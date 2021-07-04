@@ -1,8 +1,6 @@
-# Hexops engine <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
+# Hexops engine [![CI](https://github.com/hexops/engine/workflows/CI/badge.svg)](https://github.com/hexops/engine/actions) <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
 
 _Game engine & graphics toolkit for the future._
-
-[![CI](https://github.com/hexops/engine/workflows/CI/badge.svg)](https://github.com/hexops/engine/actions)
 
 ---
 
