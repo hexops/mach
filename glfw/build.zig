@@ -14,15 +14,26 @@ pub fn build(b: *Builder) void {
     test_step.dependOn(&main_tests.step);
 }
 
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
-}
+pub const LinuxWindowManager = enum {
+    X11,
+    Wayland,
+};
 
 pub const Options = struct {
-    Vulkan: bool = true,
-    Metal: bool = true,
-    OpenGL: bool = false,
-    GLES: bool = false,
+    // Not supported on macOS.
+    vulkan: bool = true,
+
+    // Only respected on macOS.
+    metal: bool = true,
+
+    // Deprecated on macOS.
+    opengl: bool = false,
+
+    // Not supported on macOS.
+    gles: bool = false,
+
+    // Only respected on Linux.
+    linux_window_manager: LinuxWindowManager = .X11, 
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
@@ -116,6 +127,10 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     linkGLFW(b, step, options);
 }
 
+fn thisDir() []const u8 {
+    return std.fs.path.dirname(@src().file) orelse ".";
+}
+
 fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     var include_dir = std.fs.path.join(b.allocator, &.{ thisDir(), "upstream/glfw/include" }) catch unreachable;
     defer b.allocator.free(include_dir);
@@ -141,7 +156,7 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
             step.linkFramework("Cocoa");
             step.linkFramework("IOKit");
             step.linkFramework("CoreFoundation");
-            if (options.OpenGL) {
+            if (options.opengl) {
                 step.linkFramework("OpenGL");
             }
         },
