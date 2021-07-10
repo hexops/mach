@@ -2,6 +2,9 @@
 
 _Game engine & graphics toolkit for the future._
 
+![](https://raw.githubusercontent.com/hexops/media/main/mach/logo.svg)
+
+
 ---
 
 ## ⚠️ Project status: in-development ⚠️
