@@ -74,6 +74,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
             lib.addCSourceFiles(sources.items, &.{});
         },
         .macos => {
+            includeSdkMacOS(b, lib);
             var sources = std.ArrayList([]const u8).init(&arena.allocator);
             for ([_][]const u8{
                 // MacOS-specific sources
@@ -176,28 +177,7 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
             // TODO(slimsag): create sdk-windows
         },
         .macos => {
-            const sdk_root_dir = getSdkRoot(b.allocator, "sdk-macos-11.3") catch unreachable;
-            defer b.allocator.free(sdk_root_dir);
-
-            var sdk_root_frameworks = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/System/Library/Frameworks" }) catch unreachable;
-            defer b.allocator.free(sdk_root_frameworks);
-            step.addFrameworkDir(sdk_root_frameworks);
-
-            var sdk_root_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
-            defer b.allocator.free(sdk_root_includes);
-            step.addSystemIncludeDir(sdk_root_includes);
-
-            var sdk_root_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib" }) catch unreachable;
-            defer b.allocator.free(sdk_root_libs);
-            step.addLibPath(sdk_root_libs);
-
-            // TODO(slimsag): Without setting sysroot, zld fails to resolve /usr/lib/libobjc.A.dylib when specifying -Dtarget=x86_64-macos
-            // Presumably has something to do with https://github.com/ziglang/zig/issues/6996 - I think zld doesn't consider addLibPath/addFrameworkDir
-            // resolution as part of dependant libs: https://github.com/ziglang/zig/blob/2d855745f91852af92ad970feef96e55919993d3/src/link/MachO/Dylib.zig#L477-L483
-            var sdk_sysroot = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/" }) catch unreachable;
-            //defer b.allocator.free(sdk_sysroot); // TODO(slimsag): memory management here is terrible
-            b.sysroot = sdk_sysroot;
-
+            includeSdkMacOS(b, step);
             step.linkFramework("Cocoa");
             step.linkFramework("IOKit");
             step.linkFramework("CoreFoundation");
@@ -210,6 +190,29 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
             // TODO(slimsag): create sdk-linux
         },
     }
+}
+
+fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep) void {
+    const sdk_root_dir = getSdkRoot(b.allocator, "sdk-macos-11.3") catch unreachable;
+    defer b.allocator.free(sdk_root_dir);
+
+    var sdk_root_frameworks = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/System/Library/Frameworks" }) catch unreachable;
+    defer b.allocator.free(sdk_root_frameworks);
+    step.addFrameworkDir(sdk_root_frameworks);
+
+    var sdk_root_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
+    defer b.allocator.free(sdk_root_includes);
+    step.addSystemIncludeDir(sdk_root_includes);
+
+    var sdk_root_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib" }) catch unreachable;
+    defer b.allocator.free(sdk_root_libs);
+    step.addLibPath(sdk_root_libs);
+
+    // TODO(slimsag): Without setting sysroot, zld fails to resolve /usr/lib/libobjc.A.dylib when specifying -Dtarget=x86_64-macos
+    // Presumably has something to do with https://github.com/ziglang/zig/issues/6996 - I think zld doesn't consider addLibPath/addFrameworkDir
+    // resolution as part of dependant libs: https://github.com/ziglang/zig/blob/2d855745f91852af92ad970feef96e55919993d3/src/link/MachO/Dylib.zig#L477-L483
+    var sdk_sysroot = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/" }) catch unreachable;
+    b.sysroot = sdk_sysroot; // TODO(slimsag): leaks, b.sysroot doesn't get free'd by builder?
 }
 
 // Caller owns returned memory.
