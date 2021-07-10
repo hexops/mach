@@ -36,14 +36,31 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
-            // TODO(slimsag): implement
-            // upstream/glfw/src/win32_thread.c
-            // upstream/glfw/src/wgl_context.c
-            // upstream/glfw/src/win32_init.c
-            // upstream/glfw/src/win32_monitor.c
-            // upstream/glfw/src/win32_time.c
-            // upstream/glfw/src/win32_joystick.c
-            // upstream/glfw/src/win32_window.c
+            var sources = std.ArrayList([]const u8).init(&arena.allocator);
+            for ([_][]const u8{
+                // Windows-specific sources
+                "upstream/glfw/src/win32_thread.c",
+                "upstream/glfw/src/wgl_context.c",
+                "upstream/glfw/src/win32_init.c",
+                "upstream/glfw/src/win32_monitor.c",
+                "upstream/glfw/src/win32_time.c",
+                "upstream/glfw/src/win32_joystick.c",
+                "upstream/glfw/src/win32_window.c",
+
+                // General sources
+                "upstream/glfw/src/monitor.c",
+                "upstream/glfw/src/init.c",
+                "upstream/glfw/src/vulkan.c",
+                "upstream/glfw/src/input.c",
+                "upstream/glfw/src/osmesa_context.c",
+                "upstream/glfw/src/egl_context.c",
+                "upstream/glfw/src/context.c",
+                "upstream/glfw/src/window.c",
+            }) |path| {
+                var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
+                sources.append(abs_path) catch unreachable;
+            }
+            lib.addCSourceFiles(sources.items, &.{});
         },
         .macos => {
             var sources = std.ArrayList([]const u8).init(&arena.allocator);
@@ -106,7 +123,9 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
-        .windows => {},
+        .windows => {
+            // TODO(slimsag): create sdk-windows
+        },
         .macos => {
             const sdk_root_dir = getSdkRoot(b.allocator, "sdk-macos-11.3") catch unreachable;
             defer b.allocator.free(sdk_root_dir);
@@ -128,6 +147,7 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
         },
         else => {
             // Assume Linux-like
+            // TODO(slimsag): create sdk-linux
         },
     }
 }
