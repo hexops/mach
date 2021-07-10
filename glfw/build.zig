@@ -33,7 +33,7 @@ pub const Options = struct {
     gles: bool = false,
 
     // Only respected on Linux.
-    linux_window_manager: LinuxWindowManager = .X11, 
+    linux_window_manager: LinuxWindowManager = .X11,
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
@@ -102,22 +102,56 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
         },
         else => {
             // Assume Linux-like
-            // TODO(slimsag): implement
+            var general_sources = std.ArrayList([]const u8).init(&arena.allocator);
+            for ([_][]const u8{
+                // General Linux-like sources
+                "upstream/glfw/src/posix_time.c",
+                "upstream/glfw/src/posix_thread.c",
+                "upstream/glfw/src/linux_joystick.c",
 
-            // upstream/glfw/src/posix_time.c
-            // upstream/glfw/src/posix_thread.c
+                // General sources
+                "upstream/glfw/src/monitor.c",
+                "upstream/glfw/src/init.c",
+                "upstream/glfw/src/vulkan.c",
+                "upstream/glfw/src/input.c",
+                "upstream/glfw/src/osmesa_context.c",
+                "upstream/glfw/src/egl_context.c",
+                "upstream/glfw/src/context.c",
+                "upstream/glfw/src/window.c",
+            }) |path| {
+                var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
+                general_sources.append(abs_path) catch unreachable;
+            }
+            lib.addCSourceFiles(general_sources.items, &.{});
 
-            // upstream/glfw/src/wl_monitor.c
-            // upstream/glfw/src/wl_window.c
-            // upstream/glfw/src/wl_init.c
-
-            // upstream/glfw/src/x11_init.c
-            // upstream/glfw/src/x11_window.c
-            // upstream/glfw/src/x11_monitor.c
-            // upstream/glfw/src/xkb_unicode.c
-
-            // upstream/glfw/src/linux_joystick.c
-            // upstream/glfw/src/glx_context.c
+            switch (options.linux_window_manager) {
+                .X11 => {
+                    var x11_sources = std.ArrayList([]const u8).init(&arena.allocator);
+                    for ([_][]const u8{
+                        "upstream/glfw/src/x11_init.c",
+                        "upstream/glfw/src/x11_window.c",
+                        "upstream/glfw/src/x11_monitor.c",
+                        "upstream/glfw/src/xkb_unicode.c",
+                        "upstream/glfw/src/glx_context.c",
+                    }) |path| {
+                        var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
+                        x11_sources.append(abs_path) catch unreachable;
+                    }
+                    lib.addCSourceFiles(x11_sources.items, &.{});
+                },
+                .Wayland => {
+                    var wayland_sources = std.ArrayList([]const u8).init(&arena.allocator);
+                    for ([_][]const u8{
+                        "upstream/glfw/src/wl_monitor.c",
+                        "upstream/glfw/src/wl_window.c",
+                        "upstream/glfw/src/wl_init.c",
+                    }) |path| {
+                        var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
+                        wayland_sources.append(abs_path) catch unreachable;
+                    }
+                    lib.addCSourceFiles(wayland_sources.items, &.{});
+                },
+            }
         },
     }
     linkGLFW(b, lib, options);
