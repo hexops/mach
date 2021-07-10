@@ -187,6 +187,17 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
             defer b.allocator.free(sdk_root_includes);
             step.addSystemIncludeDir(sdk_root_includes);
 
+            var sdk_root_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib" }) catch unreachable;
+            defer b.allocator.free(sdk_root_libs);
+            step.addLibPath(sdk_root_libs);
+
+            // TODO(slimsag): Without setting sysroot, zld fails to resolve /usr/lib/libobjc.A.dylib when specifying -Dtarget=x86_64-macos
+            // Presumably has something to do with https://github.com/ziglang/zig/issues/6996 - I think zld doesn't consider addLibPath/addFrameworkDir
+            // resolution as part of dependant libs: https://github.com/ziglang/zig/blob/2d855745f91852af92ad970feef96e55919993d3/src/link/MachO/Dylib.zig#L477-L483
+            var sdk_sysroot = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/" }) catch unreachable;
+            //defer b.allocator.free(sdk_sysroot); // TODO(slimsag): memory management here is terrible
+            b.sysroot = sdk_sysroot;
+
             step.linkFramework("Cocoa");
             step.linkFramework("IOKit");
             step.linkFramework("CoreFoundation");
