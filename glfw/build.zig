@@ -228,7 +228,7 @@ fn getSdkRoot(allocator: *std.mem.Allocator, comptime name: []const u8) ![]const
                 if (!try confirmAppleSDKAgreement()) @panic("cannot continue");
             }
             try std.fs.cwd().makePath(app_data_dir);
-            const argv = &[_][]const u8{ "git", "clone", "-c", "core.symlinks=true", "https://github.com/hexops/" ++ name };
+            const argv = &[_][]const u8{ "git", "clone", "https://github.com/hexops/" ++ name };
             const child = try std.ChildProcess.init(argv, allocator);
             child.cwd = app_data_dir;
             child.stdin = std.io.getStdOut();
