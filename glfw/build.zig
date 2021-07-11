@@ -225,7 +225,7 @@ fn getSdkRoot(allocator: *std.mem.Allocator, comptime name: []const u8) ![]const
         error.FileNotFound => {
             std.log.info("cloning required sdk..\ngit clone https://github.com/hexops/{s} '{s}'..\n", .{ name, sdk_root_dir });
             if (std.mem.eql(u8, name, "sdk-macos-11.3")) {
-                if (!try confirmAppleSDKAgreement()) @panic("cannot continue");
+                if (!try confirmAppleSDKAgreement(allocator)) @panic("cannot continue");
             }
             try std.fs.cwd().makePath(app_data_dir);
             const argv = &[_][]const u8{ "git", "clone", "https://github.com/hexops/" ++ name };
@@ -242,8 +242,15 @@ fn getSdkRoot(allocator: *std.mem.Allocator, comptime name: []const u8) ![]const
     };
 }
 
-fn confirmAppleSDKAgreement() !bool {
-    if (std.mem.eql(u8, std.os.getenv("AGREE") orelse "", "true")) return true;
+fn confirmAppleSDKAgreement(allocator: *std.mem.Allocator) !bool {
+    if (std.process.getEnvVarOwned(allocator, "AGREE")) |agree| {
+        defer allocator.free(agree);
+        return std.mem.eql(u8, agree, "true");
+    } else |err| switch (err) {
+        error.EnvironmentVariableNotFound => {},
+        else => |e| return e,
+    }
+
     const stdin = std.io.getStdIn().reader();
     const stdout = std.io.getStdOut().writer();
     var buf: [10]u8 = undefined;
