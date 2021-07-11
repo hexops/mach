@@ -261,7 +261,9 @@ fn confirmAppleSDKAgreement(allocator: *std.mem.Allocator) !bool {
     try stdout.print("Do you agree to those terms? [Y/n] ", .{});
     if (try stdin.readUntilDelimiterOrEof(buf[0..], '\n')) |user_input| {
         try stdout.print("\n", .{});
-        return std.mem.eql(u8, user_input, "y") or std.mem.eql(u8, user_input, "Y") or std.mem.eql(u8, user_input, "yes") or std.mem.eql(u8, user_input, "");
+        var in = user_input;
+        if (in[in.len-1] == '\r') in = in[0..in.len-1];
+        return std.mem.eql(u8, in, "y") or std.mem.eql(u8, in, "Y") or std.mem.eql(u8, in, "yes") or std.mem.eql(u8, in, "");
     } else {
         return false;
     }
