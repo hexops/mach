@@ -175,6 +175,7 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     switch (target.os.tag) {
         .windows => {
             // TODO(slimsag): create sdk-windows
+            step.linkSystemLibrary("c");
         },
         .macos => {
             includeSdkMacOS(b, step);
