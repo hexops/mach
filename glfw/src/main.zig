@@ -7,6 +7,7 @@ pub fn basicTest() void {
     if (c.glfwInit() != c.GLFW_TRUE) {
         @panic("failed to init");
     }
+    c.glfwWindowHint(c.GLFW_VISIBLE, c.GLFW_FALSE);
     const window = c.glfwCreateWindow(640, 480, "GLFW example", null, null);
     if (window == null) {
         c.glfwTerminate();
