@@ -3,7 +3,7 @@
 const c = @cImport(@cInclude("GLFW/glfw3.h"));
 
 /// Errors that GLFW can produce.
-const Error = error{
+pub const Error = error{
     /// GLFW has not been initialized.
     ///
     /// This occurs if a GLFW function was called that must not be called unless the library is
@@ -87,9 +87,9 @@ const Error = error{
     NoWindowContext,
 };
 
-fn convertError(e: int) ?Error {
+fn convertError(e: c_int) Error!void {
     return switch (e) {
-        c.GLFW_NO_ERROR => null,
+        c.GLFW_NO_ERROR => {},
         c.GLFW_NOT_INITIALIZED => Error.NotInitialized,
         c.GLFW_NO_CURRENT_CONTEXT => Error.NoCurrentContext,
         c.GLFW_INVALID_ENUM => Error.InvalidEnum,
@@ -100,5 +100,27 @@ fn convertError(e: int) ?Error {
         c.GLFW_PLATFORM_ERROR => Error.PlatformError,
         c.GLFW_FORMAT_UNAVAILABLE => Error.FormatUnavailable,
         c.GLFW_NO_WINDOW_CONTEXT => Error.NoWindowContext,
+        else => unreachable,
     };
+}
+
+/// Returns and clears the last error for the calling thread.
+///
+/// This function returns and clears the error code of the last error that occurred on the calling
+/// thread, and optionally a UTF-8 encoded human-readable description of it. If no error has
+/// occurred since the last call, it returns GLFW_NO_ERROR (zero) and the description pointer is
+/// set to `NULL`.
+///
+/// * @param[in] description Where to store the error description pointer, or `NULL`.
+/// @return The last error code for the calling thread, or @ref GLFW_NO_ERROR (zero).
+///
+/// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
+/// yourself. It is guaranteed to be valid only until the next error occurs or the library is
+/// terminated.
+///
+/// @remark This function may be called before @ref glfwInit.
+///
+/// @thread_safety This function may be called from any thread.
+pub fn getError() Error!void {
+    return convertError(c.glfwGetError(null));
 }
