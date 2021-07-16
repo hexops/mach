@@ -3,6 +3,8 @@ const testing = std.testing;
 
 const c = @cImport(@cInclude("GLFW/glfw3.h"));
 
+pub usingnamespace @import("consts.zig");
+
 pub const action = @import("action.zig");
 pub const gamepad_axis = @import("gamepad_axis.zig");
 pub const gamepad_button = @import("gamepad_button.zig");
