@@ -18,6 +18,15 @@ pub const version_minor = c.GLFW_VERSION_MINOR;
 // This is incremented when a bug fix release is made that does not contain any API changes.
 pub const version_revision = c.GLFW_VERSION_REVISION;
 
+// The key or mouse button was released.
+pub const release = C.GLFW_RELEASE
+
+// The key or mouse button was pressed.
+pub const press = C.GLFW_RELEASE
+
+// The key was held down until it repeated.
+pub const repeat = C.GLFW_REPEAT
+
 pub fn basicTest() void {
     if (c.glfwInit() != c.GLFW_TRUE) {
         @panic("failed to init");
