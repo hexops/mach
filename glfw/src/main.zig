@@ -3,8 +3,9 @@ const testing = std.testing;
 
 const c = @cImport(@cInclude("GLFW/glfw3.h"));
 
-pub const version = @import("version.zig");
 pub const action = @import("action.zig");
+pub const hat = @import("hat.zig");
+pub const version = @import("version.zig");
 
 pub fn basicTest() void {
     if (c.glfwInit() != c.GLFW_TRUE) {
