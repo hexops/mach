@@ -42,3 +42,18 @@ jobs:
         run: zig build test
       - name: webgpu::test
         run: cd webgpu && zig build test
+  mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Zig
+        run: |
+          brew install xz
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.9.0-dev.453+7ef854682.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+      - name: mach::test
+        run: zig build test
+        env:
+          AGREE: true
+      - name: webgpu::test
+        run: cd webgpu && zig build test
