@@ -38,7 +38,7 @@ pub const version = @import("version.zig");
 /// Unicode text input.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub fn init() Error!void {
+pub inline fn init() Error!void {
     if (c.glfwInit() != c.GLFW_TRUE) {
         return try getError();
     }
@@ -138,7 +138,7 @@ pub fn basicTest() !void {
 
 test "version" {
     std.debug.print("\nGLFW version v{}.{}.{}\n", .{ version.major, version.minor, version.revision });
-    std.debug.print("\nstring: {s}\n", .{ getVersionString() });
+    std.debug.print("\nstring: {s}\n", .{getVersionString()});
 }
 
 test "basic" {
