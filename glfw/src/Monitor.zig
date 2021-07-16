@@ -12,6 +12,30 @@ const Monitor = @This();
 
 handle: *c.GLFWmonitor,
 
+/// A monitor position, in screen coordinates, of the upper left corner of the monitor on the
+/// virtual screen.
+const Pos = struct {
+    /// The x coordinate.
+    x: isize,
+    /// The y coordinate.
+    y: isize,
+};
+
+/// Returns the position of the monitor's viewport on the virtual screen.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_properties
+pub fn getPos(self: Monitor) !Pos {
+    var xpos: c_int = 0;
+    var ypos: c_int = 0;
+    c.glfwGetMonitorPos(self.handle, &xpos, &ypos);
+    try getError();
+    return Pos{ .x = xpos, .y = ypos };
+}
+
 /// Returns the currently connected monitors.
 ///
 /// This function returns a slice of all currently connected monitors. The primary monitor is
@@ -62,4 +86,11 @@ test "getAll" {
 
 test "getPrimary" {
     _ = try getPrimary();
+}
+
+test "getPos" {
+    const monitor = try getPrimary();
+    if (monitor) |m| {
+        _ = try m.getPos();
+    }
 }
