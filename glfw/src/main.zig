@@ -4,6 +4,7 @@ const testing = std.testing;
 const c = @cImport(@cInclude("GLFW/glfw3.h"));
 
 pub const action = @import("action.zig");
+pub const gamepad_axis = @import("gamepad_axis.zig");
 pub const hat = @import("hat.zig");
 pub const joystick = @import("joystick.zig");
 pub const key = @import("key.zig");
