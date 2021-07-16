@@ -14,6 +14,7 @@ pub const hat = @import("hat.zig");
 pub const joystick = @import("joystick.zig");
 pub const key = @import("key.zig");
 pub const mod = @import("mod.zig");
+pub const Monitor = @import("Monitor.zig");
 pub const mouse_button = @import("mouse_button.zig");
 pub const version = @import("version.zig");
 
