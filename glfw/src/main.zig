@@ -57,6 +57,8 @@ pub fn init() Error!void {
 ///
 /// This function has no effect if GLFW is not initialized.
 ///
+/// Possible errors include glfw.Error.PlatformError.
+///
 /// remark: This function may be called before glfw.init.
 ///
 /// warning: The contexts of any remaining windows must not be current on any other thread when
@@ -65,8 +67,33 @@ pub fn init() Error!void {
 /// reentrancy: This function must not be called from a callback.
 ///
 /// thread_safety: This function must only be called from the main thread.
-pub fn terminate() callconv(.Inline) void {
+pub inline fn terminate() void {
     c.glfwTerminate();
+}
+
+/// Sets the specified init hint to the desired value.
+///
+/// This function sets hints for the next initialization of GLFW.
+///
+/// The values you set hints to are never reset by GLFW, but they only take effect during
+/// initialization. Once GLFW has been initialized, any values you set will be ignored until the
+/// library is terminated and initialized again.
+///
+/// Some hints are platform specific.  These may be set on any platform but they will only affect
+/// their specific platform.  Other platforms will ignore them. Setting these hints requires no
+/// platform specific headers or functions.
+///
+/// @param hint: The init hint to set.
+/// @param value: The new value of the init hint.
+///
+/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.InvalidValue.
+///
+/// @remarks This function may be called before glfw.init.
+///
+/// @thread_safety This function must only be called from the main thread.
+pub inline fn initHint(hint: c_int, value: c_int) !void {
+    c.glfwInitHint(hint, value);
+    try getError();
 }
 
 pub fn basicTest() !void {
