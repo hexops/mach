@@ -96,6 +96,28 @@ pub inline fn initHint(hint: c_int, value: c_int) !void {
     try getError();
 }
 
+/// Returns a string describing the compile-time configuration.
+///
+/// This function returns the compile-time generated version string of the GLFW library binary. It
+/// describes the version, platform, compiler and any platform-specific compile-time options. It
+/// should not be confused with the OpenGL or OpenGL ES version string, queried with `glGetString`.
+///
+/// __Do not use the version string__ to parse the GLFW library version. Use the glfw.version
+/// constants instead.
+///
+/// @return The ASCII encoded GLFW version string.
+///
+/// @errors None.
+///
+/// @remark This function may be called before @ref glfwInit.
+///
+/// @pointer_lifetime The returned string is static and compile-time generated.
+///
+/// @thread_safety This function may be called from any thread.
+pub inline fn getVersionString() [*c]const u8 {
+    return c.glfwGetVersionString();
+}
+
 pub fn basicTest() !void {
     try init();
     defer terminate();
@@ -116,6 +138,7 @@ pub fn basicTest() !void {
 
 test "version" {
     std.debug.print("\nGLFW version v{}.{}.{}\n", .{ version.major, version.minor, version.revision });
+    std.debug.print("\nstring: {s}\n", .{ getVersionString() });
 }
 
 test "basic" {
