@@ -1,6 +1,6 @@
 //! Modifier key flags
 //!
-//! See glfw.SetKeyCallback for how these are used.
+//! See glfw.setKeyCallback for how these are used.
 
 const c = @cImport(@cInclude("GLFW/glfw3.h"));
 

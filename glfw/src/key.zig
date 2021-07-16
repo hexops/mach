@@ -1,6 +1,6 @@
 //! Keyboard key IDs.
 //!
-//! See glfw.SetKeyCallback for how these are used.
+//! See glfw.setKeyCallback for how these are used.
 //!
 //! These key codes are inspired by the _USB HID Usage Tables v1.12_ (p. 53-60), but re-arranged to
 //! map to 7-bit ASCII for printable keys (function keys are put in the 256+ range).
