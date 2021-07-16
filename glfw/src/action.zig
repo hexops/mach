@@ -1,3 +1,5 @@
+//! Key and button actions
+
 const c = @cImport(@cInclude("GLFW/glfw3.h"));
 
 // The key or mouse button was released.

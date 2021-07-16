@@ -1,3 +1,5 @@
+//! GLFW version info
+
 const c = @cImport(@cInclude("GLFW/glfw3.h"));
 
 // The major version number of the GLFW library.
