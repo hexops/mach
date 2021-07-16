@@ -45,12 +45,37 @@ pub fn init() Error!void {
     return;
 }
 
-pub fn basicTest() void {
-    init() catch @panic("failed to init!");
+/// Terminates the GLFW library.
+///
+/// This function destroys all remaining windows and cursors, restores any modified gamma ramps
+/// and frees any other allocated resources. Once this function is called, you must again call
+/// glfw.init successfully before you will be able to use most GLFW functions.
+///
+/// If GLFW has been successfully initialized, this function should be called before the
+/// application exits. If initialization fails, there is no need to call this function, as it is
+/// called by glfw.init before it returns failure.
+///
+/// This function has no effect if GLFW is not initialized.
+///
+/// remark: This function may be called before glfw.init.
+///
+/// warning: The contexts of any remaining windows must not be current on any other thread when
+/// this function is called.
+///
+/// reentrancy: This function must not be called from a callback.
+///
+/// thread_safety: This function must only be called from the main thread.
+pub fn terminate() callconv(.Inline) void {
+    c.glfwTerminate();
+}
+
+pub fn basicTest() !void {
+    try init();
+    defer terminate();
+
     c.glfwWindowHint(c.GLFW_VISIBLE, c.GLFW_FALSE);
     const window = c.glfwCreateWindow(640, 480, "GLFW example", null, null);
     if (window == null) {
-        c.glfwTerminate();
         @panic("failed to create window");
     }
 
@@ -60,7 +85,6 @@ pub fn basicTest() void {
     }
 
     c.glfwDestroyWindow(window);
-    c.glfwTerminate();
 }
 
 test "version" {
@@ -68,5 +92,5 @@ test "version" {
 }
 
 test "basic" {
-    basicTest();
+    basicTest() catch unreachable;
 }
