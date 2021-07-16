@@ -35,8 +35,30 @@ pub fn getAll(allocator: *mem.Allocator) ![]Monitor {
     return slice;
 }
 
+/// Returns the primary monitor.
+///
+/// This function returns the primary monitor. This is usually the monitor where elements like
+/// the task bar or global menu bar are located.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_monitors, glfw.monitors.getAll
+pub fn getPrimary() !?Monitor {
+    const handle = c.glfwGetPrimaryMonitor();
+    if (handle == null) {
+        return null;
+    }
+    return Monitor{ .handle = handle };
+}
+
 test "getAll" {
     const allocator = testing.allocator;
     const monitors = try getAll(allocator);
     defer allocator.free(monitors);
+}
+
+test "getPrimary" {
+    _ = try getPrimary();
 }
