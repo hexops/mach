@@ -20,19 +20,19 @@ pub const LinuxWindowManager = enum {
 };
 
 pub const Options = struct {
-    // Not supported on macOS.
+    /// Not supported on macOS.
     vulkan: bool = true,
 
-    // Only respected on macOS.
+    /// Only respected on macOS.
     metal: bool = true,
 
-    // Deprecated on macOS.
+    /// Deprecated on macOS.
     opengl: bool = false,
 
-    // Not supported on macOS.
+    /// Not supported on macOS.
     gles: bool = false,
 
-    // Only respected on Linux.
+    /// Only respected on Linux.
     linux_window_manager: LinuxWindowManager = .X11,
 };
 
@@ -216,7 +216,7 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep) void {
     b.sysroot = sdk_sysroot; // TODO(slimsag): leaks, b.sysroot doesn't get free'd by builder?
 }
 
-// Caller owns returned memory.
+/// Caller owns returned memory.
 fn getSdkRoot(allocator: *std.mem.Allocator, comptime name: []const u8) ![]const u8 {
     const app_data_dir = try std.fs.getAppDataDir(allocator, "mach");
     var sdk_root_dir = try std.fs.path.join(allocator, &.{ app_data_dir, name });
