@@ -6,6 +6,7 @@ const c = @cImport(@cInclude("GLFW/glfw3.h"));
 pub const action = @import("action.zig");
 pub const hat = @import("hat.zig");
 pub const key = @import("key.zig");
+pub const mod = @import("mod.zig");
 pub const version = @import("version.zig");
 
 pub fn basicTest() void {
