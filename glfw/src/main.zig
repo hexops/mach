@@ -143,5 +143,6 @@ test "version" {
 }
 
 test "basic" {
+    _ = Monitor;
     basicTest() catch unreachable;
 }

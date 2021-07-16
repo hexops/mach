@@ -27,10 +27,10 @@ pub fn getAll(allocator: *mem.Allocator) ![]Monitor {
     var count: c_int = 0;
     const monitors = c.glfwGetMonitors(&count);
 
-    const slice = allocator.alloc(Monitor, count);
-    var i = 0;
+    const slice = try allocator.alloc(Monitor, @intCast(usize, count));
+    var i: usize = 0;
     while (i < count) : (i += 1) {
-        slice[i] = Monitor{ .handle = monitors[i] };
+        slice[i] = Monitor{ .handle = monitors[i].? };
     }
     return slice;
 }
@@ -50,7 +50,8 @@ pub fn getPrimary() !?Monitor {
     if (handle == null) {
         return null;
     }
-    return Monitor{ .handle = handle };
+    try getError();
+    return Monitor{ .handle = handle.? };
 }
 
 test "getAll" {
