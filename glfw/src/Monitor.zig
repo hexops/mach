@@ -16,9 +16,9 @@ handle: *c.GLFWmonitor,
 /// virtual screen.
 const Pos = struct {
     /// The x coordinate.
-    x: isize,
+    x: usize,
     /// The y coordinate.
-    y: isize,
+    y: usize,
 };
 
 /// Returns the position of the monitor's viewport on the virtual screen.
@@ -28,12 +28,42 @@ const Pos = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-pub fn getPos(self: Monitor) !Pos {
+pub fn getPos(self: Monitor) Error!Pos {
     var xpos: c_int = 0;
     var ypos: c_int = 0;
     c.glfwGetMonitorPos(self.handle, &xpos, &ypos);
     try getError();
-    return Pos{ .x = xpos, .y = ypos };
+    return Pos{ .x = @intCast(usize, xpos), .y = @intCast(usize, ypos) };
+}
+
+/// The monitor workarea, in screen coordinates.
+///
+/// This is the position of the upper-left corner of the work area of the monitor, along with the
+/// work area size. The work area is defined as the area of the monitor not occluded by the
+/// operating system task bar where present. If no task bar exists then the work area is the
+/// monitor resolution in screen coordinates.
+const Workarea = struct {
+    x: usize,
+    y: usize,
+    width: usize,
+    height: usize,
+};
+
+/// Retrieves the work area of the monitor.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_workarea
+pub fn getWorkarea(self: Monitor) Error!Workarea {
+    var xpos: c_int = 0;
+    var ypos: c_int = 0;
+    var width: c_int = 0;
+    var height: c_int = 0;
+    c.glfwGetMonitorWorkarea(self.handle, &xpos, &ypos, &width, &height);
+    try getError();
+    return Workarea{ .x = @intCast(usize, xpos), .y = @intCast(usize, ypos), .width = @intCast(usize, width), .height = @intCast(usize, height) };
 }
 
 /// Returns the currently connected monitors.
@@ -92,5 +122,12 @@ test "getPos" {
     const monitor = try getPrimary();
     if (monitor) |m| {
         _ = try m.getPos();
+    }
+}
+
+test "getWorkarea" {
+    const monitor = try getPrimary();
+    if (monitor) |m| {
+        _ = try m.getWorkarea();
     }
 }
