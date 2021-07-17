@@ -28,7 +28,7 @@ const Pos = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-pub fn getPos(self: Monitor) Error!Pos {
+pub inline fn getPos(self: Monitor) Error!Pos {
     var xpos: c_int = 0;
     var ypos: c_int = 0;
     c.glfwGetMonitorPos(self.handle, &xpos, &ypos);
@@ -56,7 +56,7 @@ const Workarea = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_workarea
-pub fn getWorkarea(self: Monitor) Error!Workarea {
+pub inline fn getWorkarea(self: Monitor) Error!Workarea {
     var xpos: c_int = 0;
     var ypos: c_int = 0;
     var width: c_int = 0;
@@ -86,7 +86,7 @@ const PhysicalSize = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-pub fn getPhysicalSize(self: Monitor) Error!PhysicalSize {
+pub inline fn getPhysicalSize(self: Monitor) Error!PhysicalSize {
     var width_mm: c_int = 0;
     var height_mm: c_int = 0;
     c.glfwGetMonitorPhysicalSize(self.handle, &width_mm, &height_mm);
@@ -117,7 +117,7 @@ const ContentScale = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_scale, glfw.Window.getContentScale
-pub fn getContentScale(self: Monitor) Error!ContentScale {
+pub inline fn getContentScale(self: Monitor) Error!ContentScale {
     var x_scale: f32 = 0;
     var y_scale: f32 = 0;
     c.glfwGetMonitorContentScale(self.handle, &x_scale, &y_scale);
@@ -139,7 +139,7 @@ pub fn getContentScale(self: Monitor) Error!ContentScale {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-pub fn getName(self: Monitor) Error![*c]const u8 {
+pub inline fn getName(self: Monitor) Error![*c]const u8 {
     const name = c.glfwGetMonitorName(self.handle);
     try getError();
     return name;
@@ -158,7 +158,7 @@ pub fn getName(self: Monitor) Error![*c]const u8 {
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: monitor_userptr, glfw.Monitor.getUserPointer
-pub fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) Error!void {
+pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) Error!void {
     c.glfwSetMonitorUserPointer(self.handle, ptr);
     try getError();
 }
@@ -176,7 +176,7 @@ pub fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) Error!void {
 /// synchronized.
 ///
 /// see also: monitor_userptr, glfw.Monitor.setUserPointer
-pub fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
+pub inline fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
     const ptr = c.glfwGetMonitorUserPointer(self.handle);
     try getError();
     if (ptr == null) return null;
@@ -194,7 +194,7 @@ pub fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_monitors, monitor_event, glfw.monitor.getPrimary
-pub fn getAll(allocator: *mem.Allocator) ![]Monitor {
+pub inline fn getAll(allocator: *mem.Allocator) ![]Monitor {
     var count: c_int = 0;
     const monitors = c.glfwGetMonitors(&count);
 
@@ -216,7 +216,7 @@ pub fn getAll(allocator: *mem.Allocator) ![]Monitor {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_monitors, glfw.monitors.getAll
-pub fn getPrimary() !?Monitor {
+pub inline fn getPrimary() !?Monitor {
     const handle = c.glfwGetPrimaryMonitor();
     if (handle == null) {
         return null;
