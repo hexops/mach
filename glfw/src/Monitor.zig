@@ -125,6 +125,24 @@ pub fn getContentScale(self: Monitor) Error!ContentScale {
     return ContentScale{ .x_scale = @floatCast(f32, x_scale), .y_scale = @floatCast(f32, y_scale) };
 }
 
+/// Returns the name of the specified monitor.
+///
+/// This function returns a human-readable name, encoded as UTF-8, of the specified monitor. The
+/// name typically reflects the make and model of the monitor and is not guaranteed to be unique
+/// among the connected monitors.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
+/// yourself. It is valid until the specified monitor is disconnected or the library is terminated.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_properties
+pub fn getName(self: Monitor) Error![*c]const u8 {
+    return c.glfwGetMonitorName(self.handle);
+}
+
 /// Returns the currently connected monitors.
 ///
 /// This function returns a slice of all currently connected monitors. The primary monitor is
@@ -202,5 +220,12 @@ test "getContentScale" {
     const monitor = try getPrimary();
     if (monitor) |m| {
         _ = try m.getContentScale();
+    }
+}
+
+test "getName" {
+    const monitor = try getPrimary();
+    if (monitor) |m| {
+        _ = try m.getName();
     }
 }
