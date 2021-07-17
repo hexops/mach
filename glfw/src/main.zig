@@ -130,7 +130,7 @@ pub fn basicTest() !void {
     }
 
     var start = std.time.milliTimestamp();
-    while (std.time.milliTimestamp() < start + 3000 and c.glfwWindowShouldClose(window) != c.GLFW_TRUE) {
+    while (std.time.milliTimestamp() < start + 100 and c.glfwWindowShouldClose(window) != c.GLFW_TRUE) {
         c.glfwPollEvents();
     }
 
