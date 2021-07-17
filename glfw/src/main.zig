@@ -40,10 +40,8 @@ pub const version = @import("version.zig");
 ///
 /// @thread_safety This function must only be called from the main thread.
 pub inline fn init() Error!void {
-    if (c.glfwInit() != c.GLFW_TRUE) {
-        return try getError();
-    }
-    return;
+    _ = c.glfwInit();
+    return try getError();
 }
 
 /// Terminates the GLFW library.
