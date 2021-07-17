@@ -94,6 +94,37 @@ pub fn getPhysicalSize(self: Monitor) Error!PhysicalSize {
     return PhysicalSize{ .width_mm = @intCast(usize, width_mm), .height_mm = @intCast(usize, height_mm) };
 }
 
+/// The content scale for a monitor.
+///
+/// This is the ratio between the current DPI and the platform's default DPI. This is especially
+/// important for text and any UI elements. If the pixel dimensions of your UI scaled by this look
+/// appropriate on your machine then it should appear at a reasonable size on other machines
+/// regardless of their DPI and scaling settings. This relies on the system DPI and scaling
+/// settings being somewhat correct.
+///
+/// The content scale may depend on both the monitor resolution and pixel density and on users
+/// settings. It may be very different from the raw DPI calculated from the physical size and
+/// current resolution.
+const ContentScale = struct {
+    x_scale: f32,
+    y_scale: f32,
+};
+
+/// Returns the content scale for the monitor.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_scale, glfw.Window.getContentScale
+pub fn getContentScale(self: Monitor) Error!ContentScale {
+    var x_scale: f32 = 0;
+    var y_scale: f32 = 0;
+    c.glfwGetMonitorContentScale(self.handle, &x_scale, &y_scale);
+    try getError();
+    return ContentScale{ .x_scale = @floatCast(f32, x_scale), .y_scale = @floatCast(f32, y_scale) };
+}
+
 /// Returns the currently connected monitors.
 ///
 /// This function returns a slice of all currently connected monitors. The primary monitor is
@@ -164,5 +195,12 @@ test "getPhysicalSize" {
     const monitor = try getPrimary();
     if (monitor) |m| {
         _ = try m.getPhysicalSize();
+    }
+}
+
+test "getContentScale" {
+    const monitor = try getPrimary();
+    if (monitor) |m| {
+        _ = try m.getContentScale();
     }
 }
