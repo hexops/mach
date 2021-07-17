@@ -140,7 +140,47 @@ pub fn getContentScale(self: Monitor) Error!ContentScale {
 ///
 /// see also: monitor_properties
 pub fn getName(self: Monitor) Error![*c]const u8 {
-    return c.glfwGetMonitorName(self.handle);
+    const name = c.glfwGetMonitorName(self.handle);
+    try getError();
+    return name;
+}
+
+/// Sets the user pointer of the specified monitor.
+///
+/// This function sets the user-defined pointer of the specified monitor. The current value is
+/// retained until the monitor is disconnected.
+///
+/// This function may be called from the monitor callback, even for a monitor that is being
+/// disconnected.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function may be called from any thread. Access is not synchronized.
+///
+/// see also: monitor_userptr, glfw.Monitor.getUserPointer
+pub fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) Error!void {
+    c.glfwSetMonitorUserPointer(self.handle, ptr);
+    try getError();
+}
+
+/// Returns the user pointer of the specified monitor.
+///
+/// This function returns the current value of the user-defined pointer of the specified monitor.
+///
+/// This function may be called from the monitor callback, even for a monitor that is being
+/// disconnected.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function may be called from any thread.  Access is not
+/// synchronized.
+///
+/// see also: monitor_userptr, glfw.Monitor.setUserPointer
+pub fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
+    const ptr = c.glfwGetMonitorUserPointer(self.handle);
+    try getError();
+    if (ptr == null) return null;
+    return @ptrCast(*T, @alignCast(@alignOf(*T), ptr.?));
 }
 
 /// Returns the currently connected monitors.
@@ -227,5 +267,17 @@ test "getName" {
     const monitor = try getPrimary();
     if (monitor) |m| {
         _ = try m.getName();
+    }
+}
+
+test "userPointer" {
+    const monitor = try getPrimary();
+    if (monitor) |m| {
+        var p = try m.getUserPointer(u32);
+        try testing.expect(p == null);
+        var x: u32 = 5;
+        try m.setUserPointer(u32, &x);
+        p = try m.getUserPointer(u32);
+        try testing.expectEqual(p.?.*, 5);
     }
 }
