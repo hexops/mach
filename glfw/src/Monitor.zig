@@ -66,6 +66,34 @@ pub fn getWorkarea(self: Monitor) Error!Workarea {
     return Workarea{ .x = @intCast(usize, xpos), .y = @intCast(usize, ypos), .width = @intCast(usize, width), .height = @intCast(usize, height) };
 }
 
+/// The physical size, in millimetres, of the display area of a monitor.
+const PhysicalSize = struct {
+    width_mm: usize,
+    height_mm: usize,
+};
+
+/// Returns the physical size of the monitor.
+///
+/// Some systems do not provide accurate monitor size information, either because the monitor
+/// [EDID](https://en.wikipedia.org/wiki/Extended_display_identification_data)
+/// data is incorrect or because the driver does not report it accurately.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// win32: calculates the returned physical size from the current resolution and system DPI
+/// instead of querying the monitor EDID data.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_properties
+pub fn getPhysicalSize(self: Monitor) Error!PhysicalSize {
+    var width_mm: c_int = 0;
+    var height_mm: c_int = 0;
+    c.glfwGetMonitorPhysicalSize(self.handle, &width_mm, &height_mm);
+    try getError();
+    return PhysicalSize{ .width_mm = @intCast(usize, width_mm), .height_mm = @intCast(usize, height_mm) };
+}
+
 /// Returns the currently connected monitors.
 ///
 /// This function returns a slice of all currently connected monitors. The primary monitor is
@@ -129,5 +157,12 @@ test "getWorkarea" {
     const monitor = try getPrimary();
     if (monitor) |m| {
         _ = try m.getWorkarea();
+    }
+}
+
+test "getPhysicalSize" {
+    const monitor = try getPrimary();
+    if (monitor) |m| {
+        _ = try m.getPhysicalSize();
     }
 }
