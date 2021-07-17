@@ -197,6 +197,7 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
 pub inline fn getAll(allocator: *mem.Allocator) ![]Monitor {
     var count: c_int = 0;
     const monitors = c.glfwGetMonitors(&count);
+    try getError();
 
     const slice = try allocator.alloc(Monitor, @intCast(usize, count));
     var i: usize = 0;
@@ -226,6 +227,10 @@ pub inline fn getPrimary() !?Monitor {
 }
 
 test "getAll" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
     const allocator = testing.allocator;
     const monitors = try getAll(allocator);
     defer allocator.free(monitors);
