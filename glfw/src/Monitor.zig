@@ -226,6 +226,50 @@ pub inline fn getPrimary() !?Monitor {
     return Monitor{ .handle = handle.? };
 }
 
+var callback_fn_ptr: ?usize = null;
+var callback_data_ptr: ?usize = undefined;
+
+/// Sets the monitor configuration callback.
+///
+/// This function sets the monitor configuration callback, or removes the currently set callback.
+/// This is called when a monitor is connected to or disconnected from the system. Example:
+///
+/// ```
+/// fn monitorCallback(monitor: glfw.Monitor, event: ) callconv(.C) void {
+///     // use monitor, set/get user data via monitor.setUserPointer, etc.
+/// }
+/// ...
+/// glfw.Monitor.setCallback(monitorCallback)
+/// ```
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_event
+pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monitor: Monitor, event: usize, data: *Data) void) Error!void {
+    if (f) |new_callback| {
+        callback_fn_ptr = @ptrToInt(new_callback);
+        callback_data_ptr = @ptrToInt(data);
+        const NewCallback = @TypeOf(new_callback);
+        _ = c.glfwSetMonitorCallback((struct {
+            fn callbackC(monitor: ?*c.GLFWmonitor, event: c_int) callconv(.C) void {
+                const callback = @intToPtr(NewCallback, callback_fn_ptr.?);
+                callback.*(
+                    Monitor{.handle = monitor.? },
+                    @intCast(usize, event),
+                    @intToPtr(*Data, callback_data_ptr.?),
+                );
+            }
+        }).callbackC);
+    } else {
+        _ = c.glfwSetMonitorCallback(null);
+        callback_fn_ptr = null;
+        callback_data_ptr = null;
+    }
+    try getError();
+}
+
 test "getAll" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -315,3 +359,18 @@ test "getName" {
 //         try testing.expectEqual(p.?.*, 5);
 //     }
 // }
+
+test "setCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    var custom_data: u32 = 5;
+    try setCallback(u32, &custom_data, &(struct {
+        fn callback(monitor: Monitor, event: usize, data: *u32) void {
+            _ = monitor;
+            _ = event;
+            _ = data;
+        }
+    }).callback);
+}
