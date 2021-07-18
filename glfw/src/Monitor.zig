@@ -196,7 +196,7 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_modes, glfw.Monitor.getVideoMode
-pub inline fn getVideoModes(self: Monitor, allocator: *mem.Allocator) ![]VideoMode {
+pub inline fn getVideoModes(self: Monitor, allocator: *mem.Allocator) Error![]VideoMode {
     var count: c_int = 0;
     const modes = c.glfwGetVideoModes(self.handle, &count);
     try getError();
@@ -237,7 +237,7 @@ pub inline fn getVideoMode(self: Monitor) Error!VideoMode {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_monitors, monitor_event, glfw.monitor.getPrimary
-pub inline fn getAll(allocator: *mem.Allocator) ![]Monitor {
+pub inline fn getAll(allocator: *mem.Allocator) Error![]Monitor {
     var count: c_int = 0;
     const monitors = c.glfwGetMonitors(&count);
     try getError();
@@ -260,7 +260,7 @@ pub inline fn getAll(allocator: *mem.Allocator) ![]Monitor {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_monitors, glfw.monitors.getAll
-pub inline fn getPrimary() !?Monitor {
+pub inline fn getPrimary() Error!?Monitor {
     const handle = c.glfwGetPrimaryMonitor();
     try getError();
     if (handle == null) {
@@ -314,6 +314,30 @@ pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monit
         callback_fn_ptr = null;
         callback_data_ptr = null;
     }
+    try getError();
+}
+
+/// Generates a gamma ramp and sets it for the specified monitor.
+///
+/// This function generates an appropriately sized gamma ramp from the specified exponent and then
+/// calls glfw.Monitor.setGammaRamp with it. The value must be a finite number greater than zero.
+///
+/// The software controlled gamma ramp is applied _in addition_ to the hardware gamma correction,
+/// which today is usually an approximation of sRGB gamma. This means that setting a perfectly
+/// linear ramp, or gamma 1.0, will produce the default (usually sRGB-like) behavior.
+///
+/// For gamma correct rendering with OpenGL or OpenGL ES, see the glfw.srgb_capable hint.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidValue and glfw.Error.PlatformError.
+///
+/// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
+/// and emits glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_gamma
+pub fn setGamma(self: Monitor, gamma: f32) Error!void {
+    c.glfwSetGamma(self.handle, gamma);
     try getError();
 }
 

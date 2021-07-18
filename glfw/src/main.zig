@@ -90,7 +90,7 @@ pub inline fn terminate() void {
 /// @remarks This function may be called before glfw.init.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub inline fn initHint(hint: c_int, value: c_int) !void {
+pub inline fn initHint(hint: c_int, value: c_int) Error!void {
     c.glfwInitHint(hint, value);
     try getError();
 }
