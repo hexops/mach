@@ -5,8 +5,9 @@ const mem = std.mem;
 const testing = std.testing;
 const c = @import("c.zig").c;
 
-pub const Error = @import("errors.zig").Error;
+const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
+const VideoMode = @import("VideoMode.zig");
 
 const Monitor = @This();
 
@@ -182,6 +183,32 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
     return @ptrCast(*T, @alignCast(@alignOf(T), ptr.?));
 }
 
+/// Returns the available video modes for the specified monitor.
+///
+/// This function returns an array of all video modes supported by the monitor. The returned slice
+/// is sorted in ascending order, first by color bit depth (the sum of all channel depths) and
+/// then by resolution area (the product of width and height).
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// The returned slice memory is owned by the caller.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_modes, glfw.Monitor.getVideoMode
+pub inline fn getVideoModes(self: Monitor, allocator: *mem.Allocator) ![]VideoMode {
+    var count: c_int = 0;
+    const modes = c.glfwGetVideoModes(self.handle, &count);
+    try getError();
+
+    const slice = try allocator.alloc(VideoMode, @intCast(usize, count));
+    var i: usize = 0;
+    while (i < count) : (i += 1) {
+        slice[i] = VideoMode{ .handle = modes[i] };
+    }
+    return slice;
+}
+
 /// Returns the currently connected monitors.
 ///
 /// This function returns a slice of all currently connected monitors. The primary monitor is
@@ -271,34 +298,6 @@ pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monit
         callback_data_ptr = null;
     }
     try getError();
-}
-
-/// Returns the available video modes for the specified monitor.
-///
-/// This function returns an array of all video modes supported by the monitor. The returned slice
-/// is sorted in ascending order, first by color bit depth (the sum of all channel depths) and
-/// then by resolution area (the product of width and height).
-///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-///
-/// The returned slice memory is owned by the caller. The underlying handles are owned by GLFW, and
-/// are valid until the monitor is disconnected, this function is called again, or `glfw.terminate`
-/// is called.
-///
-/// @thread_safety This function must only be called from the main thread.
-///
-/// see also: monitor_modes, glfw.Monitor.getVideoMode
-pub inline fn getVideoModes(allocator: *mem.Allocator) ![]VideoMode {
-    var count: c_int = 0;
-    const modes = c.glfwGetVideoModes(&count);
-    try getError();
-
-    const slice = try allocator.alloc(VideoMode, @intCast(usize, count));
-    var i: usize = 0;
-    while (i < count) : (i += 1) {
-        slice[i] = VideoMode{ .handle = modes[i].? };
-    }
-    return slice;
 }
 
 test "getAll" {
@@ -403,4 +402,17 @@ test "setCallback" {
             _ = data;
         }
     }).callback);
+}
+
+test "getVideoModes" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const monitor = try getPrimary();
+    if (monitor) |m| {
+        const allocator = testing.allocator;
+        const modes = try m.getVideoModes(allocator);
+        defer allocator.free(modes);
+    }
 }

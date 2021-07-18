@@ -7,10 +7,10 @@ const mem = std.mem;
 const testing = std.testing;
 const c = @import("c.zig").c;
 
-pub const Error = @import("errors.zig").Error;
+const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 
-handle: *c.GLFWvidmode,
+handle: c.GLFWvidmode,
 
 /// Returns the width of the video mode, in screen coordinates.
 pub inline fn getWidth(self: VideoMode) usize {
