@@ -235,12 +235,16 @@ var callback_data_ptr: ?usize = undefined;
 /// This is called when a monitor is connected to or disconnected from the system. Example:
 ///
 /// ```
-/// fn monitorCallback(monitor: glfw.Monitor, event: ) callconv(.C) void {
-///     // use monitor, set/get user data via monitor.setUserPointer, etc.
+/// fn monitorCallback(monitor: glfw.Monitor, event: usize, data: *MyData) void {
+///     // data is the pointer you passed into setCallback.
+///     // event is one of glfw.connected or glfw.disconnected
 /// }
 /// ...
-/// glfw.Monitor.setCallback(monitorCallback)
+/// glfw.Monitor.setCallback(MyData, &myData, monitorCallback)
 /// ```
+///
+/// `event` may be one of glfw.connected or glfw.disconnected. More events may be added in the
+/// future.
 ///
 /// Possible errors include glfw.Error.NotInitialized.
 ///
