@@ -180,7 +180,7 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
     const ptr = c.glfwGetMonitorUserPointer(self.handle);
     try getError();
     if (ptr == null) return null;
-    return @ptrCast(*T, @alignCast(@alignOf(*T), ptr.?));
+    return @ptrCast(*T, @alignCast(@alignOf(T), ptr.?));
 }
 
 /// Returns the currently connected monitors.
@@ -256,7 +256,7 @@ pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monit
             fn callbackC(monitor: ?*c.GLFWmonitor, event: c_int) callconv(.C) void {
                 const callback = @intToPtr(NewCallback, callback_fn_ptr.?);
                 callback.*(
-                    Monitor{.handle = monitor.? },
+                    Monitor{ .handle = monitor.? },
                     @intCast(usize, event),
                     @intToPtr(*Data, callback_data_ptr.?),
                 );
@@ -343,22 +343,21 @@ test "getName" {
     }
 }
 
-// TODO(slimsag): panic: incorrect alignment.
-// test "userPointer" {
-//     const glfw = @import("main.zig");
-//     try glfw.init();
-//     defer glfw.terminate();
+test "userPointer" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
 
-//     const monitor = try getPrimary();
-//     if (monitor) |m| {
-//         var p = try m.getUserPointer(u32);
-//         try testing.expect(p == null);
-//         var x: u32 = 5;
-//         try m.setUserPointer(u32, &x);
-//         p = try m.getUserPointer(u32);
-//         try testing.expectEqual(p.?.*, 5);
-//     }
-// }
+    const monitor = try getPrimary();
+    if (monitor) |m| {
+        var p = try m.getUserPointer(u32);
+        try testing.expect(p == null);
+        var x: u32 = 5;
+        try m.setUserPointer(u32, &x);
+        p = try m.getUserPointer(u32);
+        try testing.expectEqual(p.?.*, 5);
+    }
+}
 
 test "setCallback" {
     const glfw = @import("main.zig");
