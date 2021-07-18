@@ -1,6 +1,6 @@
 //! Errors
 
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 /// Errors that GLFW can produce.
 pub const Error = error{

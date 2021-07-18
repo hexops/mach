@@ -2,7 +2,7 @@
 //!
 //! See glfw.setMouseButtonCallback for how these are used.
 
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 pub const one = C.GLFW_MOUSE_BUTTON_1;
 pub const two = C.GLFW_MOUSE_BUTTON_2;

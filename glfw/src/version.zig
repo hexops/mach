@@ -1,6 +1,6 @@
 //! GLFW version info
 
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 /// The major version number of the GLFW library.
 ///

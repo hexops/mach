@@ -1,7 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 pub usingnamespace @import("consts.zig");
 pub const Error = @import("errors.zig").Error;

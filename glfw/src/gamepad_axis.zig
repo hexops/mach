@@ -2,7 +2,7 @@
 //!
 //! See glfw.getGamepadState for how these are used.
 
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 pub const left_x = C.GLFW_GAMEPAD_AXIS_LEFT_X;
 pub const left_y = C.GLFW_GAMEPAD_AXIS_LEFT_Y;

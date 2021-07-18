@@ -1,6 +1,6 @@
 //! General constants
 
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 // Input focus window hint and attribute
 

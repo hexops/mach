@@ -2,7 +2,7 @@
 //!
 //! See glfw.getGamepadState for how these are used.
 
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 pub const a = C.GLFW_GAMEPAD_BUTTON_A;
 pub const b = C.GLFW_GAMEPAD_BUTTON_B;

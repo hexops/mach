@@ -2,7 +2,7 @@
 //!
 //! See glfw.setKeyCallback for how these are used.
 
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 /// If this bit is set one or more Shift keys were held down.
 pub const shift = C.GLFW_MOD_SHIFT;

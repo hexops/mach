@@ -2,7 +2,7 @@
 //!
 //! See glfw.getJoystickHats for how these are used.
 
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 pub const centered = C.GLFW_HAT_CENTERED;
 pub const up = C.GLFW_HAT_UP;

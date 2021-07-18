@@ -1,6 +1,6 @@
 //! Key and button actions
 
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 /// The key or mouse button was released.
 pub const release = C.GLFW_RELEASE;

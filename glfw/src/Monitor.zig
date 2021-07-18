@@ -3,7 +3,7 @@
 const std = @import("std");
 const mem = std.mem;
 const testing = std.testing;
-const c = @cImport(@cInclude("GLFW/glfw3.h"));
+const c = @import("c.zig").c;
 
 pub const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
