@@ -7,6 +7,7 @@ const c = @import("c.zig").c;
 
 const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
+const GammaRamp = @import("GammaRamp.zig");
 const VideoMode = @import("VideoMode.zig");
 
 const Monitor = @This();
@@ -250,6 +251,27 @@ pub fn setGamma(self: Monitor, gamma: f32) Error!void {
     try getError();
 }
 
+/// Returns the current gamma ramp for the specified monitor.
+///
+/// This function returns the current gamma ramp of the specified monitor.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
+/// and returns glfw.Error.PlatformError.
+///
+/// The returned gamma ramp is `.owned = true` by GLFW, and is valid until the monitor is
+/// disconnected, this function is called again, or `glfw.terminate()` is called.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_gamma
+pub fn getGammaRamp(self: Monitor) Error!GammaRamp {
+    const ramp = c.glfwGetGammaRamp(self.handle);
+    try getError();
+    return GammaRamp.fromC(ramp.*);
+}
+
 /// Returns the currently connected monitors.
 ///
 /// This function returns a slice of all currently connected monitors. The primary monitor is
@@ -466,5 +488,20 @@ test "getVideoMode" {
     const monitor = try getPrimary();
     if (monitor) |m| {
         _ = try m.getVideoMode();
+    }
+}
+
+test "getGammaRamp" {
+    const allocator = testing.allocator;
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const monitor = try getPrimary();
+    if (monitor) |m| {
+        const ramp = try m.getGammaRamp();
+
+        // technically not needed here / noop because GLFW owns this gamma ramp.
+        defer ramp.deinit(allocator);
     }
 }
