@@ -209,6 +209,23 @@ pub inline fn getVideoModes(self: Monitor, allocator: *mem.Allocator) ![]VideoMo
     return slice;
 }
 
+/// Returns the current mode of the specified monitor.
+///
+/// This function returns the current video mode of the specified monitor. If you have created a
+/// full screen window for that monitor, the return value will depend on whether that window is
+/// iconified.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_modes, glfw.Monitor.getVideoModes
+pub inline fn getVideoMode(self: Monitor) Error!VideoMode {
+    const mode = c.glfwGetVideoMode(self.handle);
+    try getError();
+    return VideoMode{ .handle = mode.?.* };
+}
+
 /// Returns the currently connected monitors.
 ///
 /// This function returns a slice of all currently connected monitors. The primary monitor is
@@ -414,5 +431,16 @@ test "getVideoModes" {
         const allocator = testing.allocator;
         const modes = try m.getVideoModes(allocator);
         defer allocator.free(modes);
+    }
+}
+
+test "getVideoMode" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const monitor = try getPrimary();
+    if (monitor) |m| {
+        _ = try m.getVideoMode();
     }
 }
