@@ -246,7 +246,7 @@ pub inline fn getVideoMode(self: Monitor) Error!VideoMode {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_gamma
-pub fn setGamma(self: Monitor, gamma: f32) Error!void {
+pub inline fn setGamma(self: Monitor, gamma: f32) Error!void {
     c.glfwSetGamma(self.handle, gamma);
     try getError();
 }
@@ -266,10 +266,40 @@ pub fn setGamma(self: Monitor, gamma: f32) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_gamma
-pub fn getGammaRamp(self: Monitor) Error!GammaRamp {
+pub inline fn getGammaRamp(self: Monitor) Error!GammaRamp {
     const ramp = c.glfwGetGammaRamp(self.handle);
     try getError();
     return GammaRamp.fromC(ramp.*);
+}
+
+/// Sets the current gamma ramp for the specified monitor.
+///
+/// This function sets the current gamma ramp for the specified monitor. The original gamma ramp
+/// for that monitor is saved by GLFW the first time this function is called and is restored by
+/// `glfw.terminate()`.
+///
+/// The software controlled gamma ramp is applied _in addition_ to the hardware gamma correction,
+/// which today is usually an approximation of sRGB gamma. This means that setting a perfectly
+/// linear ramp, or gamma 1.0, will produce the default (usually sRGB-like) behavior.
+///
+/// For gamma correct rendering with OpenGL or OpenGL ES, see the glfw.srgb_capable hint.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// The size of the specified gamma ramp should match the size of the current ramp for that
+/// monitor. On win32, the gamma ramp size must be 256.
+///
+/// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
+/// and emits glfw.Error.PlatformError.
+///
+/// @pointer_lifetime The specified gamma ramp is copied before this function returns.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_gamma
+pub inline fn setGammaRamp(self: Monitor, ramp: GammaRamp) Error!void {
+    c.glfwSetGammaRamp(self.handle, &ramp.toC());
+    try getError();
 }
 
 /// Returns the currently connected monitors.
@@ -491,7 +521,7 @@ test "getVideoMode" {
     }
 }
 
-test "getGammaRamp" {
+test "set_getGammaRamp" {
     const allocator = testing.allocator;
     const glfw = @import("main.zig");
     try glfw.init();
@@ -500,6 +530,10 @@ test "getGammaRamp" {
     const monitor = try getPrimary();
     if (monitor) |m| {
         const ramp = try m.getGammaRamp();
+
+        // Set it to the exact same value; if we do otherwise an our tests fail it wouldn't call
+        // terminate and our made-up gamma ramp would get stuck.
+        try m.setGammaRamp(ramp);
 
         // technically not needed here / noop because GLFW owns this gamma ramp.
         defer ramp.deinit(allocator);
