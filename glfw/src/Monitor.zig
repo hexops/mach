@@ -172,8 +172,7 @@ pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) Error!voi
 ///
 /// Possible errors include glfw.Error.NotInitialized.
 ///
-/// @thread_safety This function may be called from any thread.  Access is not
-/// synchronized.
+/// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: monitor_userptr, glfw.Monitor.setUserPointer
 pub inline fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
@@ -189,7 +188,7 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
 /// always first. If no monitors were found, this function returns an empty slice.
 ///
 /// The returned slice memory is owned by the caller. The underlying handles are owned by GLFW, and
-/// are valid until the monitor configuration changes or the `glfw.terminate` is called.
+/// are valid until the monitor configuration changes or `glfw.terminate` is called.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -272,6 +271,34 @@ pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monit
         callback_data_ptr = null;
     }
     try getError();
+}
+
+/// Returns the available video modes for the specified monitor.
+///
+/// This function returns an array of all video modes supported by the monitor. The returned slice
+/// is sorted in ascending order, first by color bit depth (the sum of all channel depths) and
+/// then by resolution area (the product of width and height).
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// The returned slice memory is owned by the caller. The underlying handles are owned by GLFW, and
+/// are valid until the monitor is disconnected, this function is called again, or `glfw.terminate`
+/// is called.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: monitor_modes, glfw.Monitor.getVideoMode
+pub inline fn getVideoModes(allocator: *mem.Allocator) ![]VideoMode {
+    var count: c_int = 0;
+    const modes = c.glfwGetVideoModes(&count);
+    try getError();
+
+    const slice = try allocator.alloc(VideoMode, @intCast(usize, count));
+    var i: usize = 0;
+    while (i < count) : (i += 1) {
+        slice[i] = VideoMode{ .handle = modes[i].? };
+    }
+    return slice;
 }
 
 test "getAll" {
