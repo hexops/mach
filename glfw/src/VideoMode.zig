@@ -3,12 +3,7 @@
 //! see also: glfw.Monitor.getVideoMode
 
 const std = @import("std");
-const mem = std.mem;
-const testing = std.testing;
 const c = @import("c.zig").c;
-
-const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
 
 handle: c.GLFWvidmode,
 
