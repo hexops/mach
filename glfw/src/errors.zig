@@ -121,6 +121,6 @@ fn convertError(e: c_int) Error!void {
 /// @remark This function may be called before @ref glfwInit.
 ///
 /// @thread_safety This function may be called from any thread.
-pub fn getError() Error!void {
+pub inline fn getError() Error!void {
     return convertError(c.glfwGetError(null));
 }
