@@ -10,6 +10,7 @@ const getError = @import("errors.zig").getError;
 pub const action = @import("action.zig");
 pub const gamepad_axis = @import("gamepad_axis.zig");
 pub const gamepad_button = @import("gamepad_button.zig");
+pub const GammaRamp = @import("GammaRamp.zig");
 pub const hat = @import("hat.zig");
 pub const joystick = @import("joystick.zig");
 pub const key = @import("key.zig");
@@ -143,6 +144,7 @@ test "version" {
 
 test "basic" {
     _ = Monitor;
+    _ = GammaRamp;
     _ = VideoMode;
     basicTest() catch unreachable;
 }
