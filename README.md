@@ -6,3 +6,12 @@
 
 Under heavy development, not ready for use currently. [Follow @machengine on Twitter](https://twitter.com/machengine) for updates.
 
+## Zero fuss installation & cross compilation
+
+Mach is built from the ground up to support zero fuss installation & cross compilation, **only `zig` and `git` are needed to build from any OS and produce binaries for every OS.**
+
+You do **not** need any system dependencies, C libraries, SDKs (Xcode, etc.), C compilers or anything else.
+
+If you've ever worked with game engines in Go, Rust, or any other language you've probably run into issues at one point getting the right system dependencies installed, whether it be Xcode versions, compilers, X11/GLFW/SDL C dependencies, etc.
+
+Mach is able to do this thanks to Zig being a C/C++ compiler, Zig's linker `zld` supporting macOS cross compilation, and us doing the heavy lifting of packaging the required [system SDK libraries](https://github.com/hexops/sdk-macos-11.3) and [C sources](glfw/upstream/) for every dependency we need so our Zig build scripts can simply `git clone` them for you as needed for the target OS you're building for, completely automagically.
