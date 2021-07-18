@@ -15,8 +15,9 @@ jobs:
         run: zig build test -Dtarget=x86_64-macos
         env:
           AGREE: true
-      - name: mach::test
-        run: zig build test
+      # Disabled for now, see https://github.com/hexops/mach/issues/4
+      # - name: mach::test
+      #   run: zig build test
       - name: webgpu::test
         run: cd webgpu && zig build test
   windows:
@@ -38,8 +39,9 @@ jobs:
         run: zig build install -Dtarget=x86_64-macos
         env:
           AGREE: true
-      - name: mach::test
-        run: zig build test
+      # Disabled for now, see https://github.com/hexops/mach/issues/5
+      # - name: mach::test
+      #  run: zig build test
       - name: webgpu::test
         run: cd webgpu && zig build test
   mac:
