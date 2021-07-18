@@ -5,6 +5,8 @@
 const std = @import("std");
 const c = @import("c.zig").c;
 
+const VideoMode = @This();
+
 handle: c.GLFWvidmode,
 
 /// Returns the width of the video mode, in screen coordinates.
@@ -35,4 +37,14 @@ pub inline fn getBlueBits(self: VideoMode) usize {
 /// Returns the refresh rate of the video mode, in Hz.
 pub inline fn getRefreshRate(self: VideoMode) usize {
     return @intCast(usize, self.handle.refreshRate);
+}
+
+test "getters" {
+    const x = std.mem.zeroes(VideoMode);
+    _ = x.getWidth();
+    _ = x.getHeight();
+    _ = x.getRedBits();
+    _ = x.getGreenBits();
+    _ = x.getBlueBits();
+    _ = x.getRefreshRate();
 }

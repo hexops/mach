@@ -17,6 +17,7 @@ pub const mod = @import("mod.zig");
 pub const Monitor = @import("Monitor.zig");
 pub const mouse_button = @import("mouse_button.zig");
 pub const version = @import("version.zig");
+pub const VideoMode = @import("VideoMode.zig");
 
 /// Initializes the GLFW library.
 ///
@@ -142,5 +143,6 @@ test "version" {
 
 test "basic" {
     _ = Monitor;
+    _ = VideoMode;
     basicTest() catch unreachable;
 }
