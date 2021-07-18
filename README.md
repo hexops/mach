@@ -4,4 +4,5 @@
 
 ## ⚠️ Project status: in-development ⚠️
 
-Under heavy development, not ready for use currently. [Follow me on Twitter](https://twitter.com/slimsag) for updates.
+Under heavy development, not ready for use currently. [Follow @machengine on Twitter](https://twitter.com/machengine) for updates.
+
