@@ -232,6 +232,24 @@ pub fn destroy(self: Window) void {
     getError() catch {};
 }
 
+/// Checks the close flag of the specified window.
+///
+/// This function returns the value of the close flag of the specified window.
+///
+/// @thread_safety This function may be called from any thread. Access is not synchronized.
+///
+/// see also: window_close
+pub fn shouldClose(self: Window) bool {
+    const flag = c.glfwWindowShouldClose(self.handle);
+
+    // The only error shouldClose could return would be glfw.Error.NotInitialized, which would
+    // definitely have occurred before calls to shouldClose. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+
+    return flag == c.GLFW_TRUE;
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
