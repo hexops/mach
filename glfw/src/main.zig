@@ -124,21 +124,18 @@ pub fn basicTest() !void {
     try init();
     defer terminate();
 
-    c.glfwWindowHint(c.GLFW_VISIBLE, c.GLFW_FALSE);
-    const window = c.glfwCreateWindow(640, 480, "GLFW example", null, null);
-    if (window == null) {
+    const window = Window.create(640, 480, "GLFW example", null, null) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
-        std.debug.print("note: failed to create window", .{});
+        std.debug.print("note: failed to create window: {}\n", .{err});
         return;
-    }
+    };
+    defer c.glfwDestroyWindow(window.handle);
 
     var start = std.time.milliTimestamp();
-    while (std.time.milliTimestamp() < start + 100 and c.glfwWindowShouldClose(window) != c.GLFW_TRUE) {
+    while (std.time.milliTimestamp() < start + 1000 and c.glfwWindowShouldClose(window.handle) != c.GLFW_TRUE) {
         c.glfwPollEvents();
     }
-
-    c.glfwDestroyWindow(window);
 }
 
 test "version" {
