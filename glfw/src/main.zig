@@ -139,14 +139,16 @@ pub fn basicTest() !void {
 }
 
 test "version" {
+    // Reference these so the tests in these files get pulled in / ran.
+    _ = Monitor;
+    _ = GammaRamp;
+    _ = VideoMode;
+    _ = Window;
+
     std.debug.print("\nGLFW version v{}.{}.{}\n", .{ version.major, version.minor, version.revision });
     std.debug.print("\nstring: {s}\n", .{getVersionString()});
 }
 
 test "basic" {
-    _ = Monitor;
-    _ = GammaRamp;
-    _ = VideoMode;
-    _ = Window;
-    basicTest() catch unreachable;
+    try basicTest();
 }
