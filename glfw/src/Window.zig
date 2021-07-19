@@ -250,6 +250,23 @@ pub fn shouldClose(self: Window) bool {
     return flag == c.GLFW_TRUE;
 }
 
+/// Sets the close flag of the specified window.
+///
+/// This function sets the value of the close flag of the specified window. This can be used to
+/// override the user's attempt to close the window, or to signal that it should be closed.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function may be called from any thread. Access is not
+/// synchronized.
+///
+/// see also: window_close
+pub fn setShouldClose(self: Window, value: bool) Error!void {
+    const boolean = if (value) c.GLFW_TRUE else c.GLFW_FALSE;
+    c.glfwSetWindowShouldClose(self.handle, boolean);
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -286,5 +303,20 @@ test "createWindow" {
         std.debug.print("note: failed to create window: {}\n", .{err});
         return;
     };
+    defer window.destroy();
+}
+
+test "setShouldClose" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    try window.setShouldClose(true);
     defer window.destroy();
 }
