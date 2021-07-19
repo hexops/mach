@@ -130,7 +130,7 @@ pub fn basicTest() !void {
         std.debug.print("note: failed to create window: {}\n", .{err});
         return;
     };
-    defer c.glfwDestroyWindow(window.handle);
+    defer window.destroy();
 
     var start = std.time.milliTimestamp();
     while (std.time.milliTimestamp() < start + 1000 and c.glfwWindowShouldClose(window.handle) != c.GLFW_TRUE) {

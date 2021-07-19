@@ -205,6 +205,33 @@ pub fn create(width: usize, height: usize, title: [*c]const u8, monitor: ?Monito
     return Window{ .handle = handle.? };
 }
 
+/// Destroys the specified window and its context.
+///
+/// This function destroys the specified window and its context. On calling this function, no
+/// further callbacks will be called for that window.
+///
+/// If the context of the specified window is current on the main thread, it is detached before
+/// being destroyed.
+///
+/// note: The context of the specified window must not be current on any other thread when this
+/// function is called.
+///
+/// @reentrancy This function must not be called from a callback.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_creation, glfw.Window.create
+pub fn destroy(self: Window) void {
+    c.glfwDestroyWindow(self.handle);
+
+    // Technically, glfwDestroyWindow could produce errors including glfw.Error.NotInitialized and
+    // glfw.Error.PlatformError. But how would anybody handle them? By creating a new window to
+    // warn the user? That seems user-hostile. Also, `defer try window.destroy()` isn't possible in
+    // Zig, so by returning an error we'd make it harder to destroy the window properly. So we differ
+    // from GLFW here: we discard any potential error from this operation.
+    getError() catch {};
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -241,5 +268,5 @@ test "createWindow" {
         std.debug.print("note: failed to create window: {}\n", .{err});
         return;
     };
-    c.glfwDestroyWindow(window.handle);
+    defer window.destroy();
 }
