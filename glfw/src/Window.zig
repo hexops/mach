@@ -20,7 +20,7 @@ handle: *c.GLFWwindow,
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hints, glfw.Window.hint, glfw.Window.hintString
-pub fn defaultHints() Error!void {
+pub inline fn defaultHints() Error!void {
     c.glfwDefaultWindowHints();
     try getError();
 }
@@ -45,7 +45,7 @@ pub fn defaultHints() Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hints, glfw.Window.hintString, glfw.Window.defaultHints
-pub fn hint(hint_const: usize, value: isize) Error!void {
+pub inline fn hint(hint_const: usize, value: isize) Error!void {
     c.glfwWindowHint(@intCast(c_int, hint_const), @intCast(c_int, value));
     try getError();
 }
@@ -73,7 +73,7 @@ pub fn hint(hint_const: usize, value: isize) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hints, glfw.Window.hint, glfw.Window.defaultHints
-pub fn hintString(hint_const: usize, value: [:0]const u8) Error!void {
+pub inline fn hintString(hint_const: usize, value: [:0]const u8) Error!void {
     c.glfwWindowHintString(@intCast(c_int, hint_const), &value[0]);
     try getError();
 }
@@ -193,7 +193,7 @@ pub fn hintString(hint_const: usize, value: [:0]const u8) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_creation, glfw.Window.destroy
-pub fn create(width: usize, height: usize, title: [*c]const u8, monitor: ?Monitor, share: ?Window) Error!Window {
+pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: ?Monitor, share: ?Window) Error!Window {
     const handle = c.glfwCreateWindow(
         @intCast(c_int, width),
         @intCast(c_int, height),
@@ -221,7 +221,7 @@ pub fn create(width: usize, height: usize, title: [*c]const u8, monitor: ?Monito
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_creation, glfw.Window.create
-pub fn destroy(self: Window) void {
+pub inline fn destroy(self: Window) void {
     c.glfwDestroyWindow(self.handle);
 
     // Technically, glfwDestroyWindow could produce errors including glfw.Error.NotInitialized and
@@ -239,7 +239,7 @@ pub fn destroy(self: Window) void {
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: window_close
-pub fn shouldClose(self: Window) bool {
+pub inline fn shouldClose(self: Window) bool {
     const flag = c.glfwWindowShouldClose(self.handle);
 
     // The only error shouldClose could return would be glfw.Error.NotInitialized, which would
@@ -261,7 +261,7 @@ pub fn shouldClose(self: Window) bool {
 /// synchronized.
 ///
 /// see also: window_close
-pub fn setShouldClose(self: Window, value: bool) Error!void {
+pub inline fn setShouldClose(self: Window, value: bool) Error!void {
     const boolean = if (value) c.GLFW_TRUE else c.GLFW_FALSE;
     c.glfwSetWindowShouldClose(self.handle, boolean);
     try getError();
