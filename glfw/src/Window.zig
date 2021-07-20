@@ -267,6 +267,21 @@ pub inline fn setShouldClose(self: Window, value: bool) Error!void {
     try getError();
 }
 
+/// Sets the UTF-8 encoded title of the specified window.
+///
+/// This function sets the window title, encoded as UTF-8, of the specified window.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// macos: The window title will not be updated until the next time you process events.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_title
+pub inline fn setTitle(self: Window, title: [*c]const u8) Error!void {
+    c.glfwSetWindowTitle(self.handle, title);
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -319,4 +334,20 @@ test "setShouldClose" {
     };
     try window.setShouldClose(true);
     defer window.destroy();
+}
+
+test "setTitle" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    try window.setTitle("Updated title!");
 }
