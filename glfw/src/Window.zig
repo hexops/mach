@@ -1,10 +1,13 @@
 //! Window type and related functions
 
 const std = @import("std");
+const testing = std.testing;
+const mem = std.mem;
 const c = @import("c.zig").c;
 
 const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
+const Image = @import("Image.zig");
 const Monitor = @import("Monitor.zig");
 
 const Window = @This();
@@ -282,6 +285,44 @@ pub inline fn setTitle(self: Window, title: [*c]const u8) Error!void {
     c.glfwSetWindowTitle(self.handle, title);
 }
 
+/// Sets the icon for the specified window.
+///
+/// This function sets the icon of the specified window. If passed an array of candidate images,
+/// those of or closest to the sizes desired by the system are selected. If no images are
+/// specified, the window reverts to its default icon.
+///
+/// The pixels are 32-bit, little-endian, non-premultiplied RGBA, i.e. eight bits per channel with
+/// the red channel first. They are arranged canonically as packed sequential rows, starting from
+/// the top-left corner.
+///
+/// The desired image sizes varies depending on platform and system settings. The selected images
+/// will be rescaled as needed. Good sizes include 16x16, 32x32 and 48x48.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @pointer_lifetime The specified image data is copied before this function returns.
+///
+/// macos: The GLFW window has no icon, as it is not a document window, so this function does
+/// nothing. The dock icon will be the same as the application bundle's icon. For more information
+/// on bundles, see the [Bundle Programming Guide](https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/)
+/// in the Mac Developer Library.
+///
+/// wayland: There is no existing protocol to change an icon, the window will thus inherit the one
+/// defined in the application's desktop file. This function always emits glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_icon
+pub inline fn setIcon(self: Window, allocator: *mem.Allocator, images: ?[]Image) Error!void {
+    if (images) |im| {
+        const tmp = try allocator.alloc(c.GLFWimage, im.len);
+        defer allocator.free(tmp);
+        for (im) |img, index| tmp[index] = img.toC();
+        c.glfwSetWindowIcon(self.handle, @intCast(c_int, im.len), &tmp[0]);
+    } else c.glfwSetWindowIcon(self.handle, 0, null);
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -350,4 +391,36 @@ test "setTitle" {
     defer window.destroy();
 
     try window.setTitle("Updated title!");
+}
+
+test "setIcon" {
+    const allocator = testing.allocator;
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    // Create an all-red icon image.
+    var width: usize = 48;
+    var height: usize = 48;
+    const icon = try Image.init(allocator, width, height, width * height * 4);
+    var x: usize = 0;
+    var y: usize = 0;
+    while (y <= height) : (y += 1) {
+        while (x <= width) : (x += 1) {
+            icon.pixels[(x * y * 4) + 0] = 255; // red
+            icon.pixels[(x * y * 4) + 1] = 0; // green
+            icon.pixels[(x * y * 4) + 2] = 0; // blue
+            icon.pixels[(x * y * 4) + 3] = 255; // alpha
+        }
+    }
+    try window.setIcon(allocator, &[_]Image{icon});
+    icon.deinit(allocator); // glfw copies it.
 }
