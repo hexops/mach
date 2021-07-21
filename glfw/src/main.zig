@@ -12,6 +12,7 @@ pub const gamepad_axis = @import("gamepad_axis.zig");
 pub const gamepad_button = @import("gamepad_button.zig");
 pub const GammaRamp = @import("GammaRamp.zig");
 pub const hat = @import("hat.zig");
+pub const Image = @import("Image.zig");
 pub const joystick = @import("joystick.zig");
 pub const key = @import("key.zig");
 pub const mod = @import("mod.zig");
@@ -142,6 +143,7 @@ test "version" {
     // Reference these so the tests in these files get pulled in / ran.
     _ = Monitor;
     _ = GammaRamp;
+    _ = Image;
     _ = VideoMode;
     _ = Window;
 
