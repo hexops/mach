@@ -398,6 +398,33 @@ pub inline fn getSize(self: Window) Error!Size {
     return Size{ .width = @intCast(usize, width), .height = @intCast(usize, height) };
 }
 
+/// Sets the size of the content area of the specified window.
+///
+/// This function sets the size, in screen coordinates, of the content area of the specified window.
+///
+/// For full screen windows, this function updates the resolution of its desired video mode and
+/// switches to the video mode closest to it, without affecting the window's context. As the
+/// context is unaffected, the bit depths of the framebuffer remain unchanged.
+///
+/// If you wish to update the refresh rate of the desired video mode in addition to its resolution,
+/// see glfw.Window.setMonitor.
+///
+/// The window manager may put limits on what sizes are allowed. GLFW cannot and should not
+/// override these limits.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// wayland: A full screen window will not attempt to change the mode, no matter what the requested
+/// size.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_size, glfw.Window.getSize, glfw.Window.SetMonitor
+pub inline fn setSize(self: Window, size: Size) Error!void {
+    c.glfwSetWindowSize(self.handle, @intCast(c_int, size.width), @intCast(c_int, size.height));
+    try getError();
+}
+
 /// Sets the size limits of the specified window's content area.
 ///
 /// This function sets the size limits of the content area of the specified window. If the window
@@ -610,6 +637,22 @@ test "getSize" {
     defer window.destroy();
 
     _ = try window.getSize();
+}
+
+test "setSize" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = try window.setSize(.{ .width = 640, .height = 480 });
 }
 
 test "setSizeLimits" {
