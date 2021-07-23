@@ -323,6 +323,32 @@ pub inline fn setIcon(self: Window, allocator: *mem.Allocator, images: ?[]Image)
     try getError();
 }
 
+const Pos = struct {
+    x: usize,
+    y: usize,
+};
+
+/// Retrieves the position of the content area of the specified window.
+///
+/// This function retrieves the position, in screen coordinates, of the upper-left corner of the
+// content area of the specified window.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// wayland: There is no way for an application to retrieve the global position of its windows,
+/// this function will always emit glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_pos glfw.Window.setPos
+pub inline fn getPos(self: Window) Error!Pos {
+    var x: c_int = 0;
+    var y: c_int = 0;
+    c.glfwGetWindowPos(self.handle, &x, &y);
+    try getError();
+    return Pos{ .x = @intCast(usize, x), .y = @intCast(usize, y) };
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -423,4 +449,20 @@ test "setIcon" {
     }
     try window.setIcon(allocator, &[_]Image{icon});
     icon.deinit(allocator); // glfw copies it.
+}
+
+test "getPos" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = try window.getPos();
 }
