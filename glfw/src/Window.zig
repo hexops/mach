@@ -349,6 +349,31 @@ pub inline fn getPos(self: Window) Error!Pos {
     return Pos{ .x = @intCast(usize, x), .y = @intCast(usize, y) };
 }
 
+/// Sets the position of the content area of the specified window.
+///
+/// This function sets the position, in screen coordinates, of the upper-left corner of the content
+/// area of the specified windowed mode window. If the window is a full screen window, this
+/// function does nothing.
+///
+/// __Do not use this function__ to move an already visible window unless you have very good
+/// reasons for doing so, as it will confuse and annoy the user.
+///
+/// The window manager may put limits on what positions are allowed. GLFW cannot and should not
+/// override these limits.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// wayland: There is no way for an application to set the global position of its windows, this
+/// function will always emit glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_pos, glfw.Window.getPos
+pub inline fn setPos(self: Window, pos: Pos) Error!void {
+    c.glfwSetWindowPos(self.handle, @intCast(c_int, pos.x), @intCast(c_int, pos.y));
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -466,4 +491,20 @@ test "getPos" {
     defer window.destroy();
 
     _ = window.getPos() catch |err| std.debug.print("can't get window position, wayland maybe? error={}\n", .{err});
+}
+
+test "setPos" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.setPos(.{ .x = 0, .y = 0 }) catch |err| std.debug.print("can't set window position, wayland maybe? error={}\n", .{err});
 }
