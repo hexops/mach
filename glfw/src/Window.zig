@@ -398,6 +398,38 @@ pub inline fn getSize(self: Window) Error!Size {
     return Size{ .width = @intCast(usize, width), .height = @intCast(usize, height) };
 }
 
+/// Sets the size limits of the specified window's content area.
+///
+/// This function sets the size limits of the content area of the specified window. If the window
+/// is full screen, the size limits only take effect/ once it is made windowed. If the window is not
+/// resizable, this function does nothing.
+///
+/// The size limits are applied immediately to a windowed mode window and may cause it to be resized.
+///
+/// The maximum dimensions must be greater than or equal to the minimum dimensions. glfw.dont_care
+/// may be used for any width/height parameter.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidValue and glfw.Error.PlatformError.
+///
+/// If you set size limits and an aspect ratio that conflict, the results are undefined.
+///
+/// wayland: The size limits will not be applied until the window is actually resized, either by
+/// the user or by the compositor.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_sizelimits, glfw.Window.setAspectRatio
+pub inline fn setSizeLimits(self: Window, min: Size, max: Size) Error!void {
+    c.glfwSetWindowSizeLimits(
+        self.handle,
+        @intCast(c_int, min.width),
+        @intCast(c_int, min.height),
+        @intCast(c_int, max.width),
+        @intCast(c_int, max.height),
+    );
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -547,4 +579,23 @@ test "getSize" {
     defer window.destroy();
 
     _ = try window.getSize();
+}
+
+test "setSizeLimits" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    try window.setSizeLimits(
+        .{ .width = 720, .height = 480 },
+        .{ .width = 1080, .height = 1920 },
+    );
 }
