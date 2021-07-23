@@ -447,7 +447,8 @@ test "setIcon" {
             icon.pixels[(x * y * 4) + 3] = 255; // alpha
         }
     }
-    try window.setIcon(allocator, &[_]Image{icon});
+    window.setIcon(allocator, &[_]Image{icon}) catch |err| std.debug.print("can't set window icon, wayland maybe? error={}\n", .{err});
+
     icon.deinit(allocator); // glfw copies it.
 }
 
@@ -464,5 +465,5 @@ test "getPos" {
     };
     defer window.destroy();
 
-    _ = try window.getPos();
+    _ = window.getPos() catch |err| std.debug.print("can't get window position, wayland maybe? error={}\n", .{err});
 }
