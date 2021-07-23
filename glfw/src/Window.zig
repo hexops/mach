@@ -374,6 +374,30 @@ pub inline fn setPos(self: Window, pos: Pos) Error!void {
     try getError();
 }
 
+const Size = struct {
+    width: usize,
+    height: usize,
+};
+
+/// Retrieves the size of the content area of the specified window.
+///
+/// This function retrieves the size, in screen coordinates, of the content area of the specified
+/// window. If you wish to retrieve the size of the framebuffer of the window in pixels, see
+/// glfw.Window.getFramebufferSize.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_size, glfw.Window.setSize
+pub inline fn getSize(self: Window) Error!Size {
+    var width: c_int = 0;
+    var height: c_int = 0;
+    c.glfwGetWindowSize(self.handle, &width, &height);
+    try getError();
+    return Size{ .width = @intCast(usize, width), .height = @intCast(usize, height) };
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -507,4 +531,20 @@ test "setPos" {
     defer window.destroy();
 
     _ = window.setPos(.{ .x = 0, .y = 0 }) catch |err| std.debug.print("can't set window position, wayland maybe? error={}\n", .{err});
+}
+
+test "getSize" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = try window.getSize();
 }
