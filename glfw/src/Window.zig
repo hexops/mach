@@ -506,6 +506,42 @@ pub inline fn getFramebufferSize(self: Window) Error!Size {
     return Size{ .width = @intCast(usize, width), .height = @intCast(usize, height) };
 }
 
+const FrameSize = struct {
+    left: usize,
+    top: usize,
+    right: usize,
+    bottom: usize,
+};
+
+/// Retrieves the size of the frame of the window.
+///
+/// This function retrieves the size, in screen coordinates, of each edge of the frame of the
+/// specified window. This size includes the title bar, if the window has one. The size of the
+/// frame may vary depending on the window-related hints used to create it.
+///
+/// Because this function retrieves the size of each window frame edge and not the offset along a
+/// particular coordinate axis, the retrieved values will always be zero or positive.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_size
+pub inline fn getFrameSize(self: Window) Error!FrameSize {
+    var left: c_int = 0;
+    var top: c_int = 0;
+    var right: c_int = 0;
+    var bottom: c_int = 0;
+    c.glfwGetWindowFrameSize(self.handle, &left, &top, &right, &bottom);
+    try getError();
+    return FrameSize{
+        .left = @intCast(usize, left),
+        .top = @intCast(usize, top),
+        .right = @intCast(usize, right),
+        .bottom = @intCast(usize, bottom),
+    };
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -722,4 +758,20 @@ test "getFramebufferSize" {
     defer window.destroy();
 
     _ = try window.getFramebufferSize();
+}
+
+test "getFrameSize" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = try window.getFrameSize();
 }
