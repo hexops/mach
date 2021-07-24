@@ -488,6 +488,24 @@ pub inline fn setAspectRatio(self: Window, numerator: usize, denominator: usize)
     try getError();
 }
 
+/// Retrieves the size of the framebuffer of the specified window.
+///
+/// This function retrieves the size, in pixels, of the framebuffer of the specified window. If you
+/// wish to retrieve the size of the window in screen coordinates, see @ref glfwGetWindowSize.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_fbsize, glfwWindow.setFramebufferSizeCallback
+pub inline fn getFramebufferSize(self: Window) Error!Size {
+    var width: c_int = 0;
+    var height: c_int = 0;
+    c.glfwGetFramebufferSize(self.handle, &width, &height);
+    try getError();
+    return Size{ .width = @intCast(usize, width), .height = @intCast(usize, height) };
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -688,4 +706,20 @@ test "setAspectRatio" {
     defer window.destroy();
 
     try window.setAspectRatio(4, 3);
+}
+
+test "getFramebufferSize" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = try window.getFramebufferSize();
 }
