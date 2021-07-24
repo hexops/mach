@@ -218,8 +218,25 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep) void {
 
 /// Caller owns returned memory.
 fn getSdkRoot(allocator: *std.mem.Allocator, comptime name: []const u8) ![]const u8 {
-    const app_data_dir = try std.fs.getAppDataDir(allocator, "mach");
-    var sdk_root_dir = try std.fs.path.join(allocator, &.{ app_data_dir, name });
+    // Find the directory where the SDK should be located. We'll consider two locations:
+    //
+    // 1. $SDK_PATH/<name> (if set, e.g. for testing changes to SDKs easily)
+    // 2. <appdata>/<name> (default)
+    //
+    // Where `<name>` is the name of the SDK, e.g. `sdk-macos-11.3`.
+    var sdk_root_dir: []const u8 = if (std.process.getEnvVarOwned(allocator, "SDK_PATH")) |sdk_path| {
+        defer allocator.free(sdk_path);
+        return try std.fs.path.join(allocator, &.{ sdk_path, name });
+    } else |err| switch (err) {
+        error.EnvironmentVariableNotFound => {
+            const app_data_dir = try std.fs.getAppDataDir(allocator, "mach");
+            defer allocator.free(app_data_dir);
+            return try std.fs.path.join(allocator, &.{ app_data_dir, name });
+        },
+        else => |e| return e,
+    };
+
+    // If the SDK exists, return it. Otherwise, clone it.
     if (std.fs.openDirAbsolute(sdk_root_dir, .{})) {
         return sdk_root_dir;
     } else |err| return switch (err) {
