@@ -45,7 +45,7 @@ jobs:
       - name: webgpu::test
         run: cd webgpu && zig build test
   mac:
-    runs-on: macos-latest
+    runs-on: x86_64-macos
     steps:
       - name: Checkout
         uses: actions/checkout@v2
