@@ -177,10 +177,11 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
         .windows => {
             step.linkSystemLibrary("gdi32");
             if (options.opengl) {
-                step.linkFramework("opengl32");
+                step.linkSystemLibrary("opengl32");
             }
             if (options.gles) {
-                step.linkFramework("GLESv2");
+                // TODO(slimsag): does anyone want GLESv1/GLESv3 options?
+                step.linkSystemLibrary("GLESv2");
             }
         },
         .macos => {
