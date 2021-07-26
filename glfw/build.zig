@@ -224,17 +224,19 @@ fn getSdkRoot(allocator: *std.mem.Allocator, comptime name: []const u8) ![]const
     // 2. <appdata>/<name> (default)
     //
     // Where `<name>` is the name of the SDK, e.g. `sdk-macos-11.3`.
-    var sdk_root_dir: []const u8 = if (std.process.getEnvVarOwned(allocator, "SDK_PATH")) |sdk_path| {
-        defer allocator.free(sdk_path);
-        return try std.fs.path.join(allocator, &.{ sdk_path, name });
+    var sdk_root_dir: []const u8 = undefined;
+    var sdk_path_dir: []const u8 = undefined;
+    defer allocator.free(sdk_path_dir);
+    if (std.process.getEnvVarOwned(allocator, "SDK_PATH")) |sdk_path| {
+        sdk_path_dir = sdk_path;
+        sdk_root_dir = try std.fs.path.join(allocator, &.{ sdk_path, name });
     } else |err| switch (err) {
         error.EnvironmentVariableNotFound => {
-            const app_data_dir = try std.fs.getAppDataDir(allocator, "mach");
-            defer allocator.free(app_data_dir);
-            return try std.fs.path.join(allocator, &.{ app_data_dir, name });
+            sdk_path_dir = try std.fs.getAppDataDir(allocator, "mach");
+            sdk_root_dir = try std.fs.path.join(allocator, &.{ sdk_path_dir, name });
         },
         else => |e| return e,
-    };
+    }
 
     // If the SDK exists, return it. Otherwise, clone it.
     if (std.fs.openDirAbsolute(sdk_root_dir, .{})) {
@@ -245,10 +247,10 @@ fn getSdkRoot(allocator: *std.mem.Allocator, comptime name: []const u8) ![]const
             if (std.mem.eql(u8, name, "sdk-macos-11.3")) {
                 if (!try confirmAppleSDKAgreement(allocator)) @panic("cannot continue");
             }
-            try std.fs.cwd().makePath(app_data_dir);
+            try std.fs.cwd().makePath(sdk_path_dir);
             const argv = &[_][]const u8{ "git", "clone", "https://github.com/hexops/" ++ name };
             const child = try std.ChildProcess.init(argv, allocator);
-            child.cwd = app_data_dir;
+            child.cwd = sdk_path_dir;
             child.stdin = std.io.getStdOut();
             child.stderr = std.io.getStdErr();
             child.stdout = std.io.getStdOut();
