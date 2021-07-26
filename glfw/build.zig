@@ -189,6 +189,9 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
             step.linkFramework("Cocoa");
             step.linkFramework("IOKit");
             step.linkFramework("CoreFoundation");
+            if (options.metal) {
+                step.linkFramework("Metal");
+            }
             if (options.opengl) {
                 step.linkFramework("OpenGL");
             }
