@@ -542,6 +542,36 @@ pub inline fn getFrameSize(self: Window) Error!FrameSize {
     };
 }
 
+pub const ContentScale = struct {
+    x_scale: f32,
+    y_scale: f32,
+};
+
+/// Retrieves the content scale for the specified window.
+///
+/// This function retrieves the content scale for the specified window. The content scale is the
+/// ratio between the current DPI and the platform's default DPI. This is especially important for
+/// text and any UI elements. If the pixel dimensions of your UI scaled by this look appropriate on
+/// your machine then it should appear at a reasonable size on other machines regardless of their
+/// DPI and scaling settings. This relies on the system DPI and scaling settings being somewhat
+/// correct.
+///
+/// On systems where each monitors can have its own content scale, the window content scale will
+/// depend on which monitor the system considers the window to be on.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_scale, glfwSetWindowContentScaleCallback, glfwGetMonitorContentScale
+pub inline fn getContentScale(self: Window) Error!ContentScale {
+    var x_scale: f32 = 0;
+    var y_scale: f32 = 0;
+    c.glfwGetWindowContentScale(self.handle, &x_scale, &y_scale);
+    try getError();
+    return ContentScale{ .x_scale = x_scale, .y_scale = y_scale };
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -774,4 +804,20 @@ test "getFrameSize" {
     defer window.destroy();
 
     _ = try window.getFrameSize();
+}
+
+test "getContentScale" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = try window.getContentScale();
 }
