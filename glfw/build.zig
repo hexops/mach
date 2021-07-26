@@ -71,7 +71,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
             }
-            lib.addCSourceFiles(sources.items, &.{});
+            lib.addCSourceFiles(sources.items, &.{"-D_GLFW_WIN32"});
         },
         .macos => {
             includeSdkMacOS(b, lib);
@@ -174,8 +174,14 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
-            // TODO(slimsag): create sdk-windows
             step.linkSystemLibrary("c");
+            step.linkSystemLibrary("gdi32");
+            if (options.opengl) {
+                step.linkFramework("opengl32");
+            }
+            if (options.gles) {
+                step.linkFramework("GLESv2");
+            }
         },
         .macos => {
             includeSdkMacOS(b, step);
