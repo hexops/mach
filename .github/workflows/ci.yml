@@ -15,6 +15,10 @@ jobs:
         run: zig build test -Dtarget=x86_64-macos
         env:
           AGREE: true
+      - name: x86_64-linux -> aarch64-macos
+        run: zig build test -Dtarget=aarch64-macos
+        env:
+          AGREE: true
       # Disabled for now, see https://github.com/hexops/mach/issues/4
       # - name: mach::test
       #   run: zig build test
@@ -33,10 +37,16 @@ jobs:
           cd C:\
           7z x zig.zip
           Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.9.0-dev.441+7b5d139fd\"
-      - name: cross x86_64-windows -> x86_64-macos
+      - name: x86_64-windows -> x86_64-macos
         # TODO(slimsag): bug: `zig build test -Dtarget=x86_64-macos` fails on Windows with `error: Unexpected`
         # Maybe an issue in final linking? Maybe it's trying to run the Mac binary? Needs investigation
         run: zig build install -Dtarget=x86_64-macos
+        env:
+          AGREE: true
+      - name: x86_64-windows -> aarch64-macos
+        # TODO(slimsag): bug: `zig build test -Dtarget=aarch64-macos` fails on Windows with `error: Unexpected`
+        # Maybe an issue in final linking? Maybe it's trying to run the Mac binary? Needs investigation
+        run: zig build install -Dtarget=aarch64-macos
         env:
           AGREE: true
       # Disabled for now, see https://github.com/hexops/mach/issues/5
@@ -57,7 +67,7 @@ jobs:
         run: zig build test
         env:
           AGREE: true
-      - name: cross x86_64-macos -> aarch64-macos
+      - name: x86_64-macos -> aarch64-macos
         run: zig build test -Dtarget=aarch64-macos
         env:
           AGREE: true
