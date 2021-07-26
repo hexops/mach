@@ -104,6 +104,10 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
         else => {
             // Assume Linux-like
             var general_sources = std.ArrayList([]const u8).init(&arena.allocator);
+            const flag = switch (options.linux_window_manager) {
+                .X11 => "-D_GLFW_X11",
+                .Wayland => "_D_GLFW_WAYLAND",
+            };
             for ([_][]const u8{
                 // General Linux-like sources
                 "upstream/glfw/src/posix_time.c",
@@ -123,7 +127,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
                 general_sources.append(abs_path) catch unreachable;
             }
-            lib.addCSourceFiles(general_sources.items, &.{});
+            lib.addCSourceFiles(general_sources.items, &.{flag});
 
             switch (options.linux_window_manager) {
                 .X11 => {
@@ -138,7 +142,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                         var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
                         x11_sources.append(abs_path) catch unreachable;
                     }
-                    lib.addCSourceFiles(x11_sources.items, &.{});
+                    lib.addCSourceFiles(x11_sources.items, &.{flag});
                 },
                 .Wayland => {
                     var wayland_sources = std.ArrayList([]const u8).init(&arena.allocator);
@@ -150,7 +154,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                         var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
                         wayland_sources.append(abs_path) catch unreachable;
                     }
-                    lib.addCSourceFiles(wayland_sources.items, &.{});
+                    lib.addCSourceFiles(wayland_sources.items, &.{flag});
                 },
             }
         },
@@ -199,6 +203,20 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
         else => {
             // Assume Linux-like
             // TODO(slimsag): create sdk-linux
+            switch (options.linux_window_manager) {
+                .X11 => step.linkSystemLibrary("X11"),
+                .Wayland => step.linkSystemLibrary("wayland-client"),
+            }
+            if (options.vulkan) {
+                step.linkSystemLibrary("vulkan");
+            }
+            if (options.opengl) {
+                step.linkSystemLibrary("GL");
+            }
+            if (options.gles) {
+                // TODO(slimsag): does anyone want GLESv1/GLESv3 options?
+                step.linkSystemLibrary("GLESv2");
+            }
         },
     }
 }
