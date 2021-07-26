@@ -572,6 +572,27 @@ pub inline fn getContentScale(self: Window) Error!ContentScale {
     return ContentScale{ .x_scale = x_scale, .y_scale = y_scale };
 }
 
+/// Returns the opacity of the whole window.
+///
+/// This function returns the opacity of the window, including any decorations.
+///
+/// The opacity (or alpha) value is a positive finite number between zero and one, where zero is
+/// fully transparent and one is fully opaque. If the system does not support whole window
+/// transparency, this function always returns one.
+///
+/// The initial opacity value for newly created windows is one.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_transparency, glfw.Window.setOpacity
+pub inline fn getOpacity(self: Window) Error!f32 {
+    const opacity = c.glfwGetWindowOpacity(self.handle);
+    try getError();
+    return opacity;
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -820,4 +841,20 @@ test "getContentScale" {
     defer window.destroy();
 
     _ = try window.getContentScale();
+}
+
+test "getOpacity" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = try window.getOpacity();
 }
