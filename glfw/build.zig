@@ -171,10 +171,10 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     defer b.allocator.free(include_dir);
     step.addIncludeDir(include_dir);
 
+    step.linkLibC();
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
-            step.linkSystemLibrary("c");
             step.linkSystemLibrary("gdi32");
             if (options.opengl) {
                 step.linkFramework("opengl32");
