@@ -615,6 +615,27 @@ pub inline fn setOpacity(self: Window, opacity: f32) Error!void {
     try getError();
 }
 
+/// Iconifies the specified window.
+///
+/// This function iconifies (minimizes) the specified window if it was previously restored. If the
+/// window is already iconified, this function does nothing.
+///
+/// If the specified window is a full screen window, the original monitor resolution is restored
+/// until the window is restored.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// wayland: There is no concept of iconification in wl_shell, this function will emit
+/// glfw.Error.PlatformError when using this deprecated protocol.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_iconify, glfw.Window.restore, glfw.Window.maximize
+pub inline fn iconify(self: Window) Error!void {
+    c.glfwIconifyWindow(self.handle);
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -879,4 +900,20 @@ test "getOpacity" {
     defer window.destroy();
 
     _ = try window.getOpacity();
+}
+
+test "iconify" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.iconify() catch |err| std.debug.print("can't iconify window, wayland maybe? error={}\n", .{err});
 }
