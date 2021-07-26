@@ -593,6 +593,28 @@ pub inline fn getOpacity(self: Window) Error!f32 {
     return opacity;
 }
 
+/// Sets the opacity of the whole window.
+///
+/// This function sets the opacity of the window, including any decorations.
+///
+/// The opacity (or alpha) value is a positive finite number between zero and one, where zero is
+/// fully transparent and one is fully opaque.
+///
+/// The initial opacity value for newly created windows is one.
+///
+/// A window created with framebuffer transparency may not use whole window transparency. The
+/// results of doing this are undefined.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_transparency, glfw.Window.getOpacity
+pub inline fn setOpacity(self: Window, opacity: f32) Error!void {
+    c.glfwSetWindowOpacity(self.handle, opacity);
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
