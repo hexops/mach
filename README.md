@@ -25,7 +25,7 @@ Mach is still incredibly early stages, so far we have support for building from 
 | macOS x86_64     | ✅                | ✅                     | ✅                | ⚠️ #8               |
 | macOS M1/aarch64 | ✅                | ✅                     | ✅                | ⚠️ #8               |
 | Linux x86_64     | 🏃                | 🏃                     | 🏃                | 🏃                  |
-| Windows x86_64   | 🏃                | 🏃                     | 🏃                | 🏃                  |
+| Windows x86_64   | 🏃                | 🏃                     | 🏃                | ✅                  |
 | iOS              | 🏃                | 🏃                     | 🏃                | 🏃                  | 
 | Android          | 🏃                | 🏃                     | 🏃                | 🏃                  | 
 
