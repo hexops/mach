@@ -23,5 +23,11 @@ jobs:
         run: zig build test
         env:
           AGREE: true
+      - name: aarch64-macos -> x86_64-macos
+        run: zig build test -Dtarget=x86_64-macos
+        env:
+          AGREE: true
+      - name: aarch64-macos -> x86_64-windows
+        run: zig build test -Dtarget=x86_64-windows
       - name: webgpu::test
         run: cd webgpu && zig build test
