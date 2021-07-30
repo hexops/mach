@@ -103,6 +103,17 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
         },
         else => {
             // Assume Linux-like
+            includeSdkLinuxX8664(b, step);
+
+            // TODO(slimsag): for now, Linux must be built with glibc, not musl:
+            //
+            // ```
+            // ld.lld: error: cannot create a copy relocation for symbol stderr
+            // thread 2004762 panic: attempt to unwrap error: LLDReportedFailure
+            // ```
+            step.target.abi = .gnu;
+            lib.setTarget(step.target);
+
             var general_sources = std.ArrayList([]const u8).init(&arena.allocator);
             const flag = switch (options.linux_window_manager) {
                 .X11 => "-D_GLFW_X11",
@@ -202,14 +213,18 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
         },
         else => {
             // Assume Linux-like
-            // TODO(slimsag): create sdk-linux
+            includeSdkLinuxX8664(b, step);
             switch (options.linux_window_manager) {
-                .X11 => step.linkSystemLibrary("X11"),
+                .X11 => {
+                    step.linkSystemLibrary("X11");
+                    step.linkSystemLibrary("xcb");
+                    step.linkSystemLibrary("Xau");
+                    step.linkSystemLibrary("Xdmcp");
+                },
                 .Wayland => step.linkSystemLibrary("wayland-client"),
             }
-            if (options.vulkan) {
-                step.linkSystemLibrary("vulkan");
-            }
+            // Note: no need to link against vulkan, GLFW finds it dynamically at runtime.
+            // https://www.glfw.org/docs/3.3/vulkan_guide.html#vulkan_loader
             if (options.opengl) {
                 step.linkSystemLibrary("GL");
             }
@@ -242,6 +257,19 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep) void {
     // resolution as part of dependant libs: https://github.com/ziglang/zig/blob/2d855745f91852af92ad970feef96e55919993d3/src/link/MachO/Dylib.zig#L477-L483
     var sdk_sysroot = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/" }) catch unreachable;
     b.sysroot = sdk_sysroot; // TODO(slimsag): leaks, b.sysroot doesn't get free'd by builder?
+}
+
+fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep) void {
+    const sdk_root_dir = getSdkRoot(b.allocator, "sdk-linux-x86_64") catch unreachable;
+    defer b.allocator.free(sdk_root_dir);
+
+    var sdk_root_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
+    defer b.allocator.free(sdk_root_includes);
+    step.addSystemIncludeDir(sdk_root_includes);
+
+    var sdk_root_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib/x86_64-linux-gnu" }) catch unreachable;
+    defer b.allocator.free(sdk_root_libs);
+    step.addLibPath(sdk_root_libs);
 }
 
 /// Caller owns returned memory.
