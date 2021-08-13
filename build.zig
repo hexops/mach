@@ -9,7 +9,7 @@ pub fn build(b: *Builder) void {
     lib.setBuildMode(mode);
     lib.setTarget(target);
     lib.addPackagePath("glfw", "glfw/src/main.zig");
-    glfw.link(b, lib, .{});
+    glfw.linkStaticLibrary(b, lib, .{});
     lib.install();
 
     var main_tests = b.addTest("src/main.zig");
