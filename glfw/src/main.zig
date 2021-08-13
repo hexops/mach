@@ -2,12 +2,14 @@ const std = @import("std");
 const testing = std.testing;
 
 const c = @import("c.zig").c;
+pub const RawWindow = c.GLFWwindow;
 
 pub usingnamespace @import("consts.zig");
 pub const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 
 pub const action = @import("action.zig");
+pub const context = @import("context.zig");
 pub const gamepad_axis = @import("gamepad_axis.zig");
 pub const gamepad_button = @import("gamepad_button.zig");
 pub const GammaRamp = @import("GammaRamp.zig");
@@ -18,8 +20,9 @@ pub const key = @import("key.zig");
 pub const mod = @import("mod.zig");
 pub const Monitor = @import("Monitor.zig");
 pub const mouse_button = @import("mouse_button.zig");
-pub const version = @import("version.zig");
 pub const VideoMode = @import("VideoMode.zig");
+pub const version = @import("version.zig");
+pub const vulkan = @import("vulkan.zig");
 pub const Window = @import("Window.zig");
 
 /// Initializes the GLFW library.
@@ -99,6 +102,11 @@ pub inline fn initHint(hint: c_int, value: c_int) Error!void {
     try getError();
 }
 
+pub inline fn pollEvents() Error!void {
+    c.glfwPollEvents();
+    try getError();
+}
+
 /// Returns a string describing the compile-time configuration.
 ///
 /// This function returns the compile-time generated version string of the GLFW library binary. It
@@ -119,6 +127,10 @@ pub inline fn initHint(hint: c_int, value: c_int) Error!void {
 /// @thread_safety This function may be called from any thread.
 pub inline fn getVersionString() [*c]const u8 {
     return c.glfwGetVersionString();
+}
+
+pub inline fn vulkanSupported() bool {
+    return c.glfwVulkanSupported() == @"true";
 }
 
 pub fn basicTest() !void {

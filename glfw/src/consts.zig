@@ -2,6 +2,10 @@
 
 const c = @import("c.zig").c;
 
+/// glfw boolean values
+pub const @"true" = c.GLFW_TRUE;
+pub const @"false" = c.GLFW_FALSE;
+
 // Input focus window hint and attribute
 
 /// Input focus window hit or window attribute.

@@ -235,6 +235,12 @@ pub inline fn destroy(self: Window) void {
     getError() catch {};
 }
 
+pub inline fn swapBuffers(self: Window) void {
+    c.glfwSwapBuffers(self.handle);
+
+    getError() catch {};
+}
+
 /// Checks the close flag of the specified window.
 ///
 /// This function returns the value of the close flag of the specified window.
