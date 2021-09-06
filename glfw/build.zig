@@ -40,10 +40,6 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     var arena = std.heap.ArenaAllocator.init(b.allocator);
     defer arena.deinit();
 
-    const lib = b.addStaticLibrary("engine", "src/main.zig");
-    lib.setBuildMode(step.build_mode);
-    lib.setTarget(step.target);
-
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
@@ -71,10 +67,10 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
             }
-            lib.addCSourceFiles(sources.items, &.{"-D_GLFW_WIN32"});
+            step.addCSourceFiles(sources.items, &.{"-D_GLFW_WIN32"});
         },
         .macos => {
-            includeSdkMacOS(b, lib);
+            includeSdkMacOS(b, step);
             var sources = std.ArrayList([]const u8).init(&arena.allocator);
             for ([_][]const u8{
                 // MacOS-specific sources
@@ -99,7 +95,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
             }
-            lib.addCSourceFiles(sources.items, &.{"-D_GLFW_COCOA"});
+            step.addCSourceFiles(sources.items, &.{"-D_GLFW_COCOA"});
         },
         else => {
             // Assume Linux-like
@@ -112,7 +108,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
             // thread 2004762 panic: attempt to unwrap error: LLDReportedFailure
             // ```
             step.target.abi = .gnu;
-            lib.setTarget(step.target);
+            step.setTarget(step.target);
 
             var general_sources = std.ArrayList([]const u8).init(&arena.allocator);
             const flag = switch (options.linux_window_manager) {
@@ -138,7 +134,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
                 general_sources.append(abs_path) catch unreachable;
             }
-            lib.addCSourceFiles(general_sources.items, &.{flag});
+            step.addCSourceFiles(general_sources.items, &.{flag});
 
             switch (options.linux_window_manager) {
                 .X11 => {
@@ -153,7 +149,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                         var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
                         x11_sources.append(abs_path) catch unreachable;
                     }
-                    lib.addCSourceFiles(x11_sources.items, &.{flag});
+                    step.addCSourceFiles(x11_sources.items, &.{flag});
                 },
                 .Wayland => {
                     var wayland_sources = std.ArrayList([]const u8).init(&arena.allocator);
@@ -165,15 +161,11 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                         var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
                         wayland_sources.append(abs_path) catch unreachable;
                     }
-                    lib.addCSourceFiles(wayland_sources.items, &.{flag});
+                    step.addCSourceFiles(wayland_sources.items, &.{flag});
                 },
             }
         },
     }
-    linkGLFW(b, lib, options);
-    lib.install();
-
-    step.linkLibrary(lib);
     linkGLFW(b, step, options);
 }
 
