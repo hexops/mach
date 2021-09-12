@@ -52,7 +52,7 @@ jobs:
           Invoke-WebRequest -Uri "https://ziglang.org/builds/zig-windows-x86_64-0.9.0-dev.952+0c091feb5.zip" -OutFile "C:\zig.zip"
           cd C:\
           7z x zig.zip
-          Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.9.0-dev.642+b87105c92\"
+          Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.9.0-dev.952+0c091feb5\"
       - name: x86_64-windows -> x86_64-macos
         # TODO(slimsag): bug: `zig build test -Dtarget=x86_64-macos` fails on Windows with `error: Unexpected`
         # Maybe an issue in final linking? Maybe it's trying to run the Mac binary? Needs investigation
