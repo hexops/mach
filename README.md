@@ -22,12 +22,12 @@ Mach is still incredibly early stages, so far we have support for building from 
 
 | Building for     | From macOS x86_64 | From macOS M1/aarch64 | From Linux x86_64 | From Windows x86_64 |
 |------------------|-------------------|-----------------------|-------------------|---------------------|
-| macOS x86_64     | ✅                | ✅                     | ✅                | ⚠️ #8               |
-| macOS M1/aarch64 | ✅                | ✅                     | ✅                | ⚠️ #8               |
+| macOS x86_64     | ✅                | ✅                     | ✅                | ✅                  |
+| macOS M1/aarch64 | ✅                | ✅                     | ✅                | ✅                  |
 | Linux x86_64     | ✅                | ✅                     | ✅                | ✅                  |
 | Windows x86_64   | ✅                | ✅                     | ✅                | ✅                  |
-| iOS              | 🏃                | 🏃                     | 🏃                | 🏃                  | 
-| Android          | 🏃                | 🏃                     | 🏃                | 🏃                  | 
+| iOS              | 🏃                | 🏃                     | 🏃                | 🏃                  |
+| Android          | 🏃                | 🏃                     | 🏃                | 🏃                  |
 
 * ✅ Tested and verified via CI.
 * ✔️ Should work, not tested via CI yet.
