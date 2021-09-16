@@ -6,7 +6,7 @@ const c = @import("c.zig").c;
 pub const release = c.GLFW_RELEASE;
 
 /// The key or mouse button was pressed.
-pub const press = c.GLFW_RELEASE;
+pub const press = c.GLFW_PRESS;
 
 /// The key was held down until it repeated.
 pub const repeat = c.GLFW_REPEAT;
