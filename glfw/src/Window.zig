@@ -705,6 +705,35 @@ pub inline fn hide(self: Window) Error!void {
     try getError();
 }
 
+/// Brings the specified window to front and sets input focus.
+///
+/// This function brings the specified window to front and sets input focus. The window should
+/// already be visible and not iconified.
+///
+/// By default, both windowed and full screen mode windows are focused when initially created. Set
+/// the glfw.focused to disable this behavior.
+///
+/// Also by default, windowed mode windows are focused when shown with glfw.Window.show. Set the
+/// glfw.focus_on_show to disable this behavior.
+///
+/// __Do not use this function__ to steal focus from other applications unless you are certain that
+/// is what the user wants. Focus stealing can be extremely disruptive.
+///
+/// For a less disruptive way of getting the user's attention, see [attention requests (window_attention).
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// wayland: It is not possible for an application to bring its windows
+/// to front, this function will always emit glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_focus, window_attention
+pub inline fn focus(self: Window) Error!void {
+    c.glfwFocusWindow(self.handle);
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -1050,4 +1079,20 @@ test "hide" {
     defer window.destroy();
 
     _ = window.hide() catch |err| std.debug.print("can't hide window, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "focus" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.focus() catch |err| std.debug.print("can't focus window, wayland maybe? error={}\n", .{err});
 }
