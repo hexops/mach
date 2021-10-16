@@ -52,6 +52,44 @@ pub inline fn getCurrentContext() Error!?Window {
     return null;
 }
 
+/// Sets the swap interval for the current context.
+///
+/// This function sets the swap interval for the current OpenGL or OpenGL ES context, i.e. the
+/// number of screen updates to wait from the time glfw.SwapBuffers was called before swapping the
+/// buffers and returning. This is sometimes called _vertical synchronization_, _vertical retrace
+/// synchronization_ or just _vsync_.
+///
+/// A context that supports either of the `WGL_EXT_swap_control_tear` and `GLX_EXT_swap_control_tear`
+/// extensions also accepts _negative_ swap intervals, which allows the driver to swap immediately
+/// even if a frame arrives a little bit late. You can check for these extensions with glfw.extensionSupported.
+///
+/// A context must be current on the calling thread. Calling this function without a current context
+/// will cause Error.NoCurrentContext.
+///
+/// This function does not apply to Vulkan. If you are rendering with Vulkan, see the present mode
+/// of your swapchain instead.
+///
+/// @param[in] interval The minimum number of screen updates to wait for until the buffers are
+/// swapped by glfw.swapBuffers.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoCurrentContext and glfw.Error.PlatformError.
+///
+/// This function is not called during context creation, leaving the swap interval set to whatever
+/// is the default on that platform. This is done because some swap interval extensions used by
+/// GLFW do not allow the swap interval to be reset to zero once it has been set to a non-zero
+/// value.
+///
+/// Some GPU drivers do not honor the requested swap interval, either because of a user setting
+/// that overrides the application's request or due to bugs in the driver.
+///
+/// @thread_safety This function may be called from any thread.
+///
+/// see also: buffer_swap, glfwSwapBuffers
+pub inline fn swapInterval(interval: isize) Error!void {
+    c.glfwSwapInterval(@intCast(c_int, interval));
+    try getError();
+}
+
 // TODO(opengl):
 
 // /// Client API function pointer type.
@@ -64,48 +102,6 @@ pub inline fn getCurrentContext() Error!?Window {
 // ///
 // /// @ingroup context
 // typedef void (*GLFWglproc)(void);
-
-// /// Sets the swap interval for the current context.
-// ///
-// /// This function sets the swap interval for the current OpenGL or OpenGL ES
-// /// context, i.e. the number of screen updates to wait from the time @ref
-// /// glfwSwapBuffers was called before swapping the buffers and returning. This
-// /// is sometimes called _vertical synchronization_, _vertical retrace
-// /// synchronization_ or just _vsync_.
-// ///
-// /// A context that supports either of the `WGL_EXT_swap_control_tear` and
-// /// `GLX_EXT_swap_control_tear` extensions also accepts _negative_ swap
-// /// intervals, which allows the driver to swap immediately even if a frame
-// /// arrives a little bit late. You can check for these extensions with @ref
-// /// glfwExtensionSupported.
-// ///
-// /// A context must be current on the calling thread. Calling this function
-// /// without a current context will cause a @ref GLFW_NO_CURRENT_CONTEXT error.
-// ///
-// /// This function does not apply to Vulkan. If you are rendering with Vulkan,
-// /// see the present mode of your swapchain instead.
-// ///
-// /// @param[in] interval The minimum number of screen updates to wait for
-// /// until the buffers are swapped by @ref glfwSwapBuffers.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoCurrentContext and glfw.Error.PlatformError.
-// ///
-// /// This function is not called during context creation, leaving the
-// /// swap interval set to whatever is the default on that platform. This is done
-// /// because some swap interval extensions used by GLFW do not allow the swap
-// /// interval to be reset to zero once it has been set to a non-zero value.
-// ///
-// /// Some GPU drivers do not honor the requested swap interval, either
-// /// because of a user setting that overrides the application's request or due to
-// /// bugs in the driver.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: buffer_swap, glfwSwapBuffers
-// ///
-// ///
-// /// @ingroup context
-// GLFWAPI void glfwSwapInterval(int interval);
 
 // /// Returns whether the specified extension is available.
 // ///
@@ -191,7 +187,7 @@ test "makeContextCurrent" {
     };
     defer window.destroy();
 
-    glfw.makeContextCurrent(window) catch |err| std.debug.print("making context current, error={}\n", .{err});
+    try glfw.makeContextCurrent(window);
 }
 
 test "getCurrentContext" {
@@ -204,4 +200,21 @@ test "getCurrentContext" {
         return;
     };
     std.debug.assert(current_context == null);
+}
+
+test "swapInterval" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    try glfw.makeContextCurrent(window);
+    glfw.swapInterval(1) catch |err| std.debug.print("failed to set swap interval, error={}\n", .{err});
 }
