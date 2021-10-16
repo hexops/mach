@@ -654,6 +654,23 @@ pub inline fn restore(self: Window) Error!void {
     try getError();
 }
 
+/// Maximizes the specified window.
+///
+/// This function maximizes the specified window if it was previously not maximized. If the window
+/// is already maximized, this function does nothing.
+///
+/// If the specified window is a full screen window, this function does nothing.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_iconify, glfw.Window.iconify, glfw.Window.restore
+pub inline fn maximize(self: Window) Error!void {
+    c.glfwMaximizeWindow(self.handle);
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -951,4 +968,20 @@ test "restore" {
     defer window.destroy();
 
     _ = window.restore() catch |err| std.debug.print("can't restore window, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "maximize" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.maximize() catch |err| std.debug.print("can't maximize window, not supported by OS maybe? error={}\n", .{err});
 }
