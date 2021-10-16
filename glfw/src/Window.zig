@@ -636,6 +636,24 @@ pub inline fn iconify(self: Window) Error!void {
     try getError();
 }
 
+/// Restores the specified window.
+///
+/// This function restores the specified window if it was previously iconified (minimized) or
+/// maximized. If the window is already restored, this function does nothing.
+///
+/// If the specified window is a full screen window, the resolution chosen for the window is
+/// restored on the selected monitor.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_iconify, glfw.Window.iconify, glfw.Window.maximize
+pub inline fn restore(self: Window) Error!void {
+    c.glfwRestoreWindow(self.handle);
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -917,4 +935,20 @@ test "iconify" {
     defer window.destroy();
 
     _ = window.iconify() catch |err| std.debug.print("can't iconify window, wayland maybe? error={}\n", .{err});
+}
+
+test "restore" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.restore() catch |err| std.debug.print("can't restore window, not supported by OS maybe? error={}\n", .{err});
 }
