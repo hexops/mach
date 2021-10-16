@@ -1,3 +1,38 @@
+const std = @import("std");
+
+const c = @import("c.zig").c;
+const Window = @import("Window.zig");
+const Error = @import("errors.zig").Error;
+const getError = @import("errors.zig").getError;
+
+/// Makes the context of the specified window current for the calling thread.
+///
+/// This function makes the OpenGL or OpenGL ES context of the specified window current on the
+/// calling thread. A context must only be made current on a single thread at a time and each
+/// thread can have only a single current context at a time.
+///
+/// When moving a context between threads, you must make it non-current on the old thread before
+/// making it current on the new one.
+///
+/// By default, making a context non-current implicitly forces a pipeline flush. On machines that
+/// support `GL_KHR_context_flush_control`, you can control whether a context performs this flush
+/// by setting the glfw.context_release_behavior hint.
+///
+/// The specified window must have an OpenGL or OpenGL ES context. Specifying a window without a
+/// context will generate Error.NoWindowContext.
+///
+/// @param[in] window The window whose context to make current, or null to
+/// detach the current context.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoWindowContext and glfw.Error.PlatformError.
+///
+/// @thread_safety This function may be called from any thread.
+///
+/// see also: context_current, glfwGetCurrentContext
+pub inline fn makeContextCurrent(window: ?Window) Error!void {
+    if (window) |w| c.glfwMakeContextCurrent(w.handle) else c.glfwMakeContextCurrent(null);
+}
+
 // TODO(opengl):
 
 // /// Client API function pointer type.
@@ -10,40 +45,6 @@
 // ///
 // /// @ingroup context
 // typedef void (*GLFWglproc)(void);
-
-// /// Makes the context of the specified window current for the calling
-// /// thread.
-// ///
-// /// This function makes the OpenGL or OpenGL ES context of the specified window
-// /// current on the calling thread. A context must only be made current on
-// /// a single thread at a time and each thread can have only a single current
-// /// context at a time.
-// ///
-// /// When moving a context between threads, you must make it non-current on the
-// /// old thread before making it current on the new one.
-// ///
-// /// By default, making a context non-current implicitly forces a pipeline flush.
-// /// On machines that support `GL_KHR_context_flush_control`, you can control
-// /// whether a context performs this flush by setting the
-// /// [GLFW_CONTEXT_RELEASE_BEHAVIOR](@ref GLFW_CONTEXT_RELEASE_BEHAVIOR_hint)
-// /// hint.
-// ///
-// /// The specified window must have an OpenGL or OpenGL ES context. Specifying
-// /// a window without a context will generate a @ref GLFW_NO_WINDOW_CONTEXT
-// /// error.
-// ///
-// /// @param[in] window The window whose context to make current, or null to
-// /// detach the current context.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoWindowContext and glfw.Error.PlatformError.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: context_current, glfwGetCurrentContext
-// ///
-// ///
-// /// @ingroup context
-// GLFWAPI void glfwMakeContextCurrent(GLFWwindow* window);
 
 // /// Returns the window whose context is current on the calling thread.
 // ///
@@ -175,3 +176,19 @@
 // ///
 // /// @ingroup context
 // GLFWAPI GLFWglproc glfwGetProcAddress(const char* procname);
+
+test "makeContextCurrent" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    glfw.makeContextCurrent(window) catch |err| std.debug.print("making context current, error={}\n", .{err});
+}
