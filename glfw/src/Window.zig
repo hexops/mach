@@ -671,6 +671,25 @@ pub inline fn maximize(self: Window) Error!void {
     try getError();
 }
 
+/// Makes the specified window visible.
+///
+/// This function makes the specified window visible if it was previously hidden. If the window is
+/// already visible or is in full screen mode, this function does nothing.
+///
+/// By default, windowed mode windows are focused when shown Set the glfw.focus_on_show window hint
+/// to change this behavior for all newly created windows, or change the
+/// behavior for an existing window with glfw.Window.setAttrib.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_hide, glfw.Window.hide
+pub inline fn show(self: Window) Error!void {
+    c.glfwShowWindow(self.handle);
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -984,4 +1003,20 @@ test "maximize" {
     defer window.destroy();
 
     _ = window.maximize() catch |err| std.debug.print("can't maximize window, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "show" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.show() catch |err| std.debug.print("can't show window, not supported by OS maybe? error={}\n", .{err});
 }
