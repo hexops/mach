@@ -22,6 +22,12 @@ pub const version = @import("version.zig");
 pub const VideoMode = @import("VideoMode.zig");
 pub const Window = @import("Window.zig");
 
+pub usingnamespace @import("clipboard.zig");
+pub usingnamespace @import("input.zig");
+pub usingnamespace @import("opengl.zig");
+pub usingnamespace @import("vulkan.zig");
+pub usingnamespace @import("time.zig");
+
 /// Initializes the GLFW library.
 ///
 /// This function initializes the GLFW library. Before most GLFW functions can be used, GLFW must
@@ -120,6 +126,131 @@ pub inline fn initHint(hint: c_int, value: c_int) Error!void {
 pub inline fn getVersionString() [*c]const u8 {
     return c.glfwGetVersionString();
 }
+
+// TODO(events):
+// /// Processes all pending events.
+// ///
+// /// This function processes only those events that are already in the event
+// /// queue and then returns immediately. Processing events will cause the window
+// /// and input callbacks associated with those events to be called.
+// ///
+// /// On some platforms, a window move, resize or menu operation will cause event
+// /// processing to block. This is due to how event processing is designed on
+// /// those platforms. You can use the
+// /// [window refresh callback](@ref window_refresh) to redraw the contents of
+// /// your window when necessary during such operations.
+// ///
+// /// Do not assume that callbacks you set will _only_ be called in response to
+// /// event processing functions like this one. While it is necessary to poll for
+// /// events, window systems that require GLFW to register callbacks of its own
+// /// can pass events to GLFW in response to many window system function calls.
+// /// GLFW will pass those events on to the application callbacks before
+// /// returning.
+// ///
+// /// Event processing is not required for joystick input to work.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+// ///
+// /// @reentrancy This function must not be called from a callback.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
+// ///
+// GLFWAPI void glfwPollEvents(void);
+
+// /// Waits until events are queued and processes them.
+// ///
+// /// This function puts the calling thread to sleep until at least one event is
+// /// available in the event queue. Once one or more events are available,
+// /// it behaves exactly like @ref glfwPollEvents, i.e. the events in the queue
+// /// are processed and the function then returns immediately. Processing events
+// /// will cause the window and input callbacks associated with those events to be
+// /// called.
+// ///
+// /// Since not all events are associated with callbacks, this function may return
+// /// without a callback having been called even if you are monitoring all
+// /// callbacks.
+// ///
+// /// On some platforms, a window move, resize or menu operation will cause event
+// /// processing to block. This is due to how event processing is designed on
+// /// those platforms. You can use the
+// /// [window refresh callback](@ref window_refresh) to redraw the contents of
+// /// your window when necessary during such operations.
+// ///
+// /// Do not assume that callbacks you set will _only_ be called in response to
+// /// event processing functions like this one. While it is necessary to poll for
+// /// events, window systems that require GLFW to register callbacks of its own
+// /// can pass events to GLFW in response to many window system function calls.
+// /// GLFW will pass those events on to the application callbacks before
+// /// returning.
+// ///
+// /// Event processing is not required for joystick input to work.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+// ///
+// /// @reentrancy This function must not be called from a callback.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: events, glfw.pollEvents, glfw.waitEventsTimeout
+// ///
+// GLFWAPI void glfwWaitEvents(void);
+
+// /// Waits with timeout until events are queued and processes them.
+// ///
+// /// This function puts the calling thread to sleep until at least one event is
+// /// available in the event queue, or until the specified timeout is reached. If
+// /// one or more events are available, it behaves exactly like @ref
+// /// glfwPollEvents, i.e. the events in the queue are processed and the function
+// /// then returns immediately. Processing events will cause the window and input
+// /// callbacks associated with those events to be called.
+// ///
+// /// The timeout value must be a positive finite number.
+// ///
+// /// Since not all events are associated with callbacks, this function may return
+// /// without a callback having been called even if you are monitoring all
+// /// callbacks.
+// ///
+// /// On some platforms, a window move, resize or menu operation will cause event
+// /// processing to block. This is due to how event processing is designed on
+// /// those platforms. You can use the
+// /// [window refresh callback](@ref window_refresh) to redraw the contents of
+// /// your window when necessary during such operations.
+// ///
+// /// Do not assume that callbacks you set will _only_ be called in response to
+// /// event processing functions like this one. While it is necessary to poll for
+// /// events, window systems that require GLFW to register callbacks of its own
+// /// can pass events to GLFW in response to many window system function calls.
+// /// GLFW will pass those events on to the application callbacks before
+// /// returning.
+// ///
+// /// Event processing is not required for joystick input to work.
+// ///
+// /// @param[in] timeout The maximum amount of time, in seconds, to wait.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidValue and glfw.Error.PlatformError.
+// ///
+// /// @reentrancy This function must not be called from a callback.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: events, glfw.pollEvents, glfw.waitEvents
+// ///
+// GLFWAPI void glfwWaitEventsTimeout(double timeout);
+
+// /// Posts an empty event to the event queue.
+// ///
+// /// This function posts an empty event from the current thread to the event
+// /// queue, causing @ref glfwWaitEvents or @ref glfwWaitEventsTimeout to return.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+// ///
+// /// @thread_safety This function may be called from any thread.
+// ///
+// /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
+// ///
+// GLFWAPI void glfwPostEmptyEvent(void);
 
 pub fn basicTest() !void {
     try init();
