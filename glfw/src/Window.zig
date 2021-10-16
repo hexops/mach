@@ -754,6 +754,605 @@ pub inline fn requestAttention(self: Window) Error!void {
     try getError();
 }
 
+// TODO(window):
+
+// /// Swaps the front and back buffers of the specified window.
+// ///
+// /// This function swaps the front and back buffers of the specified window when
+// /// rendering with OpenGL or OpenGL ES. If the swap interval is greater than
+// /// zero, the GPU driver waits the specified number of screen updates before
+// /// swapping the buffers.
+// ///
+// /// The specified window must have an OpenGL or OpenGL ES context. Specifying
+// /// a window without a context will generate a @ref GLFW_NO_WINDOW_CONTEXT
+// /// error.
+// ///
+// /// This function does not apply to Vulkan. If you are rendering with Vulkan,
+// /// see `vkQueuePresentKHR` instead.
+// ///
+// /// @param[in] window The window whose buffers to swap.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoWindowContext and glfw.Error.PlatformError.
+// ///
+// /// __EGL:__ The context of the specified window must be current on the
+// /// calling thread.
+// ///
+// /// @thread_safety This function may be called from any thread.
+// ///
+// /// see also: buffer_swap, glfwSwapInterval
+// ///
+// /// @glfw3 Added window handle parameter.
+// GLFWAPI void glfwSwapBuffers(GLFWwindow* window);
+
+// /// The function pointer type for window position callbacks.
+// ///
+// /// This is the function pointer type for window position callbacks. A window
+// /// position callback function has the following signature:
+// /// @code
+// /// void callback_name(GLFWwindow* window, int xpos, int ypos)
+// /// @endcode
+// ///
+// /// @param[in] window The window that was moved.
+// /// @param[in] xpos The new x-coordinate, in screen coordinates, of the
+// /// upper-left corner of the content area of the window.
+// /// @param[in] ypos The new y-coordinate, in screen coordinates, of the
+// /// upper-left corner of the content area of the window.
+// ///
+// /// see also: window_pos, glfwSetWindowPosCallback
+// ///
+// typedef void (* GLFWwindowposfun)(GLFWwindow*,int,int);
+
+// /// The function pointer type for window size callbacks.
+// ///
+// /// This is the function pointer type for window size callbacks. A window size
+// /// callback function has the following signature:
+// /// @code
+// /// void callback_name(GLFWwindow* window, int width, int height)
+// /// @endcode
+// ///
+// /// @param[in] window The window that was resized.
+// /// @param[in] width The new width, in screen coordinates, of the window.
+// /// @param[in] height The new height, in screen coordinates, of the window.
+// ///
+// /// see also: window_size, glfw.Window.setSizeCallback
+// ///
+// /// @glfw3 Added window handle parameter.
+// typedef void (* GLFWwindowsizefun)(GLFWwindow*,int,int);
+
+// /// The function pointer type for window close callbacks.
+// ///
+// /// This is the function pointer type for window close callbacks. A window
+// /// close callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window)
+// /// @endcode
+// ///
+// /// @param[in] window The window that the user attempted to close.
+// ///
+// /// see also: window_close, glfw.Window.setCloseCallback
+// ///
+// /// @glfw3 Added window handle parameter.
+// typedef void (* GLFWwindowclosefun)(GLFWwindow*);
+
+// /// The function pointer type for window content refresh callbacks.
+// ///
+// /// This is the function pointer type for window content refresh callbacks.
+// /// A window content refresh callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window);
+// /// @endcode
+// ///
+// /// @param[in] window The window whose content needs to be refreshed.
+// ///
+// /// see also: window_refresh, glfw.Window.setRefreshCallback
+// ///
+// /// @glfw3 Added window handle parameter.
+// typedef void (* GLFWwindowrefreshfun)(GLFWwindow*);
+
+// /// The function pointer type for window focus callbacks.
+// ///
+// /// This is the function pointer type for window focus callbacks. A window
+// /// focus callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, int focused)
+// /// @endcode
+// ///
+// /// @param[in] window The window that gained or lost input focus.
+// /// @param[in] focused `GLFW_TRUE` if the window was given input focus, or
+// /// `GLFW_FALSE` if it lost it.
+// ///
+// /// see also: window_focus, glfw.Window.setFocusCallback
+// ///
+// typedef void (* GLFWwindowfocusfun)(GLFWwindow*,int);
+
+// /// The function pointer type for window iconify callbacks.
+// ///
+// /// This is the function pointer type for window iconify callbacks. A window
+// /// iconify callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, int iconified)
+// /// @endcode
+// ///
+// /// @param[in] window The window that was iconified or restored.
+// /// @param[in] iconified `GLFW_TRUE` if the window was iconified, or
+// /// `GLFW_FALSE` if it was restored.
+// ///
+// /// see also: window_iconify, glfw.Window.setIconifyCallback
+// ///
+// typedef void (* GLFWwindowiconifyfun)(GLFWwindow*,int);
+
+// /// The function pointer type for window maximize callbacks.
+// ///
+// /// This is the function pointer type for window maximize callbacks. A window
+// /// maximize callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, int maximized)
+// /// @endcode
+// ///
+// /// @param[in] window The window that was maximized or restored.
+// /// @param[in] maximized `GLFW_TRUE` if the window was maximized, or
+// /// `GLFW_FALSE` if it was restored.
+// ///
+// /// see also: window_maximize, /// see also: glfw.Window.setMaximizeCallback
+// ///
+// typedef void (* GLFWwindowmaximizefun)(GLFWwindow*,int);
+
+// /// The function pointer type for framebuffer size callbacks.
+// ///
+// /// This is the function pointer type for framebuffer size callbacks.
+// /// A framebuffer size callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, int width, int height)
+// /// @endcode
+// ///
+// /// @param[in] window The window whose framebuffer was resized.
+// /// @param[in] width The new width, in pixels, of the framebuffer.
+// /// @param[in] height The new height, in pixels, of the framebuffer.
+// ///
+// /// see also: window_fbsize, glfw.Window.setFramebufferSizeCallback
+// ///
+// typedef void (* GLFWframebuffersizefun)(GLFWwindow*,int,int);
+
+// /// The function pointer type for window content scale callbacks.
+// ///
+// /// This is the function pointer type for window content scale callbacks.
+// /// A window content scale callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, float xscale, float yscale)
+// /// @endcode
+// ///
+// /// @param[in] window The window whose content scale changed.
+// /// @param[in] xscale The new x-axis content scale of the window.
+// /// @param[in] yscale The new y-axis content scale of the window.
+// ///
+// /// see also: window_scale, glfwSetWindowContentScaleCallback
+// ///
+// typedef void (* GLFWwindowcontentscalefun)(GLFWwindow*,float,float);
+
+// /// Returns the monitor that the window uses for full screen mode.
+// ///
+// /// This function returns the handle of the monitor that the specified window is
+// /// in full screen on.
+// ///
+// /// @param[in] window The window to query.
+// /// @return The monitor, or null if the window is in windowed mode or an
+// /// error occurred.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_monitor, glfw.Window.setMonitor
+// ///
+// GLFWAPI GLFWmonitor* glfwGetWindowMonitor(GLFWwindow* window);
+
+// /// Sets the mode, monitor, video mode and placement of a window.
+// ///
+// /// This function sets the monitor that the window uses for full screen mode or,
+// /// if the monitor is null, makes it windowed mode.
+// ///
+// /// When setting a monitor, this function updates the width, height and refresh
+// /// rate of the desired video mode and switches to the video mode closest to it.
+// /// The window position is ignored when setting a monitor.
+// ///
+// /// When the monitor is null, the position, width and height are used to
+// /// place the window content area. The refresh rate is ignored when no monitor
+// /// is specified.
+// ///
+// /// If you only wish to update the resolution of a full screen window or the
+// /// size of a windowed mode window, see @ref glfwSetWindowSize.
+// ///
+// /// When a window transitions from full screen to windowed mode, this function
+// /// restores any previous window settings such as whether it is decorated,
+// /// floating, resizable, has size or aspect ratio limits, etc.
+// ///
+// /// @param[in] window The window whose monitor, size or video mode to set.
+// /// @param[in] monitor The desired monitor, or null to set windowed mode.
+// /// @param[in] xpos The desired x-coordinate of the upper-left corner of the
+// /// content area.
+// /// @param[in] ypos The desired y-coordinate of the upper-left corner of the
+// /// content area.
+// /// @param[in] width The desired with, in screen coordinates, of the content
+// /// area or video mode.
+// /// @param[in] height The desired height, in screen coordinates, of the content
+// /// area or video mode.
+// /// @param[in] refreshRate The desired refresh rate, in Hz, of the video mode,
+// /// or `GLFW_DONT_CARE`.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+// ///
+// /// The OpenGL or OpenGL ES context will not be destroyed or otherwise
+// /// affected by any resizing or mode switching, although you may need to update
+// /// your viewport if the framebuffer size has changed.
+// ///
+// /// wayland: The desired window position is ignored, as there is no way
+// /// for an application to set this property.
+// ///
+// /// wayland: Setting the window to full screen will not attempt to
+// /// change the mode, no matter what the requested size or refresh rate.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_monitor, window_full_screen, glfw.Window.getMonitor, glfw.Window.setSize
+// ///
+// GLFWAPI void glfwSetWindowMonitor(GLFWwindow* window, GLFWmonitor* monitor, int xpos, int ypos, int width, int height, int refreshRate);
+
+// /// Returns an attribute of the specified window.
+// ///
+// /// This function returns the value of an attribute of the specified window or
+// /// its OpenGL or OpenGL ES context.
+// ///
+// /// @param[in] window The window to query.
+// /// @param[in] attrib The [window attribute](@ref window_attribs) whose value to
+// /// return.
+// /// @return The value of the attribute, or zero if an
+// /// error occurred.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+// ///
+// /// Framebuffer related hints are not window attributes. See @ref
+// /// window_attribs_fb for more information.
+// ///
+// /// Zero is a valid value for many window and context related
+// /// attributes so you cannot use a return value of zero as an indication of
+// /// errors. However, this function should not fail as long as it is passed
+// /// valid arguments and the library has been [initialized](@ref intro_init).
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_attribs, glfw.Window.setAttrib
+// GLFWAPI int glfwGetWindowAttrib(GLFWwindow* window, int attrib);
+
+// /// Sets an attribute of the specified window.
+// ///
+// /// This function sets the value of an attribute of the specified window.
+// ///
+// /// The supported attributes are [GLFW_DECORATED](@ref GLFW_DECORATED_attrib),
+// /// [GLFW_RESIZABLE](@ref GLFW_RESIZABLE_attrib),
+// /// [GLFW_FLOATING](@ref GLFW_FLOATING_attrib),
+// /// [GLFW_AUTO_ICONIFY](@ref GLFW_AUTO_ICONIFY_attrib) and
+// /// [GLFW_FOCUS_ON_SHOW](@ref GLFW_FOCUS_ON_SHOW_attrib).
+// ///
+// /// Some of these attributes are ignored for full screen windows. The new
+// /// value will take effect if the window is later made windowed.
+// ///
+// /// Some of these attributes are ignored for windowed mode windows. The new
+// /// value will take effect if the window is later made full screen.
+// ///
+// /// @param[in] window The window to set the attribute for.
+// /// @param[in] attrib A supported window attribute.
+// /// @param[in] value `GLFW_TRUE` or `GLFW_FALSE`.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum, glfw.Error.InvalidValue and glfw.Error.PlatformError.
+// ///
+// /// Calling glfw.Window.getAttrib will always return the latest
+// /// value, even if that value is ignored by the current mode of the window.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_attribs, glfw.Window.getAttrib
+// ///
+// GLFWAPI void glfwSetWindowAttrib(GLFWwindow* window, int attrib, int value);
+
+// /// Sets the user pointer of the specified window.
+// ///
+// /// This function sets the user-defined pointer of the specified window. The
+// /// current value is retained until the window is destroyed. The initial value
+// /// is null.
+// ///
+// /// @param[in] window The window whose pointer to set.
+// /// @param[in] pointer The new value.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function may be called from any thread. Access is not
+// /// synchronized.
+// ///
+// /// see also: window_userptr, glfwGetWindowUserPointer
+// ///
+// GLFWAPI void glfwSetWindowUserPointer(GLFWwindow* window, void* pointer);
+
+// /// Returns the user pointer of the specified window.
+// ///
+// /// This function returns the current value of the user-defined pointer of the
+// /// specified window. The initial value is null.
+// ///
+// /// @param[in] window The window whose pointer to return.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function may be called from any thread. Access is not
+// /// synchronized.
+// ///
+// /// see also: window_userptr, glfwSetWindowUserPointer
+// ///
+// GLFWAPI void* glfwGetWindowUserPointer(GLFWwindow* window);
+
+// /// Sets the position callback for the specified window.
+// ///
+// /// This function sets the position callback of the specified window, which is
+// /// called when the window is moved. The callback is provided with the
+// /// position, in screen coordinates, of the upper-left corner of the content
+// /// area of the window.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, int xpos, int ypos)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWwindowposfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// wayland: This callback will never be called, as there is no way for
+// /// an application to know its global position.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_pos
+// ///
+// GLFWAPI GLFWwindowposfun glfwSetWindowPosCallback(GLFWwindow* window, GLFWwindowposfun callback);
+
+// /// Sets the size callback for the specified window.
+// ///
+// /// This function sets the size callback of the specified window, which is
+// /// called when the window is resized. The callback is provided with the size,
+// /// in screen coordinates, of the content area of the window.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, int width, int height)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWwindowsizefun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_size
+// ///
+// /// @glfw3 Added window handle parameter and return value.
+// GLFWAPI GLFWwindowsizefun glfwSetWindowSizeCallback(GLFWwindow* window, GLFWwindowsizefun callback);
+
+// /// Sets the close callback for the specified window.
+// ///
+// /// This function sets the close callback of the specified window, which is
+// /// called when the user attempts to close the window, for example by clicking
+// /// the close widget in the title bar.
+// ///
+// /// The close flag is set before this callback is called, but you can modify it
+// /// at any time with @ref glfwSetWindowShouldClose.
+// ///
+// /// The close callback is not triggered by @ref glfwDestroyWindow.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWwindowclosefun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// macos: Selecting Quit from the application menu will trigger the
+// /// close callback for all windows.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_close
+// ///
+// /// @glfw3 Added window handle parameter and return value.
+// GLFWAPI GLFWwindowclosefun glfwSetWindowCloseCallback(GLFWwindow* window, GLFWwindowclosefun callback);
+
+// /// Sets the refresh callback for the specified window.
+// ///
+// /// This function sets the refresh callback of the specified window, which is
+// /// called when the content area of the window needs to be redrawn, for example
+// /// if the window has been exposed after having been covered by another window.
+// ///
+// /// On compositing window systems such as Aero, Compiz, Aqua or Wayland, where
+// /// the window contents are saved off-screen, this callback may be called only
+// /// very infrequently or never at all.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window);
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWwindowrefreshfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_refresh
+// ///
+// /// @glfw3 Added window handle parameter and return value.
+// GLFWAPI GLFWwindowrefreshfun glfwSetWindowRefreshCallback(GLFWwindow* window, GLFWwindowrefreshfun callback);
+
+// /// Sets the focus callback for the specified window.
+// ///
+// /// This function sets the focus callback of the specified window, which is
+// /// called when the window gains or loses input focus.
+// ///
+// /// After the focus callback is called for a window that lost input focus,
+// /// synthetic key and mouse button release events will be generated for all such
+// /// that had been pressed. For more information, see @ref glfwSetKeyCallback
+// /// and @ref glfwSetMouseButtonCallback.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, int focused)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWwindowfocusfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_focus
+// ///
+// GLFWAPI GLFWwindowfocusfun glfwSetWindowFocusCallback(GLFWwindow* window, GLFWwindowfocusfun callback);
+
+// /// Sets the iconify callback for the specified window.
+// ///
+// /// This function sets the iconification callback of the specified window, which
+// /// is called when the window is iconified or restored.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, int iconified)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWwindowiconifyfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// wayland: The wl_shell protocol has no concept of iconification,
+// /// this callback will never be called when using this deprecated protocol.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_iconify
+// ///
+// GLFWAPI GLFWwindowiconifyfun glfwSetWindowIconifyCallback(GLFWwindow* window, GLFWwindowiconifyfun callback);
+
+// /// Sets the maximize callback for the specified window.
+// ///
+// /// This function sets the maximization callback of the specified window, which
+// /// is called when the window is maximized or restored.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, int maximized)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWwindowmaximizefun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_maximize
+// ///
+// GLFWAPI GLFWwindowmaximizefun glfwSetWindowMaximizeCallback(GLFWwindow* window, GLFWwindowmaximizefun callback);
+
+// /// Sets the framebuffer resize callback for the specified window.
+// ///
+// /// This function sets the framebuffer resize callback of the specified window,
+// /// which is called when the framebuffer of the specified window is resized.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, int width, int height)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWframebuffersizefun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_fbsize
+// ///
+// GLFWAPI GLFWframebuffersizefun glfwSetFramebufferSizeCallback(GLFWwindow* window, GLFWframebuffersizefun callback);
+
+// /// Sets the window content scale callback for the specified window.
+// ///
+// /// This function sets the window content scale callback of the specified window,
+// /// which is called when the content scale of the specified window changes.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, float xscale, float yscale)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWwindowcontentscalefun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: window_scale, glfw.Window.getContentScale
+// ///
+// GLFWAPI GLFWwindowcontentscalefun glfwSetWindowContentScaleCallback(GLFWwindow* window, GLFWwindowcontentscalefun callback);
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
