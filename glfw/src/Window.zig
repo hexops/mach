@@ -734,6 +734,26 @@ pub inline fn focus(self: Window) Error!void {
     try getError();
 }
 
+/// Requests user attention to the specified window.
+///
+/// This function requests user attention to the specified window. On platforms where this is not
+/// supported, attention is requested to the application as a whole.
+///
+/// Once the user has given attention, usually by focusing the window or application, the system will end the request automatically.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// macos: Attention is requested to the application as a whole, not the
+/// specific window.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_attention
+pub inline fn requestAttention(self: Window) Error!void {
+    c.glfwRequestWindowAttention(self.handle);
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -1095,4 +1115,20 @@ test "focus" {
     defer window.destroy();
 
     _ = window.focus() catch |err| std.debug.print("can't focus window, wayland maybe? error={}\n", .{err});
+}
+
+test "requestAttention" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.requestAttention() catch |err| std.debug.print("can't request attention for window, not supported by OS maybe? error={}\n", .{err});
 }
