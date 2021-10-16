@@ -29,7 +29,7 @@ pub const Options = struct {
     /// Deprecated on macOS.
     opengl: bool = false,
 
-    /// Not supported on macOS.
+    /// Not supported on macOS. GLES v3.2 only, currently.
     gles: bool = false,
 
     /// Only respected on Linux.
@@ -187,8 +187,7 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 step.linkSystemLibrary("opengl32");
             }
             if (options.gles) {
-                // TODO(slimsag): does anyone want GLESv1/GLESv3 options?
-                step.linkSystemLibrary("GLESv2");
+                step.linkSystemLibrary("GLESv3");
             }
         },
         .macos => {
