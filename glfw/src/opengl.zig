@@ -90,40 +90,36 @@ pub inline fn swapInterval(interval: isize) Error!void {
     try getError();
 }
 
-// TODO(opengl):
-
-// /// Returns whether the specified extension is available.
-// ///
-// /// This function returns whether the specified
-// /// [API extension](@ref context_glext) is supported by the current OpenGL or
-// /// OpenGL ES context. It searches both for client API extension and context
-// /// creation API extensions.
-// ///
-// /// A context must be current on the calling thread. Calling this function
-// /// without a current context will cause a @ref GLFW_NO_CURRENT_CONTEXT error.
-// ///
-// /// As this functions retrieves and searches one or more extension strings each
-// /// call, it is recommended that you cache its results if it is going to be used
-// /// frequently. The extension strings will not change during the lifetime of
-// /// a context, so there is no danger in doing this.
-// ///
-// /// This function does not apply to Vulkan. If you are using Vulkan, see @ref
-// /// glfw.getRequiredInstanceExtensions, `vkEnumerateInstanceExtensionProperties`
-// /// and `vkEnumerateDeviceExtensionProperties` instead.
-// ///
-// /// @param[in] extension The ASCII encoded name of the extension.
-// /// @return `GLFW_TRUE` if the extension is available, or `GLFW_FALSE`
-// /// otherwise.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoCurrentContext, glfw.Error.InvalidValue and glfw.Error.PlatformError.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: context_glext, glfwGetProcAddress
-// ///
-// ///
-// /// @ingroup context
-// GLFWAPI int glfwExtensionSupported(const char* extension);
+/// Returns whether the specified extension is available.
+///
+/// This function returns whether the specified API extension (see context_glext) is supported by
+/// the current OpenGL or OpenGL ES context. It searches both for client API extension and context
+/// creation API extensions.
+///
+/// A context must be current on the calling thread. Calling this function without a current
+/// context will cause Error.NoCurrentContext.
+///
+/// As this functions retrieves and searches one or more extension strings each call, it is
+/// recommended that you cache its results if it is going to be used frequently. The extension
+/// strings will not change during the lifetime of a context, so there is no danger in doing this.
+///
+/// This function does not apply to Vulkan. If you are using Vulkan, see glfw.getRequiredInstanceExtensions,
+/// `vkEnumerateInstanceExtensionProperties` and `vkEnumerateDeviceExtensionProperties` instead.
+///
+/// @param[in] extension The ASCII encoded name of the extension.
+/// @return `true` if the extension is available, or `false` otherwise.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoCurrentContext, glfw.Error.InvalidValue
+/// and glfw.Error.PlatformError.
+///
+/// @thread_safety This function may be called from any thread.
+///
+/// see also: context_glext, glfw.getProcAddress
+pub inline fn extensionSupported(extension: [*c]const u8) Error!bool {
+    const supported = c.glfwExtensionSupported(extension);
+    try getError();
+    return supported == c.GLFW_TRUE;
+}
 
 /// Client API function pointer type.
 ///
@@ -160,7 +156,7 @@ pub const GLProc = fn () callconv(.C) void;
 ///
 /// see also: context_glext, glfwExtensionSupported
 pub inline fn getProcAddress(proc_name: [*c]const u8) Error!?GLProc {
-    const proc_address = c.glfwGetProcAddress(&proc_name[0]);
+    const proc_address = c.glfwGetProcAddress(proc_name);
     try getError();
     if (proc_address) |addr| return addr;
     return null;
@@ -226,4 +222,21 @@ test "getProcAddress" {
 
     try glfw.makeContextCurrent(window);
     _ = glfw.getProcAddress("foobar") catch |err| std.debug.print("failed to get proc address, error={}\n", .{err});
+}
+
+test "extensionSupported" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    try glfw.makeContextCurrent(window);
+    _ = glfw.extensionSupported("foobar") catch |err| std.debug.print("failed to check if extension supported, error={}\n", .{err});
 }
