@@ -33,6 +33,25 @@ pub inline fn makeContextCurrent(window: ?Window) Error!void {
     if (window) |w| c.glfwMakeContextCurrent(w.handle) else c.glfwMakeContextCurrent(null);
 }
 
+/// Returns the window whose context is current on the calling thread.
+///
+/// This function returns the window whose OpenGL or OpenGL ES context is current on the calling
+/// thread.
+///
+/// Returns he window whose context is current, or null if no window's context is current.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function may be called from any thread.
+///
+/// see also: context_current, glfwMakeContextCurrent
+pub inline fn getCurrentContext() Error!?Window {
+    const handle = c.glfwGetCurrentContext();
+    try getError();
+    if (handle) |h| return Window{ .handle = h };
+    return null;
+}
+
 // TODO(opengl):
 
 // /// Client API function pointer type.
@@ -45,24 +64,6 @@ pub inline fn makeContextCurrent(window: ?Window) Error!void {
 // ///
 // /// @ingroup context
 // typedef void (*GLFWglproc)(void);
-
-// /// Returns the window whose context is current on the calling thread.
-// ///
-// /// This function returns the window whose OpenGL or OpenGL ES context is
-// /// current on the calling thread.
-// ///
-// /// @return The window whose context is current, or null if no window's
-// /// context is current.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: context_current, glfwMakeContextCurrent
-// ///
-// ///
-// /// @ingroup context
-// GLFWAPI GLFWwindow* glfwGetCurrentContext(void);
 
 // /// Sets the swap interval for the current context.
 // ///
@@ -191,4 +192,16 @@ test "makeContextCurrent" {
     defer window.destroy();
 
     glfw.makeContextCurrent(window) catch |err| std.debug.print("making context current, error={}\n", .{err});
+}
+
+test "getCurrentContext" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const current_context = glfw.getCurrentContext() catch |err| {
+        std.debug.print("can't get current context, error={}\n", .{err});
+        return;
+    };
+    std.debug.assert(current_context == null);
 }
