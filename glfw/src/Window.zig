@@ -690,6 +690,21 @@ pub inline fn show(self: Window) Error!void {
     try getError();
 }
 
+/// Hides the specified window.
+///
+/// This function hides the specified window if it was previously visible. If the window is already
+/// hidden or is in full screen mode, this function does nothing.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_hide, glfw.Window.show
+pub inline fn hide(self: Window) Error!void {
+    c.glfwHideWindow(self.handle);
+    try getError();
+}
+
 test "defaultHints" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -1019,4 +1034,20 @@ test "show" {
     defer window.destroy();
 
     _ = window.show() catch |err| std.debug.print("can't show window, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "hide" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.hide() catch |err| std.debug.print("can't hide window, not supported by OS maybe? error={}\n", .{err});
 }
