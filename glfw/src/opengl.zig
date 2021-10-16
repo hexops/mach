@@ -92,17 +92,6 @@ pub inline fn swapInterval(interval: isize) Error!void {
 
 // TODO(opengl):
 
-// /// Client API function pointer type.
-// ///
-// /// Generic function pointer used for returning client API function pointers
-// /// without forcing a cast from a regular pointer.
-// ///
-// /// see also: context_glext, glfwGetProcAddress
-// ///
-// ///
-// /// @ingroup context
-// typedef void (*GLFWglproc)(void);
-
 // /// Returns whether the specified extension is available.
 // ///
 // /// This function returns whether the specified
@@ -136,43 +125,46 @@ pub inline fn swapInterval(interval: isize) Error!void {
 // /// @ingroup context
 // GLFWAPI int glfwExtensionSupported(const char* extension);
 
-// /// Returns the address of the specified function for the current
-// /// context.
-// ///
-// /// This function returns the address of the specified OpenGL or OpenGL ES
-// /// [core or extension function](@ref context_glext), if it is supported
-// /// by the current context.
-// ///
-// /// A context must be current on the calling thread. Calling this function
-// /// without a current context will cause a @ref GLFW_NO_CURRENT_CONTEXT error.
-// ///
-// /// This function does not apply to Vulkan. If you are rendering with Vulkan,
-// /// see @ref glfwGetInstanceProcAddress, `vkGetInstanceProcAddr` and
-// /// `vkGetDeviceProcAddr` instead.
-// ///
-// /// @param[in] procname The ASCII encoded name of the function.
-// /// @return The address of the function, or null if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoCurrentContext and glfw.Error.PlatformError.
-// ///
-// /// The address of a given function is not guaranteed to be the same
-// /// between contexts.
-// ///
-// /// This function may return a non-null address despite the
-// /// associated version or extension not being available. Always check the
-// /// context version or extension string first.
-// ///
-// /// @pointer_lifetime The returned function pointer is valid until the context
-// /// is destroyed or the library is terminated.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: context_glext, glfwExtensionSupported
-// ///
-// ///
-// /// @ingroup context
-// GLFWAPI GLFWglproc glfwGetProcAddress(const char* procname);
+/// Client API function pointer type.
+///
+/// Generic function pointer used for returning client API function pointers.
+///
+/// see also: context_glext, glfwGetProcAddress
+pub const GLProc = fn () callconv(.C) void;
+
+/// Returns the address of the specified function for the current context.
+///
+/// This function returns the address of the specified OpenGL or OpenGL ES core or extension
+/// function (see context_glext), if it is supported by the current context.
+///
+/// A context must be current on the calling thread. Calling this function without a current
+// context will cause Error.NoCurrentContext.
+///
+/// This function does not apply to Vulkan. If you are rendering with Vulkan, see glfw.getInstanceProcAddress,
+// `vkGetInstanceProcAddr` and `vkGetDeviceProcAddr` instead.
+///
+/// @param[in] procname The ASCII encoded name of the function.
+/// @return The address of the function, or null if an error occurred.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoCurrentContext and glfw.Error.PlatformError.
+///
+/// The address of a given function is not guaranteed to be the same between contexts.
+///
+/// This function may return a non-null address despite the associated version or extension
+/// not being available. Always check the context version or extension string first.
+///
+/// @pointer_lifetime The returned function pointer is valid until the context is destroyed or the
+/// library is terminated.
+///
+/// @thread_safety This function may be called from any thread.
+///
+/// see also: context_glext, glfwExtensionSupported
+pub inline fn getProcAddress(proc_name: [*c]const u8) Error!?GLProc {
+    const proc_address = c.glfwGetProcAddress(&proc_name[0]);
+    try getError();
+    if (proc_address) |addr| return addr;
+    return null;
+}
 
 test "makeContextCurrent" {
     const glfw = @import("main.zig");
@@ -217,4 +209,21 @@ test "swapInterval" {
 
     try glfw.makeContextCurrent(window);
     glfw.swapInterval(1) catch |err| std.debug.print("failed to set swap interval, error={}\n", .{err});
+}
+
+test "getProcAddress" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    try glfw.makeContextCurrent(window);
+    _ = glfw.getProcAddress("foobar") catch |err| std.debug.print("failed to get proc address, error={}\n", .{err});
 }
