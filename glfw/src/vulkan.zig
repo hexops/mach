@@ -1,15 +1,10 @@
-// TODO(vulkan):
+const std = @import("std");
 
-// /// Vulkan API function pointer type.
-// ///
-// /// Generic function pointer used for returning Vulkan API function pointers
-// /// without forcing a cast from a regular pointer.
-// ///
-// /// see also: vulkan_proc, glfwGetInstanceProcAddress
-// ///
-// ///
-// /// @ingroup vulkan
-// typedef void (*GLFWvkproc)(void);
+const c = @import("c.zig").c;
+const Error = @import("errors.zig").Error;
+const getError = @import("errors.zig").getError;
+
+// TODO(vulkan):
 
 // /// Returns whether the Vulkan loader and an ICD have been found.
 // ///
@@ -69,38 +64,47 @@
 // /// see also: vulkan_ext, glfwCreateWindowSurface
 // GLFWAPI const char** glfwGetRequiredInstanceExtensions(uint32_t* count);
 
-// /// Returns the address of the specified Vulkan instance function.
-// ///
-// /// This function returns the address of the specified Vulkan core or extension function for the
-// /// specified instance. If instance is set to null it can return any function exported from the
-// /// Vulkan loader, including at least the following functions:
-// ///
-// /// - `vkEnumerateInstanceExtensionProperties`
-// /// - `vkEnumerateInstanceLayerProperties`
-// /// - `vkCreateInstance`
-// /// - `vkGetInstanceProcAddr`
-// ///
-// /// If Vulkan is not available on the machine, this function returns null and generates a
-// /// glfw.Error.APIUnavailable error. Call glfw.vulkanSupported to check whether Vulkan is at least
-// /// minimally available.
-// ///
-// /// This function is equivalent to calling `vkGetInstanceProcAddr` with a platform-specific query
-// /// of the Vulkan loader as a fallback.
-// ///
-// /// @param[in] instance The Vulkan instance to query, or null to retrieve
-// /// functions related to instance creation.
-// /// @param[in] procname The ASCII encoded name of the function.
-// /// @return The address of the function, or null if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.APIUnavailable.
-// ///
-// /// @pointer_lifetime The returned function pointer is valid until the library is terminated.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: vulkan_proc
-// GLFWAPI GLFWvkproc glfwGetInstanceProcAddress(VkInstance instance, const char* procname);
+/// Vulkan API function pointer type.
+///
+/// Generic function pointer used for returning Vulkan API function pointers.
+///
+/// see also: vulkan_proc, glfw.getInstanceProcAddress
+pub const VKProc = fn () callconv(.C) void;
+
+/// Returns the address of the specified Vulkan instance function.
+///
+/// This function returns the address of the specified Vulkan core or extension function for the
+/// specified instance. If instance is set to null it can return any function exported from the
+/// Vulkan loader, including at least the following functions:
+///
+/// - `vkEnumerateInstanceExtensionProperties`
+/// - `vkEnumerateInstanceLayerProperties`
+/// - `vkCreateInstance`
+/// - `vkGetInstanceProcAddr`
+///
+/// If Vulkan is not available on the machine, this function returns null and generates a
+/// glfw.Error.APIUnavailable error. Call glfw.vulkanSupported to check whether Vulkan is at least
+/// minimally available.
+///
+/// This function is equivalent to calling `vkGetInstanceProcAddr` with a platform-specific query
+/// of the Vulkan loader as a fallback.
+///
+/// @param[in] instance The Vulkan instance to query, or null to retrieve functions related to
+///            instance creation.
+/// @param[in] procname The ASCII encoded name of the function.
+/// @return The address of the function, or null if an error occurred.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.APIUnavailable.
+///
+/// @pointer_lifetime The returned function pointer is valid until the library is terminated.
+///
+/// @thread_safety This function may be called from any thread.
+pub inline fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*c]const u8) Error!?VKProc {
+    const proc_address = c.glfwGetInstanceProcAddress(if (vk_instance) |v| @ptrCast(c.VkInstance, v) else null, proc_name);
+    try getError();
+    if (proc_address) |addr| return addr;
+    return null;
+}
 
 // /// Returns whether the specified queue family can present images.
 // ///
@@ -176,3 +180,12 @@
 // ///
 // /// see also: vulkan_surface, glfw.getRequiredInstanceExtensions
 // GLFWAPI VkResult glfwCreateWindowSurface(VkInstance instance, GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface);
+
+test "getInstanceProcAddress" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    // syntax check only, we don't have a real vulkan instance.
+    _ = glfw.getInstanceProcAddress(null, "foobar") catch |err| std.debug.print("failed to get instance proc address, error={}\n", .{err});
+}
