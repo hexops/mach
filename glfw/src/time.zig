@@ -20,8 +20,6 @@ const getError = @import("errors.zig").getError;
 /// @return The current time, in seconds, or zero if an
 /// error occurred.
 ///
-/// Possible errors include glfw.Error.NotInitialized.
-///
 /// @thread_safety This function may be called from any thread. Reading and
 /// writing of the internal base time is not atomic, so it needs to be
 /// externally synchronized with calls to @ref glfwSetTime.
@@ -69,8 +67,6 @@ pub inline fn setTime(time: f64) Error!void {
 ///
 /// @return The value of the timer, or zero if an error occurred.
 ///
-/// Possible errors include glfw.Error.NotInitialized.
-///
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: time, glfw.getTimerFrequency
@@ -85,23 +81,25 @@ pub inline fn getTimerValue() u64 {
     return value;
 }
 
-// TODO(time):
-// /// Returns the frequency, in Hz, of the raw timer.
-// ///
-// /// This function returns the frequency, in Hz, of the raw timer.
-// ///
-// /// @return The frequency of the timer, in Hz, or zero if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: time, glfwGetTimerValue
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI uint64_t glfwGetTimerFrequency(void);
+/// Returns the frequency, in Hz, of the raw timer.
+///
+/// This function returns the frequency, in Hz, of the raw timer.
+///
+/// @return The frequency of the timer, in Hz, or zero if an error occurred.
+///
+/// @thread_safety This function may be called from any thread.
+///
+/// see also: time, glfw.getTimerValue
+pub inline fn getTimerFrequency() u64 {
+    const frequency = c.glfwGetTimerFrequency();
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+
+    return frequency;
+}
 
 test "getTime" {
     const glfw = @import("main.zig");
@@ -125,4 +123,12 @@ test "getTimerValue" {
     defer glfw.terminate();
 
     _ = glfw.getTimerValue();
+}
+
+test "getTimerFrequency" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    _ = glfw.getTimerFrequency();
 }
