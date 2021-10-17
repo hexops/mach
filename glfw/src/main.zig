@@ -231,18 +231,20 @@ pub inline fn waitEventsTimeout(timeout: f64) Error!void {
     try getError();
 }
 
-// /// Posts an empty event to the event queue.
-// ///
-// /// This function posts an empty event from the current thread to the event
-// /// queue, causing @ref glfwWaitEvents or @ref glfwWaitEventsTimeout to return.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-// ///
-// GLFWAPI void glfwPostEmptyEvent(void);
+/// Posts an empty event to the event queue.
+///
+/// This function posts an empty event from the current thread to the event queue, causing
+/// glfw.waitEvents or glfw.waitEventsTimeout to return.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function may be called from any thread.
+///
+/// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
+pub inline fn postEmptyEvent() Error!void {
+    c.glfwPostEmptyEvent();
+    try getError();
+}
 
 pub fn basicTest() !void {
     try init();
@@ -286,6 +288,14 @@ test "waitEventsTimeout" {
     defer terminate();
 
     try waitEventsTimeout(0.25);
+}
+
+test "postEmptyEvent_and_waitEvents" {
+    try init();
+    defer terminate();
+
+    try postEmptyEvent();
+    try waitEvents();
 }
 
 test "basic" {
