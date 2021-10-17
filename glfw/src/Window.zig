@@ -1421,7 +1421,7 @@ test "setTitle" {
     try window.setTitle("Updated title!");
 }
 
-// TODO(slimsag): test appears to fail on at least Linux, image size is potentially wrong.
+// TODO(window): test appears to fail on at least Linux, image size is potentially wrong.
 // test "setIcon" {
 //     const allocator = testing.allocator;
 //     const glfw = @import("main.zig");
