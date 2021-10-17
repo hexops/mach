@@ -224,8 +224,7 @@ fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 step.linkSystemLibrary("GL");
             }
             if (options.gles) {
-                // TODO(slimsag): does anyone want GLESv1/GLESv3 options?
-                step.linkSystemLibrary("GLESv2");
+                step.linkSystemLibrary("GLESv3");
             }
         },
     }
