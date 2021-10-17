@@ -6,26 +6,28 @@ const getError = @import("errors.zig").getError;
 
 // TODO(vulkan):
 
-// /// Returns whether the Vulkan loader and an ICD have been found.
-// ///
-// /// This function returns whether the Vulkan loader and any minimally functional ICD have been
-// /// found.
-// ///
-// /// The availability of a Vulkan loader and even an ICD does not by itself guarantee that surface
-// /// creation or even instance creation is possible. For example, on Fermi systems Nvidia will
-// /// install an ICD that provides no actual Vulkan support. Call glfw.getRequiredInstanceExtensions
-// /// to check whether the extensions necessary for Vulkan surface creation are available and
-// /// glfw.getPhysicalDevicePresentationSupport to check whether a queue family of a physical device
-// /// supports image presentation.
-// ///
-// /// @return `GLFW_TRUE` if Vulkan is minimally available, or `GLFW_FALSE` otherwise.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: vulkan_support
-// GLFWAPI int glfwVulkanSupported(void);
+/// Returns whether the Vulkan loader and an ICD have been found.
+///
+/// This function returns whether the Vulkan loader and any minimally functional ICD have been
+/// found.
+///
+/// The availability of a Vulkan loader and even an ICD does not by itself guarantee that surface
+/// creation or even instance creation is possible. For example, on Fermi systems Nvidia will
+/// install an ICD that provides no actual Vulkan support. Call glfw.getRequiredInstanceExtensions
+/// to check whether the extensions necessary for Vulkan surface creation are available and
+/// glfw.getPhysicalDevicePresentationSupport to check whether a queue family of a physical device
+/// supports image presentation.
+///
+/// @return `true` if Vulkan is minimally available, or `false` otherwise.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function may be called from any thread.
+pub inline fn vulkanSupported() Error!bool {
+    const supported = c.glfwVulkanSupported();
+    try getError();
+    return supported == c.GLFW_TRUE;
+}
 
 // /// Returns the Vulkan instance extensions required by GLFW.
 // ///
@@ -180,6 +182,14 @@ pub inline fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*c]co
 // ///
 // /// see also: vulkan_surface, glfw.getRequiredInstanceExtensions
 // GLFWAPI VkResult glfwCreateWindowSurface(VkInstance instance, GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface);
+
+test "vulkanSupported" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    _ = try glfw.vulkanSupported();
+}
 
 test "getInstanceProcAddress" {
     const glfw = @import("main.zig");
