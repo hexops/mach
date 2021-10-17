@@ -10,8 +10,8 @@ const getError = @import("errors.zig").getError;
 /// has been set using @ref glfwSetTime it measures time elapsed since GLFW was
 /// initialized.
 ///
-/// This function and @ref glfwSetTime are helper functions on top of @ref
-/// glfwGetTimerFrequency and @ref glfwGetTimerValue.
+/// This function and @ref glfwSetTime are helper functions on top of glfw.getTimerFrequency
+/// and glfw.getTimerValue.
 ///
 /// The resolution of the timer is system dependent, but is usually on the order
 /// of a few micro- or nanoseconds. It uses the highest-resolution monotonic
@@ -27,9 +27,6 @@ const getError = @import("errors.zig").getError;
 /// externally synchronized with calls to @ref glfwSetTime.
 ///
 /// see also: time
-///
-///
-/// @ingroup input
 pub inline fn getTime() f64 {
     const time = c.glfwGetTime();
 
@@ -41,34 +38,31 @@ pub inline fn getTime() f64 {
     return time;
 }
 
-// TODO(time):
-// /// Sets the GLFW time.
-// ///
-// /// This function sets the current GLFW time, in seconds. The value must be
-// /// a positive finite number less than or equal to 18446744073.0, which is
-// /// approximately 584.5 years.
-// ///
-// /// This function and @ref glfwGetTime are helper functions on top of @ref
-// /// glfwGetTimerFrequency and @ref glfwGetTimerValue.
-// ///
-// /// @param[in] time The new value, in seconds.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidValue.
-// ///
-// /// The upper limit of GLFW time is calculated as
-// /// floor((2<sup>64</sup> - 1) / 10<sup>9</sup>) and is due to implementations
-// /// storing nanoseconds in 64 bits. The limit may be increased in the future.
-// ///
-// /// @thread_safety This function may be called from any thread. Reading and
-// /// writing of the internal base time is not atomic, so it needs to be
-// /// externally synchronized with calls to @ref glfwGetTime.
-// ///
-// /// see also: time
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI void glfwSetTime(double time);
+/// Sets the GLFW time.
+///
+/// This function sets the current GLFW time, in seconds. The value must be a positive finite
+/// number less than or equal to 18446744073.0, which is approximately 584.5 years.
+///
+/// This function and @ref glfwGetTime are helper functions on top of glfw.getTimerFrequency and
+/// glfw.getTimerValue.
+///
+/// @param[in] time The new value, in seconds.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidValue.
+///
+/// The upper limit of GLFW time is calculated as `floor((2^64 - 1) / 10^9)` and is due to
+/// implementations storing nanoseconds in 64 bits. The limit may be increased in the future.
+///
+/// @thread_safety This function may be called from any thread. Reading and writing of the internal
+/// base time is not atomic, so it needs to be externally synchronized with calls to glfw.getTime.
+///
+/// see also: time
+pub inline fn setTime(time: f64) Error!void {
+    c.glfwSetTime(time);
+    try getError();
+}
 
+// TODO(time):
 // /// Returns the current value of the raw timer.
 // ///
 // /// This function returns the current value of the raw timer, measured in
@@ -104,6 +98,14 @@ pub inline fn getTime() f64 {
 // ///
 // /// @ingroup input
 // GLFWAPI uint64_t glfwGetTimerFrequency(void);
+
+test "getTime" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    _ = getTime();
+}
 
 test "getTime" {
     const glfw = @import("main.zig");
