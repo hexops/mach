@@ -4,8 +4,6 @@ const c = @import("c.zig").c;
 const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 
-// TODO(vulkan):
-
 /// Returns whether the Vulkan loader and an ICD have been found.
 ///
 /// This function returns whether the Vulkan loader and any minimally functional ICD have been
@@ -29,6 +27,7 @@ pub inline fn vulkanSupported() Error!bool {
     return supported == c.GLFW_TRUE;
 }
 
+// TODO(vulkan):
 // /// Returns the Vulkan instance extensions required by GLFW.
 // ///
 // /// This function returns an array of names of Vulkan instance extensions required by GLFW for
@@ -108,6 +107,7 @@ pub inline fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*c]co
     return null;
 }
 
+// TODO(vulkan):
 // /// Returns whether the specified queue family can present images.
 // ///
 // /// This function returns whether the specified queue family of the specified physical device
@@ -136,6 +136,7 @@ pub inline fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*c]co
 // /// see also: vulkan_present
 // GLFWAPI int glfwGetPhysicalDevicePresentationSupport(VkInstance instance, VkPhysicalDevice device, uint32_t queuefamily);
 
+// TODO(vulkan):
 // /// Creates a Vulkan surface for the specified window.
 // ///
 // /// This function creates a Vulkan surface for the specified window.
