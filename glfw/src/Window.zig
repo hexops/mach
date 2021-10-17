@@ -754,35 +754,33 @@ pub inline fn requestAttention(self: Window) Error!void {
     try getError();
 }
 
-// TODO(window):
+/// Swaps the front and back buffers of the specified window.
+///
+/// This function swaps the front and back buffers of the specified window when rendering with
+/// OpenGL or OpenGL ES. If the swap interval is greater than zero, the GPU driver waits the
+/// specified number of screen updates before swapping the buffers.
+///
+/// The specified window must have an OpenGL or OpenGL ES context. Specifying a window without a
+/// context will generate Error.NoWindowContext.
+///
+/// This function does not apply to Vulkan. If you are rendering with Vulkan, see `vkQueuePresentKHR`
+/// instead.
+///
+/// @param[in] window The window whose buffers to swap.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoWindowContext and glfw.Error.PlatformError.
+///
+/// __EGL:__ The context of the specified window must be current on the calling thread.
+///
+/// @thread_safety This function may be called from any thread.
+///
+/// see also: buffer_swap, glfwSwapInterval
+pub inline fn swapBuffers(self: Window) Error!void {
+    c.glfwSwapBuffers(self.handle);
+    try getError();
+}
 
-// /// Swaps the front and back buffers of the specified window.
-// ///
-// /// This function swaps the front and back buffers of the specified window when
-// /// rendering with OpenGL or OpenGL ES. If the swap interval is greater than
-// /// zero, the GPU driver waits the specified number of screen updates before
-// /// swapping the buffers.
-// ///
-// /// The specified window must have an OpenGL or OpenGL ES context. Specifying
-// /// a window without a context will generate a @ref GLFW_NO_WINDOW_CONTEXT
-// /// error.
-// ///
-// /// This function does not apply to Vulkan. If you are rendering with Vulkan,
-// /// see `vkQueuePresentKHR` instead.
-// ///
-// /// @param[in] window The window whose buffers to swap.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoWindowContext and glfw.Error.PlatformError.
-// ///
-// /// __EGL:__ The context of the specified window must be current on the
-// /// calling thread.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: buffer_swap, glfwSwapInterval
-// ///
-// /// @glfw3 Added window handle parameter.
-// GLFWAPI void glfwSwapBuffers(GLFWwindow* window);
+// TODO(window):
 
 // /// The function pointer type for window position callbacks.
 // ///
@@ -1730,4 +1728,20 @@ test "requestAttention" {
     defer window.destroy();
 
     _ = window.requestAttention() catch |err| std.debug.print("can't request attention for window, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "swapBuffers" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = try window.swapBuffers();
 }
