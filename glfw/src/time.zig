@@ -1,32 +1,47 @@
-// TODO(time):
-// /// Returns the GLFW time.
-// ///
-// /// This function returns the current GLFW time, in seconds. Unless the time
-// /// has been set using @ref glfwSetTime it measures time elapsed since GLFW was
-// /// initialized.
-// ///
-// /// This function and @ref glfwSetTime are helper functions on top of @ref
-// /// glfwGetTimerFrequency and @ref glfwGetTimerValue.
-// ///
-// /// The resolution of the timer is system dependent, but is usually on the order
-// /// of a few micro- or nanoseconds. It uses the highest-resolution monotonic
-// /// time source on each supported platform.
-// ///
-// /// @return The current time, in seconds, or zero if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread. Reading and
-// /// writing of the internal base time is not atomic, so it needs to be
-// /// externally synchronized with calls to @ref glfwSetTime.
-// ///
-// /// see also: time
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI double glfwGetTime(void);
+const std = @import("std");
 
+const c = @import("c.zig").c;
+const Error = @import("errors.zig").Error;
+const getError = @import("errors.zig").getError;
+
+/// Returns the GLFW time.
+///
+/// This function returns the current GLFW time, in seconds. Unless the time
+/// has been set using @ref glfwSetTime it measures time elapsed since GLFW was
+/// initialized.
+///
+/// This function and @ref glfwSetTime are helper functions on top of @ref
+/// glfwGetTimerFrequency and @ref glfwGetTimerValue.
+///
+/// The resolution of the timer is system dependent, but is usually on the order
+/// of a few micro- or nanoseconds. It uses the highest-resolution monotonic
+/// time source on each supported platform.
+///
+/// @return The current time, in seconds, or zero if an
+/// error occurred.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function may be called from any thread. Reading and
+/// writing of the internal base time is not atomic, so it needs to be
+/// externally synchronized with calls to @ref glfwSetTime.
+///
+/// see also: time
+///
+///
+/// @ingroup input
+pub inline fn getTime() f64 {
+    const time = c.glfwGetTime();
+
+    // The only error shouldClose could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+
+    return time;
+}
+
+// TODO(time):
 // /// Sets the GLFW time.
 // ///
 // /// This function sets the current GLFW time, in seconds. The value must be
@@ -89,3 +104,11 @@
 // ///
 // /// @ingroup input
 // GLFWAPI uint64_t glfwGetTimerFrequency(void);
+
+test "getTime" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    _ = getTime();
+}
