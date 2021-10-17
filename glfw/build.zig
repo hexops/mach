@@ -101,7 +101,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
             // Assume Linux-like
             includeSdkLinuxX8664(b, step);
 
-            // TODO(slimsag): for now, Linux must be built with glibc, not musl:
+            // TODO(future): for now, Linux must be built with glibc, not musl:
             //
             // ```
             // ld.lld: error: cannot create a copy relocation for symbol stderr
