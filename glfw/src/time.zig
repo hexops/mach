@@ -30,7 +30,7 @@ const getError = @import("errors.zig").getError;
 pub inline fn getTime() f64 {
     const time = c.glfwGetTime();
 
-    // The only error shouldClose could return would be glfw.Error.NotInitialized, which should
+    // The only error this could return would be glfw.Error.NotInitialized, which should
     // definitely have occurred before calls to this. Returning an error here makes the API
     // awkward to use, so we discard it instead.
     getError() catch {};
@@ -62,26 +62,30 @@ pub inline fn setTime(time: f64) Error!void {
     try getError();
 }
 
-// TODO(time):
-// /// Returns the current value of the raw timer.
-// ///
-// /// This function returns the current value of the raw timer, measured in
-// /// 1&nbsp;/&nbsp;frequency seconds. To get the frequency, call @ref
-// /// glfwGetTimerFrequency.
-// ///
-// /// @return The value of the timer, or zero if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: time, glfwGetTimerFrequency
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI uint64_t glfwGetTimerValue(void);
+/// Returns the current value of the raw timer.
+///
+/// This function returns the current value of the raw timer, measured in `1/frequency` seconds. To
+/// get the frequency, call glfw.getTimerFrequency.
+///
+/// @return The value of the timer, or zero if an error occurred.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function may be called from any thread.
+///
+/// see also: time, glfw.getTimerFrequency
+pub inline fn getTimerValue() u64 {
+    const value = c.glfwGetTimerValue();
 
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+
+    return value;
+}
+
+// TODO(time):
 // /// Returns the frequency, in Hz, of the raw timer.
 // ///
 // /// This function returns the frequency, in Hz, of the raw timer.
@@ -107,10 +111,18 @@ test "getTime" {
     _ = getTime();
 }
 
-test "getTime" {
+test "setTime" {
     const glfw = @import("main.zig");
     try glfw.init();
     defer glfw.terminate();
 
-    _ = getTime();
+    _ = try glfw.setTime(1234);
+}
+
+test "getTimerValue" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    _ = glfw.getTimerValue();
 }
