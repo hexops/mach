@@ -127,37 +127,35 @@ pub inline fn getVersionString() [*c]const u8 {
     return c.glfwGetVersionString();
 }
 
-// TODO(events):
-// /// Processes all pending events.
-// ///
-// /// This function processes only those events that are already in the event
-// /// queue and then returns immediately. Processing events will cause the window
-// /// and input callbacks associated with those events to be called.
-// ///
-// /// On some platforms, a window move, resize or menu operation will cause event
-// /// processing to block. This is due to how event processing is designed on
-// /// those platforms. You can use the
-// /// [window refresh callback](@ref window_refresh) to redraw the contents of
-// /// your window when necessary during such operations.
-// ///
-// /// Do not assume that callbacks you set will _only_ be called in response to
-// /// event processing functions like this one. While it is necessary to poll for
-// /// events, window systems that require GLFW to register callbacks of its own
-// /// can pass events to GLFW in response to many window system function calls.
-// /// GLFW will pass those events on to the application callbacks before
-// /// returning.
-// ///
-// /// Event processing is not required for joystick input to work.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-// ///
-// /// @reentrancy This function must not be called from a callback.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-// ///
-// GLFWAPI void glfwPollEvents(void);
+/// Processes all pending events.
+///
+/// This function processes only those events that are already in the event queue and then returns
+/// immediately. Processing events will cause the window and input callbacks associated with those
+/// events to be called.
+///
+/// On some platforms, a window move, resize or menu operation will cause event processing to
+/// block. This is due to how event processing is designed on those platforms. You can use the
+/// window refresh callback (see window_refresh) to redraw the contents of your window when
+/// necessary during such operations.
+///
+/// Do not assume that callbacks you set will _only_ be called in response to event processing
+/// functions like this one. While it is necessary to poll for events, window systems that require
+/// GLFW to register callbacks of its own can pass events to GLFW in response to many window system
+/// function calls. GLFW will pass those events on to the application callbacks before returning.
+///
+/// Event processing is not required for joystick input to work.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @reentrancy This function must not be called from a callback.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
+pub inline fn pollEvents() Error!void {
+    c.glfwPollEvents();
+    try getError();
+}
 
 // /// Waits until events are queued and processes them.
 // ///
@@ -270,7 +268,7 @@ pub fn basicTest() !void {
     }
 }
 
-test "version" {
+test "getVersionString" {
     // Reference these so the tests in these files get pulled in / ran.
     _ = Monitor;
     _ = GammaRamp;
@@ -280,6 +278,13 @@ test "version" {
 
     std.debug.print("\nGLFW version v{}.{}.{}\n", .{ version.major, version.minor, version.revision });
     std.debug.print("\nstring: {s}\n", .{getVersionString()});
+}
+
+test "pollEvents" {
+    try init();
+    defer terminate();
+
+    try pollEvents();
 }
 
 test "basic" {
