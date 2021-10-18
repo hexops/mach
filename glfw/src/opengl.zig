@@ -48,7 +48,7 @@ pub inline fn makeContextCurrent(window: ?Window) Error!void {
 pub inline fn getCurrentContext() Error!?Window {
     const handle = c.glfwGetCurrentContext();
     try getError();
-    if (handle) |h| return Window{ .handle = h };
+    if (handle) |h| return try Window.from(h);
     return null;
 }
 
