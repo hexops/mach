@@ -40,6 +40,7 @@ pub const InternalUserPointer = struct {
     setSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
     setCloseCallback: ?fn (window: Window) void,
     setRefreshCallback: ?fn (window: Window) void,
+    setFocusCallback: ?fn (window: Window, focused: bool) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1102,8 +1103,6 @@ fn setRefreshCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
 // /// @param[in] window The window whose callback to set.
 // /// @param[in] callback The new callback, or null to remove the currently set
 // /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
 // ///
 // /// @callback_param `window` the window whose content needs to be refreshed.
 // ///
@@ -1113,8 +1112,45 @@ fn setRefreshCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
 // GLFWAPI GLFWwindowrefreshfun glfwSetWindowRefreshCallback(GLFWwindow* window, GLFWwindowrefreshfun callback);
 pub inline fn setRefreshCallback(self: Window, callback: ?fn (window: Window) void) void {
     var internal = self.getInternal();
-    internal.setCloseCallback = callback;
+    internal.setRefreshCallback = callback;
     _ = c.glfwSetWindowRefreshCallback(self.handle, if (callback != null) setRefreshCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
+
+fn setFocusCallbackWrapper(handle: ?*c.GLFWwindow, focused: c_int) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setFocusCallback.?(window, if (focused == c.GLFW_TRUE) true else false);
+}
+
+/// Sets the focus callback for the specified window.
+///
+/// This function sets the focus callback of the specified window, which is
+/// called when the window gains or loses input focus.
+///
+/// After the focus callback is called for a window that lost input focus,
+/// synthetic key and mouse button release events will be generated for all such
+/// that had been pressed. For more information, see @ref glfwSetKeyCallback
+/// and @ref glfwSetMouseButtonCallback.
+///
+/// @param[in] window The window whose callback to set.
+/// @param[in] callback The new callback, or null to remove the currently set
+/// callback.
+///
+/// @callback_param `window` the window whose input focus has changed.
+/// @callback_param `focused` `true` if the window was given input focus, or `false` if it lost it.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_focus
+pub inline fn setFocusCallback(self: Window, callback: ?fn (window: Window, focused: bool) void) void {
+    var internal = self.getInternal();
+    internal.setFocusCallback = callback;
+    _ = c.glfwSetWindowFocusCallback(self.handle, if (callback != null) setFocusCallbackWrapper else null);
 
     // The only error this could return would be glfw.Error.NotInitialized, which should
     // definitely have occurred before calls to this. Returning an error here makes the API
@@ -1124,30 +1160,6 @@ pub inline fn setRefreshCallback(self: Window, callback: ?fn (window: Window) vo
 
 // TODO(window):
 
-// /// Sets the focus callback for the specified window.
-// ///
-// /// This function sets the focus callback of the specified window, which is
-// /// called when the window gains or loses input focus.
-// ///
-// /// After the focus callback is called for a window that lost input focus,
-// /// synthetic key and mouse button release events will be generated for all such
-// /// that had been pressed. For more information, see @ref glfwSetKeyCallback
-// /// and @ref glfwSetMouseButtonCallback.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_param `window` the window whose content needs to be refreshed.
-// /// @callback_param `focused` `true` if the window was given input focus, or `false` if it lost it.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_focus
-// GLFWAPI GLFWwindowfocusfun glfwSetWindowFocusCallback(GLFWwindow* window, GLFWwindowfocusfun callback);
-
 // /// Sets the iconify callback for the specified window.
 // ///
 // /// This function sets the iconification callback of the specified window, which
@@ -1156,8 +1168,6 @@ pub inline fn setRefreshCallback(self: Window, callback: ?fn (window: Window) vo
 // /// @param[in] window The window whose callback to set.
 // /// @param[in] callback The new callback, or null to remove the currently set
 // /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
 // ///
 // /// @callback_param `window` the window which was iconified or restored.
 // /// @callback_param `focused` `true` if the window was iconified, or `false` if it was restored.
@@ -1178,8 +1188,6 @@ pub inline fn setRefreshCallback(self: Window, callback: ?fn (window: Window) vo
 // /// @param[in] window The window whose callback to set.
 // /// @param[in] callback The new callback, or null to remove the currently set
 // /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
 // ///
 // /// @callback_param `window` the window which was maximized or restored.
 // /// @callback_param `maximized` `true` if the window was maximized, or `false` if it was restored.
@@ -1197,8 +1205,6 @@ pub inline fn setRefreshCallback(self: Window, callback: ?fn (window: Window) vo
 // /// @param[in] window The window whose callback to set.
 // /// @param[in] callback The new callback, or null to remove the currently set
 // /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
 // ///
 // /// @callback_param `window` the window whose framebuffer was resized.
 // /// @callback_param `width` the new width, in pixels, of the framebuffer.
@@ -1217,8 +1223,6 @@ pub inline fn setRefreshCallback(self: Window, callback: ?fn (window: Window) vo
 // /// @param[in] window The window whose callback to set.
 // /// @param[in] callback The new callback, or null to remove the currently set
 // /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
 // ///
 // /// @callback_param `window` the window whose content scale changed.
 // /// @callback_param `xscale` the new x-axis content scale of the window.
@@ -1851,6 +1855,27 @@ test "setRefreshCallback" {
     window.setRefreshCallback((struct {
         fn callback(_window: Window) void {
             _ = _window;
+        }
+    }).callback);
+}
+
+test "setFocusCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setFocusCallback((struct {
+        fn callback(_window: Window, focused: bool) void {
+            _ = _window;
+            _ = focused;
         }
     }).callback);
 }
