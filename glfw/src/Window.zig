@@ -1006,33 +1006,33 @@ pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isi
     try getError();
 }
 
-// TODO(window):
+/// Returns an attribute of the specified window.
+///
+/// This function returns the value of an attribute of the specified window or its OpenGL or OpenGL
+/// ES context.
+///
+/// @param[in] window The window to query.
+/// @param[in] attrib The window attribute (see window_attribs) whose value to return.
+/// @return The value of the attribute, or zero if an error occurred.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+///
+/// Framebuffer related hints are not window attributes. See window_attribs_fb for more information.
+///
+/// Zero is a valid value for many window and context related attributes so you cannot use a return
+/// value of zero as an indication of errors. However, this function should not fail as long as it
+/// is passed valid arguments and the library has been initialized.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_attribs, glfw.Window.setAttrib
+pub inline fn getAttrib(self: Window, attrib: isize) Error!isize {
+    const v = c.glfwGetWindowAttrib(self.handle, @intCast(c_int, attrib));
+    try getError();
+    return v;
+}
 
-// /// Returns an attribute of the specified window.
-// ///
-// /// This function returns the value of an attribute of the specified window or
-// /// its OpenGL or OpenGL ES context.
-// ///
-// /// @param[in] window The window to query.
-// /// @param[in] attrib The [window attribute](@ref window_attribs) whose value to
-// /// return.
-// /// @return The value of the attribute, or zero if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// Framebuffer related hints are not window attributes. See @ref
-// /// window_attribs_fb for more information.
-// ///
-// /// Zero is a valid value for many window and context related
-// /// attributes so you cannot use a return value of zero as an indication of
-// /// errors. However, this function should not fail as long as it is passed
-// /// valid arguments and the library has been [initialized](@ref intro_init).
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_attribs, glfw.Window.setAttrib
-// GLFWAPI int glfwGetWindowAttrib(GLFWwindow* window, int attrib);
+// TODO(window):
 
 // /// Sets an attribute of the specified window.
 // ///
@@ -1832,4 +1832,20 @@ test "setMonitor" {
     defer window.destroy();
 
     window.setMonitor(null, 10, 10, 640, 480, 60) catch |err| std.debug.print("can't set monitor, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "getAttrib" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.getAttrib(glfw.focused) catch |err| std.debug.print("can't check if window is focused, not supported by OS maybe? error={}\n", .{err});
 }
