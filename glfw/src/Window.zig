@@ -41,6 +41,7 @@ pub const InternalUserPointer = struct {
     setCloseCallback: ?fn (window: Window) void,
     setRefreshCallback: ?fn (window: Window) void,
     setFocusCallback: ?fn (window: Window, focused: bool) void,
+    setIconifyCallback: ?fn (window: Window, iconified: bool) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1158,27 +1159,42 @@ pub inline fn setFocusCallback(self: Window, callback: ?fn (window: Window, focu
     getError() catch {};
 }
 
-// TODO(window):
+fn setIconifyCallbackWrapper(handle: ?*c.GLFWwindow, iconified: c_int) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setIconifyCallback.?(window, if (iconified == c.GLFW_TRUE) true else false);
+}
 
-// /// Sets the iconify callback for the specified window.
-// ///
-// /// This function sets the iconification callback of the specified window, which
-// /// is called when the window is iconified or restored.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// ///
-// /// @callback_param `window` the window which was iconified or restored.
-// /// @callback_param `focused` `true` if the window was iconified, or `false` if it was restored.
-// ///
-// /// wayland: The wl_shell protocol has no concept of iconification,
-// /// this callback will never be called when using this deprecated protocol.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_iconify
-// GLFWAPI GLFWwindowiconifyfun glfwSetWindowIconifyCallback(GLFWwindow* window, GLFWwindowiconifyfun callback);
+/// Sets the iconify callback for the specified window.
+///
+/// This function sets the iconification callback of the specified window, which
+/// is called when the window is iconified or restored.
+///
+/// @param[in] window The window whose callback to set.
+/// @param[in] callback The new callback, or null to remove the currently set
+/// callback.
+///
+/// @callback_param `window` the window which was iconified or restored.
+/// @callback_param `iconified` `true` if the window was iconified, or `false` if it was restored.
+///
+/// wayland: The wl_shell protocol has no concept of iconification,
+/// this callback will never be called when using this deprecated protocol.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_iconify
+pub inline fn setIconifyCallback(self: Window, callback: ?fn (window: Window, iconified: bool) void) void {
+    var internal = self.getInternal();
+    internal.setIconifyCallback = callback;
+    _ = c.glfwSetWindowIconifyCallback(self.handle, if (callback != null) setIconifyCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
+
+// TODO(window):
 
 // /// Sets the maximize callback for the specified window.
 // ///
@@ -1876,6 +1892,27 @@ test "setFocusCallback" {
         fn callback(_window: Window, focused: bool) void {
             _ = _window;
             _ = focused;
+        }
+    }).callback);
+}
+
+test "setIconifyCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setIconifyCallback((struct {
+        fn callback(_window: Window, iconified: bool) void {
+            _ = _window;
+            _ = iconified;
         }
     }).callback);
 }
