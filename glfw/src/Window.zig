@@ -14,6 +14,31 @@ const Window = @This();
 
 handle: *c.GLFWwindow,
 
+/// Returns a Zig GLFW window from an underlying C GLFW window handle.
+///
+/// Note that the Zig GLFW library stores a custom user pointer in order to make callbacks nicer,
+/// see glfw.Window.InternalUserPointer.
+pub inline fn from(handle: *c.GLFWwindow) Error!Window {
+    const ptr = c.glfwGetWindowUserPointer(handle);
+    if (ptr == null) {
+        const internal = try std.heap.c_allocator.create(InternalUserPointer);
+        c.glfwSetWindowUserPointer(handle, @ptrCast(*c_void, internal));
+        try getError();
+    }
+    return Window{ .handle = handle };
+}
+
+/// The actual type which is stored by the Zig GLFW library in glfwSetWindowUserPointer.
+///
+/// This is used to internally carry function callbacks with nicer Zig interfaces.
+pub const InternalUserPointer = struct {
+    /// The actual user pointer that the user of the library wished to set via setUserPointer.
+    user_pointer: ?*c_void,
+
+    // Callbacks to be invoked by wrapper functions.
+    setPosCallback: ?fn (window: Window, xpos: isize, ypos: isize) void,
+};
+
 /// Resets all window hints to their default values.
 ///
 /// This function resets all window hints to their default values.
@@ -212,7 +237,7 @@ pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: 
         if (share) |w| w.handle else null,
     );
     try getError();
-    return Window{ .handle = handle.? };
+    return from(handle.?);
 }
 
 /// Destroys the specified window and its context.
@@ -232,7 +257,9 @@ pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: 
 ///
 /// see also: window_creation, glfw.Window.create
 pub inline fn destroy(self: Window) void {
+    const internal = self.getInternal();
     c.glfwDestroyWindow(self.handle);
+    std.heap.c_allocator.destroy(internal);
 
     // Technically, glfwDestroyWindow could produce errors including glfw.Error.NotInitialized and
     // glfw.Error.PlatformError. But how would anybody handle them? By creating a new window to
@@ -1060,6 +1087,12 @@ pub inline fn setAttrib(self: Window, attrib: isize, value: bool) Error!void {
     try getError();
 }
 
+pub inline fn getInternal(self: Window) *InternalUserPointer {
+    const ptr = c.glfwGetWindowUserPointer(self.handle);
+    if (ptr) |p| return @ptrCast(*InternalUserPointer, @alignCast(@alignOf(*InternalUserPointer), p));
+    @panic("expected GLFW window user pointer to be *glfw.Window.InternalUserPointer, found null");
+}
+
 /// Sets the user pointer of the specified window.
 ///
 /// This function sets the user-defined pointer of the specified window. The current value is
@@ -1069,12 +1102,8 @@ pub inline fn setAttrib(self: Window, attrib: isize, value: bool) Error!void {
 ///
 /// see also: window_userptr, glfw.Window.getUserPointer
 pub inline fn setUserPointer(self: Window, Type: anytype, pointer: Type) void {
-    c.glfwSetWindowUserPointer(self.handle, @ptrCast(*c_void, pointer));
-
-    // The only error this could return would be glfw.Error.NotInitialized, which should
-    // definitely have occurred before calls to this. Returning an error here makes the API
-    // awkward to use, so we discard it instead.
-    getError() catch {};
+    var internal = self.getInternal();
+    internal.user_pointer = @ptrCast(*c_void, pointer);
 }
 
 /// Returns the user pointer of the specified window.
@@ -1086,43 +1115,49 @@ pub inline fn setUserPointer(self: Window, Type: anytype, pointer: Type) void {
 ///
 /// see also: window_userptr, glfw.Window.setUserPointer
 pub inline fn getUserPointer(self: Window, Type: anytype) ?Type {
-    const ptr = c.glfwGetWindowUserPointer(self.handle);
-    if (ptr) |p| return @ptrCast(Type, @alignCast(@alignOf(Type), p));
+    var internal = self.getInternal();
+    if (internal.user_pointer) |p| return @ptrCast(Type, @alignCast(@alignOf(Type), p));
     return null;
 }
 
-// TODO(window):
+fn setPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: c_int, ypos: c_int) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setPosCallback.?(window, @intCast(isize, xpos), @intCast(isize, ypos));
+}
 
-// /// Sets the position callback for the specified window.
-// ///
-// /// This function sets the position callback of the specified window, which is
-// /// called when the window is moved. The callback is provided with the
-// /// position, in screen coordinates, of the upper-left corner of the content
-// /// area of the window.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, int xpos, int ypos)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWwindowposfun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// wayland: This callback will never be called, as there is no way for
-// /// an application to know its global position.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_pos
-// ///
-// GLFWAPI GLFWwindowposfun glfwSetWindowPosCallback(GLFWwindow* window, GLFWwindowposfun callback);
+/// Sets the position callback for the specified window.
+///
+/// This function sets the position callback of the specified window, which is called when the
+/// window is moved. The callback is provided with the position, in screen coordinates, of the
+/// upper-left corner of the content area of the window.
+///
+/// @param[in] callback The new callback, or null to remove the currently set callback.
+///
+/// @callback_param `window` the window that moved.
+/// @callback_param `xpos` the new x-coordinate, in screen coordinates, of the upper-left corner of
+/// the content area of the window. 
+/// @callback_param `ypos` the new y-coordinate, in screen coordinates, of the upper-left corner of
+/// the content area of the window. 
+///
+/// wayland: This callback will never be called, as there is no way for an application to know its
+/// global position.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_pos
+pub inline fn setPosCallback(self: Window, callback: ?fn (window: Window, xpos: isize, ypos: isize) void) void {
+    var internal = self.getInternal();
+    internal.setPosCallback = callback;
+    _ = c.glfwSetWindowPosCallback(self.handle, if (callback != null) setPosCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
+
+// TODO(window):
 
 // /// Sets the size callback for the specified window.
 // ///
@@ -1898,4 +1933,26 @@ test "getUserPointer" {
     window.setUserPointer(*T, &my_value);
     const got = window.getUserPointer(*T);
     std.debug.assert(&my_value == got);
+}
+
+test "setPosCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setPosCallback((struct {
+        fn callback(_window: Window, xpos: isize, ypos: isize) void {
+            _ = _window;
+            _ = xpos;
+            _ = ypos;
+        }
+    }).callback);
 }
