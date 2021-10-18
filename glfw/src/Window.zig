@@ -38,6 +38,7 @@ pub const InternalUserPointer = struct {
     // Callbacks to be invoked by wrapper functions.
     setPosCallback: ?fn (window: Window, xpos: isize, ypos: isize) void,
     setSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
+    setCloseCallback: ?fn (window: Window) void,
 };
 
 /// Resets all window hints to their default values.
@@ -817,21 +818,6 @@ pub inline fn swapBuffers(self: Window) Error!void {
 
 // TODO(window):
 
-// /// The function pointer type for window close callbacks.
-// ///
-// /// This is the function pointer type for window close callbacks. A window
-// /// close callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window)
-// /// @endcode
-// ///
-// /// @param[in] window The window that the user attempted to close.
-// ///
-// /// see also: window_close, glfw.Window.setCloseCallback
-// ///
-// /// @glfw3 Added window handle parameter.
-// typedef void (* GLFWwindowclosefun)(GLFWwindow*);
-
 // /// The function pointer type for window content refresh callbacks.
 // ///
 // /// This is the function pointer type for window content refresh callbacks.
@@ -1153,43 +1139,45 @@ pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width
     getError() catch {};
 }
 
-// TODO(window):
+fn setCloseCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setCloseCallback.?(window);
+}
 
-// /// Sets the close callback for the specified window.
-// ///
-// /// This function sets the close callback of the specified window, which is
-// /// called when the user attempts to close the window, for example by clicking
-// /// the close widget in the title bar.
-// ///
-// /// The close flag is set before this callback is called, but you can modify it
-// /// at any time with @ref glfwSetWindowShouldClose.
-// ///
-// /// The close callback is not triggered by @ref glfwDestroyWindow.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWwindowclosefun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// macos: Selecting Quit from the application menu will trigger the
-// /// close callback for all windows.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_close
-// ///
-// /// @glfw3 Added window handle parameter and return value.
-// GLFWAPI GLFWwindowclosefun glfwSetWindowCloseCallback(GLFWwindow* window, GLFWwindowclosefun callback);
+/// Sets the close callback for the specified window.
+///
+/// This function sets the close callback of the specified window, which is called when the user
+/// attempts to close the window, for example by clicking the close widget in the title bar.
+///
+/// The close flag is set before this callback is called, but you can modify it at any time with
+/// glfw.Window.setShouldClose.
+///
+/// The close callback is not triggered by glfw.Window.destroy.
+///
+/// @param[in] window The window whose callback to set.
+/// @param[in] callback The new callback, or null to remove the currently set callback.
+///
+/// @callback_param `window` the window that the user attempted to close.
+///
+/// macos: Selecting Quit from the application menu will trigger the close callback for all
+/// windows.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_close
+pub inline fn setCloseCallback(self: Window, callback: ?fn (window: Window) void) void {
+    var internal = self.getInternal();
+    internal.setCloseCallback = callback;
+    _ = c.glfwSetWindowCloseCallback(self.handle, if (callback != null) setCloseCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
+
+// TODO(window):
 
 // /// Sets the refresh callback for the specified window.
 // ///
@@ -1214,13 +1202,9 @@ pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width
 // /// For more information about the callback parameters, see the
 // /// [function pointer type](@ref GLFWwindowrefreshfun).
 // ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: window_refresh
-// ///
-// /// @glfw3 Added window handle parameter and return value.
 // GLFWAPI GLFWwindowrefreshfun glfwSetWindowRefreshCallback(GLFWwindow* window, GLFWwindowrefreshfun callback);
 
 // /// Sets the focus callback for the specified window.
@@ -1246,12 +1230,9 @@ pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width
 // /// For more information about the callback parameters, see the
 // /// [function pointer type](@ref GLFWwindowfocusfun).
 // ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: window_focus
-// ///
 // GLFWAPI GLFWwindowfocusfun glfwSetWindowFocusCallback(GLFWwindow* window, GLFWwindowfocusfun callback);
 
 // /// Sets the iconify callback for the specified window.
@@ -1272,15 +1253,12 @@ pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width
 // /// For more information about the callback parameters, see the
 // /// [function pointer type](@ref GLFWwindowiconifyfun).
 // ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
 // /// wayland: The wl_shell protocol has no concept of iconification,
 // /// this callback will never be called when using this deprecated protocol.
 // ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: window_iconify
-// ///
 // GLFWAPI GLFWwindowiconifyfun glfwSetWindowIconifyCallback(GLFWwindow* window, GLFWwindowiconifyfun callback);
 
 // /// Sets the maximize callback for the specified window.
@@ -1301,12 +1279,9 @@ pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width
 // /// For more information about the callback parameters, see the
 // /// [function pointer type](@ref GLFWwindowmaximizefun).
 // ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: window_maximize
-// ///
 // GLFWAPI GLFWwindowmaximizefun glfwSetWindowMaximizeCallback(GLFWwindow* window, GLFWwindowmaximizefun callback);
 
 // /// Sets the framebuffer resize callback for the specified window.
@@ -1327,12 +1302,9 @@ pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width
 // /// For more information about the callback parameters, see the
 // /// [function pointer type](@ref GLFWframebuffersizefun).
 // ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: window_fbsize
-// ///
 // GLFWAPI GLFWframebuffersizefun glfwSetFramebufferSizeCallback(GLFWwindow* window, GLFWframebuffersizefun callback);
 
 // /// Sets the window content scale callback for the specified window.
@@ -1353,12 +1325,9 @@ pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width
 // /// For more information about the callback parameters, see the
 // /// [function pointer type](@ref GLFWwindowcontentscalefun).
 // ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: window_scale, glfw.Window.getContentScale
-// ///
 // GLFWAPI GLFWwindowcontentscalefun glfwSetWindowContentScaleCallback(GLFWwindow* window, GLFWwindowcontentscalefun callback);
 
 test "defaultHints" {
@@ -1943,6 +1912,26 @@ test "setSizeCallback" {
             _ = _window;
             _ = width;
             _ = height;
+        }
+    }).callback);
+}
+
+test "setCloseCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setCloseCallback((struct {
+        fn callback(_window: Window) void {
+            _ = _window;
         }
     }).callback);
 }
