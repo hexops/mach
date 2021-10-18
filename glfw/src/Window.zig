@@ -1011,7 +1011,6 @@ pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isi
 /// This function returns the value of an attribute of the specified window or its OpenGL or OpenGL
 /// ES context.
 ///
-/// @param[in] window The window to query.
 /// @param[in] attrib The window attribute (see window_attribs) whose value to return.
 /// @return The value of the attribute, or zero if an error occurred.
 ///
@@ -1032,38 +1031,36 @@ pub inline fn getAttrib(self: Window, attrib: isize) Error!isize {
     return v;
 }
 
-// TODO(window):
+/// Sets an attribute of the specified window.
+///
+/// This function sets the value of an attribute of the specified window.
+///
+/// The supported attributes are glfw.decorated, glfw.resizable, glfw.floating, glfw.auto_iconify,
+/// glfw.focus_on_show.
+///
+/// Some of these attributes are ignored for full screen windows. The new value will take effect
+/// if the window is later made windowed.
+///
+/// Some of these attributes are ignored for windowed mode windows. The new value will take effect
+/// if the window is later made full screen.
+///
+/// @param[in] attrib A supported window attribute.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum, glfw.Error.InvalidValue and glfw.Error.PlatformError.
+///
+/// Calling glfw.Window.getAttrib will always return the latest
+/// value, even if that value is ignored by the current mode of the window.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_attribs, glfw.Window.getAttrib
+///
+pub inline fn setAttrib(self: Window, attrib: isize, value: bool) Error!void {
+    c.glfwSetWindowAttrib(self.handle, @intCast(c_int, attrib), if (value) c.GLFW_TRUE else c.GLFW_FALSE);
+    try getError();
+}
 
-// /// Sets an attribute of the specified window.
-// ///
-// /// This function sets the value of an attribute of the specified window.
-// ///
-// /// The supported attributes are [GLFW_DECORATED](@ref GLFW_DECORATED_attrib),
-// /// [GLFW_RESIZABLE](@ref GLFW_RESIZABLE_attrib),
-// /// [GLFW_FLOATING](@ref GLFW_FLOATING_attrib),
-// /// [GLFW_AUTO_ICONIFY](@ref GLFW_AUTO_ICONIFY_attrib) and
-// /// [GLFW_FOCUS_ON_SHOW](@ref GLFW_FOCUS_ON_SHOW_attrib).
-// ///
-// /// Some of these attributes are ignored for full screen windows. The new
-// /// value will take effect if the window is later made windowed.
-// ///
-// /// Some of these attributes are ignored for windowed mode windows. The new
-// /// value will take effect if the window is later made full screen.
-// ///
-// /// @param[in] window The window to set the attribute for.
-// /// @param[in] attrib A supported window attribute.
-// /// @param[in] value `GLFW_TRUE` or `GLFW_FALSE`.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum, glfw.Error.InvalidValue and glfw.Error.PlatformError.
-// ///
-// /// Calling glfw.Window.getAttrib will always return the latest
-// /// value, even if that value is ignored by the current mode of the window.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_attribs, glfw.Window.getAttrib
-// ///
-// GLFWAPI void glfwSetWindowAttrib(GLFWwindow* window, int attrib, int value);
+// TODO(window):
 
 // /// Sets the user pointer of the specified window.
 // ///
@@ -1848,4 +1845,20 @@ test "getAttrib" {
     defer window.destroy();
 
     _ = window.getAttrib(glfw.focused) catch |err| std.debug.print("can't check if window is focused, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "setAttrib" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setAttrib(glfw.decorated, false) catch |err| std.debug.print("can't remove window decorations, not supported by OS maybe? error={}\n", .{err});
 }
