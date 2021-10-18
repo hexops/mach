@@ -65,7 +65,7 @@ pub inline fn hint(hint_const: usize, value: anytype) Error!void {
         },
         .Array => |arr_type| {
             if (arr_type.child != u8) {
-                @compileError("expected array of u8, not " ++ @typeName(arr_type));
+                @compileError("expected array of u8, got " ++ @typeName(arr_type));
             }
             c.glfwWindowHintString(@intCast(c_int, hint_const), &value[0]);
         },
@@ -74,10 +74,10 @@ pub inline fn hint(hint_const: usize, value: anytype) Error!void {
             switch (pointed_type) {
                 .Array => |arr_type| {
                     if (arr_type.child != u8) {
-                        @compileError("expected pointer to array of u8, not " ++ @typeName(arr_type));
+                        @compileError("expected pointer to array of u8, got " ++ @typeName(arr_type));
                     }
                 },
-                else =>  @compileError("expected pointer to array, not " ++ @typeName(pointed_type)),
+                else =>  @compileError("expected pointer to array, got " ++ @typeName(pointed_type)),
             }
             c.glfwWindowHintString(@intCast(c_int, hint_const), &value[0]);
         },
@@ -1428,7 +1428,7 @@ test "hint array str" {
     try glfw.init();
     defer glfw.terminate();
 
-    const str_arr = [_]u8{ 'm', 'y', 'c', 'l', 'a', 's', 's'};
+    const str_arr = [_]u8{ 'm', 'y', 'c', 'l', 'a', 's', 's' };
 
     try hint(glfw.x11_class_name, str_arr);
     try defaultHints();
