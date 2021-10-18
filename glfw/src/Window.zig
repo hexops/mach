@@ -822,24 +822,23 @@ pub inline fn swapBuffers(self: Window) Error!void {
     try getError();
 }
 
-// TODO(window):
-
-// /// Returns the monitor that the window uses for full screen mode.
-// ///
-// /// This function returns the handle of the monitor that the specified window is
-// /// in full screen on.
-// ///
-// /// @param[in] window The window to query.
-// /// @return The monitor, or null if the window is in windowed mode or an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_monitor, glfw.Window.setMonitor
-// ///
-// GLFWAPI GLFWmonitor* glfwGetWindowMonitor(GLFWwindow* window);
+/// Returns the monitor that the window uses for full screen mode.
+///
+/// This function returns the handle of the monitor that the specified window is in full screen on.
+///
+/// @return The monitor, or null if the window is in windowed mode.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_monitor, glfw.Window.setMonitor
+pub inline fn getMonitor(self: Window) Error!?Monitor {
+    const monitor = c.glfwGetWindowMonitor(self.handle);
+    try getError();
+    if (monitor) |m| return Monitor{ .handle = m };
+    return null;
+}
 
 /// Sets the mode, monitor, video mode and placement of a window.
 ///
@@ -1748,6 +1747,22 @@ test "swapBuffers" {
     defer window.destroy();
 
     _ = try window.swapBuffers();
+}
+
+test "getMonitor" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.getMonitor() catch |err| std.debug.print("can't get monitor, not supported by OS maybe? error={}\n", .{err});
 }
 
 test "setMonitor" {
