@@ -37,6 +37,7 @@ pub const InternalUserPointer = struct {
 
     // Callbacks to be invoked by wrapper functions.
     setPosCallback: ?fn (window: Window, xpos: isize, ypos: isize) void,
+    setSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
 };
 
 /// Resets all window hints to their default values.
@@ -816,41 +817,6 @@ pub inline fn swapBuffers(self: Window) Error!void {
 
 // TODO(window):
 
-// /// The function pointer type for window position callbacks.
-// ///
-// /// This is the function pointer type for window position callbacks. A window
-// /// position callback function has the following signature:
-// /// @code
-// /// void callback_name(GLFWwindow* window, int xpos, int ypos)
-// /// @endcode
-// ///
-// /// @param[in] window The window that was moved.
-// /// @param[in] xpos The new x-coordinate, in screen coordinates, of the
-// /// upper-left corner of the content area of the window.
-// /// @param[in] ypos The new y-coordinate, in screen coordinates, of the
-// /// upper-left corner of the content area of the window.
-// ///
-// /// see also: window_pos, glfwSetWindowPosCallback
-// ///
-// typedef void (* GLFWwindowposfun)(GLFWwindow*,int,int);
-
-// /// The function pointer type for window size callbacks.
-// ///
-// /// This is the function pointer type for window size callbacks. A window size
-// /// callback function has the following signature:
-// /// @code
-// /// void callback_name(GLFWwindow* window, int width, int height)
-// /// @endcode
-// ///
-// /// @param[in] window The window that was resized.
-// /// @param[in] width The new width, in screen coordinates, of the window.
-// /// @param[in] height The new height, in screen coordinates, of the window.
-// ///
-// /// see also: window_size, glfw.Window.setSizeCallback
-// ///
-// /// @glfw3 Added window handle parameter.
-// typedef void (* GLFWwindowsizefun)(GLFWwindow*,int,int);
-
 // /// The function pointer type for window close callbacks.
 // ///
 // /// This is the function pointer type for window close callbacks. A window
@@ -1157,35 +1123,37 @@ pub inline fn setPosCallback(self: Window, callback: ?fn (window: Window, xpos: 
     getError() catch {};
 }
 
-// TODO(window):
+fn setSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setSizeCallback.?(window, @intCast(isize, width), @intCast(isize, height));
+}
 
-// /// Sets the size callback for the specified window.
-// ///
-// /// This function sets the size callback of the specified window, which is
-// /// called when the window is resized. The callback is provided with the size,
-// /// in screen coordinates, of the content area of the window.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, int width, int height)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWwindowsizefun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_size
-// ///
-// /// @glfw3 Added window handle parameter and return value.
-// GLFWAPI GLFWwindowsizefun glfwSetWindowSizeCallback(GLFWwindow* window, GLFWwindowsizefun callback);
+/// Sets the size callback for the specified window.
+///
+/// This function sets the size callback of the specified window, which is called when the window
+/// is resized. The callback is provided with the size, in screen coordinates, of the content area
+/// of the window.
+///
+/// @callback_param `window` the window that was resized.
+/// @callback_param `width` the new width, in screen coordinates, of the window.
+/// @callback_param `height` the new height, in screen coordinates, of the window.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_size
+pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width: isize, height: isize) void) void {
+    var internal = self.getInternal();
+    internal.setSizeCallback = callback;
+    _ = c.glfwSetWindowSizeCallback(self.handle, if (callback != null) setSizeCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
+
+// TODO(window):
 
 // /// Sets the close callback for the specified window.
 // ///
@@ -1953,6 +1921,28 @@ test "setPosCallback" {
             _ = _window;
             _ = xpos;
             _ = ypos;
+        }
+    }).callback);
+}
+
+test "setSizeCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setSizeCallback((struct {
+        fn callback(_window: Window, width: isize, height: isize) void {
+            _ = _window;
+            _ = width;
+            _ = height;
         }
     }).callback);
 }
