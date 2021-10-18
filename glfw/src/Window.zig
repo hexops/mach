@@ -42,6 +42,7 @@ pub const InternalUserPointer = struct {
     setRefreshCallback: ?fn (window: Window) void,
     setFocusCallback: ?fn (window: Window, focused: bool) void,
     setIconifyCallback: ?fn (window: Window, iconified: bool) void,
+    setMaximizeCallback: ?fn (window: Window, maximized: bool) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1194,24 +1195,40 @@ pub inline fn setIconifyCallback(self: Window, callback: ?fn (window: Window, ic
     getError() catch {};
 }
 
-// TODO(window):
+fn setMaximizeCallbackWrapper(handle: ?*c.GLFWwindow, maximized: c_int) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setMaximizeCallback.?(window, if (maximized == c.GLFW_TRUE) true else false);
+}
 
-// /// Sets the maximize callback for the specified window.
-// ///
-// /// This function sets the maximization callback of the specified window, which
-// /// is called when the window is maximized or restored.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// ///
-// /// @callback_param `window` the window which was maximized or restored.
-// /// @callback_param `maximized` `true` if the window was maximized, or `false` if it was restored.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_maximize
+/// Sets the maximize callback for the specified window.
+///
+/// This function sets the maximization callback of the specified window, which
+/// is called when the window is maximized or restored.
+///
+/// @param[in] window The window whose callback to set.
+/// @param[in] callback The new callback, or null to remove the currently set
+/// callback.
+///
+/// @callback_param `window` the window which was maximized or restored.
+/// @callback_param `maximized` `true` if the window was maximized, or `false` if it was restored.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_maximize
 // GLFWAPI GLFWwindowmaximizefun glfwSetWindowMaximizeCallback(GLFWwindow* window, GLFWwindowmaximizefun callback);
+pub inline fn setMaximizeCallback(self: Window, callback: ?fn (window: Window, maximized: bool) void) void {
+    var internal = self.getInternal();
+    internal.setMaximizeCallback = callback;
+    _ = c.glfwSetWindowMaximizeCallback(self.handle, if (callback != null) setMaximizeCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
+
+// TODO(window):
 
 // /// Sets the framebuffer resize callback for the specified window.
 // ///
@@ -1913,6 +1930,27 @@ test "setIconifyCallback" {
         fn callback(_window: Window, iconified: bool) void {
             _ = _window;
             _ = iconified;
+        }
+    }).callback);
+}
+
+test "setMaximizeCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setMaximizeCallback((struct {
+        fn callback(_window: Window, maximized: bool) void {
+            _ = _window;
+            _ = maximized;
         }
     }).callback);
 }
