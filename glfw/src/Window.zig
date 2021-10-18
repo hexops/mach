@@ -1060,25 +1060,24 @@ pub inline fn setAttrib(self: Window, attrib: isize, value: bool) Error!void {
     try getError();
 }
 
-// TODO(window):
+/// Sets the user pointer of the specified window.
+///
+/// This function sets the user-defined pointer of the specified window. The current value is
+/// retained until the window is destroyed. The initial value is null.
+///
+/// @thread_safety This function may be called from any thread. Access is not synchronized.
+///
+/// see also: window_userptr, glfw.Window.getUserPointer
+pub inline fn setUserPointer(self: Window, Type: anytype, pointer: Type) void {
+    c.glfwSetWindowUserPointer(self.handle, @ptrCast(*c_void, pointer));
 
-// /// Sets the user pointer of the specified window.
-// ///
-// /// This function sets the user-defined pointer of the specified window. The
-// /// current value is retained until the window is destroyed. The initial value
-// /// is null.
-// ///
-// /// @param[in] window The window whose pointer to set.
-// /// @param[in] pointer The new value.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread. Access is not
-// /// synchronized.
-// ///
-// /// see also: window_userptr, glfwGetWindowUserPointer
-// ///
-// GLFWAPI void glfwSetWindowUserPointer(GLFWwindow* window, void* pointer);
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
+
+// TODO(window):
 
 // /// Returns the user pointer of the specified window.
 // ///
@@ -1861,4 +1860,23 @@ test "setAttrib" {
     defer window.destroy();
 
     window.setAttrib(glfw.decorated, false) catch |err| std.debug.print("can't remove window decorations, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "setUserPointer" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    const T = struct { name: []const u8 };
+    var my_value = T{ .name = "my window!" };
+
+    window.setUserPointer(*T, &my_value);
 }
