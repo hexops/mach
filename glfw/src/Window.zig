@@ -1077,23 +1077,21 @@ pub inline fn setUserPointer(self: Window, Type: anytype, pointer: Type) void {
     getError() catch {};
 }
 
-// TODO(window):
+/// Returns the user pointer of the specified window.
+///
+/// This function returns the current value of the user-defined pointer of the specified window.
+/// The initial value is null.
+///
+/// @thread_safety This function may be called from any thread. Access is not synchronized.
+///
+/// see also: window_userptr, glfw.Window.setUserPointer
+pub inline fn getUserPointer(self: Window, Type: anytype) ?Type {
+    const ptr = c.glfwGetWindowUserPointer(self.handle);
+    if (ptr) |p| return @ptrCast(Type, @alignCast(@alignOf(Type), p));
+    return null;
+}
 
-// /// Returns the user pointer of the specified window.
-// ///
-// /// This function returns the current value of the user-defined pointer of the
-// /// specified window. The initial value is null.
-// ///
-// /// @param[in] window The window whose pointer to return.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread. Access is not
-// /// synchronized.
-// ///
-// /// see also: window_userptr, glfwSetWindowUserPointer
-// ///
-// GLFWAPI void* glfwGetWindowUserPointer(GLFWwindow* window);
+// TODO(window):
 
 // /// Sets the position callback for the specified window.
 // ///
@@ -1879,4 +1877,25 @@ test "setUserPointer" {
     var my_value = T{ .name = "my window!" };
 
     window.setUserPointer(*T, &my_value);
+}
+
+test "getUserPointer" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    const T = struct { name: []const u8 };
+    var my_value = T{ .name = "my window!" };
+
+    window.setUserPointer(*T, &my_value);
+    const got = window.getUserPointer(*T);
+    std.debug.assert(&my_value == got);
 }
