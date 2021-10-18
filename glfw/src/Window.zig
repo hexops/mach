@@ -39,6 +39,7 @@ pub const InternalUserPointer = struct {
     setPosCallback: ?fn (window: Window, xpos: isize, ypos: isize) void,
     setSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
     setCloseCallback: ?fn (window: Window) void,
+    setRefreshCallback: ?fn (window: Window) void,
 };
 
 /// Resets all window hints to their default values.
@@ -818,101 +819,6 @@ pub inline fn swapBuffers(self: Window) Error!void {
 
 // TODO(window):
 
-// /// The function pointer type for window content refresh callbacks.
-// ///
-// /// This is the function pointer type for window content refresh callbacks.
-// /// A window content refresh callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window);
-// /// @endcode
-// ///
-// /// @param[in] window The window whose content needs to be refreshed.
-// ///
-// /// see also: window_refresh, glfw.Window.setRefreshCallback
-// ///
-// /// @glfw3 Added window handle parameter.
-// typedef void (* GLFWwindowrefreshfun)(GLFWwindow*);
-
-// /// The function pointer type for window focus callbacks.
-// ///
-// /// This is the function pointer type for window focus callbacks. A window
-// /// focus callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, int focused)
-// /// @endcode
-// ///
-// /// @param[in] window The window that gained or lost input focus.
-// /// @param[in] focused `GLFW_TRUE` if the window was given input focus, or
-// /// `GLFW_FALSE` if it lost it.
-// ///
-// /// see also: window_focus, glfw.Window.setFocusCallback
-// ///
-// typedef void (* GLFWwindowfocusfun)(GLFWwindow*,int);
-
-// /// The function pointer type for window iconify callbacks.
-// ///
-// /// This is the function pointer type for window iconify callbacks. A window
-// /// iconify callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, int iconified)
-// /// @endcode
-// ///
-// /// @param[in] window The window that was iconified or restored.
-// /// @param[in] iconified `GLFW_TRUE` if the window was iconified, or
-// /// `GLFW_FALSE` if it was restored.
-// ///
-// /// see also: window_iconify, glfw.Window.setIconifyCallback
-// ///
-// typedef void (* GLFWwindowiconifyfun)(GLFWwindow*,int);
-
-// /// The function pointer type for window maximize callbacks.
-// ///
-// /// This is the function pointer type for window maximize callbacks. A window
-// /// maximize callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, int maximized)
-// /// @endcode
-// ///
-// /// @param[in] window The window that was maximized or restored.
-// /// @param[in] maximized `GLFW_TRUE` if the window was maximized, or
-// /// `GLFW_FALSE` if it was restored.
-// ///
-// /// see also: window_maximize, /// see also: glfw.Window.setMaximizeCallback
-// ///
-// typedef void (* GLFWwindowmaximizefun)(GLFWwindow*,int);
-
-// /// The function pointer type for framebuffer size callbacks.
-// ///
-// /// This is the function pointer type for framebuffer size callbacks.
-// /// A framebuffer size callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, int width, int height)
-// /// @endcode
-// ///
-// /// @param[in] window The window whose framebuffer was resized.
-// /// @param[in] width The new width, in pixels, of the framebuffer.
-// /// @param[in] height The new height, in pixels, of the framebuffer.
-// ///
-// /// see also: window_fbsize, glfw.Window.setFramebufferSizeCallback
-// ///
-// typedef void (* GLFWframebuffersizefun)(GLFWwindow*,int,int);
-
-// /// The function pointer type for window content scale callbacks.
-// ///
-// /// This is the function pointer type for window content scale callbacks.
-// /// A window content scale callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, float xscale, float yscale)
-// /// @endcode
-// ///
-// /// @param[in] window The window whose content scale changed.
-// /// @param[in] xscale The new x-axis content scale of the window.
-// /// @param[in] yscale The new y-axis content scale of the window.
-// ///
-// /// see also: window_scale, glfwSetWindowContentScaleCallback
-// ///
-// typedef void (* GLFWwindowcontentscalefun)(GLFWwindow*,float,float);
-
 // /// Returns the monitor that the window uses for full screen mode.
 // ///
 // /// This function returns the handle of the monitor that the specified window is
@@ -1177,7 +1083,11 @@ pub inline fn setCloseCallback(self: Window, callback: ?fn (window: Window) void
     getError() catch {};
 }
 
-// TODO(window):
+fn setRefreshCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setRefreshCallback.?(window);
+}
 
 // /// Sets the refresh callback for the specified window.
 // ///
@@ -1195,17 +1105,24 @@ pub inline fn setCloseCallback(self: Window, callback: ?fn (window: Window) void
 // /// @return The previously set callback, or null if no callback was set or the
 // /// library had not been [initialized](@ref intro_init).
 // ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window);
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWwindowrefreshfun).
+// /// @callback_param `window` the window whose content needs to be refreshed.
 // ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: window_refresh
 // GLFWAPI GLFWwindowrefreshfun glfwSetWindowRefreshCallback(GLFWwindow* window, GLFWwindowrefreshfun callback);
+pub inline fn setRefreshCallback(self: Window, callback: ?fn (window: Window) void) void {
+    var internal = self.getInternal();
+    internal.setCloseCallback = callback;
+    _ = c.glfwSetWindowRefreshCallback(self.handle, if (callback != null) setRefreshCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
+
+// TODO(window):
 
 // /// Sets the focus callback for the specified window.
 // ///
@@ -1223,12 +1140,8 @@ pub inline fn setCloseCallback(self: Window, callback: ?fn (window: Window) void
 // /// @return The previously set callback, or null if no callback was set or the
 // /// library had not been [initialized](@ref intro_init).
 // ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, int focused)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWwindowfocusfun).
+// /// @callback_param `window` the window whose content needs to be refreshed.
+// /// @callback_param `focused` `true` if the window was given input focus, or `false` if it lost it.
 // ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
@@ -1246,12 +1159,8 @@ pub inline fn setCloseCallback(self: Window, callback: ?fn (window: Window) void
 // /// @return The previously set callback, or null if no callback was set or the
 // /// library had not been [initialized](@ref intro_init).
 // ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, int iconified)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWwindowiconifyfun).
+// /// @callback_param `window` the window which was iconified or restored.
+// /// @callback_param `focused` `true` if the window was iconified, or `false` if it was restored.
 // ///
 // /// wayland: The wl_shell protocol has no concept of iconification,
 // /// this callback will never be called when using this deprecated protocol.
@@ -1272,12 +1181,8 @@ pub inline fn setCloseCallback(self: Window, callback: ?fn (window: Window) void
 // /// @return The previously set callback, or null if no callback was set or the
 // /// library had not been [initialized](@ref intro_init).
 // ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, int maximized)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWwindowmaximizefun).
+// /// @callback_param `window` the window which was maximized or restored.
+// /// @callback_param `maximized` `true` if the window was maximized, or `false` if it was restored.
 // ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
@@ -1295,12 +1200,9 @@ pub inline fn setCloseCallback(self: Window, callback: ?fn (window: Window) void
 // /// @return The previously set callback, or null if no callback was set or the
 // /// library had not been [initialized](@ref intro_init).
 // ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, int width, int height)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWframebuffersizefun).
+// /// @callback_param `window` the window whose framebuffer was resized.
+// /// @callback_param `width` the new width, in pixels, of the framebuffer.
+// /// @callback_param `height` the new height, in pixels, of the framebuffer.
 // ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
@@ -1318,12 +1220,9 @@ pub inline fn setCloseCallback(self: Window, callback: ?fn (window: Window) void
 // /// @return The previously set callback, or null if no callback was set or the
 // /// library had not been [initialized](@ref intro_init).
 // ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, float xscale, float yscale)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWwindowcontentscalefun).
+// /// @callback_param `window` the window whose content scale changed.
+// /// @callback_param `xscale` the new x-axis content scale of the window.
+// /// @callback_param `yscale` the new y-axis content scale of the window.
 // ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
@@ -1930,6 +1829,26 @@ test "setCloseCallback" {
     defer window.destroy();
 
     window.setCloseCallback((struct {
+        fn callback(_window: Window) void {
+            _ = _window;
+        }
+    }).callback);
+}
+
+test "setRefreshCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setRefreshCallback((struct {
         fn callback(_window: Window) void {
             _ = _window;
         }
