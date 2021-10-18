@@ -44,6 +44,7 @@ pub const InternalUserPointer = struct {
     setIconifyCallback: ?fn (window: Window, iconified: bool) void,
     setMaximizeCallback: ?fn (window: Window, maximized: bool) void,
     setFramebufferSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
+    setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1262,25 +1263,38 @@ pub inline fn setFramebufferSizeCallback(self: Window, callback: ?fn (window: Wi
     getError() catch {};
 }
 
-// TODO(window):
+fn setContentScaleCallbackWrapper(handle: ?*c.GLFWwindow, xscale: f32, yscale: f32) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setContentScaleCallback.?(window, xscale, yscale);
+}
 
-// /// Sets the window content scale callback for the specified window.
-// ///
-// /// This function sets the window content scale callback of the specified window,
-// /// which is called when the content scale of the specified window changes.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// ///
-// /// @callback_param `window` the window whose content scale changed.
-// /// @callback_param `xscale` the new x-axis content scale of the window.
-// /// @callback_param `yscale` the new y-axis content scale of the window.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_scale, glfw.Window.getContentScale
-// GLFWAPI GLFWwindowcontentscalefun glfwSetWindowContentScaleCallback(GLFWwindow* window, GLFWwindowcontentscalefun callback);
+/// Sets the window content scale callback for the specified window.
+///
+/// This function sets the window content scale callback of the specified window,
+/// which is called when the content scale of the specified window changes.
+///
+/// @param[in] window The window whose callback to set.
+/// @param[in] callback The new callback, or null to remove the currently set
+/// callback.
+///
+/// @callback_param `window` the window whose content scale changed.
+/// @callback_param `xscale` the new x-axis content scale of the window.
+/// @callback_param `yscale` the new y-axis content scale of the window.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_scale, glfw.Window.getContentScale
+pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Window, xscale: f32, yscale: f32) void) void {
+    var internal = self.getInternal();
+    internal.setContentScaleCallback = callback;
+    _ = c.glfwSetWindowContentScaleCallback(self.handle, if (callback != null) setContentScaleCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
 
 test "defaultHints" {
     const glfw = @import("main.zig");
@@ -1989,6 +2003,28 @@ test "setFramebufferSizeCallback" {
             _ = _window;
             _ = width;
             _ = height;
+        }
+    }).callback);
+}
+
+test "setContentScaleCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setContentScaleCallback((struct {
+        fn callback(_window: Window, xscale: f32, yscale: f32) void {
+            _ = _window;
+            _ = xscale;
+            _ = yscale;
         }
     }).callback);
 }
