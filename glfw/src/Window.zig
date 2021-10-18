@@ -43,6 +43,7 @@ pub const InternalUserPointer = struct {
     setFocusCallback: ?fn (window: Window, focused: bool) void,
     setIconifyCallback: ?fn (window: Window, iconified: bool) void,
     setMaximizeCallback: ?fn (window: Window, maximized: bool) void,
+    setFramebufferSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1228,25 +1229,40 @@ pub inline fn setMaximizeCallback(self: Window, callback: ?fn (window: Window, m
     getError() catch {};
 }
 
-// TODO(window):
+fn setFramebufferSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setFramebufferSizeCallback.?(window, @intCast(isize, width), @intCast(isize, height));
+}
 
-// /// Sets the framebuffer resize callback for the specified window.
-// ///
-// /// This function sets the framebuffer resize callback of the specified window,
-// /// which is called when the framebuffer of the specified window is resized.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// ///
-// /// @callback_param `window` the window whose framebuffer was resized.
-// /// @callback_param `width` the new width, in pixels, of the framebuffer.
-// /// @callback_param `height` the new height, in pixels, of the framebuffer.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: window_fbsize
-// GLFWAPI GLFWframebuffersizefun glfwSetFramebufferSizeCallback(GLFWwindow* window, GLFWframebuffersizefun callback);
+/// Sets the framebuffer resize callback for the specified window.
+///
+/// This function sets the framebuffer resize callback of the specified window,
+/// which is called when the framebuffer of the specified window is resized.
+///
+/// @param[in] window The window whose callback to set.
+/// @param[in] callback The new callback, or null to remove the currently set
+/// callback.
+///
+/// @callback_param `window` the window whose framebuffer was resized.
+/// @callback_param `width` the new width, in pixels, of the framebuffer.
+/// @callback_param `height` the new height, in pixels, of the framebuffer.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_fbsize
+pub inline fn setFramebufferSizeCallback(self: Window, callback: ?fn (window: Window, width: isize, height: isize) void) void {
+    var internal = self.getInternal();
+    internal.setFramebufferSizeCallback = callback;
+    _ = c.glfwSetFramebufferSizeCallback(self.handle, if (callback != null) setFramebufferSizeCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
+
+// TODO(window):
 
 // /// Sets the window content scale callback for the specified window.
 // ///
@@ -1951,6 +1967,28 @@ test "setMaximizeCallback" {
         fn callback(_window: Window, maximized: bool) void {
             _ = _window;
             _ = maximized;
+        }
+    }).callback);
+}
+
+test "setFramebufferSizeCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setFramebufferSizeCallback((struct {
+        fn callback(_window: Window, width: isize, height: isize) void {
+            _ = _window;
+            _ = width;
+            _ = height;
         }
     }).callback);
 }
