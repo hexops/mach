@@ -106,34 +106,37 @@ pub inline fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*c]co
     return null;
 }
 
-// TODO(vulkan):
-// /// Returns whether the specified queue family can present images.
-// ///
-// /// This function returns whether the specified queue family of the specified physical device
-// /// supports presentation to the platform GLFW was built for.
-// ///
-// /// If Vulkan or the required window surface creation instance extensions are not available on the
-// /// machine, or if the specified instance was not created with the required extensions, this
-// /// function returns `GLFW_FALSE` and generates a glfw.Error.APIUnavailable error. Call
-// /// glfw.vulkanSupported to check whether Vulkan is at least minimally available and
-// /// glfw.getRequiredInstanceExtensions to check what instance extensions are required.
-// ///
-// /// @param[in] instance The instance that the physical device belongs to.
-// /// @param[in] device The physical device that the queue family belongs to.
-// /// @param[in] queuefamily The index of the queue family to query.
-// /// @return `GLFW_TRUE` if the queue family supports presentation, or
-// /// `GLFW_FALSE` otherwise.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.APIUnavailable and glfw.Error.PlatformError.
-// ///
-// /// macos: This function currently always returns `GLFW_TRUE`, as the `VK_MVK_macos_surface`
-// /// extension does not provide a `vkGetPhysicalDevice*PresentationSupport` type function.
-// ///
-// /// @thread_safety This function may be called from any thread. For synchronization details of
-// /// Vulkan objects, see the Vulkan specification.
-// ///
-// /// see also: vulkan_present
-// GLFWAPI int glfwGetPhysicalDevicePresentationSupport(VkInstance instance, VkPhysicalDevice device, uint32_t queuefamily);
+/// Returns whether the specified queue family can present images.
+///
+/// This function returns whether the specified queue family of the specified physical device
+/// supports presentation to the platform GLFW was built for.
+///
+/// If Vulkan or the required window surface creation instance extensions are not available on the
+/// machine, or if the specified instance was not created with the required extensions, this
+/// function returns `GLFW_FALSE` and generates a glfw.Error.APIUnavailable error. Call
+/// glfw.vulkanSupported to check whether Vulkan is at least minimally available and
+/// glfw.getRequiredInstanceExtensions to check what instance extensions are required.
+///
+/// @param[in] instance The instance that the physical device belongs to.
+/// @param[in] device The physical device that the queue family belongs to.
+/// @param[in] queuefamily The index of the queue family to query.
+/// @return `GLFW_TRUE` if the queue family supports presentation, or
+/// `GLFW_FALSE` otherwise.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.APIUnavailable and glfw.Error.PlatformError.
+///
+/// macos: This function currently always returns `GLFW_TRUE`, as the `VK_MVK_macos_surface`
+/// extension does not provide a `vkGetPhysicalDevice*PresentationSupport` type function.
+///
+/// @thread_safety This function may be called from any thread. For synchronization details of
+/// Vulkan objects, see the Vulkan specification.
+///
+/// see also: vulkan_present
+pub inline fn getPhysicalDevicePresentationSupport(vk_instance: *opaque {}, vk_physical_device: *opaque {}, queue_family: u32) Error!bool {
+    const v = c.glfwGetPhysicalDevicePresentationSupport(@ptrCast(c.VkInstance, vk_instance), @ptrCast(c.VkPhysicalDevice, vk_physical_device), queue_family);
+    try getError();
+    return v == c.GLFW_TRUE;
+}
 
 // TODO(vulkan):
 // /// Creates a Vulkan surface for the specified window.
