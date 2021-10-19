@@ -3,6 +3,7 @@ const std = @import("std");
 const c = @import("c.zig").c;
 const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
+const Window = @import("Window.zig");
 
 /// Returns whether the Vulkan loader and an ICD have been found.
 ///
@@ -63,7 +64,6 @@ pub inline fn getRequiredInstanceExtensions() Error![][*c]const u8 {
     return extensions[0..count];
 }
 
-// TODO(vulkan):
 /// Vulkan API function pointer type.
 ///
 /// Generic function pointer used for returning Vulkan API function pointers.
@@ -120,12 +120,11 @@ pub inline fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*c]co
 /// @param[in] instance The instance that the physical device belongs to.
 /// @param[in] device The physical device that the queue family belongs to.
 /// @param[in] queuefamily The index of the queue family to query.
-/// @return `GLFW_TRUE` if the queue family supports presentation, or
-/// `GLFW_FALSE` otherwise.
+/// @return `true` if the queue family supports presentation, or `false` otherwise.
 ///
 /// Possible errors include glfw.Error.NotInitialized, glfw.Error.APIUnavailable and glfw.Error.PlatformError.
 ///
-/// macos: This function currently always returns `GLFW_TRUE`, as the `VK_MVK_macos_surface`
+/// macos: This function currently always returns `true`, as the `VK_MVK_macos_surface`
 /// extension does not provide a `vkGetPhysicalDevice*PresentationSupport` type function.
 ///
 /// @thread_safety This function may be called from any thread. For synchronization details of
@@ -133,58 +132,70 @@ pub inline fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*c]co
 ///
 /// see also: vulkan_present
 pub inline fn getPhysicalDevicePresentationSupport(vk_instance: *opaque {}, vk_physical_device: *opaque {}, queue_family: u32) Error!bool {
-    const v = c.glfwGetPhysicalDevicePresentationSupport(@ptrCast(c.VkInstance, vk_instance), @ptrCast(c.VkPhysicalDevice, vk_physical_device), queue_family);
+    const v = c.glfwGetPhysicalDevicePresentationSupport(
+        @ptrCast(c.VkInstance, vk_instance),
+        @ptrCast(*c.VkPhysicalDevice, @alignCast(@alignOf(*c.VkPhysicalDevice), vk_physical_device)).*,
+        queue_family,
+    );
     try getError();
     return v == c.GLFW_TRUE;
 }
 
-// TODO(vulkan):
-// /// Creates a Vulkan surface for the specified window.
-// ///
-// /// This function creates a Vulkan surface for the specified window.
-// ///
-// /// If the Vulkan loader or at least one minimally functional ICD were not found, this function
-// /// returns `VK_ERROR_INITIALIZATION_FAILED` and generates a glfw.Error.APIUnavailable error. Call
-// /// glfw.vulkanSupported to check whether Vulkan is at least minimally available.
-// ///
-// /// If the required window surface creation instance extensions are not available or if the
-// /// specified instance was not created with these extensions enabled, this function returns `VK_ERROR_EXTENSION_NOT_PRESENT`
-// /// and generates a glfw.Error.APIUnavailable error. Call glfw.getRequiredInstanceExtensions to
-// /// check what instance extensions are required.
-// ///
-// /// The window surface cannot be shared with another API so the window must have been created with
-// /// the client api hint set to `GLFW_NO_API` otherwise it generates a glfw.Error.InvalidValue error
-// /// and returns `VK_ERROR_NATIVE_WINDOW_IN_USE_KHR`.
-// ///
-// /// The window surface must be destroyed before the specified Vulkan instance. It is the
-// /// responsibility of the caller to destroy the window surface. GLFW does not destroy it for you.
-// /// Call `vkDestroySurfaceKHR` to destroy the surface.
-// ///
-// /// @param[in] instance The Vulkan instance to create the surface in.
-// /// @param[in] window The window to create the surface for.
-// /// @param[in] allocator The allocator to use, or null to use the default
-// /// allocator.
-// /// @param[out] surface Where to store the handle of the surface. This is set
-// /// to `VK_NULL_HANDLE` if an error occurred.
-// /// @return `VK_SUCCESS` if successful, or a Vulkan error code if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.APIUnavailable, glfw.Error.PlatformError and glfw.Error.InvalidValue
-// ///
-// /// If an error occurs before the creation call is made, GLFW returns the Vulkan error code most
-// /// appropriate for the error. Appropriate use of glfw.vulkanSupported and glfw.getRequiredInstanceExtensions
-// /// should eliminate almost all occurrences of these errors.
-// ///
-// /// macos: This function currently only supports the `VK_MVK_macos_surface` extension from MoltenVK.
-// ///
-// /// macos: This function creates and sets a `CAMetalLayer` instance for the window content view,
-// /// which is required for MoltenVK to function.
-// ///
-// /// @thread_safety This function may be called from any thread. For synchronization details of
-// /// Vulkan objects, see the Vulkan specification.
-// ///
-// /// see also: vulkan_surface, glfw.getRequiredInstanceExtensions
-// GLFWAPI VkResult glfwCreateWindowSurface(VkInstance instance, GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface);
+/// Creates a Vulkan surface for the specified window.
+///
+/// This function creates a Vulkan surface for the specified window.
+///
+/// If the Vulkan loader or at least one minimally functional ICD were not found, this function
+/// returns `VK_ERROR_INITIALIZATION_FAILED` and generates a glfw.Error.APIUnavailable error. Call
+/// glfw.vulkanSupported to check whether Vulkan is at least minimally available.
+///
+/// If the required window surface creation instance extensions are not available or if the
+/// specified instance was not created with these extensions enabled, this function returns `VK_ERROR_EXTENSION_NOT_PRESENT`
+/// and generates a glfw.Error.APIUnavailable error. Call glfw.getRequiredInstanceExtensions to
+/// check what instance extensions are required.
+///
+/// The window surface cannot be shared with another API so the window must have been created with
+/// the client api hint set to `GLFW_NO_API` otherwise it generates a glfw.Error.InvalidValue error
+/// and returns `VK_ERROR_NATIVE_WINDOW_IN_USE_KHR`.
+///
+/// The window surface must be destroyed before the specified Vulkan instance. It is the
+/// responsibility of the caller to destroy the window surface. GLFW does not destroy it for you.
+/// Call `vkDestroySurfaceKHR` to destroy the surface.
+///
+/// @param[in] vk_instance The Vulkan instance to create the surface in.
+/// @param[in] window The window to create the surface for.
+/// @param[in] vk_allocation_callbacks The allocator to use, or null to use the default
+/// allocator.
+/// @param[out] surface Where to store the handle of the surface. This is set
+/// to `VK_NULL_HANDLE` if an error occurred.
+/// @return `VkResult` type, `VK_SUCCESS` if successful, or a Vulkan error code if an
+/// error occurred.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.APIUnavailable, glfw.Error.PlatformError and glfw.Error.InvalidValue
+///
+/// If an error occurs before the creation call is made, GLFW returns the Vulkan error code most
+/// appropriate for the error. Appropriate use of glfw.vulkanSupported and glfw.getRequiredInstanceExtensions
+/// should eliminate almost all occurrences of these errors.
+///
+/// macos: This function currently only supports the `VK_MVK_macos_surface` extension from MoltenVK.
+///
+/// macos: This function creates and sets a `CAMetalLayer` instance for the window content view,
+/// which is required for MoltenVK to function.
+///
+/// @thread_safety This function may be called from any thread. For synchronization details of
+/// Vulkan objects, see the Vulkan specification.
+///
+/// see also: vulkan_surface, glfw.getRequiredInstanceExtensions
+pub inline fn createWindowSurface(vk_instance: *opaque {}, window: Window, vk_allocation_callbacks: *opaque {}, vk_surface_khr: *opaque {}) Error!i32 {
+    const v = c.glfwCreateWindowSurface(
+        @ptrCast(c.VkInstance, vk_instance),
+        window.handle,
+        @ptrCast(*c.VkAllocationCallbacks, @alignCast(@alignOf(*c.VkAllocationCallbacks), vk_allocation_callbacks)),
+        @ptrCast(*c.VkSurfaceKHR, @alignCast(@alignOf(*c.VkSurfaceKHR), vk_surface_khr)),
+    );
+    try getError();
+    return v;
+}
 
 test "vulkanSupported" {
     const glfw = @import("main.zig");
@@ -209,4 +220,11 @@ test "getInstanceProcAddress" {
 
     // syntax check only, we don't have a real vulkan instance.
     _ = glfw.getInstanceProcAddress(null, "foobar") catch |err| std.debug.print("failed to get vulkan instance proc address, error={}\n", .{err});
+}
+
+test "syntax" {
+    // Best we can do for these two functions in terms of testing in lieu of an actual Vulkan
+    // context.
+    _ = getPhysicalDevicePresentationSupport;
+    _ = createWindowSurface;
 }
