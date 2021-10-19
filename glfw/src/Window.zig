@@ -366,8 +366,8 @@ pub inline fn setIcon(self: Window, allocator: *mem.Allocator, images: ?[]Image)
 }
 
 const Pos = struct {
-    x: usize,
-    y: usize,
+    x: isize,
+    y: isize,
 };
 
 /// Retrieves the position of the content area of the specified window.
@@ -388,7 +388,7 @@ pub inline fn getPos(self: Window) Error!Pos {
     var y: c_int = 0;
     c.glfwGetWindowPos(self.handle, &x, &y);
     try getError();
-    return Pos{ .x = @intCast(usize, x), .y = @intCast(usize, y) };
+    return Pos{ .x = @intCast(isize, x), .y = @intCast(isize, y) };
 }
 
 /// Sets the position of the content area of the specified window.
