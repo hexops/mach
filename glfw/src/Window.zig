@@ -110,13 +110,13 @@ pub inline fn hint(hint_const: usize, value: anytype) Error!void {
                         @compileError("expected pointer to array of u8, got " ++ @typeName(arr_type));
                     }
                 },
-                else =>  @compileError("expected pointer to array, got " ++ @typeName(pointed_type)),
+                else => @compileError("expected pointer to array, got " ++ @typeName(pointed_type)),
             }
             c.glfwWindowHintString(@intCast(c_int, hint_const), &value[0]);
         },
         else => {
             @compileError("expected a int, bool, enum, array, or pointer, got " ++ @typeName(value_type));
-        }
+        },
     }
     try getError();
 }
