@@ -27,44 +27,43 @@ pub inline fn vulkanSupported() Error!bool {
     return supported == c.GLFW_TRUE;
 }
 
-// TODO(vulkan):
-// /// Returns the Vulkan instance extensions required by GLFW.
-// ///
-// /// This function returns an array of names of Vulkan instance extensions required by GLFW for
-// /// creating Vulkan surfaces for GLFW windows. If successful, the list will always contain
-// /// `VK_KHR_surface`, so if you don't require any additional extensions you can pass this list
-// /// directly to the `VkInstanceCreateInfo` struct.
-// ///
-// /// If Vulkan is not available on the machine, this function returns null and generates a
-// /// glfw.Error.APIUnavailable error. Call glfw.vulkanSupported to check whether Vulkan is at least
-// /// minimally available.
-// ///
-// /// If Vulkan is available but no set of extensions allowing window surface
-// /// creation was found, this function returns null. You may still use Vulkan
-// /// for off-screen rendering and compute work.
-// ///
-// /// @param[out] count Where to store the number of extensions in the returned
-// /// array. This is set to zero if an error occurred.
-// /// @return An array of ASCII encoded extension names, or null if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.APIUnavailable.
-// ///
-// /// Additional extensions may be required by future versions of GLFW. You should check if any
-// /// extensions you wish to enable are already in the returned array, as it is an error to specify
-// /// an extension more than once in the `VkInstanceCreateInfo` struct.
-// ///
-// /// macos: This function currently supports either the `VK_MVK_macos_surface` extension from
-// /// MoltenVK or `VK_EXT_metal_surface` extension.
-// ///
-// /// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
-// /// yourself. It is guaranteed to be valid only until the library is terminated.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: vulkan_ext, glfwCreateWindowSurface
-// GLFWAPI const char** glfwGetRequiredInstanceExtensions(uint32_t* count);
+/// Returns the Vulkan instance extensions required by GLFW.
+///
+/// This function returns an array of names of Vulkan instance extensions required by GLFW for
+/// creating Vulkan surfaces for GLFW windows. If successful, the list will always contain
+/// `VK_KHR_surface`, so if you don't require any additional extensions you can pass this list
+/// directly to the `VkInstanceCreateInfo` struct.
+///
+/// If Vulkan is not available on the machine, this function returns null and generates a
+/// glfw.Error.APIUnavailable error. Call glfw.vulkanSupported to check whether Vulkan is at least
+/// minimally available.
+///
+/// If Vulkan is available but no set of extensions allowing window surface creation was found,
+/// this function returns null. You may still use Vulkan for off-screen rendering and compute work.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.APIUnavailable.
+///
+/// Additional extensions may be required by future versions of GLFW. You should check if any
+/// extensions you wish to enable are already in the returned array, as it is an error to specify
+/// an extension more than once in the `VkInstanceCreateInfo` struct.
+///
+/// macos: This function currently supports either the `VK_MVK_macos_surface` extension from
+/// MoltenVK or `VK_EXT_metal_surface` extension.
+///
+/// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
+/// yourself. It is guaranteed to be valid only until the library is terminated.
+///
+/// @thread_safety This function may be called from any thread.
+///
+/// see also: vulkan_ext, glfwCreateWindowSurface
+pub inline fn getRequiredInstanceExtensions() Error![][*c]const u8 {
+    var count: u32 = 0;
+    const extensions = c.glfwGetRequiredInstanceExtensions(&count);
+    try getError();
+    return extensions[0..count];
+}
 
+// TODO(vulkan):
 /// Vulkan API function pointer type.
 ///
 /// Generic function pointer used for returning Vulkan API function pointers.
@@ -192,11 +191,19 @@ test "vulkanSupported" {
     _ = try glfw.vulkanSupported();
 }
 
+test "getRequiredInstanceExtensions" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    _ = glfw.getRequiredInstanceExtensions() catch |err| std.debug.print("failed to get vulkan instance extensions, error={}\n", .{err});
+}
+
 test "getInstanceProcAddress" {
     const glfw = @import("main.zig");
     try glfw.init();
     defer glfw.terminate();
 
     // syntax check only, we don't have a real vulkan instance.
-    _ = glfw.getInstanceProcAddress(null, "foobar") catch |err| std.debug.print("failed to get instance proc address, error={}\n", .{err});
+    _ = glfw.getInstanceProcAddress(null, "foobar") catch |err| std.debug.print("failed to get vulkan instance proc address, error={}\n", .{err});
 }
