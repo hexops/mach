@@ -13,7 +13,7 @@ pub const gamepad_button = @import("gamepad_button.zig");
 pub const GammaRamp = @import("GammaRamp.zig");
 pub const hat = @import("hat.zig");
 pub const Image = @import("Image.zig");
-pub const joystick = @import("joystick.zig");
+pub const Joystick = @import("Joystick.zig");
 pub const key = @import("key.zig");
 pub const mod = @import("mod.zig");
 pub const Monitor = @import("Monitor.zig");
@@ -269,6 +269,7 @@ test "getVersionString" {
     _ = Monitor;
     _ = GammaRamp;
     _ = Image;
+    _ = Joystick;
     _ = VideoMode;
     _ = Window;
 
