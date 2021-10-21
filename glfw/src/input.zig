@@ -21,7 +21,7 @@
 // /// @param[in] window The window that received the event.
 // /// @param[in] button The mouse button that was pressed or
 // /// released.
-// /// @param[in] action One of `GLFW_PRESS` or `GLFW_RELEASE`. Future releases
+// /// @param[in] action One of `glfw.press` or `glfw.release`. Future releases
 // /// may add more actions.
 // /// @param[in] mods Bit field describing which [modifier keys](@ref mods) were
 // /// held down.
@@ -62,8 +62,8 @@
 // /// @endcode
 // ///
 // /// @param[in] window The window that received the event.
-// /// @param[in] entered `GLFW_TRUE` if the cursor entered the window's content
-// /// area, or `GLFW_FALSE` if it left it.
+// /// @param[in] entered `true` if the cursor entered the window's content
+// /// area, or `false` if it left it.
 // ///
 // /// see also: cursor_enter, glfwSetCursorEnterCallback
 // ///
@@ -100,7 +100,7 @@
 // /// @param[in] window The window that received the event.
 // /// @param[in] key The [keyboard key](@ref keys) that was pressed or released.
 // /// @param[in] scancode The system-specific scancode of the key.
-// /// @param[in] action `GLFW_PRESS`, `GLFW_RELEASE` or `GLFW_REPEAT`. Future
+// /// @param[in] action `glfw.press`, `glfw.release` or `glfw.repeat`. Future
 // /// releases may add more actions.
 // /// @param[in] mods Bit field describing which [modifier keys](@ref mods) were
 // /// held down.
@@ -151,42 +151,6 @@
 // /// @ingroup input
 // typedef void (* GLFWdropfun)(GLFWwindow*,int,const char*[]);
 
-// /// The function pointer type for joystick configuration callbacks.
-// ///
-// /// This is the function pointer type for joystick configuration callbacks.
-// /// A joystick configuration callback function has the following signature:
-// /// @code
-// /// void function_name(int jid, int event)
-// /// @endcode
-// ///
-// /// @param[in] jid The joystick that was connected or disconnected.
-// /// @param[in] event One of `GLFW_CONNECTED` or `GLFW_DISCONNECTED`. Future
-// /// releases may add more events.
-// ///
-// /// see also: joystick_event, glfwSetJoystickCallback
-// ///
-// ///
-// /// @ingroup input
-// typedef void (* GLFWjoystickfun)(int,int);
-
-// /// Gamepad input state
-// ///
-// /// This describes the input state of a gamepad.
-// ///
-// /// see also: gamepad, glfwGetGamepadState
-// ///
-// ///
-// /// @ingroup input
-// typedef struct GLFWgamepadstate
-// {
-//     /*! The states of each [gamepad button](@ref gamepad_buttons), `GLFW_PRESS`
-//     /// or `GLFW_RELEASE`.
-//         unsigned char buttons[15];
-//     /*! The states of each [gamepad axis](@ref gamepad_axes), in the range -1.0
-//     /// to 1.0 inclusive.
-//         float axes[6];
-// } GLFWgamepadstate;
-
 // /// Returns the value of an input option for the specified window.
 // ///
 // /// This function returns the value of an input option for the specified window.
@@ -225,30 +189,30 @@
 // ///   and unlimited cursor movement. This is useful for implementing for
 // ///   example 3D camera controls.
 // ///
-// /// If the mode is `GLFW_STICKY_KEYS`, the value must be either `GLFW_TRUE` to
-// /// enable sticky keys, or `GLFW_FALSE` to disable it. If sticky keys are
-// /// enabled, a key press will ensure that @ref glfwGetKey returns `GLFW_PRESS`
+// /// If the mode is `GLFW_STICKY_KEYS`, the value must be either `true` to
+// /// enable sticky keys, or `false` to disable it. If sticky keys are
+// /// enabled, a key press will ensure that @ref glfwGetKey returns `glfw.press`
 // /// the next time it is called even if the key had been released before the
 // /// call. This is useful when you are only interested in whether keys have been
 // /// pressed but not when or in which order.
 // ///
 // /// If the mode is `GLFW_STICKY_MOUSE_BUTTONS`, the value must be either
-// /// `GLFW_TRUE` to enable sticky mouse buttons, or `GLFW_FALSE` to disable it.
+// /// `true` to enable sticky mouse buttons, or `false` to disable it.
 // /// If sticky mouse buttons are enabled, a mouse button press will ensure that
-// /// @ref glfwGetMouseButton returns `GLFW_PRESS` the next time it is called even
+// /// @ref glfwGetMouseButton returns `glfw.press` the next time it is called even
 // /// if the mouse button had been released before the call. This is useful when
 // /// you are only interested in whether mouse buttons have been pressed but not
 // /// when or in which order.
 // ///
-// /// If the mode is `GLFW_LOCK_KEY_MODS`, the value must be either `GLFW_TRUE` to
-// /// enable lock key modifier bits, or `GLFW_FALSE` to disable them. If enabled,
+// /// If the mode is `GLFW_LOCK_KEY_MODS`, the value must be either `true` to
+// /// enable lock key modifier bits, or `false` to disable them. If enabled,
 // /// callbacks that receive modifier bits will also have the @ref
 // /// GLFW_MOD_CAPS_LOCK bit set when the event was generated with Caps Lock on,
 // /// and the @ref GLFW_MOD_NUM_LOCK bit when Num Lock was on.
 // ///
-// /// If the mode is `GLFW_RAW_MOUSE_MOTION`, the value must be either `GLFW_TRUE`
+// /// If the mode is `GLFW_RAW_MOUSE_MOTION`, the value must be either `true`
 // /// to enable raw (unscaled and unaccelerated) mouse motion when the cursor is
-// /// disabled, or `GLFW_FALSE` to disable it. If raw motion is not supported,
+// /// disabled, or `false` to disable it. If raw motion is not supported,
 // /// attempting to set this will emit glfw.Error.PlatformError. Call @ref
 // /// glfwRawMouseMotionSupported to check for support.
 // ///
@@ -281,8 +245,8 @@
 // /// while raw motion is better for controlling for example a 3D camera. Because
 // /// of this, raw mouse motion is only provided when the cursor is disabled.
 // ///
-// /// @return `GLFW_TRUE` if raw mouse motion is supported on the current machine,
-// /// or `GLFW_FALSE` otherwise.
+// /// @return `true` if raw mouse motion is supported on the current machine,
+// /// or `false` otherwise.
 // ///
 // /// Possible errors include glfw.Error.NotInitialized.
 // ///
@@ -384,12 +348,12 @@
 // /// window.
 // ///
 // /// This function returns the last state reported for the specified key to the
-// /// specified window. The returned state is one of `GLFW_PRESS` or
-// /// `GLFW_RELEASE`. The higher-level action `GLFW_REPEAT` is only reported to
+// /// specified window. The returned state is one of `glfw.press` or
+// /// `glfw.release`. The higher-level action `glfw.repeat` is only reported to
 // /// the key callback.
 // ///
 // /// If the @ref GLFW_STICKY_KEYS input mode is enabled, this function returns
-// /// `GLFW_PRESS` the first time you call it for a key that was pressed, even if
+// /// `glfw.press` the first time you call it for a key that was pressed, even if
 // /// that key has already been released.
 // ///
 // /// The key functions deal with physical keys, with [key tokens](@ref keys)
@@ -404,7 +368,7 @@
 // /// @param[in] window The desired window.
 // /// @param[in] key The desired [keyboard key](@ref keys). `GLFW_KEY_UNKNOWN` is
 // /// not a valid key for this function.
-// /// @return One of `GLFW_PRESS` or `GLFW_RELEASE`.
+// /// @return One of `glfw.press` or `glfw.release`.
 // ///
 // /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
 // ///
@@ -421,16 +385,16 @@
 // /// window.
 // ///
 // /// This function returns the last state reported for the specified mouse button
-// /// to the specified window. The returned state is one of `GLFW_PRESS` or
-// /// `GLFW_RELEASE`.
+// /// to the specified window. The returned state is one of `glfw.press` or
+// /// `glfw.release`.
 // ///
 // /// If the @ref GLFW_STICKY_MOUSE_BUTTONS input mode is enabled, this function
-// /// returns `GLFW_PRESS` the first time you call it for a mouse button that was
+// /// returns `glfw.press` the first time you call it for a mouse button that was
 // /// pressed, even if that mouse button has already been released.
 // ///
 // /// @param[in] window The desired window.
 // /// @param[in] button The desired mouse button.
-// /// @return One of `GLFW_PRESS` or `GLFW_RELEASE`.
+// /// @return One of `glfw.press` or `glfw.release`.
 // ///
 // /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
 // ///
@@ -861,403 +825,3 @@
 // ///
 // /// @ingroup input
 // GLFWAPI GLFWdropfun glfwSetDropCallback(GLFWwindow* window, GLFWdropfun callback);
-
-// /// Returns whether the specified joystick is present.
-// ///
-// /// This function returns whether the specified joystick is present.
-// ///
-// /// There is no need to call this function before other functions that accept
-// /// a joystick ID, as they all check for presence before performing any other
-// /// work.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @return `GLFW_TRUE` if the joystick is present, or `GLFW_FALSE` otherwise.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick
-// /// Replaces `glfwGetJoystickParam`.
-// ///
-// /// @ingroup input
-// GLFWAPI int glfwJoystickPresent(int jid);
-
-// /// Returns the values of all axes of the specified joystick.
-// ///
-// /// This function returns the values of all axes of the specified joystick.
-// /// Each element in the array is a value between -1.0 and 1.0.
-// ///
-// /// If the specified joystick is not present this function will return null
-// /// but will not generate an error. This can be used instead of first calling
-// /// @ref glfwJoystickPresent.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @param[out] count Where to store the number of axis values in the returned
-// /// array. This is set to zero if the joystick is not present or an error
-// /// occurred.
-// /// @return An array of axis values, or null if the joystick is not present or
-// /// an error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @pointer_lifetime The returned array is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected or the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick_axis
-// /// Replaces `glfwGetJoystickPos`.
-// ///
-// /// @ingroup input
-// GLFWAPI const float* glfwGetJoystickAxes(int jid, int* count);
-
-// /// Returns the state of all buttons of the specified joystick.
-// ///
-// /// This function returns the state of all buttons of the specified joystick.
-// /// Each element in the array is either `GLFW_PRESS` or `GLFW_RELEASE`.
-// ///
-// /// For backward compatibility with earlier versions that did not have @ref
-// /// glfwGetJoystickHats, the button array also includes all hats, each
-// /// represented as four buttons. The hats are in the same order as returned by
-// /// __glfwGetJoystickHats__ and are in the order _up_, _right_, _down_ and
-// /// _left_. To disable these extra buttons, set the @ref
-// /// GLFW_JOYSTICK_HAT_BUTTONS init hint before initialization.
-// ///
-// /// If the specified joystick is not present this function will return null
-// /// but will not generate an error. This can be used instead of first calling
-// /// @ref glfwJoystickPresent.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @param[out] count Where to store the number of button states in the returned
-// /// array. This is set to zero if the joystick is not present or an error
-// /// occurred.
-// /// @return An array of button states, or null if the joystick is not present
-// /// or an error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @pointer_lifetime The returned array is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected or the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick_button
-// ///
-// /// @glfw3 Changed to return a dynamic array.
-// ///
-// /// @ingroup input
-// GLFWAPI const unsigned char* glfwGetJoystickButtons(int jid, int* count);
-
-// /// Returns the state of all hats of the specified joystick.
-// ///
-// /// This function returns the state of all hats of the specified joystick.
-// /// Each element in the array is one of the following values:
-// ///
-// /// Name                  | Value
-// /// ----                  | -----
-// /// `GLFW_HAT_CENTERED`   | 0
-// /// `GLFW_HAT_UP`         | 1
-// /// `GLFW_HAT_RIGHT`      | 2
-// /// `GLFW_HAT_DOWN`       | 4
-// /// `GLFW_HAT_LEFT`       | 8
-// /// `GLFW_HAT_RIGHT_UP`   | `GLFW_HAT_RIGHT` \| `GLFW_HAT_UP`
-// /// `GLFW_HAT_RIGHT_DOWN` | `GLFW_HAT_RIGHT` \| `GLFW_HAT_DOWN`
-// /// `GLFW_HAT_LEFT_UP`    | `GLFW_HAT_LEFT` \| `GLFW_HAT_UP`
-// /// `GLFW_HAT_LEFT_DOWN`  | `GLFW_HAT_LEFT` \| `GLFW_HAT_DOWN`
-// ///
-// /// The diagonal directions are bitwise combinations of the primary (up, right,
-// /// down and left) directions and you can test for these individually by ANDing
-// /// it with the corresponding direction.
-// ///
-// /// @code
-// /// if (hats[2] & GLFW_HAT_RIGHT)
-// /// {
-// ///     // State of hat 2 could be right-up, right or right-down
-// /// }
-// /// @endcode
-// ///
-// /// If the specified joystick is not present this function will return null
-// /// but will not generate an error. This can be used instead of first calling
-// /// @ref glfwJoystickPresent.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @param[out] count Where to store the number of hat states in the returned
-// /// array. This is set to zero if the joystick is not present or an error
-// /// occurred.
-// /// @return An array of hat states, or null if the joystick is not present
-// /// or an error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @pointer_lifetime The returned array is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected, this function is called again for that joystick or the library
-// /// is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick_hat
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI const unsigned char* glfwGetJoystickHats(int jid, int* count);
-
-// /// Returns the name of the specified joystick.
-// ///
-// /// This function returns the name, encoded as UTF-8, of the specified joystick.
-// /// The returned string is allocated and freed by GLFW. You should not free it
-// /// yourself.
-// ///
-// /// If the specified joystick is not present this function will return null
-// /// but will not generate an error. This can be used instead of first calling
-// /// @ref glfwJoystickPresent.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @return The UTF-8 encoded name of the joystick, or null if the joystick
-// /// is not present or an error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @pointer_lifetime The returned string is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected or the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick_name
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI const char* glfwGetJoystickName(int jid);
-
-// /// Returns the SDL compatible GUID of the specified joystick.
-// ///
-// /// This function returns the SDL compatible GUID, as a UTF-8 encoded
-// /// hexadecimal string, of the specified joystick. The returned string is
-// /// allocated and freed by GLFW. You should not free it yourself.
-// ///
-// /// The GUID is what connects a joystick to a gamepad mapping. A connected
-// /// joystick will always have a GUID even if there is no gamepad mapping
-// /// assigned to it.
-// ///
-// /// If the specified joystick is not present this function will return null
-// /// but will not generate an error. This can be used instead of first calling
-// /// @ref glfwJoystickPresent.
-// ///
-// /// The GUID uses the format introduced in SDL 2.0.5. This GUID tries to
-// /// uniquely identify the make and model of a joystick but does not identify
-// /// a specific unit, e.g. all wired Xbox 360 controllers will have the same
-// /// GUID on that platform. The GUID for a unit may vary between platforms
-// /// depending on what hardware information the platform specific APIs provide.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @return The UTF-8 encoded GUID of the joystick, or null if the joystick
-// /// is not present or an error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @pointer_lifetime The returned string is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected or the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: gamepad
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI const char* glfwGetJoystickGUID(int jid);
-
-// /// Sets the user pointer of the specified joystick.
-// ///
-// /// This function sets the user-defined pointer of the specified joystick. The
-// /// current value is retained until the joystick is disconnected. The initial
-// /// value is null.
-// ///
-// /// This function may be called from the joystick callback, even for a joystick
-// /// that is being disconnected.
-// ///
-// /// @param[in] jid The joystick whose pointer to set.
-// /// @param[in] pointer The new value.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread. Access is not
-// /// synchronized.
-// ///
-// /// see also: joystick_userptr, glfwGetJoystickUserPointer
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI void glfwSetJoystickUserPointer(int jid, void* pointer);
-
-// /// Returns the user pointer of the specified joystick.
-// ///
-// /// This function returns the current value of the user-defined pointer of the
-// /// specified joystick. The initial value is null.
-// ///
-// /// This function may be called from the joystick callback, even for a joystick
-// /// that is being disconnected.
-// ///
-// /// @param[in] jid The joystick whose pointer to return.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread. Access is not
-// /// synchronized.
-// ///
-// /// see also: joystick_userptr, glfwSetJoystickUserPointer
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI void* glfwGetJoystickUserPointer(int jid);
-
-// /// Returns whether the specified joystick has a gamepad mapping.
-// ///
-// /// This function returns whether the specified joystick is both present and has
-// /// a gamepad mapping.
-// ///
-// /// If the specified joystick is present but does not have a gamepad mapping
-// /// this function will return `GLFW_FALSE` but will not generate an error. Call
-// /// @ref glfwJoystickPresent to check if a joystick is present regardless of
-// /// whether it has a mapping.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @return `GLFW_TRUE` if a joystick is both present and has a gamepad mapping,
-// /// or `GLFW_FALSE` otherwise.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: gamepad, glfwGetGamepadState
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI int glfwJoystickIsGamepad(int jid);
-
-// /// Sets the joystick configuration callback.
-// ///
-// /// This function sets the joystick configuration callback, or removes the
-// /// currently set callback. This is called when a joystick is connected to or
-// /// disconnected from the system.
-// ///
-// /// For joystick connection and disconnection events to be delivered on all
-// /// platforms, you need to call one of the [event processing](@ref events)
-// /// functions. Joystick disconnection may also be detected and the callback
-// /// called by joystick functions. The function will then return whatever it
-// /// returns if the joystick is not present.
-// ///
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(int jid, int event)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWjoystickfun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick_event
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI GLFWjoystickfun glfwSetJoystickCallback(GLFWjoystickfun callback);
-
-// /// Adds the specified SDL_GameControllerDB gamepad mappings.
-// ///
-// /// This function parses the specified ASCII encoded string and updates the
-// /// internal list with any gamepad mappings it finds. This string may
-// /// contain either a single gamepad mapping or many mappings separated by
-// /// newlines. The parser supports the full format of the `gamecontrollerdb.txt`
-// /// source file including empty lines and comments.
-// ///
-// /// See @ref gamepad_mapping for a description of the format.
-// ///
-// /// If there is already a gamepad mapping for a given GUID in the internal list,
-// /// it will be replaced by the one passed to this function. If the library is
-// /// terminated and re-initialized the internal list will revert to the built-in
-// /// default.
-// ///
-// /// @param[in] string The string containing the gamepad mappings.
-// /// @return `GLFW_TRUE` if successful, or `GLFW_FALSE` if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidValue.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: gamepad, glfwJoystickIsGamepad, glfwGetGamepadName
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI int glfwUpdateGamepadMappings(const char* string);
-
-// /// Returns the human-readable gamepad name for the specified joystick.
-// ///
-// /// This function returns the human-readable name of the gamepad from the
-// /// gamepad mapping assigned to the specified joystick.
-// ///
-// /// If the specified joystick is not present or does not have a gamepad mapping
-// /// this function will return null but will not generate an error. Call
-// /// @ref glfwJoystickPresent to check whether it is present regardless of
-// /// whether it has a mapping.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @return The UTF-8 encoded name of the gamepad, or null if the
-// /// joystick is not present, does not have a mapping or an
-// /// error occurred.
-// ///
-// /// @pointer_lifetime The returned string is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected, the gamepad mappings are updated or the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: gamepad, glfwJoystickIsGamepad
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI const char* glfwGetGamepadName(int jid);
-
-// /// Retrieves the state of the specified joystick remapped as a gamepad.
-// ///
-// /// This function retrieves the state of the specified joystick remapped to
-// /// an Xbox-like gamepad.
-// ///
-// /// If the specified joystick is not present or does not have a gamepad mapping
-// /// this function will return `GLFW_FALSE` but will not generate an error. Call
-// /// @ref glfwJoystickPresent to check whether it is present regardless of
-// /// whether it has a mapping.
-// ///
-// /// The Guide button may not be available for input as it is often hooked by the
-// /// system or the Steam client.
-// ///
-// /// Not all devices have all the buttons or axes provided by @ref
-// /// GLFWgamepadstate. Unavailable buttons and axes will always report
-// /// `GLFW_RELEASE` and 0.0 respectively.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @param[out] state The gamepad input state of the joystick.
-// /// @return `GLFW_TRUE` if successful, or `GLFW_FALSE` if no joystick is
-// /// connected, it has no gamepad mapping or an error
-// /// occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: gamepad, glfwUpdateGamepadMappings, glfwJoystickIsGamepad
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI int glfwGetGamepadState(int jid, GLFWgamepadstate* state);
