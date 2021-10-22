@@ -178,34 +178,30 @@ pub inline fn getHats(self: Joystick) Error!?[]const u8 {
     return hats[0..@intCast(usize, count)];
 }
 
-// TODO(joystick)
-// /// Returns the name of the specified joystick.
-// ///
-// /// This function returns the name, encoded as UTF-8, of the specified joystick.
-// /// The returned string is allocated and freed by GLFW. You should not free it
-// /// yourself.
-// ///
-// /// If the specified joystick is not present this function will return null
-// /// but will not generate an error. This can be used instead of first calling
-// /// @ref glfwJoystickPresent.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @return The UTF-8 encoded name of the joystick, or null if the joystick
-// /// is not present or an error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @pointer_lifetime The returned string is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected or the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick_name
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI const char* glfwGetJoystickName(int jid);
+/// Returns the name of the specified joystick.
+///
+/// This function returns the name, encoded as UTF-8, of the specified joystick. The returned string
+/// is allocated and freed by GLFW. You should not free it yourself.
+///
+/// If the specified joystick is not present this function will return null but will not generate an
+/// error. This can be used instead of first calling glfw.Joystick.present.
+///
+/// @return The UTF-8 encoded name of the joystick, or null if the joystick is not present or an
+/// error occurred.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+///
+/// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
+/// yourself. It is valid until the specified joystick is disconnected or the library is terminated.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: joystick_name
+pub inline fn getName(self: Joystick) Error![*c]const u8 {
+    const name = c.glfwGetJoystickName(self.jid);
+    try getError();
+    return name;
+}
 
 // TODO(joystick)
 // /// Returns the SDL compatible GUID of the specified joystick.
@@ -464,6 +460,16 @@ test "getHats" {
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
 
     _ = joystick.getHats() catch |err| std.debug.print("failed to get joystick hats, joysticks not supported? error={}\n", .{err});
+}
+
+test "getName" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
+
+    _ = joystick.getName() catch |err| std.debug.print("failed to get joystick name, joysticks not supported? error={}\n", .{err});
 }
 
 test "setUserPointer_syntax" {
