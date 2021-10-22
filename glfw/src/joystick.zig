@@ -386,35 +386,33 @@ const GamepadState = extern struct {
 // /// @ingroup input
 // GLFWAPI GLFWjoystickfun glfwSetJoystickCallback(GLFWjoystickfun callback);
 
-// TODO(joystick)
-// /// Adds the specified SDL_GameControllerDB gamepad mappings.
-// ///
-// /// This function parses the specified ASCII encoded string and updates the
-// /// internal list with any gamepad mappings it finds. This string may
-// /// contain either a single gamepad mapping or many mappings separated by
-// /// newlines. The parser supports the full format of the `gamecontrollerdb.txt`
-// /// source file including empty lines and comments.
-// ///
-// /// See @ref gamepad_mapping for a description of the format.
-// ///
-// /// If there is already a gamepad mapping for a given GUID in the internal list,
-// /// it will be replaced by the one passed to this function. If the library is
-// /// terminated and re-initialized the internal list will revert to the built-in
-// /// default.
-// ///
-// /// @param[in] string The string containing the gamepad mappings.
-// /// @return `true` if successful, or `false` if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidValue.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: gamepad, glfw.Joystick.isGamepad, glfwGetGamepadName
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI int glfwUpdateGamepadMappings(const char* string);
+/// Adds the specified SDL_GameControllerDB gamepad mappings.
+///
+/// This function parses the specified ASCII encoded string and updates the internal list with any
+/// gamepad mappings it finds. This string may contain either a single gamepad mapping or many
+/// mappings separated by newlines. The parser supports the full format of the `gamecontrollerdb.txt`
+/// source file including empty lines and comments.
+///
+/// See gamepad_mapping for a description of the format.
+///
+/// If there is already a gamepad mapping for a given GUID in the internal list, it will be
+/// replaced by the one passed to this function. If the library is terminated and re-initialized
+/// the internal list will revert to the built-in default.
+///
+/// @param[in] string The string containing the gamepad mappings.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidValue.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: gamepad, glfw.Joystick.isGamepad, glfwGetGamepadName
+///
+///
+/// @ingroup input
+pub inline fn updateGamepadMappings(gamepad_mappings: [*c]const u8) Error!void {
+    _ = c.glfwUpdateGamepadMappings(gamepad_mappings);
+    try getError();
+}
 
 /// Returns the human-readable gamepad name for the specified joystick.
 ///
@@ -470,6 +468,11 @@ pub inline fn getGamepadState(self: Joystick) Error!?GamepadState {
     const success = c.glfwGetGamepadState(self.jid, @ptrCast(*c.GLFWgamepadstate, &state));
     try getError();
     return if (success == c.GLFW_TRUE) state else null;
+}
+
+test "updateGamepadMappings_syntax" {
+    // We don't have a gamepad mapping to test with, just confirm the syntax is good.
+    _ = updateGamepadMappings;
 }
 
 test "getGamepadName" {
