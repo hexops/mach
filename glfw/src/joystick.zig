@@ -33,25 +33,6 @@ pub const fifteen = c.GLFW_JOYSTICK_15;
 pub const sixteen = c.GLFW_JOYSTICK_16;
 pub const last = c.GLFW_JOYSTICK_LAST;
 
-// TODO(joystick)
-// /// The function pointer type for joystick configuration callbacks.
-// ///
-// /// This is the function pointer type for joystick configuration callbacks.
-// /// A joystick configuration callback function has the following signature:
-// /// @code
-// /// void function_name(int jid, int event)
-// /// @endcode
-// ///
-// /// @param[in] jid The joystick that was connected or disconnected.
-// /// @param[in] event One of `GLFW_CONNECTED` or `GLFW_DISCONNECTED`. Future
-// /// releases may add more events.
-// ///
-// /// see also: joystick_event, glfwSetJoystickCallback
-// ///
-// ///
-// /// @ingroup input
-// typedef void (* GLFWjoystickfun)(int,int);
-
 /// Gamepad input state
 ///
 /// This describes the input state of a gamepad.
@@ -312,40 +293,43 @@ pub inline fn getUserPointer(self: Joystick, Type: anytype) ?Type {
     return null;
 }
 
+var _callback: ?fn (joystick: Joystick, event: isize) void = null;
+
+fn callbackWrapper(jid: c_int, event: c_int) callconv(.C) void {
+    _callback.?(Joystick{ .jid = jid }, @intCast(isize, event));
+}
+
 // TODO(joystick)
-// /// Sets the joystick configuration callback.
-// ///
-// /// This function sets the joystick configuration callback, or removes the
-// /// currently set callback. This is called when a joystick is connected to or
-// /// disconnected from the system.
-// ///
-// /// For joystick connection and disconnection events to be delivered on all
-// /// platforms, you need to call one of the [event processing](@ref events)
-// /// functions. Joystick disconnection may also be detected and the callback
-// /// called by joystick functions. The function will then return whatever it
-// /// returns if the joystick is not present.
-// ///
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(int jid, int event)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWjoystickfun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick_event
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI GLFWjoystickfun glfwSetJoystickCallback(GLFWjoystickfun callback);
+/// Sets the joystick configuration callback.
+///
+/// This function sets the joystick configuration callback, or removes the currently set callback.
+/// This is called when a joystick is connected to or disconnected from the system.
+///
+/// For joystick connection and disconnection events to be delivered on all platforms, you need to
+/// call one of the event processing (see events) functions. Joystick disconnection may also be
+/// detected and the callback called by joystick functions. The function will then return whatever
+/// it returns if the joystick is not present.
+///
+/// @param[in] callback The new callback, or null to remove the currently set callback.
+///
+/// @callback_param `jid` The joystick that was connected or disconnected.
+/// @callback_param `event` One of `glfw.connected` or `glfw.disconnected`. Future releases may add
+/// more events.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: joystick_event
+pub inline fn setCallback(callback: ?fn (joystick: Joystick, event: isize) void) void {
+    _callback = callback;
+    _ = if (_callback != null) c.glfwSetJoystickCallback(callbackWrapper) else c.glfwSetJoystickCallback(null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
 
 /// Adds the specified SDL_GameControllerDB gamepad mappings.
 ///
@@ -477,6 +461,19 @@ test "getUserPointer_syntax" {
 
     // Must be called from joystick callback, we cannot test it.
     _ = joystick.getUserPointer;
+}
+
+test "setCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    glfw.Joystick.setCallback((struct {
+        pub fn callback(joystick: Joystick, event: isize) void {
+            _ = joystick;
+            _ = event;
+        }
+    }).callback);
 }
 
 test "updateGamepadMappings_syntax" {
