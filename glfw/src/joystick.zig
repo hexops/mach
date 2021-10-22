@@ -203,44 +203,38 @@ pub inline fn getName(self: Joystick) Error![*c]const u8 {
     return name;
 }
 
-// TODO(joystick)
-// /// Returns the SDL compatible GUID of the specified joystick.
-// ///
-// /// This function returns the SDL compatible GUID, as a UTF-8 encoded
-// /// hexadecimal string, of the specified joystick. The returned string is
-// /// allocated and freed by GLFW. You should not free it yourself.
-// ///
-// /// The GUID is what connects a joystick to a gamepad mapping. A connected
-// /// joystick will always have a GUID even if there is no gamepad mapping
-// /// assigned to it.
-// ///
-// /// If the specified joystick is not present this function will return null
-// /// but will not generate an error. This can be used instead of first calling
-// /// @ref glfwJoystickPresent.
-// ///
-// /// The GUID uses the format introduced in SDL 2.0.5. This GUID tries to
-// /// uniquely identify the make and model of a joystick but does not identify
-// /// a specific unit, e.g. all wired Xbox 360 controllers will have the same
-// /// GUID on that platform. The GUID for a unit may vary between platforms
-// /// depending on what hardware information the platform specific APIs provide.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @return The UTF-8 encoded GUID of the joystick, or null if the joystick
-// /// is not present or an error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @pointer_lifetime The returned string is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected or the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: gamepad
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI const char* glfwGetJoystickGUID(int jid);
+/// Returns the SDL compatible GUID of the specified joystick.
+///
+/// This function returns the SDL compatible GUID, as a UTF-8 encoded hexadecimal string, of the
+/// specified joystick. The returned string is allocated and freed by GLFW. You should not free it
+/// yourself.
+///
+/// The GUID is what connects a joystick to a gamepad mapping. A connected joystick will always have
+/// a GUID even if there is no gamepad mapping assigned to it.
+///
+/// If the specified joystick is not present this function will return null but will not generate an
+/// error. This can be used instead of first calling glfw.Joystick.present.
+///
+/// The GUID uses the format introduced in SDL 2.0.5. This GUID tries to uniquely identify the make
+/// and model of a joystick but does not identify a specific unit, e.g. all wired Xbox 360
+/// controllers will have the same GUID on that platform. The GUID for a unit may vary between
+/// platforms depending on what hardware information the platform specific APIs provide.
+///
+/// @return The UTF-8 encoded GUID of the joystick, or null if the joystick is not present.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+///
+/// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
+/// yourself. It is valid until the specified joystick is disconnected or the library is terminated.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: gamepad
+pub inline fn getGUID(self: Joystick) Error![*c]const u8 {
+    const guid = c.glfwGetJoystickGUID(self.jid);
+    try getError();
+    return guid;
+}
 
 /// Sets the user pointer of the specified joystick.
 ///
@@ -280,7 +274,6 @@ fn callbackWrapper(jid: c_int, event: c_int) callconv(.C) void {
     _callback.?(Joystick{ .jid = jid }, @intCast(isize, event));
 }
 
-// TODO(joystick)
 /// Sets the joystick configuration callback.
 ///
 /// This function sets the joystick configuration callback, or removes the currently set callback.
@@ -470,6 +463,16 @@ test "getName" {
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
 
     _ = joystick.getName() catch |err| std.debug.print("failed to get joystick name, joysticks not supported? error={}\n", .{err});
+}
+
+test "getGUID" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
+
+    _ = joystick.getGUID() catch |err| std.debug.print("failed to get joystick GUID, joysticks not supported? error={}\n", .{err});
 }
 
 test "setUserPointer_syntax" {
