@@ -21,9 +21,9 @@ pub const mouse_button = @import("mouse_button.zig");
 pub const version = @import("version.zig");
 pub const VideoMode = @import("VideoMode.zig");
 pub const Window = @import("Window.zig");
+pub const Cursor = @import("Cursor.zig");
 
 pub usingnamespace @import("clipboard.zig");
-pub usingnamespace @import("input.zig");
 pub usingnamespace @import("opengl.zig");
 pub usingnamespace @import("vulkan.zig");
 pub usingnamespace @import("time.zig");
@@ -246,6 +246,33 @@ pub inline fn postEmptyEvent() Error!void {
     try getError();
 }
 
+// TODO(mouse)
+// /// Returns whether raw mouse motion is supported.
+// ///
+// /// This function returns whether raw mouse motion is supported on the current
+// /// system. This status does not change after GLFW has been initialized so you
+// /// only need to check this once. If you attempt to enable raw motion on
+// /// a system that does not support it, glfw.Error.PlatformError will be emitted.
+// ///
+// /// Raw mouse motion is closer to the actual motion of the mouse across
+// /// a surface. It is not affected by the scaling and acceleration applied to
+// /// the motion of the desktop cursor. That processing is suitable for a cursor
+// /// while raw motion is better for controlling for example a 3D camera. Because
+// /// of this, raw mouse motion is only provided when the cursor is disabled.
+// ///
+// /// @return `true` if raw mouse motion is supported on the current machine,
+// /// or `false` otherwise.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: raw_mouse_motion, glfw.setInputMode
+// ///
+// ///
+// /// @ingroup input
+// GLFWAPI int glfwRawMouseMotionSupported(void);
+
 pub fn basicTest() !void {
     try init();
     defer terminate();
@@ -272,6 +299,7 @@ test "getVersionString" {
     _ = Joystick;
     _ = VideoMode;
     _ = Window;
+    _ = Cursor;
 
     std.debug.print("\nGLFW version v{}.{}.{}\n", .{ version.major, version.minor, version.revision });
     std.debug.print("\nstring: {s}\n", .{getVersionString()});
