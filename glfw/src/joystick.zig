@@ -69,36 +69,33 @@ pub inline fn isPresent(self: Joystick) Error!bool {
     return is_present == c.GLFW_TRUE;
 }
 
-// TODO(joystick)
-// /// Returns the values of all axes of the specified joystick.
-// ///
-// /// This function returns the values of all axes of the specified joystick.
-// /// Each element in the array is a value between -1.0 and 1.0.
-// ///
-// /// If the specified joystick is not present this function will return null
-// /// but will not generate an error. This can be used instead of first calling
-// /// @ref glfwJoystickPresent.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @param[out] count Where to store the number of axis values in the returned
-// /// array. This is set to zero if the joystick is not present or an error
-// /// occurred.
-// /// @return An array of axis values, or null if the joystick is not present or
-// /// an error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @pointer_lifetime The returned array is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected or the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick_axis
-// /// Replaces `glfwGetJoystickPos`.
-// ///
-// /// @ingroup input
-// GLFWAPI const float* glfwGetJoystickAxes(int jid, int* count);
+/// Returns the values of all axes of the specified joystick.
+///
+/// This function returns the values of all axes of the specified joystick. Each element in the
+/// array is a value between -1.0 and 1.0.
+///
+/// If the specified joystick is not present this function will return null but will not generate
+/// an error. This can be used instead of first calling glfw.Joystick.isPresent.
+///
+/// @return An array of axis values, or null if the joystick is not present.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+///
+/// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
+/// yourself. It is valid until the specified joystick is disconnected or the library is
+/// terminated.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: joystick_axis
+/// Replaces `glfwGetJoystickPos`.
+pub inline fn getAxes(self: Joystick) Error!?[]const f32 {
+    var count: c_int = undefined;
+    const axes = c.glfwGetJoystickAxes(self.jid, &count);
+    try getError();
+    if (axes == null) return null;
+    return axes[0..@intCast(usize, count)];
+}
 
 // TODO(joystick)
 // /// Returns the state of all buttons of the specified joystick.
@@ -440,6 +437,26 @@ pub inline fn getGamepadState(self: Joystick) Error!?GamepadState {
     const success = c.glfwGetGamepadState(self.jid, @ptrCast(*c.GLFWgamepadstate, &state));
     try getError();
     return if (success == c.GLFW_TRUE) state else null;
+}
+
+test "isPresent" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
+
+    _ = joystick.isPresent() catch |err| std.debug.print("failed to detect joystick, joysticks not supported? error={}\n", .{err});
+}
+
+test "getAxes" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
+
+    _ = joystick.getAxes() catch |err| std.debug.print("failed to get joystick axes, joysticks not supported? error={}\n", .{err});
 }
 
 test "setUserPointer_syntax" {
