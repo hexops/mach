@@ -151,6 +151,7 @@
 // /// @ingroup input
 // typedef void (* GLFWdropfun)(GLFWwindow*,int,const char*[]);
 
+// TODO(mouinput options)
 // /// Returns the value of an input option for the specified window.
 // ///
 // /// This function returns the value of an input option for the specified window.
@@ -173,6 +174,7 @@
 // /// @ingroup input
 // GLFWAPI int glfwGetInputMode(GLFWwindow* window, int mode);
 
+// TODO(mouinput options)
 // /// Sets an input option for the specified window.
 // ///
 // /// This function sets an input mode option for the specified window. The mode
@@ -232,6 +234,7 @@
 // /// @ingroup input
 // GLFWAPI void glfwSetInputMode(GLFWwindow* window, int mode, int value);
 
+// TODO(mouse raw)
 // /// Returns whether raw mouse motion is supported.
 // ///
 // /// This function returns whether raw mouse motion is supported on the current
@@ -258,6 +261,7 @@
 // /// @ingroup input
 // GLFWAPI int glfwRawMouseMotionSupported(void);
 
+// TODO(keyboard layout)
 // /// Returns the layout-specific name of the specified printable key.
 // ///
 // /// This function returns the name of the specified printable key, encoded as
@@ -323,6 +327,7 @@
 // /// @ingroup input
 // GLFWAPI const char* glfwGetKeyName(int key, int scancode);
 
+// TODO(keyboard scancode)
 // /// Returns the platform-specific scancode of the specified key.
 // ///
 // /// This function returns the platform-specific scancode of the specified key.
@@ -344,6 +349,7 @@
 // /// @ingroup input
 // GLFWAPI int glfwGetKeyScancode(int key);
 
+// TODO(keyboard button)
 // /// Returns the last reported state of a keyboard key for the specified
 // /// window.
 // ///
@@ -381,6 +387,7 @@
 // /// @ingroup input
 // GLFWAPI int glfwGetKey(GLFWwindow* window, int key);
 
+// TODO(mouse button)
 // /// Returns the last reported state of a mouse button for the specified
 // /// window.
 // ///
@@ -407,6 +414,7 @@
 // /// @ingroup input
 // GLFWAPI int glfwGetMouseButton(GLFWwindow* window, int button);
 
+// TODO(cursor position)
 // /// Retrieves the position of the cursor relative to the content area of
 // /// the window.
 // ///
@@ -441,6 +449,7 @@
 // /// @ingroup input
 // GLFWAPI void glfwGetCursorPos(GLFWwindow* window, double* xpos, double* ypos);
 
+// TODO(cursor position)
 // /// Sets the position of the cursor, relative to the content area of the
 // /// window.
 // ///
@@ -477,6 +486,7 @@
 // /// @ingroup input
 // GLFWAPI void glfwSetCursorPos(GLFWwindow* window, double xpos, double ypos);
 
+// TODO(cursor icon)
 // /// Creates a custom cursor.
 // ///
 // /// Creates a new custom cursor image that can be set for a window with @ref
@@ -510,6 +520,7 @@
 // /// @ingroup input
 // GLFWAPI GLFWcursor* glfwCreateCursor(const GLFWimage* image, int xhot, int yhot);
 
+// TODO(cursor icon)
 // /// Creates a cursor with a standard shape.
 // ///
 // /// Returns a cursor with a [standard shape](@ref shapes), that can be set for
@@ -529,6 +540,7 @@
 // /// @ingroup input
 // GLFWAPI GLFWcursor* glfwCreateStandardCursor(int shape);
 
+// TODO(cursor icon)
 // /// Destroys a cursor.
 // ///
 // /// This function destroys a cursor previously created with @ref
@@ -552,6 +564,7 @@
 // /// @ingroup input
 // GLFWAPI void glfwDestroyCursor(GLFWcursor* cursor);
 
+// TODO(cursor icon)
 // /// Sets the cursor for the window.
 // ///
 // /// This function sets the cursor image to be used when the cursor is over the
@@ -576,6 +589,7 @@
 // /// @ingroup input
 // GLFWAPI void glfwSetCursor(GLFWwindow* window, GLFWcursor* cursor);
 
+// TODO(key button)
 // /// Sets the key callback.
 // ///
 // /// This function sets the key callback of the specified window, which is called
@@ -624,6 +638,7 @@
 // /// @ingroup input
 // GLFWAPI GLFWkeyfun glfwSetKeyCallback(GLFWwindow* window, GLFWkeyfun callback);
 
+// TODO(unicode character)
 // /// Sets the Unicode character callback.
 // ///
 // /// This function sets the character callback of the specified window, which is
@@ -665,6 +680,7 @@
 // /// @ingroup input
 // GLFWAPI GLFWcharfun glfwSetCharCallback(GLFWwindow* window, GLFWcharfun callback);
 
+// TODO(mouse button)
 // /// Sets the mouse button callback.
 // ///
 // /// This function sets the mouse button callback of the specified window, which
@@ -700,6 +716,7 @@
 // /// @ingroup input
 // GLFWAPI GLFWmousebuttonfun glfwSetMouseButtonCallback(GLFWwindow* window, GLFWmousebuttonfun callback);
 
+// TODO(cursor)
 // /// Sets the cursor position callback.
 // ///
 // /// This function sets the cursor position callback of the specified window,
@@ -730,6 +747,7 @@
 // /// @ingroup input
 // GLFWAPI GLFWcursorposfun glfwSetCursorPosCallback(GLFWwindow* window, GLFWcursorposfun callback);
 
+// TODO(cursor)
 // /// Sets the cursor enter/leave callback.
 // ///
 // /// This function sets the cursor boundary crossing callback of the specified
@@ -759,6 +777,7 @@
 // /// @ingroup input
 // GLFWAPI GLFWcursorenterfun glfwSetCursorEnterCallback(GLFWwindow* window, GLFWcursorenterfun callback);
 
+// TODO(scrolling)
 // /// Sets the scroll callback.
 // ///
 // /// This function sets the scroll callback of the specified window, which is
@@ -791,6 +810,7 @@
 // /// @ingroup input
 // GLFWAPI GLFWscrollfun glfwSetScrollCallback(GLFWwindow* window, GLFWscrollfun callback);
 
+// TODO(path drop)
 // /// Sets the path drop callback.
 // ///
 // /// This function sets the path drop callback of the specified window, which is
