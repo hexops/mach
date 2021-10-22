@@ -83,29 +83,25 @@ pub inline fn createStandard(shape: isize) Error!Cursor {
     return Cursor{ .ptr = cursor.? };
 }
 
-// TODO(cursor icon)
-// /// Destroys a cursor.
-// ///
-// /// This function destroys a cursor previously created with @ref
-// /// glfwCreateCursor. Any remaining cursors will be destroyed by @ref
-// /// glfwTerminate.
-// ///
-// /// If the specified cursor is current for any window, that window will be
-// /// reverted to the default cursor. This does not affect the cursor mode.
-// ///
-// /// @param[in] cursor The cursor object to destroy.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-// ///
-// /// @reentrancy This function must not be called from a callback.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: cursor_object, glfwCreateCursor
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI void glfwDestroyCursor(GLFWcursor* cursor);
+/// Destroys a cursor.
+///
+/// This function destroys a cursor previously created with glfw.Cursor.create. Any remaining
+/// cursors will be destroyed by glfw.terminate.
+///
+/// If the specified cursor is current for any window, that window will be reverted to the default
+/// cursor. This does not affect the cursor mode.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @reentrancy This function must not be called from a callback.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: cursor_object, glfw.createCursor
+pub inline fn destroy(self: Cursor) void {
+    c.glfwDestroyCursor(self.ptr);
+    getError() catch {}; // what would anyone do with it anyway?
+}
 
 test "create" {
     const allocator = testing.allocator;
@@ -117,7 +113,11 @@ test "create" {
     const image = try Image.init(allocator, 32, 32, 32 * 32 * 4);
     defer image.deinit(allocator);
 
-    _ = glfw.Cursor.create(image, 0, 0) catch |err| std.debug.print("failed to create cursor, custom cursors not supported? error={}\n", .{err});
+    const cursor = glfw.Cursor.create(image, 0, 0) catch |err| {
+        std.debug.print("failed to create cursor, custom cursors not supported? error={}\n", .{err});
+        return;
+    };
+    cursor.destroy();
 }
 
 test "createStandard" {
@@ -125,5 +125,9 @@ test "createStandard" {
     try glfw.init();
     defer glfw.terminate();
 
-    _ = glfw.Cursor.createStandard(glfw.Cursor.ibeam_cursor) catch |err| std.debug.print("failed to create cursor, custom cursors not supported? error={}\n", .{err});
+    const cursor = glfw.Cursor.createStandard(glfw.Cursor.ibeam_cursor) catch |err| {
+        std.debug.print("failed to create cursor, custom cursors not supported? error={}\n", .{err});
+        return;
+    };
+    cursor.destroy();
 }
