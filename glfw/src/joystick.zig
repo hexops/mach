@@ -327,31 +327,6 @@ const GamepadState = extern struct {
 // GLFWAPI void* glfwGetJoystickUserPointer(int jid);
 
 // TODO(joystick)
-// /// Returns whether the specified joystick has a gamepad mapping.
-// ///
-// /// This function returns whether the specified joystick is both present and has
-// /// a gamepad mapping.
-// ///
-// /// If the specified joystick is present but does not have a gamepad mapping
-// /// this function will return `false` but will not generate an error. Call
-// /// @ref glfwJoystickPresent to check if a joystick is present regardless of
-// /// whether it has a mapping.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @return `true` if a joystick is both present and has a gamepad mapping,
-// /// or `false` otherwise.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: gamepad, glfwGetGamepadState
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI int glfwJoystickIsGamepad(int jid);
-
-// TODO(joystick)
 // /// Sets the joystick configuration callback.
 // ///
 // /// This function sets the joystick configuration callback, or removes the
@@ -414,6 +389,32 @@ pub inline fn updateGamepadMappings(gamepad_mappings: [*c]const u8) Error!void {
     try getError();
 }
 
+/// Returns whether the specified joystick has a gamepad mapping.
+///
+/// This function returns whether the specified joystick is both present and has a gamepad mapping.
+///
+/// If the specified joystick is present but does not have a gamepad mapping this function will
+/// return `false` but will not generate an error. Call glfw.Joystick.present to check if a
+/// joystick is present regardless of whether it has a mapping.
+///
+/// @return `true` if a joystick is both present and has a gamepad mapping, or `false` otherwise.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: gamepad, glfw.Joystick.getGamepadState
+pub inline fn isGamepad(self: Joystick) bool {
+    const is_gamepad = c.glfwJoystickIsGamepad(self.jid);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this, or glfw.Error.InvalidEnum if the joystick ID
+    // is wrong. Returning an error here makes the API awkward to use, so we discard it instead.
+    getError() catch {};
+
+    return is_gamepad == c.GLFW_TRUE;
+}
+
 /// Returns the human-readable gamepad name for the specified joystick.
 ///
 /// This function returns the human-readable name of the gamepad from the gamepad mapping assigned
@@ -473,6 +474,15 @@ pub inline fn getGamepadState(self: Joystick) Error!?GamepadState {
 test "updateGamepadMappings_syntax" {
     // We don't have a gamepad mapping to test with, just confirm the syntax is good.
     _ = updateGamepadMappings;
+}
+
+test "isGamepad" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
+    _ = joystick.isGamepad();
 }
 
 test "getGamepadName" {
