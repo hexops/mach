@@ -410,39 +410,36 @@ const GamepadState = extern struct {
 // ///
 // /// @thread_safety This function must only be called from the main thread.
 // ///
-// /// see also: gamepad, glfwJoystickIsGamepad, glfwGetGamepadName
+// /// see also: gamepad, glfw.Joystick.isGamepad, glfwGetGamepadName
 // ///
 // ///
 // /// @ingroup input
 // GLFWAPI int glfwUpdateGamepadMappings(const char* string);
 
-// TODO(joystick)
-// /// Returns the human-readable gamepad name for the specified joystick.
-// ///
-// /// This function returns the human-readable name of the gamepad from the
-// /// gamepad mapping assigned to the specified joystick.
-// ///
-// /// If the specified joystick is not present or does not have a gamepad mapping
-// /// this function will return null but will not generate an error. Call
-// /// @ref glfwJoystickPresent to check whether it is present regardless of
-// /// whether it has a mapping.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @return The UTF-8 encoded name of the gamepad, or null if the
-// /// joystick is not present, does not have a mapping or an
-// /// error occurred.
-// ///
-// /// @pointer_lifetime The returned string is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected, the gamepad mappings are updated or the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: gamepad, glfwJoystickIsGamepad
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI const char* glfwGetGamepadName(int jid);
+/// Returns the human-readable gamepad name for the specified joystick.
+///
+/// This function returns the human-readable name of the gamepad from the gamepad mapping assigned
+/// to the specified joystick.
+///
+/// If the specified joystick is not present or does not have a gamepad mapping this function will
+/// return null, not an error. Call glfw.Joystick.present to check whether it is
+/// present regardless of whether it has a mapping.
+///
+/// @return The UTF-8 encoded name of the gamepad, or null if the joystick is not present or does
+/// not have a mapping.
+///
+/// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
+/// yourself. It is valid until the specified joystick is disconnected, the gamepad mappings are
+/// updated or the library is terminated.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: gamepad, glfw.Joystick.isGamepad
+pub inline fn getGamepadName(self: Joystick) Error!?[*c]const u8 {
+    const name = c.glfwGetGamepadName(self.jid);
+    try getError();
+    return name;
+}
 
 /// Retrieves the state of the joystick remapped as a gamepad.
 ///
@@ -467,12 +464,21 @@ const GamepadState = extern struct {
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
-/// see also: gamepad, glfwUpdateGamepadMappings, glfwJoystickIsGamepad
+/// see also: gamepad, glfw.UpdateGamepadMappings, glfw.Joystick.isGamepad
 pub inline fn getGamepadState(self: Joystick) Error!?GamepadState {
     var state: GamepadState = undefined;
     const success = c.glfwGetGamepadState(self.jid, @ptrCast(*c.GLFWgamepadstate, &state));
     try getError();
     return if (success == c.GLFW_TRUE) state else null;
+}
+
+test "getGamepadName" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
+    _ = joystick.getGamepadName() catch |err| std.debug.print("failed to get gamepad name, joysticks not supported? error={}\n", .{err});
 }
 
 test "getGamepadState" {
