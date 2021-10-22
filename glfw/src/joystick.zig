@@ -97,44 +97,37 @@ pub inline fn getAxes(self: Joystick) Error!?[]const f32 {
     return axes[0..@intCast(usize, count)];
 }
 
-// TODO(joystick)
-// /// Returns the state of all buttons of the specified joystick.
-// ///
-// /// This function returns the state of all buttons of the specified joystick.
-// /// Each element in the array is either `glfw.press` or `glfw.release`.
-// ///
-// /// For backward compatibility with earlier versions that did not have @ref
-// /// glfwGetJoystickHats, the button array also includes all hats, each
-// /// represented as four buttons. The hats are in the same order as returned by
-// /// __glfwGetJoystickHats__ and are in the order _up_, _right_, _down_ and
-// /// _left_. To disable these extra buttons, set the @ref
-// /// GLFW_JOYSTICK_HAT_BUTTONS init hint before initialization.
-// ///
-// /// If the specified joystick is not present this function will return null
-// /// but will not generate an error. This can be used instead of first calling
-// /// @ref glfwJoystickPresent.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @param[out] count Where to store the number of button states in the returned
-// /// array. This is set to zero if the joystick is not present or an error
-// /// occurred.
-// /// @return An array of button states, or null if the joystick is not present
-// /// or an error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @pointer_lifetime The returned array is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected or the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick_button
-// ///
-// /// @glfw3 Changed to return a dynamic array.
-// ///
-// /// @ingroup input
-// GLFWAPI const unsigned char* glfwGetJoystickButtons(int jid, int* count);
+/// Returns the state of all buttons of the specified joystick.
+///
+/// This function returns the state of all buttons of the specified joystick. Each element in the
+/// array is either `glfw.press` or `glfw.release`.
+///
+/// For backward compatibility with earlier versions that did not have glfw.Joystick.getHats, the
+/// button array also includes all hats, each represented as four buttons. The hats are in the same
+/// order as returned by glfw.Joystick.getHats and are in the order _up_, _right_, _down_ and
+/// _left_. To disable these extra buttons, set the glfw.joystick_hat_buttons init hint before
+/// initialization.
+///
+/// If the specified joystick is not present this function will return null but will not generate an
+/// error. This can be used instead of first calling glfw.Joystick.present.
+///
+/// @return An array of button states, or null if the joystick is not present.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+///
+/// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
+/// yourself. It is valid until the specified joystick is disconnected or the library is terminated.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: joystick_button
+pub inline fn getButtons(self: Joystick) Error!?[]const u8 {
+    var count: c_int = undefined;
+    const buttons = c.glfwGetJoystickButtons(self.jid, &count);
+    try getError();
+    if (buttons == null) return null;
+    return buttons[0..@intCast(usize, count)];
+}
 
 // TODO(joystick)
 // /// Returns the state of all hats of the specified joystick.
@@ -457,6 +450,16 @@ test "getAxes" {
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
 
     _ = joystick.getAxes() catch |err| std.debug.print("failed to get joystick axes, joysticks not supported? error={}\n", .{err});
+}
+
+test "getButtons" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
+
+    _ = joystick.getButtons() catch |err| std.debug.print("failed to get joystick buttons, joysticks not supported? error={}\n", .{err});
 }
 
 test "setUserPointer_syntax" {
