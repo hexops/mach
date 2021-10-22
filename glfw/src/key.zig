@@ -145,3 +145,91 @@ pub const right_super = cc.GLFW_KEY_RIGHT_SUPER;
 pub const menu = cc.GLFW_KEY_MENU;
 
 pub const last = cc.GLFW_KEY_LAST;
+
+// TODO(keyboard layout)
+// /// Returns the layout-specific name of the specified printable key.
+// ///
+// /// This function returns the name of the specified printable key, encoded as
+// /// UTF-8. This is typically the character that key would produce without any
+// /// modifier keys, intended for displaying key bindings to the user. For dead
+// /// keys, it is typically the diacritic it would add to a character.
+// ///
+// /// __Do not use this function__ for [text input](@ref input_char). You will
+// /// break text input for many languages even if it happens to work for yours.
+// ///
+// /// If the key is `GLFW_KEY_UNKNOWN`, the scancode is used to identify the key,
+// /// otherwise the scancode is ignored. If you specify a non-printable key, or
+// /// `GLFW_KEY_UNKNOWN` and a scancode that maps to a non-printable key, this
+// /// function returns null but does not emit an error.
+// ///
+// /// This behavior allows you to always pass in the arguments in the
+// /// [key callback](@ref input_key) without modification.
+// ///
+// /// The printable keys are:
+// /// - `GLFW_KEY_APOSTROPHE`
+// /// - `GLFW_KEY_COMMA`
+// /// - `GLFW_KEY_MINUS`
+// /// - `GLFW_KEY_PERIOD`
+// /// - `GLFW_KEY_SLASH`
+// /// - `GLFW_KEY_SEMICOLON`
+// /// - `GLFW_KEY_EQUAL`
+// /// - `GLFW_KEY_LEFT_BRACKET`
+// /// - `GLFW_KEY_RIGHT_BRACKET`
+// /// - `GLFW_KEY_BACKSLASH`
+// /// - `GLFW_KEY_WORLD_1`
+// /// - `GLFW_KEY_WORLD_2`
+// /// - `GLFW_KEY_0` to `GLFW_KEY_9`
+// /// - `GLFW_KEY_A` to `GLFW_KEY_Z`
+// /// - `GLFW_KEY_KP_0` to `GLFW_KEY_KP_9`
+// /// - `GLFW_KEY_KP_DECIMAL`
+// /// - `GLFW_KEY_KP_DIVIDE`
+// /// - `GLFW_KEY_KP_MULTIPLY`
+// /// - `GLFW_KEY_KP_SUBTRACT`
+// /// - `GLFW_KEY_KP_ADD`
+// /// - `GLFW_KEY_KP_EQUAL`
+// ///
+// /// Names for printable keys depend on keyboard layout, while names for
+// /// non-printable keys are the same across layouts but depend on the application
+// /// language and should be localized along with other user interface text.
+// ///
+// /// @param[in] key The key to query, or `GLFW_KEY_UNKNOWN`.
+// /// @param[in] scancode The scancode of the key to query.
+// /// @return The UTF-8 encoded, layout-specific name of the key, or null.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+// ///
+// /// The contents of the returned string may change when a keyboard
+// /// layout change event is received.
+// ///
+// /// @pointer_lifetime The returned string is allocated and freed by GLFW. You
+// /// should not free it yourself. It is valid until the library is terminated.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: input_key_name
+// ///
+// ///
+// /// @ingroup input
+// GLFWAPI const char* glfwGetKeyName(int key, int scancode);
+
+// TODO(keyboard scancode)
+// /// Returns the platform-specific scancode of the specified key.
+// ///
+// /// This function returns the platform-specific scancode of the specified key.
+// ///
+// /// If the key is `GLFW_KEY_UNKNOWN` or does not exist on the keyboard this
+// /// method will return `-1`.
+// ///
+// /// @param[in] key Any [named key](@ref keys).
+// /// @return The platform-specific scancode for the key, or `-1` if an
+// /// error occurred.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+// ///
+// /// @thread_safety This function may be called from any thread.
+// ///
+// /// see also: input_key
+// ///
+// ///
+// /// @ingroup input
+// GLFWAPI int glfwGetKeyScancode(int key);

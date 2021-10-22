@@ -366,8 +366,8 @@ pub inline fn setIcon(self: Window, allocator: *mem.Allocator, images: ?[]Image)
 }
 
 const Pos = struct {
-    x: isize,
-    y: isize,
+    x: usize,
+    y: usize,
 };
 
 /// Retrieves the position of the content area of the specified window.
@@ -388,7 +388,7 @@ pub inline fn getPos(self: Window) Error!Pos {
     var y: c_int = 0;
     c.glfwGetWindowPos(self.handle, &x, &y);
     try getError();
-    return Pos{ .x = @intCast(isize, x), .y = @intCast(isize, y) };
+    return Pos{ .x = @intCast(usize, x), .y = @intCast(usize, y) };
 }
 
 /// Sets the position of the content area of the specified window.
@@ -1294,6 +1294,646 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
     // awkward to use, so we discard it instead.
     getError() catch {};
 }
+
+// TODO(input):
+// /// The function pointer type for mouse button callbacks.
+// ///
+// /// This is the function pointer type for mouse button callback functions.
+// /// A mouse button callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, int button, int action, int mods)
+// /// @endcode
+// ///
+// /// @param[in] window The window that received the event.
+// /// @param[in] button The mouse button that was pressed or
+// /// released.
+// /// @param[in] action One of `glfw.press` or `glfw.release`. Future releases
+// /// may add more actions.
+// /// @param[in] mods Bit field describing which [modifier keys](@ref mods) were
+// /// held down.
+// ///
+// /// see also: input_mouse_button, glfwSetMouseButtonCallback
+// ///
+// /// @glfw3 Added window handle and modifier mask parameters.
+// ///
+// /// @ingroup input
+// typedef void (* GLFWmousebuttonfun)(GLFWwindow*,int,int,int);
+
+// /// The function pointer type for cursor position callbacks.
+// ///
+// /// This is the function pointer type for cursor position callbacks. A cursor
+// /// position callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, double xpos, double ypos);
+// /// @endcode
+// ///
+// /// @param[in] window The window that received the event.
+// /// @param[in] xpos The new cursor x-coordinate, relative to the left edge of
+// /// the content area.
+// /// @param[in] ypos The new cursor y-coordinate, relative to the top edge of the
+// /// content area.
+// ///
+// /// see also: cursor_pos, glfw.setCursorPosCallback
+// /// Replaces `GLFWmouseposfun`.
+// ///
+// /// @ingroup input
+// typedef void (* GLFWcursorposfun)(GLFWwindow*,double,double);
+
+// /// The function pointer type for cursor enter/leave callbacks.
+// ///
+// /// This is the function pointer type for cursor enter/leave callbacks.
+// /// A cursor enter/leave callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, int entered)
+// /// @endcode
+// ///
+// /// @param[in] window The window that received the event.
+// /// @param[in] entered `true` if the cursor entered the window's content
+// /// area, or `false` if it left it.
+// ///
+// /// see also: cursor_enter, glfwSetCursorEnterCallback
+// ///
+// ///
+// /// @ingroup input
+// typedef void (* GLFWcursorenterfun)(GLFWwindow*,int);
+
+// /// The function pointer type for scroll callbacks.
+// ///
+// /// This is the function pointer type for scroll callbacks. A scroll callback
+// /// function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, double xoffset, double yoffset)
+// /// @endcode
+// ///
+// /// @param[in] window The window that received the event.
+// /// @param[in] xoffset The scroll offset along the x-axis.
+// /// @param[in] yoffset The scroll offset along the y-axis.
+// ///
+// /// see also: scrolling, glfwSetScrollCallback
+// /// Replaces `GLFWmousewheelfun`.
+// ///
+// /// @ingroup input
+// typedef void (* GLFWscrollfun)(GLFWwindow*,double,double);
+
+// /// The function pointer type for keyboard key callbacks.
+// ///
+// /// This is the function pointer type for keyboard key callbacks. A keyboard
+// /// key callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, int key, int scancode, int action, int mods)
+// /// @endcode
+// ///
+// /// @param[in] window The window that received the event.
+// /// @param[in] key The [keyboard key](@ref keys) that was pressed or released.
+// /// @param[in] scancode The system-specific scancode of the key.
+// /// @param[in] action `glfw.press`, `glfw.release` or `glfw.repeat`. Future
+// /// releases may add more actions.
+// /// @param[in] mods Bit field describing which [modifier keys](@ref mods) were
+// /// held down.
+// ///
+// /// see also: input_key, glfwSetKeyCallback
+// ///
+// /// @glfw3 Added window handle, scancode and modifier mask parameters.
+// ///
+// /// @ingroup input
+// typedef void (* GLFWkeyfun)(GLFWwindow*,int,int,int,int);
+
+// /// The function pointer type for Unicode character callbacks.
+// ///
+// /// This is the function pointer type for Unicode character callbacks.
+// /// A Unicode character callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, unsigned int codepoint)
+// /// @endcode
+// ///
+// /// @param[in] window The window that received the event.
+// /// @param[in] codepoint The Unicode code point of the character.
+// ///
+// /// see also: input_char, glfwSetCharCallback
+// ///
+// /// @glfw3 Added window handle parameter.
+// ///
+// /// @ingroup input
+// typedef void (* GLFWcharfun)(GLFWwindow*,unsigned int);
+
+// /// The function pointer type for path drop callbacks.
+// ///
+// /// This is the function pointer type for path drop callbacks. A path drop
+// /// callback function has the following signature:
+// /// @code
+// /// void function_name(GLFWwindow* window, int path_count, const char* paths[])
+// /// @endcode
+// ///
+// /// @param[in] window The window that received the event.
+// /// @param[in] path_count The number of dropped paths.
+// /// @param[in] paths The UTF-8 encoded file and/or directory path names.
+// ///
+// /// @pointer_lifetime The path array and its strings are valid until the
+// /// callback function returns.
+// ///
+// /// see also: path_drop, glfwSetDropCallback
+// ///
+// ///
+// /// @ingroup input
+// typedef void (* GLFWdropfun)(GLFWwindow*,int,const char*[]);
+
+// TODO(mouinput options)
+// /// Returns the value of an input option for the specified window.
+// ///
+// /// This function returns the value of an input option for the specified window.
+// /// The mode must be one of @ref GLFW_CURSOR, @ref GLFW_STICKY_KEYS,
+// /// @ref GLFW_STICKY_MOUSE_BUTTONS, @ref GLFW_LOCK_KEY_MODS or
+// /// @ref GLFW_RAW_MOUSE_MOTION.
+// ///
+// /// @param[in] window The window to query.
+// /// @param[in] mode One of `GLFW_CURSOR`, `GLFW_STICKY_KEYS`,
+// /// `GLFW_STICKY_MOUSE_BUTTONS`, `GLFW_LOCK_KEY_MODS` or
+// /// `GLFW_RAW_MOUSE_MOTION`.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: glfw.setInputMode
+// ///
+// ///
+// /// @ingroup input
+// GLFWAPI int glfwGetInputMode(GLFWwindow* window, int mode);
+
+// TODO(mouinput options)
+// /// Sets an input option for the specified window.
+// ///
+// /// This function sets an input mode option for the specified window. The mode
+// /// must be one of @ref GLFW_CURSOR, @ref GLFW_STICKY_KEYS,
+// /// @ref GLFW_STICKY_MOUSE_BUTTONS, @ref GLFW_LOCK_KEY_MODS or
+// /// @ref GLFW_RAW_MOUSE_MOTION.
+// ///
+// /// If the mode is `GLFW_CURSOR`, the value must be one of the following cursor
+// /// modes:
+// /// - `GLFW_CURSOR_NORMAL` makes the cursor visible and behaving normally.
+// /// - `GLFW_CURSOR_HIDDEN` makes the cursor invisible when it is over the
+// ///   content area of the window but does not restrict the cursor from leaving.
+// /// - `GLFW_CURSOR_DISABLED` hides and grabs the cursor, providing virtual
+// ///   and unlimited cursor movement. This is useful for implementing for
+// ///   example 3D camera controls.
+// ///
+// /// If the mode is `GLFW_STICKY_KEYS`, the value must be either `true` to
+// /// enable sticky keys, or `false` to disable it. If sticky keys are
+// /// enabled, a key press will ensure that @ref glfwGetKey returns `glfw.press`
+// /// the next time it is called even if the key had been released before the
+// /// call. This is useful when you are only interested in whether keys have been
+// /// pressed but not when or in which order.
+// ///
+// /// If the mode is `GLFW_STICKY_MOUSE_BUTTONS`, the value must be either
+// /// `true` to enable sticky mouse buttons, or `false` to disable it.
+// /// If sticky mouse buttons are enabled, a mouse button press will ensure that
+// /// @ref glfwGetMouseButton returns `glfw.press` the next time it is called even
+// /// if the mouse button had been released before the call. This is useful when
+// /// you are only interested in whether mouse buttons have been pressed but not
+// /// when or in which order.
+// ///
+// /// If the mode is `GLFW_LOCK_KEY_MODS`, the value must be either `true` to
+// /// enable lock key modifier bits, or `false` to disable them. If enabled,
+// /// callbacks that receive modifier bits will also have the @ref
+// /// GLFW_MOD_CAPS_LOCK bit set when the event was generated with Caps Lock on,
+// /// and the @ref GLFW_MOD_NUM_LOCK bit when Num Lock was on.
+// ///
+// /// If the mode is `GLFW_RAW_MOUSE_MOTION`, the value must be either `true`
+// /// to enable raw (unscaled and unaccelerated) mouse motion when the cursor is
+// /// disabled, or `false` to disable it. If raw motion is not supported,
+// /// attempting to set this will emit glfw.Error.PlatformError. Call @ref
+// /// glfwRawMouseMotionSupported to check for support.
+// ///
+// /// @param[in] window The window whose input mode to set.
+// /// @param[in] mode One of `GLFW_CURSOR`, `GLFW_STICKY_KEYS`,
+// /// `GLFW_STICKY_MOUSE_BUTTONS`, `GLFW_LOCK_KEY_MODS` or
+// /// `GLFW_RAW_MOUSE_MOTION`.
+// /// @param[in] value The new value of the specified input mode.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: glfw.getInputMode
+// /// Replaces `glfwEnable` and `glfwDisable`.
+// ///
+// /// @ingroup input
+// GLFWAPI void glfwSetInputMode(GLFWwindow* window, int mode, int value);
+
+// TODO(keyboard button)
+// /// Returns the last reported state of a keyboard key for the specified
+// /// window.
+// ///
+// /// This function returns the last state reported for the specified key to the
+// /// specified window. The returned state is one of `glfw.press` or
+// /// `glfw.release`. The higher-level action `glfw.repeat` is only reported to
+// /// the key callback.
+// ///
+// /// If the @ref GLFW_STICKY_KEYS input mode is enabled, this function returns
+// /// `glfw.press` the first time you call it for a key that was pressed, even if
+// /// that key has already been released.
+// ///
+// /// The key functions deal with physical keys, with [key tokens](@ref keys)
+// /// named after their use on the standard US keyboard layout. If you want to
+// /// input text, use the Unicode character callback instead.
+// ///
+// /// The [modifier key bit masks](@ref mods) are not key tokens and cannot be
+// /// used with this function.
+// ///
+// /// __Do not use this function__ to implement [text input](@ref input_char).
+// ///
+// /// @param[in] window The desired window.
+// /// @param[in] key The desired [keyboard key](@ref keys). `GLFW_KEY_UNKNOWN` is
+// /// not a valid key for this function.
+// /// @return One of `glfw.press` or `glfw.release`.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: input_key
+// ///
+// /// @glfw3 Added window handle parameter.
+// ///
+// /// @ingroup input
+// GLFWAPI int glfwGetKey(GLFWwindow* window, int key);
+
+// TODO(mouse button)
+// /// Returns the last reported state of a mouse button for the specified
+// /// window.
+// ///
+// /// This function returns the last state reported for the specified mouse button
+// /// to the specified window. The returned state is one of `glfw.press` or
+// /// `glfw.release`.
+// ///
+// /// If the @ref GLFW_STICKY_MOUSE_BUTTONS input mode is enabled, this function
+// /// returns `glfw.press` the first time you call it for a mouse button that was
+// /// pressed, even if that mouse button has already been released.
+// ///
+// /// @param[in] window The desired window.
+// /// @param[in] button The desired mouse button.
+// /// @return One of `glfw.press` or `glfw.release`.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: input_mouse_button
+// ///
+// /// @glfw3 Added window handle parameter.
+// ///
+// /// @ingroup input
+// GLFWAPI int glfwGetMouseButton(GLFWwindow* window, int button);
+
+// TODO(cursor position)
+// /// Retrieves the position of the cursor relative to the content area of
+// /// the window.
+// ///
+// /// This function returns the position of the cursor, in screen coordinates,
+// /// relative to the upper-left corner of the content area of the specified
+// /// window.
+// ///
+// /// If the cursor is disabled (with `GLFW_CURSOR_DISABLED`) then the cursor
+// /// position is unbounded and limited only by the minimum and maximum values of
+// /// a `double`.
+// ///
+// /// The coordinate can be converted to their integer equivalents with the
+// /// `floor` function. Casting directly to an integer type works for positive
+// /// coordinates, but fails for negative ones.
+// ///
+// /// Any or all of the position arguments may be null. If an error occurs, all
+// /// non-null position arguments will be set to zero.
+// ///
+// /// @param[in] window The desired window.
+// /// @param[out] xpos Where to store the cursor x-coordinate, relative to the
+// /// left edge of the content area, or null.
+// /// @param[out] ypos Where to store the cursor y-coordinate, relative to the to
+// /// top edge of the content area, or null.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: cursor_pos, glfw.setCursorPos
+// /// Replaces `glfwGetMousePos`.
+// ///
+// /// @ingroup input
+// GLFWAPI void glfwGetCursorPos(GLFWwindow* window, double* xpos, double* ypos);
+
+// TODO(cursor position)
+// /// Sets the position of the cursor, relative to the content area of the
+// /// window.
+// ///
+// /// This function sets the position, in screen coordinates, of the cursor
+// /// relative to the upper-left corner of the content area of the specified
+// /// window. The window must have input focus. If the window does not have
+// /// input focus when this function is called, it fails silently.
+// ///
+// /// __Do not use this function__ to implement things like camera controls. GLFW
+// /// already provides the `GLFW_CURSOR_DISABLED` cursor mode that hides the
+// /// cursor, transparently re-centers it and provides unconstrained cursor
+// /// motion. See @ref glfwSetInputMode for more information.
+// ///
+// /// If the cursor mode is `GLFW_CURSOR_DISABLED` then the cursor position is
+// /// unconstrained and limited only by the minimum and maximum values of
+// /// a `double`.
+// ///
+// /// @param[in] window The desired window.
+// /// @param[in] xpos The desired x-coordinate, relative to the left edge of the
+// /// content area.
+// /// @param[in] ypos The desired y-coordinate, relative to the top edge of the
+// /// content area.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+// ///
+// /// wayland: This function will only work when the cursor mode is
+// /// `GLFW_CURSOR_DISABLED`, otherwise it will do nothing.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: cursor_pos, glfw.getCursorPos
+// /// Replaces `glfwSetMousePos`.
+// ///
+// /// @ingroup input
+// GLFWAPI void glfwSetCursorPos(GLFWwindow* window, double xpos, double ypos);
+
+// TODO(cursor icon)
+// /// Sets the cursor for the window.
+// ///
+// /// This function sets the cursor image to be used when the cursor is over the
+// /// content area of the specified window. The set cursor will only be visible
+// /// when the [cursor mode](@ref cursor_mode) of the window is
+// /// `GLFW_CURSOR_NORMAL`.
+// ///
+// /// On some platforms, the set cursor may not be visible unless the window also
+// /// has input focus.
+// ///
+// /// @param[in] window The window to set the cursor for.
+// /// @param[in] cursor The cursor to set, or null to switch back to the default
+// /// arrow cursor.
+// ///
+// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: cursor_object
+// ///
+// ///
+// /// @ingroup input
+// GLFWAPI void glfwSetCursor(GLFWwindow* window, GLFWcursor* cursor);
+
+// TODO(key button)
+// /// Sets the key callback.
+// ///
+// /// This function sets the key callback of the specified window, which is called
+// /// when a key is pressed, repeated or released.
+// ///
+// /// The key functions deal with physical keys, with layout independent
+// /// [key tokens](@ref keys) named after their values in the standard US keyboard
+// /// layout. If you want to input text, use the
+// /// [character callback](@ref glfwSetCharCallback) instead.
+// ///
+// /// When a window loses input focus, it will generate synthetic key release
+// /// events for all pressed keys. You can tell these events from user-generated
+// /// events by the fact that the synthetic ones are generated after the focus
+// /// loss event has been processed, i.e. after the
+// /// [window focus callback](@ref glfwSetWindowFocusCallback) has been called.
+// ///
+// /// The scancode of a key is specific to that platform or sometimes even to that
+// /// machine. Scancodes are intended to allow users to bind keys that don't have
+// /// a GLFW key token. Such keys have `key` set to `GLFW_KEY_UNKNOWN`, their
+// /// state is not saved and so it cannot be queried with @ref glfwGetKey.
+// ///
+// /// Sometimes GLFW needs to generate synthetic key events, in which case the
+// /// scancode may be zero.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new key callback, or null to remove the currently
+// /// set callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, int key, int scancode, int action, int mods)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWkeyfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: input_key
+// ///
+// /// @glfw3 Added window handle parameter and return value.
+// ///
+// /// @ingroup input
+// GLFWAPI GLFWkeyfun glfwSetKeyCallback(GLFWwindow* window, GLFWkeyfun callback);
+
+// TODO(unicode character)
+// /// Sets the Unicode character callback.
+// ///
+// /// This function sets the character callback of the specified window, which is
+// /// called when a Unicode character is input.
+// ///
+// /// The character callback is intended for Unicode text input. As it deals with
+// /// characters, it is keyboard layout dependent, whereas the
+// /// [key callback](@ref glfwSetKeyCallback) is not. Characters do not map 1:1
+// /// to physical keys, as a key may produce zero, one or more characters. If you
+// /// want to know whether a specific physical key was pressed or released, see
+// /// the key callback instead.
+// ///
+// /// The character callback behaves as system text input normally does and will
+// /// not be called if modifier keys are held down that would prevent normal text
+// /// input on that platform, for example a Super (Command) key on macOS or Alt key
+// /// on Windows.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, unsigned int codepoint)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWcharfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: input_char
+// ///
+// /// @glfw3 Added window handle parameter and return value.
+// ///
+// /// @ingroup input
+// GLFWAPI GLFWcharfun glfwSetCharCallback(GLFWwindow* window, GLFWcharfun callback);
+
+// TODO(mouse button)
+// /// Sets the mouse button callback.
+// ///
+// /// This function sets the mouse button callback of the specified window, which
+// /// is called when a mouse button is pressed or released.
+// ///
+// /// When a window loses input focus, it will generate synthetic mouse button
+// /// release events for all pressed mouse buttons. You can tell these events
+// /// from user-generated events by the fact that the synthetic ones are generated
+// /// after the focus loss event has been processed, i.e. after the
+// /// [window focus callback](@ref glfwSetWindowFocusCallback) has been called.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, int button, int action, int mods)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWmousebuttonfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: input_mouse_button
+// ///
+// /// @glfw3 Added window handle parameter and return value.
+// ///
+// /// @ingroup input
+// GLFWAPI GLFWmousebuttonfun glfwSetMouseButtonCallback(GLFWwindow* window, GLFWmousebuttonfun callback);
+
+// TODO(cursor)
+// /// Sets the cursor position callback.
+// ///
+// /// This function sets the cursor position callback of the specified window,
+// /// which is called when the cursor is moved. The callback is provided with the
+// /// position, in screen coordinates, relative to the upper-left corner of the
+// /// content area of the window.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, double xpos, double ypos);
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWcursorposfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: cursor_pos
+// /// Replaces `glfwSetMousePosCallback`.
+// ///
+// /// @ingroup input
+// GLFWAPI GLFWcursorposfun glfwSetCursorPosCallback(GLFWwindow* window, GLFWcursorposfun callback);
+
+// TODO(cursor)
+// /// Sets the cursor enter/leave callback.
+// ///
+// /// This function sets the cursor boundary crossing callback of the specified
+// /// window, which is called when the cursor enters or leaves the content area of
+// /// the window.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new callback, or null to remove the currently set
+// /// callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, int entered)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWcursorenterfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: cursor_enter
+// ///
+// ///
+// /// @ingroup input
+// GLFWAPI GLFWcursorenterfun glfwSetCursorEnterCallback(GLFWwindow* window, GLFWcursorenterfun callback);
+
+// TODO(scrolling)
+// /// Sets the scroll callback.
+// ///
+// /// This function sets the scroll callback of the specified window, which is
+// /// called when a scrolling device is used, such as a mouse wheel or scrolling
+// /// area of a touchpad.
+// ///
+// /// The scroll callback receives all scrolling input, like that from a mouse
+// /// wheel or a touchpad scrolling area.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new scroll callback, or null to remove the
+// /// currently set callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, double xoffset, double yoffset)
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWscrollfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: scrolling
+// /// Replaces `glfwSetMouseWheelCallback`.
+// ///
+// /// @ingroup input
+// GLFWAPI GLFWscrollfun glfwSetScrollCallback(GLFWwindow* window, GLFWscrollfun callback);
+
+// TODO(path drop)
+// /// Sets the path drop callback.
+// ///
+// /// This function sets the path drop callback of the specified window, which is called when one or
+// /// more dragged paths are dropped on the window.
+// ///
+// /// Because the path array and its strings may have been generated specifically for that event, they
+// /// are not guaranteed to be valid after the callback has returned. If you wish to use them after
+// /// the callback returns, you need to make a deep copy.
+// ///
+// /// @param[in] window The window whose callback to set.
+// /// @param[in] callback The new file drop callback, or null to remove the
+// /// currently set callback.
+// /// @return The previously set callback, or null if no callback was set or the
+// /// library had not been [initialized](@ref intro_init).
+// ///
+// /// @callback_signature
+// /// @code
+// /// void function_name(GLFWwindow* window, int path_count, const char* paths[])
+// /// @endcode
+// /// For more information about the callback parameters, see the
+// /// [function pointer type](@ref GLFWdropfun).
+// ///
+// /// Possible errors include glfw.Error.NotInitialized.
+// ///
+// /// wayland: File drop is currently unimplemented.
+// ///
+// /// @thread_safety This function must only be called from the main thread.
+// ///
+// /// see also: path_drop
+// GLFWAPI GLFWdropfun glfwSetDropCallback(GLFWwindow* window, GLFWdropfun callback);
 
 test "defaultHints" {
     const glfw = @import("main.zig");
