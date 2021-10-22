@@ -129,60 +129,54 @@ pub inline fn getButtons(self: Joystick) Error!?[]const u8 {
     return buttons[0..@intCast(usize, count)];
 }
 
-// TODO(joystick)
-// /// Returns the state of all hats of the specified joystick.
-// ///
-// /// This function returns the state of all hats of the specified joystick.
-// /// Each element in the array is one of the following values:
-// ///
-// /// Name                  | Value
-// /// ----                  | -----
-// /// `GLFW_HAT_CENTERED`   | 0
-// /// `GLFW_HAT_UP`         | 1
-// /// `GLFW_HAT_RIGHT`      | 2
-// /// `GLFW_HAT_DOWN`       | 4
-// /// `GLFW_HAT_LEFT`       | 8
-// /// `GLFW_HAT_RIGHT_UP`   | `GLFW_HAT_RIGHT` \| `GLFW_HAT_UP`
-// /// `GLFW_HAT_RIGHT_DOWN` | `GLFW_HAT_RIGHT` \| `GLFW_HAT_DOWN`
-// /// `GLFW_HAT_LEFT_UP`    | `GLFW_HAT_LEFT` \| `GLFW_HAT_UP`
-// /// `GLFW_HAT_LEFT_DOWN`  | `GLFW_HAT_LEFT` \| `GLFW_HAT_DOWN`
-// ///
-// /// The diagonal directions are bitwise combinations of the primary (up, right,
-// /// down and left) directions and you can test for these individually by ANDing
-// /// it with the corresponding direction.
-// ///
-// /// @code
-// /// if (hats[2] & GLFW_HAT_RIGHT)
-// /// {
-// ///     // State of hat 2 could be right-up, right or right-down
-// /// }
-// /// @endcode
-// ///
-// /// If the specified joystick is not present this function will return null
-// /// but will not generate an error. This can be used instead of first calling
-// /// @ref glfwJoystickPresent.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @param[out] count Where to store the number of hat states in the returned
-// /// array. This is set to zero if the joystick is not present or an error
-// /// occurred.
-// /// @return An array of hat states, or null if the joystick is not present
-// /// or an error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @pointer_lifetime The returned array is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the specified joystick is
-// /// disconnected, this function is called again for that joystick or the library
-// /// is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick_hat
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI const unsigned char* glfwGetJoystickHats(int jid, int* count);
+/// Returns the state of all hats of the specified joystick.
+///
+/// This function returns the state of all hats of the specified joystick. Each element in the array
+/// is one of the following values:
+///
+/// | Name                  | Value                               |
+/// |-----------------------|-------------------------------------|
+/// | `glfw.hat.centered`   | 0                                   |
+/// | `glfw.hat.u[`         | 1                                   |
+/// | `glfw.hat.right`      | 2                                   |
+/// | `glfw.hat.down`       | 4                                   |
+/// | `glfw.hat.left`       | 8                                   |
+/// | `glfw.hat.right_up`   | `glfw.hat.right` \| `glfw.hat.up`   |
+/// | `glfw.hat.right_down` | `glfw.hat.right` \| `glfw.hat.down` |
+/// | `glfw.hat.left_up`    | `glfw.hat.left` \| `glfw.hat.up`    |
+/// | `glfw.hat.left_down`  | `glfw.hat.left` \| `glfw.hat.down`  |
+///
+/// The diagonal directions are bitwise combinations of the primary (up, right, down and left)
+/// directions and you can test for these individually by ANDing it with the corresponding
+/// direction.
+///
+/// ```
+/// if (hats[2] & glfw.hat.right) {
+///     // State of hat 2 could be right-up, right, or right-down.
+/// }
+/// ```
+///
+/// If the specified joystick is not present this function will return null but will not generate an
+/// error. This can be used instead of first calling glfw.Joystick.present.
+///
+/// @return An array of hat states, or null if the joystick is not present.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+///
+/// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
+/// yourself. It is valid until the specified joystick is disconnected, this function is called
+/// again for that joystick or the library is terminated.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: joystick_hat
+pub inline fn getHats(self: Joystick) Error!?[]const u8 {
+    var count: c_int = undefined;
+    const hats = c.glfwGetJoystickHats(self.jid, &count);
+    try getError();
+    if (hats == null) return null;
+    return hats[0..@intCast(usize, count)];
+}
 
 // TODO(joystick)
 // /// Returns the name of the specified joystick.
@@ -460,6 +454,16 @@ test "getButtons" {
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
 
     _ = joystick.getButtons() catch |err| std.debug.print("failed to get joystick buttons, joysticks not supported? error={}\n", .{err});
+}
+
+test "getHats" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
+
+    _ = joystick.getHats() catch |err| std.debug.print("failed to get joystick hats, joysticks not supported? error={}\n", .{err});
 }
 
 test "setUserPointer_syntax" {
