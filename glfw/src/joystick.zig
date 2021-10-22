@@ -14,7 +14,7 @@ jid: c_int,
 
 /// Joystick IDs.
 ///
-/// See glfw.setJoystickCallback for how these are used.
+/// See glfw.Joystick.setCallback for how these are used.
 pub const one = c.GLFW_JOYSTICK_1;
 pub const two = c.GLFW_JOYSTICK_2;
 pub const three = c.GLFW_JOYSTICK_3;
@@ -280,51 +280,37 @@ const GamepadState = extern struct {
 // /// @ingroup input
 // GLFWAPI const char* glfwGetJoystickGUID(int jid);
 
-// TODO(joystick)
-// /// Sets the user pointer of the specified joystick.
-// ///
-// /// This function sets the user-defined pointer of the specified joystick. The
-// /// current value is retained until the joystick is disconnected. The initial
-// /// value is null.
-// ///
-// /// This function may be called from the joystick callback, even for a joystick
-// /// that is being disconnected.
-// ///
-// /// @param[in] jid The joystick whose pointer to set.
-// /// @param[in] pointer The new value.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread. Access is not
-// /// synchronized.
-// ///
-// /// see also: joystick_userptr, glfwGetJoystickUserPointer
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI void glfwSetJoystickUserPointer(int jid, void* pointer);
+/// Sets the user pointer of the specified joystick.
+///
+/// This function sets the user-defined pointer of the specified joystick. The current value is
+/// retained until the joystick is disconnected. The initial value is null.
+///
+/// This function may be called from the joystick callback, even for a joystick that is being disconnected.
+///
+/// @thread_safety This function may be called from any thread. Access is not synchronized.
+///
+/// see also: joystick_userptr, glfw.Joystick.getUserPointer
+pub inline fn setUserPointer(self: Joystick, Type: anytype, pointer: Type) void {
+    c.glfwSetJoystickUserPointer(self.jid, @ptrCast(*c_void, pointer));
+    getError() catch {};
+}
 
-// TODO(joystick)
-// /// Returns the user pointer of the specified joystick.
-// ///
-// /// This function returns the current value of the user-defined pointer of the
-// /// specified joystick. The initial value is null.
-// ///
-// /// This function may be called from the joystick callback, even for a joystick
-// /// that is being disconnected.
-// ///
-// /// @param[in] jid The joystick whose pointer to return.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function may be called from any thread. Access is not
-// /// synchronized.
-// ///
-// /// see also: joystick_userptr, glfwSetJoystickUserPointer
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI void* glfwGetJoystickUserPointer(int jid);
+/// Returns the user pointer of the specified joystick.
+///
+/// This function returns the current value of the user-defined pointer of the specified joystick.
+/// The initial value is null.
+///
+/// This function may be called from the joystick callback, even for a joystick that is being
+/// disconnected.
+///
+/// @thread_safety This function may be called from any thread. Access is not synchronized.
+///
+/// see also: joystick_userptr, glfw.Joystick.setUserPointer
+pub inline fn getUserPointer(self: Joystick, Type: anytype) ?Type {
+    const ptr = c.glfwGetJoystickUserPointer(self.jid);
+    if (ptr) |p| return @ptrCast(Type, @alignCast(@alignOf(Type), p));
+    return null;
+}
 
 // TODO(joystick)
 // /// Sets the joystick configuration callback.
@@ -469,6 +455,28 @@ pub inline fn getGamepadState(self: Joystick) Error!?GamepadState {
     const success = c.glfwGetGamepadState(self.jid, @ptrCast(*c.GLFWgamepadstate, &state));
     try getError();
     return if (success == c.GLFW_TRUE) state else null;
+}
+
+test "setUserPointer_syntax" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
+
+    // Must be called from joystick callback, we cannot test it.
+    _ = joystick.setUserPointer;
+}
+
+test "getUserPointer_syntax" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
+
+    // Must be called from joystick callback, we cannot test it.
+    _ = joystick.getUserPointer;
 }
 
 test "updateGamepadMappings_syntax" {
