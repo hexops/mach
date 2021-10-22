@@ -63,7 +63,7 @@ const GamepadState = extern struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: joystick
-pub inline fn isPresent(self: Joystick) Error!bool {
+pub inline fn present(self: Joystick) Error!bool {
     const is_present = c.glfwJoystickPresent(self.jid);
     try getError();
     return is_present == c.GLFW_TRUE;
@@ -75,7 +75,7 @@ pub inline fn isPresent(self: Joystick) Error!bool {
 /// array is a value between -1.0 and 1.0.
 ///
 /// If the specified joystick is not present this function will return null but will not generate
-/// an error. This can be used instead of first calling glfw.Joystick.isPresent.
+/// an error. This can be used instead of first calling glfw.Joystick.present.
 ///
 /// @return An array of axis values, or null if the joystick is not present.
 ///
@@ -432,14 +432,14 @@ pub inline fn getGamepadState(self: Joystick) Error!?GamepadState {
     return if (success == c.GLFW_TRUE) state else null;
 }
 
-test "isPresent" {
+test "present" {
     const glfw = @import("main.zig");
     try glfw.init();
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
 
-    _ = joystick.isPresent() catch |err| std.debug.print("failed to detect joystick, joysticks not supported? error={}\n", .{err});
+    _ = joystick.present() catch |err| std.debug.print("failed to detect joystick, joysticks not supported? error={}\n", .{err});
 }
 
 test "getAxes" {
