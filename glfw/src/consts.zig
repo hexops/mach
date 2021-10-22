@@ -169,25 +169,6 @@ pub const native_context_api = c.GLFW_NATIVE_CONTEXT_API;
 pub const egl_context_api = c.GLFW_EGL_CONTEXT_API;
 pub const osmesa_context_api = c.GLFW_OSMESA_CONTEXT_API;
 
-// Standard system cursor shapes.
-/// The regular arrow cursor shape.
-pub const arrow_cursor = c.GLFW_ARROW_CURSOR;
-
-/// The text input I-beam cursor shape.
-pub const ibeam_cursor = c.GLFW_IBEAM_CURSOR;
-
-/// The crosshair shape.
-pub const crosshair_cursor = c.GLFW_CROSSHAIR_CURSOR;
-
-/// The hand shape.
-pub const hand_cursor = c.GLFW_HAND_CURSOR;
-
-/// The horizontal resize arrow shape.
-pub const hresize_cursor = c.GLFW_HRESIZE_CURSOR;
-
-/// The vertical resize arrow shape.
-pub const vresize_cursor = c.GLFW_VRESIZE_CURSOR;
-
 pub const connected = c.GLFW_CONNECTED;
 pub const disconnected = c.GLFW_DISCONNECTED;
 

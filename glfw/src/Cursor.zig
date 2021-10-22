@@ -12,6 +12,27 @@ const Cursor = @This();
 
 ptr: *c.GLFWcursor,
 
+// TODO(enum)
+
+// Standard system cursor shapes.
+/// The regular arrow cursor shape.
+pub const arrow_cursor = c.GLFW_ARROW_CURSOR;
+
+/// The text input I-beam cursor shape.
+pub const ibeam_cursor = c.GLFW_IBEAM_CURSOR;
+
+/// The crosshair shape.
+pub const crosshair_cursor = c.GLFW_CROSSHAIR_CURSOR;
+
+/// The hand shape.
+pub const hand_cursor = c.GLFW_HAND_CURSOR;
+
+/// The horizontal resize arrow shape.
+pub const hresize_cursor = c.GLFW_HRESIZE_CURSOR;
+
+/// The vertical resize arrow shape.
+pub const vresize_cursor = c.GLFW_VRESIZE_CURSOR;
+
 /// Creates a custom cursor.
 ///
 /// Creates a new custom cursor image that can be set for a window with glfw.Cursor.set. The cursor
@@ -44,25 +65,23 @@ pub inline fn create(image: Image, xhot: isize, yhot: isize) Error!Cursor {
     return Cursor{ .ptr = cursor.? };
 }
 
-// TODO(cursor icon)
-// /// Creates a cursor with a standard shape.
-// ///
-// /// Returns a cursor with a [standard shape](@ref shapes), that can be set for
-// /// a window with @ref glfwSetCursor.
-// ///
-// /// @param[in] shape One of the [standard shapes](@ref shapes).
-// /// @return A new cursor ready to use or null if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: cursor_object, glfwCreateCursor
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI GLFWcursor* glfwCreateStandardCursor(int shape);
+/// Creates a cursor with a standard shape.
+///
+/// Returns a cursor with a standard shape (see shapes), that can be set for a window with glfw.Window.setCursor.
+///
+/// @param[in] shape One of the standard shapes (see shapes).
+/// @return A new cursor ready to use.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: cursor_object, glfwCreateCursor
+pub inline fn createStandard(shape: isize) Error!Cursor {
+    const cursor = c.glfwCreateStandardCursor(@intCast(c_int, shape));
+    try getError();
+    return Cursor{ .ptr = cursor.? };
+}
 
 // TODO(cursor icon)
 // /// Destroys a cursor.
@@ -99,4 +118,12 @@ test "create" {
     defer image.deinit(allocator);
 
     _ = glfw.Cursor.create(image, 0, 0) catch |err| std.debug.print("failed to create cursor, custom cursors not supported? error={}\n", .{err});
+}
+
+test "createStandard" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    _ = glfw.Cursor.createStandard(glfw.Cursor.ibeam_cursor) catch |err| std.debug.print("failed to create cursor, custom cursors not supported? error={}\n", .{err});
 }
