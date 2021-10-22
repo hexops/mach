@@ -246,32 +246,33 @@ pub inline fn postEmptyEvent() Error!void {
     try getError();
 }
 
-// TODO(mouse)
-// /// Returns whether raw mouse motion is supported.
-// ///
-// /// This function returns whether raw mouse motion is supported on the current
-// /// system. This status does not change after GLFW has been initialized so you
-// /// only need to check this once. If you attempt to enable raw motion on
-// /// a system that does not support it, glfw.Error.PlatformError will be emitted.
-// ///
-// /// Raw mouse motion is closer to the actual motion of the mouse across
-// /// a surface. It is not affected by the scaling and acceleration applied to
-// /// the motion of the desktop cursor. That processing is suitable for a cursor
-// /// while raw motion is better for controlling for example a 3D camera. Because
-// /// of this, raw mouse motion is only provided when the cursor is disabled.
-// ///
-// /// @return `true` if raw mouse motion is supported on the current machine,
-// /// or `false` otherwise.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: raw_mouse_motion, glfw.setInputMode
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI int glfwRawMouseMotionSupported(void);
+/// Returns whether raw mouse motion is supported.
+///
+/// This function returns whether raw mouse motion is supported on the current system. This status
+/// does not change after GLFW has been initialized so you only need to check this once. If you
+/// attempt to enable raw motion on a system that does not support it, glfw.Error.PlatformError will
+/// be emitted.
+///
+/// Raw mouse motion is closer to the actual motion of the mouse across a surface. It is not
+/// affected by the scaling and acceleration applied to the motion of the desktop cursor. That
+/// processing is suitable for a cursor while raw motion is better for controlling for example a 3D
+/// camera. Because of this, raw mouse motion is only provided when the cursor is disabled.
+///
+/// @return `true` if raw mouse motion is supported on the current machine, or `false` otherwise.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: raw_mouse_motion, glfw.setInputMode
+pub inline fn rawMouseMotionSupported() bool {
+    const supported = c.glfwRawMouseMotionSupported();
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+
+    return supported == c.GLFW_TRUE;
+}
 
 pub fn basicTest() !void {
     try init();
@@ -325,6 +326,13 @@ test "postEmptyEvent_and_waitEvents" {
 
     try postEmptyEvent();
     try waitEvents();
+}
+
+test "rawMouseMotionSupported" {
+    try init();
+    defer terminate();
+
+    _ = rawMouseMotionSupported();
 }
 
 test "basic" {
