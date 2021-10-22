@@ -12,26 +12,26 @@ const Cursor = @This();
 
 ptr: *c.GLFWcursor,
 
-// TODO(enum)
-
 // Standard system cursor shapes.
-/// The regular arrow cursor shape.
-pub const arrow_cursor = c.GLFW_ARROW_CURSOR;
+const Shape = enum(isize) {
+    /// The regular arrow cursor shape.
+    arrow = c.GLFW_ARROW_CURSOR,
 
-/// The text input I-beam cursor shape.
-pub const ibeam_cursor = c.GLFW_IBEAM_CURSOR;
+    /// The text input I-beam cursor shape.
+    ibeam = c.GLFW_IBEAM_CURSOR,
 
-/// The crosshair shape.
-pub const crosshair_cursor = c.GLFW_CROSSHAIR_CURSOR;
+    /// The crosshair shape.
+    crosshair = c.GLFW_CROSSHAIR_CURSOR,
 
-/// The hand shape.
-pub const hand_cursor = c.GLFW_HAND_CURSOR;
+    /// The hand shape.
+    hand = c.GLFW_HAND_CURSOR,
 
-/// The horizontal resize arrow shape.
-pub const hresize_cursor = c.GLFW_HRESIZE_CURSOR;
+    /// The horizontal resize arrow shape.
+    hresize = c.GLFW_HRESIZE_CURSOR,
 
-/// The vertical resize arrow shape.
-pub const vresize_cursor = c.GLFW_VRESIZE_CURSOR;
+    /// The vertical resize arrow shape.
+    vresize = c.GLFW_VRESIZE_CURSOR,
+};
 
 /// Creates a custom cursor.
 ///
@@ -69,16 +69,13 @@ pub inline fn create(image: Image, xhot: isize, yhot: isize) Error!Cursor {
 ///
 /// Returns a cursor with a standard shape (see shapes), that can be set for a window with glfw.Window.setCursor.
 ///
-/// @param[in] shape One of the standard shapes (see shapes).
-/// @return A new cursor ready to use.
-///
 /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_object, glfwCreateCursor
-pub inline fn createStandard(shape: isize) Error!Cursor {
-    const cursor = c.glfwCreateStandardCursor(@intCast(c_int, shape));
+pub inline fn createStandard(shape: Shape) Error!Cursor {
+    const cursor = c.glfwCreateStandardCursor(@intCast(c_int, @enumToInt(shape)));
     try getError();
     return Cursor{ .ptr = cursor.? };
 }
@@ -125,7 +122,7 @@ test "createStandard" {
     try glfw.init();
     defer glfw.terminate();
 
-    const cursor = glfw.Cursor.createStandard(glfw.Cursor.ibeam_cursor) catch |err| {
+    const cursor = glfw.Cursor.createStandard(.ibeam) catch |err| {
         std.debug.print("failed to create cursor, custom cursors not supported? error={}\n", .{err});
         return;
     };
