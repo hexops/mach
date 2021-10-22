@@ -1,4 +1,7 @@
 //! Represents a Joystick or gamepad
+//!
+//! It can be manually crafted via e.g. `glfw.Joystick{.jid = glfw.Joystick.one}`, but more
+//! typically you'll want to discover the joystick using `glfw.Joystick.setCallback`.
 
 const std = @import("std");
 
@@ -46,27 +49,25 @@ const GamepadState = extern struct {
     axes: [6]f32,
 };
 
-// TODO(joystick)
-// /// Returns whether the specified joystick is present.
-// ///
-// /// This function returns whether the specified joystick is present.
-// ///
-// /// There is no need to call this function before other functions that accept
-// /// a joystick ID, as they all check for presence before performing any other
-// /// work.
-// ///
-// /// @param[in] jid The [joystick](@ref joysticks) to query.
-// /// @return `true` if the joystick is present, or `false` otherwise.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: joystick
-// /// Replaces `glfwGetJoystickParam`.
-// ///
-// /// @ingroup input
-// GLFWAPI int glfwJoystickPresent(int jid);
+/// Returns whether the specified joystick is present.
+///
+/// This function returns whether the specified joystick is present.
+///
+/// There is no need to call this function before other functions that accept a joystick ID, as
+/// they all check for presence before performing any other work.
+///
+/// @return `true` if the joystick is present, or `false` otherwise.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: joystick
+pub inline fn isPresent(self: Joystick) Error!bool {
+    const is_present = c.glfwJoystickPresent(self.jid);
+    try getError();
+    return is_present == c.GLFW_TRUE;
+}
 
 // TODO(joystick)
 // /// Returns the values of all axes of the specified joystick.
