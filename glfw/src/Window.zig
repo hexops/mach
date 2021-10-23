@@ -1303,25 +1303,26 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
     getError() catch {};
 }
 
-// TODO(mouinput options)
-// /// Returns the value of an input option for the specified window.
-// ///
-// /// This function returns the value of an input option for the specified window.
-// /// The mode must be one of @ref GLFW_CURSOR, @ref GLFW_STICKY_KEYS,
-// /// @ref GLFW_STICKY_MOUSE_BUTTONS, @ref GLFW_LOCK_KEY_MODS or
-// /// @ref GLFW_RAW_MOUSE_MOTION.
-// ///
-// /// @param[in] window The window to query.
-// /// @param[in] mode One of `GLFW_CURSOR`, `GLFW_STICKY_KEYS`,
-// /// `GLFW_STICKY_MOUSE_BUTTONS`, `GLFW_LOCK_KEY_MODS` or
-// /// `GLFW_RAW_MOUSE_MOTION`.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: glfw.setInputMode
-// GLFWAPI int glfwGetInputMode(GLFWwindow* window, int mode);
+/// Returns the value of an input option for the specified window.
+///
+/// This function returns the value of an input option for the specified window. The mode must be
+/// one of `glfw.cursor`, `glfw.sticky_keys`, `glfw.sticky_mouse_buttons`, `glfw.lock_key_mods`, or
+/// `glfw.raw_mouse_motion`.
+///
+/// Boolean values, such as for `glfw.raw_mouse_motion`, are returned as integers. You may convert
+/// to a boolean using `== 1`.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: glfw.setInputMode
+pub inline fn getInputMode(self: Window, mode: isize) isize {
+    const value = c.glfwGetInputMode(self.handle, @intCast(c_int, mode));
+
+    // Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+    getError() catch @panic("unexpected error getting input mode, invalid enum?");
+
+    return @intCast(isize, value);
+}
 
 /// Sets an input option for the specified window.
 ///
@@ -2556,6 +2557,22 @@ test "setDropCallback" {
             _ = paths;
         }
     }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "getInputMode" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.getInputMode(glfw.raw_mouse_motion) == 1;
 }
 
 test "setInputMode" {
