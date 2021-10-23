@@ -1414,28 +1414,27 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// see also: input_key
 // GLFWAPI int glfwGetKey(GLFWwindow* window, int key);
 
-// TODO(mouse button)
-// /// Returns the last reported state of a mouse button for the specified
-// /// window.
-// ///
-// /// This function returns the last state reported for the specified mouse button
-// /// to the specified window. The returned state is one of `glfw.press` or
-// /// `glfw.release`.
-// ///
-// /// If the @ref GLFW_STICKY_MOUSE_BUTTONS input mode is enabled, this function
-// /// returns `glfw.press` the first time you call it for a mouse button that was
-// /// pressed, even if that mouse button has already been released.
-// ///
-// /// @param[in] window The desired window.
-// /// @param[in] button The desired mouse button.
-// /// @return One of `glfw.press` or `glfw.release`.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: input_mouse_button
-// GLFWAPI int glfwGetMouseButton(GLFWwindow* window, int button);
+/// Returns the last reported state of a mouse button for the specified window.
+///
+/// This function returns whether the specified mouse button is pressed or not.
+///
+/// If the glfw.sticky_mouse_buttons input mode is enabled, this function returns `true` the first
+/// time you call it for a mouse button that was pressed, even if that mouse button has already been
+/// released.
+///
+/// @param[in] button The desired mouse button.
+/// @return One of `true` (if pressed) or `false` (if released)
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: input_mouse_button
+pub inline fn getMouseButton(self: Window, button: isize) Error!bool {
+    const state = c.glfwGetMouseButton(self.handle, @intCast(c_int, button));
+    try getError();
+    return state == c.GLFW_PRESS;
+}
 
 const CursorPos = struct {
     xpos: f64,
@@ -2561,6 +2560,22 @@ test "setDropCallback" {
             _ = paths;
         }
     }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "getMouseButton" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.getMouseButton(glfw.mouse_button.left) catch |err| std.debug.print("failed to get mouse button, not supported? error={}\n", .{err});
 }
 
 test "getCursorPos" {
