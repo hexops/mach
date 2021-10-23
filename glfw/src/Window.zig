@@ -1437,37 +1437,42 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// see also: input_mouse_button
 // GLFWAPI int glfwGetMouseButton(GLFWwindow* window, int button);
 
-// TODO(cursor position)
-// /// Retrieves the position of the cursor relative to the content area of
-// /// the window.
-// ///
-// /// This function returns the position of the cursor, in screen coordinates,
-// /// relative to the upper-left corner of the content area of the specified
-// /// window.
-// ///
-// /// If the cursor is disabled (with `GLFW_CURSOR_DISABLED`) then the cursor
-// /// position is unbounded and limited only by the minimum and maximum values of
-// /// a `double`.
-// ///
-// /// The coordinate can be converted to their integer equivalents with the
-// /// `floor` function. Casting directly to an integer type works for positive
-// /// coordinates, but fails for negative ones.
-// ///
-// /// Any or all of the position arguments may be null. If an error occurs, all
-// /// non-null position arguments will be set to zero.
-// ///
-// /// @param[in] window The desired window.
-// /// @param[out] xpos Where to store the cursor x-coordinate, relative to the
-// /// left edge of the content area, or null.
-// /// @param[out] ypos Where to store the cursor y-coordinate, relative to the to
-// /// top edge of the content area, or null.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: cursor_pos, glfw.setCursorPos
-// GLFWAPI void glfwGetCursorPos(GLFWwindow* window, double* xpos, double* ypos);
+const CursorPos = struct {
+    xpos: f64,
+    ypos: f64,
+};
+
+/// Retrieves the position of the cursor relative to the content area of the window.
+///
+/// This function returns the position of the cursor, in screen coordinates, relative to the
+/// upper-left corner of the content area of the specified window.
+///
+/// If the cursor is disabled (with `glfw.cursor_disabled`) then the cursor position is unbounded
+/// and limited only by the minimum and maximum values of a `f64`.
+///
+/// The coordinate can be converted to their integer equivalents with the `floor` function. Casting
+/// directly to an integer type works for positive coordinates, but fails for negative ones.
+///
+/// Any or all of the position arguments may be null. If an error occurs, all non-null position
+/// arguments will be set to zero.
+///
+/// @param[in] window The desired window.
+/// @param[out] xpos Where to store the cursor x-coordinate, relative to the left edge of the
+/// content area, or null.
+/// @param[out] ypos Where to store the cursor y-coordinate, relative to the to top edge of the
+/// content area, or null.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: cursor_pos, glfw.Window.setCursorPos
+pub inline fn getCursorPos(self: Window) Error!CursorPos {
+    var pos: CursorPos = undefined;
+    c.glfwGetCursorPos(self.handle, &pos.xpos, &pos.ypos);
+    try getError();
+    return pos;
+}
 
 /// Sets the position of the cursor, relative to the content area of the window.
 ///
@@ -1493,7 +1498,7 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
-/// see also: cursor_pos, glfw.getCursorPos
+/// see also: cursor_pos, glfw.Window.getCursorPos
 pub inline fn setCursorPos(self: Window, xpos: f64, ypos: f64) Error!void {
     c.glfwSetCursorPos(self.handle, xpos, ypos);
     try getError();
@@ -2556,6 +2561,22 @@ test "setDropCallback" {
             _ = paths;
         }
     }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "getCursorPos" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.getCursorPos() catch |err| std.debug.print("failed to get cursor pos, not supported? error={}\n", .{err});
 }
 
 test "setCursorPos" {
