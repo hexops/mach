@@ -1380,39 +1380,38 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// see also: glfw.getInputMode
 // GLFWAPI void glfwSetInputMode(GLFWwindow* window, int mode, int value);
 
-// TODO(keyboard button)
-// /// Returns the last reported state of a keyboard key for the specified
-// /// window.
-// ///
-// /// This function returns the last state reported for the specified key to the
-// /// specified window. The returned state is one of `glfw.press` or
-// /// `glfw.release`. The higher-level action `glfw.repeat` is only reported to
-// /// the key callback.
-// ///
-// /// If the @ref GLFW_STICKY_KEYS input mode is enabled, this function returns
-// /// `glfw.press` the first time you call it for a key that was pressed, even if
-// /// that key has already been released.
-// ///
-// /// The key functions deal with physical keys, with [key tokens](@ref keys)
-// /// named after their use on the standard US keyboard layout. If you want to
-// /// input text, use the Unicode character callback instead.
-// ///
-// /// The [modifier key bit masks](@ref mods) are not key tokens and cannot be
-// /// used with this function.
-// ///
-// /// __Do not use this function__ to implement [text input](@ref input_char).
-// ///
-// /// @param[in] window The desired window.
-// /// @param[in] key The desired [keyboard key](@ref keys). `GLFW_KEY_UNKNOWN` is
-// /// not a valid key for this function.
-// /// @return One of `glfw.press` or `glfw.release`.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: input_key
-// GLFWAPI int glfwGetKey(GLFWwindow* window, int key);
+/// Returns the last reported press state of a keyboard key for the specified window.
+///
+/// This function returns the last press state reported for the specified key to the specified
+/// window. The returned state is one of `true` (pressed) or `false` (released). The higher-level
+/// action `glfw.repeat` is only reported to the key callback.
+///
+/// If the `glfw.sticky_keys` input mode is enabled, this function returns `glfw.press` the first
+/// time you call it for a key that was pressed, even if that key has already been released.
+///
+/// The key functions deal with physical keys, with key tokens (see keys) named after their use on
+/// the standard US keyboard layout. If you want to input text, use the Unicode character callback
+/// instead.
+///
+/// The modifier key bit masks (see mods) are not key tokens and cannot be used with this function.
+///
+/// __Do not use this function__ to implement text input, use glfw.Window.setCharCallback instead.
+///
+/// @param[in] window The desired window.
+/// @param[in] key The desired keyboard key (see keys). `glfw.key.unknown` is not a valid key for
+/// this function.
+/// @return `true` (pressed) or `false` (released)
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: input_key
+pub inline fn getKey(self: Window, key: isize) Error!bool {
+    const state = c.glfwGetKey(self.handle, @intCast(c_int, key));
+    try getError();
+    return state == c.GLFW_PRESS;
+}
 
 /// Returns the last reported state of a mouse button for the specified window.
 ///
@@ -2562,6 +2561,22 @@ test "setDropCallback" {
     }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
 }
 
+test "getKey" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = try window.getKey(glfw.key.escape);
+}
+
 test "getMouseButton" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -2575,7 +2590,7 @@ test "getMouseButton" {
     };
     defer window.destroy();
 
-    _ = window.getMouseButton(glfw.mouse_button.left) catch |err| std.debug.print("failed to get mouse button, not supported? error={}\n", .{err});
+    _ = try window.getMouseButton(glfw.mouse_button.left);
 }
 
 test "getCursorPos" {
