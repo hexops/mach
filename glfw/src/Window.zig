@@ -9,6 +9,7 @@ const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 const Image = @import("Image.zig");
 const Monitor = @import("Monitor.zig");
+const Cursor = @import("Cursor.zig");
 
 const Window = @This();
 
@@ -1502,27 +1503,25 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// see also: cursor_pos, glfw.getCursorPos
 // GLFWAPI void glfwSetCursorPos(GLFWwindow* window, double xpos, double ypos);
 
-// TODO(cursor icon)
-// /// Sets the cursor for the window.
-// ///
-// /// This function sets the cursor image to be used when the cursor is over the
-// /// content area of the specified window. The set cursor will only be visible
-// /// when the [cursor mode](@ref cursor_mode) of the window is
-// /// `GLFW_CURSOR_NORMAL`.
-// ///
-// /// On some platforms, the set cursor may not be visible unless the window also
-// /// has input focus.
-// ///
-// /// @param[in] window The window to set the cursor for.
-// /// @param[in] cursor The cursor to set, or null to switch back to the default
-// /// arrow cursor.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: cursor_object
-// GLFWAPI void glfwSetCursor(GLFWwindow* window, GLFWcursor* cursor);
+/// Sets the cursor for the window.
+///
+/// This function sets the cursor image to be used when the cursor is over the content area of the
+/// specified window. The set cursor will only be visible when the cursor mode (see cursor_mode) of
+/// the window is `glfw.Cursor.normal`.
+///
+/// On some platforms, the set cursor may not be visible unless the window also has input focus.
+///
+/// @param[in] cursor The cursor to set, or null to switch back to the default arrow cursor.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: cursor_object
+pub inline fn setCursor(self: Window, cursor: Cursor) Error!void {
+    c.glfwSetCursor(self.handle, cursor.ptr);
+    try getError();
+}
 
 fn setKeyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
@@ -2561,6 +2560,28 @@ test "setDropCallback" {
             _ = paths;
         }
     }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "setKeyCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    const cursor = glfw.Cursor.createStandard(.ibeam) catch |err| {
+        std.debug.print("failed to create cursor, custom cursors not supported? error={}\n", .{err});
+        return;
+    };
+    defer cursor.destroy();
+
+    window.setCursor(cursor) catch |err| std.debug.print("failed to set cursor, custom cursors not supported? error={}\n", .{err});
 }
 
 test "setKeyCallback" {
