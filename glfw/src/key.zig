@@ -15,7 +15,7 @@
 //! - Keys that lack a clear US mapping are named "WORLD_x"
 //! - For non-printable keys, custom names are used (e.g. "F4", "BACKSPACE", etc.)
 
-const cc = @cImport(@cInclude("GLFW/glfw3.h"));
+const cc = @import("c.zig").c;
 
 /// The unknown key
 pub const unknown = cc.GLFW_KEY_UNKNOWN;
