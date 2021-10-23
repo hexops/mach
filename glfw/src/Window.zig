@@ -46,6 +46,7 @@ pub const InternalUserPointer = struct {
     setFramebufferSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
     setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
     setDropCallback: ?fn (window: Window, paths: [][*c]const u8) void,
+    setScrollCallback: ?fn (window: Window, xoffset: f64, yoffset: f64) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1358,24 +1359,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // typedef void (* GLFWcursorenterfun)(GLFWwindow*,int);
 
-// /// The function pointer type for scroll callbacks.
-// ///
-// /// This is the function pointer type for scroll callbacks. A scroll callback
-// /// function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, double xoffset, double yoffset)
-// /// @endcode
-// ///
-// /// @param[in] window The window that received the event.
-// /// @param[in] xoffset The scroll offset along the x-axis.
-// /// @param[in] yoffset The scroll offset along the y-axis.
-// ///
-// /// see also: scrolling, glfwSetScrollCallback
-// /// Replaces `GLFWmousewheelfun`.
-// ///
-// /// @ingroup input
-// typedef void (* GLFWscrollfun)(GLFWwindow*,double,double);
-
 // /// The function pointer type for keyboard key callbacks.
 // ///
 // /// This is the function pointer type for keyboard key callbacks. A keyboard
@@ -1850,38 +1833,42 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // GLFWAPI GLFWcursorenterfun glfwSetCursorEnterCallback(GLFWwindow* window, GLFWcursorenterfun callback);
 
-// TODO(scrolling)
-// /// Sets the scroll callback.
-// ///
-// /// This function sets the scroll callback of the specified window, which is
-// /// called when a scrolling device is used, such as a mouse wheel or scrolling
-// /// area of a touchpad.
-// ///
-// /// The scroll callback receives all scrolling input, like that from a mouse
-// /// wheel or a touchpad scrolling area.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new scroll callback, or null to remove the
-// /// currently set callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, double xoffset, double yoffset)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWscrollfun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: scrolling
-// /// Replaces `glfwSetMouseWheelCallback`.
-// ///
-// /// @ingroup input
-// GLFWAPI GLFWscrollfun glfwSetScrollCallback(GLFWwindow* window, GLFWscrollfun callback);
+fn setScrollCallbackWrapper(handle: ?*c.GLFWwindow, xoffset: f64, yoffset: f64) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setScrollCallback.?(window, xoffset, yoffset);
+}
+
+/// Sets the scroll callback.
+///
+/// This function sets the scroll callback of the specified window, which is called when a scrolling
+/// device is used, such as a mouse wheel or scrolling area of a touchpad.
+///
+/// The scroll callback receives all scrolling input, like that from a mouse wheel or a touchpad
+/// scrolling area.
+///
+/// @param[in] window The window whose callback to set.
+/// @param[in] callback The new scroll callback, or null to remove the currently set callback.
+///
+/// @callback_param[in] window The window that received the event.
+/// @callback_param[in] xoffset The scroll offset along the x-axis.
+/// @callback_param[in] yoffset The scroll offset along the y-axis.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: scrolling
+pub inline fn setScrollCallback(self: Window, callback: ?fn (window: Window, xoffset: f64, yoffset: f64) void) void {
+    var internal = self.getInternal();
+    internal.setScrollCallback = callback;
+    _ = c.glfwSetScrollCallback(self.handle, if (callback != null) setScrollCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
 
 fn setDropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c][*c]const u8) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
@@ -2689,4 +2676,26 @@ test "setDropCallback" {
             _ = paths;
         }
     }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "setScrollCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setScrollCallback((struct {
+        fn callback(_window: Window, xoffset: f64, yoffset: f64) void {
+            _ = _window;
+            _ = xoffset;
+            _ = yoffset;
+        }
+    }).callback);
 }
