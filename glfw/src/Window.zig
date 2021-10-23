@@ -47,6 +47,7 @@ pub const InternalUserPointer = struct {
     setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
     setDropCallback: ?fn (window: Window, paths: [][*c]const u8) void,
     setScrollCallback: ?fn (window: Window, xoffset: f64, yoffset: f64) void,
+    setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1341,24 +1342,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // typedef void (* GLFWcursorposfun)(GLFWwindow*,double,double);
 
-// /// The function pointer type for cursor enter/leave callbacks.
-// ///
-// /// This is the function pointer type for cursor enter/leave callbacks.
-// /// A cursor enter/leave callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, int entered)
-// /// @endcode
-// ///
-// /// @param[in] window The window that received the event.
-// /// @param[in] entered `true` if the cursor entered the window's content
-// /// area, or `false` if it left it.
-// ///
-// /// see also: cursor_enter, glfwSetCursorEnterCallback
-// ///
-// ///
-// /// @ingroup input
-// typedef void (* GLFWcursorenterfun)(GLFWwindow*,int);
-
 // /// The function pointer type for keyboard key callbacks.
 // ///
 // /// This is the function pointer type for keyboard key callbacks. A keyboard
@@ -1803,35 +1786,38 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // GLFWAPI GLFWcursorposfun glfwSetCursorPosCallback(GLFWwindow* window, GLFWcursorposfun callback);
 
-// TODO(cursor)
-// /// Sets the cursor enter/leave callback.
-// ///
-// /// This function sets the cursor boundary crossing callback of the specified
-// /// window, which is called when the cursor enters or leaves the content area of
-// /// the window.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, int entered)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWcursorenterfun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: cursor_enter
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI GLFWcursorenterfun glfwSetCursorEnterCallback(GLFWwindow* window, GLFWcursorenterfun callback);
+fn setCursorEnterCallbackWrapper(handle: ?*c.GLFWwindow, entered: c_int) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setCursorEnterCallback.?(window, entered == c.GLFW_TRUE);
+}
+
+/// Sets the cursor enter/leave callback.
+///
+/// This function sets the cursor boundary crossing callback of the specified window, which is
+/// called when the cursor enters or leaves the content area of the window.
+///
+/// @param[in] callback The new callback, or null to remove the currently set callback.
+///
+/// @callback_param[in] window The window that received the event.
+/// @callback_param[in] entered `true` if the cursor entered the window's content area, or `false`
+/// if it left it.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: cursor_enter
+pub inline fn setCursorEnterCallback(self: Window, callback: ?fn (window: Window, entered: bool) void) void {
+    var internal = self.getInternal();
+    internal.setCursorEnterCallback = callback;
+    _ = c.glfwSetCursorEnterCallback(self.handle, if (callback != null) setCursorEnterCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
 
 fn setScrollCallbackWrapper(handle: ?*c.GLFWwindow, xoffset: f64, yoffset: f64) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
@@ -2696,6 +2682,27 @@ test "setScrollCallback" {
             _ = _window;
             _ = xoffset;
             _ = yoffset;
+        }
+    }).callback);
+}
+
+test "setCursorEnterCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setCursorEnterCallback((struct {
+        fn callback(_window: Window, entered: bool) void {
+            _ = _window;
+            _ = entered;
         }
     }).callback);
 }
