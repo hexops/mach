@@ -1469,39 +1469,35 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// see also: cursor_pos, glfw.setCursorPos
 // GLFWAPI void glfwGetCursorPos(GLFWwindow* window, double* xpos, double* ypos);
 
-// TODO(cursor position)
-// /// Sets the position of the cursor, relative to the content area of the
-// /// window.
-// ///
-// /// This function sets the position, in screen coordinates, of the cursor
-// /// relative to the upper-left corner of the content area of the specified
-// /// window. The window must have input focus. If the window does not have
-// /// input focus when this function is called, it fails silently.
-// ///
-// /// __Do not use this function__ to implement things like camera controls. GLFW
-// /// already provides the `GLFW_CURSOR_DISABLED` cursor mode that hides the
-// /// cursor, transparently re-centers it and provides unconstrained cursor
-// /// motion. See @ref glfwSetInputMode for more information.
-// ///
-// /// If the cursor mode is `GLFW_CURSOR_DISABLED` then the cursor position is
-// /// unconstrained and limited only by the minimum and maximum values of
-// /// a `double`.
-// ///
-// /// @param[in] window The desired window.
-// /// @param[in] xpos The desired x-coordinate, relative to the left edge of the
-// /// content area.
-// /// @param[in] ypos The desired y-coordinate, relative to the top edge of the
-// /// content area.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-// ///
-// /// wayland: This function will only work when the cursor mode is
-// /// `GLFW_CURSOR_DISABLED`, otherwise it will do nothing.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: cursor_pos, glfw.getCursorPos
-// GLFWAPI void glfwSetCursorPos(GLFWwindow* window, double xpos, double ypos);
+/// Sets the position of the cursor, relative to the content area of the window.
+///
+/// This function sets the position, in screen coordinates, of the cursor relative to the upper-left
+/// corner of the content area of the specified window. The window must have input focus. If the
+/// window does not have input focus when this function is called, it fails silently.
+///
+/// __Do not use this function__ to implement things like camera controls. GLFW already provides the
+/// `glfw.cursor_disabled` cursor mode that hides the cursor, transparently re-centers it and
+/// provides unconstrained cursor motion. See glfw.Window.setInputMode for more information.
+///
+/// If the cursor mode is `glfw.cursor_disabled` then the cursor position is unconstrained and
+/// limited only by the minimum and maximum values of a `double`.
+///
+/// @param[in] window The desired window.
+/// @param[in] xpos The desired x-coordinate, relative to the left edge of the content area.
+/// @param[in] ypos The desired y-coordinate, relative to the top edge of the content area.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// wayland: This function will only work when the cursor mode is `glfw.cursor_disabled`, otherwise
+/// it will do nothing.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: cursor_pos, glfw.getCursorPos
+pub inline fn setCursorPos(self: Window, xpos: f64, ypos: f64) Error!void {
+    c.glfwSetCursorPos(self.handle, xpos, ypos);
+    try getError();
+}
 
 /// Sets the cursor for the window.
 ///
@@ -2562,7 +2558,23 @@ test "setDropCallback" {
     }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
 }
 
-test "setKeyCallback" {
+test "setCursorPos" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setCursorPos(0, 0) catch |err| std.debug.print("failed to set cursor pos, not supported? error={}\n", .{err});
+}
+
+test "setCursor" {
     const glfw = @import("main.zig");
     try glfw.init();
     defer glfw.terminate();
