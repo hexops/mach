@@ -45,12 +45,13 @@ pub const InternalUserPointer = struct {
     setMaximizeCallback: ?fn (window: Window, maximized: bool) void,
     setFramebufferSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
     setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
-    setDropCallback: ?fn (window: Window, paths: [][*c]const u8) void,
-    setScrollCallback: ?fn (window: Window, xoffset: f64, yoffset: f64) void,
-    setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
-    setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
-    setMouseButtonCallback: ?fn (window: Window, button: isize, action: isize, mods: isize) void,
+    setKeyCallback: ?fn (window: Window, key: isize, scancode: isize, action: isize, mods: isize) void,
     setCharCallback: ?fn (window: Window, codepoint: u21) void,
+    setMouseButtonCallback: ?fn (window: Window, button: isize, action: isize, mods: isize) void,
+    setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
+    setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
+    setScrollCallback: ?fn (window: Window, xoffset: f64, yoffset: f64) void,
+    setDropCallback: ?fn (window: Window, paths: [][*c]const u8) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1301,29 +1302,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
     getError() catch {};
 }
 
-// /// The function pointer type for keyboard key callbacks.
-// ///
-// /// This is the function pointer type for keyboard key callbacks. A keyboard
-// /// key callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, int key, int scancode, int action, int mods)
-// /// @endcode
-// ///
-// /// @param[in] window The window that received the event.
-// /// @param[in] key The [keyboard key](@ref keys) that was pressed or released.
-// /// @param[in] scancode The system-specific scancode of the key.
-// /// @param[in] action `glfw.press`, `glfw.release` or `glfw.repeat`. Future
-// /// releases may add more actions.
-// /// @param[in] mods Bit field describing which [modifier keys](@ref mods) were
-// /// held down.
-// ///
-// /// see also: input_key, glfwSetKeyCallback
-// ///
-// /// @glfw3 Added window handle, scancode and modifier mask parameters.
-// ///
-// /// @ingroup input
-// typedef void (* GLFWkeyfun)(GLFWwindow*,int,int,int,int);
-
 // TODO(mouinput options)
 // /// Returns the value of an input option for the specified window.
 // ///
@@ -1342,9 +1320,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: glfw.setInputMode
-// ///
-// ///
-// /// @ingroup input
 // GLFWAPI int glfwGetInputMode(GLFWwindow* window, int mode);
 
 // TODO(mouinput options)
@@ -1402,9 +1377,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: glfw.getInputMode
-// /// Replaces `glfwEnable` and `glfwDisable`.
-// ///
-// /// @ingroup input
 // GLFWAPI void glfwSetInputMode(GLFWwindow* window, int mode, int value);
 
 // TODO(keyboard button)
@@ -1439,10 +1411,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: input_key
-// ///
-// /// @glfw3 Added window handle parameter.
-// ///
-// /// @ingroup input
 // GLFWAPI int glfwGetKey(GLFWwindow* window, int key);
 
 // TODO(mouse button)
@@ -1466,10 +1434,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: input_mouse_button
-// ///
-// /// @glfw3 Added window handle parameter.
-// ///
-// /// @ingroup input
 // GLFWAPI int glfwGetMouseButton(GLFWwindow* window, int button);
 
 // TODO(cursor position)
@@ -1502,9 +1466,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: cursor_pos, glfw.setCursorPos
-// /// Replaces `glfwGetMousePos`.
-// ///
-// /// @ingroup input
 // GLFWAPI void glfwGetCursorPos(GLFWwindow* window, double* xpos, double* ypos);
 
 // TODO(cursor position)
@@ -1539,9 +1500,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: cursor_pos, glfw.getCursorPos
-// /// Replaces `glfwSetMousePos`.
-// ///
-// /// @ingroup input
 // GLFWAPI void glfwSetCursorPos(GLFWwindow* window, double xpos, double ypos);
 
 // TODO(cursor icon)
@@ -1564,59 +1522,58 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @thread_safety This function must only be called from the main thread.
 // ///
 // /// see also: cursor_object
-// ///
-// ///
-// /// @ingroup input
 // GLFWAPI void glfwSetCursor(GLFWwindow* window, GLFWcursor* cursor);
 
-// TODO(key button)
-// /// Sets the key callback.
-// ///
-// /// This function sets the key callback of the specified window, which is called
-// /// when a key is pressed, repeated or released.
-// ///
-// /// The key functions deal with physical keys, with layout independent
-// /// [key tokens](@ref keys) named after their values in the standard US keyboard
-// /// layout. If you want to input text, use the
-// /// [character callback](@ref glfwSetCharCallback) instead.
-// ///
-// /// When a window loses input focus, it will generate synthetic key release
-// /// events for all pressed keys. You can tell these events from user-generated
-// /// events by the fact that the synthetic ones are generated after the focus
-// /// loss event has been processed, i.e. after the
-// /// [window focus callback](@ref glfwSetWindowFocusCallback) has been called.
-// ///
-// /// The scancode of a key is specific to that platform or sometimes even to that
-// /// machine. Scancodes are intended to allow users to bind keys that don't have
-// /// a GLFW key token. Such keys have `key` set to `GLFW_KEY_UNKNOWN`, their
-// /// state is not saved and so it cannot be queried with @ref glfwGetKey.
-// ///
-// /// Sometimes GLFW needs to generate synthetic key events, in which case the
-// /// scancode may be zero.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new key callback, or null to remove the currently
-// /// set callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, int key, int scancode, int action, int mods)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWkeyfun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: input_key
-// ///
-// /// @glfw3 Added window handle parameter and return value.
-// ///
-// /// @ingroup input
-// GLFWAPI GLFWkeyfun glfwSetKeyCallback(GLFWwindow* window, GLFWkeyfun callback);
+fn setKeyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setKeyCallback.?(window, @intCast(isize, key), @intCast(isize, scancode), @intCast(isize, action), @intCast(isize, mods));
+}
+
+/// Sets the key callback.
+///
+/// This function sets the key callback of the specified window, which is called when a key is
+/// pressed, repeated or released.
+///
+/// The key functions deal with physical keys, with layout independent key tokens (see keys) named
+/// after their values in the standard US keyboard layout. If you want to input text, use the
+/// character callback (see glfw.Window.setCharCallback) instead.
+///
+/// When a window loses input focus, it will generate synthetic key release events for all pressed
+/// keys. You can tell these events from user-generated events by the fact that the synthetic ones
+/// are generated after the focus loss event has been processed, i.e. after the window focus
+/// callback (see glfw.Window.setFocusCallback) has been called.
+///
+/// The scancode of a key is specific to that platform or sometimes even to that machine. Scancodes
+/// are intended to allow users to bind keys that don't have a GLFW key token. Such keys have `key`
+/// set to `glfw.key.unknown`, their state is not saved and so it cannot be queried with
+/// glfw.Window.getKey.
+///
+/// Sometimes GLFW needs to generate synthetic key events, in which case the scancode may be zero.
+///
+/// @param[in] window The window whose callback to set.
+/// @param[in] callback The new key callback, or null to remove the currently set callback.
+///
+/// @callback_param[in] window The window that received the event.
+/// @callback_param[in] key The keyboard key (see keys) that was pressed or released.
+/// @callback_param[in] scancode The system-specific scancode of the key.
+/// @callback_param[in] action `glfw.press`, `glfw.release` or `glfw.repeat`. Future releases may
+/// add more actions.
+/// @callback_param[in] mods Bit field describing which modifier keys (see mods) were held down.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: input_key
+pub inline fn setKeyCallback(self: Window, callback: ?fn (window: Window, key: isize, scancode: isize, action: isize, mods: isize) void) void {
+    var internal = self.getInternal();
+    internal.setKeyCallback = callback;
+    _ = c.glfwSetKeyCallback(self.handle, if (callback != null) setKeyCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
 
 fn setCharCallbackWrapper(handle: ?*c.GLFWwindow, codepoint: c_uint) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
@@ -2711,6 +2668,30 @@ test "setCharCallback" {
         fn callback(_window: Window, codepoint: u21) void {
             _ = _window;
             _ = codepoint;
+        }
+    }).callback);
+}
+
+test "setKeyCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setKeyCallback((struct {
+        fn callback(_window: Window, key: isize, scancode: isize, action: isize, mods: isize) void {
+            _ = _window;
+            _ = key;
+            _ = scancode;
+            _ = action;
+            _ = mods;
         }
     }).callback);
 }
