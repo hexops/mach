@@ -45,6 +45,7 @@ pub const InternalUserPointer = struct {
     setMaximizeCallback: ?fn (window: Window, maximized: bool) void,
     setFramebufferSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
     setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
+    setDropCallback: ?fn (window: Window, paths: [][*c]const u8) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1416,27 +1417,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // typedef void (* GLFWcharfun)(GLFWwindow*,unsigned int);
 
-// /// The function pointer type for path drop callbacks.
-// ///
-// /// This is the function pointer type for path drop callbacks. A path drop
-// /// callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, int path_count, const char* paths[])
-// /// @endcode
-// ///
-// /// @param[in] window The window that received the event.
-// /// @param[in] path_count The number of dropped paths.
-// /// @param[in] paths The UTF-8 encoded file and/or directory path names.
-// ///
-// /// @pointer_lifetime The path array and its strings are valid until the
-// /// callback function returns.
-// ///
-// /// see also: path_drop, glfwSetDropCallback
-// ///
-// ///
-// /// @ingroup input
-// typedef void (* GLFWdropfun)(GLFWwindow*,int,const char*[]);
-
 // TODO(mouinput options)
 // /// Returns the value of an input option for the specified window.
 // ///
@@ -1903,37 +1883,43 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // GLFWAPI GLFWscrollfun glfwSetScrollCallback(GLFWwindow* window, GLFWscrollfun callback);
 
-// TODO(path drop)
-// /// Sets the path drop callback.
-// ///
-// /// This function sets the path drop callback of the specified window, which is called when one or
-// /// more dragged paths are dropped on the window.
-// ///
-// /// Because the path array and its strings may have been generated specifically for that event, they
-// /// are not guaranteed to be valid after the callback has returned. If you wish to use them after
-// /// the callback returns, you need to make a deep copy.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new file drop callback, or null to remove the
-// /// currently set callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, int path_count, const char* paths[])
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWdropfun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// wayland: File drop is currently unimplemented.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: path_drop
-// GLFWAPI GLFWdropfun glfwSetDropCallback(GLFWwindow* window, GLFWdropfun callback);
+fn setDropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c][*c]const u8) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setDropCallback.?(window, paths[0..@intCast(usize, path_count)]);
+}
+
+/// Sets the path drop callback.
+///
+/// This function sets the path drop callback of the specified window, which is called when one or
+/// more dragged paths are dropped on the window.
+///
+/// Because the path array and its strings may have been generated specifically for that event, they
+/// are not guaranteed to be valid after the callback has returned. If you wish to use them after
+/// the callback returns, you need to make a deep copy.
+///
+/// @param[in] callback The new file drop callback, or null to remove the currently set callback.
+///
+/// @callback_param[in] window The window that received the event.
+/// @callback_param[in] path_count The number of dropped paths.
+/// @callback_param[in] paths The UTF-8 encoded file and/or directory path names.
+///
+/// @callback_pointer_lifetime The path array and its strings are valid until the callback function
+/// returns.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// wayland: File drop is currently unimplemented.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: path_drop
+pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths: [][*c]const u8) void) Error!void {
+    var internal = self.getInternal();
+    internal.setDropCallback = callback;
+    _ = c.glfwSetDropCallback(self.handle, if (callback != null) setDropCallbackWrapper else null);
+    try getError();
+}
 
 test "defaultHints" {
     const glfw = @import("main.zig");
@@ -2682,4 +2668,25 @@ test "setContentScaleCallback" {
             _ = yscale;
         }
     }).callback);
+}
+
+test "setDropCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setDropCallback((struct {
+        fn callback(_window: Window, paths: [][*c]const u8) void {
+            _ = _window;
+            _ = paths;
+        }
+    }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
 }
