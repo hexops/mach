@@ -50,6 +50,7 @@ pub const InternalUserPointer = struct {
     setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
     setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
     setMouseButtonCallback: ?fn (window: Window, button: isize, action: isize, mods: isize) void,
+    setCharCallback: ?fn (window: Window, codepoint: u21) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1323,24 +1324,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // typedef void (* GLFWkeyfun)(GLFWwindow*,int,int,int,int);
 
-// /// The function pointer type for Unicode character callbacks.
-// ///
-// /// This is the function pointer type for Unicode character callbacks.
-// /// A Unicode character callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, unsigned int codepoint)
-// /// @endcode
-// ///
-// /// @param[in] window The window that received the event.
-// /// @param[in] codepoint The Unicode code point of the character.
-// ///
-// /// see also: input_char, glfwSetCharCallback
-// ///
-// /// @glfw3 Added window handle parameter.
-// ///
-// /// @ingroup input
-// typedef void (* GLFWcharfun)(GLFWwindow*,unsigned int);
-
 // TODO(mouinput options)
 // /// Returns the value of an input option for the specified window.
 // ///
@@ -1635,47 +1618,46 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // GLFWAPI GLFWkeyfun glfwSetKeyCallback(GLFWwindow* window, GLFWkeyfun callback);
 
-// TODO(unicode character)
-// /// Sets the Unicode character callback.
-// ///
-// /// This function sets the character callback of the specified window, which is
-// /// called when a Unicode character is input.
-// ///
-// /// The character callback is intended for Unicode text input. As it deals with
-// /// characters, it is keyboard layout dependent, whereas the
-// /// [key callback](@ref glfwSetKeyCallback) is not. Characters do not map 1:1
-// /// to physical keys, as a key may produce zero, one or more characters. If you
-// /// want to know whether a specific physical key was pressed or released, see
-// /// the key callback instead.
-// ///
-// /// The character callback behaves as system text input normally does and will
-// /// not be called if modifier keys are held down that would prevent normal text
-// /// input on that platform, for example a Super (Command) key on macOS or Alt key
-// /// on Windows.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, unsigned int codepoint)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWcharfun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: input_char
-// ///
-// /// @glfw3 Added window handle parameter and return value.
-// ///
-// /// @ingroup input
-// GLFWAPI GLFWcharfun glfwSetCharCallback(GLFWwindow* window, GLFWcharfun callback);
+fn setCharCallbackWrapper(handle: ?*c.GLFWwindow, codepoint: c_uint) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setCharCallback.?(window, @intCast(u21, codepoint));
+}
+
+/// Sets the Unicode character callback.
+///
+/// This function sets the character callback of the specified window, which is called when a
+/// Unicode character is input.
+///
+/// The character callback is intended for Unicode text input. As it deals with characters, it is
+/// keyboard layout dependent, whereas the key callback (see glfw.Window.setKeyCallback) is not.
+/// Characters do not map 1:1 to physical keys, as a key may produce zero, one or more characters.
+/// If you want to know whether a specific physical key was pressed or released, see the key
+/// callback instead.
+///
+/// The character callback behaves as system text input normally does and will not be called if
+/// modifier keys are held down that would prevent normal text input on that platform, for example a
+/// Super (Command) key on macOS or Alt key on Windows.
+///
+/// @param[in] window The window whose callback to set.
+/// @param[in] callback The new callback, or null to remove the currently set callback.
+///
+/// @callback_param[in] window The window that received the event.
+/// @callback_param[in] codepoint The Unicode code point of the character.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: input_char
+pub inline fn setCharCallback(self: Window, callback: ?fn (window: Window, codepoint: u21) void) void {
+    var internal = self.getInternal();
+    internal.setCharCallback = callback;
+    _ = c.glfwSetCharCallback(self.handle, if (callback != null) setCharCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
 
 fn setMouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: c_int, mods: c_int) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
@@ -1701,8 +1683,6 @@ fn setMouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: 
 /// @callback_param[in] action One of `glfw.press` or `glfw.release`. Future releases may add more
 /// actions.
 /// @callback_param[in] mods Bit field describing which modifier keys (see mods) were held down.
-///
-/// Possible errors include glfw.Error.NotInitialized.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -2710,6 +2690,27 @@ test "setMouseButtonCallback" {
             _ = button;
             _ = action;
             _ = mods;
+        }
+    }).callback);
+}
+
+test "setCharCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setCharCallback((struct {
+        fn callback(_window: Window, codepoint: u21) void {
+            _ = _window;
+            _ = codepoint;
         }
     }).callback);
 }
