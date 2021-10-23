@@ -48,6 +48,7 @@ pub const InternalUserPointer = struct {
     setDropCallback: ?fn (window: Window, paths: [][*c]const u8) void,
     setScrollCallback: ?fn (window: Window, xoffset: f64, yoffset: f64) void,
     setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
+    setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1322,26 +1323,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // typedef void (* GLFWmousebuttonfun)(GLFWwindow*,int,int,int);
 
-// /// The function pointer type for cursor position callbacks.
-// ///
-// /// This is the function pointer type for cursor position callbacks. A cursor
-// /// position callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, double xpos, double ypos);
-// /// @endcode
-// ///
-// /// @param[in] window The window that received the event.
-// /// @param[in] xpos The new cursor x-coordinate, relative to the left edge of
-// /// the content area.
-// /// @param[in] ypos The new cursor y-coordinate, relative to the top edge of the
-// /// content area.
-// ///
-// /// see also: cursor_pos, glfw.setCursorPosCallback
-// /// Replaces `GLFWmouseposfun`.
-// ///
-// /// @ingroup input
-// typedef void (* GLFWcursorposfun)(GLFWwindow*,double,double);
-
 // /// The function pointer type for keyboard key callbacks.
 // ///
 // /// This is the function pointer type for keyboard key callbacks. A keyboard
@@ -1755,36 +1736,39 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // GLFWAPI GLFWmousebuttonfun glfwSetMouseButtonCallback(GLFWwindow* window, GLFWmousebuttonfun callback);
 
-// TODO(cursor)
-// /// Sets the cursor position callback.
-// ///
-// /// This function sets the cursor position callback of the specified window,
-// /// which is called when the cursor is moved. The callback is provided with the
-// /// position, in screen coordinates, relative to the upper-left corner of the
-// /// content area of the window.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, double xpos, double ypos);
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWcursorposfun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: cursor_pos
-// /// Replaces `glfwSetMousePosCallback`.
-// ///
-// /// @ingroup input
-// GLFWAPI GLFWcursorposfun glfwSetCursorPosCallback(GLFWwindow* window, GLFWcursorposfun callback);
+fn setCursorPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: f64, ypos: f64) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setCursorPosCallback.?(window, xpos, ypos);
+}
+
+/// Sets the cursor position callback.
+///
+/// This function sets the cursor position callback of the specified window, which is called when
+/// the cursor is moved. The callback is provided with the position, in screen coordinates, relative
+/// to the upper-left corner of the content area of the window.
+///
+/// @param[in] callback The new callback, or null to remove the currently set callback.
+///
+/// @callback_param[in] window The window that received the event.
+/// @callback_param[in] xpos The new cursor x-coordinate, relative to the left edge of the content
+/// area.
+/// callback_@param[in] ypos The new cursor y-coordinate, relative to the top edge of the content
+/// area.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: cursor_pos
+pub inline fn setCursorPosCallback(self: Window, callback: ?fn (window: Window, xpos: f64, ypos: f64) void) void {
+    var internal = self.getInternal();
+    internal.setCursorPosCallback = callback;
+    _ = c.glfwSetCursorPosCallback(self.handle, if (callback != null) setCursorPosCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
 
 fn setCursorEnterCallbackWrapper(handle: ?*c.GLFWwindow, entered: c_int) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
@@ -1802,8 +1786,6 @@ fn setCursorEnterCallbackWrapper(handle: ?*c.GLFWwindow, entered: c_int) callcon
 /// @callback_param[in] window The window that received the event.
 /// @callback_param[in] entered `true` if the cursor entered the window's content area, or `false`
 /// if it left it.
-///
-/// Possible errors include glfw.Error.NotInitialized.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -1839,8 +1821,6 @@ fn setScrollCallbackWrapper(handle: ?*c.GLFWwindow, xoffset: f64, yoffset: f64) 
 /// @callback_param[in] window The window that received the event.
 /// @callback_param[in] xoffset The scroll offset along the x-axis.
 /// @callback_param[in] yoffset The scroll offset along the y-axis.
-///
-/// Possible errors include glfw.Error.NotInitialized.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -2703,6 +2683,28 @@ test "setCursorEnterCallback" {
         fn callback(_window: Window, entered: bool) void {
             _ = _window;
             _ = entered;
+        }
+    }).callback);
+}
+
+test "setCursorPosCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setCursorPosCallback((struct {
+        fn callback(_window: Window, xpos: f64, ypos: f64) void {
+            _ = _window;
+            _ = xpos;
+            _ = ypos;
         }
     }).callback);
 }
