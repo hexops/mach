@@ -49,6 +49,7 @@ pub const InternalUserPointer = struct {
     setScrollCallback: ?fn (window: Window, xoffset: f64, yoffset: f64) void,
     setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
     setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
+    setMouseButtonCallback: ?fn (window: Window, button: isize, action: isize, mods: isize) void,
 };
 
 /// Resets all window hints to their default values.
@@ -1299,30 +1300,6 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
     getError() catch {};
 }
 
-// TODO(input):
-// /// The function pointer type for mouse button callbacks.
-// ///
-// /// This is the function pointer type for mouse button callback functions.
-// /// A mouse button callback function has the following signature:
-// /// @code
-// /// void function_name(GLFWwindow* window, int button, int action, int mods)
-// /// @endcode
-// ///
-// /// @param[in] window The window that received the event.
-// /// @param[in] button The mouse button that was pressed or
-// /// released.
-// /// @param[in] action One of `glfw.press` or `glfw.release`. Future releases
-// /// may add more actions.
-// /// @param[in] mods Bit field describing which [modifier keys](@ref mods) were
-// /// held down.
-// ///
-// /// see also: input_mouse_button, glfwSetMouseButtonCallback
-// ///
-// /// @glfw3 Added window handle and modifier mask parameters.
-// ///
-// /// @ingroup input
-// typedef void (* GLFWmousebuttonfun)(GLFWwindow*,int,int,int);
-
 // /// The function pointer type for keyboard key callbacks.
 // ///
 // /// This is the function pointer type for keyboard key callbacks. A keyboard
@@ -1700,41 +1677,46 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// @ingroup input
 // GLFWAPI GLFWcharfun glfwSetCharCallback(GLFWwindow* window, GLFWcharfun callback);
 
-// TODO(mouse button)
-// /// Sets the mouse button callback.
-// ///
-// /// This function sets the mouse button callback of the specified window, which
-// /// is called when a mouse button is pressed or released.
-// ///
-// /// When a window loses input focus, it will generate synthetic mouse button
-// /// release events for all pressed mouse buttons. You can tell these events
-// /// from user-generated events by the fact that the synthetic ones are generated
-// /// after the focus loss event has been processed, i.e. after the
-// /// [window focus callback](@ref glfwSetWindowFocusCallback) has been called.
-// ///
-// /// @param[in] window The window whose callback to set.
-// /// @param[in] callback The new callback, or null to remove the currently set
-// /// callback.
-// /// @return The previously set callback, or null if no callback was set or the
-// /// library had not been [initialized](@ref intro_init).
-// ///
-// /// @callback_signature
-// /// @code
-// /// void function_name(GLFWwindow* window, int button, int action, int mods)
-// /// @endcode
-// /// For more information about the callback parameters, see the
-// /// [function pointer type](@ref GLFWmousebuttonfun).
-// ///
-// /// Possible errors include glfw.Error.NotInitialized.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: input_mouse_button
-// ///
-// /// @glfw3 Added window handle parameter and return value.
-// ///
-// /// @ingroup input
-// GLFWAPI GLFWmousebuttonfun glfwSetMouseButtonCallback(GLFWwindow* window, GLFWmousebuttonfun callback);
+fn setMouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: c_int, mods: c_int) callconv(.C) void {
+    const window = from(handle.?) catch unreachable;
+    const internal = window.getInternal();
+    internal.setMouseButtonCallback.?(window, @intCast(isize, button), @intCast(isize, action), @intCast(isize, mods));
+}
+
+/// Sets the mouse button callback.
+///
+/// This function sets the mouse button callback of the specified window, which is called when a
+/// mouse button is pressed or released.
+///
+/// When a window loses input focus, it will generate synthetic mouse button release events for all
+/// pressed mouse buttons. You can tell these events from user-generated events by the fact that the
+/// synthetic ones are generated after the focus loss event has been processed, i.e. after the
+/// window focus callback (see glfw.Window.setFocusCallback) has been called.
+///
+/// @param[in] window The window whose callback to set.
+/// @param[in] callback The new callback, or null to remove the currently set callback.
+///
+/// @callback_param[in] window The window that received the event.
+/// @callback_param[in] button The mouse button that was pressed or released.
+/// @callback_param[in] action One of `glfw.press` or `glfw.release`. Future releases may add more
+/// actions.
+/// @callback_param[in] mods Bit field describing which modifier keys (see mods) were held down.
+///
+/// Possible errors include glfw.Error.NotInitialized.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: input_mouse_button
+pub inline fn setMouseButtonCallback(self: Window, callback: ?fn (window: Window, button: isize, action: isize, mods: isize) void) void {
+    var internal = self.getInternal();
+    internal.setMouseButtonCallback = callback;
+    _ = c.glfwSetMouseButtonCallback(self.handle, if (callback != null) setMouseButtonCallbackWrapper else null);
+
+    // The only error this could return would be glfw.Error.NotInitialized, which should
+    // definitely have occurred before calls to this. Returning an error here makes the API
+    // awkward to use, so we discard it instead.
+    getError() catch {};
+}
 
 fn setCursorPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: f64, ypos: f64) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
@@ -2705,6 +2687,29 @@ test "setCursorPosCallback" {
             _ = _window;
             _ = xpos;
             _ = ypos;
+        }
+    }).callback);
+}
+
+test "setMouseButtonCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setMouseButtonCallback((struct {
+        fn callback(_window: Window, button: isize, action: isize, mods: isize) void {
+            _ = _window;
+            _ = button;
+            _ = action;
+            _ = mods;
         }
     }).callback);
 }
