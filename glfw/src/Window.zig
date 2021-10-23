@@ -1323,62 +1323,59 @@ pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Windo
 // /// see also: glfw.setInputMode
 // GLFWAPI int glfwGetInputMode(GLFWwindow* window, int mode);
 
-// TODO(mouinput options)
-// /// Sets an input option for the specified window.
-// ///
-// /// This function sets an input mode option for the specified window. The mode
-// /// must be one of @ref GLFW_CURSOR, @ref GLFW_STICKY_KEYS,
-// /// @ref GLFW_STICKY_MOUSE_BUTTONS, @ref GLFW_LOCK_KEY_MODS or
-// /// @ref GLFW_RAW_MOUSE_MOTION.
-// ///
-// /// If the mode is `GLFW_CURSOR`, the value must be one of the following cursor
-// /// modes:
-// /// - `GLFW_CURSOR_NORMAL` makes the cursor visible and behaving normally.
-// /// - `GLFW_CURSOR_HIDDEN` makes the cursor invisible when it is over the
-// ///   content area of the window but does not restrict the cursor from leaving.
-// /// - `GLFW_CURSOR_DISABLED` hides and grabs the cursor, providing virtual
-// ///   and unlimited cursor movement. This is useful for implementing for
-// ///   example 3D camera controls.
-// ///
-// /// If the mode is `GLFW_STICKY_KEYS`, the value must be either `true` to
-// /// enable sticky keys, or `false` to disable it. If sticky keys are
-// /// enabled, a key press will ensure that @ref glfwGetKey returns `glfw.press`
-// /// the next time it is called even if the key had been released before the
-// /// call. This is useful when you are only interested in whether keys have been
-// /// pressed but not when or in which order.
-// ///
-// /// If the mode is `GLFW_STICKY_MOUSE_BUTTONS`, the value must be either
-// /// `true` to enable sticky mouse buttons, or `false` to disable it.
-// /// If sticky mouse buttons are enabled, a mouse button press will ensure that
-// /// @ref glfwGetMouseButton returns `glfw.press` the next time it is called even
-// /// if the mouse button had been released before the call. This is useful when
-// /// you are only interested in whether mouse buttons have been pressed but not
-// /// when or in which order.
-// ///
-// /// If the mode is `GLFW_LOCK_KEY_MODS`, the value must be either `true` to
-// /// enable lock key modifier bits, or `false` to disable them. If enabled,
-// /// callbacks that receive modifier bits will also have the @ref
-// /// GLFW_MOD_CAPS_LOCK bit set when the event was generated with Caps Lock on,
-// /// and the @ref GLFW_MOD_NUM_LOCK bit when Num Lock was on.
-// ///
-// /// If the mode is `GLFW_RAW_MOUSE_MOTION`, the value must be either `true`
-// /// to enable raw (unscaled and unaccelerated) mouse motion when the cursor is
-// /// disabled, or `false` to disable it. If raw motion is not supported,
-// /// attempting to set this will emit glfw.Error.PlatformError. Call @ref
-// /// glfwRawMouseMotionSupported to check for support.
-// ///
-// /// @param[in] window The window whose input mode to set.
-// /// @param[in] mode One of `GLFW_CURSOR`, `GLFW_STICKY_KEYS`,
-// /// `GLFW_STICKY_MOUSE_BUTTONS`, `GLFW_LOCK_KEY_MODS` or
-// /// `GLFW_RAW_MOUSE_MOTION`.
-// /// @param[in] value The new value of the specified input mode.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: glfw.getInputMode
-// GLFWAPI void glfwSetInputMode(GLFWwindow* window, int mode, int value);
+/// Sets an input option for the specified window.
+///
+/// This function sets an input mode option for the specified window. The mode must be one of
+/// `glfw.cursor`, `glfw.sticky_keys`, `glfw.sticky_mouse_buttons`, `glfw.lock_key_mods`, or
+/// `glfw.raw_mouse_motion`.
+///
+/// If the mode is `glfw.cursor`, the value must be one of the following cursor
+/// modes:
+/// - `glfw.cursor_normal` makes the cursor visible and behaving normally.
+/// - `glfw.cursor_hidden` makes the cursor invisible when it is over the content area of the window
+///   but does not restrict the cursor from leaving.
+/// - `glfw.cursor_disabled` hides and grabs the cursor, providing virtual and unlimited cursor
+///   movement. This is useful for implementing for example 3D camera controls.
+///
+/// If the mode is `glfw.sticky_keys`, the value must be either `true` to enable sticky keys, or
+/// `false` to disable it. If sticky keys are enabled, a key press will ensure that `glfw.Window.getKey`
+/// `true` (pressed) the next time it is called even if the key had been released before the call.
+/// This is useful when you are only interested in whether keys have been pressed but not when or in
+/// which order.
+///
+/// If the mode is `glfw.sticky_mouse_buttons`, the value must be either `true` to enable sticky
+/// mouse buttons, or `false` to disable it. If sticky mouse buttons are enabled, a mouse button
+/// press will ensure that glfw.Window.getMouseButton returns `glfw.press` the next time it is
+/// called even if the mouse button had been released before the call. This is useful when you are
+/// only interested in whether mouse buttons have been pressed but not when or in which order.
+///
+/// If the mode is `glfw.lock_key_mods`, the value must be either `true` to enable lock key modifier
+/// bits, or `false` to disable them. If enabled, callbacks that receive modifier bits will also
+/// have the glfw.mod.caps_lock bit set when the event was generated with Caps Lock on, and the
+/// glfw.mod.num_lock bit when Num Lock was on.
+///
+/// If the mode is `glfw.raw_mouse_motion`, the value must be either `true` to enable raw (unscaled
+/// and unaccelerated) mouse motion when the cursor is disabled, or `false` to disable it. If raw
+/// motion is not supported, attempting to set this will emit glfw.Error.PlatformError. Call
+/// glfw.rawMouseMotionSupported to check for support.
+///
+/// @param[in] mode One of `glfw.cursor`, `glfw.sticky_keys`, `glfw.sticky_mouse_buttons`,
+/// `glfw.lock_key_mods` or `glfw.raw_mouse_motion`.
+/// @param[in] value The new value of the specified input mode.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: glfw.getInputMode
+pub inline fn setInputMode(self: Window, mode: isize, value: anytype) Error!void {
+    switch (@typeInfo(@TypeOf(value))) {
+        .Int, .ComptimeInt => c.glfwSetInputMode(self.handle, @intCast(c_int, mode), @intCast(c_int, value)),
+        .Bool => c.glfwSetInputMode(self.handle, @intCast(c_int, mode), @intCast(c_int, @boolToInt(value))),
+        else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
+    }
+    try getError();
+}
 
 /// Returns the last reported press state of a keyboard key for the specified window.
 ///
@@ -2559,6 +2556,26 @@ test "setDropCallback" {
             _ = paths;
         }
     }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
+}
+
+test "setInputMode" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    // Boolean values.
+    window.setInputMode(glfw.raw_mouse_motion, true) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
+
+    // Integer values.
+    window.setInputMode(glfw.cursor, glfw.cursor_hidden) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
 }
 
 test "getKey" {
