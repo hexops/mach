@@ -297,6 +297,7 @@ test "getVersionString" {
     _ = Monitor;
     _ = GammaRamp;
     _ = Image;
+    _ = key;
     _ = Joystick;
     _ = VideoMode;
     _ = Window;

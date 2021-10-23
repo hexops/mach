@@ -8,14 +8,17 @@
 //! The naming of the key codes follow these rules:
 //!
 //! - The US keyboard layout is used
-//! - Names of printable alpha-numeric characters are used (e.g. "A", "R", "3", etc.)
-//! - For non-alphanumeric characters, Unicode:ish names are used (e.g. "COMMA",
-//!   "LEFT_SQUARE_BRACKET", etc.). Note that some names do not correspond to the Unicode standard
-//!   (usually for brevity)
-//! - Keys that lack a clear US mapping are named "WORLD_x"
-//! - For non-printable keys, custom names are used (e.g. "F4", "BACKSPACE", etc.)
+//! - Names of printable alpha-numeric characters are used (e.g. "a", "r", "three", etc.)
+//! - For non-alphanumeric characters, Unicode:ish names are used (e.g. "comma", "left_bracket",
+//!   etc.). Note that some names do not correspond to the Unicode standard (usually for brevity)
+//! - Keys that lack a clear US mapping are named "world_x"
+//! - For non-printable keys, custom names are used (e.g. "F4", "backspace", etc.)
+
+const std = @import("std");
 
 const cc = @import("c.zig").c;
+const Error = @import("errors.zig").Error;
+const getError = @import("errors.zig").getError;
 
 /// The unknown key
 pub const unknown = cc.GLFW_KEY_UNKNOWN;
@@ -146,78 +149,77 @@ pub const menu = cc.GLFW_KEY_MENU;
 
 pub const last = cc.GLFW_KEY_LAST;
 
-// TODO(keyboard layout)
-// /// Returns the layout-specific name of the specified printable key.
-// ///
-// /// This function returns the name of the specified printable key, encoded as
-// /// UTF-8. This is typically the character that key would produce without any
-// /// modifier keys, intended for displaying key bindings to the user. For dead
-// /// keys, it is typically the diacritic it would add to a character.
-// ///
-// /// __Do not use this function__ for [text input](@ref input_char). You will
-// /// break text input for many languages even if it happens to work for yours.
-// ///
-// /// If the key is `GLFW_KEY_UNKNOWN`, the scancode is used to identify the key,
-// /// otherwise the scancode is ignored. If you specify a non-printable key, or
-// /// `GLFW_KEY_UNKNOWN` and a scancode that maps to a non-printable key, this
-// /// function returns null but does not emit an error.
-// ///
-// /// This behavior allows you to always pass in the arguments in the
-// /// [key callback](@ref input_key) without modification.
-// ///
-// /// The printable keys are:
-// /// - `GLFW_KEY_APOSTROPHE`
-// /// - `GLFW_KEY_COMMA`
-// /// - `GLFW_KEY_MINUS`
-// /// - `GLFW_KEY_PERIOD`
-// /// - `GLFW_KEY_SLASH`
-// /// - `GLFW_KEY_SEMICOLON`
-// /// - `GLFW_KEY_EQUAL`
-// /// - `GLFW_KEY_LEFT_BRACKET`
-// /// - `GLFW_KEY_RIGHT_BRACKET`
-// /// - `GLFW_KEY_BACKSLASH`
-// /// - `GLFW_KEY_WORLD_1`
-// /// - `GLFW_KEY_WORLD_2`
-// /// - `GLFW_KEY_0` to `GLFW_KEY_9`
-// /// - `GLFW_KEY_A` to `GLFW_KEY_Z`
-// /// - `GLFW_KEY_KP_0` to `GLFW_KEY_KP_9`
-// /// - `GLFW_KEY_KP_DECIMAL`
-// /// - `GLFW_KEY_KP_DIVIDE`
-// /// - `GLFW_KEY_KP_MULTIPLY`
-// /// - `GLFW_KEY_KP_SUBTRACT`
-// /// - `GLFW_KEY_KP_ADD`
-// /// - `GLFW_KEY_KP_EQUAL`
-// ///
-// /// Names for printable keys depend on keyboard layout, while names for
-// /// non-printable keys are the same across layouts but depend on the application
-// /// language and should be localized along with other user interface text.
-// ///
-// /// @param[in] key The key to query, or `GLFW_KEY_UNKNOWN`.
-// /// @param[in] scancode The scancode of the key to query.
-// /// @return The UTF-8 encoded, layout-specific name of the key, or null.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-// ///
-// /// The contents of the returned string may change when a keyboard
-// /// layout change event is received.
-// ///
-// /// @pointer_lifetime The returned string is allocated and freed by GLFW. You
-// /// should not free it yourself. It is valid until the library is terminated.
-// ///
-// /// @thread_safety This function must only be called from the main thread.
-// ///
-// /// see also: input_key_name
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI const char* glfwGetKeyName(int key, int scancode);
+/// Returns the layout-specific name of the specified printable key.
+///
+/// This function returns the name of the specified printable key, encoded as UTF-8. This is
+/// typically the character that key would produce without any modifier keys, intended for
+/// displaying key bindings to the user. For dead keys, it is typically the diacritic it would add
+/// to a character.
+///
+/// __Do not use this function__ for text input (see input_char). You will break text input for many
+/// languages even if it happens to work for yours.
+///
+/// If the key is `glfw.key.unknown`, the scancode is used to identify the key, otherwise the
+/// scancode is ignored. If you specify a non-printable key, or `glfw.key.unknown` and a scancode
+/// that maps to a non-printable key, this function returns null but does not emit an error.
+///
+/// This behavior allows you to always pass in the arguments in the key callback (see input_key)
+/// without modification.
+///
+/// The printable keys are:
+///
+/// - `glfw.key.apostrophe`
+/// - `glfw.key.comma`
+/// - `glfw.key.minus`
+/// - `glfw.key.period`
+/// - `glfw.key.slash`
+/// - `glfw.key.semicolon`
+/// - `glfw.key.equal`
+/// - `glfw.key.left_bracket`
+/// - `glfw.key.right_bracket`
+/// - `glfw.key.backslash`
+/// - `glfw.key.world_1`
+/// - `glfw.key.world_2`
+/// - `glfw.key.0` to `glfw.key.9`
+/// - `glfw.key.a` to `glfw.key.z`
+/// - `glfw.key.kp_0` to `glfw.key.kp_9`
+/// - `glfw.key.kp_decimal`
+/// - `glfw.key.kp_divide`
+/// - `glfw.key.kp_multiply`
+/// - `glfw.key.kp_subtract`
+/// - `glfw.key.kp_add`
+/// - `glfw.key.kp_equal`
+///
+/// Names for printable keys depend on keyboard layout, while names for non-printable keys are the
+/// same across layouts but depend on the application language and should be localized along with
+/// other user interface text.
+///
+/// @param[in] key The key to query, or `glfw.key.unknown`.
+/// @param[in] scancode The scancode of the key to query.
+/// @return The UTF-8 encoded, layout-specific name of the key, or null.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+///
+/// The contents of the returned string may change when a keyboard layout change event is received.
+///
+/// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
+/// yourself. It is valid until the library is terminated.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: input_key_name
+pub inline fn getName(key: isize, scancode: isize) Error![*c]const u8 {
+    const name = cc.glfwGetKeyName(@intCast(c_int, key), @intCast(c_int, scancode));
+    try getError();
+    return name;
+}
 
 // TODO(keyboard scancode)
 // /// Returns the platform-specific scancode of the specified key.
 // ///
 // /// This function returns the platform-specific scancode of the specified key.
 // ///
-// /// If the key is `GLFW_KEY_UNKNOWN` or does not exist on the keyboard this
+// /// If the key is `glfw.key.UNKNOWN` or does not exist on the keyboard this
 // /// method will return `-1`.
 // ///
 // /// @param[in] key Any [named key](@ref keys).
@@ -233,3 +235,11 @@ pub const last = cc.GLFW_KEY_LAST;
 // ///
 // /// @ingroup input
 // GLFWAPI int glfwGetKeyScancode(int key);
+
+test "getName" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    _ = glfw.key.getName(glfw.key.a, 0) catch |err| std.debug.print("failed to get key name, not supported? error={}\n", .{err});
+}
