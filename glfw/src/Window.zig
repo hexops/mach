@@ -2563,7 +2563,7 @@ test "setDropCallback" {
     }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
 }
 
-test "setScrollCallback" {
+test "setKeyCallback" {
     const glfw = @import("main.zig");
     try glfw.init();
     defer glfw.terminate();
@@ -2576,75 +2576,11 @@ test "setScrollCallback" {
     };
     defer window.destroy();
 
-    window.setScrollCallback((struct {
-        fn callback(_window: Window, xoffset: f64, yoffset: f64) void {
+    window.setKeyCallback((struct {
+        fn callback(_window: Window, key: isize, scancode: isize, action: isize, mods: isize) void {
             _ = _window;
-            _ = xoffset;
-            _ = yoffset;
-        }
-    }).callback);
-}
-
-test "setCursorEnterCallback" {
-    const glfw = @import("main.zig");
-    try glfw.init();
-    defer glfw.terminate();
-
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
-        // return without fail, because most of our CI environments are headless / we cannot open
-        // windows on them.
-        std.debug.print("note: failed to create window: {}\n", .{err});
-        return;
-    };
-    defer window.destroy();
-
-    window.setCursorEnterCallback((struct {
-        fn callback(_window: Window, entered: bool) void {
-            _ = _window;
-            _ = entered;
-        }
-    }).callback);
-}
-
-test "setCursorPosCallback" {
-    const glfw = @import("main.zig");
-    try glfw.init();
-    defer glfw.terminate();
-
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
-        // return without fail, because most of our CI environments are headless / we cannot open
-        // windows on them.
-        std.debug.print("note: failed to create window: {}\n", .{err});
-        return;
-    };
-    defer window.destroy();
-
-    window.setCursorPosCallback((struct {
-        fn callback(_window: Window, xpos: f64, ypos: f64) void {
-            _ = _window;
-            _ = xpos;
-            _ = ypos;
-        }
-    }).callback);
-}
-
-test "setMouseButtonCallback" {
-    const glfw = @import("main.zig");
-    try glfw.init();
-    defer glfw.terminate();
-
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
-        // return without fail, because most of our CI environments are headless / we cannot open
-        // windows on them.
-        std.debug.print("note: failed to create window: {}\n", .{err});
-        return;
-    };
-    defer window.destroy();
-
-    window.setMouseButtonCallback((struct {
-        fn callback(_window: Window, button: isize, action: isize, mods: isize) void {
-            _ = _window;
-            _ = button;
+            _ = key;
+            _ = scancode;
             _ = action;
             _ = mods;
         }
@@ -2672,7 +2608,7 @@ test "setCharCallback" {
     }).callback);
 }
 
-test "setKeyCallback" {
+test "setMouseButtonCallback" {
     const glfw = @import("main.zig");
     try glfw.init();
     defer glfw.terminate();
@@ -2685,13 +2621,77 @@ test "setKeyCallback" {
     };
     defer window.destroy();
 
-    window.setKeyCallback((struct {
-        fn callback(_window: Window, key: isize, scancode: isize, action: isize, mods: isize) void {
+    window.setMouseButtonCallback((struct {
+        fn callback(_window: Window, button: isize, action: isize, mods: isize) void {
             _ = _window;
-            _ = key;
-            _ = scancode;
+            _ = button;
             _ = action;
             _ = mods;
+        }
+    }).callback);
+}
+
+test "setCursorPosCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setCursorPosCallback((struct {
+        fn callback(_window: Window, xpos: f64, ypos: f64) void {
+            _ = _window;
+            _ = xpos;
+            _ = ypos;
+        }
+    }).callback);
+}
+
+test "setCursorEnterCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setCursorEnterCallback((struct {
+        fn callback(_window: Window, entered: bool) void {
+            _ = _window;
+            _ = entered;
+        }
+    }).callback);
+}
+
+test "setScrollCallback" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setScrollCallback((struct {
+        fn callback(_window: Window, xoffset: f64, yoffset: f64) void {
+            _ = _window;
+            _ = xoffset;
+            _ = yoffset;
         }
     }).callback);
 }
