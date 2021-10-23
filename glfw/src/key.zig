@@ -214,27 +214,23 @@ pub inline fn getName(key: isize, scancode: isize) Error![*c]const u8 {
     return name;
 }
 
-// TODO(keyboard scancode)
-// /// Returns the platform-specific scancode of the specified key.
-// ///
-// /// This function returns the platform-specific scancode of the specified key.
-// ///
-// /// If the key is `glfw.key.UNKNOWN` or does not exist on the keyboard this
-// /// method will return `-1`.
-// ///
-// /// @param[in] key Any [named key](@ref keys).
-// /// @return The platform-specific scancode for the key, or `-1` if an
-// /// error occurred.
-// ///
-// /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-// ///
-// /// @thread_safety This function may be called from any thread.
-// ///
-// /// see also: input_key
-// ///
-// ///
-// /// @ingroup input
-// GLFWAPI int glfwGetKeyScancode(int key);
+/// Returns the platform-specific scancode of the specified key.
+///
+/// This function returns the platform-specific scancode of the specified key.
+///
+/// If the key is `glfw.key.UNKNOWN` or does not exist on the keyboard this method will return `-1`.
+///
+/// @param[in] key Any named key (see keys).
+/// @return The platform-specific scancode for the key.
+///
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+///
+/// @thread_safety This function may be called from any thread.
+pub inline fn getScancode(key: isize) Error!isize {
+    const scancode = cc.glfwGetKeyScancode(@intCast(c_int, key));
+    try getError();
+    return scancode;
+}
 
 test "getName" {
     const glfw = @import("main.zig");
@@ -242,4 +238,12 @@ test "getName" {
     defer glfw.terminate();
 
     _ = glfw.key.getName(glfw.key.a, 0) catch |err| std.debug.print("failed to get key name, not supported? error={}\n", .{err});
+}
+
+test "getScancode" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    _ = glfw.key.getScancode(glfw.key.a) catch |err| std.debug.print("failed to get key scancode, not supported? error={}\n", .{err});
 }
