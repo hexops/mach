@@ -2589,7 +2589,7 @@ test "setInputMode" {
     defer window.destroy();
 
     // Boolean values.
-    window.setInputMode(glfw.raw_mouse_motion, true) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
+    window.setInputMode(glfw.sticky_mouse_buttons, true) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
 
     // Integer values.
     window.setInputMode(glfw.cursor, glfw.cursor_hidden) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
