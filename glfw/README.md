@@ -1,4 +1,4 @@
-# mach/glfw - Ziggified GLFW bindings [![CI](https://github.com/hexops/engine/workflows/CI/badge.svg)](https://github.com/hexops/engine/actions) <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
+# mach/glfw - Ziggified GLFW bindings [![CI](https://github.com/hexops/mach-glfw/workflows/CI/badge.svg)](https://github.com/hexops/mach-glfw/actions) <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
 
 Ziggified GLFW bindings that [Mach engine](https://github.com/hexops/mach) uses, with 100% API coverage, zero-fuss installation, cross compilation, and more.
 
