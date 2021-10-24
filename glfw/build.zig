@@ -37,6 +37,17 @@ pub const Options = struct {
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+    const lib = buildLibrary(b, step, options);
+    step.linkLibrary(lib);
+    linkGLFWDependencies(b, step, options);
+}
+
+fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/main.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("glfw", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
@@ -64,10 +75,10 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
             }
-            step.addCSourceFiles(sources.items, &.{"-D_GLFW_WIN32"});
+            lib.addCSourceFiles(sources.items, &.{"-D_GLFW_WIN32"});
         },
         .macos => {
-            includeSdkMacOS(b, step);
+            includeSdkMacOS(b, lib);
             var sources = std.ArrayList([]const u8).init(b.allocator);
             for ([_][]const u8{
                 // MacOS-specific sources
@@ -92,7 +103,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
             }
-            step.addCSourceFiles(sources.items, &.{"-D_GLFW_COCOA"});
+            lib.addCSourceFiles(sources.items, &.{"-D_GLFW_COCOA"});
         },
         else => {
             // Assume Linux-like
@@ -105,7 +116,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
             // thread 2004762 panic: attempt to unwrap error: LLDReportedFailure
             // ```
             step.target.abi = .gnu;
-            step.setTarget(step.target);
+            lib.setTarget(step.target);
 
             var general_sources = std.ArrayList([]const u8).init(b.allocator);
             const flag = switch (options.linux_window_manager) {
@@ -131,7 +142,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                 general_sources.append(abs_path) catch unreachable;
             }
-            step.addCSourceFiles(general_sources.items, &.{flag});
+            lib.addCSourceFiles(general_sources.items, &.{flag});
 
             switch (options.linux_window_manager) {
                 .X11 => {
@@ -146,7 +157,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                         x11_sources.append(abs_path) catch unreachable;
                     }
-                    step.addCSourceFiles(x11_sources.items, &.{flag});
+                    lib.addCSourceFiles(x11_sources.items, &.{flag});
                 },
                 .Wayland => {
                     var wayland_sources = std.ArrayList([]const u8).init(b.allocator);
@@ -158,19 +169,21 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                         wayland_sources.append(abs_path) catch unreachable;
                     }
-                    step.addCSourceFiles(wayland_sources.items, &.{flag});
+                    lib.addCSourceFiles(wayland_sources.items, &.{flag});
                 },
             }
         },
     }
-    linkGLFW(b, step, options);
+    linkGLFWDependencies(b, lib, options);
+    lib.install();
+    return lib;
 }
 
 fn thisDir() []const u8 {
     return std.fs.path.dirname(@src().file) orelse ".";
 }
 
-fn linkGLFW(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     var include_dir = std.fs.path.join(b.allocator, &.{ thisDir(), "upstream/glfw/include" }) catch unreachable;
     defer b.allocator.free(include_dir);
     step.addIncludeDir(include_dir);
