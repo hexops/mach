@@ -10,6 +10,7 @@ const getError = @import("errors.zig").getError;
 const Image = @import("Image.zig");
 const Monitor = @import("Monitor.zig");
 const Cursor = @import("Cursor.zig");
+const Key = @import("key.zig").Key;
 
 const Window = @This();
 
@@ -1405,8 +1406,8 @@ pub inline fn setInputMode(self: Window, mode: isize, value: anytype) Error!void
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_key
-pub inline fn getKey(self: Window, key: isize) Error!bool {
-    const state = c.glfwGetKey(self.handle, @intCast(c_int, key));
+pub inline fn getKey(self: Window, key: Key) Error!bool {
+    const state = c.glfwGetKey(self.handle, @enumToInt(key));
     try getError();
     return state == c.GLFW_PRESS;
 }
@@ -2608,7 +2609,7 @@ test "getKey" {
     };
     defer window.destroy();
 
-    _ = try window.getKey(glfw.key.escape);
+    _ = try window.getKey(glfw.Key.escape);
 }
 
 test "getMouseButton" {

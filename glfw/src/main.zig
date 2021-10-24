@@ -3,6 +3,8 @@ const testing = std.testing;
 
 const c = @import("c.zig").c;
 
+const key = @import("key.zig");
+
 pub usingnamespace @import("consts.zig");
 pub const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
@@ -14,7 +16,6 @@ pub const GammaRamp = @import("GammaRamp.zig");
 pub const hat = @import("hat.zig");
 pub const Image = @import("Image.zig");
 pub const Joystick = @import("Joystick.zig");
-pub const key = @import("key.zig");
 pub const mod = @import("mod.zig");
 pub const Monitor = @import("Monitor.zig");
 pub const mouse_button = @import("mouse_button.zig");
@@ -22,6 +23,7 @@ pub const version = @import("version.zig");
 pub const VideoMode = @import("VideoMode.zig");
 pub const Window = @import("Window.zig");
 pub const Cursor = @import("Cursor.zig");
+pub const Key = key.Key;
 
 pub usingnamespace @import("clipboard.zig");
 pub usingnamespace @import("opengl.zig");
