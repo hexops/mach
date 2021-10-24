@@ -37,13 +37,10 @@ pub const Options = struct {
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    var arena = std.heap.ArenaAllocator.init(b.allocator);
-    defer arena.deinit();
-
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
-            var sources = std.ArrayList([]const u8).init(&arena.allocator);
+            var sources = std.ArrayList([]const u8).init(b.allocator);
             for ([_][]const u8{
                 // Windows-specific sources
                 "upstream/glfw/src/win32_thread.c",
@@ -64,14 +61,14 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 "upstream/glfw/src/context.c",
                 "upstream/glfw/src/window.c",
             }) |path| {
-                var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
+                var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
             }
             step.addCSourceFiles(sources.items, &.{"-D_GLFW_WIN32"});
         },
         .macos => {
             includeSdkMacOS(b, step);
-            var sources = std.ArrayList([]const u8).init(&arena.allocator);
+            var sources = std.ArrayList([]const u8).init(b.allocator);
             for ([_][]const u8{
                 // MacOS-specific sources
                 "upstream/glfw/src/cocoa_joystick.m",
@@ -92,7 +89,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 "upstream/glfw/src/context.c",
                 "upstream/glfw/src/window.c",
             }) |path| {
-                var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
+                var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
             }
             step.addCSourceFiles(sources.items, &.{"-D_GLFW_COCOA"});
@@ -110,7 +107,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
             step.target.abi = .gnu;
             step.setTarget(step.target);
 
-            var general_sources = std.ArrayList([]const u8).init(&arena.allocator);
+            var general_sources = std.ArrayList([]const u8).init(b.allocator);
             const flag = switch (options.linux_window_manager) {
                 .X11 => "-D_GLFW_X11",
                 .Wayland => "_D_GLFW_WAYLAND",
@@ -131,14 +128,14 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                 "upstream/glfw/src/context.c",
                 "upstream/glfw/src/window.c",
             }) |path| {
-                var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
+                var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                 general_sources.append(abs_path) catch unreachable;
             }
             step.addCSourceFiles(general_sources.items, &.{flag});
 
             switch (options.linux_window_manager) {
                 .X11 => {
-                    var x11_sources = std.ArrayList([]const u8).init(&arena.allocator);
+                    var x11_sources = std.ArrayList([]const u8).init(b.allocator);
                     for ([_][]const u8{
                         "upstream/glfw/src/x11_init.c",
                         "upstream/glfw/src/x11_window.c",
@@ -146,19 +143,19 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
                         "upstream/glfw/src/xkb_unicode.c",
                         "upstream/glfw/src/glx_context.c",
                     }) |path| {
-                        var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
+                        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                         x11_sources.append(abs_path) catch unreachable;
                     }
                     step.addCSourceFiles(x11_sources.items, &.{flag});
                 },
                 .Wayland => {
-                    var wayland_sources = std.ArrayList([]const u8).init(&arena.allocator);
+                    var wayland_sources = std.ArrayList([]const u8).init(b.allocator);
                     for ([_][]const u8{
                         "upstream/glfw/src/wl_monitor.c",
                         "upstream/glfw/src/wl_window.c",
                         "upstream/glfw/src/wl_init.c",
                     }) |path| {
-                        var abs_path = std.fs.path.join(&arena.allocator, &.{ thisDir(), path }) catch unreachable;
+                        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                         wayland_sources.append(abs_path) catch unreachable;
                     }
                     step.addCSourceFiles(wayland_sources.items, &.{flag});
