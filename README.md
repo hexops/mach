@@ -1,35 +1,38 @@
-<img alt="Mach - Game engine & graphics toolkit for the future" src="https://raw.githubusercontent.com/hexops/media/main/mach/logo_tagline_semi.svg"></img>
+# mach/glfw - Ziggified GLFW bindings [![CI](https://github.com/hexops/engine/workflows/CI/badge.svg)](https://github.com/hexops/engine/actions) <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
 
-# Mach engine [![CI](https://github.com/hexops/engine/workflows/CI/badge.svg)](https://github.com/hexops/engine/actions) <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
+This repository contains the ziggified GLFW bindings that [Mach engine](https://github.com/hexops/mach) uses. The main Mach repository includes this one as a `git subtree`.
 
-## ⚠️ Project status: in-development ⚠️
+The intent is that anyone can use this library in their own project / engine if they like!
 
-Under heavy development, not ready for use currently. [Follow @machengine on Twitter](https://twitter.com/machengine) for updates.
+## Zero fuss installation, cross compilation, and more
 
-## Zero fuss installation & cross compilation
+[Just as with Mach](https://github.com/hexops/mach#zero-fuss-installation--cross-compilation), you just zero fuss installation & cross compilation using these GLFW bindings. **only `zig` and `git` are needed to build from any OS and produce binaries for every OS.**
 
-Mach is built from the ground up to support zero fuss installation & cross compilation, **only `zig` and `git` are needed to build from any OS and produce binaries for every OS.**
+See also: [platform support table](https://github.com/hexops/mach#supported-platforms)
 
-You do **not** need any system dependencies, C libraries, SDKs (Xcode, etc.), C compilers or anything else.
+## 100% API coverage
 
-If you've ever worked with game engines in Go, Rust, or any other language you've probably run into issues at one point getting the right system dependencies installed, whether it be Xcode versions, compilers, X11/GLFW/SDL C dependencies, etc.
+These bindings recently achieved 100% API coverage of GLFW v3.3.4. Every function, type, etc. has been wrapped in a ziggified API.
 
-Mach is able to do this thanks to Zig being a C/C++ compiler, Zig's linker `zld` supporting macOS cross compilation, and us doing the heavy lifting of packaging the required [system SDK libraries](https://github.com/hexops/sdk-macos-11.3) and [C sources](glfw/upstream/) for every dependency we need so our Zig build scripts can simply `git clone` them for you as needed for the target OS you're building for, completely automagically.
+## What does a ziggified GLFW API offer?
 
-## Supported platforms
+You could just `@cImport` GLFW with Zig - the main reasons to use a ziggified wrapper though are because you get:
 
-Mach is still incredibly early stages, so far we have support for building from the following OS to the following targets:
+* `true` and `false` booleans instead of `c.GLFW_TRUE` and `c.GLFW_FALSE` integers
+* Methods, so you can write e.g. `window.hint` instead of `glfwWindowHint`
+* Generics, so you can just use `window.hint` instead of `glfwWindowHint`, `glfwWindowHintString`, etc.
+* Enums, so you can write `window.getKey(.escape)` instead of `c.glfwGetKey(window, c.GLFW_KEY_ESCAPE)`
+* Slices instead of C pointers and lengths.
+* [`packed struct`](https://ziglang.org/documentation/master/#packed-struct) to represent bit masks, so you can interact with each bit the same way you'd interact with a `bool` if you like, instead of remembering the `&` `|` `^` incantation (although you're free to do that too.)
 
-| Building for     | From macOS x86_64 | From macOS M1/aarch64 | From Linux x86_64 | From Windows x86_64 |
-|------------------|-------------------|-----------------------|-------------------|---------------------|
-| macOS x86_64     | ✅                | ✅                     | ✅                | ✅                  |
-| macOS M1/aarch64 | ✅                | ✅                     | ✅                | ✅                  |
-| Linux x86_64     | ✅                | ✅                     | ✅                | ✅                  |
-| Windows x86_64   | ✅                | ✅                     | ✅                | ✅                  |
-| iOS              | 🏃                | 🏃                     | 🏃                | 🏃                  |
-| Android          | 🏃                | 🏃                     | 🏃                | 🏃                  |
+## Issues
 
-* ✅ Tested and verified via CI.
-* ✔️ Should work, not tested via CI yet.
-* 🏃 Planned or in progress.
-* ⚠️ Implemented, but has known issues (e.g. bugs in Zig.)
+Issues are tracked in the [main Mach repository](https://github.com/hexops/mach/issues?q=is%3Aissue+is%3Aopen+label%3Aglfw).
+
+## Contributing
+
+Contributions are very welcome. Just send a PR to this repository.
+
+We track the latest stable release of GLFW, if you need a newer version we can start a development branch / figure that out - just open an issue.
+
+Once your PR is merged, if you're using Mach engine and wanting the changes there, it will be sync'd to the main repo via `git subtree`.
