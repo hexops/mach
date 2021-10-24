@@ -58,5 +58,5 @@ test "getClipboardString" {
     try glfw.init();
     defer glfw.terminate();
 
-    _ = glfw.getClipboardString() catch |err| std.debug.print("can't get clipboard, not supported by OS? error={}\n", .{err});;
+    _ = glfw.getClipboardString() catch |err| std.debug.print("can't get clipboard, not supported by OS? error={}\n", .{err});
 }
