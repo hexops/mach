@@ -33,3 +33,28 @@ Mach is still incredibly early stages, so far we have support for building from 
 * ✔️ Should work, not tested via CI yet.
 * 🏃 Planned or in progress.
 * ⚠️ Implemented, but has known issues (e.g. bugs in Zig.)
+
+## Libraries for all
+
+Whether you're interested in using all of Mach, or just some parts of it, you get to choose.
+Our libraries all aim to have the same zero-fuss installation, cross compilation, and platform
+support:
+
+* [mach-glfw](https://github.com/hexops/mach-glfw): Ziggified GLFW bindings with 100% API coverage
+
+## About sub-repositories
+
+In this repository, we maintain Mach as a monorepo. We pull in all commits from our library sub-repositories listed above using [`git subtree`](https://www.atlassian.com/git/tutorials/git-subtree):
+
+```
+git subtree pull --prefix glfw https://github.com/hexops/mach-glfw main
+```
+
+This pulls in all commits from our sub-repositories, and effectively leads to a full history of all Mach development across all core repositories.
+
+Pull requests can be made to any repository (we synchronize both ways via `git subtree pull` and `git subtree push`.)
+
+There are only two requirements:
+
+1. Pull requests in sub-repositories must have a commit message prefix, e.g. `glfw: <commit message>` to keep our monorepo history nicer - we generally squash merge pull requests so this is not an issue.
+2. Pull requests to this repository may not change multiple sub-repositories in the same commit (e.g. a commit to `glfw/` should not also include changes to `webgpu/`, to avoid confusion.)
