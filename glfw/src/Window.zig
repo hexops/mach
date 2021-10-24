@@ -2609,7 +2609,7 @@ test "getKey" {
     };
     defer window.destroy();
 
-    _ = try window.getKey(glfw.key.Key.escape);
+    _ = try window.getKey(glfw.Key.escape);
 }
 
 test "getMouseButton" {
