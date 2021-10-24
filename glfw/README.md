@@ -1,8 +1,8 @@
 # mach/glfw - Ziggified GLFW bindings [![CI](https://github.com/hexops/engine/workflows/CI/badge.svg)](https://github.com/hexops/engine/actions) <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
 
-Ziggified GLFW bindings that [Mach engine](https://github.com/hexops/mach) uses, with 100% API coverage & zero-fuss installation, cross compilation, and more.
+Ziggified GLFW bindings that [Mach engine](https://github.com/hexops/mach) uses, with 100% API coverage, zero-fuss installation, cross compilation, and more.
 
-The main Mach repository includes this one as a `git subtree`. This is a separate repo so that anyone can use this library in their own project / engine if they like!
+The [main Mach repository](https://github.com/hexops/mach) includes [this one](https://github.com/hexops/mach-glfw) as a `git subtree`. This is a separate repo so that anyone can use this library in their own project / engine if they like!
 
 ## Zero fuss installation, cross compilation, and more
 
@@ -24,6 +24,13 @@ You could just `@cImport` GLFW with Zig - the main reasons to use a ziggified wr
 * Enums, so you can write `window.getKey(.escape)` instead of `c.glfwGetKey(window, c.GLFW_KEY_ESCAPE)`
 * Slices instead of C pointers and lengths.
 * [`packed struct`](https://ziglang.org/documentation/master/#packed-struct) to represent bit masks, so you can interact with each bit the same way you'd interact with a `bool` if you like, instead of remembering the `&` `|` `^` incantation (although you're free to do that too.)
+
+## How do I use OpenGL, Vulkan, WebGPU, etc. with this?
+
+You'll need to bring your own library for this. Some are:
+
+* (Vulkan) https://github.com/Snektron/vulkan-zig (also see https://github.com/Avokadoen/zig_vulkan)
+* (OpenGL) https://github.com/ziglibs/zgl
 
 ## Issues
 
