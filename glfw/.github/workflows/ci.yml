@@ -29,14 +29,12 @@ jobs:
         run: zig build test -Dtarget=x86_64-windows
       - name: launch xvfb
         run: Xvfb :99 -screen 0 1680x720x24 > /dev/null 2>&1 &
-      - name: mach::test
+      - name: test
         run: |
           sudo add-apt-repository -y ppa:kisak/kisak-mesa
           sudo apt-get update
           sudo apt-get install mesa-utils mesa-utils-extra mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers xvfb
           zig build test
-      - name: webgpu::test
-        run: cd webgpu && zig build test
   x86_64-windows:
     runs-on: windows-latest
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
@@ -63,10 +61,8 @@ jobs:
           AGREE: true
       - name: x86_64-windows -> x86_64-linux
         run: zig build test -Dtarget=x86_64-linux
-      - name: mach::test
+      - name: test
         run: zig build test
-      - name: webgpu::test
-        run: cd webgpu && zig build test
   x86_64-macos:
     runs-on: macos-latest
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
@@ -79,7 +75,7 @@ jobs:
         run: |
           brew install xz
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.9.0-dev.959+f011f1393.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
-      - name: mach::test
+      - name: test
         run: zig build test
         env:
           AGREE: true
@@ -91,5 +87,3 @@ jobs:
         run: zig build test -Dtarget=x86_64-windows
       - name: x86_64-macos -> x86_64-linux
         run: zig build test -Dtarget=x86_64-linux
-      - name: webgpu::test
-        run: cd webgpu && zig build test
