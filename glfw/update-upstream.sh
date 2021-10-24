@@ -21,3 +21,4 @@ git clone https://github.com/KhronosGroup/Vulkan-Headers vulkan_headers/
 cd vulkan_headers
 rm -rf .git registry/ *.gn *.txt *.md cmake/ 
 rm -rf include/vk_video
+rm .cmake-format.py .gitattributes .gitignore

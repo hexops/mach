@@ -1,0 +1,35 @@
+name: CI
+on:
+  # SECURITY: This must be a push event only, otherwise our M1 mac runner would be compromised by
+  # third-party pull requests which could run arbitrary code. This way, we can restrict it to
+  # collaborators of the repository only.
+  #
+  # Whenever GitHub Actions gets official M1 support, we can use that for PRs and get rid of this
+  # self-hosted runner: https://github.com/actions/virtual-environments/issues/2187 
+  - push
+jobs:
+  aarch64-macos:
+    runs-on: [self-hosted, macOS, ARM64]
+    defaults:
+      run:
+        shell: "/usr/bin/arch -arch arm64e /bin/bash --noprofile --norc -eo pipefail {0}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Zig
+        run: |
+          zig version
+      - name: mach::test
+        run: zig build test
+        env:
+          AGREE: true
+      - name: aarch64-macos -> x86_64-macos
+        run: zig build test -Dtarget=x86_64-macos
+        env:
+          AGREE: true
+      - name: aarch64-macos -> x86_64-windows
+        run: zig build test -Dtarget=x86_64-windows
+      - name: aarch64-macos -> x86_64-linux
+        run: zig build test -Dtarget=x86_64-linux
+      - name: webgpu::test
+        run: cd webgpu && zig build test
