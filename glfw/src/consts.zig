@@ -104,7 +104,7 @@ pub const context_revision = c.GLFW_CONTEXT_REVISION;
 pub const context_robustness = c.GLFW_CONTEXT_ROBUSTNESS;
 
 /// OpenGL forward-compatibility hint and attribute.
-pub const opengl_foward_compat = c.GLFW_OPENGL_FORWARD_COMPAT;
+pub const opengl_forward_compat = c.GLFW_OPENGL_FORWARD_COMPAT;
 
 /// Debug mode context hint and attribute.
 pub const opengl_debug_context = c.GLFW_OPENGL_DEBUG_CONTEXT;
