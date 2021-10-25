@@ -12,7 +12,7 @@ jobs:
     runs-on: [self-hosted, macOS, ARM64]
     strategy:
       matrix:
-        project: ['.', 'glfw', 'webgpu']
+        project: ['.', 'glfw']
     defaults:
       run:
         shell: "/usr/bin/arch -arch arm64e /bin/bash --noprofile --norc -eo pipefail {0}"
