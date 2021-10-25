@@ -216,10 +216,13 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
                 step.linkFramework("OpenGL");
             }
 
+            // These are dependencies of the above frameworks, but are not properly picked by zld
+            // when cross-compiling Windows/Linux -> MacOS unless linked explicitly here.
             step.linkFramework("CoreGraphics");
             step.linkFramework("CoreServices");
-            step.linkFramework("ObjC");
             step.linkFramework("AppKit");
+            step.linkFramework("Foundation");
+            step.linkSystemLibrary("objc");
         },
         else => {
             // Assume Linux-like
