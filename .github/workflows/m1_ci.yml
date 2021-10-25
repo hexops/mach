@@ -10,6 +10,9 @@ on:
 jobs:
   aarch64-macos:
     runs-on: [self-hosted, macOS, ARM64]
+    strategy:
+      matrix:
+        projects: [., glfw]
     defaults:
       run:
         shell: "/usr/bin/arch -arch arm64e /bin/bash --noprofile --norc -eo pipefail {0}"
@@ -31,5 +34,3 @@ jobs:
         run: zig build test -Dtarget=x86_64-windows
       - name: aarch64-macos -> x86_64-linux
         run: zig build test -Dtarget=x86_64-linux
-      - name: webgpu::test
-        run: cd webgpu && zig build test
