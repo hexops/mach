@@ -241,17 +241,16 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
 }
 
 fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep) void {
-    step.addFrameworkDir("/System/Library/Frameworks");
-    step.addSystemIncludeDir("/usr/include");
-    step.addLibPath("/usr/lib");
-
-    // Add the SDK as a sysroot. Using this instead of, say, absolute framework/include/lib paths
-    // to the SDK without a sysroot ensures that we use the same libraries/frameworks/headers on
-    // Mac hosts and non-Mac hosts.
     const sdk_root_dir = getSdkRoot(b.allocator, "sdk-macos-11.3") catch unreachable;
-    defer b.allocator.free(sdk_root_dir);
-    var sdk_sysroot = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/" }) catch unreachable;
-    b.sysroot = sdk_sysroot;
+
+    var sdk_framework_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/System/Library/Frameworks" }) catch unreachable;
+    step.addFrameworkDir(sdk_framework_dir);
+
+    var sdk_include_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
+    step.addSystemIncludeDir(sdk_include_dir);
+
+    var sdk_lib_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib" }) catch unreachable;
+    step.addLibPath(sdk_lib_dir);
 }
 
 fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep) void {
