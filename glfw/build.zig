@@ -215,6 +215,11 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
             if (options.opengl) {
                 step.linkFramework("OpenGL");
             }
+
+            step.linkFramework("CoreGraphics");
+            step.linkFramework("CoreServices");
+            step.linkFramework("ObjC");
+            step.linkFramework("AppKit");
         },
         else => {
             // Assume Linux-like
