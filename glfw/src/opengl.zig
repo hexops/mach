@@ -142,7 +142,11 @@ pub const GLProc = fn () callconv(.C) void;
 /// @param[in] procname The ASCII encoded name of the function.
 /// @return The address of the function, or null if an error occurred.
 ///
-/// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoCurrentContext and glfw.Error.PlatformError.
+/// To maintain ABI compatability with the C glfwGetProcAddress, as it is commonly passed into
+/// libraries expecting that exact ABI, this function does not return an error. Instead, if
+/// glfw.Error.NotInitialized, glfw.Error.NoCurrentContext, or glfw.Error.PlatformError would
+/// occur this function will panic. You should ensure a valid OpenGL context exists and the
+/// GLFW is initialized before calling this function.
 ///
 /// The address of a given function is not guaranteed to be the same between contexts.
 ///
@@ -155,9 +159,9 @@ pub const GLProc = fn () callconv(.C) void;
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_glext, glfwExtensionSupported
-pub inline fn getProcAddress(proc_name: [*c]const u8) Error!?GLProc {
+pub inline fn getProcAddress(proc_name: [*c]const u8) ?GLProc {
     const proc_address = c.glfwGetProcAddress(proc_name);
-    try getError();
+    getError() catch |err| @panic(@errorName(err));
     if (proc_address) |addr| return addr;
     return null;
 }
@@ -221,7 +225,7 @@ test "getProcAddress" {
     defer window.destroy();
 
     try glfw.makeContextCurrent(window);
-    _ = glfw.getProcAddress("foobar") catch |err| std.debug.print("failed to get proc address, error={}\n", .{err});
+    _ = glfw.getProcAddress("foobar");
 }
 
 test "extensionSupported" {
