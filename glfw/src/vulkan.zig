@@ -94,14 +94,17 @@ pub const VKProc = fn () callconv(.C) void;
 /// @param[in] procname The ASCII encoded name of the function.
 /// @return The address of the function, or null if an error occurred.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.APIUnavailable.
+/// To maintain ABI compatability with the C glfwGetInstanceProcAddress, as it is commonly passed
+/// into libraries expecting that exact ABI, this function does not return an error. Instead, if
+/// glfw.Error.NotInitialized or glfw.Error.APIUnavailable would occur this function will panic.
+/// You may check glfw.vulkanSupported prior to invoking this function.
 ///
 /// @pointer_lifetime The returned function pointer is valid until the library is terminated.
 ///
 /// @thread_safety This function may be called from any thread.
-pub inline fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*c]const u8) Error!?VKProc {
+pub fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*c]const u8) callconv(.C) ?VKProc {
     const proc_address = c.glfwGetInstanceProcAddress(if (vk_instance) |v| @ptrCast(c.VkInstance, v) else null, proc_name);
-    try getError();
+    getError() catch @panic("glfw.getInstanceProcAddress failed, not initialized or Vulkan API unavailable");
     if (proc_address) |addr| return addr;
     return null;
 }
@@ -218,8 +221,8 @@ test "getInstanceProcAddress" {
     try glfw.init();
     defer glfw.terminate();
 
-    // syntax check only, we don't have a real vulkan instance.
-    _ = glfw.getInstanceProcAddress(null, "foobar") catch |err| std.debug.print("failed to get vulkan instance proc address, error={}\n", .{err});
+    // syntax check only, we don't have a real vulkan instance and so this function would panic.
+    _ = glfw.getInstanceProcAddress;
 }
 
 test "syntax" {
