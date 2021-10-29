@@ -217,12 +217,17 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
             }
 
             // These are dependencies of the above frameworks, but are not properly picked by zld
-            // when cross-compiling Windows/Linux -> MacOS unless linked explicitly here.
-            step.linkFramework("CoreGraphics");
-            step.linkFramework("CoreServices");
-            step.linkFramework("AppKit");
-            step.linkFramework("Foundation");
-            step.linkSystemLibrary("objc");
+            // when cross-compiling Windows/Linux -> MacOS, or on MacOS (no XCode) with `zig build test -Dtarget=aarch64-macos`
+            // unless linked explicitly here.
+            //
+            // If b.sysroot is set, however, these must NOT be specified. This is a bug in zld.
+            if (b.sysroot == null) {
+                step.linkFramework("CoreGraphics");
+                step.linkFramework("CoreServices");
+                step.linkFramework("AppKit");
+                step.linkFramework("Foundation");
+                step.linkSystemLibrary("objc");
+            }
         },
         else => {
             // Assume Linux-like
