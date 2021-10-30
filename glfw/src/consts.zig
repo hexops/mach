@@ -2,24 +2,6 @@
 
 const c = @import("c.zig").c;
 
-/// Window content area scaling window
-pub const scale_to_monitor = c.GLFW_SCALE_TO_MONITOR;
-
-/// macOS specific
-pub const cocoa_retina_framebuffer = c.GLFW_COCOA_RETINA_FRAMEBUFFER;
-
-/// macOS specific
-pub const cocoa_frame_name = c.GLFW_COCOA_FRAME_NAME;
-
-/// macOS specific
-pub const cocoa_graphics_switching = c.GLFW_COCOA_GRAPHICS_SWITCHING;
-
-/// X11 specific
-pub const x11_class_name = c.GLFW_X11_CLASS_NAME;
-
-/// X11 specific
-pub const x11_instance_name = c.GLFW_X11_INSTANCE_NAME;
-
 pub const no_api = c.GLFW_NO_API;
 pub const opengl_api = c.GLFW_OPENGL_API;
 pub const opengl_es_api = c.GLFW_OPENGL_ES_API;
