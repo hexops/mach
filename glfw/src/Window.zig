@@ -1040,6 +1040,75 @@ pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isi
     try getError();
 }
 
+/// Window attributes
+pub const Attrib = enum(c_int) {
+    /// Input focus window hit or window attribute.
+    focused = c.GLFW_FOCUSED,
+
+    /// Window iconification window attribute.
+    iconified = c.GLFW_ICONIFIED,
+
+    // Window resize-ability window attribute
+    resizable = c.GLFW_RESIZABLE,
+
+    /// Window visibility window attribute
+    visible = c.GLFW_VISIBLE,
+
+    /// Window decoration window attribute
+    decorated = c.GLFW_DECORATED,
+
+    /// Window auto-iconification window attribute
+    auto_iconify = c.GLFW_AUTO_ICONIFY,
+
+    /// Window decoration window attribute
+    floating = c.GLFW_FLOATING,
+
+    /// Window maximization window attribute
+    maximized = c.GLFW_MAXIMIZED,
+
+    /// Window framebuffer transparency attribute
+    transparent_framebuffer = c.GLFW_TRANSPARENT_FRAMEBUFFER,
+
+    /// Mouse cursor hover window attribute.
+    hovered = c.GLFW_HOVERED,
+
+    /// Input focus on calling show window attribute
+    focus_on_show = c.GLFW_FOCUS_ON_SHOW,
+
+    /// Context client API attribute.
+    client_api = c.GLFW_CLIENT_API,
+
+    /// Context client API major version attribute.
+    context_version_major = c.GLFW_CONTEXT_VERSION_MAJOR,
+
+    /// Context client API minor version attribute.
+    context_version_minor = c.GLFW_CONTEXT_VERSION_MINOR,
+
+    /// Context client API revision number attribute.
+    context_revision = c.GLFW_CONTEXT_REVISION,
+
+    /// Context robustness attribute.
+    context_robustness = c.GLFW_CONTEXT_ROBUSTNESS,
+
+    /// OpenGL forward-compatibility attribute.
+    opengl_forward_compat = c.GLFW_OPENGL_FORWARD_COMPAT,
+
+    /// Debug mode context attribute.
+    opengl_debug_context = c.GLFW_OPENGL_DEBUG_CONTEXT,
+
+    /// OpenGL profile attribute.
+    opengl_profile = c.GLFW_OPENGL_PROFILE,
+
+    /// Context flush-on-release attribute.
+    context_release_behavior = c.GLFW_CONTEXT_RELEASE_BEHAVIOR,
+
+    /// Context error suppression attribute.
+    context_no_error = c.GLFW_CONTEXT_NO_ERROR,
+
+    /// Context creation API attribute.
+    context_creation_api = c.GLFW_CONTEXT_CREATION_API,
+};
+
 /// Returns an attribute of the specified window.
 ///
 /// This function returns the value of an attribute of the specified window or its OpenGL or OpenGL
@@ -1059,8 +1128,8 @@ pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isi
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_attribs, glfw.Window.setAttrib
-pub inline fn getAttrib(self: Window, attrib: isize) Error!isize {
-    const v = c.glfwGetWindowAttrib(self.handle, @intCast(c_int, attrib));
+pub inline fn getAttrib(self: Window, attrib: Attrib) Error!isize {
+    const v = c.glfwGetWindowAttrib(self.handle, @enumToInt(attrib));
     try getError();
     return v;
 }
@@ -1089,8 +1158,8 @@ pub inline fn getAttrib(self: Window, attrib: isize) Error!isize {
 ///
 /// see also: window_attribs, glfw.Window.getAttrib
 ///
-pub inline fn setAttrib(self: Window, attrib: isize, value: bool) Error!void {
-    c.glfwSetWindowAttrib(self.handle, @intCast(c_int, attrib), if (value) c.GLFW_TRUE else c.GLFW_FALSE);
+pub inline fn setAttrib(self: Window, attrib: Attrib, value: bool) Error!void {
+    c.glfwSetWindowAttrib(self.handle, @enumToInt(attrib), if (value) c.GLFW_TRUE else c.GLFW_FALSE);
     try getError();
 }
 
@@ -2424,7 +2493,7 @@ test "getAttrib" {
     };
     defer window.destroy();
 
-    _ = window.getAttrib(glfw.focused) catch |err| std.debug.print("can't check if window is focused, not supported by OS maybe? error={}\n", .{err});
+    _ = window.getAttrib(.focused) catch |err| std.debug.print("can't check if window is focused, not supported by OS maybe? error={}\n", .{err});
 }
 
 test "setAttrib" {
@@ -2440,7 +2509,7 @@ test "setAttrib" {
     };
     defer window.destroy();
 
-    window.setAttrib(glfw.decorated, false) catch |err| std.debug.print("can't remove window decorations, not supported by OS maybe? error={}\n", .{err});
+    window.setAttrib(.decorated, false) catch |err| std.debug.print("can't remove window decorations, not supported by OS maybe? error={}\n", .{err});
 }
 
 test "setUserPointer" {
