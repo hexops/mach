@@ -11,6 +11,7 @@ const Image = @import("Image.zig");
 const Monitor = @import("Monitor.zig");
 const Cursor = @import("Cursor.zig");
 const Key = @import("key.zig").Key;
+const Action = @import("action.zig").Action;
 
 const Window = @This();
 
@@ -47,9 +48,9 @@ pub const InternalUserPointer = struct {
     setMaximizeCallback: ?fn (window: Window, maximized: bool) void,
     setFramebufferSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
     setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
-    setKeyCallback: ?fn (window: Window, key: isize, scancode: isize, action: isize, mods: isize) void,
+    setKeyCallback: ?fn (window: Window, key: isize, scancode: isize, action: Action, mods: isize) void,
     setCharCallback: ?fn (window: Window, codepoint: u21) void,
-    setMouseButtonCallback: ?fn (window: Window, button: isize, action: isize, mods: isize) void,
+    setMouseButtonCallback: ?fn (window: Window, button: isize, action: Action, mods: isize) void,
     setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
     setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
     setScrollCallback: ?fn (window: Window, xoffset: f64, yoffset: f64) void,
@@ -1347,9 +1348,9 @@ pub inline fn getInputMode(self: Window, mode: isize) isize {
 ///
 /// If the mode is `glfw.sticky_mouse_buttons`, the value must be either `true` to enable sticky
 /// mouse buttons, or `false` to disable it. If sticky mouse buttons are enabled, a mouse button
-/// press will ensure that glfw.Window.getMouseButton returns `glfw.press` the next time it is
-/// called even if the mouse button had been released before the call. This is useful when you are
-/// only interested in whether mouse buttons have been pressed but not when or in which order.
+/// press will ensure that glfw.Window.getMouseButton returns `glfw.Action.press` the next time it
+/// is called even if the mouse button had been released before the call. This is useful when you
+/// are only interested in whether mouse buttons have been pressed but not when or in which order.
 ///
 /// If the mode is `glfw.lock_key_mods`, the value must be either `true` to enable lock key modifier
 /// bits, or `false` to disable them. If enabled, callbacks that receive modifier bits will also
@@ -1383,10 +1384,10 @@ pub inline fn setInputMode(self: Window, mode: isize, value: anytype) Error!void
 ///
 /// This function returns the last press state reported for the specified key to the specified
 /// window. The returned state is one of `true` (pressed) or `false` (released). The higher-level
-/// action `glfw.repeat` is only reported to the key callback.
+/// action `glfw.Action.repeat` is only reported to the key callback.
 ///
-/// If the `glfw.sticky_keys` input mode is enabled, this function returns `glfw.press` the first
-/// time you call it for a key that was pressed, even if that key has already been released.
+/// If the `glfw.sticky_keys` input mode is enabled, this function returns `glfw.Action.press` the
+/// first time you call it for a key that was pressed, even if that key has already been released.
 ///
 /// The key functions deal with physical keys, with key tokens (see keys) named after their use on
 /// the standard US keyboard layout. If you want to input text, use the Unicode character callback
@@ -1399,17 +1400,16 @@ pub inline fn setInputMode(self: Window, mode: isize, value: anytype) Error!void
 /// @param[in] window The desired window.
 /// @param[in] key The desired keyboard key (see keys). `glfw.key.unknown` is not a valid key for
 /// this function.
-/// @return `true` (pressed) or `false` (released)
 ///
 /// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_key
-pub inline fn getKey(self: Window, key: Key) Error!bool {
+pub inline fn getKey(self: Window, key: Key) Error!Action {
     const state = c.glfwGetKey(self.handle, @enumToInt(key));
     try getError();
-    return state == c.GLFW_PRESS;
+    return @intToEnum(Action, state);
 }
 
 /// Returns the last reported state of a mouse button for the specified window.
@@ -1428,10 +1428,10 @@ pub inline fn getKey(self: Window, key: Key) Error!bool {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_mouse_button
-pub inline fn getMouseButton(self: Window, button: isize) Error!bool {
+pub inline fn getMouseButton(self: Window, button: isize) Error!Action {
     const state = c.glfwGetMouseButton(self.handle, @intCast(c_int, button));
     try getError();
-    return state == c.GLFW_PRESS;
+    return @intToEnum(Action, state);
 }
 
 const CursorPos = struct {
@@ -1524,7 +1524,7 @@ pub inline fn setCursor(self: Window, cursor: Cursor) Error!void {
 fn setKeyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setKeyCallback.?(window, @intCast(isize, key), @intCast(isize, scancode), @intCast(isize, action), @intCast(isize, mods));
+    internal.setKeyCallback.?(window, @intCast(isize, key), @intCast(isize, scancode), @intToEnum(Action, action), @intCast(isize, mods));
 }
 
 /// Sets the key callback.
@@ -1554,14 +1554,14 @@ fn setKeyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, ac
 /// @callback_param[in] window The window that received the event.
 /// @callback_param[in] key The keyboard key (see keys) that was pressed or released.
 /// @callback_param[in] scancode The system-specific scancode of the key.
-/// @callback_param[in] action `glfw.press`, `glfw.release` or `glfw.repeat`. Future releases may
-/// add more actions.
+/// @callback_param[in] action `glfw.Action.press`, `glfw.Action.release` or `glfw.Action.repeat`.
+/// Future releases may add more actions.
 /// @callback_param[in] mods Bit field describing which modifier keys (see mods) were held down.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_key
-pub inline fn setKeyCallback(self: Window, callback: ?fn (window: Window, key: isize, scancode: isize, action: isize, mods: isize) void) void {
+pub inline fn setKeyCallback(self: Window, callback: ?fn (window: Window, key: isize, scancode: isize, action: Action, mods: isize) void) void {
     var internal = self.getInternal();
     internal.setKeyCallback = callback;
     _ = c.glfwSetKeyCallback(self.handle, if (callback != null) setKeyCallbackWrapper else null);
@@ -1616,7 +1616,7 @@ pub inline fn setCharCallback(self: Window, callback: ?fn (window: Window, codep
 fn setMouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: c_int, mods: c_int) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setMouseButtonCallback.?(window, @intCast(isize, button), @intCast(isize, action), @intCast(isize, mods));
+    internal.setMouseButtonCallback.?(window, @intCast(isize, button), @intToEnum(Action, action), @intCast(isize, mods));
 }
 
 /// Sets the mouse button callback.
@@ -1634,14 +1634,14 @@ fn setMouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: 
 ///
 /// @callback_param[in] window The window that received the event.
 /// @callback_param[in] button The mouse button that was pressed or released.
-/// @callback_param[in] action One of `glfw.press` or `glfw.release`. Future releases may add more
-/// actions.
+/// @callback_param[in] action One of `glfw.Action.press` or `glfw.Action.release`. Future releases
+/// may add more actions.
 /// @callback_param[in] mods Bit field describing which modifier keys (see mods) were held down.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_mouse_button
-pub inline fn setMouseButtonCallback(self: Window, callback: ?fn (window: Window, button: isize, action: isize, mods: isize) void) void {
+pub inline fn setMouseButtonCallback(self: Window, callback: ?fn (window: Window, button: isize, action: Action, mods: isize) void) void {
     var internal = self.getInternal();
     internal.setMouseButtonCallback = callback;
     _ = c.glfwSetMouseButtonCallback(self.handle, if (callback != null) setMouseButtonCallbackWrapper else null);
@@ -2696,7 +2696,7 @@ test "setKeyCallback" {
     defer window.destroy();
 
     window.setKeyCallback((struct {
-        fn callback(_window: Window, key: isize, scancode: isize, action: isize, mods: isize) void {
+        fn callback(_window: Window, key: isize, scancode: isize, action: Action, mods: isize) void {
             _ = _window;
             _ = key;
             _ = scancode;
@@ -2741,7 +2741,7 @@ test "setMouseButtonCallback" {
     defer window.destroy();
 
     window.setMouseButtonCallback((struct {
-        fn callback(_window: Window, button: isize, action: isize, mods: isize) void {
+        fn callback(_window: Window, button: isize, action: Action, mods: isize) void {
             _ = _window;
             _ = button;
             _ = action;

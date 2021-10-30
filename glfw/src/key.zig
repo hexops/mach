@@ -23,10 +23,10 @@ const getError = @import("errors.zig").getError;
 /// enum containing all glfw keys
 pub const Key = enum(c_int) {
     /// The unknown key
-    unknown = cc.GLFW_KEY_UNKNOWN, 
+    unknown = cc.GLFW_KEY_UNKNOWN,
 
     /// Printable keys
-    space = cc.GLFW_KEY_SPACE, 
+    space = cc.GLFW_KEY_SPACE,
     apostrophe = cc.GLFW_KEY_APOSTROPHE,
     comma = cc.GLFW_KEY_COMMA,
     minus = cc.GLFW_KEY_MINUS,
@@ -78,7 +78,7 @@ pub const Key = enum(c_int) {
     world_2 = cc.GLFW_KEY_WORLD_2, // non-US #2
 
     // Function keys
-    escape = cc.GLFW_KEY_ESCAPE, 
+    escape = cc.GLFW_KEY_ESCAPE,
     enter = cc.GLFW_KEY_ENTER,
     tab = cc.GLFW_KEY_TAB,
     backspace = cc.GLFW_KEY_BACKSPACE,
@@ -153,7 +153,6 @@ pub const Key = enum(c_int) {
         return @intToEnum(Key, cc.GLFW_KEY_LAST);
     }
 
-    
     /// Returns the layout-specific name of the specified printable key.
     ///
     /// This function returns the name of the specified printable key, encoded as UTF-8. This is
@@ -238,9 +237,8 @@ pub const Key = enum(c_int) {
     }
 };
 
-
 test "getName" {
-    const glfw = @import("main.zig");  
+    const glfw = @import("main.zig");
     try glfw.init();
     defer glfw.terminate();
 
