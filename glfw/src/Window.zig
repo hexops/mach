@@ -13,6 +13,7 @@ const Cursor = @import("Cursor.zig");
 const Key = @import("key.zig").Key;
 const Action = @import("action.zig").Action;
 const Mods = @import("mod.zig").Mods;
+const MouseButton = @import("mouse_button.zig").MouseButton;
 
 const Window = @This();
 
@@ -51,8 +52,7 @@ pub const InternalUserPointer = struct {
     setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
     setKeyCallback: ?fn (window: Window, key: Key, scancode: isize, action: Action, mods: Mods) void,
     setCharCallback: ?fn (window: Window, codepoint: u21) void,
-    // TODO(enumify): button
-    setMouseButtonCallback: ?fn (window: Window, button: isize, action: Action, mods: Mods) void,
+    setMouseButtonCallback: ?fn (window: Window, button: MouseButton, action: Action, mods: Mods) void,
     setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
     setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
     setScrollCallback: ?fn (window: Window, xoffset: f64, yoffset: f64) void,
@@ -1632,8 +1632,8 @@ pub inline fn getKey(self: Window, key: Key) Error!Action {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_mouse_button
-pub inline fn getMouseButton(self: Window, button: isize) Error!Action {
-    const state = c.glfwGetMouseButton(self.handle, @intCast(c_int, button));
+pub inline fn getMouseButton(self: Window, button: MouseButton) Error!Action {
+    const state = c.glfwGetMouseButton(self.handle, @enumToInt(button));
     try getError();
     return @intToEnum(Action, state);
 }
@@ -1820,7 +1820,7 @@ pub inline fn setCharCallback(self: Window, callback: ?fn (window: Window, codep
 fn setMouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: c_int, mods: c_int) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setMouseButtonCallback.?(window, @intCast(isize, button), @intToEnum(Action, action), Mods.fromInt(mods));
+    internal.setMouseButtonCallback.?(window, @intToEnum(MouseButton, button), @intToEnum(Action, action), Mods.fromInt(mods));
 }
 
 /// Sets the mouse button callback.
@@ -1845,7 +1845,7 @@ fn setMouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: 
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_mouse_button
-pub inline fn setMouseButtonCallback(self: Window, callback: ?fn (window: Window, button: isize, action: Action, mods: Mods) void) void {
+pub inline fn setMouseButtonCallback(self: Window, callback: ?fn (window: Window, button: MouseButton, action: Action, mods: Mods) void) void {
     var internal = self.getInternal();
     internal.setMouseButtonCallback = callback;
     _ = c.glfwSetMouseButtonCallback(self.handle, if (callback != null) setMouseButtonCallbackWrapper else null);
@@ -2829,7 +2829,7 @@ test "getMouseButton" {
     };
     defer window.destroy();
 
-    _ = try window.getMouseButton(glfw.mouse_button.left);
+    _ = try window.getMouseButton(.left);
 }
 
 test "getCursorPos" {
@@ -2945,7 +2945,7 @@ test "setMouseButtonCallback" {
     defer window.destroy();
 
     window.setMouseButtonCallback((struct {
-        fn callback(_window: Window, button: isize, action: Action, mods: Mods) void {
+        fn callback(_window: Window, button: MouseButton, action: Action, mods: Mods) void {
             _ = _window;
             _ = button;
             _ = action;
