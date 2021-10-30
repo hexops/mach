@@ -73,6 +73,138 @@ pub inline fn defaultHints() Error!void {
     try getError();
 }
 
+/// Window hints
+pub const Hint = enum(c_int) {
+    /// Input focus window hint.
+    focused = c.GLFW_FOCUSED,
+
+    // Window resize-ability window hint
+    resizable = c.GLFW_RESIZABLE,
+
+    /// Window visibility window hint
+    visible = c.GLFW_VISIBLE,
+
+    /// Window decoration window hint
+    decorated = c.GLFW_DECORATED,
+
+    /// Window auto-iconification window hint
+    auto_iconify = c.GLFW_AUTO_ICONIFY,
+
+    /// Window decoration window hint
+    floating = c.GLFW_FLOATING,
+
+    /// Window maximization window hint
+    maximized = c.GLFW_MAXIMIZED,
+
+    /// Cursor centering window hint
+    center = c.GLFW_CENTER_CURSOR,
+
+    /// Window framebuffer transparency hint
+    transparent_framebuffer = c.GLFW_TRANSPARENT_FRAMEBUFFER,
+
+    /// Input focus on calling show window hint
+    focus_on_show = c.GLFW_FOCUS_ON_SHOW,
+
+    /// Framebuffer bit depth hint.
+    red_bits = c.GLFW_RED_BITS,
+
+    /// Framebuffer bit depth hint.
+    green_bits = c.GLFW_GREEN_BITS,
+
+    /// Framebuffer bit depth hint.
+    blue_bits = c.GLFW_BLUE_BITS,
+
+    /// Framebuffer bit depth hint.
+    alpha_bits = c.GLFW_ALPHA_BITS,
+
+    /// Framebuffer bit depth hint.
+    depth_bits = c.GLFW_DEPTH_BITS,
+
+    /// Framebuffer bit depth hint.
+    stencil_bits = c.GLFW_STENCIL_BITS,
+
+    /// Framebuffer bit depth hint.
+    accum_red_bits = c.GLFW_ACCUM_RED_BITS,
+
+    /// Framebuffer bit depth hint.
+    accum_green_bits = c.GLFW_ACCUM_GREEN_BITS,
+
+    /// Framebuffer bit depth hint.
+    accum_blue_bits = c.GLFW_ACCUM_BLUE_BITS,
+
+    /// Framebuffer bit depth hint.
+    accum_alpha_bits = c.GLFW_ACCUM_ALPHA_BITS,
+
+    /// Framebuffer auxiliary buffer hint.
+    aux_buffers = c.GLFW_AUX_BUFFERS,
+
+    /// OpenGL stereoscopic rendering hint.
+    stereo = c.GLFW_STEREO,
+
+    /// Framebuffer MSAA samples hint.
+    samples = c.GLFW_SAMPLES,
+
+    /// Framebuffer sRGB hint.
+    srgb_capable = c.GLFW_SRGB_CAPABLE,
+
+    /// Monitor refresh rate hint.
+    refresh_rate = c.GLFW_REFRESH_RATE,
+
+    /// Framebuffer double buffering hint.
+    doublebuffer = c.GLFW_DOUBLEBUFFER,
+
+    /// Context client API hint.
+    client_api = c.GLFW_CLIENT_API,
+
+    /// Context client API major version hint.
+    context_version_major = c.GLFW_CONTEXT_VERSION_MAJOR,
+
+    /// Context client API minor version hint.
+    context_version_minor = c.GLFW_CONTEXT_VERSION_MINOR,
+
+    /// Context client API revision number hint.
+    context_revision = c.GLFW_CONTEXT_REVISION,
+
+    /// Context robustness hint.
+    context_robustness = c.GLFW_CONTEXT_ROBUSTNESS,
+
+    /// OpenGL forward-compatibility hint.
+    opengl_forward_compat = c.GLFW_OPENGL_FORWARD_COMPAT,
+
+    /// Debug mode context hint.
+    opengl_debug_context = c.GLFW_OPENGL_DEBUG_CONTEXT,
+
+    /// OpenGL profile hint.
+    opengl_profile = c.GLFW_OPENGL_PROFILE,
+
+    /// Context flush-on-release hint.
+    context_release_behavior = c.GLFW_CONTEXT_RELEASE_BEHAVIOR,
+
+    /// Context error suppression hint.
+    context_no_error = c.GLFW_CONTEXT_NO_ERROR,
+
+    /// Context creation API hint.
+    context_creation_api = c.GLFW_CONTEXT_CREATION_API,
+
+    /// Window content area scaling window
+    scale_to_monitor = c.GLFW_SCALE_TO_MONITOR,
+
+    /// macOS specific
+    cocoa_retina_framebuffer = c.GLFW_COCOA_RETINA_FRAMEBUFFER,
+
+    /// macOS specific
+    cocoa_frame_name = c.GLFW_COCOA_FRAME_NAME,
+
+    /// macOS specific
+    cocoa_graphics_switching = c.GLFW_COCOA_GRAPHICS_SWITCHING,
+
+    /// X11 specific
+    x11_class_name = c.GLFW_X11_CLASS_NAME,
+
+    /// X11 specific
+    x11_instance_name = c.GLFW_X11_INSTANCE_NAME,
+};
+
 /// Sets the specified window hint to the desired value.
 ///
 /// This function sets hints for the next call to glfw.Window.create. The hints, once set, retain
@@ -92,27 +224,27 @@ pub inline fn defaultHints() Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hints, glfw.Window.defaultHints
-pub inline fn hint(hint_const: usize, value: anytype) Error!void {
+pub inline fn hint(h: Hint, value: anytype) Error!void {
     const value_type = @TypeOf(value);
     const value_type_info: std.builtin.TypeInfo = @typeInfo(value_type);
 
     switch (value_type_info) {
         .Int, .ComptimeInt => {
-            c.glfwWindowHint(@intCast(c_int, hint_const), @intCast(c_int, value));
+            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, value));
         },
         .Bool => {
             const int_value = @boolToInt(value);
-            c.glfwWindowHint(@intCast(c_int, hint_const), @intCast(c_int, int_value));
+            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, int_value));
         },
         .Enum => {
             const int_value = @enumToInt(value);
-            c.glfwWindowHint(@intCast(c_int, hint_const), @intCast(c_int, int_value));
+            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, int_value));
         },
         .Array => |arr_type| {
             if (arr_type.child != u8) {
                 @compileError("expected array of u8, got " ++ @typeName(arr_type));
             }
-            c.glfwWindowHintString(@intCast(c_int, hint_const), &value[0]);
+            c.glfwWindowHintString(@enumToInt(h), &value[0]);
         },
         .Pointer => |pointer_info| {
             const pointed_type = @typeInfo(pointer_info.child);
@@ -124,7 +256,8 @@ pub inline fn hint(hint_const: usize, value: anytype) Error!void {
                 },
                 else => @compileError("expected pointer to array, got " ++ @typeName(pointed_type)),
             }
-            c.glfwWindowHintString(@intCast(c_int, hint_const), &value[0]);
+
+            c.glfwWindowHintString(@enumToInt(h), &value[0]);
         },
         else => {
             @compileError("expected a int, bool, enum, array, or pointer, got " ++ @typeName(value_type));
@@ -1805,7 +1938,7 @@ test "hint comptime int" {
     try glfw.init();
     defer glfw.terminate();
 
-    try hint(glfw.focused, 1);
+    try hint(.focused, 1);
     try defaultHints();
 }
 
@@ -1816,7 +1949,7 @@ test "hint int" {
 
     var focused: i32 = 1;
 
-    try hint(glfw.focused, focused);
+    try hint(.focused, focused);
     try defaultHints();
 }
 
@@ -1825,7 +1958,7 @@ test "hint bool" {
     try glfw.init();
     defer glfw.terminate();
 
-    try hint(glfw.focused, true);
+    try hint(.focused, true);
     try defaultHints();
 }
 
@@ -1839,7 +1972,7 @@ test "hint enum(u1)" {
         @"false" = 0,
     };
 
-    try hint(glfw.focused, MyEnum.@"true");
+    try hint(.focused, MyEnum.@"true");
     try defaultHints();
 }
 
@@ -1853,7 +1986,7 @@ test "hint enum(i32)" {
         @"false" = 0,
     };
 
-    try hint(glfw.focused, MyEnum.@"true");
+    try hint(.focused, MyEnum.@"true");
     try defaultHints();
 }
 
@@ -1864,7 +1997,7 @@ test "hint array str" {
 
     const str_arr = [_]u8{ 'm', 'y', 'c', 'l', 'a', 's', 's' };
 
-    try hint(glfw.x11_class_name, str_arr);
+    try hint(.x11_class_name, str_arr);
     try defaultHints();
 }
 
@@ -1873,7 +2006,7 @@ test "hint pointer str" {
     try glfw.init();
     defer glfw.terminate();
 
-    try hint(glfw.x11_class_name, "myclass");
+    try hint(.x11_class_name, "myclass");
 }
 
 test "createWindow" {
