@@ -1,8 +1,6 @@
-//! Key and button actions
-
 const c = @import("c.zig").c;
 
-/// Holds all GLFW C action enumerations in their raw form.
+/// Key and button actions
 pub const Action = enum(c_int) {
     /// The key or mouse button was released.
     release = c.GLFW_RELEASE,

@@ -9,6 +9,7 @@ const c = @import("c.zig").c;
 const Window = @import("Window.zig");
 const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
+const GamepadAxis = @import("gamepad_axis.zig").GamepadAxis;
 
 const Joystick = @This();
 
@@ -46,7 +47,14 @@ const GamepadState = extern struct {
     buttons: [15]u8,
 
     /// The states of each gamepad axis (see gamepad_axes), in the range -1.0 to 1.0 inclusive.
+    ///
+    /// Use the enumeration helper e.g. `.getAxis(.left_x)` to access these indices.
     axes: [6]f32,
+
+    /// Returns the status of the specified gamepad axis, in the range -1.0 to 1.0 inclusive.
+    pub fn getAxis(self: @This(), which: GamepadAxis) f32 {
+        return self.axis[which];
+    }
 };
 
 /// Returns whether the specified joystick is present.
@@ -540,4 +548,5 @@ test "getGamepadState" {
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
     _ = joystick.getGamepadState() catch |err| std.debug.print("failed to get gamepad state, joysticks not supported? error={}\n", .{err});
+    _ = (GamepadState{}).getAxis(.left_x);
 }
