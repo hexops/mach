@@ -49,8 +49,9 @@ pub const InternalUserPointer = struct {
     setMaximizeCallback: ?fn (window: Window, maximized: bool) void,
     setFramebufferSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
     setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
-    setKeyCallback: ?fn (window: Window, key: isize, scancode: isize, action: Action, mods: Mods) void,
+    setKeyCallback: ?fn (window: Window, key: Key, scancode: isize, action: Action, mods: Mods) void,
     setCharCallback: ?fn (window: Window, codepoint: u21) void,
+    // TODO(enumify): button
     setMouseButtonCallback: ?fn (window: Window, button: isize, action: Action, mods: Mods) void,
     setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
     setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
@@ -1525,7 +1526,7 @@ pub inline fn setCursor(self: Window, cursor: Cursor) Error!void {
 fn setKeyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setKeyCallback.?(window, @intCast(isize, key), @intCast(isize, scancode), @intToEnum(Action, action), Mods.fromInt(mods));
+    internal.setKeyCallback.?(window, @intToEnum(Key, key), @intCast(isize, scancode), @intToEnum(Action, action), Mods.fromInt(mods));
 }
 
 /// Sets the key callback.
@@ -1562,7 +1563,7 @@ fn setKeyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, ac
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_key
-pub inline fn setKeyCallback(self: Window, callback: ?fn (window: Window, key: isize, scancode: isize, action: Action, mods: Mods) void) void {
+pub inline fn setKeyCallback(self: Window, callback: ?fn (window: Window, key: Key, scancode: isize, action: Action, mods: Mods) void) void {
     var internal = self.getInternal();
     internal.setKeyCallback = callback;
     _ = c.glfwSetKeyCallback(self.handle, if (callback != null) setKeyCallbackWrapper else null);
@@ -2697,7 +2698,7 @@ test "setKeyCallback" {
     defer window.destroy();
 
     window.setKeyCallback((struct {
-        fn callback(_window: Window, key: isize, scancode: isize, action: Action, mods: Mods) void {
+        fn callback(_window: Window, key: Key, scancode: isize, action: Action, mods: Mods) void {
             _ = _window;
             _ = key;
             _ = scancode;
