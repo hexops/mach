@@ -13,10 +13,8 @@ pub const Action = @import("action.zig").Action;
 pub const GamepadAxis = @import("gamepad_axis.zig").GamepadAxis;
 pub const GamepadButton = @import("gamepad_button.zig").GamepadButton;
 pub const GammaRamp = @import("GammaRamp.zig");
-pub const hat = @import("hat.zig");
 pub const Image = @import("Image.zig");
 pub const Joystick = @import("Joystick.zig");
-pub const mod = @import("mod.zig");
 pub const Monitor = @import("Monitor.zig");
 pub const mouse_button = @import("mouse_button.zig");
 pub const version = @import("version.zig");
@@ -29,6 +27,8 @@ pub usingnamespace @import("clipboard.zig");
 pub usingnamespace @import("opengl.zig");
 pub usingnamespace @import("vulkan.zig");
 pub usingnamespace @import("time.zig");
+pub usingnamespace @import("hat.zig");
+pub usingnamespace @import("mod.zig");
 
 /// Initializes the GLFW library.
 ///
