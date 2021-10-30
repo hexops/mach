@@ -5,12 +5,15 @@ const c = @import("c.zig").c;
 ///
 /// See glfw.Joystick.getHats for how these are used.
 pub const Hat = packed struct {
-    centered: bool align(@alignOf(u8)) = false,
-    up: bool = false,
+    up: bool align(@alignOf(u8)) = false,
     right: bool = false,
     down: bool = false,
     left: bool = false,
-    _reserved: u3 = 0,
+    _reserved: u4 = 0,
+
+    pub inline fn centered(self: Hat) bool {
+        return self.up == false and self.right == false and self.down == false and self.left == false;
+    }
 
     inline fn verifyIntType(comptime IntType: type) void {
         comptime {
@@ -33,7 +36,7 @@ pub const Hat = packed struct {
 };
 
 /// Holds all GLFW hat values in their raw form.
-pub const RawHats = struct {
+pub const RawHat = struct {
     pub const centered = c.GLFW_HAT_CENTERED;
     pub const up = c.GLFW_HAT_UP;
     pub const right = c.GLFW_HAT_RIGHT;
@@ -45,3 +48,53 @@ pub const RawHats = struct {
     pub const left_up = left | up;
     pub const left_down = left | down;
 };
+
+test "from int, single" {
+    const std = @import("std");
+
+    try std.testing.expectEqual(Hat{
+        .up = true,
+        .right = false,
+        .down = false,
+        .left = false,
+        ._reserved = 0,
+    }, Hat.fromInt(RawHat.up));
+}
+
+test "from int, multi" {
+    const std = @import("std");
+
+    try std.testing.expectEqual(Hat{
+        .up = true,
+        .right = false,
+        .down = true,
+        .left = true,
+        ._reserved = 0,
+    }, Hat.fromInt(RawHat.up | RawHat.down | RawHat.left));
+}
+
+test "to int, single" {
+    const std = @import("std");
+
+    var v = Hat{
+        .up = true,
+        .right = false,
+        .down = false,
+        .left = false,
+        ._reserved = 0,
+    };
+    try std.testing.expectEqual(v.toInt(c_int), RawHat.up);
+}
+
+test "to int, multi" {
+    const std = @import("std");
+
+    var v = Hat{
+        .up = true,
+        .right = false,
+        .down = true,
+        .left = true,
+        ._reserved = 0,
+    };
+    try std.testing.expectEqual(v.toInt(c_int), RawHat.up | RawHat.down | RawHat.left);
+}
