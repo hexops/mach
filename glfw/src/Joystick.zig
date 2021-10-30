@@ -12,6 +12,7 @@ const getError = @import("errors.zig").getError;
 const Action = @import("action.zig").Action;
 const GamepadAxis = @import("gamepad_axis.zig").GamepadAxis;
 const GamepadButton = @import("gamepad_button.zig").GamepadButton;
+const Hat = @import("hat.zig").Hat;
 
 const Joystick = @This();
 
@@ -153,25 +154,24 @@ pub inline fn getButtons(self: Joystick) Error!?[]const u8 {
 /// This function returns the state of all hats of the specified joystick. Each element in the array
 /// is one of the following values:
 ///
-/// | Name                  | Value                               |
-/// |-----------------------|-------------------------------------|
-/// | `glfw.hat.centered`   | 0                                   |
-/// | `glfw.hat.u[`         | 1                                   |
-/// | `glfw.hat.right`      | 2                                   |
-/// | `glfw.hat.down`       | 4                                   |
-/// | `glfw.hat.left`       | 8                                   |
-/// | `glfw.hat.right_up`   | `glfw.hat.right` \| `glfw.hat.up`   |
-/// | `glfw.hat.right_down` | `glfw.hat.right` \| `glfw.hat.down` |
-/// | `glfw.hat.left_up`    | `glfw.hat.left` \| `glfw.hat.up`    |
-/// | `glfw.hat.left_down`  | `glfw.hat.left` \| `glfw.hat.down`  |
+/// | Name                      | Value                                       |
+/// |---------------------------|---------------------------------------------|
+/// | `glfw.RawHats.centered`   | 0                                           |
+/// | `glfw.RawHats.up`         | 1                                           |
+/// | `glfw.RawHats.right`      | 2                                           |
+/// | `glfw.RawHats.down`       | 4                                           |
+/// | `glfw.RawHats.left`       | 8                                           |
+/// | `glfw.RawHats.right_up`   | `glfw.RawHats.right` \| `glfw.RawHats.up`   |
+/// | `glfw.RawHats.right_down` | `glfw.RawHats.right` \| `glfw.RawHats.down` |
+/// | `glfw.RawHats.left_up`    | `glfw.RawHats.left` \| `glfw.RawHats.up`    |
+/// | `glfw.RawHats.left_down`  | `glfw.RawHats.left` \| `glfw.RawHats.down`  |
 ///
 /// The diagonal directions are bitwise combinations of the primary (up, right, down and left)
-/// directions and you can test for these individually by ANDing it with the corresponding
-/// direction.
+/// directions, since the Zig GLFW wrapper returns a packed struct it is trivial to test for these:
 ///
 /// ```
-/// if (hats[2] & glfw.hat.right) {
-///     // State of hat 2 could be right-up, right, or right-down.
+/// if (hats.up and hats.right) {
+///     // up-right!
 /// }
 /// ```
 ///
@@ -189,12 +189,13 @@ pub inline fn getButtons(self: Joystick) Error!?[]const u8 {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: joystick_hat
-pub inline fn getHats(self: Joystick) Error!?[]const u8 {
+pub inline fn getHats(self: Joystick) Error!?[]const Hat {
     var count: c_int = undefined;
     const hats = c.glfwGetJoystickHats(self.jid, &count);
     try getError();
     if (hats == null) return null;
-    return hats[0..@intCast(usize, count)];
+    const slice = hats[0..@intCast(usize, count)];
+    return @ptrCast(*const []const Hat, &slice).*;
 }
 
 /// Returns the name of the specified joystick.
@@ -472,6 +473,10 @@ test "getHats" {
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
 
     _ = joystick.getHats() catch |err| std.debug.print("failed to get joystick hats, joysticks not supported? error={}\n", .{err});
+    const hats = std.mem.zeroes(Hat);
+    if (hats.down and hats.up) {
+        // down-up!
+    }
 }
 
 test "getName" {
