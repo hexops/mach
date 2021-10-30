@@ -4,6 +4,7 @@
 
 const c = @import("c.zig").c;
 
+// TODO(enumify)
 pub const one = c.GLFW_MOUSE_BUTTON_1;
 pub const two = c.GLFW_MOUSE_BUTTON_2;
 pub const three = c.GLFW_MOUSE_BUTTON_3;
