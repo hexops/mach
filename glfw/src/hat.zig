@@ -20,7 +20,7 @@ pub const Hat = packed struct {
         }
     }
 
-    pub inline fn toInt(comptime IntType: type, self: Hat) IntType {
+    pub inline fn toInt(self: Hat, comptime IntType: type) IntType {
         verifyIntType(IntType);
         return @bitCast(IntType, self);
     }

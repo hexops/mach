@@ -23,7 +23,7 @@ pub const Mods = packed struct {
         }
     }
 
-    pub inline fn toInt(comptime IntType: type, self: Mods) IntType {
+    pub inline fn toInt(self: Mods, comptime IntType: type) IntType {
         verifyIntType(IntType);
         return @bitCast(IntType, self);
     }
@@ -61,12 +61,12 @@ test "shift int to bitmask" {
     const int_mod = RawMods.shift;
     const mod = Mods.fromInt(int_mod);
 
-    std.testing.expect(mod.shift == true);
-    std.testing.expect(mod.control == false);
-    std.testing.expect(mod.alt == false);
-    std.testing.expect(mod.super == false);
-    std.testing.expect(mod.caps_lock == false);
-    std.testing.expect(mod.num_lock == false);
+    try std.testing.expect(mod.shift == true);
+    try std.testing.expect(mod.control == false);
+    try std.testing.expect(mod.alt == false);
+    try std.testing.expect(mod.super == false);
+    try std.testing.expect(mod.caps_lock == false);
+    try std.testing.expect(mod.num_lock == false);
 }
 
 test "shift int and alt to bitmask" {
@@ -75,12 +75,12 @@ test "shift int and alt to bitmask" {
     const int_mod = RawMods.shift | RawMods.alt;
     const mod = Mods.fromInt(int_mod);
 
-    std.testing.expect(mod.shift == true);
-    std.testing.expect(mod.control == false);
-    std.testing.expect(mod.alt == true);
-    std.testing.expect(mod.super == false);
-    std.testing.expect(mod.caps_lock == false);
-    std.testing.expect(mod.num_lock == false);
+    try std.testing.expect(mod.shift == true);
+    try std.testing.expect(mod.control == false);
+    try std.testing.expect(mod.alt == true);
+    try std.testing.expect(mod.super == false);
+    try std.testing.expect(mod.caps_lock == false);
+    try std.testing.expect(mod.num_lock == false);
 }
 
 test "super int to bitmask" {
@@ -89,12 +89,12 @@ test "super int to bitmask" {
     const int_mod = RawMods.super;
     const mod = Mods.fromInt(int_mod);
 
-    std.testing.expect(mod.shift == false);
-    std.testing.expect(mod.control == false);
-    std.testing.expect(mod.alt == false);
-    std.testing.expect(mod.super == true);
-    std.testing.expect(mod.caps_lock == false);
-    std.testing.expect(mod.num_lock == false);
+    try std.testing.expect(mod.shift == false);
+    try std.testing.expect(mod.control == false);
+    try std.testing.expect(mod.alt == false);
+    try std.testing.expect(mod.super == true);
+    try std.testing.expect(mod.caps_lock == false);
+    try std.testing.expect(mod.num_lock == false);
 }
 
 test "num lock int to bitmask" {
@@ -103,12 +103,12 @@ test "num lock int to bitmask" {
     const int_mod = RawMods.num_lock;
     const mod = Mods.fromInt(int_mod);
 
-    std.testing.expect(mod.shift == false);
-    std.testing.expect(mod.control == false);
-    std.testing.expect(mod.alt == false);
-    std.testing.expect(mod.super == false);
-    std.testing.expect(mod.caps_lock == false);
-    std.testing.expect(mod.num_lock == true);
+    try std.testing.expect(mod.shift == false);
+    try std.testing.expect(mod.control == false);
+    try std.testing.expect(mod.alt == false);
+    try std.testing.expect(mod.super == false);
+    try std.testing.expect(mod.caps_lock == false);
+    try std.testing.expect(mod.num_lock == true);
 }
 
 test "all int to bitmask" {
@@ -119,12 +119,12 @@ test "all int to bitmask" {
         RawMods.caps_lock | RawMods.num_lock;
     const mod = Mods.fromInt(int_mod);
 
-    std.testing.expect(mod.shift == true);
-    std.testing.expect(mod.control == true);
-    std.testing.expect(mod.alt == true);
-    std.testing.expect(mod.super == true);
-    std.testing.expect(mod.caps_lock == true);
-    std.testing.expect(mod.num_lock == true);
+    try std.testing.expect(mod.shift == true);
+    try std.testing.expect(mod.control == true);
+    try std.testing.expect(mod.alt == true);
+    try std.testing.expect(mod.super == true);
+    try std.testing.expect(mod.caps_lock == true);
+    try std.testing.expect(mod.num_lock == true);
 }
 
 test "shift bitmask to int" {
@@ -133,7 +133,7 @@ test "shift bitmask to int" {
     const mod = Mods{ .shift = true };
     const int_mod = mod.toInt(c_int);
 
-    std.testing.expectEqual(int_mod, RawMods.shift);
+    try std.testing.expectEqual(int_mod, RawMods.shift);
 }
 
 test "shift and alt bitmask to int" {
@@ -142,7 +142,7 @@ test "shift and alt bitmask to int" {
     const mod = Mods{ .shift = true, .alt = true };
     const int_mod = mod.toInt(c_int);
 
-    std.testing.expectEqual(int_mod, RawMods.shift | RawMods.alt);
+    try std.testing.expectEqual(int_mod, RawMods.shift | RawMods.alt);
 }
 
 test "all bitmask to int" {
@@ -162,5 +162,5 @@ test "all bitmask to int" {
         RawMods.alt | RawMods.super |
         RawMods.caps_lock | RawMods.num_lock;
 
-    std.testing.expectEqual(int_mod, expected);
+    try std.testing.expectEqual(int_mod, expected);
 }
