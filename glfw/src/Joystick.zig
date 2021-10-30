@@ -9,7 +9,9 @@ const c = @import("c.zig").c;
 const Window = @import("Window.zig");
 const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
+const Action = @import("action.zig").Action;
 const GamepadAxis = @import("gamepad_axis.zig").GamepadAxis;
+const GamepadButton = @import("gamepad_button.zig").GamepadButton;
 
 const Joystick = @This();
 
@@ -44,6 +46,8 @@ pub const last = c.GLFW_JOYSTICK_LAST;
 /// see also: gamepad, glfwGetGamepadState
 const GamepadState = extern struct {
     /// The states of each gamepad button (see gamepad_buttons), `glfw.Action.press` or `glfw.Action.release`.
+    ///
+    /// Use the enumeration helper e.g. `.getButton(.dpad_up)` to access these indices.
     buttons: [15]u8,
 
     /// The states of each gamepad axis (see gamepad_axes), in the range -1.0 to 1.0 inclusive.
@@ -51,9 +55,16 @@ const GamepadState = extern struct {
     /// Use the enumeration helper e.g. `.getAxis(.left_x)` to access these indices.
     axes: [6]f32,
 
+    /// Returns the state of the specified gamepad button.
+    pub fn getButton(self: @This(), which: GamepadButton) Action {
+        _ = self;
+        return @intToEnum(Action, self.buttons[@intCast(usize, @enumToInt(which))]);
+    }
+
     /// Returns the status of the specified gamepad axis, in the range -1.0 to 1.0 inclusive.
     pub fn getAxis(self: @This(), which: GamepadAxis) f32 {
-        return self.axis[which];
+        _ = self;
+        return self.axes[@intCast(usize, @enumToInt(which))];
     }
 };
 
@@ -548,5 +559,6 @@ test "getGamepadState" {
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
     _ = joystick.getGamepadState() catch |err| std.debug.print("failed to get gamepad state, joysticks not supported? error={}\n", .{err});
-    _ = (GamepadState{}).getAxis(.left_x);
+    _ = (std.mem.zeroes(GamepadState)).getAxis(.left_x);
+    _ = (std.mem.zeroes(GamepadState)).getButton(.dpad_up);
 }

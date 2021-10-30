@@ -11,7 +11,7 @@ const getError = @import("errors.zig").getError;
 
 pub const Action = @import("action.zig").Action;
 pub const GamepadAxis = @import("gamepad_axis.zig").GamepadAxis;
-pub const gamepad_button = @import("gamepad_button.zig");
+pub const GamepadButton = @import("gamepad_button.zig").GamepadButton;
 pub const GammaRamp = @import("GammaRamp.zig");
 pub const hat = @import("hat.zig");
 pub const Image = @import("Image.zig");

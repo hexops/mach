@@ -10,5 +10,7 @@ pub const GamepadAxis = enum(c_int) {
     right_y = c.GLFW_GAMEPAD_AXIS_RIGHT_Y,
     left_trigger = c.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER,
     right_trigger = c.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER,
-    last = .right_trigger,
 };
+
+/// Not in the GamepadAxis enumeration as it is a duplicate value which is forbidden.
+pub const last = GamepadAxis.right_trigger;
