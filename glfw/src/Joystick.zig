@@ -42,7 +42,7 @@ pub const last = c.GLFW_JOYSTICK_LAST;
 ///
 /// see also: gamepad, glfwGetGamepadState
 const GamepadState = extern struct {
-    /// The states of each gamepad button (see gamepad_buttons), `glfw.press` or `glfw.release`.
+    /// The states of each gamepad button (see gamepad_buttons), `glfw.Action.press` or `glfw.Action.release`.
     buttons: [15]u8,
 
     /// The states of each gamepad axis (see gamepad_axes), in the range -1.0 to 1.0 inclusive.
@@ -100,7 +100,7 @@ pub inline fn getAxes(self: Joystick) Error!?[]const f32 {
 /// Returns the state of all buttons of the specified joystick.
 ///
 /// This function returns the state of all buttons of the specified joystick. Each element in the
-/// array is either `glfw.press` or `glfw.release`.
+/// array is either `glfw.Action.press` or `glfw.Action.release`.
 ///
 /// For backward compatibility with earlier versions that did not have glfw.Joystick.getHats, the
 /// button array also includes all hats, each represented as four buttons. The hats are in the same
@@ -396,7 +396,7 @@ pub inline fn getGamepadName(self: Joystick) Error!?[*c]const u8 {
 /// Steam client.
 ///
 /// Not all devices have all the buttons or axes provided by GamepadState. Unavailable buttons
-/// and axes will always report `glfw.release` and 0.0 respectively.
+/// and axes will always report `glfw.Action.release` and 0.0 respectively.
 ///
 /// @param[in] jid The joystick (see joysticks) to query.
 /// @param[out] state The gamepad input state of the joystick.

@@ -9,7 +9,7 @@ pub usingnamespace @import("consts.zig");
 pub const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 
-pub const action = @import("action.zig");
+pub const Action = @import("action.zig").Action;
 pub const gamepad_axis = @import("gamepad_axis.zig");
 pub const gamepad_button = @import("gamepad_button.zig");
 pub const GammaRamp = @import("GammaRamp.zig");

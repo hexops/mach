@@ -7,7 +7,7 @@ const c = @import("c.zig").c;
 // must be in sync with https://www.glfw.org/docs/3.3/group__mods.html
 /// A bitmask of all key modifiers
 pub const Mods = packed struct {
-    shift: bool align(@alignOf(c_int)) = false, 
+    shift: bool align(@alignOf(c_int)) = false,
     control: bool = false,
     alt: bool = false,
     super: bool = false,
@@ -34,7 +34,7 @@ pub const Mods = packed struct {
     }
 };
 
-/// Hold all glfw values as is
+/// Holds all GLFW mod values in their raw form.
 pub const RawMods = struct {
     /// If this bit is set one or more Shift keys were held down.
     pub const shift = c.GLFW_MOD_SHIFT;
@@ -54,7 +54,6 @@ pub const RawMods = struct {
     /// If this bit is set the Num Lock key is enabled and the glfw.lock_key_mods input mode is set.
     pub const num_lock = c.GLFW_MOD_NUM_LOCK;
 };
-
 
 test "shift int to bitmask" {
     const std = @import("std");
@@ -112,13 +111,12 @@ test "num lock int to bitmask" {
     std.testing.expect(mod.num_lock == true);
 }
 
-
 test "all int to bitmask" {
     const std = @import("std");
 
-    const int_mod = RawMods.shift | RawMods.control | 
-                    RawMods.alt | RawMods.super | 
-                    RawMods.caps_lock | RawMods.num_lock;
+    const int_mod = RawMods.shift | RawMods.control |
+        RawMods.alt | RawMods.super |
+        RawMods.caps_lock | RawMods.num_lock;
     const mod = Mods.fromInt(int_mod);
 
     std.testing.expect(mod.shift == true);
@@ -150,7 +148,7 @@ test "shift and alt bitmask to int" {
 test "all bitmask to int" {
     const std = @import("std");
 
-    const mod = Mods{ 
+    const mod = Mods{
         .shift = true,
         .control = true,
         .alt = true,
@@ -160,9 +158,9 @@ test "all bitmask to int" {
     };
     const int_mod = mod.toInt(c_int);
 
-    const expected = RawMods.shift | RawMods.control | 
-                    RawMods.alt | RawMods.super | 
-                    RawMods.caps_lock | RawMods.num_lock;
+    const expected = RawMods.shift | RawMods.control |
+        RawMods.alt | RawMods.super |
+        RawMods.caps_lock | RawMods.num_lock;
 
     std.testing.expectEqual(int_mod, expected);
 }
