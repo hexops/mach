@@ -13,6 +13,7 @@ pub const Mods = packed struct {
     super: bool = false,
     caps_lock: bool = false,
     num_lock: bool = false,
+    _reserved: u2 = 0,
 
     inline fn verifyIntType(comptime IntType: type) void {
         comptime {
@@ -25,12 +26,12 @@ pub const Mods = packed struct {
 
     pub inline fn toInt(self: Mods, comptime IntType: type) IntType {
         verifyIntType(IntType);
-        return @bitCast(IntType, self);
+        return @intCast(IntType, @bitCast(u8, self));
     }
 
     pub inline fn fromInt(flags: anytype) Mods {
         verifyIntType(@TypeOf(flags));
-        return @bitCast(Mods, flags);
+        return @bitCast(Mods, @intCast(u8, flags));
     }
 };
 
