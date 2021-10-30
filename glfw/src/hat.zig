@@ -10,6 +10,7 @@ pub const Hat = packed struct {
     right: bool = false,
     down: bool = false,
     left: bool = false,
+    _reserved: u3 = 0,
 
     inline fn verifyIntType(comptime IntType: type) void {
         comptime {
@@ -22,12 +23,12 @@ pub const Hat = packed struct {
 
     pub inline fn toInt(self: Hat, comptime IntType: type) IntType {
         verifyIntType(IntType);
-        return @bitCast(IntType, self);
+        return @intCast(IntType, @bitCast(u8, self));
     }
 
     pub inline fn fromInt(flags: anytype) Hat {
         verifyIntType(@TypeOf(flags));
-        return @bitCast(Hat, flags);
+        return @bitCast(Hat, @intCast(u8, flags));
     }
 };
 
