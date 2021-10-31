@@ -2133,10 +2133,10 @@ void _glfwPlatformSetWindowIcon(_GLFWwindow* window,
 
             for (j = 0;  j < images[i].width * images[i].height;  j++)
             {
-                *target++ = (images[i].pixels[j * 4 + 0] << 16) |
-                            (images[i].pixels[j * 4 + 1] <<  8) |
-                            (images[i].pixels[j * 4 + 2] <<  0) |
-                            (images[i].pixels[j * 4 + 3] << 24);
+                *target++ = (((long)images[i].pixels[j * 4 + 0]) << 16) |
+                            (((long)images[i].pixels[j * 4 + 1]) <<  8) |
+                            (((long)images[i].pixels[j * 4 + 2]) <<  0) |
+                            (((long)images[i].pixels[j * 4 + 3]) << 24);
             }
         }
 
