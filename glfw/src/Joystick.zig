@@ -288,10 +288,19 @@ pub inline fn getUserPointer(self: Joystick, Type: anytype) ?Type {
     return null;
 }
 
-var _callback: ?fn (joystick: Joystick, event: isize) void = null;
+/// Describes an event relating to a joystick.
+pub const Event = enum(c_int) {
+    /// The device was connected.
+    connected = c.GLFW_CONNECTED,
+
+    /// The device was disconnected.
+    disconnected = c.GLFW_DISCONNECTED,
+};
+
+var _callback: ?fn (joystick: Joystick, event: Event) void = null;
 
 fn callbackWrapper(jid: c_int, event: c_int) callconv(.C) void {
-    _callback.?(Joystick{ .jid = jid }, @intCast(isize, event));
+    _callback.?(Joystick{ .jid = jid }, @intToEnum(Event, event));
 }
 
 /// Sets the joystick configuration callback.
@@ -307,7 +316,7 @@ fn callbackWrapper(jid: c_int, event: c_int) callconv(.C) void {
 /// @param[in] callback The new callback, or null to remove the currently set callback.
 ///
 /// @callback_param `jid` The joystick that was connected or disconnected.
-/// @callback_param `event` One of `glfw.connected` or `glfw.disconnected`. Future releases may add
+/// @callback_param `event` One of `.connected` or `.disconnected`. Future releases may add
 /// more events.
 ///
 /// Possible errors include glfw.Error.NotInitialized.
@@ -315,7 +324,7 @@ fn callbackWrapper(jid: c_int, event: c_int) callconv(.C) void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: joystick_event
-pub inline fn setCallback(callback: ?fn (joystick: Joystick, event: isize) void) void {
+pub inline fn setCallback(callback: ?fn (joystick: Joystick, event: Event) void) void {
     _callback = callback;
     _ = if (_callback != null) c.glfwSetJoystickCallback(callbackWrapper) else c.glfwSetJoystickCallback(null);
 
@@ -527,7 +536,7 @@ test "setCallback" {
     defer glfw.terminate();
 
     glfw.Joystick.setCallback((struct {
-        pub fn callback(joystick: Joystick, event: isize) void {
+        pub fn callback(joystick: Joystick, event: Event) void {
             _ = joystick;
             _ = event;
         }

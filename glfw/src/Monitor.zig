@@ -348,29 +348,37 @@ pub inline fn getPrimary() Error!?Monitor {
 var callback_fn_ptr: ?usize = null;
 var callback_data_ptr: ?usize = undefined;
 
+/// Describes an event relating to a monitor.
+pub const Event = enum(c_int) {
+    /// The device was connected.
+    connected = c.GLFW_CONNECTED,
+
+    /// The device was disconnected.
+    disconnected = c.GLFW_DISCONNECTED,
+};
+
 /// Sets the monitor configuration callback.
 ///
 /// This function sets the monitor configuration callback, or removes the currently set callback.
 /// This is called when a monitor is connected to or disconnected from the system. Example:
 ///
 /// ```
-/// fn monitorCallback(monitor: glfw.Monitor, event: usize, data: *MyData) void {
+/// fn monitorCallback(monitor: glfw.Monitor, event: glfw.Monitor.Event, data: *MyData) void {
 ///     // data is the pointer you passed into setCallback.
-///     // event is one of glfw.connected or glfw.disconnected
+///     // event is one of .connected or .disconnected
 /// }
 /// ...
 /// glfw.Monitor.setCallback(MyData, &myData, monitorCallback)
 /// ```
 ///
-/// `event` may be one of glfw.connected or glfw.disconnected. More events may be added in the
-/// future.
+/// `event` may be one of .connected or .disconnected. More events may be added in the future.
 ///
 /// Possible errors include glfw.Error.NotInitialized.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_event
-pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monitor: Monitor, event: usize, data: *Data) void) Error!void {
+pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monitor: Monitor, event: Event, data: *Data) void) Error!void {
     if (f) |new_callback| {
         callback_fn_ptr = @ptrToInt(new_callback);
         callback_data_ptr = @ptrToInt(data);
@@ -380,7 +388,7 @@ pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monit
                 const callback = @intToPtr(NewCallback, callback_fn_ptr.?);
                 callback.*(
                     Monitor{ .handle = monitor.? },
-                    @intCast(usize, event),
+                    @intToEnum(Event, event),
                     @intToPtr(*Data, callback_data_ptr.?),
                 );
             }
@@ -489,7 +497,7 @@ test "setCallback" {
 
     var custom_data: u32 = 5;
     try setCallback(u32, &custom_data, &(struct {
-        fn callback(monitor: Monitor, event: usize, data: *u32) void {
+        fn callback(monitor: Monitor, event: Event, data: *u32) void {
             _ = monitor;
             _ = event;
             _ = data;
