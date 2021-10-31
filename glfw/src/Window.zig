@@ -1542,8 +1542,7 @@ pub inline fn getInputModeCursor(self: Window) InputModeCursor {
 }
 
 /// Sets the input mode of sticky keys, if enabled a key press will ensure that `glfw.Window.getKey`
-/// return `true` (pressed) the next time it is called even if the key had been released before the
-/// call.
+/// return `.press` the next time it is called even if the key had been released before the call.
 ///
 /// This is useful when you are only interested in whether keys have been pressed but not when or
 /// in which order.
@@ -1556,6 +1555,21 @@ pub inline fn getInputModeStickyKeys(self: Window) bool {
     return self.getInputMode(InputMode.sticky_keys) == 1;
 }
 
+/// Sets the input mode of sticky mouse buttons, if enabled a mouse button press will ensure that
+/// `glfw.Window.getMouseButton` return `.press` the next time it is called even if the button had
+/// been released before the call.
+///
+/// This is useful when you are only interested in whether buttons have been pressed but not when
+/// or in which order.
+pub inline fn setInputModeStickyMouseButtons(self: Window, enabled: bool) Error!void {
+    return self.setInputMode(InputMode.sticky_mouse_buttons, enabled);
+}
+
+/// Tells if the sticky mouse buttons input mode is enabled.
+pub inline fn getInputModeStickyMouseButtons(self: Window) bool {
+    return self.getInputMode(InputMode.sticky_mouse_buttons) == 1;
+}
+
 /// Returns the value of an input option for the specified window.
 ///
 /// Consider using one of the following variants instead, if applicable, as they'll give you a
@@ -1563,6 +1577,7 @@ pub inline fn getInputModeStickyKeys(self: Window) bool {
 ///
 /// * `glfw.Window.getInputModeCursor`
 /// * `glfw.Window.getInputModeStickyKeys`
+/// * `glfw.Window.getInputModeStickyMouseButtons`
 ///
 /// This function returns the value of an input option for the specified window. The mode must be
 /// one of the `glfw.Window.InputMode` enumerations.
@@ -1589,12 +1604,7 @@ pub inline fn getInputMode(self: Window, mode: InputMode) isize {
 ///
 /// * `glfw.Window.setInputModeCursor`
 /// * `glfw.Window.setInputModeStickyKeys`
-///
-/// If the mode is `glfw.sticky_mouse_buttons`, the value must be either `true` to enable sticky
-/// mouse buttons, or `false` to disable it. If sticky mouse buttons are enabled, a mouse button
-/// press will ensure that glfw.Window.getMouseButton returns `glfw.Action.press` the next time it
-/// is called even if the mouse button had been released before the call. This is useful when you
-/// are only interested in whether mouse buttons have been pressed but not when or in which order.
+/// * `glfw.Window.setInputModeStickyMouseButtons`
 ///
 /// If the mode is `glfw.lock_key_mods`, the value must be either `true` to enable lock key modifier
 /// bits, or `false` to disable them. If enabled, callbacks that receive modifier bits will also
@@ -2866,6 +2876,38 @@ test "setInputModeStickyKeys" {
     defer window.destroy();
 
     window.setInputModeStickyKeys(false) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
+}
+
+test "getInputModeStickyMouseButtons" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.getInputModeStickyMouseButtons();
+}
+
+test "setInputModeStickyMouseButtons" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setInputModeStickyMouseButtons(false) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
 }
 
 test "getInputMode" {
