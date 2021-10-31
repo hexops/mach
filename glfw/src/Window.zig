@@ -1577,9 +1577,24 @@ pub inline fn setInputModeLockKeyMods(self: Window, enabled: bool) Error!void {
     return self.setInputMode(InputMode.lock_key_mods, enabled);
 }
 
-/// Tells if the the locking key modifiers input mode is enabled.
+/// Tells if the locking key modifiers input mode is enabled.
 pub inline fn getInputModeLockKeyMods(self: Window) bool {
     return self.getInputMode(InputMode.lock_key_mods) == 1;
+}
+
+/// Sets whether the raw mouse motion input mode is enabled, if enabled unscaled and unaccelerated
+/// mouse motion events will be sent, otherwise standard mouse motion events respecting the user's
+/// OS settings will be sent.
+///
+/// If raw motion is not supported, attempting to set this will emit glfw.Error.PlatformError. Call
+/// glfw.rawMouseMotionSupported to check for support.
+pub inline fn setInputModeRawMouseMotion(self: Window, enabled: bool) Error!void {
+    return self.setInputMode(InputMode.raw_mouse_motion, enabled);
+}
+
+/// Tells if the raw mouse motion input mode is enabled.
+pub inline fn getInputModeRawMouseMotion(self: Window) bool {
+    return self.getInputMode(InputMode.raw_mouse_motion) == 1;
 }
 
 /// Returns the value of an input option for the specified window.
@@ -1591,6 +1606,7 @@ pub inline fn getInputModeLockKeyMods(self: Window) bool {
 /// * `glfw.Window.getInputModeStickyKeys`
 /// * `glfw.Window.getInputModeStickyMouseButtons`
 /// * `glfw.Window.getInputModeLockKeyMods`
+/// * `glfw.Window.getInputModeRawMouseMotion`
 ///
 /// This function returns the value of an input option for the specified window. The mode must be
 /// one of the `glfw.Window.InputMode` enumerations.
@@ -1619,11 +1635,7 @@ pub inline fn getInputMode(self: Window, mode: InputMode) isize {
 /// * `glfw.Window.setInputModeStickyKeys`
 /// * `glfw.Window.setInputModeStickyMouseButtons`
 /// * `glfw.Window.setInputModeLockKeyMods`
-///
-/// If the mode is `glfw.raw_mouse_motion`, the value must be either `true` to enable raw (unscaled
-/// and unaccelerated) mouse motion when the cursor is disabled, or `false` to disable it. If raw
-/// motion is not supported, attempting to set this will emit glfw.Error.PlatformError. Call
-/// glfw.rawMouseMotionSupported to check for support.
+/// * `glfw.Window.setInputModeRawMouseMotion`
 ///
 /// @param[in] mode One of the `glfw.Window.InputMode` enumerations.
 /// @param[in] value The new value of the specified input mode.
@@ -2949,6 +2961,38 @@ test "setInputModeLockKeyMods" {
     defer window.destroy();
 
     window.setInputModeLockKeyMods(false) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
+}
+
+test "getInputModeRawMouseMotion" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.getInputModeRawMouseMotion();
+}
+
+test "setInputModeRawMouseMotion" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setInputModeRawMouseMotion(false) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
 }
 
 test "getInputMode" {
