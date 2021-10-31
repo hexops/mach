@@ -131,7 +131,7 @@ fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8) 
 
             var buf: [1000]u8 = undefined;
             var repo_url_fbs = std.io.fixedBufferStream(&buf);
-            try std.fmt.format(repo_url_fbs.writer(), "https://github.com/{s}/{s}", .{org, name});
+            try std.fmt.format(repo_url_fbs.writer(), "https://github.com/{s}/{s}", .{ org, name });
 
             const argv = &[_][]const u8{ "git", "clone", repo_url_fbs.getWritten() };
             const child = try std.ChildProcess.init(argv, allocator);
