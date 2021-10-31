@@ -1533,11 +1533,27 @@ pub const InputModeCursor = enum(c_int) {
 
 /// Sets the input mode of the cursor, whether it should behave normally, be hidden, or grabbed.
 pub inline fn setInputModeCursor(self: Window, value: InputModeCursor) Error!void {
-    return self.setInputMode(@enumToInt(InputMode.cursor), value);
+    return self.setInputMode(InputMode.cursor, value);
 }
 
+/// Gets the current input mode of the cursor.
 pub inline fn getInputModeCursor(self: Window) InputModeCursor {
-    return @intToEnum(InputModeCursor, self.getInputMode(@enumToInt(InputMode.cursor)));
+    return @intToEnum(InputModeCursor, self.getInputMode(InputMode.cursor));
+}
+
+/// Sets the input mode of sticky keys, if enabled a key press will ensure that `glfw.Window.getKey`
+/// return `true` (pressed) the next time it is called even if the key had been released before the
+/// call.
+///
+/// This is useful when you are only interested in whether keys have been pressed but not when or
+/// in which order.
+pub inline fn setInputModeStickyKeys(self: Window, enabled: bool) Error!void {
+    return self.setInputMode(InputMode.sticky_keys, enabled);
+}
+
+/// Tells if the sticky keys input mode is enabled.
+pub inline fn getInputModeStickyKeys(self: Window) bool {
+    return self.getInputMode(InputMode.sticky_keys) == 1;
 }
 
 /// Returns the value of an input option for the specified window.
@@ -1546,11 +1562,10 @@ pub inline fn getInputModeCursor(self: Window) InputModeCursor {
 /// typed return value:
 ///
 /// * `glfw.Window.getInputModeCursor`
+/// * `glfw.Window.getInputModeStickyKeys`
 ///
 /// This function returns the value of an input option for the specified window. The mode must be
-/// one of `glfw.Window.InputMode.cursor`, `glfw.Window.InputMode.sticky_keys`,
-/// `glfw.Window.InputMode.sticky_mouse_buttons`, `glfw.Window.InputMode.lock_key_mods`, or
-/// `glfw.Window.InputMode.raw_mouse_motion`.
+/// one of the `glfw.Window.InputMode` enumerations.
 ///
 /// Boolean values, such as for `glfw.Window.InputMode.raw_mouse_motion`, are returned as integers.
 /// You may convert to a boolean using `== 1`.
@@ -1558,8 +1573,8 @@ pub inline fn getInputModeCursor(self: Window) InputModeCursor {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: glfw.Window.setInputMode
-pub inline fn getInputMode(self: Window, mode: isize) isize {
-    const value = c.glfwGetInputMode(self.handle, @intCast(c_int, mode));
+pub inline fn getInputMode(self: Window, mode: InputMode) isize {
+    const value = c.glfwGetInputMode(self.handle, @enumToInt(mode));
 
     // Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
     getError() catch @panic("unexpected error getting input mode, invalid enum?");
@@ -1573,12 +1588,7 @@ pub inline fn getInputMode(self: Window, mode: isize) isize {
 /// the right input value via enumerations:
 ///
 /// * `glfw.Window.setInputModeCursor`
-///
-/// If the mode is `glfw.sticky_keys`, the value must be either `true` to enable sticky keys, or
-/// `false` to disable it. If sticky keys are enabled, a key press will ensure that `glfw.Window.getKey`
-/// `true` (pressed) the next time it is called even if the key had been released before the call.
-/// This is useful when you are only interested in whether keys have been pressed but not when or in
-/// which order.
+/// * `glfw.Window.setInputModeStickyKeys`
 ///
 /// If the mode is `glfw.sticky_mouse_buttons`, the value must be either `true` to enable sticky
 /// mouse buttons, or `false` to disable it. If sticky mouse buttons are enabled, a mouse button
@@ -1596,9 +1606,7 @@ pub inline fn getInputMode(self: Window, mode: isize) isize {
 /// motion is not supported, attempting to set this will emit glfw.Error.PlatformError. Call
 /// glfw.rawMouseMotionSupported to check for support.
 ///
-/// @param[in] mode One of `glfw.Window.InputMode.cursor`, `glfw.Window.InputMode.sticky_keys`,
-/// `glfw.Window.InputMode.sticky_mouse_buttons`, `glfw.Window.InputMode.lock_key_mods` or
-/// `glfw.Window.InputMode.raw_mouse_motion`.
+/// @param[in] mode One of the `glfw.Window.InputMode` enumerations.
 /// @param[in] value The new value of the specified input mode.
 ///
 /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
@@ -1606,11 +1614,11 @@ pub inline fn getInputMode(self: Window, mode: isize) isize {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: glfw.Window.getInputMode
-pub inline fn setInputMode(self: Window, mode: isize, value: anytype) Error!void {
+pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) Error!void {
     switch (@typeInfo(@TypeOf(value))) {
-        .Enum => c.glfwSetInputMode(self.handle, @intCast(c_int, mode), @enumToInt(value)),
-        .Int, .ComptimeInt => c.glfwSetInputMode(self.handle, @intCast(c_int, mode), @intCast(c_int, value)),
-        .Bool => c.glfwSetInputMode(self.handle, @intCast(c_int, mode), @intCast(c_int, @boolToInt(value))),
+        .Enum => c.glfwSetInputMode(self.handle, @enumToInt(mode), @enumToInt(value)),
+        .Int, .ComptimeInt => c.glfwSetInputMode(self.handle, @enumToInt(mode), @intCast(c_int, value)),
+        .Bool => c.glfwSetInputMode(self.handle, @enumToInt(mode), @intCast(c_int, @boolToInt(value))),
         else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
     }
     try getError();
@@ -2828,6 +2836,38 @@ test "setInputModeCursor" {
     window.setInputModeCursor(.hidden) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
 }
 
+test "getInputModeStickyKeys" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.getInputModeStickyKeys();
+}
+
+test "setInputModeStickyKeys" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setInputModeStickyKeys(false) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
+}
+
 test "getInputMode" {
     const glfw = @import("main.zig");
     try glfw.init();
@@ -2841,7 +2881,7 @@ test "getInputMode" {
     };
     defer window.destroy();
 
-    _ = window.getInputMode(@enumToInt(glfw.Window.InputMode.raw_mouse_motion)) == 1;
+    _ = window.getInputMode(glfw.Window.InputMode.raw_mouse_motion) == 1;
 }
 
 test "setInputMode" {
@@ -2858,10 +2898,10 @@ test "setInputMode" {
     defer window.destroy();
 
     // Boolean values.
-    window.setInputMode(@enumToInt(glfw.Window.InputMode.sticky_mouse_buttons), true) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
+    window.setInputMode(glfw.Window.InputMode.sticky_mouse_buttons, true) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
 
     // Integer values.
-    window.setInputMode(@enumToInt(glfw.Window.InputMode.cursor), glfw.Window.InputModeCursor.hidden) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
+    window.setInputMode(glfw.Window.InputMode.cursor, glfw.Window.InputModeCursor.hidden) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
 }
 
 test "getKey" {
