@@ -1570,6 +1570,18 @@ pub inline fn getInputModeStickyMouseButtons(self: Window) bool {
     return self.getInputMode(InputMode.sticky_mouse_buttons) == 1;
 }
 
+/// Sets the input mode of locking key modifiers, if enabled callbacks that receive modifier bits
+/// will also have the glfw.mod.caps_lock bit set when the event was generated with Caps Lock on,
+/// and the glfw.mod.num_lock bit when Num Lock was on.
+pub inline fn setInputModeLockKeyMods(self: Window, enabled: bool) Error!void {
+    return self.setInputMode(InputMode.lock_key_mods, enabled);
+}
+
+/// Tells if the the locking key modifiers input mode is enabled.
+pub inline fn getInputModeLockKeyMods(self: Window) bool {
+    return self.getInputMode(InputMode.lock_key_mods) == 1;
+}
+
 /// Returns the value of an input option for the specified window.
 ///
 /// Consider using one of the following variants instead, if applicable, as they'll give you a
@@ -1578,6 +1590,7 @@ pub inline fn getInputModeStickyMouseButtons(self: Window) bool {
 /// * `glfw.Window.getInputModeCursor`
 /// * `glfw.Window.getInputModeStickyKeys`
 /// * `glfw.Window.getInputModeStickyMouseButtons`
+/// * `glfw.Window.getInputModeLockKeyMods`
 ///
 /// This function returns the value of an input option for the specified window. The mode must be
 /// one of the `glfw.Window.InputMode` enumerations.
@@ -1605,11 +1618,7 @@ pub inline fn getInputMode(self: Window, mode: InputMode) isize {
 /// * `glfw.Window.setInputModeCursor`
 /// * `glfw.Window.setInputModeStickyKeys`
 /// * `glfw.Window.setInputModeStickyMouseButtons`
-///
-/// If the mode is `glfw.lock_key_mods`, the value must be either `true` to enable lock key modifier
-/// bits, or `false` to disable them. If enabled, callbacks that receive modifier bits will also
-/// have the glfw.mod.caps_lock bit set when the event was generated with Caps Lock on, and the
-/// glfw.mod.num_lock bit when Num Lock was on.
+/// * `glfw.Window.setInputModeLockKeyMods`
 ///
 /// If the mode is `glfw.raw_mouse_motion`, the value must be either `true` to enable raw (unscaled
 /// and unaccelerated) mouse motion when the cursor is disabled, or `false` to disable it. If raw
@@ -2908,6 +2917,38 @@ test "setInputModeStickyMouseButtons" {
     defer window.destroy();
 
     window.setInputModeStickyMouseButtons(false) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
+}
+
+test "getInputModeLockKeyMods" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    _ = window.getInputModeLockKeyMods();
+}
+
+test "setInputModeLockKeyMods" {
+    const glfw = @import("main.zig");
+    try glfw.init();
+    defer glfw.terminate();
+
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window: {}\n", .{err});
+        return;
+    };
+    defer window.destroy();
+
+    window.setInputModeLockKeyMods(false) catch |err| std.debug.print("failed to set input mode, not supported? error={}\n", .{err});
 }
 
 test "getInputMode" {
