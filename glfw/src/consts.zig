@@ -31,18 +31,6 @@ pub const osmesa_context_api = c.GLFW_OSMESA_CONTEXT_API;
 pub const dont_care = c.GLFW_DONT_CARE;
 
 // TODO(enumify)
-pub const cursor = c.GLFW_CURSOR;
-pub const sticky_keys = c.GLFW_STICKY_KEYS;
-pub const sticky_mouse_buttons = c.GLFW_STICKY_MOUSE_BUTTONS;
-pub const lock_key_mods = c.GLFW_LOCK_KEY_MODS;
-pub const raw_mouse_motion = c.GLFW_RAW_MOUSE_MOTION;
-
-// TODO(enumify)
-pub const cursor_normal = c.GLFW_CURSOR_NORMAL;
-pub const cursor_hidden = c.GLFW_CURSOR_HIDDEN;
-pub const cursor_disabled = c.GLFW_CURSOR_DISABLED;
-
-// TODO(enumify)
 pub const connected = c.GLFW_CONNECTED;
 pub const disconnected = c.GLFW_DISCONNECTED;
 
