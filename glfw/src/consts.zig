@@ -31,10 +31,6 @@ pub const osmesa_context_api = c.GLFW_OSMESA_CONTEXT_API;
 pub const dont_care = c.GLFW_DONT_CARE;
 
 // TODO(enumify)
-pub const connected = c.GLFW_CONNECTED;
-pub const disconnected = c.GLFW_DISCONNECTED;
-
-// TODO(enumify)
 /// Joystick hat buttons init hint.
 pub const joystick_hat_buttons = c.GLFW_JOYSTICK_HAT_BUTTONS;
 
