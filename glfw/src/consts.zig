@@ -29,15 +29,3 @@ pub const osmesa_context_api = c.GLFW_OSMESA_CONTEXT_API;
 
 /// Possible value for various window hints, etc.
 pub const dont_care = c.GLFW_DONT_CARE;
-
-// TODO(enumify)
-/// Joystick hat buttons init hint.
-pub const joystick_hat_buttons = c.GLFW_JOYSTICK_HAT_BUTTONS;
-
-// TODO(enumify)
-/// macOS specific init hint.
-pub const cocoa_chdir_resources = c.GLFW_COCOA_CHDIR_RESOURCES;
-
-// TODO(enumify)
-/// macOS specific init hint.
-pub const cocoa_menubar = c.GLFW_COCOA_MENUBAR;
