@@ -189,11 +189,18 @@ pub inline fn getPhysicalDevicePresentationSupport(vk_instance: *opaque {}, vk_p
 /// Vulkan objects, see the Vulkan specification.
 ///
 /// see also: vulkan_surface, glfw.getRequiredInstanceExtensions
-pub inline fn createWindowSurface(vk_instance: *opaque {}, window: Window, vk_allocation_callbacks: *opaque {}, vk_surface_khr: *opaque {}) Error!i32 {
+pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_allocation_callbacks: anytype, vk_surface_khr: anytype) Error!i32 {
+    // zig-vulkan uses enums to represent opaque pointers:
+    // pub const Instance = enum(usize) { null_handle = 0, _ };
+    const instance: c.VkInstance = switch (@typeInfo(@TypeOf(vk_instance))) {
+        .Enum => @intToPtr(c.VkInstance, @enumToInt(vk_instance)),
+        else => @ptrCast(c.VkInstance, vk_instance),
+    };
+
     const v = c.glfwCreateWindowSurface(
-        @ptrCast(c.VkInstance, vk_instance),
+        instance,
         window.handle,
-        @ptrCast(*c.VkAllocationCallbacks, @alignCast(@alignOf(*c.VkAllocationCallbacks), vk_allocation_callbacks)),
+        if (vk_allocation_callbacks == null) null else @ptrCast(*c.VkAllocationCallbacks, @alignCast(@alignOf(*c.VkAllocationCallbacks), vk_allocation_callbacks)),
         @ptrCast(*c.VkSurfaceKHR, @alignCast(@alignOf(*c.VkSurfaceKHR), vk_surface_khr)),
     );
     try getError();
