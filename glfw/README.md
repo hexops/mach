@@ -104,8 +104,6 @@ Issues are tracked in the [main Mach repository](https://github.com/hexops/mach/
 
 ## Contributing
 
-Contributions are very welcome. Just send a PR to this repository.
+Contributions are very welcome. If possible, please send pull requests to [the main repository](https://github.com/hexops/mach/tree/main/glfw) and once merged the change will get sync'd here.
 
 We track the latest stable release of GLFW, if you need a newer version we can start a development branch / figure that out - just open an issue.
-
-Once your PR is merged, if you're using Mach engine and wanting the changes there, it will be sync'd to the main repo via `git subtree`.
