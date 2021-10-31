@@ -36,6 +36,9 @@ pub const Options = struct {
 
     /// Only respected on Linux.
     linux_window_manager: LinuxWindowManager = .X11,
+
+    /// System SDK options.
+    system_sdk: system_sdk.Options = .{},
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
