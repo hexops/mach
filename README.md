@@ -6,13 +6,18 @@
 
 Under heavy development, not ready for use currently. [Follow @machengine on Twitter](https://twitter.com/machengine) for updates.
 
+## News
+
+You can read about major Mach engine developments at [devlog.hexops.com](https://devlog.hexops.com/categories/mach/):
+
+* [Perfecting GLFW for Zig, and finding lurking undefined behavior that went unnoticed for 6+ years](https://devlog.hexops.com/2021/perfecting-glfw-for-zig-and-finding-undefined-behavior)
+* [Mach engine: The future of graphics (with Zig)](https://devlog.hexops.com/2021/mach-engine-the-future-of-graphics-with-zig)
+
 ## Zero fuss installation & cross compilation
 
-Mach is built from the ground up to support zero fuss installation & cross compilation, **only `zig` and `git` are needed to build from any OS and produce binaries for every OS.**
+Mach is built from the ground up to support zero fuss installation & cross compilation, **only `zig` and `git` are needed to build from any OS and produce binaries for every platform.**
 
-You do **not** need any system dependencies, C libraries, SDKs (Xcode, etc.), C compilers or anything else.
-
-If you've ever worked with game engines in Go, Rust, or any other language you've probably run into issues at one point getting the right system dependencies installed, whether it be Xcode versions, compilers, X11/GLFW/SDL C dependencies, etc.
+If you've ever worked with game engines in C, C++, Rust, Go, or any other language you've probably run into issues at one point getting the right system dependencies installed, whether it be library versions, compilers, system SDKs, X11/GLFW/SDL C dependencies, etc. With Mach, none of this is needed - it's all sorted out for you automagically.
 
 Mach is able to do this thanks to Zig being a C/C++ compiler, Zig's linker `zld` supporting macOS cross compilation, and us doing the heavy lifting of packaging the required [system SDK libraries](https://github.com/hexops/sdk-macos-11.3) and [C sources](glfw/upstream/) for every dependency we need so our Zig build scripts can simply `git clone` them for you as needed for the target OS you're building for, completely automagically.
 
