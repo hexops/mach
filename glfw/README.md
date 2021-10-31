@@ -35,6 +35,12 @@ You'll need to bring your own library for this. Some are:
 * (Vulkan) https://github.com/Snektron/vulkan-zig (also see https://github.com/Avokadoen/zig_vulkan)
 * (OpenGL) https://github.com/ziglibs/zgl
 
+## Examples
+
+A minimal Vulkan example can be found in the [mach-glfw-vulkan-example](https://github.com/hexops/mach-glfw-vulkan-example) repository:
+
+<img width="912" alt="image" src="https://user-images.githubusercontent.com/3173176/139573985-d862f35a-e78e-40c2-bc0c-9c4fb68d6ecd.png">
+
 ## Getting started
 
 In a `libs` subdirectory of the root of your project:
