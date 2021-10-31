@@ -1,6 +1,8 @@
 const std = @import("std");
 const Builder = std.build.Builder;
 
+const system_sdk = @import("system_sdk.zig");
+
 pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
@@ -48,6 +50,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
 
+    system_sdk.include(b, step, .{});
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
@@ -78,7 +81,6 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
             lib.addCSourceFiles(sources.items, &.{"-D_GLFW_WIN32"});
         },
         .macos => {
-            includeSdkMacOS(b, lib);
             var sources = std.ArrayList([]const u8).init(b.allocator);
             for ([_][]const u8{
                 // MacOS-specific sources
@@ -106,9 +108,6 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
             lib.addCSourceFiles(sources.items, &.{"-D_GLFW_COCOA"});
         },
         else => {
-            // Assume Linux-like
-            includeSdkLinuxX8664(b, step);
-
             // TODO(future): for now, Linux must be built with glibc, not musl:
             //
             // ```
@@ -193,6 +192,7 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     step.addIncludeDir(vulkan_include_dir);
 
     step.linkLibC();
+    system_sdk.include(b, step, .{});
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
@@ -205,7 +205,6 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
             }
         },
         .macos => {
-            includeSdkMacOS(b, step);
             step.linkFramework("Cocoa");
             step.linkFramework("IOKit");
             step.linkFramework("CoreFoundation");
@@ -231,7 +230,6 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         },
         else => {
             // Assume Linux-like
-            includeSdkLinuxX8664(b, step);
             switch (options.linux_window_manager) {
                 .X11 => {
                     step.linkSystemLibrary("X11");
@@ -250,103 +248,5 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
                 step.linkSystemLibrary("GLESv3");
             }
         },
-    }
-}
-
-fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep) void {
-    const sdk_root_dir = getSdkRoot(b.allocator, "sdk-macos-11.3") catch unreachable;
-
-    var sdk_framework_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/System/Library/Frameworks" }) catch unreachable;
-    step.addFrameworkDir(sdk_framework_dir);
-
-    var sdk_include_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
-    step.addSystemIncludeDir(sdk_include_dir);
-
-    var sdk_lib_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib" }) catch unreachable;
-    step.addLibPath(sdk_lib_dir);
-}
-
-fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep) void {
-    const sdk_root_dir = getSdkRoot(b.allocator, "sdk-linux-x86_64") catch unreachable;
-    defer b.allocator.free(sdk_root_dir);
-
-    var sdk_root_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
-    defer b.allocator.free(sdk_root_includes);
-    step.addSystemIncludeDir(sdk_root_includes);
-
-    var sdk_root_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib/x86_64-linux-gnu" }) catch unreachable;
-    defer b.allocator.free(sdk_root_libs);
-    step.addLibPath(sdk_root_libs);
-}
-
-/// Caller owns returned memory.
-fn getSdkRoot(allocator: *std.mem.Allocator, comptime name: []const u8) ![]const u8 {
-    // Find the directory where the SDK should be located. We'll consider two locations:
-    //
-    // 1. $SDK_PATH/<name> (if set, e.g. for testing changes to SDKs easily)
-    // 2. <appdata>/<name> (default)
-    //
-    // Where `<name>` is the name of the SDK, e.g. `sdk-macos-11.3`.
-    var sdk_root_dir: []const u8 = undefined;
-    var sdk_path_dir: []const u8 = undefined;
-    defer allocator.free(sdk_path_dir);
-    if (std.process.getEnvVarOwned(allocator, "SDK_PATH")) |sdk_path| {
-        sdk_path_dir = sdk_path;
-        sdk_root_dir = try std.fs.path.join(allocator, &.{ sdk_path, name });
-    } else |err| switch (err) {
-        error.EnvironmentVariableNotFound => {
-            sdk_path_dir = try std.fs.getAppDataDir(allocator, "mach");
-            sdk_root_dir = try std.fs.path.join(allocator, &.{ sdk_path_dir, name });
-        },
-        else => |e| return e,
-    }
-
-    // If the SDK exists, return it. Otherwise, clone it.
-    if (std.fs.openDirAbsolute(sdk_root_dir, .{})) {
-        return sdk_root_dir;
-    } else |err| return switch (err) {
-        error.FileNotFound => {
-            std.log.info("cloning required sdk..\ngit clone https://github.com/hexops/{s} '{s}'..\n", .{ name, sdk_root_dir });
-            if (std.mem.eql(u8, name, "sdk-macos-11.3")) {
-                if (!try confirmAppleSDKAgreement(allocator)) @panic("cannot continue");
-            }
-            try std.fs.cwd().makePath(sdk_path_dir);
-            const argv = &[_][]const u8{ "git", "clone", "https://github.com/hexops/" ++ name };
-            const child = try std.ChildProcess.init(argv, allocator);
-            child.cwd = sdk_path_dir;
-            child.stdin = std.io.getStdOut();
-            child.stderr = std.io.getStdErr();
-            child.stdout = std.io.getStdOut();
-            try child.spawn();
-            _ = try child.wait();
-            return sdk_root_dir;
-        },
-        else => err,
-    };
-}
-
-fn confirmAppleSDKAgreement(allocator: *std.mem.Allocator) !bool {
-    if (std.process.getEnvVarOwned(allocator, "AGREE")) |agree| {
-        defer allocator.free(agree);
-        return std.mem.eql(u8, agree, "true");
-    } else |err| switch (err) {
-        error.EnvironmentVariableNotFound => {},
-        else => |e| return e,
-    }
-
-    const stdin = std.io.getStdIn().reader();
-    const stdout = std.io.getStdOut().writer();
-    var buf: [10]u8 = undefined;
-    try stdout.print("This SDK is distributed under the terms of the Xcode and Apple SDKs agreement:\n", .{});
-    try stdout.print("  https://www.apple.com/legal/sla/docs/xcode.pdf\n", .{});
-    try stdout.print("\n", .{});
-    try stdout.print("Do you agree to those terms? [Y/n] ", .{});
-    if (try stdin.readUntilDelimiterOrEof(buf[0..], '\n')) |user_input| {
-        try stdout.print("\n", .{});
-        var in = user_input;
-        if (in.len > 0 and in[in.len - 1] == '\r') in = in[0 .. in.len - 1];
-        return std.mem.eql(u8, in, "y") or std.mem.eql(u8, in, "Y") or std.mem.eql(u8, in, "yes") or std.mem.eql(u8, in, "");
-    } else {
-        return false;
     }
 }
