@@ -8,22 +8,25 @@ The [main Mach repository](https://github.com/hexops/mach) includes [this one](h
 
 [Just as with Mach](https://github.com/hexops/mach#zero-fuss-installation--cross-compilation), you get zero fuss installation & cross compilation using these GLFW bindings. **only `zig` and `git` are needed to build from any OS and produce binaries for every OS.** No system dependencies at all.
 
-See also: [platform support table](https://github.com/hexops/mach#supported-platforms)
+## 100% API coverage, 130+ tests, etc.
 
-## 100% API coverage
+These bindings have 100% API coverage of GLFW v3.3.4. Every function, type, constant, etc. has been wrapped in a ziggified API.
 
-These bindings recently achieved 100% API coverage of GLFW v3.3.4. Every function, type, etc. has been wrapped in a ziggified API.
+There are 130+ tests, and CI tests on all major platforms as well as cross-compilation between platforms:
+
+[platform support table](https://github.com/hexops/mach#supported-platforms)
 
 ## What does a ziggified GLFW API offer?
 
-You could just `@cImport` GLFW with Zig - the main reasons to use a ziggified wrapper though are because you get:
+Why create a ziggified GLFW wrapper, instead of just using `@cImport` and interfacing with GLFW directly? You get:
 
-* `true` and `false` booleans instead of `c.GLFW_TRUE` and `c.GLFW_FALSE` integers
-* Methods, so you can write e.g. `window.hint` instead of `glfwWindowHint`
+* Errors as [zig errors](https://ziglang.org/documentation/master/#Errors) instead of via a callback function.
+* `true` and `false` instead of `c.GLFW_TRUE` and `c.GLFW_FALSE` constants.
 * Generics, so you can just use `window.hint` instead of `glfwWindowHint`, `glfwWindowHintString`, etc.
-* Enums, so you can write `window.getKey(.escape)` instead of `c.glfwGetKey(window, c.GLFW_KEY_ESCAPE)`
+* **Enums**, always know what value a GLFW function can accept as everything is strictly typed. And use the nice Zig syntax to access enums, like `window.getKey(.escape)` instead of `c.glfwGetKey(window, c.GLFW_KEY_ESCAPE)`
 * Slices instead of C pointers and lengths.
-* [`packed struct`](https://ziglang.org/documentation/master/#packed-struct) to represent bit masks, so you can interact with each bit the same way you'd interact with a `bool` if you like, instead of remembering the `&` `|` `^` incantation (although you're free to do that too.)
+* [packed structs](https://ziglang.org/documentation/master/#packed-struct) represent bit masks, so you can use `if (joystick.down and joystick.right)` instead of `if (joystick & c.GLFW_HAT_DOWN and joystick & c.GLFW_HAT_RIGHT)`, etc.
+* Methods, e.g. `my_window.hint(...)` instead of `glfwWindowHint(my_window, ...)`
 
 ## How do I use OpenGL, Vulkan, WebGPU, etc. with this?
 
@@ -31,6 +34,69 @@ You'll need to bring your own library for this. Some are:
 
 * (Vulkan) https://github.com/Snektron/vulkan-zig (also see https://github.com/Avokadoen/zig_vulkan)
 * (OpenGL) https://github.com/ziglibs/zgl
+
+## Getting started
+
+In a `libs` subdirectory of the root of your project:
+
+```sg
+git clone https://github.com/hexops/mach-glfw
+```
+
+Then in your `build.zig` add:
+
+```zig
+const glfw = @import("libs/mach-glfw/build.zig");
+
+pub fn build(b: *Builder) void {
+    ...
+    exe.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
+    glfw.link(b, exe, .{});
+}
+```
+
+Now in your code you may import and use GLFW:
+
+```zig
+const glfw = @import("glfw");
+
+pub fn main() !void {
+    try glfw.init();
+    defer glfw.terminate();
+
+    // Create our window
+    const window = try glfw.Window.create(640, 480, "Hello, mach-glfw!", null, null);
+    defer window.destroy();
+
+    // Wait for the user to close the window.
+    while (!window.shouldClose()) {
+        glfw.pollEvents();
+    }
+}
+```
+
+## A warning about error handling
+
+Unless the action you're performing is truly critical to your application continuing further, you should avoid using `try`.
+
+This is because GLFW unfortunately must return errors for _a large portion_ of its functionality on some platforms, but especially for Wayland - so ideally your application is resiliant to such errors and merely e.g. logs failures that are not critical.
+
+Instead of `try window.getPos()` for example, you may use:
+
+```zig
+const pos = window.getPos() catch |err| {
+    std.log.err("failed to get window position: error={}\n", err);
+    return;
+}
+```
+
+Here is a rough list of functionality Wayland does not support:
+
+* `Window.setIcon`
+* `Window.setPos`, `Window.getPos`
+* `Window.iconify`, `Window.focus`
+* `Monitor.setGamma`
+* `Monitor.getGammaRamp`, `Monitor.setGammaRamp`
 
 ## Issues
 
