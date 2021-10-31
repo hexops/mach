@@ -84,6 +84,31 @@ pub inline fn terminate() void {
     c.glfwTerminate();
 }
 
+/// Initialization hints for passing into glfw.initHint
+pub const InitHint = enum(c_int) {
+    /// Specifies whether to also expose joystick hats as buttons, for compatibility with earlier
+    /// versions of GLFW that did not have glfwGetJoystickHats.
+    ///
+    /// Possible values are `true` and `false`.
+    joystick_hat_buttons = c.GLFW_JOYSTICK_HAT_BUTTONS,
+
+    /// macOS specific init hint. Ignored on other platforms.
+    ///
+    /// Specifies whether to set the current directory to the application to the Contents/Resources
+    /// subdirectory of the application's bundle, if present.
+    ///
+    /// Possible values are `true` and `false`.
+    cocoa_chdir_resources = c.GLFW_COCOA_CHDIR_RESOURCES,
+
+    /// macOS specific init hint. Ignored on other platforms.
+    ///
+    /// specifies whether to create a basic menu bar, either from a nib or manually, when the first
+    /// window is created, which is when AppKit is initialized.
+    ///
+    /// Possible values are `true` and `false`.
+    cocoa_menubar = c.GLFW_COCOA_MENUBAR,
+};
+
 /// Sets the specified init hint to the desired value.
 ///
 /// This function sets hints for the next initialization of GLFW.
@@ -104,8 +129,12 @@ pub inline fn terminate() void {
 /// @remarks This function may be called before glfw.init.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub inline fn initHint(hint: c_int, value: c_int) Error!void {
-    c.glfwInitHint(hint, value);
+pub inline fn initHint(hint: InitHint, value: anytype) Error!void {
+    switch (@typeInfo(@TypeOf(value))) {
+        .Int, .ComptimeInt => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, value)),
+        .Bool => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, @boolToInt(value))),
+        else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
+    }
     try getError();
 }
 
@@ -309,6 +338,12 @@ test "getVersionString" {
 
     std.debug.print("\nGLFW version v{}.{}.{}\n", .{ version.major, version.minor, version.revision });
     std.debug.print("\nstring: {s}\n", .{getVersionString()});
+}
+
+test "pollEvents" {
+    try initHint(.cocoa_chdir_resources, true);
+    try init();
+    defer terminate();
 }
 
 test "pollEvents" {
