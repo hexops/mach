@@ -91,9 +91,9 @@ Instead of `try window.getPos()` for example, you may use:
 
 ```zig
 const pos = window.getPos() catch |err| {
-    std.log.err("failed to get window position: error={}\n", err);
+    std.log.err("failed to get window position: error={}\n", .{err});
     return;
-}
+};
 ```
 
 Here is a rough list of functionality Wayland does not support:
