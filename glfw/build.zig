@@ -208,7 +208,6 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
             }
         },
         .macos => {
-            step.linkFramework("Cocoa");
             step.linkFramework("IOKit");
             step.linkFramework("CoreFoundation");
             if (options.metal) {
@@ -217,18 +216,18 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
             if (options.opengl) {
                 step.linkFramework("OpenGL");
             }
+            step.linkSystemLibrary("objc");
+            step.linkFramework("AppKit");
 
-            // These are dependencies of the above frameworks, but are not properly picked by zld
-            // when cross-compiling Windows/Linux -> MacOS, or on MacOS (no XCode) with `zig build test -Dtarget=aarch64-macos`
-            // unless linked explicitly here.
-            //
-            // If b.sysroot is set, however, these must NOT be specified. This is a bug in zld.
-            if (b.sysroot == null) {
-                step.linkFramework("CoreGraphics");
-                step.linkFramework("CoreServices");
-                step.linkFramework("AppKit");
-                step.linkFramework("Foundation");
-                step.linkSystemLibrary("objc");
+            // TODO(system_sdk): update MacOS system SDK so we can remove this, see:
+            // https://github.com/hexops/mach/pull/63#issuecomment-962141088
+            switch (@import("builtin").target.os.tag) {
+                .macos => {},
+                else => {
+                    step.linkFramework("CoreServices");
+                    step.linkFramework("CoreGraphics");
+                    step.linkFramework("Foundation");
+                },
             }
         },
         else => {
@@ -253,3 +252,4 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         },
     }
 }
+
