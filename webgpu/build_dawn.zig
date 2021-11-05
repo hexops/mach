@@ -1,7 +1,6 @@
 const std = @import("std");
 const Builder = std.build.Builder;
-//const glfw = @import("../glfw/build.zig");
-const glfw = @import("./libs/dawn/mach-old/glfw/build.zig"); // TODO: mach-old path
+const glfw = @import("libs/mach-glfw/build.zig");
 
 pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
@@ -18,7 +17,7 @@ pub fn build(b: *Builder) void {
     example.setTarget(target);
     link(b, example, .{});
     glfw.link(b, example, .{.system_sdk = .{.set_sysroot = false}});
-    example.addPackagePath("glfw", "./libs/dawn/mach-old/glfw/src/main.zig"); // TODO: mach-old path
+    example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
     example.addIncludeDir("out/Debug/gen/src/include");
     example.addIncludeDir("out/Debug/gen/src");
     example.addIncludeDir("examples");
