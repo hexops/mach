@@ -224,6 +224,7 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
             switch (@import("builtin").target.os.tag) {
                 .macos => {},
                 else => {
+                    step.linkFramework("CoreServices");
                     step.linkFramework("CoreGraphics");
                     step.linkFramework("Foundation");
                 },
