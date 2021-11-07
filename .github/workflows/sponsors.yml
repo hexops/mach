@@ -23,8 +23,8 @@ jobs:
         with:
           token: ${{ secrets.SLIMSAG_SPONSORS_PAT }}
           file: 'README.md'
-          minimum: 250 # cents
-          maximum: 260 # cents
+          minimum: 2500 # cents
+          maximum: 2600 # cents
           marker: 'silver'
 
       - name: Push changes to GitHub
