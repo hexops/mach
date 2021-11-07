@@ -13,7 +13,7 @@ jobs:
       - name: Generate Sponsors (bronze) 💖
         uses: JamesIves/github-sponsors-readme-action@1.0.5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.SLIMSAG_SPONSORS_PAT }}
           file: 'README.md'
           maximum: 5
           marker: 'bronze'
@@ -21,16 +21,15 @@ jobs:
       - name: Generate Sponsors (silver) 💖
         uses: JamesIves/github-sponsors-readme-action@1.0.5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.SLIMSAG_SPONSORS_PAT }}
           file: 'README.md'
           minimum: 25
           maximum: 50
           marker: 'silver'
 
-      - name: Generate Sponsors (gold) 💖
-        uses: JamesIves/github-sponsors-readme-action@1.0.5
+      - name: Push changes to GitHub
+        uses: JamesIves/github-pages-deploy-action@4.1.1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          file: 'README.md'
-          minimum: 100
-          marker: 'gold'
+          branch: main
+          folder: '.'
+          commit-message: 'README: regenerate sponsors section'
