@@ -70,10 +70,8 @@ If you like Mach engine, or my other work, you may [sponsor me on GitHub](https:
 
 ### Silver sponsors ($25/mo)
 
-<!-- silver -->
-<!-- silver -->
+<!-- silver --><!-- silver -->
 
 ### Bronze sponsors ($5/mo)
 
-<!-- bronze -->
-<!-- bronze -->
+<!-- bronze --><!-- bronze -->
