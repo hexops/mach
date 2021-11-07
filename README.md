@@ -63,3 +63,17 @@ There are only two requirements:
 
 1. Pull requests in sub-repositories must have a commit message prefix, e.g. `glfw: <commit message>` to keep our monorepo history nicer - we generally squash merge pull requests so this is not an issue.
 2. Pull requests to this repository may not change multiple sub-repositories in the same commit (e.g. a commit to `glfw/` should not also include changes to `webgpu/`, to avoid confusion.)
+
+## Sponsors
+
+If you like Mach engine, or my other work, you may [sponsor me on GitHub](https://github.com/sponsors/slimsag). This will make my day, it's a huge vote of confidence and I really appreciate your support!
+
+### Silver sponsors ($25/mo)
+
+<!-- silver -->
+<!-- silver -->
+
+### Bronze sponsors ($5/mo)
+
+<!-- bronze -->
+<!-- bronze -->
