@@ -15,7 +15,7 @@ jobs:
         with:
           token: ${{ secrets.SLIMSAG_SPONSORS_PAT }}
           file: 'README.md'
-          maximum: 5
+          maximum: 6
           marker: 'bronze'
 
       - name: Generate Sponsors (silver) 💖
@@ -23,7 +23,7 @@ jobs:
         with:
           token: ${{ secrets.SLIMSAG_SPONSORS_PAT }}
           file: 'README.md'
-          minimum: 25
+          minimum: 24
           maximum: 50
           marker: 'silver'
 
