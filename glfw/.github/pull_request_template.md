@@ -1,3 +1,5 @@
+Please send your change to [the main repository](https://github.com/hexops/mach/tree/main/glfw) instead, sorry for the trouble!
 
+This helps us avoid some complex merge conflicts we run into when changes are made to both repositories and history needs to be reconciled. Keeping PRs in just that repository enables us to use `git subtree` to trivially keep the two repositories in sync.
 
-- [ ] By selecting this checkbox, I agree to license my contributions to this project under the license(s) described in the LICENSE file, and I have the right to do so or have received permission to do so by an employer or client I am producing work for whom has this right.
+Once your PR is merged over there, it'll automatically sync to this repository.
