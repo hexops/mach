@@ -2,7 +2,7 @@
 
 Ziggified GLFW bindings that [Mach engine](https://github.com/hexops/mach) uses, with 100% API coverage, zero-fuss installation, cross compilation, and more.
 
-The [main Mach repository](https://github.com/hexops/mach) includes [this one](https://github.com/hexops/mach-glfw) as a `git subtree`. This is a separate repo so that anyone can use this library in their own project / engine if they like!
+This repository is a separate copy of the same library in the [main Mach repository](https://github.com/hexops/mach), and is automatically kept in sync, so that anyone can use this library in their own project / engine if they like!
 
 ## Zero fuss installation, cross compilation, and more
 
@@ -110,6 +110,6 @@ Issues are tracked in the [main Mach repository](https://github.com/hexops/mach/
 
 ## Contributing
 
-Contributions are very welcome. If possible, please send pull requests to [the main repository](https://github.com/hexops/mach/tree/main/glfw) and once merged the change will get sync'd here.
+Contributions are very welcome, but pull requests must be sent to [the main repository](https://github.com/hexops/mach/tree/main/glfw) to avoid some complex merge conflicts we'd get by accepting contributions in both repositories. Once the changes are merged there, they'll get sync'd to this repository automatically.
 
 We track the latest stable release of GLFW, if you need a newer version we can start a development branch / figure that out - just open an issue.
