@@ -239,7 +239,7 @@ pub const Key = enum(c_int) {
 
 test "getName" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     _ = glfw.Key.a.getName(0) catch |err| std.debug.print("failed to get key name, not supported? error={}\n", .{err});
@@ -247,7 +247,7 @@ test "getName" {
 
 test "getScancode" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     _ = glfw.Key.a.getScancode() catch |err| std.debug.print("failed to get key scancode, not supported? error={}\n", .{err});

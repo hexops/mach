@@ -104,7 +104,7 @@ test "create" {
     const allocator = testing.allocator;
 
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const image = try Image.init(allocator, 32, 32, 32 * 32 * 4);
@@ -119,7 +119,7 @@ test "create" {
 
 test "createStandard" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const cursor = glfw.Cursor.createStandard(.ibeam) catch |err| {
