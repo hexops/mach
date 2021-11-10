@@ -67,7 +67,7 @@ Now in your code you may import and use GLFW:
 const glfw = @import("glfw");
 
 pub fn main() !void {
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     // Create our window
