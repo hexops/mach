@@ -53,7 +53,12 @@ pub usingnamespace @import("mod.zig");
 /// Unicode text input.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub inline fn init() Error!void {
+pub inline fn init(hints: InitHints) Error!void {
+    inline for (comptime std.meta.fieldNames(InitHints)) |field_name| {
+        const init_hint = @field(InitHint, field_name);
+        const init_value = @field(hints, field_name);
+        try initHint(init_hint, init_value);
+    }
     _ = c.glfwInit();
     return try getError();
 }
@@ -84,8 +89,27 @@ pub inline fn terminate() void {
     c.glfwTerminate();
 }
 
+/// Initialization hints for passing into glfw.init
+pub const InitHints = struct {
+    /// Specifies whether to also expose joystick hats as buttons, for compatibility with earlier
+    /// versions of GLFW that did not have glfwGetJoystickHats.
+    joystick_hat_buttons: bool = true,
+    
+    /// macOS specific init hint. Ignored on other platforms.
+    ///
+    /// Specifies whether to set the current directory to the application to the Contents/Resources
+    /// subdirectory of the application's bundle, if present.
+    cocoa_chdir_resources: bool = true,
+    
+    /// macOS specific init hint. Ignored on other platforms.
+    ///
+    /// specifies whether to create a basic menu bar, either from a nib or manually, when the first
+    /// window is created, which is when AppKit is initialized.
+    cocoa_menubar: bool = true,
+};
+
 /// Initialization hints for passing into glfw.initHint
-pub const InitHint = enum(c_int) {
+const InitHint = enum(c_int) {
     /// Specifies whether to also expose joystick hats as buttons, for compatibility with earlier
     /// versions of GLFW that did not have glfwGetJoystickHats.
     ///
@@ -129,7 +153,7 @@ pub const InitHint = enum(c_int) {
 /// @remarks This function may be called before glfw.init.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub inline fn initHint(hint: InitHint, value: anytype) Error!void {
+fn initHint(hint: InitHint, value: anytype) Error!void {
     switch (@typeInfo(@TypeOf(value))) {
         .Int, .ComptimeInt => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, value)),
         .Bool => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, @boolToInt(value))),
@@ -308,7 +332,7 @@ pub inline fn rawMouseMotionSupported() bool {
 }
 
 pub fn basicTest() !void {
-    try init();
+    try init(.{});
     defer terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null) catch |err| {
@@ -341,27 +365,26 @@ test "getVersionString" {
 }
 
 test "pollEvents" {
-    try initHint(.cocoa_chdir_resources, true);
-    try init();
+    try init(.{ .cocoa_chdir_resources = true });
     defer terminate();
 }
 
 test "pollEvents" {
-    try init();
+    try init(.{});
     defer terminate();
 
     try pollEvents();
 }
 
 test "waitEventsTimeout" {
-    try init();
+    try init(.{});
     defer terminate();
 
     try waitEventsTimeout(0.25);
 }
 
 test "postEmptyEvent_and_waitEvents" {
-    try init();
+    try init(.{});
     defer terminate();
 
     try postEmptyEvent();
@@ -369,7 +392,7 @@ test "postEmptyEvent_and_waitEvents" {
 }
 
 test "rawMouseMotionSupported" {
-    try init();
+    try init(.{});
     defer terminate();
 
     _ = rawMouseMotionSupported();
