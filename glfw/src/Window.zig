@@ -2067,7 +2067,7 @@ pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths
 
 test "defaultHints" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     try defaultHints();
@@ -2075,7 +2075,7 @@ test "defaultHints" {
 
 test "hint comptime int" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     try hint(.focused, 1);
@@ -2084,7 +2084,7 @@ test "hint comptime int" {
 
 test "hint int" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     var focused: i32 = 1;
@@ -2095,7 +2095,7 @@ test "hint int" {
 
 test "hint bool" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     try hint(.focused, true);
@@ -2104,7 +2104,7 @@ test "hint bool" {
 
 test "hint enum(u1)" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const MyEnum = enum(u1) {
@@ -2118,7 +2118,7 @@ test "hint enum(u1)" {
 
 test "hint enum(i32)" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const MyEnum = enum(i32) {
@@ -2132,7 +2132,7 @@ test "hint enum(i32)" {
 
 test "hint array str" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const str_arr = [_]u8{ 'm', 'y', 'c', 'l', 'a', 's', 's' };
@@ -2143,7 +2143,7 @@ test "hint array str" {
 
 test "hint pointer str" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     try hint(.x11_class_name, "myclass");
@@ -2151,7 +2151,7 @@ test "hint pointer str" {
 
 test "createWindow" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2165,7 +2165,7 @@ test "createWindow" {
 
 test "setShouldClose" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2180,7 +2180,7 @@ test "setShouldClose" {
 
 test "setTitle" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2197,7 +2197,7 @@ test "setTitle" {
 test "setIcon" {
     const allocator = testing.allocator;
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2229,7 +2229,7 @@ test "setIcon" {
 
 test "getPos" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2245,7 +2245,7 @@ test "getPos" {
 
 test "setPos" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2261,7 +2261,7 @@ test "setPos" {
 
 test "getSize" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2277,7 +2277,7 @@ test "getSize" {
 
 test "setSize" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2293,7 +2293,7 @@ test "setSize" {
 
 test "setSizeLimits" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2312,7 +2312,7 @@ test "setSizeLimits" {
 
 test "setAspectRatio" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2328,7 +2328,7 @@ test "setAspectRatio" {
 
 test "getFramebufferSize" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2344,7 +2344,7 @@ test "getFramebufferSize" {
 
 test "getFrameSize" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2360,7 +2360,7 @@ test "getFrameSize" {
 
 test "getContentScale" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2376,7 +2376,7 @@ test "getContentScale" {
 
 test "getOpacity" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2392,7 +2392,7 @@ test "getOpacity" {
 
 test "iconify" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2408,7 +2408,7 @@ test "iconify" {
 
 test "restore" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2424,7 +2424,7 @@ test "restore" {
 
 test "maximize" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2440,7 +2440,7 @@ test "maximize" {
 
 test "show" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2456,7 +2456,7 @@ test "show" {
 
 test "hide" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2472,7 +2472,7 @@ test "hide" {
 
 test "focus" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2488,7 +2488,7 @@ test "focus" {
 
 test "requestAttention" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2504,7 +2504,7 @@ test "requestAttention" {
 
 test "swapBuffers" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2520,7 +2520,7 @@ test "swapBuffers" {
 
 test "getMonitor" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2536,7 +2536,7 @@ test "getMonitor" {
 
 test "setMonitor" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2552,7 +2552,7 @@ test "setMonitor" {
 
 test "getAttrib" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2568,7 +2568,7 @@ test "getAttrib" {
 
 test "setAttrib" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2584,7 +2584,7 @@ test "setAttrib" {
 
 test "setUserPointer" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2603,7 +2603,7 @@ test "setUserPointer" {
 
 test "getUserPointer" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2624,7 +2624,7 @@ test "getUserPointer" {
 
 test "setPosCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2646,7 +2646,7 @@ test "setPosCallback" {
 
 test "setSizeCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2668,7 +2668,7 @@ test "setSizeCallback" {
 
 test "setCloseCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2688,7 +2688,7 @@ test "setCloseCallback" {
 
 test "setRefreshCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2708,7 +2708,7 @@ test "setRefreshCallback" {
 
 test "setFocusCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2729,7 +2729,7 @@ test "setFocusCallback" {
 
 test "setIconifyCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2750,7 +2750,7 @@ test "setIconifyCallback" {
 
 test "setMaximizeCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2771,7 +2771,7 @@ test "setMaximizeCallback" {
 
 test "setFramebufferSizeCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2793,7 +2793,7 @@ test "setFramebufferSizeCallback" {
 
 test "setContentScaleCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2815,7 +2815,7 @@ test "setContentScaleCallback" {
 
 test "setDropCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2836,7 +2836,7 @@ test "setDropCallback" {
 
 test "getInputModeCursor" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2852,7 +2852,7 @@ test "getInputModeCursor" {
 
 test "setInputModeCursor" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2868,7 +2868,7 @@ test "setInputModeCursor" {
 
 test "getInputModeStickyKeys" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2884,7 +2884,7 @@ test "getInputModeStickyKeys" {
 
 test "setInputModeStickyKeys" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2900,7 +2900,7 @@ test "setInputModeStickyKeys" {
 
 test "getInputModeStickyMouseButtons" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2916,7 +2916,7 @@ test "getInputModeStickyMouseButtons" {
 
 test "setInputModeStickyMouseButtons" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2932,7 +2932,7 @@ test "setInputModeStickyMouseButtons" {
 
 test "getInputModeLockKeyMods" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2948,7 +2948,7 @@ test "getInputModeLockKeyMods" {
 
 test "setInputModeLockKeyMods" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2964,7 +2964,7 @@ test "setInputModeLockKeyMods" {
 
 test "getInputModeRawMouseMotion" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2980,7 +2980,7 @@ test "getInputModeRawMouseMotion" {
 
 test "setInputModeRawMouseMotion" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -2996,7 +2996,7 @@ test "setInputModeRawMouseMotion" {
 
 test "getInputMode" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3012,7 +3012,7 @@ test "getInputMode" {
 
 test "setInputMode" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3032,7 +3032,7 @@ test "setInputMode" {
 
 test "getKey" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3048,7 +3048,7 @@ test "getKey" {
 
 test "getMouseButton" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3064,7 +3064,7 @@ test "getMouseButton" {
 
 test "getCursorPos" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3080,7 +3080,7 @@ test "getCursorPos" {
 
 test "setCursorPos" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3096,7 +3096,7 @@ test "setCursorPos" {
 
 test "setCursor" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3118,7 +3118,7 @@ test "setCursor" {
 
 test "setKeyCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3142,7 +3142,7 @@ test "setKeyCallback" {
 
 test "setCharCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3163,7 +3163,7 @@ test "setCharCallback" {
 
 test "setMouseButtonCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3186,7 +3186,7 @@ test "setMouseButtonCallback" {
 
 test "setCursorPosCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3208,7 +3208,7 @@ test "setCursorPosCallback" {
 
 test "setCursorEnterCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -3229,7 +3229,7 @@ test "setCursorEnterCallback" {
 
 test "setScrollCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {

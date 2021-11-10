@@ -47,7 +47,7 @@ pub inline fn getClipboardString() Error![*c]const u8 {
 
 test "setClipboardString" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     try glfw.setClipboardString("hello mach");
@@ -55,7 +55,7 @@ test "setClipboardString" {
 
 test "getClipboardString" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     _ = glfw.getClipboardString() catch |err| std.debug.print("can't get clipboard, not supported by OS? error={}\n", .{err});

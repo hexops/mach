@@ -103,7 +103,7 @@ pub inline fn getTimerFrequency() u64 {
 
 test "getTime" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     _ = getTime();
@@ -111,7 +111,7 @@ test "getTime" {
 
 test "setTime" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     _ = try glfw.setTime(1234);
@@ -119,7 +119,7 @@ test "setTime" {
 
 test "getTimerValue" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     _ = glfw.getTimerValue();
@@ -127,7 +127,7 @@ test "getTimerValue" {
 
 test "getTimerFrequency" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     _ = glfw.getTimerFrequency();

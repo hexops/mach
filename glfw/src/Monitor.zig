@@ -403,7 +403,7 @@ pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monit
 
 test "getAll" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const allocator = testing.allocator;
@@ -413,7 +413,7 @@ test "getAll" {
 
 test "getPrimary" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     _ = try getPrimary();
@@ -421,7 +421,7 @@ test "getPrimary" {
 
 test "getPos" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const monitor = try getPrimary();
@@ -432,7 +432,7 @@ test "getPos" {
 
 test "getWorkarea" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const monitor = try getPrimary();
@@ -443,7 +443,7 @@ test "getWorkarea" {
 
 test "getPhysicalSize" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const monitor = try getPrimary();
@@ -454,7 +454,7 @@ test "getPhysicalSize" {
 
 test "getContentScale" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const monitor = try getPrimary();
@@ -465,7 +465,7 @@ test "getContentScale" {
 
 test "getName" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const monitor = try getPrimary();
@@ -476,7 +476,7 @@ test "getName" {
 
 test "userPointer" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const monitor = try getPrimary();
@@ -492,7 +492,7 @@ test "userPointer" {
 
 test "setCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     var custom_data: u32 = 5;
@@ -507,7 +507,7 @@ test "setCallback" {
 
 test "getVideoModes" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const monitor = try getPrimary();
@@ -520,7 +520,7 @@ test "getVideoModes" {
 
 test "getVideoMode" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const monitor = try getPrimary();
@@ -532,7 +532,7 @@ test "getVideoMode" {
 test "set_getGammaRamp" {
     const allocator = testing.allocator;
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const monitor = try getPrimary();

@@ -446,7 +446,7 @@ pub inline fn getGamepadState(self: Joystick) Error!?GamepadState {
 
 test "present" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
@@ -456,7 +456,7 @@ test "present" {
 
 test "getAxes" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
@@ -466,7 +466,7 @@ test "getAxes" {
 
 test "getButtons" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
@@ -476,7 +476,7 @@ test "getButtons" {
 
 test "getHats" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
@@ -490,7 +490,7 @@ test "getHats" {
 
 test "getName" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
@@ -500,7 +500,7 @@ test "getName" {
 
 test "getGUID" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
@@ -510,7 +510,7 @@ test "getGUID" {
 
 test "setUserPointer_syntax" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
@@ -521,7 +521,7 @@ test "setUserPointer_syntax" {
 
 test "getUserPointer_syntax" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
@@ -532,7 +532,7 @@ test "getUserPointer_syntax" {
 
 test "setCallback" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     glfw.Joystick.setCallback((struct {
@@ -550,7 +550,7 @@ test "updateGamepadMappings_syntax" {
 
 test "isGamepad" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
@@ -559,7 +559,7 @@ test "isGamepad" {
 
 test "getGamepadName" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };
@@ -568,7 +568,7 @@ test "getGamepadName" {
 
 test "getGamepadState" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = glfw.Joystick.one };

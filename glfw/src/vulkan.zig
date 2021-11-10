@@ -209,7 +209,7 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
 
 test "vulkanSupported" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     _ = try glfw.vulkanSupported();
@@ -217,7 +217,7 @@ test "vulkanSupported" {
 
 test "getRequiredInstanceExtensions" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     _ = glfw.getRequiredInstanceExtensions() catch |err| std.debug.print("failed to get vulkan instance extensions, error={}\n", .{err});
@@ -225,7 +225,7 @@ test "getRequiredInstanceExtensions" {
 
 test "getInstanceProcAddress" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     // syntax check only, we don't have a real vulkan instance and so this function would panic.

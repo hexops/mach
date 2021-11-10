@@ -168,7 +168,7 @@ pub inline fn getProcAddress(proc_name: [*c]const u8) ?GLProc {
 
 test "makeContextCurrent" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -184,7 +184,7 @@ test "makeContextCurrent" {
 
 test "getCurrentContext" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const current_context = glfw.getCurrentContext() catch |err| {
@@ -196,7 +196,7 @@ test "getCurrentContext" {
 
 test "swapInterval" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -213,7 +213,7 @@ test "swapInterval" {
 
 test "getProcAddress" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
@@ -230,7 +230,7 @@ test "getProcAddress" {
 
 test "extensionSupported" {
     const glfw = @import("main.zig");
-    try glfw.init();
+    try glfw.init(.{});
     defer glfw.terminate();
 
     const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
