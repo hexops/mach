@@ -97,7 +97,7 @@ pub const Hint = enum(c_int) {
     maximized = c.GLFW_MAXIMIZED,
 
     /// Cursor centering window hint
-    center = c.GLFW_CENTER_CURSOR,
+    center_cursor = c.GLFW_CENTER_CURSOR,
 
     /// Window framebuffer transparency hint
     transparent_framebuffer = c.GLFW_TRANSPARENT_FRAMEBUFFER,
