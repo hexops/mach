@@ -182,8 +182,8 @@ fn initHint(hint: InitHint, value: anytype) Error!void {
 /// @pointer_lifetime The returned string is static and compile-time generated.
 ///
 /// @thread_safety This function may be called from any thread.
-pub inline fn getVersionString() [*c]const u8 {
-    return c.glfwGetVersionString();
+pub inline fn getVersionString() [:0]const u8 {
+    return std.mem.span(c.glfwGetVersionString());
 }
 
 /// Processes all pending events.

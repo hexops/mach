@@ -57,7 +57,7 @@ pub const InternalUserPointer = struct {
     setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
     setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
     setScrollCallback: ?fn (window: Window, xoffset: f64, yoffset: f64) void,
-    setDropCallback: ?fn (window: Window, paths: [][*c]const u8) void,
+    setDropCallback: ?fn (window: Window, paths: [][*:0]const u8) void,
 };
 
 /// Resets all window hints to their default values.
@@ -397,7 +397,7 @@ pub const Hints = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_creation, glfw.Window.destroy
-pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: ?Monitor, share: ?Window, hints: Hints) Error!Window {
+pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor: ?Monitor, share: ?Window, hints: Hints) Error!Window {
     try hints.set();
     defer defaultHints() catch unreachable; // this should be unreachable, being that this should be caught in the previous call to `Hints.set`.
 
@@ -488,7 +488,7 @@ pub inline fn setShouldClose(self: Window, value: bool) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_title
-pub inline fn setTitle(self: Window, title: [*c]const u8) Error!void {
+pub inline fn setTitle(self: Window, title: [*:0]const u8) Error!void {
     c.glfwSetWindowTitle(self.handle, title);
 }
 
@@ -2050,7 +2050,7 @@ pub inline fn setScrollCallback(self: Window, callback: ?fn (window: Window, xof
 fn setDropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c][*c]const u8) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setDropCallback.?(window, paths[0..@intCast(usize, path_count)]);
+    internal.setDropCallback.?(window, @ptrCast([*][*:0]const u8, paths)[0..@intCast(usize, path_count)]);
 }
 
 /// Sets the path drop callback.
@@ -2078,7 +2078,7 @@ fn setDropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c]
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: path_drop
-pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths: [][*c]const u8) void) Error!void {
+pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths: [][*:0]const u8) void) Error!void {
     var internal = self.getInternal();
     internal.setDropCallback = callback;
     _ = c.glfwSetDropCallback(self.handle, if (callback != null) setDropCallbackWrapper else null);
@@ -2863,7 +2863,7 @@ test "setDropCallback" {
     defer window.destroy();
 
     window.setDropCallback((struct {
-        fn callback(_window: Window, paths: [][*c]const u8) void {
+        fn callback(_window: Window, paths: [][*:0]const u8) void {
             _ = _window;
             _ = paths;
         }

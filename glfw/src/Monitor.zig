@@ -141,7 +141,7 @@ pub inline fn getContentScale(self: Monitor) Error!ContentScale {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-pub inline fn getName(self: Monitor) Error![*c]const u8 {
+pub inline fn getName(self: Monitor) Error![*:0]const u8 {
     const name = c.glfwGetMonitorName(self.handle);
     try getError();
     return name;

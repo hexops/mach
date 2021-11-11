@@ -217,10 +217,13 @@ pub inline fn getHats(self: Joystick) Error!?[]const Hat {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: joystick_name
-pub inline fn getName(self: Joystick) Error![*c]const u8 {
-    const name = c.glfwGetJoystickName(self.jid);
+pub inline fn getName(self: Joystick) Error!?[:0]const u8 {
+    const name_opt = c.glfwGetJoystickName(self.jid);
     try getError();
-    return name;
+    return if (name_opt) |name|
+        std.mem.span(name)
+    else
+        null;
 }
 
 /// Returns the SDL compatible GUID of the specified joystick.
@@ -250,10 +253,13 @@ pub inline fn getName(self: Joystick) Error![*c]const u8 {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: gamepad
-pub inline fn getGUID(self: Joystick) Error![*c]const u8 {
-    const guid = c.glfwGetJoystickGUID(self.jid);
+pub inline fn getGUID(self: Joystick) Error!?[:0]const u8 {
+    const guid_opt = c.glfwGetJoystickGUID(self.jid);
     try getError();
-    return guid;
+    return if (guid_opt) |guid|
+        std.mem.span(guid)
+    else
+        null;
 }
 
 /// Sets the user pointer of the specified joystick.
@@ -357,7 +363,7 @@ pub inline fn setCallback(callback: ?fn (joystick: Joystick, event: Event) void)
 ///
 ///
 /// @ingroup input
-pub inline fn updateGamepadMappings(gamepad_mappings: [*c]const u8) Error!void {
+pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) Error!void {
     _ = c.glfwUpdateGamepadMappings(gamepad_mappings);
     try getError();
 }
@@ -407,10 +413,13 @@ pub inline fn isGamepad(self: Joystick) bool {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: gamepad, glfw.Joystick.isGamepad
-pub inline fn getGamepadName(self: Joystick) Error!?[*c]const u8 {
-    const name = c.glfwGetGamepadName(self.jid);
+pub inline fn getGamepadName(self: Joystick) Error!?[:0]const u8 {
+    const name_opt = c.glfwGetGamepadName(self.jid);
     try getError();
-    return name;
+    return if (name_opt) |name|
+        std.mem.span(name)
+    else
+        null;
 }
 
 /// Retrieves the state of the joystick remapped as a gamepad.
