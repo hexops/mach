@@ -335,7 +335,7 @@ pub fn basicTest() !void {
     try init(.{});
     defer terminate();
 
-    const window = Window.create(640, 480, "GLFW example", null, null) catch |err| {
+    const window = Window.create(640, 480, "GLFW example", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});

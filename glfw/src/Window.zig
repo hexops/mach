@@ -5,6 +5,7 @@ const testing = std.testing;
 const mem = std.mem;
 const c = @import("c.zig").c;
 
+const consts = @import("consts.zig");
 const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 const Image = @import("Image.zig");
@@ -68,13 +69,13 @@ pub const InternalUserPointer = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hints, glfw.Window.hint, glfw.Window.hintString
-pub inline fn defaultHints() Error!void {
+inline fn defaultHints() Error!void {
     c.glfwDefaultWindowHints();
     try getError();
 }
 
 /// Window hints
-pub const Hint = enum(c_int) {
+const Hint = enum(c_int) {
     /// Input focus window hint.
     focused = c.GLFW_FOCUSED,
 
@@ -162,8 +163,10 @@ pub const Hint = enum(c_int) {
     /// Context client API minor version hint.
     context_version_minor = c.GLFW_CONTEXT_VERSION_MINOR,
 
-    /// Context client API revision number hint.
-    context_revision = c.GLFW_CONTEXT_REVISION,
+    // TODO: The docs don't specify GLFW_CONTEXT_REVISION as a hint, only as an attribute; is there a reason this is here? Commented to make current
+    // draft work, which is mostly copying from the docs
+    // /// Context client API revision number hint.
+    // context_revision = c.GLFW_CONTEXT_REVISION,
 
     /// Context robustness hint.
     context_robustness = c.GLFW_CONTEXT_ROBUSTNESS,
@@ -180,8 +183,10 @@ pub const Hint = enum(c_int) {
     /// Context flush-on-release hint.
     context_release_behavior = c.GLFW_CONTEXT_RELEASE_BEHAVIOR,
 
-    /// Context error suppression hint.
-    context_no_error = c.GLFW_CONTEXT_NO_ERROR,
+    // TODO: The docs don't specify GLFW_CONTEXT_REVISION as a hint, only as an attribute; is there a reason this is here? Commented to make current
+    // draft work, which is mostly copying from the docs
+    // /// Context error suppression hint.
+    // context_no_error = c.GLFW_CONTEXT_NO_ERROR,
 
     /// Context creation API hint.
     context_creation_api = c.GLFW_CONTEXT_CREATION_API,
@@ -224,7 +229,7 @@ pub const Hint = enum(c_int) {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hints, glfw.Window.defaultHints
-pub inline fn hint(h: Hint, value: anytype) Error!void {
+inline fn hint(h: Hint, value: anytype) Error!void {
     const value_type = @TypeOf(value);
     const value_type_info: std.builtin.TypeInfo = @typeInfo(value_type);
 
@@ -265,6 +270,120 @@ pub inline fn hint(h: Hint, value: anytype) Error!void {
     }
     try getError();
 }
+
+/// Window hints
+pub const Hints = struct {
+    resizable: bool = true,
+    visible: bool = true,
+    decorated: bool = true,
+    focused: bool = true,
+    auto_iconify: bool = true,
+    floating: bool = false,
+    maximized: bool = false,
+    center_cursor: bool = true,
+    transparent_framebuffer: bool = false,
+    focus_on_show: bool = true,
+    scale_to_monitor: bool = false,
+    
+    red_bits: c_int = 8,
+    green_bits: c_int = 8,
+    blue_bits: c_int = 8,
+    alpha_bits: c_int = 8,
+    depth_bits: c_int = 24,
+    stencil_bits: c_int = 8,
+    accum_red_bits: c_int = 0,
+    accum_green_bits: c_int = 0,
+    accum_blue_bits: c_int = 0,
+    accum_alpha_bits: c_int = 0,
+    aux_buffers: c_int = 0,
+    samples: c_int = 0,
+    refresh_rate: c_int = consts.dont_care,
+    
+    stereo: bool = false,
+    srgb_capable: bool = false,
+    doublebuffer: bool = true,
+    
+    client_api: ClientApi = .opengl_api,
+    context_creation_api: ContextCreationApi = .native_context_api,
+    
+    context_version_major: c_int = 1,
+    context_version_minor: c_int = 0,
+    
+    context_robustness: ContextRobustness = .no_robustness,
+    context_release_behavior: ContextReleaseBehavior = .any_release_behavior,
+    
+    opengl_forward_compat: bool = false,
+    opengl_debug_context: bool = false,
+    
+    opengl_profile: OpenGlProfile = .opengl_any_profile,
+    
+    cocoa_retina_framebuffer: bool = true,
+    
+    cocoa_frame_name: [:0]const u8 = "",
+    
+    cocoa_graphics_switching: bool = false,
+    
+    x11_class_name: [:0]const u8 = "",
+    x11_instance_name: [:0]const u8 = "",
+    
+    pub const ClientApi = enum(c_int) {
+        opengl_api = consts.opengl_api,
+        opengl_es_api = consts.opengl_es_api,
+        no_api = consts.no_api,
+    };
+    
+    pub const ContextCreationApi = enum(c_int) {
+        native_context_api = consts.native_context_api,
+        egl_context_api = consts.egl_context_api,
+        osmesa_context_api = consts.osmesa_context_api,
+    };
+    
+    pub const ContextRobustness = enum(c_int) {
+        no_robustness = consts.no_robustness,
+        no_reset_notification = consts.no_reset_notification,
+        lose_context_on_reset = consts.lose_context_on_reset,
+    };
+    
+    pub const ContextReleaseBehavior = enum(c_int) {
+        any_release_behavior = consts.any_release_behavior,
+        release_behavior_flush = consts.release_behavior_flush,
+        release_behavior_none = consts.release_behavior_none,
+    };
+    
+    pub const OpenGlProfile = enum(c_int) {
+        opengl_any_profile = consts.opengl_any_profile,
+        opengl_compat_profile = consts.opengl_compat_profile,
+        opengl_core_profile = consts.opengl_core_profile,
+    };
+    
+    fn set(hints: Hints) !void {
+        inline for (comptime std.meta.fieldNames(Hints)) |field_name| {
+            const hint_tag = @enumToInt(@field(Hint, field_name));
+            const hint_value = @field(hints, field_name);
+            switch (@TypeOf(hint_value)) {
+                bool => c.glfwWindowHint(hint_tag, @boolToInt(hint_value)),
+                c_int => c.glfwWindowHint(hint_tag, hint_value),
+                
+                ClientApi,
+                ContextCreationApi,
+                ContextRobustness,
+                ContextReleaseBehavior,
+                OpenGlProfile,
+                => c.glfwWindowHint(hint_tag, @enumToInt(hint_value)),
+                
+                [:0]const u8 => c.glfwWindowHintString(hint_tag, hint_value.ptr),
+                
+                else => unreachable,
+            }
+            
+            getError() catch |err| switch (err) {
+                error.NotInitialized => return err,
+                // `glfw.Error.InvalidEnum` should not be possible, given that only values defined within this struct are possible.
+                else => unreachable,
+            };
+        }
+    }
+};
 
 /// Creates a window and its associated context.
 ///
@@ -381,7 +500,10 @@ pub inline fn hint(h: Hint, value: anytype) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_creation, glfw.Window.destroy
-pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: ?Monitor, share: ?Window) Error!Window {
+pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: ?Monitor, share: ?Window, hints: Hints) Error!Window {
+    try hints.set();
+    try Window.defaultHints();
+    
     const handle = c.glfwCreateWindow(
         @intCast(c_int, width),
         @intCast(c_int, height),
@@ -2154,7 +2276,7 @@ test "createWindow" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2168,7 +2290,7 @@ test "setShouldClose" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2183,7 +2305,7 @@ test "setTitle" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2200,7 +2322,7 @@ test "setIcon" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2232,7 +2354,7 @@ test "getPos" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2248,7 +2370,7 @@ test "setPos" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2264,7 +2386,7 @@ test "getSize" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2280,7 +2402,7 @@ test "setSize" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2296,7 +2418,7 @@ test "setSizeLimits" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2315,7 +2437,7 @@ test "setAspectRatio" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2331,7 +2453,7 @@ test "getFramebufferSize" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2347,7 +2469,7 @@ test "getFrameSize" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2363,7 +2485,7 @@ test "getContentScale" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2379,7 +2501,7 @@ test "getOpacity" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2395,7 +2517,7 @@ test "iconify" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2411,7 +2533,7 @@ test "restore" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2427,7 +2549,7 @@ test "maximize" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2443,7 +2565,7 @@ test "show" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2459,7 +2581,7 @@ test "hide" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2475,7 +2597,7 @@ test "focus" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2491,7 +2613,7 @@ test "requestAttention" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2507,7 +2629,7 @@ test "swapBuffers" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2523,7 +2645,7 @@ test "getMonitor" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2539,7 +2661,7 @@ test "setMonitor" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2555,7 +2677,7 @@ test "getAttrib" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2571,7 +2693,7 @@ test "setAttrib" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2587,7 +2709,7 @@ test "setUserPointer" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2606,7 +2728,7 @@ test "getUserPointer" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2627,7 +2749,7 @@ test "setPosCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2649,7 +2771,7 @@ test "setSizeCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2671,7 +2793,7 @@ test "setCloseCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2691,7 +2813,7 @@ test "setRefreshCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2711,7 +2833,7 @@ test "setFocusCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2732,7 +2854,7 @@ test "setIconifyCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2753,7 +2875,7 @@ test "setMaximizeCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2774,7 +2896,7 @@ test "setFramebufferSizeCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2796,7 +2918,7 @@ test "setContentScaleCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2818,7 +2940,7 @@ test "setDropCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2839,7 +2961,7 @@ test "getInputModeCursor" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2855,7 +2977,7 @@ test "setInputModeCursor" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2871,7 +2993,7 @@ test "getInputModeStickyKeys" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2887,7 +3009,7 @@ test "setInputModeStickyKeys" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2903,7 +3025,7 @@ test "getInputModeStickyMouseButtons" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2919,7 +3041,7 @@ test "setInputModeStickyMouseButtons" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2935,7 +3057,7 @@ test "getInputModeLockKeyMods" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2951,7 +3073,7 @@ test "setInputModeLockKeyMods" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2967,7 +3089,7 @@ test "getInputModeRawMouseMotion" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2983,7 +3105,7 @@ test "setInputModeRawMouseMotion" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -2999,7 +3121,7 @@ test "getInputMode" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3015,7 +3137,7 @@ test "setInputMode" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3035,7 +3157,7 @@ test "getKey" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3051,7 +3173,7 @@ test "getMouseButton" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3067,7 +3189,7 @@ test "getCursorPos" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3083,7 +3205,7 @@ test "setCursorPos" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3099,7 +3221,7 @@ test "setCursor" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3121,7 +3243,7 @@ test "setKeyCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3145,7 +3267,7 @@ test "setCharCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3166,7 +3288,7 @@ test "setMouseButtonCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3189,7 +3311,7 @@ test "setCursorPosCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3211,7 +3333,7 @@ test "setCursorEnterCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -3232,7 +3354,7 @@ test "setScrollCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});

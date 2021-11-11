@@ -71,7 +71,7 @@ pub fn main() !void {
     defer glfw.terminate();
 
     // Create our window
-    const window = try glfw.Window.create(640, 480, "Hello, mach-glfw!", null, null);
+    const window = try glfw.Window.create(640, 480, "Hello, mach-glfw!", null, null, .{});
     defer window.destroy();
 
     // Wait for the user to close the window.
