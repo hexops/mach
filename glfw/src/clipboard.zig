@@ -17,7 +17,7 @@ const getError = @import("errors.zig").getError;
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: clipboard, glfwGetClipboardString
-pub inline fn setClipboardString(value: [*c]const u8) Error!void {
+pub inline fn setClipboardString(value: [*:0]const u8) Error!void {
     c.glfwSetClipboardString(null, value);
     try getError();
 }
@@ -28,7 +28,7 @@ pub inline fn setClipboardString(value: [*c]const u8) Error!void {
 /// a UTF-8 encoded string. If the clipboard is empty or if its contents cannot be converted,
 /// glfw.Error.FormatUnavailable is returned.
 ///
-/// @return The contents of the clipboard as a UTF-8 encoded string, or null if an error occurred.
+/// @return The contents of the clipboard as a UTF-8 encoded string.
 ///
 /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
 ///
@@ -39,10 +39,10 @@ pub inline fn setClipboardString(value: [*c]const u8) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: clipboard, glfwSetClipboardString
-pub inline fn getClipboardString() Error![*c]const u8 {
+pub inline fn getClipboardString() Error![:0]const u8 {
     const value = c.glfwGetClipboardString(null);
     try getError();
-    return value;
+    return std.mem.span(value);
 }
 
 test "setClipboardString" {

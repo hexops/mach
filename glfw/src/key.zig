@@ -212,10 +212,13 @@ pub const Key = enum(c_int) {
     /// @thread_safety This function must only be called from the main thread.
     ///
     /// see also: input_key_name
-    pub inline fn getName(self: Key, scancode: isize) Error![*c]const u8 {
-        const name = cc.glfwGetKeyName(@enumToInt(self), @intCast(c_int, scancode));
+    pub inline fn getName(self: Key, scancode: isize) Error!?[:0]const u8 {
+        const name_opt = cc.glfwGetKeyName(@enumToInt(self), @intCast(c_int, scancode));
         try getError();
-        return name;
+        return if (name_opt) |name|
+            std.mem.span(name)
+        else
+            null;
     }
 
     /// Returns the platform-specific scancode of the specified key.

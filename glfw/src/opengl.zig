@@ -115,7 +115,7 @@ pub inline fn swapInterval(interval: isize) Error!void {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_glext, glfw.getProcAddress
-pub inline fn extensionSupported(extension: [*c]const u8) Error!bool {
+pub inline fn extensionSupported(extension: [*:0]const u8) Error!bool {
     const supported = c.glfwExtensionSupported(extension);
     try getError();
     return supported == c.GLFW_TRUE;
@@ -159,7 +159,7 @@ pub const GLProc = fn () callconv(.C) void;
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_glext, glfwExtensionSupported
-pub inline fn getProcAddress(proc_name: [*c]const u8) ?GLProc {
+pub inline fn getProcAddress(proc_name: [*:0]const u8) ?GLProc {
     const proc_address = c.glfwGetProcAddress(proc_name);
     getError() catch |err| @panic(@errorName(err));
     if (proc_address) |addr| return addr;

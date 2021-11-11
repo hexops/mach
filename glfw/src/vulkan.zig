@@ -57,11 +57,11 @@ pub inline fn vulkanSupported() Error!bool {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: vulkan_ext, glfwCreateWindowSurface
-pub inline fn getRequiredInstanceExtensions() Error![][*c]const u8 {
+pub inline fn getRequiredInstanceExtensions() Error![][*:0]const u8 {
     var count: u32 = 0;
     const extensions = c.glfwGetRequiredInstanceExtensions(&count);
     try getError();
-    return extensions[0..count];
+    return @ptrCast([*][*:0]const u8, extensions)[0..count];
 }
 
 /// Vulkan API function pointer type.
@@ -102,7 +102,7 @@ pub const VKProc = fn () callconv(.C) void;
 /// @pointer_lifetime The returned function pointer is valid until the library is terminated.
 ///
 /// @thread_safety This function may be called from any thread.
-pub fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*c]const u8) callconv(.C) ?VKProc {
+pub fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*:0]const u8) callconv(.C) ?VKProc {
     const proc_address = c.glfwGetInstanceProcAddress(if (vk_instance) |v| @ptrCast(c.VkInstance, v) else null, proc_name);
     getError() catch |err| @panic(@errorName(err));
     if (proc_address) |addr| return addr;
