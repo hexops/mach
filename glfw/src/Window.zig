@@ -78,7 +78,7 @@ pub const Hint = enum(c_int) {
     /// Input focus window hint.
     focused = c.GLFW_FOCUSED,
 
-    // Window resize-ability window hint
+    /// Window resize-ability window hint
     resizable = c.GLFW_RESIZABLE,
 
     /// Window visibility window hint
@@ -1048,7 +1048,7 @@ pub const Attrib = enum(c_int) {
     /// Window iconification window attribute.
     iconified = c.GLFW_ICONIFIED,
 
-    // Window resize-ability window attribute
+    /// Window resize-ability window attribute
     resizable = c.GLFW_RESIZABLE,
 
     /// Window visibility window attribute
