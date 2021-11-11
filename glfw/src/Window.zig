@@ -510,7 +510,7 @@ pub inline fn setIcon(self: Window, allocator: *mem.Allocator, images: ?[]Image)
     try getError();
 }
 
-const Pos = struct {
+pub const Pos = struct {
     x: usize,
     y: usize,
 };
@@ -561,7 +561,7 @@ pub inline fn setPos(self: Window, pos: Pos) Error!void {
     try getError();
 }
 
-const Size = struct {
+pub const Size = struct {
     width: usize,
     height: usize,
 };
@@ -693,7 +693,7 @@ pub inline fn getFramebufferSize(self: Window) Error!Size {
     return Size{ .width = @intCast(usize, width), .height = @intCast(usize, height) };
 }
 
-const FrameSize = struct {
+pub const FrameSize = struct {
     left: usize,
     top: usize,
     right: usize,
@@ -1709,7 +1709,7 @@ pub inline fn getMouseButton(self: Window, button: MouseButton) Error!Action {
     return @intToEnum(Action, state);
 }
 
-const CursorPos = struct {
+pub const CursorPos = struct {
     xpos: f64,
     ypos: f64,
 };
