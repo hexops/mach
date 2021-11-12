@@ -293,7 +293,7 @@ pub const Hints = struct {
     };
     
     fn set(hints: Hints) !void {
-        inline for (comptime std.meta.fieldNames(Hints)) |field_name| {
+        inline for (comptime std.meta.fieldNames(Hint)) |field_name| {
             const hint_tag = @enumToInt(@field(Hint, field_name));
             const hint_value = @field(hints, field_name);
             switch (@TypeOf(hint_value)) {
