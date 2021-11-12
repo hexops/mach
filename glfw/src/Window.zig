@@ -163,11 +163,6 @@ const Hint = enum(c_int) {
     /// Context client API minor version hint.
     context_version_minor = c.GLFW_CONTEXT_VERSION_MINOR,
 
-    // TODO: The docs don't specify GLFW_CONTEXT_REVISION as a hint, only as an attribute; is there a reason this is here? Commented to make current
-    // draft work, which is mostly copying from the docs
-    // /// Context client API revision number hint.
-    // context_revision = c.GLFW_CONTEXT_REVISION,
-
     /// Context robustness hint.
     context_robustness = c.GLFW_CONTEXT_ROBUSTNESS,
 
@@ -183,10 +178,8 @@ const Hint = enum(c_int) {
     /// Context flush-on-release hint.
     context_release_behavior = c.GLFW_CONTEXT_RELEASE_BEHAVIOR,
 
-    // TODO: The docs don't specify GLFW_CONTEXT_REVISION as a hint, only as an attribute; is there a reason this is here? Commented to make current
-    // draft work, which is mostly copying from the docs
-    // /// Context error suppression hint.
-    // context_no_error = c.GLFW_CONTEXT_NO_ERROR,
+    /// Context error suppression hint.
+    context_no_error = c.GLFW_CONTEXT_NO_ERROR,
 
     /// Context creation API hint.
     context_creation_api = c.GLFW_CONTEXT_CREATION_API,
@@ -251,6 +244,7 @@ pub const Hints = struct {
     context_robustness: ContextRobustness = .no_robustness,
     context_release_behavior: ContextReleaseBehavior = .any_release_behavior,
     
+    context_no_error: bool = !std.debug.runtime_safety,
     opengl_forward_compat: bool = false,
     opengl_debug_context: bool = false,
     
