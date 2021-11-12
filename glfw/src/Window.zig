@@ -263,33 +263,33 @@ pub const Hints = struct {
     x11_instance_name: [:0]const u8 = "",
     
     pub const ClientApi = enum(c_int) {
-        opengl_api = consts.opengl_api,
-        opengl_es_api = consts.opengl_es_api,
-        no_api = consts.no_api,
+        opengl_api = c.GLFW_OPENGL_API,
+        opengl_es_api = c.GLFW_OPENGL_ES_API,
+        no_api = c.GLFW_NO_API,
     };
     
     pub const ContextCreationApi = enum(c_int) {
-        native_context_api = consts.native_context_api,
-        egl_context_api = consts.egl_context_api,
-        osmesa_context_api = consts.osmesa_context_api,
+        native_context_api = c.GLFW_NATIVE_CONTEXT_API,
+        egl_context_api = c.GLFW_EGL_CONTEXT_API,
+        osmesa_context_api = c.GLFW_OSMESA_CONTEXT_API,
     };
     
     pub const ContextRobustness = enum(c_int) {
-        no_robustness = consts.no_robustness,
-        no_reset_notification = consts.no_reset_notification,
-        lose_context_on_reset = consts.lose_context_on_reset,
+        no_robustness = c.GLFW_NO_ROBUSTNESS,
+        no_reset_notification = c.GLFW_NO_RESET_NOTIFICATION,
+        lose_context_on_reset = c.GLFW_LOSE_CONTEXT_ON_RESET,
     };
     
     pub const ContextReleaseBehavior = enum(c_int) {
-        any_release_behavior = consts.any_release_behavior,
-        release_behavior_flush = consts.release_behavior_flush,
-        release_behavior_none = consts.release_behavior_none,
+        any_release_behavior = c.GLFW_ANY_RELEASE_BEHAVIOR,
+        release_behavior_flush = c.GLFW_RELEASE_BEHAVIOR_FLUSH,
+        release_behavior_none = c.GLFW_RELEASE_BEHAVIOR_NONE,
     };
     
     pub const OpenGlProfile = enum(c_int) {
-        opengl_any_profile = consts.opengl_any_profile,
-        opengl_compat_profile = consts.opengl_compat_profile,
-        opengl_core_profile = consts.opengl_core_profile,
+        opengl_any_profile = c.GLFW_OPENGL_ANY_PROFILE,
+        opengl_compat_profile = c.GLFW_OPENGL_COMPAT_PROFILE,
+        opengl_core_profile = c.GLFW_OPENGL_CORE_PROFILE,
     };
     
     fn set(hints: Hints) !void {
