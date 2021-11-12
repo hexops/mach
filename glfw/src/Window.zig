@@ -317,7 +317,7 @@ pub const Hints = struct {
             
             getError() catch |err| switch (err) {
                 error.NotInitialized => return err,
-                // `glfw.Error.InvalidEnum` should not be possible, given that only values defined within this struct are possible.
+                Error.InvalidEnum => unreachable, // should not be possible, given that only values defined within this struct are possible.
                 else => unreachable,
             };
         }
