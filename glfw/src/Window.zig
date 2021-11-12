@@ -244,7 +244,10 @@ pub const Hints = struct {
     context_robustness: ContextRobustness = .no_robustness,
     context_release_behavior: ContextReleaseBehavior = .any_release_behavior,
     
-    context_no_error: bool = !std.debug.runtime_safety,
+    /// Note: disables the context creating errors,
+    /// instead turning them into undefined behavior.
+    context_no_error: bool = false,
+    
     opengl_forward_compat: bool = false,
     opengl_debug_context: bool = false,
     
