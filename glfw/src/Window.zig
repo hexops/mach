@@ -210,67 +210,6 @@ const Hint = enum(c_int) {
     x11_instance_name = c.GLFW_X11_INSTANCE_NAME,
 };
 
-/// Sets the specified window hint to the desired value.
-///
-/// This function sets hints for the next call to glfw.Window.create. The hints, once set, retain
-/// their values until changed by a call to this function or glfw.window.defaultHints, or until the
-/// library is terminated.
-///
-/// This function does not check whether the specified hint values are valid. If you set hints to
-/// invalid values this will instead be reported by the next call to glfw.createWindow.
-///
-/// Some hints are platform specific. These may be set on any platform but they will only affect
-/// their specific platform. Other platforms will ignore them.
-///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
-///
-/// @pointer_lifetime in the event that value is of a str type, the specified string is copied before this function returns.
-///
-/// @thread_safety This function must only be called from the main thread.
-///
-/// see also: window_hints, glfw.Window.defaultHints
-inline fn hint(h: Hint, value: anytype) Error!void {
-    const value_type = @TypeOf(value);
-    const value_type_info: std.builtin.TypeInfo = @typeInfo(value_type);
-
-    switch (value_type_info) {
-        .Int, .ComptimeInt => {
-            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, value));
-        },
-        .Bool => {
-            const int_value = @boolToInt(value);
-            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, int_value));
-        },
-        .Enum => {
-            const int_value = @enumToInt(value);
-            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, int_value));
-        },
-        .Array => |arr_type| {
-            if (arr_type.child != u8) {
-                @compileError("expected array of u8, got " ++ @typeName(arr_type));
-            }
-            c.glfwWindowHintString(@enumToInt(h), &value[0]);
-        },
-        .Pointer => |pointer_info| {
-            const pointed_type = @typeInfo(pointer_info.child);
-            switch (pointed_type) {
-                .Array => |arr_type| {
-                    if (arr_type.child != u8) {
-                        @compileError("expected pointer to array of u8, got " ++ @typeName(arr_type));
-                    }
-                },
-                else => @compileError("expected pointer to array, got " ++ @typeName(pointed_type)),
-            }
-
-            c.glfwWindowHintString(@enumToInt(h), &value[0]);
-        },
-        else => {
-            @compileError("expected a int, bool, enum, array, or pointer, got " ++ @typeName(value_type));
-        },
-    }
-    try getError();
-}
-
 /// Window hints
 pub const Hints = struct {
     resizable: bool = true,
@@ -2184,6 +2123,70 @@ pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths
     var internal = self.getInternal();
     internal.setDropCallback = callback;
     _ = c.glfwSetDropCallback(self.handle, if (callback != null) setDropCallbackWrapper else null);
+    try getError();
+}
+
+
+
+/// For testing purposes only; see glfw.Window.Hints and glfw.Window.create for the public API.
+/// Sets the specified window hint to the desired value.
+///
+/// This function sets hints for the next call to glfw.Window.create. The hints, once set, retain
+/// their values until changed by a call to this function or glfw.window.defaultHints, or until the
+/// library is terminated.
+///
+/// This function does not check whether the specified hint values are valid. If you set hints to
+/// invalid values this will instead be reported by the next call to glfw.createWindow.
+///
+/// Some hints are platform specific. These may be set on any platform but they will only affect
+/// their specific platform. Other platforms will ignore them.
+///
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+///
+/// @pointer_lifetime in the event that value is of a str type, the specified string is copied before this function returns.
+///
+/// @thread_safety This function must only be called from the main thread.
+///
+/// see also: window_hints, glfw.Window.defaultHints
+inline fn hint(h: Hint, value: anytype) Error!void {
+    const value_type = @TypeOf(value);
+    const value_type_info: std.builtin.TypeInfo = @typeInfo(value_type);
+
+    switch (value_type_info) {
+        .Int, .ComptimeInt => {
+            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, value));
+        },
+        .Bool => {
+            const int_value = @boolToInt(value);
+            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, int_value));
+        },
+        .Enum => {
+            const int_value = @enumToInt(value);
+            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, int_value));
+        },
+        .Array => |arr_type| {
+            if (arr_type.child != u8) {
+                @compileError("expected array of u8, got " ++ @typeName(arr_type));
+            }
+            c.glfwWindowHintString(@enumToInt(h), &value[0]);
+        },
+        .Pointer => |pointer_info| {
+            const pointed_type = @typeInfo(pointer_info.child);
+            switch (pointed_type) {
+                .Array => |arr_type| {
+                    if (arr_type.child != u8) {
+                        @compileError("expected pointer to array of u8, got " ++ @typeName(arr_type));
+                    }
+                },
+                else => @compileError("expected pointer to array, got " ++ @typeName(pointed_type)),
+            }
+
+            c.glfwWindowHintString(@enumToInt(h), &value[0]);
+        },
+        else => {
+            @compileError("expected a int, bool, enum, array, or pointer, got " ++ @typeName(value_type));
+        },
+    }
     try getError();
 }
 
