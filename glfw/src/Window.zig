@@ -252,7 +252,7 @@ pub const Hints = struct {
     opengl_forward_compat: bool = false,
     opengl_debug_context: bool = false,
     
-    opengl_profile: OpenGlProfile = .opengl_any_profile,
+    opengl_profile: OpenGLProfile = .opengl_any_profile,
     
     cocoa_retina_framebuffer: bool = true,
     
