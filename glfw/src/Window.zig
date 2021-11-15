@@ -287,7 +287,7 @@ pub const Hints = struct {
         release_behavior_none = c.GLFW_RELEASE_BEHAVIOR_NONE,
     };
     
-    pub const OpenGlProfile = enum(c_int) {
+    pub const OpenGLProfile = enum(c_int) {
         opengl_any_profile = c.GLFW_OPENGL_ANY_PROFILE,
         opengl_compat_profile = c.GLFW_OPENGL_COMPAT_PROFILE,
         opengl_core_profile = c.GLFW_OPENGL_CORE_PROFILE,
