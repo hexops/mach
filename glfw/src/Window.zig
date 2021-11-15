@@ -439,6 +439,7 @@ pub const Hints = struct {
 /// see also: window_creation, glfw.Window.destroy
 pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: ?Monitor, share: ?Window, hints: Hints) Error!Window {
     try hints.set();
+    defer defaultHints() catch unreachable; // this should be unreachable, being that this should be caught in the previous call to `Hints.set`.
     
     const handle = c.glfwCreateWindow(
         @intCast(c_int, width),
@@ -449,7 +450,6 @@ pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: 
     );
     try getError();
     
-    try Window.defaultHints();
     return from(handle.?);
 }
 
