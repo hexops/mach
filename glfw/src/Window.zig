@@ -5,7 +5,7 @@ const testing = std.testing;
 const mem = std.mem;
 const c = @import("c.zig").c;
 
-const consts = @import("consts.zig");
+const glfw = @import("main.zig");
 const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 const Image = @import("Image.zig");
@@ -230,7 +230,7 @@ pub const Hints = struct {
     accum_alpha_bits: c_int = 0,
     aux_buffers: c_int = 0,
     samples: c_int = 0,
-    refresh_rate: c_int = consts.dont_care,
+    refresh_rate: c_int = glfw.dont_care,
     
     stereo: bool = false,
     srgb_capable: bool = false,
@@ -305,7 +305,7 @@ pub const Hints = struct {
                 ContextCreationApi,
                 ContextRobustness,
                 ContextReleaseBehavior,
-                OpenGlProfile,
+                OpenGLProfile,
                 => c.glfwWindowHint(hint_tag, @enumToInt(hint_value)),
                 
                 [:0]const u8 => c.glfwWindowHintString(hint_tag, hint_value.ptr),
@@ -2190,7 +2190,6 @@ inline fn hint(h: Hint, value: anytype) Error!void {
 }
 
 test "defaultHints" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2198,7 +2197,6 @@ test "defaultHints" {
 }
 
 test "hint comptime int" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2207,7 +2205,6 @@ test "hint comptime int" {
 }
 
 test "hint int" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2218,7 +2215,6 @@ test "hint int" {
 }
 
 test "hint bool" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2227,7 +2223,6 @@ test "hint bool" {
 }
 
 test "hint enum(u1)" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2241,7 +2236,6 @@ test "hint enum(u1)" {
 }
 
 test "hint enum(i32)" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2255,7 +2249,6 @@ test "hint enum(i32)" {
 }
 
 test "hint array str" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2266,7 +2259,6 @@ test "hint array str" {
 }
 
 test "hint pointer str" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2274,7 +2266,6 @@ test "hint pointer str" {
 }
 
 test "createWindow" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2288,7 +2279,6 @@ test "createWindow" {
 }
 
 test "setShouldClose" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2303,7 +2293,6 @@ test "setShouldClose" {
 }
 
 test "setTitle" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2320,7 +2309,6 @@ test "setTitle" {
 
 test "setIcon" {
     const allocator = testing.allocator;
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2352,7 +2340,6 @@ test "setIcon" {
 }
 
 test "getPos" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2368,7 +2355,6 @@ test "getPos" {
 }
 
 test "setPos" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2384,7 +2370,6 @@ test "setPos" {
 }
 
 test "getSize" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2400,7 +2385,6 @@ test "getSize" {
 }
 
 test "setSize" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2416,7 +2400,6 @@ test "setSize" {
 }
 
 test "setSizeLimits" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2435,7 +2418,6 @@ test "setSizeLimits" {
 }
 
 test "setAspectRatio" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2451,7 +2433,6 @@ test "setAspectRatio" {
 }
 
 test "getFramebufferSize" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2467,7 +2448,6 @@ test "getFramebufferSize" {
 }
 
 test "getFrameSize" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2483,7 +2463,6 @@ test "getFrameSize" {
 }
 
 test "getContentScale" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2499,7 +2478,6 @@ test "getContentScale" {
 }
 
 test "getOpacity" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2515,7 +2493,6 @@ test "getOpacity" {
 }
 
 test "iconify" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2531,7 +2508,6 @@ test "iconify" {
 }
 
 test "restore" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2547,7 +2523,6 @@ test "restore" {
 }
 
 test "maximize" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2563,7 +2538,6 @@ test "maximize" {
 }
 
 test "show" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2579,7 +2553,6 @@ test "show" {
 }
 
 test "hide" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2595,7 +2568,6 @@ test "hide" {
 }
 
 test "focus" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2611,7 +2583,6 @@ test "focus" {
 }
 
 test "requestAttention" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2627,7 +2598,6 @@ test "requestAttention" {
 }
 
 test "swapBuffers" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2643,7 +2613,6 @@ test "swapBuffers" {
 }
 
 test "getMonitor" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2659,7 +2628,6 @@ test "getMonitor" {
 }
 
 test "setMonitor" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2675,7 +2643,6 @@ test "setMonitor" {
 }
 
 test "getAttrib" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2691,7 +2658,6 @@ test "getAttrib" {
 }
 
 test "setAttrib" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2707,7 +2673,6 @@ test "setAttrib" {
 }
 
 test "setUserPointer" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2726,7 +2691,6 @@ test "setUserPointer" {
 }
 
 test "getUserPointer" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2747,7 +2711,6 @@ test "getUserPointer" {
 }
 
 test "setPosCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2769,7 +2732,6 @@ test "setPosCallback" {
 }
 
 test "setSizeCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2791,7 +2753,6 @@ test "setSizeCallback" {
 }
 
 test "setCloseCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2811,7 +2772,6 @@ test "setCloseCallback" {
 }
 
 test "setRefreshCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2831,7 +2791,6 @@ test "setRefreshCallback" {
 }
 
 test "setFocusCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2852,7 +2811,6 @@ test "setFocusCallback" {
 }
 
 test "setIconifyCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2873,7 +2831,6 @@ test "setIconifyCallback" {
 }
 
 test "setMaximizeCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2894,7 +2851,6 @@ test "setMaximizeCallback" {
 }
 
 test "setFramebufferSizeCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2916,7 +2872,6 @@ test "setFramebufferSizeCallback" {
 }
 
 test "setContentScaleCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2938,7 +2893,6 @@ test "setContentScaleCallback" {
 }
 
 test "setDropCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2959,7 +2913,6 @@ test "setDropCallback" {
 }
 
 test "getInputModeCursor" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2975,7 +2928,6 @@ test "getInputModeCursor" {
 }
 
 test "setInputModeCursor" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -2991,7 +2943,6 @@ test "setInputModeCursor" {
 }
 
 test "getInputModeStickyKeys" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3007,7 +2958,6 @@ test "getInputModeStickyKeys" {
 }
 
 test "setInputModeStickyKeys" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3023,7 +2973,6 @@ test "setInputModeStickyKeys" {
 }
 
 test "getInputModeStickyMouseButtons" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3039,7 +2988,6 @@ test "getInputModeStickyMouseButtons" {
 }
 
 test "setInputModeStickyMouseButtons" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3055,7 +3003,6 @@ test "setInputModeStickyMouseButtons" {
 }
 
 test "getInputModeLockKeyMods" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3071,7 +3018,6 @@ test "getInputModeLockKeyMods" {
 }
 
 test "setInputModeLockKeyMods" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3087,7 +3033,6 @@ test "setInputModeLockKeyMods" {
 }
 
 test "getInputModeRawMouseMotion" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3103,7 +3048,6 @@ test "getInputModeRawMouseMotion" {
 }
 
 test "setInputModeRawMouseMotion" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3119,7 +3063,6 @@ test "setInputModeRawMouseMotion" {
 }
 
 test "getInputMode" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3135,7 +3078,6 @@ test "getInputMode" {
 }
 
 test "setInputMode" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3155,7 +3097,6 @@ test "setInputMode" {
 }
 
 test "getKey" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3171,7 +3112,6 @@ test "getKey" {
 }
 
 test "getMouseButton" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3187,7 +3127,6 @@ test "getMouseButton" {
 }
 
 test "getCursorPos" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3203,7 +3142,6 @@ test "getCursorPos" {
 }
 
 test "setCursorPos" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3219,7 +3157,6 @@ test "setCursorPos" {
 }
 
 test "setCursor" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3241,7 +3178,6 @@ test "setCursor" {
 }
 
 test "setKeyCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3265,7 +3201,6 @@ test "setKeyCallback" {
 }
 
 test "setCharCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3286,7 +3221,6 @@ test "setCharCallback" {
 }
 
 test "setMouseButtonCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3309,7 +3243,6 @@ test "setMouseButtonCallback" {
 }
 
 test "setCursorPosCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3331,7 +3264,6 @@ test "setCursorPosCallback" {
 }
 
 test "setCursorEnterCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 
@@ -3352,7 +3284,6 @@ test "setCursorEnterCallback" {
 }
 
 test "setScrollCallback" {
-    const glfw = @import("main.zig");
     try glfw.init(.{});
     defer glfw.terminate();
 

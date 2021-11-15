@@ -5,7 +5,9 @@ const c = @import("c.zig").c;
 
 const key = @import("key.zig");
 
-pub usingnamespace @import("consts.zig");
+/// Possible value for various window hints, etc.
+pub const dont_care = c.GLFW_DONT_CARE;
+
 pub const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 
