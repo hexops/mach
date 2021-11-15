@@ -439,7 +439,6 @@ pub const Hints = struct {
 /// see also: window_creation, glfw.Window.destroy
 pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: ?Monitor, share: ?Window, hints: Hints) Error!Window {
     try hints.set();
-    try Window.defaultHints();
     
     const handle = c.glfwCreateWindow(
         @intCast(c_int, width),
@@ -449,6 +448,8 @@ pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: 
         if (share) |w| w.handle else null,
     );
     try getError();
+    
+    try Window.defaultHints();
     return from(handle.?);
 }
 
