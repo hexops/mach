@@ -205,6 +205,7 @@ const Hint = enum(c_int) {
 
 /// Window hints
 pub const Hints = struct {
+    // Note: The defaults here are directly from the GLFW source of the glfwDefaultWindowHints function
     resizable: bool = true,
     visible: bool = true,
     decorated: bool = true,
