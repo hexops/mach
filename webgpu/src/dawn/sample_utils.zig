@@ -3,7 +3,6 @@ const assert = std.debug.assert;
 const glfw = @import("glfw");
 const c = @import("c.zig").c;
 
-
 // #include "SampleUtils.h"
 
 // #include "common/Assert.h"
@@ -27,11 +26,11 @@ const c = @import("c.zig").c;
 fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, ptr: ?*c_void) callconv(.C) void {
     _ = ptr;
     switch (error_type) {
-    c.WGPUErrorType_Validation => std.debug.print("dawn: validation error: {s}\n", .{message}),
-    c.WGPUErrorType_OutOfMemory => std.debug.print("dawn: out of memory: {s}\n", .{message}),
-    c.WGPUErrorType_Unknown => std.debug.print("dawn: unknown error: {s}\n", .{message}),
-    c.WGPUErrorType_DeviceLost => std.debug.print("dawn: device lost: {s}\n", .{message}),
-    else => unreachable,
+        c.WGPUErrorType_Validation => std.debug.print("dawn: validation error: {s}\n", .{message}),
+        c.WGPUErrorType_OutOfMemory => std.debug.print("dawn: out of memory: {s}\n", .{message}),
+        c.WGPUErrorType_Unknown => std.debug.print("dawn: unknown error: {s}\n", .{message}),
+        c.WGPUErrorType_DeviceLost => std.debug.print("dawn: device lost: {s}\n", .{message}),
+        else => unreachable,
     }
 }
 
@@ -51,11 +50,7 @@ fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, ptr: ?*c
 // #    error
 // #endif
 
-
-const CmdBufType = enum {
-    none,
-    terrible
-};
+const CmdBufType = enum { none, terrible };
 
 // static std::unique_ptr<dawn_native::Instance> instance;
 // static utils::BackendBinding* binding = nullptr;
@@ -111,36 +106,36 @@ pub fn setup() !Setup {
     var procs: ?*const c.DawnProcTable = null;
     var c_device: ?c.WGPUDevice = null;
     switch (cmd_buf_type) {
-    CmdBufType.none => {
-        procs = backend_procs;
-        c_device = backend_device;
-    },
-    CmdBufType.terrible => {
-        // TODO(slimsag):
-        @panic("not implemented");
-        // c2sBuf = new utils::TerribleCommandBuffer();
-        // s2cBuf = new utils::TerribleCommandBuffer();
+        CmdBufType.none => {
+            procs = backend_procs;
+            c_device = backend_device;
+        },
+        CmdBufType.terrible => {
+            // TODO(slimsag):
+            @panic("not implemented");
+            // c2sBuf = new utils::TerribleCommandBuffer();
+            // s2cBuf = new utils::TerribleCommandBuffer();
 
-        // dawn_wire::WireServerDescriptor serverDesc = {};
-        // serverDesc.procs = &backendProcs;
-        // serverDesc.serializer = s2cBuf;
+            // dawn_wire::WireServerDescriptor serverDesc = {};
+            // serverDesc.procs = &backendProcs;
+            // serverDesc.serializer = s2cBuf;
 
-        // wireServer = new dawn_wire::WireServer(serverDesc);
-        // c2sBuf->SetHandler(wireServer);
+            // wireServer = new dawn_wire::WireServer(serverDesc);
+            // c2sBuf->SetHandler(wireServer);
 
-        // dawn_wire::WireClientDescriptor clientDesc = {};
-        // clientDesc.serializer = c2sBuf;
+            // dawn_wire::WireClientDescriptor clientDesc = {};
+            // clientDesc.serializer = c2sBuf;
 
-        // wireClient = new dawn_wire::WireClient(clientDesc);
-        // procs = dawn_wire::client::GetProcs();
-        // s2cBuf->SetHandler(wireClient);
+            // wireClient = new dawn_wire::WireClient(clientDesc);
+            // procs = dawn_wire::client::GetProcs();
+            // s2cBuf->SetHandler(wireClient);
 
-        // auto deviceReservation = wireClient->ReserveDevice();
-        // wireServer->InjectDevice(backendDevice, deviceReservation.id,
-        //                             deviceReservation.generation);
+            // auto deviceReservation = wireClient->ReserveDevice();
+            // wireServer->InjectDevice(backendDevice, deviceReservation.id,
+            //                             deviceReservation.generation);
 
-        // cDevice = deviceReservation.device;
-    }
+            // cDevice = deviceReservation.device;
+        },
     }
 
     c.dawnProcSetProcs(procs.?);
@@ -154,25 +149,25 @@ pub fn setup() !Setup {
 
 fn setupGLFWWindowHintsForBackend(backend: c.WGPUBackendType) !void {
     switch (backend) {
-    c.WGPUBackendType_OpenGL => {
-        // Ask for OpenGL 4.4 which is what the GL backend requires for compute shaders and
-        // texture views.
-        try glfw.Window.hint(.context_version_major, 4);
-        try glfw.Window.hint(.context_version_minor, 4);
-        try glfw.Window.hint(.opengl_forward_compat, 1); // true
-        try glfw.Window.hint(.opengl_profile, glfw.opengl_core_profile);
-    },
-    c.WGPUBackendType_OpenGLES => {
-        try glfw.Window.hint(.context_version_major, 3);
-        try glfw.Window.hint(.context_version_minor, 1);
-        try glfw.Window.hint(.client_api, glfw.opengl_es_api);
-        try glfw.Window.hint(.context_creation_api, glfw.egl_context_api);
-    },
-    else => {
-        // Without this GLFW will initialize a GL context on the window, which prevents using
-        // the window with other APIs (by crashing in weird ways).
-        try glfw.Window.hint(.client_api, glfw.no_api);
-    }
+        c.WGPUBackendType_OpenGL => {
+            // Ask for OpenGL 4.4 which is what the GL backend requires for compute shaders and
+            // texture views.
+            try glfw.Window.hint(.context_version_major, 4);
+            try glfw.Window.hint(.context_version_minor, 4);
+            try glfw.Window.hint(.opengl_forward_compat, 1); // true
+            try glfw.Window.hint(.opengl_profile, glfw.opengl_core_profile);
+        },
+        c.WGPUBackendType_OpenGLES => {
+            try glfw.Window.hint(.context_version_major, 3);
+            try glfw.Window.hint(.context_version_minor, 1);
+            try glfw.Window.hint(.client_api, glfw.opengl_es_api);
+            try glfw.Window.hint(.context_creation_api, glfw.egl_context_api);
+        },
+        else => {
+            // Without this GLFW will initialize a GL context on the window, which prevents using
+            // the window with other APIs (by crashing in weird ways).
+            try glfw.Window.hint(.client_api, glfw.no_api);
+        },
     }
 }
 
