@@ -23,7 +23,7 @@ pub fn build(b: *Builder) void {
     dawn_example.setBuildMode(mode);
     dawn_example.setTarget(target);
     dawn.link(b, dawn_example, .{});
-    glfw.link(b, dawn_example, .{.system_sdk = .{.set_sysroot = false}});
+    glfw.link(b, dawn_example, .{ .system_sdk = .{ .set_sysroot = false } });
     dawn_example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
     dawn_example.addIncludeDir("libs/dawn/out/Debug/gen/src/include");
     dawn_example.addIncludeDir("libs/dawn/out/Debug/gen/src");

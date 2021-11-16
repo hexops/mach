@@ -11,12 +11,11 @@ pub fn build(b: *Builder) void {
     main_tests.setTarget(target);
     link(b, main_tests, .{});
 
-
     const example = b.addExecutable("hello_triangle", "examples/hello_triangle.zig");
     example.setBuildMode(mode);
     example.setTarget(target);
     link(b, example, .{});
-    glfw.link(b, example, .{.system_sdk = .{.set_sysroot = false}});
+    glfw.link(b, example, .{ .system_sdk = .{ .set_sysroot = false } });
     example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
     example.addIncludeDir("out/Debug/gen/src/include");
     example.addIncludeDir("out/Debug/gen/src");
@@ -68,7 +67,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     });
 
     lib.linkLibCpp(); // TODO: is it actually needed if we build with Zig?
-    glfw.link(b, lib, .{.system_sdk = .{.set_sysroot = false}});
+    glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
     addCommonSources(b, lib, options, target);
     addDawnPlatformSources(b, lib, options);
     addDawnNativeSources(b, lib, options, target);
@@ -101,7 +100,6 @@ fn addCommonSources(b: *Builder, step: *std.build.LibExeObjStep, options: Option
         step.addCSourceFile(abs_path, &.{include("src")});
     }
 }
-
 
 // Adds dawn platform sources; derived from src/dawn_platform/BUILD.gn
 fn addDawnPlatformSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
@@ -1271,8 +1269,7 @@ fn addDawnUtilsSources(b: *Builder, step: *std.build.LibExeObjStep, options: Opt
             }
         },
         else => {
-            if (options.linux_window_manager == .X11) {
-            }
+            if (options.linux_window_manager == .X11) {}
         },
     }
 
