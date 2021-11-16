@@ -55,6 +55,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
 fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn-native-mach", main_abs);
+    lib.install();
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     lib.linkLibCpp();
@@ -107,6 +108,7 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
 fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn-platform", main_abs);
+    lib.install();
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     lib.linkLibCpp();
@@ -131,6 +133,7 @@ fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep) *std.build.
 fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn-native", main_abs);
+    lib.install();
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     lib.linkLibCpp();
@@ -564,6 +567,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("tint", main_abs);
+    lib.install();
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     lib.linkLibCpp();
@@ -857,6 +861,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
 fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("spirv-tools", main_abs);
+    lib.install();
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     lib.linkLibCpp();
@@ -1078,6 +1083,7 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
 fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("abseil-cpp", main_abs);
+    lib.install();
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     lib.linkLibCpp();
@@ -1217,6 +1223,7 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Lib
 fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn-wire", main_abs);
+    lib.install();
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     lib.linkLibCpp();
@@ -1273,6 +1280,7 @@ fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibE
 fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn-utils", main_abs);
+    lib.install();
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     lib.linkLibCpp();
