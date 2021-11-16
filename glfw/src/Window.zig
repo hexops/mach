@@ -100,10 +100,10 @@ const Hint = enum(c_int) {
     accum_blue_bits = c.GLFW_ACCUM_BLUE_BITS,
     accum_alpha_bits = c.GLFW_ACCUM_ALPHA_BITS,
     aux_buffers = c.GLFW_AUX_BUFFERS,
-    
+
     /// Framebuffer MSAA samples
     samples = c.GLFW_SAMPLES,
-    
+
     /// Monitor refresh rate
     refresh_rate = c.GLFW_REFRESH_RATE,
 
@@ -174,10 +174,10 @@ pub const Hints = struct {
     accum_blue_bits: c_int = 0,
     accum_alpha_bits: c_int = 0,
     aux_buffers: c_int = 0,
-    
+
     /// Framebuffer MSAA samples
     samples: c_int = 0,
-    
+
     /// Monitor refresh rate
     refresh_rate: c_int = glfw.dont_care,
 
@@ -190,8 +190,8 @@ pub const Hints = struct {
     /// Framebuffer double buffering
     doublebuffer: bool = true,
 
-    client_api: ClientApi = .opengl_api,
-    context_creation_api: ContextCreationApi = .native_context_api,
+    client_api: ClientAPI = .opengl_api,
+    context_creation_api: ContextCreationAPI = .native_context_api,
 
     context_version_major: c_int = 1,
     context_version_minor: c_int = 0,
@@ -223,13 +223,13 @@ pub const Hints = struct {
     /// X11 specific
     x11_instance_name: [:0]const u8 = "",
 
-    pub const ClientApi = enum(c_int) {
+    pub const ClientAPI = enum(c_int) {
         opengl_api = c.GLFW_OPENGL_API,
         opengl_es_api = c.GLFW_OPENGL_ES_API,
         no_api = c.GLFW_NO_API,
     };
 
-    pub const ContextCreationApi = enum(c_int) {
+    pub const ContextCreationAPI = enum(c_int) {
         native_context_api = c.GLFW_NATIVE_CONTEXT_API,
         egl_context_api = c.GLFW_EGL_CONTEXT_API,
         osmesa_context_api = c.GLFW_OSMESA_CONTEXT_API,
@@ -261,8 +261,8 @@ pub const Hints = struct {
                 bool => c.glfwWindowHint(hint_tag, @boolToInt(hint_value)),
                 c_int => c.glfwWindowHint(hint_tag, hint_value),
 
-                ClientApi,
-                ContextCreationApi,
+                ClientAPI,
+                ContextCreationAPI,
                 ContextRobustness,
                 ContextReleaseBehavior,
                 OpenGLProfile,
