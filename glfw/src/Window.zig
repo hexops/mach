@@ -76,9 +76,6 @@ inline fn defaultHints() Error!void {
 
 /// Window hints
 const Hint = enum(c_int) {
-    /// Input focus window hint.
-    focused = c.GLFW_FOCUSED,
-
     /// Window resize-ability window hint
     resizable = c.GLFW_RESIZABLE,
 
@@ -87,6 +84,9 @@ const Hint = enum(c_int) {
 
     /// Window decoration window hint
     decorated = c.GLFW_DECORATED,
+
+    /// Input focus window hint.
+    focused = c.GLFW_FOCUSED,
 
     /// Window auto-iconification window hint
     auto_iconify = c.GLFW_AUTO_ICONIFY,
