@@ -123,7 +123,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
             var general_sources = std.ArrayList([]const u8).init(b.allocator);
             const flag = switch (options.linux_window_manager) {
                 .X11 => "-D_GLFW_X11",
-                .Wayland => "_D_GLFW_WAYLAND",
+                .Wayland => "-D_GLFW_WAYLAND",
             };
             for ([_][]const u8{
                 // General Linux-like sources
