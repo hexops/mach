@@ -2,29 +2,6 @@ const std = @import("std");
 const Builder = std.build.Builder;
 const glfw = @import("libs/mach-glfw/build.zig");
 
-pub fn build(b: *Builder) void {
-    const mode = b.standardReleaseOptions();
-    const target = b.standardTargetOptions(.{});
-
-    var main_tests = b.addTest("src/dummy.zig");
-    main_tests.setBuildMode(mode);
-    main_tests.setTarget(target);
-    link(b, main_tests, .{});
-
-    const example = b.addExecutable("hello_triangle", "examples/hello_triangle.zig");
-    example.setBuildMode(mode);
-    example.setTarget(target);
-    link(b, example, .{});
-    glfw.link(b, example, .{ .system_sdk = .{ .set_sysroot = false } });
-    example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
-    example.addIncludeDir("out/Debug/gen/src/include");
-    example.addIncludeDir("out/Debug/gen/src");
-    example.addIncludeDir("examples");
-    example.addIncludeDir("mach/glfw/upstream/glfw/include");
-    example.addIncludeDir("src/include");
-    example.install();
-}
-
 pub const LinuxWindowManager = enum {
     X11,
     Wayland,
@@ -46,15 +23,16 @@ pub const Options = struct {
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const lib = buildLibrary(b, step, options);
+    const lib = buildLibDawn(b, step, options);
     step.linkLibrary(lib);
 }
 
-fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn", main_abs);
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
+    lib.linkLibCpp();
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
 
@@ -66,8 +44,6 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
         include("examples"),
     });
 
-    lib.linkLibCpp(); // TODO: is it actually needed if we build with Zig?
-    glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
     addCommonSources(b, lib, options, target);
     addDawnPlatformSources(b, lib, options);
     addDawnNativeSources(b, lib, options, target);
@@ -1230,6 +1206,7 @@ fn addDawnWireSources(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 fn addDawnUtilsSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
     _ = options;
     _ = target;
+    glfw.link(b, step, .{ .system_sdk = .{ .set_sysroot = false } });
     const flags = &.{
         "-DDAWN_ENABLE_BACKEND_METAL",
         //"-DDAWN_ENABLE_BACKEND_NULL",
