@@ -45,11 +45,14 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const lib_dawn_utils = buildLibDawnUtils(b, step, options);
     step.linkLibrary(lib_dawn_utils);
 
-    const lib = buildLibDawn(b, step, options);
+    const lib_spirv_tools = buildLibSPIRVTools(b, step);
+    step.linkLibrary(lib_spirv_tools);
+
+    const lib = buildLibDawn(b, step);
     step.linkLibrary(lib);
 }
 
-fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn", main_abs);
     lib.setBuildMode(step.build_mode);
@@ -57,7 +60,7 @@ fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     lib.linkLibCpp();
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    addThirdPartyTintSources(b, lib, options, target);
+    addThirdPartyTintSources(b, lib, target);
     return lib;
 }
 
@@ -570,8 +573,8 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 }
 
 // Adds third party tint sources; derived from third_party/tint/src/BUILD.gn
-fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
-    addThirdPartyVulkanDepsSPIRVTools(b, step, options, target);
+// TODO(webgpu): lib
+fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, target: std.Target) void {
     const flags = &.{
         "-DTINT_BUILD_SPV_READER=1",
         "-DTINT_BUILD_SPV_WRITER=1",
@@ -855,10 +858,14 @@ fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, options
     }
 }
 
-// Adds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
-fn addThirdPartyVulkanDepsSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
-    _ = options;
-    _ = target;
+// Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
+fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("spirv-tools", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+
     const flags = &.{
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
@@ -897,7 +904,7 @@ fn addThirdPartyVulkanDepsSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep
         "third_party/vulkan-deps/spirv-tools/src/source/util/timer.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // spvtools_val
@@ -944,7 +951,7 @@ fn addThirdPartyVulkanDepsSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep
         "third_party/vulkan-deps/spirv-tools/src/source/val/validation_state.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // spvtools_opt
@@ -1054,7 +1061,7 @@ fn addThirdPartyVulkanDepsSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep
         "third_party/vulkan-deps/spirv-tools/src/source/opt/wrap_opkill.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // spvtools_link
@@ -1062,8 +1069,9 @@ fn addThirdPartyVulkanDepsSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep
         "third_party/vulkan-deps/spirv-tools/src/source/link/linker.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
+    return lib;
 }
 
 // Builds third_party/abseil sources; derived from:
