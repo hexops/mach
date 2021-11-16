@@ -72,12 +72,12 @@ pub fn setup() !Setup {
     const backend_type = c.WGPUBackendType_Metal;
     const cmd_buf_type = CmdBufType.none;
 
-    try glfw.init();
+    try glfw.init(.{});
 
     // Create the test window and discover adapters using it (esp. for OpenGL)
-    try setupGLFWWindowHintsForBackend(backend_type);
-    glfw.Window.hint(.cocoa_retina_framebuffer, 0) catch {}; // false
-    const window = try glfw.Window.create(640, 480, "Dawn window", null, null);
+    var hints = glfwWindowHintsForBackend(backend_type);
+    hints.cocoa_retina_framebuffer = false;
+    const window = try glfw.Window.create(640, 480, "Dawn window", null, null, hints);
 
     const instance = c.machDawnNativeInstance_init();
     try discoverAdapter(instance, window, backend_type);
@@ -147,28 +147,28 @@ pub fn setup() !Setup {
     };
 }
 
-fn setupGLFWWindowHintsForBackend(backend: c.WGPUBackendType) !void {
-    switch (backend) {
-        c.WGPUBackendType_OpenGL => {
+fn glfwWindowHintsForBackend(backend: c.WGPUBackendType) glfw.Window.Hints {
+    return switch (backend) {
+        c.WGPUBackendType_OpenGL => .{
             // Ask for OpenGL 4.4 which is what the GL backend requires for compute shaders and
             // texture views.
-            try glfw.Window.hint(.context_version_major, 4);
-            try glfw.Window.hint(.context_version_minor, 4);
-            try glfw.Window.hint(.opengl_forward_compat, 1); // true
-            try glfw.Window.hint(.opengl_profile, glfw.opengl_core_profile);
+            .context_version_major = 4,
+            .context_version_minor = 4,
+            .opengl_forward_compat = true,
+            .opengl_profile = .opengl_core_profile,
         },
-        c.WGPUBackendType_OpenGLES => {
-            try glfw.Window.hint(.context_version_major, 3);
-            try glfw.Window.hint(.context_version_minor, 1);
-            try glfw.Window.hint(.client_api, glfw.opengl_es_api);
-            try glfw.Window.hint(.context_creation_api, glfw.egl_context_api);
+        c.WGPUBackendType_OpenGLES => .{
+            .context_version_major = 3,
+            .context_version_minor = 1,
+            .client_api = .opengl_es_api,
+            .context_creation_api = .egl_context_api,
         },
-        else => {
+        else => .{
             // Without this GLFW will initialize a GL context on the window, which prevents using
             // the window with other APIs (by crashing in weird ways).
-            try glfw.Window.hint(.client_api, glfw.no_api);
+            .client_api = .no_api,
         },
-    }
+    };
 }
 
 fn discoverAdapter(instance: c.MachDawnNativeInstance, window: glfw.Window, typ: c.WGPUBackendType) !void {
