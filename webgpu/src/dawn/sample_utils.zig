@@ -23,8 +23,7 @@ const c = @import("c.zig").c;
 // #include <algorithm>
 // #include <cstring>
 
-fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, ptr: ?*c_void) callconv(.C) void {
-    _ = ptr;
+fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*c_void) callconv(.C) void {
     switch (error_type) {
         c.WGPUErrorType_Validation => std.debug.print("dawn: validation error: {s}\n", .{message}),
         c.WGPUErrorType_OutOfMemory => std.debug.print("dawn: out of memory: {s}\n", .{message}),

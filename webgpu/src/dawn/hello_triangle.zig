@@ -109,9 +109,6 @@ pub fn main() !void {
     c.wgpuShaderModuleRelease(fs_module);
 
     while (!setup.window.shouldClose()) {
-        // _ = pipeline;
-        // _ = queue;
-        // try glfw.pollEvents();
         try frame(.{
             .device = setup.device,
             .swap_chain = swap_chain,
