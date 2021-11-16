@@ -42,6 +42,9 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const lib_dawn_wire = buildLibDawnWire(b, step);
     step.linkLibrary(lib_dawn_wire);
 
+    const lib_dawn_utils = buildLibDawnUtils(b, step, options);
+    step.linkLibrary(lib_dawn_utils);
+
     const lib = buildLibDawn(b, step, options);
     step.linkLibrary(lib);
 }
@@ -54,7 +57,6 @@ fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     lib.linkLibCpp();
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    addDawnUtilsSources(b, lib, options, target);
     addThirdPartyTintSources(b, lib, options, target);
     return lib;
 }
@@ -1264,11 +1266,15 @@ fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibE
     return lib;
 }
 
-// Adds dawn utils sources; derived from src/utils/BUILD.gn
-fn addDawnUtilsSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
-    _ = options;
-    _ = target;
-    glfw.link(b, step, .{ .system_sdk = .{ .set_sysroot = false } });
+// Builds dawn utils sources; derived from src/utils/BUILD.gn
+fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("dawn-utils", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+
+    glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
     const flags = &.{
         "-DDAWN_ENABLE_BACKEND_METAL",
         //"-DDAWN_ENABLE_BACKEND_NULL",
@@ -1283,9 +1289,10 @@ fn addDawnUtilsSources(b: *Builder, step: *std.build.LibExeObjStep, options: Opt
         "src/utils/NullBinding.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
             if (options.d3d12) {
@@ -1293,7 +1300,7 @@ fn addDawnUtilsSources(b: *Builder, step: *std.build.LibExeObjStep, options: Opt
                     "src/utils/D3D12Binding.cpp",
                 }) |path| {
                     var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    step.addCSourceFile(abs_path, flags);
+                    lib.addCSourceFile(abs_path, flags);
                 }
             }
         },
@@ -1303,7 +1310,7 @@ fn addDawnUtilsSources(b: *Builder, step: *std.build.LibExeObjStep, options: Opt
                     "src/utils/MetalBinding.mm",
                 }) |path| {
                     var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    step.addCSourceFile(abs_path, flags);
+                    lib.addCSourceFile(abs_path, flags);
                 }
             }
         },
@@ -1319,6 +1326,7 @@ fn addDawnUtilsSources(b: *Builder, step: *std.build.LibExeObjStep, options: Opt
     // if (dawn_enable_vulkan) {
     //   sources += [ "VulkanBinding.cpp" ]
     // }
+    return lib;
 }
 
 fn include(comptime rel: []const u8) []const u8 {
