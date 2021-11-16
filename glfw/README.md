@@ -76,7 +76,7 @@ pub fn main() !void {
 
     // Wait for the user to close the window.
     while (!window.shouldClose()) {
-        glfw.pollEvents();
+        try glfw.pollEvents();
     }
 }
 ```
