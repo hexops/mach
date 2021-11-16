@@ -1,6 +1,7 @@
 const std = @import("std");
 const Builder = std.build.Builder;
 const glfw = @import("libs/mach-glfw/build.zig");
+const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
 
 pub const LinuxWindowManager = enum {
     X11,
@@ -25,6 +26,10 @@ pub const Options = struct {
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const lib_mach_dawn_native = buildLibMachDawnNative(b, step);
     step.linkLibrary(lib_mach_dawn_native);
+
+    // dawn-native dependencies
+    const lib_abseil_cpp = buildLibAbseilCpp(b, step);
+    step.linkLibrary(lib_abseil_cpp);
 
     const lib = buildLibDawn(b, step, options);
     step.linkLibrary(lib);
@@ -110,7 +115,6 @@ fn addDawnPlatformSources(b: *Builder, step: *std.build.LibExeObjStep, options: 
 
 // Adds dawn native sources; derived from src/dawn_native/BUILD.gn
 fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
-    AddThirdPartyAbseilCppSources(b, step, options, target);
     const flags = &.{
         "-DDAWN_ENABLE_BACKEND_METAL",
         //"-DDAWN_ENABLE_BACKEND_NULL",
@@ -1032,15 +1036,21 @@ fn addThirdPartyVulkanDepsSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep
     }
 }
 
-// Adds third_party/abseil sources; derived from:
+// Builds third_party/abseil sources; derived from:
 //
 // ```
 // $ find third_party/abseil-cpp/absl | grep '\.cc' | grep -v 'test' | grep -v 'benchmark' | grep -v gaussian_distribution_gentables | grep -v print_hash_of | grep -v chi_square
 // ```
 //
-fn AddThirdPartyAbseilCppSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
-    _ = options;
-    _ = target;
+fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("abseil-cpp", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+    system_sdk.include(b, lib, .{});
+    lib.linkFramework("CoreFoundation");
+
     const flags = &.{include("libs/dawn/third_party/abseil-cpp")};
 
     // absl
@@ -1165,8 +1175,9 @@ fn AddThirdPartyAbseilCppSources(b: *Builder, step: *std.build.LibExeObjStep, op
         "third_party/abseil-cpp/absl/base/log_severity.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
+    return lib;
 }
 
 // Adds dawn wire sources; derived from src/dawn_wire/BUILD.gn
