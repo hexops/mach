@@ -30,6 +30,9 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const lib_dawn_common = buildLibDawnCommon(b, step);
     step.linkLibrary(lib_dawn_common);
 
+    const lib_dawn_platform = buildLibDawnPlatform(b, step);
+    step.linkLibrary(lib_dawn_platform);
+
     // dawn-native dependencies
     const lib_abseil_cpp = buildLibAbseilCpp(b, step);
     step.linkLibrary(lib_abseil_cpp);
@@ -46,7 +49,6 @@ fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     lib.linkLibCpp();
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    addDawnPlatformSources(b, lib, options);
     addDawnNativeSources(b, lib, options, target);
     addDawnWireSources(b, lib, options, target);
     addDawnUtilsSources(b, lib, options, target);
@@ -105,16 +107,21 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
     return lib;
 }
 
-// Adds dawn platform sources; derived from src/dawn_platform/BUILD.gn
-fn addDawnPlatformSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    _ = options;
+// Build dawn platform sources; derived from src/dawn_platform/BUILD.gn
+fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("dawn-platform", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+
     for ([_][]const u8{
         "src/dawn_platform/DawnPlatform.cpp",
         "src/dawn_platform/WorkerThread.cpp",
         "src/dawn_platform/tracing/EventTracer.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, &.{
+        lib.addCSourceFile(abs_path, &.{
             include("libs/dawn/src"),
             include("libs/dawn/src/include"),
 
@@ -122,6 +129,7 @@ fn addDawnPlatformSources(b: *Builder, step: *std.build.LibExeObjStep, options: 
             include("libs/dawn/out/Debug/gen/src/include"),
         });
     }
+    return lib;
 }
 
 // Adds dawn native sources; derived from src/dawn_native/BUILD.gn
