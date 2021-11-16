@@ -96,13 +96,13 @@ pub const InitHints = struct {
     /// Specifies whether to also expose joystick hats as buttons, for compatibility with earlier
     /// versions of GLFW that did not have glfwGetJoystickHats.
     joystick_hat_buttons: bool = true,
-    
+
     /// macOS specific init hint. Ignored on other platforms.
     ///
     /// Specifies whether to set the current directory to the application to the Contents/Resources
     /// subdirectory of the application's bundle, if present.
     cocoa_chdir_resources: bool = true,
-    
+
     /// macOS specific init hint. Ignored on other platforms.
     ///
     /// specifies whether to create a basic menu bar, either from a nib or manually, when the first

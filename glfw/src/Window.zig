@@ -84,7 +84,7 @@ pub const Hint = enum(c_int) {
 
     /// Window decoration window hint
     decorated = c.GLFW_DECORATED,
-    
+
     /// Input focus window hint.
     focused = c.GLFW_FOCUSED,
 
@@ -217,7 +217,7 @@ pub const Hints = struct {
     transparent_framebuffer: bool = false,
     focus_on_show: bool = true,
     scale_to_monitor: bool = false,
-    
+
     red_bits: c_int = 8,
     green_bits: c_int = 8,
     blue_bits: c_int = 8,
@@ -231,68 +231,68 @@ pub const Hints = struct {
     aux_buffers: c_int = 0,
     samples: c_int = 0,
     refresh_rate: c_int = glfw.dont_care,
-    
+
     stereo: bool = false,
     srgb_capable: bool = false,
     doublebuffer: bool = true,
-    
+
     client_api: ClientApi = .opengl_api,
     context_creation_api: ContextCreationApi = .native_context_api,
-    
+
     context_version_major: c_int = 1,
     context_version_minor: c_int = 0,
-    
+
     context_robustness: ContextRobustness = .no_robustness,
     context_release_behavior: ContextReleaseBehavior = .any_release_behavior,
-    
+
     /// Note: disables the context creating errors,
     /// instead turning them into undefined behavior.
     context_no_error: bool = false,
-    
+
     opengl_forward_compat: bool = false,
     opengl_debug_context: bool = false,
-    
+
     opengl_profile: OpenGLProfile = .opengl_any_profile,
-    
+
     cocoa_retina_framebuffer: bool = true,
-    
+
     cocoa_frame_name: [:0]const u8 = "",
-    
+
     cocoa_graphics_switching: bool = false,
-    
+
     x11_class_name: [:0]const u8 = "",
     x11_instance_name: [:0]const u8 = "",
-    
+
     pub const ClientApi = enum(c_int) {
         opengl_api = c.GLFW_OPENGL_API,
         opengl_es_api = c.GLFW_OPENGL_ES_API,
         no_api = c.GLFW_NO_API,
     };
-    
+
     pub const ContextCreationApi = enum(c_int) {
         native_context_api = c.GLFW_NATIVE_CONTEXT_API,
         egl_context_api = c.GLFW_EGL_CONTEXT_API,
         osmesa_context_api = c.GLFW_OSMESA_CONTEXT_API,
     };
-    
+
     pub const ContextRobustness = enum(c_int) {
         no_robustness = c.GLFW_NO_ROBUSTNESS,
         no_reset_notification = c.GLFW_NO_RESET_NOTIFICATION,
         lose_context_on_reset = c.GLFW_LOSE_CONTEXT_ON_RESET,
     };
-    
+
     pub const ContextReleaseBehavior = enum(c_int) {
         any_release_behavior = c.GLFW_ANY_RELEASE_BEHAVIOR,
         release_behavior_flush = c.GLFW_RELEASE_BEHAVIOR_FLUSH,
         release_behavior_none = c.GLFW_RELEASE_BEHAVIOR_NONE,
     };
-    
+
     pub const OpenGLProfile = enum(c_int) {
         opengl_any_profile = c.GLFW_OPENGL_ANY_PROFILE,
         opengl_compat_profile = c.GLFW_OPENGL_COMPAT_PROFILE,
         opengl_core_profile = c.GLFW_OPENGL_CORE_PROFILE,
     };
-    
+
     fn set(hints: Hints) !void {
         inline for (comptime std.meta.fieldNames(Hint)) |field_name| {
             const hint_tag = @enumToInt(@field(Hint, field_name));
@@ -300,19 +300,19 @@ pub const Hints = struct {
             switch (@TypeOf(hint_value)) {
                 bool => c.glfwWindowHint(hint_tag, @boolToInt(hint_value)),
                 c_int => c.glfwWindowHint(hint_tag, hint_value),
-                
+
                 ClientApi,
                 ContextCreationApi,
                 ContextRobustness,
                 ContextReleaseBehavior,
                 OpenGLProfile,
                 => c.glfwWindowHint(hint_tag, @enumToInt(hint_value)),
-                
+
                 [:0]const u8 => c.glfwWindowHintString(hint_tag, hint_value.ptr),
-                
+
                 else => unreachable,
             }
-            
+
             getError() catch |err| switch (err) {
                 error.NotInitialized => return err,
                 Error.InvalidEnum => unreachable, // should not be possible, given that only values defined within this struct are possible.
@@ -440,7 +440,7 @@ pub const Hints = struct {
 pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: ?Monitor, share: ?Window, hints: Hints) Error!Window {
     try hints.set();
     defer defaultHints() catch unreachable; // this should be unreachable, being that this should be caught in the previous call to `Hints.set`.
-    
+
     const handle = c.glfwCreateWindow(
         @intCast(c_int, width),
         @intCast(c_int, height),
@@ -449,7 +449,7 @@ pub inline fn create(width: usize, height: usize, title: [*c]const u8, monitor: 
         if (share) |w| w.handle else null,
     );
     try getError();
-    
+
     return from(handle.?);
 }
 
@@ -2124,8 +2124,6 @@ pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths
     _ = c.glfwSetDropCallback(self.handle, if (callback != null) setDropCallbackWrapper else null);
     try getError();
 }
-
-
 
 /// For testing purposes only; see glfw.Window.Hints and glfw.Window.create for the public API.
 /// Sets the specified window hint to the desired value.
