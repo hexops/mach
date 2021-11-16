@@ -13,7 +13,7 @@ const Cursor = @This();
 ptr: *c.GLFWcursor,
 
 // Standard system cursor shapes.
-const Shape = enum(isize) {
+pub const Shape = enum(isize) {
     /// The regular arrow cursor shape.
     arrow = c.GLFW_ARROW_CURSOR,
 
