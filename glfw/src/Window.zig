@@ -75,117 +75,61 @@ inline fn defaultHints() Error!void {
 }
 
 /// Window hints
-pub const Hint = enum(c_int) {
-    /// Window resize-ability window hint
+const Hint = enum(c_int) {
     resizable = c.GLFW_RESIZABLE,
-
-    /// Window visibility window hint
     visible = c.GLFW_VISIBLE,
-
-    /// Window decoration window hint
     decorated = c.GLFW_DECORATED,
-
-    /// Input focus window hint.
     focused = c.GLFW_FOCUSED,
-
-    /// Window auto-iconification window hint
     auto_iconify = c.GLFW_AUTO_ICONIFY,
-
-    /// Window decoration window hint
     floating = c.GLFW_FLOATING,
-
-    /// Window maximization window hint
     maximized = c.GLFW_MAXIMIZED,
-
-    /// Cursor centering window hint
     center_cursor = c.GLFW_CENTER_CURSOR,
-
-    /// Window framebuffer transparency hint
     transparent_framebuffer = c.GLFW_TRANSPARENT_FRAMEBUFFER,
-
-    /// Input focus on calling show window hint
     focus_on_show = c.GLFW_FOCUS_ON_SHOW,
+    scale_to_monitor = c.GLFW_SCALE_TO_MONITOR,
 
-    /// Framebuffer bit depth hint.
+    /// Framebuffer hints
     red_bits = c.GLFW_RED_BITS,
-
-    /// Framebuffer bit depth hint.
     green_bits = c.GLFW_GREEN_BITS,
-
-    /// Framebuffer bit depth hint.
     blue_bits = c.GLFW_BLUE_BITS,
-
-    /// Framebuffer bit depth hint.
     alpha_bits = c.GLFW_ALPHA_BITS,
-
-    /// Framebuffer bit depth hint.
     depth_bits = c.GLFW_DEPTH_BITS,
-
-    /// Framebuffer bit depth hint.
     stencil_bits = c.GLFW_STENCIL_BITS,
-
-    /// Framebuffer bit depth hint.
     accum_red_bits = c.GLFW_ACCUM_RED_BITS,
-
-    /// Framebuffer bit depth hint.
     accum_green_bits = c.GLFW_ACCUM_GREEN_BITS,
-
-    /// Framebuffer bit depth hint.
     accum_blue_bits = c.GLFW_ACCUM_BLUE_BITS,
-
-    /// Framebuffer bit depth hint.
     accum_alpha_bits = c.GLFW_ACCUM_ALPHA_BITS,
-
-    /// Framebuffer auxiliary buffer hint.
     aux_buffers = c.GLFW_AUX_BUFFERS,
-
-    /// OpenGL stereoscopic rendering hint.
-    stereo = c.GLFW_STEREO,
-
-    /// Framebuffer MSAA samples hint.
+    
+    /// Framebuffer MSAA samples
     samples = c.GLFW_SAMPLES,
-
-    /// Framebuffer sRGB hint.
-    srgb_capable = c.GLFW_SRGB_CAPABLE,
-
-    /// Monitor refresh rate hint.
+    
+    /// Monitor refresh rate
     refresh_rate = c.GLFW_REFRESH_RATE,
 
-    /// Framebuffer double buffering hint.
+    /// OpenGL stereoscopic rendering
+    stereo = c.GLFW_STEREO,
+
+    /// Framebuffer sRGB
+    srgb_capable = c.GLFW_SRGB_CAPABLE,
+
+    /// Framebuffer double buffering
     doublebuffer = c.GLFW_DOUBLEBUFFER,
 
-    /// Context client API hint.
     client_api = c.GLFW_CLIENT_API,
-
-    /// Context client API major version hint.
-    context_version_major = c.GLFW_CONTEXT_VERSION_MAJOR,
-
-    /// Context client API minor version hint.
-    context_version_minor = c.GLFW_CONTEXT_VERSION_MINOR,
-
-    /// Context robustness hint.
-    context_robustness = c.GLFW_CONTEXT_ROBUSTNESS,
-
-    /// OpenGL forward-compatibility hint.
-    opengl_forward_compat = c.GLFW_OPENGL_FORWARD_COMPAT,
-
-    /// Debug mode context hint.
-    opengl_debug_context = c.GLFW_OPENGL_DEBUG_CONTEXT,
-
-    /// OpenGL profile hint.
-    opengl_profile = c.GLFW_OPENGL_PROFILE,
-
-    /// Context flush-on-release hint.
-    context_release_behavior = c.GLFW_CONTEXT_RELEASE_BEHAVIOR,
-
-    /// Context error suppression hint.
-    context_no_error = c.GLFW_CONTEXT_NO_ERROR,
-
-    /// Context creation API hint.
     context_creation_api = c.GLFW_CONTEXT_CREATION_API,
 
-    /// Window content area scaling window
-    scale_to_monitor = c.GLFW_SCALE_TO_MONITOR,
+    context_version_major = c.GLFW_CONTEXT_VERSION_MAJOR,
+    context_version_minor = c.GLFW_CONTEXT_VERSION_MINOR,
+
+    context_robustness = c.GLFW_CONTEXT_ROBUSTNESS,
+    context_release_behavior = c.GLFW_CONTEXT_RELEASE_BEHAVIOR,
+    context_no_error = c.GLFW_CONTEXT_NO_ERROR,
+
+    opengl_forward_compat = c.GLFW_OPENGL_FORWARD_COMPAT,
+    opengl_debug_context = c.GLFW_OPENGL_DEBUG_CONTEXT,
+
+    opengl_profile = c.GLFW_OPENGL_PROFILE,
 
     /// macOS specific
     cocoa_retina_framebuffer = c.GLFW_COCOA_RETINA_FRAMEBUFFER,
@@ -218,6 +162,7 @@ pub const Hints = struct {
     focus_on_show: bool = true,
     scale_to_monitor: bool = false,
 
+    /// Framebuffer hints
     red_bits: c_int = 8,
     green_bits: c_int = 8,
     blue_bits: c_int = 8,
@@ -229,11 +174,20 @@ pub const Hints = struct {
     accum_blue_bits: c_int = 0,
     accum_alpha_bits: c_int = 0,
     aux_buffers: c_int = 0,
+    
+    /// Framebuffer MSAA samples
     samples: c_int = 0,
+    
+    /// Monitor refresh rate
     refresh_rate: c_int = glfw.dont_care,
 
+    /// OpenGL stereoscopic rendering
     stereo: bool = false,
+
+    /// Framebuffer sRGB
     srgb_capable: bool = false,
+
+    /// Framebuffer double buffering
     doublebuffer: bool = true,
 
     client_api: ClientApi = .opengl_api,
@@ -254,13 +208,19 @@ pub const Hints = struct {
 
     opengl_profile: OpenGLProfile = .opengl_any_profile,
 
+    /// macOS specific
     cocoa_retina_framebuffer: bool = true,
 
+    /// macOS specific
     cocoa_frame_name: [:0]const u8 = "",
 
+    /// macOS specific
     cocoa_graphics_switching: bool = false,
 
+    /// X11 specific
     x11_class_name: [:0]const u8 = "",
+
+    /// X11 specific
     x11_instance_name: [:0]const u8 = "",
 
     pub const ClientApi = enum(c_int) {
