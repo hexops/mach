@@ -37,6 +37,9 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const lib_abseil_cpp = buildLibAbseilCpp(b, step);
     step.linkLibrary(lib_abseil_cpp);
 
+    const lib_dawn_native = buildLibDawnNative(b, step, options);
+    step.linkLibrary(lib_dawn_native);
+
     const lib = buildLibDawn(b, step, options);
     step.linkLibrary(lib);
 }
@@ -49,7 +52,6 @@ fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     lib.linkLibCpp();
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    addDawnNativeSources(b, lib, options, target);
     addDawnWireSources(b, lib, options, target);
     addDawnUtilsSources(b, lib, options, target);
     addThirdPartyTintSources(b, lib, options, target);
@@ -125,15 +127,22 @@ fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep) *std.build.
             include("libs/dawn/src"),
             include("libs/dawn/src/include"),
 
-            // TODO: should we commit generated dawn/webgpu.h somewhere to avoid people needing depot_tools (ninja, gn, gclient, etc.)
             include("libs/dawn/out/Debug/gen/src/include"),
         });
     }
     return lib;
 }
 
-// Adds dawn native sources; derived from src/dawn_native/BUILD.gn
-fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
+// Builds dawn native sources; derived from src/dawn_native/BUILD.gn
+fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("dawn-native", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+
     const flags = &.{
         "-DDAWN_ENABLE_BACKEND_METAL",
         //"-DDAWN_ENABLE_BACKEND_NULL",
@@ -151,7 +160,6 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         include("libs/dawn/third_party/tint"),
         include("libs/dawn/third_party/tint/include"),
 
-        // TODO: should we commit generated dawn/webgpu.h somewhere to avoid people needing depot_tools (ninja, gn, gclient, etc.)
         include("libs/dawn/out/Debug/gen/src/include"),
         include("libs/dawn/out/Debug/gen/src"),
     };
@@ -169,7 +177,7 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         "out/Debug/gen/src/dawn/webgpu_cpp.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     for ([_][]const u8{
@@ -244,7 +252,7 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         "src/dawn_native/VertexFormat.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // dawn_native_utils_gen
@@ -257,7 +265,7 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         "out/Debug/gen/src/dawn_native/ObjectType_autogen.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // TODO: could allow enable_vulkan_validation_layers here. See src/dawn_native/BUILD.gn
@@ -270,7 +278,7 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     switch (target.os.tag) {
         .windows => {
             if (options.windows_uwp_app) {
-                if (step.build_mode == .Debug) {
+                if (lib.build_mode == .Debug) {
                     // DXGIGetDebugInterface1 is defined in dxgi.lib
                     // But this API is tagged as a development-only capability
                     // which implies that linking to this function will cause
@@ -278,9 +286,9 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
                     // So we only link to it in debug build when compiling for UWP.
                     // In win32 we load dxgi.dll using LoadLibrary
                     // so no need for static linking.
-                    step.linkSystemLibrary("dxgi.lib");
+                    lib.linkSystemLibrary("dxgi.lib");
                 }
-                step.linkSystemLibrary("user32.lib");
+                lib.linkSystemLibrary("user32.lib");
             }
 
             // TODO:
@@ -330,13 +338,12 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         },
         .macos => {
             if (options.metal) {
-                step.linkFramework("Metal");
-                step.linkFramework("CoreGraphics");
-                step.linkFramework("Foundation");
-                // step.linkFramework("Cocoa");
-                step.linkFramework("IOKit");
-                step.linkFramework("IOSurface");
-                step.linkFramework("QuartzCore");
+                lib.linkFramework("Metal");
+                lib.linkFramework("CoreGraphics");
+                lib.linkFramework("Foundation");
+                lib.linkFramework("IOKit");
+                lib.linkFramework("IOSurface");
+                lib.linkFramework("QuartzCore");
 
                 for ([_][]const u8{
                     "src/dawn_native/metal/MetalBackend.mm",
@@ -361,18 +368,18 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
                     "src/dawn_native/metal/UtilsMetal.mm",
                 }) |path| {
                     var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    step.addCSourceFile(abs_path, flags);
+                    lib.addCSourceFile(abs_path, flags);
                 }
             }
         },
         else => {
             if (options.linux_window_manager == .X11) {
-                step.linkSystemLibrary("X11");
+                lib.linkSystemLibrary("X11");
                 for ([_][]const u8{
                     "src/dawn_native/XlibXcbFunctions.cpp",
                 }) |path| {
                     var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    step.addCSourceFile(abs_path, flags);
+                    lib.addCSourceFile(abs_path, flags);
                 }
             }
         },
@@ -382,7 +389,7 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         "src/dawn_native/null/DeviceNull.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // TODO: no vulkan on macos
@@ -534,7 +541,7 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         "src/dawn_native/null/NullBackend.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     //   if (dawn_enable_d3d12) {
@@ -556,6 +563,7 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     //     }
     //   }
     // }
+    return lib;
 }
 
 // Adds third party tint sources; derived from third_party/tint/src/BUILD.gn
@@ -1203,7 +1211,13 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Lib
 fn addDawnWireSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
     _ = options;
     _ = target;
-    const flags = &.{};
+    const flags = &.{
+        include("libs/dawn/src"),
+        include("libs/dawn/src/include"),
+
+        include("libs/dawn/out/Debug/gen/src/include"),
+        include("libs/dawn/out/Debug/gen/src"),
+    };
 
     // dawn_wire_gen
     for ([_][]const u8{
