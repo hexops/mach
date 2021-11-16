@@ -23,6 +23,9 @@ pub const Options = struct {
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+    const lib_mach_dawn_native = buildLibMachDawnNative(b, step);
+    step.linkLibrary(lib_mach_dawn_native);
+
     const lib = buildLibDawn(b, step, options);
     step.linkLibrary(lib);
 }
@@ -35,21 +38,30 @@ fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     lib.linkLibCpp();
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-
-    lib.addCSourceFile("src/dawn/dawn_native_c.cpp", &.{
-        include("out/Debug/gen/src/include"),
-        include("out/Debug/gen/src"),
-        include("src/include"),
-        include("src"),
-        include("examples"),
-    });
-
     addCommonSources(b, lib, options, target);
     addDawnPlatformSources(b, lib, options);
     addDawnNativeSources(b, lib, options, target);
     addDawnWireSources(b, lib, options, target);
     addDawnUtilsSources(b, lib, options, target);
     addThirdPartyTintSources(b, lib, options, target);
+    return lib;
+}
+
+fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("dawn-native-mach", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+
+    glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
+    lib.addCSourceFile("src/dawn/dawn_native_c.cpp", &.{
+        include("libs/mach-glfw/upstream/glfw/include"),
+        include("libs/dawn/out/Debug/gen/src/include"),
+        include("libs/dawn/out/Debug/gen/src"),
+        include("libs/dawn/src/include"),
+        include("libs/dawn/src"),
+    });
     return lib;
 }
 
@@ -68,12 +80,12 @@ fn addCommonSources(b: *Builder, step: *std.build.LibExeObjStep, options: Option
         "src/common/SystemUtils.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, &.{include("src")});
+        step.addCSourceFile(abs_path, &.{include("libs/dawn/src")});
     }
 
     if (target.os.tag == .macos) {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn/src/common/SystemUtils_mac.mm" }) catch unreachable;
-        step.addCSourceFile(abs_path, &.{include("src")});
+        step.addCSourceFile(abs_path, &.{include("libs/dawn/src")});
     }
 }
 
@@ -87,11 +99,11 @@ fn addDawnPlatformSources(b: *Builder, step: *std.build.LibExeObjStep, options: 
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
         step.addCSourceFile(abs_path, &.{
-            include("src"),
-            include("src/include"),
+            include("libs/dawn/src"),
+            include("libs/dawn/src/include"),
 
             // TODO: should we commit generated dawn/webgpu.h somewhere to avoid people needing depot_tools (ninja, gn, gclient, etc.)
-            include("out/Debug/gen/src/include"),
+            include("libs/dawn/out/Debug/gen/src/include"),
         });
     }
 }
@@ -102,10 +114,10 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     const flags = &.{
         "-DDAWN_ENABLE_BACKEND_METAL",
         //"-DDAWN_ENABLE_BACKEND_NULL",
-        include("src"),
-        include("src/include"),
-        include("third_party/vulkan-deps/spirv-tools/src/include"),
-        include("third_party/abseil-cpp"),
+        include("libs/dawn/src"),
+        include("libs/dawn/src/include"),
+        include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
+        include("libs/dawn/third_party/abseil-cpp"),
 
         "-DTINT_BUILD_SPV_READER=1",
         "-DTINT_BUILD_SPV_WRITER=1",
@@ -113,12 +125,12 @@ fn addDawnNativeSources(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         "-DTINT_BUILD_WGSL_WRITER=1",
         "-DTINT_BUILD_MSL_WRITER=1",
         "-DTINT_BUILD_HLSL_WRITER=1",
-        include("third_party/tint"),
-        include("third_party/tint/include"),
+        include("libs/dawn/third_party/tint"),
+        include("libs/dawn/third_party/tint/include"),
 
         // TODO: should we commit generated dawn/webgpu.h somewhere to avoid people needing depot_tools (ninja, gn, gclient, etc.)
-        include("out/Debug/gen/src/include"),
-        include("out/Debug/gen/src"),
+        include("libs/dawn/out/Debug/gen/src/include"),
+        include("libs/dawn/out/Debug/gen/src"),
     };
 
     // #if defined(DAWN_ENABLE_BACKEND_D3D12)
@@ -535,14 +547,14 @@ fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, options
         "-DTINT_BUILD_HLSL_WRITER=1",
 
         // Required for TINT_BUILD_SPV_READER=1 and TINT_BUILD_SPV_WRITER=1
-        include("third_party/vulkan-deps"),
-        include("third_party/vulkan-deps/spirv-tools/src"),
-        include("third_party/vulkan-deps/spirv-tools/src/include"),
-        include("third_party/vulkan-deps/spirv-headers/src/include"),
-        include("out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
-        include("out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
-        include("third_party/tint"),
-        include("third_party/tint/include"),
+        include("libs/dawn/third_party/vulkan-deps"),
+        include("libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
+        include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
+        include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include"),
+        include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
+        include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
+        include("libs/dawn/third_party/tint"),
+        include("libs/dawn/third_party/tint/include"),
     };
 
     // libtint_core_all_src
@@ -814,11 +826,11 @@ fn addThirdPartyVulkanDepsSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep
     _ = options;
     _ = target;
     const flags = &.{
-        include("third_party/vulkan-deps/spirv-tools/src"),
-        include("third_party/vulkan-deps/spirv-tools/src/include"),
-        include("third_party/vulkan-deps/spirv-headers/src/include"),
-        include("out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
-        include("out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
+        include("libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
+        include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
+        include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include"),
+        include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
+        include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
     };
 
     // spvtools
@@ -1029,7 +1041,7 @@ fn addThirdPartyVulkanDepsSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep
 fn AddThirdPartyAbseilCppSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
     _ = options;
     _ = target;
-    const flags = &.{include("third_party/abseil-cpp")};
+    const flags = &.{include("libs/dawn/third_party/abseil-cpp")};
 
     // absl
     for ([_][]const u8{
@@ -1210,10 +1222,10 @@ fn addDawnUtilsSources(b: *Builder, step: *std.build.LibExeObjStep, options: Opt
     const flags = &.{
         "-DDAWN_ENABLE_BACKEND_METAL",
         //"-DDAWN_ENABLE_BACKEND_NULL",
-        include("mach/glfw/upstream/glfw/include"),
-        include("src"),
-        include("src/include"),
-        include("out/Debug/gen/src/include"),
+        include("libs/mach-glfw/upstream/glfw/include"),
+        include("libs/dawn/src"),
+        include("libs/dawn/src/include"),
+        include("libs/dawn/out/Debug/gen/src/include"),
     };
 
     for ([_][]const u8{
@@ -1260,7 +1272,7 @@ fn addDawnUtilsSources(b: *Builder, step: *std.build.LibExeObjStep, options: Opt
 }
 
 fn include(comptime rel: []const u8) []const u8 {
-    return "-I" ++ thisDir() ++ "/libs/dawn/" ++ rel;
+    return "-I" ++ thisDir() ++ "/" ++ rel;
 }
 
 fn thisDir() []const u8 {
