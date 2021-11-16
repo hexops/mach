@@ -33,12 +33,14 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const lib_dawn_platform = buildLibDawnPlatform(b, step);
     step.linkLibrary(lib_dawn_platform);
 
-    // dawn-native dependencies
+    // dawn-native
     const lib_abseil_cpp = buildLibAbseilCpp(b, step);
     step.linkLibrary(lib_abseil_cpp);
-
     const lib_dawn_native = buildLibDawnNative(b, step, options);
     step.linkLibrary(lib_dawn_native);
+
+    const lib_dawn_wire = buildLibDawnWire(b, step);
+    step.linkLibrary(lib_dawn_wire);
 
     const lib = buildLibDawn(b, step, options);
     step.linkLibrary(lib);
@@ -52,7 +54,6 @@ fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     lib.linkLibCpp();
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    addDawnWireSources(b, lib, options, target);
     addDawnUtilsSources(b, lib, options, target);
     addThirdPartyTintSources(b, lib, options, target);
     return lib;
@@ -1207,10 +1208,14 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Lib
     return lib;
 }
 
-// Adds dawn wire sources; derived from src/dawn_wire/BUILD.gn
-fn addDawnWireSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
-    _ = options;
-    _ = target;
+// Buids dawn wire sources; derived from src/dawn_wire/BUILD.gn
+fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("dawn-wire", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+
     const flags = &.{
         include("libs/dawn/src"),
         include("libs/dawn/src/include"),
@@ -1228,7 +1233,7 @@ fn addDawnWireSources(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "out/Debug/gen/src/dawn_wire/server/ServerHandlers_autogen.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // dawn_wire_gen
@@ -1254,8 +1259,9 @@ fn addDawnWireSources(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "src/dawn_wire/server/ServerShaderModule.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
+    return lib;
 }
 
 // Adds dawn utils sources; derived from src/utils/BUILD.gn
