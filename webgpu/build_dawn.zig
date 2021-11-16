@@ -48,20 +48,8 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const lib_spirv_tools = buildLibSPIRVTools(b, step);
     step.linkLibrary(lib_spirv_tools);
 
-    const lib = buildLibDawn(b, step);
-    step.linkLibrary(lib);
-}
-
-fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
-    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
-    const lib = b.addStaticLibrary("dawn", main_abs);
-    lib.setBuildMode(step.build_mode);
-    lib.setTarget(step.target);
-    lib.linkLibCpp();
-
-    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    addThirdPartyTintSources(b, lib, target);
-    return lib;
+    const lib_tint = buildLibTint(b, step);
+    step.linkLibrary(lib_tint);
 }
 
 fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
@@ -572,9 +560,14 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     return lib;
 }
 
-// Adds third party tint sources; derived from third_party/tint/src/BUILD.gn
-// TODO(webgpu): lib
-fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, target: std.Target) void {
+// Builds third party tint sources; derived from third_party/tint/src/BUILD.gn
+fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("tint", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+
     const flags = &.{
         "-DTINT_BUILD_SPV_READER=1",
         "-DTINT_BUILD_SPV_WRITER=1",
@@ -734,13 +727,14 @@ fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, target:
         "third_party/tint/src/writer/writer.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
-        .windows => step.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_windows.cc", flags),
-        .linux => step.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_linux.cc", flags),
-        else => step.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_other.cc", flags),
+        .windows => lib.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_windows.cc", flags),
+        .linux => lib.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_linux.cc", flags),
+        else => lib.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_other.cc", flags),
     }
 
     // libtint_sem_src
@@ -787,7 +781,7 @@ fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, target:
         "third_party/tint/src/sem/void_type.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // libtint_spv_reader_src
@@ -803,7 +797,7 @@ fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, target:
         "third_party/tint/src/reader/spirv/usage.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // libtint_spv_writer_src
@@ -816,7 +810,7 @@ fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, target:
         "third_party/tint/src/writer/spirv/operand.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // libtint_wgsl_reader_src
@@ -827,7 +821,7 @@ fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, target:
         "third_party/tint/src/reader/wgsl/token.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // libtint_wgsl_writer_src
@@ -836,7 +830,7 @@ fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, target:
         "third_party/tint/src/writer/wgsl/generator_impl.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // libtint_msl_writer_src
@@ -845,7 +839,7 @@ fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, target:
         "third_party/tint/src/writer/msl/generator_impl.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
 
     // libtint_hlsl_writer_src
@@ -854,8 +848,9 @@ fn addThirdPartyTintSources(b: *Builder, step: *std.build.LibExeObjStep, target:
         "third_party/tint/src/writer/hlsl/generator_impl.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags);
     }
+    return lib;
 }
 
 // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
