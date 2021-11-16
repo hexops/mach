@@ -27,6 +27,9 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const lib_mach_dawn_native = buildLibMachDawnNative(b, step);
     step.linkLibrary(lib_mach_dawn_native);
 
+    const lib_dawn_common = buildLibDawnCommon(b, step);
+    step.linkLibrary(lib_dawn_common);
+
     // dawn-native dependencies
     const lib_abseil_cpp = buildLibAbseilCpp(b, step);
     step.linkLibrary(lib_abseil_cpp);
@@ -43,7 +46,6 @@ fn buildLibDawn(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     lib.linkLibCpp();
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    addCommonSources(b, lib, options, target);
     addDawnPlatformSources(b, lib, options);
     addDawnNativeSources(b, lib, options, target);
     addDawnWireSources(b, lib, options, target);
@@ -70,9 +72,14 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep) *std.buil
     return lib;
 }
 
-// Adds common sources; derived from src/common/BUILD.gn
-fn addCommonSources(b: *Builder, step: *std.build.LibExeObjStep, options: Options, target: std.Target) void {
-    _ = options;
+// Builds common sources; derived from src/common/BUILD.gn
+fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("dawn-common", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+
     for ([_][]const u8{
         "src/common/Assert.cpp",
         "src/common/DynamicLib.cpp",
@@ -85,13 +92,17 @@ fn addCommonSources(b: *Builder, step: *std.build.LibExeObjStep, options: Option
         "src/common/SystemUtils.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        step.addCSourceFile(abs_path, &.{include("libs/dawn/src")});
+        lib.addCSourceFile(abs_path, &.{include("libs/dawn/src")});
     }
 
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (target.os.tag == .macos) {
+        system_sdk.include(b, lib, .{});
+        lib.linkFramework("Foundation");
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn/src/common/SystemUtils_mac.mm" }) catch unreachable;
-        step.addCSourceFile(abs_path, &.{include("libs/dawn/src")});
+        lib.addCSourceFile(abs_path, &.{include("libs/dawn/src")});
     }
+    return lib;
 }
 
 // Adds dawn platform sources; derived from src/dawn_platform/BUILD.gn
