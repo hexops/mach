@@ -5,7 +5,9 @@ const c = @import("c.zig").c;
 
 const key = @import("key.zig");
 
-pub usingnamespace @import("consts.zig");
+/// Possible value for various window hints, etc.
+pub const dont_care = c.GLFW_DONT_CARE;
+
 pub const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 
@@ -94,13 +96,13 @@ pub const InitHints = struct {
     /// Specifies whether to also expose joystick hats as buttons, for compatibility with earlier
     /// versions of GLFW that did not have glfwGetJoystickHats.
     joystick_hat_buttons: bool = true,
-    
+
     /// macOS specific init hint. Ignored on other platforms.
     ///
     /// Specifies whether to set the current directory to the application to the Contents/Resources
     /// subdirectory of the application's bundle, if present.
     cocoa_chdir_resources: bool = true,
-    
+
     /// macOS specific init hint. Ignored on other platforms.
     ///
     /// specifies whether to create a basic menu bar, either from a nib or manually, when the first
@@ -335,7 +337,7 @@ pub fn basicTest() !void {
     try init(.{});
     defer terminate();
 
-    const window = Window.create(640, 480, "GLFW example", null, null) catch |err| {
+    const window = Window.create(640, 480, "GLFW example", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});

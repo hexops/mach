@@ -171,7 +171,7 @@ test "makeContextCurrent" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -199,7 +199,7 @@ test "swapInterval" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -216,7 +216,7 @@ test "getProcAddress" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -233,7 +233,7 @@ test "extensionSupported" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null) catch |err| {
+    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
