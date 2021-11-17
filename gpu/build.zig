@@ -7,7 +7,7 @@ pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
-    const lib = b.addStaticLibrary("webgpu", "src/main.zig");
+    const lib = b.addStaticLibrary("gpu", "src/main.zig");
     lib.setBuildMode(mode);
     lib.setTarget(target);
     lib.install();
