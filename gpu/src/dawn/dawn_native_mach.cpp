@@ -2,7 +2,7 @@
 #include <dawn_native/wgpu_structs_autogen.h>
 #include "utils/BackendBinding.h"
 
-#include "dawn_native_c.h"
+#include "dawn_native_mach.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +59,7 @@ MACH_EXPORT MachDawnNativeAdapterProperties machDawnNativeAdapter_getProperties(
     self->GetProperties(cppProperties);
     return reinterpret_cast<MachDawnNativeAdapterProperties>(cppProperties);
 }
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 // std::vector<const char*> GetSupportedExtensions() const;
 // WGPUDeviceProperties GetAdapterProperties() const;
 // bool GetLimits(WGPUSupportedLimits* limits) const;
@@ -96,7 +96,7 @@ MACH_EXPORT WGPUDevice machDawnNativeAdapter_createDevice(MachDawnNativeAdapter 
     return self->CreateDevice(&cppDeviceDescriptor);
 }
 
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 //     // An optional parameter of Adapter::CreateDevice() to send additional information when creating
 //     // a Device. For example, we can use it to enable a workaround, optimization or feature.
 //     struct DAWN_NATIVE_EXPORT DeviceDescriptor {
@@ -108,18 +108,18 @@ MACH_EXPORT WGPUDevice machDawnNativeAdapter_createDevice(MachDawnNativeAdapter 
 //     };
 
 
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 // // Create a device on this adapter, note that the interface will change to include at least
 // // a device descriptor and a pointer to backend specific options.
 // // On an error, nullptr is returned.
 // WGPUDevice CreateDevice(const DeviceDescriptor* deviceDescriptor = nullptr);
 
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 // void RequestDevice(const DeviceDescriptor* descriptor,
 //                     WGPURequestDeviceCallback callback,
 //                     void* userdata);
 
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 // // Reset the backend device object for testing purposes.
 // void ResetInternalDeviceForTesting();
 
@@ -145,7 +145,7 @@ MACH_EXPORT void machDawnNativeInstance_discoverDefaultAdapters(MachDawnNativeIn
     dawn_native::Instance* self = reinterpret_cast<dawn_native::Instance*>(instance);
     self->DiscoverDefaultAdapters();
 }
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 // // Adds adapters that can be discovered with the options provided (like a getProcAddress).
 // // The backend is chosen based on the type of the options used. Returns true on success.
 // bool DiscoverAdapters(const AdapterDiscoveryOptionsBase* options);
@@ -161,22 +161,22 @@ MACH_EXPORT const DawnProcTable* machDawnNativeGetProcs() {
     return &dawn_native::GetProcs();
 }
 
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 // const ToggleInfo* GetToggleInfo(const char* toggleName);
 
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 // // Enables backend validation layers
 // void EnableBackendValidation(bool enableBackendValidation);
 // void SetBackendValidationLevel(BackendValidationLevel validationLevel);
 
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 // // Enable debug capture on Dawn startup
 // void EnableBeginCaptureOnStartup(bool beginCaptureOnStartup);
 
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 // void SetPlatform(dawn_platform::Platform* platform);
 
-// TODO(mach-dawn-shims):
+// TODO(dawn-native-mach):
 // // Returns the underlying WGPUInstance object.
 // WGPUInstance Get() const;
 
@@ -231,7 +231,7 @@ MACH_EXPORT WGPUTextureFormat machUtilsBackendBinding_getPreferredSwapChainTextu
 } // extern "C"
 #endif
 
-// TODO(mach-dawn-shims): everything below here is not wrapped
+// TODO(dawn-native-mach): everything below here is not wrapped
 
 // #ifndef DAWNNATIVE_DAWNNATIVE_H_
 // #define DAWNNATIVE_DAWNNATIVE_H_

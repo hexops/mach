@@ -61,7 +61,7 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep) *std.buil
     lib.linkLibCpp();
 
     glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
-    lib.addCSourceFile("src/dawn/dawn_native_c.cpp", &.{
+    lib.addCSourceFile("src/dawn/dawn_native_mach.cpp", &.{
         include("libs/mach-glfw/upstream/glfw/include"),
         include("libs/dawn/out/Debug/gen/src/include"),
         include("libs/dawn/out/Debug/gen/src"),
