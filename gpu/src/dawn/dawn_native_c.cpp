@@ -182,10 +182,8 @@ MACH_EXPORT const DawnProcTable* machDawnNativeGetProcs() {
 
 
 // typedef struct MachUtilsBackendBindingImpl* MachUtilsBackendBinding;
-#include <stdio.h>
 MACH_EXPORT MachUtilsBackendBinding machUtilsCreateBinding(WGPUBackendType backendType, GLFWwindow* window, WGPUDevice device) {
     wgpu::BackendType cppBackendType;
-    printf("here with backendType=%d, expecting %d\n", backendType, WGPUBackendType_Metal);
     switch (backendType) {
     case WGPUBackendType_WebGPU:
         cppBackendType = wgpu::BackendType::WebGPU;
@@ -216,7 +214,6 @@ MACH_EXPORT MachUtilsBackendBinding machUtilsCreateBinding(WGPUBackendType backe
         cppBackendType = wgpu::BackendType::Null;
         break;
     }
-    printf("created cppBackendType=%d, expected %d\n", cppBackendType, wgpu::BackendType::Metal);
     return reinterpret_cast<MachUtilsBackendBinding>(utils::CreateBinding(cppBackendType, window, device));
 }
 
