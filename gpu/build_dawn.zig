@@ -142,7 +142,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     const flags = &.{
         "-DDAWN_ENABLE_BACKEND_METAL",
-        //"-DDAWN_ENABLE_BACKEND_NULL",
+        "-DDAWN_ENABLE_BACKEND_NULL",
         include("libs/dawn/src"),
         include("libs/dawn/src/include"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
@@ -1288,7 +1288,7 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
     const flags = &.{
         "-DDAWN_ENABLE_BACKEND_METAL",
-        //"-DDAWN_ENABLE_BACKEND_NULL",
+        "-DDAWN_ENABLE_BACKEND_NULL",
         include("libs/mach-glfw/upstream/glfw/include"),
         include("libs/dawn/src"),
         include("libs/dawn/src/include"),
