@@ -210,7 +210,8 @@ MACH_EXPORT MachUtilsBackendBinding machUtilsCreateBinding(WGPUBackendType backe
         cppBackendType = wgpu::BackendType::Vulkan;
         break;
     case WGPUBackendType_Force32:
-        // TODO: what would this indicate?
+        // Force32 is just to force the size of the C enum type to 32-bits, so this is technically
+        // an illegal input.
         cppBackendType = wgpu::BackendType::Null;
         break;
     }
