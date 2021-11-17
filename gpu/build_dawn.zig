@@ -270,7 +270,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     // TODO: could allow use_swiftshader here. See src/dawn_native/BUILD.gn
     // TODO: allow dawn_enable_vulkan here. See src/dawn_native/BUILD.gn
     // TODO: allow dawn_enable_opengl here. See src/dawn_native/BUILD.gn
-    // TODO: could allow dawn_use_spriv_cross here. See src/dawn_native/BUILD.gn
 
     switch (target.os.tag) {
         .windows => {
