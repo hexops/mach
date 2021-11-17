@@ -1075,18 +1075,18 @@ pub const Attrib = enum(c_int) {
     focus_on_show = c.GLFW_FOCUS_ON_SHOW,
 
     client_api = c.GLFW_CLIENT_API,
+    context_creation_api = c.GLFW_CONTEXT_CREATION_API,
     context_version_major = c.GLFW_CONTEXT_VERSION_MAJOR,
     context_version_minor = c.GLFW_CONTEXT_VERSION_MINOR,
     context_revision = c.GLFW_CONTEXT_REVISION,
+
     context_robustness = c.GLFW_CONTEXT_ROBUSTNESS,
+    context_release_behavior = c.GLFW_CONTEXT_RELEASE_BEHAVIOR,
+    context_no_error = c.GLFW_CONTEXT_NO_ERROR,
 
     opengl_forward_compat = c.GLFW_OPENGL_FORWARD_COMPAT,
     opengl_debug_context = c.GLFW_OPENGL_DEBUG_CONTEXT,
     opengl_profile = c.GLFW_OPENGL_PROFILE,
-
-    context_release_behavior = c.GLFW_CONTEXT_RELEASE_BEHAVIOR,
-    context_no_error = c.GLFW_CONTEXT_NO_ERROR,
-    context_creation_api = c.GLFW_CONTEXT_CREATION_API,
 };
 
 /// Returns an attribute of the specified window.
