@@ -3221,3 +3221,104 @@ test "setScrollCallback" {
         }
     }).callback);
 }
+
+fn failedToCreateWindow(err: Error) void {
+    // return without fail, because most of our CI environments are headless / we cannot open
+    // windows on them.
+    std.debug.print("note: failed to create window: {}\n", .{err});
+    return;
+}
+
+test "hint-attribute default value parity" {
+    try glfw.init(.{});
+    defer glfw.terminate();
+    const window_a = @as(Error!Window, handle: {
+        // manually create window, to avoid call to `Window.Hints.set` in `Window.create`, which
+        // would overwrite the default hint values set by GLFW itself.
+        const handle = c.glfwCreateWindow(640, 480, "Hello, Zig!", null, null);
+        getError() catch |err| break :handle err;
+        break :handle Window.from(handle.?) catch |err| break :handle err;
+    }) catch |err| return failedToCreateWindow(err);
+    defer window_a.destroy();
+
+    const window_b = Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| return failedToCreateWindow(err);
+    defer window_b.destroy();
+
+    inline for (comptime std.enums.values(Window.Hint)) |hint_tag| {
+        if (@hasField(Window.Attrib, @tagName(hint_tag))) {
+            const attrib_tag = @field(Window.Attrib, @tagName(hint_tag));
+            switch (attrib_tag) {
+                .resizable,
+                .visible,
+                .decorated,
+                .auto_iconify,
+                .floating,
+                .maximized,
+                .transparent_framebuffer,
+                .focus_on_show,
+                .client_api,
+                .context_creation_api,
+                .context_version_major,
+                .context_version_minor,
+                .context_robustness,
+                .context_release_behavior,
+                .opengl_forward_compat,
+                .opengl_debug_context,
+                .opengl_profile,
+                => {
+                    const expected = window_a.getAttrib(attrib_tag) catch |err| {
+                        std.debug.print("Failed to get attribute '{}' value from window_a with error '{}'.\n", .{ attrib_tag, err });
+                        return;
+                    };
+                    const actual = window_b.getAttrib(attrib_tag) catch |err| {
+                        std.debug.print("Failed to get attribute '{}' value from window_b with error '{}'.\n", .{ attrib_tag, err });
+                        return;
+                    };
+
+                    testing.expectEqual(expected, actual) catch |err| {
+                        std.debug.print("On attribute '{}'.\n", .{hint_tag});
+                        return err;
+                    };
+                },
+
+                // This attribute is based on a check for which window is currently in focus,
+                // and the default value, as of writing this comment, is 'true', which means
+                // that first window_a takes focus, and then window_b takes focus, meaning
+                // that we can't actually test for the default value.
+                .focused => continue,
+
+                // TODO: consider this one differently, as we've chosen a different default value
+                .context_no_error => continue,
+
+                .iconified,
+                .hovered,
+                .context_revision,
+                => unreachable,
+            }
+        }
+        // TODO: consider hint values that can't be retrieved via attributes:
+        // center_cursor
+        // scale_to_monitor
+        // red_bits
+        // green_bits
+        // blue_bits
+        // alpha_bits
+        // depth_bits
+        // stencil_bits
+        // accum_red_bits
+        // accum_green_bits
+        // accum_blue_bits
+        // accum_alpha_bits
+        // aux_buffers
+        // samples
+        // refresh_rate
+        // stereo
+        // srgb_capable
+        // doublebuffer
+
+        // platform specific, and thus not considered:
+        // cocoa_retina_framebuffer
+        // cocoa_frame_name
+        // cocoa_graphics_switching
+    }
+}
