@@ -398,8 +398,11 @@ pub const Hints = struct {
 ///
 /// see also: window_creation, glfw.Window.destroy
 pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor: ?Monitor, share: ?Window, hints: Hints) Error!Window {
-    try hints.set();
-    defer defaultHints() catch unreachable; // this should be unreachable, being that this should be caught in the previous call to `Hints.set`.
+    const ignore_hints_struct = if (comptime @import("builtin").is_test) testing_ignore_window_hints_struct else false;
+    if (!ignore_hints_struct) {
+        try hints.set();
+        defer defaultHints() catch unreachable; // this should be unreachable, being that this should be caught in the previous call to `Hints.set`.
+    }
 
     const handle = c.glfwCreateWindow(
         @intCast(c_int, width),
@@ -412,6 +415,8 @@ pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor:
 
     return from(handle.?);
 }
+
+var testing_ignore_window_hints_struct = if (@import("builtin").is_test) false else @as(void, {});
 
 /// Destroys the specified window and its context.
 ///
@@ -3222,26 +3227,26 @@ test "setScrollCallback" {
     }).callback);
 }
 
-fn failedToCreateWindow(err: Error) void {
-    // return without fail, because most of our CI environments are headless / we cannot open
-    // windows on them.
-    std.debug.print("note: failed to create window: {}\n", .{err});
-    return;
-}
-
 test "hint-attribute default value parity" {
     try glfw.init(.{});
     defer glfw.terminate();
-    const window_a = @as(Error!Window, handle: {
-        // manually create window, to avoid call to `Window.Hints.set` in `Window.create`, which
-        // would overwrite the default hint values set by GLFW itself.
-        const handle = c.glfwCreateWindow(640, 480, "Hello, Zig!", null, null);
-        getError() catch |err| break :handle err;
-        break :handle Window.from(handle.?) catch |err| break :handle err;
-    }) catch |err| return failedToCreateWindow(err);
+
+    testing_ignore_window_hints_struct = true;
+    const window_a = Window.create(640, 480, "Hello, Zig!", null, null, undefined) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window_a: {}\n", .{err});
+        return;
+    };
     defer window_a.destroy();
 
-    const window_b = Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| return failedToCreateWindow(err);
+    testing_ignore_window_hints_struct = false;
+    const window_b = Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window_b: {}\n", .{err});
+        return;
+    };
     defer window_b.destroy();
 
     inline for (comptime std.enums.values(Window.Hint)) |hint_tag| {
@@ -3311,6 +3316,7 @@ test "hint-attribute default value parity" {
         // accum_alpha_bits
         // aux_buffers
         // samples
+
         // refresh_rate
         // stereo
         // srgb_capable
