@@ -3301,7 +3301,7 @@ test "hint-attribute default value parity" {
                 => unreachable,
             }
         }
-        // TODO: consider hint values that can't be retrieved via attributes:
+        // Future: we could consider hint values that can't be retrieved via attributes:
         // center_cursor
         // scale_to_monitor
         // red_bits
