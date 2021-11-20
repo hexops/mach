@@ -398,8 +398,9 @@ pub const Hints = struct {
 ///
 /// see also: window_creation, glfw.Window.destroy
 pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor: ?Monitor, share: ?Window, hints: Hints) Error!Window {
-    try hints.set();
-    defer defaultHints() catch unreachable; // this should be unreachable, being that this should be caught in the previous call to `Hints.set`.
+    const ignore_hints_struct = if (comptime @import("builtin").is_test) testing_ignore_window_hints_struct else false;
+    if (!ignore_hints_struct) try hints.set();
+    defer if (!ignore_hints_struct) defaultHints() catch unreachable; // this should be unreachable, being that this should be caught in the previous call to `Hints.set`.
 
     const handle = c.glfwCreateWindow(
         @intCast(c_int, width),
@@ -412,6 +413,8 @@ pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor:
 
     return from(handle.?);
 }
+
+var testing_ignore_window_hints_struct = if (@import("builtin").is_test) false else @as(void, {});
 
 /// Destroys the specified window and its context.
 ///
@@ -3220,4 +3223,104 @@ test "setScrollCallback" {
             _ = yoffset;
         }
     }).callback);
+}
+
+test "hint-attribute default value parity" {
+    try glfw.init(.{});
+    defer glfw.terminate();
+
+    testing_ignore_window_hints_struct = true;
+    const window_a = Window.create(640, 480, "Hello, Zig!", null, null, undefined) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window_a: {}\n", .{err});
+        return;
+    };
+    defer window_a.destroy();
+
+    testing_ignore_window_hints_struct = false;
+    const window_b = Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
+        // return without fail, because most of our CI environments are headless / we cannot open
+        // windows on them.
+        std.debug.print("note: failed to create window_b: {}\n", .{err});
+        return;
+    };
+    defer window_b.destroy();
+
+    inline for (comptime std.enums.values(Window.Hint)) |hint_tag| {
+        if (@hasField(Window.Attrib, @tagName(hint_tag))) {
+            const attrib_tag = @field(Window.Attrib, @tagName(hint_tag));
+            switch (attrib_tag) {
+                .resizable,
+                .visible,
+                .decorated,
+                .auto_iconify,
+                .floating,
+                .maximized,
+                .transparent_framebuffer,
+                .focus_on_show,
+                .client_api,
+                .context_creation_api,
+                .context_version_major,
+                .context_version_minor,
+                .context_robustness,
+                .context_release_behavior,
+                .context_no_error, // Note: at the time of writing this, GLFW does not list the default value for this hint in the documentation
+                .opengl_forward_compat,
+                .opengl_debug_context,
+                .opengl_profile,
+                => {
+                    const expected = window_a.getAttrib(attrib_tag) catch |err| {
+                        std.debug.print("Failed to get attribute '{}' value from window_a with error '{}'.\n", .{ attrib_tag, err });
+                        return;
+                    };
+                    const actual = window_b.getAttrib(attrib_tag) catch |err| {
+                        std.debug.print("Failed to get attribute '{}' value from window_b with error '{}'.\n", .{ attrib_tag, err });
+                        return;
+                    };
+
+                    testing.expectEqual(expected, actual) catch |err| {
+                        std.debug.print("On attribute '{}'.\n", .{hint_tag});
+                        return err;
+                    };
+                },
+
+                // This attribute is based on a check for which window is currently in focus,
+                // and the default value, as of writing this comment, is 'true', which means
+                // that first window_a takes focus, and then window_b takes focus, meaning
+                // that we can't actually test for the default value.
+                .focused => continue,
+
+                .iconified,
+                .hovered,
+                .context_revision,
+                => unreachable,
+            }
+        }
+        // Future: we could consider hint values that can't be retrieved via attributes:
+        // center_cursor
+        // scale_to_monitor
+        // red_bits
+        // green_bits
+        // blue_bits
+        // alpha_bits
+        // depth_bits
+        // stencil_bits
+        // accum_red_bits
+        // accum_green_bits
+        // accum_blue_bits
+        // accum_alpha_bits
+        // aux_buffers
+        // samples
+
+        // refresh_rate
+        // stereo
+        // srgb_capable
+        // doublebuffer
+
+        // platform specific, and thus not considered:
+        // cocoa_retina_framebuffer
+        // cocoa_frame_name
+        // cocoa_graphics_switching
+    }
 }
