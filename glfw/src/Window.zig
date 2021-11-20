@@ -399,10 +399,8 @@ pub const Hints = struct {
 /// see also: window_creation, glfw.Window.destroy
 pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor: ?Monitor, share: ?Window, hints: Hints) Error!Window {
     const ignore_hints_struct = if (comptime @import("builtin").is_test) testing_ignore_window_hints_struct else false;
-    if (!ignore_hints_struct) {
-        try hints.set();
-        defer defaultHints() catch unreachable; // this should be unreachable, being that this should be caught in the previous call to `Hints.set`.
-    }
+    if (!ignore_hints_struct) try hints.set();
+    defer if (!ignore_hints_struct) defaultHints() catch unreachable; // this should be unreachable, being that this should be caught in the previous call to `Hints.set`.
 
     const handle = c.glfwCreateWindow(
         @intCast(c_int, width),
@@ -3267,6 +3265,7 @@ test "hint-attribute default value parity" {
                 .context_version_minor,
                 .context_robustness,
                 .context_release_behavior,
+                .context_no_error, // Note: at the time of writing this, GLFW does not list the default value for this hint in the documentation
                 .opengl_forward_compat,
                 .opengl_debug_context,
                 .opengl_profile,
@@ -3291,9 +3290,6 @@ test "hint-attribute default value parity" {
                 // that first window_a takes focus, and then window_b takes focus, meaning
                 // that we can't actually test for the default value.
                 .focused => continue,
-
-                // TODO: consider this one differently, as we've chosen a different default value
-                .context_no_error => continue,
 
                 .iconified,
                 .hovered,
