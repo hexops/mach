@@ -57,7 +57,7 @@ const internal_debug = @import("internal_debug.zig");
 /// Unicode text input.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub inline fn init(hints: InitHints) error{ PlatformError }!void {
+pub inline fn init(hints: InitHints) Error!void {
     internal_debug.toggleInitialized();
     internal_debug.assertInitialized();
     errdefer internal_debug.toggleInitialized();
@@ -76,7 +76,7 @@ pub inline fn init(hints: InitHints) error{ PlatformError }!void {
     
     _ = c.glfwInit();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -173,7 +173,7 @@ const InitHint = enum(c_int) {
 /// @remarks This function may be called before glfw.init.
 ///
 /// @thread_safety This function must only be called from the main thread.
-fn initHint(hint: InitHint, value: anytype) error{ InvalidValue }!void {
+fn initHint(hint: InitHint, value: anytype) Error!void {
     switch (@typeInfo(@TypeOf(value))) {
         .Int, .ComptimeInt => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, value)),
         .Bool => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, @boolToInt(value))),
@@ -181,7 +181,7 @@ fn initHint(hint: InitHint, value: anytype) error{ InvalidValue }!void {
     }
     getError() catch |err| return switch (err) {
         Error.InvalidEnum => unreachable, // impossible for any valid 'InitHint' value
-        Error.InvalidValue => @errSetCast(error{ InvalidValue }, err),
+        Error.InvalidValue => err,
         else => unreachable,
     };
 }
@@ -233,11 +233,11 @@ pub inline fn getVersionString() [:0]const u8 {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-pub inline fn pollEvents() error{ PlatformError }!void {
+pub inline fn pollEvents() Error!void {
     internal_debug.assertInitialized();
     c.glfwPollEvents();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -272,11 +272,11 @@ pub inline fn pollEvents() error{ PlatformError }!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.pollEvents, glfw.waitEventsTimeout
-pub inline fn waitEvents() error{ PlatformError }!void {
+pub inline fn waitEvents() Error!void {
     internal_debug.assertInitialized();
     c.glfwWaitEvents();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -315,7 +315,7 @@ pub inline fn waitEvents() error{ PlatformError }!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.pollEvents, glfw.waitEvents
-pub inline fn waitEventsTimeout(timeout: f64) error{ InvalidValue, PlatformError }!void {
+pub inline fn waitEventsTimeout(timeout: f64) Error!void {
     internal_debug.assertInitialized();
     c.glfwWaitEventsTimeout(timeout);
     getError() catch |err| return switch (err) {
@@ -323,7 +323,7 @@ pub inline fn waitEventsTimeout(timeout: f64) error{ InvalidValue, PlatformError
         // and make its branch unreachable.
         Error.InvalidValue, 
         Error.PlatformError,
-        => @errSetCast(error{ InvalidValue, PlatformError }, err),
+        => err,
         else => unreachable,
     };
 }
@@ -338,11 +338,11 @@ pub inline fn waitEventsTimeout(timeout: f64) error{ InvalidValue, PlatformError
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-pub inline fn postEmptyEvent() error{ PlatformError }!void {
+pub inline fn postEmptyEvent() Error!void {
     internal_debug.assertInitialized();
     c.glfwPostEmptyEvent();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }

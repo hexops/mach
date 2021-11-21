@@ -31,13 +31,13 @@ const internal_debug = @import("internal_debug.zig");
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_current, glfwGetCurrentContext
-pub inline fn makeContextCurrent(window: ?Window) error{ NoWindowContext, PlatformError }!void {
+pub inline fn makeContextCurrent(window: ?Window) Error!void {
     internal_debug.assertInitialized();
     if (window) |w| c.glfwMakeContextCurrent(w.handle) else c.glfwMakeContextCurrent(null);
     getError() catch |err| return switch (err) {
         Error.NoWindowContext,
         Error.PlatformError,
-        => @errSetCast(error{ NoWindowContext, PlatformError }, err),
+        => err,
         else => unreachable,
     };
 }
@@ -95,13 +95,13 @@ pub inline fn getCurrentContext() std.mem.Allocator.Error!?Window {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: buffer_swap, glfwSwapBuffers
-pub inline fn swapInterval(interval: isize) error{ NoCurrentContext, PlatformError }!void {
+pub inline fn swapInterval(interval: isize) Error!void {
     internal_debug.assertInitialized();
     c.glfwSwapInterval(@intCast(c_int, interval));
     getError() catch |err| return switch (err) {
         Error.NoCurrentContext,
         Error.PlatformError,
-        => @errSetCast(error{ NoCurrentContext, PlatformError }, err),
+        => err,
         else => unreachable,
     };
 }
@@ -131,13 +131,13 @@ pub inline fn swapInterval(interval: isize) error{ NoCurrentContext, PlatformErr
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_glext, glfw.getProcAddress
-pub inline fn extensionSupported(extension: [*:0]const u8) error{ NoCurrentContext, InvalidValue }!bool {
+pub inline fn extensionSupported(extension: [*:0]const u8) Error!bool {
     internal_debug.assertInitialized();
     const supported = c.glfwExtensionSupported(extension);
     getError() catch |err| return switch (err) {
         Error.NoCurrentContext,
         Error.InvalidValue,
-        => @errSetCast(error{ NoCurrentContext, InvalidValue }, err),
+        => err,
         else => unreachable,
     };
     return supported == c.GLFW_TRUE;

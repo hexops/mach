@@ -60,12 +60,12 @@ pub const Shape = enum(isize) {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_object, glfw.Cursor.destroy, glfw.Cursor.createStandard
-pub inline fn create(image: Image, xhot: isize, yhot: isize) error{ PlatformError }!Cursor {
+pub inline fn create(image: Image, xhot: isize, yhot: isize) Error!Cursor {
     internal_debug.assertInitialized();
     const img = image.toC();
     const cursor = c.glfwCreateCursor(&img, @intCast(c_int, xhot), @intCast(c_int, yhot));
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
     return Cursor{ .ptr = cursor.? };
@@ -80,13 +80,13 @@ pub inline fn create(image: Image, xhot: isize, yhot: isize) error{ PlatformErro
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_object, glfwCreateCursor
-pub inline fn createStandard(shape: Shape) error{ InvalidEnum, PlatformError }!Cursor {
+pub inline fn createStandard(shape: Shape) Error!Cursor {
     internal_debug.assertInitialized();
     const cursor = c.glfwCreateStandardCursor(@intCast(c_int, @enumToInt(shape)));
     getError() catch |err| return switch (err) {
         // TODO: should be impossible given that only the values in 'Shape' are available, unless the user explicitly gives us a bad value via casting
         Error.InvalidEnum => unreachable, 
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
     return Cursor{ .ptr = cursor.? };
