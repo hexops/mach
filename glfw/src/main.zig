@@ -34,6 +34,8 @@ pub usingnamespace @import("time.zig");
 pub usingnamespace @import("hat.zig");
 pub usingnamespace @import("mod.zig");
 
+const internal_debug = @import("internal_debug.zig");
+
 /// Initializes the GLFW library.
 ///
 /// This function initializes the GLFW library. Before most GLFW functions can be used, GLFW must
@@ -55,14 +57,29 @@ pub usingnamespace @import("mod.zig");
 /// Unicode text input.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub inline fn init(hints: InitHints) Error!void {
+pub inline fn init(hints: InitHints) error{ PlatformError }!void {
+    internal_debug.toggleInitialized();
+    internal_debug.assertInitialized();
+    errdefer internal_debug.toggleInitialized();
+    
     inline for (comptime std.meta.fieldNames(InitHints)) |field_name| {
         const init_hint = @field(InitHint, field_name);
         const init_value = @field(hints, field_name);
-        try initHint(init_hint, init_value);
+        initHint(init_hint, init_value) catch |err| switch (err) {
+            // TODO: Consider this; should not be reachable, given that all of the hint tags and hint values
+            // are coming in from a strict set of predefined values in 'InitHints' and 'InitHint'
+            Error.InvalidValue,
+            Error.InvalidEnum,
+            => unreachable, 
+            else => unreachable,
+        };
     }
+    
     _ = c.glfwInit();
-    return try getError();
+    getError() catch |err| return switch (err) {
+        Error.PlatformError => err,
+        else => unreachable,
+    };
 }
 
 /// Terminates the GLFW library.
@@ -88,6 +105,8 @@ pub inline fn init(hints: InitHints) Error!void {
 ///
 /// thread_safety: This function must only be called from the main thread.
 pub inline fn terminate() void {
+    internal_debug.assertInitialized();
+    internal_debug.toggleInitialized();
     c.glfwTerminate();
 }
 
@@ -155,13 +174,17 @@ const InitHint = enum(c_int) {
 /// @remarks This function may be called before glfw.init.
 ///
 /// @thread_safety This function must only be called from the main thread.
-fn initHint(hint: InitHint, value: anytype) Error!void {
+fn initHint(hint: InitHint, value: anytype) error{ InvalidValue }!void {
     switch (@typeInfo(@TypeOf(value))) {
         .Int, .ComptimeInt => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, value)),
         .Bool => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, @boolToInt(value))),
         else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
     }
-    try getError();
+    getError() catch |err| return switch (err) {
+        Error.InvalidEnum => unreachable, // impossible for any valid 'InitHint' value
+        Error.InvalidValue => err,
+        else => unreachable,
+    };
 }
 
 /// Returns a string describing the compile-time configuration.
@@ -211,9 +234,13 @@ pub inline fn getVersionString() [:0]const u8 {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-pub inline fn pollEvents() Error!void {
+pub inline fn pollEvents() error{ PlatformError }!void {
+    internal_debug.assertInitialized();
     c.glfwPollEvents();
-    try getError();
+    getError() catch |err| return switch (err) {
+        Error.PlatformError => err,
+        else => unreachable,
+    };
 }
 
 /// Waits until events are queued and processes them.
@@ -246,9 +273,13 @@ pub inline fn pollEvents() Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.pollEvents, glfw.waitEventsTimeout
-pub inline fn waitEvents() Error!void {
+pub inline fn waitEvents() error{ PlatformError }!void {
+    internal_debug.assertInitialized();
     c.glfwWaitEvents();
-    try getError();
+    getError() catch |err| return switch (err) {
+        Error.PlatformError => err,
+        else => unreachable,
+    };
 }
 
 /// Waits with timeout until events are queued and processes them.
@@ -285,9 +316,17 @@ pub inline fn waitEvents() Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.pollEvents, glfw.waitEvents
-pub inline fn waitEventsTimeout(timeout: f64) Error!void {
+pub inline fn waitEventsTimeout(timeout: f64) error{ InvalidValue, PlatformError }!void {
+    internal_debug.assertInitialized();
     c.glfwWaitEventsTimeout(timeout);
-    try getError();
+    getError() catch |err| return switch (err) {
+        // TODO: Consider whether to catch 'GLFW_INVALID_VALUE' from GLFW, or assert that 'timeout' is positive here, in the same manner as GLFW,
+        // and make its branch unreachable.
+        Error.InvalidValue, 
+        Error.PlatformError,
+        => err,
+        else => unreachable,
+    };
 }
 
 /// Posts an empty event to the event queue.
@@ -300,9 +339,13 @@ pub inline fn waitEventsTimeout(timeout: f64) Error!void {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-pub inline fn postEmptyEvent() Error!void {
+pub inline fn postEmptyEvent() error{ PlatformError }!void {
+    internal_debug.assertInitialized();
     c.glfwPostEmptyEvent();
-    try getError();
+    getError() catch |err| return switch (err) {
+        Error.PlatformError => err,
+        else => unreachable,
+    };
 }
 
 /// Returns whether raw mouse motion is supported.
@@ -323,13 +366,9 @@ pub inline fn postEmptyEvent() Error!void {
 ///
 /// see also: raw_mouse_motion, glfw.setInputMode
 pub inline fn rawMouseMotionSupported() bool {
+    internal_debug.assertInitialized();
     const supported = c.glfwRawMouseMotionSupported();
-
-    // The only error this could return would be glfw.Error.NotInitialized, which should
-    // definitely have occurred before calls to this. Returning an error here makes the API
-    // awkward to use, so we discard it instead.
-    getError() catch {};
-
+    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
     return supported == c.GLFW_TRUE;
 }
 
