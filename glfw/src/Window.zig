@@ -73,7 +73,7 @@ pub const InternalUserPointer = struct {
 ///
 /// see also: window_hints, glfw.Window.hint, glfw.Window.hintString
 // TODO: Remove error stub
-inline fn defaultHints() error{}!void {
+inline fn defaultHints() Error!void {
     internal_debug.assertInitialized();
     c.glfwDefaultWindowHints();
     getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
@@ -259,7 +259,7 @@ pub const Hints = struct {
     };
 
     // TODO: Remove error stub
-    fn set(hints: Hints) error{}!void {
+    fn set(hints: Hints) Error!void {
         internal_debug.assertInitialized();
         inline for (comptime std.meta.fieldNames(Hint)) |field_name| {
             const hint_tag = @enumToInt(@field(Hint, field_name));
@@ -483,7 +483,7 @@ pub inline fn shouldClose(self: Window) bool {
 ///
 /// see also: window_close
 // TODO: Remove error stub
-pub inline fn setShouldClose(self: Window, value: bool) error{}!void {
+pub inline fn setShouldClose(self: Window, value: bool) Error!void {
     internal_debug.assertInitialized();
     const boolean = if (value) c.GLFW_TRUE else c.GLFW_FALSE;
     c.glfwSetWindowShouldClose(self.handle, boolean);
@@ -501,11 +501,11 @@ pub inline fn setShouldClose(self: Window, value: bool) error{}!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_title
-pub inline fn setTitle(self: Window, title: [*:0]const u8) error{ PlatformError }!void {
+pub inline fn setTitle(self: Window, title: [*:0]const u8) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowTitle(self.handle, title);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -538,7 +538,7 @@ pub inline fn setTitle(self: Window, title: [*:0]const u8) error{ PlatformError 
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_icon
-pub inline fn setIcon(self: Window, allocator: *mem.Allocator, images: ?[]Image) (mem.Allocator.Error || error{ PlatformError })!void {
+pub inline fn setIcon(self: Window, allocator: *mem.Allocator, images: ?[]Image) Error!void {
     internal_debug.assertInitialized();
     if (images) |im| {
         const tmp = try allocator.alloc(c.GLFWimage, im.len);
@@ -547,7 +547,7 @@ pub inline fn setIcon(self: Window, allocator: *mem.Allocator, images: ?[]Image)
         c.glfwSetWindowIcon(self.handle, @intCast(c_int, im.len), &tmp[0]);
     } else c.glfwSetWindowIcon(self.handle, 0, null);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -570,13 +570,13 @@ pub const Pos = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_pos glfw.Window.setPos
-pub inline fn getPos(self: Window) error{ PlatformError }!Pos {
+pub inline fn getPos(self: Window) Error!Pos {
     internal_debug.assertInitialized();
     var x: c_int = 0;
     var y: c_int = 0;
     c.glfwGetWindowPos(self.handle, &x, &y);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
     return Pos{ .x = @intCast(usize, x), .y = @intCast(usize, y) };
@@ -602,11 +602,11 @@ pub inline fn getPos(self: Window) error{ PlatformError }!Pos {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_pos, glfw.Window.getPos
-pub inline fn setPos(self: Window, pos: Pos) error{ PlatformError }!void {
+pub inline fn setPos(self: Window, pos: Pos) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowPos(self.handle, @intCast(c_int, pos.x), @intCast(c_int, pos.y));
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -627,13 +627,13 @@ pub const Size = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_size, glfw.Window.setSize
-pub inline fn getSize(self: Window) error{ PlatformError }!Size {
+pub inline fn getSize(self: Window) Error!Size {
     internal_debug.assertInitialized();
     var width: c_int = 0;
     var height: c_int = 0;
     c.glfwGetWindowSize(self.handle, &width, &height);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
     return Size{ .width = @intCast(usize, width), .height = @intCast(usize, height) };
@@ -661,11 +661,11 @@ pub inline fn getSize(self: Window) error{ PlatformError }!Size {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_size, glfw.Window.getSize, glfw.Window.SetMonitor
-pub inline fn setSize(self: Window, size: Size) error{ PlatformError }!void {
+pub inline fn setSize(self: Window, size: Size) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowSize(self.handle, @intCast(c_int, size.width), @intCast(c_int, size.height));
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -691,7 +691,7 @@ pub inline fn setSize(self: Window, size: Size) error{ PlatformError }!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_sizelimits, glfw.Window.setAspectRatio
-pub inline fn setSizeLimits(self: Window, min: Size, max: Size) error{ InvalidValue, PlatformError }!void {
+pub inline fn setSizeLimits(self: Window, min: Size, max: Size) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowSizeLimits(
         self.handle,
@@ -703,7 +703,7 @@ pub inline fn setSizeLimits(self: Window, min: Size, max: Size) error{ InvalidVa
     getError() catch |err| return switch (err) {
         Error.InvalidValue,
         Error.PlatformError,
-        => @errSetCast(error{ InvalidValue, PlatformError }, err),
+        => err,
         else => unreachable,
     };
 }
@@ -734,13 +734,13 @@ pub inline fn setSizeLimits(self: Window, min: Size, max: Size) error{ InvalidVa
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_sizelimits, glfw.Window.setSizeLimits
-pub inline fn setAspectRatio(self: Window, numerator: usize, denominator: usize) error{ InvalidValue, PlatformError }!void {
+pub inline fn setAspectRatio(self: Window, numerator: usize, denominator: usize) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowAspectRatio(self.handle, @intCast(c_int, numerator), @intCast(c_int, denominator));
     getError() catch |err| return switch (err) {
         Error.InvalidValue,
         Error.PlatformError,
-        => @errSetCast(error{ InvalidValue, PlatformError }, err),
+        => err,
         else => unreachable,
     };
 }
@@ -755,13 +755,13 @@ pub inline fn setAspectRatio(self: Window, numerator: usize, denominator: usize)
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_fbsize, glfwWindow.setFramebufferSizeCallback
-pub inline fn getFramebufferSize(self: Window) error{ PlatformError }!Size {
+pub inline fn getFramebufferSize(self: Window) Error!Size {
     internal_debug.assertInitialized();
     var width: c_int = 0;
     var height: c_int = 0;
     c.glfwGetFramebufferSize(self.handle, &width, &height);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
     return Size{ .width = @intCast(usize, width), .height = @intCast(usize, height) };
@@ -788,7 +788,7 @@ pub const FrameSize = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_size
-pub inline fn getFrameSize(self: Window) error{ PlatformError }!FrameSize {
+pub inline fn getFrameSize(self: Window) Error!FrameSize {
     internal_debug.assertInitialized();
     var left: c_int = 0;
     var top: c_int = 0;
@@ -796,7 +796,7 @@ pub inline fn getFrameSize(self: Window) error{ PlatformError }!FrameSize {
     var bottom: c_int = 0;
     c.glfwGetWindowFrameSize(self.handle, &left, &top, &right, &bottom);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
     return FrameSize{
@@ -829,13 +829,13 @@ pub const ContentScale = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_scale, glfwSetWindowContentScaleCallback, glfwGetMonitorContentScale
-pub inline fn getContentScale(self: Window) error{ PlatformError }!ContentScale {
+pub inline fn getContentScale(self: Window) Error!ContentScale {
     internal_debug.assertInitialized();
     var x_scale: f32 = 0;
     var y_scale: f32 = 0;
     c.glfwGetWindowContentScale(self.handle, &x_scale, &y_scale);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
     return ContentScale{ .x_scale = x_scale, .y_scale = y_scale };
@@ -856,11 +856,11 @@ pub inline fn getContentScale(self: Window) error{ PlatformError }!ContentScale 
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_transparency, glfw.Window.setOpacity
-pub inline fn getOpacity(self: Window) error{ PlatformError }!f32 {
+pub inline fn getOpacity(self: Window) Error!f32 {
     internal_debug.assertInitialized();
     const opacity = c.glfwGetWindowOpacity(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
     return opacity;
@@ -883,11 +883,11 @@ pub inline fn getOpacity(self: Window) error{ PlatformError }!f32 {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_transparency, glfw.Window.getOpacity
-pub inline fn setOpacity(self: Window, opacity: f32) error{ PlatformError }!void {
+pub inline fn setOpacity(self: Window, opacity: f32) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowOpacity(self.handle, opacity);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -908,11 +908,11 @@ pub inline fn setOpacity(self: Window, opacity: f32) error{ PlatformError }!void
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_iconify, glfw.Window.restore, glfw.Window.maximize
-pub inline fn iconify(self: Window) error{ PlatformError }!void {
+pub inline fn iconify(self: Window) Error!void {
     internal_debug.assertInitialized();
     c.glfwIconifyWindow(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -930,11 +930,11 @@ pub inline fn iconify(self: Window) error{ PlatformError }!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_iconify, glfw.Window.iconify, glfw.Window.maximize
-pub inline fn restore(self: Window) error{ PlatformError }!void {
+pub inline fn restore(self: Window) Error!void {
     internal_debug.assertInitialized();
     c.glfwRestoreWindow(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -951,11 +951,11 @@ pub inline fn restore(self: Window) error{ PlatformError }!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_iconify, glfw.Window.iconify, glfw.Window.restore
-pub inline fn maximize(self: Window) error{ PlatformError }!void {
+pub inline fn maximize(self: Window) Error!void {
     internal_debug.assertInitialized();
     c.glfwMaximizeWindow(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -974,11 +974,11 @@ pub inline fn maximize(self: Window) error{ PlatformError }!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hide, glfw.Window.hide
-pub inline fn show(self: Window) error{ PlatformError }!void {
+pub inline fn show(self: Window) Error!void {
     internal_debug.assertInitialized();
     c.glfwShowWindow(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -993,11 +993,11 @@ pub inline fn show(self: Window) error{ PlatformError }!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hide, glfw.Window.show
-pub inline fn hide(self: Window) error{ PlatformError }!void {
+pub inline fn hide(self: Window) Error!void {
     internal_debug.assertInitialized();
     c.glfwHideWindow(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -1026,11 +1026,11 @@ pub inline fn hide(self: Window) error{ PlatformError }!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_focus, window_attention
-pub inline fn focus(self: Window) error{ PlatformError }!void {
+pub inline fn focus(self: Window) Error!void {
     internal_debug.assertInitialized();
     c.glfwFocusWindow(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -1050,11 +1050,11 @@ pub inline fn focus(self: Window) error{ PlatformError }!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_attention
-pub inline fn requestAttention(self: Window) error{ PlatformError }!void {
+pub inline fn requestAttention(self: Window) Error!void {
     internal_debug.assertInitialized();
     c.glfwRequestWindowAttention(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -1080,13 +1080,13 @@ pub inline fn requestAttention(self: Window) error{ PlatformError }!void {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: buffer_swap, glfwSwapInterval
-pub inline fn swapBuffers(self: Window) error{ NoWindowContext, PlatformError }!void {
+pub inline fn swapBuffers(self: Window) Error!void {
     internal_debug.assertInitialized();
     c.glfwSwapBuffers(self.handle);
     getError() catch |err| return switch (err) {
         Error.NoWindowContext,
         Error.PlatformError,
-        => @errSetCast(error{ NoWindowContext, PlatformError }, err),
+        => err,
         else => unreachable,
     };
 }
@@ -1103,7 +1103,7 @@ pub inline fn swapBuffers(self: Window) error{ NoWindowContext, PlatformError }!
 ///
 /// see also: window_monitor, glfw.Window.setMonitor
 // TODO: Remove error stub
-pub inline fn getMonitor(self: Window) error{}!?Monitor {
+pub inline fn getMonitor(self: Window) Error!?Monitor {
     internal_debug.assertInitialized();
     const monitor = c.glfwGetWindowMonitor(self.handle);
     getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
@@ -1153,7 +1153,7 @@ pub inline fn getMonitor(self: Window) error{}!?Monitor {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_monitor, window_full_screen, glfw.Window.getMonitor, glfw.Window.setSize
-pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isize, width: isize, height: isize, refresh_rate: isize) error{ PlatformError }!void {
+pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isize, width: isize, height: isize, refresh_rate: isize) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowMonitor(
         self.handle,
@@ -1165,7 +1165,7 @@ pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isi
         @intCast(c_int, refresh_rate),
     );
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -1218,13 +1218,13 @@ pub const Attrib = enum(c_int) {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_attribs, glfw.Window.setAttrib
-pub inline fn getAttrib(self: Window, attrib: Attrib) error{ InvalidEnum, PlatformError }!isize {
+pub inline fn getAttrib(self: Window, attrib: Attrib) Error!isize {
     internal_debug.assertInitialized();
     const v = c.glfwGetWindowAttrib(self.handle, @enumToInt(attrib));
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.PlatformError,
-        => @errSetCast(error{ InvalidEnum, PlatformError }, err),
+        => err,
         else => unreachable,
     };
     return v;
@@ -1255,14 +1255,14 @@ pub inline fn getAttrib(self: Window, attrib: Attrib) error{ InvalidEnum, Platfo
 /// see also: window_attribs, glfw.Window.getAttrib
 ///
 // TODO: Maybe enhance type-safety here to avoid 'InvalidEnum' and 'InvalidValue' at runtime alltogether?
-pub inline fn setAttrib(self: Window, attrib: Attrib, value: bool) error{ InvalidEnum, InvalidValue, PlatformError }!void {
+pub inline fn setAttrib(self: Window, attrib: Attrib, value: bool) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowAttrib(self.handle, @enumToInt(attrib), if (value) c.GLFW_TRUE else c.GLFW_FALSE);
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.InvalidValue,
         Error.PlatformError,
-        => @errSetCast(error{ InvalidEnum, InvalidValue, PlatformError }, err),
+        => err,
         else => unreachable,
     };
 }
@@ -1623,7 +1623,7 @@ pub const InputModeCursor = enum(c_int) {
 };
 
 /// Sets the input mode of the cursor, whether it should behave normally, be hidden, or grabbed.
-pub inline fn setInputModeCursor(self: Window, value: InputModeCursor) error{ InvalidEnum, PlatformError }!void {
+pub inline fn setInputModeCursor(self: Window, value: InputModeCursor) Error!void {
     return self.setInputMode(InputMode.cursor, value);
 }
 
@@ -1637,7 +1637,7 @@ pub inline fn getInputModeCursor(self: Window) InputModeCursor {
 ///
 /// This is useful when you are only interested in whether keys have been pressed but not when or
 /// in which order.
-pub inline fn setInputModeStickyKeys(self: Window, enabled: bool) error{ InvalidEnum, PlatformError }!void {
+pub inline fn setInputModeStickyKeys(self: Window, enabled: bool) Error!void {
     return self.setInputMode(InputMode.sticky_keys, enabled);
 }
 
@@ -1652,7 +1652,7 @@ pub inline fn getInputModeStickyKeys(self: Window) bool {
 ///
 /// This is useful when you are only interested in whether buttons have been pressed but not when
 /// or in which order.
-pub inline fn setInputModeStickyMouseButtons(self: Window, enabled: bool) error{ InvalidEnum, PlatformError }!void {
+pub inline fn setInputModeStickyMouseButtons(self: Window, enabled: bool) Error!void {
     return self.setInputMode(InputMode.sticky_mouse_buttons, enabled);
 }
 
@@ -1737,7 +1737,7 @@ pub inline fn getInputMode(self: Window, mode: InputMode) isize {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: glfw.Window.getInputMode
-pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) error{ InvalidEnum, PlatformError }!void {
+pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) Error!void {
     internal_debug.assertInitialized();
     switch (@typeInfo(@TypeOf(value))) {
         .Enum => c.glfwSetInputMode(self.handle, @enumToInt(mode), @enumToInt(value)),
@@ -1748,7 +1748,7 @@ pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) error{
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.PlatformError,
-        => @errSetCast(error{ InvalidEnum, PlatformError }, err),
+        => err,
         else => unreachable,
     };
 }
@@ -1779,11 +1779,11 @@ pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) error{
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_key
-pub inline fn getKey(self: Window, key: Key) error{ InvalidEnum }!Action {
+pub inline fn getKey(self: Window, key: Key) Error!Action {
     internal_debug.assertInitialized();
     const state = c.glfwGetKey(self.handle, @enumToInt(key));
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => @errSetCast(error{ InvalidEnum }, err),
+        Error.InvalidEnum => err,
         else => unreachable,
     };
     return @intToEnum(Action, state);
@@ -1805,11 +1805,11 @@ pub inline fn getKey(self: Window, key: Key) error{ InvalidEnum }!Action {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_mouse_button
-pub inline fn getMouseButton(self: Window, button: MouseButton) error{ InvalidEnum }!Action {
+pub inline fn getMouseButton(self: Window, button: MouseButton) Error!Action {
     internal_debug.assertInitialized();
     const state = c.glfwGetMouseButton(self.handle, @enumToInt(button));
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => @errSetCast(error{ InvalidEnum }, err),
+        Error.InvalidEnum => err,
         else => unreachable,
     };
     return @intToEnum(Action, state);
@@ -1845,12 +1845,12 @@ pub const CursorPos = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_pos, glfw.Window.setCursorPos
-pub inline fn getCursorPos(self: Window) error{ PlatformError }!CursorPos {
+pub inline fn getCursorPos(self: Window) Error!CursorPos {
     internal_debug.assertInitialized();
     var pos: CursorPos = undefined;
     c.glfwGetCursorPos(self.handle, &pos.xpos, &pos.ypos);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
     return pos;
@@ -1881,11 +1881,11 @@ pub inline fn getCursorPos(self: Window) error{ PlatformError }!CursorPos {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_pos, glfw.Window.getCursorPos
-pub inline fn setCursorPos(self: Window, xpos: f64, ypos: f64) error{ PlatformError }!void {
+pub inline fn setCursorPos(self: Window, xpos: f64, ypos: f64) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetCursorPos(self.handle, xpos, ypos);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -1905,11 +1905,11 @@ pub inline fn setCursorPos(self: Window, xpos: f64, ypos: f64) error{ PlatformEr
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_object
-pub inline fn setCursor(self: Window, cursor: Cursor) error{ PlatformError }!void {
+pub inline fn setCursor(self: Window, cursor: Cursor) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetCursor(self.handle, cursor.ptr);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -2159,7 +2159,7 @@ fn setDropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c]
 ///
 /// see also: path_drop
 // TODO: Remove error stub
-pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths: [][*:0]const u8) void) error{}!void {
+pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths: [][*:0]const u8) void) Error!void {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
     internal.setDropCallback = callback;

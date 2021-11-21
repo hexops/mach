@@ -53,12 +53,12 @@ pub inline fn getTime() f64 {
 /// base time is not atomic, so it needs to be externally synchronized with calls to glfw.getTime.
 ///
 /// see also: time
-pub inline fn setTime(time: f64) error{ InvalidValue }!void {
+pub inline fn setTime(time: f64) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetTime(time);
     getError() catch |err| return switch (err) {
         // TODO: Consider whether to use GLFW error handling, or assert that 'time' is a valid value
-        Error.InvalidValue => @errSetCast(error{ InvalidValue }, err),
+        Error.InvalidValue => err,
         else => unreachable,
     };
 }
