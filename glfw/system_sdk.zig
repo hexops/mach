@@ -6,7 +6,7 @@
 //! The SDKs used by this script by default are:
 //!
 //! * Linux: https://github.com/hexops/sdk-linux-x86_64 (~40MB, X11, Wayland, etc. development libraries)
-//! * MacOS: https://github.com/hexops/sdk-macos-11.3 (~160MB, most frameworks you'd find in the XCode SDK)
+//! * MacOS: https://github.com/hexops/sdk-macos-12.0 (~112MB, most frameworks you'd find in the XCode SDK)
 //! * Windows: not needed
 //!
 //! You may supply your own SDKs via the Options struct if needed, although the Mach versions above
@@ -35,7 +35,7 @@ pub const Options = struct {
     github_org: []const u8 = "hexops",
 
     /// The MacOS SDK repository name.
-    macos_sdk: []const u8 = "sdk-macos-11.3",
+    macos_sdk: []const u8 = "sdk-macos-12.0",
 
     /// The Linux x86-64 SDK repository name.
     linux_x86_64_sdk: []const u8 = "sdk-linux-x86_64",
@@ -104,7 +104,7 @@ fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8) 
     // 1. $SDK_PATH/<name> (if set, e.g. for testing changes to SDKs easily)
     // 2. <appdata>/<name> (default)
     //
-    // Where `<name>` is the name of the SDK, e.g. `sdk-macos-11.3`.
+    // Where `<name>` is the name of the SDK, e.g. `sdk-macos-12.0`.
     var sdk_root_dir: []const u8 = undefined;
     var sdk_path_dir: []const u8 = undefined;
     if (std.process.getEnvVarOwned(allocator, "SDK_PATH")) |sdk_path| {
@@ -124,7 +124,7 @@ fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8) 
     } else |err| return switch (err) {
         error.FileNotFound => {
             std.log.info("cloning required sdk..\ngit clone https://github.com/{s}/{s} '{s}'..\n", .{ org, name, sdk_root_dir });
-            if (std.mem.eql(u8, name, "sdk-macos-11.3")) {
+            if (std.mem.eql(u8, name, "sdk-macos-12.0")) {
                 if (!try confirmAppleSDKAgreement(allocator)) @panic("cannot continue");
             }
             try std.fs.cwd().makePath(sdk_path_dir);
