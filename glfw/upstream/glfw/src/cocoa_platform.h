@@ -27,6 +27,19 @@
 #include <stdint.h>
 #include <dlfcn.h>
 
+// HACK(mach): Zig's C stdlib headers conflict with those in sdk-macos-12.0, in specific _CDEFS_H_
+// is already defined once sys/cdefs.h from sdk-macos-12.0 is included. This leads to these not
+// being defined as empty, and that leads to syntax errors such as:
+//
+// sdk-macos-12.0/root/System/Library/Frameworks/IOKit.framework/Headers/IOTypes.h:81:49: error: expected ';' after top level declarator
+//
+// We patch this here by defining these, which appears to be good enough to workaround the issue for
+// now. Presumably Zig's C stdlib headers will define these on macOS once updated for macOS 12.0,
+// they're just slightly out of date for now.
+#define __kernel_ptr_semantics
+#define __kernel_data_semantics
+#define __kernel_dual_semantics
+
 #include <Carbon/Carbon.h>
 
 // NOTE: All of NSGL was deprecated in the 10.14 SDK
