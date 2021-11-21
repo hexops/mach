@@ -4,6 +4,8 @@ const c = @import("c.zig").c;
 const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 
+const internal_debug = @import("internal_debug.zig");
+
 /// Returns the GLFW time.
 ///
 /// This function returns the current GLFW time, in seconds. Unless the time
@@ -26,13 +28,9 @@ const getError = @import("errors.zig").getError;
 ///
 /// see also: time
 pub inline fn getTime() f64 {
+    internal_debug.assertInitialized();
     const time = c.glfwGetTime();
-
-    // The only error this could return would be glfw.Error.NotInitialized, which should
-    // definitely have occurred before calls to this. Returning an error here makes the API
-    // awkward to use, so we discard it instead.
-    getError() catch {};
-
+    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
     return time;
 }
 
@@ -55,9 +53,14 @@ pub inline fn getTime() f64 {
 /// base time is not atomic, so it needs to be externally synchronized with calls to glfw.getTime.
 ///
 /// see also: time
-pub inline fn setTime(time: f64) Error!void {
+pub inline fn setTime(time: f64) error{ InvalidValue }!void {
+    internal_debug.assertInitialized();
     c.glfwSetTime(time);
-    try getError();
+    getError() catch |err| return switch (err) {
+        // TODO: Consider whether to use GLFW error handling, or assert that 'time' is a valid value
+        Error.InvalidValue => err,
+        else => unreachable,
+    };
 }
 
 /// Returns the current value of the raw timer.
@@ -71,13 +74,9 @@ pub inline fn setTime(time: f64) Error!void {
 ///
 /// see also: time, glfw.getTimerFrequency
 pub inline fn getTimerValue() u64 {
+    internal_debug.assertInitialized();
     const value = c.glfwGetTimerValue();
-
-    // The only error this could return would be glfw.Error.NotInitialized, which should
-    // definitely have occurred before calls to this. Returning an error here makes the API
-    // awkward to use, so we discard it instead.
-    getError() catch {};
-
+    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
     return value;
 }
 
@@ -91,13 +90,9 @@ pub inline fn getTimerValue() u64 {
 ///
 /// see also: time, glfw.getTimerValue
 pub inline fn getTimerFrequency() u64 {
+    internal_debug.assertInitialized();
     const frequency = c.glfwGetTimerFrequency();
-
-    // The only error this could return would be glfw.Error.NotInitialized, which should
-    // definitely have occurred before calls to this. Returning an error here makes the API
-    // awkward to use, so we discard it instead.
-    getError() catch {};
-
+    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
     return frequency;
 }
 
