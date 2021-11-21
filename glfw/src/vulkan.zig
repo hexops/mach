@@ -66,7 +66,7 @@ pub inline fn getRequiredInstanceExtensions() error{ APIUnavailable }![][*:0]con
     var count: u32 = 0;
     const extensions = c.glfwGetRequiredInstanceExtensions(&count);
     getError() catch |err| return switch (err) {
-        Error.APIUnavailable => err,
+        Error.APIUnavailable => @errSetCast(error{ APIUnavailable }, err),
         else => unreachable,
     };
     return @ptrCast([*][*:0]const u8, extensions)[0..count];
@@ -153,7 +153,7 @@ pub inline fn getPhysicalDevicePresentationSupport(vk_instance: *opaque {}, vk_p
     getError() catch |err| return switch (err) {
         Error.APIUnavailable,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ APIUnavailable, PlatformError }, err),
         else => unreachable,
     };
     return v == c.GLFW_TRUE;

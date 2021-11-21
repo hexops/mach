@@ -58,7 +58,7 @@ pub inline fn setTime(time: f64) error{ InvalidValue }!void {
     c.glfwSetTime(time);
     getError() catch |err| return switch (err) {
         // TODO: Consider whether to use GLFW error handling, or assert that 'time' is a valid value
-        Error.InvalidValue => err,
+        Error.InvalidValue => @errSetCast(error{ InvalidValue }, err),
         else => unreachable,
     };
 }

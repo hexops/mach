@@ -68,8 +68,7 @@ pub inline fn init(hints: InitHints) error{ PlatformError }!void {
         initHint(init_hint, init_value) catch |err| switch (err) {
             // TODO: Consider this; should not be reachable, given that all of the hint tags and hint values
             // are coming in from a strict set of predefined values in 'InitHints' and 'InitHint'
-            Error.InvalidValue,
-            Error.InvalidEnum,
+            error.InvalidValue,
             => unreachable, 
             else => unreachable,
         };
@@ -77,7 +76,7 @@ pub inline fn init(hints: InitHints) error{ PlatformError }!void {
     
     _ = c.glfwInit();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
 }
@@ -182,7 +181,7 @@ fn initHint(hint: InitHint, value: anytype) error{ InvalidValue }!void {
     }
     getError() catch |err| return switch (err) {
         Error.InvalidEnum => unreachable, // impossible for any valid 'InitHint' value
-        Error.InvalidValue => err,
+        Error.InvalidValue => @errSetCast(error{ InvalidValue }, err),
         else => unreachable,
     };
 }
@@ -238,7 +237,7 @@ pub inline fn pollEvents() error{ PlatformError }!void {
     internal_debug.assertInitialized();
     c.glfwPollEvents();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
 }
@@ -277,7 +276,7 @@ pub inline fn waitEvents() error{ PlatformError }!void {
     internal_debug.assertInitialized();
     c.glfwWaitEvents();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
 }
@@ -324,7 +323,7 @@ pub inline fn waitEventsTimeout(timeout: f64) error{ InvalidValue, PlatformError
         // and make its branch unreachable.
         Error.InvalidValue, 
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ InvalidValue, PlatformError }, err),
         else => unreachable,
     };
 }
@@ -343,7 +342,7 @@ pub inline fn postEmptyEvent() error{ PlatformError }!void {
     internal_debug.assertInitialized();
     c.glfwPostEmptyEvent();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
 }

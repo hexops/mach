@@ -65,7 +65,7 @@ pub inline fn create(image: Image, xhot: isize, yhot: isize) error{ PlatformErro
     const img = image.toC();
     const cursor = c.glfwCreateCursor(&img, @intCast(c_int, xhot), @intCast(c_int, yhot));
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
     return Cursor{ .ptr = cursor.? };
@@ -86,7 +86,7 @@ pub inline fn createStandard(shape: Shape) error{ InvalidEnum, PlatformError }!C
     getError() catch |err| return switch (err) {
         // TODO: should be impossible given that only the values in 'Shape' are available, unless the user explicitly gives us a bad value via casting
         Error.InvalidEnum => unreachable, 
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
     return Cursor{ .ptr = cursor.? };

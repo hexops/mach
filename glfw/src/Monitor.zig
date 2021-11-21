@@ -38,7 +38,7 @@ pub inline fn getPos(self: Monitor) error{ PlatformError }!Pos {
     var ypos: c_int = 0;
     c.glfwGetMonitorPos(self.handle, &xpos, &ypos);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
     return Pos{ .x = @intCast(usize, xpos), .y = @intCast(usize, ypos) };
@@ -72,7 +72,7 @@ pub inline fn getWorkarea(self: Monitor) error{ PlatformError }!Workarea {
     var height: c_int = 0;
     c.glfwGetMonitorWorkarea(self.handle, &xpos, &ypos, &width, &height);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
     return Workarea{ .x = @intCast(usize, xpos), .y = @intCast(usize, ypos), .width = @intCast(usize, width), .height = @intCast(usize, height) };
@@ -137,7 +137,7 @@ pub inline fn getContentScale(self: Monitor) error{ PlatformError }!ContentScale
     var y_scale: f32 = 0;
     c.glfwGetMonitorContentScale(self.handle, &x_scale, &y_scale);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
     return ContentScale{ .x_scale = @floatCast(f32, x_scale), .y_scale = @floatCast(f32, y_scale) };
@@ -224,7 +224,7 @@ pub inline fn getVideoModes(self: Monitor, allocator: *mem.Allocator) (mem.Alloc
     var count: c_int = 0;
     const modes = c.glfwGetVideoModes(self.handle, &count);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
 
@@ -251,7 +251,7 @@ pub inline fn getVideoMode(self: Monitor) error{ PlatformError }!VideoMode {
     internal_debug.assertInitialized();
     const mode = c.glfwGetVideoMode(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
     return VideoMode{ .handle = mode.?.* };
@@ -283,7 +283,7 @@ pub inline fn setGamma(self: Monitor, gamma: f32) error{ InvalidValue, PlatformE
         // TODO: Consider whether to assert that 'gamma' is a valid value instead of leaving it to GLFW's error handling.
         Error.InvalidValue,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ InvalidValue, PlatformError }, err),
         else => unreachable,
     };
 }
@@ -307,7 +307,7 @@ pub inline fn getGammaRamp(self: Monitor) error{ PlatformError }!GammaRamp {
     internal_debug.assertInitialized();
     const ramp = c.glfwGetGammaRamp(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
     return GammaRamp.fromC(ramp.*);
@@ -342,7 +342,7 @@ pub inline fn setGammaRamp(self: Monitor, ramp: GammaRamp) error{ PlatformError 
     internal_debug.assertInitialized();
     c.glfwSetGammaRamp(self.handle, &ramp.toC());
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
 }
