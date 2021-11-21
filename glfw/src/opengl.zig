@@ -5,6 +5,8 @@ const Window = @import("Window.zig");
 const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 
+const internal_debug = @import("internal_debug.zig");
+
 /// Makes the context of the specified window current for the calling thread.
 ///
 /// This function makes the OpenGL or OpenGL ES context of the specified window current on the
@@ -29,8 +31,15 @@ const getError = @import("errors.zig").getError;
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_current, glfwGetCurrentContext
-pub inline fn makeContextCurrent(window: ?Window) Error!void {
+pub inline fn makeContextCurrent(window: ?Window) error{ NoWindowContext, PlatformError }!void {
+    internal_debug.assertInitialized();
     if (window) |w| c.glfwMakeContextCurrent(w.handle) else c.glfwMakeContextCurrent(null);
+    getError() catch |err| return switch (err) {
+        Error.NoWindowContext,
+        Error.PlatformError,
+        => err,
+        else => unreachable,
+    };
 }
 
 /// Returns the window whose context is current on the calling thread.
@@ -45,9 +54,11 @@ pub inline fn makeContextCurrent(window: ?Window) Error!void {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_current, glfwMakeContextCurrent
-pub inline fn getCurrentContext() Error!?Window {
+// TODO: Remove error stub
+pub inline fn getCurrentContext() error{}!?Window {
+    internal_debug.assertInitialized();
     const handle = c.glfwGetCurrentContext();
-    try getError();
+    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
     if (handle) |h| return try Window.from(h);
     return null;
 }
@@ -85,9 +96,15 @@ pub inline fn getCurrentContext() Error!?Window {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: buffer_swap, glfwSwapBuffers
-pub inline fn swapInterval(interval: isize) Error!void {
+pub inline fn swapInterval(interval: isize) error{ NoCurrentContext, PlatformError }!void {
+    internal_debug.assertInitialized();
     c.glfwSwapInterval(@intCast(c_int, interval));
-    try getError();
+    getError() catch |err| return switch (err) {
+        Error.NoCurrentContext,
+        Error.PlatformError,
+        => err,
+        else => unreachable,
+    };
 }
 
 /// Returns whether the specified extension is available.
@@ -115,9 +132,15 @@ pub inline fn swapInterval(interval: isize) Error!void {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_glext, glfw.getProcAddress
-pub inline fn extensionSupported(extension: [*:0]const u8) Error!bool {
+pub inline fn extensionSupported(extension: [*:0]const u8) error{ NoCurrentContext, InvalidValue }!bool {
+    internal_debug.assertInitialized();
     const supported = c.glfwExtensionSupported(extension);
-    try getError();
+    getError() catch |err| return switch (err) {
+        Error.NoCurrentContext,
+        Error.InvalidValue,
+        => err,
+        else => unreachable,
+    };
     return supported == c.GLFW_TRUE;
 }
 
@@ -134,10 +157,10 @@ pub const GLProc = fn () callconv(.C) void;
 /// function (see context_glext), if it is supported by the current context.
 ///
 /// A context must be current on the calling thread. Calling this function without a current
-// context will cause Error.NoCurrentContext.
+/// context will cause Error.NoCurrentContext.
 ///
 /// This function does not apply to Vulkan. If you are rendering with Vulkan, see glfw.getInstanceProcAddress,
-// `vkGetInstanceProcAddr` and `vkGetDeviceProcAddr` instead.
+/// `vkGetInstanceProcAddr` and `vkGetDeviceProcAddr` instead.
 ///
 /// @param[in] procname The ASCII encoded name of the function.
 /// @return The address of the function, or null if an error occurred.
@@ -160,6 +183,7 @@ pub const GLProc = fn () callconv(.C) void;
 ///
 /// see also: context_glext, glfwExtensionSupported
 pub inline fn getProcAddress(proc_name: [*:0]const u8) ?GLProc {
+    // TODO: Do we call 'internal_debug.assertInitialized()' here?
     const proc_address = c.glfwGetProcAddress(proc_name);
     getError() catch |err| @panic(@errorName(err));
     if (proc_address) |addr| return addr;
