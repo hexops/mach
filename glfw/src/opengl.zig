@@ -37,7 +37,7 @@ pub inline fn makeContextCurrent(window: ?Window) error{ NoWindowContext, Platfo
     getError() catch |err| return switch (err) {
         Error.NoWindowContext,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ NoWindowContext, PlatformError }, err),
         else => unreachable,
     };
 }
@@ -54,8 +54,7 @@ pub inline fn makeContextCurrent(window: ?Window) error{ NoWindowContext, Platfo
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_current, glfwMakeContextCurrent
-// TODO: Remove error stub
-pub inline fn getCurrentContext() error{}!?Window {
+pub inline fn getCurrentContext() std.mem.Allocator.Error!?Window {
     internal_debug.assertInitialized();
     const handle = c.glfwGetCurrentContext();
     getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
@@ -102,7 +101,7 @@ pub inline fn swapInterval(interval: isize) error{ NoCurrentContext, PlatformErr
     getError() catch |err| return switch (err) {
         Error.NoCurrentContext,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ NoCurrentContext, PlatformError }, err),
         else => unreachable,
     };
 }
@@ -138,7 +137,7 @@ pub inline fn extensionSupported(extension: [*:0]const u8) error{ NoCurrentConte
     getError() catch |err| return switch (err) {
         Error.NoCurrentContext,
         Error.InvalidValue,
-        => err,
+        => @errSetCast(error{ NoCurrentContext, InvalidValue }, err),
         else => unreachable,
     };
     return supported == c.GLFW_TRUE;

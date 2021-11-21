@@ -23,7 +23,7 @@ pub inline fn setClipboardString(value: [*:0]const u8) error{ PlatformError }!vo
     internal_debug.assertInitialized();
     c.glfwSetClipboardString(null, value);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
 }
@@ -49,7 +49,7 @@ pub inline fn getClipboardString() error{ PlatformError }![:0]const u8 {
     internal_debug.assertInitialized();
     const value = c.glfwGetClipboardString(null);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{ PlatformError }, err),
         else => unreachable,
     };
     return std.mem.span(value);

@@ -92,7 +92,7 @@ pub inline fn present(self: Joystick) error{ InvalidEnum, PlatformError }!bool {
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ InvalidEnum, PlatformError }, err),
         else => unreachable,
     };
     return is_present == c.GLFW_TRUE;
@@ -125,7 +125,7 @@ pub inline fn getAxes(self: Joystick) error{ InvalidEnum, PlatformError }!?[]con
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ InvalidEnum, PlatformError }, err),
         else => unreachable,
     };
     if (axes == null) return null;
@@ -163,7 +163,7 @@ pub inline fn getButtons(self: Joystick) error{ InvalidEnum, PlatformError }!?[]
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ InvalidEnum, PlatformError }, err),
         else => unreachable,
     };
     if (buttons == null) return null;
@@ -217,7 +217,7 @@ pub inline fn getHats(self: Joystick) error{ InvalidEnum, PlatformError }!?[]con
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ InvalidEnum, PlatformError }, err),
         else => unreachable,
     };
     if (hats == null) return null;
@@ -250,7 +250,7 @@ pub inline fn getName(self: Joystick) error{ InvalidEnum, PlatformError }!?[:0]c
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ InvalidEnum, PlatformError }, err),
         else => unreachable,
     };
     return if (name_opt) |name|
@@ -292,7 +292,7 @@ pub inline fn getGUID(self: Joystick) error{ InvalidEnum, PlatformError }!?[:0]c
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ InvalidEnum, PlatformError }, err),
         else => unreachable,
     };
     return if (guid_opt) |guid|
@@ -408,7 +408,7 @@ pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) error{ Inva
     internal_debug.assertInitialized();
     _ = c.glfwUpdateGamepadMappings(gamepad_mappings);
     getError() catch |err| return switch (err) {
-        Error.InvalidValue => err,
+        Error.InvalidValue => @errSetCast(error{ InvalidValue }, err),
         else => unreachable,
     };
 }
@@ -466,7 +466,7 @@ pub inline fn getGamepadName(self: Joystick) error{ InvalidEnum }!?[:0]const u8 
     internal_debug.assertInitialized();
     const name_opt = c.glfwGetGamepadName(self.jid);
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => err,
+        Error.InvalidEnum => @errSetCast(error{ InvalidEnum }, err),
         else => unreachable,
     };
     return if (name_opt) |name|
@@ -504,7 +504,7 @@ pub inline fn getGamepadState(self: Joystick) error{ InvalidEnum }!?GamepadState
     var state: GamepadState = undefined;
     const success = c.glfwGetGamepadState(self.jid, @ptrCast(*c.GLFWgamepadstate, &state));
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => err,
+        Error.InvalidEnum => @errSetCast(error{ InvalidEnum }, err),
         else => unreachable,
     };
     return if (success == c.GLFW_TRUE) state else null;
