@@ -8,6 +8,7 @@
 
 Not everything stated in this README is yet achieved. We're working on it! Of particular note, we are missing:
 
+* You'll need a version of Zig which includes ObjC++ support: https://github.com/ziglang/zig/pull/10096
 * Cross compilation support
 * Windows support
 * Linux support
