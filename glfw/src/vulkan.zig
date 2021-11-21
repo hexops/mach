@@ -5,6 +5,8 @@ const Error = @import("errors.zig").Error;
 const getError = @import("errors.zig").getError;
 const Window = @import("Window.zig");
 
+const internal_debug = @import("internal_debug.zig");
+
 /// Returns whether the Vulkan loader and an ICD have been found.
 ///
 /// This function returns whether the Vulkan loader and any minimally functional ICD have been
@@ -22,9 +24,11 @@ const Window = @import("Window.zig");
 /// Possible errors include glfw.Error.NotInitialized.
 ///
 /// @thread_safety This function may be called from any thread.
-pub inline fn vulkanSupported() Error!bool {
+// TODO: Remove error stub
+pub inline fn vulkanSupported() error{}!bool {
+    internal_debug.assertInitialized();
     const supported = c.glfwVulkanSupported();
-    try getError();
+    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
     return supported == c.GLFW_TRUE;
 }
 
@@ -57,10 +61,14 @@ pub inline fn vulkanSupported() Error!bool {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: vulkan_ext, glfwCreateWindowSurface
-pub inline fn getRequiredInstanceExtensions() Error![][*:0]const u8 {
+pub inline fn getRequiredInstanceExtensions() error{ APIUnavailable }![][*:0]const u8 {
+    internal_debug.assertInitialized();
     var count: u32 = 0;
     const extensions = c.glfwGetRequiredInstanceExtensions(&count);
-    try getError();
+    getError() catch |err| return switch (err) {
+        Error.APIUnavailable => err,
+        else => unreachable,
+    };
     return @ptrCast([*][*:0]const u8, extensions)[0..count];
 }
 
@@ -103,6 +111,7 @@ pub const VKProc = fn () callconv(.C) void;
 ///
 /// @thread_safety This function may be called from any thread.
 pub fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*:0]const u8) callconv(.C) ?VKProc {
+    // TODO: Do we call 'internal_debug.assertInitialized()' here?
     const proc_address = c.glfwGetInstanceProcAddress(if (vk_instance) |v| @ptrCast(c.VkInstance, v) else null, proc_name);
     getError() catch |err| @panic(@errorName(err));
     if (proc_address) |addr| return addr;
@@ -134,13 +143,19 @@ pub fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*:0]const u8
 /// Vulkan objects, see the Vulkan specification.
 ///
 /// see also: vulkan_present
-pub inline fn getPhysicalDevicePresentationSupport(vk_instance: *opaque {}, vk_physical_device: *opaque {}, queue_family: u32) Error!bool {
+pub inline fn getPhysicalDevicePresentationSupport(vk_instance: *opaque {}, vk_physical_device: *opaque {}, queue_family: u32) error{ APIUnavailable, PlatformError }!bool {
+    internal_debug.assertInitialized();
     const v = c.glfwGetPhysicalDevicePresentationSupport(
         @ptrCast(c.VkInstance, vk_instance),
         @ptrCast(*c.VkPhysicalDevice, @alignCast(@alignOf(*c.VkPhysicalDevice), vk_physical_device)).*,
         queue_family,
     );
-    try getError();
+    getError() catch |err| return switch (err) {
+        Error.APIUnavailable,
+        Error.PlatformError,
+        => err,
+        else => unreachable,
+    };
     return v == c.GLFW_TRUE;
 }
 
@@ -189,7 +204,8 @@ pub inline fn getPhysicalDevicePresentationSupport(vk_instance: *opaque {}, vk_p
 /// Vulkan objects, see the Vulkan specification.
 ///
 /// see also: vulkan_surface, glfw.getRequiredInstanceExtensions
-pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_allocation_callbacks: anytype, vk_surface_khr: anytype) Error!i32 {
+pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_allocation_callbacks: anytype, vk_surface_khr: anytype) error{ APIUnavailable, PlatformError, InvalidValue }!i32 {
+    internal_debug.assertInitialized();
     // zig-vulkan uses enums to represent opaque pointers:
     // pub const Instance = enum(usize) { null_handle = 0, _ };
     const instance: c.VkInstance = switch (@typeInfo(@TypeOf(vk_instance))) {
@@ -203,7 +219,13 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
         if (vk_allocation_callbacks == null) null else @ptrCast(*c.VkAllocationCallbacks, @alignCast(@alignOf(*c.VkAllocationCallbacks), vk_allocation_callbacks)),
         @ptrCast(*c.VkSurfaceKHR, @alignCast(@alignOf(*c.VkSurfaceKHR), vk_surface_khr)),
     );
-    try getError();
+    getError() catch |err| return switch (err) {
+        Error.APIUnavailable,
+        Error.PlatformError,
+        Error.InvalidValue,
+        => err,
+        else => unreachable,
+    };
     return v;
 }
 
