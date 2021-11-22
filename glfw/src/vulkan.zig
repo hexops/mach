@@ -111,7 +111,7 @@ pub const VKProc = fn () callconv(.C) void;
 ///
 /// @thread_safety This function may be called from any thread.
 pub fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*:0]const u8) callconv(.C) ?VKProc {
-    // TODO: Do we call 'internal_debug.assertInitialized()' here?
+    internal_debug.assertInitialized();
     const proc_address = c.glfwGetInstanceProcAddress(if (vk_instance) |v| @ptrCast(c.VkInstance, v) else null, proc_name);
     getError() catch |err| @panic(@errorName(err));
     if (proc_address) |addr| return addr;
