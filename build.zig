@@ -12,7 +12,7 @@ pub fn build(b: *Builder) void {
     glfw.link(b, lib, .{});
     lib.install();
 
-    var main_tests = b.addTest("src/main.zig");
+    const main_tests = b.addTest("src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     main_tests.addPackagePath("glfw", "glfw/src/main.zig");

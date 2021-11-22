@@ -13,7 +13,7 @@ pub fn build(b: *Builder) void {
     lib.install();
     dawn.link(b, lib, .{});
 
-    var main_tests = b.addTest("src/main.zig");
+    const main_tests = b.addTest("src/main.zig");
     main_tests.setBuildMode(mode);
 
     const test_step = b.step("test", "Run library tests");
