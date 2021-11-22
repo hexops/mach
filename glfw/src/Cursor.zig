@@ -85,7 +85,7 @@ pub inline fn createStandard(shape: Shape) Error!Cursor {
     const cursor = c.glfwCreateStandardCursor(@intCast(c_int, @enumToInt(shape)));
     getError() catch |err| return switch (err) {
         // should be unreachable given that only the values in 'Shape' are available, unless the user explicitly gives us a bad value via casting
-        Error.InvalidEnum => unreachable, 
+        Error.InvalidEnum => unreachable,
         Error.PlatformError => err,
         else => unreachable,
     };
@@ -111,7 +111,7 @@ pub inline fn destroy(self: Cursor) void {
     internal_debug.assertInitialized();
     c.glfwDestroyCursor(self.ptr);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => std.log.debug("{}: was unable to destroy Cursor.\n", .{ err }),
+        Error.PlatformError => std.log.debug("{}: was unable to destroy Cursor.\n", .{err}),
         else => unreachable,
     };
 }

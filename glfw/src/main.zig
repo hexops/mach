@@ -61,7 +61,7 @@ pub inline fn init(hints: InitHints) Error!void {
     internal_debug.toggleInitialized();
     internal_debug.assertInitialized();
     errdefer internal_debug.toggleInitialized();
-    
+
     inline for (comptime std.meta.fieldNames(InitHints)) |field_name| {
         const init_hint = @field(InitHint, field_name);
         const init_value = @field(hints, field_name);
@@ -70,7 +70,7 @@ pub inline fn init(hints: InitHints) Error!void {
             else => unreachable,
         };
     }
-    
+
     _ = c.glfwInit();
     getError() catch |err| return switch (err) {
         Error.PlatformError => err,
@@ -318,7 +318,7 @@ pub inline fn waitEventsTimeout(timeout: f64) Error!void {
     getError() catch |err| return switch (err) {
         // TODO: Consider whether to catch 'GLFW_INVALID_VALUE' from GLFW, or assert that 'timeout' is positive here, in the same manner as GLFW,
         // and make its branch unreachable.
-        Error.InvalidValue, 
+        Error.InvalidValue,
         Error.PlatformError,
         => err,
         else => unreachable,

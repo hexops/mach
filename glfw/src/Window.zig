@@ -416,7 +416,7 @@ pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor:
         if (monitor) |m| m.handle else null,
         if (share) |w| w.handle else null,
     );
-    
+
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.InvalidValue,
@@ -462,7 +462,7 @@ pub inline fn destroy(self: Window) void {
     // Zig, so by returning an error we'd make it harder to destroy the window properly. So we differ
     // from GLFW here: we discard any potential error from this operation.
     getError() catch |err| return switch (err) {
-        Error.PlatformError => std.log.debug("{}: was unable to destroy Window.\n", .{ err }),
+        Error.PlatformError => std.log.debug("{}: was unable to destroy Window.\n", .{err}),
         else => unreachable,
     };
 }
