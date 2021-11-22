@@ -72,8 +72,7 @@ pub const InternalUserPointer = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hints, glfw.Window.hint, glfw.Window.hintString
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-inline fn defaultHints() Error!void {
+inline fn defaultHints() void {
     internal_debug.assertInitialized();
     c.glfwDefaultWindowHints();
     getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
@@ -407,7 +406,7 @@ pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor:
     internal_debug.assertInitialized();
     const ignore_hints_struct = if (comptime @import("builtin").is_test) testing_ignore_window_hints_struct else false;
     if (!ignore_hints_struct) try hints.set();
-    defer if (!ignore_hints_struct) defaultHints() catch unreachable; // this should be unreachable, being that this should be caught in the previous call to `Hints.set`.
+    defer if (!ignore_hints_struct) defaultHints();
 
     const handle = c.glfwCreateWindow(
         @intCast(c_int, width),
@@ -492,8 +491,7 @@ pub inline fn shouldClose(self: Window) bool {
 /// synchronized.
 ///
 /// see also: window_close
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-pub inline fn setShouldClose(self: Window, value: bool) Error!void {
+pub inline fn setShouldClose(self: Window, value: bool) void {
     internal_debug.assertInitialized();
     const boolean = if (value) c.GLFW_TRUE else c.GLFW_FALSE;
     c.glfwSetWindowShouldClose(self.handle, boolean);
@@ -1112,8 +1110,7 @@ pub inline fn swapBuffers(self: Window) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_monitor, glfw.Window.setMonitor
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-pub inline fn getMonitor(self: Window) Error!?Monitor {
+pub inline fn getMonitor(self: Window) ?Monitor {
     internal_debug.assertInitialized();
     const monitor = c.glfwGetWindowMonitor(self.handle);
     getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
@@ -2165,8 +2162,7 @@ fn setDropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c]
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: path_drop
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths: [][*:0]const u8) void) Error!void {
+pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths: [][*:0]const u8) void) void {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
     internal.setDropCallback = callback;
@@ -2240,7 +2236,7 @@ test "defaultHints" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    try defaultHints();
+    defaultHints();
 }
 
 test "hint comptime int" {
@@ -2248,7 +2244,7 @@ test "hint comptime int" {
     defer glfw.terminate();
 
     try hint(.focused, 1);
-    try defaultHints();
+    defaultHints();
 }
 
 test "hint int" {
@@ -2258,7 +2254,7 @@ test "hint int" {
     var focused: i32 = 1;
 
     try hint(.focused, focused);
-    try defaultHints();
+    defaultHints();
 }
 
 test "hint bool" {
@@ -2266,7 +2262,7 @@ test "hint bool" {
     defer glfw.terminate();
 
     try hint(.focused, true);
-    try defaultHints();
+    defaultHints();
 }
 
 test "hint enum(u1)" {
@@ -2279,7 +2275,7 @@ test "hint enum(u1)" {
     };
 
     try hint(.focused, MyEnum.@"true");
-    try defaultHints();
+    defaultHints();
 }
 
 test "hint enum(i32)" {
@@ -2292,7 +2288,7 @@ test "hint enum(i32)" {
     };
 
     try hint(.focused, MyEnum.@"true");
-    try defaultHints();
+    defaultHints();
 }
 
 test "hint array str" {
@@ -2302,7 +2298,7 @@ test "hint array str" {
     const str_arr = [_]u8{ 'm', 'y', 'c', 'l', 'a', 's', 's' };
 
     try hint(.x11_class_name, str_arr);
-    try defaultHints();
+    defaultHints();
 }
 
 test "hint pointer str" {
@@ -2335,7 +2331,7 @@ test "setShouldClose" {
         std.debug.print("note: failed to create window: {}\n", .{err});
         return;
     };
-    try window.setShouldClose(true);
+    window.setShouldClose(true);
     defer window.destroy();
 }
 
@@ -2671,7 +2667,7 @@ test "getMonitor" {
     };
     defer window.destroy();
 
-    _ = window.getMonitor() catch |err| std.debug.print("can't get monitor, not supported by OS maybe? error={}\n", .{err});
+    _ = window.getMonitor();
 }
 
 test "setMonitor" {
@@ -2956,7 +2952,7 @@ test "setDropCallback" {
             _ = _window;
             _ = paths;
         }
-    }).callback) catch |err| std.debug.print("can't set window drop callback, not supported by OS maybe? error={}\n", .{err});
+    }).callback);
 }
 
 test "getInputModeCursor" {

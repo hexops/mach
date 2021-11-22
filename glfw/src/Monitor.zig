@@ -98,8 +98,7 @@ const PhysicalSize = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-pub inline fn getPhysicalSize(self: Monitor) Error!PhysicalSize {
+pub inline fn getPhysicalSize(self: Monitor) PhysicalSize {
     internal_debug.assertInitialized();
     var width_mm: c_int = 0;
     var height_mm: c_int = 0;
@@ -157,8 +156,7 @@ pub inline fn getContentScale(self: Monitor) Error!ContentScale {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-pub inline fn getName(self: Monitor) Error![*:0]const u8 {
+pub inline fn getName(self: Monitor) [*:0]const u8 {
     internal_debug.assertInitialized();
     const name = c.glfwGetMonitorName(self.handle);
     getError() catch unreachable;
@@ -178,8 +176,7 @@ pub inline fn getName(self: Monitor) Error![*:0]const u8 {
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: monitor_userptr, glfw.Monitor.getUserPointer
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) Error!void {
+pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) void {
     internal_debug.assertInitialized();
     c.glfwSetMonitorUserPointer(self.handle, ptr);
     getError() catch unreachable;
@@ -197,8 +194,7 @@ pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) Error!voi
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: monitor_userptr, glfw.Monitor.setUserPointer
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-pub inline fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
+pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
     internal_debug.assertInitialized();
     const ptr = c.glfwGetMonitorUserPointer(self.handle);
     getError() catch unreachable;
@@ -358,7 +354,7 @@ pub inline fn setGammaRamp(self: Monitor, ramp: GammaRamp) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_monitors, monitor_event, glfw.monitor.getPrimary
-pub inline fn getAll(allocator: *mem.Allocator) (mem.Allocator.Error)![]Monitor {
+pub inline fn getAll(allocator: *mem.Allocator) mem.Allocator.Error![]Monitor {
     internal_debug.assertInitialized();
     var count: c_int = 0;
     const monitors = c.glfwGetMonitors(&count);
@@ -382,8 +378,7 @@ pub inline fn getAll(allocator: *mem.Allocator) (mem.Allocator.Error)![]Monitor 
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_monitors, glfw.monitors.getAll
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-pub inline fn getPrimary() Error!?Monitor {
+pub inline fn getPrimary() ?Monitor {
     internal_debug.assertInitialized();
     const handle = c.glfwGetPrimaryMonitor();
     getError() catch unreachable;
@@ -426,8 +421,7 @@ pub const Event = enum(c_int) {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_event
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monitor: Monitor, event: Event, data: *Data) void) Error!void {
+pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monitor: Monitor, event: Event, data: *Data) void) void {
     internal_debug.assertInitialized();
     if (f) |new_callback| {
         callback_fn_ptr = @ptrToInt(new_callback);
@@ -466,7 +460,7 @@ test "getPrimary" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    _ = try getPrimary();
+    _ = getPrimary();
 }
 
 test "getPos" {
@@ -474,7 +468,7 @@ test "getPos" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const monitor = try getPrimary();
+    const monitor = getPrimary();
     if (monitor) |m| {
         _ = try m.getPos();
     }
@@ -485,7 +479,7 @@ test "getWorkarea" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const monitor = try getPrimary();
+    const monitor = getPrimary();
     if (monitor) |m| {
         _ = try m.getWorkarea();
     }
@@ -496,9 +490,9 @@ test "getPhysicalSize" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const monitor = try getPrimary();
+    const monitor = getPrimary();
     if (monitor) |m| {
-        _ = try m.getPhysicalSize();
+        _ = m.getPhysicalSize();
     }
 }
 
@@ -507,7 +501,7 @@ test "getContentScale" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const monitor = try getPrimary();
+    const monitor = getPrimary();
     if (monitor) |m| {
         _ = try m.getContentScale();
     }
@@ -518,9 +512,9 @@ test "getName" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const monitor = try getPrimary();
+    const monitor = getPrimary();
     if (monitor) |m| {
-        _ = try m.getName();
+        _ = m.getName();
     }
 }
 
@@ -529,13 +523,13 @@ test "userPointer" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const monitor = try getPrimary();
+    const monitor = getPrimary();
     if (monitor) |m| {
-        var p = try m.getUserPointer(u32);
+        var p = m.getUserPointer(u32);
         try testing.expect(p == null);
         var x: u32 = 5;
-        try m.setUserPointer(u32, &x);
-        p = try m.getUserPointer(u32);
+        m.setUserPointer(u32, &x);
+        p = m.getUserPointer(u32);
         try testing.expectEqual(p.?.*, 5);
     }
 }
@@ -546,7 +540,7 @@ test "setCallback" {
     defer glfw.terminate();
 
     var custom_data: u32 = 5;
-    try setCallback(u32, &custom_data, &(struct {
+    setCallback(u32, &custom_data, &(struct {
         fn callback(monitor: Monitor, event: Event, data: *u32) void {
             _ = monitor;
             _ = event;
@@ -560,7 +554,7 @@ test "getVideoModes" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const monitor = try getPrimary();
+    const monitor = getPrimary();
     if (monitor) |m| {
         const allocator = testing.allocator;
         const modes = try m.getVideoModes(allocator);
@@ -573,7 +567,7 @@ test "getVideoMode" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const monitor = try getPrimary();
+    const monitor = getPrimary();
     if (monitor) |m| {
         _ = try m.getVideoMode();
     }
@@ -585,7 +579,7 @@ test "set_getGammaRamp" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const monitor = try getPrimary();
+    const monitor = getPrimary();
     if (monitor) |m| {
         const ramp = m.getGammaRamp() catch |err| {
             std.debug.print("can't get window position, wayland maybe? error={}\n", .{err});
