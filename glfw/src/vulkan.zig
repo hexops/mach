@@ -24,8 +24,7 @@ const internal_debug = @import("internal_debug.zig");
 /// Possible errors include glfw.Error.NotInitialized.
 ///
 /// @thread_safety This function may be called from any thread.
-// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
-pub inline fn vulkanSupported() Error!bool {
+pub inline fn vulkanSupported() bool {
     internal_debug.assertInitialized();
     const supported = c.glfwVulkanSupported();
     getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
@@ -234,7 +233,7 @@ test "vulkanSupported" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    _ = try glfw.vulkanSupported();
+    _ = glfw.vulkanSupported();
 }
 
 test "getRequiredInstanceExtensions" {
