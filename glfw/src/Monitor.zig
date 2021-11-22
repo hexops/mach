@@ -98,7 +98,7 @@ const PhysicalSize = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-// TODO: Remove error stub
+// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
 pub inline fn getPhysicalSize(self: Monitor) Error!PhysicalSize {
     internal_debug.assertInitialized();
     var width_mm: c_int = 0;
@@ -157,7 +157,7 @@ pub inline fn getContentScale(self: Monitor) Error!ContentScale {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-// TODO: Remove error stub
+// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
 pub inline fn getName(self: Monitor) Error![*:0]const u8 {
     internal_debug.assertInitialized();
     const name = c.glfwGetMonitorName(self.handle);
@@ -178,7 +178,7 @@ pub inline fn getName(self: Monitor) Error![*:0]const u8 {
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: monitor_userptr, glfw.Monitor.getUserPointer
-// TODO: Remove error stub
+// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
 pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetMonitorUserPointer(self.handle, ptr);
@@ -197,7 +197,7 @@ pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) Error!voi
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: monitor_userptr, glfw.Monitor.setUserPointer
-// TODO: Remove error stub
+// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
 pub inline fn getUserPointer(self: Monitor, comptime T: type) Error!?*T {
     internal_debug.assertInitialized();
     const ptr = c.glfwGetMonitorUserPointer(self.handle);
@@ -382,7 +382,7 @@ pub inline fn getAll(allocator: *mem.Allocator) (mem.Allocator.Error)![]Monitor 
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_monitors, glfw.monitors.getAll
-// TODO: Remove error stub
+// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
 pub inline fn getPrimary() Error!?Monitor {
     internal_debug.assertInitialized();
     const handle = c.glfwGetPrimaryMonitor();
@@ -426,7 +426,7 @@ pub const Event = enum(c_int) {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_event
-// TODO: Remove error stub
+// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
 pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monitor: Monitor, event: Event, data: *Data) void) Error!void {
     internal_debug.assertInitialized();
     if (f) |new_callback| {
