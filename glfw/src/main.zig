@@ -66,10 +66,7 @@ pub inline fn init(hints: InitHints) Error!void {
         const init_hint = @field(InitHint, field_name);
         const init_value = @field(hints, field_name);
         initHint(init_hint, init_value) catch |err| switch (err) {
-            // TODO: Consider this; should not be reachable, given that all of the hint tags and hint values
-            // are coming in from a strict set of predefined values in 'InitHints' and 'InitHint'
-            error.InvalidValue,
-            => unreachable, 
+            Error.InvalidValue => unreachable,
             else => unreachable,
         };
     }

@@ -72,7 +72,7 @@ pub const InternalUserPointer = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hints, glfw.Window.hint, glfw.Window.hintString
-// TODO: Remove error stub
+// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
 inline fn defaultHints() Error!void {
     internal_debug.assertInitialized();
     c.glfwDefaultWindowHints();
@@ -258,7 +258,7 @@ pub const Hints = struct {
         opengl_core_profile = c.GLFW_OPENGL_CORE_PROFILE,
     };
 
-    // TODO: Remove error stub
+    // TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED' and 'GLFW_INVALID_ENUM'
     fn set(hints: Hints) Error!void {
         internal_debug.assertInitialized();
         inline for (comptime std.meta.fieldNames(Hint)) |field_name| {
@@ -416,8 +416,18 @@ pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor:
         if (monitor) |m| m.handle else null,
         if (share) |w| w.handle else null,
     );
-    // TODO: Consider all the possible errors here, and whether they are actually possible
-    try getError();
+    
+    getError() catch |err| return switch (err) {
+        Error.InvalidEnum,
+        Error.InvalidValue,
+        => unreachable, // we restrict the set of values to only those which GLFW deems to be valid, so these should never be reachable.
+        Error.APIUnavailable,
+        Error.VersionUnavailable,
+        Error.FormatUnavailable,
+        Error.PlatformError,
+        => err,
+        else => unreachable,
+    };
 
     return from(handle.?);
 }
@@ -452,7 +462,7 @@ pub inline fn destroy(self: Window) void {
     // Zig, so by returning an error we'd make it harder to destroy the window properly. So we differ
     // from GLFW here: we discard any potential error from this operation.
     getError() catch |err| return switch (err) {
-        Error.PlatformError => {}, // TODO: Consider this error, and whether it can be guaranteed to not occur somehow
+        Error.PlatformError => std.log.debug("{}: was unable to destroy Window.\n", .{ err }),
         else => unreachable,
     };
 }
@@ -482,7 +492,7 @@ pub inline fn shouldClose(self: Window) bool {
 /// synchronized.
 ///
 /// see also: window_close
-// TODO: Remove error stub
+// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
 pub inline fn setShouldClose(self: Window, value: bool) Error!void {
     internal_debug.assertInitialized();
     const boolean = if (value) c.GLFW_TRUE else c.GLFW_FALSE;
@@ -1102,7 +1112,7 @@ pub inline fn swapBuffers(self: Window) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_monitor, glfw.Window.setMonitor
-// TODO: Remove error stub
+// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
 pub inline fn getMonitor(self: Window) Error!?Monitor {
     internal_debug.assertInitialized();
     const monitor = c.glfwGetWindowMonitor(self.handle);
@@ -1254,15 +1264,14 @@ pub inline fn getAttrib(self: Window, attrib: Attrib) Error!isize {
 ///
 /// see also: window_attribs, glfw.Window.getAttrib
 ///
-// TODO: Maybe enhance type-safety here to avoid 'InvalidEnum' and 'InvalidValue' at runtime alltogether?
 pub inline fn setAttrib(self: Window, attrib: Attrib, value: bool) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowAttrib(self.handle, @enumToInt(attrib), if (value) c.GLFW_TRUE else c.GLFW_FALSE);
     getError() catch |err| return switch (err) {
         Error.InvalidEnum,
         Error.InvalidValue,
-        Error.PlatformError,
-        => err,
+        => unreachable,
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -1282,8 +1291,7 @@ pub inline fn getInternal(self: Window) *InternalUserPointer {
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: window_userptr, glfw.Window.getUserPointer
-// TODO: Review this function signature
-pub inline fn setUserPointer(self: Window, Type: anytype, pointer: Type) void {
+pub inline fn setUserPointer(self: Window, comptime T: type, pointer: *T) void {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
     internal.user_pointer = @ptrCast(*c_void, pointer);
@@ -1297,11 +1305,10 @@ pub inline fn setUserPointer(self: Window, Type: anytype, pointer: Type) void {
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: window_userptr, glfw.Window.setUserPointer
-// TODO: Review this function signature
-pub inline fn getUserPointer(self: Window, Type: anytype) ?Type {
+pub inline fn getUserPointer(self: Window, comptime PointerType: type) ?PointerType {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
-    if (internal.user_pointer) |p| return @ptrCast(Type, @alignCast(@alignOf(Type), p));
+    if (internal.user_pointer) |p| return @ptrCast(PointerType, @alignCast(@alignOf(std.meta.Child(PointerType)), p));
     return null;
 }
 
@@ -2158,7 +2165,7 @@ fn setDropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c]
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: path_drop
-// TODO: Remove error stub
+// TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED'
 pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths: [][*:0]const u8) void) Error!void {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
@@ -2727,7 +2734,7 @@ test "setUserPointer" {
     const T = struct { name: []const u8 };
     var my_value = T{ .name = "my window!" };
 
-    window.setUserPointer(*T, &my_value);
+    window.setUserPointer(T, &my_value);
 }
 
 test "getUserPointer" {
@@ -2745,7 +2752,7 @@ test "getUserPointer" {
     const T = struct { name: []const u8 };
     var my_value = T{ .name = "my window!" };
 
-    window.setUserPointer(*T, &my_value);
+    window.setUserPointer(T, &my_value);
     const got = window.getUserPointer(*T);
     std.debug.assert(&my_value == got);
 }

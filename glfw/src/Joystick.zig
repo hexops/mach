@@ -311,8 +311,7 @@ pub inline fn getGUID(self: Joystick) Error!?[:0]const u8 {
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: joystick_userptr, glfw.Joystick.getUserPointer
-// TODO: review this function signature
-pub inline fn setUserPointer(self: Joystick, Type: anytype, pointer: Type) void { 
+pub inline fn setUserPointer(self: Joystick, comptime T: type, pointer: *T) void { 
     internal_debug.assertInitialized();
     c.glfwSetJoystickUserPointer(self.jid, @ptrCast(*c_void, pointer));
     getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
@@ -329,12 +328,11 @@ pub inline fn setUserPointer(self: Joystick, Type: anytype, pointer: Type) void 
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: joystick_userptr, glfw.Joystick.setUserPointer
-// TODO: review this function signature
-pub inline fn getUserPointer(self: Joystick, Type: anytype) ?Type {
+pub inline fn getUserPointer(self: Joystick, comptime PointerType: type) ?PointerType {
     internal_debug.assertInitialized();
     const ptr = c.glfwGetJoystickUserPointer(self.jid);
     getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
-    if (ptr) |p| return @ptrCast(Type, @alignCast(@alignOf(Type), p));
+    if (ptr) |p| return @ptrCast(PointerType, @alignCast(@alignOf(std.meta.Child(PointerType)), p));
     return null;
 }
 
@@ -460,12 +458,13 @@ pub inline fn isGamepad(self: Joystick) bool {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: gamepad, glfw.Joystick.isGamepad
-// TODO: Consider this; GLFW documentation for this function doesn't list any errors,
-// but source code in 'init.c' only appears to return 'GLFW_INVALID_ENUM' and 'GLFW_NOT_INITIALIZED' on error.
 pub inline fn getGamepadName(self: Joystick) Error!?[:0]const u8 {
     internal_debug.assertInitialized();
     const name_opt = c.glfwGetGamepadName(self.jid);
     getError() catch |err| return switch (err) {
+        // TODO: See 'todo' at top of file concerning making 'Joystick' into an enum to make 'InvalidEnum' unreachable
+        // Note: GLFW documentation doesn't list an error for this function, but source does set 'GLFW_NOT_INITIALIZED'
+        // and 'GLFW_INVALID_ENUM'.
         Error.InvalidEnum => err,
         else => unreachable,
     };
