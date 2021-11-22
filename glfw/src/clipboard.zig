@@ -49,7 +49,9 @@ pub inline fn getClipboardString() Error![:0]const u8 {
     internal_debug.assertInitialized();
     const value = c.glfwGetClipboardString(null);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError,
+        Error.FormatUnavailable,
+        => err,
         else => unreachable,
     };
     return std.mem.span(value);
