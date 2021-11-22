@@ -7,7 +7,7 @@ pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
-    var main_tests = b.addTest("src/main.zig");
+    const main_tests = b.addTest("src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     link(b, main_tests, .{});
@@ -48,7 +48,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
 }
 
 fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
-    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/main.zig" }) catch unreachable;
+    const main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/main.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("glfw", main_abs);
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
@@ -78,7 +78,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
                 "upstream/glfw/src/context.c",
                 "upstream/glfw/src/window.c",
             }) |path| {
-                var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
+                const abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
             }
             lib.addCSourceFiles(sources.items, &.{"-D_GLFW_WIN32"});
@@ -105,7 +105,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
                 "upstream/glfw/src/context.c",
                 "upstream/glfw/src/window.c",
             }) |path| {
-                var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
+                const abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
             }
             lib.addCSourceFiles(sources.items, &.{"-D_GLFW_COCOA"});
@@ -141,7 +141,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
                 "upstream/glfw/src/context.c",
                 "upstream/glfw/src/window.c",
             }) |path| {
-                var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
+                const abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                 general_sources.append(abs_path) catch unreachable;
             }
             lib.addCSourceFiles(general_sources.items, &.{flag});
@@ -156,7 +156,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
                         "upstream/glfw/src/xkb_unicode.c",
                         "upstream/glfw/src/glx_context.c",
                     }) |path| {
-                        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
+                        const abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                         x11_sources.append(abs_path) catch unreachable;
                     }
                     lib.addCSourceFiles(x11_sources.items, &.{flag});
@@ -168,7 +168,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
                         "upstream/glfw/src/wl_window.c",
                         "upstream/glfw/src/wl_init.c",
                     }) |path| {
-                        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
+                        const abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
                         wayland_sources.append(abs_path) catch unreachable;
                     }
                     lib.addCSourceFiles(wayland_sources.items, &.{flag});
@@ -186,11 +186,11 @@ fn thisDir() []const u8 {
 }
 
 fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    var include_dir = std.fs.path.join(b.allocator, &.{ thisDir(), "upstream/glfw/include" }) catch unreachable;
+    const include_dir = std.fs.path.join(b.allocator, &.{ thisDir(), "upstream/glfw/include" }) catch unreachable;
     defer b.allocator.free(include_dir);
     step.addIncludeDir(include_dir);
 
-    var vulkan_include_dir = std.fs.path.join(b.allocator, &.{ thisDir(), "upstream/vulkan_headers/include" }) catch unreachable;
+    const vulkan_include_dir = std.fs.path.join(b.allocator, &.{ thisDir(), "upstream/vulkan_headers/include" }) catch unreachable;
     defer b.allocator.free(vulkan_include_dir);
     step.addIncludeDir(vulkan_include_dir);
 
