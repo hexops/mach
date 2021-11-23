@@ -91,7 +91,6 @@ pub inline fn present(self: Joystick) Error!bool {
     internal_debug.assertInitialized();
     const is_present = c.glfwJoystickPresent(@enumToInt(self.jid));
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // intentionally invalid enum value
         Error.PlatformError => err,
         else => unreachable,
     };
@@ -123,7 +122,6 @@ pub inline fn getAxes(self: Joystick) Error!?[]const f32 {
     var count: c_int = undefined;
     const axes = c.glfwGetJoystickAxes(@enumToInt(self.jid), &count);
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // intentionally invalid enum value
         Error.PlatformError => err,
         else => unreachable,
     };
@@ -160,7 +158,6 @@ pub inline fn getButtons(self: Joystick) Error!?[]const u8 {
     var count: c_int = undefined;
     const buttons = c.glfwGetJoystickButtons(@enumToInt(self.jid), &count);
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // intentionally invalid enum value
         Error.PlatformError => err,
         else => unreachable,
     };
@@ -213,7 +210,6 @@ pub inline fn getHats(self: Joystick) Error!?[]const Hat {
     var count: c_int = undefined;
     const hats = c.glfwGetJoystickHats(@enumToInt(self.jid), &count);
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // intentionally invalid enum value
         Error.PlatformError => err,
         else => unreachable,
     };
@@ -245,7 +241,6 @@ pub inline fn getName(self: Joystick) Error!?[:0]const u8 {
     internal_debug.assertInitialized();
     const name_opt = c.glfwGetJoystickName(@enumToInt(self.jid));
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // intentionally invalid enum value
         Error.PlatformError => err,
         else => unreachable,
     };
@@ -286,7 +281,6 @@ pub inline fn getGUID(self: Joystick) Error!?[:0]const u8 {
     internal_debug.assertInitialized();
     const guid_opt = c.glfwGetJoystickGUID(@enumToInt(self.jid));
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // intentionally invalid enum value
         Error.PlatformError => err,
         else => unreachable,
     };
@@ -401,7 +395,7 @@ pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) Error!void 
     internal_debug.assertInitialized();
     _ = c.glfwUpdateGamepadMappings(gamepad_mappings);
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // intentionally invalid enum value
+        Error.InvalidValue => err, // TODO: Evaluate if this is preventable, or if this is like a parsing error which should definitely be returned
         else => unreachable,
     };
 }
@@ -424,10 +418,7 @@ pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) Error!void 
 pub inline fn isGamepad(self: Joystick) bool {
     internal_debug.assertInitialized();
     const is_gamepad = c.glfwJoystickIsGamepad(@enumToInt(self.jid));
-    getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // intentionally invalid enum value
-        else => unreachable,
-    };
+    getError() catch unreachable;
     return is_gamepad == c.GLFW_TRUE;
 }
 
@@ -454,7 +445,6 @@ pub inline fn getGamepadName(self: Joystick) Error!?[:0]const u8 {
     internal_debug.assertInitialized();
     const name_opt = c.glfwGetGamepadName(@enumToInt(self.jid));
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // intentionally invalid enum value
         else => unreachable,
     };
     return if (name_opt) |name|
@@ -487,14 +477,11 @@ pub inline fn getGamepadName(self: Joystick) Error!?[:0]const u8 {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: gamepad, glfw.UpdateGamepadMappings, glfw.Joystick.isGamepad
-pub inline fn getGamepadState(self: Joystick) Error!?GamepadState {
+pub inline fn getGamepadState(self: Joystick) ?GamepadState {
     internal_debug.assertInitialized();
     var state: GamepadState = undefined;
     const success = c.glfwGetGamepadState(@enumToInt(self.jid), @ptrCast(*c.GLFWgamepadstate, &state));
-    getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // intentionally invalid enum value
-        else => unreachable,
-    };
+    getError() catch unreachable;
     return if (success == c.GLFW_TRUE) state else null;
 }
 
@@ -626,7 +613,7 @@ test "getGamepadState" {
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
-    _ = joystick.getGamepadState() catch |err| std.debug.print("failed to get gamepad state, joysticks not supported? error={}\n", .{err});
+    _ = joystick.getGamepadState();
     _ = (std.mem.zeroes(GamepadState)).getAxis(.left_x);
     _ = (std.mem.zeroes(GamepadState)).getButton(.dpad_up);
 }

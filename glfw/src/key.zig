@@ -243,7 +243,6 @@ pub const Key = enum(c_int) {
         internal_debug.assertInitialized();
         const scancode = cc.glfwGetKeyScancode(@enumToInt(self));
         getError() catch |err| return switch (err) {
-            Error.InvalidEnum => unreachable, // Should be unreachable for any valid 'Key' value.
             Error.PlatformError => err,
             else => unreachable,
         };

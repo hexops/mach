@@ -177,7 +177,6 @@ fn initHint(hint: InitHint, value: anytype) Error!void {
         else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
     }
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable, // impossible for any valid 'InitHint' value
         Error.InvalidValue => err,
         else => unreachable,
     };
