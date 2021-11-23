@@ -2191,6 +2191,7 @@ pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths
 ///
 /// see also: window_hints, glfw.Window.defaultHints
 inline fn hint(h: Hint, value: anytype) Error!void {
+    internal_debug.assertInitialized();
     const value_type = @TypeOf(value);
     const value_type_info: std.builtin.TypeInfo = @typeInfo(value_type);
 
