@@ -36,7 +36,7 @@ pub inline fn setClipboardString(value: [*:0]const u8) Error!void {
 ///
 /// @return The contents of the clipboard as a UTF-8 encoded string.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.NotInitialized, glfw.Error.FormatUnavailable and glfw.Error.PlatformError.
 ///
 /// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
 /// yourself. It is valid until the next call to glfw.getClipboardString or glfw.setClipboardString
