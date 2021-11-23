@@ -257,8 +257,7 @@ pub const Hints = struct {
         opengl_core_profile = c.GLFW_OPENGL_CORE_PROFILE,
     };
 
-    // TODO: Consider whether to retain error here, despite us guaranteeing the absence of 'GLFW_NOT_INITIALIZED' and 'GLFW_INVALID_ENUM'
-    fn set(hints: Hints) Error!void {
+    fn set(hints: Hints) void {
         internal_debug.assertInitialized();
         inline for (comptime std.meta.fieldNames(Hint)) |field_name| {
             const hint_tag = @enumToInt(@field(Hint, field_name));
@@ -279,10 +278,7 @@ pub const Hints = struct {
                 else => unreachable,
             }
 
-            getError() catch |err| return switch (err) {
-                Error.InvalidEnum => unreachable, // should not be possible, given that only values defined within this struct are possible.
-                else => unreachable,
-            };
+            getError() catch unreachable;
         }
     }
 };
@@ -405,7 +401,7 @@ pub const Hints = struct {
 pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor: ?Monitor, share: ?Window, hints: Hints) Error!Window {
     internal_debug.assertInitialized();
     const ignore_hints_struct = if (comptime @import("builtin").is_test) testing_ignore_window_hints_struct else false;
-    if (!ignore_hints_struct) try hints.set();
+    if (!ignore_hints_struct) hints.set();
     defer if (!ignore_hints_struct) defaultHints();
 
     const handle = c.glfwCreateWindow(
@@ -417,9 +413,7 @@ pub inline fn create(width: usize, height: usize, title: [*:0]const u8, monitor:
     );
 
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum,
-        Error.InvalidValue,
-        => unreachable, // we restrict the set of values to only those which GLFW deems to be valid, so these should never be reachable.
+        Error.InvalidValue => unreachable,
         Error.APIUnavailable,
         Error.VersionUnavailable,
         Error.FormatUnavailable,
@@ -1229,9 +1223,7 @@ pub inline fn getAttrib(self: Window, attrib: Attrib) Error!isize {
     internal_debug.assertInitialized();
     const v = c.glfwGetWindowAttrib(self.handle, @enumToInt(attrib));
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum,
-        Error.PlatformError,
-        => err,
+        Error.PlatformError => err,
         else => unreachable,
     };
     return v;
@@ -1265,9 +1257,7 @@ pub inline fn setAttrib(self: Window, attrib: Attrib, value: bool) Error!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowAttrib(self.handle, @enumToInt(attrib), if (value) c.GLFW_TRUE else c.GLFW_FALSE);
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum,
-        Error.InvalidValue,
-        => unreachable,
+        Error.InvalidValue => unreachable,
         Error.PlatformError => err,
         else => unreachable,
     };
@@ -1716,8 +1706,8 @@ pub inline fn getInputMode(self: Window, mode: InputMode) isize {
     internal_debug.assertInitialized();
     const value = c.glfwGetInputMode(self.handle, @enumToInt(mode));
 
-    // Possible errors include glfw.Error.InvalidEnum.
-    getError() catch @panic("unexpected error getting input mode, invalid enum");
+    // Possible errors: 'GLFW_NOT_INITIALIZED' and 'GLFW_INVALID_ENUM'; we guarantee both to be unreachable
+    getError() catch unreachable; 
 
     return @intCast(isize, value);
 }
@@ -1741,6 +1731,7 @@ pub inline fn getInputMode(self: Window, mode: InputMode) isize {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: glfw.Window.getInputMode
+// TODO: Review this function and consider how to make it impossible for GLFW to set 'GLFW_INVALID_ENUM'
 pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) Error!void {
     internal_debug.assertInitialized();
     switch (@typeInfo(@TypeOf(value))) {
@@ -1750,9 +1741,8 @@ pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) Error!
         else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
     }
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum,
-        Error.PlatformError,
-        => err,
+        Error.InvalidEnum => err, // TODO: See above 'todo'
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
@@ -1783,13 +1773,10 @@ pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) Error!
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_key
-pub inline fn getKey(self: Window, key: Key) Error!Action {
+pub inline fn getKey(self: Window, key: Key) Action {
     internal_debug.assertInitialized();
     const state = c.glfwGetKey(self.handle, @enumToInt(key));
-    getError() catch |err| return switch (err) {
-        Error.InvalidEnum => err,
-        else => unreachable,
-    };
+    getError() catch unreachable;
     return @intToEnum(Action, state);
 }
 
@@ -1809,13 +1796,10 @@ pub inline fn getKey(self: Window, key: Key) Error!Action {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_mouse_button
-pub inline fn getMouseButton(self: Window, button: MouseButton) Error!Action {
+pub inline fn getMouseButton(self: Window, button: MouseButton) Action {
     internal_debug.assertInitialized();
     const state = c.glfwGetMouseButton(self.handle, @enumToInt(button));
-    getError() catch |err| return switch (err) {
-        Error.InvalidEnum => err,
-        else => unreachable,
-    };
+    getError() catch unreachable;
     return @intToEnum(Action, state);
 }
 
@@ -2190,7 +2174,7 @@ pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hints, glfw.Window.defaultHints
-inline fn hint(h: Hint, value: anytype) Error!void {
+inline fn hint(h: Hint, value: anytype) void {
     internal_debug.assertInitialized();
     const value_type = @TypeOf(value);
     const value_type_info: std.builtin.TypeInfo = @typeInfo(value_type);
@@ -2230,7 +2214,7 @@ inline fn hint(h: Hint, value: anytype) Error!void {
             @compileError("expected a int, bool, enum, array, or pointer, got " ++ @typeName(value_type));
         },
     }
-    try getError();
+    getError() catch unreachable;
 }
 
 test "defaultHints" {
@@ -2244,7 +2228,7 @@ test "hint comptime int" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    try hint(.focused, 1);
+    hint(.focused, 1);
     defaultHints();
 }
 
@@ -2254,7 +2238,7 @@ test "hint int" {
 
     var focused: i32 = 1;
 
-    try hint(.focused, focused);
+    hint(.focused, focused);
     defaultHints();
 }
 
@@ -2262,7 +2246,7 @@ test "hint bool" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    try hint(.focused, true);
+    hint(.focused, true);
     defaultHints();
 }
 
@@ -2275,7 +2259,7 @@ test "hint enum(u1)" {
         @"false" = 0,
     };
 
-    try hint(.focused, MyEnum.@"true");
+    hint(.focused, MyEnum.@"true");
     defaultHints();
 }
 
@@ -2288,7 +2272,7 @@ test "hint enum(i32)" {
         @"false" = 0,
     };
 
-    try hint(.focused, MyEnum.@"true");
+    hint(.focused, MyEnum.@"true");
     defaultHints();
 }
 
@@ -2298,7 +2282,7 @@ test "hint array str" {
 
     const str_arr = [_]u8{ 'm', 'y', 'c', 'l', 'a', 's', 's' };
 
-    try hint(.x11_class_name, str_arr);
+    hint(.x11_class_name, str_arr);
     defaultHints();
 }
 
@@ -2306,7 +2290,7 @@ test "hint pointer str" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    try hint(.x11_class_name, "myclass");
+    hint(.x11_class_name, "myclass");
 }
 
 test "createWindow" {
@@ -3152,7 +3136,7 @@ test "getKey" {
     };
     defer window.destroy();
 
-    _ = try window.getKey(glfw.Key.escape);
+    _ = window.getKey(glfw.Key.escape);
 }
 
 test "getMouseButton" {
@@ -3167,7 +3151,7 @@ test "getMouseButton" {
     };
     defer window.destroy();
 
-    _ = try window.getMouseButton(.left);
+    _ = window.getMouseButton(.left);
 }
 
 test "getCursorPos" {

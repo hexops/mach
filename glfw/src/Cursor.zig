@@ -84,8 +84,6 @@ pub inline fn createStandard(shape: Shape) Error!Cursor {
     internal_debug.assertInitialized();
     const cursor = c.glfwCreateStandardCursor(@intCast(c_int, @enumToInt(shape)));
     getError() catch |err| return switch (err) {
-        // should be unreachable given that only the values in 'Shape' are available, unless the user explicitly gives us a bad value via casting
-        Error.InvalidEnum => unreachable,
         Error.PlatformError => err,
         else => unreachable,
     };
