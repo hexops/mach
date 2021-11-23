@@ -568,7 +568,7 @@ pub const Pos = struct {
 /// Retrieves the position of the content area of the specified window.
 ///
 /// This function retrieves the position, in screen coordinates, of the upper-left corner of the
-// content area of the specified window.
+/// content area of the specified window.
 ///
 /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
 ///
