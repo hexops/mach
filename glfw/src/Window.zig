@@ -1707,7 +1707,7 @@ pub inline fn getInputMode(self: Window, mode: InputMode) isize {
     const value = c.glfwGetInputMode(self.handle, @enumToInt(mode));
 
     // Possible errors: 'GLFW_NOT_INITIALIZED' and 'GLFW_INVALID_ENUM'; we guarantee both to be unreachable
-    getError() catch unreachable; 
+    getError() catch unreachable;
 
     return @intCast(isize, value);
 }
