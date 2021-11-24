@@ -11,12 +11,6 @@ pub const Error = error{
     /// glfw.SwapInterval.
     NoCurrentContext,
 
-    /// One of the arguments to the function was an invalid enum value.
-    ///
-    /// One of the arguments to the function was an invalid enum value, for example requesting
-    /// glfw.red_bits with glfw.getWindowAttrib.
-    InvalidEnum,
-
     /// One of the arguments to the function was an invalid value.
     ///
     /// One of the arguments to the function was an invalid value, for example requesting a
@@ -86,7 +80,7 @@ fn convertError(e: c_int) Error!void {
         c.GLFW_NO_ERROR => {},
         c.GLFW_NOT_INITIALIZED => unreachable,
         c.GLFW_NO_CURRENT_CONTEXT => Error.NoCurrentContext,
-        c.GLFW_INVALID_ENUM => Error.InvalidEnum,
+        c.GLFW_INVALID_ENUM => unreachable,
         c.GLFW_INVALID_VALUE => Error.InvalidValue,
         c.GLFW_OUT_OF_MEMORY => Error.OutOfMemory,
         c.GLFW_API_UNAVAILABLE => Error.APIUnavailable,
