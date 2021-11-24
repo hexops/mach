@@ -1731,17 +1731,28 @@ pub inline fn getInputMode(self: Window, mode: InputMode) isize {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: glfw.Window.getInputMode
-// TODO: Review this function and consider how to make it impossible for GLFW to set 'GLFW_INVALID_ENUM'
 pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) Error!void {
     internal_debug.assertInitialized();
-    switch (@typeInfo(@TypeOf(value))) {
-        .Enum => c.glfwSetInputMode(self.handle, @enumToInt(mode), @enumToInt(value)),
-        .Int, .ComptimeInt => c.glfwSetInputMode(self.handle, @enumToInt(mode), @intCast(c_int, value)),
-        .Bool => c.glfwSetInputMode(self.handle, @enumToInt(mode), @intCast(c_int, @boolToInt(value))),
-        else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
-    }
+    const T = @TypeOf(value);
+    std.debug.assert(switch (mode) {
+        .cursor => switch (@typeInfo(T)) {
+            .Enum => T == InputModeCursor,
+            .EnumLiteral => @hasField(InputModeCursor, @tagName(value)),
+            else => false,
+        },
+        .sticky_keys => T == bool,
+        .sticky_mouse_buttons => T == bool,
+        .lock_key_mods => T == bool,
+        .raw_mouse_motion => T == bool,
+    });
+    const int_value: c_int = switch (@typeInfo(T)) {
+        .Enum,
+        .EnumLiteral,
+        => @enumToInt(@as(InputModeCursor, value)),
+        else => @boolToInt(value),
+    };
+    c.glfwSetInputMode(self.handle, @enumToInt(mode), int_value);
     getError() catch |err| return switch (err) {
-        Error.InvalidEnum => err, // TODO: See above 'todo'
         Error.PlatformError => err,
         else => unreachable,
     };
