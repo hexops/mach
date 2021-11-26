@@ -274,12 +274,15 @@ pub inline fn getVideoMode(self: Monitor) Error!VideoMode {
 /// see also: monitor_gamma
 pub inline fn setGamma(self: Monitor, gamma: f32) Error!void {
     internal_debug.assertInitialized();
+
+    std.debug.assert(!std.math.isNan(gamma));
+    std.debug.assert(gamma >= 0);
+    std.debug.assert(gamma <= std.math.f32_max);
+
     c.glfwSetGamma(self.handle, gamma);
     getError() catch |err| return switch (err) {
-        // TODO: Consider whether to assert that 'gamma' is a valid value instead of leaving it to GLFW's error handling.
-        Error.InvalidValue,
-        Error.PlatformError,
-        => err,
+        Error.InvalidValue => unreachable, // we assert that 'gamma' is a valid value, so this should be impossible
+        Error.PlatformError => err,
         else => unreachable,
     };
 }
