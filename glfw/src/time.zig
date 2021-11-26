@@ -53,12 +53,18 @@ pub inline fn getTime() f64 {
 /// base time is not atomic, so it needs to be externally synchronized with calls to glfw.getTime.
 ///
 /// see also: time
-pub inline fn setTime(time: f64) Error!void {
+pub inline fn setTime(time: f64) void {
     internal_debug.assertInitialized();
+
+    std.debug.assert(!std.math.isNan(time));
+    std.debug.assert(time >= 0);
+    // TODO: Look into why GLFW uses this hardcoded float literal as the maximum valid value for 'time'.
+    // Maybe propose upstream to name this constant. 
+    std.debug.assert(time <= 18446744073.0);
+
     c.glfwSetTime(time);
     getError() catch |err| return switch (err) {
-        // TODO: Consider whether to use GLFW error handling, or assert that 'time' is a valid value
-        Error.InvalidValue => err,
+        Error.InvalidValue => unreachable, // we assert that 'time' is a valid value, so this should be impossible
         else => unreachable,
     };
 }
@@ -109,7 +115,7 @@ test "setTime" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    _ = try glfw.setTime(1234);
+    _ = glfw.setTime(1234);
 }
 
 test "getTimerValue" {

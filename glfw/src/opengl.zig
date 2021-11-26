@@ -131,13 +131,16 @@ pub inline fn swapInterval(interval: isize) Error!void {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_glext, glfw.getProcAddress
-pub inline fn extensionSupported(extension: [*:0]const u8) Error!bool {
+pub inline fn extensionSupported(extension: [:0]const u8) Error!bool {
     internal_debug.assertInitialized();
+    
+    std.debug.assert(extension.len != 0);
+    std.debug.assert(extension[0] != 0);
+    
     const supported = c.glfwExtensionSupported(extension);
     getError() catch |err| return switch (err) {
-        Error.NoCurrentContext,
-        Error.InvalidValue,
-        => err,
+        Error.NoCurrentContext => err,
+        Error.InvalidValue => unreachable, // we assert that 'extension' is a minimally valid value, so this should be impossible
         else => unreachable,
     };
     return supported == c.GLFW_TRUE;

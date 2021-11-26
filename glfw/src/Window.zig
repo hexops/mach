@@ -695,6 +695,20 @@ pub inline fn setSize(self: Window, size: Size) Error!void {
 /// see also: window_sizelimits, glfw.Window.setAspectRatio
 pub inline fn setSizeLimits(self: Window, min: Size, max: Size) Error!void {
     internal_debug.assertInitialized();
+
+    if (min.width != glfw.dont_care and min.height != glfw.dont_care) {
+        std.debug.assert(min.width >= 0);
+        std.debug.assert(min.height >= 0);
+    }
+
+    if (max.width != glfw.dont_care and max.height != glfw.dont_care) {
+        std.debug.assert(max.width >= 0);
+        std.debug.assert(max.height >= 0);
+    }
+
+    std.debug.assert(min.height <= max.height);
+    std.debug.assert(min.width <= max.width);
+
     c.glfwSetWindowSizeLimits(
         self.handle,
         @intCast(c_int, min.width),
@@ -703,9 +717,8 @@ pub inline fn setSizeLimits(self: Window, min: Size, max: Size) Error!void {
         @intCast(c_int, max.height),
     );
     getError() catch |err| return switch (err) {
-        Error.InvalidValue,
-        Error.PlatformError,
-        => err,
+        Error.PlatformError => err,
+        Error.InvalidValue => unreachable, // we assert that 'min' and 'max' contain valid values, both absolutely and relative to each other, so this should be impossible
         else => unreachable,
     };
 }
@@ -738,11 +751,19 @@ pub inline fn setSizeLimits(self: Window, min: Size, max: Size) Error!void {
 /// see also: window_sizelimits, glfw.Window.setSizeLimits
 pub inline fn setAspectRatio(self: Window, numerator: usize, denominator: usize) Error!void {
     internal_debug.assertInitialized();
+    
+    std.debug.assert(numerator != 0);
+    std.debug.assert(denominator != 0);
+    
+    if (numerator != glfw.dont_care and denominator != glfw.dont_care) {
+        std.debug.assert(numerator > 0);
+        std.debug.assert(denominator > 0);
+    }
+    
     c.glfwSetWindowAspectRatio(self.handle, @intCast(c_int, numerator), @intCast(c_int, denominator));
     getError() catch |err| return switch (err) {
-        Error.InvalidValue,
-        Error.PlatformError,
-        => err,
+        Error.PlatformError => err,
+        Error.InvalidValue => unreachable,
         else => unreachable,
     };
 }
@@ -1255,10 +1276,19 @@ pub inline fn getAttrib(self: Window, attrib: Attrib) Error!isize {
 ///
 pub inline fn setAttrib(self: Window, attrib: Attrib, value: bool) Error!void {
     internal_debug.assertInitialized();
+    std.debug.assert(switch (attrib) {
+        .decorated,
+        .resizable,
+        .floating,
+        .auto_iconify,
+        .focus_on_show,
+        => true,
+        else => false,
+    });
     c.glfwSetWindowAttrib(self.handle, @enumToInt(attrib), if (value) c.GLFW_TRUE else c.GLFW_FALSE);
     getError() catch |err| return switch (err) {
-        Error.InvalidValue => unreachable,
         Error.PlatformError => err,
+        Error.InvalidValue => unreachable,
         else => unreachable,
     };
 }

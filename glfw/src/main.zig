@@ -65,10 +65,7 @@ pub inline fn init(hints: InitHints) Error!void {
     inline for (comptime std.meta.fieldNames(InitHints)) |field_name| {
         const init_hint = @field(InitHint, field_name);
         const init_value = @field(hints, field_name);
-        initHint(init_hint, init_value) catch |err| switch (err) {
-            Error.InvalidValue => unreachable,
-            else => unreachable,
-        };
+        initHint(init_hint, init_value);
     }
 
     _ = c.glfwInit();
@@ -170,14 +167,17 @@ const InitHint = enum(c_int) {
 /// @remarks This function may be called before glfw.init.
 ///
 /// @thread_safety This function must only be called from the main thread.
-fn initHint(hint: InitHint, value: anytype) Error!void {
+fn initHint(hint: InitHint, value: anytype) void {
     switch (@typeInfo(@TypeOf(value))) {
-        .Int, .ComptimeInt => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, value)),
+        .Int, .ComptimeInt => {
+            std.debug.assert(value == c.GLFW_TRUE or value == c.GLFW_FALSE);
+            c.glfwInitHint(@enumToInt(hint), @intCast(c_int, value));
+        },
         .Bool => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, @boolToInt(value))),
         else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
     }
     getError() catch |err| return switch (err) {
-        Error.InvalidValue => err,
+        Error.InvalidValue => unreachable, // we assert that 'value' is valid if it is an integer, so this should be impossible
         else => unreachable,
     };
 }
@@ -313,13 +313,13 @@ pub inline fn waitEvents() Error!void {
 /// see also: events, glfw.pollEvents, glfw.waitEvents
 pub inline fn waitEventsTimeout(timeout: f64) Error!void {
     internal_debug.assertInitialized();
+    std.debug.assert(!std.math.isNan(timeout));
+    std.debug.assert(timeout >= 0);
+    std.debug.assert(timeout <= std.math.f64_max);
     c.glfwWaitEventsTimeout(timeout);
     getError() catch |err| return switch (err) {
-        // TODO: Consider whether to catch 'GLFW_INVALID_VALUE' from GLFW, or assert that 'timeout' is positive here, in the same manner as GLFW,
-        // and make its branch unreachable.
-        Error.InvalidValue,
-        Error.PlatformError,
-        => err,
+        Error.InvalidValue => unreachable, // we assert that 'timeout' is a valid value, so this should be impossible
+        Error.PlatformError => err,
         else => unreachable,
     };
 }

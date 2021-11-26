@@ -395,7 +395,11 @@ pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) Error!void 
     internal_debug.assertInitialized();
     _ = c.glfwUpdateGamepadMappings(gamepad_mappings);
     getError() catch |err| return switch (err) {
-        Error.InvalidValue => err, // TODO: Evaluate if this is preventable, or if this is like a parsing error which should definitely be returned
+        // TODO: Maybe return as 'ParseError' here?
+        // TODO: Look into upstream proposal for GLFW to publicize
+        // their Gamepad mappings parsing functions/interface
+        // for a better error message in debug.
+        Error.InvalidValue => err,
         else => unreachable,
     };
 }
