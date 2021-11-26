@@ -101,21 +101,12 @@ pub const VKProc = fn () callconv(.C) void;
 /// @param[in] procname The ASCII encoded name of the function.
 /// @return The address of the function, or null if an error occurred.
 ///
-/// To maintain ABI compatability with the C glfwGetInstanceProcAddress, as it is commonly passed
-/// into libraries expecting that exact ABI, this function does not return an error. Instead, if
-/// glfw.Error.NotInitialized or glfw.Error.APIUnavailable would occur this function will panic.
 /// You may check glfw.vulkanSupported prior to invoking this function.
 ///
 /// @pointer_lifetime The returned function pointer is valid until the library is terminated.
 ///
 /// @thread_safety This function may be called from any thread.
-pub fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*:0]const u8) callconv(.C) ?VKProc {
-    internal_debug.assertInitialized();
-    const proc_address = c.glfwGetInstanceProcAddress(if (vk_instance) |v| @ptrCast(c.VkInstance, v) else null, proc_name);
-    getError() catch |err| @panic(@errorName(err));
-    if (proc_address) |addr| return addr;
-    return null;
-}
+pub const getInstanceProcAddress = c.glfwGetInstanceProcAddress;
 
 /// Returns whether the specified queue family can present images.
 ///
