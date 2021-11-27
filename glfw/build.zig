@@ -218,17 +218,9 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
             }
             step.linkSystemLibrary("objc");
             step.linkFramework("AppKit");
-
-            // TODO(system_sdk): update MacOS system SDK so we can remove this, see:
-            // https://github.com/hexops/mach/pull/63#issuecomment-962141088
-            switch (@import("builtin").target.os.tag) {
-                .macos => {},
-                else => {
-                    step.linkFramework("CoreServices");
-                    step.linkFramework("CoreGraphics");
-                    step.linkFramework("Foundation");
-                },
-            }
+            step.linkFramework("CoreServices");
+            step.linkFramework("CoreGraphics");
+            step.linkFramework("Foundation");
         },
         else => {
             // Assume Linux-like
