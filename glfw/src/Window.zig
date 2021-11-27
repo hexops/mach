@@ -751,15 +751,15 @@ pub inline fn setSizeLimits(self: Window, min: Size, max: Size) Error!void {
 /// see also: window_sizelimits, glfw.Window.setSizeLimits
 pub inline fn setAspectRatio(self: Window, numerator: usize, denominator: usize) Error!void {
     internal_debug.assertInitialized();
-    
+
     std.debug.assert(numerator != 0);
     std.debug.assert(denominator != 0);
-    
+
     if (numerator != glfw.dont_care and denominator != glfw.dont_care) {
         std.debug.assert(numerator > 0);
         std.debug.assert(denominator > 0);
     }
-    
+
     c.glfwSetWindowAspectRatio(self.handle, @intCast(c_int, numerator), @intCast(c_int, denominator));
     getError() catch |err| return switch (err) {
         Error.PlatformError => err,

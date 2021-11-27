@@ -244,4 +244,3 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         },
     }
 }
-
