@@ -133,10 +133,10 @@ pub inline fn swapInterval(interval: isize) Error!void {
 /// see also: context_glext, glfw.getProcAddress
 pub inline fn extensionSupported(extension: [:0]const u8) Error!bool {
     internal_debug.assertInitialized();
-    
+
     std.debug.assert(extension.len != 0);
     std.debug.assert(extension[0] != 0);
-    
+
     const supported = c.glfwExtensionSupported(extension);
     getError() catch |err| return switch (err) {
         Error.NoCurrentContext => err,

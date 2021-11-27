@@ -5,9 +5,11 @@
 //!
 //! The SDKs used by this script by default are:
 //!
+//! * Windows: none
 //! * Linux: https://github.com/hexops/sdk-linux-x86_64 (~40MB, X11, Wayland, etc. development libraries)
-//! * MacOS: https://github.com/hexops/sdk-macos-12.0 (~112MB, most frameworks you'd find in the XCode SDK)
-//! * Windows: not needed
+//! * MacOS (most frameworks you'd find in the XCode SDK):
+//!     * https://github.com/hexops/sdk-macos-11.3 (~160MB, default)
+//!     * https://github.com/hexops/sdk-macos-12.0 (~112MB, only if you specify a macOS 12 target triple.)
 //!
 //! You may supply your own SDKs via the Options struct if needed, although the Mach versions above
 //! will generally work for most OpenGL/Vulkan applications.
@@ -34,8 +36,11 @@ pub const Options = struct {
     /// The github org to find repositories in.
     github_org: []const u8 = "hexops",
 
-    /// The MacOS SDK repository name.
-    macos_sdk: []const u8 = "sdk-macos-12.0",
+    /// The MacOS 12 SDK repository name.
+    macos_sdk_12: []const u8 = "sdk-macos-12.0",
+
+    /// The MacOS 11 SDK repository name.
+    macos_sdk_11: []const u8 = "sdk-macos-11.3",
 
     /// The Linux x86-64 SDK repository name.
     linux_x86_64_sdk: []const u8 = "sdk-linux-x86_64",
@@ -57,7 +62,10 @@ pub fn include(b: *Builder, step: *std.build.LibExeObjStep, options: Options) vo
 }
 
 fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.macos_sdk) catch unreachable;
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+    const mac_12 = target.os.version_range.semver.isAtLeast(.{ .major = 12, .minor = 0 }) orelse false;
+    const sdk_name = if (mac_12) options.macos_sdk_12 else options.macos_sdk_11;
+    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, sdk_name) catch unreachable;
 
     if (options.set_sysroot) {
         step.addFrameworkDir("/System/Library/Frameworks");
