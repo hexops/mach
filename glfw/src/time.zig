@@ -58,9 +58,11 @@ pub inline fn setTime(time: f64) void {
 
     std.debug.assert(!std.math.isNan(time));
     std.debug.assert(time >= 0);
-    // TODO: Look into why GLFW uses this hardcoded float literal as the maximum valid value for 'time'.
-    // Maybe propose upstream to name this constant. 
-    std.debug.assert(time <= 18446744073.0);
+    // assert time is lteq to largest number of seconds representable by u64 with nanosecond precision
+    std.debug.assert(time <= max_time: {
+        const @"2^64" = std.math.maxInt(u64);
+        break :max_time @divTrunc(@"2^64", std.time.ns_per_s);
+    });
 
     c.glfwSetTime(time);
     getError() catch |err| return switch (err) {
