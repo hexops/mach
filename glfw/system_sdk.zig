@@ -43,7 +43,7 @@ pub const Options = struct {
     macos_sdk_11: []const u8 = "sdk-macos-11.3",
 
     /// The Linux x86-64 SDK repository name.
-    linux_x86_64_sdk: []const u8 = "sdk-linux-x86_64",
+    linux_x86_64: []const u8 = "sdk-linux-x86_64",
 
     /// If true, the Builder.sysroot will set to the SDK path. This has the drawback of preventing
     /// you from including headers, libraries, etc. from outside the SDK generally. However, it can
@@ -88,7 +88,7 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep, options: Options
 }
 
 fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.linux_x86_64_sdk) catch unreachable;
+    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.linux_x86_64) catch unreachable;
     defer b.allocator.free(sdk_root_dir);
 
     if (options.set_sysroot) {
