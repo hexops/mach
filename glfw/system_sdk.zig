@@ -132,7 +132,7 @@ fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8) 
     } else |err| return switch (err) {
         error.FileNotFound => {
             std.log.info("cloning required sdk..\ngit clone https://github.com/{s}/{s} '{s}'..\n", .{ org, name, sdk_root_dir });
-            if (std.mem.eql(u8, name, "sdk-macos-12.0")) {
+            if (std.mem.startsWith(u8, name, "sdk-macos-")) {
                 if (!try confirmAppleSDKAgreement(allocator)) @panic("cannot continue");
             }
             try std.fs.cwd().makePath(sdk_path_dir);
