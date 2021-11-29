@@ -88,11 +88,10 @@ jobs:
         run: cd ${{ matrix.project }} && zig build test
         env:
           AGREE: true
-      # TODO(build-system): https://github.com/hexops/mach/issues/108
-      # - name: x86_64-macos -> aarch64-macos
-      #   run: cd ${{ matrix.project }} && zig build test -Dtarget=aarch64-macos
-      #   env:
-      #     AGREE: true
+      - name: x86_64-macos -> aarch64-macos
+        run: cd ${{ matrix.project }} && zig build test -Dtarget=aarch64-macos
+        env:
+          AGREE: true
       - name: x86_64-macos -> x86_64-windows
         run: cd ${{ matrix.project }} && zig build test -Dtarget=x86_64-windows
       - name: x86_64-macos -> x86_64-linux
