@@ -119,7 +119,9 @@ fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8, 
     // Where `<name>` is the name of the SDK, e.g. `sdk-macos-12.0`.
     var sdk_root_dir: []const u8 = undefined;
     var sdk_path_dir: []const u8 = undefined;
+    var custom_sdk_path = false;
     if (std.process.getEnvVarOwned(allocator, "SDK_PATH")) |sdk_path| {
+        custom_sdk_path = true;
         sdk_path_dir = sdk_path;
         sdk_root_dir = try std.fs.path.join(allocator, &.{ sdk_path, name });
     } else |err| switch (err) {
@@ -133,7 +135,7 @@ fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8, 
     // If the SDK exists, return it. Otherwise, clone it.
     if (std.fs.openDirAbsolute(sdk_root_dir, .{})) {
         exec(allocator, &[_][]const u8{ "git", "fetch" }, sdk_root_dir) catch |err| std.debug.print("warning: failed to check for updates to {s}/{s}: {s}\n", .{ org, name, @errorName(err) });
-        try exec(allocator, &[_][]const u8{ "git", "reset", "--quiet", "--hard", revision }, sdk_root_dir);
+        if (!custom_sdk_path) try exec(allocator, &[_][]const u8{ "git", "reset", "--quiet", "--hard", revision }, sdk_root_dir);
 
         return sdk_root_dir;
     } else |err| return switch (err) {
