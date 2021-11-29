@@ -215,8 +215,8 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
     const v = c.glfwCreateWindowSurface(
         instance,
         window.handle,
-        if (vk_allocation_callbacks == null) null else @ptrCast(*c.VkAllocationCallbacks, @alignCast(@alignOf(*c.VkAllocationCallbacks), vk_allocation_callbacks)),
-        @ptrCast(*c.VkSurfaceKHR, @alignCast(@alignOf(*c.VkSurfaceKHR), vk_surface_khr)),
+        if (vk_allocation_callbacks == null) null else @ptrCast(*const c.VkAllocationCallbacks, @alignCast(@alignOf(c.VkAllocationCallbacks), vk_allocation_callbacks)),
+        @ptrCast(*c.VkSurfaceKHR, @alignCast(@alignOf(c.VkSurfaceKHR), vk_surface_khr)),
     );
     getError() catch |err| return switch (err) {
         Error.InvalidValue => @panic("Attempted to use window with client api to create vulkan surface."),
