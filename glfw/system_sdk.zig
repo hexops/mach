@@ -38,12 +38,15 @@ pub const Options = struct {
 
     /// The MacOS 12 SDK repository name.
     macos_sdk_12: []const u8 = "sdk-macos-12.0",
+    macos_sdk_12_revision: []const u8 = "565bf00e90133109c0af4d19aae0e0ec39bc05cc",
 
     /// The MacOS 11 SDK repository name.
     macos_sdk_11: []const u8 = "sdk-macos-11.3",
+    macos_sdk_11_revision: []const u8 = "6d49d06e1280f0f4a207720cf67df44eed41e4db",
 
     /// The Linux x86-64 SDK repository name.
     linux_x86_64: []const u8 = "sdk-linux-x86_64",
+    linux_x86_64_revision: []const u8 = "36bd27cf4d62becd7848ebc05e434688495617a0",
 
     /// If true, the Builder.sysroot will set to the SDK path. This has the drawback of preventing
     /// you from including headers, libraries, etc. from outside the SDK generally. However, it can
@@ -65,7 +68,8 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep, options: Options
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const mac_12 = target.os.version_range.semver.isAtLeast(.{ .major = 12, .minor = 0 }) orelse false;
     const sdk_name = if (mac_12) options.macos_sdk_12 else options.macos_sdk_11;
-    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, sdk_name) catch unreachable;
+    const sdk_revision = if (mac_12) options.macos_sdk_12_revision else options.macos_sdk_11_revision;
+    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, sdk_name, sdk_revision) catch unreachable;
 
     if (options.set_sysroot) {
         step.addFrameworkDir("/System/Library/Frameworks");
@@ -88,7 +92,7 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep, options: Options
 }
 
 fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.linux_x86_64) catch unreachable;
+    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.linux_x86_64, options.linux_x86_64_revision) catch unreachable;
     defer b.allocator.free(sdk_root_dir);
 
     if (options.set_sysroot) {
@@ -106,7 +110,7 @@ fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     step.addLibPath(sdk_root_libs);
 }
 
-fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8) ![]const u8 {
+fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8, revision: []const u8) ![]const u8 {
     // Find the directory where the SDK should be located. We'll consider two locations:
     //
     // 1. $SDK_PATH/<name> (if set, e.g. for testing changes to SDKs easily)
@@ -128,6 +132,9 @@ fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8) 
 
     // If the SDK exists, return it. Otherwise, clone it.
     if (std.fs.openDirAbsolute(sdk_root_dir, .{})) {
+        exec(allocator, &[_][]const u8{ "git", "fetch" }, sdk_root_dir) catch |err| std.debug.print("warning: failed to check for updates to {s}/{s}: {s}\n", .{ org, name, @errorName(err) });
+        try exec(allocator, &[_][]const u8{ "git", "reset", "--quiet", "--hard", revision }, sdk_root_dir);
+
         return sdk_root_dir;
     } else |err| return switch (err) {
         error.FileNotFound => {
@@ -141,18 +148,21 @@ fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8) 
             var repo_url_fbs = std.io.fixedBufferStream(&buf);
             try std.fmt.format(repo_url_fbs.writer(), "https://github.com/{s}/{s}", .{ org, name });
 
-            const argv = &[_][]const u8{ "git", "clone", repo_url_fbs.getWritten() };
-            const child = try std.ChildProcess.init(argv, allocator);
-            child.cwd = sdk_path_dir;
-            child.stdin = std.io.getStdOut();
-            child.stderr = std.io.getStdErr();
-            child.stdout = std.io.getStdOut();
-            try child.spawn();
-            _ = try child.wait();
+            try exec(allocator, &[_][]const u8{ "git", "clone", repo_url_fbs.getWritten() }, sdk_path_dir);
             return sdk_root_dir;
         },
         else => err,
     };
+}
+
+fn exec(allocator: *std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
+    const child = try std.ChildProcess.init(argv, allocator);
+    child.cwd = cwd;
+    child.stdin = std.io.getStdOut();
+    child.stderr = std.io.getStdErr();
+    child.stdout = std.io.getStdOut();
+    try child.spawn();
+    _ = try child.wait();
 }
 
 fn confirmAppleSDKAgreement(allocator: *std.mem.Allocator) !bool {
