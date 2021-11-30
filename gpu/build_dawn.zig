@@ -12,10 +12,6 @@ pub const Options = struct {
     /// Only respected on Linux.
     linux_window_manager: LinuxWindowManager = .X11,
 
-    /// Only respected on Windows. Whether or not to build a UWP application, linking WindowsApp.lib
-    /// instead of user32.lib.
-    windows_uwp_app: bool = false,
-
     /// Defaults to true on Windows
     d3d12: ?bool = null,
 
@@ -319,20 +315,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     switch (target.os.tag) {
         .windows => {
-            if (options.windows_uwp_app) {
-                if (lib.build_mode == .Debug) {
-                    // DXGIGetDebugInterface1 is defined in dxgi.lib
-                    // But this API is tagged as a development-only capability
-                    // which implies that linking to this function will cause
-                    // the application to fail Windows store certification
-                    // So we only link to it in debug build when compiling for UWP.
-                    // In win32 we load dxgi.dll using LoadLibrary
-                    // so no need for static linking.
-                    lib.linkSystemLibrary("dxgi.lib");
-                }
-                lib.linkSystemLibrary("user32.lib");
-            }
-
             // TODO(build-system): windows
             //   if (dawn_enable_d3d12) {
             //     libs += [ "dxguid.lib" ]
