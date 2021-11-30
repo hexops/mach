@@ -33,7 +33,7 @@ pub const Options = struct {
     /// Detects the default options to use for the given target.
     pub fn detectDefaults(self: Options, target: std.Target) Options {
         const tag = target.os.tag;
-        const linux_desktop_like = !tag.isDarwin() and tag != .windows and tag != .fuchsia and tag != .emscripten and !target.isAndroid();
+        const linux_desktop_like = isLinuxDesktopLike(target);
 
         var options = self;
         if (options.linux_window_manager == null and linux_desktop_like) options.linux_window_manager = .X11;
@@ -80,6 +80,11 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
 
     const lib_tint = buildLibTint(b, step);
     step.linkLibrary(lib_tint);
+}
+
+fn isLinuxDesktopLike(target: std.Target) bool {
+    const tag = target.os.tag;
+    return !tag.isDarwin() and tag != .windows and tag != .fuchsia and tag != .emscripten and !target.isAndroid();
 }
 
 fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
@@ -456,6 +461,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         }
     }
 
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (options.vulkan.?) {
         for ([_][]const u8{
             "src/dawn_native/vulkan/AdapterVk.cpp",
@@ -490,33 +496,35 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             lib.addCSourceFile(abs_path, flags.items);
         }
+
+        if (isLinuxDesktopLike(target)) {
+            for ([_][]const u8{
+                "src/dawn_native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
+                "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
+            }) |path| {
+                var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+                lib.addCSourceFile(abs_path, flags.items);
+            }
+        } else if (target.os.tag == .fuchsia) {
+            for ([_][]const u8{
+                "src/dawn_native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
+                "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
+            }) |path| {
+                var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+                lib.addCSourceFile(abs_path, flags.items);
+            }
+        } else {
+            for ([_][]const u8{
+                "src/dawn_native/vulkan/external_memory/MemoryServiceNull.cpp",
+                "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceNull.cpp",
+            }) |path| {
+                var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+                lib.addCSourceFile(abs_path, flags.items);
+            }
+        }
     }
 
-    // TODO(build-system): linux, fuschia, other
-    //     if (is_chromeos) {
-    //       sources += [
-    //         "src/dawn_native/vulkan/external_memory/MemoryServiceDmaBuf.cpp",
-    //         "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
-    //       ]
-    //       defines += [ "DAWN_USE_SYNC_FDS" ]
-    //     } else if (is_linux) {
-    //       sources += [
-    //         "src/dawn_native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
-    //         "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
-    //       ]
-    //     } else if (is_fuchsia) {
-    //       sources += [
-    //         "src/dawn_native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
-    //         "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
-    //       ]
-    //     } else {
-    //       sources += [
-    //         "src/dawn_native/vulkan/external_memory/MemoryServiceNull.cpp",
-    //         "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceNull.cpp",
-    //       ]
-    //     }
-
-    // TODO(build-system): fuschia: add is_fuchsia here from upstream source file
+    // TODO(build-system): fuchsia: add is_fuchsia here from upstream source file
 
     if (options.vulkan.?) {
         // TODO(build-system): vulkan
