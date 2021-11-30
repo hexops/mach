@@ -9,8 +9,8 @@ pub const LinuxWindowManager = enum {
 };
 
 pub const Options = struct {
-    /// Only respected on Linux.
-    linux_window_manager: LinuxWindowManager = .X11,
+    /// Defaults to X11 on Linux.
+    linux_window_manager: ?LinuxWindowManager = null,
 
     /// Defaults to true on Windows
     d3d12: ?bool = null,
@@ -36,6 +36,7 @@ pub const Options = struct {
         const linux_desktop_like = !tag.isDarwin() and tag != .windows and tag != .fuchsia and tag != .emscripten and !target.isAndroid();
 
         var options = self;
+        if (options.linux_window_manager == null and linux_desktop_like) options.linux_window_manager = .X11;
         if (options.d3d12 == null) options.d3d12 = tag == .windows;
         if (options.metal == null) options.metal = tag.isDarwin();
         if (options.vulkan == null) options.vulkan = tag == .fuchsia or linux_desktop_like;
@@ -186,8 +187,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     lib.linkLibCpp();
     system_sdk.include(b, lib, .{});
 
-    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-
     var flags = std.ArrayList([]const u8).init(b.allocator);
     appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
     flags.appendSlice(&.{
@@ -311,100 +310,93 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     // TODO(build-system): allow use_angle here. See src/dawn_native/BUILD.gn
     // TODO(build-system): could allow use_swiftshader here. See src/dawn_native/BUILD.gn
 
-    switch (target.os.tag) {
-        .windows => {
-            // TODO(build-system): windows
-            //   if (dawn_enable_d3d12) {
-            //     libs += [ "dxguid.lib" ]
-            //     sources += [
-            //       "d3d12/AdapterD3D12.cpp",
-            //       "d3d12/BackendD3D12.cpp",
-            //       "d3d12/BindGroupD3D12.cpp",
-            //       "d3d12/BindGroupLayoutD3D12.cpp",
-            //       "d3d12/BufferD3D12.cpp",
-            //       "d3d12/CPUDescriptorHeapAllocationD3D12.cpp",
-            //       "d3d12/CommandAllocatorManager.cpp",
-            //       "d3d12/CommandBufferD3D12.cpp",
-            //       "d3d12/CommandRecordingContext.cpp",
-            //       "d3d12/ComputePipelineD3D12.cpp",
-            //       "d3d12/D3D11on12Util.cpp",
-            //       "d3d12/D3D12Error.cpp",
-            //       "d3d12/D3D12Info.cpp",
-            //       "d3d12/DeviceD3D12.cpp",
-            //       "d3d12/GPUDescriptorHeapAllocationD3D12.cpp",
-            //       "d3d12/HeapAllocatorD3D12.cpp",
-            //       "d3d12/HeapD3D12.cpp",
-            //       "d3d12/NativeSwapChainImplD3D12.cpp",
-            //       "d3d12/PageableD3D12.cpp",
-            //       "d3d12/PipelineLayoutD3D12.cpp",
-            //       "d3d12/PlatformFunctions.cpp",
-            //       "d3d12/QuerySetD3D12.cpp",
-            //       "d3d12/QueueD3D12.cpp",
-            //       "d3d12/RenderPassBuilderD3D12.cpp",
-            //       "d3d12/RenderPipelineD3D12.cpp",
-            //       "d3d12/ResidencyManagerD3D12.cpp",
-            //       "d3d12/ResourceAllocatorManagerD3D12.cpp",
-            //       "d3d12/ResourceHeapAllocationD3D12.cpp",
-            //       "d3d12/SamplerD3D12.cpp",
-            //       "d3d12/SamplerHeapCacheD3D12.cpp",
-            //       "d3d12/ShaderModuleD3D12.cpp",
-            //       "d3d12/ShaderVisibleDescriptorAllocatorD3D12.cpp",
-            //       "d3d12/StagingBufferD3D12.cpp",
-            //       "d3d12/StagingDescriptorAllocatorD3D12.cpp",
-            //       "d3d12/SwapChainD3D12.cpp",
-            //       "d3d12/TextureCopySplitter.cpp",
-            //       "d3d12/TextureD3D12.cpp",
-            //       "d3d12/UtilsD3D12.cpp",
-            //     ]
-            //   }
-        },
-        .macos => {
-            if (options.metal.?) {
-                lib.linkFramework("Metal");
-                lib.linkFramework("CoreGraphics");
-                lib.linkFramework("Foundation");
-                lib.linkFramework("IOKit");
-                lib.linkFramework("IOSurface");
-                lib.linkFramework("QuartzCore");
+    // TODO(build-system): windows
+    //   if (dawn_enable_d3d12) {
+    //     libs += [ "dxguid.lib" ]
+    //     sources += [
+    //       "d3d12/AdapterD3D12.cpp",
+    //       "d3d12/BackendD3D12.cpp",
+    //       "d3d12/BindGroupD3D12.cpp",
+    //       "d3d12/BindGroupLayoutD3D12.cpp",
+    //       "d3d12/BufferD3D12.cpp",
+    //       "d3d12/CPUDescriptorHeapAllocationD3D12.cpp",
+    //       "d3d12/CommandAllocatorManager.cpp",
+    //       "d3d12/CommandBufferD3D12.cpp",
+    //       "d3d12/CommandRecordingContext.cpp",
+    //       "d3d12/ComputePipelineD3D12.cpp",
+    //       "d3d12/D3D11on12Util.cpp",
+    //       "d3d12/D3D12Error.cpp",
+    //       "d3d12/D3D12Info.cpp",
+    //       "d3d12/DeviceD3D12.cpp",
+    //       "d3d12/GPUDescriptorHeapAllocationD3D12.cpp",
+    //       "d3d12/HeapAllocatorD3D12.cpp",
+    //       "d3d12/HeapD3D12.cpp",
+    //       "d3d12/NativeSwapChainImplD3D12.cpp",
+    //       "d3d12/PageableD3D12.cpp",
+    //       "d3d12/PipelineLayoutD3D12.cpp",
+    //       "d3d12/PlatformFunctions.cpp",
+    //       "d3d12/QuerySetD3D12.cpp",
+    //       "d3d12/QueueD3D12.cpp",
+    //       "d3d12/RenderPassBuilderD3D12.cpp",
+    //       "d3d12/RenderPipelineD3D12.cpp",
+    //       "d3d12/ResidencyManagerD3D12.cpp",
+    //       "d3d12/ResourceAllocatorManagerD3D12.cpp",
+    //       "d3d12/ResourceHeapAllocationD3D12.cpp",
+    //       "d3d12/SamplerD3D12.cpp",
+    //       "d3d12/SamplerHeapCacheD3D12.cpp",
+    //       "d3d12/ShaderModuleD3D12.cpp",
+    //       "d3d12/ShaderVisibleDescriptorAllocatorD3D12.cpp",
+    //       "d3d12/StagingBufferD3D12.cpp",
+    //       "d3d12/StagingDescriptorAllocatorD3D12.cpp",
+    //       "d3d12/SwapChainD3D12.cpp",
+    //       "d3d12/TextureCopySplitter.cpp",
+    //       "d3d12/TextureD3D12.cpp",
+    //       "d3d12/UtilsD3D12.cpp",
+    //     ]
+    //   }
+    if (options.metal.?) {
+        lib.linkFramework("Metal");
+        lib.linkFramework("CoreGraphics");
+        lib.linkFramework("Foundation");
+        lib.linkFramework("IOKit");
+        lib.linkFramework("IOSurface");
+        lib.linkFramework("QuartzCore");
 
-                for ([_][]const u8{
-                    "src/dawn_native/metal/MetalBackend.mm",
-                    "src/dawn_native/Surface_metal.mm",
-                    "src/dawn_native/metal/BackendMTL.mm",
-                    "src/dawn_native/metal/BindGroupLayoutMTL.mm",
-                    "src/dawn_native/metal/BindGroupMTL.mm",
-                    "src/dawn_native/metal/BufferMTL.mm",
-                    "src/dawn_native/metal/CommandBufferMTL.mm",
-                    "src/dawn_native/metal/CommandRecordingContext.mm",
-                    "src/dawn_native/metal/ComputePipelineMTL.mm",
-                    "src/dawn_native/metal/DeviceMTL.mm",
-                    "src/dawn_native/metal/PipelineLayoutMTL.mm",
-                    "src/dawn_native/metal/QuerySetMTL.mm",
-                    "src/dawn_native/metal/QueueMTL.mm",
-                    "src/dawn_native/metal/RenderPipelineMTL.mm",
-                    "src/dawn_native/metal/SamplerMTL.mm",
-                    "src/dawn_native/metal/ShaderModuleMTL.mm",
-                    "src/dawn_native/metal/StagingBufferMTL.mm",
-                    "src/dawn_native/metal/SwapChainMTL.mm",
-                    "src/dawn_native/metal/TextureMTL.mm",
-                    "src/dawn_native/metal/UtilsMetal.mm",
-                }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    lib.addCSourceFile(abs_path, flags.items);
-                }
-            }
-        },
-        else => {
-            if (options.linux_window_manager == .X11) {
-                lib.linkSystemLibrary("X11");
-                for ([_][]const u8{
-                    "src/dawn_native/XlibXcbFunctions.cpp",
-                }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    lib.addCSourceFile(abs_path, flags.items);
-                }
-            }
-        },
+        for ([_][]const u8{
+            "src/dawn_native/metal/MetalBackend.mm",
+            "src/dawn_native/Surface_metal.mm",
+            "src/dawn_native/metal/BackendMTL.mm",
+            "src/dawn_native/metal/BindGroupLayoutMTL.mm",
+            "src/dawn_native/metal/BindGroupMTL.mm",
+            "src/dawn_native/metal/BufferMTL.mm",
+            "src/dawn_native/metal/CommandBufferMTL.mm",
+            "src/dawn_native/metal/CommandRecordingContext.mm",
+            "src/dawn_native/metal/ComputePipelineMTL.mm",
+            "src/dawn_native/metal/DeviceMTL.mm",
+            "src/dawn_native/metal/PipelineLayoutMTL.mm",
+            "src/dawn_native/metal/QuerySetMTL.mm",
+            "src/dawn_native/metal/QueueMTL.mm",
+            "src/dawn_native/metal/RenderPipelineMTL.mm",
+            "src/dawn_native/metal/SamplerMTL.mm",
+            "src/dawn_native/metal/ShaderModuleMTL.mm",
+            "src/dawn_native/metal/StagingBufferMTL.mm",
+            "src/dawn_native/metal/SwapChainMTL.mm",
+            "src/dawn_native/metal/TextureMTL.mm",
+            "src/dawn_native/metal/UtilsMetal.mm",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+    }
+
+    if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
+        lib.linkSystemLibrary("X11");
+        for ([_][]const u8{
+            "src/dawn_native/XlibXcbFunctions.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
     }
 
     for ([_][]const u8{
@@ -1326,31 +1318,21 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
         lib.addCSourceFile(abs_path, flags.items);
     }
 
-    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    switch (target.os.tag) {
-        .windows => {
-            if (options.d3d12.?) {
-                for ([_][]const u8{
-                    "src/utils/D3D12Binding.cpp",
-                }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    lib.addCSourceFile(abs_path, flags.items);
-                }
-            }
-        },
-        .macos => {
-            if (options.metal.?) {
-                for ([_][]const u8{
-                    "src/utils/MetalBinding.mm",
-                }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    lib.addCSourceFile(abs_path, flags.items);
-                }
-            }
-        },
-        else => {
-            if (options.linux_window_manager == .X11) {}
-        },
+    if (options.d3d12.?) {
+        for ([_][]const u8{
+            "src/utils/D3D12Binding.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+    }
+    if (options.metal.?) {
+        for ([_][]const u8{
+            "src/utils/MetalBinding.mm",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
     }
 
     // TODO(build-system): opengl
