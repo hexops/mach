@@ -194,6 +194,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         include("libs/dawn/src/include"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
         include("libs/dawn/third_party/abseil-cpp"),
+        include("libs/dawn/third_party/khronos"),
 
         // TODO(build-system): make these optional
         "-DTINT_BUILD_SPV_READER=1",
@@ -456,8 +457,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 
     if (options.vulkan.?) {
-        // TODO(build-system): vulkan
-        //     public_deps += [ "${dawn_root}/third_party/khronos:vulkan_headers" ]
         for ([_][]const u8{
             "src/dawn_native/vulkan/AdapterVk.cpp",
             "src/dawn_native/vulkan/BackendVk.cpp",
