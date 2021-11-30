@@ -38,11 +38,11 @@ pub const Options = struct {
 
     /// The MacOS 12 SDK repository name.
     macos_sdk_12: []const u8 = "sdk-macos-12.0",
-    macos_sdk_12_revision: []const u8 = "565bf00e90133109c0af4d19aae0e0ec39bc05cc",
+    macos_sdk_12_revision: []const u8 = "b365132501f5577a357fab955d112fc1fee79f27",
 
     /// The MacOS 11 SDK repository name.
     macos_sdk_11: []const u8 = "sdk-macos-11.3",
-    macos_sdk_11_revision: []const u8 = "6d49d06e1280f0f4a207720cf67df44eed41e4db",
+    macos_sdk_11_revision: []const u8 = "ccbaae84cc39469a6792108b24480a4806e09d59",
 
     /// The Linux x86-64 SDK repository name.
     linux_x86_64: []const u8 = "sdk-linux-x86_64",
