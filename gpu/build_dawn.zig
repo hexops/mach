@@ -16,14 +16,47 @@ pub const Options = struct {
     /// instead of user32.lib.
     windows_uwp_app: bool = false,
 
-    /// Only respected on Windows.
-    d3d12: bool = true,
+    /// Defaults to true on Windows
+    d3d12: ?bool = null,
 
-    /// Only respected on MacOS.
-    metal: bool = true,
+    /// Defaults to true on Darwin
+    metal: ?bool = null,
+
+    /// Defaults to true on Linux, Fuchsia
+    // TODO(build-system): enable on Windows if we can cross compile Vulkan
+    vulkan: ?bool = null,
+
+    /// Defaults to true on Windows, Linux
+    // TODO(build-system): not respected at all currently
+    desktop_gl: ?bool = null,
+
+    /// Defaults to true on Android, Linux, Windows, Emscripten
+    // TODO(build-system): not respected at all currently
+    opengl_es: ?bool = null,
+
+    /// Detects the default options to use for the given target.
+    pub fn detectDefaults(self: Options, target: std.Target) Options {
+        const tag = target.os.tag;
+        const linux_desktop_like = !tag.isDarwin() and tag != .windows and tag != .fuchsia and tag != .emscripten and !target.isAndroid();
+
+        var options = self;
+        if (options.d3d12 == null) options.d3d12 = tag == .windows;
+        if (options.metal == null) options.metal = tag.isDarwin();
+        if (options.vulkan == null) options.vulkan = tag == .fuchsia or linux_desktop_like;
+
+        // TODO(build-system): respect these options / defaults
+        options.desktop_gl = false;
+        options.opengl_es = false;
+        // if (options.desktop_gl == null) options.desktop_gl = tag == .windows or linux_desktop_like;
+        // if (options.opengl_es == null) options.opengl_es = tag == .windows or tag == .emscripten or target.isAndroid() or linux_desktop_like;
+        return options;
+    }
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+    const opt = options.detectDefaults(target);
+
     const lib_mach_dawn_native = buildLibMachDawnNative(b, step);
     step.linkLibrary(lib_mach_dawn_native);
 
@@ -36,13 +69,13 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     // dawn-native
     const lib_abseil_cpp = buildLibAbseilCpp(b, step);
     step.linkLibrary(lib_abseil_cpp);
-    const lib_dawn_native = buildLibDawnNative(b, step, options);
+    const lib_dawn_native = buildLibDawnNative(b, step, opt);
     step.linkLibrary(lib_dawn_native);
 
     const lib_dawn_wire = buildLibDawnWire(b, step);
     step.linkLibrary(lib_dawn_wire);
 
-    const lib_dawn_utils = buildLibDawnUtils(b, step, options);
+    const lib_dawn_utils = buildLibDawnUtils(b, step, opt);
     step.linkLibrary(lib_dawn_utils);
 
     const lib_spirv_tools = buildLibSPIRVTools(b, step);
@@ -131,6 +164,22 @@ fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep) *std.build.
     return lib;
 }
 
+fn appendDawnEnableBackendTypeFlags(flags: *std.ArrayList([]const u8), options: Options) !void {
+    const d3d12 = "-DDAWN_ENABLE_BACKEND_D3D12";
+    const metal = "-DDAWN_ENABLE_BACKEND_METAL";
+    const vulkan = "-DDAWN_ENABLE_BACKEND_VULKAN";
+    const desktop_gl = "-DDAWN_ENABLE_BACKEND_DESKTOP_GL";
+    const opengl_es = "-DDAWN_ENABLE_BACKEND_OPENGLES";
+    const backend_null = "-DDAWN_ENABLE_BACKEND_NULL";
+
+    try flags.append(backend_null);
+    if (options.d3d12.?) try flags.append(d3d12);
+    if (options.metal.?) try flags.append(metal);
+    if (options.vulkan.?) try flags.append(vulkan);
+    if (options.desktop_gl.?) try flags.append(desktop_gl);
+    if (options.opengl_es.?) try flags.append(opengl_es);
+}
+
 // Builds dawn native sources; derived from src/dawn_native/BUILD.gn
 fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
@@ -143,16 +192,9 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
 
-    const flags = &.{
-        // TODO(build-system): use platform-specific backend type here
-        // #if defined(DAWN_ENABLE_BACKEND_D3D12)
-        // #if defined(DAWN_ENABLE_BACKEND_METAL)
-        // #if defined(DAWN_ENABLE_BACKEND_VULKAN)
-        // #if defined(DAWN_ENABLE_BACKEND_DESKTOP_GL)
-        // #if defined(DAWN_ENABLE_BACKEND_OPENGLES)
-        // #if defined(DAWN_ENABLE_BACKEND_NULL)
-        "-DDAWN_ENABLE_BACKEND_METAL",
-        "-DDAWN_ENABLE_BACKEND_NULL",
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
+    flags.appendSlice(&.{
         include("libs/dawn/src"),
         include("libs/dawn/src/include"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
@@ -170,7 +212,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
         include("libs/dawn/out/Debug/gen/src/include"),
         include("libs/dawn/out/Debug/gen/src"),
-    };
+    }) catch unreachable;
 
     for ([_][]const u8{
         "out/Debug/gen/src/dawn/dawn_thread_dispatch_proc.cpp",
@@ -178,7 +220,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "out/Debug/gen/src/dawn/webgpu_cpp.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     for ([_][]const u8{
@@ -253,7 +295,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "src/dawn_native/VertexFormat.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // dawn_native_utils_gen
@@ -266,7 +308,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "out/Debug/gen/src/dawn_native/ObjectType_autogen.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // TODO(build-system): could allow enable_vulkan_validation_layers here. See src/dawn_native/BUILD.gn
@@ -337,7 +379,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
             //   }
         },
         .macos => {
-            if (options.metal) {
+            if (options.metal.?) {
                 lib.linkFramework("Metal");
                 lib.linkFramework("CoreGraphics");
                 lib.linkFramework("Foundation");
@@ -368,7 +410,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
                     "src/dawn_native/metal/UtilsMetal.mm",
                 }) |path| {
                     var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    lib.addCSourceFile(abs_path, flags);
+                    lib.addCSourceFile(abs_path, flags.items);
                 }
             }
         },
@@ -379,7 +421,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
                     "src/dawn_native/XlibXcbFunctions.cpp",
                 }) |path| {
                     var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    lib.addCSourceFile(abs_path, flags);
+                    lib.addCSourceFile(abs_path, flags.items);
                 }
             }
         },
@@ -389,7 +431,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "src/dawn_native/null/DeviceNull.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // TODO(build-system): opengl, vulkan
@@ -529,7 +571,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "src/dawn_native/null/NullBackend.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // TODO(build-system): d3d12
@@ -1086,8 +1128,9 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Lib
     lib.setTarget(step.target);
     lib.linkLibCpp();
     system_sdk.include(b, lib, .{});
-    // TODO(build-system): mac only
-    lib.linkFramework("CoreFoundation");
+
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+    if (target.os.tag == .macos) lib.linkFramework("CoreFoundation");
 
     const flags = &.{include("libs/dawn/third_party/abseil-cpp")};
 
@@ -1285,43 +1328,43 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     lib.linkLibCpp();
 
     glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
-    const flags = &.{
-        // TODO(build-system): specify platform-specific backend type here
-        "-DDAWN_ENABLE_BACKEND_METAL",
-        "-DDAWN_ENABLE_BACKEND_NULL",
+
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
+    flags.appendSlice(&.{
         include("libs/mach-glfw/upstream/glfw/include"),
         include("libs/dawn/src"),
         include("libs/dawn/src/include"),
         include("libs/dawn/out/Debug/gen/src/include"),
-    };
+    }) catch unreachable;
 
     for ([_][]const u8{
         "src/utils/BackendBinding.cpp",
         "src/utils/NullBinding.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
-            if (options.d3d12) {
+            if (options.d3d12.?) {
                 for ([_][]const u8{
                     "src/utils/D3D12Binding.cpp",
                 }) |path| {
                     var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    lib.addCSourceFile(abs_path, flags);
+                    lib.addCSourceFile(abs_path, flags.items);
                 }
             }
         },
         .macos => {
-            if (options.metal) {
+            if (options.metal.?) {
                 for ([_][]const u8{
                     "src/utils/MetalBinding.mm",
                 }) |path| {
                     var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-                    lib.addCSourceFile(abs_path, flags);
+                    lib.addCSourceFile(abs_path, flags.items);
                 }
             }
         },
