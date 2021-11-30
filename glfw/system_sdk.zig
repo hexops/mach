@@ -46,7 +46,7 @@ pub const Options = struct {
 
     /// The Linux x86-64 SDK repository name.
     linux_x86_64: []const u8 = "sdk-linux-x86_64",
-    linux_x86_64_revision: []const u8 = "36bd27cf4d62becd7848ebc05e434688495617a0",
+    linux_x86_64_revision: []const u8 = "77688d6d5e93508d40b1f76d1cc9705c98163955",
 
     /// If true, the Builder.sysroot will set to the SDK path. This has the drawback of preventing
     /// you from including headers, libraries, etc. from outside the SDK generally. However, it can
