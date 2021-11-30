@@ -60,6 +60,7 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep) *std.buil
     lib.setTarget(step.target);
     lib.linkLibCpp();
 
+    // TODO(build-system): pass system SDK options through
     glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
     lib.addCSourceFile("src/dawn/dawn_native_mach.cpp", &.{
         include("libs/mach-glfw/upstream/glfw/include"),
@@ -96,6 +97,7 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (target.os.tag == .macos) {
+        // TODO(build-system): pass system SDK options through
         system_sdk.include(b, lib, .{});
         lib.linkFramework("Foundation");
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn/src/common/SystemUtils_mac.mm" }) catch unreachable;
@@ -142,6 +144,13 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
 
     const flags = &.{
+        // TODO(build-system): use platform-specific backend type here
+        // #if defined(DAWN_ENABLE_BACKEND_D3D12)
+        // #if defined(DAWN_ENABLE_BACKEND_METAL)
+        // #if defined(DAWN_ENABLE_BACKEND_VULKAN)
+        // #if defined(DAWN_ENABLE_BACKEND_DESKTOP_GL)
+        // #if defined(DAWN_ENABLE_BACKEND_OPENGLES)
+        // #if defined(DAWN_ENABLE_BACKEND_NULL)
         "-DDAWN_ENABLE_BACKEND_METAL",
         "-DDAWN_ENABLE_BACKEND_NULL",
         include("libs/dawn/src"),
@@ -149,6 +158,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
         include("libs/dawn/third_party/abseil-cpp"),
 
+        // TODO(build-system): make these optional
         "-DTINT_BUILD_SPV_READER=1",
         "-DTINT_BUILD_SPV_WRITER=1",
         "-DTINT_BUILD_WGSL_READER=1",
@@ -161,13 +171,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         include("libs/dawn/out/Debug/gen/src/include"),
         include("libs/dawn/out/Debug/gen/src"),
     };
-
-    // #if defined(DAWN_ENABLE_BACKEND_D3D12)
-    // #if defined(DAWN_ENABLE_BACKEND_METAL)
-    // #if defined(DAWN_ENABLE_BACKEND_VULKAN)
-    // #if defined(DAWN_ENABLE_BACKEND_DESKTOP_GL)
-    // #if defined(DAWN_ENABLE_BACKEND_OPENGLES)
-    // #if defined(DAWN_ENABLE_BACKEND_NULL)
 
     for ([_][]const u8{
         "out/Debug/gen/src/dawn/dawn_thread_dispatch_proc.cpp",
@@ -266,11 +269,11 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         lib.addCSourceFile(abs_path, flags);
     }
 
-    // TODO: could allow enable_vulkan_validation_layers here. See src/dawn_native/BUILD.gn
-    // TODO: allow use_angle here. See src/dawn_native/BUILD.gn
-    // TODO: could allow use_swiftshader here. See src/dawn_native/BUILD.gn
-    // TODO: allow dawn_enable_vulkan here. See src/dawn_native/BUILD.gn
-    // TODO: allow dawn_enable_opengl here. See src/dawn_native/BUILD.gn
+    // TODO(build-system): could allow enable_vulkan_validation_layers here. See src/dawn_native/BUILD.gn
+    // TODO(build-system): allow use_angle here. See src/dawn_native/BUILD.gn
+    // TODO(build-system): could allow use_swiftshader here. See src/dawn_native/BUILD.gn
+    // TODO(build-system): allow dawn_enable_vulkan here. See src/dawn_native/BUILD.gn
+    // TODO(build-system): allow dawn_enable_opengl here. See src/dawn_native/BUILD.gn
 
     switch (target.os.tag) {
         .windows => {
@@ -288,7 +291,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
                 lib.linkSystemLibrary("user32.lib");
             }
 
-            // TODO:
+            // TODO(build-system): windows
             //   if (dawn_enable_d3d12) {
             //     libs += [ "dxguid.lib" ]
             //     sources += [
@@ -389,15 +392,14 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         lib.addCSourceFile(abs_path, flags);
     }
 
-    // TODO: no vulkan on macos
-    // TODO:
+    // TODO(build-system): opengl, vulkan
     //   if (dawn_enable_opengl || dawn_enable_vulkan) {
     //     sources += [
     //       "SpirvValidation.cpp",
     //     ]
     //   }
 
-    // TODO:
+    // TODO(build-system): opengl
     //   if (dawn_enable_opengl) {
     //     public_deps += [
     //       ":dawn_native_opengl_loader_gen",
@@ -431,8 +433,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     //     ]
     //   }
 
-    // TODO: no vulkan on macos
-    // TODO:
+    // TODO(build-system): vulkan
     //   if (dawn_enable_vulkan) {
     //     public_deps += [ "${dawn_root}/third_party/khronos:vulkan_headers" ]
     //     sources += [
@@ -466,7 +467,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     //       "vulkan/VulkanInfo.cpp",
     //     ]
 
-    // TODO:
+    // TODO(build-system): linux, fuschia, other
     //     if (is_chromeos) {
     //       sources += [
     //         "vulkan/external_memory/MemoryServiceDmaBuf.cpp",
@@ -490,9 +491,9 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     //       ]
     //     }
 
-    // TODO: could add is_fuchsia checks if anybody cares about Fuchsia?
+    // TODO(build-system): fuschia: add is_fuchsia here from upstream source file
 
-    // TODO:
+    // TODO(build-system): vulkan
     //     if (enable_vulkan_validation_layers) {
     //       defines += [
     //         "DAWN_ENABLE_VULKAN_VALIDATION_LAYERS",
@@ -514,7 +515,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     //     }
     //   }
 
-    // TODO:
+    // TODO(build-system): opengl
     //   if (use_angle) {
     //     data_deps += [
     //       "${dawn_angle_dir}:libEGL",
@@ -522,16 +523,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     //     ]
     //   }
     // }
-
-    // TODO: ???
-    // # The static and shared libraries for dawn_native. Most of the files are
-    // # already compiled in dawn_native_sources, but we still need to compile
-    // # files defining exported symbols.
-    // dawn_component("dawn_native") {
-    //   DEFINE_PREFIX = "DAWN_NATIVE"
-
-    //   #Make headers publically visible
-    //   public_deps = [ ":dawn_native_headers" ]
 
     for ([_][]const u8{
         "src/dawn_native/DawnNative.cpp",
@@ -541,15 +532,17 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         lib.addCSourceFile(abs_path, flags);
     }
 
+    // TODO(build-system): d3d12
     //   if (dawn_enable_d3d12) {
     //     sources += [ "d3d12/D3D12Backend.cpp" ]
     //   }
+    // TODO(build-system): opengl
     //   if (dawn_enable_opengl) {
     //     sources += [ "opengl/OpenGLBackend.cpp" ]
     //   }
+    // TODO(build-system): vulkan
     //   if (dawn_enable_vulkan) {
     //     sources += [ "vulkan/VulkanBackend.cpp" ]
-
     //     if (enable_vulkan_validation_layers) {
     //       data_deps =
     //           [ "${dawn_vulkan_validation_layers_dir}:vulkan_validation_layers" ]
@@ -573,6 +566,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
     lib.linkLibCpp();
 
     const flags = &.{
+        // TODO(build-system): make these optional
         "-DTINT_BUILD_SPV_READER=1",
         "-DTINT_BUILD_SPV_WRITER=1",
         "-DTINT_BUILD_WGSL_READER=1",
@@ -580,7 +574,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "-DTINT_BUILD_MSL_WRITER=1",
         "-DTINT_BUILD_HLSL_WRITER=1",
 
-        // Required for TINT_BUILD_SPV_READER=1 and TINT_BUILD_SPV_WRITER=1
+        // Required for TINT_BUILD_SPV_READER=1 and TINT_BUILD_SPV_WRITER=1, if specified
         include("libs/dawn/third_party/vulkan-deps"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
@@ -817,6 +811,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         lib.addCSourceFile(abs_path, flags);
     }
 
+    // TODO(build-system): make optional
     // libtint_wgsl_reader_src
     for ([_][]const u8{
         "third_party/tint/src/reader/wgsl/lexer.cc",
@@ -828,6 +823,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         lib.addCSourceFile(abs_path, flags);
     }
 
+    // TODO(build-system): make optional
     // libtint_wgsl_writer_src
     for ([_][]const u8{
         "third_party/tint/src/writer/wgsl/generator.cc",
@@ -837,6 +833,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         lib.addCSourceFile(abs_path, flags);
     }
 
+    // TODO(build-system): make optional
     // libtint_msl_writer_src
     for ([_][]const u8{
         "third_party/tint/src/writer/msl/generator.cc",
@@ -846,6 +843,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         lib.addCSourceFile(abs_path, flags);
     }
 
+    // TODO(build-system): make optional
     // libtint_hlsl_writer_src
     for ([_][]const u8{
         "third_party/tint/src/writer/hlsl/generator.cc",
@@ -1088,6 +1086,7 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Lib
     lib.setTarget(step.target);
     lib.linkLibCpp();
     system_sdk.include(b, lib, .{});
+    // TODO(build-system): mac only
     lib.linkFramework("CoreFoundation");
 
     const flags = &.{include("libs/dawn/third_party/abseil-cpp")};
@@ -1287,6 +1286,7 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
 
     glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
     const flags = &.{
+        // TODO(build-system): specify platform-specific backend type here
         "-DDAWN_ENABLE_BACKEND_METAL",
         "-DDAWN_ENABLE_BACKEND_NULL",
         include("libs/mach-glfw/upstream/glfw/include"),
@@ -1330,10 +1330,12 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
         },
     }
 
+    // TODO(build-system): opengl
     // if (dawn_enable_opengl) {
     //   sources += [ "OpenGLBinding.cpp" ]
     // }
 
+    // TODO(build-system): vulkan
     // if (dawn_enable_vulkan) {
     //   sources += [ "VulkanBinding.cpp" ]
     // }
