@@ -310,50 +310,53 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     // TODO(build-system): allow use_angle here. See src/dawn_native/BUILD.gn
     // TODO(build-system): could allow use_swiftshader here. See src/dawn_native/BUILD.gn
 
-    // TODO(build-system): windows
-    //   if (dawn_enable_d3d12) {
-    //     libs += [ "dxguid.lib" ]
-    //     sources += [
-    //       "d3d12/AdapterD3D12.cpp",
-    //       "d3d12/BackendD3D12.cpp",
-    //       "d3d12/BindGroupD3D12.cpp",
-    //       "d3d12/BindGroupLayoutD3D12.cpp",
-    //       "d3d12/BufferD3D12.cpp",
-    //       "d3d12/CPUDescriptorHeapAllocationD3D12.cpp",
-    //       "d3d12/CommandAllocatorManager.cpp",
-    //       "d3d12/CommandBufferD3D12.cpp",
-    //       "d3d12/CommandRecordingContext.cpp",
-    //       "d3d12/ComputePipelineD3D12.cpp",
-    //       "d3d12/D3D11on12Util.cpp",
-    //       "d3d12/D3D12Error.cpp",
-    //       "d3d12/D3D12Info.cpp",
-    //       "d3d12/DeviceD3D12.cpp",
-    //       "d3d12/GPUDescriptorHeapAllocationD3D12.cpp",
-    //       "d3d12/HeapAllocatorD3D12.cpp",
-    //       "d3d12/HeapD3D12.cpp",
-    //       "d3d12/NativeSwapChainImplD3D12.cpp",
-    //       "d3d12/PageableD3D12.cpp",
-    //       "d3d12/PipelineLayoutD3D12.cpp",
-    //       "d3d12/PlatformFunctions.cpp",
-    //       "d3d12/QuerySetD3D12.cpp",
-    //       "d3d12/QueueD3D12.cpp",
-    //       "d3d12/RenderPassBuilderD3D12.cpp",
-    //       "d3d12/RenderPipelineD3D12.cpp",
-    //       "d3d12/ResidencyManagerD3D12.cpp",
-    //       "d3d12/ResourceAllocatorManagerD3D12.cpp",
-    //       "d3d12/ResourceHeapAllocationD3D12.cpp",
-    //       "d3d12/SamplerD3D12.cpp",
-    //       "d3d12/SamplerHeapCacheD3D12.cpp",
-    //       "d3d12/ShaderModuleD3D12.cpp",
-    //       "d3d12/ShaderVisibleDescriptorAllocatorD3D12.cpp",
-    //       "d3d12/StagingBufferD3D12.cpp",
-    //       "d3d12/StagingDescriptorAllocatorD3D12.cpp",
-    //       "d3d12/SwapChainD3D12.cpp",
-    //       "d3d12/TextureCopySplitter.cpp",
-    //       "d3d12/TextureD3D12.cpp",
-    //       "d3d12/UtilsD3D12.cpp",
-    //     ]
-    //   }
+    if (options.d3d12.?) {
+        // TODO(build-system): windows
+        //     libs += [ "dxguid.lib" ]
+        for ([_][]const u8{
+            "src/dawn_native/d3d12/AdapterD3D12.cpp",
+            "src/dawn_native/d3d12/BackendD3D12.cpp",
+            "src/dawn_native/d3d12/BindGroupD3D12.cpp",
+            "src/dawn_native/d3d12/BindGroupLayoutD3D12.cpp",
+            "src/dawn_native/d3d12/BufferD3D12.cpp",
+            "src/dawn_native/d3d12/CPUDescriptorHeapAllocationD3D12.cpp",
+            "src/dawn_native/d3d12/CommandAllocatorManager.cpp",
+            "src/dawn_native/d3d12/CommandBufferD3D12.cpp",
+            "src/dawn_native/d3d12/CommandRecordingContext.cpp",
+            "src/dawn_native/d3d12/ComputePipelineD3D12.cpp",
+            "src/dawn_native/d3d12/D3D11on12Util.cpp",
+            "src/dawn_native/d3d12/D3D12Error.cpp",
+            "src/dawn_native/d3d12/D3D12Info.cpp",
+            "src/dawn_native/d3d12/DeviceD3D12.cpp",
+            "src/dawn_native/d3d12/GPUDescriptorHeapAllocationD3D12.cpp",
+            "src/dawn_native/d3d12/HeapAllocatorD3D12.cpp",
+            "src/dawn_native/d3d12/HeapD3D12.cpp",
+            "src/dawn_native/d3d12/NativeSwapChainImplD3D12.cpp",
+            "src/dawn_native/d3d12/PageableD3D12.cpp",
+            "src/dawn_native/d3d12/PipelineLayoutD3D12.cpp",
+            "src/dawn_native/d3d12/PlatformFunctions.cpp",
+            "src/dawn_native/d3d12/QuerySetD3D12.cpp",
+            "src/dawn_native/d3d12/QueueD3D12.cpp",
+            "src/dawn_native/d3d12/RenderPassBuilderD3D12.cpp",
+            "src/dawn_native/d3d12/RenderPipelineD3D12.cpp",
+            "src/dawn_native/d3d12/ResidencyManagerD3D12.cpp",
+            "src/dawn_native/d3d12/ResourceAllocatorManagerD3D12.cpp",
+            "src/dawn_native/d3d12/ResourceHeapAllocationD3D12.cpp",
+            "src/dawn_native/d3d12/SamplerD3D12.cpp",
+            "src/dawn_native/d3d12/SamplerHeapCacheD3D12.cpp",
+            "src/dawn_native/d3d12/ShaderModuleD3D12.cpp",
+            "src/dawn_native/d3d12/ShaderVisibleDescriptorAllocatorD3D12.cpp",
+            "src/dawn_native/d3d12/StagingBufferD3D12.cpp",
+            "src/dawn_native/d3d12/StagingDescriptorAllocatorD3D12.cpp",
+            "src/dawn_native/d3d12/SwapChainD3D12.cpp",
+            "src/dawn_native/d3d12/TextureCopySplitter.cpp",
+            "src/dawn_native/d3d12/TextureD3D12.cpp",
+            "src/dawn_native/d3d12/UtilsD3D12.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+    }
     if (options.metal.?) {
         lib.linkFramework("Metal");
         lib.linkFramework("CoreGraphics");
@@ -406,117 +409,129 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         lib.addCSourceFile(abs_path, flags.items);
     }
 
-    // TODO(build-system): opengl, vulkan
-    //   if (dawn_enable_opengl || dawn_enable_vulkan) {
-    //     sources += [
-    //       "SpirvValidation.cpp",
-    //     ]
-    //   }
+    if (options.desktop_gl.? or options.vulkan.?) {
+        for ([_][]const u8{
+            "src/dawn_native/SpirvValidation.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+    }
 
-    // TODO(build-system): opengl
-    //   if (dawn_enable_opengl) {
-    //     public_deps += [
-    //       ":dawn_native_opengl_loader_gen",
-    //       "${dawn_root}/third_party/khronos:khronos_platform",
-    //     ]
-    //     sources += get_target_outputs(":dawn_native_opengl_loader_gen")
-    //     sources += [
-    //       "opengl/BackendGL.cpp",
-    //       "opengl/BindGroupGL.cpp",
-    //       "opengl/BindGroupLayoutGL.cpp",
-    //       "opengl/BufferGL.cpp",
-    //       "opengl/CommandBufferGL.cpp",
-    //       "opengl/ComputePipelineGL.cpp",
-    //       "opengl/DeviceGL.cpp",
-    //       "opengl/GLFormat.cpp",
-    //       "opengl/NativeSwapChainImplGL.cpp",
-    //       "opengl/OpenGLFunctions.cpp",
-    //       "opengl/OpenGLVersion.cpp",
-    //       "opengl/PersistentPipelineStateGL.cpp",
-    //       "opengl/PipelineGL.cpp",
-    //       "opengl/PipelineLayoutGL.cpp",
-    //       "opengl/QuerySetGL.cpp",
-    //       "opengl/QueueGL.cpp",
-    //       "opengl/RenderPipelineGL.cpp",
-    //       "opengl/SamplerGL.cpp",
-    //       "opengl/ShaderModuleGL.cpp",
-    //       "opengl/SpirvUtils.cpp",
-    //       "opengl/SwapChainGL.cpp",
-    //       "opengl/TextureGL.cpp",
-    //       "opengl/UtilsGL.cpp",
-    //     ]
-    //   }
+    if (options.desktop_gl.?) {
+        // TODO(build-system): opengl
+        //     public_deps += [
+        //       ":dawn_native_opengl_loader_gen",
+        //       "${dawn_root}/third_party/khronos:khronos_platform",
+        //     ]
+        //     sources += get_target_outputs(":dawn_native_opengl_loader_gen")
+        for ([_][]const u8{
+            "src/dawn_native/opengl/BackendGL.cpp",
+            "src/dawn_native/opengl/BindGroupGL.cpp",
+            "src/dawn_native/opengl/BindGroupLayoutGL.cpp",
+            "src/dawn_native/opengl/BufferGL.cpp",
+            "src/dawn_native/opengl/CommandBufferGL.cpp",
+            "src/dawn_native/opengl/ComputePipelineGL.cpp",
+            "src/dawn_native/opengl/DeviceGL.cpp",
+            "src/dawn_native/opengl/GLFormat.cpp",
+            "src/dawn_native/opengl/NativeSwapChainImplGL.cpp",
+            "src/dawn_native/opengl/OpenGLFunctions.cpp",
+            "src/dawn_native/opengl/OpenGLVersion.cpp",
+            "src/dawn_native/opengl/PersistentPipelineStateGL.cpp",
+            "src/dawn_native/opengl/PipelineGL.cpp",
+            "src/dawn_native/opengl/PipelineLayoutGL.cpp",
+            "src/dawn_native/opengl/QuerySetGL.cpp",
+            "src/dawn_native/opengl/QueueGL.cpp",
+            "src/dawn_native/opengl/RenderPipelineGL.cpp",
+            "src/dawn_native/opengl/SamplerGL.cpp",
+            "src/dawn_native/opengl/ShaderModuleGL.cpp",
+            "src/dawn_native/opengl/SpirvUtils.cpp",
+            "src/dawn_native/opengl/SwapChainGL.cpp",
+            "src/dawn_native/opengl/TextureGL.cpp",
+            "src/dawn_native/opengl/UtilsGL.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+    }
 
-    // TODO(build-system): vulkan
-    //   if (dawn_enable_vulkan) {
-    //     public_deps += [ "${dawn_root}/third_party/khronos:vulkan_headers" ]
-    //     sources += [
-    //       "vulkan/AdapterVk.cpp",
-    //       "vulkan/BackendVk.cpp",
-    //       "vulkan/BindGroupLayoutVk.cpp",
-    //       "vulkan/BindGroupVk.cpp",
-    //       "vulkan/BufferVk.cpp",
-    //       "vulkan/CommandBufferVk.cpp",
-    //       "vulkan/ComputePipelineVk.cpp",
-    //       "vulkan/DescriptorSetAllocator.cpp",
-    //       "vulkan/DeviceVk.cpp",
-    //       "vulkan/FencedDeleter.cpp",
-    //       "vulkan/NativeSwapChainImplVk.cpp",
-    //       "vulkan/PipelineLayoutVk.cpp",
-    //       "vulkan/QuerySetVk.cpp",
-    //       "vulkan/QueueVk.cpp",
-    //       "vulkan/RenderPassCache.cpp",
-    //       "vulkan/RenderPipelineVk.cpp",
-    //       "vulkan/ResourceHeapVk.cpp",
-    //       "vulkan/ResourceMemoryAllocatorVk.cpp",
-    //       "vulkan/SamplerVk.cpp",
-    //       "vulkan/ShaderModuleVk.cpp",
-    //       "vulkan/StagingBufferVk.cpp",
-    //       "vulkan/SwapChainVk.cpp",
-    //       "vulkan/TextureVk.cpp",
-    //       "vulkan/UtilsVulkan.cpp",
-    //       "vulkan/VulkanError.cpp",
-    //       "vulkan/VulkanExtensions.cpp",
-    //       "vulkan/VulkanFunctions.cpp",
-    //       "vulkan/VulkanInfo.cpp",
-    //     ]
+    if (options.vulkan.?) {
+        // TODO(build-system): vulkan
+        //     public_deps += [ "${dawn_root}/third_party/khronos:vulkan_headers" ]
+        for ([_][]const u8{
+            "src/dawn_native/vulkan/AdapterVk.cpp",
+            "src/dawn_native/vulkan/BackendVk.cpp",
+            "src/dawn_native/vulkan/BindGroupLayoutVk.cpp",
+            "src/dawn_native/vulkan/BindGroupVk.cpp",
+            "src/dawn_native/vulkan/BufferVk.cpp",
+            "src/dawn_native/vulkan/CommandBufferVk.cpp",
+            "src/dawn_native/vulkan/ComputePipelineVk.cpp",
+            "src/dawn_native/vulkan/DescriptorSetAllocator.cpp",
+            "src/dawn_native/vulkan/DeviceVk.cpp",
+            "src/dawn_native/vulkan/FencedDeleter.cpp",
+            "src/dawn_native/vulkan/NativeSwapChainImplVk.cpp",
+            "src/dawn_native/vulkan/PipelineLayoutVk.cpp",
+            "src/dawn_native/vulkan/QuerySetVk.cpp",
+            "src/dawn_native/vulkan/QueueVk.cpp",
+            "src/dawn_native/vulkan/RenderPassCache.cpp",
+            "src/dawn_native/vulkan/RenderPipelineVk.cpp",
+            "src/dawn_native/vulkan/ResourceHeapVk.cpp",
+            "src/dawn_native/vulkan/ResourceMemoryAllocatorVk.cpp",
+            "src/dawn_native/vulkan/SamplerVk.cpp",
+            "src/dawn_native/vulkan/ShaderModuleVk.cpp",
+            "src/dawn_native/vulkan/StagingBufferVk.cpp",
+            "src/dawn_native/vulkan/SwapChainVk.cpp",
+            "src/dawn_native/vulkan/TextureVk.cpp",
+            "src/dawn_native/vulkan/UtilsVulkan.cpp",
+            "src/dawn_native/vulkan/VulkanError.cpp",
+            "src/dawn_native/vulkan/VulkanExtensions.cpp",
+            "src/dawn_native/vulkan/VulkanFunctions.cpp",
+            "src/dawn_native/vulkan/VulkanInfo.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+    }
 
     // TODO(build-system): linux, fuschia, other
     //     if (is_chromeos) {
     //       sources += [
-    //         "vulkan/external_memory/MemoryServiceDmaBuf.cpp",
-    //         "vulkan/external_semaphore/SemaphoreServiceFD.cpp",
+    //         "src/dawn_native/vulkan/external_memory/MemoryServiceDmaBuf.cpp",
+    //         "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
     //       ]
     //       defines += [ "DAWN_USE_SYNC_FDS" ]
     //     } else if (is_linux) {
     //       sources += [
-    //         "vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
-    //         "vulkan/external_semaphore/SemaphoreServiceFD.cpp",
+    //         "src/dawn_native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
+    //         "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
     //       ]
     //     } else if (is_fuchsia) {
     //       sources += [
-    //         "vulkan/external_memory/MemoryServiceZirconHandle.cpp",
-    //         "vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
+    //         "src/dawn_native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
+    //         "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
     //       ]
     //     } else {
     //       sources += [
-    //         "vulkan/external_memory/MemoryServiceNull.cpp",
-    //         "vulkan/external_semaphore/SemaphoreServiceNull.cpp",
+    //         "src/dawn_native/vulkan/external_memory/MemoryServiceNull.cpp",
+    //         "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceNull.cpp",
     //       ]
     //     }
 
     // TODO(build-system): fuschia: add is_fuchsia here from upstream source file
 
-    // TODO(build-system): vulkan
-    //     if (enable_vulkan_validation_layers) {
-    //       defines += [
-    //         "DAWN_ENABLE_VULKAN_VALIDATION_LAYERS",
-    //         "DAWN_VK_DATA_DIR=\"$vulkan_data_subdir\"",
-    //       ]
-    //     }
-    //     if (enable_vulkan_loader) {
-    //       data_deps += [ "${dawn_vulkan_loader_dir}:libvulkan" ]
-    //     }
+    if (options.vulkan.?) {
+        // TODO(build-system): vulkan
+        //     if (enable_vulkan_validation_layers) {
+        //       defines += [
+        //         "DAWN_ENABLE_VULKAN_VALIDATION_LAYERS",
+        //         "DAWN_VK_DATA_DIR=\"$vulkan_data_subdir\"",
+        //       ]
+        //     }
+        //     if (enable_vulkan_loader) {
+        //       data_deps += [ "${dawn_vulkan_loader_dir}:libvulkan" ]
+        //     }
+    }
+    // TODO(build-system): swiftshader
     //     if (use_swiftshader) {
     //       data_deps += [
     //         "${dawn_swiftshader_dir}/src/Vulkan:icd_file",
@@ -529,14 +544,16 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     //     }
     //   }
 
-    // TODO(build-system): opengl
-    //   if (use_angle) {
-    //     data_deps += [
-    //       "${dawn_angle_dir}:libEGL",
-    //       "${dawn_angle_dir}:libGLESv2",
-    //     ]
-    //   }
-    // }
+    if (options.opengl_es.?) {
+        // TODO(build-system): gles
+        //   if (use_angle) {
+        //     data_deps += [
+        //       "${dawn_angle_dir}:libEGL",
+        //       "${dawn_angle_dir}:libGLESv2",
+        //     ]
+        //   }
+        // }
+    }
 
     for ([_][]const u8{
         "src/dawn_native/DawnNative.cpp",
@@ -546,27 +563,39 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         lib.addCSourceFile(abs_path, flags.items);
     }
 
-    // TODO(build-system): d3d12
-    //   if (dawn_enable_d3d12) {
-    //     sources += [ "d3d12/D3D12Backend.cpp" ]
-    //   }
-    // TODO(build-system): opengl
-    //   if (dawn_enable_opengl) {
-    //     sources += [ "opengl/OpenGLBackend.cpp" ]
-    //   }
-    // TODO(build-system): vulkan
-    //   if (dawn_enable_vulkan) {
-    //     sources += [ "vulkan/VulkanBackend.cpp" ]
-    //     if (enable_vulkan_validation_layers) {
-    //       data_deps =
-    //           [ "${dawn_vulkan_validation_layers_dir}:vulkan_validation_layers" ]
-    //       if (!is_android) {
-    //         data_deps +=
-    //             [ "${dawn_vulkan_validation_layers_dir}:vulkan_gen_json_files" ]
-    //       }
-    //     }
-    //   }
-    // }
+    if (options.d3d12.?) {
+        for ([_][]const u8{
+            "src/dawn_native/d3d12/D3D12Backend.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+    }
+    if (options.desktop_gl.?) {
+        for ([_][]const u8{
+            "src/dawn_native/opengl/OpenGLBackend.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+    }
+    if (options.vulkan.?) {
+        for ([_][]const u8{
+            "src/dawn_native/vulkan/VulkanBackend.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+        // TODO(build-system): vulkan
+        //     if (enable_vulkan_validation_layers) {
+        //       data_deps =
+        //           [ "${dawn_vulkan_validation_layers_dir}:vulkan_validation_layers" ]
+        //       if (!is_android) {
+        //         data_deps +=
+        //             [ "${dawn_vulkan_validation_layers_dir}:vulkan_gen_json_files" ]
+        //       }
+        //     }
+    }
     return lib;
 }
 
@@ -1335,15 +1364,23 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
         }
     }
 
-    // TODO(build-system): opengl
-    // if (dawn_enable_opengl) {
-    //   sources += [ "OpenGLBinding.cpp" ]
-    // }
+    if (options.desktop_gl.?) {
+        for ([_][]const u8{
+            "src/utils/OpenGLBinding.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+    }
 
-    // TODO(build-system): vulkan
-    // if (dawn_enable_vulkan) {
-    //   sources += [ "VulkanBinding.cpp" ]
-    // }
+    if (options.vulkan.?) {
+        for ([_][]const u8{
+            "src/utils/VulkanBinding.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+    }
     return lib;
 }
 
