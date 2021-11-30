@@ -310,8 +310,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     // TODO(build-system): could allow enable_vulkan_validation_layers here. See src/dawn_native/BUILD.gn
     // TODO(build-system): allow use_angle here. See src/dawn_native/BUILD.gn
     // TODO(build-system): could allow use_swiftshader here. See src/dawn_native/BUILD.gn
-    // TODO(build-system): allow dawn_enable_vulkan here. See src/dawn_native/BUILD.gn
-    // TODO(build-system): allow dawn_enable_opengl here. See src/dawn_native/BUILD.gn
 
     switch (target.os.tag) {
         .windows => {
