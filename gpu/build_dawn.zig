@@ -137,6 +137,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     lib.linkLibCpp();
+    system_sdk.include(b, lib, .{});
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
 
