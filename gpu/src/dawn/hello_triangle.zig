@@ -108,6 +108,20 @@ pub fn main() !void {
     c.wgpuShaderModuleRelease(vs_module);
     c.wgpuShaderModuleRelease(fs_module);
 
+    // Reconfigure the swap chain with the new framebuffer width/height, otherwise e.g. the Vulkan
+    // device would be lost after a resize.
+    const CallbackPayload = struct {
+        swap_chain: c.WGPUSwapChain,
+        swap_chain_format: c.WGPUTextureFormat,
+    };
+    setup.window.setUserPointer(CallbackPayload, &.{ .swap_chain = swap_chain, .swap_chain_format = swap_chain_format });
+    setup.window.setFramebufferSizeCallback((struct {
+        fn callback(window: glfw.Window, width: isize, height: isize) void {
+            const pl = window.getUserPointer(*CallbackPayload);
+            c.wgpuSwapChainConfigure(pl.?.swap_chain, pl.?.swap_chain_format, c.WGPUTextureUsage_RenderAttachment, @intCast(u32, width), @intCast(u32, height));
+        }
+    }).callback);
+
     while (!setup.window.shouldClose()) {
         try frame(.{
             .device = setup.device,
