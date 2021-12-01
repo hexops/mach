@@ -52,8 +52,8 @@ MACH_EXPORT MachDawnNativeAdapterProperties machDawnNativeAdapter_getProperties(
 // An optional parameter of Adapter::CreateDevice() to send additional information when creating
 // a Device. For example, we can use it to enable a workaround, optimization or feature.
 typedef struct MachDawnNativeDeviceDescriptor {
-    char** requiredExtensions;
-    uintptr_t requiredExtensionsLength;
+    char** requiredFeatures;
+    uintptr_t requiredFeaturesLength;
 
     char** forceEnabledToggles;
     uintptr_t forceEnabledTogglesLength;
