@@ -76,8 +76,8 @@ MACH_EXPORT WGPUDevice machDawnNativeAdapter_createDevice(MachDawnNativeAdapter 
     }
 
     std::vector<const char*> cppRequiredExtensions;
-    for (int i = 0; i < deviceDescriptor->requiredExtensionsLength; i++)
-        cppRequiredExtensions.push_back(deviceDescriptor->requiredExtensions[i]);
+    for (int i = 0; i < deviceDescriptor->requiredFeaturesLength; i++)
+        cppRequiredExtensions.push_back(deviceDescriptor->requiredFeatures[i]);
 
     std::vector<const char*> cppForceEnabledToggles;
     for (int i = 0; i < deviceDescriptor->forceEnabledTogglesLength; i++)
@@ -88,25 +88,13 @@ MACH_EXPORT WGPUDevice machDawnNativeAdapter_createDevice(MachDawnNativeAdapter 
         cppForceDisabledToggles.push_back(deviceDescriptor->forceDisabledToggles[i]);
 
     auto cppDeviceDescriptor = dawn_native::DeviceDescriptor{
-        .requiredExtensions = cppRequiredExtensions,
+        .requiredFeatures = cppRequiredExtensions,
         .forceEnabledToggles = cppForceEnabledToggles,
         .forceDisabledToggles = cppForceDisabledToggles,
         .requiredLimits = deviceDescriptor->requiredLimits,
     };
     return self->CreateDevice(&cppDeviceDescriptor);
 }
-
-// TODO(dawn-native-mach):
-//     // An optional parameter of Adapter::CreateDevice() to send additional information when creating
-//     // a Device. For example, we can use it to enable a workaround, optimization or feature.
-//     struct DAWN_NATIVE_EXPORT DeviceDescriptor {
-//         std::vector<const char*> requiredExtensions;
-//         std::vector<const char*> forceEnabledToggles;
-//         std::vector<const char*> forceDisabledToggles;
-
-//         const WGPURequiredLimits* requiredLimits = nullptr;
-//     };
-
 
 // TODO(dawn-native-mach):
 // // Create a device on this adapter, note that the interface will change to include at least

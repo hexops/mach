@@ -235,7 +235,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "src/dawn_native/BuddyAllocator.cpp",
         "src/dawn_native/BuddyMemoryAllocator.cpp",
         "src/dawn_native/Buffer.cpp",
-        "src/dawn_native/BufferLocation.cpp",
         "src/dawn_native/CachedObject.cpp",
         "src/dawn_native/CallbackTaskManager.cpp",
         "src/dawn_native/CommandAllocator.cpp",
@@ -256,8 +255,8 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "src/dawn_native/ErrorData.cpp",
         "src/dawn_native/ErrorInjector.cpp",
         "src/dawn_native/ErrorScope.cpp",
-        "src/dawn_native/Extensions.cpp",
         "src/dawn_native/ExternalTexture.cpp",
+        "src/dawn_native/Features.cpp",
         "src/dawn_native/Format.cpp",
         "src/dawn_native/IndirectDrawMetadata.cpp",
         "src/dawn_native/IndirectDrawValidationEncoder.cpp",
@@ -272,7 +271,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "src/dawn_native/Pipeline.cpp",
         "src/dawn_native/PipelineLayout.cpp",
         "src/dawn_native/PooledResourceMemoryAllocator.cpp",
-        "src/dawn_native/ProgrammablePassEncoder.cpp",
+        "src/dawn_native/ProgrammableEncoder.cpp",
         "src/dawn_native/QueryHelper.cpp",
         "src/dawn_native/QuerySet.cpp",
         "src/dawn_native/Queue.cpp",
@@ -294,6 +293,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "src/dawn_native/TintUtils.cpp",
         "src/dawn_native/Toggles.cpp",
         "src/dawn_native/VertexFormat.cpp",
+        "src/dawn_native/utils/WGPUHelpers.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
         lib.addCSourceFile(abs_path, flags.items);
@@ -536,6 +536,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         //     }
         //     if (enable_vulkan_loader) {
         //       data_deps += [ "${dawn_vulkan_loader_dir}:libvulkan" ]
+        //       defines += [ "DAWN_ENABLE_VULKAN_LOADER" ]
         //     }
     }
     // TODO(build-system): swiftshader
@@ -623,6 +624,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "-DTINT_BUILD_WGSL_WRITER=1",
         "-DTINT_BUILD_MSL_WRITER=1",
         "-DTINT_BUILD_HLSL_WRITER=1",
+        "-DTINT_BUILD_GLSL_WRITER=1",
 
         // Required for TINT_BUILD_SPV_READER=1 and TINT_BUILD_SPV_WRITER=1, if specified
         include("libs/dawn/third_party/vulkan-deps"),
@@ -640,7 +642,6 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/ast/access.cc",
         "third_party/tint/src/ast/alias.cc",
         "third_party/tint/src/ast/array.cc",
-        "third_party/tint/src/ast/array_accessor_expression.cc",
         "third_party/tint/src/ast/assignment_statement.cc",
         "third_party/tint/src/ast/ast_type.cc",
         "third_party/tint/src/ast/atomic.cc",
@@ -649,14 +650,13 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/ast/bitcast_expression.cc",
         "third_party/tint/src/ast/block_statement.cc",
         "third_party/tint/src/ast/bool.cc",
-        "third_party/tint/src/ast/bool_literal.cc",
+        "third_party/tint/src/ast/bool_literal_expression.cc",
         "third_party/tint/src/ast/break_statement.cc",
         "third_party/tint/src/ast/builtin.cc",
         "third_party/tint/src/ast/builtin_decoration.cc",
         "third_party/tint/src/ast/call_expression.cc",
         "third_party/tint/src/ast/call_statement.cc",
         "third_party/tint/src/ast/case_statement.cc",
-        "third_party/tint/src/ast/constructor_expression.cc",
         "third_party/tint/src/ast/continue_statement.cc",
         "third_party/tint/src/ast/decoration.cc",
         "third_party/tint/src/ast/depth_multisampled_texture.cc",
@@ -668,18 +668,19 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/ast/external_texture.cc",
         "third_party/tint/src/ast/f32.cc",
         "third_party/tint/src/ast/fallthrough_statement.cc",
-        "third_party/tint/src/ast/float_literal.cc",
+        "third_party/tint/src/ast/float_literal_expression.cc",
         "third_party/tint/src/ast/for_loop_statement.cc",
         "third_party/tint/src/ast/function.cc",
         "third_party/tint/src/ast/group_decoration.cc",
         "third_party/tint/src/ast/i32.cc",
         "third_party/tint/src/ast/identifier_expression.cc",
         "third_party/tint/src/ast/if_statement.cc",
-        "third_party/tint/src/ast/int_literal.cc",
+        "third_party/tint/src/ast/index_accessor_expression.cc",
+        "third_party/tint/src/ast/int_literal_expression.cc",
         "third_party/tint/src/ast/internal_decoration.cc",
         "third_party/tint/src/ast/interpolate_decoration.cc",
         "third_party/tint/src/ast/invariant_decoration.cc",
-        "third_party/tint/src/ast/literal.cc",
+        "third_party/tint/src/ast/literal_expression.cc",
         "third_party/tint/src/ast/location_decoration.cc",
         "third_party/tint/src/ast/loop_statement.cc",
         "third_party/tint/src/ast/matrix.cc",
@@ -688,13 +689,13 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/ast/multisampled_texture.cc",
         "third_party/tint/src/ast/node.cc",
         "third_party/tint/src/ast/override_decoration.cc",
+        "third_party/tint/src/ast/phony_expression.cc",
         "third_party/tint/src/ast/pipeline_stage.cc",
         "third_party/tint/src/ast/pointer.cc",
         "third_party/tint/src/ast/return_statement.cc",
         "third_party/tint/src/ast/sampled_texture.cc",
         "third_party/tint/src/ast/sampler.cc",
-        "third_party/tint/src/ast/scalar_constructor_expression.cc",
-        "third_party/tint/src/ast/sint_literal.cc",
+        "third_party/tint/src/ast/sint_literal_expression.cc",
         "third_party/tint/src/ast/stage_decoration.cc",
         "third_party/tint/src/ast/statement.cc",
         "third_party/tint/src/ast/storage_class.cc",
@@ -708,11 +709,10 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/ast/struct_member_size_decoration.cc",
         "third_party/tint/src/ast/switch_statement.cc",
         "third_party/tint/src/ast/texture.cc",
-        "third_party/tint/src/ast/type_constructor_expression.cc",
         "third_party/tint/src/ast/type_decl.cc",
         "third_party/tint/src/ast/type_name.cc",
         "third_party/tint/src/ast/u32.cc",
-        "third_party/tint/src/ast/uint_literal.cc",
+        "third_party/tint/src/ast/uint_literal_expression.cc",
         "third_party/tint/src/ast/unary_op.cc",
         "third_party/tint/src/ast/unary_op_expression.cc",
         "third_party/tint/src/ast/variable.cc",
@@ -736,8 +736,10 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/program_builder.cc",
         "third_party/tint/src/program_id.cc",
         "third_party/tint/src/reader/reader.cc",
+        "third_party/tint/src/resolver/dependency_graph.cc",
         "third_party/tint/src/resolver/resolver.cc",
         "third_party/tint/src/resolver/resolver_constants.cc",
+        "third_party/tint/src/resolver/resolver_validation.cc",
         "third_party/tint/src/source.cc",
         "third_party/tint/src/symbol.cc",
         "third_party/tint/src/symbol_table.cc",
@@ -753,22 +755,26 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/transform/fold_constants.cc",
         "third_party/tint/src/transform/fold_trivial_single_use_lets.cc",
         "third_party/tint/src/transform/for_loop_to_loop.cc",
-        "third_party/tint/src/transform/inline_pointer_lets.cc",
         "third_party/tint/src/transform/loop_to_for_loop.cc",
         "third_party/tint/src/transform/manager.cc",
         "third_party/tint/src/transform/module_scope_var_to_entry_point_param.cc",
+        "third_party/tint/src/transform/multiplanar_external_texture.cc",
         "third_party/tint/src/transform/num_workgroups_from_uniform.cc",
         "third_party/tint/src/transform/pad_array_elements.cc",
         "third_party/tint/src/transform/promote_initializers_to_const_var.cc",
+        "third_party/tint/src/transform/remove_phonies.cc",
         "third_party/tint/src/transform/renamer.cc",
         "third_party/tint/src/transform/robustness.cc",
-        "third_party/tint/src/transform/simplify.cc",
+        "third_party/tint/src/transform/simplify_pointers.cc",
         "third_party/tint/src/transform/single_entry_point.cc",
         "third_party/tint/src/transform/transform.cc",
+        "third_party/tint/src/transform/unshadow.cc",
+        "third_party/tint/src/transform/vectorize_scalar_matrix_constructors.cc",
         "third_party/tint/src/transform/vertex_pulling.cc",
         "third_party/tint/src/transform/wrap_arrays_in_structs.cc",
         "third_party/tint/src/transform/zero_init_workgroup_memory.cc",
         "third_party/tint/src/writer/append_vector.cc",
+        "third_party/tint/src/writer/array_length_from_uniform_options.cc",
         "third_party/tint/src/writer/float_to_string.cc",
         "third_party/tint/src/writer/text.cc",
         "third_party/tint/src/writer/text_generator.cc",
@@ -789,6 +795,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
     for ([_][]const u8{
         "third_party/tint/src/sem/array.cc",
         "third_party/tint/src/sem/atomic_type.cc",
+        "third_party/tint/src/sem/behavior.cc",
         "third_party/tint/src/sem/block_statement.cc",
         "third_party/tint/src/sem/bool_type.cc",
         "third_party/tint/src/sem/call.cc",
@@ -822,6 +829,8 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/sem/switch_statement.cc",
         "third_party/tint/src/sem/texture_type.cc",
         "third_party/tint/src/sem/type.cc",
+        "third_party/tint/src/sem/type_constructor.cc",
+        "third_party/tint/src/sem/type_conversion.cc",
         "third_party/tint/src/sem/type_manager.cc",
         "third_party/tint/src/sem/u32_type.cc",
         "third_party/tint/src/sem/variable.cc",
@@ -898,6 +907,17 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
     for ([_][]const u8{
         "third_party/tint/src/writer/hlsl/generator.cc",
         "third_party/tint/src/writer/hlsl/generator_impl.cc",
+    }) |path| {
+        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+        lib.addCSourceFile(abs_path, flags);
+    }
+
+    // TODO(build-system): make optional
+    // libtint_glsl_writer_src
+    for ([_][]const u8{
+        "third_party/tint/src/transform/glsl.cc",
+        "third_party/tint/src/writer/glsl/generator.cc",
+        "third_party/tint/src/writer/glsl/generator_impl.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
         lib.addCSourceFile(abs_path, flags);
