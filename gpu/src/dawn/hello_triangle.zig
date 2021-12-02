@@ -129,7 +129,7 @@ pub fn main() !void {
             .pipeline = pipeline,
             .queue = queue,
         });
-        std.time.sleep(16000);
+        std.time.sleep(16 * std.time.ns_per_ms);
     }
 }
 
