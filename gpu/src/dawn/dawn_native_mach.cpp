@@ -1,7 +1,9 @@
 #include <dawn_native/DawnNative.h>
 #include <dawn_native/wgpu_structs_autogen.h>
 #include "utils/BackendBinding.h"
-
+#if defined(DAWN_ENABLE_BACKEND_OPENGL)
+#include <dawn_native/OpenGLBackend.h>
+#endif
 #include "dawn_native_mach.h"
 
 #ifdef __cplusplus
@@ -133,10 +135,37 @@ MACH_EXPORT void machDawnNativeInstance_discoverDefaultAdapters(MachDawnNativeIn
     dawn_native::Instance* self = reinterpret_cast<dawn_native::Instance*>(instance);
     self->DiscoverDefaultAdapters();
 }
-// TODO(dawn-native-mach):
-// // Adds adapters that can be discovered with the options provided (like a getProcAddress).
-// // The backend is chosen based on the type of the options used. Returns true on success.
-// bool DiscoverAdapters(const AdapterDiscoveryOptionsBase* options);
+MACH_EXPORT bool machDawnNativeInstance_discoverAdapters(MachDawnNativeInstance instance, WGPUBackendType backendType, const void* options) {
+    dawn_native::Instance* self = reinterpret_cast<dawn_native::Instance*>(instance);
+    switch (backendType) {
+    case WGPUBackendType_OpenGL:
+    #if defined(DAWN_ENABLE_BACKEND_DESKTOP_GL)
+    {
+        auto opt = reinterpret_cast<const MachDawnNativeAdapterDiscoveryOptions_OpenGL*>(options);
+        dawn_native::opengl::AdapterDiscoveryOptions adapterOptions = dawn_native::opengl::AdapterDiscoveryOptions();
+        adapterOptions.getProc = opt->getProc;
+        return self->DiscoverAdapters(&adapterOptions);
+    }
+    #endif
+    case WGPUBackendType_OpenGLES:
+    #if defined(DAWN_ENABLE_BACKEND_OPENGLES)
+    {
+        auto opt = reinterpret_cast<const MachDawnNativeAdapterDiscoveryOptions_OpenGLES*>(options);
+        dawn_native::opengl::AdapterDiscoveryOptionsES adapterOptions;
+        adapterOptions.getProc = opt->getProc;
+        return self->DiscoverAdapters(&adapterOptions);
+    }
+    #endif
+    case WGPUBackendType_WebGPU:
+    case WGPUBackendType_D3D11:
+    case WGPUBackendType_D3D12:
+    case WGPUBackendType_Metal:
+    case WGPUBackendType_Null:
+    case WGPUBackendType_Vulkan:
+    case WGPUBackendType_Force32:
+        return false;
+    }
+}
 MACH_EXPORT MachDawnNativeAdapters machDawnNativeInstance_getAdapters(MachDawnNativeInstance instance) {
     dawn_native::Instance* self = reinterpret_cast<dawn_native::Instance*>(instance);
     auto cppAdapters = self->GetAdapters();

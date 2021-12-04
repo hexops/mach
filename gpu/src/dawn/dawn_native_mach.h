@@ -81,11 +81,25 @@ typedef struct MachDawnNativeInstanceImpl* MachDawnNativeInstance;
 MACH_EXPORT MachDawnNativeInstance machDawnNativeInstance_init(void);
 MACH_EXPORT void machDawnNativeInstance_deinit(MachDawnNativeInstance);
 MACH_EXPORT void machDawnNativeInstance_discoverDefaultAdapters(MachDawnNativeInstance);
+
+// Adds adapters that can be discovered with the options provided (like a getProcAddress).
+// You must specify a valid backend type corresponding to the type of MachDawnNativeAdapterDiscoveryOptions_
+// struct pointer you pass as options.
+// Returns true on success.
+MACH_EXPORT bool machDawnNativeInstance_discoverAdapters(MachDawnNativeInstance instance, WGPUBackendType backendType, const void* options);
+
 MACH_EXPORT MachDawnNativeAdapters machDawnNativeInstance_getAdapters(MachDawnNativeInstance instance);
 
 // Backend-agnostic API for dawn_native
 MACH_EXPORT const DawnProcTable* machDawnNativeGetProcs();
 
+// Backend-specific options which can be passed to discoverAdapters
+typedef struct MachDawnNativeAdapterDiscoveryOptions_OpenGL {
+    void* (*getProc)(const char*);
+} MachDawnNativeAdapterDiscoveryOptions_OpenGL;
+typedef struct MachDawnNativeAdapterDiscoveryOptions_OpenGLES {
+    void* (*getProc)(const char*);
+} MachDawnNativeAdapterDiscoveryOptions_OpenGLES;
 
 // utils
 #include <GLFW/glfw3.h>
