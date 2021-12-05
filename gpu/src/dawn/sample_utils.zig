@@ -52,10 +52,34 @@ const Setup = struct {
 };
 
 fn detectBackendType() c.WGPUBackendType {
+    if (std.os.getenv("WGPU_BACKEND")) |backend| {
+        if (std.ascii.eqlIgnoreCase(backend, "opengl")) return c.WGPUBackendType_OpenGL;
+        if (std.ascii.eqlIgnoreCase(backend, "opengles")) return c.WGPUBackendType_OpenGLES;
+        if (std.ascii.eqlIgnoreCase(backend, "d3d11")) return c.WGPUBackendType_D3D11;
+        if (std.ascii.eqlIgnoreCase(backend, "d3d12")) return c.WGPUBackendType_D3D12;
+        if (std.ascii.eqlIgnoreCase(backend, "metal")) return c.WGPUBackendType_Metal;
+        if (std.ascii.eqlIgnoreCase(backend, "null")) return c.WGPUBackendType_Null;
+        if (std.ascii.eqlIgnoreCase(backend, "vulkan")) return c.WGPUBackendType_Vulkan;
+        @panic("unknown BACKEND type");
+    }
+
     const target = @import("builtin").target;
     if (target.isDarwin()) return c.WGPUBackendType_Metal;
     if (target.os.tag == .windows) return c.WGPUBackendType_D3D12;
     return c.WGPUBackendType_Vulkan;
+}
+
+fn backendTypeString(t: c.WGPUBackendType) []const u8 {
+    return switch (t) {
+        c.WGPUBackendType_OpenGL => "OpenGL",
+        c.WGPUBackendType_OpenGLES => "OpenGLES",
+        c.WGPUBackendType_D3D11 => "D3D11",
+        c.WGPUBackendType_D3D12 => "D3D12",
+        c.WGPUBackendType_Metal => "Metal",
+        c.WGPUBackendType_Null => "Null",
+        c.WGPUBackendType_Vulkan => "Vulkan",
+        else => unreachable,
+    };
 }
 
 pub fn setup() !Setup {
@@ -79,11 +103,9 @@ pub fn setup() !Setup {
         const adapter = c.machDawnNativeAdapters_index(adapters, i);
         const properties = c.machDawnNativeAdapter_getProperties(adapter);
         if (c.machDawnNativeAdapterProperties_getBackendType(properties) == backend_type) {
-            const vendor_id = c.machDawnNativeAdapterProperties_getVendorID(properties);
-            const device_id = c.machDawnNativeAdapterProperties_getDeviceID(properties);
             const name = c.machDawnNativeAdapterProperties_getName(properties);
             const driver_description = c.machDawnNativeAdapterProperties_getDriverDescription(properties);
-            std.debug.print("found adapter vendor_id={} device_id={} name={s} driver={s}\n", .{vendor_id, device_id, name, driver_description});
+            std.debug.print("found {s} adapter: {s}, {s}\n", .{ backendTypeString(backend_type), name, driver_description });
             backend_adapter = adapter;
         }
     }
