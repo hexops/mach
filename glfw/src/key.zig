@@ -214,11 +214,12 @@ pub const Key = enum(c_int) {
     /// @thread_safety This function must only be called from the main thread.
     ///
     /// see also: input_key_name
-    pub inline fn getName(self: Key, scancode: isize) Error!?[:0]const u8 {
+    pub inline fn getName(self: Key, scancode: isize) error{PlatformError}!?[:0]const u8 {
         internal_debug.assertInitialized();
         const name_opt = cc.glfwGetKeyName(@enumToInt(self), @intCast(c_int, scancode));
         getError() catch |err| return switch (err) {
-            Error.PlatformError => err,
+            Error.NotInitialized => unreachable,
+            Error.PlatformError => @errSetCast(error{PlatformError}, err),
             else => unreachable,
         };
         return if (name_opt) |name|
@@ -239,11 +240,13 @@ pub const Key = enum(c_int) {
     /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
     ///
     /// @thread_safety This function may be called from any thread.
-    pub inline fn getScancode(self: Key) Error!isize {
+    pub inline fn getScancode(self: Key) error{PlatformError}!isize {
         internal_debug.assertInitialized();
         const scancode = cc.glfwGetKeyScancode(@enumToInt(self));
         getError() catch |err| return switch (err) {
-            Error.PlatformError => err,
+            Error.NotInitialized => unreachable,
+            Error.InvalidEnum => unreachable,
+            Error.PlatformError => @errSetCast(error{PlatformError}, err),
             else => unreachable,
         };
         return scancode;

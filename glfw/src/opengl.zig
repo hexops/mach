@@ -31,13 +31,14 @@ const internal_debug = @import("internal_debug.zig");
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_current, glfwGetCurrentContext
-pub inline fn makeContextCurrent(window: ?Window) Error!void {
+pub inline fn makeContextCurrent(window: ?Window) error{ NoWindowContext, PlatformError }!void {
     internal_debug.assertInitialized();
     if (window) |w| c.glfwMakeContextCurrent(w.handle) else c.glfwMakeContextCurrent(null);
     getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
         Error.NoWindowContext,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ NoWindowContext, PlatformError }, err),
         else => unreachable,
     };
 }
@@ -57,7 +58,10 @@ pub inline fn makeContextCurrent(window: ?Window) Error!void {
 pub inline fn getCurrentContext() std.mem.Allocator.Error!?Window {
     internal_debug.assertInitialized();
     const handle = c.glfwGetCurrentContext();
-    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     if (handle) |h| return try Window.from(h);
     return null;
 }
@@ -95,13 +99,14 @@ pub inline fn getCurrentContext() std.mem.Allocator.Error!?Window {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: buffer_swap, glfwSwapBuffers
-pub inline fn swapInterval(interval: isize) Error!void {
+pub inline fn swapInterval(interval: isize) error{ NoCurrentContext, PlatformError }!void {
     internal_debug.assertInitialized();
     c.glfwSwapInterval(@intCast(c_int, interval));
     getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
         Error.NoCurrentContext,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ NoCurrentContext, PlatformError }, err),
         else => unreachable,
     };
 }
@@ -131,7 +136,7 @@ pub inline fn swapInterval(interval: isize) Error!void {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_glext, glfw.getProcAddress
-pub inline fn extensionSupported(extension: [:0]const u8) Error!bool {
+pub inline fn extensionSupported(extension: [:0]const u8) error{ NoCurrentContext, PlatformError }!bool {
     internal_debug.assertInitialized();
 
     std.debug.assert(extension.len != 0);
@@ -139,8 +144,11 @@ pub inline fn extensionSupported(extension: [:0]const u8) Error!bool {
 
     const supported = c.glfwExtensionSupported(extension);
     getError() catch |err| return switch (err) {
-        Error.NoCurrentContext => err,
-        Error.InvalidValue => unreachable, // we assert that 'extension' is a minimally valid value, so this should be impossible
+        Error.NoCurrentContext,
+        Error.PlatformError,
+        => @errSetCast(error{ NoCurrentContext, PlatformError }, err),
+        Error.NotInitialized => unreachable,
+        Error.InvalidValue => unreachable,
         else => unreachable,
     };
     return supported == c.GLFW_TRUE;

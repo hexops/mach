@@ -30,7 +30,10 @@ const internal_debug = @import("internal_debug.zig");
 pub inline fn getTime() f64 {
     internal_debug.assertInitialized();
     const time = c.glfwGetTime();
-    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     return time;
 }
 
@@ -66,7 +69,8 @@ pub inline fn setTime(time: f64) void {
 
     c.glfwSetTime(time);
     getError() catch |err| return switch (err) {
-        Error.InvalidValue => unreachable, // we assert that 'time' is a valid value, so this should be impossible
+        Error.NotInitialized => unreachable,
+        Error.InvalidValue => unreachable,
         else => unreachable,
     };
 }
@@ -84,7 +88,10 @@ pub inline fn setTime(time: f64) void {
 pub inline fn getTimerValue() u64 {
     internal_debug.assertInitialized();
     const value = c.glfwGetTimerValue();
-    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     return value;
 }
 
@@ -100,7 +107,10 @@ pub inline fn getTimerValue() u64 {
 pub inline fn getTimerFrequency() u64 {
     internal_debug.assertInitialized();
     const frequency = c.glfwGetTimerFrequency();
-    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     return frequency;
 }
 

@@ -60,12 +60,13 @@ pub inline fn vulkanSupported() bool {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: vulkan_ext, glfwCreateWindowSurface
-pub inline fn getRequiredInstanceExtensions() Error![][*:0]const u8 {
+pub inline fn getRequiredInstanceExtensions() error{APIUnavailable}![][*:0]const u8 {
     internal_debug.assertInitialized();
     var count: u32 = 0;
     const extensions = c.glfwGetRequiredInstanceExtensions(&count);
     getError() catch |err| return switch (err) {
-        Error.APIUnavailable => err,
+        Error.NotInitialized => unreachable,
+        Error.APIUnavailable => @errSetCast(error{APIUnavailable}, err),
         else => unreachable,
     };
     return @ptrCast([*][*:0]const u8, extensions)[0..count];
@@ -142,7 +143,11 @@ pub fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*:0]const u8
 /// Vulkan objects, see the Vulkan specification.
 ///
 /// see also: vulkan_present
-pub inline fn getPhysicalDevicePresentationSupport(vk_instance: *opaque {}, vk_physical_device: *opaque {}, queue_family: u32) Error!bool {
+pub inline fn getPhysicalDevicePresentationSupport(
+    vk_instance: *opaque {},
+    vk_physical_device: *opaque {},
+    queue_family: u32,
+) error{ APIUnavailable, PlatformError }!bool {
     internal_debug.assertInitialized();
     const v = c.glfwGetPhysicalDevicePresentationSupport(
         @ptrCast(c.VkInstance, vk_instance),
@@ -150,9 +155,10 @@ pub inline fn getPhysicalDevicePresentationSupport(vk_instance: *opaque {}, vk_p
         queue_family,
     );
     getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
         Error.APIUnavailable,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ APIUnavailable, PlatformError }, err),
         else => unreachable,
     };
     return v == c.GLFW_TRUE;
@@ -203,7 +209,7 @@ pub inline fn getPhysicalDevicePresentationSupport(vk_instance: *opaque {}, vk_p
 /// Vulkan objects, see the Vulkan specification.
 ///
 /// see also: vulkan_surface, glfw.getRequiredInstanceExtensions
-pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_allocation_callbacks: anytype, vk_surface_khr: anytype) Error!i32 {
+pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_allocation_callbacks: anytype, vk_surface_khr: anytype) error{ APIUnavailable, PlatformError }!i32 {
     internal_debug.assertInitialized();
     // zig-vulkan uses enums to represent opaque pointers:
     // pub const Instance = enum(usize) { null_handle = 0, _ };
@@ -219,6 +225,7 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
         @ptrCast(*c.VkSurfaceKHR, @alignCast(@alignOf(c.VkSurfaceKHR), vk_surface_khr)),
     );
     getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
         Error.InvalidValue => @panic("Attempted to use window with client api to create vulkan surface."),
         Error.APIUnavailable,
         Error.PlatformError,
