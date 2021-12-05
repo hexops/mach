@@ -189,18 +189,18 @@ fn glfwWindowHintsForBackend(backend: c.WGPUBackendType) glfw.Window.Hints {
 }
 
 fn discoverAdapter(instance: c.MachDawnNativeInstance, window: glfw.Window, typ: c.WGPUBackendType) !void {
-    if (typ == c.WGPUBackendType_OpenGL or typ == c.WGPUBackendType_OpenGLES) {
+    if (typ == c.WGPUBackendType_OpenGL) {
         try glfw.makeContextCurrent(window);
-        // auto getProc = reinterpret_cast<void* (*)(const char*)>(glfwGetProcAddress);
-        // if (type == wgpu::BackendType::OpenGL) {
-        //     dawn_native::opengl::AdapterDiscoveryOptions adapterOptions;
-        //     adapterOptions.getProc = getProc;
-        //     instance->DiscoverAdapters(&adapterOptions);
-        // } else {
-        //     dawn_native::opengl::AdapterDiscoveryOptionsES adapterOptions;
-        //     adapterOptions.getProc = getProc;
-        //     instance->DiscoverAdapters(&adapterOptions);
-        // }
+        const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGL{
+            .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*c_void, glfw.getProcAddress),
+        };
+        _ = c.machDawnNativeInstance_discoverAdapters(instance, typ, &adapter_options);
+    } else if (typ == c.WGPUBackendType_OpenGLES) {
+        try glfw.makeContextCurrent(window);
+        const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGLES{
+            .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*c_void, glfw.getProcAddress),
+        };
+        _ = c.machDawnNativeInstance_discoverAdapters(instance, typ, &adapter_options);
     } else {
         c.machDawnNativeInstance_discoverDefaultAdapters(instance);
     }
