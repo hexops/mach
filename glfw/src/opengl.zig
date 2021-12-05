@@ -184,7 +184,7 @@ pub const GLProc = fn () callconv(.C) void;
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: context_glext, glfwExtensionSupported
-pub inline fn getProcAddress(proc_name: [*:0]const u8) ?GLProc {
+pub fn getProcAddress(proc_name: [*:0]const u8) callconv(.C) ?GLProc {
     internal_debug.assertInitialized();
     const proc_address = c.glfwGetProcAddress(proc_name);
     getError() catch |err| @panic(@errorName(err));
