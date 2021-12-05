@@ -30,6 +30,13 @@ pub const Options = struct {
     // TODO(build-system): not respected at all currently
     opengl_es: ?bool = null,
 
+    /// Whether or not minimal debug symbols should be emitted. This is -g1 in most cases, enough to
+    /// produce stack traces but omitting debug symbols for locals. For spirv-tools and tint in
+    /// specific, -g0 will be used (no debug symbols at all) to save an additional ~39M.
+    ///
+    /// When enabled, a debug build of the static library goes from ~947M to just ~53M.
+    minimal_debug_symbols: bool = true,
+
     /// Detects the default options to use for the given target.
     pub fn detectDefaults(self: Options, target: std.Target) Options {
         const tag = target.os.tag;
@@ -47,6 +54,12 @@ pub const Options = struct {
         // if (options.opengl_es == null) options.opengl_es = tag == .windows or tag == .emscripten or target.isAndroid() or linux_desktop_like;
         return options;
     }
+
+    pub fn appendFlags(self: Options, flags: *std.ArrayList([]const u8), zero_debug_symbols: bool) !void {
+        if (self.minimal_debug_symbols) {
+            if (zero_debug_symbols) try flags.append("-g0") else try flags.append("-g1");
+        }
+    }
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
@@ -56,28 +69,28 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const lib_mach_dawn_native = buildLibMachDawnNative(b, step, opt);
     step.linkLibrary(lib_mach_dawn_native);
 
-    const lib_dawn_common = buildLibDawnCommon(b, step);
+    const lib_dawn_common = buildLibDawnCommon(b, step, opt);
     step.linkLibrary(lib_dawn_common);
 
-    const lib_dawn_platform = buildLibDawnPlatform(b, step);
+    const lib_dawn_platform = buildLibDawnPlatform(b, step, opt);
     step.linkLibrary(lib_dawn_platform);
 
     // dawn-native
-    const lib_abseil_cpp = buildLibAbseilCpp(b, step);
+    const lib_abseil_cpp = buildLibAbseilCpp(b, step, opt);
     step.linkLibrary(lib_abseil_cpp);
     const lib_dawn_native = buildLibDawnNative(b, step, opt);
     step.linkLibrary(lib_dawn_native);
 
-    const lib_dawn_wire = buildLibDawnWire(b, step);
+    const lib_dawn_wire = buildLibDawnWire(b, step, opt);
     step.linkLibrary(lib_dawn_wire);
 
     const lib_dawn_utils = buildLibDawnUtils(b, step, opt);
     step.linkLibrary(lib_dawn_utils);
 
-    const lib_spirv_tools = buildLibSPIRVTools(b, step);
+    const lib_spirv_tools = buildLibSPIRVTools(b, step, opt);
     step.linkLibrary(lib_spirv_tools);
 
-    const lib_tint = buildLibTint(b, step);
+    const lib_tint = buildLibTint(b, step, opt);
     step.linkLibrary(lib_tint);
 }
 
@@ -98,6 +111,7 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: 
     glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, false) catch unreachable;
     appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
     flags.appendSlice(&.{
         include("libs/mach-glfw/upstream/glfw/include"),
@@ -112,12 +126,16 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: 
 }
 
 // Builds common sources; derived from src/common/BUILD.gn
-fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn-common", main_abs);
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     lib.linkLibCpp();
+
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, false) catch unreachable;
+    flags.append(include("libs/dawn/src")) catch unreachable;
 
     for ([_][]const u8{
         "src/common/Assert.cpp",
@@ -131,7 +149,7 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
         "src/common/SystemUtils.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, &.{include("libs/dawn/src")});
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
@@ -140,13 +158,13 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
         system_sdk.include(b, lib, .{});
         lib.linkFramework("Foundation");
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn/src/common/SystemUtils_mac.mm" }) catch unreachable;
-        lib.addCSourceFile(abs_path, &.{include("libs/dawn/src")});
+        lib.addCSourceFile(abs_path, flags.items);
     }
     return lib;
 }
 
 // Build dawn platform sources; derived from src/dawn_platform/BUILD.gn
-fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn-platform", main_abs);
     lib.install();
@@ -154,18 +172,22 @@ fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep) *std.build.
     lib.setTarget(step.target);
     lib.linkLibCpp();
 
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, false) catch unreachable;
+    flags.appendSlice(&.{
+        include("libs/dawn/src"),
+        include("libs/dawn/src/include"),
+
+        include("libs/dawn/out/Debug/gen/src/include"),
+    }) catch unreachable;
+
     for ([_][]const u8{
         "src/dawn_platform/DawnPlatform.cpp",
         "src/dawn_platform/WorkerThread.cpp",
         "src/dawn_platform/tracing/EventTracer.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, &.{
-            include("libs/dawn/src"),
-            include("libs/dawn/src/include"),
-
-            include("libs/dawn/out/Debug/gen/src/include"),
-        });
+        lib.addCSourceFile(abs_path, flags.items);
     }
     return lib;
 }
@@ -198,12 +220,13 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     system_sdk.include(b, lib, .{});
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, false) catch unreachable;
     appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
     if (options.desktop_gl.?) {
         // OpenGL requires spriv-cross until Dawn moves OpenGL shader generation to Tint.
         flags.append(include("libs/dawn/third_party/vulkan-deps/spirv-cross/src")) catch unreachable;
 
-        const lib_spirv_cross = buildLibSPIRVCross(b, step);
+        const lib_spirv_cross = buildLibSPIRVCross(b, step, options);
         step.linkLibrary(lib_spirv_cross);
     }
     flags.appendSlice(&.{
@@ -621,7 +644,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 }
 
 // Builds third party tint sources; derived from third_party/tint/src/BUILD.gn
-fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("tint", main_abs);
     lib.install();
@@ -629,7 +652,9 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
     lib.setTarget(step.target);
     lib.linkLibCpp();
 
-    const flags = &.{
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, true) catch unreachable;
+    flags.appendSlice(&.{
         // TODO(build-system): make these optional
         "-DTINT_BUILD_SPV_READER=1",
         "-DTINT_BUILD_SPV_WRITER=1",
@@ -648,7 +673,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
         include("libs/dawn/third_party/tint"),
         include("libs/dawn/third_party/tint/include"),
-    };
+    }) catch unreachable;
 
     // libtint_core_all_src
     for ([_][]const u8{
@@ -794,14 +819,14 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/writer/writer.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
-        .windows => lib.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_windows.cc", flags),
-        .linux => lib.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_linux.cc", flags),
-        else => lib.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_other.cc", flags),
+        .windows => lib.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_windows.cc", flags.items),
+        .linux => lib.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_linux.cc", flags.items),
+        else => lib.addCSourceFile(thisDir() ++ "/libs/dawn/third_party/tint/src/diagnostic/printer_other.cc", flags.items),
     }
 
     // libtint_sem_src
@@ -851,7 +876,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/sem/void_type.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // libtint_spv_reader_src
@@ -867,7 +892,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/reader/spirv/usage.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // libtint_spv_writer_src
@@ -880,7 +905,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/writer/spirv/operand.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // TODO(build-system): make optional
@@ -892,7 +917,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/reader/wgsl/token.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // TODO(build-system): make optional
@@ -902,7 +927,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/writer/wgsl/generator_impl.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // TODO(build-system): make optional
@@ -912,7 +937,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/writer/msl/generator_impl.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // TODO(build-system): make optional
@@ -922,7 +947,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/writer/hlsl/generator_impl.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // TODO(build-system): make optional
@@ -933,13 +958,13 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
         "third_party/tint/src/writer/glsl/generator_impl.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
     return lib;
 }
 
 // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
-fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("spirv-tools", main_abs);
     lib.install();
@@ -947,13 +972,15 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
     lib.setTarget(step.target);
     lib.linkLibCpp();
 
-    const flags = &.{
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, true) catch unreachable;
+    flags.appendSlice(&.{
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
         include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include"),
         include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
         include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
-    };
+    }) catch unreachable;
 
     // spvtools
     for ([_][]const u8{
@@ -985,7 +1012,7 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
         "third_party/vulkan-deps/spirv-tools/src/source/util/timer.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // spvtools_val
@@ -1032,7 +1059,7 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
         "third_party/vulkan-deps/spirv-tools/src/source/val/validation_state.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // spvtools_opt
@@ -1142,7 +1169,7 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
         "third_party/vulkan-deps/spirv-tools/src/source/opt/wrap_opkill.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // spvtools_link
@@ -1150,13 +1177,13 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
         "third_party/vulkan-deps/spirv-tools/src/source/link/linker.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
     return lib;
 }
 
 // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
-fn buildLibSPIRVCross(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+fn buildLibSPIRVCross(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("spirv-cross", main_abs);
     lib.install();
@@ -1165,6 +1192,7 @@ fn buildLibSPIRVCross(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
     lib.linkLibCpp();
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, false) catch unreachable;
     flags.appendSlice(&.{
         "-DSPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS",
         include("libs/dawn/third_party/vulkan-deps/spirv-cross/src"),
@@ -1205,7 +1233,7 @@ fn buildLibSPIRVCross(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
 // $ find third_party/abseil-cpp/absl | grep '\.cc' | grep -v 'test' | grep -v 'benchmark' | grep -v gaussian_distribution_gentables | grep -v print_hash_of | grep -v chi_square
 // ```
 //
-fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("abseil-cpp", main_abs);
     lib.install();
@@ -1217,7 +1245,11 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Lib
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (target.os.tag == .macos) lib.linkFramework("CoreFoundation");
 
-    const flags = &.{include("libs/dawn/third_party/abseil-cpp")};
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, false) catch unreachable;
+    flags.appendSlice(&.{
+        include("libs/dawn/third_party/abseil-cpp"),
+    }) catch unreachable;
 
     // absl
     for ([_][]const u8{
@@ -1341,13 +1373,13 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Lib
         "third_party/abseil-cpp/absl/base/log_severity.cc",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
     return lib;
 }
 
 // Buids dawn wire sources; derived from src/dawn_wire/BUILD.gn
-fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn-wire", main_abs);
     lib.install();
@@ -1355,13 +1387,15 @@ fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibE
     lib.setTarget(step.target);
     lib.linkLibCpp();
 
-    const flags = &.{
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, false) catch unreachable;
+    flags.appendSlice(&.{
         include("libs/dawn/src"),
         include("libs/dawn/src/include"),
 
         include("libs/dawn/out/Debug/gen/src/include"),
         include("libs/dawn/out/Debug/gen/src"),
-    };
+    }) catch unreachable;
 
     // dawn_wire_gen
     for ([_][]const u8{
@@ -1372,7 +1406,7 @@ fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibE
         "out/Debug/gen/src/dawn_wire/server/ServerHandlers_autogen.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
 
     // dawn_wire_gen
@@ -1398,7 +1432,7 @@ fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibE
         "src/dawn_wire/server/ServerShaderModule.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags);
+        lib.addCSourceFile(abs_path, flags.items);
     }
     return lib;
 }
@@ -1415,6 +1449,7 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
+    options.appendFlags(&flags, false) catch unreachable;
     appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
     flags.appendSlice(&.{
         include("libs/mach-glfw/upstream/glfw/include"),
