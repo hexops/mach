@@ -42,9 +42,8 @@ pub const Options = struct {
         if (options.vulkan == null) options.vulkan = tag == .fuchsia or linux_desktop_like;
 
         // TODO(build-system): respect these options / defaults
-        options.desktop_gl = false;
+        if (options.desktop_gl == null) options.desktop_gl = linux_desktop_like; // TODO(build-system): add windows
         options.opengl_es = false;
-        // if (options.desktop_gl == null) options.desktop_gl = tag == .windows or linux_desktop_like;
         // if (options.opengl_es == null) options.opengl_es = tag == .windows or tag == .emscripten or target.isAndroid() or linux_desktop_like;
         return options;
     }
@@ -54,7 +53,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const opt = options.detectDefaults(target);
 
-    const lib_mach_dawn_native = buildLibMachDawnNative(b, step);
+    const lib_mach_dawn_native = buildLibMachDawnNative(b, step, opt);
     step.linkLibrary(lib_mach_dawn_native);
 
     const lib_dawn_common = buildLibDawnCommon(b, step);
@@ -87,7 +86,7 @@ fn isLinuxDesktopLike(target: std.Target) bool {
     return !tag.isDarwin() and tag != .windows and tag != .fuchsia and tag != .emscripten and !target.isAndroid();
 }
 
-fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("dawn-native-mach", main_abs);
     lib.install();
@@ -97,13 +96,18 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep) *std.buil
 
     // TODO(build-system): pass system SDK options through
     glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
-    lib.addCSourceFile("src/dawn/dawn_native_mach.cpp", &.{
+
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
+    flags.appendSlice(&.{
         include("libs/mach-glfw/upstream/glfw/include"),
         include("libs/dawn/out/Debug/gen/src/include"),
         include("libs/dawn/out/Debug/gen/src"),
         include("libs/dawn/src/include"),
         include("libs/dawn/src"),
-    });
+    }) catch unreachable;
+
+    lib.addCSourceFile("src/dawn/dawn_native_mach.cpp", flags.items);
     return lib;
 }
 
@@ -170,6 +174,7 @@ fn appendDawnEnableBackendTypeFlags(flags: *std.ArrayList([]const u8), options: 
     const d3d12 = "-DDAWN_ENABLE_BACKEND_D3D12";
     const metal = "-DDAWN_ENABLE_BACKEND_METAL";
     const vulkan = "-DDAWN_ENABLE_BACKEND_VULKAN";
+    const opengl = "-DDAWN_ENABLE_BACKEND_OPENGL";
     const desktop_gl = "-DDAWN_ENABLE_BACKEND_DESKTOP_GL";
     const opengl_es = "-DDAWN_ENABLE_BACKEND_OPENGLES";
     const backend_null = "-DDAWN_ENABLE_BACKEND_NULL";
@@ -178,8 +183,8 @@ fn appendDawnEnableBackendTypeFlags(flags: *std.ArrayList([]const u8), options: 
     if (options.d3d12.?) try flags.append(d3d12);
     if (options.metal.?) try flags.append(metal);
     if (options.vulkan.?) try flags.append(vulkan);
-    if (options.desktop_gl.?) try flags.append(desktop_gl);
-    if (options.opengl_es.?) try flags.append(opengl_es);
+    if (options.desktop_gl.?) try flags.appendSlice(&.{ opengl, desktop_gl });
+    if (options.opengl_es.?) try flags.appendSlice(&.{ opengl, opengl_es });
 }
 
 // Builds dawn native sources; derived from src/dawn_native/BUILD.gn
@@ -194,6 +199,13 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
     appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
+    if (options.desktop_gl.?) {
+        // OpenGL requires spriv-cross until Dawn moves OpenGL shader generation to Tint.
+        flags.append(include("libs/dawn/third_party/vulkan-deps/spirv-cross/src")) catch unreachable;
+
+        const lib_spirv_cross = buildLibSPIRVCross(b, step);
+        step.linkLibrary(lib_spirv_cross);
+    }
     flags.appendSlice(&.{
         include("libs/dawn/src"),
         include("libs/dawn/src/include"),
@@ -425,12 +437,13 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 
     if (options.desktop_gl.?) {
-        // TODO(build-system): opengl
-        //     public_deps += [
-        //       ":dawn_native_opengl_loader_gen",
-        //       "${dawn_root}/third_party/khronos:khronos_platform",
-        //     ]
-        //     sources += get_target_outputs(":dawn_native_opengl_loader_gen")
+        for ([_][]const u8{
+            "out/Debug/gen/src/dawn_native/opengl/OpenGLFunctionsBase_autogen.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+            lib.addCSourceFile(abs_path, flags.items);
+        }
+
         for ([_][]const u8{
             "src/dawn_native/opengl/BackendGL.cpp",
             "src/dawn_native/opengl/BindGroupGL.cpp",
@@ -1138,6 +1151,50 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep) *std.build.Li
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
         lib.addCSourceFile(abs_path, flags);
+    }
+    return lib;
+}
+
+// Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
+fn buildLibSPIRVCross(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+    var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+    const lib = b.addStaticLibrary("spirv-cross", main_abs);
+    lib.install();
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibCpp();
+
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    flags.appendSlice(&.{
+        "-DSPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS",
+        include("libs/dawn/third_party/vulkan-deps/spirv-cross/src"),
+        "-Wno-extra-semi",
+        "-Wno-ignored-qualifiers",
+        "-Wno-implicit-fallthrough",
+        "-Wno-inconsistent-missing-override",
+        "-Wno-missing-field-initializers",
+        "-Wno-newline-eof",
+        "-Wno-sign-compare",
+        "-Wno-unused-variable",
+    }) catch unreachable;
+
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+    if (target.os.tag != .windows) flags.append("-fno-exceptions") catch unreachable;
+
+    // spvtools_link
+    for ([_][]const u8{
+        "third_party/vulkan-deps/spirv-cross/src/spirv_cfg.cpp",
+        "third_party/vulkan-deps/spirv-cross/src/spirv_cross.cpp",
+        "third_party/vulkan-deps/spirv-cross/src/spirv_cross_parsed_ir.cpp",
+        "third_party/vulkan-deps/spirv-cross/src/spirv_cross_util.cpp",
+        "third_party/vulkan-deps/spirv-cross/src/spirv_glsl.cpp",
+        "third_party/vulkan-deps/spirv-cross/src/spirv_hlsl.cpp",
+        "third_party/vulkan-deps/spirv-cross/src/spirv_msl.cpp",
+        "third_party/vulkan-deps/spirv-cross/src/spirv_parser.cpp",
+        "third_party/vulkan-deps/spirv-cross/src/spirv_reflect.cpp",
+    }) |path| {
+        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
+        lib.addCSourceFile(abs_path, flags.items);
     }
     return lib;
 }
