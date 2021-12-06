@@ -110,7 +110,7 @@ fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     step.addLibPath(sdk_root_libs);
 }
 
-fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8, revision: []const u8) ![]const u8 {
+fn getSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const u8, revision: []const u8) ![]const u8 {
     // Find the directory where the SDK should be located. We'll consider two locations:
     //
     // 1. $SDK_PATH/<name> (if set, e.g. for testing changes to SDKs easily)
@@ -157,7 +157,7 @@ fn getSdkRoot(allocator: *std.mem.Allocator, org: []const u8, name: []const u8, 
     };
 }
 
-fn exec(allocator: *std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
+fn exec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
     const child = try std.ChildProcess.init(argv, allocator);
     child.cwd = cwd;
     child.stdin = std.io.getStdOut();
@@ -167,7 +167,7 @@ fn exec(allocator: *std.mem.Allocator, argv: []const []const u8, cwd: []const u8
     _ = try child.wait();
 }
 
-fn confirmAppleSDKAgreement(allocator: *std.mem.Allocator) !bool {
+fn confirmAppleSDKAgreement(allocator: std.mem.Allocator) !bool {
     if (std.process.getEnvVarOwned(allocator, "AGREE")) |agree| {
         return std.mem.eql(u8, agree, "true");
     } else |err| switch (err) {
