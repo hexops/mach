@@ -229,7 +229,7 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
         Error.InvalidValue => @panic("Attempted to use window with client api to create vulkan surface."),
         Error.APIUnavailable,
         Error.PlatformError,
-        => err,
+        => @errSetCast(error{ APIUnavailable, PlatformError }, err),
         else => unreachable,
     };
     return v;
