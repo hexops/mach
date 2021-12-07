@@ -16,7 +16,7 @@ jobs:
       - name: Setup Zig
         run: |
           sudo apt install xz-utils
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.9.0-dev.1785+4cdf5b666.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.9.0-dev.1910+fffa89700.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: x86_64-linux -> x86_64-macos
         run: zig build test -Dtarget=x86_64-macos
         env:
@@ -47,10 +47,10 @@ jobs:
         run: choco install git
       - name: Setup Zig
         run: |
-          Invoke-WebRequest -Uri "https://ziglang.org/builds/zig-windows-x86_64-0.9.0-dev.1785+4cdf5b666.zip" -OutFile "C:\zig.zip"
+          Invoke-WebRequest -Uri "https://ziglang.org/builds/zig-windows-x86_64-0.9.0-dev.1910+fffa89700.zip" -OutFile "C:\zig.zip"
           cd C:\
           7z x zig.zip
-          Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.9.0-dev.1785+4cdf5b666\"
+          Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.9.0-dev.1910+fffa89700\"
       - name: x86_64-windows -> x86_64-macos
         run: zig build test -Dtarget=x86_64-macos
         env:
@@ -74,7 +74,7 @@ jobs:
       - name: Setup Zig
         run: |
           brew install xz
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.9.0-dev.1785+4cdf5b666.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.9.0-dev.1910+fffa89700.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: test
         run: zig build test
         env:

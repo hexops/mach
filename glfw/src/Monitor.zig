@@ -230,7 +230,7 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_modes, glfw.Monitor.getVideoMode
-pub inline fn getVideoModes(self: Monitor, allocator: *mem.Allocator) (mem.Allocator.Error || error{PlatformError})![]VideoMode {
+pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Allocator.Error || error{PlatformError})![]VideoMode {
     internal_debug.assertInitialized();
     var count: c_int = 0;
     const modes = c.glfwGetVideoModes(self.handle, &count);
@@ -377,7 +377,7 @@ pub inline fn setGammaRamp(self: Monitor, ramp: GammaRamp) error{PlatformError}!
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_monitors, monitor_event, glfw.monitor.getPrimary
-pub inline fn getAll(allocator: *mem.Allocator) mem.Allocator.Error![]Monitor {
+pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
     internal_debug.assertInitialized();
     var count: c_int = 0;
     const monitors = c.glfwGetMonitors(&count);

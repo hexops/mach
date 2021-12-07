@@ -30,7 +30,7 @@ pixels: []u8,
 owned: bool,
 
 /// Initializes a new owned image with the given size and pixel_data_len of undefined .pixel values.
-pub inline fn init(allocator: *mem.Allocator, width: usize, height: usize, pixel_data_len: usize) !Image {
+pub inline fn init(allocator: mem.Allocator, width: usize, height: usize, pixel_data_len: usize) !Image {
     const buf = try allocator.alloc(u8, pixel_data_len);
     return Image{
         .width = width,
@@ -67,7 +67,7 @@ pub inline fn toC(self: Image) c.GLFWimage {
 }
 
 /// Deinitializes the memory using the allocator iff `.owned = true`.
-pub inline fn deinit(self: Image, allocator: *mem.Allocator) void {
+pub inline fn deinit(self: Image, allocator: mem.Allocator) void {
     if (self.owned) allocator.free(self.pixels);
 }
 

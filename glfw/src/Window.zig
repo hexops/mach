@@ -567,7 +567,7 @@ pub inline fn setTitle(self: Window, title: [*:0]const u8) error{PlatformError}!
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_icon
-pub inline fn setIcon(self: Window, allocator: *mem.Allocator, images: ?[]Image) (mem.Allocator.Error || error{PlatformError})!void {
+pub inline fn setIcon(self: Window, allocator: mem.Allocator, images: ?[]Image) (mem.Allocator.Error || error{PlatformError})!void {
     internal_debug.assertInitialized();
     if (images) |im| {
         const tmp = try allocator.alloc(c.GLFWimage, im.len);
