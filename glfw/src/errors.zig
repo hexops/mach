@@ -4,12 +4,24 @@ const c = @import("c.zig").c;
 
 /// Errors that GLFW can produce.
 pub const Error = error{
+    /// GLFW has not been initialized.
+    ///
+    /// This occurs if a GLFW function was called that must not be called unless the library is
+    /// initialized.
+    NotInitialized,
+
     /// No context is current for this thread.
     ///
     /// This occurs if a GLFW function was called that needs and operates on the current OpenGL or
     /// OpenGL ES context but no context is current on the calling thread. One such function is
     /// glfw.SwapInterval.
     NoCurrentContext,
+
+    /// One of the arguments to the function was an invalid enum value.
+    ///
+    /// One of the arguments to the function was an invalid enum value, for example requesting
+    /// glfw.red_bits with glfw.getWindowAttrib.
+    InvalidEnum,
 
     /// One of the arguments to the function was an invalid value.
     ///
@@ -78,9 +90,9 @@ pub const Error = error{
 fn convertError(e: c_int) Error!void {
     return switch (e) {
         c.GLFW_NO_ERROR => {},
-        c.GLFW_NOT_INITIALIZED => unreachable,
+        c.GLFW_NOT_INITIALIZED => Error.NotInitialized,
         c.GLFW_NO_CURRENT_CONTEXT => Error.NoCurrentContext,
-        c.GLFW_INVALID_ENUM => unreachable,
+        c.GLFW_INVALID_ENUM => Error.InvalidEnum,
         c.GLFW_INVALID_VALUE => Error.InvalidValue,
         c.GLFW_OUT_OF_MEMORY => Error.OutOfMemory,
         c.GLFW_API_UNAVAILABLE => Error.APIUnavailable,

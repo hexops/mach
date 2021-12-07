@@ -32,13 +32,14 @@ const Pos = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-pub inline fn getPos(self: Monitor) Error!Pos {
+pub inline fn getPos(self: Monitor) error{PlatformError}!Pos {
     internal_debug.assertInitialized();
     var xpos: c_int = 0;
     var ypos: c_int = 0;
     c.glfwGetMonitorPos(self.handle, &xpos, &ypos);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
     return Pos{ .x = @intCast(usize, xpos), .y = @intCast(usize, ypos) };
@@ -64,7 +65,7 @@ const Workarea = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_workarea
-pub inline fn getWorkarea(self: Monitor) Error!Workarea {
+pub inline fn getWorkarea(self: Monitor) error{PlatformError}!Workarea {
     internal_debug.assertInitialized();
     var xpos: c_int = 0;
     var ypos: c_int = 0;
@@ -72,7 +73,8 @@ pub inline fn getWorkarea(self: Monitor) Error!Workarea {
     var height: c_int = 0;
     c.glfwGetMonitorWorkarea(self.handle, &xpos, &ypos, &width, &height);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
     return Workarea{ .x = @intCast(usize, xpos), .y = @intCast(usize, ypos), .width = @intCast(usize, width), .height = @intCast(usize, height) };
@@ -103,7 +105,10 @@ pub inline fn getPhysicalSize(self: Monitor) PhysicalSize {
     var width_mm: c_int = 0;
     var height_mm: c_int = 0;
     c.glfwGetMonitorPhysicalSize(self.handle, &width_mm, &height_mm);
-    getError() catch unreachable;
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     return PhysicalSize{ .width_mm = @intCast(usize, width_mm), .height_mm = @intCast(usize, height_mm) };
 }
 
@@ -130,13 +135,14 @@ const ContentScale = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_scale, glfw.Window.getContentScale
-pub inline fn getContentScale(self: Monitor) Error!ContentScale {
+pub inline fn getContentScale(self: Monitor) error{PlatformError}!ContentScale {
     internal_debug.assertInitialized();
     var x_scale: f32 = 0;
     var y_scale: f32 = 0;
     c.glfwGetMonitorContentScale(self.handle, &x_scale, &y_scale);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
     return ContentScale{ .x_scale = @floatCast(f32, x_scale), .y_scale = @floatCast(f32, y_scale) };
@@ -159,7 +165,10 @@ pub inline fn getContentScale(self: Monitor) Error!ContentScale {
 pub inline fn getName(self: Monitor) [*:0]const u8 {
     internal_debug.assertInitialized();
     const name = c.glfwGetMonitorName(self.handle);
-    getError() catch unreachable;
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     return name;
 }
 
@@ -179,7 +188,10 @@ pub inline fn getName(self: Monitor) [*:0]const u8 {
 pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) void {
     internal_debug.assertInitialized();
     c.glfwSetMonitorUserPointer(self.handle, ptr);
-    getError() catch unreachable;
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
 }
 
 /// Returns the user pointer of the specified monitor.
@@ -197,7 +209,10 @@ pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) void {
 pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
     internal_debug.assertInitialized();
     const ptr = c.glfwGetMonitorUserPointer(self.handle);
-    getError() catch unreachable;
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     if (ptr == null) return null;
     return @ptrCast(*T, @alignCast(@alignOf(T), ptr.?));
 }
@@ -215,12 +230,13 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_modes, glfw.Monitor.getVideoMode
-pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) Error![]VideoMode {
+pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Allocator.Error || error{PlatformError})![]VideoMode {
     internal_debug.assertInitialized();
     var count: c_int = 0;
     const modes = c.glfwGetVideoModes(self.handle, &count);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
 
@@ -243,11 +259,12 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) Error![]Vid
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_modes, glfw.Monitor.getVideoModes
-pub inline fn getVideoMode(self: Monitor) Error!VideoMode {
+pub inline fn getVideoMode(self: Monitor) error{PlatformError}!VideoMode {
     internal_debug.assertInitialized();
     const mode = c.glfwGetVideoMode(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
     return VideoMode{ .handle = mode.?.* };
@@ -272,7 +289,7 @@ pub inline fn getVideoMode(self: Monitor) Error!VideoMode {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_gamma
-pub inline fn setGamma(self: Monitor, gamma: f32) Error!void {
+pub inline fn setGamma(self: Monitor, gamma: f32) error{PlatformError}!void {
     internal_debug.assertInitialized();
 
     std.debug.assert(!std.math.isNan(gamma));
@@ -281,8 +298,9 @@ pub inline fn setGamma(self: Monitor, gamma: f32) Error!void {
 
     c.glfwSetGamma(self.handle, gamma);
     getError() catch |err| return switch (err) {
-        Error.InvalidValue => unreachable, // we assert that 'gamma' is a valid value, so this should be impossible
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.InvalidValue => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
 }
@@ -302,11 +320,12 @@ pub inline fn setGamma(self: Monitor, gamma: f32) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_gamma
-pub inline fn getGammaRamp(self: Monitor) Error!GammaRamp {
+pub inline fn getGammaRamp(self: Monitor) error{PlatformError}!GammaRamp {
     internal_debug.assertInitialized();
     const ramp = c.glfwGetGammaRamp(self.handle);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
     return GammaRamp.fromC(ramp.*);
@@ -337,11 +356,12 @@ pub inline fn getGammaRamp(self: Monitor) Error!GammaRamp {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_gamma
-pub inline fn setGammaRamp(self: Monitor, ramp: GammaRamp) Error!void {
+pub inline fn setGammaRamp(self: Monitor, ramp: GammaRamp) error{PlatformError}!void {
     internal_debug.assertInitialized();
     c.glfwSetGammaRamp(self.handle, &ramp.toC());
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
 }
@@ -361,8 +381,10 @@ pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
     internal_debug.assertInitialized();
     var count: c_int = 0;
     const monitors = c.glfwGetMonitors(&count);
-    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
-
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     const slice = try allocator.alloc(Monitor, @intCast(usize, count));
     var i: usize = 0;
     while (i < count) : (i += 1) {
@@ -384,7 +406,10 @@ pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
 pub inline fn getPrimary() ?Monitor {
     internal_debug.assertInitialized();
     const handle = c.glfwGetPrimaryMonitor();
-    getError() catch unreachable;
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     if (handle == null) {
         return null;
     }
@@ -445,7 +470,10 @@ pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monit
         callback_fn_ptr = null;
         callback_data_ptr = null;
     }
-    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
 }
 
 test "getAll" {

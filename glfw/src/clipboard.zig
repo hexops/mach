@@ -19,11 +19,12 @@ const internal_debug = @import("internal_debug.zig");
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: clipboard, glfwGetClipboardString
-pub inline fn setClipboardString(value: [*:0]const u8) Error!void {
+pub inline fn setClipboardString(value: [*:0]const u8) error{PlatformError}!void {
     internal_debug.assertInitialized();
     c.glfwSetClipboardString(null, value);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
 }
@@ -45,13 +46,14 @@ pub inline fn setClipboardString(value: [*:0]const u8) Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: clipboard, glfwSetClipboardString
-pub inline fn getClipboardString() Error![:0]const u8 {
+pub inline fn getClipboardString() error{ FormatUnavailable, PlatformError }![:0]const u8 {
     internal_debug.assertInitialized();
     const value = c.glfwGetClipboardString(null);
     getError() catch |err| return switch (err) {
-        Error.PlatformError,
+        Error.NotInitialized => unreachable,
         Error.FormatUnavailable,
-        => err,
+        Error.PlatformError,
+        => @errSetCast(error{ FormatUnavailable, PlatformError }, err),
         else => unreachable,
     };
     return std.mem.span(value);

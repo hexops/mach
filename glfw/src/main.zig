@@ -57,10 +57,13 @@ const internal_debug = @import("internal_debug.zig");
 /// Unicode text input.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub inline fn init(hints: InitHints) Error!void {
+pub inline fn init(hints: InitHints) error{PlatformError}!void {
     internal_debug.toggleInitialized();
     internal_debug.assertInitialized();
-    errdefer internal_debug.toggleInitialized();
+    errdefer {
+        internal_debug.assertInitialized();
+        internal_debug.toggleInitialized();
+    }
 
     inline for (comptime std.meta.fieldNames(InitHints)) |field_name| {
         const init_hint = @field(InitHint, field_name);
@@ -70,7 +73,7 @@ pub inline fn init(hints: InitHints) Error!void {
 
     _ = c.glfwInit();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
 }
@@ -89,6 +92,7 @@ pub inline fn init(hints: InitHints) Error!void {
 ///
 /// Possible errors include glfw.Error.PlatformError.
 ///
+// TODO: Should this remark be removed? Or should we allow this function to be called before init?
 /// remark: This function may be called before glfw.init.
 ///
 /// warning: The contexts of any remaining windows must not be current on any other thread when
@@ -101,6 +105,10 @@ pub inline fn terminate() void {
     internal_debug.assertInitialized();
     internal_debug.toggleInitialized();
     c.glfwTerminate();
+    getError() catch |err| return switch (err) {
+        Error.PlatformError => std.log.err("mach/glfw: Failed to terminate GLFW: {}", .{err}),
+        else => unreachable,
+    };
 }
 
 /// Initialization hints for passing into glfw.init
@@ -177,7 +185,8 @@ fn initHint(hint: InitHint, value: anytype) void {
         else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
     }
     getError() catch |err| return switch (err) {
-        Error.InvalidValue => unreachable, // we assert that 'value' is valid if it is an integer, so this should be impossible
+        Error.InvalidEnum => unreachable,
+        Error.InvalidValue => unreachable,
         else => unreachable,
     };
 }
@@ -201,7 +210,11 @@ fn initHint(hint: InitHint, value: anytype) void {
 ///
 /// @thread_safety This function may be called from any thread.
 pub inline fn getVersionString() [:0]const u8 {
-    return std.mem.span(c.glfwGetVersionString());
+    const result = std.mem.span(c.glfwGetVersionString());
+    getError() catch |err| switch (err) {
+        else => unreachable,
+    };
+    return result;
 }
 
 /// Processes all pending events.
@@ -229,11 +242,12 @@ pub inline fn getVersionString() [:0]const u8 {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-pub inline fn pollEvents() Error!void {
+pub inline fn pollEvents() error{PlatformError}!void {
     internal_debug.assertInitialized();
     c.glfwPollEvents();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
 }
@@ -268,11 +282,12 @@ pub inline fn pollEvents() Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.pollEvents, glfw.waitEventsTimeout
-pub inline fn waitEvents() Error!void {
+pub inline fn waitEvents() error{PlatformError}!void {
     internal_debug.assertInitialized();
     c.glfwWaitEvents();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
 }
@@ -311,15 +326,16 @@ pub inline fn waitEvents() Error!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.pollEvents, glfw.waitEvents
-pub inline fn waitEventsTimeout(timeout: f64) Error!void {
+pub inline fn waitEventsTimeout(timeout: f64) error{PlatformError}!void {
     internal_debug.assertInitialized();
     std.debug.assert(!std.math.isNan(timeout));
     std.debug.assert(timeout >= 0);
     std.debug.assert(timeout <= std.math.f64_max);
     c.glfwWaitEventsTimeout(timeout);
     getError() catch |err| return switch (err) {
-        Error.InvalidValue => unreachable, // we assert that 'timeout' is a valid value, so this should be impossible
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.InvalidValue => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
 }
@@ -334,11 +350,12 @@ pub inline fn waitEventsTimeout(timeout: f64) Error!void {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-pub inline fn postEmptyEvent() Error!void {
+pub inline fn postEmptyEvent() error{PlatformError}!void {
     internal_debug.assertInitialized();
     c.glfwPostEmptyEvent();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
 }
@@ -363,7 +380,10 @@ pub inline fn postEmptyEvent() Error!void {
 pub inline fn rawMouseMotionSupported() bool {
     internal_debug.assertInitialized();
     const supported = c.glfwRawMouseMotionSupported();
-    getError() catch unreachable; // Only error 'GLFW_NOT_INITIALIZED' is impossible
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     return supported == c.GLFW_TRUE;
 }
 

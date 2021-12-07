@@ -60,12 +60,13 @@ pub const Shape = enum(isize) {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_object, glfw.Cursor.destroy, glfw.Cursor.createStandard
-pub inline fn create(image: Image, xhot: isize, yhot: isize) Error!Cursor {
+pub inline fn create(image: Image, xhot: isize, yhot: isize) error{PlatformError}!Cursor {
     internal_debug.assertInitialized();
     const img = image.toC();
     const cursor = c.glfwCreateCursor(&img, @intCast(c_int, xhot), @intCast(c_int, yhot));
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
     return Cursor{ .ptr = cursor.? };
@@ -80,11 +81,13 @@ pub inline fn create(image: Image, xhot: isize, yhot: isize) Error!Cursor {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_object, glfwCreateCursor
-pub inline fn createStandard(shape: Shape) Error!Cursor {
+pub inline fn createStandard(shape: Shape) error{PlatformError}!Cursor {
     internal_debug.assertInitialized();
     const cursor = c.glfwCreateStandardCursor(@intCast(c_int, @enumToInt(shape)));
     getError() catch |err| return switch (err) {
-        Error.PlatformError => err,
+        Error.NotInitialized => unreachable,
+        Error.InvalidEnum => unreachable,
+        Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
     return Cursor{ .ptr = cursor.? };
@@ -109,7 +112,7 @@ pub inline fn destroy(self: Cursor) void {
     internal_debug.assertInitialized();
     c.glfwDestroyCursor(self.ptr);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => std.log.debug("{}: was unable to destroy Cursor.\n", .{err}),
+        Error.PlatformError => std.log.err("mach/glfw: unable to destroy Cursor: {}\n", .{err}),
         else => unreachable,
     };
 }
