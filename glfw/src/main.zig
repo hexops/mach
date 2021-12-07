@@ -106,7 +106,7 @@ pub inline fn terminate() void {
     internal_debug.toggleInitialized();
     c.glfwTerminate();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => std.log.err("Failed to terminate GLFW: {}", .{err}),
+        Error.PlatformError => std.log.err("mach/glfw: Failed to terminate GLFW: {}", .{err}),
         else => unreachable,
     };
 }

@@ -112,7 +112,7 @@ pub inline fn destroy(self: Cursor) void {
     internal_debug.assertInitialized();
     c.glfwDestroyCursor(self.ptr);
     getError() catch |err| return switch (err) {
-        Error.PlatformError => std.log.err("{}: was unable to destroy Cursor.\n", .{err}),
+        Error.PlatformError => std.log.err("mach/glfw: unable to destroy Cursor: {}\n", .{err}),
         else => unreachable,
     };
 }
