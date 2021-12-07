@@ -92,9 +92,6 @@ pub inline fn init(hints: InitHints) error{PlatformError}!void {
 ///
 /// Possible errors include glfw.Error.PlatformError.
 ///
-// TODO: Should this remark be removed? Or should we allow this function to be called before init?
-/// remark: This function may be called before glfw.init.
-///
 /// warning: The contexts of any remaining windows must not be current on any other thread when
 /// this function is called.
 ///
