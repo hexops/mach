@@ -13,7 +13,7 @@ const glfw = @import("glfw");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    var allocator = &gpa.allocator;
+    var allocator = gpa.allocator();
 
     const setup = try sample_utils.setup();
     const queue = c.wgpuDeviceGetQueue(setup.device);
