@@ -230,6 +230,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         step.linkLibrary(lib_spirv_cross);
     }
     flags.appendSlice(&.{
+        include("libs/dawn"),
         include("libs/dawn/src"),
         include("libs/dawn/src/include"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
@@ -250,102 +251,13 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         include("libs/dawn/out/Debug/gen/src"),
     }) catch unreachable;
 
-    for ([_][]const u8{
-        "out/Debug/gen/src/dawn/dawn_thread_dispatch_proc.cpp",
-        "out/Debug/gen/src/dawn/dawn_proc.c",
-        "out/Debug/gen/src/dawn/webgpu_cpp.cpp",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags.items);
-    }
-
-    for ([_][]const u8{
-        "src/dawn_native/Adapter.cpp",
-        "src/dawn_native/AsyncTask.cpp",
-        "src/dawn_native/AttachmentState.cpp",
-        "src/dawn_native/BackendConnection.cpp",
-        "src/dawn_native/BindGroup.cpp",
-        "src/dawn_native/BindGroupLayout.cpp",
-        "src/dawn_native/BindingInfo.cpp",
-        "src/dawn_native/BuddyAllocator.cpp",
-        "src/dawn_native/BuddyMemoryAllocator.cpp",
-        "src/dawn_native/Buffer.cpp",
-        "src/dawn_native/CachedObject.cpp",
-        "src/dawn_native/CallbackTaskManager.cpp",
-        "src/dawn_native/CommandAllocator.cpp",
-        "src/dawn_native/CommandBuffer.cpp",
-        "src/dawn_native/CommandBufferStateTracker.cpp",
-        "src/dawn_native/CommandEncoder.cpp",
-        "src/dawn_native/CommandValidation.cpp",
-        "src/dawn_native/Commands.cpp",
-        "src/dawn_native/CompilationMessages.cpp",
-        "src/dawn_native/ComputePassEncoder.cpp",
-        "src/dawn_native/ComputePipeline.cpp",
-        "src/dawn_native/CopyTextureForBrowserHelper.cpp",
-        "src/dawn_native/CreatePipelineAsyncTask.cpp",
-        "src/dawn_native/Device.cpp",
-        "src/dawn_native/DynamicUploader.cpp",
-        "src/dawn_native/EncodingContext.cpp",
-        "src/dawn_native/Error.cpp",
-        "src/dawn_native/ErrorData.cpp",
-        "src/dawn_native/ErrorInjector.cpp",
-        "src/dawn_native/ErrorScope.cpp",
-        "src/dawn_native/ExternalTexture.cpp",
-        "src/dawn_native/Features.cpp",
-        "src/dawn_native/Format.cpp",
-        "src/dawn_native/IndirectDrawMetadata.cpp",
-        "src/dawn_native/IndirectDrawValidationEncoder.cpp",
-        "src/dawn_native/Instance.cpp",
-        "src/dawn_native/InternalPipelineStore.cpp",
-        "src/dawn_native/Limits.cpp",
-        "src/dawn_native/ObjectBase.cpp",
-        "src/dawn_native/ObjectContentHasher.cpp",
-        "src/dawn_native/PassResourceUsageTracker.cpp",
-        "src/dawn_native/PerStage.cpp",
-        "src/dawn_native/PersistentCache.cpp",
-        "src/dawn_native/Pipeline.cpp",
-        "src/dawn_native/PipelineLayout.cpp",
-        "src/dawn_native/PooledResourceMemoryAllocator.cpp",
-        "src/dawn_native/ProgrammableEncoder.cpp",
-        "src/dawn_native/QueryHelper.cpp",
-        "src/dawn_native/QuerySet.cpp",
-        "src/dawn_native/Queue.cpp",
-        "src/dawn_native/RenderBundle.cpp",
-        "src/dawn_native/RenderBundleEncoder.cpp",
-        "src/dawn_native/RenderEncoderBase.cpp",
-        "src/dawn_native/RenderPassEncoder.cpp",
-        "src/dawn_native/RenderPipeline.cpp",
-        "src/dawn_native/ResourceMemoryAllocation.cpp",
-        "src/dawn_native/RingBufferAllocator.cpp",
-        "src/dawn_native/Sampler.cpp",
-        "src/dawn_native/ScratchBuffer.cpp",
-        "src/dawn_native/ShaderModule.cpp",
-        "src/dawn_native/StagingBuffer.cpp",
-        "src/dawn_native/Subresource.cpp",
-        "src/dawn_native/Surface.cpp",
-        "src/dawn_native/SwapChain.cpp",
-        "src/dawn_native/Texture.cpp",
-        "src/dawn_native/TintUtils.cpp",
-        "src/dawn_native/Toggles.cpp",
-        "src/dawn_native/VertexFormat.cpp",
-        "src/dawn_native/utils/WGPUHelpers.cpp",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags.items);
-    }
+    lib.addCSourceFiles(&.{
+        thisDir() ++ "/src/dawn/sources/dawn_native.cpp",
+        thisDir() ++ "/libs/dawn/out/Debug/gen/src/dawn/dawn_proc.c",
+    }, flags.items);
 
     // dawn_native_utils_gen
-    for ([_][]const u8{
-        "out/Debug/gen/src/dawn_native/ChainUtils_autogen.cpp",
-        "out/Debug/gen/src/dawn_native/ProcTable.cpp",
-        "out/Debug/gen/src/dawn_native/wgpu_structs_autogen.cpp",
-        "out/Debug/gen/src/dawn_native/ValidationUtils_autogen.cpp",
-        "out/Debug/gen/src/dawn_native/webgpu_absl_format_autogen.cpp",
-        "out/Debug/gen/src/dawn_native/ObjectType_autogen.cpp",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags.items);
-    }
+    lib.addCSourceFile(thisDir() ++ "/src/dawn/sources/dawn_native_utils_gen.cpp", flags.items);
 
     // TODO(build-system): could allow enable_vulkan_validation_layers here. See src/dawn_native/BUILD.gn
     // TODO(build-system): allow use_angle here. See src/dawn_native/BUILD.gn
@@ -354,6 +266,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     if (options.d3d12.?) {
         // TODO(build-system): windows
         //     libs += [ "dxguid.lib" ]
+        // TODO(build-system): reduce build units
         for ([_][]const u8{
             "src/dawn_native/d3d12/AdapterD3D12.cpp",
             "src/dawn_native/d3d12/BackendD3D12.cpp",
@@ -406,31 +319,10 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         lib.linkFramework("IOSurface");
         lib.linkFramework("QuartzCore");
 
-        for ([_][]const u8{
-            "src/dawn_native/metal/MetalBackend.mm",
-            "src/dawn_native/Surface_metal.mm",
-            "src/dawn_native/metal/BackendMTL.mm",
-            "src/dawn_native/metal/BindGroupLayoutMTL.mm",
-            "src/dawn_native/metal/BindGroupMTL.mm",
-            "src/dawn_native/metal/BufferMTL.mm",
-            "src/dawn_native/metal/CommandBufferMTL.mm",
-            "src/dawn_native/metal/CommandRecordingContext.mm",
-            "src/dawn_native/metal/ComputePipelineMTL.mm",
-            "src/dawn_native/metal/DeviceMTL.mm",
-            "src/dawn_native/metal/PipelineLayoutMTL.mm",
-            "src/dawn_native/metal/QuerySetMTL.mm",
-            "src/dawn_native/metal/QueueMTL.mm",
-            "src/dawn_native/metal/RenderPipelineMTL.mm",
-            "src/dawn_native/metal/SamplerMTL.mm",
-            "src/dawn_native/metal/ShaderModuleMTL.mm",
-            "src/dawn_native/metal/StagingBufferMTL.mm",
-            "src/dawn_native/metal/SwapChainMTL.mm",
-            "src/dawn_native/metal/TextureMTL.mm",
-            "src/dawn_native/metal/UtilsMetal.mm",
-        }) |path| {
-            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-            lib.addCSourceFile(abs_path, flags.items);
-        }
+        lib.addCSourceFiles(&.{
+            thisDir() ++ "/src/dawn/sources/dawn_native_metal.mm",
+            thisDir() ++ "/libs/dawn/src/dawn_native/metal/BackendMTL.mm",
+        }, flags.items);
     }
 
     if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
@@ -467,6 +359,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
             lib.addCSourceFile(abs_path, flags.items);
         }
 
+        // TODO(build-system): reduce build units
         for ([_][]const u8{
             "src/dawn_native/opengl/BackendGL.cpp",
             "src/dawn_native/opengl/BindGroupGL.cpp",
@@ -499,6 +392,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (options.vulkan.?) {
+        // TODO(build-system): reduce build units
         for ([_][]const u8{
             "src/dawn_native/vulkan/AdapterVk.cpp",
             "src/dawn_native/vulkan/BackendVk.cpp",
