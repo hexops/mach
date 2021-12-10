@@ -1,0 +1,6 @@
+#include "third_party/tint/src/writer/spirv/binary_writer.cc"
+#include "third_party/tint/src/writer/spirv/builder.cc"
+#include "third_party/tint/src/writer/spirv/function.cc"
+#include "third_party/tint/src/writer/spirv/generator.cc"
+#include "third_party/tint/src/writer/spirv/instruction.cc"
+#include "third_party/tint/src/writer/spirv/operand.cc"
