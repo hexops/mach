@@ -173,23 +173,23 @@ pub const Hints = struct {
     scale_to_monitor: bool = false,
 
     /// Framebuffer hints
-    red_bits: c_int = 8,
-    green_bits: c_int = 8,
-    blue_bits: c_int = 8,
-    alpha_bits: c_int = 8,
-    depth_bits: c_int = 24,
-    stencil_bits: c_int = 8,
-    accum_red_bits: c_int = 0,
-    accum_green_bits: c_int = 0,
-    accum_blue_bits: c_int = 0,
-    accum_alpha_bits: c_int = 0,
-    aux_buffers: c_int = 0,
+    red_bits: ?PositiveCInt = 8,
+    green_bits: ?PositiveCInt = 8,
+    blue_bits: ?PositiveCInt = 8,
+    alpha_bits: ?PositiveCInt = 8,
+    depth_bits: ?PositiveCInt = 24,
+    stencil_bits: ?PositiveCInt = 8,
+    accum_red_bits: ?PositiveCInt = 0,
+    accum_green_bits: ?PositiveCInt = 0,
+    accum_blue_bits: ?PositiveCInt = 0,
+    accum_alpha_bits: ?PositiveCInt = 0,
+    aux_buffers: ?PositiveCInt = 0,
 
     /// Framebuffer MSAA samples
-    samples: c_int = 0,
+    samples: ?PositiveCInt = 0,
 
     /// Monitor refresh rate
-    refresh_rate: ?std.math.IntFittingRange(0, std.math.maxInt(c_int)) = null,
+    refresh_rate: ?PositiveCInt = null,
 
     /// OpenGL stereoscopic rendering
     stereo: bool = false,
@@ -233,6 +233,8 @@ pub const Hints = struct {
     /// X11 specific
     x11_instance_name: [:0]const u8 = "",
 
+    pub const PositiveCInt = std.math.IntFittingRange(0, std.math.maxInt(c_int));
+
     pub const ClientAPI = enum(c_int) {
         opengl_api = c.GLFW_OPENGL_API,
         opengl_es_api = c.GLFW_OPENGL_ES_API,
@@ -268,25 +270,22 @@ pub const Hints = struct {
         inline for (comptime std.meta.fieldNames(Hint)) |field_name| {
             const hint_tag = @enumToInt(@field(Hint, field_name));
             const hint_value = @field(hints, field_name);
-            switch (@field(Hint, field_name)) {
-                .refresh_rate => c.glfwWindowHint(hint_tag, if (hint_value) |refresh_rate| refresh_rate else glfw.dont_care),
-                else => switch (@TypeOf(hint_value)) {
-                    bool => c.glfwWindowHint(hint_tag, @boolToInt(hint_value)),
-                    c_int => c.glfwWindowHint(hint_tag, hint_value),
+            switch (@TypeOf(hint_value)) {
+                bool => c.glfwWindowHint(hint_tag, @boolToInt(hint_value)),
+                ?PositiveCInt => c.glfwWindowHint(hint_tag, if (hint_value) |refresh_rate| refresh_rate else glfw.dont_care),
+                c_int => c.glfwWindowHint(hint_tag, hint_value),
 
-                    ClientAPI,
-                    ContextCreationAPI,
-                    ContextRobustness,
-                    ContextReleaseBehavior,
-                    OpenGLProfile,
-                    => c.glfwWindowHint(hint_tag, @enumToInt(hint_value)),
+                ClientAPI,
+                ContextCreationAPI,
+                ContextRobustness,
+                ContextReleaseBehavior,
+                OpenGLProfile,
+                => c.glfwWindowHint(hint_tag, @enumToInt(hint_value)),
 
-                    [:0]const u8 => c.glfwWindowHintString(hint_tag, hint_value.ptr),
+                [:0]const u8 => c.glfwWindowHintString(hint_tag, hint_value.ptr),
 
-                    else => unreachable,
-                }
+                else => unreachable,
             }
-            
 
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
@@ -294,6 +293,7 @@ pub const Hints = struct {
                 else => unreachable,
             };
         }
+
     }
 };
 
