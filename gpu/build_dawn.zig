@@ -975,6 +975,7 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     var flags = std.ArrayList([]const u8).init(b.allocator);
     options.appendFlags(&flags, true) catch unreachable;
     flags.appendSlice(&.{
+        include("libs/dawn"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
         include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include"),
@@ -983,194 +984,25 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }) catch unreachable;
 
     // spvtools
-    for ([_][]const u8{
-        "third_party/vulkan-deps/spirv-tools/src/source/assembly_grammar.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/binary.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/diagnostic.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/disassemble.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/enum_string_mapping.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/ext_inst.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/extensions.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/libspirv.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/name_mapper.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opcode.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/operand.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/parsed_operand.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/print.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/spirv_endian.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/spirv_fuzzer_options.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/spirv_optimizer_options.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/spirv_reducer_options.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/spirv_target_env.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/spirv_validator_options.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/table.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/text.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/text_handler.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/util/bit_vector.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/util/parse_number.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/util/string_utils.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/util/timer.cpp",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags.items);
-    }
+    lib.addCSourceFiles(&.{
+        thisDir() ++ "/src/dawn/sources/spirv_tools.cpp",
+        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/operand.cpp",
+        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/spirv_reducer_options.cpp",
+    }, flags.items);
 
     // spvtools_val
-    for ([_][]const u8{
-        "third_party/vulkan-deps/spirv-tools/src/source/val/basic_block.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/construct.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/function.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/instruction.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_adjacency.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_annotation.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_arithmetics.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_atomics.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_barriers.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_bitwise.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_builtins.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_capability.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_cfg.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_composites.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_constants.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_conversion.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_debug.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_decorations.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_derivatives.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_execution_limitations.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_extensions.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_function.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_id.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_image.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_instruction.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_interfaces.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_layout.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_literals.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_logicals.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_memory.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_memory_semantics.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_misc.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_mode_setting.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_non_uniform.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_primitives.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_scopes.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_small_type_uses.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validate_type.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/val/validation_state.cpp",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags.items);
-    }
+    lib.addCSourceFile(thisDir() ++ "/src/dawn/sources/spirv_tools_val.cpp", flags.items);
 
     // spvtools_opt
-    for ([_][]const u8{
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/aggressive_dead_code_elim_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/amd_ext_to_khr.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/basic_block.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/block_merge_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/block_merge_util.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/build_module.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/ccp_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/cfg.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/cfg_cleanup_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/code_sink.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/combine_access_chains.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/compact_ids_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/composite.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/const_folding_rules.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/constants.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/control_dependence.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/convert_to_sampled_image_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/convert_to_half_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/copy_prop_arrays.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/dataflow.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/dead_branch_elim_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/dead_insert_elim_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/dead_variable_elimination.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/debug_info_manager.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/decoration_manager.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/def_use_manager.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/desc_sroa.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/dominator_analysis.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/dominator_tree.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/eliminate_dead_constant_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/eliminate_dead_functions_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/eliminate_dead_functions_util.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/eliminate_dead_members_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/feature_manager.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/fix_storage_class.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/flatten_decoration_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/fold.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/fold_spec_constant_op_and_composite_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/folding_rules.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/freeze_spec_constant_value_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/function.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/graphics_robust_access_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/if_conversion.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/inline_exhaustive_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/inline_opaque_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/inline_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/inst_bindless_check_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/inst_buff_addr_check_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/inst_debug_printf_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/instruction.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/instruction_list.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/instrument_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/interp_fixup_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/ir_context.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/ir_loader.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/licm_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/local_access_chain_convert_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/local_redundancy_elimination.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/local_single_block_elim_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/local_single_store_elim_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/loop_dependence.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/loop_dependence_helpers.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/loop_descriptor.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/loop_fission.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/loop_fusion.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/loop_fusion_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/loop_peeling.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/loop_unroller.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/loop_unswitch_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/loop_utils.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/mem_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/merge_return_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/module.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/optimizer.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/pass_manager.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/private_to_local_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/propagator.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/reduce_load_size.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/redundancy_elimination.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/register_pressure.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/relax_float_ops_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/remove_duplicates_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/remove_unused_interface_variables_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/replace_invalid_opc.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/scalar_analysis.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/scalar_analysis_simplification.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/scalar_replacement_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/set_spec_constant_default_value_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/simplification_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/ssa_rewrite_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/strength_reduction_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/strip_debug_info_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/strip_reflect_info_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/struct_cfg_analysis.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/type_manager.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/types.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/unify_const_pass.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/upgrade_memory_model.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/value_number_table.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/vector_dce.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/workaround1209.cpp",
-        "third_party/vulkan-deps/spirv-tools/src/source/opt/wrap_opkill.cpp",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags.items);
-    }
+    lib.addCSourceFiles(&.{
+        thisDir() ++ "/src/dawn/sources/spirv_tools_opt.cpp",
+        thisDir() ++ "/src/dawn/sources/spirv_tools_opt_2.cpp",
+        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/local_single_store_elim_pass.cpp",
+        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/loop_unswitch_pass.cpp",
+        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/mem_pass.cpp",
+        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/ssa_rewrite_pass.cpp",
+        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/vector_dce.cpp",
+    }, flags.items);
 
     // spvtools_link
     for ([_][]const u8{
@@ -1196,6 +1028,7 @@ fn buildLibSPIRVCross(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     flags.appendSlice(&.{
         "-DSPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS",
         include("libs/dawn/third_party/vulkan-deps/spirv-cross/src"),
+        include("libs/dawn"),
         "-Wno-extra-semi",
         "-Wno-ignored-qualifiers",
         "-Wno-implicit-fallthrough",
@@ -1210,20 +1043,7 @@ fn buildLibSPIRVCross(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     if (target.os.tag != .windows) flags.append("-fno-exceptions") catch unreachable;
 
     // spvtools_link
-    for ([_][]const u8{
-        "third_party/vulkan-deps/spirv-cross/src/spirv_cfg.cpp",
-        "third_party/vulkan-deps/spirv-cross/src/spirv_cross.cpp",
-        "third_party/vulkan-deps/spirv-cross/src/spirv_cross_parsed_ir.cpp",
-        "third_party/vulkan-deps/spirv-cross/src/spirv_cross_util.cpp",
-        "third_party/vulkan-deps/spirv-cross/src/spirv_glsl.cpp",
-        "third_party/vulkan-deps/spirv-cross/src/spirv_hlsl.cpp",
-        "third_party/vulkan-deps/spirv-cross/src/spirv_msl.cpp",
-        "third_party/vulkan-deps/spirv-cross/src/spirv_parser.cpp",
-        "third_party/vulkan-deps/spirv-cross/src/spirv_reflect.cpp",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags.items);
-    }
+    lib.addCSourceFile(thisDir() ++ "/src/dawn/sources/spirv_cross.cpp", flags.items);
     return lib;
 }
 
