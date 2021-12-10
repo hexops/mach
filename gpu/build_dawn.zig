@@ -1390,50 +1390,14 @@ fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Option
     var flags = std.ArrayList([]const u8).init(b.allocator);
     options.appendFlags(&flags, false) catch unreachable;
     flags.appendSlice(&.{
+        include("libs/dawn"),
         include("libs/dawn/src"),
         include("libs/dawn/src/include"),
-
         include("libs/dawn/out/Debug/gen/src/include"),
         include("libs/dawn/out/Debug/gen/src"),
     }) catch unreachable;
 
-    // dawn_wire_gen
-    for ([_][]const u8{
-        "out/Debug/gen/src/dawn_wire/WireCmd_autogen.cpp",
-        "out/Debug/gen/src/dawn_wire/client/ApiProcs_autogen.cpp",
-        "out/Debug/gen/src/dawn_wire/client/ClientHandlers_autogen.cpp",
-        "out/Debug/gen/src/dawn_wire/server/ServerDoers_autogen.cpp",
-        "out/Debug/gen/src/dawn_wire/server/ServerHandlers_autogen.cpp",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags.items);
-    }
-
-    // dawn_wire_gen
-    for ([_][]const u8{
-        "src/dawn_wire/ChunkedCommandHandler.cpp",
-        "src/dawn_wire/ChunkedCommandSerializer.cpp",
-        "src/dawn_wire/Wire.cpp",
-        "src/dawn_wire/WireClient.cpp",
-        "src/dawn_wire/WireDeserializeAllocator.cpp",
-        "src/dawn_wire/WireServer.cpp",
-        "src/dawn_wire/client/Buffer.cpp",
-        "src/dawn_wire/client/Client.cpp",
-        "src/dawn_wire/client/ClientDoers.cpp",
-        "src/dawn_wire/client/ClientInlineMemoryTransferService.cpp",
-        "src/dawn_wire/client/Device.cpp",
-        "src/dawn_wire/client/Queue.cpp",
-        "src/dawn_wire/client/ShaderModule.cpp",
-        "src/dawn_wire/server/Server.cpp",
-        "src/dawn_wire/server/ServerBuffer.cpp",
-        "src/dawn_wire/server/ServerDevice.cpp",
-        "src/dawn_wire/server/ServerInlineMemoryTransferService.cpp",
-        "src/dawn_wire/server/ServerQueue.cpp",
-        "src/dawn_wire/server/ServerShaderModule.cpp",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        lib.addCSourceFile(abs_path, flags.items);
-    }
+    lib.addCSourceFile(thisDir() ++ "/src/dawn/sources/dawn_wire_gen.cpp", flags.items);
     return lib;
 }
 
