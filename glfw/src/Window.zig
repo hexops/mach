@@ -704,6 +704,11 @@ pub inline fn setSize(self: Window, size: Size) error{PlatformError}!void {
     };
 }
 
+pub const SizeOptional = struct {
+    width: ?usize,
+    height: ?usize,
+};
+
 /// Sets the size limits of the specified window's content area.
 ///
 /// This function sets the size limits of the content area of the specified window. If the window
@@ -725,28 +730,22 @@ pub inline fn setSize(self: Window, size: Size) error{PlatformError}!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_sizelimits, glfw.Window.setAspectRatio
-pub inline fn setSizeLimits(self: Window, min: Size, max: Size) error{PlatformError}!void {
+pub inline fn setSizeLimits(self: Window, min: SizeOptional, max: SizeOptional) error{PlatformError}!void {
     internal_debug.assertInitialized();
 
-    if (min.width != glfw.dont_care and min.height != glfw.dont_care) {
-        std.debug.assert(min.width >= 0);
-        std.debug.assert(min.height >= 0);
+    if (min.width != null and max.width != null) {
+        std.debug.assert(min.width.? <= max.width.?);
     }
-
-    if (max.width != glfw.dont_care and max.height != glfw.dont_care) {
-        std.debug.assert(max.width >= 0);
-        std.debug.assert(max.height >= 0);
+    if (min.height != null and max.height != null) {
+        std.debug.assert(min.height.? <= max.height.?);
     }
-
-    std.debug.assert(min.height <= max.height);
-    std.debug.assert(min.width <= max.width);
 
     c.glfwSetWindowSizeLimits(
         self.handle,
-        @intCast(c_int, min.width),
-        @intCast(c_int, min.height),
-        @intCast(c_int, max.width),
-        @intCast(c_int, max.height),
+        if (min.width) |min_width| @intCast(c_int, min_width) else glfw.dont_care,
+        if (min.height) |min_height| @intCast(c_int, min_height) else glfw.dont_care,
+        if (max.width) |max_width| @intCast(c_int, max_width) else glfw.dont_care,
+        if (max.height) |max_height| @intCast(c_int, max_height) else glfw.dont_care,
     );
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
@@ -782,18 +781,19 @@ pub inline fn setSizeLimits(self: Window, min: Size, max: Size) error{PlatformEr
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_sizelimits, glfw.Window.setSizeLimits
-pub inline fn setAspectRatio(self: Window, numerator: usize, denominator: usize) error{PlatformError}!void {
+pub inline fn setAspectRatio(self: Window, numerator: ?usize, denominator: ?usize) error{PlatformError}!void {
     internal_debug.assertInitialized();
 
-    std.debug.assert(numerator != 0);
-    std.debug.assert(denominator != 0);
-
-    if (numerator != glfw.dont_care and denominator != glfw.dont_care) {
-        std.debug.assert(numerator > 0);
-        std.debug.assert(denominator > 0);
+    if (numerator != null and denominator != null) {
+        std.debug.assert(numerator.? > 0);
+        std.debug.assert(denominator.? > 0);
     }
 
-    c.glfwSetWindowAspectRatio(self.handle, @intCast(c_int, numerator), @intCast(c_int, denominator));
+    c.glfwSetWindowAspectRatio(
+        self.handle,
+        if (numerator) |numerator_unwrapped| @intCast(c_int, numerator_unwrapped) else glfw.dont_care,
+        if (denominator) |denominator_unwrapped| @intCast(c_int, denominator_unwrapped) else glfw.dont_care,
+    );
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidValue => unreachable,
@@ -1225,7 +1225,7 @@ pub inline fn getMonitor(self: Window) ?Monitor {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_monitor, window_full_screen, glfw.Window.getMonitor, glfw.Window.setSize
-pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isize, width: isize, height: isize, refresh_rate: isize) error{PlatformError}!void {
+pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isize, width: isize, height: isize, refresh_rate: ?usize) error{PlatformError}!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowMonitor(
         self.handle,
@@ -1234,7 +1234,7 @@ pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isi
         @intCast(c_int, ypos),
         @intCast(c_int, width),
         @intCast(c_int, height),
-        @intCast(c_int, refresh_rate),
+        if (refresh_rate) |refresh_rate_unwrapped| @intCast(c_int, refresh_rate_unwrapped) else glfw.dont_care,
     );
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
@@ -1421,6 +1421,9 @@ pub inline fn setPosCallback(self: Window, callback: ?fn (window: Window, xpos: 
         else => unreachable,
     };
 }
+
+// TODO: don't the calls to `from` in these `set*CallbackWrapper` functions cause a leak?
+// is this what's being reported by valgrind in [#60](https://github.com/hexops/mach/issues/60)?
 
 fn setSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
     internal_debug.assertInitialized();
