@@ -93,7 +93,6 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep, options: Options
 
 fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.linux_x86_64, options.linux_x86_64_revision) catch unreachable;
-    defer b.allocator.free(sdk_root_dir);
 
     if (options.set_sysroot) {
         var sdk_sysroot = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/" }) catch unreachable;
@@ -110,7 +109,19 @@ fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     step.addLibPath(sdk_root_libs);
 }
 
+var cached_sdk_root: ?[]const u8 = null;
+
+/// returns the SDK root path, determining it iff necessary. In a real application, this may be
+/// tens or hundreds of times and so the result is cached in-memory (this also means the result
+/// cannot be freed until the result will never be used again, which is fine as the Zig build system
+/// Builder.allocator is an arena, you don't need to free.)
 fn getSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const u8, revision: []const u8) ![]const u8 {
+    if (cached_sdk_root) |cached| return cached;
+    cached_sdk_root = try determineSdkRoot(allocator, org, name, revision);
+    return cached_sdk_root.?;
+}
+
+fn determineSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const u8, revision: []const u8) ![]const u8 {
     // Find the directory where the SDK should be located. We'll consider two locations:
     //
     // 1. $SDK_PATH/<name> (if set, e.g. for testing changes to SDKs easily)
@@ -134,9 +145,16 @@ fn getSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const u8, r
 
     // If the SDK exists, return it. Otherwise, clone it.
     if (std.fs.openDirAbsolute(sdk_root_dir, .{})) {
-        exec(allocator, &[_][]const u8{ "git", "fetch" }, sdk_root_dir) catch |err| std.debug.print("warning: failed to check for updates to {s}/{s}: {s}\n", .{ org, name, @errorName(err) });
-        if (!custom_sdk_path) try exec(allocator, &[_][]const u8{ "git", "reset", "--quiet", "--hard", revision }, sdk_root_dir);
-
+        const current_revision = try getCurrentGitRevision(allocator, sdk_root_dir);
+        if (!std.mem.eql(u8, current_revision, revision)) {
+            // Update the SDK to the target revision. This may be either forward or backwards in
+            // history (e.g. if building an old project) and so we use a hard reset.
+            //
+            // No reset is performed if specifying a custom SDK_PATH, as that is a development/debug
+            // option and could wipe out dev history.
+            exec(allocator, &[_][]const u8{ "git", "fetch" }, sdk_root_dir) catch |err| std.debug.print("warning: failed to check for updates to {s}/{s}: {s}\n", .{ org, name, @errorName(err) });
+            if (!custom_sdk_path) try exec(allocator, &[_][]const u8{ "git", "reset", "--quiet", "--hard", revision }, sdk_root_dir);
+        }
         return sdk_root_dir;
     } else |err| return switch (err) {
         error.FileNotFound => {
@@ -160,11 +178,14 @@ fn getSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const u8, r
 fn exec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
     const child = try std.ChildProcess.init(argv, allocator);
     child.cwd = cwd;
-    child.stdin = std.io.getStdOut();
-    child.stderr = std.io.getStdErr();
-    child.stdout = std.io.getStdOut();
-    try child.spawn();
-    _ = try child.wait();
+    _ = try child.spawnAndWait();
+}
+
+fn getCurrentGitRevision(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
+    const result = try std.ChildProcess.exec(.{ .allocator = allocator, .argv = &.{ "git", "rev-parse", "HEAD" }, .cwd = cwd });
+    allocator.free(result.stderr);
+    if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
+    return result.stdout;
 }
 
 fn confirmAppleSDKAgreement(allocator: std.mem.Allocator) !bool {
