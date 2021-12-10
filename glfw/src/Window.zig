@@ -704,6 +704,8 @@ pub inline fn setSize(self: Window, size: Size) error{PlatformError}!void {
     };
 }
 
+/// A size with option width/height, used to represent e.g. constraints on a windows size while
+/// allowing specific axis to be unconstrained (null) if desired.
 pub const SizeOptional = struct {
     width: ?usize,
     height: ?usize,
