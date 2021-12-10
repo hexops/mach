@@ -272,7 +272,7 @@ pub const Hints = struct {
             const hint_value = @field(hints, field_name);
             switch (@TypeOf(hint_value)) {
                 bool => c.glfwWindowHint(hint_tag, @boolToInt(hint_value)),
-                ?PositiveCInt => c.glfwWindowHint(hint_tag, if (hint_value) |refresh_rate| refresh_rate else glfw.dont_care),
+                ?PositiveCInt => c.glfwWindowHint(hint_tag, if (hint_value) |unwrapped| unwrapped else glfw.dont_care),
                 c_int => c.glfwWindowHint(hint_tag, hint_value),
 
                 ClientAPI,
