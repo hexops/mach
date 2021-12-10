@@ -189,7 +189,7 @@ pub const Hints = struct {
     samples: c_int = 0,
 
     /// Monitor refresh rate
-    refresh_rate: c_int = glfw.dont_care,
+    refresh_rate: ?std.math.IntFittingRange(0, std.math.maxInt(c_int)) = null,
 
     /// OpenGL stereoscopic rendering
     stereo: bool = false,
@@ -268,21 +268,25 @@ pub const Hints = struct {
         inline for (comptime std.meta.fieldNames(Hint)) |field_name| {
             const hint_tag = @enumToInt(@field(Hint, field_name));
             const hint_value = @field(hints, field_name);
-            switch (@TypeOf(hint_value)) {
-                bool => c.glfwWindowHint(hint_tag, @boolToInt(hint_value)),
-                c_int => c.glfwWindowHint(hint_tag, hint_value),
+            switch (@field(Hint, field_name)) {
+                .refresh_rate => c.glfwWindowHint(hint_tag, if (hint_value) |refresh_rate| refresh_rate else glfw.dont_care),
+                else => switch (@TypeOf(hint_value)) {
+                    bool => c.glfwWindowHint(hint_tag, @boolToInt(hint_value)),
+                    c_int => c.glfwWindowHint(hint_tag, hint_value),
 
-                ClientAPI,
-                ContextCreationAPI,
-                ContextRobustness,
-                ContextReleaseBehavior,
-                OpenGLProfile,
-                => c.glfwWindowHint(hint_tag, @enumToInt(hint_value)),
+                    ClientAPI,
+                    ContextCreationAPI,
+                    ContextRobustness,
+                    ContextReleaseBehavior,
+                    OpenGLProfile,
+                    => c.glfwWindowHint(hint_tag, @enumToInt(hint_value)),
 
-                [:0]const u8 => c.glfwWindowHintString(hint_tag, hint_value.ptr),
+                    [:0]const u8 => c.glfwWindowHintString(hint_tag, hint_value.ptr),
 
-                else => unreachable,
+                    else => unreachable,
+                }
             }
+            
 
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
