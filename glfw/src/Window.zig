@@ -293,7 +293,6 @@ pub const Hints = struct {
                 else => unreachable,
             };
         }
-
     }
 };
 
