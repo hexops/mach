@@ -1424,9 +1424,6 @@ pub inline fn setPosCallback(self: Window, callback: ?fn (window: Window, xpos: 
     };
 }
 
-// TODO: don't the calls to `from` in these `set*CallbackWrapper` functions cause a leak?
-// is this what's being reported by valgrind in [#60](https://github.com/hexops/mach/issues/60)?
-
 fn setSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
     internal_debug.assertInitialized();
     const window = from(handle.?) catch unreachable;
