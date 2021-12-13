@@ -18,10 +18,10 @@ const c = @import("c.zig").c;
 const Image = @This();
 
 /// The width of this image, in pixels.
-width: usize,
+width: u32,
 
 /// The height of this image, in pixels.
-height: usize,
+height: u32,
 
 /// The pixel data of this image, arranged left-to-right, top-to-bottom.
 pixels: []u8,
@@ -30,7 +30,7 @@ pixels: []u8,
 owned: bool,
 
 /// Initializes a new owned image with the given size and pixel_data_len of undefined .pixel values.
-pub inline fn init(allocator: mem.Allocator, width: usize, height: usize, pixel_data_len: usize) !Image {
+pub inline fn init(allocator: mem.Allocator, width: u32, height: u32, pixel_data_len: u32) !Image {
     const buf = try allocator.alloc(u8, pixel_data_len);
     return Image{
         .width = width,
@@ -46,10 +46,10 @@ pub inline fn init(allocator: mem.Allocator, width: usize, height: usize, pixel_
 /// number of bytes required per pixel / the length of the pixel data array.
 ///
 /// The returned memory is valid for as long as the GLFW C memory is valid.
-pub inline fn fromC(native: c.GLFWimage, pixel_data_len: usize) Image {
+pub inline fn fromC(native: c.GLFWimage, pixel_data_len: u32) Image {
     return Image{
-        .width = @intCast(usize, native.width),
-        .height = @intCast(usize, native.height),
+        .width = @intCast(u32, native.width),
+        .height = @intCast(u32, native.height),
         .pixels = native.pixels[0..pixel_data_len],
         .owned = false,
     };

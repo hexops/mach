@@ -22,7 +22,7 @@ owned: bool,
 /// Initializes a new owned gamma ramp with the given array size and undefined values.
 ///
 /// see also: glfw.Monitor.getGammaRamp
-pub inline fn init(allocator: mem.Allocator, size: usize) !GammaRamp {
+pub inline fn init(allocator: mem.Allocator, size: u32) !GammaRamp {
     const buf = try allocator.alloc(u16, size * 3);
     return GammaRamp{
         .red = buf[size * 0 .. (size * 0) + size],

@@ -99,7 +99,7 @@ pub inline fn getCurrentContext() std.mem.Allocator.Error!?Window {
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: buffer_swap, glfwSwapBuffers
-pub inline fn swapInterval(interval: isize) error{ NoCurrentContext, PlatformError }!void {
+pub inline fn swapInterval(interval: i32) error{ NoCurrentContext, PlatformError }!void {
     internal_debug.assertInitialized();
     c.glfwSwapInterval(@intCast(c_int, interval));
     getError() catch |err| return switch (err) {
