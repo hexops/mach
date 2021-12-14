@@ -1645,7 +1645,7 @@ fn setFramebufferSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, heigh
     internal_debug.assertInitialized();
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setFramebufferSizeCallback.?(window, @intCast(i32, width), @intCast(i32, height));
+    internal.setFramebufferSizeCallback.?(window, @intCast(u32, width), @intCast(u32, height));
 }
 
 /// Sets the framebuffer resize callback for the specified window.
@@ -1664,7 +1664,7 @@ fn setFramebufferSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, heigh
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_fbsize
-pub inline fn setFramebufferSizeCallback(self: Window, callback: ?fn (window: Window, width: i32, height: i32) void) void {
+pub inline fn setFramebufferSizeCallback(self: Window, callback: ?fn (window: Window, width: u32, height: u32) void) void {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
     internal.setFramebufferSizeCallback = callback;
@@ -3058,7 +3058,7 @@ test "setFramebufferSizeCallback" {
     defer window.destroy();
 
     window.setFramebufferSizeCallback((struct {
-        fn callback(_window: Window, width: i32, height: i32) void {
+        fn callback(_window: Window, width: u32, height: u32) void {
             _ = _window;
             _ = width;
             _ = height;

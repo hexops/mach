@@ -416,8 +416,8 @@ pub inline fn getPrimary() ?Monitor {
     return Monitor{ .handle = handle.? };
 }
 
-var callback_fn_ptr: ?u32 = null;
-var callback_data_ptr: ?u32 = undefined;
+var callback_fn_ptr: ?usize = null;
+var callback_data_ptr: ?usize = undefined;
 
 /// Describes an event relating to a monitor.
 pub const Event = enum(c_int) {
