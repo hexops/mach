@@ -15,7 +15,7 @@ const Cursor = @This();
 ptr: *c.GLFWcursor,
 
 // Standard system cursor shapes.
-pub const Shape = enum(isize) {
+pub const Shape = enum(i32) {
     /// The regular arrow cursor shape.
     arrow = c.GLFW_ARROW_CURSOR,
 
@@ -60,7 +60,7 @@ pub const Shape = enum(isize) {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_object, glfw.Cursor.destroy, glfw.Cursor.createStandard
-pub inline fn create(image: Image, xhot: isize, yhot: isize) error{PlatformError}!Cursor {
+pub inline fn create(image: Image, xhot: i32, yhot: i32) error{PlatformError}!Cursor {
     internal_debug.assertInitialized();
     const img = image.toC();
     const cursor = c.glfwCreateCursor(&img, @intCast(c_int, xhot), @intCast(c_int, yhot));

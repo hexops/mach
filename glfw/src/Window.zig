@@ -48,16 +48,16 @@ pub const InternalUserPointer = struct {
     user_pointer: ?*c_void,
 
     // Callbacks to be invoked by wrapper functions.
-    setPosCallback: ?fn (window: Window, xpos: isize, ypos: isize) void,
-    setSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
+    setPosCallback: ?fn (window: Window, xpos: i32, ypos: i32) void,
+    setSizeCallback: ?fn (window: Window, width: i32, height: i32) void,
     setCloseCallback: ?fn (window: Window) void,
     setRefreshCallback: ?fn (window: Window) void,
     setFocusCallback: ?fn (window: Window, focused: bool) void,
     setIconifyCallback: ?fn (window: Window, iconified: bool) void,
     setMaximizeCallback: ?fn (window: Window, maximized: bool) void,
-    setFramebufferSizeCallback: ?fn (window: Window, width: isize, height: isize) void,
+    setFramebufferSizeCallback: ?fn (window: Window, width: u32, height: u32) void,
     setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
-    setKeyCallback: ?fn (window: Window, key: Key, scancode: isize, action: Action, mods: Mods) void,
+    setKeyCallback: ?fn (window: Window, key: Key, scancode: i32, action: Action, mods: Mods) void,
     setCharCallback: ?fn (window: Window, codepoint: u21) void,
     setMouseButtonCallback: ?fn (window: Window, button: MouseButton, action: Action, mods: Mods) void,
     setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
@@ -412,8 +412,8 @@ pub const Hints = struct {
 ///
 /// see also: window_creation, glfw.Window.destroy
 pub inline fn create(
-    width: usize,
-    height: usize,
+    width: u32,
+    height: u32,
     title: [*:0]const u8,
     monitor: ?Monitor,
     share: ?Window,
@@ -586,8 +586,8 @@ pub inline fn setIcon(self: Window, allocator: mem.Allocator, images: ?[]Image) 
 }
 
 pub const Pos = struct {
-    x: usize,
-    y: usize,
+    x: u32,
+    y: u32,
 };
 
 /// Retrieves the position of the content area of the specified window.
@@ -613,7 +613,7 @@ pub inline fn getPos(self: Window) error{PlatformError}!Pos {
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-    return Pos{ .x = @intCast(usize, x), .y = @intCast(usize, y) };
+    return Pos{ .x = @intCast(u32, x), .y = @intCast(u32, y) };
 }
 
 /// Sets the position of the content area of the specified window.
@@ -647,8 +647,8 @@ pub inline fn setPos(self: Window, pos: Pos) error{PlatformError}!void {
 }
 
 pub const Size = struct {
-    width: usize,
-    height: usize,
+    width: u32,
+    height: u32,
 };
 
 /// Retrieves the size of the content area of the specified window.
@@ -672,7 +672,7 @@ pub inline fn getSize(self: Window) error{PlatformError}!Size {
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-    return Size{ .width = @intCast(usize, width), .height = @intCast(usize, height) };
+    return Size{ .width = @intCast(u32, width), .height = @intCast(u32, height) };
 }
 
 /// Sets the size of the content area of the specified window.
@@ -710,8 +710,8 @@ pub inline fn setSize(self: Window, size: Size) error{PlatformError}!void {
 /// A size with option width/height, used to represent e.g. constraints on a windows size while
 /// allowing specific axis to be unconstrained (null) if desired.
 pub const SizeOptional = struct {
-    width: ?usize,
-    height: ?usize,
+    width: ?u32,
+    height: ?u32,
 };
 
 /// Sets the size limits of the specified window's content area.
@@ -786,7 +786,7 @@ pub inline fn setSizeLimits(self: Window, min: SizeOptional, max: SizeOptional) 
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_sizelimits, glfw.Window.setSizeLimits
-pub inline fn setAspectRatio(self: Window, numerator: ?usize, denominator: ?usize) error{PlatformError}!void {
+pub inline fn setAspectRatio(self: Window, numerator: ?u32, denominator: ?u32) error{PlatformError}!void {
     internal_debug.assertInitialized();
 
     if (numerator != null and denominator != null) {
@@ -827,14 +827,14 @@ pub inline fn getFramebufferSize(self: Window) error{PlatformError}!Size {
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-    return Size{ .width = @intCast(usize, width), .height = @intCast(usize, height) };
+    return Size{ .width = @intCast(u32, width), .height = @intCast(u32, height) };
 }
 
 pub const FrameSize = struct {
-    left: usize,
-    top: usize,
-    right: usize,
-    bottom: usize,
+    left: u32,
+    top: u32,
+    right: u32,
+    bottom: u32,
 };
 
 /// Retrieves the size of the frame of the window.
@@ -864,10 +864,10 @@ pub inline fn getFrameSize(self: Window) error{PlatformError}!FrameSize {
         else => unreachable,
     };
     return FrameSize{
-        .left = @intCast(usize, left),
-        .top = @intCast(usize, top),
-        .right = @intCast(usize, right),
-        .bottom = @intCast(usize, bottom),
+        .left = @intCast(u32, left),
+        .top = @intCast(u32, top),
+        .right = @intCast(u32, right),
+        .bottom = @intCast(u32, bottom),
     };
 }
 
@@ -1230,7 +1230,7 @@ pub inline fn getMonitor(self: Window) ?Monitor {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_monitor, window_full_screen, glfw.Window.getMonitor, glfw.Window.setSize
-pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: isize, ypos: isize, width: isize, height: isize, refresh_rate: ?usize) error{PlatformError}!void {
+pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: i32, ypos: i32, width: i32, height: i32, refresh_rate: ?u32) error{PlatformError}!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowMonitor(
         self.handle,
@@ -1296,7 +1296,7 @@ pub const Attrib = enum(c_int) {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_attribs, glfw.Window.setAttrib
-pub inline fn getAttrib(self: Window, attrib: Attrib) error{PlatformError}!isize {
+pub inline fn getAttrib(self: Window, attrib: Attrib) error{PlatformError}!i32 {
     internal_debug.assertInitialized();
     const v = c.glfwGetWindowAttrib(self.handle, @enumToInt(attrib));
     getError() catch |err| return switch (err) {
@@ -1393,7 +1393,7 @@ fn setPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: c_int, ypos: c_int) callc
     internal_debug.assertInitialized();
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setPosCallback.?(window, @intCast(isize, xpos), @intCast(isize, ypos));
+    internal.setPosCallback.?(window, @intCast(i32, xpos), @intCast(i32, ypos));
 }
 
 /// Sets the position callback for the specified window.
@@ -1416,7 +1416,7 @@ fn setPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: c_int, ypos: c_int) callc
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_pos
-pub inline fn setPosCallback(self: Window, callback: ?fn (window: Window, xpos: isize, ypos: isize) void) void {
+pub inline fn setPosCallback(self: Window, callback: ?fn (window: Window, xpos: i32, ypos: i32) void) void {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
     internal.setPosCallback = callback;
@@ -1431,7 +1431,7 @@ fn setSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) c
     internal_debug.assertInitialized();
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setSizeCallback.?(window, @intCast(isize, width), @intCast(isize, height));
+    internal.setSizeCallback.?(window, @intCast(i32, width), @intCast(i32, height));
 }
 
 /// Sets the size callback for the specified window.
@@ -1447,7 +1447,7 @@ fn setSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) c
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_size
-pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width: isize, height: isize) void) void {
+pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width: i32, height: i32) void) void {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
     internal.setSizeCallback = callback;
@@ -1645,7 +1645,7 @@ fn setFramebufferSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, heigh
     internal_debug.assertInitialized();
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setFramebufferSizeCallback.?(window, @intCast(isize, width), @intCast(isize, height));
+    internal.setFramebufferSizeCallback.?(window, @intCast(u32, width), @intCast(u32, height));
 }
 
 /// Sets the framebuffer resize callback for the specified window.
@@ -1664,7 +1664,7 @@ fn setFramebufferSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, heigh
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_fbsize
-pub inline fn setFramebufferSizeCallback(self: Window, callback: ?fn (window: Window, width: isize, height: isize) void) void {
+pub inline fn setFramebufferSizeCallback(self: Window, callback: ?fn (window: Window, width: u32, height: u32) void) void {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
     internal.setFramebufferSizeCallback = callback;
@@ -1817,7 +1817,7 @@ pub inline fn getInputModeRawMouseMotion(self: Window) bool {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: glfw.Window.setInputMode
-pub inline fn getInputMode(self: Window, mode: InputMode) isize {
+pub inline fn getInputMode(self: Window, mode: InputMode) i32 {
     internal_debug.assertInitialized();
     const value = c.glfwGetInputMode(self.handle, @enumToInt(mode));
 
@@ -1827,7 +1827,7 @@ pub inline fn getInputMode(self: Window, mode: InputMode) isize {
         else => unreachable,
     };
 
-    return @intCast(isize, value);
+    return @intCast(i32, value);
 }
 
 /// Sets an input option for the specified window.
@@ -2047,7 +2047,7 @@ pub inline fn setCursor(self: Window, cursor: Cursor) error{PlatformError}!void 
 fn setKeyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setKeyCallback.?(window, @intToEnum(Key, key), @intCast(isize, scancode), @intToEnum(Action, action), Mods.fromInt(mods));
+    internal.setKeyCallback.?(window, @intToEnum(Key, key), @intCast(i32, scancode), @intToEnum(Action, action), Mods.fromInt(mods));
 }
 
 /// Sets the key callback.
@@ -2084,7 +2084,7 @@ fn setKeyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, ac
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_key
-pub inline fn setKeyCallback(self: Window, callback: ?fn (window: Window, key: Key, scancode: isize, action: Action, mods: Mods) void) void {
+pub inline fn setKeyCallback(self: Window, callback: ?fn (window: Window, key: Key, scancode: i32, action: Action, mods: Mods) void) void {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
     internal.setKeyCallback = callback;
@@ -2278,7 +2278,7 @@ pub inline fn setScrollCallback(self: Window, callback: ?fn (window: Window, xof
 fn setDropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c][*c]const u8) callconv(.C) void {
     const window = from(handle.?) catch unreachable;
     const internal = window.getInternal();
-    internal.setDropCallback.?(window, @ptrCast([*][*:0]const u8, paths)[0..@intCast(usize, path_count)]);
+    internal.setDropCallback.?(window, @ptrCast([*][*:0]const u8, paths)[0..@intCast(u32, path_count)]);
 }
 
 /// Sets the path drop callback.
@@ -2516,11 +2516,11 @@ test "setIcon" {
     defer window.destroy();
 
     // Create an all-red icon image.
-    var width: usize = 48;
-    var height: usize = 48;
+    var width: u32 = 48;
+    var height: u32 = 48;
     const icon = try Image.init(allocator, width, height, width * height * 4);
-    var x: usize = 0;
-    var y: usize = 0;
+    var x: u32 = 0;
+    var y: u32 = 0;
     while (y <= height) : (y += 1) {
         while (x <= width) : (x += 1) {
             icon.pixels[(x * y * 4) + 0] = 255; // red
@@ -2918,7 +2918,7 @@ test "setPosCallback" {
     defer window.destroy();
 
     window.setPosCallback((struct {
-        fn callback(_window: Window, xpos: isize, ypos: isize) void {
+        fn callback(_window: Window, xpos: i32, ypos: i32) void {
             _ = _window;
             _ = xpos;
             _ = ypos;
@@ -2939,7 +2939,7 @@ test "setSizeCallback" {
     defer window.destroy();
 
     window.setSizeCallback((struct {
-        fn callback(_window: Window, width: isize, height: isize) void {
+        fn callback(_window: Window, width: i32, height: i32) void {
             _ = _window;
             _ = width;
             _ = height;
@@ -3058,7 +3058,7 @@ test "setFramebufferSizeCallback" {
     defer window.destroy();
 
     window.setFramebufferSizeCallback((struct {
-        fn callback(_window: Window, width: isize, height: isize) void {
+        fn callback(_window: Window, width: u32, height: u32) void {
             _ = _window;
             _ = width;
             _ = height;
@@ -3385,7 +3385,7 @@ test "setKeyCallback" {
     defer window.destroy();
 
     window.setKeyCallback((struct {
-        fn callback(_window: Window, key: Key, scancode: isize, action: Action, mods: Mods) void {
+        fn callback(_window: Window, key: Key, scancode: i32, action: Action, mods: Mods) void {
             _ = _window;
             _ = key;
             _ = scancode;

@@ -20,9 +20,9 @@ handle: *c.GLFWmonitor,
 /// virtual screen.
 const Pos = struct {
     /// The x coordinate.
-    x: usize,
+    x: u32,
     /// The y coordinate.
-    y: usize,
+    y: u32,
 };
 
 /// Returns the position of the monitor's viewport on the virtual screen.
@@ -42,7 +42,7 @@ pub inline fn getPos(self: Monitor) error{PlatformError}!Pos {
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-    return Pos{ .x = @intCast(usize, xpos), .y = @intCast(usize, ypos) };
+    return Pos{ .x = @intCast(u32, xpos), .y = @intCast(u32, ypos) };
 }
 
 /// The monitor workarea, in screen coordinates.
@@ -52,10 +52,10 @@ pub inline fn getPos(self: Monitor) error{PlatformError}!Pos {
 /// operating system task bar where present. If no task bar exists then the work area is the
 /// monitor resolution in screen coordinates.
 const Workarea = struct {
-    x: usize,
-    y: usize,
-    width: usize,
-    height: usize,
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
 };
 
 /// Retrieves the work area of the monitor.
@@ -77,13 +77,13 @@ pub inline fn getWorkarea(self: Monitor) error{PlatformError}!Workarea {
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-    return Workarea{ .x = @intCast(usize, xpos), .y = @intCast(usize, ypos), .width = @intCast(usize, width), .height = @intCast(usize, height) };
+    return Workarea{ .x = @intCast(u32, xpos), .y = @intCast(u32, ypos), .width = @intCast(u32, width), .height = @intCast(u32, height) };
 }
 
 /// The physical size, in millimetres, of the display area of a monitor.
 const PhysicalSize = struct {
-    width_mm: usize,
-    height_mm: usize,
+    width_mm: u32,
+    height_mm: u32,
 };
 
 /// Returns the physical size of the monitor.
@@ -109,7 +109,7 @@ pub inline fn getPhysicalSize(self: Monitor) PhysicalSize {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    return PhysicalSize{ .width_mm = @intCast(usize, width_mm), .height_mm = @intCast(usize, height_mm) };
+    return PhysicalSize{ .width_mm = @intCast(u32, width_mm), .height_mm = @intCast(u32, height_mm) };
 }
 
 /// The content scale for a monitor.
@@ -240,8 +240,8 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Alloca
         else => unreachable,
     };
 
-    const slice = try allocator.alloc(VideoMode, @intCast(usize, count));
-    var i: usize = 0;
+    const slice = try allocator.alloc(VideoMode, @intCast(u32, count));
+    var i: u32 = 0;
     while (i < count) : (i += 1) {
         slice[i] = VideoMode{ .handle = modes[i] };
     }
@@ -385,8 +385,8 @@ pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    const slice = try allocator.alloc(Monitor, @intCast(usize, count));
-    var i: usize = 0;
+    const slice = try allocator.alloc(Monitor, @intCast(u32, count));
+    var i: u32 = 0;
     while (i < count) : (i += 1) {
         slice[i] = Monitor{ .handle = monitors[i].? };
     }
