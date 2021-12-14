@@ -55,7 +55,7 @@ pub const InternalUserPointer = struct {
     setFocusCallback: ?fn (window: Window, focused: bool) void,
     setIconifyCallback: ?fn (window: Window, iconified: bool) void,
     setMaximizeCallback: ?fn (window: Window, maximized: bool) void,
-    setFramebufferSizeCallback: ?fn (window: Window, width: i32, height: i32) void,
+    setFramebufferSizeCallback: ?fn (window: Window, width: u32, height: u32) void,
     setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
     setKeyCallback: ?fn (window: Window, key: Key, scancode: i32, action: Action, mods: Mods) void,
     setCharCallback: ?fn (window: Window, codepoint: u21) void,

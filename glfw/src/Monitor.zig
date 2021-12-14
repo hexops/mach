@@ -452,8 +452,8 @@ pub const Event = enum(c_int) {
 pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monitor: Monitor, event: Event, data: *Data) void) void {
     internal_debug.assertInitialized();
     if (f) |new_callback| {
-        callback_fn_ptr = @truncate(u32, @ptrToInt(new_callback));
-        callback_data_ptr = @truncate(u32, @ptrToInt(data));
+        callback_fn_ptr = @ptrToInt(new_callback);
+        callback_data_ptr = @ptrToInt(data);
         const NewCallback = @TypeOf(new_callback);
         _ = c.glfwSetMonitorCallback((struct {
             fn callbackC(monitor: ?*c.GLFWmonitor, event: c_int) callconv(.C) void {

@@ -30,7 +30,7 @@ pixels: []u8,
 owned: bool,
 
 /// Initializes a new owned image with the given size and pixel_data_len of undefined .pixel values.
-pub inline fn init(allocator: mem.Allocator, width: u32, height: u32, pixel_data_len: u32) !Image {
+pub inline fn init(allocator: mem.Allocator, width: u32, height: u32, pixel_data_len: usize) !Image {
     const buf = try allocator.alloc(u8, pixel_data_len);
     return Image{
         .width = width,
@@ -46,7 +46,7 @@ pub inline fn init(allocator: mem.Allocator, width: u32, height: u32, pixel_data
 /// number of bytes required per pixel / the length of the pixel data array.
 ///
 /// The returned memory is valid for as long as the GLFW C memory is valid.
-pub inline fn fromC(native: c.GLFWimage, pixel_data_len: u32) Image {
+pub inline fn fromC(native: c.GLFWimage, pixel_data_len: usize) Image {
     return Image{
         .width = @intCast(u32, native.width),
         .height = @intCast(u32, native.height),
