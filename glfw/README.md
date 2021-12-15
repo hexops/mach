@@ -104,12 +104,16 @@ Here is a rough list of functionality Wayland does not support:
 * `Monitor.setGamma`
 * `Monitor.getGammaRamp`, `Monitor.setGammaRamp`
 
+## Join the community
+
+Join the Mach engine community [on Matrix chat](https://matrix.to/#/#hexops:matrix.org) to discuss this project, ask questions, get help, etc.
+
 ## Issues
 
 Issues are tracked in the [main Mach repository](https://github.com/hexops/mach/issues?q=is%3Aissue+is%3Aopen+label%3Aglfw).
 
 ## Contributing
 
-Contributions are very welcome, but pull requests must be sent to [the main repository](https://github.com/hexops/mach/tree/main/glfw) to avoid some complex merge conflicts we'd get by accepting contributions in both repositories. Once the changes are merged there, they'll get sync'd to this repository automatically.
+Contributions are very welcome. Pull requests must be sent to [the main repository](https://github.com/hexops/mach/tree/main/glfw) to avoid some complex merge conflicts we'd get by accepting contributions in both repositories. Once the changes are merged there, they'll get sync'd to this repository automatically.
 
 We track the latest stable release of GLFW, if you need a newer version we can start a development branch / figure that out - just open an issue.
