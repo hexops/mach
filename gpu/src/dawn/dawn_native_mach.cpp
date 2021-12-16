@@ -70,7 +70,23 @@ MACH_EXPORT MachDawnNativeAdapterProperties machDawnNativeAdapter_getProperties(
 // // to implement the swapchain and interop APIs in Chromium.
 // bool SupportsExternalImages() const;
 // explicit operator bool() const;
-MACH_EXPORT WGPUDevice machDawnNativeAdapter_createDevice(MachDawnNativeAdapter adapter, MachDawnNativeDeviceDescriptor* deviceDescriptor) {
+
+// TODO(dawn-native-mach): These API* methods correlate to the new API (which is unified between Dawn
+// and wgpu-native?), e.g. dawn_native::Instance::APIRequestAdapter corresponds to wgpuInstanceRequestAdapter
+// These are not implemented in Dawn yet according to austineng, but we should switch to this API once they do:
+//
+// "fyi, the requestAdapter/requestedDevice stuff isn't implemented right now. We just added the interface for it, but still working on the implementation. Today, it'll always fail the callback."
+//
+//
+// bool APIGetLimits(SupportedLimits* limits) const;
+// void APIGetProperties(AdapterProperties* properties) const;
+// bool APIHasFeature(wgpu::FeatureName feature) const;
+// uint32_t APIEnumerateFeatures(wgpu::FeatureName* features) const;
+// void APIRequestDevice(const DeviceDescriptor* descriptor,
+//                       WGPURequestDeviceCallback callback,
+//                       void* userdata);
+//
+MACH_EXPORT WGPUDevice machDawnNativeAdapter_createDevice(MachDawnNativeAdapter adapter, MachDawnNativeDawnDeviceDescriptor* deviceDescriptor) {
     auto self = reinterpret_cast<dawn_native::Adapter*>(adapter);
 
     if (deviceDescriptor == nullptr) {
@@ -89,7 +105,7 @@ MACH_EXPORT WGPUDevice machDawnNativeAdapter_createDevice(MachDawnNativeAdapter 
     for (int i = 0; i < deviceDescriptor->forceDisabledTogglesLength; i++)
         cppForceDisabledToggles.push_back(deviceDescriptor->forceDisabledToggles[i]);
 
-    auto cppDeviceDescriptor = dawn_native::DeviceDescriptor{
+    auto cppDeviceDescriptor = dawn_native::DawnDeviceDescriptor{
         .requiredFeatures = cppRequiredExtensions,
         .forceEnabledToggles = cppForceEnabledToggles,
         .forceDisabledToggles = cppForceDisabledToggles,
@@ -131,6 +147,15 @@ MACH_EXPORT MachDawnNativeInstance machDawnNativeInstance_init(void) {
 MACH_EXPORT void machDawnNativeInstance_deinit(MachDawnNativeInstance instance) {
     delete reinterpret_cast<dawn_native::Instance*>(instance);
 }
+// TODO(dawn-native-mach): These API* methods correlate to the new API (which is unified between Dawn
+// and wgpu-native?), e.g. dawn_native::Instance::APIRequestAdapter corresponds to wgpuInstanceRequestAdapter
+// These are not implemented in Dawn yet according to austineng, but we should switch to this API once they do:
+//
+// "fyi, the requestAdapter/requestedDevice stuff isn't implemented right now. We just added the interface for it, but still working on the implementation. Today, it'll always fail the callback."
+//
+// void APIRequestAdapter(const RequestAdapterOptions* options,
+//                        WGPURequestAdapterCallback callback,
+//                        void* userdata);
 MACH_EXPORT void machDawnNativeInstance_discoverDefaultAdapters(MachDawnNativeInstance instance) {
     dawn_native::Instance* self = reinterpret_cast<dawn_native::Instance*>(instance);
     self->DiscoverDefaultAdapters();
@@ -247,157 +272,3 @@ MACH_EXPORT WGPUTextureFormat machUtilsBackendBinding_getPreferredSwapChainTextu
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
-// TODO(dawn-native-mach): everything below here is not wrapped
-
-// #ifndef DAWNNATIVE_DAWNNATIVE_H_
-// #define DAWNNATIVE_DAWNNATIVE_H_
-
-// #include <dawn/dawn_proc_table.h>
-// #include <dawn/webgpu.h>
-// #include <dawn_native/dawn_native_export.h>
-
-// #include <string>
-// #include <vector>
-
-// namespace dawn_platform {
-//     class Platform;
-// }  // namespace dawn_platform
-
-// namespace wgpu {
-//     struct AdapterProperties;
-// }
-
-// namespace dawn_native {
-
-//     // DEPRECATED: use WGPUAdapterProperties instead.
-//     struct PCIInfo {
-//         uint32_t deviceId = 0;
-//         uint32_t vendorId = 0;
-//         std::string name;
-//     };
-
-//     // DEPRECATED: use WGPUBackendType instead.
-//     enum class BackendType {
-//         D3D12,
-//         Metal,
-//         Null,
-//         OpenGL,
-//         OpenGLES,
-//         Vulkan,
-//     };
-
-//     // DEPRECATED: use WGPUAdapterType instead.
-//     enum class DeviceType {
-//         DiscreteGPU,
-//         IntegratedGPU,
-//         CPU,
-//         Unknown,
-//     };
-
-//     class InstanceBase;
-//     class AdapterBase;
-
-//     // A struct to record the information of a toggle. A toggle is a code path in Dawn device that
-//     // can be manually configured to run or not outside Dawn, including workarounds, special
-//     // features and optimizations.
-//     struct ToggleInfo {
-//         const char* name;
-//         const char* description;
-//         const char* url;
-//     };
-
-//     // A struct to record the information of an extension. An extension is a GPU feature that is not
-//     // required to be supported by all Dawn backends and can only be used when it is enabled on the
-//     // creation of device.
-//     using ExtensionInfo = ToggleInfo;
-
-//     // Base class for options passed to Instance::DiscoverAdapters.
-//     struct DAWN_NATIVE_EXPORT AdapterDiscoveryOptionsBase {
-//       public:
-//         const WGPUBackendType backendType;
-
-//       protected:
-//         AdapterDiscoveryOptionsBase(WGPUBackendType type);
-//     };
-
-//     enum BackendValidationLevel { Full, Partial, Disabled };
-
-//     class DAWN_NATIVE_EXPORT Instance {
-//     };
-
-//     // Query the names of all the toggles that are enabled in device
-//     DAWN_NATIVE_EXPORT std::vector<const char*> GetTogglesUsed(WGPUDevice device);
-
-//     // Backdoor to get the number of lazy clears for testing
-//     DAWN_NATIVE_EXPORT size_t GetLazyClearCountForTesting(WGPUDevice device);
-
-//     // Backdoor to get the number of deprecation warnings for testing
-//     DAWN_NATIVE_EXPORT size_t GetDeprecationWarningCountForTesting(WGPUDevice device);
-
-//     //  Query if texture has been initialized
-//     DAWN_NATIVE_EXPORT bool IsTextureSubresourceInitialized(
-//         WGPUTexture texture,
-//         uint32_t baseMipLevel,
-//         uint32_t levelCount,
-//         uint32_t baseArrayLayer,
-//         uint32_t layerCount,
-//         WGPUTextureAspect aspect = WGPUTextureAspect_All);
-
-//     // Backdoor to get the order of the ProcMap for testing
-//     DAWN_NATIVE_EXPORT std::vector<const char*> GetProcMapNamesForTesting();
-
-//     DAWN_NATIVE_EXPORT bool DeviceTick(WGPUDevice device);
-
-//     // ErrorInjector functions used for testing only. Defined in dawn_native/ErrorInjector.cpp
-//     DAWN_NATIVE_EXPORT void EnableErrorInjector();
-//     DAWN_NATIVE_EXPORT void DisableErrorInjector();
-//     DAWN_NATIVE_EXPORT void ClearErrorInjector();
-//     DAWN_NATIVE_EXPORT uint64_t AcquireErrorInjectorCallCount();
-//     DAWN_NATIVE_EXPORT void InjectErrorAt(uint64_t index);
-
-//     // The different types of external images
-//     enum ExternalImageType {
-//         OpaqueFD,
-//         DmaBuf,
-//         IOSurface,
-//         DXGISharedHandle,
-//         EGLImage,
-//     };
-
-//     // Common properties of external images
-//     struct DAWN_NATIVE_EXPORT ExternalImageDescriptor {
-//       public:
-//         const ExternalImageType type;
-//         const WGPUTextureDescriptor* cTextureDescriptor;  // Must match image creation params
-//         bool isInitialized;  // Whether the texture is initialized on import
-
-//       protected:
-//         ExternalImageDescriptor(ExternalImageType type);
-//     };
-
-//     struct DAWN_NATIVE_EXPORT ExternalImageAccessDescriptor {
-//       public:
-//         bool isInitialized;  // Whether the texture is initialized on import
-//         WGPUTextureUsageFlags usage;
-//     };
-
-//     struct DAWN_NATIVE_EXPORT ExternalImageExportInfo {
-//       public:
-//         const ExternalImageType type;
-//         bool isInitialized;  // Whether the texture is initialized after export
-
-//       protected:
-//         ExternalImageExportInfo(ExternalImageType type);
-//     };
-
-//     DAWN_NATIVE_EXPORT const char* GetObjectLabelForTesting(void* objectHandle);
-
-//     DAWN_NATIVE_EXPORT uint64_t GetAllocatedSizeForTesting(WGPUBuffer buffer);
-
-//     DAWN_NATIVE_EXPORT bool BindGroupLayoutBindingsEqualForTesting(WGPUBindGroupLayout a,
-//                                                                    WGPUBindGroupLayout b);
-
-// }  // namespace dawn_native
-
-// #endif  // DAWNNATIVE_DAWNNATIVE_H_

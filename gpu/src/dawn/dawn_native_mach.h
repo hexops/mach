@@ -51,7 +51,7 @@ MACH_EXPORT MachDawnNativeAdapterProperties machDawnNativeAdapter_getProperties(
 
 // An optional parameter of Adapter::CreateDevice() to send additional information when creating
 // a Device. For example, we can use it to enable a workaround, optimization or feature.
-typedef struct MachDawnNativeDeviceDescriptor {
+typedef struct MachDawnNativeDawnDeviceDescriptor {
     char** requiredFeatures;
     uintptr_t requiredFeaturesLength;
 
@@ -63,8 +63,8 @@ typedef struct MachDawnNativeDeviceDescriptor {
 
     // default null
     WGPURequiredLimits* requiredLimits;
-} MachDawnNativeDeviceDescriptor;
-MACH_EXPORT WGPUDevice machDawnNativeAdapter_createDevice(MachDawnNativeAdapter adapter, MachDawnNativeDeviceDescriptor* deviceDescriptor);
+} MachDawnNativeDawnDeviceDescriptor;
+MACH_EXPORT WGPUDevice machDawnNativeAdapter_createDevice(MachDawnNativeAdapter adapter, MachDawnNativeDawnDeviceDescriptor* deviceDescriptor);
 
 typedef struct MachDawnNativeAdaptersImpl* MachDawnNativeAdapters;
 MACH_EXPORT MachDawnNativeAdapter machDawnNativeAdapters_index(MachDawnNativeAdapters adapters, uintptr_t index);
