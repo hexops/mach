@@ -31,7 +31,7 @@ pub inline fn from(handle: *c.GLFWwindow) mem.Allocator.Error!Window {
     const ptr = c.glfwGetWindowUserPointer(handle);
     if (ptr == null) {
         const internal = try std.heap.c_allocator.create(InternalUserPointer);
-        c.glfwSetWindowUserPointer(handle, @ptrCast(*c_void, internal));
+        c.glfwSetWindowUserPointer(handle, @ptrCast(*anyopaque, internal));
         getError() catch |err| return switch (err) {
             Error.NotInitialized => unreachable,
             else => unreachable,
@@ -45,7 +45,7 @@ pub inline fn from(handle: *c.GLFWwindow) mem.Allocator.Error!Window {
 /// This is used to internally carry function callbacks with nicer Zig interfaces.
 pub const InternalUserPointer = struct {
     /// The actual user pointer that the user of the library wished to set via setUserPointer.
-    user_pointer: ?*c_void,
+    user_pointer: ?*anyopaque,
 
     // Callbacks to be invoked by wrapper functions.
     setPosCallback: ?fn (window: Window, xpos: i32, ypos: i32) void,
@@ -1371,7 +1371,7 @@ pub inline fn getInternal(self: Window) *InternalUserPointer {
 pub inline fn setUserPointer(self: Window, comptime T: type, pointer: *T) void {
     internal_debug.assertInitialized();
     var internal = self.getInternal();
-    internal.user_pointer = @ptrCast(*c_void, pointer);
+    internal.user_pointer = @ptrCast(*anyopaque, pointer);
 }
 
 /// Returns the user pointer of the specified window.

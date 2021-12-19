@@ -314,7 +314,7 @@ pub inline fn getGUID(self: Joystick) error{PlatformError}!?[:0]const u8 {
 /// see also: joystick_userptr, glfw.Joystick.getUserPointer
 pub inline fn setUserPointer(self: Joystick, comptime T: type, pointer: *T) void {
     internal_debug.assertInitialized();
-    c.glfwSetJoystickUserPointer(@enumToInt(self.jid), @ptrCast(*c_void, pointer));
+    c.glfwSetJoystickUserPointer(@enumToInt(self.jid), @ptrCast(*anyopaque, pointer));
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
