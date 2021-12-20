@@ -23,7 +23,7 @@ const c = @import("c.zig").c;
 // #include <algorithm>
 // #include <cstring>
 
-fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*c_void) callconv(.C) void {
+fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*anyopaque) callconv(.C) void {
     switch (error_type) {
         c.WGPUErrorType_Validation => std.debug.print("dawn: validation error: {s}\n", .{message}),
         c.WGPUErrorType_OutOfMemory => std.debug.print("dawn: out of memory: {s}\n", .{message}),
@@ -192,13 +192,13 @@ fn discoverAdapter(instance: c.MachDawnNativeInstance, window: glfw.Window, typ:
     if (typ == c.WGPUBackendType_OpenGL) {
         try glfw.makeContextCurrent(window);
         const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGL{
-            .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*c_void, glfw.getProcAddress),
+            .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*anyopaque, glfw.getProcAddress),
         };
         _ = c.machDawnNativeInstance_discoverAdapters(instance, typ, &adapter_options);
     } else if (typ == c.WGPUBackendType_OpenGLES) {
         try glfw.makeContextCurrent(window);
         const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGLES{
-            .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*c_void, glfw.getProcAddress),
+            .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*anyopaque, glfw.getProcAddress),
         };
         _ = c.machDawnNativeInstance_discoverAdapters(instance, typ, &adapter_options);
     } else {
