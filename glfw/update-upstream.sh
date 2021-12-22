@@ -9,8 +9,8 @@ git clone --depth 1 --branch 3.3.6 https://github.com/glfw/glfw
 cd glfw/
 
 # Remove non-C files
-rm -rf .appveyor.yml .git .gitattributes .gitignore .mailmap .travis.yml
-rm cmake_uninstall.cmake.in README.md
+rm -rf .appveyor.yml .git .github .gitattributes .gitignore .mailmap .travis.yml
+rm cmake_uninstall.cmake.in README.md CONTRIBUTORS.md
 rm -r CMake* deps/ examples/ tests/ docs/
 rm src/CMakeLists.txt src/*.in
 
