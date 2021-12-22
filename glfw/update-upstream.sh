@@ -16,7 +16,7 @@ rm src/CMakeLists.txt src/*.in
 
 # Vulkan headers
 cd ..
-git clone https://github.com/KhronosGroup/Vulkan-Headers vulkan_headers/
+git clone --depth 1 https://github.com/KhronosGroup/Vulkan-Headers vulkan_headers/
 cd vulkan_headers
 rm -rf .git registry/ *.gn *.txt *.md cmake/ 
 rm -rf include/vk_video
