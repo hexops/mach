@@ -5,7 +5,7 @@ set -ex
 rm -rf upstream/
 mkdir upstream/
 cd upstream/
-git clone --depth 1 --branch 3.3.4 https://github.com/glfw/glfw
+git clone --depth 1 --branch 3.3.6 https://github.com/glfw/glfw
 cd glfw/
 
 # Remove non-C files
