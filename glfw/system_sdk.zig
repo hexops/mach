@@ -101,11 +101,15 @@ fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     }
 
     var sdk_root_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
-    defer b.allocator.free(sdk_root_includes);
-    step.addSystemIncludeDir(sdk_root_includes);
-
+    var wayland_protocols_include = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/share/wayland-generated" }) catch unreachable;
     var sdk_root_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib/x86_64-linux-gnu" }) catch unreachable;
-    defer b.allocator.free(sdk_root_libs);
+    defer {
+        b.allocator.free(sdk_root_includes);
+        b.allocator.free(wayland_protocols_include);
+        b.allocator.free(sdk_root_libs);
+    }
+    step.addSystemIncludeDir(sdk_root_includes);
+    step.addSystemIncludeDir(wayland_protocols_include);
     step.addLibPath(sdk_root_libs);
 }
 
