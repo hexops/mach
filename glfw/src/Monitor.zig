@@ -94,9 +94,9 @@ const PhysicalSize = struct {
 ///
 /// Possible errors include glfw.Error.NotInitialized.
 ///
-/// win32: calculates the returned physical size from the current resolution and system DPI
-/// instead of querying the monitor EDID data.
 ///
+/// win32: On Windows 8 and earlier the physical size is calculated from
+/// the current resolution and system DPI instead of querying the monitor EDID data
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
@@ -221,7 +221,8 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
 ///
 /// This function returns an array of all video modes supported by the monitor. The returned slice
 /// is sorted in ascending order, first by color bit depth (the sum of all channel depths) and
-/// then by resolution area (the product of width and height).
+/// then by resolution area (the product of width and height), then resolution width and finally
+/// by refresh rate.
 ///
 /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
 ///

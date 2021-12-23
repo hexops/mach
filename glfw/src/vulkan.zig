@@ -13,8 +13,7 @@ const internal_debug = @import("internal_debug.zig");
 /// found.
 ///
 /// The availability of a Vulkan loader and even an ICD does not by itself guarantee that surface
-/// creation or even instance creation is possible. For example, on Fermi systems Nvidia will
-/// install an ICD that provides no actual Vulkan support. Call glfw.getRequiredInstanceExtensions
+/// creation or even instance creation is possible. Call glfw.getRequiredInstanceExtensions
 /// to check whether the extensions necessary for Vulkan surface creation are available and
 /// glfw.getPhysicalDevicePresentationSupport to check whether a queue family of a physical device
 /// supports image presentation.
@@ -51,8 +50,8 @@ pub inline fn vulkanSupported() bool {
 /// extensions you wish to enable are already in the returned array, as it is an error to specify
 /// an extension more than once in the `VkInstanceCreateInfo` struct.
 ///
-/// macos: This function currently supports either the `VK_MVK_macos_surface` extension from
-/// MoltenVK or `VK_EXT_metal_surface` extension.
+/// macos: GLFW currently supports both the `VK_MVK_macos_surface` and the newer
+/// `VK_EXT_metal_surface` extensions.
 ///
 /// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
 /// yourself. It is guaranteed to be valid only until the library is terminated.
@@ -136,8 +135,8 @@ pub fn getInstanceProcAddress(vk_instance: ?*opaque {}, proc_name: [*:0]const u8
 ///
 /// Possible errors include glfw.Error.NotInitialized, glfw.Error.APIUnavailable and glfw.Error.PlatformError.
 ///
-/// macos: This function currently always returns `true`, as the `VK_MVK_macos_surface`
-/// extension does not provide a `vkGetPhysicalDevice*PresentationSupport` type function.
+/// macos: This function currently always returns `true`, as the `VK_MVK_macos_surface` and
+/// 'VK_EXT_metal_surface' extension does not provide a `vkGetPhysicalDevice*PresentationSupport` type function.
 ///
 /// @thread_safety This function may be called from any thread. For synchronization details of
 /// Vulkan objects, see the Vulkan specification.
