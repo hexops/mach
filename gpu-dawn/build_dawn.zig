@@ -683,6 +683,7 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include"),
         include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
         include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
+        include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include/spirv/unified1"),
     }) catch unreachable;
 
     // spvtools
@@ -700,6 +701,7 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     sources.appendSlice(&.{
         thisDir() ++ "/src/dawn/sources/spirv_tools_opt.cpp",
         thisDir() ++ "/src/dawn/sources/spirv_tools_opt_2.cpp",
+        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/dataflow.cpp",
         thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/local_single_store_elim_pass.cpp",
         thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/loop_unswitch_pass.cpp",
         thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/mem_pass.cpp",

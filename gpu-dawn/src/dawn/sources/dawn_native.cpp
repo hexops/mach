@@ -69,4 +69,5 @@
 #include "src/dawn_native/TintUtils.cpp"
 #include "src/dawn_native/Toggles.cpp"
 #include "src/dawn_native/VertexFormat.cpp"
+#include "src/dawn_native/webgpu_absl_format.cpp"
 #include "src/dawn_native/utils/WGPUHelpers.cpp"
