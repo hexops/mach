@@ -27,7 +27,7 @@
 //! Best way to get this file in your own repository? We suggest just copying it, or importing it
 //! from a project that includes it if you're using one (e.g. mach-glfw)
 //!
-//! version: 1.0
+//! version: Dec 24, 2021
 
 const std = @import("std");
 const Builder = std.build.Builder;
@@ -46,7 +46,7 @@ pub const Options = struct {
 
     /// The Linux x86-64 SDK repository name.
     linux_x86_64: []const u8 = "sdk-linux-x86_64",
-    linux_x86_64_revision: []const u8 = "ce9ef1e0b45d982a399fac6a9456a47a5e1f0d2e",
+    linux_x86_64_revision: []const u8 = "ab7fa8f3a05b06e0b06f4277b484e27004bfb20f",
 
     /// If true, the Builder.sysroot will set to the SDK path. This has the drawback of preventing
     /// you from including headers, libraries, etc. from outside the SDK generally. However, it can
@@ -101,11 +101,15 @@ fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     }
 
     var sdk_root_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
-    defer b.allocator.free(sdk_root_includes);
-    step.addSystemIncludeDir(sdk_root_includes);
-
+    var wayland_protocols_include = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/share/wayland-generated" }) catch unreachable;
     var sdk_root_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib/x86_64-linux-gnu" }) catch unreachable;
-    defer b.allocator.free(sdk_root_libs);
+    defer {
+        b.allocator.free(sdk_root_includes);
+        b.allocator.free(wayland_protocols_include);
+        b.allocator.free(sdk_root_libs);
+    }
+    step.addSystemIncludeDir(sdk_root_includes);
+    step.addSystemIncludeDir(wayland_protocols_include);
     step.addLibPath(sdk_root_libs);
 }
 
