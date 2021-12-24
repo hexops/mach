@@ -90,7 +90,7 @@ MACH_EXPORT WGPUDevice machDawnNativeAdapter_createDevice(MachDawnNativeAdapter 
     auto self = reinterpret_cast<dawn_native::Adapter*>(adapter);
 
     if (deviceDescriptor == nullptr) {
-        return self->CreateDevice(nullptr);
+        return self->CreateDevice();
     }
 
     std::vector<const char*> cppRequiredExtensions;
