@@ -1,5 +1,6 @@
 //! Errors
 
+const testing = @import("std").testing;
 const c = @import("c.zig").c;
 
 /// Errors that GLFW can produce.
@@ -87,6 +88,8 @@ pub const Error = error{
     NoWindowContext,
 };
 
+pub const ErrorCallbackFn = fn (c_int, [*c]const u8) callconv(.C) void;
+
 fn convertError(e: c_int) Error!void {
     return switch (e) {
         c.GLFW_NO_ERROR => {},
@@ -123,4 +126,52 @@ fn convertError(e: c_int) Error!void {
 /// @thread_safety This function may be called from any thread.
 pub inline fn getError() Error!void {
     return convertError(c.glfwGetError(null));
+}
+
+/// Sets the error callback.
+///
+/// This function sets the error callback, which is called with an error code
+/// and a human-readable description each time a GLFW error occurs.
+///
+/// The error code is set before the callback is called.  Calling @ref
+/// glfwGetError from the error callback will return the same value as the error
+/// code argument.
+///
+/// The error callback is called on the thread where the error occurred.  If you
+/// are using GLFW from multiple threads, your error callback needs to be
+/// written accordingly.
+///
+/// Because the description string may have been generated specifically for that
+/// error, it is not guaranteed to be valid after the callback has returned.  If
+/// you wish to use it after the callback returns, you need to make a copy.
+///
+/// Once set, the error callback remains set even after the library has been
+/// terminated.
+///
+/// @param[in] callback The new callback, or `NULL` to remove the currently set
+/// callback.
+/// @return The previously set callback, or `NULL` if no callback was set.
+///
+/// @callback_signature
+/// ```
+/// fn (error_code: c_int, description: [*c]const u8) callconv(.C) void;
+/// ```
+/// For more information about the callback parameters, see the
+/// [callback pointer type](@ref GLFWerrorfun).
+///
+/// @errors None.
+///
+/// @remark This function may be called before @ref glfwInit.
+///
+/// @thread_safety This function must only be called from the main thread.
+pub fn setErrorCallback(callback_fn: ?ErrorCallbackFn) ?ErrorCallbackFn {
+    return c.glfwSetErrorCallback(callback_fn);
+}
+
+test "errorCallback" {
+    const TestStruct = struct {
+        pub fn callback(_: c_int, _: [*c]const u8) callconv(.C) void {}
+    };
+    try testing.expect(setErrorCallback(TestStruct.callback) == null);
+    try testing.expect(@TypeOf(setErrorCallback(TestStruct.callback).?) == ErrorCallbackFn);
 }

@@ -8,8 +8,10 @@ const key = @import("key.zig");
 /// Possible value for various window hints, etc.
 pub const dont_care = c.GLFW_DONT_CARE;
 
-pub const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
+const errors = @import("errors.zig");
+const getError = errors.getError;
+pub const setErrorCallback = errors.setErrorCallback;
+pub const Error = errors.Error;
 
 pub const Action = @import("action.zig").Action;
 pub const GamepadAxis = @import("gamepad_axis.zig").GamepadAxis;
