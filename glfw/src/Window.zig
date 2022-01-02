@@ -1368,10 +1368,10 @@ pub inline fn getInternal(self: Window) *InternalUserPointer {
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: window_userptr, glfw.Window.getUserPointer
-pub inline fn setUserPointer(self: Window, comptime T: type, pointer: *T) void {
+pub inline fn setUserPointer(self: Window, pointer: ?*anyopaque) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.user_pointer = @ptrCast(*anyopaque, pointer);
+    const internal = self.getInternal();
+    internal.user_pointer = pointer;
 }
 
 /// Returns the user pointer of the specified window.
@@ -1382,10 +1382,10 @@ pub inline fn setUserPointer(self: Window, comptime T: type, pointer: *T) void {
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: window_userptr, glfw.Window.setUserPointer
-pub inline fn getUserPointer(self: Window, comptime PointerType: type) ?PointerType {
+pub inline fn getUserPointer(self: Window, comptime T: type) ?*T {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    if (internal.user_pointer) |p| return @ptrCast(PointerType, @alignCast(@alignOf(std.meta.Child(PointerType)), p));
+    const internal = self.getInternal();
+    if (internal.user_pointer) |p| return @ptrCast(?*T, @alignCast(@alignOf(T), p));
     return null;
 }
 
@@ -2882,7 +2882,7 @@ test "setUserPointer" {
     const T = struct { name: []const u8 };
     var my_value = T{ .name = "my window!" };
 
-    window.setUserPointer(T, &my_value);
+    window.setUserPointer(&my_value);
 }
 
 test "getUserPointer" {
@@ -2900,8 +2900,8 @@ test "getUserPointer" {
     const T = struct { name: []const u8 };
     var my_value = T{ .name = "my window!" };
 
-    window.setUserPointer(T, &my_value);
-    const got = window.getUserPointer(*T);
+    window.setUserPointer(&my_value);
+    const got = window.getUserPointer(T);
     std.debug.assert(&my_value == got);
 }
 
