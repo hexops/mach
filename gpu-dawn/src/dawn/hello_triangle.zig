@@ -114,10 +114,10 @@ pub fn main() !void {
         swap_chain: c.WGPUSwapChain,
         swap_chain_format: c.WGPUTextureFormat,
     };
-    setup.window.setUserPointer(CallbackPayload, &.{ .swap_chain = swap_chain, .swap_chain_format = swap_chain_format });
+    setup.window.setUserPointer(&.{ .swap_chain = swap_chain, .swap_chain_format = swap_chain_format });
     setup.window.setFramebufferSizeCallback((struct {
         fn callback(window: glfw.Window, width: u32, height: u32) void {
-            const pl = window.getUserPointer(*CallbackPayload);
+            const pl = window.getUserPointer(CallbackPayload);
             c.wgpuSwapChainConfigure(pl.?.swap_chain, pl.?.swap_chain_format, c.WGPUTextureUsage_RenderAttachment, @intCast(u32, width), @intCast(u32, height));
         }
     }).callback);
