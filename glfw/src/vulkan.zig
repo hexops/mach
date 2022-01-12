@@ -143,8 +143,8 @@ pub fn getInstanceProcAddress(vk_instance: ?*anyopaque, proc_name: [*:0]const u8
 ///
 /// see also: vulkan_present
 pub inline fn getPhysicalDevicePresentationSupport(
-    vk_instance: *opaque {},
-    vk_physical_device: *opaque {},
+    vk_instance: *anyopaque,
+    vk_physical_device: *anyopaque,
     queue_family: u32,
 ) error{ APIUnavailable, PlatformError }!bool {
     internal_debug.assertInitialized();
