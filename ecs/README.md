@@ -27,23 +27,17 @@ There are plenty of known issues, and things that just aren't implemented yet. A
 * Currently only handles entity management, no world management or scheduling. No global data, etc.
 * Lack of API documentation (see "example" test)
 * Missing hooks that would enable visualizing memory usage, # of entities, components, etc. and otherwise enable integration of editors/visualizers/profilers/etc.
-* TypedEntities does not allow for storage of sparse data yet, and also specifically comptime defined sparse data - both are needed. e.g. if only a handful of entities need a component but there are hundreds of thousands.
-* If many entities are deleted, TypedEntities iteration becomes slower due to needing to skip over entities in the free_slots set, we should add a .compact() method that allows for remediating this as well as exposing .
-* If *tons* of entities are deleted, even with .compact(), memory would not be free'd / returned to the OS by the underlying MultiArrayList. We could add a .compactAndFree() method to correct this.
+* We have dense and sparse data, but no shared data yet.
+* If many entities are deleted, iteration becomes slower due to needing to skip over entities in the free_slots set, we should add a .compact() method that allows for remediating this.
+* If *tons* of entities are deleted, even with .compact(), memory would not be free'd / returned to the OS by the underlying components arrays. We could add a .compactAndFree() method to correct this.
 * It would be nicer if there were configuration options for performing .compactAndFree() automatically, e.g. if the number of free entity slots is particularly high or something.
 * Currently we do not expose an API for pre-allocating entities (i.e. allocating capacity up front) but that's very important for perf and memory usage in the real world.
-* When TypedEntities is deinit'd, entity Archetypes - or maybe systems via an event/callback, need a way to be notified of destruction.
-* Entities.get() currently operates on the archetype type name, but we should perhaps enable also getting a TypedEntities instance via passing a unique string name. e.g. if you want to store two separate team's Player entities in distinct TypedEntities collections.
-* There should exist a Merge/Combine function for composing Archetypes from components and other Archetypes without explicitly listing every single component out in a new struct.
+* When entity is deleted, maybe via systems / an event/callback, need a way to be notified of destruction. Same with updated maybe.
+
+See also the numerous TODOs in main.zig.
 
 ## Copyright & patent mitigation
 
-The initial implementation was a clean-room implementation by Stephen Gutekanst without having
-read other ECS implementations' code, but with speaking to people familiar with other ECS
-implementations. Contributions past the initial implementation may be made by individuals in
-non-clean-room settings (familiar with open source implementations only.)
+The initial implementation was a clean-room implementation by Stephen Gutekanst without having read other ECS implementations' code, but with speaking to people familiar with other ECS implementations. Contributions past the initial implementation may be made by individuals in non-clean-room settings (familiar with open source implementations only.)
 
-Critically, this entity component system stores components for a classified archetype using both
-a multi array list (independent arrays allocated per component) as well as hashmaps for sparse
-component data for optimization. This is a novel and fundamentally different process than what
-is described Unity Software Inc's patent US 10,599,560. This is not legal advice.
+Critically, this entity component system stores components for a classified archetype using independent arrays allocated per component as well as hashmaps for sparse component data as an optimization. This is a novel and fundamentally different process than what is described in Unity Software Inc's patent US 10,599,560. This is not legal advice.
