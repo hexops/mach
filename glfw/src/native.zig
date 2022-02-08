@@ -135,7 +135,7 @@ pub fn Native(comptime options: BackendOptions) type {
             if (native.glfwGetWGLContext(@ptrCast(*native.GLFWwindow, window.handle))) |context| return context;
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             unreachable;
@@ -182,7 +182,7 @@ pub fn Native(comptime options: BackendOptions) type {
             const context = native.glfwGetNSGLContext(@ptrCast(*native.GLFWwindow, window.handle));
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             return context;
@@ -263,7 +263,7 @@ pub fn Native(comptime options: BackendOptions) type {
             native.glfwSetX11SelectionString(string);
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.PlatformError => |e| @errSetCast(error{PlatformError}, e),
+                Error.PlatformError => |e| e,
                 else => unreachable,
             };
         }
@@ -282,7 +282,7 @@ pub fn Native(comptime options: BackendOptions) type {
             if (native.glfwGetX11SelectionString()) |str| return str;
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.FormatUnavailable => |e| @errSetCast(error{FormatUnavailable}, e),
+                Error.FormatUnavailable => |e| e,
                 else => unreachable,
             };
             unreachable;
@@ -298,7 +298,7 @@ pub fn Native(comptime options: BackendOptions) type {
             if (native.glfwGetGLXContext(@ptrCast(*native.GLFWwindow, window.handle))) |context| return @ptrCast(*anyopaque, context);
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             unreachable;
@@ -315,7 +315,7 @@ pub fn Native(comptime options: BackendOptions) type {
             if (win != 0) return @ptrCast(*anyopaque, win);
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             unreachable;
@@ -393,7 +393,7 @@ pub fn Native(comptime options: BackendOptions) type {
             if (context != native.EGL_NO_CONTEXT) return @ptrCast(*anyopaque, context);
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             unreachable;
@@ -410,7 +410,7 @@ pub fn Native(comptime options: BackendOptions) type {
             if (surface != native.EGL_NO_SURFACE) return @ptrCast(*anyopaque, surface);
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             unreachable;
@@ -441,7 +441,7 @@ pub fn Native(comptime options: BackendOptions) type {
             ) == native.GLFW_TRUE) return buf;
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.PlatformError, Error.NoWindowContext => |e| @errSetCast(error{ PlatformError, NoWindowContext }, e),
+                Error.PlatformError, Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             unreachable;
@@ -472,7 +472,7 @@ pub fn Native(comptime options: BackendOptions) type {
             ) == native.GLFW_TRUE) return buf;
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.PlatformError, Error.NoWindowContext => |e| @errSetCast(error{ PlatformError, NoWindowContext }, e),
+                Error.PlatformError, Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             unreachable;
@@ -488,7 +488,7 @@ pub fn Native(comptime options: BackendOptions) type {
             if (native.glfwGetOSMesaContext(@ptrCast(*native.GLFWwindow, window.handle))) |context| return @ptrCast(*anyopaque, context);
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             unreachable;

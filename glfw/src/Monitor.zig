@@ -39,7 +39,7 @@ pub inline fn getPos(self: Monitor) error{PlatformError}!Pos {
     c.glfwGetMonitorPos(self.handle, &xpos, &ypos);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return Pos{ .x = @intCast(u32, xpos), .y = @intCast(u32, ypos) };
@@ -74,7 +74,7 @@ pub inline fn getWorkarea(self: Monitor) error{PlatformError}!Workarea {
     c.glfwGetMonitorWorkarea(self.handle, &xpos, &ypos, &width, &height);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return Workarea{ .x = @intCast(u32, xpos), .y = @intCast(u32, ypos), .width = @intCast(u32, width), .height = @intCast(u32, height) };
@@ -142,7 +142,7 @@ pub inline fn getContentScale(self: Monitor) error{PlatformError}!ContentScale {
     c.glfwGetMonitorContentScale(self.handle, &x_scale, &y_scale);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return ContentScale{ .x_scale = @floatCast(f32, x_scale), .y_scale = @floatCast(f32, y_scale) };
@@ -244,7 +244,7 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Alloca
     }
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     unreachable;
@@ -266,7 +266,7 @@ pub inline fn getVideoMode(self: Monitor) error{PlatformError}!VideoMode {
     if (c.glfwGetVideoMode(self.handle)) |mode| return VideoMode{ .handle = mode.* };
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     unreachable;
@@ -302,7 +302,7 @@ pub inline fn setGamma(self: Monitor, gamma: f32) error{PlatformError}!void {
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidValue => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -327,7 +327,7 @@ pub inline fn getGammaRamp(self: Monitor) error{PlatformError}!GammaRamp {
     if (c.glfwGetGammaRamp(self.handle)) |ramp| return GammaRamp.fromC(ramp.*);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     unreachable;
@@ -363,7 +363,7 @@ pub inline fn setGammaRamp(self: Monitor, ramp: GammaRamp) error{PlatformError}!
     c.glfwSetGammaRamp(self.handle, &ramp.toC());
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }

@@ -36,9 +36,7 @@ pub inline fn makeContextCurrent(window: ?Window) error{ NoWindowContext, Platfo
     if (window) |w| c.glfwMakeContextCurrent(w.handle) else c.glfwMakeContextCurrent(null);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.NoWindowContext,
-        Error.PlatformError,
-        => @errSetCast(error{ NoWindowContext, PlatformError }, err),
+        Error.NoWindowContext, Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -103,9 +101,7 @@ pub inline fn swapInterval(interval: i32) error{ NoCurrentContext, PlatformError
     c.glfwSwapInterval(@intCast(c_int, interval));
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.NoCurrentContext,
-        Error.PlatformError,
-        => @errSetCast(error{ NoCurrentContext, PlatformError }, err),
+        Error.NoCurrentContext, Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -143,9 +139,7 @@ pub inline fn extensionSupported(extension: [:0]const u8) error{ NoCurrentContex
 
     const supported = c.glfwExtensionSupported(extension);
     getError() catch |err| return switch (err) {
-        Error.NoCurrentContext,
-        Error.PlatformError,
-        => @errSetCast(error{ NoCurrentContext, PlatformError }, err),
+        Error.NoCurrentContext, Error.PlatformError => |e| e,
         Error.NotInitialized => unreachable,
         Error.InvalidValue => unreachable,
         else => unreachable,

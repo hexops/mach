@@ -219,7 +219,7 @@ pub const Key = enum(c_int) {
         const name_opt = cc.glfwGetKeyName(@enumToInt(self), @intCast(c_int, scancode));
         getError() catch |err| return switch (err) {
             Error.NotInitialized => unreachable,
-            Error.PlatformError => @errSetCast(error{PlatformError}, err),
+            Error.PlatformError => |e| e,
             else => unreachable,
         };
         return if (name_opt) |name|
@@ -247,7 +247,7 @@ pub const Key = enum(c_int) {
         getError() catch |err| return switch (err) {
             Error.NotInitialized => unreachable,
             Error.InvalidEnum => unreachable,
-            Error.PlatformError => @errSetCast(error{PlatformError}, err),
+            Error.PlatformError => |e| e,
             else => unreachable,
         };
         unreachable;

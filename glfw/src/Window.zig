@@ -437,10 +437,11 @@ pub inline fn create(
         Error.InvalidEnum => unreachable,
         Error.InvalidValue => unreachable,
         Error.APIUnavailable,
+        Error.PlatformError,
         Error.VersionUnavailable,
         Error.FormatUnavailable,
-        Error.PlatformError,
-        => @errSetCast(error{ APIUnavailable, VersionUnavailable, FormatUnavailable, PlatformError }, err),
+        => |e| e,
+
         else => unreachable,
     };
 
@@ -537,7 +538,7 @@ pub inline fn setTitle(self: Window, title: [*:0]const u8) error{PlatformError}!
     c.glfwSetWindowTitle(self.handle, title);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -580,7 +581,7 @@ pub inline fn setIcon(self: Window, allocator: mem.Allocator, images: ?[]Image) 
     } else c.glfwSetWindowIcon(self.handle, 0, null);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -610,7 +611,7 @@ pub inline fn getPos(self: Window) error{PlatformError}!Pos {
     c.glfwGetWindowPos(self.handle, &x, &y);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return Pos{ .x = @intCast(u32, x), .y = @intCast(u32, y) };
@@ -641,7 +642,7 @@ pub inline fn setPos(self: Window, pos: Pos) error{PlatformError}!void {
     c.glfwSetWindowPos(self.handle, @intCast(c_int, pos.x), @intCast(c_int, pos.y));
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -669,7 +670,7 @@ pub inline fn getSize(self: Window) error{PlatformError}!Size {
     c.glfwGetWindowSize(self.handle, &width, &height);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return Size{ .width = @intCast(u32, width), .height = @intCast(u32, height) };
@@ -702,7 +703,7 @@ pub inline fn setSize(self: Window, size: Size) error{PlatformError}!void {
     c.glfwSetWindowSize(self.handle, @intCast(c_int, size.width), @intCast(c_int, size.height));
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -755,7 +756,7 @@ pub inline fn setSizeLimits(self: Window, min: SizeOptional, max: SizeOptional) 
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidValue => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -802,7 +803,7 @@ pub inline fn setAspectRatio(self: Window, numerator: ?u32, denominator: ?u32) e
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidValue => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -824,7 +825,7 @@ pub inline fn getFramebufferSize(self: Window) error{PlatformError}!Size {
     c.glfwGetFramebufferSize(self.handle, &width, &height);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return Size{ .width = @intCast(u32, width), .height = @intCast(u32, height) };
@@ -860,7 +861,7 @@ pub inline fn getFrameSize(self: Window) error{PlatformError}!FrameSize {
     c.glfwGetWindowFrameSize(self.handle, &left, &top, &right, &bottom);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return FrameSize{
@@ -900,7 +901,7 @@ pub inline fn getContentScale(self: Window) error{PlatformError}!ContentScale {
     c.glfwGetWindowContentScale(self.handle, &x_scale, &y_scale);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return ContentScale{ .x_scale = x_scale, .y_scale = y_scale };
@@ -926,7 +927,7 @@ pub inline fn getOpacity(self: Window) error{PlatformError}!f32 {
     const opacity = c.glfwGetWindowOpacity(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return opacity;
@@ -954,7 +955,7 @@ pub inline fn setOpacity(self: Window, opacity: f32) error{PlatformError}!void {
     c.glfwSetWindowOpacity(self.handle, opacity);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -980,7 +981,7 @@ pub inline fn iconify(self: Window) error{PlatformError}!void {
     c.glfwIconifyWindow(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1003,7 +1004,7 @@ pub inline fn restore(self: Window) error{PlatformError}!void {
     c.glfwRestoreWindow(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1025,7 +1026,7 @@ pub inline fn maximize(self: Window) error{PlatformError}!void {
     c.glfwMaximizeWindow(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1049,7 +1050,7 @@ pub inline fn show(self: Window) error{PlatformError}!void {
     c.glfwShowWindow(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1069,7 +1070,7 @@ pub inline fn hide(self: Window) error{PlatformError}!void {
     c.glfwHideWindow(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1103,7 +1104,7 @@ pub inline fn focus(self: Window) error{PlatformError}!void {
     c.glfwFocusWindow(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1128,7 +1129,7 @@ pub inline fn requestAttention(self: Window) error{PlatformError}!void {
     c.glfwRequestWindowAttention(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1159,9 +1160,7 @@ pub inline fn swapBuffers(self: Window) error{ NoWindowContext, PlatformError }!
     c.glfwSwapBuffers(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.NoWindowContext,
-        Error.PlatformError,
-        => @errSetCast(error{ NoWindowContext, PlatformError }, err),
+        Error.NoWindowContext, Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1242,7 +1241,7 @@ pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: i32, ypos: i32, 
     );
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1302,7 +1301,7 @@ pub inline fn getAttrib(self: Window, attrib: Attrib) error{PlatformError}!i32 {
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     unreachable;
@@ -1348,7 +1347,7 @@ pub inline fn setAttrib(self: Window, attrib: Attrib, value: bool) error{Platfor
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
         Error.InvalidValue => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1873,7 +1872,7 @@ pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) error{
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -1978,7 +1977,7 @@ pub inline fn getCursorPos(self: Window) error{PlatformError}!CursorPos {
     c.glfwGetCursorPos(self.handle, &pos.xpos, &pos.ypos);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return pos;
@@ -2014,7 +2013,7 @@ pub inline fn setCursorPos(self: Window, xpos: f64, ypos: f64) error{PlatformErr
     c.glfwSetCursorPos(self.handle, xpos, ypos);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -2039,7 +2038,7 @@ pub inline fn setCursor(self: Window, cursor: Cursor) error{PlatformError}!void 
     c.glfwSetCursor(self.handle, cursor.ptr);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
