@@ -62,13 +62,13 @@ pub inline fn vulkanSupported() bool {
 pub inline fn getRequiredInstanceExtensions() error{APIUnavailable}![][*:0]const u8 {
     internal_debug.assertInitialized();
     var count: u32 = 0;
-    const extensions = c.glfwGetRequiredInstanceExtensions(&count);
+    if (c.glfwGetRequiredInstanceExtensions(&count)) |extensions| return @ptrCast([*][*:0]const u8, extensions)[0..count];
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.APIUnavailable => @errSetCast(error{APIUnavailable}, err),
         else => unreachable,
     };
-    return @ptrCast([*][*:0]const u8, extensions)[0..count];
+    unreachable;
 }
 
 /// Vulkan API function pointer type.
@@ -111,9 +111,8 @@ pub const VKProc = fn () callconv(.C) void;
 /// @thread_safety This function may be called from any thread.
 pub fn getInstanceProcAddress(vk_instance: ?*anyopaque, proc_name: [*:0]const u8) callconv(.C) ?VKProc {
     internal_debug.assertInitialized();
-    const proc_address = c.glfwGetInstanceProcAddress(if (vk_instance) |v| @ptrCast(c.VkInstance, v) else null, proc_name);
+    if (c.glfwGetInstanceProcAddress(if (vk_instance) |v| @ptrCast(c.VkInstance, v) else null, proc_name)) |proc_address| return proc_address;
     getError() catch |err| @panic(@errorName(err));
-    if (proc_address) |addr| return addr;
     return null;
 }
 
@@ -223,6 +222,7 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
         if (vk_allocation_callbacks == null) null else @ptrCast(*const c.VkAllocationCallbacks, @alignCast(@alignOf(c.VkAllocationCallbacks), vk_allocation_callbacks)),
         @ptrCast(*c.VkSurfaceKHR, @alignCast(@alignOf(c.VkSurfaceKHR), vk_surface_khr)),
     );
+    if (v == c.VK_SUCCESS) return v;
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidValue => @panic("Attempted to use window with client api to create vulkan surface."),
@@ -231,7 +231,7 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
         => @errSetCast(error{ APIUnavailable, PlatformError }, err),
         else => unreachable,
     };
-    return v;
+    unreachable;
 }
 
 test "vulkanSupported" {

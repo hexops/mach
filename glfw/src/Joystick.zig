@@ -414,7 +414,7 @@ pub inline fn setCallback(callback: ?fn (joystick: Joystick, event: Event) void)
 /// @ingroup input
 pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) error{InvalidValue}!void {
     internal_debug.assertInitialized();
-    _ = c.glfwUpdateGamepadMappings(gamepad_mappings);
+    if (c.glfwUpdateGamepadMappings(gamepad_mappings) == c.GLFW_TRUE) return;
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         // TODO: Maybe return as 'ParseError' here?

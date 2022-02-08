@@ -74,7 +74,7 @@ pub inline fn init(hints: InitHints) error{PlatformError}!void {
         initHint(init_hint, init_value);
     }
 
-    _ = c.glfwInit();
+    if (c.glfwInit() == c.GLFW_TRUE) return;
     getError() catch |err| return switch (err) {
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
@@ -210,11 +210,7 @@ fn initHint(hint: InitHint, value: anytype) void {
 ///
 /// @thread_safety This function may be called from any thread.
 pub inline fn getVersionString() [:0]const u8 {
-    const result = std.mem.span(c.glfwGetVersionString());
-    getError() catch |err| switch (err) {
-        else => unreachable,
-    };
-    return result;
+    return std.mem.span(c.glfwGetVersionString());
 }
 
 /// Processes all pending events.

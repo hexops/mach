@@ -63,13 +63,13 @@ pub const Shape = enum(i32) {
 pub inline fn create(image: Image, xhot: i32, yhot: i32) error{PlatformError}!Cursor {
     internal_debug.assertInitialized();
     const img = image.toC();
-    const cursor = c.glfwCreateCursor(&img, @intCast(c_int, xhot), @intCast(c_int, yhot));
+    if (c.glfwCreateCursor(&img, @intCast(c_int, xhot), @intCast(c_int, yhot))) |cursor| return Cursor{ .ptr = cursor };
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-    return Cursor{ .ptr = cursor.? };
+    unreachable;
 }
 
 /// Creates a cursor with a standard shape.
@@ -83,14 +83,14 @@ pub inline fn create(image: Image, xhot: i32, yhot: i32) error{PlatformError}!Cu
 /// see also: cursor_object, glfwCreateCursor
 pub inline fn createStandard(shape: Shape) error{PlatformError}!Cursor {
     internal_debug.assertInitialized();
-    const cursor = c.glfwCreateStandardCursor(@intCast(c_int, @enumToInt(shape)));
+    if (c.glfwCreateStandardCursor(@intCast(c_int, @enumToInt(shape)))) |cursor| return Cursor{ .ptr = cursor };
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-    return Cursor{ .ptr = cursor.? };
+    unreachable;
 }
 
 /// Destroys a cursor.
