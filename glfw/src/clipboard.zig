@@ -24,7 +24,7 @@ pub inline fn setClipboardString(value: [*:0]const u8) error{PlatformError}!void
     c.glfwSetClipboardString(null, value);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -51,9 +51,7 @@ pub inline fn getClipboardString() error{ FormatUnavailable, PlatformError }![:0
     const value = c.glfwGetClipboardString(null);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.FormatUnavailable,
-        Error.PlatformError,
-        => @errSetCast(error{ FormatUnavailable, PlatformError }, err),
+        Error.FormatUnavailable, Error.PlatformError => |e| e,
         else => unreachable,
     };
     return std.mem.span(value);

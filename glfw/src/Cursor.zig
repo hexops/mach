@@ -66,7 +66,7 @@ pub inline fn create(image: Image, xhot: i32, yhot: i32) error{PlatformError}!Cu
     const cursor = c.glfwCreateCursor(&img, @intCast(c_int, xhot), @intCast(c_int, yhot));
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return Cursor{ .ptr = cursor.? };
@@ -87,7 +87,7 @@ pub inline fn createStandard(shape: Shape) error{PlatformError}!Cursor {
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return Cursor{ .ptr = cursor.? };

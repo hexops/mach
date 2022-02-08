@@ -65,7 +65,7 @@ pub inline fn getRequiredInstanceExtensions() error{APIUnavailable}![][*:0]const
     const extensions = c.glfwGetRequiredInstanceExtensions(&count);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.APIUnavailable => @errSetCast(error{APIUnavailable}, err),
+        Error.APIUnavailable => |e| e,
         else => unreachable,
     };
     return @ptrCast([*][*:0]const u8, extensions)[0..count];
@@ -155,9 +155,7 @@ pub inline fn getPhysicalDevicePresentationSupport(
     );
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.APIUnavailable,
-        Error.PlatformError,
-        => @errSetCast(error{ APIUnavailable, PlatformError }, err),
+        Error.APIUnavailable, Error.PlatformError => |e| e,
         else => unreachable,
     };
     return v == c.GLFW_TRUE;
@@ -226,9 +224,7 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidValue => @panic("Attempted to use window with client api to create vulkan surface."),
-        Error.APIUnavailable,
-        Error.PlatformError,
-        => @errSetCast(error{ APIUnavailable, PlatformError }, err),
+        Error.APIUnavailable, Error.PlatformError => |e| e,
         else => unreachable,
     };
     return v;

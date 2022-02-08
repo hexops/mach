@@ -134,7 +134,7 @@ pub fn Native(comptime options: BackendOptions) type {
             const context = native.glfwGetWGLContext(@ptrCast(*native.GLFWwindow, window.handle));
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             return context;
@@ -180,7 +180,7 @@ pub fn Native(comptime options: BackendOptions) type {
             const context = native.glfwGetNSGLContext(@ptrCast(*native.GLFWwindow, window.handle));
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             return context;
@@ -258,7 +258,7 @@ pub fn Native(comptime options: BackendOptions) type {
             native.glfwSetX11SelectionString(string);
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.PlatformError => |e| @errSetCast(error{PlatformError}, e),
+                Error.PlatformError => |e| e,
                 else => unreachable,
             };
         }
@@ -277,7 +277,7 @@ pub fn Native(comptime options: BackendOptions) type {
             const str = native.glfwGetX11SelectionString();
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.FormatUnavailable => |e| @errSetCast(error{FormatUnavailable}, e),
+                Error.FormatUnavailable => |e| e,
                 else => unreachable,
             };
             return str;
@@ -293,7 +293,7 @@ pub fn Native(comptime options: BackendOptions) type {
             const context = native.glfwGetGLXContext(@ptrCast(*native.GLFWwindow, window.handle));
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             return @ptrCast(*anyopaque, context);
@@ -309,7 +309,7 @@ pub fn Native(comptime options: BackendOptions) type {
             const win = native.glfwGetGLXWindow(@ptrCast(*native.GLFWwindow, window.handle));
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             return @ptrCast(*anyopaque, win);
@@ -385,7 +385,7 @@ pub fn Native(comptime options: BackendOptions) type {
             const context = native.glfwGetEGLContext(@ptrCast(*native.GLFWwindow, window.handle));
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             return @ptrCast(*anyopaque, context);
@@ -401,7 +401,7 @@ pub fn Native(comptime options: BackendOptions) type {
             const surface = native.glfwGetEGLSurface(@ptrCast(*native.GLFWwindow, window.handle));
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             return @ptrCast(*anyopaque, surface);
@@ -426,7 +426,7 @@ pub fn Native(comptime options: BackendOptions) type {
             _ = native.glfwGetOSMesaColorBuffer(@ptrCast(*native.GLFWwindow, window.handle), &buf.width, &buf.height, &buf.format, &buf.buffer);
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.PlatformError, Error.NoWindowContext => |e| @errSetCast(error{ PlatformError, NoWindowContext }, e),
+                Error.PlatformError, Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             return buf;
@@ -451,7 +451,7 @@ pub fn Native(comptime options: BackendOptions) type {
             _ = native.glfwGetOSMesaDepthBuffer(@ptrCast(*native.GLFWwindow, window.handle), &buf.width, &buf.height, &buf.bytes_per_value, &buf.buffer);
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.PlatformError, Error.NoWindowContext => |e| @errSetCast(error{ PlatformError, NoWindowContext }, e),
+                Error.PlatformError, Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             return buf;
@@ -467,7 +467,7 @@ pub fn Native(comptime options: BackendOptions) type {
             const context = native.glfwGetOSMesa(@ptrCast(*native.GLFWwindow, window.handle));
             getError() catch |err| return switch (err) {
                 Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| @errSetCast(error{NoWindowContext}, e),
+                Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
             return @ptrCast(*anyopaque, context);

@@ -93,7 +93,7 @@ pub inline fn present(self: Joystick) error{PlatformError}!bool {
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return is_present == c.GLFW_TRUE;
@@ -126,7 +126,7 @@ pub inline fn getAxes(self: Joystick) error{PlatformError}!?[]const f32 {
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     if (axes == null) return null;
@@ -164,7 +164,7 @@ pub inline fn getButtons(self: Joystick) error{PlatformError}!?[]const u8 {
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     if (buttons == null) return null;
@@ -218,7 +218,7 @@ pub inline fn getHats(self: Joystick) error{PlatformError}!?[]const Hat {
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     if (hats == null) return null;
@@ -251,7 +251,7 @@ pub inline fn getName(self: Joystick) error{PlatformError}!?[:0]const u8 {
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return if (name_opt) |name|
@@ -293,7 +293,7 @@ pub inline fn getGUID(self: Joystick) error{PlatformError}!?[:0]const u8 {
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
     return if (guid_opt) |guid|
@@ -421,7 +421,7 @@ pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) error{Inval
         // TODO: Look into upstream proposal for GLFW to publicize
         // their Gamepad mappings parsing functions/interface
         // for a better error message in debug.
-        Error.InvalidValue => @errSetCast(error{InvalidValue}, err),
+        Error.InvalidValue => |e| e,
         else => unreachable,
     };
 }

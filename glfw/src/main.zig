@@ -76,7 +76,7 @@ pub inline fn init(hints: InitHints) error{PlatformError}!void {
 
     _ = c.glfwInit();
     getError() catch |err| return switch (err) {
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -247,7 +247,7 @@ pub inline fn pollEvents() error{PlatformError}!void {
     c.glfwPollEvents();
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -287,7 +287,7 @@ pub inline fn waitEvents() error{PlatformError}!void {
     c.glfwWaitEvents();
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -335,7 +335,7 @@ pub inline fn waitEventsTimeout(timeout: f64) error{PlatformError}!void {
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidValue => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
@@ -355,7 +355,7 @@ pub inline fn postEmptyEvent() error{PlatformError}!void {
     c.glfwPostEmptyEvent();
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => @errSetCast(error{PlatformError}, err),
+        Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
