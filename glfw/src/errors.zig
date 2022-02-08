@@ -1,6 +1,7 @@
 //! Errors
 
 const testing = @import("std").testing;
+const mem = @import("std").mem;
 const c = @import("c.zig").c;
 
 /// Errors that GLFW can produce.
@@ -88,8 +89,6 @@ pub const Error = error{
     NoWindowContext,
 };
 
-pub const ErrorCallbackFn = fn (c_int, [*c]const u8) callconv(.C) void;
-
 fn convertError(e: c_int) Error!void {
     return switch (e) {
         c.GLFW_NO_ERROR => {},
@@ -150,28 +149,38 @@ pub inline fn getError() Error!void {
 ///
 /// @param[in] callback The new callback, or `NULL` to remove the currently set
 /// callback.
-/// @return The previously set callback, or `NULL` if no callback was set.
 ///
-/// @callback_signature
-/// ```
-/// fn (error_code: c_int, description: [*c]const u8) callconv(.C) void;
-/// ```
-/// For more information about the callback parameters, see the
-/// [callback pointer type](@ref GLFWerrorfun).
+/// @callback_param `error_code` An error code. Future releases may add more error codes.
+/// @callback_param `description` A UTF-8 encoded string describing the error.
 ///
 /// @errors None.
 ///
 /// @remark This function may be called before @ref glfwInit.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub fn setErrorCallback(callback_fn: ?ErrorCallbackFn) ?ErrorCallbackFn {
-    return c.glfwSetErrorCallback(callback_fn);
+pub fn setErrorCallback(comptime callback: ?fn (error_code: Error, description: [:0]const u8) void) void {
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn c_wrapper(err_int: c_int, c_description: [*c]const u8) callconv(.C) void {
+                if (convertError(err_int)) |_| {
+                    // This means the error was `GLFW_NO_ERROR`
+                    return;
+                } else |err| {
+                    user_callback(err, mem.sliceTo(c_description, 0));
+                }
+            }
+        };
+
+        _ = c.glfwSetErrorCallback(CWrapper.c_wrapper);
+        return;
+    }
+
+    _ = c.glfwSetErrorCallback(null);
 }
 
 test "errorCallback" {
     const TestStruct = struct {
-        pub fn callback(_: c_int, _: [*c]const u8) callconv(.C) void {}
+        pub fn callback(_: Error, _: [:0]const u8) void {}
     };
-    try testing.expect(setErrorCallback(TestStruct.callback) == null);
-    try testing.expect(@TypeOf(setErrorCallback(TestStruct.callback).?) == ErrorCallbackFn);
+    setErrorCallback(TestStruct.callback);
 }
