@@ -30,11 +30,12 @@ const internal_debug = @import("internal_debug.zig");
 pub inline fn getTime() f64 {
     internal_debug.assertInitialized();
     const time = c.glfwGetTime();
+    if (time != 0) return time;
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    return time;
+    unreachable;
 }
 
 /// Sets the GLFW time.
@@ -88,11 +89,12 @@ pub inline fn setTime(time: f64) void {
 pub inline fn getTimerValue() u64 {
     internal_debug.assertInitialized();
     const value = c.glfwGetTimerValue();
+    if (value != 0) return value;
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    return value;
+    unreachable;
 }
 
 /// Returns the frequency, in Hz, of the raw timer.
@@ -107,11 +109,12 @@ pub inline fn getTimerValue() u64 {
 pub inline fn getTimerFrequency() u64 {
     internal_debug.assertInitialized();
     const frequency = c.glfwGetTimerFrequency();
+    if (frequency != 0) frequency;
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    return frequency;
+    unreachable;
 }
 
 test "getTime" {

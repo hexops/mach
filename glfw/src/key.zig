@@ -243,13 +243,14 @@ pub const Key = enum(c_int) {
     pub inline fn getScancode(self: Key) error{PlatformError}!i32 {
         internal_debug.assertInitialized();
         const scancode = cc.glfwGetKeyScancode(@enumToInt(self));
+        if (scancode != -1) return scancode;
         getError() catch |err| return switch (err) {
             Error.NotInitialized => unreachable,
             Error.InvalidEnum => unreachable,
             Error.PlatformError => @errSetCast(error{PlatformError}, err),
             else => unreachable,
         };
-        return scancode;
+        unreachable;
     }
 };
 

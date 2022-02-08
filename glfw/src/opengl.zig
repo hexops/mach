@@ -57,12 +57,11 @@ pub inline fn makeContextCurrent(window: ?Window) error{ NoWindowContext, Platfo
 /// see also: context_current, glfwMakeContextCurrent
 pub inline fn getCurrentContext() std.mem.Allocator.Error!?Window {
     internal_debug.assertInitialized();
-    const handle = c.glfwGetCurrentContext();
+    if (c.glfwGetCurrentContext()) |handle| return try Window.from(handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    if (handle) |h| return try Window.from(h);
     return null;
 }
 
@@ -194,9 +193,8 @@ pub const GLProc = fn () callconv(.C) void;
 /// see also: context_glext, glfwExtensionSupported
 pub fn getProcAddress(proc_name: [*:0]const u8) callconv(.C) ?GLProc {
     internal_debug.assertInitialized();
-    const proc_address = c.glfwGetProcAddress(proc_name);
+    if (c.glfwGetProcAddress(proc_name)) |proc_address| return proc_address;
     getError() catch |err| @panic(@errorName(err));
-    if (proc_address) |addr| return addr;
     return null;
 }
 

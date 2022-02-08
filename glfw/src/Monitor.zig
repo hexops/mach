@@ -164,12 +164,12 @@ pub inline fn getContentScale(self: Monitor) error{PlatformError}!ContentScale {
 /// see also: monitor_properties
 pub inline fn getName(self: Monitor) [*:0]const u8 {
     internal_debug.assertInitialized();
-    const name = c.glfwGetMonitorName(self.handle);
+    if (c.glfwGetMonitorName(self.handle)) |name| return name;
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    return name;
+    unreachable;
 }
 
 /// Sets the user pointer of the specified monitor.
@@ -234,19 +234,20 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
 pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Allocator.Error || error{PlatformError})![]VideoMode {
     internal_debug.assertInitialized();
     var count: c_int = 0;
-    const modes = c.glfwGetVideoModes(self.handle, &count);
+    if (c.glfwGetVideoModes(self.handle, &count)) |modes| {
+        const slice = try allocator.alloc(VideoMode, @intCast(u32, count));
+        var i: u32 = 0;
+        while (i < count) : (i += 1) {
+            slice[i] = VideoMode{ .handle = modes[i] };
+        }
+        return slice;
+    }
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-
-    const slice = try allocator.alloc(VideoMode, @intCast(u32, count));
-    var i: u32 = 0;
-    while (i < count) : (i += 1) {
-        slice[i] = VideoMode{ .handle = modes[i] };
-    }
-    return slice;
+    unreachable;
 }
 
 /// Returns the current mode of the specified monitor.
@@ -262,13 +263,13 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Alloca
 /// see also: monitor_modes, glfw.Monitor.getVideoModes
 pub inline fn getVideoMode(self: Monitor) error{PlatformError}!VideoMode {
     internal_debug.assertInitialized();
-    const mode = c.glfwGetVideoMode(self.handle);
+    if (c.glfwGetVideoMode(self.handle)) |mode| return VideoMode{ .handle = mode.* };
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-    return VideoMode{ .handle = mode.?.* };
+    unreachable;
 }
 
 /// Generates a gamma ramp and sets it for the specified monitor.
@@ -323,13 +324,13 @@ pub inline fn setGamma(self: Monitor, gamma: f32) error{PlatformError}!void {
 /// see also: monitor_gamma
 pub inline fn getGammaRamp(self: Monitor) error{PlatformError}!GammaRamp {
     internal_debug.assertInitialized();
-    const ramp = c.glfwGetGammaRamp(self.handle);
+    if (c.glfwGetGammaRamp(self.handle)) |ramp| return GammaRamp.fromC(ramp.*);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-    return GammaRamp.fromC(ramp.*);
+    unreachable;
 }
 
 /// Sets the current gamma ramp for the specified monitor.
@@ -381,17 +382,19 @@ pub inline fn setGammaRamp(self: Monitor, ramp: GammaRamp) error{PlatformError}!
 pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
     internal_debug.assertInitialized();
     var count: c_int = 0;
-    const monitors = c.glfwGetMonitors(&count);
+    if (c.glfwGetMonitors(&count)) |monitors| {
+        const slice = try allocator.alloc(Monitor, @intCast(u32, count));
+        var i: u32 = 0;
+        while (i < count) : (i += 1) {
+            slice[i] = Monitor{ .handle = monitors[i].? };
+        }
+        return slice;
+    }
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    const slice = try allocator.alloc(Monitor, @intCast(u32, count));
-    var i: u32 = 0;
-    while (i < count) : (i += 1) {
-        slice[i] = Monitor{ .handle = monitors[i].? };
-    }
-    return slice;
+    return &.{};
 }
 
 /// Returns the primary monitor.
@@ -406,15 +409,12 @@ pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
 /// see also: monitor_monitors, glfw.monitors.getAll
 pub inline fn getPrimary() ?Monitor {
     internal_debug.assertInitialized();
-    const handle = c.glfwGetPrimaryMonitor();
+    if (c.glfwGetPrimaryMonitor()) |handle| return Monitor{ .handle = handle };
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    if (handle == null) {
-        return null;
-    }
-    return Monitor{ .handle = handle.? };
+    return null;
 }
 
 var callback_fn_ptr: ?usize = null;

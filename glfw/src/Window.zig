@@ -424,13 +424,13 @@ pub inline fn create(
     if (!ignore_hints_struct) hints.set();
     defer if (!ignore_hints_struct) defaultHints();
 
-    const handle = c.glfwCreateWindow(
+    if (c.glfwCreateWindow(
         @intCast(c_int, width),
         @intCast(c_int, height),
         &title[0],
         if (monitor) |m| m.handle else null,
         if (share) |w| w.handle else null,
-    );
+    )) |handle| return from(handle);
 
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
@@ -444,7 +444,7 @@ pub inline fn create(
         else => unreachable,
     };
 
-    return from(handle.?);
+    unreachable;
 }
 
 var testing_ignore_window_hints_struct = if (@import("builtin").is_test) false else @as(void, {});
@@ -1179,12 +1179,11 @@ pub inline fn swapBuffers(self: Window) error{ NoWindowContext, PlatformError }!
 /// see also: window_monitor, glfw.Window.setMonitor
 pub inline fn getMonitor(self: Window) ?Monitor {
     internal_debug.assertInitialized();
-    const monitor = c.glfwGetWindowMonitor(self.handle);
+    if (c.glfwGetWindowMonitor(self.handle)) |monitor| return Monitor{ .handle = monitor };
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    if (monitor) |m| return Monitor{ .handle = m };
     return null;
 }
 
@@ -1299,13 +1298,14 @@ pub const Attrib = enum(c_int) {
 pub inline fn getAttrib(self: Window, attrib: Attrib) error{PlatformError}!i32 {
     internal_debug.assertInitialized();
     const v = c.glfwGetWindowAttrib(self.handle, @enumToInt(attrib));
+    if (v != 0) return v;
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
         Error.PlatformError => @errSetCast(error{PlatformError}, err),
         else => unreachable,
     };
-    return v;
+    unreachable;
 }
 
 /// Sets an attribute of the specified window.
