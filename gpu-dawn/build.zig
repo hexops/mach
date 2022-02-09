@@ -97,6 +97,8 @@ pub const Options = struct {
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+    ensureSubmodules(b.allocator) catch |err| @panic(@errorName(err));
+
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const opt = options.detectDefaults(target);
 
@@ -126,6 +128,14 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
 
     const lib_tint = buildLibTint(b, step, opt);
     step.linkLibrary(lib_tint);
+}
+
+fn ensureSubmodules(allocator: std.mem.Allocator) !void {
+    const child = try std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", "--recursive" }, allocator);
+    child.cwd = thisDir();
+    child.stderr = std.io.getStdErr();
+    child.stdout = std.io.getStdOut();
+    _ = try child.spawnAndWait();
 }
 
 fn isLinuxDesktopLike(target: std.Target) bool {
