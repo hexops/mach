@@ -69,6 +69,7 @@ pub inline fn create(image: Image, xhot: i32, yhot: i32) error{PlatformError}!Cu
         Error.PlatformError => |e| e,
         else => unreachable,
     };
+    // `glfwCreateCursor` returns `null` only for errors
     unreachable;
 }
 
@@ -90,6 +91,7 @@ pub inline fn createStandard(shape: Shape) error{PlatformError}!Cursor {
         Error.PlatformError => |e| e,
         else => unreachable,
     };
+    // `glfwCreateStandardCursor` returns `null` only for errors
     unreachable;
 }
 

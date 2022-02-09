@@ -68,6 +68,7 @@ pub inline fn getRequiredInstanceExtensions() error{APIUnavailable}![][*:0]const
         Error.APIUnavailable => |e| e,
         else => unreachable,
     };
+    // `glfwGetRequiredInstanceExtensions` returns `null` only for errors
     unreachable;
 }
 
@@ -227,6 +228,7 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
         Error.APIUnavailable, Error.PlatformError => |e| e,
         else => unreachable,
     };
+    // `glfwCreateWindowSurface` returns `!VK_SUCCESS` only for errors
     unreachable;
 }
 

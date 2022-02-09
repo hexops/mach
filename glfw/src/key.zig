@@ -250,6 +250,7 @@ pub const Key = enum(c_int) {
             Error.PlatformError => |e| e,
             else => unreachable,
         };
+        // `glfwGetKeyScancode` returns `-1` only for errors
         unreachable;
     }
 };
