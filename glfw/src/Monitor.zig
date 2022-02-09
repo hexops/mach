@@ -394,7 +394,7 @@ pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    return &.{};
+    unreachable;
 }
 
 /// Returns the primary monitor.

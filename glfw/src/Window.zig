@@ -1304,7 +1304,7 @@ pub inline fn getAttrib(self: Window, attrib: Attrib) error{PlatformError}!i32 {
         Error.PlatformError => |e| e,
         else => unreachable,
     };
-    unreachable;
+    return v;
 }
 
 /// Sets an attribute of the specified window.

@@ -109,7 +109,7 @@ pub inline fn getTimerValue() u64 {
 pub inline fn getTimerFrequency() u64 {
     internal_debug.assertInitialized();
     const frequency = c.glfwGetTimerFrequency();
-    if (frequency != 0) frequency;
+    if (frequency != 0) return frequency;
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
