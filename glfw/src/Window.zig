@@ -444,7 +444,7 @@ pub inline fn create(
 
         else => unreachable,
     };
-
+    // `glfwCreateWindow` returns `null` only for errors
     unreachable;
 }
 
@@ -1304,6 +1304,7 @@ pub inline fn getAttrib(self: Window, attrib: Attrib) error{PlatformError}!i32 {
         Error.PlatformError => |e| e,
         else => unreachable,
     };
+    // this is not unreachable as `0` is a valid value
     return v;
 }
 

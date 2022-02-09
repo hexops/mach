@@ -54,6 +54,7 @@ pub inline fn getClipboardString() error{ FormatUnavailable, PlatformError }![:0
         Error.FormatUnavailable, Error.PlatformError => |e| e,
         else => unreachable,
     };
+    // `glfwGetClipboardString` returns `null` only for errors
     unreachable;
 }
 

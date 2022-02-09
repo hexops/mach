@@ -35,6 +35,7 @@ pub inline fn getTime() f64 {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
+    // `glfwGetTime` returns `0` only for errors
     unreachable;
 }
 
@@ -94,6 +95,7 @@ pub inline fn getTimerValue() u64 {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
+    // `glfwGetTimerValue` returns `0` only for errors
     unreachable;
 }
 
@@ -114,6 +116,7 @@ pub inline fn getTimerFrequency() u64 {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
+    // `glfwGetTimerFrequency` returns `0` only for errors
     unreachable;
 }
 

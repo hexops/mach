@@ -72,6 +72,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetWin32Adapter` returns `null` only for errors
             unreachable;
         }
 
@@ -90,6 +91,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetWin32Monitor` returns `null` only for errors
             unreachable;
         }
 
@@ -114,6 +116,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetWin32Window` returns `null` only for errors
             unreachable;
         }
 
@@ -138,6 +141,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
+            // `glfwGetWGLContext` returns `null` only for errors
             unreachable;
         }
 
@@ -154,6 +158,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetCocoaMonitor` returns `kCGNullDirectDisplay` only for errors
             unreachable;
         }
 
@@ -200,6 +205,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetX11Display` returns `null` only for errors
             unreachable;
         }
 
@@ -216,6 +222,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetX11Adapter` returns `0` only for errors
             unreachable;
         }
 
@@ -232,6 +239,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetX11Monitor` returns `0` only for errors
             unreachable;
         }
 
@@ -248,6 +256,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetX11Window` returns `0` only for errors
             unreachable;
         }
 
@@ -285,6 +294,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.FormatUnavailable => |e| e,
                 else => unreachable,
             };
+            // `glfwGetX11SelectionString` returns `null` only for errors
             unreachable;
         }
 
@@ -301,6 +311,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
+            // `glfwGetGLXContext` returns `null` only for errors
             unreachable;
         }
 
@@ -318,6 +329,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
+            // `glfwGetGLXWindow` returns `0` only for errors
             unreachable;
         }
 
@@ -333,6 +345,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetWaylandDisplay` returns `null` only for errors
             unreachable;
         }
 
@@ -348,6 +361,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetWaylandMonitor` returns `null` only for errors
             unreachable;
         }
 
@@ -363,6 +377,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetWaylandWindow` returns `null` only for errors
             unreachable;
         }
 
@@ -379,6 +394,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NotInitialized => unreachable,
                 else => unreachable,
             };
+            // `glfwGetEGLDisplay` returns `EGL_NO_DISPLAY` only for errors
             unreachable;
         }
 
@@ -396,6 +412,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
+            // `glfwGetEGLContext` returns `EGL_NO_CONTEXT` only for errors
             unreachable;
         }
 
@@ -413,6 +430,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
+            // `glfwGetEGLSurface` returns `EGL_NO_SURFACE` only for errors
             unreachable;
         }
 
@@ -444,6 +462,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.PlatformError, Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
+            // `glfwGetOSMesaColorBuffer` returns `GLFW_FALSE` only for errors
             unreachable;
         }
 
@@ -475,6 +494,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.PlatformError, Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
+            // `glfwGetOSMesaDepthBuffer` returns `GLFW_FALSE` only for errors
             unreachable;
         }
 
@@ -491,6 +511,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 Error.NoWindowContext => |e| e,
                 else => unreachable,
             };
+            // `glfwGetOSMesaContext` returns `null` only for errors
             unreachable;
         }
     };

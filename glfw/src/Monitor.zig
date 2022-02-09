@@ -169,6 +169,7 @@ pub inline fn getName(self: Monitor) [*:0]const u8 {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
+    // `glfwGetMonitorName` returns `null` only for errors
     unreachable;
 }
 
@@ -247,6 +248,7 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Alloca
         Error.PlatformError => |e| e,
         else => unreachable,
     };
+    // `glfwGetVideoModes` returns `null` only for errors
     unreachable;
 }
 
@@ -269,6 +271,7 @@ pub inline fn getVideoMode(self: Monitor) error{PlatformError}!VideoMode {
         Error.PlatformError => |e| e,
         else => unreachable,
     };
+    // `glfwGetVideoMode` returns `null` only for errors
     unreachable;
 }
 
@@ -330,6 +333,7 @@ pub inline fn getGammaRamp(self: Monitor) error{PlatformError}!GammaRamp {
         Error.PlatformError => |e| e,
         else => unreachable,
     };
+    // `glfwGetGammaRamp` returns `null` only for errors
     unreachable;
 }
 
