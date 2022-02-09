@@ -422,9 +422,6 @@ pub inline fn getPrimary() ?Monitor {
     return null;
 }
 
-var callback_fn_ptr: ?usize = null;
-var callback_data_ptr: ?usize = undefined;
-
 /// Describes an event relating to a monitor.
 pub const Event = enum(c_int) {
     /// The device was connected.
@@ -455,27 +452,24 @@ pub const Event = enum(c_int) {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_event
-pub inline fn setCallback(comptime Data: type, data: *Data, f: ?*const fn (monitor: Monitor, event: Event, data: *Data) void) void {
+pub inline fn setCallback(comptime callback: ?fn (monitor: Monitor, event: Event) void) void {
     internal_debug.assertInitialized();
-    if (f) |new_callback| {
-        callback_fn_ptr = @ptrToInt(new_callback);
-        callback_data_ptr = @ptrToInt(data);
-        const NewCallback = @TypeOf(new_callback);
-        _ = c.glfwSetMonitorCallback((struct {
-            fn callbackC(monitor: ?*c.GLFWmonitor, event: c_int) callconv(.C) void {
-                const callback = @intToPtr(NewCallback, callback_fn_ptr.?);
-                callback.*(
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn monitorCallbackWrapper(monitor: ?*c.GLFWmonitor, event: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
                     Monitor{ .handle = monitor.? },
                     @intToEnum(Event, event),
-                    @intToPtr(*Data, callback_data_ptr.?),
-                );
+                });
             }
-        }).callbackC);
+        };
+
+        if (c.glfwSetMonitorCallback(CWrapper.monitorCallbackWrapper) != null) return;
     } else {
-        _ = c.glfwSetMonitorCallback(null);
-        callback_fn_ptr = null;
-        callback_data_ptr = null;
+        if (c.glfwSetMonitorCallback(null) != null) return;
     }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
@@ -576,14 +570,12 @@ test "setCallback" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    var custom_data: u32 = 5;
-    setCallback(u32, &custom_data, &(struct {
-        fn callback(monitor: Monitor, event: Event, data: *u32) void {
+    setCallback(struct {
+        fn callback(monitor: Monitor, event: Event) void {
             _ = monitor;
             _ = event;
-            _ = data;
         }
-    }).callback);
+    }.callback);
 }
 
 test "getVideoModes" {

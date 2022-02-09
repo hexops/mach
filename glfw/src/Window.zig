@@ -23,48 +23,9 @@ const Window = @This();
 handle: *c.GLFWwindow,
 
 /// Returns a Zig GLFW window from an underlying C GLFW window handle.
-///
-/// Note that the Zig GLFW library stores a custom user pointer in order to make callbacks nicer,
-/// see glfw.Window.InternalUserPointer.
-pub inline fn from(handle: *c.GLFWwindow) mem.Allocator.Error!Window {
-    internal_debug.assertInitialized();
-    const ptr = c.glfwGetWindowUserPointer(handle);
-    if (ptr == null) {
-        const internal = try std.heap.c_allocator.create(InternalUserPointer);
-        c.glfwSetWindowUserPointer(handle, @ptrCast(*anyopaque, internal));
-        getError() catch |err| return switch (err) {
-            Error.NotInitialized => unreachable,
-            else => unreachable,
-        };
-    }
+pub inline fn from(handle: *c.GLFWwindow) Window {
     return Window{ .handle = handle };
 }
-
-/// The actual type which is stored by the Zig GLFW library in glfwSetWindowUserPointer.
-///
-/// This is used to internally carry function callbacks with nicer Zig interfaces.
-pub const InternalUserPointer = struct {
-    /// The actual user pointer that the user of the library wished to set via setUserPointer.
-    user_pointer: ?*anyopaque,
-
-    // Callbacks to be invoked by wrapper functions.
-    setPosCallback: ?fn (window: Window, xpos: i32, ypos: i32) void,
-    setSizeCallback: ?fn (window: Window, width: i32, height: i32) void,
-    setCloseCallback: ?fn (window: Window) void,
-    setRefreshCallback: ?fn (window: Window) void,
-    setFocusCallback: ?fn (window: Window, focused: bool) void,
-    setIconifyCallback: ?fn (window: Window, iconified: bool) void,
-    setMaximizeCallback: ?fn (window: Window, maximized: bool) void,
-    setFramebufferSizeCallback: ?fn (window: Window, width: u32, height: u32) void,
-    setContentScaleCallback: ?fn (window: Window, xscale: f32, yscale: f32) void,
-    setKeyCallback: ?fn (window: Window, key: Key, scancode: i32, action: Action, mods: Mods) void,
-    setCharCallback: ?fn (window: Window, codepoint: u21) void,
-    setMouseButtonCallback: ?fn (window: Window, button: MouseButton, action: Action, mods: Mods) void,
-    setCursorPosCallback: ?fn (window: Window, xpos: f64, ypos: f64) void,
-    setCursorEnterCallback: ?fn (window: Window, entered: bool) void,
-    setScrollCallback: ?fn (window: Window, xoffset: f64, yoffset: f64) void,
-    setDropCallback: ?fn (window: Window, paths: [][*:0]const u8) void,
-};
 
 /// Resets all window hints to their default values.
 ///
@@ -418,7 +379,7 @@ pub inline fn create(
     monitor: ?Monitor,
     share: ?Window,
     hints: Hints,
-) (mem.Allocator.Error || error{ APIUnavailable, VersionUnavailable, FormatUnavailable, PlatformError })!Window {
+) error{ APIUnavailable, VersionUnavailable, FormatUnavailable, PlatformError }!Window {
     internal_debug.assertInitialized();
     const ignore_hints_struct = if (comptime @import("builtin").is_test) testing_ignore_window_hints_struct else false;
     if (!ignore_hints_struct) hints.set();
@@ -468,9 +429,7 @@ var testing_ignore_window_hints_struct = if (@import("builtin").is_test) false e
 /// see also: window_creation, glfw.Window.create
 pub inline fn destroy(self: Window) void {
     internal_debug.assertInitialized();
-    const internal = self.getInternal();
     c.glfwDestroyWindow(self.handle);
-    std.heap.c_allocator.destroy(internal);
 
     // Technically, glfwDestroyWindow could produce errors including glfw.Error.NotInitialized and
     // glfw.Error.PlatformError. But how would anybody handle them? By creating a new window to
@@ -1353,13 +1312,6 @@ pub inline fn setAttrib(self: Window, attrib: Attrib, value: bool) error{Platfor
     };
 }
 
-pub inline fn getInternal(self: Window) *InternalUserPointer {
-    internal_debug.assertInitialized();
-    const ptr = c.glfwGetWindowUserPointer(self.handle);
-    if (ptr) |p| return @ptrCast(*InternalUserPointer, @alignCast(@alignOf(*InternalUserPointer), p));
-    @panic("expected GLFW window user pointer to be *glfw.Window.InternalUserPointer, found null");
-}
-
 /// Sets the user pointer of the specified window.
 ///
 /// This function sets the user-defined pointer of the specified window. The current value is
@@ -1370,8 +1322,11 @@ pub inline fn getInternal(self: Window) *InternalUserPointer {
 /// see also: window_userptr, glfw.Window.getUserPointer
 pub inline fn setUserPointer(self: Window, pointer: ?*anyopaque) void {
     internal_debug.assertInitialized();
-    const internal = self.getInternal();
-    internal.user_pointer = pointer;
+    c.glfwSetWindowUserPointer(self.handle, pointer);
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
 }
 
 /// Returns the user pointer of the specified window.
@@ -1384,16 +1339,12 @@ pub inline fn setUserPointer(self: Window, pointer: ?*anyopaque) void {
 /// see also: window_userptr, glfw.Window.setUserPointer
 pub inline fn getUserPointer(self: Window, comptime T: type) ?*T {
     internal_debug.assertInitialized();
-    const internal = self.getInternal();
-    if (internal.user_pointer) |p| return @ptrCast(?*T, @alignCast(@alignOf(T), p));
+    if (c.glfwGetWindowUserPointer(self.handle)) |user_pointer| return @ptrCast(?*T, @alignCast(@alignOf(T), user_pointer));
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
     return null;
-}
-
-fn setPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: c_int, ypos: c_int) callconv(.C) void {
-    internal_debug.assertInitialized();
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setPosCallback.?(window, @intCast(i32, xpos), @intCast(i32, ypos));
 }
 
 /// Sets the position callback for the specified window.
@@ -1416,22 +1367,29 @@ fn setPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: c_int, ypos: c_int) callc
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_pos
-pub inline fn setPosCallback(self: Window, callback: ?fn (window: Window, xpos: i32, ypos: i32) void) void {
+pub inline fn setPosCallback(self: Window, comptime callback: ?fn (window: Window, xpos: i32, ypos: i32) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setPosCallback = callback;
-    _ = c.glfwSetWindowPosCallback(self.handle, if (callback != null) setPosCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn posCallbackWrapper(handle: ?*c.GLFWwindow, xpos: c_int, ypos: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    @intCast(i32, xpos),
+                    @intCast(i32, ypos),
+                });
+            }
+        };
+
+        if (c.glfwSetWindowPosCallback(self.handle, CWrapper.posCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetWindowPosCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
-    internal_debug.assertInitialized();
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setSizeCallback.?(window, @intCast(i32, width), @intCast(i32, height));
 }
 
 /// Sets the size callback for the specified window.
@@ -1447,22 +1405,29 @@ fn setSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) c
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_size
-pub inline fn setSizeCallback(self: Window, callback: ?fn (window: Window, width: i32, height: i32) void) void {
+pub inline fn setSizeCallback(self: Window, comptime callback: ?fn (window: Window, width: i32, height: i32) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setSizeCallback = callback;
-    _ = c.glfwSetWindowSizeCallback(self.handle, if (callback != null) setSizeCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn sizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    @intCast(i32, width),
+                    @intCast(i32, height),
+                });
+            }
+        };
+
+        if (c.glfwSetWindowSizeCallback(self.handle, CWrapper.sizeCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetWindowSizeCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setCloseCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
-    internal_debug.assertInitialized();
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setCloseCallback.?(window);
 }
 
 /// Sets the close callback for the specified window.
@@ -1486,21 +1451,27 @@ fn setCloseCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_close
-pub inline fn setCloseCallback(self: Window, callback: ?fn (window: Window) void) void {
+pub inline fn setCloseCallback(self: Window, comptime callback: ?fn (window: Window) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setCloseCallback = callback;
-    _ = c.glfwSetWindowCloseCallback(self.handle, if (callback != null) setCloseCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn closeCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                });
+            }
+        };
+
+        if (c.glfwSetWindowCloseCallback(self.handle, CWrapper.closeCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetWindowCloseCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setRefreshCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setRefreshCallback.?(window);
 }
 
 /// Sets the refresh callback for the specified window.
@@ -1522,22 +1493,27 @@ fn setRefreshCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_refresh
-pub inline fn setRefreshCallback(self: Window, callback: ?fn (window: Window) void) void {
+pub inline fn setRefreshCallback(self: Window, comptime callback: ?fn (window: Window) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setRefreshCallback = callback;
-    _ = c.glfwSetWindowRefreshCallback(self.handle, if (callback != null) setRefreshCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn refreshCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                });
+            }
+        };
+
+        if (c.glfwSetWindowRefreshCallback(self.handle, CWrapper.refreshCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetWindowRefreshCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setFocusCallbackWrapper(handle: ?*c.GLFWwindow, focused: c_int) callconv(.C) void {
-    internal_debug.assertInitialized();
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setFocusCallback.?(window, if (focused == c.GLFW_TRUE) true else false);
 }
 
 /// Sets the focus callback for the specified window.
@@ -1560,22 +1536,28 @@ fn setFocusCallbackWrapper(handle: ?*c.GLFWwindow, focused: c_int) callconv(.C) 
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_focus
-pub inline fn setFocusCallback(self: Window, callback: ?fn (window: Window, focused: bool) void) void {
+pub inline fn setFocusCallback(self: Window, comptime callback: ?fn (window: Window, focused: bool) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setFocusCallback = callback;
-    _ = c.glfwSetWindowFocusCallback(self.handle, if (callback != null) setFocusCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn focusCallbackWrapper(handle: ?*c.GLFWwindow, focused: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    focused == c.GLFW_TRUE,
+                });
+            }
+        };
+
+        if (c.glfwSetWindowFocusCallback(self.handle, CWrapper.focusCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetWindowFocusCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setIconifyCallbackWrapper(handle: ?*c.GLFWwindow, iconified: c_int) callconv(.C) void {
-    internal_debug.assertInitialized();
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setIconifyCallback.?(window, if (iconified == c.GLFW_TRUE) true else false);
 }
 
 /// Sets the iconify callback for the specified window.
@@ -1596,22 +1578,28 @@ fn setIconifyCallbackWrapper(handle: ?*c.GLFWwindow, iconified: c_int) callconv(
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_iconify
-pub inline fn setIconifyCallback(self: Window, callback: ?fn (window: Window, iconified: bool) void) void {
+pub inline fn setIconifyCallback(self: Window, comptime callback: ?fn (window: Window, iconified: bool) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setIconifyCallback = callback;
-    _ = c.glfwSetWindowIconifyCallback(self.handle, if (callback != null) setIconifyCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn iconifyCallbackWrapper(handle: ?*c.GLFWwindow, iconified: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    iconified == c.GLFW_TRUE,
+                });
+            }
+        };
+
+        if (c.glfwSetWindowIconifyCallback(self.handle, CWrapper.iconifyCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetWindowIconifyCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setMaximizeCallbackWrapper(handle: ?*c.GLFWwindow, maximized: c_int) callconv(.C) void {
-    internal_debug.assertInitialized();
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setMaximizeCallback.?(window, if (maximized == c.GLFW_TRUE) true else false);
 }
 
 /// Sets the maximize callback for the specified window.
@@ -1630,22 +1618,28 @@ fn setMaximizeCallbackWrapper(handle: ?*c.GLFWwindow, maximized: c_int) callconv
 ///
 /// see also: window_maximize
 // GLFWAPI GLFWwindowmaximizefun glfwSetWindowMaximizeCallback(GLFWwindow* window, GLFWwindowmaximizefun callback);
-pub inline fn setMaximizeCallback(self: Window, callback: ?fn (window: Window, maximized: bool) void) void {
+pub inline fn setMaximizeCallback(self: Window, comptime callback: ?fn (window: Window, maximized: bool) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setMaximizeCallback = callback;
-    _ = c.glfwSetWindowMaximizeCallback(self.handle, if (callback != null) setMaximizeCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn maximizeCallbackWrapper(handle: ?*c.GLFWwindow, maximized: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    maximized == c.GLFW_TRUE,
+                });
+            }
+        };
+
+        if (c.glfwSetWindowMaximizeCallback(self.handle, CWrapper.maximizeCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetWindowMaximizeCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setFramebufferSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
-    internal_debug.assertInitialized();
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setFramebufferSizeCallback.?(window, @intCast(u32, width), @intCast(u32, height));
 }
 
 /// Sets the framebuffer resize callback for the specified window.
@@ -1664,22 +1658,29 @@ fn setFramebufferSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, heigh
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_fbsize
-pub inline fn setFramebufferSizeCallback(self: Window, callback: ?fn (window: Window, width: u32, height: u32) void) void {
+pub inline fn setFramebufferSizeCallback(self: Window, comptime callback: ?fn (window: Window, width: u32, height: u32) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setFramebufferSizeCallback = callback;
-    _ = c.glfwSetFramebufferSizeCallback(self.handle, if (callback != null) setFramebufferSizeCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn framebufferSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    @intCast(u32, width),
+                    @intCast(u32, height),
+                });
+            }
+        };
+
+        if (c.glfwSetFramebufferSizeCallback(self.handle, CWrapper.framebufferSizeCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetFramebufferSizeCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setContentScaleCallbackWrapper(handle: ?*c.GLFWwindow, xscale: f32, yscale: f32) callconv(.C) void {
-    internal_debug.assertInitialized();
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setContentScaleCallback.?(window, xscale, yscale);
 }
 
 /// Sets the window content scale callback for the specified window.
@@ -1698,11 +1699,25 @@ fn setContentScaleCallbackWrapper(handle: ?*c.GLFWwindow, xscale: f32, yscale: f
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_scale, glfw.Window.getContentScale
-pub inline fn setContentScaleCallback(self: Window, callback: ?fn (window: Window, xscale: f32, yscale: f32) void) void {
+pub inline fn setContentScaleCallback(self: Window, comptime callback: ?fn (window: Window, xscale: f32, yscale: f32) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setContentScaleCallback = callback;
-    _ = c.glfwSetWindowContentScaleCallback(self.handle, if (callback != null) setContentScaleCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn windowScaleCallbackWrapper(handle: ?*c.GLFWwindow, xscale: f32, yscale: f32) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    xscale,
+                    yscale,
+                });
+            }
+        };
+
+        if (c.glfwSetWindowContentScaleCallback(self.handle, CWrapper.windowScaleCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetWindowContentScaleCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
@@ -2044,12 +2059,6 @@ pub inline fn setCursor(self: Window, cursor: Cursor) error{PlatformError}!void 
     };
 }
 
-fn setKeyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setKeyCallback.?(window, @intToEnum(Key, key), @intCast(i32, scancode), @intToEnum(Action, action), Mods.fromInt(mods));
-}
-
 /// Sets the key callback.
 ///
 /// This function sets the key callback of the specified window, which is called when a key is
@@ -2084,21 +2093,31 @@ fn setKeyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, ac
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_key
-pub inline fn setKeyCallback(self: Window, callback: ?fn (window: Window, key: Key, scancode: i32, action: Action, mods: Mods) void) void {
+pub inline fn setKeyCallback(self: Window, comptime callback: ?fn (window: Window, key: Key, scancode: i32, action: Action, mods: Mods) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setKeyCallback = callback;
-    _ = c.glfwSetKeyCallback(self.handle, if (callback != null) setKeyCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn keyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    @intToEnum(Key, key),
+                    @intCast(i32, scancode),
+                    @intToEnum(Action, action),
+                    Mods.fromInt(mods),
+                });
+            }
+        };
+
+        if (c.glfwSetKeyCallback(self.handle, CWrapper.keyCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetKeyCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setCharCallbackWrapper(handle: ?*c.GLFWwindow, codepoint: c_uint) callconv(.C) void {
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setCharCallback.?(window, @intCast(u21, codepoint));
 }
 
 /// Sets the Unicode character callback.
@@ -2125,21 +2144,28 @@ fn setCharCallbackWrapper(handle: ?*c.GLFWwindow, codepoint: c_uint) callconv(.C
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_char
-pub inline fn setCharCallback(self: Window, callback: ?fn (window: Window, codepoint: u21) void) void {
+pub inline fn setCharCallback(self: Window, comptime callback: ?fn (window: Window, codepoint: u21) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setCharCallback = callback;
-    _ = c.glfwSetCharCallback(self.handle, if (callback != null) setCharCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn charCallbackWrapper(handle: ?*c.GLFWwindow, codepoint: c_uint) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    @intCast(u21, codepoint),
+                });
+            }
+        };
+
+        if (c.glfwSetCharCallback(self.handle, CWrapper.charCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetCharCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setMouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: c_int, mods: c_int) callconv(.C) void {
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setMouseButtonCallback.?(window, @intToEnum(MouseButton, button), @intToEnum(Action, action), Mods.fromInt(mods));
 }
 
 /// Sets the mouse button callback.
@@ -2164,21 +2190,30 @@ fn setMouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: 
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: input_mouse_button
-pub inline fn setMouseButtonCallback(self: Window, callback: ?fn (window: Window, button: MouseButton, action: Action, mods: Mods) void) void {
+pub inline fn setMouseButtonCallback(self: Window, comptime callback: ?fn (window: Window, button: MouseButton, action: Action, mods: Mods) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setMouseButtonCallback = callback;
-    _ = c.glfwSetMouseButtonCallback(self.handle, if (callback != null) setMouseButtonCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn mouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: c_int, mods: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    @intToEnum(MouseButton, button),
+                    @intToEnum(Action, action),
+                    Mods.fromInt(mods),
+                });
+            }
+        };
+
+        if (c.glfwSetMouseButtonCallback(self.handle, CWrapper.mouseButtonCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetMouseButtonCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setCursorPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: f64, ypos: f64) callconv(.C) void {
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setCursorPosCallback.?(window, xpos, ypos);
 }
 
 /// Sets the cursor position callback.
@@ -2198,21 +2233,29 @@ fn setCursorPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: f64, ypos: f64) cal
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_pos
-pub inline fn setCursorPosCallback(self: Window, callback: ?fn (window: Window, xpos: f64, ypos: f64) void) void {
+pub inline fn setCursorPosCallback(self: Window, comptime callback: ?fn (window: Window, xpos: f64, ypos: f64) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setCursorPosCallback = callback;
-    _ = c.glfwSetCursorPosCallback(self.handle, if (callback != null) setCursorPosCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn cursorPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: f64, ypos: f64) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    xpos,
+                    ypos,
+                });
+            }
+        };
+
+        if (c.glfwSetCursorPosCallback(self.handle, CWrapper.cursorPosCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetCursorPosCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setCursorEnterCallbackWrapper(handle: ?*c.GLFWwindow, entered: c_int) callconv(.C) void {
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setCursorEnterCallback.?(window, entered == c.GLFW_TRUE);
 }
 
 /// Sets the cursor enter/leave callback.
@@ -2229,21 +2272,28 @@ fn setCursorEnterCallbackWrapper(handle: ?*c.GLFWwindow, entered: c_int) callcon
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_enter
-pub inline fn setCursorEnterCallback(self: Window, callback: ?fn (window: Window, entered: bool) void) void {
+pub inline fn setCursorEnterCallback(self: Window, comptime callback: ?fn (window: Window, entered: bool) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setCursorEnterCallback = callback;
-    _ = c.glfwSetCursorEnterCallback(self.handle, if (callback != null) setCursorEnterCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn cursorEnterCallbackWrapper(handle: ?*c.GLFWwindow, entered: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    entered == c.GLFW_TRUE,
+                });
+            }
+        };
+
+        if (c.glfwSetCursorEnterCallback(self.handle, CWrapper.cursorEnterCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetCursorEnterCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setScrollCallbackWrapper(handle: ?*c.GLFWwindow, xoffset: f64, yoffset: f64) callconv(.C) void {
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setScrollCallback.?(window, xoffset, yoffset);
 }
 
 /// Sets the scroll callback.
@@ -2264,21 +2314,29 @@ fn setScrollCallbackWrapper(handle: ?*c.GLFWwindow, xoffset: f64, yoffset: f64) 
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: scrolling
-pub inline fn setScrollCallback(self: Window, callback: ?fn (window: Window, xoffset: f64, yoffset: f64) void) void {
+pub inline fn setScrollCallback(self: Window, comptime callback: ?fn (window: Window, xoffset: f64, yoffset: f64) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setScrollCallback = callback;
-    _ = c.glfwSetScrollCallback(self.handle, if (callback != null) setScrollCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn scrollCallbackWrapper(handle: ?*c.GLFWwindow, xoffset: f64, yoffset: f64) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    xoffset,
+                    yoffset,
+                });
+            }
+        };
+
+        if (c.glfwSetScrollCallback(self.handle, CWrapper.scrollCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetScrollCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-}
-
-fn setDropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c][*c]const u8) callconv(.C) void {
-    const window = from(handle.?) catch unreachable;
-    const internal = window.getInternal();
-    internal.setDropCallback.?(window, @ptrCast([*][*:0]const u8, paths)[0..@intCast(u32, path_count)]);
 }
 
 /// Sets the path drop callback.
@@ -2306,11 +2364,24 @@ fn setDropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c]
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: path_drop
-pub inline fn setDropCallback(self: Window, callback: ?fn (window: Window, paths: [][*:0]const u8) void) void {
+pub inline fn setDropCallback(self: Window, comptime callback: ?fn (window: Window, paths: [][*:0]const u8) void) void {
     internal_debug.assertInitialized();
-    var internal = self.getInternal();
-    internal.setDropCallback = callback;
-    _ = c.glfwSetDropCallback(self.handle, if (callback != null) setDropCallbackWrapper else null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn dropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c][*c]const u8) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    from(handle.?),
+                    @ptrCast([*][*:0]const u8, paths)[0..@intCast(u32, path_count)],
+                });
+            }
+        };
+
+        if (c.glfwSetDropCallback(self.handle, CWrapper.dropCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetDropCallback(self.handle, null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
