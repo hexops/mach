@@ -352,12 +352,6 @@ pub const Event = enum(c_int) {
     disconnected = c.GLFW_DISCONNECTED,
 };
 
-var _callback: ?fn (joystick: Joystick, event: Event) void = null;
-
-fn callbackWrapper(jid: c_int, event: c_int) callconv(.C) void {
-    _callback.?(Joystick{ .jid = @intToEnum(Joystick.Id, jid) }, @intToEnum(Event, event));
-}
-
 /// Sets the joystick configuration callback.
 ///
 /// This function sets the joystick configuration callback, or removes the currently set callback.
@@ -379,10 +373,24 @@ fn callbackWrapper(jid: c_int, event: c_int) callconv(.C) void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: joystick_event
-pub inline fn setCallback(callback: ?fn (joystick: Joystick, event: Event) void) void {
+pub inline fn setCallback(comptime callback: ?fn (joystick: Joystick, event: Event) void) void {
     internal_debug.assertInitialized();
-    _callback = callback;
-    _ = if (_callback != null) c.glfwSetJoystickCallback(callbackWrapper) else c.glfwSetJoystickCallback(null);
+
+    if (callback) |user_callback| {
+        const CWrapper = struct {
+            pub fn joystickCallbackWrapper(jid: c_int, event: c_int) callconv(.C) void {
+                @call(.{ .modifier = .always_inline }, user_callback, .{
+                    Joystick{ .jid = @intToEnum(Joystick.Id, jid) },
+                    @intToEnum(Event, event),
+                });
+            }
+        };
+
+        if (c.glfwSetJoystickCallback(CWrapper.joystickCallbackWrapper) != null) return;
+    } else {
+        if (c.glfwSetJoystickCallback(null) != null) return;
+    }
+
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,

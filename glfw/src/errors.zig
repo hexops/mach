@@ -161,7 +161,7 @@ pub inline fn getError() Error!void {
 pub fn setErrorCallback(comptime callback: ?fn (error_code: Error, description: [:0]const u8) void) void {
     if (callback) |user_callback| {
         const CWrapper = struct {
-            pub fn c_wrapper(err_int: c_int, c_description: [*c]const u8) callconv(.C) void {
+            pub fn errorCallbackWrapper(err_int: c_int, c_description: [*c]const u8) callconv(.C) void {
                 if (convertError(err_int)) |_| {
                     // This means the error was `GLFW_NO_ERROR`
                     return;
@@ -171,7 +171,7 @@ pub fn setErrorCallback(comptime callback: ?fn (error_code: Error, description: 
             }
         };
 
-        _ = c.glfwSetErrorCallback(CWrapper.c_wrapper);
+        _ = c.glfwSetErrorCallback(CWrapper.errorCallbackWrapper);
         return;
     }
 
