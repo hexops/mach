@@ -398,7 +398,8 @@ pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
         Error.NotInitialized => unreachable,
         else => unreachable,
     };
-    unreachable;
+    // `glfwGetMonitors` returning null can be either an error or no monitors
+    return &[_]Monitor{};
 }
 
 /// Returns the primary monitor.
