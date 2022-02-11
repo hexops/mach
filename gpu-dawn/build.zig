@@ -101,37 +101,44 @@ pub const Options = struct {
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    ensureSubmodules(b.allocator) catch |err| @panic(@errorName(err));
-
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const opt = options.detectDefaults(target);
 
+    ensureSubmodules(b.allocator) catch |err| @panic(@errorName(err));
+
+    // TODO(build-system): add flag to link from source
+    // TODO(build-system): default to binary releases
+    // linkFromBinary(b, step, opt);
+    linkFromSource(b, step, opt);
+}
+
+fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     if (options.separate_libs) {
-        const lib_mach_dawn_native = buildLibMachDawnNative(b, step, opt);
+        const lib_mach_dawn_native = buildLibMachDawnNative(b, step, options);
         step.linkLibrary(lib_mach_dawn_native);
 
-        const lib_dawn_common = buildLibDawnCommon(b, step, opt);
+        const lib_dawn_common = buildLibDawnCommon(b, step, options);
         step.linkLibrary(lib_dawn_common);
 
-        const lib_dawn_platform = buildLibDawnPlatform(b, step, opt);
+        const lib_dawn_platform = buildLibDawnPlatform(b, step, options);
         step.linkLibrary(lib_dawn_platform);
 
         // dawn-native
-        const lib_abseil_cpp = buildLibAbseilCpp(b, step, opt);
+        const lib_abseil_cpp = buildLibAbseilCpp(b, step, options);
         step.linkLibrary(lib_abseil_cpp);
-        const lib_dawn_native = buildLibDawnNative(b, step, opt);
+        const lib_dawn_native = buildLibDawnNative(b, step, options);
         step.linkLibrary(lib_dawn_native);
 
-        const lib_dawn_wire = buildLibDawnWire(b, step, opt);
+        const lib_dawn_wire = buildLibDawnWire(b, step, options);
         step.linkLibrary(lib_dawn_wire);
 
-        const lib_dawn_utils = buildLibDawnUtils(b, step, opt);
+        const lib_dawn_utils = buildLibDawnUtils(b, step, options);
         step.linkLibrary(lib_dawn_utils);
 
-        const lib_spirv_tools = buildLibSPIRVTools(b, step, opt);
+        const lib_spirv_tools = buildLibSPIRVTools(b, step, options);
         step.linkLibrary(lib_spirv_tools);
 
-        const lib_tint = buildLibTint(b, step, opt);
+        const lib_tint = buildLibTint(b, step, options);
         step.linkLibrary(lib_tint);
         return;
     }
@@ -144,19 +151,163 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     lib_dawn.linkLibCpp();
     step.linkLibrary(lib_dawn);
 
-    _ = buildLibMachDawnNative(b, lib_dawn, opt);
-    _ = buildLibDawnCommon(b, lib_dawn, opt);
-    _ = buildLibDawnPlatform(b, lib_dawn, opt);
-    _ = buildLibAbseilCpp(b, lib_dawn, opt);
-    _ = buildLibDawnNative(b, lib_dawn, opt);
-    _ = buildLibDawnWire(b, lib_dawn, opt);
-    _ = buildLibDawnUtils(b, lib_dawn, opt);
-    _ = buildLibSPIRVTools(b, lib_dawn, opt);
-    _ = buildLibTint(b, lib_dawn, opt);
+    _ = buildLibMachDawnNative(b, lib_dawn, options);
+    _ = buildLibDawnCommon(b, lib_dawn, options);
+    _ = buildLibDawnPlatform(b, lib_dawn, options);
+    _ = buildLibAbseilCpp(b, lib_dawn, options);
+    _ = buildLibDawnNative(b, lib_dawn, options);
+    _ = buildLibDawnWire(b, lib_dawn, options);
+    _ = buildLibDawnUtils(b, lib_dawn, options);
+    _ = buildLibSPIRVTools(b, lib_dawn, options);
+    _ = buildLibTint(b, lib_dawn, options);
 }
 
 fn ensureSubmodules(allocator: std.mem.Allocator) !void {
     const child = try std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", "--recursive" }, allocator);
+    child.cwd = thisDir();
+    child.stderr = std.io.getStdErr();
+    child.stdout = std.io.getStdOut();
+    _ = try child.spawnAndWait();
+}
+
+pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+
+    // If it's not the default ABI, we have no binaries available.
+    const default_abi = std.Target.Abi.default(target.cpu.arch, target.os);
+    if (target.abi != default_abi) return linkFromSource(b, step, options);
+
+    const triple = blk: {
+        if (target.cpu.arch.isX86()) switch (target.os.tag) {
+            .windows => break :blk "windows-x86_64",
+            .linux => break :blk "linux-x86_64",
+            .macos => break :blk "macos-x86_64",
+            else => return linkFromSource(b, step, options),
+        };
+        if (target.cpu.arch.isAARCH64()) switch (target.os.tag) {
+            .macos => break :blk "macos-aarch64",
+            else => return linkFromSource(b, step, options),
+        };
+        return linkFromSource(b, step, options);
+    };
+    ensureBinaryDownloaded(b.allocator, triple);
+
+    const current_git_commit = getCurrentGitCommit(b.allocator) catch unreachable;
+    const base_cache_dir_rel = std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
+    std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
+    const base_cache_dir = std.fs.cwd().realpathAlloc(b.allocator, base_cache_dir_rel) catch unreachable;
+    const commit_cache_dir = std.fs.path.join(b.allocator, &.{ base_cache_dir, current_git_commit }) catch unreachable;
+    const target_cache_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, triple }) catch unreachable;
+
+    step.addLibraryPath(target_cache_dir);
+    step.linkSystemLibrary("dawn");
+    step.linkLibCpp();
+
+    // TODO: remove this!
+    const tmp = std.fs.cwd().realpathAlloc(b.allocator, "zig-out/lib") catch unreachable;
+    step.addLibraryPath(tmp);
+
+    if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
+        step.linkSystemLibrary("X11");
+    }
+    if (options.metal.?) {
+        step.linkFramework("Metal");
+        step.linkFramework("CoreGraphics");
+        step.linkFramework("Foundation");
+        step.linkFramework("IOKit");
+        step.linkFramework("IOSurface");
+        step.linkFramework("QuartzCore");
+    }
+}
+
+pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8) void {
+    // If zig-cache/mach/gpu-dawn/<git revision> does not exist:
+    //   If on a commit in the main branch => rm -r zig-cache/mach/gpu-dawn/
+    //   else => noop
+    // If zig-cache/mach/gpu-dawn/<git revision>/<target> exists:
+    //   noop
+    // else:
+    //   Download archive to zig-cache/mach/gpu-dawn/download/macos-aarch64
+    //   Extract to zig-cache/mach/gpu-dawn/<git revision>/macos-aarch64/libgpu.a
+    //   Remove zig-cache/mach/gpu-dawn/download
+
+    const current_git_commit = getCurrentGitCommit(allocator) catch unreachable;
+    const base_cache_dir_rel = std.fs.path.join(allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
+    std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
+    const base_cache_dir = std.fs.cwd().realpathAlloc(allocator, base_cache_dir_rel) catch unreachable;
+    const commit_cache_dir = std.fs.path.join(allocator, &.{ base_cache_dir, current_git_commit }) catch unreachable;
+
+    if (!dirExists(commit_cache_dir)) {
+        // Commit cache dir does not exist. If the commit we want is in the main branch, we're
+        // probably moving to a newer commit and so we should cleanup older cached binaries.
+        if (gitBranchContainsCommit(allocator, "main", current_git_commit) catch false) {
+            std.fs.deleteTreeAbsolute(base_cache_dir) catch {};
+        }
+    }
+
+    const target_cache_dir = std.fs.path.join(allocator, &.{ commit_cache_dir, triple }) catch unreachable;
+    if (dirExists(target_cache_dir)) {
+        return; // nothing to do, already have the binary
+    }
+
+    const download_dir = std.fs.path.join(allocator, &.{ target_cache_dir, "download" }) catch unreachable;
+    std.fs.cwd().makePath(download_dir) catch unreachable;
+
+    // TODO: replace URL with a release build from mach-gpu-dawn once CI is building it!
+    const gz_target_file = std.fs.path.join(allocator, &.{ download_dir, "compressed.gz" }) catch unreachable;
+    downloadFile(allocator, gz_target_file, "https://github.com/microsoft/DirectXShaderCompiler/archive/refs/tags/v1.6.2112.tar.gz") catch unreachable;
+
+    const target_file = std.fs.path.join(allocator, &.{ target_cache_dir, "libdawn.a" }) catch unreachable;
+    gzipDecompress(allocator, gz_target_file, target_file) catch unreachable;
+
+    std.fs.deleteTreeAbsolute(download_dir) catch unreachable;
+}
+
+fn dirExists(path: []const u8) bool {
+    var dir = std.fs.openDirAbsolute(path, .{}) catch return false;
+    dir.close();
+    return true;
+}
+
+fn gzipDecompress(allocator: std.mem.Allocator, src_absolute_path: []const u8, dst_absolute_path: []const u8) !void {
+    var file = try std.fs.openFileAbsolute(src_absolute_path, .{ .mode = .read_only });
+    defer file.close();
+
+    var gzip_stream = try std.compress.gzip.gzipStream(allocator, file.reader());
+    defer gzip_stream.deinit();
+
+    // Read and decompress the whole file
+    const buf = try gzip_stream.reader().readAllAlloc(allocator, std.math.maxInt(usize));
+    defer allocator.free(buf);
+
+    var new_file = try std.fs.createFileAbsolute(dst_absolute_path, .{});
+    defer new_file.close();
+
+    try new_file.writeAll(buf);
+}
+
+fn gitBranchContainsCommit(allocator: std.mem.Allocator, branch: []const u8, commit: []const u8) !bool {
+    const result = try std.ChildProcess.exec(.{
+        .allocator = allocator,
+        .argv = &.{ "git", "branch", branch, "--contains", commit },
+        .cwd = thisDir(),
+    });
+    return result.term.Exited == 0;
+}
+
+fn getCurrentGitCommit(allocator: std.mem.Allocator) ![]const u8 {
+    const result = try std.ChildProcess.exec(.{
+        .allocator = allocator,
+        .argv = &.{ "git", "rev-parse", "HEAD" },
+        .cwd = thisDir(),
+    });
+    if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
+    return result.stdout;
+}
+
+fn downloadFile(allocator: std.mem.Allocator, target_file: []const u8, url: []const u8) !void {
+    std.debug.print("downloading {s}..\n", .{url});
+    const child = try std.ChildProcess.init(&.{ "curl", "-L", "-o", target_file, url }, allocator);
     child.cwd = thisDir();
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
