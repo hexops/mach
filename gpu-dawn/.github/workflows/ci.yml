@@ -1,0 +1,54 @@
+name: CI
+on:
+  - push
+  - pull_request
+jobs:
+  x86_64-linux:
+    runs-on: ubuntu-latest
+    # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
+    # to the branch.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Zig
+        run: |
+          sudo apt install xz-utils
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.9.0-dev.2023+16b753549.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+      - name: test
+        run: zig build test && find zig-out/
+  # TODO(build-system): enable windows CI here once gpu-dawn builds under Windows
+  # x86_64-windows:
+  #   runs-on: windows-latest
+  #   # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
+  #   # to the branch.
+  #   if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #     - name: Install Git
+  #       run: choco install git
+  #     - name: Setup Zig
+  #       run: |
+  #         Invoke-WebRequest -Uri "https://ziglang.org/builds/zig-windows-x86_64-0.9.0-dev.2023+16b753549.zip" -OutFile "C:\zig.zip"
+  #         cd C:\
+  #         7z x zig.zip
+  #         Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.9.0-dev.2023+16b753549\"
+  #     - name: test
+  #       run: zig build test && find zig-out/
+  x86_64-macos:
+    runs-on: macos-latest
+    # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
+    # to the branch.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Zig
+        run: |
+          brew install xz
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.9.0-dev.2023+16b753549.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+      - name: test
+        run: zig build test && find zig-out/
+        env:
+          AGREE: true
