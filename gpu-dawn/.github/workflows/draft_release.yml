@@ -1,0 +1,11 @@
+name: Draft release
+on:
+  push:
+    branches:
+      - 'main'
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create draft
+      run: gh release create $(git rev-parse --short HEAD) --title "Automatic release of main @ $(git rev-parse --short HEAD)"

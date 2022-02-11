@@ -1,12 +1,9 @@
-name: CI
+name: CI M1
 on:
-  # SECURITY: This must be a push event only, otherwise our M1 mac runner would be compromised by
-  # third-party pull requests which could run arbitrary code. This way, we can restrict it to
-  # collaborators of the repository only.
-  #
-  # Whenever GitHub Actions gets official M1 support, we can use that for PRs and get rid of this
-  # self-hosted runner: https://github.com/actions/virtual-environments/issues/2187 
-  - push
+  workflow_run:
+    workflows: ["Draft release"]
+    types:
+      - completed
 jobs:
   aarch64-macos:
     runs-on: [self-hosted, macOS, ARM64]
@@ -21,7 +18,12 @@ jobs:
           zig version
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
-      - name: test
-        run: zig build test && find zig-out/
+      - name: install
+        run: zig build install && find zig-out/
         env:
           AGREE: true
+      - name: upload
+        run: |
+          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_aarch64-macos.a
+          gzip -9 zig-out/lib/libdawn_aarch64-macos.a
+          gh release upload $(git rev-parse --short HEAD) zig-out/lib/libdawn_aarch64-macos.a
