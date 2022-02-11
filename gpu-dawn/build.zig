@@ -7,12 +7,6 @@ pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
-    // TODO(build-system): remove dependency on GLFW (Dawn no longer requires it / we can
-    // eliminate it.)
-    if (!dirExists("libs/mach-glfw")) {
-        try gitClone(b.allocator, "https://github.com/hexops/mach-glfw", "libs/mach-glfw");
-    }
-
     const lib = b.addStaticLibrary("gpu", "src/main.zig");
     lib.setBuildMode(mode);
     lib.setTarget(target);

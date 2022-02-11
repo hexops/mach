@@ -15,6 +15,8 @@ jobs:
         run: |
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.9.0-dev.2023+16b753549.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+      - name: Clone mach-glfw
+        run: git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: test
         run: zig build test && find zig-out/
   # TODO(build-system): enable windows CI here once gpu-dawn builds under Windows
@@ -48,6 +50,8 @@ jobs:
         run: |
           brew install xz
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.9.0-dev.2023+16b753549.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+      - name: Clone mach-glfw
+        run: git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: test
         run: zig build test && find zig-out/
         env:
