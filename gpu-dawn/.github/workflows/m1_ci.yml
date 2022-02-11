@@ -19,6 +19,8 @@ jobs:
       - name: Setup Zig
         run: |
           zig version
+      - name: Clone mach-glfw
+        run: git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: test
         run: zig build test && find zig-out/
         env:
