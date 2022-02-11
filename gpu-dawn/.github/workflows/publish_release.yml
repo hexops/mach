@@ -8,6 +8,8 @@ jobs:
   draft:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: Publish release
       run: echo "TODO(build-system): gh CLI has no way to mark draft as published?"
       env:
