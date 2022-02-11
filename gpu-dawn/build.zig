@@ -7,6 +7,12 @@ pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
+    // TODO(build-system): remove dependency on GLFW (Dawn no longer requires it / we can
+    // eliminate it.)
+    if (!dirExists("libs/mach-glfw")) {
+        try gitClone(b.allocator, "https://github.com/hexops/mach-glfw", "libs/mach-glfw");
+    }
+
     const lib = b.addStaticLibrary("gpu", "src/main.zig");
     lib.setBuildMode(mode);
     lib.setTarget(target);
@@ -304,6 +310,15 @@ fn getCurrentGitCommit(allocator: std.mem.Allocator) ![]const u8 {
     });
     if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
     return result.stdout;
+}
+
+fn gitClone(allocator: std.mem.Allocator, repository: []const u8, dir: []const u8) !bool {
+    const result = try std.ChildProcess.exec(.{
+        .allocator = allocator,
+        .argv = &.{ "git", "clone", repository, dir },
+        .cwd = thisDir(),
+    });
+    return result.term.Exited == 0;
 }
 
 fn downloadFile(allocator: std.mem.Allocator, target_file: []const u8, url: []const u8) !void {
