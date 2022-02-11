@@ -10,3 +10,5 @@ jobs:
     steps:
     - name: Publish release
       run: echo "TODO(build-system): gh CLI has no way to mark draft as published?"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

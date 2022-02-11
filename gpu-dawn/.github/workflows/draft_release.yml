@@ -9,3 +9,5 @@ jobs:
     steps:
     - name: Create draft
       run: gh release create $(git rev-parse --short HEAD) --title "Automatic release of main @ $(git rev-parse --short HEAD)"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
