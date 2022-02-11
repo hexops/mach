@@ -6,7 +6,6 @@ on:
       - completed
 jobs:
   x86_64-linux:
-    needs: release-draft
     runs-on: ubuntu-latest
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
     # to the branch.
@@ -50,7 +49,6 @@ jobs:
   #       run: zig build install && find zig-out/
   #     # TODO: upload step for Windows
   x86_64-macos:
-    needs: release-draft
     runs-on: macos-latest
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
     # to the branch.
