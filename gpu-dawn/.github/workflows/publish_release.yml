@@ -1,0 +1,12 @@
+name: Publish release
+on:
+  workflow_run:
+    workflows: ["CI", "CI M1"]
+    types:
+      - completed
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Publish release
+      run: echo "TODO(build-system): gh CLI has no way to mark draft as published?"
