@@ -7,11 +7,15 @@ pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
+    const options = Options{
+        .from_source = b.option(bool, "from-source", "Build Dawn from source") orelse false,
+    };
+
     const lib = b.addStaticLibrary("gpu", "src/main.zig");
     lib.setBuildMode(mode);
     lib.setTarget(target);
     lib.install();
-    link(b, lib, .{});
+    link(b, lib, options);
 
     const main_tests = b.addTest("src/main.zig");
     main_tests.setBuildMode(mode);
@@ -22,7 +26,7 @@ pub fn build(b: *Builder) void {
     const dawn_example = b.addExecutable("dawn-example", "src/dawn/hello_triangle.zig");
     dawn_example.setBuildMode(mode);
     dawn_example.setTarget(target);
-    link(b, dawn_example, .{});
+    link(b, dawn_example, options);
     glfw.link(b, dawn_example, .{ .system_sdk = .{ .set_sysroot = false } });
     dawn_example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
     dawn_example.addIncludeDir("libs/dawn/out/Debug/gen/src/include");
@@ -75,9 +79,11 @@ pub const Options = struct {
     /// iteration times when building from source / testing changes to Dawn source code.)
     separate_libs: bool = false,
 
+    /// Whether to build Dawn from source or not.
+    from_source: bool = false,
+
     /// The binary release version to use from https://github.com/hexops/mach-gpu-dawn/releases
-    /// If null, Dawn will be built from source.
-    binary_version: ?[]const u8 = "release-2e5a4eb",
+    binary_version: []const u8 = "release-2e5a4eb",
 
     /// Detects the default options to use for the given target.
     pub fn detectDefaults(self: Options, target: std.Target) Options {
@@ -110,7 +116,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
 
     ensureSubmodules(b.allocator) catch |err| @panic(@errorName(err));
 
-    if (options.binary_version != null) linkFromBinary(b, step, opt) else linkFromSource(b, step, opt);
+    if (options.from_source) linkFromSource(b, step, opt) else linkFromBinary(b, step, opt);
 }
 
 fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
@@ -191,7 +197,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         };
         return linkFromSource(b, step, options);
     };
-    ensureBinaryDownloaded(b.allocator, triple, options.binary_version.?);
+    ensureBinaryDownloaded(b.allocator, triple, options.binary_version);
 
     const current_git_commit = getCurrentGitCommit(b.allocator) catch unreachable;
     const base_cache_dir_rel = std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
