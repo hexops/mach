@@ -10,7 +10,25 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Publish release
-      run: echo "TODO(build-system): gh CLI has no way to mark draft as published?"
+    - name: Record latest release version
+      id: recorded_release_version
+      run: echo "::set-output name=commit::$(git rev-parse --short HEAD)"
+    # - name: Publish release
+    #   run: echo "TODO(build-system): gh CLI has no way to mark draft as published?"
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Checkout hexops/mach monorepo
+      uses: actions/checkout@v2
+      with:
+        name: hexops/mach
+    - name: 'gpu/dawn: update hard-coded binary release version'
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_COMMIT: ${{steps.recorded_release_version.outputs.commit}}
+      run: |
+        sed -i "/binary_version: \[\]const u8 =/c\    binary_version: []const u8 = \"release-$RELEASE_COMMIT\"," ./gpu-dawn/build.zig
+    - name: 'gpu/dawn: use latest binary release'
+      uses: JamesIves/github-pages-deploy-action@4.1.1
+      with:
+        branch: main
+        folder: '.'
+        commit-message: 'gpu-dawn: update to latest binary release'
