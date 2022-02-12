@@ -21,6 +21,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: hexops/mach
+        token: ${{ secrets.HEXOPS_MACH_GPU_DAWN_PUSH }}
     - name: 'gpu/dawn: update hard-coded binary release version'
       env:
         RELEASE_COMMIT: ${{steps.recorded_release_version.outputs.commit}}
@@ -29,7 +30,7 @@ jobs:
     - name: 'gpu/dawn: use latest binary release'
       run: |
         git config user.name 'Release automation'
-        git config user.name 'stephen@hexops.com'
+        git config user.email 'stephen@hexops.com'
         git add .
         git commit -m 'gpu-dawn: update to latest binary release'
         git push -u origin HEAD
