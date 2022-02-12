@@ -11,25 +11,29 @@ jobs:
       run:
         shell: "/usr/bin/arch -arch arm64e /bin/bash --noprofile --norc -eo pipefail {0}"
     steps:
-      # TODO(build-system): remove this step, uncomment the steps below, and fix the M1 CI runner.
+      - name: Clean repository submodules
+        # See https://github.com/actions/checkout/issues/385
+        run: |
+          git submodule deinit .
+          git submodule | cut -c43- | while read -r line; do (git rm "$line"); done
+          git config --local -l | grep submodule | sed -e 's/^\(submodule\.[^.]*\)\(.*\)/\1/g' | while read -r line; do (git config --local --remove-section "$line"); done
+          rm -rf .gitmodules .git/modules
+          git reset --hard HEAD
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Setup Zig
         run: |
           zig version
-      # - name: Checkout
-      #   uses: actions/checkout@v2
-      # - name: Setup Zig
-      #   run: |
-      #     zig version
-      # - name: Clone mach-glfw
-      #   run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
-      # - name: install
-      #   run: zig build install -Dfrom-source=true
-      #   env:
-      #     AGREE: true
-      # - name: upload
-      #   run: |
-      #     mv zig-out/lib/libdawn.a zig-out/lib/libdawn_macos-aarch64.a
-      #     gzip -9 zig-out/lib/libdawn_macos-aarch64.a
-      #     gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_macos-aarch64.a.gz
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Clone mach-glfw
+        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+      - name: install
+        run: zig build install -Dfrom-source=true
+        env:
+          AGREE: true
+      - name: upload
+        run: |
+          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_macos-aarch64.a
+          gzip -9 zig-out/lib/libdawn_macos-aarch64.a
+          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_macos-aarch64.a.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
