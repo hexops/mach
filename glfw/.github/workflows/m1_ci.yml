@@ -17,7 +17,7 @@ jobs:
       - name: Clean repository submodules
         # See https://github.com/actions/checkout/issues/385
         run: |
-          sudo rm -fr $GITHUB_WORKSPACE && mkdir $GITHUB_WORKSPACE
+          rm -rf $GITHUB_WORKSPACE && mkdir $GITHUB_WORKSPACE
       - name: Checkout
         uses: actions/checkout@v2
       - name: Setup Zig
