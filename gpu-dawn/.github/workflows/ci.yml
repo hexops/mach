@@ -26,7 +26,7 @@ jobs:
   #       run: |
   #         mv zig-out/lib/libdawn.a zig-out/lib/libdawn_x86_64-linux.a
   #         gzip -9 zig-out/lib/libdawn_x86_64-linux.a
-  #         gh release upload $(git rev-parse --short HEAD) zig-out/lib/libdawn_x86_64-linux.a.gz
+  #         gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_x86_64-linux.a.gz
   #       env:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # TODO(build-system): enable windows CI here once gpu-dawn builds under Windows
@@ -71,6 +71,6 @@ jobs:
         run: |
           mv zig-out/lib/libdawn.a zig-out/lib/libdawn_x86_64-macos.a
           gzip -9 zig-out/lib/libdawn_x86_64-macos.a
-          gh release upload $(git rev-parse --short HEAD) zig-out/lib/libdawn_x86_64-macos.a.gz
+          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_x86_64-macos.a.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
