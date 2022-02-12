@@ -21,7 +21,7 @@ jobs:
   #     - name: Clone mach-glfw
   #       run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
   #     - name: install
-  #       run: zig build install
+  #       run: zig build install -Dfrom-source=true
   #     - name: upload
   #       run: |
   #         mv zig-out/lib/libdawn.a zig-out/lib/libdawn_linux-x86_64.a
@@ -47,7 +47,7 @@ jobs:
   #         7z x zig.zip
   #         Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.10.0-dev.670+e1a535360\"
   #     - name: install
-  #       run: zig build install
+  #       run: zig build install -Dfrom-source=true
   #     # TODO: upload step for Windows
   x86_64-macos:
     runs-on: macos-latest
@@ -64,7 +64,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install
-        run: zig build install
+        run: zig build install -Dfrom-source=true
         env:
           AGREE: true
       - name: upload
