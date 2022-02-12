@@ -5,7 +5,7 @@ on:
       - 'main'
 jobs:
   draft:
-    if: ${{ !contains(github.event.head_commit.message, 'gpu-dawn: update to latest binary release') }}
+    if: ${{ !contains(github.event.head_commit.message, 'update to latest binary release') }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
