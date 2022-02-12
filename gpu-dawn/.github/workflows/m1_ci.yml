@@ -11,21 +11,25 @@ jobs:
       run:
         shell: "/usr/bin/arch -arch arm64e /bin/bash --noprofile --norc -eo pipefail {0}"
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      # TODO(build-system): remove this step, uncomment the steps below, and fix the M1 CI runner.
       - name: Setup Zig
         run: |
           zig version
-      - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
-      - name: install
-        run: zig build install && find zig-out/
-        env:
-          AGREE: true
-      - name: upload
-        run: |
-          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_aarch64-macos.a
-          gzip -9 zig-out/lib/libdawn_aarch64-macos.a
-          gh release upload $(git rev-parse --short HEAD) zig-out/lib/libdawn_aarch64-macos.a.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Checkout
+      #   uses: actions/checkout@v2
+      # - name: Setup Zig
+      #   run: |
+      #     zig version
+      # - name: Clone mach-glfw
+      #   run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+      # - name: install
+      #   run: zig build install && find zig-out/
+      #   env:
+      #     AGREE: true
+      # - name: upload
+      #   run: |
+      #     mv zig-out/lib/libdawn.a zig-out/lib/libdawn_aarch64-macos.a
+      #     gzip -9 zig-out/lib/libdawn_aarch64-macos.a
+      #     gh release upload $(git rev-parse --short HEAD) zig-out/lib/libdawn_aarch64-macos.a.gz
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
