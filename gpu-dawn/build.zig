@@ -180,13 +180,13 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     const triple = blk: {
         if (target.cpu.arch.isX86()) switch (target.os.tag) {
-            .windows => break :blk "windows-x86_64",
-            .linux => break :blk "linux-x86_64",
+            .windows => return linkFromSource(b, step, options), // break :blk "windows-x86_64",
+            .linux => return linkFromSource(b, step, options), // break :blk "linux-x86_64",
             .macos => break :blk "macos-x86_64",
             else => return linkFromSource(b, step, options),
         };
         if (target.cpu.arch.isAARCH64()) switch (target.os.tag) {
-            .macos => break :blk "macos-aarch64",
+            .macos => return linkFromSource(b, step, options), // break :blk "macos-aarch64",
             else => return linkFromSource(b, step, options),
         };
         return linkFromSource(b, step, options);
