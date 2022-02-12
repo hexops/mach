@@ -20,13 +20,22 @@ jobs:
   #         sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.670+e1a535360.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
   #     - name: Clone mach-glfw
   #       run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
-  #     - name: install
+  #     - name: install (debug)
   #       run: zig build install -Dfrom-source=true
-  #     - name: upload
+  #     - name: upload (debug)
   #       run: |
-  #         mv zig-out/lib/libdawn.a zig-out/lib/libdawn_linux-x86_64.a
-  #         gzip -9 zig-out/lib/libdawn_linux-x86_64.a
-  #         gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_linux-x86_64.a.gz
+  #         mv zig-out/lib/libdawn.a zig-out/lib/libdawn_linux-x86_64_debug.a
+  #         gzip -9 zig-out/lib/libdawn_linux-x86_64_debug.a
+  #         gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_linux-x86_64_debug.a.gz
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: install (release-fast)
+  #       run: zig build install -Dfrom-source=true -Drelease-fast=true
+  #     - name: upload (release-fast)
+  #       run: |
+  #         mv zig-out/lib/libdawn.a zig-out/lib/libdawn_linux-x86_64_release-fast.a
+  #         gzip -9 zig-out/lib/libdawn_linux-x86_64_release-fast.a
+  #         gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_linux-x86_64_release-fast.a.gz
   #       env:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # TODO(build-system): enable windows CI here once gpu-dawn builds under Windows
@@ -46,7 +55,7 @@ jobs:
   #         cd C:\
   #         7z x zig.zip
   #         Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.10.0-dev.670+e1a535360\"
-  #     - name: install
+  #     - name: install (debug)
   #       run: zig build install -Dfrom-source=true
   #     # TODO: upload step for Windows
   x86_64-macos:
@@ -63,14 +72,25 @@ jobs:
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.10.0-dev.670+e1a535360.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
-      - name: install
+      - name: install (debug)
         run: zig build install -Dfrom-source=true
         env:
           AGREE: true
-      - name: upload
+      - name: upload (debug)
         run: |
-          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_macos-x86_64.a
-          gzip -9 zig-out/lib/libdawn_macos-x86_64.a
-          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_macos-x86_64.a.gz
+          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_macos-x86_64_debug.a
+          gzip -9 zig-out/lib/libdawn_macos-x86_64_debug.a
+          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_macos-x86_64_debug.a.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: install (release-fast)
+        run: zig build install -Dfrom-source=true -Drelease-fast=true
+        env:
+          AGREE: true
+      - name: upload (release-fast)
+        run: |
+          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_macos-x86_64_release-fast.a
+          gzip -9 zig-out/lib/libdawn_macos-x86_64_release-fast.a
+          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_macos-x86_64_release-fast.a.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
