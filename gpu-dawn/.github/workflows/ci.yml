@@ -24,8 +24,8 @@ jobs:
   #       run: zig build install
   #     - name: upload
   #       run: |
-  #         mv zig-out/lib/libdawn.a zig-out/lib/libdawn_x86_64-linux.a
-  #         gzip -9 zig-out/lib/libdawn_x86_64-linux.a
+  #         mv zig-out/lib/libdawn.a zig-out/lib/libdawn_linux-x86_64.a
+  #         gzip -9 zig-out/lib/libdawn_linux-x86_64.a
   #         gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_linux-x86_64.a.gz
   #       env:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,8 +69,8 @@ jobs:
           AGREE: true
       - name: upload
         run: |
-          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_x86_64-macos.a
-          gzip -9 zig-out/lib/libdawn_x86_64-macos.a
+          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_macos-x86_64.a
+          gzip -9 zig-out/lib/libdawn_macos-x86_64.a
           gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_macos-x86_64.a.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

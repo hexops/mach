@@ -28,8 +28,8 @@ jobs:
       #     AGREE: true
       # - name: upload
       #   run: |
-      #     mv zig-out/lib/libdawn.a zig-out/lib/libdawn_aarch64-macos.a
-      #     gzip -9 zig-out/lib/libdawn_aarch64-macos.a
+      #     mv zig-out/lib/libdawn.a zig-out/lib/libdawn_macos-aarch64.a
+      #     gzip -9 zig-out/lib/libdawn_macos-aarch64.a
       #     gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_macos-aarch64.a.gz
       #   env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
