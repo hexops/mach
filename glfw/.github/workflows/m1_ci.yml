@@ -17,11 +17,7 @@ jobs:
       - name: Clean repository submodules
         # See https://github.com/actions/checkout/issues/385
         run: |
-          git submodule deinit .
-          git submodule | cut -c43- | while read -r line; do (git rm "$line"); done
-          git config --local -l | grep submodule | sed -e 's/^\(submodule\.[^.]*\)\(.*\)/\1/g' | while read -r line; do (git config --local --remove-section "$line"); done
-          rm -rf .gitmodules .git/modules
-          git reset --hard HEAD
+          sudo rm -fr $GITHUB_WORKSPACE && mkdir $GITHUB_WORKSPACE
       - name: Checkout
         uses: actions/checkout@v2
       - name: Setup Zig
