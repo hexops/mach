@@ -20,7 +20,7 @@ jobs:
     - name: Checkout hexops/mach monorepo
       uses: actions/checkout@v2
       with:
-        name: hexops/mach
+        repository: hexops/mach
     - name: 'gpu/dawn: update hard-coded binary release version'
       env:
         RELEASE_COMMIT: ${{steps.recorded_release_version.outputs.commit}}
