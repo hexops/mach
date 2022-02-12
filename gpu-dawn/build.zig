@@ -75,6 +75,10 @@ pub const Options = struct {
     /// iteration times when building from source / testing changes to Dawn source code.)
     separate_libs: bool = false,
 
+    /// The binary release version to use from https://github.com/hexops/mach-gpu-dawn/releases
+    /// If null, Dawn will be built from source.
+    binary_version: ?[]const u8 = "release-2e5a4eb",
+
     /// Detects the default options to use for the given target.
     pub fn detectDefaults(self: Options, target: std.Target) Options {
         const tag = target.os.tag;
@@ -106,10 +110,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
 
     ensureSubmodules(b.allocator) catch |err| @panic(@errorName(err));
 
-    // TODO(build-system): add flag to link from source
-    // TODO(build-system): default to binary releases
-    // linkFromBinary(b, step, opt);
-    linkFromSource(b, step, opt);
+    if (options.binary_version != null) linkFromBinary(b, step, opt) else linkFromSource(b, step, opt);
 }
 
 fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
@@ -190,7 +191,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         };
         return linkFromSource(b, step, options);
     };
-    ensureBinaryDownloaded(b.allocator, triple);
+    ensureBinaryDownloaded(b.allocator, triple, options.binary_version.?);
 
     const current_git_commit = getCurrentGitCommit(b.allocator) catch unreachable;
     const base_cache_dir_rel = std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
@@ -202,10 +203,6 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     step.addLibraryPath(target_cache_dir);
     step.linkSystemLibrary("dawn");
     step.linkLibCpp();
-
-    // TODO: remove this!
-    const tmp = std.fs.cwd().realpathAlloc(b.allocator, "zig-out/lib") catch unreachable;
-    step.addLibraryPath(tmp);
 
     if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
         step.linkSystemLibrary("X11");
@@ -220,7 +217,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 }
 
-pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8) void {
+pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8, version: []const u8) void {
     // If zig-cache/mach/gpu-dawn/<git revision> does not exist:
     //   If on a commit in the main branch => rm -r zig-cache/mach/gpu-dawn/
     //   else => noop
@@ -253,9 +250,18 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8) 
     const download_dir = std.fs.path.join(allocator, &.{ target_cache_dir, "download" }) catch unreachable;
     std.fs.cwd().makePath(download_dir) catch unreachable;
 
-    // TODO: replace URL with a release build from mach-gpu-dawn once CI is building it!
+    // Compose the download URL, e.g.:
+    // https://github.com/hexops/mach-gpu-dawn/releases/download/release-2e5a4eb/libdawn_x86_64-macos.a.gz
+    const download_url = std.mem.concat(allocator, u8, &.{
+        "https://github.com/hexops/mach-gpu-dawn/releases/download/",
+        version,
+        "/libdawn_",
+        triple,
+        ".a.gz",
+    }) catch unreachable;
+
     const gz_target_file = std.fs.path.join(allocator, &.{ download_dir, "compressed.gz" }) catch unreachable;
-    downloadFile(allocator, gz_target_file, "https://github.com/microsoft/DirectXShaderCompiler/archive/refs/tags/v1.6.2112.tar.gz") catch unreachable;
+    downloadFile(allocator, gz_target_file, download_url) catch unreachable;
 
     const target_file = std.fs.path.join(allocator, &.{ target_cache_dir, "libdawn.a" }) catch unreachable;
     gzipDecompress(allocator, gz_target_file, target_file) catch unreachable;
