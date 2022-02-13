@@ -135,6 +135,10 @@ fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options)
         step.linkLibrary(lib_abseil_cpp);
         const lib_dawn_native = buildLibDawnNative(b, step, options);
         step.linkLibrary(lib_dawn_native);
+        if (options.desktop_gl.?) {
+            const lib_spirv_cross = buildLibSPIRVCross(b, step, options);
+            step.linkLibrary(lib_spirv_cross);
+        }
 
         const lib_dawn_wire = buildLibDawnWire(b, step, options);
         step.linkLibrary(lib_dawn_wire);
@@ -163,6 +167,9 @@ fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options)
     _ = buildLibDawnPlatform(b, lib_dawn, options);
     _ = buildLibAbseilCpp(b, lib_dawn, options);
     _ = buildLibDawnNative(b, lib_dawn, options);
+    if (options.desktop_gl.?) {
+        _ = buildLibSPIRVCross(b, lib_dawn, options);
+    }
     _ = buildLibDawnWire(b, lib_dawn, options);
     _ = buildLibDawnUtils(b, lib_dawn, options);
     _ = buildLibSPIRVTools(b, lib_dawn, options);
@@ -483,9 +490,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     if (options.desktop_gl.?) {
         // OpenGL requires spriv-cross until Dawn moves OpenGL shader generation to Tint.
         flags.append(include("libs/dawn/third_party/vulkan-deps/spirv-cross/src")) catch unreachable;
-
-        const lib_spirv_cross = buildLibSPIRVCross(b, step, options);
-        step.linkLibrary(lib_spirv_cross);
     }
     flags.appendSlice(&.{
         include("libs/dawn"),
