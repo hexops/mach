@@ -199,7 +199,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
             else => return linkFromSource(b, step, options),
         };
         if (target.cpu.arch.isAARCH64()) switch (target.os.tag) {
-            .macos => return linkFromSource(b, step, options), // break :blk "macos-aarch64",
+            .macos => break :blk "macos-aarch64",
             else => return linkFromSource(b, step, options),
         };
         return linkFromSource(b, step, options);
