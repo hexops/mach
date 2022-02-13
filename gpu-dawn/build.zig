@@ -531,8 +531,15 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         &.{ "test", "benchmark", "mock", "SpirvValidation.cpp", "XlibXcbFunctions.cpp" },
     ) catch unreachable;
 
-    // dawn_native_utils_gen
-    sources.append(thisDir() ++ "/src/dawn/sources/dawn_native_utils_gen.cpp") catch unreachable;
+    // dawn_native_gen
+    scanSources(
+        b,
+        &sources,
+        "libs/dawn/out/Debug/gen/src/dawn_native/",
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{ "test", "benchmark", "mock" },
+    ) catch unreachable;
 
     // TODO(build-system): could allow enable_vulkan_validation_layers here. See src/dawn_native/BUILD.gn
     // TODO(build-system): allow use_angle here. See src/dawn_native/BUILD.gn
