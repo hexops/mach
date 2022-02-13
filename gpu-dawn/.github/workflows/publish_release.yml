@@ -5,7 +5,7 @@ on:
     types:
       - completed
 jobs:
-  draft:
+  publish:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
