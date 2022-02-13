@@ -631,40 +631,14 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (options.vulkan.?) {
-        // TODO(build-system): reduce build units
-        for ([_][]const u8{
-            "src/dawn_native/vulkan/AdapterVk.cpp",
-            "src/dawn_native/vulkan/BackendVk.cpp",
-            "src/dawn_native/vulkan/BindGroupLayoutVk.cpp",
-            "src/dawn_native/vulkan/BindGroupVk.cpp",
-            "src/dawn_native/vulkan/BufferVk.cpp",
-            "src/dawn_native/vulkan/CommandBufferVk.cpp",
-            "src/dawn_native/vulkan/ComputePipelineVk.cpp",
-            "src/dawn_native/vulkan/DescriptorSetAllocator.cpp",
-            "src/dawn_native/vulkan/DeviceVk.cpp",
-            "src/dawn_native/vulkan/FencedDeleter.cpp",
-            "src/dawn_native/vulkan/NativeSwapChainImplVk.cpp",
-            "src/dawn_native/vulkan/PipelineLayoutVk.cpp",
-            "src/dawn_native/vulkan/QuerySetVk.cpp",
-            "src/dawn_native/vulkan/QueueVk.cpp",
-            "src/dawn_native/vulkan/RenderPassCache.cpp",
-            "src/dawn_native/vulkan/RenderPipelineVk.cpp",
-            "src/dawn_native/vulkan/ResourceHeapVk.cpp",
-            "src/dawn_native/vulkan/ResourceMemoryAllocatorVk.cpp",
-            "src/dawn_native/vulkan/SamplerVk.cpp",
-            "src/dawn_native/vulkan/ShaderModuleVk.cpp",
-            "src/dawn_native/vulkan/StagingBufferVk.cpp",
-            "src/dawn_native/vulkan/SwapChainVk.cpp",
-            "src/dawn_native/vulkan/TextureVk.cpp",
-            "src/dawn_native/vulkan/UtilsVulkan.cpp",
-            "src/dawn_native/vulkan/VulkanError.cpp",
-            "src/dawn_native/vulkan/VulkanExtensions.cpp",
-            "src/dawn_native/vulkan/VulkanFunctions.cpp",
-            "src/dawn_native/vulkan/VulkanInfo.cpp",
-        }) |path| {
-            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-            sources.append(abs_path) catch unreachable;
-        }
+        scanSources(
+            b,
+            &sources,
+            "libs/dawn/src/dawn_native/vulkan/",
+            &.{ ".cpp", ".c", ".cc" },
+            &.{},
+            &.{ "test", "benchmark", "mock" },
+        ) catch unreachable;
 
         if (isLinuxDesktopLike(target)) {
             for ([_][]const u8{
