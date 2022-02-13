@@ -869,7 +869,14 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     }) catch unreachable;
 
     // libtint_spv_reader_src
-    sources.append(thisDir() ++ "/src/dawn/sources/tint_spv_reader_src.cc") catch unreachable;
+    scanSources(
+        b,
+        &sources,
+        "libs/dawn/third_party/tint/src/reader/spirv/",
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{"test", "benchmark"},
+    ) catch unreachable;
 
     // libtint_spv_writer_src
     scanSources(
