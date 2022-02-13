@@ -1009,7 +1009,7 @@ fn buildLibSPIRVCross(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "libs/dawn/third_party/vulkan-deps/spirv-cross/src/",
         &.{ ".cpp", ".c", ".cc" },
         &.{},
-        &.{ "test", "benchmark" },
+        &.{ "test", "benchmark", "main.cpp" },
     ) catch unreachable;
     addCSourceFiles(b, lib, sources.items, flags.items);
     return lib;
@@ -1074,7 +1074,7 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
             "libs/dawn/" ++ dir,
             &.{ ".cpp", ".c", ".cc" },
             &.{},
-            &.{ "_test", "_testing", "benchmark" },
+            &.{ "_test", "_testing", "benchmark", "print_hash_of.cc", "gaussian_distribution_gentables.cc" },
         ) catch unreachable;
     }
     addCSourceFiles(b, lib, sources.items, flags.items);
