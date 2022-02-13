@@ -1160,7 +1160,23 @@ fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Option
         include("libs/dawn/out/Debug/gen/src"),
     }) catch unreachable;
 
-    lib.addCSourceFile(thisDir() ++ "/src/dawn/sources/dawn_wire_gen.cpp", flags.items);
+    var sources = std.ArrayList([]const u8).init(b.allocator);
+    inline for (&[_][]const u8{
+        "out/Debug/gen/src/dawn_wire/",
+        "out/Debug/gen/src/dawn_wire/client/",
+        "out/Debug/gen/src/dawn_wire/server/",
+        "src/dawn_wire/",
+        "src/dawn_wire/client/",
+        "src/dawn_wire/server/",
+    }) |dir| scanSources(
+        b,
+        &sources,
+        "libs/dawn/" ++ dir,
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{ "test", "benchmark", "mock" },
+    ) catch unreachable;
+    lib.addCSourceFiles(sources.items, flags.items);
     return lib;
 }
 
