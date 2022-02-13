@@ -1,7 +1,7 @@
 name: Publish release
 on:
   workflow_run:
-    workflows: ["CI", "CI M1"]
+    workflows: ["CI M1"]
     types:
       - completed
 concurrency: 
