@@ -1053,13 +1053,40 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     }) catch unreachable;
 
     // absl
-    lib.addCSourceFiles(&.{
-        thisDir() ++ "/src/dawn/sources/abseil.cc",
-        thisDir() ++ "/libs/dawn/third_party/abseil-cpp/absl/strings/numbers.cc",
-        thisDir() ++ "/libs/dawn/third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc",
-        thisDir() ++ "/libs/dawn/third_party/abseil-cpp/absl/time/format.cc",
-        thisDir() ++ "/libs/dawn/third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc",
-    }, flags.items);
+    const source_dirs = &[_][]const u8{
+        "third_party/abseil-cpp/absl/strings/",
+        "third_party/abseil-cpp/absl/strings/internal/",
+        "third_party/abseil-cpp/absl/strings/internal/str_format/",
+        "third_party/abseil-cpp/absl/types/",
+        "third_party/abseil-cpp/absl/flags/internal/",
+        "third_party/abseil-cpp/absl/flags/",
+        "third_party/abseil-cpp/absl/synchronization/",
+        "third_party/abseil-cpp/absl/synchronization/internal/",
+        "third_party/abseil-cpp/absl/hash/internal/",
+        "third_party/abseil-cpp/absl/debugging/",
+        "third_party/abseil-cpp/absl/debugging/internal/",
+        "third_party/abseil-cpp/absl/status/",
+        "third_party/abseil-cpp/absl/time/internal/cctz/src/",
+        "third_party/abseil-cpp/absl/time/",
+        "third_party/abseil-cpp/absl/container/internal/",
+        "third_party/abseil-cpp/absl/numeric/",
+        "third_party/abseil-cpp/absl/random/",
+        "third_party/abseil-cpp/absl/random/internal/",
+        "third_party/abseil-cpp/absl/base/internal/",
+        "third_party/abseil-cpp/absl/base/",
+    };
+    var sources = std.ArrayList([]const u8).init(b.allocator);
+    inline for (source_dirs) |dir| {
+        scanSources(
+            b,
+            &sources,
+            "libs/dawn/" ++ dir,
+            &.{".cpp", ".c", ".cc"},
+            &.{},
+            &.{"_test", "_testing", "benchmark"},
+        ) catch unreachable;
+    }
+    lib.addCSourceFiles(sources.items, flags.items);
     return lib;
 }
 
@@ -1165,4 +1192,53 @@ fn include(comptime rel: []const u8) []const u8 {
 
 fn thisDir() []const u8 {
     return std.fs.path.dirname(@src().file) orelse ".";
+}
+
+/// Scans rel_dir for sources ending with one of the provided extensions, excluding relative paths
+/// listed in the excluded list.
+/// Results are appended to the dst ArrayList.
+fn scanSources(
+    b: *Builder,
+    dst: *std.ArrayList([]const u8),
+    comptime rel_dir: []const u8,
+    extensions: []const []const u8,
+    excluding: []const []const u8,
+    excluding_contains: []const []const u8,
+) !void {
+    const abs_dir = thisDir() ++ "/" ++ rel_dir;
+    var dir = try std.fs.openDirAbsolute(abs_dir, .{ .iterate = true });
+    defer dir.close();
+    var dir_it = dir.iterate();
+    while (try dir_it.next()) |entry| {
+        if (entry.kind != .File) continue;
+        var abs_path = try std.fs.path.join(b.allocator, &.{ abs_dir, entry.name });
+        abs_path = try std.fs.realpathAlloc(b.allocator, abs_path);
+
+        const allowed_extension = blk: {
+            const ours = std.fs.path.extension(entry.name);
+            for (extensions) |ext| {
+                if (std.mem.eql(u8, ours, ext)) break :blk true;
+            }
+            break :blk false;
+        };
+        if (!allowed_extension) continue;
+
+        const excluded = blk: {
+            for (excluding) |excluded| {
+                if (std.mem.eql(u8, entry.name, excluded)) break :blk true;
+            }
+            break :blk false;
+        };
+        if (excluded) continue;
+
+        const excluded_contains = blk: {
+            for (excluding_contains) |contains| {
+                if (std.mem.containsAtLeast(u8, entry.name, 1, contains)) break :blk true;
+            }
+            break :blk false;
+        };
+        if (excluded_contains) continue;
+
+        try dst.append(abs_path);
+    }
 }
