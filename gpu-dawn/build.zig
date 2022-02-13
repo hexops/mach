@@ -872,7 +872,14 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     sources.append(thisDir() ++ "/src/dawn/sources/tint_spv_reader_src.cc") catch unreachable;
 
     // libtint_spv_writer_src
-    sources.append(thisDir() ++ "/src/dawn/sources/tint_spv_writer_src.cc") catch unreachable;
+    scanSources(
+        b,
+        &sources,
+        "libs/dawn/third_party/tint/src/writer/spirv/",
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{"test", "benchmark"},
+    ) catch unreachable;
 
     // TODO(build-system): make optional
     // libtint_wgsl_reader_src
@@ -1081,9 +1088,9 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
             b,
             &sources,
             "libs/dawn/" ++ dir,
-            &.{".cpp", ".c", ".cc"},
+            &.{ ".cpp", ".c", ".cc" },
             &.{},
-            &.{"_test", "_testing", "benchmark"},
+            &.{ "_test", "_testing", "benchmark" },
         ) catch unreachable;
     }
     lib.addCSourceFiles(sources.items, flags.items);
