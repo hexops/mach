@@ -1058,8 +1058,17 @@ fn buildLibSPIRVCross(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (target.os.tag != .windows) flags.append("-fno-exceptions") catch unreachable;
 
-    // spvtools_link
-    lib.addCSourceFile(thisDir() ++ "/src/dawn/sources/spirv_cross.cpp", flags.items);
+    // spirv_cross
+    var sources = std.ArrayList([]const u8).init(b.allocator);
+    scanSources(
+        b,
+        &sources,
+        "libs/dawn/third_party/vulkan-deps/spirv-cross/src/",
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{ "test", "benchmark" },
+    ) catch unreachable;
+    lib.addCSourceFiles(sources.items, flags.items);
     return lib;
 }
 
