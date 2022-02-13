@@ -20,7 +20,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
-        run: zig build install -Dfrom-source=true
+        run: zig build install -Dfrom-source=true -Dtarget=x86_64-linux
       - name: upload (debug)
         run: |
           mv zig-out/lib/libdawn.a zig-out/lib/libdawn_linux-x86_64_debug.a
@@ -29,7 +29,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: install (release-fast)
-        run: zig build install -Dfrom-source=true -Drelease-fast=true
+        run: zig build install -Dfrom-source=true -Drelease-fast=true -Dtarget=x86_64-linux
       - name: upload (release-fast)
         run: |
           mv zig-out/lib/libdawn.a zig-out/lib/libdawn_linux-x86_64_release-fast.a
@@ -55,7 +55,7 @@ jobs:
   #         7z x zig.zip
   #         Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.10.0-dev.670+e1a535360\"
   #     - name: install (debug)
-  #       run: zig build install -Dfrom-source=true
+  #       run: zig build install -Dfrom-source=true -Dtarget=x86_64-windows
   #     # TODO: upload step for Windows
   x86_64-macos:
     runs-on: macos-latest
@@ -72,7 +72,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
-        run: zig build install -Dfrom-source=true
+        run: zig build install -Dfrom-source=true -Dtarget=x86_64-macos
         env:
           AGREE: true
       - name: upload (debug)
@@ -83,7 +83,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: install (release-fast)
-        run: zig build install -Dfrom-source=true -Drelease-fast=true
+        run: zig build install -Dfrom-source=true -Drelease-fast=true -Dtarget=x86_64-macos
         env:
           AGREE: true
       - name: upload (release-fast)
