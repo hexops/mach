@@ -997,7 +997,14 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     ) catch unreachable;
 
     // spvtools_val
-    sources.append(thisDir() ++ "/src/dawn/sources/spirv_tools_val.cpp") catch unreachable;
+    scanSources(
+        b,
+        &sources,
+        "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/val/",
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{ "test", "benchmark" },
+    ) catch unreachable;
 
     // spvtools_opt
     sources.appendSlice(&.{
