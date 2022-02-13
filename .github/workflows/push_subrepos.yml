@@ -1,0 +1,18 @@
+name: Push to subrepositories
+on:
+  push:
+    branches:
+      - 'main'
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.HEXOPS_MACH_PUSH_SUBREPOS }}
+    - name: 'gpu/dawn: use latest binary release'
+      run: |
+        git config user.name 'Repository synchronization automation'
+        git config user.email 'stephen@hexops.com'
+        ./dev/push-subrepos.sh
