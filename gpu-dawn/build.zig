@@ -548,51 +548,14 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     if (options.d3d12.?) {
         // TODO(build-system): windows
         //     libs += [ "dxguid.lib" ]
-        // TODO(build-system): reduce build units
-        for ([_][]const u8{
-            "src/dawn_native/d3d12/AdapterD3D12.cpp",
-            "src/dawn_native/d3d12/BackendD3D12.cpp",
-            "src/dawn_native/d3d12/BindGroupD3D12.cpp",
-            "src/dawn_native/d3d12/BindGroupLayoutD3D12.cpp",
-            "src/dawn_native/d3d12/BufferD3D12.cpp",
-            "src/dawn_native/d3d12/CPUDescriptorHeapAllocationD3D12.cpp",
-            "src/dawn_native/d3d12/CommandAllocatorManager.cpp",
-            "src/dawn_native/d3d12/CommandBufferD3D12.cpp",
-            "src/dawn_native/d3d12/CommandRecordingContext.cpp",
-            "src/dawn_native/d3d12/ComputePipelineD3D12.cpp",
-            "src/dawn_native/d3d12/D3D11on12Util.cpp",
-            "src/dawn_native/d3d12/D3D12Error.cpp",
-            "src/dawn_native/d3d12/D3D12Info.cpp",
-            "src/dawn_native/d3d12/DeviceD3D12.cpp",
-            "src/dawn_native/d3d12/GPUDescriptorHeapAllocationD3D12.cpp",
-            "src/dawn_native/d3d12/HeapAllocatorD3D12.cpp",
-            "src/dawn_native/d3d12/HeapD3D12.cpp",
-            "src/dawn_native/d3d12/NativeSwapChainImplD3D12.cpp",
-            "src/dawn_native/d3d12/PageableD3D12.cpp",
-            "src/dawn_native/d3d12/PipelineLayoutD3D12.cpp",
-            "src/dawn_native/d3d12/PlatformFunctions.cpp",
-            "src/dawn_native/d3d12/QuerySetD3D12.cpp",
-            "src/dawn_native/d3d12/QueueD3D12.cpp",
-            "src/dawn_native/d3d12/RenderPassBuilderD3D12.cpp",
-            "src/dawn_native/d3d12/RenderPipelineD3D12.cpp",
-            "src/dawn_native/d3d12/ResidencyManagerD3D12.cpp",
-            "src/dawn_native/d3d12/ResourceAllocatorManagerD3D12.cpp",
-            "src/dawn_native/d3d12/ResourceHeapAllocationD3D12.cpp",
-            "src/dawn_native/d3d12/SamplerD3D12.cpp",
-            "src/dawn_native/d3d12/SamplerHeapCacheD3D12.cpp",
-            "src/dawn_native/d3d12/ShaderModuleD3D12.cpp",
-            "src/dawn_native/d3d12/ShaderVisibleDescriptorAllocatorD3D12.cpp",
-            "src/dawn_native/d3d12/StagingBufferD3D12.cpp",
-            "src/dawn_native/d3d12/StagingDescriptorAllocatorD3D12.cpp",
-            "src/dawn_native/d3d12/SwapChainD3D12.cpp",
-            "src/dawn_native/d3d12/TextureCopySplitter.cpp",
-            "src/dawn_native/d3d12/TextureD3D12.cpp",
-            "src/dawn_native/d3d12/UtilsD3D12.cpp",
-        }) |path| {
-            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-            lib.addCSourceFile(abs_path, flags.items);
-            sources.append(abs_path) catch unreachable;
-        }
+        scanSources(
+            b,
+            &sources,
+            "libs/dawn/src/dawn_native/d3d12/",
+            &.{ ".cpp", ".c", ".cc" },
+            &.{},
+            &.{ "test", "benchmark", "mock" },
+        ) catch unreachable;
     }
     if (options.metal.?) {
         lib.linkFramework("Metal");
