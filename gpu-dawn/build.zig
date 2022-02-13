@@ -1024,6 +1024,7 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
         include("libs/dawn"),
         include("libs/dawn/third_party/abseil-cpp"),
     }) catch unreachable;
+    if (target.os.tag == .windows) flags.append("-DABSL_FORCE_THREAD_IDENTITY_MODE=2") catch unreachable;
 
     // absl
     appendLangScannedSources(b, lib, options, .{
