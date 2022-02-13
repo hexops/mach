@@ -9,9 +9,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.HEXOPS_MACH_PUSH_SUBREPOS }}
-    - name: 'gpu/dawn: use latest binary release'
+    - name: 'Push recent commits to subrepositories'
+      env:
+        ACCESS_TOKEN: ${{ secrets.HEXOPS_MACH_PUSH_SUBREPOS }}
       run: |
         git config user.name 'Repository synchronization automation'
         git config user.email 'stephen@hexops.com'
