@@ -397,20 +397,14 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     flags.append(include("libs/dawn/src")) catch unreachable;
 
     var sources = std.ArrayList([]const u8).init(b.allocator);
-    for ([_][]const u8{
-        "src/common/Assert.cpp",
-        "src/common/DynamicLib.cpp",
-        "src/common/GPUInfo.cpp",
-        "src/common/Log.cpp",
-        "src/common/Math.cpp",
-        "src/common/RefCounted.cpp",
-        "src/common/Result.cpp",
-        "src/common/SlabAllocator.cpp",
-        "src/common/SystemUtils.cpp",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        sources.append(abs_path) catch unreachable;
-    }
+    scanSources(
+        b,
+        &sources,
+        "libs/dawn/src/common/",
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{ "test", "benchmark", "mock", "WindowsUtils.cpp",  },
+    ) catch unreachable;
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (target.os.tag == .macos) {
