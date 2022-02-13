@@ -77,7 +77,7 @@ pub const Options = struct {
 
     /// Whether or not to produce separate static libraries for each component of Dawn (reduces
     /// iteration times when building from source / testing changes to Dawn source code.)
-    separate_libs: bool = true,
+    separate_libs: bool = false,
 
     /// Whether to build Dawn from source or not.
     from_source: bool = false,
