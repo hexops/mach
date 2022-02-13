@@ -211,7 +211,8 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
     const base_cache_dir = std.fs.cwd().realpathAlloc(b.allocator, base_cache_dir_rel) catch unreachable;
     const commit_cache_dir = std.fs.path.join(b.allocator, &.{ base_cache_dir, current_git_commit }) catch unreachable;
-    const target_cache_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, triple }) catch unreachable;
+    const release_tag = if (b.is_release) "release-fast" else "debug";
+    const target_cache_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, triple, release_tag }) catch unreachable;
 
     step.addLibraryPath(target_cache_dir);
     step.linkSystemLibrary("dawn");
@@ -255,7 +256,8 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8, 
         }
     }
 
-    const target_cache_dir = std.fs.path.join(allocator, &.{ commit_cache_dir, triple }) catch unreachable;
+    const release_tag = if (is_release) "release-fast" else "debug";
+    const target_cache_dir = std.fs.path.join(allocator, &.{ commit_cache_dir, triple, release_tag }) catch unreachable;
     if (dirExists(target_cache_dir)) {
         return; // nothing to do, already have the binary
     }
@@ -265,7 +267,6 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8, 
 
     // Compose the download URL, e.g.:
     // https://github.com/hexops/mach-gpu-dawn/releases/download/release-2e5a4eb/libdawn_x86_64-macos_debug.a.gz
-    const release_tag = if (is_release) "release-fast" else "debug";
     const download_url = std.mem.concat(allocator, u8, &.{
         "https://github.com/hexops/mach-gpu-dawn/releases/download/",
         version,
