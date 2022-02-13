@@ -7,7 +7,7 @@ on:
 jobs:
   # TODO(build-system): enable x86 Linux CI here, dependency cycle in build.zig
   # x86_64-linux:
-  #   if: ${{ !contains(github.event.head_commit.message, 'update to latest binary release') }}
+  #   if: ${{ github.event.workflow_run.conclusion == 'success' }}
   #   runs-on: ubuntu-latest
   #   # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
   #   # to the branch.
@@ -41,7 +41,7 @@ jobs:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # TODO(build-system): enable windows CI here once gpu-dawn builds under Windows
   # x86_64-windows:
-  #   if: ${{ !contains(github.event.head_commit.message, 'update to latest binary release') }}
+  #   if: ${{ github.event.workflow_run.conclusion == 'success' }}
   #   runs-on: windows-latest
   #   # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
   #   # to the branch.
@@ -61,7 +61,7 @@ jobs:
   #       run: zig build install -Dfrom-source=true
   #     # TODO: upload step for Windows
   x86_64-macos:
-    if: ${{ !contains(github.event.head_commit.message, 'update to latest binary release') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: macos-latest
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
     # to the branch.

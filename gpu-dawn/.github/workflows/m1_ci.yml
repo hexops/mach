@@ -6,7 +6,7 @@ on:
       - completed
 jobs:
   aarch64-macos:
-    if: ${{ !contains(github.event.head_commit.message, 'update to latest binary release') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: [self-hosted, macOS, ARM64]
     defaults:
       run:
