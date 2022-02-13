@@ -204,7 +204,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         };
         return linkFromSource(b, step, options);
     };
-    ensureBinaryDownloaded(b.allocator, triple, options.binary_version);
+    ensureBinaryDownloaded(b.allocator, triple, b.is_release, options.binary_version);
 
     const current_git_commit = getCurrentGitCommit(b.allocator) catch unreachable;
     const base_cache_dir_rel = std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
@@ -230,7 +230,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 }
 
-pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8, version: []const u8) void {
+pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8, is_release: bool, version: []const u8) void {
     // If zig-cache/mach/gpu-dawn/<git revision> does not exist:
     //   If on a commit in the main branch => rm -r zig-cache/mach/gpu-dawn/
     //   else => noop
@@ -264,12 +264,15 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8, 
     std.fs.cwd().makePath(download_dir) catch unreachable;
 
     // Compose the download URL, e.g.:
-    // https://github.com/hexops/mach-gpu-dawn/releases/download/release-2e5a4eb/libdawn_x86_64-macos.a.gz
+    // https://github.com/hexops/mach-gpu-dawn/releases/download/release-2e5a4eb/libdawn_x86_64-macos_debug.a.gz
+    const release_tag = if (is_release) "release-fast" else "debug";
     const download_url = std.mem.concat(allocator, u8, &.{
         "https://github.com/hexops/mach-gpu-dawn/releases/download/",
         version,
         "/libdawn_",
         triple,
+        "_",
+        release_tag,
         ".a.gz",
     }) catch unreachable;
 
