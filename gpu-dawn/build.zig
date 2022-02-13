@@ -861,12 +861,14 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     }
 
     // libtint_sem_src
-    sources.appendSlice(&.{
-        thisDir() ++ "/src/dawn/sources/tint_sem_src.cc",
-        thisDir() ++ "/src/dawn/sources/tint_sem_src_2.cc",
-        thisDir() ++ "/libs/dawn/third_party/tint/src/sem/node.cc",
-        thisDir() ++ "/libs/dawn/third_party/tint/src/sem/texture_type.cc",
-    }) catch unreachable;
+    scanSources(
+        b,
+        &sources,
+        "libs/dawn/third_party/tint/src/sem/",
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{"test", "benchmark"},
+    ) catch unreachable;
 
     // libtint_spv_reader_src
     scanSources(
