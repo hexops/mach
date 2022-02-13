@@ -610,42 +610,23 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 
     if (options.desktop_gl.?) {
-        for ([_][]const u8{
-            "out/Debug/gen/src/dawn_native/opengl/OpenGLFunctionsBase_autogen.cpp",
-        }) |path| {
-            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-            sources.append(abs_path) catch unreachable;
-        }
+        scanSources(
+            b,
+            &sources,
+            "libs/dawn/out/Debug/gen/src/dawn_native/opengl/",
+            &.{ ".cpp", ".c", ".cc" },
+            &.{},
+            &.{ "test", "benchmark", "mock" },
+        ) catch unreachable;
 
-        // TODO(build-system): reduce build units
-        for ([_][]const u8{
-            "src/dawn_native/opengl/BackendGL.cpp",
-            "src/dawn_native/opengl/BindGroupGL.cpp",
-            "src/dawn_native/opengl/BindGroupLayoutGL.cpp",
-            "src/dawn_native/opengl/BufferGL.cpp",
-            "src/dawn_native/opengl/CommandBufferGL.cpp",
-            "src/dawn_native/opengl/ComputePipelineGL.cpp",
-            "src/dawn_native/opengl/DeviceGL.cpp",
-            "src/dawn_native/opengl/GLFormat.cpp",
-            "src/dawn_native/opengl/NativeSwapChainImplGL.cpp",
-            "src/dawn_native/opengl/OpenGLFunctions.cpp",
-            "src/dawn_native/opengl/OpenGLVersion.cpp",
-            "src/dawn_native/opengl/PersistentPipelineStateGL.cpp",
-            "src/dawn_native/opengl/PipelineGL.cpp",
-            "src/dawn_native/opengl/PipelineLayoutGL.cpp",
-            "src/dawn_native/opengl/QuerySetGL.cpp",
-            "src/dawn_native/opengl/QueueGL.cpp",
-            "src/dawn_native/opengl/RenderPipelineGL.cpp",
-            "src/dawn_native/opengl/SamplerGL.cpp",
-            "src/dawn_native/opengl/ShaderModuleGL.cpp",
-            "src/dawn_native/opengl/SpirvUtils.cpp",
-            "src/dawn_native/opengl/SwapChainGL.cpp",
-            "src/dawn_native/opengl/TextureGL.cpp",
-            "src/dawn_native/opengl/UtilsGL.cpp",
-        }) |path| {
-            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-            sources.append(abs_path) catch unreachable;
-        }
+        scanSources(
+            b,
+            &sources,
+            "libs/dawn/src/dawn_native/opengl/",
+            &.{ ".cpp", ".c", ".cc" },
+            &.{},
+            &.{ "test", "benchmark", "mock" },
+        ) catch unreachable;
     }
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
