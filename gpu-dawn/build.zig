@@ -846,12 +846,24 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
 
     // libtint_core_all_src
     var sources = std.ArrayList([]const u8).init(b.allocator);
-    sources.appendSlice(&.{
-        thisDir() ++ "/src/dawn/sources/tint_core_all_src.cc",
-        thisDir() ++ "/src/dawn/sources/tint_core_all_src_2.cc",
-        thisDir() ++ "/libs/dawn/third_party/tint/src/ast/node.cc",
-        thisDir() ++ "/libs/dawn/third_party/tint/src/ast/texture.cc",
-    }) catch unreachable;
+    inline for (&[_][]const u8{
+        "third_party/tint/src/ast/",
+        "third_party/tint/src/",
+        "third_party/tint/src/diagnostic/",
+        "third_party/tint/src/inspector/",
+        "third_party/tint/src/reader/",
+        "third_party/tint/src/resolver/",
+        "third_party/tint/src/transform/",
+        "third_party/tint/src/writer/",
+        "third_party/tint/src/ast/",
+    }) |dir| scanSources(
+        b,
+        &sources,
+        "libs/dawn/" ++ dir,
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{ "test", "benchmark", "printer_windows", "printer_linux", "printer_other" },
+    ) catch unreachable;
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
@@ -867,7 +879,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
         "libs/dawn/third_party/tint/src/sem/",
         &.{ ".cpp", ".c", ".cc" },
         &.{},
-        &.{"test", "benchmark"},
+        &.{ "test", "benchmark" },
     ) catch unreachable;
 
     // libtint_spv_reader_src
@@ -877,7 +889,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
         "libs/dawn/third_party/tint/src/reader/spirv/",
         &.{ ".cpp", ".c", ".cc" },
         &.{},
-        &.{"test", "benchmark"},
+        &.{ "test", "benchmark" },
     ) catch unreachable;
 
     // libtint_spv_writer_src
@@ -887,7 +899,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
         "libs/dawn/third_party/tint/src/writer/spirv/",
         &.{ ".cpp", ".c", ".cc" },
         &.{},
-        &.{"test", "benchmark"},
+        &.{ "test", "benchmark" },
     ) catch unreachable;
 
     // TODO(build-system): make optional
