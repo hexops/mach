@@ -602,10 +602,22 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         lib.linkFramework("IOSurface");
         lib.linkFramework("QuartzCore");
 
-        sources.appendSlice(&.{
-            thisDir() ++ "/src/dawn/sources/dawn_native_metal.mm",
-            thisDir() ++ "/libs/dawn/src/dawn_native/metal/BackendMTL.mm",
-        }) catch unreachable;
+        scanSources(
+            b,
+            &sources,
+            "libs/dawn/src/dawn_native/metal/",
+            &.{ ".cpp", ".c", ".cc", ".m", ".mm" },
+            &.{},
+            &.{ "test", "benchmark", "mock" },
+        ) catch unreachable;
+        scanSources(
+            b,
+            &sources,
+            "libs/dawn/src/dawn_native/",
+            &.{ ".m", ".mm" },
+            &.{},
+            &.{ "test", "benchmark", "mock" },
+        ) catch unreachable;
     }
 
     if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
