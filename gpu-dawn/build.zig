@@ -518,10 +518,18 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }) catch unreachable;
 
     var sources = std.ArrayList([]const u8).init(b.allocator);
-    sources.appendSlice(&.{
-        thisDir() ++ "/src/dawn/sources/dawn_native.cpp",
-        thisDir() ++ "/libs/dawn/out/Debug/gen/src/dawn/dawn_proc.c",
-    }) catch unreachable;
+    inline for (&[_][]const u8{
+        "out/Debug/gen/src/dawn/",
+        "src/dawn_native/",
+        "src/dawn_native/utils/",
+    }) |dir| scanSources(
+        b,
+        &sources,
+        "libs/dawn/" ++ dir,
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{ "test", "benchmark", "mock", "SpirvValidation.cpp", "XlibXcbFunctions.cpp" },
+    ) catch unreachable;
 
     // dawn_native_utils_gen
     sources.append(thisDir() ++ "/src/dawn/sources/dawn_native_utils_gen.cpp") catch unreachable;
@@ -763,7 +771,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 
     for ([_][]const u8{
-        "src/dawn_native/DawnNative.cpp",
         "src/dawn_native/null/NullBackend.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
