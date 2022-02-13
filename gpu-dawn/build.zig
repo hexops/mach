@@ -984,11 +984,17 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     // spvtools
     var sources = std.ArrayList([]const u8).init(b.allocator);
-    sources.appendSlice(&.{
-        thisDir() ++ "/src/dawn/sources/spirv_tools.cpp",
-        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/operand.cpp",
-        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/spirv_reducer_options.cpp",
-    }) catch unreachable;
+    inline for (&[_][]const u8{
+        "third_party/vulkan-deps/spirv-tools/src/source/",
+        "third_party/vulkan-deps/spirv-tools/src/source/util/",
+    }) |dir| scanSources(
+        b,
+        &sources,
+        "libs/dawn/" ++ dir,
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{ "test", "benchmark" },
+    ) catch unreachable;
 
     // spvtools_val
     sources.append(thisDir() ++ "/src/dawn/sources/spirv_tools_val.cpp") catch unreachable;
