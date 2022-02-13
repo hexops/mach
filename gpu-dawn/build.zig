@@ -1007,16 +1007,14 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     ) catch unreachable;
 
     // spvtools_opt
-    sources.appendSlice(&.{
-        thisDir() ++ "/src/dawn/sources/spirv_tools_opt.cpp",
-        thisDir() ++ "/src/dawn/sources/spirv_tools_opt_2.cpp",
-        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/dataflow.cpp",
-        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/local_single_store_elim_pass.cpp",
-        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/loop_unswitch_pass.cpp",
-        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/mem_pass.cpp",
-        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/ssa_rewrite_pass.cpp",
-        thisDir() ++ "/libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/vector_dce.cpp",
-    }) catch unreachable;
+    scanSources(
+        b,
+        &sources,
+        "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/",
+        &.{ ".cpp", ".c", ".cc" },
+        &.{},
+        &.{ "test", "benchmark" },
+    ) catch unreachable;
 
     // spvtools_link
     for ([_][]const u8{
