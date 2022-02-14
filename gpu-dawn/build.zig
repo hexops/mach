@@ -60,8 +60,7 @@ pub const Options = struct {
     // TODO(build-system): enable on Windows if we can cross compile Vulkan
     vulkan: ?bool = null,
 
-    /// Defaults to true on Windows, Linux
-    // TODO(build-system): not respected at all currently
+    /// Defaults to true on Linux
     desktop_gl: ?bool = null,
 
     /// Defaults to true on Android, Linux, Windows, Emscripten
@@ -96,9 +95,9 @@ pub const Options = struct {
         if (options.metal == null) options.metal = tag.isDarwin();
         if (options.vulkan == null) options.vulkan = tag == .fuchsia or linux_desktop_like;
 
-        // TODO(build-system): respect these options / defaults
-        if (options.desktop_gl == null) options.desktop_gl = linux_desktop_like; // TODO(build-system): add windows
-        options.opengl_es = false;
+        // TODO(build-system): technically Dawn itself defaults desktop_gl to true on Windows.
+        if (options.desktop_gl == null) options.desktop_gl = linux_desktop_like;
+        options.opengl_es = false; // TODO(build-system): OpenGL ES
         // if (options.opengl_es == null) options.opengl_es = tag == .windows or tag == .emscripten or target.isAndroid() or linux_desktop_like;
         return options;
     }
