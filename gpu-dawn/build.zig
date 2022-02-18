@@ -29,9 +29,9 @@ pub fn build(b: *Builder) void {
     link(b, dawn_example, options);
     glfw.link(b, dawn_example, .{ .system_sdk = .{ .set_sysroot = false } });
     dawn_example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
-    dawn_example.addIncludeDir("libs/dawn/out/Debug/gen/src/include");
+    dawn_example.addIncludeDir("libs/dawn/out/Debug/gen/include");
     dawn_example.addIncludeDir("libs/dawn/out/Debug/gen/src");
-    dawn_example.addIncludeDir("libs/dawn/src/include");
+    dawn_example.addIncludeDir("libs/dawn/include");
     dawn_example.addIncludeDir("src/dawn");
     dawn_example.install();
 
@@ -107,6 +107,8 @@ pub const Options = struct {
         if (self.minimal_debug_symbols) {
             if (zero_debug_symbols) try flags.append("-g0") else try flags.append("-g1");
         }
+        // TODO: this flag is illegal for C sources!
+        try flags.append("-std=c++17");
     }
 };
 
@@ -370,9 +372,9 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: 
     appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
     flags.appendSlice(&.{
         include("libs/mach-glfw/upstream/glfw/include"),
-        include("libs/dawn/out/Debug/gen/src/include"),
+        include("libs/dawn/out/Debug/gen/include"),
         include("libs/dawn/out/Debug/gen/src"),
-        include("libs/dawn/src/include"),
+        include("libs/dawn/include"),
         include("libs/dawn/src"),
     }) catch unreachable;
 
@@ -400,7 +402,7 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     scanSources(
         b,
         &sources,
-        "libs/dawn/src/common/",
+        "libs/dawn/src/dawn/common/",
         &.{ ".cpp", ".c", ".cc" },
         &.{},
         &.{
@@ -416,14 +418,14 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         // TODO(build-system): pass system SDK options through
         system_sdk.include(b, lib, .{});
         lib.linkFramework("Foundation");
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn/src/common/SystemUtils_mac.mm" }) catch unreachable;
+        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn/src/dawn/common/SystemUtils_mac.mm" }) catch unreachable;
         sources.append(abs_path) catch unreachable;
     }
     addCSourceFiles(b, lib, sources.items, flags.items);
     return lib;
 }
 
-// Build dawn platform sources; derived from src/dawn_platform/BUILD.gn
+// Build dawn platform sources; derived from src/dawn/platform/BUILD.gn
 fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     const lib = if (!options.separate_libs) step else blk: {
         var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
@@ -439,16 +441,16 @@ fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     options.appendFlags(&flags, false) catch unreachable;
     flags.appendSlice(&.{
         include("libs/dawn/src"),
-        include("libs/dawn/src/include"),
+        include("libs/dawn/include"),
 
-        include("libs/dawn/out/Debug/gen/src/include"),
+        include("libs/dawn/out/Debug/gen/include"),
     }) catch unreachable;
 
     var sources = std.ArrayList([]const u8).init(b.allocator);
     for ([_][]const u8{
-        "src/dawn_platform/DawnPlatform.cpp",
-        "src/dawn_platform/WorkerThread.cpp",
-        "src/dawn_platform/tracing/EventTracer.cpp",
+        "src/dawn/platform/DawnPlatform.cpp",
+        "src/dawn/platform/WorkerThread.cpp",
+        "src/dawn/platform/tracing/EventTracer.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
         sources.append(abs_path) catch unreachable;
@@ -474,7 +476,7 @@ fn appendDawnEnableBackendTypeFlags(flags: *std.ArrayList([]const u8), options: 
     if (options.opengl_es.?) try flags.appendSlice(&.{ opengl, opengl_es });
 }
 
-// Builds dawn native sources; derived from src/dawn_native/BUILD.gn
+// Builds dawn native sources; derived from src/dawn/native/BUILD.gn
 fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     const lib = if (!options.separate_libs) step else blk: {
         var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
@@ -497,7 +499,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     flags.appendSlice(&.{
         include("libs/dawn"),
         include("libs/dawn/src"),
-        include("libs/dawn/src/include"),
+        include("libs/dawn/include"),
         include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
         include("libs/dawn/third_party/abseil-cpp"),
         include("libs/dawn/third_party/khronos"),
@@ -512,15 +514,15 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         include("libs/dawn/third_party/tint"),
         include("libs/dawn/third_party/tint/include"),
 
-        include("libs/dawn/out/Debug/gen/src/include"),
+        include("libs/dawn/out/Debug/gen/include"),
         include("libs/dawn/out/Debug/gen/src"),
     }) catch unreachable;
 
     var sources = std.ArrayList([]const u8).init(b.allocator);
     inline for (&[_][]const u8{
         "out/Debug/gen/src/dawn/",
-        "src/dawn_native/",
-        "src/dawn_native/utils/",
+        "src/dawn/native/",
+        "src/dawn/native/utils/",
     }) |dir| scanSources(
         b,
         &sources,
@@ -534,15 +536,15 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     scanSources(
         b,
         &sources,
-        "libs/dawn/out/Debug/gen/src/dawn_native/",
+        "libs/dawn/out/Debug/gen/src/dawn/native/",
         &.{ ".cpp", ".c", ".cc" },
         &.{},
         &.{ "test", "benchmark", "mock" },
     ) catch unreachable;
 
-    // TODO(build-system): could allow enable_vulkan_validation_layers here. See src/dawn_native/BUILD.gn
-    // TODO(build-system): allow use_angle here. See src/dawn_native/BUILD.gn
-    // TODO(build-system): could allow use_swiftshader here. See src/dawn_native/BUILD.gn
+    // TODO(build-system): could allow enable_vulkan_validation_layers here. See src/dawn/native/BUILD.gn
+    // TODO(build-system): allow use_angle here. See src/dawn/native/BUILD.gn
+    // TODO(build-system): could allow use_swiftshader here. See src/dawn/native/BUILD.gn
 
     if (options.d3d12.?) {
         // TODO(build-system): windows
@@ -550,7 +552,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         scanSources(
             b,
             &sources,
-            "libs/dawn/src/dawn_native/d3d12/",
+            "libs/dawn/src/dawn/native/d3d12/",
             &.{ ".cpp", ".c", ".cc" },
             &.{},
             &.{ "test", "benchmark", "mock" },
@@ -567,7 +569,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         scanSources(
             b,
             &sources,
-            "libs/dawn/src/dawn_native/metal/",
+            "libs/dawn/src/dawn/native/metal/",
             &.{ ".cpp", ".c", ".cc", ".m", ".mm" },
             &.{},
             &.{ "test", "benchmark", "mock" },
@@ -575,7 +577,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         scanSources(
             b,
             &sources,
-            "libs/dawn/src/dawn_native/",
+            "libs/dawn/src/dawn/native/",
             &.{ ".m", ".mm" },
             &.{},
             &.{ "test", "benchmark", "mock" },
@@ -585,7 +587,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
         lib.linkSystemLibrary("X11");
         for ([_][]const u8{
-            "src/dawn_native/XlibXcbFunctions.cpp",
+            "src/dawn/native/XlibXcbFunctions.cpp",
         }) |path| {
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             sources.append(abs_path) catch unreachable;
@@ -593,7 +595,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 
     for ([_][]const u8{
-        "src/dawn_native/null/DeviceNull.cpp",
+        "src/dawn/native/null/DeviceNull.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
         sources.append(abs_path) catch unreachable;
@@ -601,7 +603,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     if (options.desktop_gl.? or options.vulkan.?) {
         for ([_][]const u8{
-            "src/dawn_native/SpirvValidation.cpp",
+            "src/dawn/native/SpirvValidation.cpp",
         }) |path| {
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             sources.append(abs_path) catch unreachable;
@@ -612,7 +614,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         scanSources(
             b,
             &sources,
-            "libs/dawn/out/Debug/gen/src/dawn_native/opengl/",
+            "libs/dawn/out/Debug/gen/src/dawn/native/opengl/",
             &.{ ".cpp", ".c", ".cc" },
             &.{},
             &.{ "test", "benchmark", "mock" },
@@ -621,7 +623,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         scanSources(
             b,
             &sources,
-            "libs/dawn/src/dawn_native/opengl/",
+            "libs/dawn/src/dawn/native/opengl/",
             &.{ ".cpp", ".c", ".cc" },
             &.{},
             &.{ "test", "benchmark", "mock" },
@@ -633,7 +635,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         scanSources(
             b,
             &sources,
-            "libs/dawn/src/dawn_native/vulkan/",
+            "libs/dawn/src/dawn/native/vulkan/",
             &.{ ".cpp", ".c", ".cc" },
             &.{},
             &.{ "test", "benchmark", "mock" },
@@ -641,8 +643,8 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
         if (isLinuxDesktopLike(target)) {
             for ([_][]const u8{
-                "src/dawn_native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
-                "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
+                "src/dawn/native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
+                "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
             }) |path| {
                 var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
                 lib.addCSourceFile(abs_path, flags.items);
@@ -650,16 +652,16 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
             }
         } else if (target.os.tag == .fuchsia) {
             for ([_][]const u8{
-                "src/dawn_native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
-                "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
+                "src/dawn/native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
+                "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
             }) |path| {
                 var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
             }
         } else {
             for ([_][]const u8{
-                "src/dawn_native/vulkan/external_memory/MemoryServiceNull.cpp",
-                "src/dawn_native/vulkan/external_semaphore/SemaphoreServiceNull.cpp",
+                "src/dawn/native/vulkan/external_memory/MemoryServiceNull.cpp",
+                "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceNull.cpp",
             }) |path| {
                 var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
                 sources.append(abs_path) catch unreachable;
@@ -707,7 +709,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 
     for ([_][]const u8{
-        "src/dawn_native/null/NullBackend.cpp",
+        "src/dawn/native/null/NullBackend.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
         sources.append(abs_path) catch unreachable;
@@ -715,7 +717,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     if (options.d3d12.?) {
         for ([_][]const u8{
-            "src/dawn_native/d3d12/D3D12Backend.cpp",
+            "src/dawn/native/d3d12/D3D12Backend.cpp",
         }) |path| {
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             sources.append(abs_path) catch unreachable;
@@ -723,7 +725,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
     if (options.desktop_gl.?) {
         for ([_][]const u8{
-            "src/dawn_native/opengl/OpenGLBackend.cpp",
+            "src/dawn/native/opengl/OpenGLBackend.cpp",
         }) |path| {
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             sources.append(abs_path) catch unreachable;
@@ -731,7 +733,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
     if (options.vulkan.?) {
         for ([_][]const u8{
-            "src/dawn_native/vulkan/VulkanBackend.cpp",
+            "src/dawn/native/vulkan/VulkanBackend.cpp",
         }) |path| {
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             sources.append(abs_path) catch unreachable;
@@ -805,7 +807,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
         "libs/dawn/" ++ dir,
         &.{ ".cpp", ".c", ".cc" },
         &.{},
-        &.{ "test", "benchmark", "printer_windows", "printer_linux", "printer_other" },
+        &.{ "test", "bench", "printer_windows", "printer_linux", "printer_other" },
     ) catch unreachable;
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
@@ -842,7 +844,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
         "libs/dawn/third_party/tint/src/writer/spirv/",
         &.{ ".cpp", ".c", ".cc" },
         &.{},
-        &.{ "test", "benchmark" },
+        &.{ "test", "bench" },
     ) catch unreachable;
 
     // TODO(build-system): make optional
@@ -1081,7 +1083,7 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     return lib;
 }
 
-// Buids dawn wire sources; derived from src/dawn_wire/BUILD.gn
+// Buids dawn wire sources; derived from src/dawn/wire/BUILD.gn
 fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     const lib = if (!options.separate_libs) step else blk: {
         var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
@@ -1098,19 +1100,19 @@ fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Option
     flags.appendSlice(&.{
         include("libs/dawn"),
         include("libs/dawn/src"),
-        include("libs/dawn/src/include"),
-        include("libs/dawn/out/Debug/gen/src/include"),
+        include("libs/dawn/include"),
+        include("libs/dawn/out/Debug/gen/include"),
         include("libs/dawn/out/Debug/gen/src"),
     }) catch unreachable;
 
     var sources = std.ArrayList([]const u8).init(b.allocator);
     inline for (&[_][]const u8{
-        "out/Debug/gen/src/dawn_wire/",
-        "out/Debug/gen/src/dawn_wire/client/",
-        "out/Debug/gen/src/dawn_wire/server/",
-        "src/dawn_wire/",
-        "src/dawn_wire/client/",
-        "src/dawn_wire/server/",
+        "out/Debug/gen/src/dawn/wire/",
+        "out/Debug/gen/src/dawn/wire/client/",
+        "out/Debug/gen/src/dawn/wire/server/",
+        "src/dawn/wire/",
+        "src/dawn/wire/client/",
+        "src/dawn/wire/server/",
     }) |dir| scanSources(
         b,
         &sources,
@@ -1123,7 +1125,7 @@ fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Option
     return lib;
 }
 
-// Builds dawn utils sources; derived from src/utils/BUILD.gn
+// Builds dawn utils sources; derived from src/dawn/utils/BUILD.gn
 fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     const lib = if (!options.separate_libs) step else blk: {
         var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
@@ -1142,14 +1144,14 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     flags.appendSlice(&.{
         include("libs/mach-glfw/upstream/glfw/include"),
         include("libs/dawn/src"),
-        include("libs/dawn/src/include"),
-        include("libs/dawn/out/Debug/gen/src/include"),
+        include("libs/dawn/include"),
+        include("libs/dawn/out/Debug/gen/include"),
     }) catch unreachable;
 
     var sources = std.ArrayList([]const u8).init(b.allocator);
     for ([_][]const u8{
-        "src/utils/BackendBinding.cpp",
-        "src/utils/NullBinding.cpp",
+        "src/dawn/utils/BackendBinding.cpp",
+        "src/dawn/utils/NullBinding.cpp",
     }) |path| {
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
         sources.append(abs_path) catch unreachable;
@@ -1157,7 +1159,7 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
 
     if (options.d3d12.?) {
         for ([_][]const u8{
-            "src/utils/D3D12Binding.cpp",
+            "src/dawn/utils/D3D12Binding.cpp",
         }) |path| {
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             sources.append(abs_path) catch unreachable;
@@ -1165,7 +1167,7 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     }
     if (options.metal.?) {
         for ([_][]const u8{
-            "src/utils/MetalBinding.mm",
+            "src/dawn/utils/MetalBinding.mm",
         }) |path| {
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             sources.append(abs_path) catch unreachable;
@@ -1174,7 +1176,7 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
 
     if (options.desktop_gl.?) {
         for ([_][]const u8{
-            "src/utils/OpenGLBinding.cpp",
+            "src/dawn/utils/OpenGLBinding.cpp",
         }) |path| {
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             sources.append(abs_path) catch unreachable;
@@ -1183,7 +1185,7 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
 
     if (options.vulkan.?) {
         for ([_][]const u8{
-            "src/utils/VulkanBinding.cpp",
+            "src/dawn/utils/VulkanBinding.cpp",
         }) |path| {
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             sources.append(abs_path) catch unreachable;
