@@ -1,3 +1,5 @@
 [submodule "gpu-dawn/libs/dawn"]
 	path = gpu-dawn/libs/dawn
 	url = https://github.com/hexops/dawn.git
+	shallow = true
+	branch = "generated-2022-02-17"
