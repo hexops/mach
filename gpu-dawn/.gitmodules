@@ -1,3 +1,5 @@
 [submodule "libs/dawn"]
 	path = libs/dawn
 	url = https://github.com/hexops/dawn.git
+	shallow = true
+	branch = "generated-2022-02-17"
