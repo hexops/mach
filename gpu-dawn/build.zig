@@ -492,6 +492,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
     if (options.desktop_gl.?) {
         // OpenGL requires spriv-cross until Dawn moves OpenGL shader generation to Tint.
+        // TODO: need to verify this is still accurate, do we need spirv-cross at all anymore?
         flags.append(include("libs/dawn/third_party/vulkan-deps/spirv-cross/src")) catch unreachable;
     }
     flags.appendSlice(&.{
@@ -509,6 +510,8 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "-DTINT_BUILD_WGSL_WRITER=1",
         "-DTINT_BUILD_MSL_WRITER=1",
         "-DTINT_BUILD_HLSL_WRITER=1",
+        "-DTINT_BUILD_GLSL_WRITER=1",
+
         include("libs/dawn/third_party/tint"),
         include("libs/dawn/third_party/tint/include"),
 
