@@ -1,8 +1,8 @@
-#include <dawn_native/DawnNative.h>
-#include <dawn_native/wgpu_structs_autogen.h>
-#include "utils/BackendBinding.h"
+#include <dawn/native/DawnNative.h>
+#include <dawn/native/wgpu_structs_autogen.h>
+#include "dawn/utils/BackendBinding.h"
 #if defined(DAWN_ENABLE_BACKEND_OPENGL)
-#include <dawn_native/OpenGLBackend.h>
+#include <dawn/native/OpenGLBackend.h>
 #endif
 #include "dawn_native_mach.h"
 
