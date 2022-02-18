@@ -157,7 +157,7 @@ fn frame(params: FrameParams) !void {
     const pass = c.wgpuCommandEncoderBeginRenderPass(encoder, &render_pass_info);
     c.wgpuRenderPassEncoderSetPipeline(pass, params.pipeline);
     c.wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
-    c.wgpuRenderPassEncoderEndPass(pass);
+    c.wgpuRenderPassEncoderEnd(pass);
     c.wgpuRenderPassEncoderRelease(pass);
 
     const commands = c.wgpuCommandEncoderFinish(encoder, null);
