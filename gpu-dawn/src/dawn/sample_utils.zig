@@ -51,8 +51,17 @@ const Setup = struct {
     window: glfw.Window,
 };
 
-fn detectBackendType() c.WGPUBackendType {
-    if (std.os.getenv("WGPU_BACKEND")) |backend| {
+fn getEnvVarOwned(allocator: std.mem.Allocator, key: []const u8) error{ OutOfMemory, InvalidUtf8 }!?[]u8 {
+    return std.process.getEnvVarOwned(allocator, key) catch |err| switch (err) {
+        error.EnvironmentVariableNotFound => @as(?[]u8, null),
+        else => |e| e,
+    };
+}
+
+fn detectBackendType(allocator: std.mem.Allocator) !c.WGPUBackendType {
+    const WGPU_BACKEND = try getEnvVarOwned(allocator, "WGPU_BACKEND");
+    if (WGPU_BACKEND) |backend| {
+        defer allocator.free(backend);
         if (std.ascii.eqlIgnoreCase(backend, "opengl")) return c.WGPUBackendType_OpenGL;
         if (std.ascii.eqlIgnoreCase(backend, "opengles")) return c.WGPUBackendType_OpenGLES;
         if (std.ascii.eqlIgnoreCase(backend, "d3d11")) return c.WGPUBackendType_D3D11;
@@ -82,8 +91,8 @@ fn backendTypeString(t: c.WGPUBackendType) []const u8 {
     };
 }
 
-pub fn setup() !Setup {
-    const backend_type = detectBackendType();
+pub fn setup(allocator: std.mem.Allocator) !Setup {
+    const backend_type = try detectBackendType(allocator);
     const cmd_buf_type = CmdBufType.none;
 
     try glfw.init(.{});
