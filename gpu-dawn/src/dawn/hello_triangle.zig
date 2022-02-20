@@ -15,7 +15,7 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var allocator = gpa.allocator();
 
-    const setup = try sample_utils.setup();
+    const setup = try sample_utils.setup(allocator);
     const queue = c.wgpuDeviceGetQueue(setup.device);
 
     var descriptor = std.mem.zeroes(c.WGPUSwapChainDescriptor);
