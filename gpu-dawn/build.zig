@@ -418,7 +418,7 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
     cpp_flags.appendSlice(flags.items) catch unreachable;
     options.appendFlags(&cpp_flags, false, true) catch unreachable;
-    addCSourceFiles(b, lib, cpp_sources.items, cpp_flags.items);
+    lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
     return lib;
 }
 
@@ -453,7 +453,7 @@ fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         cpp_sources.append(abs_path) catch unreachable;
     }
 
-    addCSourceFiles(b, lib, cpp_sources.items, cpp_flags.items);
+    lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
     return lib;
 }
 
@@ -735,7 +735,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
     cpp_flags.appendSlice(flags.items) catch unreachable;
     options.appendFlags(&cpp_flags, false, true) catch unreachable;
-    addCSourceFiles(b, lib, cpp_sources.items, cpp_flags.items);
+    lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
     return lib;
 }
 
@@ -890,7 +890,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
     cpp_flags.appendSlice(flags.items) catch unreachable;
     options.appendFlags(&cpp_flags, false, true) catch unreachable;
-    addCSourceFiles(b, lib, cpp_sources.items, cpp_flags.items);
+    lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
     return lib;
 }
 
@@ -1160,7 +1160,7 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
     cpp_flags.appendSlice(flags.items) catch unreachable;
     options.appendFlags(&cpp_flags, false, true) catch unreachable;
-    addCSourceFiles(b, lib, cpp_sources.items, cpp_flags.items);
+    lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
     return lib;
 }
 
@@ -1170,29 +1170,6 @@ fn include(comptime rel: []const u8) []const u8 {
 
 fn thisDir() []const u8 {
     return std.fs.path.dirname(@src().file) orelse ".";
-}
-
-// TODO(build-system): This and divideSources are needed to avoid Windows process creation argument
-// length limits. This should probably be fixed in Zig itself, not worked around here.
-fn addCSourceFiles(b: *Builder, step: *std.build.LibExeObjStep, sources: []const []const u8, flags: []const []const u8) void {
-    for (divideSources(b, sources) catch unreachable) |divided| step.addCSourceFiles(divided, flags);
-}
-
-fn divideSources(b: *Builder, sources: []const []const u8) ![]const []const []const u8 {
-    var divided = std.ArrayList([]const []const u8).init(b.allocator);
-    var current = std.ArrayList([]const u8).init(b.allocator);
-    var current_size: usize = 0;
-    for (sources) |src| {
-        if (current_size + src.len >= 30000) {
-            try divided.append(current.items);
-            current = std.ArrayList([]const u8).init(b.allocator);
-            current_size = 0;
-        }
-        current_size += src.len;
-        try current.append(src);
-    }
-    try divided.append(current.items);
-    return divided.items;
 }
 
 fn appendLangScannedSources(
@@ -1244,7 +1221,7 @@ fn appendScannedSources(b: *Builder, step: *std.build.LibExeObjStep, args: struc
     for (args.rel_dirs) |rel_dir| {
         try scanSources(b, &sources, rel_dir, args.extensions, args.excluding, args.excluding_contains);
     }
-    addCSourceFiles(b, step, sources.items, args.flags);
+    step.addCSourceFiles(sources.items, args.flags);
 }
 
 /// Scans rel_dir for sources ending with one of the provided extensions, excluding relative paths
