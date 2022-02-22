@@ -3,14 +3,6 @@ const sample_utils = @import("sample_utils.zig");
 const c = @import("c.zig").c;
 const glfw = @import("glfw");
 
-// #include "utils/SystemUtils.h"
-// #include "utils/WGPUHelpers.h"
-
-// WGPUSwapChain swapchain;
-// WGPURenderPipeline pipeline;
-
-// WGPUTextureFormat swapChainFormat;
-
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var allocator = gpa.allocator();
@@ -26,9 +18,9 @@ pub fn main() !void {
     c.wgpuSwapChainConfigure(swap_chain, swap_chain_format, c.WGPUTextureUsage_RenderAttachment, 640, 480);
 
     const vs =
-        \\ [[stage(vertex)]] fn main(
-        \\     [[builtin(vertex_index)]] VertexIndex : u32
-        \\ ) -> [[builtin(position)]] vec4<f32> {
+        \\ @stage(vertex) fn main(
+        \\     @builtin(vertex_index) VertexIndex : u32
+        \\ ) -> @builtin(position) vec4<f32> {
         \\     var pos = array<vec2<f32>, 3>(
         \\         vec2<f32>( 0.0,  0.5),
         \\         vec2<f32>(-0.5, -0.5),
@@ -48,7 +40,7 @@ pub fn main() !void {
     const vs_module = c.wgpuDeviceCreateShaderModule(setup.device, &vs_shader_descriptor);
 
     const fs =
-        \\ [[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
+        \\ @stage(fragment) fn main() -> @location(0) vec4<f32> {
         \\     return vec4<f32>(1.0, 0.0, 0.0, 1.0);
         \\ }
     ;
@@ -168,11 +160,5 @@ fn frame(params: FrameParams) !void {
     c.wgpuSwapChainPresent(params.swap_chain);
     c.wgpuTextureViewRelease(back_buffer_view);
 
-    //     if (cmdBufType == CmdBufType::Terrible) {
-    //         bool c2sSuccess = c2sBuf->Flush();
-    //         bool s2cSuccess = s2cBuf->Flush();
-
-    //         ASSERT(c2sSuccess && s2cSuccess);
-    //     }
     try glfw.pollEvents();
 }

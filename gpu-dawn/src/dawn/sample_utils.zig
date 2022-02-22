@@ -3,26 +3,6 @@ const assert = std.debug.assert;
 const glfw = @import("glfw");
 const c = @import("c.zig").c;
 
-// #include "SampleUtils.h"
-
-// #include "common/Assert.h"
-// #include "common/Log.h"
-// #include "common/Platform.h"
-// #include "common/SystemUtils.h"
-// #include "utils/BackendBinding.h"
-// #include "utils/GLFWUtils.h"
-// #include "utils/TerribleCommandBuffer.h"
-
-// #include <dawn/dawn_proc.h>
-// #include <dawn/dawn_wsi.h>
-// #include <dawn_native/DawnNative.h>
-// #include <dawn_wire/WireClient.h>
-// #include <dawn_wire/WireServer.h>
-// #include "GLFW/glfw3.h"
-
-// #include <algorithm>
-// #include <cstring>
-
 fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*anyopaque) callconv(.C) void {
     switch (error_type) {
         c.WGPUErrorType_Validation => std.debug.print("dawn: validation error: {s}\n", .{message}),
@@ -32,18 +12,6 @@ fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*any
         else => unreachable,
     }
 }
-
-const CmdBufType = enum { none, terrible };
-
-// static std::unique_ptr<dawn_native::Instance> instance;
-// static utils::BackendBinding* binding = nullptr;
-
-// static GLFWwindow* window = nullptr;
-
-// static dawn_wire::WireServer* wireServer = nullptr;
-// static dawn_wire::WireClient* wireClient = nullptr;
-// static utils::TerribleCommandBuffer* c2sBuf = nullptr;
-// static utils::TerribleCommandBuffer* s2cBuf = nullptr;
 
 const Setup = struct {
     device: c.WGPUDevice,
@@ -93,7 +61,6 @@ fn backendTypeString(t: c.WGPUBackendType) []const u8 {
 
 pub fn setup(allocator: std.mem.Allocator) !Setup {
     const backend_type = try detectBackendType(allocator);
-    const cmd_buf_type = CmdBufType.none;
 
     try glfw.init(.{});
 
@@ -128,46 +95,10 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
         @panic("failed to create binding");
     }
 
-    // Choose whether to use the backend procs and devices directly, or set up the wire.
-    var procs: ?*const c.DawnProcTable = null;
-    var c_device: ?c.WGPUDevice = null;
-    switch (cmd_buf_type) {
-        CmdBufType.none => {
-            procs = backend_procs;
-            c_device = backend_device;
-        },
-        CmdBufType.terrible => {
-            // TODO(slimsag):
-            @panic("not implemented");
-            // c2sBuf = new utils::TerribleCommandBuffer();
-            // s2cBuf = new utils::TerribleCommandBuffer();
-
-            // dawn_wire::WireServerDescriptor serverDesc = {};
-            // serverDesc.procs = &backendProcs;
-            // serverDesc.serializer = s2cBuf;
-
-            // wireServer = new dawn_wire::WireServer(serverDesc);
-            // c2sBuf->SetHandler(wireServer);
-
-            // dawn_wire::WireClientDescriptor clientDesc = {};
-            // clientDesc.serializer = c2sBuf;
-
-            // wireClient = new dawn_wire::WireClient(clientDesc);
-            // procs = dawn_wire::client::GetProcs();
-            // s2cBuf->SetHandler(wireClient);
-
-            // auto deviceReservation = wireClient->ReserveDevice();
-            // wireServer->InjectDevice(backendDevice, deviceReservation.id,
-            //                             deviceReservation.generation);
-
-            // cDevice = deviceReservation.device;
-        },
-    }
-
-    c.dawnProcSetProcs(procs.?);
-    procs.?.deviceSetUncapturedErrorCallback.?(c_device.?, printDeviceError, null);
+    c.dawnProcSetProcs(backend_procs);
+    backend_procs.*.deviceSetUncapturedErrorCallback.?(backend_device, printDeviceError, null);
     return Setup{
-        .device = c_device.?,
+        .device = backend_device,
         .binding = binding,
         .window = window,
     };
@@ -232,60 +163,4 @@ fn discoverAdapter(instance: c.MachDawnNativeInstance, window: glfw.Window, typ:
 //     descriptor.usage = wgpu::TextureUsage::RenderAttachment;
 //     auto depthStencilTexture = device.CreateTexture(&descriptor);
 //     return depthStencilTexture.CreateView();
-// }
-
-// bool InitSample(int argc, const char** argv) {
-//     for (int i = 1; i < argc; i++) {
-//         if (std::string("-b") == argv[i] || std::string("--backend") == argv[i]) {
-//             i++;
-//             if (i < argc && std::string("d3d12") == argv[i]) {
-//                 backendType = wgpu::BackendType::D3D12;
-//                 continue;
-//             }
-//             if (i < argc && std::string("metal") == argv[i]) {
-//                 backendType = wgpu::BackendType::Metal;
-//                 continue;
-//             }
-//             if (i < argc && std::string("null") == argv[i]) {
-//                 backendType = wgpu::BackendType::Null;
-//                 continue;
-//             }
-//             if (i < argc && std::string("opengl") == argv[i]) {
-//                 backendType = wgpu::BackendType::OpenGL;
-//                 continue;
-//             }
-//             if (i < argc && std::string("opengles") == argv[i]) {
-//                 backendType = wgpu::BackendType::OpenGLES;
-//                 continue;
-//             }
-//             if (i < argc && std::string("vulkan") == argv[i]) {
-//                 backendType = wgpu::BackendType::Vulkan;
-//                 continue;
-//             }
-//             fprintf(stderr,
-//                     "--backend expects a backend name (opengl, opengles, metal, d3d12, null, "
-//                     "vulkan)\n");
-//             return false;
-//         }
-//         if (std::string("-c") == argv[i] || std::string("--command-buffer") == argv[i]) {
-//             i++;
-//             if (i < argc && std::string("none") == argv[i]) {
-//                 cmdBufType = CmdBufType::None;
-//                 continue;
-//             }
-//             if (i < argc && std::string("terrible") == argv[i]) {
-//                 cmdBufType = CmdBufType::Terrible;
-//                 continue;
-//             }
-//             fprintf(stderr, "--command-buffer expects a command buffer name (none, terrible)\n");
-//             return false;
-//         }
-//         if (std::string("-h") == argv[i] || std::string("--help") == argv[i]) {
-//             printf("Usage: %s [-b BACKEND] [-c COMMAND_BUFFER]\n", argv[0]);
-//             printf("  BACKEND is one of: d3d12, metal, null, opengl, opengles, vulkan\n");
-//             printf("  COMMAND_BUFFER is one of: none, terrible\n");
-//             return false;
-//         }
-//     }
-//     return true;
 // }
