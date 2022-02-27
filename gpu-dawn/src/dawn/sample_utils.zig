@@ -2,6 +2,9 @@ const std = @import("std");
 const assert = std.debug.assert;
 const glfw = @import("glfw");
 const c = @import("c.zig").c;
+const objc = @cImport({
+    @cInclude("objc/message.h");
+});
 
 fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*anyopaque) callconv(.C) void {
     switch (error_type) {
@@ -144,6 +147,95 @@ fn discoverAdapter(instance: c.MachDawnNativeInstance, window: glfw.Window, typ:
     } else {
         c.machDawnNativeInstance_discoverDefaultAdapters(instance);
     }
+}
+
+pub fn detectGLFWOptions() glfw.BackendOptions {
+    const target = @import("builtin").target;
+    if (target.isDarwin()) return .{ .cocoa = true };
+    return switch (target.os.tag) {
+        .windows => .{ .win32 = true },
+        .linux => .{ .x11 = true },
+        else => .{},
+    };
+}
+
+pub fn createSurfaceForWindow(
+    instance: c.WGPUInstance,
+    window: glfw.Window,
+    comptime glfw_options: glfw.BackendOptions,
+) c.WGPUSurface {
+    const glfw_native = glfw.Native(glfw_options);
+    if (glfw_options.win32) {
+        var desc: c.WGPUSurfaceDescriptorFromWindowsHWND = undefined;
+        desc.chain.next = null;
+        desc.chain.sType = c.WGPUSType_SurfaceDescriptorFromWindowsHWND;
+
+        desc.hinstance = c.GetModuleHandle(null);
+        desc.hwnd = glfw_native.getWin32Window(window);
+
+        var descriptor: c.WGPUSurfaceDescriptor = undefined;
+        descriptor.nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc);
+        descriptor.label = "basic surface";
+        return c.wgpuInstanceCreateSurface(instance, &descriptor);
+    } else if (glfw_options.x11) {
+        var desc: c.WGPUSurfaceDescriptorFromXlibWindow = undefined;
+        desc.chain.next = null;
+        desc.chain.sType = c.WGPUSType_SurfaceDescriptorFromXlibWindow;
+
+        desc.display = glfw_native.getX11Display();
+        desc.window = glfw_native.getX11Window(window);
+
+        var descriptor: c.WGPUSurfaceDescriptor = undefined;
+        descriptor.nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc);
+        descriptor.label = "basic surface";
+        return c.wgpuInstanceCreateSurface(instance, &descriptor);
+    } else if (glfw_options.cocoa) {
+        var desc: c.WGPUSurfaceDescriptorFromMetalLayer = undefined;
+        desc.chain.next = null;
+        desc.chain.sType = c.WGPUSType_SurfaceDescriptorFromMetalLayer;
+
+        const ns_window = glfw_native.getCocoaWindow(window);
+        const ns_view = msgSend(ns_window, "contentView", .{}, *anyopaque); // [nsWindow contentView]
+
+        // Create a CAMetalLayer that covers the whole window that will be passed to CreateSurface.
+        msgSend(ns_view, "setWantsLayer:", .{true}, void); // [view setWantsLayer:YES]
+        const layer = msgSend(objc.objc_getClass("CAMetalLayer"), "layer", .{}, ?*anyopaque); // [CAMetalLayer layer]
+        if (layer == null) @panic("failed to create Metal layer");
+        msgSend(ns_view, "setLayer:", .{layer.?}, void); // [view setLayer:layer]
+
+        // Use retina if the window was created with retina support.
+        const scale_factor = msgSend(ns_window, "backingScaleFactor", .{}, f64); // [ns_window backingScaleFactor]
+        msgSend(layer.?, "setContentsScale:", .{scale_factor}, void); // [layer setContentsScale:scale_factor]
+
+        desc.layer = layer.?;
+
+        var descriptor: c.WGPUSurfaceDescriptor = undefined;
+        descriptor.nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc);
+        descriptor.label = "basic surface";
+        return c.wgpuInstanceCreateSurface(instance, &descriptor);
+    } else if (glfw_options.wayland) {
+        @panic("Dawn does not yet have Wayland support, see https://bugs.chromium.org/p/dawn/issues/detail?id=1246&q=surface&can=2");
+    } else unreachable;
+}
+
+// Borrowed from https://github.com/hazeycode/zig-objcrt
+pub fn msgSend(obj: anytype, sel_name: [:0]const u8, args: anytype, comptime ReturnType: type) ReturnType {
+    const args_meta = @typeInfo(@TypeOf(args)).Struct.fields;
+
+    const FnType = switch (args_meta.len) {
+        0 => fn (@TypeOf(obj), objc.SEL) callconv(.C) ReturnType,
+        1 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type) callconv(.C) ReturnType,
+        2 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type) callconv(.C) ReturnType,
+        3 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type) callconv(.C) ReturnType,
+        4 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type, args_meta[3].field_type) callconv(.C) ReturnType,
+        else => @compileError("Unsupported number of args"),
+    };
+
+    // NOTE: func is a var because making it const causes a compile error which I believe is a compiler bug
+    var func = @ptrCast(FnType, objc.objc_msgSend);
+    const sel = objc.sel_getUid(sel_name);
+
+    return @call(.{}, func, .{ obj, sel } ++ args);
 }
 
 // wgpu::TextureFormat GetPreferredSwapChainTextureFormat() {
