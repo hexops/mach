@@ -135,10 +135,6 @@ fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options)
         step.linkLibrary(lib_abseil_cpp);
         const lib_dawn_native = buildLibDawnNative(b, step, options);
         step.linkLibrary(lib_dawn_native);
-        if (options.desktop_gl.?) {
-            const lib_spirv_cross = buildLibSPIRVCross(b, step, options);
-            step.linkLibrary(lib_spirv_cross);
-        }
 
         const lib_dawn_wire = buildLibDawnWire(b, step, options);
         step.linkLibrary(lib_dawn_wire);
@@ -167,9 +163,6 @@ fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options)
     _ = buildLibDawnPlatform(b, lib_dawn, options);
     _ = buildLibAbseilCpp(b, lib_dawn, options);
     _ = buildLibDawnNative(b, lib_dawn, options);
-    if (options.desktop_gl.?) {
-        _ = buildLibSPIRVCross(b, lib_dawn, options);
-    }
     _ = buildLibDawnWire(b, lib_dawn, options);
     _ = buildLibDawnUtils(b, lib_dawn, options);
     _ = buildLibSPIRVTools(b, lib_dawn, options);
@@ -511,11 +504,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
     appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
-    if (options.desktop_gl.?) {
-        // OpenGL requires spriv-cross until Dawn moves OpenGL shader generation to Tint.
-        // TODO: need to verify this is still accurate, do we need spirv-cross at all anymore?
-        flags.append(include("libs/dawn/third_party/vulkan-deps/spirv-cross/src")) catch unreachable;
-    }
     flags.appendSlice(&.{
         include("libs/dawn"),
         include("libs/dawn/src"),
@@ -974,47 +962,6 @@ fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         },
         .flags = flags.items,
         .excluding_contains = &.{ "test", "benchmark" },
-    }) catch unreachable;
-    return lib;
-}
-
-// Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
-fn buildLibSPIRVCross(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
-    const lib = if (!options.separate_libs) step else blk: {
-        var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
-        const separate_lib = b.addStaticLibrary("spirv-cross", main_abs);
-        separate_lib.install();
-        separate_lib.setBuildMode(step.build_mode);
-        separate_lib.setTarget(step.target);
-        separate_lib.linkLibCpp();
-        break :blk separate_lib;
-    };
-
-    var flags = std.ArrayList([]const u8).init(b.allocator);
-    flags.appendSlice(&.{
-        "-DSPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS",
-        include("libs/dawn/third_party/vulkan-deps/spirv-cross/src"),
-        include("libs/dawn"),
-        "-Wno-extra-semi",
-        "-Wno-ignored-qualifiers",
-        "-Wno-implicit-fallthrough",
-        "-Wno-inconsistent-missing-override",
-        "-Wno-missing-field-initializers",
-        "-Wno-newline-eof",
-        "-Wno-sign-compare",
-        "-Wno-unused-variable",
-    }) catch unreachable;
-
-    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    if (target.os.tag != .windows) flags.append("-fno-exceptions") catch unreachable;
-
-    // spirv_cross
-    appendLangScannedSources(b, lib, options, .{
-        .rel_dirs = &.{
-            "libs/dawn/third_party/vulkan-deps/spirv-cross/src/",
-        },
-        .flags = flags.items,
-        .excluding_contains = &.{ "test", "benchmark", "main.cpp" },
     }) catch unreachable;
     return lib;
 }
