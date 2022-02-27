@@ -28,6 +28,7 @@ pub const VideoMode = @import("VideoMode.zig");
 pub const Window = @import("Window.zig");
 pub const Cursor = @import("Cursor.zig");
 pub const Native = @import("native.zig").Native;
+pub const BackendOptions = @import("native.zig").BackendOptions;
 pub const Key = key.Key;
 
 pub usingnamespace @import("clipboard.zig");
