@@ -16,7 +16,12 @@ jobs:
       uses: actions/checkout@v2
     - name: Record latest release version
       id: recorded_release_version
-      run: echo "::set-output name=commit::$(git rev-parse --short HEAD)"
+      # Note: we find the latest non-'update to latest binary release' commit here, which is not
+      # necessarily HEAD because another build could have succeeded before us and HEAD may now refer
+      # to 'update to latest binary release' instead of the commit we were building.
+      # By doing this, we ensure any update we push would refer to the absolute latest binary
+      # release even if *this* CI run is older.
+      run: echo "::set-output name=commit::$(git log --oneline | grep -v 'update to latest binary release' | head -n1 | cut -d " " -f1)"
     # - name: Publish release
     #   run: echo "TODO(build-system): gh CLI has no way to mark draft as published?"
     #   env:
