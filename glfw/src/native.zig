@@ -8,7 +8,7 @@ const getError = @import("errors.zig").getError;
 
 const internal_debug = @import("internal_debug.zig");
 
-const BackendOptions = struct {
+pub const BackendOptions = struct {
     win32: bool = false,
     wgl: bool = false,
     cocoa: bool = false,
