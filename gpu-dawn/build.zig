@@ -107,6 +107,7 @@ pub const Options = struct {
             if (zero_debug_symbols) try flags.append("-g0") else try flags.append("-g1");
         }
         if (is_cpp) try flags.append("-std=c++17");
+        if (self.linux_window_manager != null and self.linux_window_manager.? == .X11) try flags.append("-DDAWN_USE_X11");
     }
 };
 
