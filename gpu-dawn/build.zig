@@ -8,7 +8,7 @@ pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
 
     const options = Options{
-        .from_source = b.option(bool, "from-source", "Build Dawn from source") orelse false,
+        .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
     };
 
     const lib = b.addStaticLibrary("gpu", "src/main.zig");
@@ -219,7 +219,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     };
     if (!binaries_available) {
         std.log.err("\nerror: gpu-dawn binaries for {s} not available. Please open an issue: https://github.com/hexops/mach/issues\n\n", .{zig_triple});
-        std.log.err("Build from source (takes 5-10 minutes) using -Dfrom-source=true or via `.from_source = true` in Options", .{});
+        std.log.err("Build from source (takes 5-10 minutes) using -Ddawn-from-source=true or via `.from_source = true` in Options", .{});
         std.process.exit(1);
     }
 
