@@ -147,6 +147,9 @@ MACH_EXPORT MachDawnNativeInstance machDawnNativeInstance_init(void) {
 MACH_EXPORT void machDawnNativeInstance_deinit(MachDawnNativeInstance instance) {
     delete reinterpret_cast<dawn_native::Instance*>(instance);
 }
+MACH_EXPORT WGPUInstance machDawnNativeInstance_get(MachDawnNativeInstance instance) {
+    return reinterpret_cast<dawn_native::Instance*>(instance)->Get();
+}
 // TODO(dawn-native-mach): These API* methods correlate to the new API (which is unified between Dawn
 // and wgpu-native?), e.g. dawn_native::Instance::APIRequestAdapter corresponds to wgpuInstanceRequestAdapter
 // These are not implemented in Dawn yet according to austineng, but we should switch to this API once they do:
@@ -217,10 +220,6 @@ MACH_EXPORT const DawnProcTable* machDawnNativeGetProcs() {
 
 // TODO(dawn-native-mach):
 // void SetPlatform(dawn_platform::Platform* platform);
-
-// TODO(dawn-native-mach):
-// // Returns the underlying WGPUInstance object.
-// WGPUInstance Get() const;
 
 
 // typedef struct MachUtilsBackendBindingImpl* MachUtilsBackendBinding;
