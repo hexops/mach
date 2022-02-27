@@ -191,24 +191,16 @@ fn ensureSubmodules(allocator: std.mem.Allocator) !void {
 pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
 
-    // If it's not the default ABI, we have no binaries available.
-    const default_abi = std.Target.Abi.default(target.cpu.arch, target.os);
-    if (target.abi != default_abi) return linkFromSource(b, step, options);
-
-    const triple = blk: {
-        if (target.cpu.arch.isX86()) switch (target.os.tag) {
-            .windows => return linkFromSource(b, step, options), // break :blk "windows-x86_64",
-            .linux => break :blk "linux-x86_64",
-            .macos => break :blk "macos-x86_64",
-            else => return linkFromSource(b, step, options),
-        };
-        if (target.cpu.arch.isAARCH64()) switch (target.os.tag) {
-            .macos => break :blk "macos-aarch64",
-            else => return linkFromSource(b, step, options),
-        };
-        return linkFromSource(b, step, options);
+    const have_binaries = switch (target.os.tag) {
+        .windows => false, // TODO(build-system): add Windows binaries
+        .linux => target.cpu.arch.isX86() and target.abi.isGnu(),
+        .macos => (target.cpu.arch.isX86() or target.cpu.arch.isAARCH64()) and target.abi == .macabi,
+        else => false,
     };
-    ensureBinaryDownloaded(b.allocator, triple, b.is_release, options.binary_version);
+    if (!have_binaries) return linkFromSource(b, step, options);
+
+    const zig_triple = target.zigTriple(b.allocator) catch unreachable;
+    ensureBinaryDownloaded(b.allocator, zig_triple, b.is_release, options.binary_version);
 
     const current_git_commit = getCurrentGitCommit(b.allocator) catch unreachable;
     const base_cache_dir_rel = std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
@@ -216,7 +208,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     const base_cache_dir = std.fs.cwd().realpathAlloc(b.allocator, base_cache_dir_rel) catch unreachable;
     const commit_cache_dir = std.fs.path.join(b.allocator, &.{ base_cache_dir, current_git_commit }) catch unreachable;
     const release_tag = if (b.is_release) "release-fast" else "debug";
-    const target_cache_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, triple, release_tag }) catch unreachable;
+    const target_cache_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, zig_triple, release_tag }) catch unreachable;
 
     step.addLibraryPath(target_cache_dir);
     step.linkSystemLibrary("dawn");

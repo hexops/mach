@@ -23,18 +23,18 @@ jobs:
         run: zig build install -Dfrom-source=true -Dtarget=x86_64-linux
       - name: upload (debug)
         run: |
-          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_linux-x86_64_debug.a
-          gzip -9 zig-out/lib/libdawn_linux-x86_64_debug.a
-          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_linux-x86_64_debug.a.gz
+          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_x86_64-linux-gnu_debug.a
+          gzip -9 zig-out/lib/libdawn_x86_64-linux-gnu_debug.a
+          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_x86_64-linux-gnu_debug.a.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: install (release-fast)
         run: zig build install -Dfrom-source=true -Drelease-fast=true -Dtarget=x86_64-linux
       - name: upload (release-fast)
         run: |
-          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_linux-x86_64_release-fast.a
-          gzip -9 zig-out/lib/libdawn_linux-x86_64_release-fast.a
-          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_linux-x86_64_release-fast.a.gz
+          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_x86_64-linux-gnu_release-fast.a
+          gzip -9 zig-out/lib/libdawn_x86_64-linux-gnu_release-fast.a
+          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_x86_64-linux-gnu_release-fast.a.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # TODO(build-system): enable windows CI here once gpu-dawn builds under Windows
@@ -77,9 +77,9 @@ jobs:
           AGREE: true
       - name: upload (debug)
         run: |
-          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_macos-x86_64_debug.a
-          gzip -9 zig-out/lib/libdawn_macos-x86_64_debug.a
-          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_macos-x86_64_debug.a.gz
+          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_x86_64-macos.12.1...12.1-gnu_debug.a
+          gzip -9 zig-out/lib/libdawn_x86_64-macos.12.1...12.1-gnu_debug.a
+          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_x86_64-macos.12.1...12.1-gnu_debug.a.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: install (release-fast)
@@ -88,8 +88,8 @@ jobs:
           AGREE: true
       - name: upload (release-fast)
         run: |
-          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_macos-x86_64_release-fast.a
-          gzip -9 zig-out/lib/libdawn_macos-x86_64_release-fast.a
-          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_macos-x86_64_release-fast.a.gz
+          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_x86_64-macos.12.1...12.1-gnu_release-fast.a
+          gzip -9 zig-out/lib/libdawn_x86_64-macos.12.1...12.1-gnu_release-fast.a
+          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_x86_64-macos.12.1...12.1-gnu_release-fast.a.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
