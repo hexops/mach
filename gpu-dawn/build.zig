@@ -190,7 +190,7 @@ fn ensureSubmodules(allocator: std.mem.Allocator) !void {
 
 pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    const zig_triple = target.zigTriple(b.allocator) catch unreachable;
+    var zig_triple = target.zigTriple(b.allocator) catch unreachable;
 
     const binaries_available = switch (target.os.tag) {
         .windows => false, // TODO(build-system): add Windows binaries
@@ -201,8 +201,18 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
             // If min. target macOS version is lesser than the min version we have available, then
             // our binary is incompatible with the target.
-            const min_available = std.builtin.Version{ .major = 12, .minor = 1 };
+            const min_available = std.builtin.Version{ .major = 12, .minor = 0 };
             if (target.os.version_range.semver.min.order(min_available) == .lt) break :blk false;
+
+            // update zig_triple to reflect the Zig triple of the binary release we're downloading.
+            var binary_target = target;
+            binary_target.os.version_range = .{
+                .semver = .{
+                    .min = min_available,
+                    .max = min_available,
+                },
+            };
+            zig_triple = target.zigTriple(b.allocator) catch unreachable;
             break :blk true;
         },
         else => false,
