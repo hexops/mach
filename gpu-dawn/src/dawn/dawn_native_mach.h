@@ -80,6 +80,7 @@ typedef struct MachDawnNativeInstanceImpl* MachDawnNativeInstance;
 
 MACH_EXPORT MachDawnNativeInstance machDawnNativeInstance_init(void);
 MACH_EXPORT void machDawnNativeInstance_deinit(MachDawnNativeInstance);
+MACH_EXPORT WGPUInstance machDawnNativeInstance_get(MachDawnNativeInstance instance);
 MACH_EXPORT void machDawnNativeInstance_discoverDefaultAdapters(MachDawnNativeInstance);
 
 // Adds adapters that can be discovered with the options provided (like a getProcAddress).
