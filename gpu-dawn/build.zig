@@ -190,16 +190,19 @@ fn ensureSubmodules(allocator: std.mem.Allocator) !void {
 
 pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+    const zig_triple = target.zigTriple(b.allocator) catch unreachable;
 
-    const have_binaries = switch (target.os.tag) {
+    const binaries_available = switch (target.os.tag) {
         .windows => false, // TODO(build-system): add Windows binaries
         .linux => target.cpu.arch.isX86() and target.abi.isGnu(),
         .macos => (target.cpu.arch.isX86() or target.cpu.arch.isAARCH64()) and target.abi == .macabi,
         else => false,
     };
-    if (!have_binaries) return linkFromSource(b, step, options);
+    if (!binaries_available) {
+        std.debug.print("\nnote: gpu-dawn binaries for {s} not available, building from source (may take 5-10 minutes.)\nPlease open an issue: https://github.com/hexops/mach/issues\n", .{zig_triple});
+        return linkFromSource(b, step, options);
+    }
 
-    const zig_triple = target.zigTriple(b.allocator) catch unreachable;
     ensureBinaryDownloaded(b.allocator, zig_triple, b.is_release, options.binary_version);
 
     const current_git_commit = getCurrentGitCommit(b.allocator) catch unreachable;
