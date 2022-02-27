@@ -218,8 +218,9 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         else => false,
     };
     if (!binaries_available) {
-        std.debug.print("\nnote: gpu-dawn binaries for {s} not available, building from source (may take 5-10 minutes.)\nPlease open an issue: https://github.com/hexops/mach/issues\n", .{zig_triple});
-        return linkFromSource(b, step, options);
+        std.log.err("\nerror: gpu-dawn binaries for {s} not available. Please open an issue: https://github.com/hexops/mach/issues\n\n", .{zig_triple});
+        std.log.err("Build from source (takes 5-10 minutes) using -Dfrom-source=true or via `.from_source = true` in Options", .{});
+        std.process.exit(1);
     }
 
     ensureBinaryDownloaded(b.allocator, zig_triple, b.is_release, options.binary_version);
