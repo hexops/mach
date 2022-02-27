@@ -167,7 +167,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// Possible errors include glfw.Error.NotInitalized.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
-        pub fn getCocoaWindow(window: Window) u32 {
+        pub fn getCocoaWindow(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
             const win = native.glfwGetCocoaWindow(@ptrCast(*native.GLFWwindow, window.handle));
             getError() catch |err| return switch (err) {
