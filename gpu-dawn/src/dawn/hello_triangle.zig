@@ -52,11 +52,16 @@ pub fn main() !void {
         window_data.swap_chain = c.wgpuDeviceCreateSwapChain(setup.device, null, &descriptor);
 
         window_data.swap_chain_format = c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding);
-        c.wgpuSwapChainConfigure(window_data.swap_chain.?, window_data.swap_chain_format, c.WGPUTextureUsage_RenderAttachment, 640, 480);
+        c.wgpuSwapChainConfigure(
+            window_data.swap_chain.?,
+            window_data.swap_chain_format,
+            c.WGPUTextureUsage_RenderAttachment,
+            framebuffer_size.width,
+            framebuffer_size.height,
+        );
     }
     window_data.current_desc = descriptor;
     window_data.target_desc = descriptor;
-
 
     const vs =
         \\ @stage(vertex) fn main(
