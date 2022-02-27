@@ -103,8 +103,10 @@ typedef struct MachDawnNativeAdapterDiscoveryOptions_OpenGLES {
 } MachDawnNativeAdapterDiscoveryOptions_OpenGLES;
 
 // utils
+//
+// These are legacy methods. If using OpenGL, they must be used to create a backend binding
+// as Dawn does not yet support the WGPUSurface API for OpenGL yet. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
 #include <GLFW/glfw3.h>
-
 typedef struct MachUtilsBackendBindingImpl* MachUtilsBackendBinding;
 MACH_EXPORT MachUtilsBackendBinding machUtilsCreateBinding(WGPUBackendType backendType, GLFWwindow* window, WGPUDevice device);
 MACH_EXPORT uint64_t machUtilsBackendBinding_getSwapChainImplementation(MachUtilsBackendBinding binding);
