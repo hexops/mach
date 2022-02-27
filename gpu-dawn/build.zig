@@ -227,7 +227,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 }
 
-pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8, is_release: bool, version: []const u8) void {
+pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const u8, is_release: bool, version: []const u8) void {
     // If zig-cache/mach/gpu-dawn/<git revision> does not exist:
     //   If on a commit in the main branch => rm -r zig-cache/mach/gpu-dawn/
     //   else => noop
@@ -253,7 +253,7 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8, 
     }
 
     const release_tag = if (is_release) "release-fast" else "debug";
-    const target_cache_dir = std.fs.path.join(allocator, &.{ commit_cache_dir, triple, release_tag }) catch unreachable;
+    const target_cache_dir = std.fs.path.join(allocator, &.{ commit_cache_dir, zig_triple, release_tag }) catch unreachable;
     if (dirExists(target_cache_dir)) {
         return; // nothing to do, already have the binary
     }
@@ -261,13 +261,17 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, triple: []const u8, 
     const download_dir = std.fs.path.join(allocator, &.{ target_cache_dir, "download" }) catch unreachable;
     std.fs.cwd().makePath(download_dir) catch unreachable;
 
+    // Replace "..." with "---" because GitHub releases has very weird restrictions on file names.
+    // https://twitter.com/slimsag/status/1498025997987315713
+    const github_triple = std.mem.replaceOwned(u8, allocator, zig_triple, "...", "---") catch unreachable;
+
     // Compose the download URL, e.g.:
     // https://github.com/hexops/mach-gpu-dawn/releases/download/release-2e5a4eb/libdawn_x86_64-macos_debug.a.gz
     const download_url = std.mem.concat(allocator, u8, &.{
         "https://github.com/hexops/mach-gpu-dawn/releases/download/",
         version,
         "/libdawn_",
-        triple,
+        github_triple,
         "_",
         release_tag,
         ".a.gz",
