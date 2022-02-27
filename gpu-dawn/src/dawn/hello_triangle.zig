@@ -9,13 +9,54 @@ pub fn main() !void {
 
     const setup = try sample_utils.setup(allocator);
     const queue = c.wgpuDeviceGetQueue(setup.device);
+    const framebuffer_size = try setup.window.getFramebufferSize();
 
-    var descriptor = std.mem.zeroes(c.WGPUSwapChainDescriptor);
-    descriptor.implementation = c.machUtilsBackendBinding_getSwapChainImplementation(setup.binding);
-    const swap_chain = c.wgpuDeviceCreateSwapChain(setup.device, null, &descriptor);
+    const window_data = try allocator.create(WindowData);
+    window_data.* = .{
+        .surface = null,
+        .swap_chain = null,
+        .swap_chain_format = undefined,
+        .current_desc = undefined,
+        .target_desc = undefined,
+    };
+    setup.window.setUserPointer(window_data);
 
-    const swap_chain_format = c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(setup.binding);
-    c.wgpuSwapChainConfigure(swap_chain, swap_chain_format, c.WGPUTextureUsage_RenderAttachment, 640, 480);
+    // If targetting OpenGL, we can't use the newer WGPUSurface API. Instead, we need to use the
+    // older Dawn-specific API. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
+    const use_legacy_api = setup.backend_type == c.WGPUBackendType_OpenGL or setup.backend_type == c.WGPUBackendType_OpenGLES;
+    var descriptor: c.WGPUSwapChainDescriptor = undefined;
+    if (!use_legacy_api) {
+        window_data.swap_chain_format = c.WGPUTextureFormat_BGRA8Unorm;
+        descriptor = c.WGPUSwapChainDescriptor{
+            .nextInChain = null,
+            .label = "basic swap chain",
+            .usage = c.WGPUTextureUsage_RenderAttachment,
+            .format = window_data.swap_chain_format,
+            .width = framebuffer_size.width,
+            .height = framebuffer_size.height,
+            .presentMode = c.WGPUPresentMode_Fifo,
+            .implementation = 0,
+        };
+        window_data.surface = sample_utils.createSurfaceForWindow(
+            setup.instance,
+            setup.window,
+            comptime sample_utils.detectGLFWOptions(),
+        );
+    } else {
+        const binding = c.machUtilsCreateBinding(setup.backend_type, @ptrCast(*c.GLFWwindow, setup.window.handle), setup.device);
+        if (binding == null) {
+            @panic("failed to create Dawn backend binding");
+        }
+        descriptor = std.mem.zeroes(c.WGPUSwapChainDescriptor);
+        descriptor.implementation = c.machUtilsBackendBinding_getSwapChainImplementation(binding);
+        window_data.swap_chain = c.wgpuDeviceCreateSwapChain(setup.device, null, &descriptor);
+
+        window_data.swap_chain_format = c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding);
+        c.wgpuSwapChainConfigure(window_data.swap_chain.?, window_data.swap_chain_format, c.WGPUTextureUsage_RenderAttachment, 640, 480);
+    }
+    window_data.current_desc = descriptor;
+    window_data.target_desc = descriptor;
+
 
     const vs =
         \\ @stage(vertex) fn main(
@@ -64,7 +105,7 @@ pub fn main() !void {
     blend.alpha.dstFactor = c.WGPUBlendFactor_One;
 
     var color_target = std.mem.zeroes(c.WGPUColorTargetState);
-    color_target.format = swap_chain_format;
+    color_target.format = window_data.swap_chain_format;
     color_target.blend = &blend;
     color_target.writeMask = c.WGPUColorWriteMask_All;
 
@@ -102,22 +143,18 @@ pub fn main() !void {
 
     // Reconfigure the swap chain with the new framebuffer width/height, otherwise e.g. the Vulkan
     // device would be lost after a resize.
-    const CallbackPayload = struct {
-        swap_chain: c.WGPUSwapChain,
-        swap_chain_format: c.WGPUTextureFormat,
-    };
-    setup.window.setUserPointer(&.{ .swap_chain = swap_chain, .swap_chain_format = swap_chain_format });
     setup.window.setFramebufferSizeCallback((struct {
         fn callback(window: glfw.Window, width: u32, height: u32) void {
-            const pl = window.getUserPointer(CallbackPayload);
-            c.wgpuSwapChainConfigure(pl.?.swap_chain, pl.?.swap_chain_format, c.WGPUTextureUsage_RenderAttachment, @intCast(u32, width), @intCast(u32, height));
+            const pl = window.getUserPointer(WindowData);
+            pl.?.target_desc.width = width;
+            pl.?.target_desc.height = height;
         }
     }).callback);
 
     while (!setup.window.shouldClose()) {
         try frame(.{
+            .window = setup.window,
             .device = setup.device,
-            .swap_chain = swap_chain,
             .pipeline = pipeline,
             .queue = queue,
         });
@@ -125,15 +162,45 @@ pub fn main() !void {
     }
 }
 
+const WindowData = struct {
+    surface: ?c.WGPUSurface,
+    swap_chain: ?c.WGPUSwapChain,
+    swap_chain_format: c.WGPUTextureFormat,
+    current_desc: c.WGPUSwapChainDescriptor,
+    target_desc: c.WGPUSwapChainDescriptor,
+};
+
 const FrameParams = struct {
+    window: glfw.Window,
     device: c.WGPUDevice,
-    swap_chain: c.WGPUSwapChain,
     pipeline: c.WGPURenderPipeline,
     queue: c.WGPUQueue,
 };
 
+fn isDescriptorEqual(a: c.WGPUSwapChainDescriptor, b: c.WGPUSwapChainDescriptor) bool {
+    return a.usage == b.usage and a.format == b.format and a.width == b.width and a.height == b.height and a.presentMode == b.presentMode;
+}
+
 fn frame(params: FrameParams) !void {
-    const back_buffer_view = c.wgpuSwapChainGetCurrentTextureView(params.swap_chain);
+    try glfw.pollEvents();
+    const pl = params.window.getUserPointer(WindowData).?;
+    if (pl.swap_chain == null or !isDescriptorEqual(pl.current_desc, pl.target_desc)) {
+        const use_legacy_api = pl.surface == null;
+        if (!use_legacy_api) {
+            pl.swap_chain = c.wgpuDeviceCreateSwapChain(params.device, pl.surface.?, &pl.target_desc);
+        } else {
+            c.wgpuSwapChainConfigure(
+                pl.swap_chain.?,
+                pl.swap_chain_format,
+                c.WGPUTextureUsage_RenderAttachment,
+                @intCast(u32, pl.target_desc.width),
+                @intCast(u32, pl.target_desc.height),
+            );
+        }
+        pl.current_desc = pl.target_desc;
+    }
+
+    const back_buffer_view = c.wgpuSwapChainGetCurrentTextureView(pl.swap_chain.?);
     var render_pass_info = std.mem.zeroes(c.WGPURenderPassDescriptor);
     var color_attachment = std.mem.zeroes(c.WGPURenderPassColorAttachment);
     color_attachment.view = back_buffer_view;
@@ -157,8 +224,6 @@ fn frame(params: FrameParams) !void {
 
     c.wgpuQueueSubmit(params.queue, 1, &commands);
     c.wgpuCommandBufferRelease(commands);
-    c.wgpuSwapChainPresent(params.swap_chain);
+    c.wgpuSwapChainPresent(pl.swap_chain.?);
     c.wgpuTextureViewRelease(back_buffer_view);
-
-    try glfw.pollEvents();
 }
