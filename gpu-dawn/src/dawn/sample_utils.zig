@@ -167,7 +167,7 @@ pub fn createSurfaceForWindow(
         desc.chain.next = null;
         desc.chain.sType = c.WGPUSType_SurfaceDescriptorFromWindowsHWND;
 
-        desc.hinstance = c.GetModuleHandle(null);
+        desc.hinstance = std.os.windows.kernel32.GetModuleHandleW(null);
         desc.hwnd = glfw_native.getWin32Window(window);
 
         var descriptor: c.WGPUSurfaceDescriptor = undefined;
