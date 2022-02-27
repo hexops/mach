@@ -223,6 +223,9 @@ MACH_EXPORT const DawnProcTable* machDawnNativeGetProcs() {
 
 
 // typedef struct MachUtilsBackendBindingImpl* MachUtilsBackendBinding;
+//
+// This is a legacy method. If using OpenGL, it must be used to create a backend binding
+// as Dawn does not yet support the WGPUSurface API for OpenGL yet. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
 MACH_EXPORT MachUtilsBackendBinding machUtilsCreateBinding(WGPUBackendType backendType, GLFWwindow* window, WGPUDevice device) {
     wgpu::BackendType cppBackendType;
     switch (backendType) {
@@ -259,10 +262,14 @@ MACH_EXPORT MachUtilsBackendBinding machUtilsCreateBinding(WGPUBackendType backe
     return reinterpret_cast<MachUtilsBackendBinding>(utils::CreateBinding(cppBackendType, window, device));
 }
 
+// This is a legacy method. If using OpenGL, it must be used to create a backend binding
+// as Dawn does not yet support the WGPUSurface API for OpenGL yet. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
 MACH_EXPORT uint64_t machUtilsBackendBinding_getSwapChainImplementation(MachUtilsBackendBinding binding) {
     auto self = reinterpret_cast<utils::BackendBinding*>(binding);
     return self->GetSwapChainImplementation();
 }
+// This is a legacy method. If using OpenGL, it must be used to create a backend binding
+// as Dawn does not yet support the WGPUSurface API for OpenGL yet. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
 MACH_EXPORT WGPUTextureFormat machUtilsBackendBinding_getPreferredSwapChainTextureFormat(MachUtilsBackendBinding binding) {
     auto self = reinterpret_cast<utils::BackendBinding*>(binding);
     return self->GetPreferredSwapChainTextureFormat();
