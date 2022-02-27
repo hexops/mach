@@ -17,8 +17,9 @@ fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*any
 }
 
 const Setup = struct {
+    instance: c.WGPUInstance,
+    backend_type: c.WGPUBackendType,
     device: c.WGPUDevice,
-    binding: c.MachUtilsBackendBinding,
     window: glfw.Window,
 };
 
@@ -93,16 +94,12 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
     const backend_device = c.machDawnNativeAdapter_createDevice(backend_adapter.?, null);
     const backend_procs = c.machDawnNativeGetProcs();
 
-    const binding = c.machUtilsCreateBinding(backend_type, @ptrCast(*c.GLFWwindow, window.handle), backend_device);
-    if (binding == null) {
-        @panic("failed to create binding");
-    }
-
     c.dawnProcSetProcs(backend_procs);
     backend_procs.*.deviceSetUncapturedErrorCallback.?(backend_device, printDeviceError, null);
     return Setup{
+        .instance = c.machDawnNativeInstance_get(instance),
+        .backend_type = backend_type,
         .device = backend_device,
-        .binding = binding,
         .window = window,
     };
 }
