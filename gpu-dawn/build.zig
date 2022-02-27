@@ -195,7 +195,16 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     const binaries_available = switch (target.os.tag) {
         .windows => false, // TODO(build-system): add Windows binaries
         .linux => target.cpu.arch.isX86() and target.abi.isGnu(),
-        .macos => (target.cpu.arch.isX86() or target.cpu.arch.isAARCH64()) and target.abi == .macabi,
+        .macos => blk: {
+            if (!target.cpu.arch.isX86() and !target.cpu.arch.isAARCH64()) break :blk false;
+            if (target.abi != .gnu) break :blk false;
+
+            // If min. target macOS version is lesser than the min version we have available, then
+            // our binary is incompatible with the target.
+            const min_available = std.builtin.Version{ .major = 12, .minor = 1 };
+            if (target.os.version_range.semver.min.order(min_available) == .lt) break :blk false;
+            break :blk true;
+        },
         else => false,
     };
     if (!binaries_available) {
