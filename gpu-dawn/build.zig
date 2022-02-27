@@ -212,7 +212,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
                     .max = min_available,
                 },
             };
-            zig_triple = target.zigTriple(b.allocator) catch unreachable;
+            zig_triple = binary_target.zigTriple(b.allocator) catch unreachable;
             break :blk true;
         },
         else => false,
