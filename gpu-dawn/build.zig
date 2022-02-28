@@ -111,12 +111,12 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const opt = options.detectDefaults(target);
 
-    ensureSubmodules(b.allocator) catch |err| @panic(@errorName(err));
-
     if (options.from_source) linkFromSource(b, step, opt) else linkFromBinary(b, step, opt);
 }
 
 fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+    ensureSubmodules(b.allocator) catch |err| @panic(@errorName(err));
+
     step.addIncludeDir(thisDir() ++ "/libs/dawn/out/Debug/gen/include");
     step.addIncludeDir(thisDir() ++ "/libs/dawn/include");
     step.addIncludeDir(thisDir() ++ "/src/dawn");
@@ -225,10 +225,14 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     const commit_cache_dir = std.fs.path.join(b.allocator, &.{ base_cache_dir, current_git_commit }) catch unreachable;
     const release_tag = if (b.is_release) "release-fast" else "debug";
     const target_cache_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, zig_triple, release_tag }) catch unreachable;
+    const include_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, "include" }) catch unreachable;
 
     step.addLibraryPath(target_cache_dir);
     step.linkSystemLibrary("dawn");
     step.linkLibCpp();
+
+    step.addIncludeDir(include_dir);
+    step.addIncludeDir(thisDir() ++ "/src/dawn");
 
     if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
         step.linkSystemLibrary("X11");
@@ -254,6 +258,8 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const 
     //   Extract to zig-cache/mach/gpu-dawn/<git revision>/macos-aarch64/libgpu.a
     //   Remove zig-cache/mach/gpu-dawn/download
 
+    // TODO(build-system): should not depend on _current_ git commit, but rather just the desired
+    // binary version now that we have that as an option, otherwise we needlessly re-download.
     const current_git_commit = getCurrentGitCommit(allocator) catch unreachable;
     const base_cache_dir_rel = std.fs.path.join(allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
     std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
@@ -282,7 +288,7 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const 
     const github_triple = std.mem.replaceOwned(u8, allocator, zig_triple, "...", "---") catch unreachable;
 
     // Compose the download URL, e.g.:
-    // https://github.com/hexops/mach-gpu-dawn/releases/download/release-2e5a4eb/libdawn_x86_64-macos_debug.a.gz
+    // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/libdawn_x86_64-macos.12---12-gnu_debug.a.gz
     const download_url = std.mem.concat(allocator, u8, &.{
         "https://github.com/hexops/mach-gpu-dawn/releases/download/",
         version,
@@ -293,13 +299,53 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const 
         ".a.gz",
     }) catch unreachable;
 
+    // Download and decompress libdawn
     const gz_target_file = std.fs.path.join(allocator, &.{ download_dir, "compressed.gz" }) catch unreachable;
     downloadFile(allocator, gz_target_file, download_url) catch unreachable;
-
     const target_file = std.fs.path.join(allocator, &.{ target_cache_dir, "libdawn.a" }) catch unreachable;
     gzipDecompress(allocator, gz_target_file, target_file) catch unreachable;
 
+    // If we don't yet have the headers (these are shared across architectures), download them.
+    const include_dir = std.fs.path.join(allocator, &.{ commit_cache_dir, "include" }) catch unreachable;
+    if (!dirExists(include_dir)) {
+        // Compose the headers download URL, e.g.:
+        // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/headers.json.gz
+        const headers_download_url = std.mem.concat(allocator, u8, &.{
+            "https://github.com/hexops/mach-gpu-dawn/releases/download/",
+            version,
+            "/headers.json.gz",
+        }) catch unreachable;
+
+        // Download and decompress headers.json.gz
+        const headers_gz_target_file = std.fs.path.join(allocator, &.{ download_dir, "headers.json.gz" }) catch unreachable;
+        downloadFile(allocator, headers_gz_target_file, headers_download_url) catch unreachable;
+        const headers_target_file = std.fs.path.join(allocator, &.{ target_cache_dir, "headers.json" }) catch unreachable;
+        gzipDecompress(allocator, headers_gz_target_file, headers_target_file) catch unreachable;
+
+        // Extract headers JSON archive.
+        extractHeaders(allocator, headers_target_file, commit_cache_dir) catch unreachable;
+    }
+
     std.fs.deleteTreeAbsolute(download_dir) catch unreachable;
+}
+
+fn extractHeaders(allocator: std.mem.Allocator, json_file: []const u8, out_dir: []const u8) !void {
+    const contents = try std.fs.cwd().readFileAlloc(allocator, json_file, std.math.maxInt(usize));
+
+    var parser = std.json.Parser.init(allocator, false);
+    defer parser.deinit();
+    var tree = try parser.parse(contents);
+    defer tree.deinit();
+
+    var iter = tree.root.Object.iterator();
+    while (iter.next()) |f| {
+        const out_path = try std.fs.path.join(allocator, &.{out_dir, f.key_ptr.*});
+        try std.fs.cwd().makePath(std.fs.path.dirname(out_path).?);
+
+        var new_file = try std.fs.createFileAbsolute(out_path, .{});
+        defer new_file.close();
+        try new_file.writeAll(f.value_ptr.*.String);
+    }
 }
 
 fn dirExists(path: []const u8) bool {
