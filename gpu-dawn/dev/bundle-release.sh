@@ -2,8 +2,9 @@
 set -exuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"/..
 
+rm -rf out/ out.tar.gz headers.json headers.json.gz
+
 # Prepare the `out/` directory that we will bundle.
-rm -rf out/
 mkdir out/
 cp -R libs/dawn/include out/
 cp -R libs/dawn/out/Debug/gen/include/* out/include/
