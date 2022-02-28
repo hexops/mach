@@ -8,6 +8,7 @@ mkdir out/
 cp -R libs/dawn/include out/
 cp -R libs/dawn/out/Debug/gen/include/* out/include/
 cp libs/dawn/LICENSE out/
+zig version > out/ZIG_VERSION
 
 # Bundle headers.json.gz
 pushd out
