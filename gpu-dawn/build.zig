@@ -183,8 +183,6 @@ fn ensureSubmodules(allocator: std.mem.Allocator) !void {
 
 pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    var zig_triple = target.zigTriple(b.allocator) catch unreachable;
-
     const binaries_available = switch (target.os.tag) {
         .windows => false, // TODO(build-system): add Windows binaries
         .linux => target.cpu.arch.isX86() and target.abi.isGnu(),
@@ -196,21 +194,12 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
             // our binary is incompatible with the target.
             const min_available = std.builtin.Version{ .major = 12, .minor = 0 };
             if (target.os.version_range.semver.min.order(min_available) == .lt) break :blk false;
-
-            // update zig_triple to reflect the Zig triple of the binary release we're downloading.
-            var binary_target = target;
-            binary_target.os.version_range = .{
-                .semver = .{
-                    .min = min_available,
-                    .max = min_available,
-                },
-            };
-            zig_triple = binary_target.zigTriple(b.allocator) catch unreachable;
             break :blk true;
         },
         else => false,
     };
     if (!binaries_available) {
+        const zig_triple = target.zigTriple(b.allocator) catch unreachable;
         std.log.err("gpu-dawn binaries for {s} not available.", .{zig_triple});
         std.log.err("-> open an issue: https://github.com/hexops/mach/issues", .{});
         std.log.err("-> build from source (takes 5-15 minutes):", .{});
@@ -218,6 +207,13 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         std.process.exit(1);
     }
 
+    // Remove OS version range / glibc version from triple (we do not include that in our download
+    // URLs.)
+    var binary_target = std.zig.CrossTarget.fromTarget(target);
+    binary_target.os_version_min = .{ .none = .{} };
+    binary_target.os_version_max = .{ .none = .{} };
+    binary_target.glibc_version = null;
+    const zig_triple = binary_target.zigTriple(b.allocator) catch unreachable;
     ensureBinaryDownloaded(b.allocator, zig_triple, b.is_release, options.binary_version);
 
     const current_git_commit = getCurrentGitCommit(b.allocator) catch unreachable;
@@ -290,7 +286,7 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const 
     const github_triple = std.mem.replaceOwned(u8, allocator, zig_triple, "...", "---") catch unreachable;
 
     // Compose the download URL, e.g.:
-    // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/libdawn_x86_64-macos.12---12-gnu_debug.a.gz
+    // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/libdawn_x86_64-macos-gnu_debug.a.gz
     const download_url = std.mem.concat(allocator, u8, &.{
         "https://github.com/hexops/mach-gpu-dawn/releases/download/",
         version,
