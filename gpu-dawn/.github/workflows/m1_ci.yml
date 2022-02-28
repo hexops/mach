@@ -28,20 +28,17 @@ jobs:
         env:
           AGREE: true
       - name: upload (debug)
-        run: |
-          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_aarch64-macos.12---12-gnu_debug.a
-          gzip -9 zig-out/lib/libdawn_aarch64-macos.12---12-gnu_debug.a
-          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_aarch64-macos.12---12-gnu_debug.a.gz
+        run: ./dev/upload-release.sh
         env:
+          RELEASE_NAME: aarch64-macos.12---12-gnu_debug
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: install (release-fast)
         run: zig build install -Ddawn-from-source=true -Drelease-fast=true -Dtarget=aarch64-macos.12
         env:
           AGREE: true
       - name: upload (release-fast)
-        run: |
-          mv zig-out/lib/libdawn.a zig-out/lib/libdawn_aarch64-macos.12---12-gnu_release-fast.a
-          gzip -9 zig-out/lib/libdawn_aarch64-macos.12---12-gnu_release-fast.a
-          gh release upload "release-$(git rev-parse --short HEAD)" zig-out/lib/libdawn_aarch64-macos.12---12-gnu_release-fast.a.gz
+        run: ./dev/upload-release.sh
         env:
+          RELEASE_NAME: aarch64-macos.12---12-gnu_release-fast
+          UPLOAD_HEADERS: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
