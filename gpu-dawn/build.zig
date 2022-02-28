@@ -211,8 +211,10 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         else => false,
     };
     if (!binaries_available) {
-        std.log.err("\nerror: gpu-dawn binaries for {s} not available. Please open an issue: https://github.com/hexops/mach/issues\n\n", .{zig_triple});
-        std.log.err("Build from source (takes 5-10 minutes) using -Ddawn-from-source=true or via `.from_source = true` in Options", .{});
+        std.log.err("gpu-dawn binaries for {s} not available.", .{zig_triple});
+        std.log.err("-> open an issue: https://github.com/hexops/mach/issues", .{});
+        std.log.err("-> build from source (takes 5-15 minutes):", .{});
+        std.log.err("       use -Ddawn-from-source=true or set `Options.from_source = true`\n", .{});
         std.process.exit(1);
     }
 
@@ -339,7 +341,7 @@ fn extractHeaders(allocator: std.mem.Allocator, json_file: []const u8, out_dir: 
 
     var iter = tree.root.Object.iterator();
     while (iter.next()) |f| {
-        const out_path = try std.fs.path.join(allocator, &.{out_dir, f.key_ptr.*});
+        const out_path = try std.fs.path.join(allocator, &.{ out_dir, f.key_ptr.* });
         try std.fs.cwd().makePath(std.fs.path.dirname(out_path).?);
 
         var new_file = try std.fs.createFileAbsolute(out_path, .{});
