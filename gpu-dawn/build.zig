@@ -29,9 +29,6 @@ pub fn build(b: *Builder) void {
     link(b, dawn_example, options);
     glfw.link(b, dawn_example, .{ .system_sdk = .{ .set_sysroot = false } });
     dawn_example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
-    dawn_example.addIncludeDir("libs/dawn/out/Debug/gen/include");
-    dawn_example.addIncludeDir("libs/dawn/include");
-    dawn_example.addIncludeDir("src/dawn");
     dawn_example.install();
 
     const dawn_example_run_cmd = dawn_example.run();
@@ -120,6 +117,10 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
 }
 
 fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+    step.addIncludeDir(thisDir() ++ "/libs/dawn/out/Debug/gen/include");
+    step.addIncludeDir(thisDir() ++ "/libs/dawn/include");
+    step.addIncludeDir(thisDir() ++ "/src/dawn");
+
     if (options.separate_libs) {
         const lib_mach_dawn_native = buildLibMachDawnNative(b, step, options);
         step.linkLibrary(lib_mach_dawn_native);
