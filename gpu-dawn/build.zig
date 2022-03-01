@@ -185,7 +185,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const binaries_available = switch (target.os.tag) {
         .windows => false, // TODO(build-system): add Windows binaries
-        .linux => target.cpu.arch.isX86() and target.abi.isGnu(),
+        .linux => target.cpu.arch.isX86() and (target.abi.isGnu() or target.abi == .musl),
         .macos => blk: {
             if (!target.cpu.arch.isX86() and !target.cpu.arch.isAARCH64()) break :blk false;
             if (target.abi != .gnu) break :blk false;
