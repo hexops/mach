@@ -48,6 +48,10 @@ pub const Options = struct {
     linux_x86_64: []const u8 = "sdk-linux-x86_64",
     linux_x86_64_revision: []const u8 = "ab7fa8f3a05b06e0b06f4277b484e27004bfb20f",
 
+    /// The Windows x86-64 SDK repository name.
+    windows_x86_64: []const u8 = "sdk-windows-x86_64",
+    windows_x86_64_revision: []const u8 = "5acba990efd112ea0ced364f0428e6ef6e7a5541",
+
     /// If true, the Builder.sysroot will set to the SDK path. This has the drawback of preventing
     /// you from including headers, libraries, etc. from outside the SDK generally. However, it can
     /// be useful in order to identify which libraries, headers, frameworks, etc. may be missing in
@@ -58,7 +62,7 @@ pub const Options = struct {
 pub fn include(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
-        .windows => {},
+        .windows => includeSdkWindowsX8664(b, step, options),
         .macos => includeSdkMacOS(b, step, options),
         else => includeSdkLinuxX8664(b, step, options), // Assume Linux-like for now
     }
@@ -111,6 +115,27 @@ fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     step.addSystemIncludeDir(sdk_root_includes);
     step.addSystemIncludeDir(wayland_protocols_include);
     step.addLibPath(sdk_root_libs);
+}
+
+fn includeSdkWindowsX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.windows_x86_64, options.windows_x86_64_revision) catch unreachable;
+
+    if (options.set_sysroot) {
+        // We have no sysroot for Windows, but we still set one to prevent inclusion of other system
+        // libs (if set_sysroot is set, don't want to accidentally depend on system libs.)
+        var sdk_sysroot = std.fs.path.join(b.allocator, &.{sdk_root_dir}) catch unreachable;
+        b.sysroot = sdk_sysroot;
+    }
+
+    var sdk_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "include" }) catch unreachable;
+    var sdk_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "lib" }) catch unreachable;
+    defer {
+        b.allocator.free(sdk_includes);
+        b.allocator.free(sdk_libs);
+    }
+
+    step.addIncludeDir(sdk_includes);
+    step.addLibPath(sdk_libs);
 }
 
 var cached_sdk_root: ?[]const u8 = null;
