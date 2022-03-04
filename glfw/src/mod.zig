@@ -7,7 +7,7 @@ const c = @import("c.zig").c;
 // must be in sync with GLFW C constants in modifier group, search for "@defgroup mods Modifier key flags"
 /// A bitmask of all key modifiers
 pub const Mods = packed struct {
-    shift: bool align(@alignOf(c_int)) = false,
+    shift: bool = false,
     control: bool = false,
     alt: bool = false,
     super: bool = false,
