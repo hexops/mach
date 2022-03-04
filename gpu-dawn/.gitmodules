@@ -3,3 +3,9 @@
 	url = https://github.com/hexops/dawn.git
 	shallow = true
 	branch = "generated-2022-02-17"
+[submodule "gpu-dawn/libs/DirectXShaderCompiler"]
+	path = gpu-dawn/libs/DirectXShaderCompiler
+	url = https://github.com/hexops/DirectXShaderCompiler
+        shallow = true
+        branch = "mach"
+
