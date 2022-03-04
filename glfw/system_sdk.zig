@@ -5,7 +5,7 @@
 //!
 //! The SDKs used by this script by default are:
 //!
-//! * Windows: none
+//! * Windows: https://github.com/hexops/sdk-windows-x86_64 (~7MB, updated DirectX headers for Zig/MinGW)
 //! * Linux: https://github.com/hexops/sdk-linux-x86_64 (~40MB, X11, Wayland, etc. development libraries)
 //! * MacOS (most frameworks you'd find in the XCode SDK):
 //!     * https://github.com/hexops/sdk-macos-11.3 (~160MB, default)
@@ -27,7 +27,7 @@
 //! Best way to get this file in your own repository? We suggest just copying it, or importing it
 //! from a project that includes it if you're using one (e.g. mach-glfw)
 //!
-//! version: Dec 24, 2021
+//! version: Mar 4, 2022
 
 const std = @import("std");
 const Builder = std.build.Builder;
