@@ -112,7 +112,7 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         .windows => {
             step.linkSystemLibrary("gdi32");
             step.linkSystemLibrary("user32");
-            step.linkSystemLibrary("Shell32");
+            step.linkSystemLibrary("shell32");
             if (options.opengl) {
                 step.linkSystemLibrary("opengl32");
             }
