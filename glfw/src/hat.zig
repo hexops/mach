@@ -5,7 +5,7 @@ const c = @import("c.zig").c;
 ///
 /// See glfw.Joystick.getHats for how these are used.
 pub const Hat = packed struct {
-    up: bool align(@alignOf(u8)) = false,
+    up: bool = false,
     right: bool = false,
     down: bool = false,
     left: bool = false,
