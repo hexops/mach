@@ -11,9 +11,15 @@ if [[ "${UPLOAD_HEADERS:-"false"}" == "true" ]]; then
 fi
 
 # Upload static library individually.
-cp zig-out/lib/libdawn.a "libdawn_$RELEASE_NAME.a"
-gzip -9 "libdawn_$RELEASE_NAME.a"
-gh release upload "release-$(git rev-parse --short HEAD)" "libdawn_$RELEASE_NAME.a.gz"
+if [[ "${WINDOWS:-"false"}" == "true" ]]; then
+    cp zig-out/lib/dawn.lib "dawn_$RELEASE_NAME.lib"
+    gzip -9 "dawn_$RELEASE_NAME.lib"
+    gh release upload "release-$(git rev-parse --short HEAD)" "dawn_$RELEASE_NAME.lib.gz"
+else
+    cp zig-out/lib/libdawn.a "libdawn_$RELEASE_NAME.a"
+    gzip -9 "libdawn_$RELEASE_NAME.a"
+    gh release upload "release-$(git rev-parse --short HEAD)" "libdawn_$RELEASE_NAME.a.gz"
+fi
 
 # Upload tarball of static library + headers.
 mv out.tar.gz "$RELEASE_NAME.tar.gz"

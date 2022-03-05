@@ -18,7 +18,11 @@ popd
 gzip -9 headers.json
 
 # Copy the binary into the out/ directory
-cp zig-out/lib/libdawn.a out/
+if [[ "${WINDOWS:-"false"}" == "true" ]]; then
+    cp zig-out/lib/dawn.lib out/
+else
+    cp zig-out/lib/libdawn.a out/
+fi
 
 # Create out.tar.gz bundle
 pushd out
