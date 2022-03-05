@@ -197,7 +197,7 @@ fn determineSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const
             var repo_url_fbs = std.io.fixedBufferStream(&buf);
             try std.fmt.format(repo_url_fbs.writer(), "https://github.com/{s}/{s}", .{ org, name });
 
-            try exec(allocator, &[_][]const u8{ "git", "clone", repo_url_fbs.getWritten() }, sdk_path_dir);
+            try exec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", repo_url_fbs.getWritten() }, sdk_path_dir);
             return sdk_root_dir;
         },
         else => err,
