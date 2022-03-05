@@ -137,6 +137,11 @@ fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options)
         const lib_dawn_native = buildLibDawnNative(b, step, options);
         step.linkLibrary(lib_dawn_native);
 
+        if (options.d3d12.?) {
+            const lib_dxcompiler = buildLibDxcompiler(b, step, options);
+            step.linkLibrary(lib_dxcompiler);
+        }
+
         const lib_dawn_wire = buildLibDawnWire(b, step, options);
         step.linkLibrary(lib_dawn_wire);
 
@@ -168,6 +173,7 @@ fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options)
     _ = buildLibDawnUtils(b, lib_dawn, options);
     _ = buildLibSPIRVTools(b, lib_dawn, options);
     _ = buildLibTint(b, lib_dawn, options);
+    if (options.d3d12.?) _ = buildLibDxcompiler(b, lib_dawn, options);
 }
 
 fn ensureSubmodules(allocator: std.mem.Allocator) !void {
@@ -435,6 +441,14 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: 
         include("libs/dawn/include"),
         include("libs/dawn/src"),
     }) catch unreachable;
+    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+    if (target.os.tag == .windows) {
+        cpp_flags.appendSlice(&.{
+            "-D_DEBUG",
+            "-D_MT",
+            "-D_DLL",
+        }) catch unreachable;
+    }
 
     lib.addCSourceFile("src/dawn/dawn_native_mach.cpp", cpp_flags.items);
     return lib;
@@ -472,6 +486,10 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         system_sdk.include(b, lib, .{});
         lib.linkFramework("Foundation");
         var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn/src/dawn/common/SystemUtils_mac.mm" }) catch unreachable;
+        cpp_sources.append(abs_path) catch unreachable;
+    }
+    if (target.os.tag == .windows) {
+        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn/src/dawn/common/WindowsUtils.cpp" }) catch unreachable;
         cpp_sources.append(abs_path) catch unreachable;
     }
 
@@ -534,6 +552,25 @@ fn appendDawnEnableBackendTypeFlags(flags: *std.ArrayList([]const u8), options: 
     if (options.opengl_es.?) try flags.appendSlice(&.{ opengl, opengl_es });
 }
 
+const dawn_d3d12_flags = &[_][]const u8{
+    "-DDAWN_NO_WINDOWS_UI",
+    "-D__EMULATE_UUID=1",
+    "-Wno-nonportable-include-path",
+    "-Wno-extern-c-compat",
+    "-Wno-invalid-noreturn",
+    "-Wno-pragma-pack",
+    "-Wno-microsoft-template-shadow",
+    "-Wno-unused-command-line-argument",
+    "-Wno-microsoft-exception-spec",
+    "-Wno-implicit-exception-spec-mismatch",
+    "-Wno-unknown-attributes",
+    "-Wno-c++20-extensions",
+    "-D_CRT_SECURE_NO_WARNINGS",
+    "-DWIN32_LEAN_AND_MEAN",
+    "-DD3D10_ARBITRARY_HEADER_ORDERING",
+    "-DNOMINMAX",
+};
+
 // Builds dawn native sources; derived from src/dawn/native/BUILD.gn
 fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     const lib = if (!options.separate_libs) step else blk: {
@@ -572,6 +609,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         include("libs/dawn/out/Debug/gen/include"),
         include("libs/dawn/out/Debug/gen/src"),
     }) catch unreachable;
+    if (options.d3d12.?) flags.appendSlice(dawn_d3d12_flags) catch unreachable;
 
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
@@ -602,9 +640,18 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     // TODO(build-system): allow use_angle here. See src/dawn/native/BUILD.gn
     // TODO(build-system): could allow use_swiftshader here. See src/dawn/native/BUILD.gn
 
+    var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
     if (options.d3d12.?) {
-        // TODO(build-system): windows
-        //     libs += [ "dxguid.lib" ]
+        lib.linkSystemLibrary("dxgi");
+        lib.linkSystemLibrary("dxguid");
+
+        for ([_][]const u8{
+            "src/dawn/mingw_helpers.cpp",
+        }) |path| {
+            var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), path }) catch unreachable;
+            cpp_sources.append(abs_path) catch unreachable;
+        }
+
         appendLangScannedSources(b, lib, options, .{
             .rel_dirs = &.{
                 "libs/dawn/src/dawn/native/d3d12/",
@@ -632,7 +679,6 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         }) catch unreachable;
     }
 
-    var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
     if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
         lib.linkSystemLibrary("X11");
         for ([_][]const u8{
@@ -1031,13 +1077,20 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (target.os.tag == .macos) lib.linkFramework("CoreFoundation");
+    if (target.os.tag == .windows) lib.linkSystemLibrary("bcrypt");
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
     flags.appendSlice(&.{
         include("libs/dawn"),
         include("libs/dawn/third_party/abseil-cpp"),
     }) catch unreachable;
-    if (target.os.tag == .windows) flags.append("-DABSL_FORCE_THREAD_IDENTITY_MODE=2") catch unreachable;
+    if (target.os.tag == .windows) flags.appendSlice(&.{
+        "-DABSL_FORCE_THREAD_IDENTITY_MODE=2",
+        "-DWIN32_LEAN_AND_MEAN",
+        "-DD3D10_ARBITRARY_HEADER_ORDERING",
+        "-D_CRT_SECURE_NO_WARNINGS",
+        "-DNOMINMAX",
+    }) catch unreachable;
 
     // absl
     appendLangScannedSources(b, lib, options, .{
@@ -1143,6 +1196,7 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
             var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
             cpp_sources.append(abs_path) catch unreachable;
         }
+        flags.appendSlice(dawn_d3d12_flags) catch unreachable;
     }
     if (options.metal.?) {
         for ([_][]const u8{
@@ -1175,6 +1229,106 @@ fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
     cpp_flags.appendSlice(flags.items) catch unreachable;
     options.appendFlags(&cpp_flags, false, true) catch unreachable;
     lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
+    return lib;
+}
+
+// Buids dxcompiler sources; derived from libs/DirectXShaderCompiler/CMakeLists.txt
+fn buildLibDxcompiler(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+    const lib = if (!options.separate_libs) step else blk: {
+        var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
+        const separate_lib = b.addStaticLibrary("dxcompiler", main_abs);
+        separate_lib.install();
+        separate_lib.setBuildMode(step.build_mode);
+        separate_lib.setTarget(step.target);
+        separate_lib.linkLibCpp();
+        break :blk separate_lib;
+    };
+    system_sdk.include(b, lib, .{});
+
+    lib.linkSystemLibrary("oleaut32");
+    lib.linkSystemLibrary("ole32");
+    lib.linkSystemLibrary("dbghelp");
+    lib.linkSystemLibrary("dxguid");
+    lib.linkLibCpp();
+
+    var flags = std.ArrayList([]const u8).init(b.allocator);
+    flags.appendSlice(&.{
+        include("libs/"),
+        include("libs/DirectXShaderCompiler/include/llvm/llvm_assert"),
+        include("libs/DirectXShaderCompiler/include"),
+        include("libs/DirectXShaderCompiler/build/include"),
+        include("libs/DirectXShaderCompiler/build/lib/HLSL"),
+        include("libs/DirectXShaderCompiler/build/lib/DxilPIXPasses"),
+        include("libs/DirectXShaderCompiler/build/include"),
+        "-DUNREFERENCED_PARAMETER(x)=",
+        "-Wno-inconsistent-missing-override",
+        "-Wno-missing-exception-spec",
+        "-Wno-switch",
+        "-Wno-deprecated-declarations",
+        "-Wno-macro-redefined", // regex2.h and regcomp.c requires this for OUT redefinition
+        "-DMSFT_SUPPORTS_CHILD_PROCESSES=1",
+        "-DHAVE_LIBPSAPI=1",
+        "-DHAVE_LIBSHELL32=1",
+        "-DLLVM_ON_WIN32=1",
+    }) catch unreachable;
+
+    appendLangScannedSources(b, lib, options, .{
+        .zero_debug_symbols = true,
+        .rel_dirs = &.{
+            "libs/DirectXShaderCompiler/lib/Analysis/IPA",
+            "libs/DirectXShaderCompiler/lib/Analysis",
+            "libs/DirectXShaderCompiler/lib/AsmParser",
+            "libs/DirectXShaderCompiler/lib/Bitcode/Writer",
+            "libs/DirectXShaderCompiler/lib/DxcBindingTable",
+            "libs/DirectXShaderCompiler/lib/DxcSupport",
+            "libs/DirectXShaderCompiler/lib/DxilContainer",
+            "libs/DirectXShaderCompiler/lib/DxilPIXPasses",
+            "libs/DirectXShaderCompiler/lib/DxilRootSignature",
+            "libs/DirectXShaderCompiler/lib/DXIL",
+            "libs/DirectXShaderCompiler/lib/DxrFallback",
+            "libs/DirectXShaderCompiler/lib/HLSL",
+            "libs/DirectXShaderCompiler/lib/IRReader",
+            "libs/DirectXShaderCompiler/lib/IR",
+            "libs/DirectXShaderCompiler/lib/Linker",
+            "libs/DirectXShaderCompiler/lib/miniz",
+            "libs/DirectXShaderCompiler/lib/Option",
+            "libs/DirectXShaderCompiler/lib/PassPrinters",
+            "libs/DirectXShaderCompiler/lib/Passes",
+            "libs/DirectXShaderCompiler/lib/ProfileData",
+            "libs/DirectXShaderCompiler/lib/Target",
+            "libs/DirectXShaderCompiler/lib/Transforms/InstCombine",
+            "libs/DirectXShaderCompiler/lib/Transforms/IPO",
+            "libs/DirectXShaderCompiler/lib/Transforms/Scalar",
+            "libs/DirectXShaderCompiler/lib/Transforms/Utils",
+            "libs/DirectXShaderCompiler/lib/Transforms/Vectorize",
+        },
+        .flags = flags.items,
+    }) catch unreachable;
+
+    appendLangScannedSources(b, lib, options, .{
+        .zero_debug_symbols = true,
+        .rel_dirs = &.{
+            "libs/DirectXShaderCompiler/lib/Support",
+        },
+        .flags = flags.items,
+        .excluding_contains = &.{
+            "DynamicLibrary.cpp", // ignore, HLSL_IGNORE_SOURCES
+            "PluginLoader.cpp", // ignore, HLSL_IGNORE_SOURCES
+            "Path.cpp", // ignore, LLVM_INCLUDE_TESTS
+            "DynamicLibrary.cpp", // ignore
+        },
+    }) catch unreachable;
+
+    appendLangScannedSources(b, lib, options, .{
+        .zero_debug_symbols = true,
+        .rel_dirs = &.{
+            "libs/DirectXShaderCompiler/lib/Bitcode/Reader",
+        },
+        .flags = flags.items,
+        .excluding_contains = &.{
+            "BitReader.cpp", // ignore
+        },
+    }) catch unreachable;
     return lib;
 }
 
