@@ -2,7 +2,7 @@
 	path = libs/dawn
 	url = https://github.com/hexops/dawn.git
 	shallow = true
-	branch = "generated-2022-02-17"
+	branch = "generated-2022-03-04"
 [submodule "libs/DirectXShaderCompiler"]
 	path = libs/DirectXShaderCompiler
 	url = https://github.com/hexops/DirectXShaderCompiler

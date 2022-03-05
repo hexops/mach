@@ -210,7 +210,7 @@ fn frame(params: FrameParams) !void {
     var color_attachment = std.mem.zeroes(c.WGPURenderPassColorAttachment);
     color_attachment.view = back_buffer_view;
     color_attachment.resolveTarget = null;
-    color_attachment.clearColor = c.WGPUColor{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 };
+    color_attachment.clearValue = c.WGPUColor{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 };
     color_attachment.loadOp = c.WGPULoadOp_Clear;
     color_attachment.storeOp = c.WGPUStoreOp_Store;
     render_pass_info.colorAttachmentCount = 1;
