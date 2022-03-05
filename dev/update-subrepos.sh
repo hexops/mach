@@ -2,7 +2,7 @@
 set -exuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"/..
 
-if [ -n "$GITHUB_ACTIONS" ]; then
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
     git remote add -f mach-glfw "https://slimsag:$ACCESS_TOKEN@github.com/hexops/mach-glfw" || true
     git remote add -f mach-gpu-dawn "https://slimsag:$ACCESS_TOKEN@github.com/hexops/mach-gpu-dawn" || true
 else
