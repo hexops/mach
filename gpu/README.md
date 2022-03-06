@@ -49,3 +49,13 @@ When targeting WebAssembly, `mach/gpu` merely calls into the browser's native We
 When targeting native platforms, we build Google Chrome's WebGPU implementation, [Dawn](https://dawn.googlesource.com/dawn), bypassing the client-server sandboxing model and use `zig build` (plus a lot of hand-holding) to support zero-fuss cross compilation & installation without any third-party Google tools, libraries, etc. Just `zig` and `git` needed, nothing else.
 
 [Read more about why we believe WebGPU may be the future of graphics here](https://devlog.hexops.com/2021/mach-engine-the-future-of-graphics-with-zig#truly-cross-platform-graphics-api)
+
+## WebGPU version
+
+The interface and all documentation corresponds to the spec found at:
+
+https://github.com/gpuweb/gpuweb/tree/main/spec
+
+Revision: 3382f327520b4bcd5ea617fa7e7fe60e214f0d96
+
+Tracking this enables us to diff the spec and keep our interface up to date.
