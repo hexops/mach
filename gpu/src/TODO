@@ -9,7 +9,6 @@
 
 typedef uint32_t WGPUFlags;
 
-typedef struct WGPUAdapterImpl* WGPUAdapter;
 typedef struct WGPUBindGroupImpl* WGPUBindGroup;
 typedef struct WGPUBindGroupLayoutImpl* WGPUBindGroupLayout;
 typedef struct WGPUBufferImpl* WGPUBuffer;
@@ -33,14 +32,6 @@ typedef struct WGPUSurfaceImpl* WGPUSurface;
 typedef struct WGPUSwapChainImpl* WGPUSwapChain;
 typedef struct WGPUTextureImpl* WGPUTexture;
 typedef struct WGPUTextureViewImpl* WGPUTextureView;
-
-typedef enum WGPUAdapterType {
-    WGPUAdapterType_DiscreteGPU = 0x00000000,
-    WGPUAdapterType_IntegratedGPU = 0x00000001,
-    WGPUAdapterType_CPU = 0x00000002,
-    WGPUAdapterType_Unknown = 0x00000003,
-    WGPUAdapterType_Force32 = 0x7FFFFFFF
-} WGPUAdapterType;
 
 typedef enum WGPUAddressMode {
     WGPUAddressMode_Repeat = 0x00000000,
@@ -615,16 +606,6 @@ typedef struct WGPUChainedStructOut {
     WGPUSType sType;
 } WGPUChainedStructOut;
 
-typedef struct WGPUAdapterProperties {
-    WGPUChainedStructOut * nextInChain;
-    uint32_t vendorID;
-    uint32_t deviceID;
-    char const * name;
-    char const * driverDescription;
-    WGPUAdapterType adapterType;
-    WGPUBackendType backendType;
-} WGPUAdapterProperties;
-
 typedef struct WGPUBindGroupEntry {
     WGPUChainedStruct const * nextInChain;
     uint32_t binding;
@@ -761,35 +742,6 @@ typedef struct WGPUExternalTextureDescriptor {
 typedef struct WGPUInstanceDescriptor {
     WGPUChainedStruct const * nextInChain;
 } WGPUInstanceDescriptor;
-
-typedef struct WGPULimits {
-    uint32_t maxTextureDimension1D;
-    uint32_t maxTextureDimension2D;
-    uint32_t maxTextureDimension3D;
-    uint32_t maxTextureArrayLayers;
-    uint32_t maxBindGroups;
-    uint32_t maxDynamicUniformBuffersPerPipelineLayout;
-    uint32_t maxDynamicStorageBuffersPerPipelineLayout;
-    uint32_t maxSampledTexturesPerShaderStage;
-    uint32_t maxSamplersPerShaderStage;
-    uint32_t maxStorageBuffersPerShaderStage;
-    uint32_t maxStorageTexturesPerShaderStage;
-    uint32_t maxUniformBuffersPerShaderStage;
-    uint64_t maxUniformBufferBindingSize;
-    uint64_t maxStorageBufferBindingSize;
-    uint32_t minUniformBufferOffsetAlignment;
-    uint32_t minStorageBufferOffsetAlignment;
-    uint32_t maxVertexBuffers;
-    uint32_t maxVertexAttributes;
-    uint32_t maxVertexBufferArrayStride;
-    uint32_t maxInterStageShaderComponents;
-    uint32_t maxComputeWorkgroupStorageSize;
-    uint32_t maxComputeInvocationsPerWorkgroup;
-    uint32_t maxComputeWorkgroupSizeX;
-    uint32_t maxComputeWorkgroupSizeY;
-    uint32_t maxComputeWorkgroupSizeZ;
-    uint32_t maxComputeWorkgroupsPerDimension;
-} WGPULimits;
 
 typedef struct WGPUMultisampleState {
     WGPUChainedStruct const * nextInChain;
@@ -1092,11 +1044,6 @@ typedef struct WGPURequiredLimits {
     WGPULimits limits;
 } WGPURequiredLimits;
 
-typedef struct WGPUSupportedLimits {
-    WGPUChainedStructOut * nextInChain;
-    WGPULimits limits;
-} WGPUSupportedLimits;
-
 typedef struct WGPUTextureDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
@@ -1220,16 +1167,6 @@ typedef void (*WGPURequestDeviceCallback)(WGPURequestDeviceStatus status, WGPUDe
 
 WGPU_EXPORT WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const * descriptor);
 WGPU_EXPORT WGPUProc wgpuGetProcAddress(WGPUDevice device, char const * procName);
-
-// Methods of Adapter
-WGPU_EXPORT WGPUDevice wgpuAdapterCreateDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor);
-WGPU_EXPORT size_t wgpuAdapterEnumerateFeatures(WGPUAdapter adapter, WGPUFeatureName * features);
-WGPU_EXPORT bool wgpuAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits * limits);
-WGPU_EXPORT void wgpuAdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties * properties);
-WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature);
-WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor, WGPURequestDeviceCallback callback, void * userdata);
-WGPU_EXPORT void wgpuAdapterReference(WGPUAdapter adapter);
-WGPU_EXPORT void wgpuAdapterRelease(WGPUAdapter adapter);
 
 // Methods of BindGroup
 WGPU_EXPORT void wgpuBindGroupSetLabel(WGPUBindGroup bindGroup, char const * label);

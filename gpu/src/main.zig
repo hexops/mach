@@ -14,5 +14,20 @@
 //!
 //! Note: WebGPU’s coordinate systems match DirectX’s coordinate systems in a graphics pipeline.
 //!
-//! https://gpuweb.github.io/gpuweb 
+//! 
 const std = @import("std");
+const Adapter = @import("Adapter.zig");
+const Device = @import("Device.zig");
+
+const native = @import("native.zig").native;
+
+const FeatureName = @import("feature_name.zig").FeatureName;
+const SupportedLimits = @import("supported_limits.zig").SupportedLimits;
+
+test "syntax" {
+    _ = Adapter;
+    _ = Device;
+    _ = native;
+    _ = FeatureName;
+    _ = SupportedLimits;
+}
