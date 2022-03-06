@@ -190,7 +190,7 @@ fn ensureSubmodules(allocator: std.mem.Allocator) !void {
 pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const binaries_available = switch (target.os.tag) {
-        .windows => false, // TODO(build-system): add Windows binaries
+        .windows => target.abi.isGnu(),
         .linux => target.cpu.arch.isX86() and (target.abi.isGnu() or target.abi.isMusl()),
         .macos => blk: {
             if (!target.cpu.arch.isX86() and !target.cpu.arch.isAARCH64()) break :blk false;
@@ -220,7 +220,7 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     binary_target.os_version_max = .{ .none = .{} };
     binary_target.glibc_version = null;
     const zig_triple = binary_target.zigTriple(b.allocator) catch unreachable;
-    ensureBinaryDownloaded(b.allocator, zig_triple, b.is_release, options.binary_version);
+    ensureBinaryDownloaded(b.allocator, zig_triple, b.is_release, target.os.tag == .windows, options.binary_version);
 
     const current_git_commit = getCurrentGitCommit(b.allocator) catch unreachable;
     const base_cache_dir_rel = std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
@@ -249,9 +249,13 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         step.linkFramework("IOSurface");
         step.linkFramework("QuartzCore");
     }
+    if (options.d3d12.?) {
+        step.linkSystemLibrary("ole32");
+        step.linkSystemLibrary("dxguid");
+    }
 }
 
-pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const u8, is_release: bool, version: []const u8) void {
+pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const u8, is_release: bool, is_windows: bool, version: []const u8) void {
     // If zig-cache/mach/gpu-dawn/<git revision> does not exist:
     //   If on a commit in the main branch => rm -r zig-cache/mach/gpu-dawn/
     //   else => noop
@@ -293,20 +297,25 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const 
 
     // Compose the download URL, e.g.:
     // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/libdawn_x86_64-macos-gnu_debug.a.gz
+    const lib_prefix = if (is_windows) "dawn_" else "libdawn_";
+    const lib_ext = if (is_windows) ".lib" else ".a";
+    const lib_file_name = if (is_windows) "dawn.lib" else "libdawn.a";
     const download_url = std.mem.concat(allocator, u8, &.{
         "https://github.com/hexops/mach-gpu-dawn/releases/download/",
         version,
-        "/libdawn_",
+        "/",
+        lib_prefix,
         github_triple,
         "_",
         release_tag,
-        ".a.gz",
+        lib_ext,
+        ".gz",
     }) catch unreachable;
 
     // Download and decompress libdawn
     const gz_target_file = std.fs.path.join(allocator, &.{ download_dir, "compressed.gz" }) catch unreachable;
     downloadFile(allocator, gz_target_file, download_url) catch unreachable;
-    const target_file = std.fs.path.join(allocator, &.{ target_cache_dir, "libdawn.a" }) catch unreachable;
+    const target_file = std.fs.path.join(allocator, &.{ target_cache_dir, lib_file_name }) catch unreachable;
     gzipDecompress(allocator, gz_target_file, target_file) catch unreachable;
 
     // If we don't yet have the headers (these are shared across architectures), download them.
