@@ -105,7 +105,7 @@ jobs:
           Invoke-WebRequest -Uri "https://drive.google.com/uc?export=download&id=15kRWfJo1Rjt6x6IfkKROMF9XBRDgm_GI&confirm=t" -OutFile "C:\zig.zip"
           cd C:\
           7z x zig.zip
-          Add-Content $env:GITHUB_PATH "C:\"
+          Add-Content $env:GITHUB_PATH "C:\bin"
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
@@ -133,7 +133,7 @@ jobs:
           Invoke-WebRequest -Uri "https://drive.google.com/uc?export=download&id=15kRWfJo1Rjt6x6IfkKROMF9XBRDgm_GI&confirm=t" -OutFile "C:\zig.zip"
           cd C:\
           7z x zig.zip
-          Add-Content $env:GITHUB_PATH "C:\"
+          Add-Content $env:GITHUB_PATH "C:\bin"
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
