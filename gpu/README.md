@@ -59,3 +59,15 @@ https://github.com/gpuweb/gpuweb/tree/main/spec
 Revision: 3382f327520b4bcd5ea617fa7e7fe60e214f0d96
 
 Tracking this enables us to diff the spec and keep our interface up to date.
+
+## Join the community
+
+Join the Mach engine community [on Matrix chat](https://matrix.to/#/#hexops:matrix.org) to discuss this project, ask questions, get help, etc.
+
+## Issues
+
+Issues are tracked in the [main Mach repository](https://github.com/hexops/mach/issues?q=is%3Aissue+is%3Aopen+label%3Aglfw).
+
+## Contributing
+
+Contributions are very welcome. Pull requests must be sent to [the main repository](https://github.com/hexops/mach/tree/main/glfw) to avoid some complex merge conflicts we'd get by accepting contributions in both repositories. Once the changes are merged there, they'll get sync'd to this repository automatically.
