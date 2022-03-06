@@ -101,6 +101,7 @@ jobs:
         run: choco install git
       - name: Setup Zig
         run: |
+          $ProgressPreference = 'SilentlyContinue'
           Invoke-WebRequest -Uri "https://drive.google.com/uc?export=download&id=15kRWfJo1Rjt6x6IfkKROMF9XBRDgm_GI&confirm=t" -OutFile "C:\zig.zip"
           cd C:\
           7z x zig.zip
@@ -128,6 +129,7 @@ jobs:
         run: choco install git
       - name: Setup Zig
         run: |
+          $ProgressPreference = 'SilentlyContinue'
           Invoke-WebRequest -Uri "https://drive.google.com/uc?export=download&id=15kRWfJo1Rjt6x6IfkKROMF9XBRDgm_GI&confirm=t" -OutFile "C:\zig.zip"
           cd C:\
           7z x zig.zip
