@@ -77,7 +77,7 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep, options: Options
 
     if (options.set_sysroot) {
         step.addFrameworkDir("/System/Library/Frameworks");
-        step.addSystemIncludeDir("/usr/include");
+        step.addIncludeDir("/usr/include");
         step.addLibPath("/usr/lib");
 
         var sdk_sysroot = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/" }) catch unreachable;
@@ -89,7 +89,7 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep, options: Options
     step.addFrameworkDir(sdk_framework_dir);
 
     var sdk_include_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
-    step.addSystemIncludeDir(sdk_include_dir);
+    step.addIncludeDir(sdk_include_dir);
 
     var sdk_lib_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib" }) catch unreachable;
     step.addLibPath(sdk_lib_dir);
@@ -112,8 +112,8 @@ fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         b.allocator.free(wayland_protocols_include);
         b.allocator.free(sdk_root_libs);
     }
-    step.addSystemIncludeDir(sdk_root_includes);
-    step.addSystemIncludeDir(wayland_protocols_include);
+    step.addIncludeDir(sdk_root_includes);
+    step.addIncludeDir(wayland_protocols_include);
     step.addLibPath(sdk_root_libs);
 }
 
