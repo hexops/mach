@@ -281,14 +281,6 @@ typedef enum WGPURenderPassTimestampLocation {
     WGPURenderPassTimestampLocation_Force32 = 0x7FFFFFFF
 } WGPURenderPassTimestampLocation;
 
-typedef enum WGPURequestAdapterStatus {
-    WGPURequestAdapterStatus_Success = 0x00000000,
-    WGPURequestAdapterStatus_Unavailable = 0x00000001,
-    WGPURequestAdapterStatus_Error = 0x00000002,
-    WGPURequestAdapterStatus_Unknown = 0x00000003,
-    WGPURequestAdapterStatus_Force32 = 0x7FFFFFFF
-} WGPURequestAdapterStatus;
-
 typedef enum WGPURequestDeviceStatus {
     WGPURequestDeviceStatus_Success = 0x00000000,
     WGPURequestDeviceStatus_Error = 0x00000001,
@@ -808,13 +800,6 @@ typedef struct WGPURenderPassTimestampWrite {
     WGPURenderPassTimestampLocation location;
 } WGPURenderPassTimestampWrite;
 
-typedef struct WGPURequestAdapterOptions {
-    WGPUChainedStruct const * nextInChain;
-    WGPUSurface compatibleSurface;
-    WGPUPowerPreference powerPreference;
-    bool forceFallbackAdapter;
-} WGPURequestAdapterOptions;
-
 typedef struct WGPUSamplerBindingLayout {
     WGPUChainedStruct const * nextInChain;
     WGPUSamplerBindingType type;
@@ -1112,7 +1097,6 @@ typedef void (*WGPUErrorCallback)(WGPUErrorType type, char const * message, void
 typedef void (*WGPULoggingCallback)(WGPULoggingType type, char const * message, void * userdata);
 typedef void (*WGPUProc)();
 typedef void (*WGPUQueueWorkDoneCallback)(WGPUQueueWorkDoneStatus status, void * userdata);
-typedef void (*WGPURequestAdapterCallback)(WGPURequestAdapterStatus status, WGPUAdapter adapter, char const * message, void * userdata);
 typedef void (*WGPURequestDeviceCallback)(WGPURequestDeviceStatus status, WGPUDevice device, char const * message, void * userdata);
 
 WGPU_EXPORT WGPUProc wgpuGetProcAddress(WGPUDevice device, char const * procName);

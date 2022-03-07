@@ -1,12 +1,22 @@
 //! A native webgpu.h implementation of the gpu.Interface
+const std = @import("std");
 const c = @import("c.zig").c;
-const Interface = @import("Interface.zig");
+
+pub const Interface = @import("Interface.zig");
+pub const RequestAdapterOptions = Interface.RequestAdapterOptions;
+pub const RequestAdapterErrorCode = Interface.RequestAdapterErrorCode;
+pub const RequestAdapterError = Interface.RequestAdapterError;
+pub const RequestAdapterResponse = Interface.RequestAdapterResponse;
+
+pub const Adapter = @import("Adapter.zig");
 const Surface = @import("Surface.zig");
 
 const NativeInstance = @This();
 
 /// The WGPUInstance that is wrapped by this native instance.
 instance: c.WGPUInstance,
+
+request_adapter_response: ?Interface.RequestAdapterResponse = null,
 
 /// Wraps a native WGPUInstance to provide an implementation of the gpu.Interface.
 pub fn wrap(instance: *anyopaque) NativeInstance {
@@ -26,23 +36,73 @@ const interface_vtable = Interface.VTable{
             c.wgpuInstanceRelease(native.instance);
         }
     }).release,
+    .requestAdapter = (struct {
+        pub fn requestAdapter(ptr: *anyopaque, options: *const RequestAdapterOptions) callconv(.Async) RequestAdapterResponse {
+            const native = @ptrCast(*NativeInstance, @alignCast(@alignOf(*NativeInstance), ptr));
+
+            const opt = c.WGPURequestAdapterOptions{
+                .nextInChain = null,
+                .compatibleSurface = if (options.compatible_surface) |surface| @ptrCast(c.WGPUSurface, surface.ptr) else null,
+                // TODO:
+                //.powerPreference = power_preference,
+                .powerPreference = c.WGPUPowerPreference_Undefined,
+                .forceFallbackAdapter = options.force_fallback_adapter,
+            };
+
+            const callback = (struct {
+                pub fn callback(status: c.WGPURequestAdapterStatus, adapter: c.WGPUAdapter, message: [*c]const u8, userdata: ?*anyopaque) callconv(.C) void {
+                    const _native = @ptrCast(*NativeInstance, @alignCast(@alignOf(*NativeInstance), userdata));
+
+                    // Store the response into a field on the native instance for later reading.
+                    _native.request_adapter_response = if (status == c.WGPURequestAdapterStatus_Success) .{
+                        .adapter = wrapAdapter(adapter.?),
+                    } else .{
+                        .err = Interface.RequestAdapterError{
+                            .message = std.mem.span(message),
+                            .code = switch (status) {
+                                c.WGPURequestAdapterStatus_Unavailable => RequestAdapterErrorCode.Unavailable,
+                                c.WGPURequestAdapterStatus_Error => RequestAdapterErrorCode.Error,
+                                c.WGPURequestAdapterStatus_Unknown => RequestAdapterErrorCode.Unknown,
+                                else => unreachable,
+                            },
+                        },
+                    };
+                }
+            }).callback;
+
+            c.wgpuInstanceRequestAdapter(native.instance, &opt, callback, native);
+            // TODO: Once crbug.com/dawn/1122 is fixed, we should process events here otherwise our
+            // callback will not be invoked.
+            // c.wgpuInstanceProcessEvents(native.instance)
+
+            // Return the response, asserting the callback has executed at this point.
+            const resp = native.request_adapter_response.?;
+            native.request_adapter_response = null;
+            return resp;
+        }
+    }).requestAdapter,
 };
+
+// TODO:
+// typedef void (*WGPURequestAdapterCallback)(WGPURequestAdapterStatus status, WGPUAdapter adapter, char const * message, void * userdata);
+// WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options, WGPURequestAdapterCallback callback, void * userdata);
+
+// typedef enum WGPURequestAdapterStatus {
+//     WGPURequestAdapterStatus_Success = 0x00000000,
+//     WGPURequestAdapterStatus_Unavailable = 0x00000001,
+//     WGPURequestAdapterStatus_Error = 0x00000002,
+//     WGPURequestAdapterStatus_Unknown = 0x00000003,
+//     WGPURequestAdapterStatus_Force32 = 0x7FFFFFFF
+// } WGPURequestAdapterStatus;
 
 /// Returns the gpu.Interface for interacting with this native instance.
 pub fn interface(native: *NativeInstance) Interface {
+    std.debug.assert(@alignOf(@Frame(interface_vtable.requestAdapter)) == 16);
     return .{
         .ptr = native,
         .vtable = &interface_vtable,
+        .request_adapter_frame_size = @frameSize(interface_vtable.requestAdapter),
     };
-    // TODO: implement Device interface
-
-    // TODO: implement Adapter interface:
-    // typedef struct WGPUAdapterImpl* WGPUAdapter;
-    // // Methods of Adapter
-    // WGPU_EXPORT size_t wgpuAdapterEnumerateFeatures(WGPUAdapter adapter, WGPUFeatureName * features);
-    // WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature);
-    // WGPU_EXPORT bool wgpuAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits * limits);
-    // WGPU_EXPORT void wgpuAdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties * properties);
 }
 
 pub fn createSurface(native: *const NativeInstance, descriptor: *const Surface.Descriptor) Surface {
@@ -130,8 +190,36 @@ const surface_vtable = Surface.VTable{
     }).release,
 };
 
+fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
+    // TODO: implement Adapter interface:
+    // WGPU_EXPORT size_t wgpuAdapterEnumerateFeatures(WGPUAdapter adapter, WGPUFeatureName * features);
+    // WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature);
+    // WGPU_EXPORT bool wgpuAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits * limits);
+    // WGPU_EXPORT void wgpuAdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties * properties);
+
+    return .{
+        // TODO:
+        .features = undefined,
+        // TODO:
+        .limits = undefined,
+
+        // TODO: why is fallback not queryable on Dawn?
+        .fallback = false,
+
+        .ptr = adapter.?,
+        .vtable = &adapter_vtable,
+    };
+}
+
+const adapter_vtable = Adapter.VTable{};
+
+// TODO: implement Device interface
+
 test "syntax" {
     _ = wrap;
+    _ = interface_vtable;
     _ = interface;
     _ = createSurface;
+    _ = surface_vtable;
+    _ = adapter_vtable;
 }

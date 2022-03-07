@@ -17,6 +17,11 @@
 //! 
 const std = @import("std");
 pub const Interface = @import("Interface.zig");
+pub const RequestAdapterOptions = Interface.RequestAdapterOptions;
+pub const RequestAdapterErrorCode = Interface.RequestAdapterErrorCode;
+pub const RequestAdapterError = Interface.RequestAdapterError;
+pub const RequestAdapterResponse = Interface.RequestAdapterResponse;
+
 pub const NativeInstance = @import("NativeInstance.zig");
 
 pub const Adapter = @import("Adapter.zig");
@@ -33,7 +38,6 @@ test "syntax" {
     _ = Adapter;
     _ = Device;
     _ = Surface;
-    _ = Surface.Descriptor;
 
     _ = FeatureName;
     _ = SupportedLimits;
