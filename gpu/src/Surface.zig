@@ -2,7 +2,8 @@
 
 const Surface = @This();
 
-// The type erased pointer to the Surface implementation
+/// The type erased pointer to the Surface implementation
+/// Equal to c.WGPUSurface for NativeInstance.
 ptr: *anyopaque,
 vtable: *const VTable,
 
