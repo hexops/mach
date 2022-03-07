@@ -36,7 +36,7 @@ pub const RequestAdapterOptions = struct {
     force_fallback_adapter: bool = false,
 
     /// Only respected by native WebGPU implementations.
-    compatible_surface: ?Surface,
+    compatible_surface: ?Surface = null,
 };
 
 pub const RequestAdapterErrorCode = error{
@@ -81,18 +81,6 @@ pub fn requestAdapter(interface: Interface, options: *const RequestAdapterOption
     const f = @asyncCall(frame_buffer, &result, interface.vtable.requestAdapter, .{ interface.ptr, options });
     resume f;
     return result;
-
-    // @asyncCall(frame_buffer: []align(@alignOf(@Frame(anyAsyncFunction))) u8, result_ptr, function_ptr, args: anytype) anyframe->T
-
-    // var data: i32 = 1;
-    // const Foo = struct {
-    //     bar: fn (*i32) callconv(.Async) void,
-    // };
-    // var foo = Foo{ .bar = func };
-    // var bytes: [64]u8 align(@alignOf(@Frame(func))) = undefined;
-    // const f = @asyncCall(&bytes, {}, foo.bar, .{&data});
-
-    // return async interface.vtable.requestAdapter(interface.ptr, options);
 }
 
 test "syntax" {

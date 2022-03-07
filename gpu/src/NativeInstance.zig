@@ -74,6 +74,7 @@ const interface_vtable = Interface.VTable{
             // TODO: Once crbug.com/dawn/1122 is fixed, we should process events here otherwise our
             // callback will not be invoked.
             // c.wgpuInstanceProcessEvents(native.instance)
+            suspend {} // must suspend so that async caller can resume
 
             // Return the response, asserting the callback has executed at this point.
             const resp = native.request_adapter_response.?;
@@ -97,7 +98,6 @@ const interface_vtable = Interface.VTable{
 
 /// Returns the gpu.Interface for interacting with this native instance.
 pub fn interface(native: *NativeInstance) Interface {
-    std.debug.assert(@alignOf(@Frame(interface_vtable.requestAdapter)) == 16);
     return .{
         .ptr = native,
         .vtable = &interface_vtable,
