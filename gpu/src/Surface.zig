@@ -1,5 +1,7 @@
 //! A native WebGPU surface
 
+const Surface = @This();
+
 // The type erased pointer to the Surface implementation
 ptr: *anyopaque,
 vtable: *const VTable,
@@ -8,6 +10,14 @@ pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
 };
+
+pub inline fn reference(surface: Surface) void {
+    surface.vtable.reference(surface.ptr);
+}
+
+pub inline fn release(surface: Surface) void {
+    surface.vtable.release(surface.ptr);
+}
 
 pub const DescriptorTag = enum {
     metal_layer,
@@ -48,6 +58,9 @@ pub const Descriptor = union(DescriptorTag) {
 };
 
 test "syntax" {
+    _ = VTable;
+    _ = reference;
+    _ = release;
     _ = DescriptorTag;
     _ = Descriptor;
 }
