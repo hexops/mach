@@ -17,7 +17,6 @@ typedef struct WGPUCommandEncoderImpl* WGPUCommandEncoder;
 typedef struct WGPUComputePassEncoderImpl* WGPUComputePassEncoder;
 typedef struct WGPUComputePipelineImpl* WGPUComputePipeline;
 typedef struct WGPUExternalTextureImpl* WGPUExternalTexture;
-typedef struct WGPUInstanceImpl* WGPUInstance;
 typedef struct WGPUPipelineLayoutImpl* WGPUPipelineLayout;
 typedef struct WGPUQuerySetImpl* WGPUQuerySet;
 typedef struct WGPUQueueImpl* WGPUQueue;
@@ -738,10 +737,6 @@ typedef struct WGPUExternalTextureDescriptor {
     WGPUPredefinedColorSpace colorSpace;
 } WGPUExternalTextureDescriptor;
 
-typedef struct WGPUInstanceDescriptor {
-    WGPUChainedStruct const * nextInChain;
-} WGPUInstanceDescriptor;
-
 typedef struct WGPUMultisampleState {
     WGPUChainedStruct const * nextInChain;
     uint32_t count;
@@ -1164,7 +1159,6 @@ typedef void (*WGPUQueueWorkDoneCallback)(WGPUQueueWorkDoneStatus status, void *
 typedef void (*WGPURequestAdapterCallback)(WGPURequestAdapterStatus status, WGPUAdapter adapter, char const * message, void * userdata);
 typedef void (*WGPURequestDeviceCallback)(WGPURequestDeviceStatus status, WGPUDevice device, char const * message, void * userdata);
 
-WGPU_EXPORT WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const * descriptor);
 WGPU_EXPORT WGPUProc wgpuGetProcAddress(WGPUDevice device, char const * procName);
 
 // Methods of BindGroup
@@ -1239,12 +1233,6 @@ WGPU_EXPORT void wgpuExternalTextureDestroy(WGPUExternalTexture externalTexture)
 WGPU_EXPORT void wgpuExternalTextureSetLabel(WGPUExternalTexture externalTexture, char const * label);
 WGPU_EXPORT void wgpuExternalTextureReference(WGPUExternalTexture externalTexture);
 WGPU_EXPORT void wgpuExternalTextureRelease(WGPUExternalTexture externalTexture);
-
-// Methods of Instance
-WGPU_EXPORT WGPUSurface wgpuInstanceCreateSurface(WGPUInstance instance, WGPUSurfaceDescriptor const * descriptor);
-WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options, WGPURequestAdapterCallback callback, void * userdata);
-WGPU_EXPORT void wgpuInstanceReference(WGPUInstance instance);
-WGPU_EXPORT void wgpuInstanceRelease(WGPUInstance instance);
 
 // Methods of PipelineLayout
 WGPU_EXPORT void wgpuPipelineLayoutSetLabel(WGPUPipelineLayout pipelineLayout, char const * label);
