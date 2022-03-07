@@ -40,6 +40,9 @@ limits: SupportedLimits,
 /// Always false on native implementations of WebGPU (TODO: why is this not queryable in Dawn?)
 fallback: bool,
 
+// TODO: docs
+properties: Properties,
+
 // The type erased pointer to the Adapter implementation
 ptr: *anyopaque,
 vtable: *const VTable,
@@ -60,22 +63,40 @@ pub fn hasFeature(adapter: Adapter, feature: FeatureName) bool {
     return false;
 }
 
-// TODO:
-// typedef struct WGPUAdapterProperties {
-//     WGPUChainedStructOut * nextInChain;
-//     uint32_t vendorID;
-//     uint32_t deviceID;
-//     char const * name;
-//     char const * driverDescription;
-//     WGPUAdapterType adapterType;
-//     WGPUBackendType backendType;
-// } WGPUAdapterProperties;
+// TODO: docs
+pub const Properties = struct {
+    vendor_id: u32,
+    device_id: u32,
+    name: []const u8,
+    driver_description: []const u8,
+    adapter_type: Type,
+    backend_type: BackendType,
+};
 
-// TODO:
-// typedef enum WGPUAdapterType {
-//     WGPUAdapterType_DiscreteGPU = 0x00000000,
-//     WGPUAdapterType_IntegratedGPU = 0x00000001,
-//     WGPUAdapterType_CPU = 0x00000002,
-//     WGPUAdapterType_Unknown = 0x00000003,
-//     WGPUAdapterType_Force32 = 0x7FFFFFFF
-// } WGPUAdapterType;
+// TODO: docs
+pub const Type = enum(u32) {
+    discrete_gpu,
+    integrated_gpu,
+    cpu,
+    unknown,
+};
+
+// TODO: docs
+pub const BackendType = enum(u32) {
+    nul,
+    webgpu,
+    d3d11,
+    d3d12,
+    metal,
+    vulkan,
+    opengl,
+    opengles,
+};
+
+test "syntax" {
+    _ = VTable;
+    _ = hasFeature;
+    _ = Properties;
+    _ = Type;
+    _ = BackendType;
+}

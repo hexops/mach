@@ -84,18 +84,6 @@ const interface_vtable = Interface.VTable{
     }).requestAdapter,
 };
 
-// TODO:
-// typedef void (*WGPURequestAdapterCallback)(WGPURequestAdapterStatus status, WGPUAdapter adapter, char const * message, void * userdata);
-// WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options, WGPURequestAdapterCallback callback, void * userdata);
-
-// typedef enum WGPURequestAdapterStatus {
-//     WGPURequestAdapterStatus_Success = 0x00000000,
-//     WGPURequestAdapterStatus_Unavailable = 0x00000001,
-//     WGPURequestAdapterStatus_Error = 0x00000002,
-//     WGPURequestAdapterStatus_Unknown = 0x00000003,
-//     WGPURequestAdapterStatus_Force32 = 0x7FFFFFFF
-// } WGPURequestAdapterStatus;
-
 /// Returns the gpu.Interface for interacting with this native instance.
 pub fn interface(native: *NativeInstance) Interface {
     return .{
@@ -191,17 +179,28 @@ const surface_vtable = Surface.VTable{
 };
 
 fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
+    var c_props: c.WGPUAdapterProperties = undefined;
+    c.wgpuAdapterGetProperties(adapter, &c_props);
+    const properties = Adapter.Properties{
+        .vendor_id = c_props.vendorID,
+        .device_id = c_props.deviceID,
+        .name = std.mem.span(c_props.name),
+        .driver_description = std.mem.span(c_props.driverDescription),
+        .adapter_type = @intToEnum(Adapter.Type, c_props.adapterType),
+        .backend_type = @intToEnum(Adapter.BackendType, c_props.backendType),
+    };
+
     // TODO: implement Adapter interface:
     // WGPU_EXPORT size_t wgpuAdapterEnumerateFeatures(WGPUAdapter adapter, WGPUFeatureName * features);
     // WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature);
     // WGPU_EXPORT bool wgpuAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits * limits);
-    // WGPU_EXPORT void wgpuAdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties * properties);
 
     return .{
         // TODO:
         .features = undefined,
         // TODO:
         .limits = undefined,
+        .properties = properties,
 
         // TODO: why is fallback not queryable on Dawn?
         .fallback = false,
