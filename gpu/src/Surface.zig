@@ -1,46 +1,39 @@
 //! A native WebGPU surface
 
-// typedef enum WGPUSType {
-//     WGPUSType_Invalid = 0x00000000,
-//     WGPUSType_SurfaceDescriptorFromMetalLayer = 0x00000001,
-//     WGPUSType_SurfaceDescriptorFromWindowsHWND = 0x00000002,
-//     WGPUSType_SurfaceDescriptorFromXlibWindow = 0x00000003,
-//     WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector = 0x00000004,
+pub const DescriptorTag = enum {
+    metal_layer,
+    windows_hwnd,
+    windows_core_window,
+    windows_swap_chain_panel,
+    xlib_window,
+    canvas_html_selector,
+};
 
-const Descriptor = struct {};
-// typedef struct WGPUSurfaceDescriptor {
-//     WGPUChainedStruct const * nextInChain;
-//     char const * label;
-// } WGPUSurfaceDescriptor;
-
-// typedef struct WGPUSurfaceDescriptorFromCanvasHTMLSelector {
-//     WGPUChainedStruct chain;
-//     char const * selector;
-// } WGPUSurfaceDescriptorFromCanvasHTMLSelector;
-
-// typedef struct WGPUSurfaceDescriptorFromMetalLayer {
-//     WGPUChainedStruct chain;
-//     void * layer;
-// } WGPUSurfaceDescriptorFromMetalLayer;
-
-// typedef struct WGPUSurfaceDescriptorFromWindowsCoreWindow {
-//     WGPUChainedStruct chain;
-//     void * coreWindow;
-// } WGPUSurfaceDescriptorFromWindowsCoreWindow;
-
-// typedef struct WGPUSurfaceDescriptorFromWindowsHWND {
-//     WGPUChainedStruct chain;
-//     void * hinstance;
-//     void * hwnd;
-// } WGPUSurfaceDescriptorFromWindowsHWND;
-
-// typedef struct WGPUSurfaceDescriptorFromWindowsSwapChainPanel {
-//     WGPUChainedStruct chain;
-//     void * swapChainPanel;
-// } WGPUSurfaceDescriptorFromWindowsSwapChainPanel;
-
-// typedef struct WGPUSurfaceDescriptorFromXlibWindow {
-//     WGPUChainedStruct chain;
-//     void * display;
-//     uint32_t window;
-// } WGPUSurfaceDescriptorFromXlibWindow;
+pub const Descriptor = union(DescriptorTag) {
+    metal_layer: struct {
+        label: ?[]const u8,
+        layer: *anyopaque,
+    },
+    windows_hwnd: struct {
+        label: ?[]const u8,
+        hinstance: *anyopaque,
+        hwnd: *anyopaque,
+    },
+    windows_core_window: struct {
+        label: ?[]const u8,
+        core_window: *anyopaque,
+    },
+    windows_swap_chain_panel: struct {
+        label: ?[]const u8,
+        swap_chain_panel: *anyopaque,
+    },
+    xlib_window: struct {
+        label: ?[]const u8,
+        display: *anyopaque,
+        window: u32,
+    },
+    canvas_html_selector: struct {
+        label: ?[]const u8,
+        selector: []const u8,
+    },
+};

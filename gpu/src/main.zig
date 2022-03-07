@@ -33,6 +33,7 @@ test "syntax" {
     _ = Adapter;
     _ = Device;
     _ = Surface;
+    _ = Surface.Descriptor;
 
     _ = FeatureName;
     _ = SupportedLimits;
