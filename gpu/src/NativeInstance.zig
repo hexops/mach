@@ -2,11 +2,17 @@
 const c = @import("c.zig").c;
 const Interface = @import("Interface.zig");
 
-/// Returns a native webgpu.h implementation of the gpu.Interface, wrapping the given WGPUInstance.
-pub fn native(instance: c.WGPUInstance) Interface {
-    // TODO: implement Interface
-    _ = instance;
+const NativeInstance = @This();
+
+/// The WGPUInstance that is wrapped by this native instance.
+instance: c.WGPUInstance,
+
+/// Returns the gpu.Interface for interacting with this native instance.
+pub fn interface(native: NativeInstance) Interface {
+    _ = native;
     @panic("not implemented");
+
+    // TODO: implement Interface
 
     // TODO: implement Device interface
 
@@ -17,4 +23,9 @@ pub fn native(instance: c.WGPUInstance) Interface {
     // WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature);
     // WGPU_EXPORT bool wgpuAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits * limits);
     // WGPU_EXPORT void wgpuAdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties * properties);
+}
+
+/// Wraps a native WGPUInstance to provide an implementation of the gpu.Interface.
+pub fn wrap(instance: c.WGPUInstance) NativeInstance {
+    return .{ .instance = instance };
 }
