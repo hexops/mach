@@ -11,9 +11,9 @@ instance: c.WGPUInstance,
 vtable: Interface.VTable,
 
 /// Wraps a native WGPUInstance to provide an implementation of the gpu.Interface.
-pub fn wrap(instance: c.WGPUInstance) NativeInstance {
+pub fn wrap(instance: *anyopaque) NativeInstance {
     return .{
-        .instance = instance,
+        .instance = @ptrCast(c.WGPUInstance, instance),
         .vtable = undefined, // TODO
     };
 }
