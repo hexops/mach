@@ -2,6 +2,7 @@ const std = @import("std");
 const sample_utils = @import("sample_utils.zig");
 const c = @import("c.zig").c;
 const glfw = @import("glfw");
+const gpu = @import("gpu");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -37,11 +38,12 @@ pub fn main() !void {
             .presentMode = c.WGPUPresentMode_Fifo,
             .implementation = 0,
         };
-        window_data.surface = sample_utils.createSurfaceForWindow(
-            setup.instance,
+        const surface = sample_utils.createSurfaceForWindow(
+            &setup.native_instance,
             setup.window,
             comptime sample_utils.detectGLFWOptions(),
         );
+        window_data.surface = @ptrCast(c.WGPUSurface, surface.ptr);
     } else {
         const binding = c.machUtilsCreateBinding(setup.backend_type, @ptrCast(*c.GLFWwindow, setup.window.handle), setup.device);
         if (binding == null) {

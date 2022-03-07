@@ -160,40 +160,24 @@ pub fn detectGLFWOptions() glfw.BackendOptions {
 }
 
 pub fn createSurfaceForWindow(
-    instance: c.WGPUInstance,
+    native_instance: *const gpu.NativeInstance,
     window: glfw.Window,
     comptime glfw_options: glfw.BackendOptions,
-) c.WGPUSurface {
+) gpu.Surface {
     const glfw_native = glfw.Native(glfw_options);
-    if (glfw_options.win32) {
-        var desc: c.WGPUSurfaceDescriptorFromWindowsHWND = undefined;
-        desc.chain.next = null;
-        desc.chain.sType = c.WGPUSType_SurfaceDescriptorFromWindowsHWND;
-
-        desc.hinstance = std.os.windows.kernel32.GetModuleHandleW(null);
-        desc.hwnd = glfw_native.getWin32Window(window);
-
-        var descriptor: c.WGPUSurfaceDescriptor = undefined;
-        descriptor.nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc);
-        descriptor.label = "basic surface";
-        return c.wgpuInstanceCreateSurface(instance, &descriptor);
-    } else if (glfw_options.x11) {
-        var desc: c.WGPUSurfaceDescriptorFromXlibWindow = undefined;
-        desc.chain.next = null;
-        desc.chain.sType = c.WGPUSType_SurfaceDescriptorFromXlibWindow;
-
-        desc.display = glfw_native.getX11Display();
-        desc.window = glfw_native.getX11Window(window);
-
-        var descriptor: c.WGPUSurfaceDescriptor = undefined;
-        descriptor.nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc);
-        descriptor.label = "basic surface";
-        return c.wgpuInstanceCreateSurface(instance, &descriptor);
-    } else if (glfw_options.cocoa) {
-        var desc: c.WGPUSurfaceDescriptorFromMetalLayer = undefined;
-        desc.chain.next = null;
-        desc.chain.sType = c.WGPUSType_SurfaceDescriptorFromMetalLayer;
-
+    const descriptor = if (glfw_options.win32) gpu.Surface.Descriptor{
+        .windows_hwnd = .{
+            .label = "basic surface",
+            .hinstance = std.os.windows.kernel32.GetModuleHandleW(null),
+            .hwnd = glfw_native.getWin32Window(window),
+        },
+    } else if (glfw_options.x11) gpu.Surface.Descriptor{
+        .xlib_window = .{
+            .label = "basic surface",
+            .display = glfw_native.getX11Display(),
+            .window = glfw_native.getX11Window(window),
+        },
+    } else if (glfw_options.cocoa) blk: {
         const ns_window = glfw_native.getCocoaWindow(window);
         const ns_view = msgSend(ns_window, "contentView", .{}, *anyopaque); // [nsWindow contentView]
 
@@ -207,15 +191,17 @@ pub fn createSurfaceForWindow(
         const scale_factor = msgSend(ns_window, "backingScaleFactor", .{}, f64); // [ns_window backingScaleFactor]
         msgSend(layer.?, "setContentsScale:", .{scale_factor}, void); // [layer setContentsScale:scale_factor]
 
-        desc.layer = layer.?;
-
-        var descriptor: c.WGPUSurfaceDescriptor = undefined;
-        descriptor.nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc);
-        descriptor.label = "basic surface";
-        return c.wgpuInstanceCreateSurface(instance, &descriptor);
+        break :blk gpu.Surface.Descriptor{
+            .metal_layer = .{
+                .label = "basic surface",
+                .layer = layer.?,
+            },
+        };
     } else if (glfw_options.wayland) {
         @panic("Dawn does not yet have Wayland support, see https://bugs.chromium.org/p/dawn/issues/detail?id=1246&q=surface&can=2");
     } else unreachable;
+
+    return native_instance.createSurface(&descriptor);
 }
 
 // Borrowed from https://github.com/hazeycode/zig-objcrt
