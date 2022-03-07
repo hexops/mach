@@ -81,6 +81,15 @@ pub const Type = enum(u32) {
     unknown,
 };
 
+pub fn typeName(t: Type) []const u8 {
+    return switch (t) {
+        .discrete_gpu => "Discrete GPU",
+        .integrated_gpu => "Integrated GPU",
+        .cpu => "CPU",
+        .unknown => "Unknown",
+    };
+}
+
 // TODO: docs
 pub const BackendType = enum(u32) {
     nul,
@@ -92,6 +101,19 @@ pub const BackendType = enum(u32) {
     opengl,
     opengles,
 };
+
+pub fn backendTypeName(t: BackendType) []const u8 {
+    return switch (t) {
+        .nul => "Null",
+        .webgpu => "WebGPU",
+        .d3d11 => "D3D11",
+        .d3d12 => "D3D12",
+        .metal => "Metal",
+        .vulkan => "Vulkan",
+        .opengl => "OpenGL",
+        .opengles => "OpenGLES",
+    };
+}
 
 test "syntax" {
     _ = VTable;
