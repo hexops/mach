@@ -1,9 +1,9 @@
-//! A native webgpu.h based implementation of the Device interface.
-const Device = @import("Device.zig");
+//! A native webgpu.h implementation of the gpu.Interface
+const Interface = @import("Interface.zig");
 
-/// Returns a native WebGPU implementation of the Device interface.
-pub fn native() Device {
-    // TODO: implement Device interface
+/// Returns a native webgpu.h implementation of the gpu.Interface
+pub fn native() Interface {
+    // TODO: implement Interface
     @panic("not implemented");
 
     // TODO: implement Adapter interface:

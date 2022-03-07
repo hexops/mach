@@ -16,17 +16,17 @@
 //!
 //! 
 const std = @import("std");
-const Adapter = @import("Adapter.zig");
-const Device = @import("Device.zig");
-
+const Interface = @import("Interface.zig");
 const native = @import("native.zig").native;
+
+const Adapter = @import("Adapter.zig");
 
 const FeatureName = @import("feature_name.zig").FeatureName;
 const SupportedLimits = @import("supported_limits.zig").SupportedLimits;
 
 test "syntax" {
     _ = Adapter;
-    _ = Device;
+    _ = Interface;
     _ = native;
     _ = FeatureName;
     _ = SupportedLimits;
