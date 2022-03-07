@@ -52,19 +52,6 @@ fn detectBackendType(allocator: std.mem.Allocator) !c.WGPUBackendType {
     return c.WGPUBackendType_Vulkan;
 }
 
-fn backendTypeString(t: c.WGPUBackendType) []const u8 {
-    return switch (t) {
-        c.WGPUBackendType_OpenGL => "OpenGL",
-        c.WGPUBackendType_OpenGLES => "OpenGLES",
-        c.WGPUBackendType_D3D11 => "D3D11",
-        c.WGPUBackendType_D3D12 => "D3D12",
-        c.WGPUBackendType_Metal => "Metal",
-        c.WGPUBackendType_Null => "Null",
-        c.WGPUBackendType_Vulkan => "Vulkan",
-        else => unreachable,
-    };
-}
-
 pub fn setup(allocator: std.mem.Allocator) !Setup {
     const backend_type = try detectBackendType(allocator);
 
@@ -94,12 +81,15 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
             std.process.exit(1);
         },
     };
-    // TODO: print information about the adapter.
-    //         const name = c.machDawnNativeAdapterProperties_getName(properties);
-    //         const driver_description = c.machDawnNativeAdapterProperties_getDriverDescription(properties);
-    //         std.debug.print("found {s} adapter: {s}, {s}\n", .{ backendTypeString(backend_type), name, driver_description });
-    _ = backend_adapter;
-    std.debug.print("got adapter! requestDevice not yet implemented..", .{});
+
+    // Print which adapter we are going to use.
+    const props = backend_adapter.properties;
+    std.debug.print("found {s} backend on {s} adapter: {s}, {s}\n", .{
+        gpu.Adapter.backendTypeName(props.backend_type),
+        gpu.Adapter.typeName(props.adapter_type),
+        props.name,
+        props.driver_description,
+    });
     std.process.exit(1);
 
     // const backend_device = c.machDawnNativeAdapter_createDevice(backend_adapter.?, null);
