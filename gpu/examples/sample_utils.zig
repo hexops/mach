@@ -76,33 +76,39 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
     const window = try glfw.Window.create(640, 480, "Dawn window", null, null, hints);
 
     const instance = c.machDawnNativeInstance_init();
-    try discoverAdapter(instance, window, backend_type);
 
-    const adapters = c.machDawnNativeInstance_getAdapters(instance);
-    var backend_adapter: ?c.MachDawnNativeAdapter = null;
-    var i: usize = 0;
-    while (i < c.machDawnNativeAdapters_length(adapters)) : (i += 1) {
-        const adapter = c.machDawnNativeAdapters_index(adapters, i);
-        const properties = c.machDawnNativeAdapter_getProperties(adapter);
-        if (c.machDawnNativeAdapterProperties_getBackendType(properties) == backend_type) {
-            const name = c.machDawnNativeAdapterProperties_getName(properties);
-            const driver_description = c.machDawnNativeAdapterProperties_getDriverDescription(properties);
-            std.debug.print("found {s} adapter: {s}, {s}\n", .{ backendTypeString(backend_type), name, driver_description });
-            backend_adapter = adapter;
-        }
-    }
-    assert(backend_adapter != null);
-
-    const backend_device = c.machDawnNativeAdapter_createDevice(backend_adapter.?, null);
     const backend_procs = c.machDawnNativeGetProcs();
-
     c.dawnProcSetProcs(backend_procs);
-    backend_procs.*.deviceSetUncapturedErrorCallback.?(backend_device, printDeviceError, null);
+
+    var native_instance = gpu.NativeInstance.wrap(c.machDawnNativeInstance_get(instance).?);
+    const gpu_interface = native_instance.interface();
+
+    // Discovers e.g. OpenGL adapters.
+    try discoverAdapters(instance, window, backend_type);
+
+    // Request an adapter.
+    const backend_adapter = switch (nosuspend gpu_interface.requestAdapter(&.{})) {
+        .adapter => |v| v,
+        .err => |err| {
+            std.debug.print("failed to get adapter: error={} {s}\n", .{ err.code, err.message });
+            std.process.exit(1);
+        },
+    };
+    // TODO: print information about the adapter.
+    //         const name = c.machDawnNativeAdapterProperties_getName(properties);
+    //         const driver_description = c.machDawnNativeAdapterProperties_getDriverDescription(properties);
+    //         std.debug.print("found {s} adapter: {s}, {s}\n", .{ backendTypeString(backend_type), name, driver_description });
+    _ = backend_adapter;
+    std.debug.print("got adapter! requestDevice not yet implemented..", .{});
+    std.process.exit(1);
+
+    // const backend_device = c.machDawnNativeAdapter_createDevice(backend_adapter.?, null);
+    // backend_procs.*.deviceSetUncapturedErrorCallback.?(backend_device, printDeviceError, null);
     return Setup{
-        .native_instance = gpu.NativeInstance.wrap(c.machDawnNativeInstance_get(instance).?),
+        .native_instance = native_instance,
         .instance = c.machDawnNativeInstance_get(instance),
         .backend_type = backend_type,
-        .device = backend_device,
+        .device = undefined,
         .window = window,
     };
 }
@@ -131,7 +137,7 @@ fn glfwWindowHintsForBackend(backend: c.WGPUBackendType) glfw.Window.Hints {
     };
 }
 
-fn discoverAdapter(instance: c.MachDawnNativeInstance, window: glfw.Window, typ: c.WGPUBackendType) !void {
+fn discoverAdapters(instance: c.MachDawnNativeInstance, window: glfw.Window, typ: c.WGPUBackendType) !void {
     if (typ == c.WGPUBackendType_OpenGL) {
         try glfw.makeContextCurrent(window);
         const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGL{
