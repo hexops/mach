@@ -2,16 +2,24 @@
 //!
 //! Like std.mem.Allocator, but representing a WebGPU implementation.
 
-// The type erased pointer to the Device implementation
+const Interface = @This();
+
+/// The type erased pointer to the Interface implementation
 ptr: *anyopaque,
 vtable: *const VTable,
 
 pub const VTable = struct {
-    // TODO(gpu): make these *const fn once stage2 is released.
-    deinit: fn (ptr: *anyopaque) void,
+    reference: fn (ptr: *anyopaque) void,
+    release: fn (ptr: *anyopaque) void,
 };
+
+pub inline fn reference(interface: Interface) void {
+    interface.vtable.reference(interface.ptr);
+}
+
+pub inline fn release(interface: Interface) void {
+    interface.vtable.release(interface.ptr);
+}
 
 // TODO:
 // WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options, WGPURequestAdapterCallback callback, void * userdata);
-// WGPU_EXPORT void wgpuInstanceReference(WGPUInstance instance);
-// WGPU_EXPORT void wgpuInstanceRelease(WGPUInstance instance);

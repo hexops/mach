@@ -8,26 +8,32 @@ const NativeInstance = @This();
 /// The WGPUInstance that is wrapped by this native instance.
 instance: c.WGPUInstance,
 
-vtable: Interface.VTable,
-
 /// Wraps a native WGPUInstance to provide an implementation of the gpu.Interface.
 pub fn wrap(instance: *anyopaque) NativeInstance {
-    return .{
-        .instance = @ptrCast(c.WGPUInstance, instance),
-        .vtable = undefined, // TODO
-    };
+    return .{ .instance = @ptrCast(c.WGPUInstance, instance) };
 }
+
+const interface_vtable = Interface.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            const native = @ptrCast(*NativeInstance, @alignCast(@alignOf(*NativeInstance), ptr));
+            c.wgpuInstanceReference(native.instance);
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            const native = @ptrCast(*NativeInstance, @alignCast(@alignOf(*NativeInstance), ptr));
+            c.wgpuInstanceRelease(native.instance);
+        }
+    }).release,
+};
 
 /// Returns the gpu.Interface for interacting with this native instance.
 pub fn interface(native: *NativeInstance) Interface {
     return .{
         .ptr = native,
-        .vtable = &native.vtable,
+        .vtable = &interface_vtable,
     };
-    // TODO: implement Interface
-    // WGPU_EXPORT void wgpuInstanceReference(WGPUInstance instance);
-    // WGPU_EXPORT void wgpuInstanceRelease(WGPUInstance instance);
-
     // TODO: implement Device interface
 
     // TODO: implement Adapter interface:
