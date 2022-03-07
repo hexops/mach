@@ -27,6 +27,7 @@ pub fn build(b: *std.build.Builder) void {
     example.setBuildMode(mode);
     example.install();
     example.linkLibC();
+    example.addPackagePath("gpu", "src/main.zig");
     example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
     glfw.link(b, example, .{});
     gpu_dawn.link(b, example, .{});

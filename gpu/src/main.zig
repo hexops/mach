@@ -16,15 +16,15 @@
 //!
 //! 
 const std = @import("std");
-const Interface = @import("Interface.zig");
-const NativeInstance = @import("NativeInstance.zig");
+pub const Interface = @import("Interface.zig");
+pub const NativeInstance = @import("NativeInstance.zig");
 
-const Adapter = @import("Adapter.zig");
-const Device = @import("Device.zig");
-const Surface = @import("Surface.zig");
+pub const Adapter = @import("Adapter.zig");
+pub const Device = @import("Device.zig");
+pub const Surface = @import("Surface.zig");
 
-const FeatureName = @import("feature_name.zig").FeatureName;
-const SupportedLimits = @import("supported_limits.zig").SupportedLimits;
+pub const FeatureName = @import("feature_name.zig").FeatureName;
+pub const SupportedLimits = @import("supported_limits.zig").SupportedLimits;
 
 test "syntax" {
     _ = Interface;
