@@ -38,12 +38,11 @@ pub fn main() !void {
             .presentMode = c.WGPUPresentMode_Fifo,
             .implementation = 0,
         };
-        const surface = sample_utils.createSurfaceForWindow(
+        window_data.surface = sample_utils.createSurfaceForWindow(
             &setup.native_instance,
             setup.window,
             comptime sample_utils.detectGLFWOptions(),
         );
-        window_data.surface = @ptrCast(c.WGPUSurface, surface.ptr);
     } else {
         const binding = c.machUtilsCreateBinding(setup.backend_type, @ptrCast(*c.GLFWwindow, setup.window.handle), setup.device);
         if (binding == null) {
@@ -170,7 +169,7 @@ pub fn main() !void {
 }
 
 const WindowData = struct {
-    surface: ?c.WGPUSurface,
+    surface: ?gpu.Surface,
     swap_chain: ?c.WGPUSwapChain,
     swap_chain_format: c.WGPUTextureFormat,
     current_desc: c.WGPUSwapChainDescriptor,
@@ -194,7 +193,7 @@ fn frame(params: FrameParams) !void {
     if (pl.swap_chain == null or !isDescriptorEqual(pl.current_desc, pl.target_desc)) {
         const use_legacy_api = pl.surface == null;
         if (!use_legacy_api) {
-            pl.swap_chain = c.wgpuDeviceCreateSwapChain(params.device, pl.surface.?, &pl.target_desc);
+            pl.swap_chain = c.wgpuDeviceCreateSwapChain(params.device, @ptrCast(c.WGPUSurface, pl.surface.?.ptr), &pl.target_desc);
         } else {
             c.wgpuSwapChainConfigure(
                 pl.swap_chain.?,
