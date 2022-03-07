@@ -26,7 +26,6 @@ typedef struct WGPURenderPassEncoderImpl* WGPURenderPassEncoder;
 typedef struct WGPURenderPipelineImpl* WGPURenderPipeline;
 typedef struct WGPUSamplerImpl* WGPUSampler;
 typedef struct WGPUShaderModuleImpl* WGPUShaderModule;
-typedef struct WGPUSurfaceImpl* WGPUSurface;
 typedef struct WGPUSwapChainImpl* WGPUSwapChain;
 typedef struct WGPUTextureImpl* WGPUTexture;
 typedef struct WGPUTextureViewImpl* WGPUTextureView;
@@ -1274,10 +1273,6 @@ WGPU_EXPORT void wgpuShaderModuleGetCompilationInfo(WGPUShaderModule shaderModul
 WGPU_EXPORT void wgpuShaderModuleSetLabel(WGPUShaderModule shaderModule, char const * label);
 WGPU_EXPORT void wgpuShaderModuleReference(WGPUShaderModule shaderModule);
 WGPU_EXPORT void wgpuShaderModuleRelease(WGPUShaderModule shaderModule);
-
-// Methods of Surface
-WGPU_EXPORT void wgpuSurfaceReference(WGPUSurface surface);
-WGPU_EXPORT void wgpuSurfaceRelease(WGPUSurface surface);
 
 // Methods of SwapChain
 WGPU_EXPORT void wgpuSwapChainConfigure(WGPUSwapChain swapChain, WGPUTextureFormat format, WGPUTextureUsageFlags allowedUsage, uint32_t width, uint32_t height);

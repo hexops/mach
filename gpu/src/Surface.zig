@@ -1,5 +1,14 @@
 //! A native WebGPU surface
 
+// The type erased pointer to the Surface implementation
+ptr: *anyopaque,
+vtable: *const VTable,
+
+pub const VTable = struct {
+    reference: fn (ptr: *anyopaque) void,
+    release: fn (ptr: *anyopaque) void,
+};
+
 pub const DescriptorTag = enum {
     metal_layer,
     windows_hwnd,
@@ -37,3 +46,8 @@ pub const Descriptor = union(DescriptorTag) {
         selector: []const u8,
     },
 };
+
+test "syntax" {
+    _ = DescriptorTag;
+    _ = Descriptor;
+}
