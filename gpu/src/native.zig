@@ -1,9 +1,11 @@
 //! A native webgpu.h implementation of the gpu.Interface
+const c = @import("c.zig").c;
 const Interface = @import("Interface.zig");
 
-/// Returns a native webgpu.h implementation of the gpu.Interface
-pub fn native() Interface {
+/// Returns a native webgpu.h implementation of the gpu.Interface, wrapping the given WGPUInstance.
+pub fn native(instance: c.WGPUInstance) Interface {
     // TODO: implement Interface
+    _ = instance;
     @panic("not implemented");
 
     // TODO: implement Device interface
