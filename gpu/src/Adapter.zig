@@ -36,6 +36,8 @@ limits: SupportedLimits,
 /// An adapter may be considered a fallback adapter if it has significant performance caveats in
 /// exchange for some combination of wider compatibility, more predictable behavior, or improved
 /// privacy. It is not guaranteed that a fallback adapter is available on every system.
+///
+/// Always false on native implementations of WebGPU (TODO: why is this not queryable in Dawn?)
 fallback: bool,
 
 // The type erased pointer to the Adapter implementation
