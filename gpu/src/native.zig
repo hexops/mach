@@ -6,6 +6,8 @@ pub fn native() Interface {
     // TODO: implement Interface
     @panic("not implemented");
 
+    // TODO: implement Device interface
+
     // TODO: implement Adapter interface:
     // typedef struct WGPUAdapterImpl* WGPUAdapter;
     // // Methods of Adapter
