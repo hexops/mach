@@ -22,9 +22,6 @@ const NativeInstance = @This();
 /// The WGPUInstance that is wrapped by this native instance.
 instance: c.WGPUInstance,
 
-// TODO: use CallbackResponse approach instead of storing here
-request_adapter_response: ?Interface.RequestAdapterResponse = null,
-
 /// Wraps a native WGPUInstance to provide an implementation of the gpu.Interface.
 pub fn wrap(instance: *anyopaque) NativeInstance {
     return .{ .instance = @ptrCast(c.WGPUInstance, instance) };
@@ -58,10 +55,10 @@ const interface_vtable = Interface.VTable{
 
             const callback = (struct {
                 pub fn callback(status: c.WGPURequestAdapterStatus, adapter: c.WGPUAdapter, message: [*c]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                    const _native = @ptrCast(*NativeInstance, @alignCast(@alignOf(*NativeInstance), userdata));
+                    const _callback_response = @ptrCast(*Interface.RequestAdapterResponse, @alignCast(@alignOf(*Interface.RequestAdapterResponse), userdata));
 
                     // Store the response into a field on the native instance for later reading.
-                    _native.request_adapter_response = if (status == c.WGPURequestAdapterStatus_Success) .{
+                    _callback_response.* = if (status == c.WGPURequestAdapterStatus_Success) .{
                         .adapter = wrapAdapter(adapter.?),
                     } else .{
                         .err = Interface.RequestAdapterError{
@@ -77,16 +74,15 @@ const interface_vtable = Interface.VTable{
                 }
             }).callback;
 
-            c.wgpuInstanceRequestAdapter(native.instance, &opt, callback, native);
+            var callback_response: Interface.RequestAdapterResponse = undefined;
+            c.wgpuInstanceRequestAdapter(native.instance, &opt, callback, &callback_response);
             // TODO: Once crbug.com/dawn/1122 is fixed, we should process events here otherwise our
             // callback will not be invoked.
             // c.wgpuInstanceProcessEvents(native.instance)
             suspend {} // must suspend so that async caller can resume
 
             // Return the response, asserting the callback has executed at this point.
-            const resp = native.request_adapter_response.?;
-            native.request_adapter_response = null;
-            return resp;
+            return callback_response;
         }
     }).requestAdapter,
 };
