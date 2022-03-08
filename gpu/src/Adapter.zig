@@ -51,9 +51,17 @@ pub const VTable = struct {
     // TODO:
     // WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor, WGPURequestDeviceCallback callback, void * userdata);
     // WGPU_EXPORT WGPUDevice wgpuAdapterCreateDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor);
-    // WGPU_EXPORT void wgpuAdapterReference(WGPUAdapter adapter);
-    // WGPU_EXPORT void wgpuAdapterRelease(WGPUAdapter adapter);
+    reference: fn (ptr: *anyopaque) void,
+    release: fn (ptr: *anyopaque) void,
 };
+
+pub inline fn reference(adapter: Adapter) void {
+    adapter.vtable.reference(adapter.ptr);
+}
+
+pub inline fn release(adapter: Adapter) void {
+    adapter.vtable.release(adapter.ptr);
+}
 
 /// Tests of the given feature can be used to create devices on this adapter.
 pub fn hasFeature(adapter: Adapter, feature: FeatureName) bool {

@@ -210,7 +210,18 @@ fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
     };
 }
 
-const adapter_vtable = Adapter.VTable{};
+const adapter_vtable = Adapter.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuAdapterReference(@ptrCast(c.WGPUAdapter, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuAdapterRelease(@ptrCast(c.WGPUAdapter, ptr));
+        }
+    }).release,
+};
 
 // TODO: implement Device interface
 
