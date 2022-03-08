@@ -9,7 +9,6 @@ pub fn main() !void {
     var allocator = gpa.allocator();
 
     const setup = try sample_utils.setup(allocator);
-    const queue = c.wgpuDeviceGetQueue(@ptrCast(c.WGPUDevice, setup.device.ptr));
     const framebuffer_size = try setup.window.getFramebufferSize();
 
     const window_data = try allocator.create(WindowData);
@@ -157,6 +156,7 @@ pub fn main() !void {
         }
     }).callback);
 
+    const queue = setup.device.getQueue();
     while (!setup.window.shouldClose()) {
         try frame(.{
             .window = setup.window,
@@ -180,7 +180,7 @@ const FrameParams = struct {
     window: glfw.Window,
     device: gpu.Device,
     pipeline: c.WGPURenderPipeline,
-    queue: c.WGPUQueue,
+    queue: gpu.Queue,
 };
 
 fn isDescriptorEqual(a: c.WGPUSwapChainDescriptor, b: c.WGPUSwapChainDescriptor) bool {
@@ -228,7 +228,7 @@ fn frame(params: FrameParams) !void {
     const commands = c.wgpuCommandEncoderFinish(encoder, null);
     c.wgpuCommandEncoderRelease(encoder);
 
-    c.wgpuQueueSubmit(params.queue, 1, &commands);
+    c.wgpuQueueSubmit(@ptrCast(c.WGPUQueue, params.queue.ptr), 1, &commands);
     c.wgpuCommandBufferRelease(commands);
     c.wgpuSwapChainPresent(pl.swap_chain.?);
     c.wgpuTextureViewRelease(back_buffer_view);
