@@ -15,6 +15,9 @@ pub const FeatureName = enum(u32) {
     DawnNative = 0x000003EC,
 };
 
+// TODO: add featureNameString method
+// TODO: should featureName be renamed to just feature?
+
 test "syntax" {
     _ = FeatureName;
 }
