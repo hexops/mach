@@ -16,6 +16,7 @@ const RequestDeviceResponse = Adapter.RequestDeviceResponse;
 const Device = @import("Device.zig");
 const Surface = @import("Surface.zig");
 const Limits = @import("Limits.zig");
+const Queue = @import("Queue.zig");
 
 const NativeInstance = @This();
 
@@ -294,6 +295,11 @@ const device_vtable = Device.VTable{
             c.wgpuDeviceRelease(@ptrCast(c.WGPUDevice, ptr));
         }
     }).release,
+    .getQueue = (struct {
+        pub fn getQueue(ptr: *anyopaque) Queue {
+            return wrapQueue(c.wgpuDeviceGetQueue(@ptrCast(c.WGPUDevice, ptr)));
+        }
+    }).getQueue,
 };
 
 // TODO: maybe make Limits an extern struct that can be cast?
@@ -328,6 +334,26 @@ fn convertLimits(l: Limits) c.WGPULimits {
     };
 }
 
+fn wrapQueue(queue: c.WGPUQueue) Queue {
+    return .{
+        .ptr = queue.?,
+        .vtable = &queue_vtable,
+    };
+}
+
+const queue_vtable = Queue.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuQueueReference(@ptrCast(c.WGPUQueue, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuQueueRelease(@ptrCast(c.WGPUQueue, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -338,4 +364,5 @@ test "syntax" {
     _ = wrapDevice;
     _ = device_vtable;
     _ = convertLimits;
+    _ = wrapQueue;
 }

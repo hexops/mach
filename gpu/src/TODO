@@ -19,7 +19,6 @@ typedef struct WGPUComputePipelineImpl* WGPUComputePipeline;
 typedef struct WGPUExternalTextureImpl* WGPUExternalTexture;
 typedef struct WGPUPipelineLayoutImpl* WGPUPipelineLayout;
 typedef struct WGPUQuerySetImpl* WGPUQuerySet;
-typedef struct WGPUQueueImpl* WGPUQueue;
 typedef struct WGPURenderBundleImpl* WGPURenderBundle;
 typedef struct WGPURenderBundleEncoderImpl* WGPURenderBundleEncoder;
 typedef struct WGPURenderPassEncoderImpl* WGPURenderPassEncoder;
@@ -254,14 +253,6 @@ typedef enum WGPUQueryType {
     WGPUQueryType_Timestamp = 0x00000002,
     WGPUQueryType_Force32 = 0x7FFFFFFF
 } WGPUQueryType;
-
-typedef enum WGPUQueueWorkDoneStatus {
-    WGPUQueueWorkDoneStatus_Success = 0x00000000,
-    WGPUQueueWorkDoneStatus_Error = 0x00000001,
-    WGPUQueueWorkDoneStatus_Unknown = 0x00000002,
-    WGPUQueueWorkDoneStatus_DeviceLost = 0x00000003,
-    WGPUQueueWorkDoneStatus_Force32 = 0x7FFFFFFF
-} WGPUQueueWorkDoneStatus;
 
 typedef enum WGPURenderPassTimestampLocation {
     WGPURenderPassTimestampLocation_Beginning = 0x00000000,
@@ -1069,7 +1060,6 @@ typedef void (*WGPUDeviceLostCallback)(WGPUDeviceLostReason reason, char const *
 typedef void (*WGPUErrorCallback)(WGPUErrorType type, char const * message, void * userdata);
 typedef void (*WGPULoggingCallback)(WGPULoggingType type, char const * message, void * userdata);
 typedef void (*WGPUProc)();
-typedef void (*WGPUQueueWorkDoneCallback)(WGPUQueueWorkDoneStatus status, void * userdata);
 
 WGPU_EXPORT WGPUProc wgpuGetProcAddress(WGPUDevice device, char const * procName);
 
@@ -1156,15 +1146,6 @@ WGPU_EXPORT void wgpuQuerySetDestroy(WGPUQuerySet querySet);
 WGPU_EXPORT void wgpuQuerySetSetLabel(WGPUQuerySet querySet, char const * label);
 WGPU_EXPORT void wgpuQuerySetReference(WGPUQuerySet querySet);
 WGPU_EXPORT void wgpuQuerySetRelease(WGPUQuerySet querySet);
-
-// Methods of Queue
-WGPU_EXPORT void wgpuQueueCopyTextureForBrowser(WGPUQueue queue, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize, WGPUCopyTextureForBrowserOptions const * options);
-WGPU_EXPORT void wgpuQueueOnSubmittedWorkDone(WGPUQueue queue, uint64_t signalValue, WGPUQueueWorkDoneCallback callback, void * userdata);
-WGPU_EXPORT void wgpuQueueSubmit(WGPUQueue queue, uint32_t commandCount, WGPUCommandBuffer const * commands);
-WGPU_EXPORT void wgpuQueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const * data, size_t size);
-WGPU_EXPORT void wgpuQueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize);
-WGPU_EXPORT void wgpuQueueReference(WGPUQueue queue);
-WGPU_EXPORT void wgpuQueueRelease(WGPUQueue queue);
 
 // Methods of RenderBundle
 WGPU_EXPORT void wgpuRenderBundleReference(WGPURenderBundle renderBundle);
