@@ -95,6 +95,7 @@ pub const Type = enum(u32) {
     unknown,
 };
 
+// TODO: docs
 pub fn typeName(t: Type) []const u8 {
     return switch (t) {
         .discrete_gpu => "Discrete GPU",
@@ -116,6 +117,7 @@ pub const BackendType = enum(u32) {
     opengles,
 };
 
+// TODO: docs
 pub fn backendTypeName(t: BackendType) []const u8 {
     return switch (t) {
         .nul => "Null",

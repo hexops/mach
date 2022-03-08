@@ -14,7 +14,10 @@
 //!
 //! Note: WebGPU’s coordinate systems match DirectX’s coordinate systems in a graphics pipeline.
 //!
-//! 
+//! # Reference counting
+//!
+//! TODO: docs
+//!
 const std = @import("std");
 pub const Interface = @import("Interface.zig");
 pub const RequestAdapterOptions = Interface.RequestAdapterOptions;
