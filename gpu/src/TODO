@@ -994,6 +994,11 @@ typedef struct WGPUComputePipelineDescriptor {
     WGPUProgrammableStageDescriptor compute;
 } WGPUComputePipelineDescriptor;
 
+typedef struct WGPUSupportedLimits {
+    WGPUChainedStructOut * nextInChain;
+    WGPULimits limits;
+} WGPUSupportedLimits;
+
 typedef struct WGPUDeviceProperties {
     uint32_t deviceID;
     uint32_t vendorID;

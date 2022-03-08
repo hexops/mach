@@ -300,10 +300,36 @@ const device_vtable = Device.VTable{
     }).release,
 };
 
+// TODO: maybe make Limits an extern struct that can be cast?
 fn convertLimits(l: Limits) c.WGPULimits {
-    // TODO: implement!
-    _ = l;
-    return std.mem.zeroes(c.WGPULimits);
+    return .{
+        .maxTextureDimension1D = l.max_texture_dimension_1d,
+        .maxTextureDimension2D = l.max_texture_dimension_2d,
+        .maxTextureDimension3D = l.max_texture_dimension_3d,
+        .maxTextureArrayLayers = l.max_texture_array_layers,
+        .maxBindGroups = l.max_bind_groups,
+        .maxDynamicUniformBuffersPerPipelineLayout = l.max_dynamic_uniform_buffers_per_pipeline_layout,
+        .maxDynamicStorageBuffersPerPipelineLayout = l.max_dynamic_storage_buffers_per_pipeline_layout,
+        .maxSampledTexturesPerShaderStage = l.max_sampled_textures_per_shader_stage,
+        .maxSamplersPerShaderStage = l.max_samplers_per_shader_stage,
+        .maxStorageBuffersPerShaderStage = l.max_storage_buffers_per_shader_stage,
+        .maxStorageTexturesPerShaderStage = l.max_storage_textures_per_shader_stage,
+        .maxUniformBuffersPerShaderStage = l.max_uniform_buffers_per_shader_stage,
+        .maxUniformBufferBindingSize = l.max_uniform_buffer_binding_size,
+        .maxStorageBufferBindingSize = l.max_storage_buffer_binding_size,
+        .minUniformBufferOffsetAlignment = l.min_uniform_buffer_offset_alignment,
+        .minStorageBufferOffsetAlignment = l.min_storage_buffer_offset_alignment,
+        .maxVertexBuffers = l.max_vertex_buffers,
+        .maxVertexAttributes = l.max_vertex_attributes,
+        .maxVertexBufferArrayStride = l.max_vertex_buffer_array_stride,
+        .maxInterStageShaderComponents = l.max_inter_stage_shader_components,
+        .maxComputeWorkgroupStorageSize = l.max_compute_workgroup_storage_size,
+        .maxComputeInvocationsPerWorkgroup = l.max_compute_invocations_per_workgroup,
+        .maxComputeWorkgroupSizeX = l.max_compute_workgroup_size_x,
+        .maxComputeWorkgroupSizeY = l.max_compute_workgroup_size_y,
+        .maxComputeWorkgroupSizeZ = l.max_compute_workgroup_size_z,
+        .maxComputeWorkgroupsPerDimension = l.max_compute_workgroups_per_dimension,
+    };
 }
 
 test "syntax" {
