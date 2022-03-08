@@ -8,6 +8,7 @@
 //! https://gpuweb.github.io/gpuweb/#gpuadapter
 const FeatureName = @import("feature_name.zig").FeatureName;
 const Limits = @import("Limits.zig");
+const Queue = @import("Queue.zig");
 
 const Device = @This();
 
@@ -38,7 +39,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void wgpuDeviceDestroy(WGPUDevice device);
     // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeatureName * features);
     // WGPU_EXPORT bool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits * limits);
-    // WGPU_EXPORT WGPUQueue wgpuDeviceGetQueue(WGPUDevice device);
+    getQueue: fn (ptr: *anyopaque) Queue,
     // WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeatureName feature);
     // WGPU_EXPORT void wgpuDeviceInjectError(WGPUDevice device, WGPUErrorType type, char const * message);
     // WGPU_EXPORT void wgpuDeviceLoseForTesting(WGPUDevice device);
@@ -53,6 +54,18 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
 };
 
+pub inline fn getQueue(device: Device) Queue {
+    return device.vtable.getQueue(device.ptr);
+}
+
+pub inline fn reference(device: Device) void {
+    device.vtable.reference(device.ptr);
+}
+
+pub inline fn release(device: Device) void {
+    device.vtable.release(device.ptr);
+}
+
 // TODO: docs
 pub const Descriptor = struct {
     label: ?[]const u8 = null,
@@ -62,5 +75,8 @@ pub const Descriptor = struct {
 
 test "syntax" {
     _ = VTable;
+    _ = getQueue;
+    _ = reference;
+    _ = release;
     _ = Descriptor;
 }
