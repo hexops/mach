@@ -1,37 +1,27 @@
 // TODO: docs
-
-// TODO:
-// typedef struct WGPUSupportedLimits {
-//     WGPUChainedStructOut * nextInChain;
-//     WGPULimits limits;
-// } WGPUSupportedLimits;
-
-// TODO:
-// typedef struct WGPULimits {
-//     uint32_t maxTextureDimension1D;
-//     uint32_t maxTextureDimension2D;
-//     uint32_t maxTextureDimension3D;
-//     uint32_t maxTextureArrayLayers;
-//     uint32_t maxBindGroups;
-//     uint32_t maxDynamicUniformBuffersPerPipelineLayout;
-//     uint32_t maxDynamicStorageBuffersPerPipelineLayout;
-//     uint32_t maxSampledTexturesPerShaderStage;
-//     uint32_t maxSamplersPerShaderStage;
-//     uint32_t maxStorageBuffersPerShaderStage;
-//     uint32_t maxStorageTexturesPerShaderStage;
-//     uint32_t maxUniformBuffersPerShaderStage;
-//     uint64_t maxUniformBufferBindingSize;
-//     uint64_t maxStorageBufferBindingSize;
-//     uint32_t minUniformBufferOffsetAlignment;
-//     uint32_t minStorageBufferOffsetAlignment;
-//     uint32_t maxVertexBuffers;
-//     uint32_t maxVertexAttributes;
-//     uint32_t maxVertexBufferArrayStride;
-//     uint32_t maxInterStageShaderComponents;
-//     uint32_t maxComputeWorkgroupStorageSize;
-//     uint32_t maxComputeInvocationsPerWorkgroup;
-//     uint32_t maxComputeWorkgroupSizeX;
-//     uint32_t maxComputeWorkgroupSizeY;
-//     uint32_t maxComputeWorkgroupSizeZ;
-//     uint32_t maxComputeWorkgroupsPerDimension;
-// } WGPULimits;
+max_texture_dimension_1d: u32,
+max_texture_dimension_2d: u32,
+max_texture_dimension_3d: u32,
+max_texture_array_layers: u32,
+max_bind_groups: u32,
+max_dynamic_uniform_buffers_per_pipeline_layout: u32,
+max_dynamic_storage_buffers_per_pipeline_layout: u32,
+max_sampled_textures_per_shader_stage: u32,
+max_samplers_per_shader_stage: u32,
+max_storage_buffers_per_shader_stage: u32,
+max_storage_textures_per_shader_stage: u32,
+max_uniform_buffers_per_shader_stage: u32,
+max_uniform_buffer_binding_size: u64,
+max_storage_buffer_binding_size: u64,
+min_uniform_buffer_offset_alignment: u32,
+min_storage_buffer_offset_alignment: u32,
+max_vertex_buffers: u32,
+max_vertex_attributes: u32,
+max_vertex_buffer_array_stride: u32,
+max_inter_stage_shader_components: u32,
+max_compute_workgroup_storage_size: u32,
+max_compute_invocations_per_workgroup: u32,
+max_compute_workgroup_size_x: u32,
+max_compute_workgroup_size_y: u32,
+max_compute_workgroup_size_z: u32,
+max_compute_workgroups_per_dimension: u32,
