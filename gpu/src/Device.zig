@@ -52,6 +52,7 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
 };
 
+// TODO: docs
 pub const Descriptor = struct {
     label: ?[]const u8 = null,
     required_features: ?[]FeatureName = null,

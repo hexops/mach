@@ -29,6 +29,7 @@ pub const DescriptorTag = enum {
     canvas_html_selector,
 };
 
+// TODO: docs
 pub const Descriptor = union(DescriptorTag) {
     metal_layer: struct {
         label: ?[]const u8,
