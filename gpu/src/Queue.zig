@@ -1,3 +1,5 @@
+const CommandBuffer = @import("CommandBuffer.zig");
+
 const Queue = @This();
 
 /// The type erased pointer to the Queue implementation
@@ -10,7 +12,7 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuQueueCopyTextureForBrowser(WGPUQueue queue, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize, WGPUCopyTextureForBrowserOptions const * options);
     // WGPU_EXPORT void wgpuQueueOnSubmittedWorkDone(WGPUQueue queue, uint64_t signalValue, WGPUQueueWorkDoneCallback callback, void * userdata);
-    // WGPU_EXPORT void wgpuQueueSubmit(WGPUQueue queue, uint32_t commandCount, WGPUCommandBuffer const * commands);
+    submit: fn (ptr: *anyopaque, command_count: u32, commands: *const CommandBuffer) void,
     // WGPU_EXPORT void wgpuQueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const * data, size_t size);
     // WGPU_EXPORT void wgpuQueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize);
 };
@@ -21,6 +23,10 @@ pub inline fn reference(queue: Queue) void {
 
 pub inline fn release(queue: Queue) void {
     queue.vtable.release(queue.ptr);
+}
+
+pub inline fn submit(queue: Queue, command_count: u32, commands: *const CommandBuffer) void {
+    queue.vtable.submit(queue.ptr, command_count, commands);
 }
 
 // typedef void (*WGPUQueueWorkDoneCallback)(WGPUQueueWorkDoneStatus status, void * userdata);
@@ -37,4 +43,5 @@ test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = submit;
 }
