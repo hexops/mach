@@ -17,6 +17,7 @@ const Device = @import("Device.zig");
 const Surface = @import("Surface.zig");
 const Limits = @import("Limits.zig");
 const Queue = @import("Queue.zig");
+const CommandBuffer = @import("CommandBuffer.zig");
 
 const NativeInstance = @This();
 
@@ -352,6 +353,15 @@ const queue_vtable = Queue.VTable{
             c.wgpuQueueRelease(@ptrCast(c.WGPUQueue, ptr));
         }
     }).release,
+    .submit = (struct {
+        pub fn submit(ptr: *anyopaque, command_count: u32, commands: *const CommandBuffer) void {
+            c.wgpuQueueSubmit(
+                @ptrCast(c.WGPUQueue, ptr),
+                command_count,
+                @ptrCast(*c.WGPUCommandBuffer, @alignCast(@alignOf(*c.WGPUCommandBuffer), commands.ptr)),
+            );
+        }
+    }).submit,
 };
 
 test "syntax" {

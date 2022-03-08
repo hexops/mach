@@ -32,6 +32,7 @@ pub const Device = @import("Device.zig");
 pub const Surface = @import("Surface.zig");
 pub const Limits = @import("Limits.zig");
 pub const Queue = @import("Queue.zig");
+pub const CommandBuffer = @import("CommandBuffer.zig");
 
 pub const FeatureName = @import("feature_name.zig").FeatureName;
 
@@ -44,6 +45,7 @@ test "syntax" {
     _ = Surface;
     _ = Limits;
     _ = Queue;
+    _ = CommandBuffer;
 
     _ = FeatureName;
 }
