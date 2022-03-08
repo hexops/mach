@@ -2,6 +2,8 @@ const CommandBuffer = @import("CommandBuffer.zig");
 
 const Queue = @This();
 
+on_submitted_work_done: ?OnSubmittedWorkDone = null,
+
 /// The type erased pointer to the Queue implementation
 /// Equal to c.WGPUQueue for NativeInstance.
 ptr: *anyopaque,
@@ -12,11 +14,10 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     // TODO:
     // copyTextureForBrowser: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D, options: *const CopyTextureForBrowserOptions) void,
-    // WGPU_EXPORT void wgpuQueueOnSubmittedWorkDone(WGPUQueue queue, uint64_t signalValue, WGPUQueueWorkDoneCallback callback, void * userdata);
-    submit: fn (ptr: *anyopaque, command_count: u32, commands: *const CommandBuffer) void,
+    submit: fn (queue: Queue, command_count: u32, commands: *const CommandBuffer) void,
     // TODO:
-    // queueWriteBuffer: fn (ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const anyopaque, size: usize);
-    // queueWriteTexture: fn (ptr: *anyopaque, destination: *const ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const TextureDataLayout, write_size: *const Extent3D);
+    // writeBuffer: fn (ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const anyopaque, size: usize);
+    // writeTexture: fn (ptr: *anyopaque, destination: *const ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const TextureDataLayout, write_size: *const Extent3D);
 };
 
 pub inline fn reference(queue: Queue) void {
@@ -28,24 +29,38 @@ pub inline fn release(queue: Queue) void {
 }
 
 pub inline fn submit(queue: Queue, command_count: u32, commands: *const CommandBuffer) void {
-    queue.vtable.submit(queue.ptr, command_count, commands);
+    queue.vtable.submit(queue, command_count, commands);
 }
 
-// TODO:
-// typedef void (*WGPUQueueWorkDoneCallback)(WGPUQueueWorkDoneStatus status, void * userdata);
+pub const OnSubmittedWorkDone = struct {
+    userdata: *anyopaque,
+    callback: fn (status: WorkDoneStatus, userdata: *anyopaque) void,
 
-// TODO:
-// typedef enum WGPUQueueWorkDoneStatus {
-//     WGPUQueueWorkDoneStatus_Success = 0x00000000,
-//     WGPUQueueWorkDoneStatus_Error = 0x00000001,
-//     WGPUQueueWorkDoneStatus_Unknown = 0x00000002,
-//     WGPUQueueWorkDoneStatus_DeviceLost = 0x00000003,
-//     WGPUQueueWorkDoneStatus_Force32 = 0x7FFFFFFF
-// } WGPUQueueWorkDoneStatus;
+    fn init(comptime Context: type, userdata: *Context, comptime callback: fn (status: WorkDoneStatus, userdata: *Context) void) OnSubmittedWorkDone {
+        return .{
+            .userdata = userdata,
+            .callback = (struct {
+                pub inline fn untyped(status: WorkDoneStatus, _userdata: *anyopaque) void {
+                    callback(status, @ptrCast(*Context, @alignCast(@alignOf(*Context), _userdata)));
+                }
+            }).untyped,
+        };
+    }
+};
+
+pub const WorkDoneStatus = enum(u32) {
+    Success = 0x00000000,
+    Error = 0x00000001,
+    Unknown = 0x00000002,
+    DeviceLost = 0x00000003,
+    Force32 = 0x7FFFFFFF,
+};
 
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
     _ = submit;
+    _ = OnSubmittedWorkDone;
+    _ = WorkDoneStatus;
 }
