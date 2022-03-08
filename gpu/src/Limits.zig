@@ -1,9 +1,12 @@
-pub const SupportedLimits = struct {};
+// TODO: docs
+
 // TODO:
 // typedef struct WGPUSupportedLimits {
 //     WGPUChainedStructOut * nextInChain;
 //     WGPULimits limits;
 // } WGPUSupportedLimits;
+
+// TODO:
 // typedef struct WGPULimits {
 //     uint32_t maxTextureDimension1D;
 //     uint32_t maxTextureDimension2D;

@@ -2,20 +2,20 @@
 const std = @import("std");
 const c = @import("c.zig").c;
 
-pub const Interface = @import("Interface.zig");
-pub const RequestAdapterOptions = Interface.RequestAdapterOptions;
-pub const RequestAdapterErrorCode = Interface.RequestAdapterErrorCode;
-pub const RequestAdapterError = Interface.RequestAdapterError;
-pub const RequestAdapterResponse = Interface.RequestAdapterResponse;
+const Interface = @import("Interface.zig");
+const RequestAdapterOptions = Interface.RequestAdapterOptions;
+const RequestAdapterErrorCode = Interface.RequestAdapterErrorCode;
+const RequestAdapterError = Interface.RequestAdapterError;
+const RequestAdapterResponse = Interface.RequestAdapterResponse;
 
-pub const Adapter = @import("Adapter.zig");
-pub const RequestDeviceErrorCode = Adapter.RequestDeviceErrorCode;
-pub const RequestDeviceError = Adapter.RequestDeviceError;
-pub const RequestDeviceResponse = Adapter.RequestDeviceResponse;
+const Adapter = @import("Adapter.zig");
+const RequestDeviceErrorCode = Adapter.RequestDeviceErrorCode;
+const RequestDeviceError = Adapter.RequestDeviceError;
+const RequestDeviceResponse = Adapter.RequestDeviceResponse;
 
-pub const Device = @import("Device.zig");
-
+const Device = @import("Device.zig");
 const Surface = @import("Surface.zig");
+const Limits = @import("Limits.zig");
 
 const NativeInstance = @This();
 
@@ -233,12 +233,17 @@ const adapter_vtable = Adapter.VTable{
         pub fn requestDevice(ptr: *anyopaque, descriptor: *const Device.Descriptor) callconv(.Async) RequestDeviceResponse {
             const adapter = @ptrCast(c.WGPUAdapter, @alignCast(@alignOf(c.WGPUAdapter), ptr));
 
+            const required_limits = if (descriptor.required_limits) |l| c.WGPURequiredLimits{
+                .nextInChain = null,
+                .limits = convertLimits(l),
+            } else null;
+
             const desc = c.WGPUDeviceDescriptor{
                 .nextInChain = null,
                 .label = if (descriptor.label) |l| @ptrCast([*c]const u8, l) else null,
                 .requiredFeaturesCount = if (descriptor.required_features) |f| @intCast(u32, f.len) else 0,
                 .requiredFeatures = if (descriptor.required_features) |f| @ptrCast([*c]const c_uint, &f[0]) else null,
-                .requiredLimits = null, // TODO
+                .requiredLimits = if (required_limits) |*l| l else null,
             };
 
             const callback = (struct {
@@ -295,6 +300,12 @@ const device_vtable = Device.VTable{
     }).release,
 };
 
+fn convertLimits(l: Limits) c.WGPULimits {
+    // TODO: implement!
+    _ = l;
+    return std.mem.zeroes(c.WGPULimits);
+}
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -304,4 +315,5 @@ test "syntax" {
     _ = adapter_vtable;
     _ = wrapDevice;
     _ = device_vtable;
+    _ = convertLimits;
 }

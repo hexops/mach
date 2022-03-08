@@ -20,7 +20,7 @@
 const std = @import("std");
 
 const FeatureName = @import("feature_name.zig").FeatureName;
-const SupportedLimits = @import("supported_limits.zig").SupportedLimits;
+const Limits = @import("Limits.zig");
 const Device = @import("Device.zig");
 
 const Adapter = @This();
@@ -31,7 +31,7 @@ features: []FeatureName,
 /// The best limits which can be used to create devices on this adapter.
 ///
 /// Each adapter limit will be the same or better than its default value in supported limits.
-limits: SupportedLimits,
+limits: Limits,
 
 /// If set to true indicates that the adapter is a fallback adapter.
 ///
@@ -54,7 +54,8 @@ vtable: *const VTable,
 request_device_frame_size: usize,
 
 pub const VTable = struct {
-    // TODO:
+    // TODO: is this method actually useful over requestDevice? Doesn't appear to be available in
+    // web either:
     // WGPU_EXPORT WGPUDevice wgpuAdapterCreateDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor);
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,

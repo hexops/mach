@@ -7,6 +7,7 @@
 //! https://gpuweb.github.io/gpuweb/#devices
 //! https://gpuweb.github.io/gpuweb/#gpuadapter
 const FeatureName = @import("feature_name.zig").FeatureName;
+const Limits = @import("Limits.zig");
 
 const Device = @This();
 
@@ -56,8 +57,7 @@ pub const VTable = struct {
 pub const Descriptor = struct {
     label: ?[]const u8 = null,
     required_features: ?[]FeatureName = null,
-    // TODO:
-    //required_limits: ?RequiredLimits = null,
+    required_limits: ?Limits = null,
 };
 
 test "syntax" {

@@ -955,11 +955,6 @@ typedef struct WGPURenderPassColorAttachment {
     WGPUColor clearValue;
 } WGPURenderPassColorAttachment;
 
-typedef struct WGPURequiredLimits {
-    WGPUChainedStruct const * nextInChain;
-    WGPULimits limits;
-} WGPURequiredLimits;
-
 typedef struct WGPUTextureDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
