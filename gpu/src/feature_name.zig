@@ -1,21 +1,20 @@
-pub const FeatureName = enum {
-    TODO,
+pub const FeatureName = enum(u32) {
+    Undefined = 0x00000000,
+    Depth24UnormStencil8 = 0x00000002,
+    Depth32FloatStencil8 = 0x00000003,
+    TimestampQuery = 0x00000004,
+    PipelineStatisticsQuery = 0x00000005,
+    TextureCompressionBC = 0x00000006,
+    TextureCompressionETC2 = 0x00000007,
+    TextureCompressionASTC = 0x00000008,
+    IndirectFirstInstance = 0x00000009,
+    DepthClamping = 0x000003E8,
+    DawnShaderFloat16 = 0x000003E9,
+    DawnInternalUsages = 0x000003EA,
+    DawnMultiPlanarFormats = 0x000003EB,
+    DawnNative = 0x000003EC,
 };
-// TODO:
-// typedef enum WGPUFeatureName {
-//     WGPUFeatureName_Undefined = 0x00000000,
-//     WGPUFeatureName_Depth24UnormStencil8 = 0x00000002,
-//     WGPUFeatureName_Depth32FloatStencil8 = 0x00000003,
-//     WGPUFeatureName_TimestampQuery = 0x00000004,
-//     WGPUFeatureName_PipelineStatisticsQuery = 0x00000005,
-//     WGPUFeatureName_TextureCompressionBC = 0x00000006,
-//     WGPUFeatureName_TextureCompressionETC2 = 0x00000007,
-//     WGPUFeatureName_TextureCompressionASTC = 0x00000008,
-//     WGPUFeatureName_IndirectFirstInstance = 0x00000009,
-//     WGPUFeatureName_DepthClamping = 0x000003E8,
-//     WGPUFeatureName_DawnShaderFloat16 = 0x000003E9,
-//     WGPUFeatureName_DawnInternalUsages = 0x000003EA,
-//     WGPUFeatureName_DawnMultiPlanarFormats = 0x000003EB,
-//     WGPUFeatureName_DawnNative = 0x000003EC,
-//     WGPUFeatureName_Force32 = 0x7FFFFFFF
-// } WGPUFeatureName;
+
+test "syntax" {
+    _ = FeatureName;
+}
