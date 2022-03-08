@@ -9,7 +9,7 @@ pub fn main() !void {
     var allocator = gpa.allocator();
 
     const setup = try sample_utils.setup(allocator);
-    const queue = c.wgpuDeviceGetQueue(setup.device);
+    const queue = c.wgpuDeviceGetQueue(@ptrCast(c.WGPUDevice, setup.device.ptr));
     const framebuffer_size = try setup.window.getFramebufferSize();
 
     const window_data = try allocator.create(WindowData);
@@ -44,13 +44,13 @@ pub fn main() !void {
             comptime sample_utils.detectGLFWOptions(),
         );
     } else {
-        const binding = c.machUtilsCreateBinding(setup.backend_type, @ptrCast(*c.GLFWwindow, setup.window.handle), setup.device);
+        const binding = c.machUtilsCreateBinding(setup.backend_type, @ptrCast(*c.GLFWwindow, setup.window.handle), @ptrCast(c.WGPUDevice, setup.device.ptr));
         if (binding == null) {
             @panic("failed to create Dawn backend binding");
         }
         descriptor = std.mem.zeroes(c.WGPUSwapChainDescriptor);
         descriptor.implementation = c.machUtilsBackendBinding_getSwapChainImplementation(binding);
-        window_data.swap_chain = c.wgpuDeviceCreateSwapChain(setup.device, null, &descriptor);
+        window_data.swap_chain = c.wgpuDeviceCreateSwapChain(@ptrCast(c.WGPUDevice, setup.device.ptr), null, &descriptor);
 
         window_data.swap_chain_format = c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding);
         c.wgpuSwapChainConfigure(
@@ -84,7 +84,7 @@ pub fn main() !void {
         .nextInChain = @ptrCast(*const c.WGPUChainedStruct, vs_wgsl_descriptor),
         .label = "my vertex shader",
     };
-    const vs_module = c.wgpuDeviceCreateShaderModule(setup.device, &vs_shader_descriptor);
+    const vs_module = c.wgpuDeviceCreateShaderModule(@ptrCast(c.WGPUDevice, setup.device.ptr), &vs_shader_descriptor);
 
     const fs =
         \\ @stage(fragment) fn main() -> @location(0) vec4<f32> {
@@ -99,7 +99,7 @@ pub fn main() !void {
         .nextInChain = @ptrCast(*const c.WGPUChainedStruct, fs_wgsl_descriptor),
         .label = "my fragment shader",
     };
-    const fs_module = c.wgpuDeviceCreateShaderModule(setup.device, &fs_shader_descriptor);
+    const fs_module = c.wgpuDeviceCreateShaderModule(@ptrCast(c.WGPUDevice, setup.device.ptr), &fs_shader_descriptor);
 
     // Fragment state
     var blend = std.mem.zeroes(c.WGPUBlendState);
@@ -142,7 +142,7 @@ pub fn main() !void {
     pipeline_descriptor.primitive.topology = c.WGPUPrimitiveTopology_TriangleList;
     pipeline_descriptor.primitive.stripIndexFormat = c.WGPUIndexFormat_Undefined;
 
-    const pipeline = c.wgpuDeviceCreateRenderPipeline(setup.device, &pipeline_descriptor);
+    const pipeline = c.wgpuDeviceCreateRenderPipeline(@ptrCast(c.WGPUDevice, setup.device.ptr), &pipeline_descriptor);
 
     c.wgpuShaderModuleRelease(vs_module);
     c.wgpuShaderModuleRelease(fs_module);
@@ -178,7 +178,7 @@ const WindowData = struct {
 
 const FrameParams = struct {
     window: glfw.Window,
-    device: c.WGPUDevice,
+    device: gpu.Device,
     pipeline: c.WGPURenderPipeline,
     queue: c.WGPUQueue,
 };
@@ -193,7 +193,7 @@ fn frame(params: FrameParams) !void {
     if (pl.swap_chain == null or !isDescriptorEqual(pl.current_desc, pl.target_desc)) {
         const use_legacy_api = pl.surface == null;
         if (!use_legacy_api) {
-            pl.swap_chain = c.wgpuDeviceCreateSwapChain(params.device, @ptrCast(c.WGPUSurface, pl.surface.?.ptr), &pl.target_desc);
+            pl.swap_chain = c.wgpuDeviceCreateSwapChain(@ptrCast(c.WGPUDevice, params.device.ptr), @ptrCast(c.WGPUSurface, pl.surface.?.ptr), &pl.target_desc);
         } else {
             c.wgpuSwapChainConfigure(
                 pl.swap_chain.?,
@@ -218,7 +218,7 @@ fn frame(params: FrameParams) !void {
     render_pass_info.colorAttachments = &color_attachment;
     render_pass_info.depthStencilAttachment = null;
 
-    const encoder = c.wgpuDeviceCreateCommandEncoder(params.device, null);
+    const encoder = c.wgpuDeviceCreateCommandEncoder(@ptrCast(c.WGPUDevice, params.device.ptr), null);
     const pass = c.wgpuCommandEncoderBeginRenderPass(encoder, &render_pass_info);
     c.wgpuRenderPassEncoderSetPipeline(pass, params.pipeline);
     c.wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
