@@ -30,9 +30,9 @@ pub const NativeInstance = @import("NativeInstance.zig");
 pub const Adapter = @import("Adapter.zig");
 pub const Device = @import("Device.zig");
 pub const Surface = @import("Surface.zig");
+pub const Limits = @import("Limits.zig");
 
 pub const FeatureName = @import("feature_name.zig").FeatureName;
-pub const SupportedLimits = @import("supported_limits.zig").SupportedLimits;
 
 test "syntax" {
     _ = Interface;
@@ -41,7 +41,7 @@ test "syntax" {
     _ = Adapter;
     _ = Device;
     _ = Surface;
+    _ = Limits;
 
     _ = FeatureName;
-    _ = SupportedLimits;
 }
