@@ -354,9 +354,31 @@ const queue_vtable = Queue.VTable{
         }
     }).release,
     .submit = (struct {
-        pub fn submit(ptr: *anyopaque, command_count: u32, commands: *const CommandBuffer) void {
+        pub fn submit(queue: Queue, command_count: u32, commands: *const CommandBuffer) void {
+            const wgpu_queue = @ptrCast(c.WGPUQueue, queue.ptr);
+
+            if (queue.on_submitted_work_done) |on_submitted_work_done| {
+                // Note: signalValue is not available in the web API, and it's usage is undocumented
+                // kainino says "It's basically reserved for future use, though it's been suggested
+                // to remove it instead"
+                const signal_value: u64 = 0;
+
+                const callback = (struct {
+                    pub fn callback(status: c.WGPUQueueWorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
+                        const _on_submitted_work_done = @ptrCast(*Queue.OnSubmittedWorkDone, @alignCast(@alignOf(*Queue.OnSubmittedWorkDone), userdata));
+                        _on_submitted_work_done.callback(
+                            @intToEnum(Queue.WorkDoneStatus, status),
+                            _on_submitted_work_done.userdata,
+                        );
+                    }
+                }).callback;
+
+                var mut_on_submitted_work_done = on_submitted_work_done;
+                c.wgpuQueueOnSubmittedWorkDone(wgpu_queue, signal_value, callback, &mut_on_submitted_work_done);
+            }
+
             c.wgpuQueueSubmit(
-                @ptrCast(c.WGPUQueue, ptr),
+                wgpu_queue,
                 command_count,
                 @ptrCast(*c.WGPUCommandBuffer, @alignCast(@alignOf(*c.WGPUCommandBuffer), commands.ptr)),
             );
