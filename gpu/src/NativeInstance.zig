@@ -9,6 +9,12 @@ pub const RequestAdapterError = Interface.RequestAdapterError;
 pub const RequestAdapterResponse = Interface.RequestAdapterResponse;
 
 pub const Adapter = @import("Adapter.zig");
+pub const RequestDeviceErrorCode = Adapter.RequestDeviceErrorCode;
+pub const RequestDeviceError = Adapter.RequestDeviceError;
+pub const RequestDeviceResponse = Adapter.RequestDeviceResponse;
+
+pub const Device = @import("Device.zig");
+
 const Surface = @import("Surface.zig");
 
 const NativeInstance = @This();
@@ -16,6 +22,7 @@ const NativeInstance = @This();
 /// The WGPUInstance that is wrapped by this native instance.
 instance: c.WGPUInstance,
 
+// TODO: use CallbackResponse approach instead of storing here
 request_adapter_response: ?Interface.RequestAdapterResponse = null,
 
 /// Wraps a native WGPUInstance to provide an implementation of the gpu.Interface.
@@ -207,6 +214,7 @@ fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
 
         .ptr = adapter.?,
         .vtable = &adapter_vtable,
+        .request_device_frame_size = @frameSize(adapter_vtable.requestDevice),
     };
 }
 
@@ -221,9 +229,71 @@ const adapter_vtable = Adapter.VTable{
             c.wgpuAdapterRelease(@ptrCast(c.WGPUAdapter, ptr));
         }
     }).release,
+    .requestDevice = (struct {
+        pub fn requestDevice(ptr: *anyopaque, descriptor: *const Device.Descriptor) callconv(.Async) RequestDeviceResponse {
+            const adapter = @ptrCast(c.WGPUAdapter, @alignCast(@alignOf(c.WGPUAdapter), ptr));
+
+            const desc = c.WGPUDeviceDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| @ptrCast([*c]const u8, l) else null,
+                .requiredFeaturesCount = if (descriptor.required_features) |f| @intCast(u32, f.len) else 0,
+                .requiredFeatures = if (descriptor.required_features) |f| @ptrCast([*c]const c_uint, &f[0]) else null,
+                .requiredLimits = null, // TODO
+            };
+
+            const callback = (struct {
+                pub fn callback(status: c.WGPURequestDeviceStatus, device: c.WGPUDevice, message: [*c]const u8, userdata: ?*anyopaque) callconv(.C) void {
+                    const _callback_response = @ptrCast(*Adapter.RequestDeviceResponse, @alignCast(@alignOf(*Adapter.RequestDeviceResponse), userdata));
+
+                    // Store the response into a field on the native instance for later reading.
+                    _callback_response.* = if (status == c.WGPURequestDeviceStatus_Success) .{
+                        .device = wrapDevice(device.?),
+                    } else .{
+                        .err = Adapter.RequestDeviceError{
+                            .message = std.mem.span(message),
+                            .code = switch (status) {
+                                c.WGPURequestDeviceStatus_Error => RequestDeviceErrorCode.Error,
+                                c.WGPURequestDeviceStatus_Unknown => RequestDeviceErrorCode.Unknown,
+                                else => unreachable,
+                            },
+                        },
+                    };
+                }
+            }).callback;
+
+            var callback_response: Adapter.RequestDeviceResponse = undefined;
+            c.wgpuAdapterRequestDevice(adapter, &desc, callback, &callback_response);
+            // TODO: Once crbug.com/dawn/1122 is fixed, we should process events here otherwise our
+            // callback will not be invoked.
+            // c.wgpuInstanceProcessEvents(native.instance)
+            suspend {} // must suspend so that async caller can resume
+
+            // Return the response, asserting the callback has executed at this point.
+            return callback_response;
+        }
+    }).requestDevice,
 };
 
-// TODO: implement Device interface
+fn wrapDevice(device: c.WGPUDevice) Device {
+    // TODO: implement Device interface
+    return .{
+        .ptr = device.?,
+        .vtable = &device_vtable,
+    };
+}
+
+const device_vtable = Device.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuDeviceReference(@ptrCast(c.WGPUDevice, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuDeviceRelease(@ptrCast(c.WGPUDevice, ptr));
+        }
+    }).release,
+};
 
 test "syntax" {
     _ = wrap;
@@ -232,4 +302,6 @@ test "syntax" {
     _ = createSurface;
     _ = surface_vtable;
     _ = adapter_vtable;
+    _ = wrapDevice;
+    _ = device_vtable;
 }

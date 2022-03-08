@@ -269,13 +269,6 @@ typedef enum WGPURenderPassTimestampLocation {
     WGPURenderPassTimestampLocation_Force32 = 0x7FFFFFFF
 } WGPURenderPassTimestampLocation;
 
-typedef enum WGPURequestDeviceStatus {
-    WGPURequestDeviceStatus_Success = 0x00000000,
-    WGPURequestDeviceStatus_Error = 0x00000001,
-    WGPURequestDeviceStatus_Unknown = 0x00000002,
-    WGPURequestDeviceStatus_Force32 = 0x7FFFFFFF
-} WGPURequestDeviceStatus;
-
 typedef enum WGPUSType {
     WGPUSType_Invalid = 0x00000000,
     WGPUSType_ShaderModuleSPIRVDescriptor = 0x00000005,
@@ -1006,14 +999,6 @@ typedef struct WGPUComputePipelineDescriptor {
     WGPUProgrammableStageDescriptor compute;
 } WGPUComputePipelineDescriptor;
 
-typedef struct WGPUDeviceDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    uint32_t requiredFeaturesCount;
-    WGPUFeatureName const * requiredFeatures;
-    WGPURequiredLimits const * requiredLimits;
-} WGPUDeviceDescriptor;
-
 typedef struct WGPUDeviceProperties {
     uint32_t deviceID;
     uint32_t vendorID;
@@ -1085,7 +1070,6 @@ typedef void (*WGPUErrorCallback)(WGPUErrorType type, char const * message, void
 typedef void (*WGPULoggingCallback)(WGPULoggingType type, char const * message, void * userdata);
 typedef void (*WGPUProc)();
 typedef void (*WGPUQueueWorkDoneCallback)(WGPUQueueWorkDoneStatus status, void * userdata);
-typedef void (*WGPURequestDeviceCallback)(WGPURequestDeviceStatus status, WGPUDevice device, char const * message, void * userdata);
 
 WGPU_EXPORT WGPUProc wgpuGetProcAddress(WGPUDevice device, char const * procName);
 
