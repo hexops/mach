@@ -225,10 +225,11 @@ fn frame(params: FrameParams) !void {
     c.wgpuRenderPassEncoderEnd(pass);
     c.wgpuRenderPassEncoderRelease(pass);
 
-    const commands = c.wgpuCommandEncoderFinish(encoder, null);
+    var commands = c.wgpuCommandEncoderFinish(encoder, null);
     c.wgpuCommandEncoderRelease(encoder);
 
-    c.wgpuQueueSubmit(@ptrCast(c.WGPUQueue, params.queue.ptr), 1, &commands);
+    const buf = gpu.CommandBuffer{ .ptr = &commands, .vtable = undefined };
+    params.queue.submit(1, &buf);
     c.wgpuCommandBufferRelease(commands);
     c.wgpuSwapChainPresent(pl.swap_chain.?);
     c.wgpuTextureViewRelease(back_buffer_view);
