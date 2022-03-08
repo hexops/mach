@@ -17,9 +17,11 @@
 //!
 //! https://gpuweb.github.io/gpuweb/#adapters
 //! https://gpuweb.github.io/gpuweb/#gpuadapter
+const std = @import("std");
 
 const FeatureName = @import("feature_name.zig").FeatureName;
 const SupportedLimits = @import("supported_limits.zig").SupportedLimits;
+const Device = @import("Device.zig");
 
 const Adapter = @This();
 
@@ -43,16 +45,20 @@ fallback: bool,
 // TODO: docs
 properties: Properties,
 
-// The type erased pointer to the Adapter implementation
+/// The type erased pointer to the Adapter implementation
+/// Equal to c.WGPUAdapter for NativeInstance.
 ptr: *anyopaque,
 vtable: *const VTable,
 
+// The @frameSize(func) of the implementations requestDevice async function
+request_device_frame_size: usize,
+
 pub const VTable = struct {
     // TODO:
-    // WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor, WGPURequestDeviceCallback callback, void * userdata);
     // WGPU_EXPORT WGPUDevice wgpuAdapterCreateDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor);
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
+    requestDevice: fn requestDevice(ptr: *anyopaque, descriptor: *const Device.Descriptor) callconv(.Async) RequestDeviceResponse,
 };
 
 pub inline fn reference(adapter: Adapter) void {
@@ -123,10 +129,57 @@ pub fn backendTypeName(t: BackendType) []const u8 {
     };
 }
 
+pub const RequestDeviceErrorCode = error{
+    Error,
+    Unknown,
+};
+
+// TODO: docs
+pub const RequestDeviceError = struct {
+    message: []const u8,
+    code: RequestDeviceErrorCode,
+};
+
+pub const RequestDeviceResponseTag = enum {
+    device,
+    err,
+};
+
+pub const RequestDeviceResponse = union(RequestDeviceResponseTag) {
+    // TODO: docs
+    device: Device,
+    err: RequestDeviceError,
+};
+
+// TODO: docs
+pub fn requestDevice(adapter: Adapter, descriptor: *const Device.Descriptor) callconv(.Async) RequestDeviceResponse {
+    var frame_buffer = std.heap.page_allocator.allocAdvanced(
+        u8,
+        16,
+        adapter.request_device_frame_size,
+        std.mem.Allocator.Exact.at_least,
+    ) catch {
+        return .{ .err = .{
+            .message = "Out of memory",
+            .code = RequestDeviceErrorCode.Error,
+        } };
+    };
+    defer std.heap.page_allocator.free(frame_buffer);
+
+    var result: RequestDeviceResponse = undefined;
+    const f = @asyncCall(frame_buffer, &result, adapter.vtable.requestDevice, .{ adapter.ptr, descriptor });
+    resume f;
+    return result;
+}
+
 test "syntax" {
     _ = VTable;
     _ = hasFeature;
     _ = Properties;
     _ = Type;
     _ = BackendType;
+    _ = RequestDeviceErrorCode;
+    _ = RequestDeviceError;
+    _ = RequestDeviceResponse;
+    _ = requestDevice;
 }
