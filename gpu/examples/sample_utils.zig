@@ -21,7 +21,7 @@ const Setup = struct {
     native_instance: gpu.NativeInstance,
     instance: c.WGPUInstance,
     backend_type: c.WGPUBackendType,
-    device: c.WGPUDevice,
+    device: gpu.Device,
     window: glfw.Window,
 };
 
@@ -90,15 +90,22 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
         props.name,
         props.driver_description,
     });
-    std.process.exit(1);
 
-    // const backend_device = c.machDawnNativeAdapter_createDevice(backend_adapter.?, null);
+    const device = switch (nosuspend backend_adapter.requestDevice(&.{})) {
+        .device => |v| v,
+        .err => |err| {
+            std.debug.print("failed to get device: error={} {s}\n", .{ err.code, err.message });
+            std.process.exit(1);
+        },
+    };
+
+    // TODO: set wgpuDeviceSetUncapturedErrorCallback
     // backend_procs.*.deviceSetUncapturedErrorCallback.?(backend_device, printDeviceError, null);
     return Setup{
         .native_instance = native_instance,
         .instance = c.machDawnNativeInstance_get(instance),
         .backend_type = backend_type,
-        .device = undefined,
+        .device = device,
         .window = window,
     };
 }
