@@ -141,7 +141,7 @@ pub fn createSurface(native: *const NativeInstance, descriptor: *const Surface.D
                 .label = if (src.label) |l| @ptrCast([*c]const u8, l) else null,
             });
         },
-        .xlib_window => |src| blk: {
+        .xlib => |src| blk: {
             var desc: c.WGPUSurfaceDescriptorFromXlibWindow = undefined;
             desc.chain.next = null;
             desc.chain.sType = c.WGPUSType_SurfaceDescriptorFromXlibWindow;

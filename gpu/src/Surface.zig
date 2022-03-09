@@ -25,7 +25,7 @@ pub const DescriptorTag = enum {
     windows_hwnd,
     windows_core_window,
     windows_swap_chain_panel,
-    xlib_window,
+    xlib,
     canvas_html_selector,
 };
 
@@ -48,7 +48,7 @@ pub const Descriptor = union(DescriptorTag) {
         label: ?[]const u8,
         swap_chain_panel: *anyopaque,
     },
-    xlib_window: struct {
+    xlib: struct {
         label: ?[]const u8,
         display: *anyopaque,
         window: u32,
