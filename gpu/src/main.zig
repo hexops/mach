@@ -70,6 +70,7 @@ pub const SamplerBindingType = @import("enums.zig").SamplerBindingType;
 pub const StencilOperation = @import("enums.zig").StencilOperation;
 pub const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 pub const StoreOp = @import("enums.zig").StoreOp;
+pub const TextureAspect = @import("enums.zig").TextureAspect;
 
 test "syntax" {
     _ = Interface;
