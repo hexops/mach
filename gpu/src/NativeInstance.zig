@@ -19,6 +19,11 @@ const Limits = @import("Limits.zig");
 const Queue = @import("Queue.zig");
 const CommandBuffer = @import("CommandBuffer.zig");
 const ShaderModule = @import("ShaderModule.zig");
+const SwapChain = @import("SwapChain.zig");
+
+const TextureUsage = @import("texture_usage.zig").TextureUsage;
+const TextureFormat = @import("texture_format.zig").TextureFormat;
+const PresentMode = @import("present_mode.zig").PresentMode;
 
 const NativeInstance = @This();
 
@@ -337,6 +342,25 @@ const device_vtable = Device.VTable{
             }
         }
     }).createShaderModule,
+    .nativeCreateSwapChain = (struct {
+        pub fn nativeCreateSwapChain(ptr: *anyopaque, surface: Surface, descriptor: SwapChain.Descriptor) SwapChain {
+            const desc = c.WGPUSwapChainDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| @ptrCast([*c]const u8, l) else null,
+                .usage = @enumToInt(descriptor.usage),
+                .format = @enumToInt(descriptor.format),
+                .width = descriptor.width,
+                .height = descriptor.height,
+                .presentMode = @enumToInt(descriptor.present_mode),
+                .implementation = descriptor.implementation,
+            };
+            return wrapSwapChain(c.wgpuDeviceCreateSwapChain(
+                @ptrCast(c.WGPUDevice, ptr),
+                @ptrCast(c.WGPUSurface, surface.ptr),
+                &desc,
+            ));
+        }
+    }).nativeCreateSwapChain,
 };
 
 // TODO: maybe make Limits an extern struct that can be cast?
@@ -442,6 +466,26 @@ const shader_module_vtable = ShaderModule.VTable{
     }).release,
 };
 
+fn wrapSwapChain(swap_chain: c.WGPUSwapChain) SwapChain {
+    return .{
+        .ptr = swap_chain.?,
+        .vtable = &swap_chain_vtable,
+    };
+}
+
+const swap_chain_vtable = SwapChain.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuSwapChainReference(@ptrCast(c.WGPUSwapChain, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuSwapChainRelease(@ptrCast(c.WGPUSwapChain, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -454,4 +498,5 @@ test "syntax" {
     _ = convertLimits;
     _ = wrapQueue;
     _ = wrapShaderModule;
+    _ = wrapSwapChain;
 }
