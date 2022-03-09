@@ -301,6 +301,12 @@ pub const PrimitiveTopology = enum(u32) {
     triangle_strip = 0x00000004,
 };
 
+pub const QueryType = enum(u32) {
+    occlusion = 0x00000000,
+    pipeline_statistics = 0x00000001,
+    timestamp = 0x00000002,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -332,4 +338,5 @@ test "syntax" {
     _ = PowerPreference;
     _ = PredefinedColorSpace;
     _ = PrimitiveTopology;
+    _ = QueryType;
 }
