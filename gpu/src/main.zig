@@ -40,6 +40,7 @@ pub const FeatureName = @import("feature_name.zig").FeatureName;
 pub const TextureUsage = @import("texture_usage.zig").TextureUsage;
 pub const TextureFormat = @import("texture_format.zig").TextureFormat;
 pub const PresentMode = @import("present_mode.zig").PresentMode;
+pub const AddressMode = @import("address_mode.zig").AddressMode;
 
 test "syntax" {
     _ = Interface;
