@@ -26,11 +26,11 @@ pub fn main() !void {
     const use_legacy_api = setup.backend_type == c.WGPUBackendType_OpenGL or setup.backend_type == c.WGPUBackendType_OpenGLES;
     var descriptor: gpu.SwapChain.Descriptor = undefined;
     if (!use_legacy_api) {
-        window_data.swap_chain_format = c.WGPUTextureFormat_BGRA8Unorm;
+        window_data.swap_chain_format = .BGRA8Unorm;
         descriptor = .{
             .label = "basic swap chain",
             .usage = .RenderAttachment,
-            .format = @intToEnum(gpu.TextureFormat, window_data.swap_chain_format),
+            .format = window_data.swap_chain_format,
             .width = framebuffer_size.width,
             .height = framebuffer_size.height,
             .present_mode = .Fifo,
@@ -50,10 +50,10 @@ pub fn main() !void {
         descriptor.implementation = c.machUtilsBackendBinding_getSwapChainImplementation(binding);
         window_data.swap_chain = setup.device.nativeCreateSwapChain(null, &descriptor);
 
-        window_data.swap_chain_format = c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding);
+        window_data.swap_chain_format = @intToEnum(gpu.TextureFormat, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
         c.wgpuSwapChainConfigure(
             @ptrCast(c.WGPUSwapChain, window_data.swap_chain.?.ptr),
-            window_data.swap_chain_format,
+            @enumToInt(window_data.swap_chain_format),
             c.WGPUTextureUsage_RenderAttachment,
             framebuffer_size.width,
             framebuffer_size.height,
@@ -99,7 +99,7 @@ pub fn main() !void {
     blend.alpha.dstFactor = c.WGPUBlendFactor_One;
 
     var color_target = std.mem.zeroes(c.WGPUColorTargetState);
-    color_target.format = window_data.swap_chain_format;
+    color_target.format = @enumToInt(window_data.swap_chain_format);
     color_target.blend = &blend;
     color_target.writeMask = c.WGPUColorWriteMask_All;
 
@@ -160,7 +160,7 @@ pub fn main() !void {
 const WindowData = struct {
     surface: ?gpu.Surface,
     swap_chain: ?gpu.SwapChain,
-    swap_chain_format: c.WGPUTextureFormat,
+    swap_chain_format: gpu.TextureFormat,
     current_desc: gpu.SwapChain.Descriptor,
     target_desc: gpu.SwapChain.Descriptor,
 };
@@ -182,7 +182,7 @@ fn frame(params: FrameParams) !void {
         } else {
             c.wgpuSwapChainConfigure(
                 @ptrCast(c.WGPUSwapChain, pl.swap_chain.?.ptr),
-                pl.swap_chain_format,
+                @enumToInt(pl.swap_chain_format),
                 c.WGPUTextureUsage_RenderAttachment,
                 @intCast(u32, pl.target_desc.width),
                 @intCast(u32, pl.target_desc.height),
