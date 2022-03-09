@@ -48,6 +48,8 @@ pub const BufferBindingType = @import("enums.zig").BufferBindingType;
 pub const BufferMapAsyncStatus = @import("enums.zig").BufferMapAsyncStatus;
 pub const CompareFunction = @import("enums.zig").CompareFunction;
 pub const CompilationInfoRequestStatus = @import("enums.zig").CompilationInfoRequestStatus;
+pub const CompilationMessageType = @import("enums.zig").CompilationMessageType;
+
 
 test "syntax" {
     _ = Interface;
