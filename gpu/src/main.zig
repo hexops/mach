@@ -73,6 +73,7 @@ pub const StoreOp = @import("enums.zig").StoreOp;
 pub const TextureAspect = @import("enums.zig").TextureAspect;
 pub const TextureComponentType = @import("enums.zig").TextureComponentType;
 pub const TextureDimension = @import("enums.zig").TextureDimension;
+pub const TextureSampleType = @import("enums.zig").TextureSampleType;
 
 test "syntax" {
     _ = Interface;

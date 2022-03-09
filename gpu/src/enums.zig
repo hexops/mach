@@ -362,6 +362,15 @@ pub const TextureDimension = enum(u32) {
     dimension_3d = 0x00000002,
 };
 
+pub const TextureSampleType = enum(u32) {
+    none = 0x00000000,
+    float = 0x00000001,
+    unfilterable_float = 0x00000002,
+    depth = 0x00000003,
+    sint = 0x00000004,
+    uint = 0x00000005,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -402,4 +411,5 @@ test "syntax" {
     _ = TextureAspect;
     _ = TextureComponentType;
     _ = TextureDimension;
+    _ = TextureSampleType;
 }
