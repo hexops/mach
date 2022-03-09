@@ -282,6 +282,12 @@ pub const PipelineStatistic = enum(u32) {
     compute_shader_invocations = 0x00000004,
 };
 
+pub const PowerPreference = enum(u32) {
+    none = 0x00000000,
+    low_power = 0x00000001,
+    high_performance = 0x00000002,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -310,4 +316,5 @@ test "syntax" {
     _ = LoadOp;
     _ = LoggingType;
     _ = PipelineStatistic;
+    _ = PowerPreference;
 }
