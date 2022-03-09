@@ -43,6 +43,7 @@ pub const PresentMode = @import("enums.zig").PresentMode;
 pub const AddressMode = @import("enums.zig").AddressMode;
 pub const AlphaMode = @import("enums.zig").AlphaMode;
 pub const BlendFactor = @import("enums.zig").BlendFactor;
+pub const BlendOperation = @import("enums.zig").BlendOperation;
 
 test "syntax" {
     _ = Interface;
