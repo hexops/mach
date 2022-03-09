@@ -37,7 +37,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void wgpuDeviceCreateRenderPipelineAsync(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor, WGPUCreateRenderPipelineAsyncCallback callback, void * userdata);
     // WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor);
     createShaderModule: fn (ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule,
-    nativeCreateSwapChain: fn (ptr: *anyopaque, surface: ?Surface, descriptor: SwapChain.Descriptor) SwapChain,
+    nativeCreateSwapChain: fn (ptr: *anyopaque, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain,
     // WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
     // WGPU_EXPORT void wgpuDeviceDestroy(WGPUDevice device);
     // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeatureName * features);
@@ -73,7 +73,7 @@ pub inline fn createShaderModule(device: Device, descriptor: *const ShaderModule
     return device.vtable.createShaderModule(device.ptr, descriptor);
 }
 
-pub inline fn nativeCreateSwapChain(device: Device, surface: ?Surface, descriptor: SwapChain.Descriptor) SwapChain {
+pub inline fn nativeCreateSwapChain(device: Device, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain {
     return device.vtable.nativeCreateSwapChain(device.ptr, surface, descriptor);
 }
 

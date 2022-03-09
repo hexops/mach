@@ -343,7 +343,7 @@ const device_vtable = Device.VTable{
         }
     }).createShaderModule,
     .nativeCreateSwapChain = (struct {
-        pub fn nativeCreateSwapChain(ptr: *anyopaque, surface: ?Surface, descriptor: SwapChain.Descriptor) SwapChain {
+        pub fn nativeCreateSwapChain(ptr: *anyopaque, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain {
             const desc = c.WGPUSwapChainDescriptor{
                 .nextInChain = null,
                 .label = if (descriptor.label) |l| @ptrCast([*c]const u8, l) else null,
