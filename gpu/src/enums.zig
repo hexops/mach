@@ -232,6 +232,11 @@ pub const DeviceLostReason = enum(u32) {
     destroyed = 0x00000001,
 };
 
+pub const ErrorFilter = enum(u32) {
+    validation = 0x00000000,
+    out_of_memory = 0x00000001,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -252,4 +257,5 @@ test "syntax" {
     _ = CreatePipelineAsyncStatus;
     _ = CullMode;
     _ = DeviceLostReason;
+    _ = ErrorFilter;
 }
