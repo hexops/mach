@@ -21,7 +21,7 @@ pub fn main() !void {
     };
     setup.window.setUserPointer(window_data);
 
-    // If targetting OpenGL, we can't use the newer WGPUSurface API. Instead, we need to use the
+    // If targeting OpenGL, we can't use the newer WGPUSurface API. Instead, we need to use the
     // older Dawn-specific API. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
     const use_legacy_api = setup.backend_type == c.WGPUBackendType_OpenGL or setup.backend_type == c.WGPUBackendType_OpenGLES;
     var descriptor: c.WGPUSwapChainDescriptor = undefined;
@@ -75,30 +75,20 @@ pub fn main() !void {
         \\     return vec4<f32>(pos[VertexIndex], 0.0, 1.0);
         \\ }
     ;
-    var vs_wgsl_descriptor = try allocator.create(c.WGPUShaderModuleWGSLDescriptor);
-    vs_wgsl_descriptor.chain.next = null;
-    vs_wgsl_descriptor.chain.sType = c.WGPUSType_ShaderModuleWGSLDescriptor;
-    vs_wgsl_descriptor.source = vs;
-    const vs_shader_descriptor = c.WGPUShaderModuleDescriptor{
-        .nextInChain = @ptrCast(*const c.WGPUChainedStruct, vs_wgsl_descriptor),
+    const vs_module = setup.device.createShaderModule(&.{
         .label = "my vertex shader",
-    };
-    const vs_module = c.wgpuDeviceCreateShaderModule(@ptrCast(c.WGPUDevice, setup.device.ptr), &vs_shader_descriptor);
+        .code = .{ .wgsl = vs },
+    });
 
     const fs =
         \\ @stage(fragment) fn main() -> @location(0) vec4<f32> {
         \\     return vec4<f32>(1.0, 0.0, 0.0, 1.0);
         \\ }
     ;
-    var fs_wgsl_descriptor = try allocator.create(c.WGPUShaderModuleWGSLDescriptor);
-    fs_wgsl_descriptor.chain.next = null;
-    fs_wgsl_descriptor.chain.sType = c.WGPUSType_ShaderModuleWGSLDescriptor;
-    fs_wgsl_descriptor.source = fs;
-    const fs_shader_descriptor = c.WGPUShaderModuleDescriptor{
-        .nextInChain = @ptrCast(*const c.WGPUChainedStruct, fs_wgsl_descriptor),
+    const fs_module = setup.device.createShaderModule(&.{
         .label = "my fragment shader",
-    };
-    const fs_module = c.wgpuDeviceCreateShaderModule(@ptrCast(c.WGPUDevice, setup.device.ptr), &fs_shader_descriptor);
+        .code = .{ .wgsl = fs },
+    });
 
     // Fragment state
     var blend = std.mem.zeroes(c.WGPUBlendState);
@@ -115,7 +105,7 @@ pub fn main() !void {
     color_target.writeMask = c.WGPUColorWriteMask_All;
 
     var fragment = std.mem.zeroes(c.WGPUFragmentState);
-    fragment.module = fs_module;
+    fragment.module = @ptrCast(c.WGPUShaderModule, fs_module.ptr);
     fragment.entryPoint = "main";
     fragment.targetCount = 1;
     fragment.targets = &color_target;
@@ -127,7 +117,7 @@ pub fn main() !void {
     pipeline_descriptor.layout = null;
     pipeline_descriptor.depthStencil = null;
 
-    pipeline_descriptor.vertex.module = vs_module;
+    pipeline_descriptor.vertex.module = @ptrCast(c.WGPUShaderModule, vs_module.ptr);
     pipeline_descriptor.vertex.entryPoint = "main";
     pipeline_descriptor.vertex.bufferCount = 0;
     pipeline_descriptor.vertex.buffers = null;
@@ -143,8 +133,8 @@ pub fn main() !void {
 
     const pipeline = c.wgpuDeviceCreateRenderPipeline(@ptrCast(c.WGPUDevice, setup.device.ptr), &pipeline_descriptor);
 
-    c.wgpuShaderModuleRelease(vs_module);
-    c.wgpuShaderModuleRelease(fs_module);
+    c.wgpuShaderModuleRelease(@ptrCast(c.WGPUShaderModule, vs_module.ptr));
+    c.wgpuShaderModuleRelease(@ptrCast(c.WGPUShaderModule, fs_module.ptr));
 
     // Reconfigure the swap chain with the new framebuffer width/height, otherwise e.g. the Vulkan
     // device would be lost after a resize.
