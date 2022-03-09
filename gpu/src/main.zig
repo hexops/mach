@@ -51,6 +51,7 @@ pub const CompilationInfoRequestStatus = @import("enums.zig").CompilationInfoReq
 pub const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 pub const ComputePassTimestampLocation = @import("enums.zig").ComputePassTimestampLocation;
 pub const CreatePipelineAsyncStatus = @import("enums.zig").CreatePipelineAsyncStatus;
+pub const CullMode = @import("enums.zig").CullMode;
 
 test "syntax" {
     _ = Interface;
