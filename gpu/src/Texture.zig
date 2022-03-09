@@ -21,3 +21,9 @@ pub inline fn reference(texture: Texture) void {
 pub inline fn release(texture: Texture) void {
     texture.vtable.release(texture.ptr);
 }
+
+test "syntax" {
+    _ = VTable;
+    _ = reference;
+    _ = release;
+}

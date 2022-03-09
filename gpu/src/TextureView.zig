@@ -19,3 +19,9 @@ pub inline fn reference(texture_view: TextureView) void {
 pub inline fn release(texture_view: TextureView) void {
     texture_view.vtable.release(texture_view.ptr);
 }
+
+test "syntax" {
+    _ = VTable;
+    _ = reference;
+    _ = release;
+}
