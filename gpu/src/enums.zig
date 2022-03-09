@@ -144,19 +144,27 @@ pub const AlphaMode = enum(u32) {
 };
 
 pub const BlendFactor = enum(u32) {
-    Zero = 0x00000000,
-    One = 0x00000001,
-    Src = 0x00000002,
-    OneMinusSrc = 0x00000003,
-    SrcAlpha = 0x00000004,
-    OneMinusSrcAlpha = 0x00000005,
-    Dst = 0x00000006,
-    OneMinusDst = 0x00000007,
-    DstAlpha = 0x00000008,
-    OneMinusDstAlpha = 0x00000009,
-    SrcAlphaSaturated = 0x0000000A,
-    Constant = 0x0000000B,
-    OneMinusConstant = 0x0000000C,
+    zero = 0x00000000,
+    one = 0x00000001,
+    src = 0x00000002,
+    one_minus_src = 0x00000003,
+    src_alpha = 0x00000004,
+    oneMinusSrcAlpha = 0x00000005,
+    dst = 0x00000006,
+    one_minus_dst = 0x00000007,
+    dst_alpha = 0x00000008,
+    one_minus_dst_alpha = 0x00000009,
+    src_alpha_saturated = 0x0000000A,
+    constant = 0x0000000B,
+    one_minus_constant = 0x0000000C,
+};
+
+pub const BlendOperation = enum(u32) {
+    add = 0x00000000,
+    subtract = 0x00000001,
+    reverse_subtract = 0x00000002,
+    min = 0x00000003,
+    max = 0x00000004,
 };
 
 test "name" {
@@ -169,4 +177,5 @@ test "syntax" {
     _ = PresentMode;
     _ = AlphaMode;
     _ = BlendFactor;
+    _ = BlendOperation;
 }
