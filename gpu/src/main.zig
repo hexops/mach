@@ -49,7 +49,7 @@ pub const BufferMapAsyncStatus = @import("enums.zig").BufferMapAsyncStatus;
 pub const CompareFunction = @import("enums.zig").CompareFunction;
 pub const CompilationInfoRequestStatus = @import("enums.zig").CompilationInfoRequestStatus;
 pub const CompilationMessageType = @import("enums.zig").CompilationMessageType;
-
+pub const ComputePassTimestampLocation = @import("enums.zig").ComputePassTimestampLocation;
 
 test "syntax" {
     _ = Interface;
