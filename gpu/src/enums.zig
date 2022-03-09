@@ -381,6 +381,40 @@ pub const TextureViewDimension = enum(u32) {
     dimension_3d = 0x00000006,
 };
 
+pub const VertexFormat = enum(u32) {
+    none = 0x00000000,
+    uint8x2 = 0x00000001,
+    uint8x4 = 0x00000002,
+    sint8x2 = 0x00000003,
+    sint8x4 = 0x00000004,
+    unorm8x2 = 0x00000005,
+    unorm8x4 = 0x00000006,
+    snorm8x2 = 0x00000007,
+    snorm8x4 = 0x00000008,
+    uint16x2 = 0x00000009,
+    uint16x4 = 0x0000000A,
+    sint16x2 = 0x0000000B,
+    sint16x4 = 0x0000000C,
+    unorm16x2 = 0x0000000D,
+    unorm16x4 = 0x0000000E,
+    snorm16x2 = 0x0000000F,
+    snorm16x4 = 0x00000010,
+    float16x2 = 0x00000011,
+    float16x4 = 0x00000012,
+    float32 = 0x00000013,
+    float32x2 = 0x00000014,
+    float32x3 = 0x00000015,
+    float32x4 = 0x00000016,
+    uint32 = 0x00000017,
+    uint32x2 = 0x00000018,
+    uint32x3 = 0x00000019,
+    uint32x4 = 0x0000001A,
+    sint32 = 0x0000001B,
+    sint32x2 = 0x0000001C,
+    sint32x3 = 0x0000001D,
+    sint32x4 = 0x0000001E,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -423,4 +457,5 @@ test "syntax" {
     _ = TextureDimension;
     _ = TextureSampleType;
     _ = TextureViewDimension;
+    _ = VertexFormat;
 }
