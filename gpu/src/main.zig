@@ -35,6 +35,7 @@ pub const Queue = @import("Queue.zig");
 pub const CommandBuffer = @import("CommandBuffer.zig");
 pub const ShaderModule = @import("ShaderModule.zig");
 pub const SwapChain = @import("SwapChain.zig");
+pub const TextureView = @import("TextureView.zig");
 
 pub const Feature = @import("enums.zig").Feature;
 pub const TextureUsage = @import("enums.zig").TextureUsage;
@@ -94,6 +95,7 @@ test "syntax" {
     _ = CommandBuffer;
     _ = ShaderModule;
     _ = SwapChain;
+    _ = TextureView;
 
     _ = Feature;
 }
