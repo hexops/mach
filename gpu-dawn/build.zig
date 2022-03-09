@@ -222,11 +222,10 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     const zig_triple = binary_target.zigTriple(b.allocator) catch unreachable;
     ensureBinaryDownloaded(b.allocator, zig_triple, b.is_release, target.os.tag == .windows, options.binary_version);
 
-    const current_git_commit = getCurrentGitCommit(b.allocator) catch unreachable;
     const base_cache_dir_rel = std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
     std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
     const base_cache_dir = std.fs.cwd().realpathAlloc(b.allocator, base_cache_dir_rel) catch unreachable;
-    const commit_cache_dir = std.fs.path.join(b.allocator, &.{ base_cache_dir, current_git_commit }) catch unreachable;
+    const commit_cache_dir = std.fs.path.join(b.allocator, &.{ base_cache_dir, options.binary_version }) catch unreachable;
     const release_tag = if (b.is_release) "release-fast" else "debug";
     const target_cache_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, zig_triple, release_tag }) catch unreachable;
     const include_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, "include" }) catch unreachable;
@@ -266,17 +265,15 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const 
     //   Extract to zig-cache/mach/gpu-dawn/<git revision>/macos-aarch64/libgpu.a
     //   Remove zig-cache/mach/gpu-dawn/download
 
-    // TODO(build-system): should not depend on _current_ git commit, but rather just the desired
-    // binary version now that we have that as an option, otherwise we needlessly re-download.
-    const current_git_commit = getCurrentGitCommit(allocator) catch unreachable;
     const base_cache_dir_rel = std.fs.path.join(allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
     std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
     const base_cache_dir = std.fs.cwd().realpathAlloc(allocator, base_cache_dir_rel) catch unreachable;
-    const commit_cache_dir = std.fs.path.join(allocator, &.{ base_cache_dir, current_git_commit }) catch unreachable;
+    const commit_cache_dir = std.fs.path.join(allocator, &.{ base_cache_dir, version }) catch unreachable;
 
     if (!dirExists(commit_cache_dir)) {
-        // Commit cache dir does not exist. If the commit we want is in the main branch, we're
+        // Commit cache dir does not exist. If the commit we're on is in the main branch, we're
         // probably moving to a newer commit and so we should cleanup older cached binaries.
+        const current_git_commit = getCurrentGitCommit(allocator) catch unreachable;
         if (gitBranchContainsCommit(allocator, "main", current_git_commit) catch false) {
             std.fs.deleteTreeAbsolute(base_cache_dir) catch {};
         }
