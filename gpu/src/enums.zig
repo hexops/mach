@@ -221,6 +221,12 @@ pub const CreatePipelineAsyncStatus = enum(u32) {
     unknown = 0x00000004,
 };
 
+pub const CullMode = enum(u32) {
+    none = 0x00000000,
+    front = 0x00000001,
+    back = 0x00000002,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -239,4 +245,5 @@ test "syntax" {
     _ = CompilationMessageType;
     _ = ComputePassTimestampLocation;
     _ = CreatePipelineAsyncStatus;
+    _ = CullMode;
 }
