@@ -37,28 +37,8 @@ typedef struct WGPUChainedStructOut {
     WGPUSType sType;
 } WGPUChainedStructOut;
 
-typedef struct WGPUBindGroupEntry {
-    WGPUChainedStruct const * nextInChain;
-    uint32_t binding;
-    WGPUBuffer buffer;
-    uint64_t offset;
-    uint64_t size;
-    WGPUSampler sampler;
-    WGPUTextureView textureView;
-} WGPUBindGroupEntry;
 
-typedef struct WGPUBlendComponent {
-    WGPUBlendOperation operation;
-    WGPUBlendFactor srcFactor;
-    WGPUBlendFactor dstFactor;
-} WGPUBlendComponent;
 
-typedef struct WGPUBufferBindingLayout {
-    WGPUChainedStruct const * nextInChain;
-    WGPUBufferBindingType type;
-    bool hasDynamicOffset;
-    uint64_t minBindingSize;
-} WGPUBufferBindingLayout;
 
 typedef struct WGPUBufferDescriptor {
     WGPUChainedStruct const * nextInChain;
@@ -67,13 +47,6 @@ typedef struct WGPUBufferDescriptor {
     uint64_t size;
     bool mappedAtCreation;
 } WGPUBufferDescriptor;
-
-typedef struct WGPUColor {
-    double r;
-    double g;
-    double b;
-    double a;
-} WGPUColor;
 
 typedef struct WGPUCommandBufferDescriptor {
     WGPUChainedStruct const * nextInChain;
@@ -84,39 +57,6 @@ typedef struct WGPUCommandEncoderDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
 } WGPUCommandEncoderDescriptor;
-
-typedef struct WGPUCompilationMessage {
-    WGPUChainedStruct const * nextInChain;
-    char const * message;
-    WGPUCompilationMessageType type;
-    uint64_t lineNum;
-    uint64_t linePos;
-    uint64_t offset;
-    uint64_t length;
-} WGPUCompilationMessage;
-
-typedef struct WGPUComputePassTimestampWrite {
-    WGPUQuerySet querySet;
-    uint32_t queryIndex;
-    WGPUComputePassTimestampLocation location;
-} WGPUComputePassTimestampWrite;
-
-typedef struct WGPUConstantEntry {
-    WGPUChainedStruct const * nextInChain;
-    char const * key;
-    double value;
-} WGPUConstantEntry;
-
-typedef struct WGPUCopyTextureForBrowserOptions {
-    WGPUChainedStruct const * nextInChain;
-    bool flipY;
-    bool needsColorSpaceConversion;
-    WGPUAlphaMode srcAlphaMode;
-    float const * srcTransferFunctionParameters;
-    float const * conversionMatrix;
-    float const * dstTransferFunctionParameters;
-    WGPUAlphaMode dstAlphaMode;
-} WGPUCopyTextureForBrowserOptions;
 
 typedef struct WGPUDawnCacheDeviceDescriptor {
     WGPUChainedStruct chain;
@@ -147,21 +87,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
     const char* const * forceDisabledToggles;
 } WGPUDawnTogglesDeviceDescriptor;
 
-typedef struct WGPUExtent3D {
-    uint32_t width;
-    uint32_t height;
-    uint32_t depthOrArrayLayers;
-} WGPUExtent3D;
-
-typedef struct WGPUExternalTextureBindingEntry {
-    WGPUChainedStruct chain;
-    WGPUExternalTexture externalTexture;
-} WGPUExternalTextureBindingEntry;
-
-typedef struct WGPUExternalTextureBindingLayout {
-    WGPUChainedStruct chain;
-} WGPUExternalTextureBindingLayout;
-
 typedef struct WGPUExternalTextureDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
@@ -170,38 +95,12 @@ typedef struct WGPUExternalTextureDescriptor {
     WGPUPredefinedColorSpace colorSpace;
 } WGPUExternalTextureDescriptor;
 
-typedef struct WGPUMultisampleState {
-    WGPUChainedStruct const * nextInChain;
-    uint32_t count;
-    uint32_t mask;
-    bool alphaToCoverageEnabled;
-} WGPUMultisampleState;
-
-typedef struct WGPUOrigin3D {
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-} WGPUOrigin3D;
-
 typedef struct WGPUPipelineLayoutDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
     uint32_t bindGroupLayoutCount;
     WGPUBindGroupLayout const * bindGroupLayouts;
 } WGPUPipelineLayoutDescriptor;
-
-typedef struct WGPUPrimitiveDepthClampingState {
-    WGPUChainedStruct chain;
-    bool clampDepth;
-} WGPUPrimitiveDepthClampingState;
-
-typedef struct WGPUPrimitiveState {
-    WGPUChainedStruct const * nextInChain;
-    WGPUPrimitiveTopology topology;
-    WGPUIndexFormat stripIndexFormat;
-    WGPUFrontFace frontFace;
-    WGPUCullMode cullMode;
-} WGPUPrimitiveState;
 
 typedef struct WGPUQuerySetDescriptor {
     WGPUChainedStruct const * nextInChain;
@@ -228,31 +127,6 @@ typedef struct WGPURenderBundleEncoderDescriptor {
     bool stencilReadOnly;
 } WGPURenderBundleEncoderDescriptor;
 
-typedef struct WGPURenderPassDepthStencilAttachment {
-    WGPUTextureView view;
-    WGPULoadOp depthLoadOp;
-    WGPUStoreOp depthStoreOp;
-    float clearDepth;
-    float depthClearValue;
-    bool depthReadOnly;
-    WGPULoadOp stencilLoadOp;
-    WGPUStoreOp stencilStoreOp;
-    uint32_t clearStencil;
-    uint32_t stencilClearValue;
-    bool stencilReadOnly;
-} WGPURenderPassDepthStencilAttachment;
-
-typedef struct WGPURenderPassTimestampWrite {
-    WGPUQuerySet querySet;
-    uint32_t queryIndex;
-    WGPURenderPassTimestampLocation location;
-} WGPURenderPassTimestampWrite;
-
-typedef struct WGPUSamplerBindingLayout {
-    WGPUChainedStruct const * nextInChain;
-    WGPUSamplerBindingType type;
-} WGPUSamplerBindingLayout;
-
 typedef struct WGPUSamplerDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
@@ -268,12 +142,155 @@ typedef struct WGPUSamplerDescriptor {
     uint16_t maxAnisotropy;
 } WGPUSamplerDescriptor;
 
-typedef struct WGPUStencilFaceState {
-    WGPUCompareFunction compare;
-    WGPUStencilOperation failOp;
-    WGPUStencilOperation depthFailOp;
-    WGPUStencilOperation passOp;
-} WGPUStencilFaceState;
+typedef struct WGPUTextureViewDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    char const * label;
+    WGPUTextureFormat format;
+    WGPUTextureViewDimension dimension;
+    uint32_t baseMipLevel;
+    uint32_t mipLevelCount;
+    uint32_t baseArrayLayer;
+    uint32_t arrayLayerCount;
+    WGPUTextureAspect aspect;
+} WGPUTextureViewDescriptor;
+
+typedef struct WGPUBindGroupDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    char const * label;
+    WGPUBindGroupLayout layout;
+    uint32_t entryCount;
+    WGPUBindGroupEntry const * entries;
+} WGPUBindGroupDescriptor;
+
+typedef struct WGPUComputePassDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    char const * label;
+    uint32_t timestampWriteCount;
+    WGPUComputePassTimestampWrite const * timestampWrites;
+} WGPUComputePassDescriptor;
+
+typedef struct WGPUProgrammableStageDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    WGPUShaderModule module;
+    char const * entryPoint;
+    uint32_t constantCount;
+    WGPUConstantEntry const * constants;
+} WGPUProgrammableStageDescriptor;
+
+typedef struct WGPUTextureDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    char const * label;
+    WGPUTextureUsageFlags usage;
+    WGPUTextureDimension dimension;
+    WGPUExtent3D size;
+    WGPUTextureFormat format;
+    uint32_t mipLevelCount;
+    uint32_t sampleCount;
+} WGPUTextureDescriptor;
+
+typedef struct WGPUBindGroupLayoutDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    char const * label;
+    uint32_t entryCount;
+    WGPUBindGroupLayoutEntry const * entries;
+} WGPUBindGroupLayoutDescriptor;
+
+typedef struct WGPUComputePipelineDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    char const * label;
+    WGPUPipelineLayout layout;
+    WGPUProgrammableStageDescriptor compute;
+} WGPUComputePipelineDescriptor;
+
+typedef struct WGPURenderPassDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    char const * label;
+    uint32_t colorAttachmentCount;
+    WGPURenderPassColorAttachment const * colorAttachments;
+    WGPURenderPassDepthStencilAttachment const * depthStencilAttachment;
+    WGPUQuerySet occlusionQuerySet;
+    uint32_t timestampWriteCount;
+    WGPURenderPassTimestampWrite const * timestampWrites;
+} WGPURenderPassDescriptor;
+
+typedef struct WGPURenderPipelineDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    char const * label;
+    WGPUPipelineLayout layout;
+    WGPUVertexState vertex;
+    WGPUPrimitiveState primitive;
+    WGPUDepthStencilState const * depthStencil;
+    WGPUMultisampleState multisample;
+    WGPUFragmentState const * fragment;
+} WGPURenderPipelineDescriptor;
+
+
+
+
+
+typedef struct WGPUBindGroupEntry {
+    WGPUChainedStruct const * nextInChain;
+    uint32_t binding;
+    WGPUBuffer buffer;
+    uint64_t offset;
+    uint64_t size;
+    WGPUSampler sampler;
+    WGPUTextureView textureView;
+} WGPUBindGroupEntry;
+
+typedef struct WGPUBufferBindingLayout {
+    WGPUChainedStruct const * nextInChain;
+    WGPUBufferBindingType type;
+    bool hasDynamicOffset;
+    uint64_t minBindingSize;
+} WGPUBufferBindingLayout;
+
+typedef struct WGPUCompilationMessage {
+    WGPUChainedStruct const * nextInChain;
+    char const * message;
+    WGPUCompilationMessageType type;
+    uint64_t lineNum;
+    uint64_t linePos;
+    uint64_t offset;
+    uint64_t length;
+} WGPUCompilationMessage;
+
+typedef struct WGPUConstantEntry {
+    WGPUChainedStruct const * nextInChain;
+    char const * key;
+    double value;
+} WGPUConstantEntry;
+
+typedef struct WGPUCopyTextureForBrowserOptions {
+    WGPUChainedStruct const * nextInChain;
+    bool flipY;
+    bool needsColorSpaceConversion;
+    WGPUAlphaMode srcAlphaMode;
+    float const * srcTransferFunctionParameters;
+    float const * conversionMatrix;
+    float const * dstTransferFunctionParameters;
+    WGPUAlphaMode dstAlphaMode;
+} WGPUCopyTextureForBrowserOptions;
+
+typedef struct WGPUMultisampleState {
+    WGPUChainedStruct const * nextInChain;
+    uint32_t count;
+    uint32_t mask;
+    bool alphaToCoverageEnabled;
+} WGPUMultisampleState;
+
+typedef struct WGPUPrimitiveState {
+    WGPUChainedStruct const * nextInChain;
+    WGPUPrimitiveTopology topology;
+    WGPUIndexFormat stripIndexFormat;
+    WGPUFrontFace frontFace;
+    WGPUCullMode cullMode;
+} WGPUPrimitiveState;
+
+typedef struct WGPUSamplerBindingLayout {
+    WGPUChainedStruct const * nextInChain;
+    WGPUSamplerBindingType type;
+} WGPUSamplerBindingLayout;
 
 typedef struct WGPUStorageTextureBindingLayout {
     WGPUChainedStruct const * nextInChain;
@@ -296,32 +313,6 @@ typedef struct WGPUTextureDataLayout {
     uint32_t rowsPerImage;
 } WGPUTextureDataLayout;
 
-typedef struct WGPUTextureViewDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUTextureFormat format;
-    WGPUTextureViewDimension dimension;
-    uint32_t baseMipLevel;
-    uint32_t mipLevelCount;
-    uint32_t baseArrayLayer;
-    uint32_t arrayLayerCount;
-    WGPUTextureAspect aspect;
-} WGPUTextureViewDescriptor;
-
-typedef struct WGPUVertexAttribute {
-    WGPUVertexFormat format;
-    uint64_t offset;
-    uint32_t shaderLocation;
-} WGPUVertexAttribute;
-
-typedef struct WGPUBindGroupDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUBindGroupLayout layout;
-    uint32_t entryCount;
-    WGPUBindGroupEntry const * entries;
-} WGPUBindGroupDescriptor;
-
 typedef struct WGPUBindGroupLayoutEntry {
     WGPUChainedStruct const * nextInChain;
     uint32_t binding;
@@ -332,23 +323,11 @@ typedef struct WGPUBindGroupLayoutEntry {
     WGPUStorageTextureBindingLayout storageTexture;
 } WGPUBindGroupLayoutEntry;
 
-typedef struct WGPUBlendState {
-    WGPUBlendComponent color;
-    WGPUBlendComponent alpha;
-} WGPUBlendState;
-
 typedef struct WGPUCompilationInfo {
     WGPUChainedStruct const * nextInChain;
     uint32_t messageCount;
     WGPUCompilationMessage const * messages;
 } WGPUCompilationInfo;
-
-typedef struct WGPUComputePassDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    uint32_t timestampWriteCount;
-    WGPUComputePassTimestampWrite const * timestampWrites;
-} WGPUComputePassDescriptor;
 
 typedef struct WGPUDepthStencilState {
     WGPUChainedStruct const * nextInChain;
@@ -378,48 +357,6 @@ typedef struct WGPUImageCopyTexture {
     WGPUTextureAspect aspect;
 } WGPUImageCopyTexture;
 
-typedef struct WGPUProgrammableStageDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    WGPUShaderModule module;
-    char const * entryPoint;
-    uint32_t constantCount;
-    WGPUConstantEntry const * constants;
-} WGPUProgrammableStageDescriptor;
-
-typedef struct WGPURenderPassColorAttachment {
-    WGPUTextureView view;
-    WGPUTextureView resolveTarget;
-    WGPULoadOp loadOp;
-    WGPUStoreOp storeOp;
-    WGPUColor clearColor;
-    WGPUColor clearValue;
-} WGPURenderPassColorAttachment;
-
-typedef struct WGPUTextureDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUTextureUsageFlags usage;
-    WGPUTextureDimension dimension;
-    WGPUExtent3D size;
-    WGPUTextureFormat format;
-    uint32_t mipLevelCount;
-    uint32_t sampleCount;
-} WGPUTextureDescriptor;
-
-typedef struct WGPUVertexBufferLayout {
-    uint64_t arrayStride;
-    WGPUVertexStepMode stepMode;
-    uint32_t attributeCount;
-    WGPUVertexAttribute const * attributes;
-} WGPUVertexBufferLayout;
-
-typedef struct WGPUBindGroupLayoutDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    uint32_t entryCount;
-    WGPUBindGroupLayoutEntry const * entries;
-} WGPUBindGroupLayoutDescriptor;
-
 typedef struct WGPUColorTargetState {
     WGPUChainedStruct const * nextInChain;
     WGPUTextureFormat format;
@@ -427,48 +364,10 @@ typedef struct WGPUColorTargetState {
     WGPUColorWriteMaskFlags writeMask;
 } WGPUColorTargetState;
 
-typedef struct WGPUComputePipelineDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUPipelineLayout layout;
-    WGPUProgrammableStageDescriptor compute;
-} WGPUComputePipelineDescriptor;
-
 typedef struct WGPUSupportedLimits {
     WGPUChainedStructOut * nextInChain;
     WGPULimits limits;
 } WGPUSupportedLimits;
-
-typedef struct WGPUDeviceProperties {
-    uint32_t deviceID;
-    uint32_t vendorID;
-    WGPUAdapterType adapterType;
-    bool textureCompressionBC;
-    bool textureCompressionETC2;
-    bool textureCompressionASTC;
-    bool shaderFloat16;
-    bool pipelineStatisticsQuery;
-    bool timestampQuery;
-    bool multiPlanarFormats;
-    bool depthClamping;
-    bool depth24UnormStencil8;
-    bool depth32FloatStencil8;
-    bool invalidFeature;
-    bool dawnInternalUsages;
-    bool dawnNative;
-    WGPUSupportedLimits limits;
-} WGPUDeviceProperties;
-
-typedef struct WGPURenderPassDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    uint32_t colorAttachmentCount;
-    WGPURenderPassColorAttachment const * colorAttachments;
-    WGPURenderPassDepthStencilAttachment const * depthStencilAttachment;
-    WGPUQuerySet occlusionQuerySet;
-    uint32_t timestampWriteCount;
-    WGPURenderPassTimestampWrite const * timestampWrites;
-} WGPURenderPassDescriptor;
 
 typedef struct WGPUVertexState {
     WGPUChainedStruct const * nextInChain;
@@ -490,16 +389,131 @@ typedef struct WGPUFragmentState {
     WGPUColorTargetState const * targets;
 } WGPUFragmentState;
 
-typedef struct WGPURenderPipelineDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUPipelineLayout layout;
-    WGPUVertexState vertex;
-    WGPUPrimitiveState primitive;
-    WGPUDepthStencilState const * depthStencil;
-    WGPUMultisampleState multisample;
-    WGPUFragmentState const * fragment;
-} WGPURenderPipelineDescriptor;
+
+
+
+
+typedef struct WGPUBlendComponent {
+    WGPUBlendOperation operation;
+    WGPUBlendFactor srcFactor;
+    WGPUBlendFactor dstFactor;
+} WGPUBlendComponent;
+
+typedef struct WGPUColor {
+    double r;
+    double g;
+    double b;
+    double a;
+} WGPUColor;
+
+typedef struct WGPUComputePassTimestampWrite {
+    WGPUQuerySet querySet;
+    uint32_t queryIndex;
+    WGPUComputePassTimestampLocation location;
+} WGPUComputePassTimestampWrite;
+
+typedef struct WGPUExtent3D {
+    uint32_t width;
+    uint32_t height;
+    uint32_t depthOrArrayLayers;
+} WGPUExtent3D;
+
+typedef struct WGPUExternalTextureBindingEntry {
+    WGPUChainedStruct chain;
+    WGPUExternalTexture externalTexture;
+} WGPUExternalTextureBindingEntry;
+
+typedef struct WGPUExternalTextureBindingLayout {
+    WGPUChainedStruct chain;
+} WGPUExternalTextureBindingLayout;
+
+typedef struct WGPUOrigin3D {
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+} WGPUOrigin3D;
+
+typedef struct WGPUPrimitiveDepthClampingState {
+    WGPUChainedStruct chain;
+    bool clampDepth;
+} WGPUPrimitiveDepthClampingState;
+
+typedef struct WGPURenderPassDepthStencilAttachment {
+    WGPUTextureView view;
+    WGPULoadOp depthLoadOp;
+    WGPUStoreOp depthStoreOp;
+    float clearDepth;
+    float depthClearValue;
+    bool depthReadOnly;
+    WGPULoadOp stencilLoadOp;
+    WGPUStoreOp stencilStoreOp;
+    uint32_t clearStencil;
+    uint32_t stencilClearValue;
+    bool stencilReadOnly;
+} WGPURenderPassDepthStencilAttachment;
+
+typedef struct WGPURenderPassTimestampWrite {
+    WGPUQuerySet querySet;
+    uint32_t queryIndex;
+    WGPURenderPassTimestampLocation location;
+} WGPURenderPassTimestampWrite;
+
+typedef struct WGPUStencilFaceState {
+    WGPUCompareFunction compare;
+    WGPUStencilOperation failOp;
+    WGPUStencilOperation depthFailOp;
+    WGPUStencilOperation passOp;
+} WGPUStencilFaceState;
+
+typedef struct WGPUVertexAttribute {
+    WGPUVertexFormat format;
+    uint64_t offset;
+    uint32_t shaderLocation;
+} WGPUVertexAttribute;
+
+typedef struct WGPUBlendState {
+    WGPUBlendComponent color;
+    WGPUBlendComponent alpha;
+} WGPUBlendState;
+
+typedef struct WGPURenderPassColorAttachment {
+    WGPUTextureView view;
+    WGPUTextureView resolveTarget;
+    WGPULoadOp loadOp;
+    WGPUStoreOp storeOp;
+    WGPUColor clearColor;
+    WGPUColor clearValue;
+} WGPURenderPassColorAttachment;
+
+typedef struct WGPUVertexBufferLayout {
+    uint64_t arrayStride;
+    WGPUVertexStepMode stepMode;
+    uint32_t attributeCount;
+    WGPUVertexAttribute const * attributes;
+} WGPUVertexBufferLayout;
+
+typedef struct WGPUDeviceProperties {
+    uint32_t deviceID;
+    uint32_t vendorID;
+    WGPUAdapterType adapterType;
+    bool textureCompressionBC;
+    bool textureCompressionETC2;
+    bool textureCompressionASTC;
+    bool shaderFloat16;
+    bool pipelineStatisticsQuery;
+    bool timestampQuery;
+    bool multiPlanarFormats;
+    bool depthClamping;
+    bool depth24UnormStencil8;
+    bool depth32FloatStencil8;
+    bool invalidFeature;
+    bool dawnInternalUsages;
+    bool dawnNative;
+    WGPUSupportedLimits limits;
+} WGPUDeviceProperties;
+
+
+
 
 typedef void (*WGPUBufferMapCallback)(WGPUBufferMapAsyncStatus status, void * userdata);
 typedef void (*WGPUCompilationInfoCallback)(WGPUCompilationInfoRequestStatus status, WGPUCompilationInfo const * compilationInfo, void * userdata);
