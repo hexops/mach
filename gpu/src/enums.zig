@@ -335,6 +335,12 @@ pub const StorageTextureAccess = enum(u32) {
     write_only = 0x00000001,
 };
 
+pub const StoreOp = enum(u32) {
+    none = 0x00000000,
+    store = 0x00000001,
+    discard = 0x00000002,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -371,4 +377,5 @@ test "syntax" {
     _ = SamplerBindingType;
     _ = StencilOperation;
     _ = StorageTextureAccess;
+    _ = StoreOp;
 }
