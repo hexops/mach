@@ -23,6 +23,7 @@ const SwapChain = @import("SwapChain.zig");
 const TextureView = @import("TextureView.zig");
 const Texture = @import("Texture.zig");
 const Sampler = @import("Sampler.zig");
+const RenderPipeline = @import("RenderPipeline.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -560,6 +561,26 @@ const sampler_vtable = Sampler.VTable{
     }).release,
 };
 
+fn wrapRenderPipeline(render_pipeline: c.WGPURenderPipeline) RenderPipeline {
+    return .{
+        .ptr = render_pipeline.?,
+        .vtable = &render_pipeline_vtable,
+    };
+}
+
+const render_pipeline_vtable = RenderPipeline.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuRenderPipelineReference(@ptrCast(c.WGPURenderPipeline, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuRenderPipelineRelease(@ptrCast(c.WGPURenderPipeline, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -576,4 +597,5 @@ test "syntax" {
     _ = wrapTextureView;
     _ = wrapTexture;
     _ = wrapSampler;
+    _ = wrapRenderPipeline;
 }
