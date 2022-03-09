@@ -668,13 +668,6 @@ WGPU_EXPORT void wgpuSamplerSetLabel(WGPUSampler sampler, char const * label);
 WGPU_EXPORT void wgpuSamplerReference(WGPUSampler sampler);
 WGPU_EXPORT void wgpuSamplerRelease(WGPUSampler sampler);
 
-// Methods of Texture
-WGPU_EXPORT WGPUTextureView wgpuTextureCreateView(WGPUTexture texture, WGPUTextureViewDescriptor const * descriptor);
-WGPU_EXPORT void wgpuTextureDestroy(WGPUTexture texture);
-WGPU_EXPORT void wgpuTextureSetLabel(WGPUTexture texture, char const * label);
-WGPU_EXPORT void wgpuTextureReference(WGPUTexture texture);
-WGPU_EXPORT void wgpuTextureRelease(WGPUTexture texture);
-
 typedef enum WGPUSType {
     // webgpu.h upstream:
     WGPUSType_Invalid = 0x00000000,
