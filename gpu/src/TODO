@@ -24,7 +24,6 @@ typedef struct WGPURenderBundleEncoderImpl* WGPURenderBundleEncoder;
 typedef struct WGPURenderPassEncoderImpl* WGPURenderPassEncoder;
 typedef struct WGPURenderPipelineImpl* WGPURenderPipeline;
 typedef struct WGPUSamplerImpl* WGPUSampler;
-typedef struct WGPUShaderModuleImpl* WGPUShaderModule;
 typedef struct WGPUSwapChainImpl* WGPUSwapChain;
 typedef struct WGPUTextureImpl* WGPUTexture;
 typedef struct WGPUTextureViewImpl* WGPUTextureView;
@@ -262,8 +261,6 @@ typedef enum WGPURenderPassTimestampLocation {
 
 typedef enum WGPUSType {
     WGPUSType_Invalid = 0x00000000,
-    WGPUSType_ShaderModuleSPIRVDescriptor = 0x00000005,
-    WGPUSType_ShaderModuleWGSLDescriptor = 0x00000006,
     WGPUSType_ExternalTextureBindingEntry = 0x00000009,
     WGPUSType_ExternalTextureBindingLayout = 0x0000000A,
     WGPUSType_DawnTextureInternalUsageDescriptor = 0x000003E8,
@@ -792,22 +789,6 @@ typedef struct WGPUSamplerDescriptor {
     uint16_t maxAnisotropy;
 } WGPUSamplerDescriptor;
 
-typedef struct WGPUShaderModuleDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-} WGPUShaderModuleDescriptor;
-
-typedef struct WGPUShaderModuleSPIRVDescriptor {
-    WGPUChainedStruct chain;
-    uint32_t codeSize;
-    uint32_t const * code;
-} WGPUShaderModuleSPIRVDescriptor;
-
-typedef struct WGPUShaderModuleWGSLDescriptor {
-    WGPUChainedStruct chain;
-    char const * source;
-} WGPUShaderModuleWGSLDescriptor;
-
 typedef struct WGPUStencilFaceState {
     WGPUCompareFunction compare;
     WGPUStencilOperation failOp;
@@ -1204,12 +1185,6 @@ WGPU_EXPORT void wgpuRenderPipelineRelease(WGPURenderPipeline renderPipeline);
 WGPU_EXPORT void wgpuSamplerSetLabel(WGPUSampler sampler, char const * label);
 WGPU_EXPORT void wgpuSamplerReference(WGPUSampler sampler);
 WGPU_EXPORT void wgpuSamplerRelease(WGPUSampler sampler);
-
-// Methods of ShaderModule
-WGPU_EXPORT void wgpuShaderModuleGetCompilationInfo(WGPUShaderModule shaderModule, WGPUCompilationInfoCallback callback, void * userdata);
-WGPU_EXPORT void wgpuShaderModuleSetLabel(WGPUShaderModule shaderModule, char const * label);
-WGPU_EXPORT void wgpuShaderModuleReference(WGPUShaderModule shaderModule);
-WGPU_EXPORT void wgpuShaderModuleRelease(WGPUShaderModule shaderModule);
 
 // Methods of SwapChain
 WGPU_EXPORT void wgpuSwapChainConfigure(WGPUSwapChain swapChain, WGPUTextureFormat format, WGPUTextureUsageFlags allowedUsage, uint32_t width, uint32_t height);

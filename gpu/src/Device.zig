@@ -9,6 +9,7 @@
 const FeatureName = @import("feature_name.zig").FeatureName;
 const Limits = @import("Limits.zig");
 const Queue = @import("Queue.zig");
+const ShaderModule = @import("ShaderModule.zig");
 
 const Device = @This();
 
@@ -33,7 +34,7 @@ pub const VTable = struct {
     // WGPU_EXPORT WGPURenderPipeline wgpuDeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor);
     // WGPU_EXPORT void wgpuDeviceCreateRenderPipelineAsync(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor, WGPUCreateRenderPipelineAsyncCallback callback, void * userdata);
     // WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor);
-    // WGPU_EXPORT WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor const * descriptor);
+    createShaderModule: fn (ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule,
     // WGPU_EXPORT WGPUSwapChain wgpuDeviceCreateSwapChain(WGPUDevice device, WGPUSurface surface, WGPUSwapChainDescriptor const * descriptor);
     // WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
     // WGPU_EXPORT void wgpuDeviceDestroy(WGPUDevice device);
@@ -66,6 +67,10 @@ pub inline fn release(device: Device) void {
     device.vtable.release(device.ptr);
 }
 
+pub inline fn createShaderModule(device: Device, descriptor: *const ShaderModule.Descriptor) ShaderModule {
+    return device.vtable.createShaderModule(device.ptr, descriptor);
+}
+
 // TODO: docs
 pub const Descriptor = struct {
     label: ?[]const u8 = null,
@@ -78,5 +83,6 @@ test "syntax" {
     _ = getQueue;
     _ = reference;
     _ = release;
+    _ = createShaderModule;
     _ = Descriptor;
 }

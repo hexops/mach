@@ -18,6 +18,7 @@ const Surface = @import("Surface.zig");
 const Limits = @import("Limits.zig");
 const Queue = @import("Queue.zig");
 const CommandBuffer = @import("CommandBuffer.zig");
+const ShaderModule = @import("ShaderModule.zig");
 
 const NativeInstance = @This();
 
@@ -301,6 +302,41 @@ const device_vtable = Device.VTable{
             return wrapQueue(c.wgpuDeviceGetQueue(@ptrCast(c.WGPUDevice, ptr)));
         }
     }).getQueue,
+    .createShaderModule = (struct {
+        pub fn createShaderModule(ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule {
+            switch (descriptor.code) {
+                .wgsl => |wgsl| {
+                    const wgsl_desc = c.WGPUShaderModuleWGSLDescriptor{
+                        .chain = c.WGPUChainedStruct{
+                            .next = null,
+                            .sType = c.WGPUSType_ShaderModuleWGSLDescriptor,
+                        },
+                        .source = wgsl,
+                    };
+                    const desc = c.WGPUShaderModuleDescriptor{
+                        .nextInChain = @ptrCast(*const c.WGPUChainedStruct, &wgsl_desc),
+                        .label = if (descriptor.label) |l| @ptrCast([*c]const u8, l) else null,
+                    };
+                    return wrapShaderModule(c.wgpuDeviceCreateShaderModule(@ptrCast(c.WGPUDevice, ptr), &desc));
+                },
+                .spirv => |spirv| {
+                    const spirv_desc = c.WGPUShaderModuleSPIRVDescriptor{
+                        .chain = c.WGPUChainedStruct{
+                            .next = null,
+                            .sType = c.WGPUSType_ShaderModuleSPIRVDescriptor,
+                        },
+                        .code = @ptrCast([*c]const u32, &spirv[0]),
+                        .codeSize = @intCast(u32, spirv.len),
+                    };
+                    const desc = c.WGPUShaderModuleDescriptor{
+                        .nextInChain = @ptrCast(*const c.WGPUChainedStruct, &spirv_desc),
+                        .label = if (descriptor.label) |l| @ptrCast([*c]const u8, l) else null,
+                    };
+                    return wrapShaderModule(c.wgpuDeviceCreateShaderModule(@ptrCast(c.WGPUDevice, ptr), &desc));
+                },
+            }
+        }
+    }).createShaderModule,
 };
 
 // TODO: maybe make Limits an extern struct that can be cast?
@@ -386,6 +422,26 @@ const queue_vtable = Queue.VTable{
     }).submit,
 };
 
+fn wrapShaderModule(shader_module: c.WGPUShaderModule) ShaderModule {
+    return .{
+        .ptr = shader_module.?,
+        .vtable = &shader_module_vtable,
+    };
+}
+
+const shader_module_vtable = ShaderModule.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuShaderModuleReference(@ptrCast(c.WGPUShaderModule, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuShaderModuleRelease(@ptrCast(c.WGPUShaderModule, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -397,4 +453,5 @@ test "syntax" {
     _ = device_vtable;
     _ = convertLimits;
     _ = wrapQueue;
+    _ = wrapShaderModule;
 }
