@@ -434,6 +434,15 @@ pub const BufferUsage = enum(u32) {
     query_resolve = 0x00000200,
 };
 
+pub const ColorWriteMask = enum(u32) {
+    none = 0x00000000,
+    red = 0x00000001,
+    green = 0x00000002,
+    blue = 0x00000004,
+    alpha = 0x00000008,
+    all = 0x0000000F,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -479,4 +488,5 @@ test "syntax" {
     _ = VertexFormat;
     _ = VertexStepMode;
     _ = BufferUsage;
+    _ = ColorWriteMask;
 }
