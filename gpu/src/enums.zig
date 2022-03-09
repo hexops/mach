@@ -143,6 +143,22 @@ pub const AlphaMode = enum(u32) {
     unpremultiplied = 0x00000001,
 };
 
+pub const BlendFactor = enum(u32) {
+    Zero = 0x00000000,
+    One = 0x00000001,
+    Src = 0x00000002,
+    OneMinusSrc = 0x00000003,
+    SrcAlpha = 0x00000004,
+    OneMinusSrcAlpha = 0x00000005,
+    Dst = 0x00000006,
+    OneMinusDst = 0x00000007,
+    DstAlpha = 0x00000008,
+    OneMinusDstAlpha = 0x00000009,
+    SrcAlphaSaturated = 0x0000000A,
+    Constant = 0x0000000B,
+    OneMinusConstant = 0x0000000C,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -151,4 +167,6 @@ test "syntax" {
     _ = Feature;
     _ = AddressMode;
     _ = PresentMode;
+    _ = AlphaMode;
+    _ = BlendFactor;
 }
