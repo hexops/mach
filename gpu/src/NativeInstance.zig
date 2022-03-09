@@ -484,6 +484,17 @@ const swap_chain_vtable = SwapChain.VTable{
             c.wgpuSwapChainRelease(@ptrCast(c.WGPUSwapChain, ptr));
         }
     }).release,
+    .configure = (struct {
+        pub fn configure(ptr: *anyopaque, format: TextureFormat, allowed_usage: TextureUsage, width: u32, height: u32) void {
+            c.wgpuSwapChainConfigure(
+                @ptrCast(c.WGPUSwapChain, ptr),
+                @enumToInt(format),
+                @enumToInt(allowed_usage),
+                width,
+                height,
+            );
+        }
+    }).configure,
 };
 
 test "syntax" {
