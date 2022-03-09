@@ -39,8 +39,8 @@ pub const SwapChain = @import("SwapChain.zig");
 pub const Feature = @import("enums.zig").Feature;
 pub const TextureUsage = @import("texture_usage.zig").TextureUsage;
 pub const TextureFormat = @import("texture_format.zig").TextureFormat;
-pub const PresentMode = @import("present_mode.zig").PresentMode;
-pub const AddressMode = @import("address_mode.zig").AddressMode;
+pub const PresentMode = @import("enums.zig").PresentMode;
+pub const AddressMode = @import("enums.zig").AddressMode;
 
 test "syntax" {
     _ = Interface;

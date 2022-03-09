@@ -23,7 +23,7 @@ const SwapChain = @import("SwapChain.zig");
 
 const TextureUsage = @import("texture_usage.zig").TextureUsage;
 const TextureFormat = @import("texture_format.zig").TextureFormat;
-const PresentMode = @import("present_mode.zig").PresentMode;
+const PresentMode = @import("enums.zig").PresentMode;
 
 const NativeInstance = @This();
 
