@@ -657,17 +657,6 @@ WGPU_EXPORT void wgpuRenderPassEncoderWriteTimestamp(WGPURenderPassEncoder rende
 WGPU_EXPORT void wgpuRenderPassEncoderReference(WGPURenderPassEncoder renderPassEncoder);
 WGPU_EXPORT void wgpuRenderPassEncoderRelease(WGPURenderPassEncoder renderPassEncoder);
 
-// Methods of RenderPipeline
-WGPU_EXPORT WGPUBindGroupLayout wgpuRenderPipelineGetBindGroupLayout(WGPURenderPipeline renderPipeline, uint32_t groupIndex);
-WGPU_EXPORT void wgpuRenderPipelineSetLabel(WGPURenderPipeline renderPipeline, char const * label);
-WGPU_EXPORT void wgpuRenderPipelineReference(WGPURenderPipeline renderPipeline);
-WGPU_EXPORT void wgpuRenderPipelineRelease(WGPURenderPipeline renderPipeline);
-
-// Methods of Sampler
-WGPU_EXPORT void wgpuSamplerSetLabel(WGPUSampler sampler, char const * label);
-WGPU_EXPORT void wgpuSamplerReference(WGPUSampler sampler);
-WGPU_EXPORT void wgpuSamplerRelease(WGPUSampler sampler);
-
 typedef enum WGPUSType {
     // webgpu.h upstream:
     WGPUSType_Invalid = 0x00000000,
