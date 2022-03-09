@@ -255,6 +255,12 @@ pub const FrontFace = enum(u32) {
     cw = 0x00000001,
 };
 
+pub const IndexFormat = enum(u32) {
+    none = 0x00000000,
+    uint16 = 0x00000001,
+    uint32 = 0x00000002,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -279,4 +285,5 @@ test "syntax" {
     _ = ErrorType;
     _ = FilterMode;
     _ = FrontFace;
+    _ = IndexFormat;
 }
