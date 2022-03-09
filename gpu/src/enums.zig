@@ -16,6 +16,13 @@ pub const Feature = enum(u32) {
 
 // TODO: add featureName stringer method
 
+const AddressMode = enum(u32) {
+    repeat = 0x00000000,
+    mirror_repeat = 0x00000001,
+    clamp_to_edge = 0x00000002,
+};
+
 test "syntax" {
     _ = Feature;
+    _ = AddressMode;
 }
