@@ -79,6 +79,7 @@ pub const VertexFormat = @import("enums.zig").VertexFormat;
 pub const VertexStepMode = @import("enums.zig").VertexStepMode;
 pub const BufferUsage = @import("enums.zig").BufferUsage;
 pub const ColorWriteMask = @import("enums.zig").ColorWriteMask;
+pub const MapMode = @import("enums.zig").MapMode;
 
 test "syntax" {
     _ = Interface;
