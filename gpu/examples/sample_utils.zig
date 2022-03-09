@@ -175,7 +175,7 @@ pub fn createSurfaceForWindow(
             .hwnd = glfw_native.getWin32Window(window),
         },
     } else if (glfw_options.x11) gpu.Surface.Descriptor{
-        .xlib_window = .{
+        .xlib = .{
             .label = "basic surface",
             .display = glfw_native.getX11Display(),
             .window = glfw_native.getX11Window(window),
