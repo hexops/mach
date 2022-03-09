@@ -261,6 +261,12 @@ pub const IndexFormat = enum(u32) {
     uint32 = 0x00000002,
 };
 
+pub const LoadOp = enum(u32) {
+    none = 0x00000000,
+    clear = 0x00000001,
+    load = 0x00000002,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -286,4 +292,5 @@ test "syntax" {
     _ = FilterMode;
     _ = FrontFace;
     _ = IndexFormat;
+    _ = LoadOp;
 }
