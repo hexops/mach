@@ -237,6 +237,14 @@ pub const ErrorFilter = enum(u32) {
     out_of_memory = 0x00000001,
 };
 
+pub const ErrorType = enum(u32) {
+    noError = 0x00000000,
+    validation = 0x00000001,
+    out_of_memory = 0x00000002,
+    unknown = 0x00000003,
+    device_lost = 0x00000004,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -258,4 +266,5 @@ test "syntax" {
     _ = CullMode;
     _ = DeviceLostReason;
     _ = ErrorFilter;
+    _ = ErrorType;
 }

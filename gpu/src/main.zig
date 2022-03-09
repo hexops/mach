@@ -54,6 +54,7 @@ pub const CreatePipelineAsyncStatus = @import("enums.zig").CreatePipelineAsyncSt
 pub const CullMode = @import("enums.zig").CullMode;
 pub const DeviceLostReason = @import("enums.zig").DeviceLostReason;
 pub const ErrorFilter = @import("enums.zig").ErrorFilter;
+pub const ErrorType = @import("enums.zig").ErrorType;
 
 test "syntax" {
     _ = Interface;
