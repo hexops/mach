@@ -415,6 +415,11 @@ pub const VertexFormat = enum(u32) {
     sint32x4 = 0x0000001E,
 };
 
+pub const VertexStepMode = enum(u32) {
+    vertex = 0x00000000,
+    instance = 0x00000001,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -458,4 +463,5 @@ test "syntax" {
     _ = TextureSampleType;
     _ = TextureViewDimension;
     _ = VertexFormat;
+    _ = VertexStepMode;
 }
