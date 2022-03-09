@@ -319,6 +319,17 @@ pub const SamplerBindingType = enum(u32) {
     comparison = 0x00000003,
 };
 
+pub const StencilOperation = enum(u32) {
+    keep = 0x00000000,
+    zero = 0x00000001,
+    replace = 0x00000002,
+    invert = 0x00000003,
+    increment_clamp = 0x00000004,
+    decrement_clamp = 0x00000005,
+    increment_wrap = 0x00000006,
+    decrement_wrap = 0x00000007,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -353,4 +364,5 @@ test "syntax" {
     _ = QueryType;
     _ = RenderPassTimestampLocation;
     _ = SamplerBindingType;
+    _ = StencilOperation;
 }
