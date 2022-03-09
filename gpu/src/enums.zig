@@ -250,6 +250,11 @@ pub const FilterMode = enum(u32) {
     linear = 0x00000001,
 };
 
+pub const FrontFace = enum(u32) {
+    ccw = 0x00000000,
+    cw = 0x00000001,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -273,4 +278,5 @@ test "syntax" {
     _ = ErrorFilter;
     _ = ErrorType;
     _ = FilterMode;
+    _ = FrontFace;
 }
