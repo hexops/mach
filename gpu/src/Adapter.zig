@@ -19,14 +19,14 @@
 //! https://gpuweb.github.io/gpuweb/#gpuadapter
 const std = @import("std");
 
-const FeatureName = @import("enums.zig").FeatureName;
+const Feature = @import("enums.zig").Feature;
 const Limits = @import("Limits.zig");
 const Device = @import("Device.zig");
 
 const Adapter = @This();
 
 /// The features which can be used to create devices on this adapter.
-features: []FeatureName,
+features: []Feature,
 
 /// The best limits which can be used to create devices on this adapter.
 ///
@@ -71,7 +71,7 @@ pub inline fn release(adapter: Adapter) void {
 }
 
 /// Tests of the given feature can be used to create devices on this adapter.
-pub fn hasFeature(adapter: Adapter, feature: FeatureName) bool {
+pub fn hasFeature(adapter: Adapter, feature: Feature) bool {
     for (adapter.features) |f| {
         if (f == feature) return true;
     }
