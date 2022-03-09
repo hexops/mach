@@ -38,7 +38,7 @@ pub const SwapChain = @import("SwapChain.zig");
 
 pub const Feature = @import("enums.zig").Feature;
 pub const TextureUsage = @import("texture_usage.zig").TextureUsage;
-pub const TextureFormat = @import("texture_format.zig").TextureFormat;
+pub const TextureFormat = @import("enums.zig").TextureFormat;
 pub const PresentMode = @import("enums.zig").PresentMode;
 pub const AddressMode = @import("enums.zig").AddressMode;
 
