@@ -330,6 +330,11 @@ pub const StencilOperation = enum(u32) {
     decrement_wrap = 0x00000007,
 };
 
+pub const StorageTextureAccess = enum(u32) {
+    none = 0x00000000,
+    write_only = 0x00000001,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -365,4 +370,5 @@ test "syntax" {
     _ = RenderPassTimestampLocation;
     _ = SamplerBindingType;
     _ = StencilOperation;
+    _ = StorageTextureAccess;
 }
