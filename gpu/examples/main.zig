@@ -51,10 +51,9 @@ pub fn main() !void {
         window_data.swap_chain = setup.device.nativeCreateSwapChain(null, &descriptor);
 
         window_data.swap_chain_format = @intToEnum(gpu.TextureFormat, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
-        c.wgpuSwapChainConfigure(
-            @ptrCast(c.WGPUSwapChain, window_data.swap_chain.?.ptr),
-            @enumToInt(window_data.swap_chain_format),
-            c.WGPUTextureUsage_RenderAttachment,
+        window_data.swap_chain.?.configure(
+            window_data.swap_chain_format,
+            .RenderAttachment,
             framebuffer_size.width,
             framebuffer_size.height,
         );
