@@ -22,6 +22,7 @@ const ShaderModule = @import("ShaderModule.zig");
 const SwapChain = @import("SwapChain.zig");
 const TextureView = @import("TextureView.zig");
 const Texture = @import("Texture.zig");
+const Sampler = @import("Sampler.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -539,6 +540,26 @@ const texture_vtable = Texture.VTable{
     }).release,
 };
 
+fn wrapSampler(sampler: c.WGPUSampler) Sampler {
+    return .{
+        .ptr = sampler.?,
+        .vtable = &sampler_vtable,
+    };
+}
+
+const sampler_vtable = Sampler.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuSamplerReference(@ptrCast(c.WGPUSampler, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuSamplerRelease(@ptrCast(c.WGPUSampler, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -554,4 +575,5 @@ test "syntax" {
     _ = wrapSwapChain;
     _ = wrapTextureView;
     _ = wrapTexture;
+    _ = wrapSampler;
 }

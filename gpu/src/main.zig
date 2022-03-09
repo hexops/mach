@@ -37,6 +37,7 @@ pub const ShaderModule = @import("ShaderModule.zig");
 pub const SwapChain = @import("SwapChain.zig");
 pub const TextureView = @import("TextureView.zig");
 pub const Texture = @import("Texture.zig");
+pub const Sampler = @import("Sampler.zig");
 
 pub const Feature = @import("enums.zig").Feature;
 pub const TextureUsage = @import("enums.zig").TextureUsage;
@@ -98,6 +99,7 @@ test "syntax" {
     _ = SwapChain;
     _ = TextureView;
     _ = Texture;
+    _ = Sampler;
 
     _ = Feature;
 }
