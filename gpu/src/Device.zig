@@ -6,7 +6,7 @@
 //!
 //! https://gpuweb.github.io/gpuweb/#devices
 //! https://gpuweb.github.io/gpuweb/#gpuadapter
-const FeatureName = @import("enums.zig").FeatureName;
+const Feature = @import("enums.zig").Feature;
 const Limits = @import("Limits.zig");
 const Queue = @import("Queue.zig");
 const ShaderModule = @import("ShaderModule.zig");
@@ -40,10 +40,10 @@ pub const VTable = struct {
     nativeCreateSwapChain: fn (ptr: *anyopaque, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain,
     // WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
     // WGPU_EXPORT void wgpuDeviceDestroy(WGPUDevice device);
-    // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeatureName * features);
+    // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeature * features);
     // WGPU_EXPORT bool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits * limits);
     getQueue: fn (ptr: *anyopaque) Queue,
-    // WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeatureName feature);
+    // WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeature feature);
     // WGPU_EXPORT void wgpuDeviceInjectError(WGPUDevice device, WGPUErrorType type, char const * message);
     // WGPU_EXPORT void wgpuDeviceLoseForTesting(WGPUDevice device);
     // WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
@@ -80,7 +80,7 @@ pub inline fn nativeCreateSwapChain(device: Device, surface: ?Surface, descripto
 // TODO: docs
 pub const Descriptor = struct {
     label: ?[]const u8 = null,
-    required_features: ?[]FeatureName = null,
+    required_features: ?[]Feature = null,
     required_limits: ?Limits = null,
 };
 

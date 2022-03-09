@@ -1,4 +1,4 @@
-pub const FeatureName = enum(u32) {
+pub const Feature = enum(u32) {
     depth24_unorm_stencil8 = 0x00000002,
     depth32_float_stencil8 = 0x00000003,
     timestamp_query = 0x00000004,
@@ -14,9 +14,8 @@ pub const FeatureName = enum(u32) {
     dawn_native = 0x000003ec,
 };
 
-// TODO: add featureNameString method
-// TODO: should featureName be renamed to just feature?
+// TODO: add featureName stringer method
 
 test "syntax" {
-    _ = FeatureName;
+    _ = Feature;
 }
