@@ -133,8 +133,8 @@ pub fn main() !void {
 
     const pipeline = c.wgpuDeviceCreateRenderPipeline(@ptrCast(c.WGPUDevice, setup.device.ptr), &pipeline_descriptor);
 
-    c.wgpuShaderModuleRelease(@ptrCast(c.WGPUShaderModule, vs_module.ptr));
-    c.wgpuShaderModuleRelease(@ptrCast(c.WGPUShaderModule, fs_module.ptr));
+    vs_module.release();
+    fs_module.release();
 
     // Reconfigure the swap chain with the new framebuffer width/height, otherwise e.g. the Vulkan
     // device would be lost after a resize.
