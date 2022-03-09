@@ -227,6 +227,11 @@ pub const CullMode = enum(u32) {
     back = 0x00000002,
 };
 
+pub const DeviceLostReason = enum(u32) {
+    none = 0x00000000,
+    destroyed = 0x00000001,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -246,4 +251,5 @@ test "syntax" {
     _ = ComputePassTimestampLocation;
     _ = CreatePipelineAsyncStatus;
     _ = CullMode;
+    _ = DeviceLostReason;
 }
