@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const Feature = enum(u32) {
     depth24_unorm_stencil8 = 0x00000002,
     depth32_float_stencil8 = 0x00000003,
@@ -14,13 +16,15 @@ pub const Feature = enum(u32) {
     dawn_native = 0x000003ec,
 };
 
-// TODO: add featureName stringer method
-
 const AddressMode = enum(u32) {
     repeat = 0x00000000,
     mirror_repeat = 0x00000001,
     clamp_to_edge = 0x00000002,
 };
+
+test "name" {
+    try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
+}
 
 test "syntax" {
     _ = Feature;
