@@ -213,6 +213,14 @@ pub const ComputePassTimestampLocation = enum(u32) {
     end = 0x00000001,
 };
 
+pub const CreatePipelineAsyncStatus = enum(u32) {
+    success = 0x00000000,
+    err = 0x00000001,
+    device_lost = 0x00000002,
+    device_destroyed = 0x00000003,
+    unknown = 0x00000004,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -230,4 +238,5 @@ test "syntax" {
     _ = CompilationInfoRequestStatus;
     _ = CompilationMessageType;
     _ = ComputePassTimestampLocation;
+    _ = CreatePipelineAsyncStatus;
 }
