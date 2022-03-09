@@ -66,6 +66,7 @@ pub const PredefinedColorSpace = @import("enums.zig").PredefinedColorSpace;
 pub const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 pub const QueryType = @import("enums.zig").QueryType;
 pub const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestampLocation;
+pub const SamplerBindingType = @import("enums.zig").SamplerBindingType;
 
 test "syntax" {
     _ = Interface;

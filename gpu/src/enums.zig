@@ -312,6 +312,13 @@ pub const RenderPassTimestampLocation = enum(u32) {
     end = 0x00000001,
 };
 
+pub const SamplerBindingType = enum(u32) {
+    none = 0x00000000,
+    filtering = 0x00000001,
+    non_filtering = 0x00000002,
+    comparison = 0x00000003,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -345,4 +352,5 @@ test "syntax" {
     _ = PrimitiveTopology;
     _ = QueryType;
     _ = RenderPassTimestampLocation;
+    _ = SamplerBindingType;
 }
