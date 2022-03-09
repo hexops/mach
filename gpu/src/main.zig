@@ -60,6 +60,7 @@ pub const FrontFace = @import("enums.zig").FrontFace;
 pub const IndexFormat = @import("enums.zig").IndexFormat;
 pub const LoadOp = @import("enums.zig").LoadOp;
 pub const LoggingType = @import("enums.zig").LoggingType;
+pub const PipelineStatistic = @import("enums.zig").PipelineStatistic;
 
 test "syntax" {
     _ = Interface;
