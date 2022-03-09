@@ -288,6 +288,11 @@ pub const PowerPreference = enum(u32) {
     high_performance = 0x00000002,
 };
 
+pub const PredefinedColorSpace = enum(u32) {
+    none = 0x00000000,
+    srgb = 0x00000001,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -317,4 +322,5 @@ test "syntax" {
     _ = LoggingType;
     _ = PipelineStatistic;
     _ = PowerPreference;
+    _ = PredefinedColorSpace;
 }
