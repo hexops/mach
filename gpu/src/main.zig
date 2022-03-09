@@ -56,6 +56,7 @@ pub const DeviceLostReason = @import("enums.zig").DeviceLostReason;
 pub const ErrorFilter = @import("enums.zig").ErrorFilter;
 pub const ErrorType = @import("enums.zig").ErrorType;
 pub const FilterMode = @import("enums.zig").FilterMode;
+pub const FrontFace = @import("enums.zig").FrontFace;
 
 test "syntax" {
     _ = Interface;
