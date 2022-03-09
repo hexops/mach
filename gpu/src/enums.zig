@@ -245,6 +245,11 @@ pub const ErrorType = enum(u32) {
     device_lost = 0x00000004,
 };
 
+pub const FilterMode = enum(u32) {
+    nearest = 0x00000000,
+    linear = 0x00000001,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -267,4 +272,5 @@ test "syntax" {
     _ = DeviceLostReason;
     _ = ErrorFilter;
     _ = ErrorType;
+    _ = FilterMode;
 }
