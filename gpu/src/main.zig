@@ -62,6 +62,7 @@ pub const LoadOp = @import("enums.zig").LoadOp;
 pub const LoggingType = @import("enums.zig").LoggingType;
 pub const PipelineStatistic = @import("enums.zig").PipelineStatistic;
 pub const PowerPreference = @import("enums.zig").PowerPreference;
+pub const PredefinedColorSpace = @import("enums.zig").PredefinedColorSpace;
 
 test "syntax" {
     _ = Interface;
