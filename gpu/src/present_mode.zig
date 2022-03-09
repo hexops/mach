@@ -1,6 +1,5 @@
 pub const PresentMode = enum(u32) {
-    // TODO: zig enums are not CamelCase
-    Immediate = 0x00000000,
-    Mailbox = 0x00000001,
-    Fifo = 0x00000002,
+    immediate = 0x00000000,
+    mailbox = 0x00000001,
+    fifo = 0x00000002,
 };
