@@ -195,6 +195,13 @@ pub const CompareFunction = enum(u32) {
     always = 0x00000008,
 };
 
+pub const CompilationInfoRequestStatus = enum(u32) {
+    success = 0x00000000,
+    err = 0x00000001,
+    device_lost = 0x00000002,
+    unknown = 0x00000003,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -209,4 +216,5 @@ test "syntax" {
     _ = BufferBindingType;
     _ = BufferMapAsyncStatus;
     _ = CompareFunction;
+    _ = CompilationInfoRequestStatus;
 }
