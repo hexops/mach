@@ -44,6 +44,7 @@ pub const AddressMode = @import("enums.zig").AddressMode;
 pub const AlphaMode = @import("enums.zig").AlphaMode;
 pub const BlendFactor = @import("enums.zig").BlendFactor;
 pub const BlendOperation = @import("enums.zig").BlendOperation;
+pub const BufferBindingType = @import("enums.zig").BufferBindingType;
 
 test "syntax" {
     _ = Interface;

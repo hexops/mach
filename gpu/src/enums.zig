@@ -167,6 +167,13 @@ pub const BlendOperation = enum(u32) {
     max = 0x00000004,
 };
 
+pub const BufferBindingType = enum(u32) {
+    none = 0x00000000,
+    uniform = 0x00000001,
+    storage = 0x00000002,
+    read_only_storage = 0x00000003,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -178,4 +185,5 @@ test "syntax" {
     _ = AlphaMode;
     _ = BlendFactor;
     _ = BlendOperation;
+    _ = BufferBindingType;
 }
