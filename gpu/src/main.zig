@@ -36,7 +36,7 @@ pub const CommandBuffer = @import("CommandBuffer.zig");
 pub const ShaderModule = @import("ShaderModule.zig");
 pub const SwapChain = @import("SwapChain.zig");
 
-pub const FeatureName = @import("feature_name.zig").FeatureName;
+pub const FeatureName = @import("enums.zig").FeatureName;
 pub const TextureUsage = @import("texture_usage.zig").TextureUsage;
 pub const TextureFormat = @import("texture_format.zig").TextureFormat;
 pub const PresentMode = @import("present_mode.zig").PresentMode;

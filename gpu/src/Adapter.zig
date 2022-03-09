@@ -19,7 +19,7 @@
 //! https://gpuweb.github.io/gpuweb/#gpuadapter
 const std = @import("std");
 
-const FeatureName = @import("feature_name.zig").FeatureName;
+const FeatureName = @import("enums.zig").FeatureName;
 const Limits = @import("Limits.zig");
 const Device = @import("Device.zig");
 

@@ -6,7 +6,7 @@
 //!
 //! https://gpuweb.github.io/gpuweb/#devices
 //! https://gpuweb.github.io/gpuweb/#gpuadapter
-const FeatureName = @import("feature_name.zig").FeatureName;
+const FeatureName = @import("enums.zig").FeatureName;
 const Limits = @import("Limits.zig");
 const Queue = @import("Queue.zig");
 const ShaderModule = @import("ShaderModule.zig");
