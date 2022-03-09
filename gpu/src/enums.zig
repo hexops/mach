@@ -293,6 +293,14 @@ pub const PredefinedColorSpace = enum(u32) {
     srgb = 0x00000001,
 };
 
+pub const PrimitiveTopology = enum(u32) {
+    point_list = 0x00000000,
+    line_list = 0x00000001,
+    line_strip = 0x00000002,
+    triangle_list = 0x00000003,
+    triangle_strip = 0x00000004,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -323,4 +331,5 @@ test "syntax" {
     _ = PipelineStatistic;
     _ = PowerPreference;
     _ = PredefinedColorSpace;
+    _ = PrimitiveTopology;
 }
