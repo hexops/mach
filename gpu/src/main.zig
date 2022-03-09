@@ -46,6 +46,7 @@ pub const BlendFactor = @import("enums.zig").BlendFactor;
 pub const BlendOperation = @import("enums.zig").BlendOperation;
 pub const BufferBindingType = @import("enums.zig").BufferBindingType;
 pub const BufferMapAsyncStatus = @import("enums.zig").BufferMapAsyncStatus;
+pub const CompareFunction = @import("enums.zig").CompareFunction;
 
 test "syntax" {
     _ = Interface;

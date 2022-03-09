@@ -183,6 +183,18 @@ pub const BufferMapAsyncStatus = enum(u32) {
     unmapped_before_callback = 0x00000005,
 };
 
+pub const CompareFunction = enum(u32) {
+    none = 0x00000000,
+    never = 0x00000001,
+    less = 0x00000002,
+    less_equal = 0x00000003,
+    greater = 0x00000004,
+    greater_equal = 0x00000005,
+    equal = 0x00000006,
+    not_equal = 0x00000007,
+    always = 0x00000008,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -196,4 +208,5 @@ test "syntax" {
     _ = BlendOperation;
     _ = BufferBindingType;
     _ = BufferMapAsyncStatus;
+    _ = CompareFunction;
 }
