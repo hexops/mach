@@ -1,5 +1,5 @@
 const std = @import("std");
-const TextureUsage = @import("texture_usage.zig").TextureUsage;
+const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
 const PresentMode = @import("enums.zig").PresentMode;
 
