@@ -267,6 +267,13 @@ pub const LoadOp = enum(u32) {
     load = 0x00000002,
 };
 
+pub const LoggingType = enum(u32) {
+    verbose = 0x00000000,
+    info = 0x00000001,
+    warning = 0x00000002,
+    err = 0x00000003,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -293,4 +300,5 @@ test "syntax" {
     _ = FrontFace;
     _ = IndexFormat;
     _ = LoadOp;
+    _ = LoggingType;
 }

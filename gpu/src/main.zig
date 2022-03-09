@@ -59,6 +59,7 @@ pub const FilterMode = @import("enums.zig").FilterMode;
 pub const FrontFace = @import("enums.zig").FrontFace;
 pub const IndexFormat = @import("enums.zig").IndexFormat;
 pub const LoadOp = @import("enums.zig").LoadOp;
+pub const LoggingType = @import("enums.zig").LoggingType;
 
 test "syntax" {
     _ = Interface;
