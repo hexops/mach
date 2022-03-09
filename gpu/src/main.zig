@@ -65,6 +65,7 @@ pub const PowerPreference = @import("enums.zig").PowerPreference;
 pub const PredefinedColorSpace = @import("enums.zig").PredefinedColorSpace;
 pub const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 pub const QueryType = @import("enums.zig").QueryType;
+pub const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestampLocation;
 
 test "syntax" {
     _ = Interface;

@@ -307,6 +307,11 @@ pub const QueryType = enum(u32) {
     timestamp = 0x00000002,
 };
 
+pub const RenderPassTimestampLocation = enum(u32) {
+    beginning = 0x00000000,
+    end = 0x00000001,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -339,4 +344,5 @@ test "syntax" {
     _ = PredefinedColorSpace;
     _ = PrimitiveTopology;
     _ = QueryType;
+    _ = RenderPassTimestampLocation;
 }
