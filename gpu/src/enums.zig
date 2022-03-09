@@ -449,6 +449,13 @@ pub const MapMode = enum(u32) {
     write = 0x00000002,
 };
 
+pub const ShaderStage = enum(u32) {
+    none = 0x00000000,
+    vertex = 0x00000001,
+    fragment = 0x00000002,
+    compute = 0x00000004,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -496,4 +503,5 @@ test "syntax" {
     _ = BufferUsage;
     _ = ColorWriteMask;
     _ = MapMode;
+    _ = ShaderStage;
 }
