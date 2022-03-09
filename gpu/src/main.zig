@@ -53,6 +53,7 @@ pub const ComputePassTimestampLocation = @import("enums.zig").ComputePassTimesta
 pub const CreatePipelineAsyncStatus = @import("enums.zig").CreatePipelineAsyncStatus;
 pub const CullMode = @import("enums.zig").CullMode;
 pub const DeviceLostReason = @import("enums.zig").DeviceLostReason;
+pub const ErrorFilter = @import("enums.zig").ErrorFilter;
 
 test "syntax" {
     _ = Interface;
