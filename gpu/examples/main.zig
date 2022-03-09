@@ -26,14 +26,14 @@ pub fn main() !void {
     const use_legacy_api = setup.backend_type == c.WGPUBackendType_OpenGL or setup.backend_type == c.WGPUBackendType_OpenGLES;
     var descriptor: gpu.SwapChain.Descriptor = undefined;
     if (!use_legacy_api) {
-        window_data.swap_chain_format = .BGRA8Unorm;
+        window_data.swap_chain_format = .bgra8_unorm;
         descriptor = .{
             .label = "basic swap chain",
-            .usage = .RenderAttachment,
+            .usage = .render_attachment,
             .format = window_data.swap_chain_format,
             .width = framebuffer_size.width,
             .height = framebuffer_size.height,
-            .present_mode = .Fifo,
+            .present_mode = .fifo,
             .implementation = 0,
         };
         window_data.surface = sample_utils.createSurfaceForWindow(
@@ -53,7 +53,7 @@ pub fn main() !void {
         window_data.swap_chain_format = @intToEnum(gpu.TextureFormat, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
         window_data.swap_chain.?.configure(
             window_data.swap_chain_format,
-            .RenderAttachment,
+            .render_attachment,
             framebuffer_size.width,
             framebuffer_size.height,
         );
