@@ -22,6 +22,12 @@ const AddressMode = enum(u32) {
     clamp_to_edge = 0x00000002,
 };
 
+pub const PresentMode = enum(u32) {
+    immediate = 0x00000000,
+    mailbox = 0x00000001,
+    fifo = 0x00000002,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -29,4 +35,5 @@ test "name" {
 test "syntax" {
     _ = Feature;
     _ = AddressMode;
+    _ = PresentMode;
 }
