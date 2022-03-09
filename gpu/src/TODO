@@ -675,7 +675,20 @@ WGPU_EXPORT void wgpuTextureSetLabel(WGPUTexture texture, char const * label);
 WGPU_EXPORT void wgpuTextureReference(WGPUTexture texture);
 WGPU_EXPORT void wgpuTextureRelease(WGPUTexture texture);
 
-// Methods of TextureView
-WGPU_EXPORT void wgpuTextureViewSetLabel(WGPUTextureView textureView, char const * label);
-WGPU_EXPORT void wgpuTextureViewReference(WGPUTextureView textureView);
-WGPU_EXPORT void wgpuTextureViewRelease(WGPUTextureView textureView);
+typedef enum WGPUSType {
+    // webgpu.h upstream:
+    WGPUSType_Invalid = 0x00000000,
+    WGPUSType_PrimitiveDepthClipControl = 0x00000007,
+    WGPUSType_SurfaceDescriptorFromWaylandSurface = 0x00000008,
+    WGPUSType_SurfaceDescriptorFromAndroidNativeWindow = 0x00000009,
+
+    // webgpu.h dawn:
+    WGPUSType_ExternalTextureBindingEntry = 0x00000009,
+    WGPUSType_ExternalTextureBindingLayout = 0x0000000A,
+    WGPUSType_DawnTextureInternalUsageDescriptor = 0x000003E8,
+    WGPUSType_PrimitiveDepthClampingState = 0x000003E9,
+    WGPUSType_DawnTogglesDeviceDescriptor = 0x000003EA,
+    WGPUSType_DawnEncoderInternalUsageDescriptor = 0x000003EB,
+    WGPUSType_DawnInstanceDescriptor = 0x000003EC,
+    WGPUSType_DawnCacheDeviceDescriptor = 0x000003ED,
+} WGPUSType;
