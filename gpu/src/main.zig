@@ -75,6 +75,7 @@ pub const TextureComponentType = @import("enums.zig").TextureComponentType;
 pub const TextureDimension = @import("enums.zig").TextureDimension;
 pub const TextureSampleType = @import("enums.zig").TextureSampleType;
 pub const TextureViewDimension = @import("enums.zig").TextureViewDimension;
+pub const VertexFormat = @import("enums.zig").VertexFormat;
 
 test "syntax" {
     _ = Interface;
