@@ -420,6 +420,20 @@ pub const VertexStepMode = enum(u32) {
     instance = 0x00000001,
 };
 
+pub const BufferUsage = enum(u32) {
+    none = 0x00000000,
+    map_read = 0x00000001,
+    map_write = 0x00000002,
+    copy_src = 0x00000004,
+    copy_dst = 0x00000008,
+    index = 0x00000010,
+    vertex = 0x00000020,
+    uniform = 0x00000040,
+    storage = 0x00000080,
+    indirect = 0x00000100,
+    query_resolve = 0x00000200,
+};
+
 test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
@@ -464,4 +478,5 @@ test "syntax" {
     _ = TextureViewDimension;
     _ = VertexFormat;
     _ = VertexStepMode;
+    _ = BufferUsage;
 }

@@ -77,6 +77,7 @@ pub const TextureSampleType = @import("enums.zig").TextureSampleType;
 pub const TextureViewDimension = @import("enums.zig").TextureViewDimension;
 pub const VertexFormat = @import("enums.zig").VertexFormat;
 pub const VertexStepMode = @import("enums.zig").VertexStepMode;
+pub const BufferUsage = @import("enums.zig").BufferUsage;
 
 test "syntax" {
     _ = Interface;
