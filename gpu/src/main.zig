@@ -34,8 +34,12 @@ pub const Limits = @import("Limits.zig");
 pub const Queue = @import("Queue.zig");
 pub const CommandBuffer = @import("CommandBuffer.zig");
 pub const ShaderModule = @import("ShaderModule.zig");
+pub const SwapChain = @import("SwapChain.zig");
 
 pub const FeatureName = @import("feature_name.zig").FeatureName;
+pub const TextureUsage = @import("texture_usage.zig").TextureUsage;
+pub const TextureFormat = @import("texture_format.zig").TextureFormat;
+pub const PresentMode = @import("present_mode.zig").PresentMode;
 
 test "syntax" {
     _ = Interface;
@@ -48,6 +52,7 @@ test "syntax" {
     _ = Queue;
     _ = CommandBuffer;
     _ = ShaderModule;
+    _ = SwapChain;
 
     _ = FeatureName;
 }

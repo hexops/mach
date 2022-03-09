@@ -8,6 +8,9 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
+    // TODO:
+    // WGPU_EXPORT void wgpuShaderModuleGetCompilationInfo(WGPUShaderModule shaderModule, WGPUCompilationInfoCallback callback, void * userdata);
+    // WGPU_EXPORT void wgpuShaderModuleSetLabel(WGPUShaderModule shaderModule, char const * label);
 };
 
 pub inline fn reference(queue: ShaderModule) void {
@@ -31,6 +34,10 @@ pub const Descriptor = struct {
     },
 };
 
-// // Methods of ShaderModule
-// WGPU_EXPORT void wgpuShaderModuleGetCompilationInfo(WGPUShaderModule shaderModule, WGPUCompilationInfoCallback callback, void * userdata);
-// WGPU_EXPORT void wgpuShaderModuleSetLabel(WGPUShaderModule shaderModule, char const * label);
+test "syntax" {
+    _ = VTable;
+    _ = reference;
+    _ = release;
+    _ = CodeTag;
+    _ = Descriptor;
+}
