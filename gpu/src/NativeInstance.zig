@@ -21,7 +21,7 @@ const CommandBuffer = @import("CommandBuffer.zig");
 const ShaderModule = @import("ShaderModule.zig");
 const SwapChain = @import("SwapChain.zig");
 
-const TextureUsage = @import("texture_usage.zig").TextureUsage;
+const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
 const PresentMode = @import("enums.zig").PresentMode;
 
