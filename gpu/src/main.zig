@@ -68,6 +68,7 @@ pub const QueryType = @import("enums.zig").QueryType;
 pub const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestampLocation;
 pub const SamplerBindingType = @import("enums.zig").SamplerBindingType;
 pub const StencilOperation = @import("enums.zig").StencilOperation;
+pub const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 
 test "syntax" {
     _ = Interface;
