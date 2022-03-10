@@ -32,6 +32,7 @@ const PipelineLayout = @import("PipelineLayout.zig");
 const ExternalTexture = @import("ExternalTexture.zig");
 const BindGroup = @import("BindGroup.zig");
 const BindGroupLayout = @import("BindGroupLayout.zig");
+const Buffer = @import("Buffer.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -749,6 +750,26 @@ const bind_group_layout_vtable = BindGroupLayout.VTable{
     }).release,
 };
 
+fn wrapBuffer(buffer: c.WGPUBuffer) Buffer {
+    return .{
+        .ptr = buffer.?,
+        .vtable = &buffer_vtable,
+    };
+}
+
+const buffer_vtable = Buffer.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuBufferReference(@ptrCast(c.WGPUBuffer, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuBufferRelease(@ptrCast(c.WGPUBuffer, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -774,4 +795,5 @@ test "syntax" {
     _ = wrapExternalTexture;
     _ = wrapBindGroup;
     _ = wrapBindGroupLayout;
+    _ = wrapBuffer;
 }
