@@ -39,6 +39,7 @@ pub const TextureView = @import("TextureView.zig");
 pub const Texture = @import("Texture.zig");
 pub const Sampler = @import("Sampler.zig");
 pub const RenderPipeline = @import("RenderPipeline.zig");
+pub const RenderPassEncoder = @import("RenderPassEncoder.zig");
 
 pub const Feature = @import("enums.zig").Feature;
 pub const TextureUsage = @import("enums.zig").TextureUsage;
@@ -102,6 +103,7 @@ test "syntax" {
     _ = Texture;
     _ = Sampler;
     _ = RenderPipeline;
+    _ = RenderPassEncoder;
 
     _ = Feature;
 }
