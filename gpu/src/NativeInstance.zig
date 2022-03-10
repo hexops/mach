@@ -26,6 +26,7 @@ const Sampler = @import("Sampler.zig");
 const RenderPipeline = @import("RenderPipeline.zig");
 const RenderPassEncoder = @import("RenderPassEncoder.zig");
 const RenderBundleEncoder = @import("RenderBundleEncoder.zig");
+const RenderBundle = @import("RenderBundle.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -623,6 +624,26 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
     }).release,
 };
 
+fn wrapRenderBundle(bundle: c.WGPURenderBundle) RenderBundle {
+    return .{
+        .ptr = bundle.?,
+        .vtable = &render_bundle_vtable,
+    };
+}
+
+const render_bundle_vtable = RenderBundle.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuRenderBundleReference(@ptrCast(c.WGPURenderBundle, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuRenderBundleRelease(@ptrCast(c.WGPURenderBundle, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -642,4 +663,5 @@ test "syntax" {
     _ = wrapRenderPipeline;
     _ = wrapRenderPassEncoder;
     _ = wrapRenderBundleEncoder;
+    _ = wrapRenderBundle;
 }

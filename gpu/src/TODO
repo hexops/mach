@@ -610,10 +610,6 @@ WGPU_EXPORT void wgpuQuerySetSetLabel(WGPUQuerySet querySet, char const * label)
 WGPU_EXPORT void wgpuQuerySetReference(WGPUQuerySet querySet);
 WGPU_EXPORT void wgpuQuerySetRelease(WGPUQuerySet querySet);
 
-// Methods of RenderBundle
-WGPU_EXPORT void wgpuRenderBundleReference(WGPURenderBundle renderBundle);
-WGPU_EXPORT void wgpuRenderBundleRelease(WGPURenderBundle renderBundle);
-
 typedef enum WGPUSType {
     // webgpu.h upstream:
     WGPUSType_Invalid = 0x00000000,
