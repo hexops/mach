@@ -29,6 +29,7 @@ const RenderBundleEncoder = @import("RenderBundleEncoder.zig");
 const RenderBundle = @import("RenderBundle.zig");
 const QuerySet = @import("QuerySet.zig");
 const PipelineLayout = @import("PipelineLayout.zig");
+const ExternalTexture = @import("ExternalTexture.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -686,6 +687,26 @@ const pipeline_layout_vtable = PipelineLayout.VTable{
     }).release,
 };
 
+fn wrapExternalTexture(texture: c.WGPUExternalTexture) ExternalTexture {
+    return .{
+        .ptr = texture.?,
+        .vtable = &external_texture_vtable,
+    };
+}
+
+const external_texture_vtable = ExternalTexture.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuExternalTextureReference(@ptrCast(c.WGPUExternalTexture, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuExternalTextureRelease(@ptrCast(c.WGPUExternalTexture, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -708,4 +729,5 @@ test "syntax" {
     _ = wrapRenderBundle;
     _ = wrapQuerySet;
     _ = wrapPipelineLayout;
+    _ = wrapExternalTexture;
 }
