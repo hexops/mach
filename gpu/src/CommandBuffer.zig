@@ -8,6 +8,8 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
+    // TODO:
+    // WGPU_EXPORT void wgpuCommandBufferSetLabel(WGPUCommandBuffer commandBuffer, char const * label);
 };
 
 pub inline fn reference(buf: CommandBuffer) void {
