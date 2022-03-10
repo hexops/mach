@@ -35,6 +35,7 @@ const BindGroupLayout = @import("BindGroupLayout.zig");
 const Buffer = @import("Buffer.zig");
 const CommandEncoder = @import("CommandEncoder.zig");
 const ComputePassEncoder = @import("ComputePassEncoder.zig");
+const ComputePipeline = @import("ComputePipeline.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -772,9 +773,9 @@ const buffer_vtable = Buffer.VTable{
     }).release,
 };
 
-fn wrapCommandEncoder(buffer: c.WGPUCommandEncoder) CommandEncoder {
+fn wrapCommandEncoder(enc: c.WGPUCommandEncoder) CommandEncoder {
     return .{
-        .ptr = buffer.?,
+        .ptr = enc.?,
         .vtable = &command_encoder_vtable,
     };
 }
@@ -792,14 +793,14 @@ const command_encoder_vtable = CommandEncoder.VTable{
     }).release,
 };
 
-fn wrapComputePassEncoder(buffer: c.WGPUComputePassEncoder) ComputePassEncoder {
+fn wrapComputePassEncoder(enc: c.WGPUComputePassEncoder) ComputePassEncoder {
     return .{
-        .ptr = buffer.?,
-        .vtable = &command_pass_encoder_vtable,
+        .ptr = enc.?,
+        .vtable = &compute_pass_encoder_vtable,
     };
 }
 
-const command_pass_encoder_vtable = ComputePassEncoder.VTable{
+const compute_pass_encoder_vtable = ComputePassEncoder.VTable{
     .reference = (struct {
         pub fn reference(ptr: *anyopaque) void {
             c.wgpuComputePassEncoderReference(@ptrCast(c.WGPUComputePassEncoder, ptr));
@@ -808,6 +809,26 @@ const command_pass_encoder_vtable = ComputePassEncoder.VTable{
     .release = (struct {
         pub fn release(ptr: *anyopaque) void {
             c.wgpuComputePassEncoderRelease(@ptrCast(c.WGPUComputePassEncoder, ptr));
+        }
+    }).release,
+};
+
+fn wrapComputePipeline(pipeline: c.WGPUComputePipeline) ComputePipeline {
+    return .{
+        .ptr = pipeline.?,
+        .vtable = &compute_pipeline_vtable,
+    };
+}
+
+const compute_pipeline_vtable = ComputePipeline.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuComputePipelineReference(@ptrCast(c.WGPUComputePipeline, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuComputePipelineRelease(@ptrCast(c.WGPUComputePipeline, ptr));
         }
     }).release,
 };
@@ -840,4 +861,5 @@ test "syntax" {
     _ = wrapBuffer;
     _ = wrapCommandEncoder;
     _ = wrapComputePassEncoder;
+    _ = wrapComputePipeline;
 }
