@@ -34,6 +34,7 @@ const BindGroup = @import("BindGroup.zig");
 const BindGroupLayout = @import("BindGroupLayout.zig");
 const Buffer = @import("Buffer.zig");
 const CommandEncoder = @import("CommandEncoder.zig");
+const ComputePassEncoder = @import("ComputePassEncoder.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -791,6 +792,26 @@ const command_encoder_vtable = CommandEncoder.VTable{
     }).release,
 };
 
+fn wrapComputePassEncoder(buffer: c.WGPUComputePassEncoder) ComputePassEncoder {
+    return .{
+        .ptr = buffer.?,
+        .vtable = &command_pass_encoder_vtable,
+    };
+}
+
+const command_pass_encoder_vtable = ComputePassEncoder.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuComputePassEncoderReference(@ptrCast(c.WGPUComputePassEncoder, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuComputePassEncoderRelease(@ptrCast(c.WGPUComputePassEncoder, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -818,4 +839,5 @@ test "syntax" {
     _ = wrapBindGroupLayout;
     _ = wrapBuffer;
     _ = wrapCommandEncoder;
+    _ = wrapComputePassEncoder;
 }

@@ -49,6 +49,7 @@ pub const BindGroup = @import("BindGroup.zig");
 pub const BindGroupLayout = @import("BindGroupLayout.zig");
 pub const Buffer = @import("Buffer.zig");
 pub const CommandEncoder = @import("CommandEncoder.zig");
+pub const ComputePassEncoder = @import("ComputePassEncoder.zig");
 
 pub const Feature = @import("enums.zig").Feature;
 pub const TextureUsage = @import("enums.zig").TextureUsage;
@@ -122,6 +123,7 @@ test "syntax" {
     _ = BindGroupLayout;
     _ = Buffer;
     _ = CommandEncoder;
+    _ = ComputePassEncoder;
 
     _ = Feature;
 }
