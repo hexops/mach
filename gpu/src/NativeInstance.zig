@@ -31,6 +31,7 @@ const QuerySet = @import("QuerySet.zig");
 const PipelineLayout = @import("PipelineLayout.zig");
 const ExternalTexture = @import("ExternalTexture.zig");
 const BindGroup = @import("BindGroup.zig");
+const BindGroupLayout = @import("BindGroupLayout.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -728,6 +729,26 @@ const bind_group_vtable = BindGroup.VTable{
     }).release,
 };
 
+fn wrapBindGroupLayout(layout: c.WGPUBindGroupLayout) BindGroupLayout {
+    return .{
+        .ptr = layout.?,
+        .vtable = &bind_group_layout_vtable,
+    };
+}
+
+const bind_group_layout_vtable = BindGroupLayout.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuBindGroupLayoutReference(@ptrCast(c.WGPUBindGroupLayout, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuBindGroupLayoutRelease(@ptrCast(c.WGPUBindGroupLayout, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -752,4 +773,5 @@ test "syntax" {
     _ = wrapPipelineLayout;
     _ = wrapExternalTexture;
     _ = wrapBindGroup;
+    _ = wrapBindGroupLayout;
 }
