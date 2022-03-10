@@ -604,12 +604,6 @@ WGPU_EXPORT void wgpuPipelineLayoutSetLabel(WGPUPipelineLayout pipelineLayout, c
 WGPU_EXPORT void wgpuPipelineLayoutReference(WGPUPipelineLayout pipelineLayout);
 WGPU_EXPORT void wgpuPipelineLayoutRelease(WGPUPipelineLayout pipelineLayout);
 
-// Methods of QuerySet
-WGPU_EXPORT void wgpuQuerySetDestroy(WGPUQuerySet querySet);
-WGPU_EXPORT void wgpuQuerySetSetLabel(WGPUQuerySet querySet, char const * label);
-WGPU_EXPORT void wgpuQuerySetReference(WGPUQuerySet querySet);
-WGPU_EXPORT void wgpuQuerySetRelease(WGPUQuerySet querySet);
-
 typedef enum WGPUSType {
     // webgpu.h upstream:
     WGPUSType_Invalid = 0x00000000,

@@ -27,6 +27,7 @@ const RenderPipeline = @import("RenderPipeline.zig");
 const RenderPassEncoder = @import("RenderPassEncoder.zig");
 const RenderBundleEncoder = @import("RenderBundleEncoder.zig");
 const RenderBundle = @import("RenderBundle.zig");
+const QuerySet = @import("QuerySet.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -644,6 +645,26 @@ const render_bundle_vtable = RenderBundle.VTable{
     }).release,
 };
 
+fn wrapQuerySet(qset: c.WGPUQuerySet) QuerySet {
+    return .{
+        .ptr = qset.?,
+        .vtable = &query_set_vtable,
+    };
+}
+
+const query_set_vtable = QuerySet.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuQuerySetReference(@ptrCast(c.WGPUQuerySet, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuQuerySetRelease(@ptrCast(c.WGPUQuerySet, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -664,4 +685,5 @@ test "syntax" {
     _ = wrapRenderPassEncoder;
     _ = wrapRenderBundleEncoder;
     _ = wrapRenderBundle;
+    _ = wrapQuerySet;
 }
