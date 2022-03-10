@@ -48,6 +48,7 @@ pub const ExternalTexture = @import("ExternalTexture.zig");
 pub const BindGroup = @import("BindGroup.zig");
 pub const BindGroupLayout = @import("BindGroupLayout.zig");
 pub const Buffer = @import("Buffer.zig");
+pub const CommandEncoder = @import("CommandEncoder.zig");
 
 pub const Feature = @import("enums.zig").Feature;
 pub const TextureUsage = @import("enums.zig").TextureUsage;
@@ -120,6 +121,7 @@ test "syntax" {
     _ = BindGroup;
     _ = BindGroupLayout;
     _ = Buffer;
+    _ = CommandEncoder;
 
     _ = Feature;
 }

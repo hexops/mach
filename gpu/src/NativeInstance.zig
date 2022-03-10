@@ -33,6 +33,7 @@ const ExternalTexture = @import("ExternalTexture.zig");
 const BindGroup = @import("BindGroup.zig");
 const BindGroupLayout = @import("BindGroupLayout.zig");
 const Buffer = @import("Buffer.zig");
+const CommandEncoder = @import("CommandEncoder.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -770,6 +771,26 @@ const buffer_vtable = Buffer.VTable{
     }).release,
 };
 
+fn wrapCommandEncoder(buffer: c.WGPUCommandEncoder) CommandEncoder {
+    return .{
+        .ptr = buffer.?,
+        .vtable = &command_encoder_vtable,
+    };
+}
+
+const command_encoder_vtable = CommandEncoder.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuCommandEncoderReference(@ptrCast(c.WGPUCommandEncoder, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuCommandEncoderRelease(@ptrCast(c.WGPUCommandEncoder, ptr));
+        }
+    }).release,
+};
+
 test "syntax" {
     _ = wrap;
     _ = interface_vtable;
@@ -796,4 +817,5 @@ test "syntax" {
     _ = wrapBindGroup;
     _ = wrapBindGroupLayout;
     _ = wrapBuffer;
+    _ = wrapCommandEncoder;
 }
