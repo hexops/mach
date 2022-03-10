@@ -45,6 +45,7 @@ pub const RenderBundle = @import("RenderBundle.zig");
 pub const QuerySet = @import("QuerySet.zig");
 pub const PipelineLayout = @import("PipelineLayout.zig");
 pub const ExternalTexture = @import("ExternalTexture.zig");
+pub const BindGroup = @import("BindGroup.zig");
 
 pub const Feature = @import("enums.zig").Feature;
 pub const TextureUsage = @import("enums.zig").TextureUsage;
@@ -114,6 +115,7 @@ test "syntax" {
     _ = QuerySet;
     _ = PipelineLayout;
     _ = ExternalTexture;
+    _ = BindGroup;
 
     _ = Feature;
 }
