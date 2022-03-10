@@ -24,6 +24,7 @@ const TextureView = @import("TextureView.zig");
 const Texture = @import("Texture.zig");
 const Sampler = @import("Sampler.zig");
 const RenderPipeline = @import("RenderPipeline.zig");
+const RenderPassEncoder = @import("RenderPassEncoder.zig");
 
 const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
@@ -561,9 +562,9 @@ const sampler_vtable = Sampler.VTable{
     }).release,
 };
 
-fn wrapRenderPipeline(render_pipeline: c.WGPURenderPipeline) RenderPipeline {
+fn wrapRenderPipeline(pipeline: c.WGPURenderPipeline) RenderPipeline {
     return .{
-        .ptr = render_pipeline.?,
+        .ptr = pipeline.?,
         .vtable = &render_pipeline_vtable,
     };
 }
@@ -577,6 +578,26 @@ const render_pipeline_vtable = RenderPipeline.VTable{
     .release = (struct {
         pub fn release(ptr: *anyopaque) void {
             c.wgpuRenderPipelineRelease(@ptrCast(c.WGPURenderPipeline, ptr));
+        }
+    }).release,
+};
+
+fn wrapRenderPassEncoder(pass: c.WGPURenderPassEncoder) RenderPassEncoder {
+    return .{
+        .ptr = pass.?,
+        .vtable = &render_pass_encoder_vtable,
+    };
+}
+
+const render_pass_encoder_vtable = RenderPassEncoder.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuRenderPassEncoderReference(@ptrCast(c.WGPURenderPassEncoder, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuRenderPassEncoderRelease(@ptrCast(c.WGPURenderPassEncoder, ptr));
         }
     }).release,
 };
@@ -598,4 +619,5 @@ test "syntax" {
     _ = wrapTexture;
     _ = wrapSampler;
     _ = wrapRenderPipeline;
+    _ = wrapRenderPassEncoder;
 }
