@@ -57,13 +57,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
 
 
 
-typedef struct WGPUComputePipelineDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUPipelineLayout layout;
-    WGPUProgrammableStageDescriptor compute;
-} WGPUComputePipelineDescriptor;
-
 typedef struct WGPURenderPassDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
