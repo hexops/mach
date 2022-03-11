@@ -180,6 +180,12 @@ pub const ViewDimension = enum(u32) {
     dimension_3d = 0x00000006,
 };
 
+pub const BindingLayout = struct {
+    sample_type: SampleType,
+    view_dimension: ViewDimension,
+    multisampled: bool,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
@@ -192,4 +198,5 @@ test "syntax" {
     _ = Dimension;
     _ = SampleType;
     _ = ViewDimension;
+    _ = BindingLayout;
 }
