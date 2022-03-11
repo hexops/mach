@@ -8,8 +8,7 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    // TODO:
-    // WGPU_EXPORT void wgpuBindGroupLayoutSetLabel(WGPUBindGroupLayout bindGroupLayout, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
 };
 
 pub inline fn reference(layout: BindGroupLayout) void {
@@ -20,8 +19,13 @@ pub inline fn release(layout: BindGroupLayout) void {
     layout.vtable.release(layout.ptr);
 }
 
+pub inline fn setLabel(group: BindGroupLayout, label: [:0]const u8) void {
+    group.vtable.setLabel(group.ptr, label);
+}
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = setLabel;
 }
