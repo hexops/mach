@@ -781,6 +781,11 @@ const buffer_vtable = Buffer.VTable{
             c.wgpuBufferRelease(@ptrCast(c.WGPUBuffer, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuBufferLayoutSetLabel(@ptrCast(c.WGPUBufferLayout, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapCommandEncoder(enc: c.WGPUCommandEncoder) CommandEncoder {
