@@ -37,7 +37,6 @@ const CommandEncoder = @import("CommandEncoder.zig");
 const ComputePassEncoder = @import("ComputePassEncoder.zig");
 const ComputePipeline = @import("ComputePipeline.zig");
 
-const TextureUsage = @import("enums.zig").TextureUsage;
 const TextureFormat = @import("enums.zig").TextureFormat;
 const PresentMode = @import("enums.zig").PresentMode;
 
@@ -511,7 +510,7 @@ const swap_chain_vtable = SwapChain.VTable{
         }
     }).release,
     .configure = (struct {
-        pub fn configure(ptr: *anyopaque, format: TextureFormat, allowed_usage: TextureUsage, width: u32, height: u32) void {
+        pub fn configure(ptr: *anyopaque, format: TextureFormat, allowed_usage: Texture.Usage, width: u32, height: u32) void {
             c.wgpuSwapChainConfigure(
                 @ptrCast(c.WGPUSwapChain, ptr),
                 @enumToInt(format),
