@@ -57,14 +57,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
 
 
 
-typedef struct WGPUBindGroupDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUBindGroupLayout layout;
-    uint32_t entryCount;
-    WGPUBindGroupEntry const * entries;
-} WGPUBindGroupDescriptor;
-
 typedef struct WGPUComputePassDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
