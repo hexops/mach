@@ -80,6 +80,7 @@ pub const BlendComponent = @import("structs.zig").BlendComponent;
 pub const Color = @import("structs.zig").Color;
 pub const Extent3D = @import("structs.zig").Extent3D;
 pub const Origin3D = @import("structs.zig").Origin3D;
+pub const StencilFaceState = @import("structs.zig").StencilFaceState;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;

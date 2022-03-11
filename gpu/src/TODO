@@ -374,9 +374,6 @@ typedef struct WGPURenderPassTimestampWrite {
     WGPURenderPassTimestampLocation location;
 } WGPURenderPassTimestampWrite;
 
-
-
-
 typedef struct WGPURenderPassDepthStencilAttachment {
     WGPUTextureView view;
     WGPULoadOp depthLoadOp;
@@ -391,12 +388,9 @@ typedef struct WGPURenderPassDepthStencilAttachment {
     bool stencilReadOnly;
 } WGPURenderPassDepthStencilAttachment;
 
-typedef struct WGPUStencilFaceState {
-    WGPUCompareFunction compare;
-    WGPUStencilOperation failOp;
-    WGPUStencilOperation depthFailOp;
-    WGPUStencilOperation passOp;
-} WGPUStencilFaceState;
+
+
+
 
 typedef struct WGPUVertexAttribute {
     WGPUVertexFormat format;
