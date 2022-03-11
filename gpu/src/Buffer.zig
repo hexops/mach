@@ -17,16 +17,16 @@ pub const VTable = struct {
     // WGPU_EXPORT void wgpuBufferUnmap(WGPUBuffer buffer);
 };
 
-pub inline fn reference(buffer: Buffer) void {
-    buffer.vtable.reference(buffer.ptr);
+pub inline fn reference(buf: Buffer) void {
+    buf.vtable.reference(buf.ptr);
 }
 
-pub inline fn release(buffer: Buffer) void {
-    buffer.vtable.release(buffer.ptr);
+pub inline fn release(buf: Buffer) void {
+    buf.vtable.release(buf.ptr);
 }
 
-pub inline fn setLabel(group: Buffer, label: [:0]const u8) void {
-    group.vtable.setLabel(group.ptr, label);
+pub inline fn setLabel(buf: Buffer, label: [:0]const u8) void {
+    buf.vtable.setLabel(buf.ptr, label);
 }
 
 test "syntax" {
