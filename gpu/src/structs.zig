@@ -1,3 +1,6 @@
+const BlendOperation = @import("enums.zig").BlendOperation;
+const BlendFactor = @import("enums.zig").BlendFactor;
+
 // TODO: docs
 pub const Limits = struct {
     max_texture_dimension_1d: u32,
@@ -26,4 +29,10 @@ pub const Limits = struct {
     max_compute_workgroup_size_y: u32,
     max_compute_workgroup_size_z: u32,
     max_compute_workgroups_per_dimension: u32,
+};
+
+pub const BlendComponent = struct {
+    operation: BlendOperation,
+    src_factor: BlendFactor,
+    dst_factor: BlendFactor,
 };

@@ -49,10 +49,10 @@ pub const RequestAdapterResponse = Interface.RequestAdapterResponse;
 
 pub const NativeInstance = @import("NativeInstance.zig");
 
+// Interfaces
 pub const Adapter = @import("Adapter.zig");
 pub const Device = @import("Device.zig");
 pub const Surface = @import("Surface.zig");
-pub const Limits = @import("structs.zig").Limits;
 pub const Queue = @import("Queue.zig");
 pub const CommandBuffer = @import("CommandBuffer.zig");
 pub const ShaderModule = @import("ShaderModule.zig");
@@ -74,6 +74,11 @@ pub const CommandEncoder = @import("CommandEncoder.zig");
 pub const ComputePassEncoder = @import("ComputePassEncoder.zig");
 pub const ComputePipeline = @import("ComputePipeline.zig");
 
+// Data structures
+pub const Limits = @import("structs.zig").Limits;
+pub const BlendComponent = @import("structs.zig").BlendComponent;
+
+// Enumerations
 pub const Feature = @import("enums.zig").Feature;
 pub const TextureUsage = @import("enums.zig").TextureUsage;
 pub const TextureFormat = @import("enums.zig").TextureFormat;

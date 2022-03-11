@@ -351,13 +351,6 @@ typedef struct WGPUFragmentState {
 
 
 
-
-typedef struct WGPUBlendComponent {
-    WGPUBlendOperation operation;
-    WGPUBlendFactor srcFactor;
-    WGPUBlendFactor dstFactor;
-} WGPUBlendComponent;
-
 typedef struct WGPUColor {
     double r;
     double g;
