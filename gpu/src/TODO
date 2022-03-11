@@ -451,27 +451,6 @@ typedef struct WGPUVertexBufferLayout {
     WGPUVertexAttribute const * attributes;
 } WGPUVertexBufferLayout;
 
-typedef struct WGPUDeviceProperties {
-    uint32_t deviceID;
-    uint32_t vendorID;
-    WGPUAdapterType adapterType;
-    bool textureCompressionBC;
-    bool textureCompressionETC2;
-    bool textureCompressionASTC;
-    bool shaderFloat16;
-    bool pipelineStatisticsQuery;
-    bool timestampQuery;
-    bool multiPlanarFormats;
-    bool depthClamping;
-    bool depth24UnormStencil8;
-    bool depth32FloatStencil8;
-    bool invalidFeature;
-    bool dawnInternalUsages;
-    bool dawnNative;
-    WGPUSupportedLimits limits;
-} WGPUDeviceProperties;
-
-
 
 
 typedef void (*WGPUBufferMapCallback)(WGPUBufferMapAsyncStatus status, void * userdata);
