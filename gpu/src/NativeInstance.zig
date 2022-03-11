@@ -788,6 +788,31 @@ const buffer_vtable = Buffer.VTable{
     }).setLabel,
 };
 
+fn wrapCommandBuffer(buffer: c.WGPUCommandBuffer) CommandBuffer {
+    return .{
+        .ptr = buffer.?,
+        .vtable = &command_buffer_vtable,
+    };
+}
+
+const command_buffer_vtable = CommandBuffer.VTable{
+    .reference = (struct {
+        pub fn reference(ptr: *anyopaque) void {
+            c.wgpuCommandBufferReference(@ptrCast(c.WGPUCommandBuffer, ptr));
+        }
+    }).reference,
+    .release = (struct {
+        pub fn release(ptr: *anyopaque) void {
+            c.wgpuCommandBufferRelease(@ptrCast(c.WGPUCommandBuffer, ptr));
+        }
+    }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuCommandBufferLayoutSetLabel(@ptrCast(c.WGPUCommandBufferLayout, ptr), label);
+        }
+    }).setLabel,
+};
+
 fn wrapCommandEncoder(enc: c.WGPUCommandEncoder) CommandEncoder {
     return .{
         .ptr = enc.?,
@@ -874,6 +899,7 @@ test "syntax" {
     _ = wrapBindGroup;
     _ = wrapBindGroupLayout;
     _ = wrapBuffer;
+    _ = wrapCommandBuffer;
     _ = wrapCommandEncoder;
     _ = wrapComputePassEncoder;
     _ = wrapComputePipeline;
