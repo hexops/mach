@@ -312,13 +312,6 @@ pub const RenderPassTimestampLocation = enum(u32) {
     end = 0x00000001,
 };
 
-pub const SamplerBindingType = enum(u32) {
-    none = 0x00000000,
-    filtering = 0x00000001,
-    non_filtering = 0x00000002,
-    comparison = 0x00000003,
-};
-
 pub const StencilOperation = enum(u32) {
     keep = 0x00000000,
     zero = 0x00000001,
@@ -489,7 +482,6 @@ test "syntax" {
     _ = PrimitiveTopology;
     _ = QueryType;
     _ = RenderPassTimestampLocation;
-    _ = SamplerBindingType;
     _ = StencilOperation;
     _ = StorageTextureAccess;
     _ = StoreOp;
