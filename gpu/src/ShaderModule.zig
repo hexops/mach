@@ -10,7 +10,7 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     // TODO:
     // WGPU_EXPORT void wgpuShaderModuleGetCompilationInfo(WGPUShaderModule shaderModule, WGPUCompilationInfoCallback callback, void * userdata);
-    // WGPU_EXPORT void wgpuShaderModuleSetLabel(WGPUShaderModule shaderModule, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
 };
 
 pub inline fn reference(queue: ShaderModule) void {
@@ -19,6 +19,10 @@ pub inline fn reference(queue: ShaderModule) void {
 
 pub inline fn release(queue: ShaderModule) void {
     queue.vtable.release(queue.ptr);
+}
+
+pub inline fn setLabel(queue: ShaderModule, label: [:0]const u8) void {
+    queue.vtable.setLabel(queue.ptr, label);
 }
 
 pub const CodeTag = enum {

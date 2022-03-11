@@ -480,6 +480,11 @@ const shader_module_vtable = ShaderModule.VTable{
             c.wgpuShaderModuleRelease(@ptrCast(c.WGPUShaderModule, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuShaderModuleSetLabel(@ptrCast(c.WGPUShaderModule, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapSwapChain(swap_chain: c.WGPUSwapChain) SwapChain {
