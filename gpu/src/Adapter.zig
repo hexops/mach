@@ -54,9 +54,6 @@ vtable: *const VTable,
 request_device_frame_size: usize,
 
 pub const VTable = struct {
-    // TODO: is this method actually useful over requestDevice? Doesn't appear to be available in
-    // web either:
-    // WGPU_EXPORT WGPUDevice wgpuAdapterCreateDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor);
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
     requestDevice: fn requestDevice(ptr: *anyopaque, descriptor: *const Device.Descriptor) callconv(.Async) RequestDeviceResponse,
