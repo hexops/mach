@@ -129,7 +129,7 @@ pub fn createSurface(native: *const NativeInstance, descriptor: *const Surface.D
             desc.layer = src.layer;
             break :blk c.wgpuInstanceCreateSurface(native.instance, &c.WGPUSurfaceDescriptor{
                 .nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc),
-                .label = if (src.label) |l| @ptrCast([*c]const u8, l) else null,
+                .label = if (src.label) |l| l else null,
             });
         },
         .windows_hwnd => |src| blk: {
@@ -140,7 +140,7 @@ pub fn createSurface(native: *const NativeInstance, descriptor: *const Surface.D
             desc.hwnd = src.hwnd;
             break :blk c.wgpuInstanceCreateSurface(native.instance, &c.WGPUSurfaceDescriptor{
                 .nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc),
-                .label = if (src.label) |l| @ptrCast([*c]const u8, l) else null,
+                .label = if (src.label) |l| l else null,
             });
         },
         .windows_core_window => |src| blk: {
@@ -150,7 +150,7 @@ pub fn createSurface(native: *const NativeInstance, descriptor: *const Surface.D
             desc.coreWindow = src.core_window;
             break :blk c.wgpuInstanceCreateSurface(native.instance, &c.WGPUSurfaceDescriptor{
                 .nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc),
-                .label = if (src.label) |l| @ptrCast([*c]const u8, l) else null,
+                .label = if (src.label) |l| l else null,
             });
         },
         .windows_swap_chain_panel => |src| blk: {
@@ -160,7 +160,7 @@ pub fn createSurface(native: *const NativeInstance, descriptor: *const Surface.D
             desc.swapChainPanel = src.swap_chain_panel;
             break :blk c.wgpuInstanceCreateSurface(native.instance, &c.WGPUSurfaceDescriptor{
                 .nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc),
-                .label = if (src.label) |l| @ptrCast([*c]const u8, l) else null,
+                .label = if (src.label) |l| l else null,
             });
         },
         .xlib => |src| blk: {
@@ -171,17 +171,17 @@ pub fn createSurface(native: *const NativeInstance, descriptor: *const Surface.D
             desc.window = src.window;
             break :blk c.wgpuInstanceCreateSurface(native.instance, &c.WGPUSurfaceDescriptor{
                 .nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc),
-                .label = if (src.label) |l| @ptrCast([*c]const u8, l) else null,
+                .label = if (src.label) |l| l else null,
             });
         },
         .canvas_html_selector => |src| blk: {
             var desc: c.WGPUSurfaceDescriptorFromCanvasHTMLSelector = undefined;
             desc.chain.next = null;
             desc.chain.sType = c.WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
-            desc.selector = @ptrCast([*c]const u8, src.selector);
+            desc.selector = src.selector;
             break :blk c.wgpuInstanceCreateSurface(native.instance, &c.WGPUSurfaceDescriptor{
                 .nextInChain = @ptrCast(*c.WGPUChainedStruct, &desc),
-                .label = if (src.label) |l| @ptrCast([*c]const u8, l) else null,
+                .label = if (src.label) |l| l else null,
             });
         },
     };
@@ -260,7 +260,7 @@ const adapter_vtable = Adapter.VTable{
 
             const desc = c.WGPUDeviceDescriptor{
                 .nextInChain = null,
-                .label = if (descriptor.label) |l| @ptrCast([*c]const u8, l) else null,
+                .label = if (descriptor.label) |l| l else null,
                 .requiredFeaturesCount = if (descriptor.required_features) |f| @intCast(u32, f.len) else 0,
                 .requiredFeatures = if (descriptor.required_features) |f| @ptrCast([*c]const c_uint, &f[0]) else null,
                 .requiredLimits = if (required_limits) |*l| l else null,
@@ -336,7 +336,7 @@ const device_vtable = Device.VTable{
                     };
                     const desc = c.WGPUShaderModuleDescriptor{
                         .nextInChain = @ptrCast(*const c.WGPUChainedStruct, &wgsl_desc),
-                        .label = if (descriptor.label) |l| @ptrCast([*c]const u8, l) else null,
+                        .label = if (descriptor.label) |l| l else null,
                     };
                     return wrapShaderModule(c.wgpuDeviceCreateShaderModule(@ptrCast(c.WGPUDevice, ptr), &desc));
                 },
@@ -351,7 +351,7 @@ const device_vtable = Device.VTable{
                     };
                     const desc = c.WGPUShaderModuleDescriptor{
                         .nextInChain = @ptrCast(*const c.WGPUChainedStruct, &spirv_desc),
-                        .label = if (descriptor.label) |l| @ptrCast([*c]const u8, l) else null,
+                        .label = if (descriptor.label) |l| l else null,
                     };
                     return wrapShaderModule(c.wgpuDeviceCreateShaderModule(@ptrCast(c.WGPUDevice, ptr), &desc));
                 },
@@ -362,7 +362,7 @@ const device_vtable = Device.VTable{
         pub fn nativeCreateSwapChain(ptr: *anyopaque, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain {
             const desc = c.WGPUSwapChainDescriptor{
                 .nextInChain = null,
-                .label = if (descriptor.label) |l| @ptrCast([*c]const u8, l) else null,
+                .label = if (descriptor.label) |l| l else null,
                 .usage = @enumToInt(descriptor.usage),
                 .format = @enumToInt(descriptor.format),
                 .width = descriptor.width,

@@ -79,7 +79,7 @@ pub inline fn nativeCreateSwapChain(device: Device, surface: ?Surface, descripto
 
 // TODO: docs
 pub const Descriptor = struct {
-    label: ?[]const u8 = null,
+    label: ?[*:0]const u8 = null,
     required_features: ?[]Feature = null,
     required_limits: ?Limits = null,
 };

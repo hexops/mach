@@ -38,7 +38,7 @@ pub inline fn configure(
 }
 
 pub const Descriptor = struct {
-    label: ?[]const u8 = null,
+    label: ?[:0]const u8 = null,
     usage: TextureUsage,
     format: TextureFormat,
     width: u32,
