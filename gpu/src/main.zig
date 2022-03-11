@@ -86,7 +86,6 @@ pub const BlendState = @import("data.zig").BlendState;
 pub const VertexBufferLayout = @import("data.zig").VertexBufferLayout;
 
 // Data structures not ABI-compatible with webgpu.h
-pub const BindGroupEntry = @import("structs.zig").BindGroupEntry;
 pub const CompilationMessage = @import("structs.zig").CompilationMessage;
 pub const MultisampleState = @import("structs.zig").MultisampleState;
 pub const PrimitiveState = @import("structs.zig").PrimitiveState;
@@ -120,7 +119,7 @@ pub const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestamp
 pub const StencilOperation = @import("enums.zig").StencilOperation;
 pub const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 pub const StoreOp = @import("enums.zig").StoreOp;
-pub const TextureAspect = @import("enums.zig").TextureAspect;
+// TODO: move to Texture.Foo
 pub const TextureComponentType = @import("enums.zig").TextureComponentType;
 pub const TextureDimension = @import("enums.zig").TextureDimension;
 pub const TextureSampleType = @import("enums.zig").TextureSampleType;
