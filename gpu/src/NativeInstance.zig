@@ -716,6 +716,11 @@ const query_set_vtable = QuerySet.VTable{
             c.wgpuQuerySetSetLabel(@ptrCast(c.WGPUQuerySet, ptr), label);
         }
     }).setLabel,
+    .destroy = (struct {
+        pub fn destroy(ptr: *anyopaque) void {
+            c.wgpuQuerySetDestroy(@ptrCast(c.WGPUQuerySet, ptr));
+        }
+    }).destroy,
 };
 
 fn wrapPipelineLayout(layout: c.WGPUPipelineLayout) PipelineLayout {
