@@ -29,6 +29,12 @@ pub inline fn setLabel(group: BindGroupLayout, label: [:0]const u8) void {
     group.vtable.setLabel(group.ptr, label);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    entries: []const Entry,
+};
+
+// TODO: can this be extern struct / ABI compatible?
 pub const Entry = struct {
     binding: u32,
     visibility: ShaderStage,
@@ -43,5 +49,6 @@ test "syntax" {
     _ = reference;
     _ = release;
     _ = setLabel;
+    _ = Descriptor;
     _ = Entry;
 }
