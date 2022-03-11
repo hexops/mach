@@ -8,8 +8,7 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    // TODO:
-    // WGPU_EXPORT void wgpuExternalTextureDestroy(WGPUExternalTexture externalTexture);
+    destroy: fn (ptr: *anyopaque) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
 };
 
@@ -25,8 +24,13 @@ pub inline fn setLabel(texture: ExternalTexture, label: [:0]const u8) void {
     texture.vtable.setLabel(texture.ptr, label);
 }
 
+pub inline fn destroy(texture: ExternalTexture) void {
+    texture.vtable.destroy(texture.ptr);
+}
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = destroy;
 }

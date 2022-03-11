@@ -379,7 +379,7 @@ const device_vtable = Device.VTable{
     }).nativeCreateSwapChain,
     .destroy = (struct {
         pub fn destroy(ptr: *anyopaque) void {
-            c.wgpuDeviceDestroy(@ptrCast(c.WGPUDestroy, ptr));
+            c.wgpuDeviceDestroy(@ptrCast(c.WGPUDevice, ptr));
         }
     }).destroy,
 };
@@ -766,6 +766,11 @@ const external_texture_vtable = ExternalTexture.VTable{
             c.wgpuExternalTextureSetLabel(@ptrCast(c.WGPUExternalTexture, ptr), label);
         }
     }).setLabel,
+    .destroy = (struct {
+        pub fn destroy(ptr: *anyopaque) void {
+            c.wgpuExternalTextureDestroy(@ptrCast(c.WGPUExternalTexture, ptr));
+        }
+    }).destroy,
 };
 
 fn wrapBindGroup(group: c.WGPUBindGroup) BindGroup {
@@ -843,7 +848,7 @@ const buffer_vtable = Buffer.VTable{
     }).setLabel,
     .destroy = (struct {
         pub fn destroy(ptr: *anyopaque) void {
-            c.wgpuBufferDestroy(@ptrCast(c.WGPUDestroy, ptr));
+            c.wgpuBufferDestroy(@ptrCast(c.WGPUBuffer, ptr));
         }
     }).destroy,
 };
