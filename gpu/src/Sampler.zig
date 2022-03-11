@@ -1,6 +1,6 @@
 const AddressMode = @import("enums.zig").AddressMode;
 const FilterMode = @import("enums.zig").FilterMode;
-const CompareFunction = @import("data.zig").CompareFunction;
+const CompareFunction = @import("enums.zig").CompareFunction;
 
 const Sampler = @This();
 

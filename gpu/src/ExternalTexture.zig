@@ -1,4 +1,5 @@
 const Texture = @import("Texture.zig");
+const TextureView = @import("TextureView.zig");
 const PredefinedColorSpace = @import("enums.zig").PredefinedColorSpace;
 
 const ExternalTexture = @This();
@@ -33,8 +34,8 @@ pub inline fn destroy(texture: ExternalTexture) void {
 
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
-    plane0: Texture.View,
-    plane1: Texture.View,
+    plane0: TextureView,
+    plane1: TextureView,
     color_space: PredefinedColorSpace,
 };
 

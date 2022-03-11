@@ -1,3 +1,5 @@
+const TextureView = @import("TextureView.zig");
+
 const Texture = @This();
 
 /// The type erased pointer to the Texture implementation
@@ -170,19 +172,9 @@ pub const SampleType = enum(u32) {
     uint = 0x00000005,
 };
 
-pub const ViewDimension = enum(u32) {
-    dimension_none = 0x00000000,
-    dimension_1d = 0x00000001,
-    dimension_2d = 0x00000002,
-    dimension_2d_array = 0x00000003,
-    dimension_cube = 0x00000004,
-    dimension_cube_array = 0x00000005,
-    dimension_3d = 0x00000006,
-};
-
 pub const BindingLayout = struct {
     sample_type: SampleType,
-    view_dimension: ViewDimension,
+    view_dimension: TextureView.Dimension,
     multisampled: bool,
 };
 
@@ -203,7 +195,6 @@ test "syntax" {
     _ = ComponentType;
     _ = Dimension;
     _ = SampleType;
-    _ = ViewDimension;
     _ = BindingLayout;
     _ = DataLayout;
 }

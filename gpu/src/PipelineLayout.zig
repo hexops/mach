@@ -1,3 +1,5 @@
+const BindGroupLayout = @import("BindGroupLayout.zig");
+
 const BindGroup = @import("BindGroup.zig");
 
 const PipelineLayout = @This();
@@ -27,7 +29,7 @@ pub inline fn setLabel(qset: PipelineLayout, label: [:0]const u8) void {
 
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
-    bind_group_layouts: []const BindGroup.Layout,
+    bind_group_layouts: []const BindGroupLayout,
 };
 
 test "syntax" {
