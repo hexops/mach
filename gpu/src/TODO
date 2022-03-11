@@ -204,16 +204,6 @@ typedef struct WGPUCopyTextureForBrowserOptions {
     WGPUAlphaMode dstAlphaMode;
 } WGPUCopyTextureForBrowserOptions;
 
-typedef struct WGPUBindGroupLayoutEntry {
-    WGPUChainedStruct const * nextInChain;
-    uint32_t binding;
-    WGPUShaderStageFlags visibility;
-    WGPUBufferBindingLayout buffer;
-    WGPUSamplerBindingLayout sampler;
-    WGPUTextureBindingLayout texture;
-    WGPUStorageTextureBindingLayout storageTexture;
-} WGPUBindGroupLayoutEntry;
-
 typedef struct WGPUCompilationInfo {
     WGPUChainedStruct const * nextInChain;
     uint32_t messageCount;

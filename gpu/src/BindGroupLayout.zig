@@ -1,3 +1,9 @@
+const Buffer = @import("Buffer.zig");
+const Sampler = @import("Sampler.zig");
+const Texture = @import("Texture.zig");
+const StorageTextureBindingLayout = @import("structs.zig").StorageTextureBindingLayout;
+const ShaderStage = @import("enums.zig").ShaderStage;
+
 const BindGroupLayout = @This();
 
 /// The type erased pointer to the BindGroupLayout implementation
@@ -23,9 +29,19 @@ pub inline fn setLabel(group: BindGroupLayout, label: [:0]const u8) void {
     group.vtable.setLabel(group.ptr, label);
 }
 
+pub const Entry = struct {
+    binding: u32,
+    visibility: ShaderStage,
+    buffer: Buffer.BindingLayout,
+    sampler: Sampler.BindingLayout,
+    texture: Texture.BindingLayout,
+    storage_texture: StorageTextureBindingLayout,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
     _ = setLabel;
+    _ = Entry;
 }
