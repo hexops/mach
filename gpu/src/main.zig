@@ -74,7 +74,7 @@ pub const CommandEncoder = @import("CommandEncoder.zig");
 pub const ComputePassEncoder = @import("ComputePassEncoder.zig");
 pub const ComputePipeline = @import("ComputePipeline.zig");
 
-// Data structures
+// Data structures ABI-compatible with webgpu.h
 pub const Limits = @import("data.zig").Limits;
 pub const Color = @import("data.zig").Color;
 pub const Extent3D = @import("data.zig").Extent3D;
@@ -84,6 +84,9 @@ pub const VertexAttribute = @import("data.zig").VertexAttribute;
 pub const BlendComponent = @import("data.zig").BlendComponent;
 pub const BlendState = @import("data.zig").BlendState;
 pub const VertexBufferLayout = @import("data.zig").VertexBufferLayout;
+
+// Data structures not ABI-compatible with webgpu.h
+pub const BindGroupEntry = @import("structs.zig").BindGroupEntry;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;

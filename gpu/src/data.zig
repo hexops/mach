@@ -4,6 +4,8 @@ const BlendOperation = @import("enums.zig").BlendOperation;
 const BlendFactor = @import("enums.zig").BlendFactor;
 const CompareFunction = @import("enums.zig").CompareFunction;
 const StencilOperation = @import("enums.zig").StencilOperation;
+const VertexFormat = @import("enums.zig").VertexFormat;
+const VertexStepMode = @import("enums.zig").VertexStepMode;
 
 // TODO: docs
 pub const Limits = extern struct {
@@ -84,3 +86,15 @@ pub const VertexBufferLayout = extern struct {
     attribute_count: u32,
     attributes: *const VertexAttribute,
 };
+
+test "syntax" {
+    _ = Limits;
+    _ = Color;
+    _ = Extent3D;
+    _ = Origin3D;
+    _ = StencilFaceState;
+    _ = VertexAttribute;
+    _ = BlendComponent;
+    _ = BlendState;
+    _ = VertexBufferLayout;
+}

@@ -187,16 +187,6 @@ typedef struct WGPURenderPipelineDescriptor {
 
 
 
-typedef struct WGPUBindGroupEntry {
-    WGPUChainedStruct const * nextInChain;
-    uint32_t binding;
-    WGPUBuffer buffer;
-    uint64_t offset;
-    uint64_t size;
-    WGPUSampler sampler;
-    WGPUTextureView textureView;
-} WGPUBindGroupEntry;
-
 typedef struct WGPUBufferBindingLayout {
     WGPUChainedStruct const * nextInChain;
     WGPUBufferBindingType type;
