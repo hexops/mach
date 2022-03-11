@@ -148,6 +148,13 @@ pub const Aspect = enum(u32) {
     plane1_only = 0x00000004,
 };
 
+pub const ComponentType = enum(u32) {
+    float = 0x00000000,
+    sint = 0x00000001,
+    uint = 0x00000002,
+    depth_comparison = 0x00000003,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
@@ -156,4 +163,5 @@ test "syntax" {
     _ = Usage;
     _ = Format;
     _ = Aspect;
+    _ = ComponentType;
 }
