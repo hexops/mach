@@ -203,14 +203,6 @@ pub const StoreOp = enum(u32) {
     discard = 0x00000002,
 };
 
-pub const TextureAspect = enum(u32) {
-    all = 0x00000000,
-    stencil_only = 0x00000001,
-    depth_only = 0x00000002,
-    plane0_only = 0x00000003,
-    plane1_only = 0x00000004,
-};
-
 pub const TextureComponentType = enum(u32) {
     float = 0x00000000,
     sint = 0x00000001,
@@ -351,7 +343,6 @@ test "syntax" {
     _ = StencilOperation;
     _ = StorageTextureAccess;
     _ = StoreOp;
-    _ = TextureAspect;
     _ = TextureComponentType;
     _ = TextureDimension;
     _ = TextureSampleType;
