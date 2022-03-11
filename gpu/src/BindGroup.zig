@@ -1,3 +1,7 @@
+const Buffer = @import("Buffer.zig");
+const Sampler = @import("Sampler.zig");
+const TextureView = @import("TextureView.zig");
+
 const BindGroup = @This();
 
 /// The type erased pointer to the BindGroup implementation
@@ -23,9 +27,19 @@ pub inline fn setLabel(group: BindGroup, label: [:0]const u8) void {
     group.vtable.setLabel(group.ptr, label);
 }
 
+pub const Entry = struct {
+    binding: u32,
+    buffer: Buffer,
+    offset: u64,
+    size: u64,
+    sampler: Sampler,
+    texture_view: TextureView,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
     _ = setLabel;
+    _ = Entry;
 }
