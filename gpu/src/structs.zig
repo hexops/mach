@@ -3,6 +3,7 @@ const Buffer = @import("Buffer.zig");
 const Sampler = @import("Sampler.zig");
 const Texture = @import("Texture.zig");
 const TextureView = @import("TextureView.zig");
+const ShaderModule = @import("ShaderModule.zig");
 const StencilFaceState = @import("data.zig").StencilFaceState;
 const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
@@ -70,6 +71,12 @@ pub const ProgrammableStageDescriptor = struct {
     constants: []const ConstantEntry,
 };
 
+pub const ComputePassTimestampWrite = struct {
+    query_set: QuerySet,
+    query_index: u32,
+    location: ComputePassTimestampLocation,
+};
+
 test "syntax" {
     _ = CompilationMessage;
     _ = CompilationInfo;
@@ -79,4 +86,5 @@ test "syntax" {
     _ = DepthStencilState;
     _ = ConstantEntry;
     _ = ProgrammableStageDescriptor;
+    _ = ComputePassTimestampWrite;
 }

@@ -165,12 +165,6 @@ typedef struct WGPUFragmentState {
     WGPUColorTargetState const * targets;
 } WGPUFragmentState;
 
-typedef struct WGPUComputePassTimestampWrite {
-    WGPUQuerySet querySet;
-    uint32_t queryIndex;
-    WGPUComputePassTimestampLocation location;
-} WGPUComputePassTimestampWrite;
-
 typedef struct WGPUExternalTextureBindingEntry {
     WGPUChainedStruct chain;
     WGPUExternalTexture externalTexture;
