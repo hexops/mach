@@ -204,12 +204,6 @@ typedef struct WGPUCopyTextureForBrowserOptions {
     WGPUAlphaMode dstAlphaMode;
 } WGPUCopyTextureForBrowserOptions;
 
-typedef struct WGPUCompilationInfo {
-    WGPUChainedStruct const * nextInChain;
-    uint32_t messageCount;
-    WGPUCompilationMessage const * messages;
-} WGPUCompilationInfo;
-
 typedef struct WGPUDepthStencilState {
     WGPUChainedStruct const * nextInChain;
     WGPUTextureFormat format;
