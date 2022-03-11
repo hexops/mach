@@ -187,13 +187,6 @@ typedef struct WGPURenderPipelineDescriptor {
 
 
 
-typedef struct WGPUBufferBindingLayout {
-    WGPUChainedStruct const * nextInChain;
-    WGPUBufferBindingType type;
-    bool hasDynamicOffset;
-    uint64_t minBindingSize;
-} WGPUBufferBindingLayout;
-
 typedef struct WGPUCompilationMessage {
     WGPUChainedStruct const * nextInChain;
     char const * message;
