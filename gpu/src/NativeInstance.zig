@@ -571,6 +571,11 @@ const texture_vtable = Texture.VTable{
             c.wgpuTextureSetLabel(@ptrCast(c.WGPUTexture, ptr), label);
         }
     }).setLabel,
+    .destroy = (struct {
+        pub fn destroy(ptr: *anyopaque) void {
+            c.wgpuTextureDestroy(@ptrCast(c.WGPUTexture, ptr));
+        }
+    }).destroy,
 };
 
 fn wrapSampler(sampler: c.WGPUSampler) Sampler {
