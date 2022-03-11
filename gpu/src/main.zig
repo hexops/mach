@@ -91,6 +91,7 @@ pub const VertexBufferLayout = @import("data.zig").VertexBufferLayout;
 pub const CompilationMessage = @import("structs.zig").CompilationMessage;
 pub const MultisampleState = @import("structs.zig").MultisampleState;
 pub const PrimitiveState = @import("structs.zig").PrimitiveState;
+pub const StorageTextureBindingLayout = @import("structs.zig").StorageTextureBindingLayout;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;
