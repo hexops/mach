@@ -556,6 +556,11 @@ const texture_vtable = Texture.VTable{
             c.wgpuTextureRelease(@ptrCast(c.WGPUTexture, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuTextureSetLabel(@ptrCast(c.WGPUTexture, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapSampler(sampler: c.WGPUSampler) Sampler {
