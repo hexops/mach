@@ -19,7 +19,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void wgpuRenderBundleEncoderPushDebugGroup(WGPURenderBundleEncoder renderBundleEncoder, char const * groupLabel);
     // WGPU_EXPORT void wgpuRenderBundleEncoderSetBindGroup(WGPURenderBundleEncoder renderBundleEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
     // WGPU_EXPORT void wgpuRenderBundleEncoderSetIndexBuffer(WGPURenderBundleEncoder renderBundleEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
-    // WGPU_EXPORT void wgpuRenderBundleEncoderSetLabel(WGPURenderBundleEncoder renderBundleEncoder, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     // WGPU_EXPORT void wgpuRenderBundleEncoderSetPipeline(WGPURenderBundleEncoder renderBundleEncoder, WGPURenderPipeline pipeline);
     // WGPU_EXPORT void wgpuRenderBundleEncoderSetVertexBuffer(WGPURenderBundleEncoder renderBundleEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
 };
@@ -30,6 +30,10 @@ pub inline fn reference(enc: RenderBundleEncoder) void {
 
 pub inline fn release(enc: RenderBundleEncoder) void {
     enc.vtable.release(enc.ptr);
+}
+
+pub inline fn setLabel(enc: RenderBundleEncoder, label: [:0]const u8) void {
+    enc.vtable.setLabel(enc.ptr, label);
 }
 
 test "syntax" {
