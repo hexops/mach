@@ -87,6 +87,8 @@ pub const VertexBufferLayout = @import("data.zig").VertexBufferLayout;
 
 // Data structures not ABI-compatible with webgpu.h
 pub const BindGroupEntry = @import("structs.zig").BindGroupEntry;
+pub const BufferBindingLayout = @import("structs.zig").BufferBindingLayout;
+pub const CompilationMessage = @import("structs.zig").CompilationMessage;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;
