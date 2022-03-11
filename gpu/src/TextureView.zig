@@ -28,7 +28,7 @@ pub inline fn setLabel(texture_view: TextureView, label: [:0]const u8) void {
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     format: Texture.Format,
-    dimension: Texture.ViewDimension,
+    dimension: TextureView.Dimension,
     base_mip_level: u32,
     mip_level_count: u32,
     base_array_layer: u32,
@@ -36,9 +36,20 @@ pub const Descriptor = struct {
     aspect: Texture.Aspect,
 };
 
+pub const Dimension = enum(u32) {
+    dimension_none = 0x00000000,
+    dimension_1d = 0x00000001,
+    dimension_2d = 0x00000002,
+    dimension_2d_array = 0x00000003,
+    dimension_cube = 0x00000004,
+    dimension_cube_array = 0x00000005,
+    dimension_3d = 0x00000006,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
     _ = Descriptor;
+    _ = Dimension;
 }
