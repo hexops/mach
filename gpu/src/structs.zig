@@ -17,12 +17,6 @@ pub const BindGroupEntry = struct {
     texture_view: TextureView,
 };
 
-pub const BufferBindingLayout = struct {
-    type: Buffer.BindingType,
-    has_dynamic_offset: bool,
-    min_binding_size: u64,
-};
-
 pub const CompilationMessage = struct {
     message: [:0]const u8,
     type: CompilationMessageType,
@@ -47,7 +41,6 @@ pub const PrimitiveState = struct {
 
 test "syntax" {
     _ = BindGroupEntry;
-    _ = BufferBindingLayout;
     _ = CompilationMessage;
     _ = MultisampleState;
     _ = PrimitiveState;

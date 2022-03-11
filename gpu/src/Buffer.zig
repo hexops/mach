@@ -49,6 +49,12 @@ pub const BindingType = enum(u32) {
     read_only_storage = 0x00000003,
 };
 
+pub const BindingLayout = struct {
+    type: BindingType,
+    has_dynamic_offset: bool,
+    min_binding_size: u64,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
@@ -57,4 +63,5 @@ test "syntax" {
     _ = setLabel;
     _ = Descriptor;
     _ = BindingType;
+    _ = BindingLayout;
 }
