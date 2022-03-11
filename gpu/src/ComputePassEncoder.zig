@@ -17,7 +17,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void wgpuComputePassEncoderPopDebugGroup(WGPUComputePassEncoder computePassEncoder);
     // WGPU_EXPORT void wgpuComputePassEncoderPushDebugGroup(WGPUComputePassEncoder computePassEncoder, char const * groupLabel);
     // WGPU_EXPORT void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
-    // WGPU_EXPORT void wgpuComputePassEncoderSetLabel(WGPUComputePassEncoder computePassEncoder, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     // WGPU_EXPORT void wgpuComputePassEncoderSetPipeline(WGPUComputePassEncoder computePassEncoder, WGPUComputePipeline pipeline);
     // WGPU_EXPORT void wgpuComputePassEncoderWriteTimestamp(WGPUComputePassEncoder computePassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
 };
@@ -28,6 +28,10 @@ pub inline fn reference(enc: ComputePassEncoder) void {
 
 pub inline fn release(enc: ComputePassEncoder) void {
     enc.vtable.release(enc.ptr);
+}
+
+pub inline fn setLabel(enc: ComputePassEncoder, label: [:0]const u8) void {
+    enc.vtable.setLabel(enc.ptr, label);
 }
 
 test "syntax" {
