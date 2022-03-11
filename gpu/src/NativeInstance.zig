@@ -756,6 +756,11 @@ const bind_group_layout_vtable = BindGroupLayout.VTable{
             c.wgpuBindGroupLayoutRelease(@ptrCast(c.WGPUBindGroupLayout, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuBindGroupLayoutSetLabel(@ptrCast(c.WGPUBindGroupLayout, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapBuffer(buffer: c.WGPUBuffer) Buffer {
