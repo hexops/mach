@@ -392,12 +392,6 @@ typedef struct WGPURenderPassDepthStencilAttachment {
 
 
 
-typedef struct WGPUVertexAttribute {
-    WGPUVertexFormat format;
-    uint64_t offset;
-    uint32_t shaderLocation;
-} WGPUVertexAttribute;
-
 typedef struct WGPUBlendState {
     WGPUBlendComponent color;
     WGPUBlendComponent alpha;

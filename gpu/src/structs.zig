@@ -64,3 +64,9 @@ pub const StencilFaceState = extern struct {
     depth_fail_op: StencilOperation,
     pass_op: StencilOperation,
 };
+
+pub const VertexAttribute = extern struct {
+    format: VertexFormat,
+    offset: u64,
+    shader_location: u32,
+};
