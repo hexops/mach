@@ -536,6 +536,11 @@ const texture_view_vtable = TextureView.VTable{
             c.wgpuTextureViewRelease(@ptrCast(c.WGPUTextureView, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuTextureViewSetLabel(@ptrCast(c.WGPUTextureView, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapTexture(texture: c.WGPUTexture) Texture {
@@ -658,7 +663,7 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
     }).release,
     .setLabel = (struct {
         pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
-            c.wgpuRenderBundleSetLabel(@ptrCast(c.WGPURenderBundle, ptr), label);
+            c.wgpuRenderBundleEncoderSetLabel(@ptrCast(c.WGPURenderBundleEncoder, ptr), label);
         }
     }).setLabel,
 };
@@ -828,7 +833,7 @@ const buffer_vtable = Buffer.VTable{
     }).release,
     .setLabel = (struct {
         pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
-            c.wgpuBufferLayoutSetLabel(@ptrCast(c.WGPUBufferLayout, ptr), label);
+            c.wgpuBufferSetLabel(@ptrCast(c.WGPUBuffer, ptr), label);
         }
     }).setLabel,
 };
@@ -853,7 +858,7 @@ const command_buffer_vtable = CommandBuffer.VTable{
     }).release,
     .setLabel = (struct {
         pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
-            c.wgpuCommandBufferLayoutSetLabel(@ptrCast(c.WGPUCommandBufferLayout, ptr), label);
+            c.wgpuCommandBufferSetLabel(@ptrCast(c.WGPUCommandBuffer, ptr), label);
         }
     }).setLabel,
 };
