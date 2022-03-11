@@ -21,28 +21,32 @@ typedef struct WGPUChainedStructOut {
 
 
 
-
+// TODO: Dawn specific
 typedef struct WGPUDawnCacheDeviceDescriptor {
     WGPUChainedStruct chain;
     char const * isolationKey;
 } WGPUDawnCacheDeviceDescriptor;
 
+// TODO: Dawn specific
 typedef struct WGPUDawnEncoderInternalUsageDescriptor {
     WGPUChainedStruct chain;
     bool useInternalUsages;
 } WGPUDawnEncoderInternalUsageDescriptor;
 
+// TODO: Dawn specific
 typedef struct WGPUDawnInstanceDescriptor {
     WGPUChainedStruct chain;
     uint32_t additionalRuntimeSearchPathsCount;
     const char* const * additionalRuntimeSearchPaths;
 } WGPUDawnInstanceDescriptor;
 
+// TODO: Dawn specific
 typedef struct WGPUDawnTextureInternalUsageDescriptor {
     WGPUChainedStruct chain;
     WGPUTextureUsageFlags internalUsage;
 } WGPUDawnTextureInternalUsageDescriptor;
 
+// TODO: Dawn specific
 typedef struct WGPUDawnTogglesDeviceDescriptor {
     WGPUChainedStruct chain;
     uint32_t forceEnabledTogglesCount;
@@ -51,20 +55,7 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
     const char* const * forceDisabledToggles;
 } WGPUDawnTogglesDeviceDescriptor;
 
-typedef struct WGPUExternalTextureDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUTextureView plane0;
-    WGPUTextureView plane1;
-    WGPUPredefinedColorSpace colorSpace;
-} WGPUExternalTextureDescriptor;
 
-typedef struct WGPUPipelineLayoutDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    uint32_t bindGroupLayoutCount;
-    WGPUBindGroupLayout const * bindGroupLayouts;
-} WGPUPipelineLayoutDescriptor;
 
 typedef struct WGPUQuerySetDescriptor {
     WGPUChainedStruct const * nextInChain;

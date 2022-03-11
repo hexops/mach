@@ -1,3 +1,5 @@
+const BindGroup = @import("BindGroup.zig");
+
 const PipelineLayout = @This();
 
 /// The type erased pointer to the PipelineLayout implementation
@@ -23,8 +25,14 @@ pub inline fn setLabel(qset: PipelineLayout, label: [:0]const u8) void {
     qset.vtable.setLabel(qset.ptr, label);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    bind_group_layouts: []const BindGroup.Layout,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = Descriptor;
 }
