@@ -57,13 +57,6 @@ pub const BlendOperation = enum(u32) {
     max = 0x00000004,
 };
 
-pub const BufferBindingType = enum(u32) {
-    none = 0x00000000,
-    uniform = 0x00000001,
-    storage = 0x00000002,
-    read_only_storage = 0x00000003,
-};
-
 pub const BufferMapAsyncStatus = enum(u32) {
     success = 0x00000000,
     err = 0x00000001,
@@ -350,7 +343,6 @@ test "syntax" {
     _ = AlphaMode;
     _ = BlendFactor;
     _ = BlendOperation;
-    _ = BufferBindingType;
     _ = BufferMapAsyncStatus;
     _ = CompareFunction;
     _ = CompilationInfoRequestStatus;
