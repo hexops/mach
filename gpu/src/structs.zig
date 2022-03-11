@@ -29,6 +29,12 @@ pub const CompilationMessage = struct {
     length: u64,
 };
 
+pub const MultisampleState = struct {
+    count: u32,
+    mask: u32,
+    alpha_to_coverage_enabled: bool,
+};
+
 test "syntax" {
     _ = BindGroupEntry;
     _ = BufferBindingLayout;

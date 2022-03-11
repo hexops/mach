@@ -192,6 +192,7 @@ typedef struct WGPUConstantEntry {
     double value;
 } WGPUConstantEntry;
 
+// TODO: Dawn-specific?
 typedef struct WGPUCopyTextureForBrowserOptions {
     WGPUChainedStruct const * nextInChain;
     bool flipY;
@@ -202,13 +203,6 @@ typedef struct WGPUCopyTextureForBrowserOptions {
     float const * dstTransferFunctionParameters;
     WGPUAlphaMode dstAlphaMode;
 } WGPUCopyTextureForBrowserOptions;
-
-typedef struct WGPUMultisampleState {
-    WGPUChainedStruct const * nextInChain;
-    uint32_t count;
-    uint32_t mask;
-    bool alphaToCoverageEnabled;
-} WGPUMultisampleState;
 
 typedef struct WGPUPrimitiveState {
     WGPUChainedStruct const * nextInChain;
