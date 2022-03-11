@@ -27,9 +27,9 @@ pub const CodeTag = enum {
 };
 
 pub const Descriptor = struct {
-    label: ?[]const u8 = null,
+    label: ?[*:0]const u8 = null,
     code: union(CodeTag) {
-        wgsl: [:0]const u8,
+        wgsl: [*:0]const u8,
         spirv: []const u32,
     },
 };

@@ -32,30 +32,30 @@ pub const DescriptorTag = enum {
 // TODO: docs
 pub const Descriptor = union(DescriptorTag) {
     metal_layer: struct {
-        label: ?[]const u8,
+        label: ?[*:0]const u8 = null,
         layer: *anyopaque,
     },
     windows_hwnd: struct {
-        label: ?[]const u8,
+        label: ?[*:0]const u8 = null,
         hinstance: *anyopaque,
         hwnd: *anyopaque,
     },
     windows_core_window: struct {
-        label: ?[]const u8,
+        label: ?[*:0]const u8 = null,
         core_window: *anyopaque,
     },
     windows_swap_chain_panel: struct {
-        label: ?[]const u8,
+        label: ?[*:0]const u8 = null,
         swap_chain_panel: *anyopaque,
     },
     xlib: struct {
-        label: ?[]const u8,
+        label: ?[*:0]const u8 = null,
         display: *anyopaque,
         window: u32,
     },
     canvas_html_selector: struct {
-        label: ?[]const u8,
-        selector: []const u8,
+        label: ?[*:0]const u8 = null,
+        selector: ?[*:0]const u8,
     },
 };
 
