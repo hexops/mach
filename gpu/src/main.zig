@@ -83,6 +83,7 @@ pub const StencilFaceState = @import("structs.zig").StencilFaceState;
 pub const VertexAttribute = @import("structs.zig").VertexAttribute;
 pub const BlendComponent = @import("structs.zig").BlendComponent;
 pub const BlendState = @import("structs.zig").BlendState;
+pub const VertexBufferLayout = @import("structs.zig").VertexBufferLayout;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;

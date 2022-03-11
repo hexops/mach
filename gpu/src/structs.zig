@@ -75,3 +75,10 @@ pub const BlendState = extern struct {
     color: BlendComponent,
     alpha: BlendComponent,
 };
+
+pub const VertexBufferLayout = extern struct {
+    array_stride: u64,
+    step_mode: VertexStepMode,
+    attribute_count: u32,
+    attributes: *const VertexAttribute,
+};
