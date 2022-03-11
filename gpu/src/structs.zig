@@ -1,12 +1,14 @@
 //! Structures which are not ABI compatible with webgpu.h
 const Buffer = @import("Buffer.zig");
 const Sampler = @import("Sampler.zig");
+const Texture = @import("Texture.zig");
 const TextureView = @import("TextureView.zig");
 const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 const IndexFormat = @import("enums.zig").IndexFormat;
 const FrontFace = @import("enums.zig").FrontFace;
 const CullMode = @import("enums.zig").CullMode;
+const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 
 pub const CompilationMessage = struct {
     message: [:0]const u8,
@@ -30,8 +32,15 @@ pub const PrimitiveState = struct {
     cull_mode: CullMode,
 };
 
+pub const StorageTextureBindingLayout = struct {
+    access: StorageTextureAccess,
+    format: Texture.Format,
+    view_dimension: Texture.ViewDimension,
+};
+
 test "syntax" {
     _ = CompilationMessage;
     _ = MultisampleState;
     _ = PrimitiveState;
+    _ = StorageTextureBindingLayout;
 }

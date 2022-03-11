@@ -204,13 +204,6 @@ typedef struct WGPUCopyTextureForBrowserOptions {
     WGPUAlphaMode dstAlphaMode;
 } WGPUCopyTextureForBrowserOptions;
 
-typedef struct WGPUStorageTextureBindingLayout {
-    WGPUChainedStruct const * nextInChain;
-    WGPUStorageTextureAccess access;
-    WGPUTextureFormat format;
-    WGPUTextureViewDimension viewDimension;
-} WGPUStorageTextureBindingLayout;
-
 typedef struct WGPUTextureBindingLayout {
     WGPUChainedStruct const * nextInChain;
     WGPUTextureSampleType sampleType;
