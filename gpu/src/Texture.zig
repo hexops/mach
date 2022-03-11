@@ -1,3 +1,5 @@
+const Extent3D = @import("data.zig").Extent3D;
+
 const TextureView = @import("TextureView.zig");
 
 const Texture = @This();

@@ -1,3 +1,6 @@
+const PipelineLayout = @import("PipelineLayout.zig");
+const ProgrammableStageDescriptor = @import("structs.zig").ProgrammableStageDescriptor;
+
 const ComputePipeline = @This();
 
 /// The type erased pointer to the ComputePipeline implementation
@@ -25,8 +28,15 @@ pub inline fn setLabel(pipeline: ComputePipeline, label: [:0]const u8) void {
     pipeline.vtable.setLabel(pipeline.ptr, label);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    layout: PipelineLayout,
+    compute: ProgrammableStageDescriptor,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = Descriptor;
 }
