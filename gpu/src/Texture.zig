@@ -170,6 +170,16 @@ pub const SampleType = enum(u32) {
     uint = 0x00000005,
 };
 
+pub const ViewDimension = enum(u32) {
+    dimension_none = 0x00000000,
+    dimension_1d = 0x00000001,
+    dimension_2d = 0x00000002,
+    dimension_2d_array = 0x00000003,
+    dimension_cube = 0x00000004,
+    dimension_cube_array = 0x00000005,
+    dimension_3d = 0x00000006,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
@@ -181,4 +191,5 @@ test "syntax" {
     _ = ComponentType;
     _ = Dimension;
     _ = SampleType;
+    _ = ViewDimension;
 }
