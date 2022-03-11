@@ -831,6 +831,11 @@ const command_encoder_vtable = CommandEncoder.VTable{
             c.wgpuCommandEncoderRelease(@ptrCast(c.WGPUCommandEncoder, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuCommandEncoderLayoutSetLabel(@ptrCast(c.WGPUCommandEncoderLayout, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapComputePassEncoder(enc: c.WGPUComputePassEncoder) ComputePassEncoder {
