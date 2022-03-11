@@ -8,15 +8,6 @@ const IndexFormat = @import("enums.zig").IndexFormat;
 const FrontFace = @import("enums.zig").FrontFace;
 const CullMode = @import("enums.zig").CullMode;
 
-pub const BindGroupEntry = struct {
-    binding: u32,
-    buffer: Buffer,
-    offset: u64,
-    size: u64,
-    sampler: Sampler,
-    texture_view: TextureView,
-};
-
 pub const CompilationMessage = struct {
     message: [:0]const u8,
     type: CompilationMessageType,
@@ -40,7 +31,6 @@ pub const PrimitiveState = struct {
 };
 
 test "syntax" {
-    _ = BindGroupEntry;
     _ = CompilationMessage;
     _ = MultisampleState;
     _ = PrimitiveState;
