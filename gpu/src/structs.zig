@@ -19,6 +19,10 @@ pub const CompilationMessage = struct {
     length: u64,
 };
 
+pub const CompilationInfo = struct {
+    messages: []const CompilationMessage,
+};
+
 pub const MultisampleState = struct {
     count: u32,
     mask: u32,
@@ -40,6 +44,7 @@ pub const StorageTextureBindingLayout = struct {
 
 test "syntax" {
     _ = CompilationMessage;
+    _ = CompilationInfo;
     _ = MultisampleState;
     _ = PrimitiveState;
     _ = StorageTextureBindingLayout;
