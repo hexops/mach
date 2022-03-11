@@ -631,6 +631,11 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
             c.wgpuRenderBundleEncoderRelease(@ptrCast(c.WGPURenderBundleEncoder, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuRenderBundleSetLabel(@ptrCast(c.WGPURenderBundle, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapRenderBundle(bundle: c.WGPURenderBundle) RenderBundle {

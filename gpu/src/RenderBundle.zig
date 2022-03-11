@@ -8,7 +8,6 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    // TODO:
 };
 
 pub inline fn reference(bundle: RenderBundle) void {
@@ -17,6 +16,10 @@ pub inline fn reference(bundle: RenderBundle) void {
 
 pub inline fn release(bundle: RenderBundle) void {
     bundle.vtable.release(bundle.ptr);
+}
+
+pub inline fn setLabel(bundle: RenderBundle, label: [:0]const u8) void {
+    bundle.vtable.setLabel(bundle.ptr, label);
 }
 
 test "syntax" {
