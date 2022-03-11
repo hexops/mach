@@ -1,6 +1,5 @@
 const std = @import("std");
 const Texture = @import("Texture.zig");
-const TextureFormat = @import("enums.zig").TextureFormat;
 const PresentMode = @import("enums.zig").PresentMode;
 
 const SwapChain = @This();
@@ -13,7 +12,7 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    configure: fn (ptr: *anyopaque, format: TextureFormat, allowed_usage: Texture.Usage, width: u32, height: u32) void,
+    configure: fn (ptr: *anyopaque, format: Texture.Format, allowed_usage: Texture.Usage, width: u32, height: u32) void,
     // TODO:
     // WGPU_EXPORT WGPUTextureView wgpuSwapChainGetCurrentTextureView(WGPUSwapChain swapChain);
     // WGPU_EXPORT void wgpuSwapChainPresent(WGPUSwapChain swapChain);
@@ -29,7 +28,7 @@ pub inline fn release(swap_chain: SwapChain) void {
 
 pub inline fn configure(
     swap_chain: SwapChain,
-    format: TextureFormat,
+    format: Texture.Format,
     allowed_usage: Texture.Usage,
     width: u32,
     height: u32,
@@ -40,7 +39,7 @@ pub inline fn configure(
 pub const Descriptor = struct {
     label: ?[:0]const u8 = null,
     usage: Texture.Usage,
-    format: TextureFormat,
+    format: Texture.Format,
     width: u32,
     height: u32,
     present_mode: PresentMode,

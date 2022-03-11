@@ -50,7 +50,7 @@ pub fn main() !void {
         descriptor.implementation = c.machUtilsBackendBinding_getSwapChainImplementation(binding);
         window_data.swap_chain = setup.device.nativeCreateSwapChain(null, &descriptor);
 
-        window_data.swap_chain_format = @intToEnum(gpu.TextureFormat, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
+        window_data.swap_chain_format = @intToEnum(gpu.Texture.Format, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
         window_data.swap_chain.?.configure(
             window_data.swap_chain_format,
             .render_attachment,
@@ -159,7 +159,7 @@ pub fn main() !void {
 const WindowData = struct {
     surface: ?gpu.Surface,
     swap_chain: ?gpu.SwapChain,
-    swap_chain_format: gpu.TextureFormat,
+    swap_chain_format: gpu.Texture.Format,
     current_desc: gpu.SwapChain.Descriptor,
     target_desc: gpu.SwapChain.Descriptor,
 };

@@ -94,7 +94,6 @@ pub const PrimitiveState = @import("structs.zig").PrimitiveState;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;
-pub const TextureFormat = @import("enums.zig").TextureFormat;
 pub const PresentMode = @import("enums.zig").PresentMode;
 pub const AddressMode = @import("enums.zig").AddressMode;
 pub const AlphaMode = @import("enums.zig").AlphaMode;
