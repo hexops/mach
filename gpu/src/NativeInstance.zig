@@ -15,7 +15,7 @@ const RequestDeviceResponse = Adapter.RequestDeviceResponse;
 
 const Device = @import("Device.zig");
 const Surface = @import("Surface.zig");
-const Limits = @import("Limits.zig");
+const Limits = @import("structs.zig").Limits;
 const Queue = @import("Queue.zig");
 const CommandBuffer = @import("CommandBuffer.zig");
 const ShaderModule = @import("ShaderModule.zig");

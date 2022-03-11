@@ -20,7 +20,7 @@
 const std = @import("std");
 
 const Feature = @import("enums.zig").Feature;
-const Limits = @import("Limits.zig");
+const Limits = @import("structs.zig").Limits;
 const Device = @import("Device.zig");
 
 const Adapter = @This();
