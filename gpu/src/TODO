@@ -348,20 +348,11 @@ typedef struct WGPUFragmentState {
     WGPUColorTargetState const * targets;
 } WGPUFragmentState;
 
-
-
-
 typedef struct WGPUComputePassTimestampWrite {
     WGPUQuerySet querySet;
     uint32_t queryIndex;
     WGPUComputePassTimestampLocation location;
 } WGPUComputePassTimestampWrite;
-
-typedef struct WGPUExtent3D {
-    uint32_t width;
-    uint32_t height;
-    uint32_t depthOrArrayLayers;
-} WGPUExtent3D;
 
 typedef struct WGPUExternalTextureBindingEntry {
     WGPUChainedStruct chain;
@@ -372,16 +363,31 @@ typedef struct WGPUExternalTextureBindingLayout {
     WGPUChainedStruct chain;
 } WGPUExternalTextureBindingLayout;
 
+typedef struct WGPUPrimitiveDepthClampingState {
+    WGPUChainedStruct chain;
+    bool clampDepth;
+} WGPUPrimitiveDepthClampingState;
+
+typedef struct WGPURenderPassTimestampWrite {
+    WGPUQuerySet querySet;
+    uint32_t queryIndex;
+    WGPURenderPassTimestampLocation location;
+} WGPURenderPassTimestampWrite;
+
+
+
+
+typedef struct WGPUExtent3D {
+    uint32_t width;
+    uint32_t height;
+    uint32_t depthOrArrayLayers;
+} WGPUExtent3D;
+
 typedef struct WGPUOrigin3D {
     uint32_t x;
     uint32_t y;
     uint32_t z;
 } WGPUOrigin3D;
-
-typedef struct WGPUPrimitiveDepthClampingState {
-    WGPUChainedStruct chain;
-    bool clampDepth;
-} WGPUPrimitiveDepthClampingState;
 
 typedef struct WGPURenderPassDepthStencilAttachment {
     WGPUTextureView view;
@@ -396,12 +402,6 @@ typedef struct WGPURenderPassDepthStencilAttachment {
     uint32_t stencilClearValue;
     bool stencilReadOnly;
 } WGPURenderPassDepthStencilAttachment;
-
-typedef struct WGPURenderPassTimestampWrite {
-    WGPUQuerySet querySet;
-    uint32_t queryIndex;
-    WGPURenderPassTimestampLocation location;
-} WGPURenderPassTimestampWrite;
 
 typedef struct WGPUStencilFaceState {
     WGPUCompareFunction compare;
