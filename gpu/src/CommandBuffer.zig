@@ -23,9 +23,14 @@ pub inline fn setLabel(buf: CommandBuffer, label: [:0]const u8) void {
     buf.vtable.setLabel(buf.ptr, label);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
     _ = setLabel;
+    _ = Descriptor;
 }
