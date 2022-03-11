@@ -57,14 +57,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
 
 
 
-typedef struct WGPUProgrammableStageDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    WGPUShaderModule module;
-    char const * entryPoint;
-    uint32_t constantCount;
-    WGPUConstantEntry const * constants;
-} WGPUProgrammableStageDescriptor;
-
 typedef struct WGPUTextureDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
