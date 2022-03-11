@@ -23,7 +23,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void wgpuCommandEncoderPopDebugGroup(WGPUCommandEncoder commandEncoder);
     // WGPU_EXPORT void wgpuCommandEncoderPushDebugGroup(WGPUCommandEncoder commandEncoder, char const * groupLabel);
     // WGPU_EXPORT void wgpuCommandEncoderResolveQuerySet(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t firstQuery, uint32_t queryCount, WGPUBuffer destination, uint64_t destinationOffset);
-    // WGPU_EXPORT void wgpuCommandEncoderSetLabel(WGPUCommandEncoder commandEncoder, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     // WGPU_EXPORT void wgpuCommandEncoderWriteBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t bufferOffset, uint8_t const * data, uint64_t size);
     // WGPU_EXPORT void wgpuCommandEncoderWriteTimestamp(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
 };
@@ -34,6 +34,10 @@ pub inline fn reference(enc: CommandEncoder) void {
 
 pub inline fn release(enc: CommandEncoder) void {
     enc.vtable.release(enc.ptr);
+}
+
+pub inline fn setLabel(enc: CommandEncoder, label: [:0]const u8) void {
+    enc.vtable.setLabel(enc.ptr, label);
 }
 
 test "syntax" {
