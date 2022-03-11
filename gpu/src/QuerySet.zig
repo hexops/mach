@@ -10,7 +10,7 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     // TODO:
     // WGPU_EXPORT void wgpuQuerySetDestroy(WGPUQuerySet querySet);
-    // WGPU_EXPORT void wgpuQuerySetSetLabel(WGPUQuerySet querySet, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
 };
 
 pub inline fn reference(qset: QuerySet) void {
@@ -19,6 +19,10 @@ pub inline fn reference(qset: QuerySet) void {
 
 pub inline fn release(qset: QuerySet) void {
     qset.vtable.release(qset.ptr);
+}
+
+pub inline fn setLabel(qset: QuerySet, label: [:0]const u8) void {
+    qset.vtable.setLabel(qset.ptr, label);
 }
 
 test "syntax" {
