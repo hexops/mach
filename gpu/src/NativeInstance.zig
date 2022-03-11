@@ -731,6 +731,11 @@ const bind_group_vtable = BindGroup.VTable{
             c.wgpuBindGroupRelease(@ptrCast(c.WGPUBindGroup, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuBindGroupSetLabel(@ptrCast(c.WGPUBindGroup, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapBindGroupLayout(layout: c.WGPUBindGroupLayout) BindGroupLayout {
