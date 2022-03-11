@@ -1,3 +1,5 @@
+const QueryType = @import("enums.zig").QueryType;
+
 const PipelineStatistic = @import("enums.zig").PipelineStatistic;
 
 const QuerySet = @This();
