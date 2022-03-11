@@ -161,6 +161,15 @@ pub const Dimension = enum(u32) {
     dimension_3d = 0x00000002,
 };
 
+pub const SampleType = enum(u32) {
+    none = 0x00000000,
+    float = 0x00000001,
+    unfilterable_float = 0x00000002,
+    depth = 0x00000003,
+    sint = 0x00000004,
+    uint = 0x00000005,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
@@ -171,4 +180,5 @@ test "syntax" {
     _ = Aspect;
     _ = ComponentType;
     _ = Dimension;
+    _ = SampleType;
 }
