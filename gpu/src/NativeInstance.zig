@@ -836,6 +836,11 @@ const buffer_vtable = Buffer.VTable{
             c.wgpuBufferSetLabel(@ptrCast(c.WGPUBuffer, ptr), label);
         }
     }).setLabel,
+    .destroy = (struct {
+        pub fn destroy(ptr: *anyopaque) void {
+            c.wgpuBufferDestroy(@ptrCast(c.WGPUDestroy, ptr));
+        }
+    }).destroy,
 };
 
 fn wrapCommandBuffer(buffer: c.WGPUCommandBuffer) CommandBuffer {
