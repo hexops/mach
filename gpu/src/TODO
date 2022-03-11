@@ -57,15 +57,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
 
 
 
-typedef struct WGPUQuerySetDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUQueryType type;
-    uint32_t count;
-    WGPUPipelineStatisticName const * pipelineStatistics;
-    uint32_t pipelineStatisticsCount;
-} WGPUQuerySetDescriptor;
-
 typedef struct WGPURenderBundleEncoderDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;

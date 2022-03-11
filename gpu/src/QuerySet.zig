@@ -1,3 +1,5 @@
+const PipelineStatistic = @import("enums.zig").PipelineStatistic;
+
 const QuerySet = @This();
 
 /// The type erased pointer to the QuerySet implementation
@@ -28,9 +30,17 @@ pub inline fn destroy(qset: QuerySet) void {
     qset.vtable.destroy(qset.ptr);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    type: QueryType,
+    count: u32,
+    pipeline_statistics: []PipelineStatistic,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
     _ = destroy;
+    _ = Descriptor;
 }
