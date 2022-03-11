@@ -186,17 +186,6 @@ typedef struct WGPURenderPipelineDescriptor {
 
 
 
-
-typedef struct WGPUCompilationMessage {
-    WGPUChainedStruct const * nextInChain;
-    char const * message;
-    WGPUCompilationMessageType type;
-    uint64_t lineNum;
-    uint64_t linePos;
-    uint64_t offset;
-    uint64_t length;
-} WGPUCompilationMessage;
-
 typedef struct WGPUConstantEntry {
     WGPUChainedStruct const * nextInChain;
     char const * key;
