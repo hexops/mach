@@ -123,7 +123,6 @@ pub const PredefinedColorSpace = @import("enums.zig").PredefinedColorSpace;
 pub const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 pub const QueryType = @import("enums.zig").QueryType;
 pub const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestampLocation;
-pub const SamplerBindingType = @import("enums.zig").SamplerBindingType;
 pub const StencilOperation = @import("enums.zig").StencilOperation;
 pub const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 pub const StoreOp = @import("enums.zig").StoreOp;

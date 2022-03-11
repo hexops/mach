@@ -23,8 +23,21 @@ pub inline fn setLabel(sampler: Sampler, label: [:0]const u8) void {
     sampler.vtable.setLabel(sampler.ptr, label);
 }
 
+pub const BindingType = enum(u32) {
+    none = 0x00000000,
+    filtering = 0x00000001,
+    non_filtering = 0x00000002,
+    comparison = 0x00000003,
+};
+
+pub const BindingLayout = struct {
+    type: BindingType,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = BindingType;
+    _ = BindingLayout;
 }
