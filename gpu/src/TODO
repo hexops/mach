@@ -107,12 +107,6 @@ typedef struct WGPURenderPipelineDescriptor {
 
 
 
-typedef struct WGPUConstantEntry {
-    WGPUChainedStruct const * nextInChain;
-    char const * key;
-    double value;
-} WGPUConstantEntry;
-
 // TODO: Dawn-specific?
 typedef struct WGPUCopyTextureForBrowserOptions {
     WGPUChainedStruct const * nextInChain;

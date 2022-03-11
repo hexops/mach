@@ -94,6 +94,7 @@ pub const MultisampleState = @import("structs.zig").MultisampleState;
 pub const PrimitiveState = @import("structs.zig").PrimitiveState;
 pub const StorageTextureBindingLayout = @import("structs.zig").StorageTextureBindingLayout;
 pub const DepthStencilState = @import("structs.zig").DepthStencilState;
+pub const ConstantEntry = @import("structs.zig").ConstantEntry;
 pub const ProgrammableStageDescriptor = @import("structs.zig").ProgrammableStageDescriptor;
 
 // Enumerations
