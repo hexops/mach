@@ -881,6 +881,11 @@ const compute_pipeline_vtable = ComputePipeline.VTable{
             c.wgpuComputePipelineRelease(@ptrCast(c.WGPUComputePipeline, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuComputePipelineSetLabel(@ptrCast(c.WGPUComputePipeline, ptr), label);
+        }
+    }).setLabel,
 };
 
 test "syntax" {

@@ -10,7 +10,7 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     // TODO:
     // WGPU_EXPORT WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComputePipeline computePipeline, uint32_t groupIndex);
-    // WGPU_EXPORT void wgpuComputePipelineSetLabel(WGPUComputePipeline computePipeline, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
 };
 
 pub inline fn reference(pipeline: ComputePipeline) void {
@@ -19,6 +19,10 @@ pub inline fn reference(pipeline: ComputePipeline) void {
 
 pub inline fn release(pipeline: ComputePipeline) void {
     pipeline.vtable.release(pipeline.ptr);
+}
+
+pub inline fn setLabel(pipeline: ComputePipeline, label: [:0]const u8) void {
+    pipeline.vtable.setLabel(pipeline.ptr, label);
 }
 
 test "syntax" {
