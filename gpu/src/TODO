@@ -40,14 +40,6 @@ typedef struct WGPUChainedStructOut {
 
 
 
-typedef struct WGPUBufferDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUBufferUsageFlags usage;
-    uint64_t size;
-    bool mappedAtCreation;
-} WGPUBufferDescriptor;
-
 typedef struct WGPUCommandBufferDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;

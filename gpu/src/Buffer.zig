@@ -1,3 +1,5 @@
+const BufferUsage = @import("enums.zig").BufferUsage;
+
 const Buffer = @This();
 
 /// The type erased pointer to the Buffer implementation
@@ -33,10 +35,18 @@ pub inline fn setLabel(buf: Buffer, label: [:0]const u8) void {
     buf.vtable.setLabel(buf.ptr, label);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    usage: BufferUsage,
+    size: usize,
+    mapped_at_creation: bool,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
     _ = destroy;
     _ = setLabel;
+    _ = Descriptor;
 }
