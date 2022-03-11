@@ -41,6 +41,8 @@
 //! doesn't exist in the map then it is dead.
 //!
 const std = @import("std");
+
+// Root interface/implementations
 pub const Interface = @import("Interface.zig");
 pub const RequestAdapterOptions = Interface.RequestAdapterOptions;
 pub const RequestAdapterErrorCode = Interface.RequestAdapterErrorCode;
@@ -119,8 +121,6 @@ pub const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestamp
 pub const StencilOperation = @import("enums.zig").StencilOperation;
 pub const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 pub const StoreOp = @import("enums.zig").StoreOp;
-// TODO: move to Texture.Foo
-pub const TextureViewDimension = @import("enums.zig").TextureViewDimension;
 pub const VertexFormat = @import("enums.zig").VertexFormat;
 pub const VertexStepMode = @import("enums.zig").VertexStepMode;
 pub const BufferUsage = @import("enums.zig").BufferUsage;
@@ -129,9 +129,11 @@ pub const MapMode = @import("enums.zig").MapMode;
 pub const ShaderStage = @import("enums.zig").ShaderStage;
 
 test "syntax" {
+    // Root interface/implementations
     _ = Interface;
     _ = NativeInstance;
 
+    // Interfaces
     _ = Adapter;
     _ = Device;
     _ = Surface;
@@ -157,5 +159,12 @@ test "syntax" {
     _ = ComputePassEncoder;
     _ = ComputePipeline;
 
+    // Data structures ABI-compatible with webgpu.h
+    _ = Limits;
+
+    // Data structures not ABI-compatible with webgpu.h
+    _ = CompilationMessage;
+
+    // Enumerations
     _ = Feature;
 }
