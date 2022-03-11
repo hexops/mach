@@ -571,6 +571,11 @@ const sampler_vtable = Sampler.VTable{
             c.wgpuSamplerRelease(@ptrCast(c.WGPUSampler, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuSamplerSetLabel(@ptrCast(c.WGPUSampler, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapRenderPipeline(pipeline: c.WGPURenderPipeline) RenderPipeline {
