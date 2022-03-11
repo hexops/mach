@@ -57,6 +57,13 @@ pub const DepthStencilState = struct {
     depth_bias_clamp: f32,
 };
 
+pub const ProgrammableStageDescriptor = struct {
+    label: ?[*:0]const u8 = null,
+    module: ShaderModule,
+    entryPoint: [*:0]const u8,
+    constants: []const ConstantEntry,
+};
+
 test "syntax" {
     _ = CompilationMessage;
     _ = CompilationInfo;
@@ -64,4 +71,5 @@ test "syntax" {
     _ = PrimitiveState;
     _ = StorageTextureBindingLayout;
     _ = DepthStencilState;
+    _ = ProgrammableStageDescriptor;
 }
