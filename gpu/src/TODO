@@ -57,21 +57,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
 
 
 
-typedef struct WGPUSamplerDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUAddressMode addressModeU;
-    WGPUAddressMode addressModeV;
-    WGPUAddressMode addressModeW;
-    WGPUFilterMode magFilter;
-    WGPUFilterMode minFilter;
-    WGPUFilterMode mipmapFilter;
-    float lodMinClamp;
-    float lodMaxClamp;
-    WGPUCompareFunction compare;
-    uint16_t maxAnisotropy;
-} WGPUSamplerDescriptor;
-
 typedef struct WGPUTextureViewDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
