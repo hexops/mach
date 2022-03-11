@@ -57,15 +57,6 @@ pub const BlendOperation = enum(u32) {
     max = 0x00000004,
 };
 
-pub const BufferMapAsyncStatus = enum(u32) {
-    success = 0x00000000,
-    err = 0x00000001,
-    unknown = 0x00000002,
-    device_lost = 0x00000003,
-    destroyed_before_callback = 0x00000004,
-    unmapped_before_callback = 0x00000005,
-};
-
 pub const CompareFunction = enum(u32) {
     none = 0x00000000,
     never = 0x00000001,
@@ -343,7 +334,6 @@ test "syntax" {
     _ = AlphaMode;
     _ = BlendFactor;
     _ = BlendOperation;
-    _ = BufferMapAsyncStatus;
     _ = CompareFunction;
     _ = CompilationInfoRequestStatus;
     _ = CompilationMessageType;
