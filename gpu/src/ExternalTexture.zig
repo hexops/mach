@@ -10,7 +10,7 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     // TODO:
     // WGPU_EXPORT void wgpuExternalTextureDestroy(WGPUExternalTexture externalTexture);
-    // WGPU_EXPORT void wgpuExternalTextureSetLabel(WGPUExternalTexture externalTexture, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
 };
 
 pub inline fn reference(texture: ExternalTexture) void {
@@ -19,6 +19,10 @@ pub inline fn reference(texture: ExternalTexture) void {
 
 pub inline fn release(texture: ExternalTexture) void {
     texture.vtable.release(texture.ptr);
+}
+
+pub inline fn setLabel(texture: ExternalTexture, label: [:0]const u8) void {
+    texture.vtable.setLabel(texture.ptr, label);
 }
 
 test "syntax" {

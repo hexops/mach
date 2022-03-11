@@ -711,6 +711,11 @@ const external_texture_vtable = ExternalTexture.VTable{
             c.wgpuExternalTextureRelease(@ptrCast(c.WGPUExternalTexture, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuExternalTextureSetLabel(@ptrCast(c.WGPUExternalTexture, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapBindGroup(group: c.WGPUBindGroup) BindGroup {
