@@ -591,6 +591,11 @@ const render_pipeline_vtable = RenderPipeline.VTable{
             c.wgpuRenderPipelineRelease(@ptrCast(c.WGPURenderPipeline, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuRenderPipelineSetLabel(@ptrCast(c.WGPURenderPipeline, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapRenderPassEncoder(pass: c.WGPURenderPassEncoder) RenderPassEncoder {
