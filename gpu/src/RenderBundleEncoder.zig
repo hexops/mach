@@ -1,3 +1,5 @@
+const Texture = @import("Texture.zig");
+
 const RenderBundleEncoder = @This();
 
 /// The type erased pointer to the RenderBundleEncoder implementation
@@ -36,8 +38,18 @@ pub inline fn setLabel(enc: RenderBundleEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    color_formats: []Texture.Format,
+    depth_stencil_format: Texture.Format,
+    sample_count: u32,
+    depth_read_only: bool,
+    stencil_read_only: bool,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = Descriptor;
 }
