@@ -57,17 +57,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
 
 
 
-typedef struct WGPURenderBundleEncoderDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    uint32_t colorFormatsCount;
-    WGPUTextureFormat const * colorFormats;
-    WGPUTextureFormat depthStencilFormat;
-    uint32_t sampleCount;
-    bool depthReadOnly;
-    bool stencilReadOnly;
-} WGPURenderBundleEncoderDescriptor;
-
 typedef struct WGPUSamplerDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
