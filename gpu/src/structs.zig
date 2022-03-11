@@ -3,12 +3,14 @@ const Buffer = @import("Buffer.zig");
 const Sampler = @import("Sampler.zig");
 const Texture = @import("Texture.zig");
 const TextureView = @import("TextureView.zig");
+const StencilFaceState = @import("data.zig").StencilFaceState;
 const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 const IndexFormat = @import("enums.zig").IndexFormat;
 const FrontFace = @import("enums.zig").FrontFace;
 const CullMode = @import("enums.zig").CullMode;
 const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
+const CompareFunction = @import("enums.zig").CompareFunction;
 
 pub const CompilationMessage = struct {
     message: [:0]const u8,
@@ -42,10 +44,24 @@ pub const StorageTextureBindingLayout = struct {
     view_dimension: Texture.ViewDimension,
 };
 
+pub const DepthStencilState = struct {
+    format: Texture.Format,
+    depth_write_enabled: bool,
+    depth_compare: CompareFunction,
+    stencil_front: StencilFaceState,
+    stencil_back: StencilFaceState,
+    stencil_read_mask: u32,
+    stencil_write_mask: u32,
+    depth_bias: i32,
+    depth_bias_slope_scale: f32,
+    depth_bias_clamp: f32,
+};
+
 test "syntax" {
     _ = CompilationMessage;
     _ = CompilationInfo;
     _ = MultisampleState;
     _ = PrimitiveState;
     _ = StorageTextureBindingLayout;
+    _ = DepthStencilState;
 }

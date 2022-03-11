@@ -204,20 +204,6 @@ typedef struct WGPUCopyTextureForBrowserOptions {
     WGPUAlphaMode dstAlphaMode;
 } WGPUCopyTextureForBrowserOptions;
 
-typedef struct WGPUDepthStencilState {
-    WGPUChainedStruct const * nextInChain;
-    WGPUTextureFormat format;
-    bool depthWriteEnabled;
-    WGPUCompareFunction depthCompare;
-    WGPUStencilFaceState stencilFront;
-    WGPUStencilFaceState stencilBack;
-    uint32_t stencilReadMask;
-    uint32_t stencilWriteMask;
-    int32_t depthBias;
-    float depthBiasSlopeScale;
-    float depthBiasClamp;
-} WGPUDepthStencilState;
-
 typedef struct WGPUImageCopyBuffer {
     WGPUChainedStruct const * nextInChain;
     WGPUTextureDataLayout layout;
