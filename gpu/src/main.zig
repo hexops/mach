@@ -87,7 +87,6 @@ pub const VertexBufferLayout = @import("data.zig").VertexBufferLayout;
 
 // Data structures not ABI-compatible with webgpu.h
 pub const BindGroupEntry = @import("structs.zig").BindGroupEntry;
-pub const BufferBindingLayout = @import("structs.zig").BufferBindingLayout;
 pub const CompilationMessage = @import("structs.zig").CompilationMessage;
 pub const MultisampleState = @import("structs.zig").MultisampleState;
 pub const PrimitiveState = @import("structs.zig").PrimitiveState;
@@ -99,14 +98,12 @@ pub const AddressMode = @import("enums.zig").AddressMode;
 pub const AlphaMode = @import("enums.zig").AlphaMode;
 pub const BlendFactor = @import("enums.zig").BlendFactor;
 pub const BlendOperation = @import("enums.zig").BlendOperation;
-pub const BufferMapAsyncStatus = @import("enums.zig").BufferMapAsyncStatus;
 pub const CompareFunction = @import("enums.zig").CompareFunction;
 pub const CompilationInfoRequestStatus = @import("enums.zig").CompilationInfoRequestStatus;
 pub const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 pub const ComputePassTimestampLocation = @import("enums.zig").ComputePassTimestampLocation;
 pub const CreatePipelineAsyncStatus = @import("enums.zig").CreatePipelineAsyncStatus;
 pub const CullMode = @import("enums.zig").CullMode;
-pub const DeviceLostReason = @import("enums.zig").DeviceLostReason;
 pub const ErrorFilter = @import("enums.zig").ErrorFilter;
 pub const ErrorType = @import("enums.zig").ErrorType;
 pub const FilterMode = @import("enums.zig").FilterMode;

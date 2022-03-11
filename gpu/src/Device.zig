@@ -88,6 +88,11 @@ pub const Descriptor = struct {
     required_limits: ?Limits = null,
 };
 
+pub const LostReason = enum(u32) {
+    none = 0x00000000,
+    destroyed = 0x00000001,
+};
+
 test "syntax" {
     _ = VTable;
     _ = getQueue;
@@ -97,4 +102,5 @@ test "syntax" {
     _ = nativeCreateSwapChain;
     _ = destroy;
     _ = Descriptor;
+    _ = LostReason;
 }
