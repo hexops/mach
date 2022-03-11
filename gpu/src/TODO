@@ -57,17 +57,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
 
 
 
-typedef struct WGPUTextureDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    WGPUTextureUsageFlags usage;
-    WGPUTextureDimension dimension;
-    WGPUExtent3D size;
-    WGPUTextureFormat format;
-    uint32_t mipLevelCount;
-    uint32_t sampleCount;
-} WGPUTextureDescriptor;
-
 typedef struct WGPUBindGroupLayoutDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;

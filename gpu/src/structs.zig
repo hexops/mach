@@ -4,6 +4,7 @@ const Sampler = @import("Sampler.zig");
 const Texture = @import("Texture.zig");
 const TextureView = @import("TextureView.zig");
 const ShaderModule = @import("ShaderModule.zig");
+const QuerySet = @import("QuerySet.zig");
 const StencilFaceState = @import("data.zig").StencilFaceState;
 const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
@@ -12,6 +13,7 @@ const FrontFace = @import("enums.zig").FrontFace;
 const CullMode = @import("enums.zig").CullMode;
 const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 const CompareFunction = @import("enums.zig").CompareFunction;
+const ComputePassTimestampLocation = @import("enums.zig").ComputePassTimestampLocation;
 
 pub const CompilationMessage = struct {
     message: [:0]const u8,
