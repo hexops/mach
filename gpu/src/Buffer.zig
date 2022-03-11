@@ -42,6 +42,13 @@ pub const Descriptor = struct {
     mapped_at_creation: bool,
 };
 
+pub const BindingType = enum(u32) {
+    none = 0x00000000,
+    uniform = 0x00000001,
+    storage = 0x00000002,
+    read_only_storage = 0x00000003,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
@@ -49,4 +56,5 @@ test "syntax" {
     _ = destroy;
     _ = setLabel;
     _ = Descriptor;
+    _ = BindingType;
 }

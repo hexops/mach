@@ -2,7 +2,6 @@
 const Buffer = @import("Buffer.zig");
 const Sampler = @import("Sampler.zig");
 const TextureView = @import("TextureView.zig");
-const BufferBindingType = @import("enums.zig").BufferBindingType;
 const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 const IndexFormat = @import("enums.zig").IndexFormat;
@@ -19,7 +18,7 @@ pub const BindGroupEntry = struct {
 };
 
 pub const BufferBindingLayout = struct {
-    type: BufferBindingType,
+    type: Buffer.BindingType,
     has_dynamic_offset: bool,
     min_binding_size: u64,
 };
