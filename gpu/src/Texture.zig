@@ -32,6 +32,16 @@ pub inline fn destroy(texture: Texture) void {
     texture.vtable.destroy(texture.ptr);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    usage: Usage,
+    dimension: Dimension,
+    size: Extent3D,
+    format: Format,
+    mip_level_count: u32,
+    sample_count: u32,
+};
+
 pub const Usage = enum(u32) {
     none = 0x00000000,
     copy_src = 0x00000001,
@@ -189,6 +199,7 @@ test "syntax" {
     _ = reference;
     _ = release;
     _ = destroy;
+    _ = Descriptor;
     _ = Usage;
     _ = Format;
     _ = Aspect;
