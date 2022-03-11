@@ -22,11 +22,6 @@ typedef struct WGPUChainedStructOut {
 
 
 
-typedef struct WGPUCommandEncoderDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-} WGPUCommandEncoderDescriptor;
-
 typedef struct WGPUDawnCacheDeviceDescriptor {
     WGPUChainedStruct chain;
     char const * isolationKey;
