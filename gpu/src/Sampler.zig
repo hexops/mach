@@ -8,8 +8,7 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    // TODO:
-    // WGPU_EXPORT void wgpuSamplerSetLabel(WGPUSampler sampler, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
 };
 
 pub inline fn reference(sampler: Sampler) void {
@@ -18,6 +17,10 @@ pub inline fn reference(sampler: Sampler) void {
 
 pub inline fn release(sampler: Sampler) void {
     sampler.vtable.release(sampler.ptr);
+}
+
+pub inline fn setLabel(sampler: Sampler, label: [:0]const u8) void {
+    sampler.vtable.setLabel(sampler.ptr, label);
 }
 
 test "syntax" {
