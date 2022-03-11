@@ -39,7 +39,7 @@ pub const VTable = struct {
     createShaderModule: fn (ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule,
     nativeCreateSwapChain: fn (ptr: *anyopaque, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain,
     // WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
-    // WGPU_EXPORT void wgpuDeviceDestroy(WGPUDevice device);
+    destroy: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeature * features);
     // WGPU_EXPORT bool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits * limits);
     getQueue: fn (ptr: *anyopaque) Queue,
@@ -77,6 +77,10 @@ pub inline fn nativeCreateSwapChain(device: Device, surface: ?Surface, descripto
     return device.vtable.nativeCreateSwapChain(device.ptr, surface, descriptor);
 }
 
+pub inline fn destroy(device: Device) void {
+    device.vtable.destroy(device.ptr);
+}
+
 // TODO: docs
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
@@ -90,6 +94,7 @@ test "syntax" {
     _ = reference;
     _ = release;
     _ = createShaderModule;
-    _ = Descriptor;
     _ = nativeCreateSwapChain;
+    _ = destroy;
+    _ = Descriptor;
 }
