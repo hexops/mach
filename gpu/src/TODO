@@ -57,13 +57,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
 
 
 
-typedef struct WGPUComputePassDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    uint32_t timestampWriteCount;
-    WGPUComputePassTimestampWrite const * timestampWrites;
-} WGPUComputePassDescriptor;
-
 typedef struct WGPUProgrammableStageDescriptor {
     WGPUChainedStruct const * nextInChain;
     WGPUShaderModule module;
