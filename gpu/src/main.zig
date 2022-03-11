@@ -14,9 +14,31 @@
 //!
 //! Note: WebGPU’s coordinate systems match DirectX’s coordinate systems in a graphics pipeline.
 //!
-//! # Reference counting
+//! # Releasing resources
 //!
-//! TODO: docs
+//! WebGPU objects such as textures provide two APIs to release resources:
+//!
+//! * Reference counting: `reference` / `release`
+//! * Manual destruction: `destroy`
+//!
+//! Where possible, using `destroy` is preferred as it more explicitly communicates the intent to
+//! the implementation.
+//!
+//! When an object is `destroy`d, it is merely marked as destroyed. If the object is used past that
+//! point, it is not unsafe nor does it access undefined memory. Instead, you will merely recieve
+//! errors. The actual memory is released at the discretion of the implementation, possibly after a
+//! few frames but it should be relatively soon (e.g. if the GPU is still using the resource, then
+//! the implementation has to wait until it's safe to free.)
+//!
+//! Native implementations generally implement reference/release via referencing counting and invoke
+//! destroy when zero is reached, but a browser implementation may choose to utilize these as
+//! signals into an imprecise GC that may not even be aware of GPU-allocated memory (and so a 2MB
+//! texture may appear as just a ~40b texture handle which is not important to free.)
+//!
+//! Implementations keep track of which objects are dead (so that errors, not undefined memory
+//! accesses, occur) without truly keeping memory reserved for them by e.g. using a unique ID/handle
+//! to represent a texture, and e.g. a hashmap from that handle to the memory. Thus, if the handle
+//! doesn't exist in the map then it is dead.
 //!
 const std = @import("std");
 pub const Interface = @import("Interface.zig");
