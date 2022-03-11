@@ -351,13 +351,6 @@ typedef struct WGPUFragmentState {
 
 
 
-typedef struct WGPUColor {
-    double r;
-    double g;
-    double b;
-    double a;
-} WGPUColor;
-
 typedef struct WGPUComputePassTimestampWrite {
     WGPUQuerySet querySet;
     uint32_t queryIndex;

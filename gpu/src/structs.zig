@@ -2,7 +2,7 @@ const BlendOperation = @import("enums.zig").BlendOperation;
 const BlendFactor = @import("enums.zig").BlendFactor;
 
 // TODO: docs
-pub const Limits = struct {
+pub const Limits = extern struct {
     max_texture_dimension_1d: u32,
     max_texture_dimension_2d: u32,
     max_texture_dimension_3d: u32,
@@ -31,8 +31,15 @@ pub const Limits = struct {
     max_compute_workgroups_per_dimension: u32,
 };
 
-pub const BlendComponent = struct {
+pub const BlendComponent = extern struct {
     operation: BlendOperation,
     src_factor: BlendFactor,
     dst_factor: BlendFactor,
+};
+
+pub const Color = extern struct {
+    r: f64,
+    g: f64,
+    b: f64,
+    a: f64,
 };
