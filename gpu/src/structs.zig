@@ -4,6 +4,10 @@ const Sampler = @import("Sampler.zig");
 const TextureView = @import("TextureView.zig");
 const BufferBindingType = @import("enums.zig").BufferBindingType;
 const CompilationMessageType = @import("enums.zig").CompilationMessageType;
+const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
+const IndexFormat = @import("enums.zig").IndexFormat;
+const FrontFace = @import("enums.zig").FrontFace;
+const CullMode = @import("enums.zig").CullMode;
 
 pub const BindGroupEntry = struct {
     binding: u32,
@@ -35,8 +39,17 @@ pub const MultisampleState = struct {
     alpha_to_coverage_enabled: bool,
 };
 
+pub const PrimitiveState = struct {
+    topology: PrimitiveTopology,
+    strip_index_format: IndexFormat,
+    front_face: FrontFace,
+    cull_mode: CullMode,
+};
+
 test "syntax" {
     _ = BindGroupEntry;
     _ = BufferBindingLayout;
     _ = CompilationMessage;
+    _ = MultisampleState;
+    _ = PrimitiveState;
 }
