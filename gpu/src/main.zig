@@ -120,7 +120,6 @@ pub const StencilOperation = @import("enums.zig").StencilOperation;
 pub const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 pub const StoreOp = @import("enums.zig").StoreOp;
 // TODO: move to Texture.Foo
-pub const TextureSampleType = @import("enums.zig").TextureSampleType;
 pub const TextureViewDimension = @import("enums.zig").TextureViewDimension;
 pub const VertexFormat = @import("enums.zig").VertexFormat;
 pub const VertexStepMode = @import("enums.zig").VertexStepMode;
