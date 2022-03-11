@@ -55,6 +55,15 @@ pub const BindingLayout = struct {
     min_binding_size: u64,
 };
 
+pub const MapAsyncStatus = enum(u32) {
+    success = 0x00000000,
+    err = 0x00000001,
+    unknown = 0x00000002,
+    device_lost = 0x00000003,
+    destroyed_before_callback = 0x00000004,
+    unmapped_before_callback = 0x00000005,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
@@ -64,4 +73,5 @@ test "syntax" {
     _ = Descriptor;
     _ = BindingType;
     _ = BindingLayout;
+    _ = MapAsyncStatus;
 }
