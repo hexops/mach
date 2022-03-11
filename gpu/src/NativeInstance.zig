@@ -377,6 +377,11 @@ const device_vtable = Device.VTable{
             ));
         }
     }).nativeCreateSwapChain,
+    .destroy = (struct {
+        pub fn destroy(ptr: *anyopaque) void {
+            c.wgpuDeviceDestroy(@ptrCast(c.WGPUDestroy, ptr));
+        }
+    }).destroy,
 };
 
 // TODO: maybe make Limits an extern struct that can be cast?
