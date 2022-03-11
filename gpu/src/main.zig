@@ -90,6 +90,7 @@ pub const BindGroupEntry = @import("structs.zig").BindGroupEntry;
 pub const BufferBindingLayout = @import("structs.zig").BufferBindingLayout;
 pub const CompilationMessage = @import("structs.zig").CompilationMessage;
 pub const MultisampleState = @import("structs.zig").MultisampleState;
+pub const PrimitiveState = @import("structs.zig").PrimitiveState;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;
