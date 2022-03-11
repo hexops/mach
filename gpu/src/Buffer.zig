@@ -13,7 +13,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void const * wgpuBufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
     // WGPU_EXPORT void * wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
     // WGPU_EXPORT void wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapModeFlags mode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userdata);
-    // WGPU_EXPORT void wgpuBufferSetLabel(WGPUBuffer buffer, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     // WGPU_EXPORT void wgpuBufferUnmap(WGPUBuffer buffer);
 };
 
@@ -25,8 +25,13 @@ pub inline fn release(buffer: Buffer) void {
     buffer.vtable.release(buffer.ptr);
 }
 
+pub inline fn setLabel(group: Buffer, label: [:0]const u8) void {
+    group.vtable.setLabel(group.ptr, label);
+}
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = setLabel;
 }
