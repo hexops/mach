@@ -1,3 +1,5 @@
+const ComputePassTimestampWrite = @import("structs.zig").ComputePassTimestampWrite;
+
 const ComputePassEncoder = @This();
 
 /// The type erased pointer to the ComputePassEncoder implementation
@@ -34,8 +36,14 @@ pub inline fn setLabel(enc: ComputePassEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    timestamp_writes: []const ComputePassTimestampWrite,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = Descriptor;
 }
