@@ -388,10 +388,6 @@ typedef struct WGPURenderPassDepthStencilAttachment {
     bool stencilReadOnly;
 } WGPURenderPassDepthStencilAttachment;
 
-
-
-
-
 typedef struct WGPURenderPassColorAttachment {
     WGPUTextureView view;
     WGPUTextureView resolveTarget;
@@ -401,12 +397,7 @@ typedef struct WGPURenderPassColorAttachment {
     WGPUColor clearValue;
 } WGPURenderPassColorAttachment;
 
-typedef struct WGPUVertexBufferLayout {
-    uint64_t arrayStride;
-    WGPUVertexStepMode stepMode;
-    uint32_t attributeCount;
-    WGPUVertexAttribute const * attributes;
-} WGPUVertexBufferLayout;
+
 
 
 
