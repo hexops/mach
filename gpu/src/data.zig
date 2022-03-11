@@ -1,3 +1,5 @@
+//! Data structures that are ABI-compatible with webgpu.h
+
 const BlendOperation = @import("enums.zig").BlendOperation;
 const BlendFactor = @import("enums.zig").BlendFactor;
 const CompareFunction = @import("enums.zig").CompareFunction;
