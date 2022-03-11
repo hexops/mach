@@ -75,11 +75,6 @@ typedef struct WGPUQuerySetDescriptor {
     uint32_t pipelineStatisticsCount;
 } WGPUQuerySetDescriptor;
 
-typedef struct WGPURenderBundleDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-} WGPURenderBundleDescriptor;
-
 typedef struct WGPURenderBundleEncoderDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
