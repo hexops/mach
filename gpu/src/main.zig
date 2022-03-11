@@ -76,12 +76,13 @@ pub const ComputePipeline = @import("ComputePipeline.zig");
 
 // Data structures
 pub const Limits = @import("structs.zig").Limits;
-pub const BlendComponent = @import("structs.zig").BlendComponent;
 pub const Color = @import("structs.zig").Color;
 pub const Extent3D = @import("structs.zig").Extent3D;
 pub const Origin3D = @import("structs.zig").Origin3D;
 pub const StencilFaceState = @import("structs.zig").StencilFaceState;
 pub const VertexAttribute = @import("structs.zig").VertexAttribute;
+pub const BlendComponent = @import("structs.zig").BlendComponent;
+pub const BlendState = @import("structs.zig").BlendState;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;

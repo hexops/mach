@@ -33,12 +33,6 @@ pub const Limits = extern struct {
     max_compute_workgroups_per_dimension: u32,
 };
 
-pub const BlendComponent = extern struct {
-    operation: BlendOperation,
-    src_factor: BlendFactor,
-    dst_factor: BlendFactor,
-};
-
 pub const Color = extern struct {
     r: f64,
     g: f64,
@@ -69,4 +63,15 @@ pub const VertexAttribute = extern struct {
     format: VertexFormat,
     offset: u64,
     shader_location: u32,
+};
+
+pub const BlendComponent = extern struct {
+    operation: BlendOperation,
+    src_factor: BlendFactor,
+    dst_factor: BlendFactor,
+};
+
+pub const BlendState = extern struct {
+    color: BlendComponent,
+    alpha: BlendComponent,
 };
