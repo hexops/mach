@@ -19,8 +19,8 @@ pub inline fn release(buf: CommandBuffer) void {
     buf.vtable.release(buf.ptr);
 }
 
-pub inline fn setLabel(group: CommandBuffer, label: [:0]const u8) void {
-    group.vtable.setLabel(group.ptr, label);
+pub inline fn setLabel(buf: CommandBuffer, label: [:0]const u8) void {
+    buf.vtable.setLabel(buf.ptr, label);
 }
 
 test "syntax" {
