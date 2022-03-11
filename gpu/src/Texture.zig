@@ -155,6 +155,12 @@ pub const ComponentType = enum(u32) {
     depth_comparison = 0x00000003,
 };
 
+pub const Dimension = enum(u32) {
+    dimension_1d = 0x00000000,
+    dimension_2d = 0x00000001,
+    dimension_3d = 0x00000002,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
@@ -164,4 +170,5 @@ test "syntax" {
     _ = Format;
     _ = Aspect;
     _ = ComponentType;
+    _ = Dimension;
 }
