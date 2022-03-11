@@ -691,6 +691,11 @@ const pipeline_layout_vtable = PipelineLayout.VTable{
             c.wgpuPipelineLayoutRelease(@ptrCast(c.WGPUPipelineLayout, ptr));
         }
     }).release,
+    .setLabel = (struct {
+        pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
+            c.wgpuPipelineLayoutSetLabel(@ptrCast(c.WGPUPipelineLayout, ptr), label);
+        }
+    }).setLabel,
 };
 
 fn wrapExternalTexture(texture: c.WGPUExternalTexture) ExternalTexture {

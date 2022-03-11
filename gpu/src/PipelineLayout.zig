@@ -8,8 +8,7 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    // TODO:
-    // WGPU_EXPORT void wgpuPipelineLayoutSetLabel(WGPUPipelineLayout pipelineLayout, char const * label);
+    setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
 };
 
 pub inline fn reference(qset: PipelineLayout) void {
@@ -18,6 +17,10 @@ pub inline fn reference(qset: PipelineLayout) void {
 
 pub inline fn release(qset: PipelineLayout) void {
     qset.vtable.release(qset.ptr);
+}
+
+pub inline fn setLabel(qset: PipelineLayout, label: [:0]const u8) void {
+    qset.vtable.setLabel(qset.ptr, label);
 }
 
 test "syntax" {
