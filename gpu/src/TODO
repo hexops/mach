@@ -392,11 +392,6 @@ typedef struct WGPURenderPassDepthStencilAttachment {
 
 
 
-typedef struct WGPUBlendState {
-    WGPUBlendComponent color;
-    WGPUBlendComponent alpha;
-} WGPUBlendState;
-
 typedef struct WGPURenderPassColorAttachment {
     WGPUTextureView view;
     WGPUTextureView resolveTarget;
