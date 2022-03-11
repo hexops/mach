@@ -49,3 +49,9 @@ pub const Extent3D = extern struct {
     height: u32,
     depth_or_array_layers: u32,
 };
+
+pub const Origin3D = extern struct {
+    x: u32,
+    y: u32,
+    z: u32,
+};

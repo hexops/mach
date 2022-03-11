@@ -78,6 +78,8 @@ pub const ComputePipeline = @import("ComputePipeline.zig");
 pub const Limits = @import("structs.zig").Limits;
 pub const BlendComponent = @import("structs.zig").BlendComponent;
 pub const Color = @import("structs.zig").Color;
+pub const Extent3D = @import("structs.zig").Extent3D;
+pub const Origin3D = @import("structs.zig").Origin3D;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;
