@@ -1,5 +1,7 @@
 const BlendOperation = @import("enums.zig").BlendOperation;
 const BlendFactor = @import("enums.zig").BlendFactor;
+const CompareFunction = @import("enums.zig").CompareFunction;
+const StencilOperation = @import("enums.zig").StencilOperation;
 
 // TODO: docs
 pub const Limits = extern struct {
@@ -54,4 +56,11 @@ pub const Origin3D = extern struct {
     x: u32,
     y: u32,
     z: u32,
+};
+
+pub const StencilFaceState = extern struct {
+    compare: CompareFunction,
+    fail_op: StencilOperation,
+    depth_fail_op: StencilOperation,
+    pass_op: StencilOperation,
 };
