@@ -9,24 +9,6 @@
 
 typedef uint32_t WGPUFlags;
 
-typedef struct WGPUBindGroupImpl* WGPUBindGroup;
-typedef struct WGPUBindGroupLayoutImpl* WGPUBindGroupLayout;
-typedef struct WGPUBufferImpl* WGPUBuffer;
-typedef struct WGPUCommandBufferImpl* WGPUCommandBuffer;
-typedef struct WGPUCommandEncoderImpl* WGPUCommandEncoder;
-typedef struct WGPUComputePassEncoderImpl* WGPUComputePassEncoder;
-typedef struct WGPUComputePipelineImpl* WGPUComputePipeline;
-typedef struct WGPUExternalTextureImpl* WGPUExternalTexture;
-typedef struct WGPUPipelineLayoutImpl* WGPUPipelineLayout;
-typedef struct WGPUQuerySetImpl* WGPUQuerySet;
-typedef struct WGPURenderBundleImpl* WGPURenderBundle;
-typedef struct WGPURenderBundleEncoderImpl* WGPURenderBundleEncoder;
-typedef struct WGPURenderPassEncoderImpl* WGPURenderPassEncoder;
-typedef struct WGPURenderPipelineImpl* WGPURenderPipeline;
-typedef struct WGPUSamplerImpl* WGPUSampler;
-typedef struct WGPUTextureImpl* WGPUTexture;
-typedef struct WGPUTextureViewImpl* WGPUTextureView;
-
 typedef struct WGPUChainedStruct {
     struct WGPUChainedStruct const * next;
     WGPUSType sType;
