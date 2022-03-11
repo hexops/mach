@@ -1,6 +1,7 @@
 const Buffer = @import("Buffer.zig");
 const Sampler = @import("Sampler.zig");
 const TextureView = @import("TextureView.zig");
+const BindGroupLayout = @import("BindGroupLayout.zig");
 
 const BindGroup = @This();
 
@@ -36,10 +37,17 @@ pub const Entry = struct {
     texture_view: TextureView,
 };
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    layout: BindGroupLayout,
+    entries: []const Entry,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
     _ = setLabel;
     _ = Entry;
+    _ = Descriptor;
 }
