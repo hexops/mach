@@ -69,9 +69,7 @@ const interface_vtable = Interface.VTable{
             const opt = c.WGPURequestAdapterOptions{
                 .nextInChain = null,
                 .compatibleSurface = if (options.compatible_surface) |surface| @ptrCast(c.WGPUSurface, surface.ptr) else null,
-                // TODO:
-                //.powerPreference = power_preference,
-                .powerPreference = c.WGPUPowerPreference_Undefined,
+                .powerPreference = @enumToInt(options.power_preference),
                 .forceFallbackAdapter = options.force_fallback_adapter,
             };
 

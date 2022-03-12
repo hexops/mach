@@ -34,7 +34,6 @@ pub const Descriptor = struct {
     entries: []const Entry,
 };
 
-// TODO: can this be extern struct / ABI compatible?
 pub const Entry = struct {
     binding: u32,
     visibility: ShaderStage,

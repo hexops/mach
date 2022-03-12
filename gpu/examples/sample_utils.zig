@@ -74,7 +74,9 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
     try discoverAdapters(instance, window, backend_type);
 
     // Request an adapter.
-    const backend_adapter = switch (nosuspend gpu_interface.requestAdapter(&.{})) {
+    const backend_adapter = switch (nosuspend gpu_interface.requestAdapter(&.{
+        .power_preference = .high_performance,
+    })) {
         .adapter => |v| v,
         .err => |err| {
             std.debug.print("failed to get adapter: error={} {s}\n", .{ err.code, err.message });
