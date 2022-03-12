@@ -20,7 +20,6 @@ const objc = @cImport({
 
 const Setup = struct {
     native_instance: gpu.NativeInstance,
-    instance: c.WGPUInstance,
     backend_type: gpu.Adapter.BackendType,
     device: gpu.Device,
     window: glfw.Window,
@@ -105,7 +104,6 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
     // backend_procs.*.deviceSetUncapturedErrorCallback.?(backend_device, printDeviceError, null);
     return Setup{
         .native_instance = native_instance,
-        .instance = c.machDawnNativeInstance_get(instance),
         .backend_type = backend_type,
         .device = device,
         .window = window,
