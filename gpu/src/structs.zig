@@ -14,6 +14,7 @@ const CullMode = @import("enums.zig").CullMode;
 const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 const CompareFunction = @import("enums.zig").CompareFunction;
 const ComputePassTimestampLocation = @import("enums.zig").ComputePassTimestampLocation;
+const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestampLocation;
 
 pub const CompilationMessage = struct {
     message: [:0]const u8,
@@ -79,6 +80,12 @@ pub const ComputePassTimestampWrite = struct {
     location: ComputePassTimestampLocation,
 };
 
+pub const RenderPassTimestampWrite = struct {
+    query_set: QuerySet,
+    query_index: u32,
+    location: RenderPassTimestampLocation,
+};
+
 test "syntax" {
     _ = CompilationMessage;
     _ = CompilationInfo;
@@ -89,4 +96,5 @@ test "syntax" {
     _ = ConstantEntry;
     _ = ProgrammableStageDescriptor;
     _ = ComputePassTimestampWrite;
+    _ = RenderPassTimestampWrite;
 }
