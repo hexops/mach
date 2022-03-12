@@ -5,6 +5,7 @@ const std = @import("std");
 
 const Surface = @import("Surface.zig");
 const Adapter = @import("Adapter.zig");
+const PowerPreference = @import("enums.zig").PowerPreference;
 
 const Interface = @This();
 
@@ -30,8 +31,7 @@ pub inline fn release(interface: Interface) void {
 }
 
 pub const RequestAdapterOptions = struct {
-    // TODO:
-    //power_preference: PowerPreference,
+    power_preference: PowerPreference,
     force_fallback_adapter: bool = false,
 
     /// Only respected by native WebGPU implementations.
