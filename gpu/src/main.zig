@@ -98,6 +98,7 @@ pub const ConstantEntry = @import("structs.zig").ConstantEntry;
 pub const ProgrammableStageDescriptor = @import("structs.zig").ProgrammableStageDescriptor;
 pub const ComputePassTimestampWrite = @import("structs.zig").ComputePassTimestampWrite;
 pub const RenderPassTimestampWrite = @import("structs.zig").RenderPassTimestampWrite;
+pub const RenderPassDepthStencilAttachment = @import("structs.zig").RenderPassDepthStencilAttachment;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;

@@ -15,6 +15,8 @@ const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 const CompareFunction = @import("enums.zig").CompareFunction;
 const ComputePassTimestampLocation = @import("enums.zig").ComputePassTimestampLocation;
 const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestampLocation;
+const LoadOp = @import("enums.zig").LoadOp;
+const StoreOp = @import("enums.zig").StoreOp;
 
 pub const CompilationMessage = struct {
     message: [:0]const u8,
@@ -86,6 +88,20 @@ pub const RenderPassTimestampWrite = struct {
     location: RenderPassTimestampLocation,
 };
 
+pub const RenderPassDepthStencilAttachment = struct {
+    view: TextureView,
+    depth_load_op: LoadOp,
+    depth_store_op: StoreOp,
+    clear_depth: f32,
+    depth_clear_value: f32,
+    depth_read_only: bool,
+    stencil_load_op: LoadOp,
+    stencil_store_op: StoreOp,
+    clear_stencil: u32,
+    stencil_clear_value: u32,
+    stencil_read_only: bool,
+};
+
 test "syntax" {
     _ = CompilationMessage;
     _ = CompilationInfo;
@@ -97,4 +113,5 @@ test "syntax" {
     _ = ProgrammableStageDescriptor;
     _ = ComputePassTimestampWrite;
     _ = RenderPassTimestampWrite;
+    _ = RenderPassDepthStencilAttachment;
 }
