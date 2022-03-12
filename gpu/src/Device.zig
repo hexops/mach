@@ -110,6 +110,7 @@ test "syntax" {
     _ = createShaderModule;
     _ = nativeCreateSwapChain;
     _ = destroy;
+    _ = createCommandEncoder;
     _ = createRenderPipeline;
     _ = Descriptor;
     _ = LostReason;

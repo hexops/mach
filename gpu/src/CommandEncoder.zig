@@ -1,3 +1,5 @@
+const RenderPassEncoder = @import("RenderPassEncoder.zig");
+
 const CommandEncoder = @This();
 
 /// The type erased pointer to the CommandEncoder implementation
@@ -10,7 +12,7 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     // TODO:
     // WGPU_EXPORT WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder, WGPUComputePassDescriptor const * descriptor);
-    // WGPU_EXPORT WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder commandEncoder, WGPURenderPassDescriptor const * descriptor);
+    beginRenderPass: fn (ptr: *anyopaque, descriptor: *const RenderPassEncoder.Descriptor) RenderPassEncoder,
     // WGPU_EXPORT void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t offset, uint64_t size);
     // WGPU_EXPORT void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size);
     // WGPU_EXPORT void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyBuffer const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
@@ -40,6 +42,10 @@ pub inline fn setLabel(enc: CommandEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
 
+pub inline fn beginRenderPass(enc: CommandEncoder, descriptor: *const RenderPassEncoder.Descriptor) RenderPassEncoder {
+    return enc.vtable.beginRenderPass(enc.ptr, descriptor);
+}
+
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
 };
@@ -48,5 +54,6 @@ test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = beginRenderPass;
     _ = Descriptor;
 }
