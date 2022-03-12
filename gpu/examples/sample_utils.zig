@@ -7,15 +7,16 @@ const objc = @cImport({
     @cInclude("objc/message.h");
 });
 
-fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*anyopaque) callconv(.C) void {
-    switch (error_type) {
-        c.WGPUErrorType_Validation => std.debug.print("dawn: validation error: {s}\n", .{message}),
-        c.WGPUErrorType_OutOfMemory => std.debug.print("dawn: out of memory: {s}\n", .{message}),
-        c.WGPUErrorType_Unknown => std.debug.print("dawn: unknown error: {s}\n", .{message}),
-        c.WGPUErrorType_DeviceLost => std.debug.print("dawn: device lost: {s}\n", .{message}),
-        else => unreachable,
-    }
-}
+// TODO: Make gpu.Device implement wgpuDeviceSetUncapturedErrorCallback
+// fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*anyopaque) callconv(.C) void {
+//     switch (error_type) {
+//         c.WGPUErrorType_Validation => std.debug.print("dawn: validation error: {s}\n", .{message}),
+//         c.WGPUErrorType_OutOfMemory => std.debug.print("dawn: out of memory: {s}\n", .{message}),
+//         c.WGPUErrorType_Unknown => std.debug.print("dawn: unknown error: {s}\n", .{message}),
+//         c.WGPUErrorType_DeviceLost => std.debug.print("dawn: device lost: {s}\n", .{message}),
+//         else => unreachable,
+//     }
+// }
 
 const Setup = struct {
     native_instance: gpu.NativeInstance,
@@ -62,11 +63,10 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
     hints.cocoa_retina_framebuffer = false;
     const window = try glfw.Window.create(640, 480, "Dawn window", null, null, hints);
 
-    const instance = c.machDawnNativeInstance_init();
-
     const backend_procs = c.machDawnNativeGetProcs();
     c.dawnProcSetProcs(backend_procs);
 
+    const instance = c.machDawnNativeInstance_init();
     var native_instance = gpu.NativeInstance.wrap(c.machDawnNativeInstance_get(instance).?);
     const gpu_interface = native_instance.interface();
 
@@ -101,7 +101,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
         },
     };
 
-    // TODO: set wgpuDeviceSetUncapturedErrorCallback
+    // TODO: Make gpu.Device implement wgpuDeviceSetUncapturedErrorCallback
     // backend_procs.*.deviceSetUncapturedErrorCallback.?(backend_device, printDeviceError, null);
     return Setup{
         .native_instance = native_instance,
