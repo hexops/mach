@@ -101,40 +101,39 @@ pub fn main() !void {
             .dst_factor = .one,
         },
     };
-
-    var color_target = std.mem.zeroes(c.WGPUColorTargetState);
-    color_target.format = @enumToInt(window_data.swap_chain_format);
-    color_target.blend = @ptrCast(*const c.WGPUBlendState, &blend);
-    color_target.writeMask = c.WGPUColorWriteMask_All;
-
-    var fragment = std.mem.zeroes(c.WGPUFragmentState);
-    fragment.module = @ptrCast(c.WGPUShaderModule, fs_module.ptr);
-    fragment.entryPoint = "main";
-    fragment.targetCount = 1;
-    fragment.targets = &color_target;
-
-    var pipeline_descriptor = std.mem.zeroes(c.WGPURenderPipelineDescriptor);
-    pipeline_descriptor.fragment = &fragment;
-
-    // Other state
-    pipeline_descriptor.layout = null;
-    pipeline_descriptor.depthStencil = null;
-
-    pipeline_descriptor.vertex.module = @ptrCast(c.WGPUShaderModule, vs_module.ptr);
-    pipeline_descriptor.vertex.entryPoint = "main";
-    pipeline_descriptor.vertex.bufferCount = 0;
-    pipeline_descriptor.vertex.buffers = null;
-
-    pipeline_descriptor.multisample.count = 1;
-    pipeline_descriptor.multisample.mask = 0xFFFFFFFF;
-    pipeline_descriptor.multisample.alphaToCoverageEnabled = false;
-
-    pipeline_descriptor.primitive.frontFace = c.WGPUFrontFace_CCW;
-    pipeline_descriptor.primitive.cullMode = c.WGPUCullMode_None;
-    pipeline_descriptor.primitive.topology = c.WGPUPrimitiveTopology_TriangleList;
-    pipeline_descriptor.primitive.stripIndexFormat = c.WGPUIndexFormat_Undefined;
-
-    const pipeline = c.wgpuDeviceCreateRenderPipeline(@ptrCast(c.WGPUDevice, setup.device.ptr), &pipeline_descriptor);
+    const color_target = gpu.ColorTargetState{
+        .format = window_data.swap_chain_format,
+        .blend = &blend,
+        .write_mask = .all,
+    };
+    const fragment = gpu.FragmentState{
+        .module = fs_module,
+        .entry_point = "main",
+        .targets = &.{color_target},
+        .constants = null,
+    };
+    const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
+        .fragment = &fragment,
+        .layout = null,
+        .depth_stencil = null,
+        .vertex = .{
+            .module = vs_module,
+            .entry_point = "main",
+            .buffers = null,
+        },
+        .multisample = .{
+            .count = 1,
+            .mask = 0xFFFFFFFF,
+            .alpha_to_coverage_enabled = false,
+        },
+        .primitive = .{
+            .front_face = .ccw,
+            .cull_mode = .none,
+            .topology = .triangle_list,
+            .strip_index_format = .none,
+        },
+    };
+    const pipeline = setup.device.createRenderPipeline(&pipeline_descriptor);
 
     vs_module.release();
     fs_module.release();
@@ -172,7 +171,7 @@ const WindowData = struct {
 const FrameParams = struct {
     window: glfw.Window,
     device: gpu.Device,
-    pipeline: c.WGPURenderPipeline,
+    pipeline: gpu.RenderPipeline,
     queue: gpu.Queue,
 };
 
@@ -209,7 +208,7 @@ fn frame(params: FrameParams) !void {
 
     const encoder = c.wgpuDeviceCreateCommandEncoder(@ptrCast(c.WGPUDevice, params.device.ptr), null);
     const pass = c.wgpuCommandEncoderBeginRenderPass(encoder, &render_pass_info);
-    c.wgpuRenderPassEncoderSetPipeline(pass, params.pipeline);
+    c.wgpuRenderPassEncoderSetPipeline(pass, @ptrCast(c.WGPURenderPipeline, params.pipeline.ptr));
     c.wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
     c.wgpuRenderPassEncoderEnd(pass);
     c.wgpuRenderPassEncoderRelease(pass);
