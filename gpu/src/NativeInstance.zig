@@ -378,6 +378,15 @@ const device_vtable = Device.VTable{
             c.wgpuDeviceDestroy(@ptrCast(c.WGPUDevice, ptr));
         }
     }).destroy,
+    .createCommandEncoder = (struct {
+        pub fn createCommandEncoder(ptr: *anyopaque, descriptor: *const CommandEncoder.Descriptor) CommandEncoder {
+            const desc = c.WGPUCommandEncoderDescriptor{
+                .nextInChain = null,
+                .label = descriptor.label,
+            };
+            return wrapCommandEncoder(c.wgpuDeviceCreateCommandEncoder(@ptrCast(c.WGPUDevice, ptr), &desc));
+        }
+    }).createCommandEncoder,
     .createRenderPipeline = (struct {
         pub fn createRenderPipeline(ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
             var tmp_depth_stencil: c.WGPUDepthStencilState = undefined;

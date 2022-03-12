@@ -13,6 +13,7 @@ const ShaderModule = @import("ShaderModule.zig");
 const Surface = @import("Surface.zig");
 const SwapChain = @import("SwapChain.zig");
 const RenderPipeline = @import("RenderPipeline.zig");
+const CommandEncoder = @import("CommandEncoder.zig");
 
 const Device = @This();
 
@@ -26,7 +27,7 @@ pub const VTable = struct {
     // WGPU_EXPORT WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const * descriptor);
     // WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor);
     // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
-    // WGPU_EXPORT WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommandEncoderDescriptor const * descriptor);
+    createCommandEncoder: fn (ptr: *anyopaque, descriptor: *const CommandEncoder.Descriptor) CommandEncoder,
     // WGPU_EXPORT WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor);
     // WGPU_EXPORT void wgpuDeviceCreateComputePipelineAsync(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor, WGPUCreateComputePipelineAsyncCallback callback, void * userdata);
     // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device);
@@ -80,6 +81,10 @@ pub inline fn nativeCreateSwapChain(device: Device, surface: ?Surface, descripto
 
 pub inline fn destroy(device: Device) void {
     device.vtable.destroy(device.ptr);
+}
+
+pub inline fn createCommandEncoder(device: Device, descriptor: *const CommandEncoder.Descriptor) CommandEncoder {
+    return device.vtable.createCommandEncoder(device.ptr, descriptor);
 }
 
 pub inline fn createRenderPipeline(device: Device, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
