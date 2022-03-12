@@ -203,15 +203,15 @@ fn frame(params: FrameParams) !void {
     render_pass_info.colorAttachments = &color_attachment;
     render_pass_info.depthStencilAttachment = null;
 
-    const encoder = c.wgpuDeviceCreateCommandEncoder(@ptrCast(c.WGPUDevice, params.device.ptr), null);
-    const pass = c.wgpuCommandEncoderBeginRenderPass(encoder, &render_pass_info);
+    const encoder = params.device.createCommandEncoder(null);
+    const pass = c.wgpuCommandEncoderBeginRenderPass(@ptrCast(c.WGPUCommandEncoder, encoder.ptr), &render_pass_info);
     c.wgpuRenderPassEncoderSetPipeline(pass, @ptrCast(c.WGPURenderPipeline, params.pipeline.ptr));
     c.wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
     c.wgpuRenderPassEncoderEnd(pass);
     c.wgpuRenderPassEncoderRelease(pass);
 
-    var commands = c.wgpuCommandEncoderFinish(encoder, null);
-    c.wgpuCommandEncoderRelease(encoder);
+    var commands = c.wgpuCommandEncoderFinish(@ptrCast(c.WGPUCommandEncoder, encoder.ptr), null);
+    encoder.release();
 
     const buf = gpu.CommandBuffer{ .ptr = &commands, .vtable = undefined };
     params.queue.submit(1, &buf);
