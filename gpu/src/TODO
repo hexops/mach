@@ -143,12 +143,6 @@ typedef struct WGPUPrimitiveDepthClampingState {
     bool clampDepth;
 } WGPUPrimitiveDepthClampingState;
 
-typedef struct WGPURenderPassTimestampWrite {
-    WGPUQuerySet querySet;
-    uint32_t queryIndex;
-    WGPURenderPassTimestampLocation location;
-} WGPURenderPassTimestampWrite;
-
 typedef struct WGPURenderPassDepthStencilAttachment {
     WGPUTextureView view;
     WGPULoadOp depthLoadOp;
