@@ -110,7 +110,7 @@ pub const RenderPassDepthStencilAttachment = struct {
 
 pub const RenderPassColorAttachment = struct {
     view: TextureView,
-    resolve_target: TextureView,
+    resolve_target: ?TextureView,
     load_op: LoadOp,
     store_op: StoreOp,
     clear_value: Color,

@@ -998,25 +998,66 @@ const command_encoder_vtable = CommandEncoder.VTable{
     }).setLabel,
     .beginRenderPass = (struct {
         pub fn beginRenderPass(ptr: *anyopaque, d: *const RenderPassEncoder.Descriptor) RenderPassEncoder {
+            var few_color_attachments: [8]c.WGPURenderPassColorAttachment = undefined;
+            const color_attachments = if (d.color_attachments.len <= 8) blk: {
+                for (d.color_attachments) |v, i| {
+                    few_color_attachments[i] = c.WGPURenderPassColorAttachment{
+                        .view = @ptrCast(c.WGPUTextureView, v.view.ptr),
+                        .resolveTarget = if (v.resolve_target) |t| @ptrCast(c.WGPUTextureView, t.ptr) else null,
+                        .loadOp = @enumToInt(v.load_op),
+                        .storeOp = @enumToInt(v.load_op),
+                        .clearValue = @bitCast(c.WGPUColor, v.clear_value),
+                        // deprecated:
+                        .clearColor = c.WGPUColor{
+                            .r = std.math.nan(f32),
+                            .g = std.math.nan(f32),
+                            .b = std.math.nan(f32),
+                            .a = std.math.nan(f32),
+                        },
+                    };
+                }
+                break :blk few_color_attachments[0..d.color_attachments.len];
+            } else blk: {
+                const mem = std.heap.page_allocator.alloc(c.WGPURenderPassColorAttachment, d.color_attachments.len) catch unreachable;
+                for (d.color_attachments) |v, i| {
+                    mem[i] = c.WGPURenderPassColorAttachment{
+                        .view = @ptrCast(c.WGPUTextureView, v.view.ptr),
+                        .resolveTarget = if (v.resolve_target) |t| @ptrCast(c.WGPUTextureView, t.ptr) else null,
+                        .loadOp = @enumToInt(v.load_op),
+                        .storeOp = @enumToInt(v.load_op),
+                        .clearValue = @bitCast(c.WGPUColor, v.clear_value),
+                        // deprecated:
+                        .clearColor = c.WGPUColor{
+                            .r = std.math.nan(f32),
+                            .g = std.math.nan(f32),
+                            .b = std.math.nan(f32),
+                            .a = std.math.nan(f32),
+                        },
+                    };
+                }
+                break :blk mem;
+            };
+            defer if (d.color_attachments.len > 8) std.heap.page_allocator.free(color_attachments);
+
             const desc = c.WGPURenderPassDescriptor{
                 .nextInChain = null,
                 .label = if (d.label) |l| l else null,
-                .colorAttachmentCount = 0, // TODO
-                .colorAttachments = null, // TODO
-                .depthStencilAttachment = &c.WGPURenderPassDepthStencilAttachment{
-                    .view = @ptrCast(c.WGPUTextureView, d.depth_stencil_attachment.view.ptr),
-                    .depthLoadOp = @enumToInt(d.depth_stencil_attachment.depth_load_op),
-                    .depthStoreOp = @enumToInt(d.depth_stencil_attachment.depth_store_op),
-                    .clearDepth = d.depth_stencil_attachment.clear_depth,
-                    .depthClearValue = d.depth_stencil_attachment.depth_clear_value,
-                    .depthReadOnly = d.depth_stencil_attachment.depth_read_only,
-                    .stencilLoadOp = @enumToInt(d.depth_stencil_attachment.stencil_load_op),
-                    .stencilStoreOp = @enumToInt(d.depth_stencil_attachment.stencil_store_op),
-                    .clearStencil = d.depth_stencil_attachment.clear_stencil,
-                    .stencilClearValue = d.depth_stencil_attachment.stencil_clear_value,
-                    .stencilReadOnly = d.depth_stencil_attachment.stencil_read_only,
-                },
-                .occlusionQuerySet = @ptrCast(c.WGPUQuerySet, d.occlusion_query_set.ptr),
+                .colorAttachmentCount = @intCast(u32, color_attachments.len),
+                .colorAttachments = &color_attachments[0],
+                .depthStencilAttachment = if (d.depth_stencil_attachment) |v| &c.WGPURenderPassDepthStencilAttachment{
+                    .view = @ptrCast(c.WGPUTextureView, v.view.ptr),
+                    .depthLoadOp = @enumToInt(v.depth_load_op),
+                    .depthStoreOp = @enumToInt(v.depth_store_op),
+                    .clearDepth = v.clear_depth,
+                    .depthClearValue = v.depth_clear_value,
+                    .depthReadOnly = v.depth_read_only,
+                    .stencilLoadOp = @enumToInt(v.stencil_load_op),
+                    .stencilStoreOp = @enumToInt(v.stencil_store_op),
+                    .clearStencil = v.clear_stencil,
+                    .stencilClearValue = v.stencil_clear_value,
+                    .stencilReadOnly = v.stencil_read_only,
+                } else null,
+                .occlusionQuerySet = if (d.occlusion_query_set) |v| @ptrCast(c.WGPUQuerySet, v.ptr) else null,
                 .timestampWriteCount = 0, // TODO
                 .timestampWrites = null, // TODO
             };

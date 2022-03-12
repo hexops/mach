@@ -53,9 +53,9 @@ pub inline fn setLabel(pass: RenderPassEncoder, label: [:0]const u8) void {
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     color_attachments: []const RenderPassColorAttachment,
-    depth_stencil_attachment: *const RenderPassDepthStencilAttachment,
-    occlusion_query_set: QuerySet,
-    timestamp_writes: []RenderPassTimestampWrite,
+    depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment,
+    occlusion_query_set: ?QuerySet = null,
+    timestamp_writes: ?[]RenderPassTimestampWrite = null,
 };
 
 test "syntax" {
