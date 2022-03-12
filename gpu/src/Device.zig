@@ -12,6 +12,7 @@ const Queue = @import("Queue.zig");
 const ShaderModule = @import("ShaderModule.zig");
 const Surface = @import("Surface.zig");
 const SwapChain = @import("SwapChain.zig");
+const RenderPipeline = @import("RenderPipeline.zig");
 
 const Device = @This();
 
@@ -33,7 +34,7 @@ pub const VTable = struct {
     // WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
     // WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
     // WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
-    // WGPU_EXPORT WGPURenderPipeline wgpuDeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor);
+    createRenderPipeline: fn (ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline,
     // WGPU_EXPORT void wgpuDeviceCreateRenderPipelineAsync(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor, WGPUCreateRenderPipelineAsyncCallback callback, void * userdata);
     // WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor);
     createShaderModule: fn (ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule,
@@ -81,6 +82,10 @@ pub inline fn destroy(device: Device) void {
     device.vtable.destroy(device.ptr);
 }
 
+pub inline fn createRenderPipeline(device: Device, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
+    return device.vtable.createRenderPipeline(device.ptr, descriptor);
+}
+
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     required_features: ?[]Feature = null,
@@ -100,6 +105,7 @@ test "syntax" {
     _ = createShaderModule;
     _ = nativeCreateSwapChain;
     _ = destroy;
+    _ = createRenderPipeline;
     _ = Descriptor;
     _ = LostReason;
 }

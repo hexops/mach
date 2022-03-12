@@ -378,7 +378,67 @@ const device_vtable = Device.VTable{
             c.wgpuDeviceDestroy(@ptrCast(c.WGPUDevice, ptr));
         }
     }).destroy,
+    .createRenderPipeline = (struct {
+        pub fn createRenderPipeline(ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
+            const desc = convertRenderPipelineDescriptor(descriptor);
+            return wrapRenderPipeline(c.wgpuDeviceCreateRenderPipeline(@ptrCast(c.WGPUDevice, ptr), &desc));
+        }
+    }).createRenderPipeline,
 };
+
+inline fn convertRenderPipelineDescriptor(d: *const RenderPipeline.Descriptor) c.WGPURenderPipelineDescriptor {
+    return c.WGPURenderPipelineDescriptor{
+        .nextInChain = null,
+        .label = d.label,
+        .layout = @ptrCast(c.WGPUPipelineLayout, d.layout.ptr),
+        .vertex = c.WGPUVertexState{
+            .nextInChain = null,
+            .module = @ptrCast(c.WGPUShaderModule, d.vertex.module.ptr),
+            .entryPoint = d.vertex.entry_point,
+            .constantCount = 0, // d.vertex.constants.len,
+            .constants = null, // TODO: need to convert entire list to WGPUConstantEntry
+            .bufferCount = 0, // d.vertex.buffers.len
+            .buffers = null, // TODO: need to convert entire list to WGPUVertexBufferLayout
+        },
+        .primitive = c.WGPUPrimitiveState{
+            .nextInChain = null,
+            .topology = @enumToInt(d.primitive.topology),
+            .stripIndexFormat = @enumToInt(d.primitive.strip_index_format),
+            .frontFace = @enumToInt(d.primitive.front_face),
+            .cullMode = @enumToInt(d.primitive.cull_mode),
+        },
+        // TODO: don't create ptr on stack or something
+        .depthStencil = &c.WGPUDepthStencilState{
+            .nextInChain = null,
+            .format = @enumToInt(d.depth_stencil.format),
+            .depthWriteEnabled = d.depth_stencil.depth_write_enabled,
+            .depthCompare = @enumToInt(d.depth_stencil.depth_compare),
+            .stencilFront = @bitCast(c.WGPUStencilFaceState, d.depth_stencil.stencil_front),
+            .stencilBack = @bitCast(c.WGPUStencilFaceState, d.depth_stencil.stencil_back),
+            .stencilReadMask = d.depth_stencil.stencil_read_mask,
+            .stencilWriteMask = d.depth_stencil.stencil_write_mask,
+            .depthBias = d.depth_stencil.depth_bias,
+            .depthBiasSlopeScale = d.depth_stencil.depth_bias_slope_scale,
+            .depthBiasClamp = d.depth_stencil.depth_bias_clamp,
+        },
+        .multisample = c.WGPUMultisampleState{
+            .nextInChain = null,
+            .count = d.multisample.count,
+            .mask = d.multisample.mask,
+            .alphaToCoverageEnabled = d.multisample.alpha_to_coverage_enabled,
+        },
+        // TODO: don't create ptr on stack or something
+        .fragment = &c.WGPUFragmentState{
+            .nextInChain = null,
+            .module = @ptrCast(c.WGPUShaderModule, d.fragment.module.ptr),
+            .entryPoint = d.vertex.entry_point,
+            .constantCount = 0, // d.fragment.constants.len,
+            .constants = null, // TODO: need to convert entire list to WGPUConstantEntry
+            .targetCount = 0, // d.fragment.targets.len,
+            .targets = null, // TODO: need to convert entire list to WGPUColorTargetState
+        },
+    };
+}
 
 // TODO: maybe make Limits an extern struct that can be cast?
 fn convertLimits(l: Limits) c.WGPULimits {
