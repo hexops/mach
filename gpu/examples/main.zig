@@ -211,12 +211,11 @@ fn frame(params: FrameParams) !void {
     pass.end();
     pass.release();
 
-    var commands = encoder.finish(null);
+    var command = encoder.finish(null);
     encoder.release();
 
-    const buf = gpu.CommandBuffer{ .ptr = &commands, .vtable = undefined };
-    params.queue.submit(1, &buf);
-    commands.release();
+    params.queue.submit(&.{command});
+    command.release();
     pl.swap_chain.?.present();
     back_buffer_view.release();
 }

@@ -510,7 +510,7 @@ const queue_vtable = Queue.VTable{
         }
     }).release,
     .submit = (struct {
-        pub fn submit(queue: Queue, command_count: u32, commands: *const CommandBuffer) void {
+        pub fn submit(queue: Queue, cmds: []const CommandBuffer) void {
             const wgpu_queue = @ptrCast(c.WGPUQueue, queue.ptr);
 
             if (queue.on_submitted_work_done) |on_submitted_work_done| {
@@ -533,10 +533,25 @@ const queue_vtable = Queue.VTable{
                 c.wgpuQueueOnSubmittedWorkDone(wgpu_queue, signal_value, callback, &mut_on_submitted_work_done);
             }
 
+            var few_commands: [16]c.WGPUCommandBuffer = undefined;
+            const commands = if (cmds.len <= 8) blk: {
+                for (cmds) |cmd, i| {
+                    few_commands[i] = @ptrCast(c.WGPUCommandBuffer, cmd.ptr);
+                }
+                break :blk few_commands[0..cmds.len];
+            } else blk: {
+                const mem = std.heap.page_allocator.alloc(c.WGPUCommandBuffer, cmds.len) catch unreachable;
+                for (cmds) |cmd, i| {
+                    mem[i] = @ptrCast(c.WGPUCommandBuffer, cmd.ptr);
+                }
+                break :blk mem;
+            };
+            defer if (cmds.len > 8) std.heap.page_allocator.free(cmds);
+
             c.wgpuQueueSubmit(
                 wgpu_queue,
-                command_count,
-                @ptrCast(*c.WGPUCommandBuffer, @alignCast(@alignOf(*c.WGPUCommandBuffer), commands.ptr)),
+                @intCast(u32, commands.len),
+                @ptrCast(*c.WGPUCommandBuffer, &commands[0]),
             );
         }
     }).submit,

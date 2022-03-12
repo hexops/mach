@@ -14,7 +14,7 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     // TODO: dawn specific?
     // copyTextureForBrowser: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D, options: *const CopyTextureForBrowserOptions) void,
-    submit: fn (queue: Queue, command_count: u32, commands: *const CommandBuffer) void,
+    submit: fn (queue: Queue, commands: []const CommandBuffer) void,
     // TODO:
     // writeBuffer: fn (ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const anyopaque, size: usize);
     // writeTexture: fn (ptr: *anyopaque, destination: *const ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const TextureDataLayout, write_size: *const Extent3D);
@@ -28,8 +28,8 @@ pub inline fn release(queue: Queue) void {
     queue.vtable.release(queue.ptr);
 }
 
-pub inline fn submit(queue: Queue, command_count: u32, commands: *const CommandBuffer) void {
-    queue.vtable.submit(queue, command_count, commands);
+pub inline fn submit(queue: Queue, commands: []const CommandBuffer) void {
+    queue.vtable.submit(queue, commands);
 }
 
 pub const OnSubmittedWorkDone = struct {
