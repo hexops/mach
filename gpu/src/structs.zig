@@ -102,6 +102,14 @@ pub const RenderPassDepthStencilAttachment = struct {
     stencil_read_only: bool,
 };
 
+pub const RenderPassColorAttachment = struct {
+    view: TextureView,
+    resolve_target: TextureView,
+    load_op: LoadOp,
+    store_op: StoreOp,
+    clear_value: Color,
+};
+
 test "syntax" {
     _ = CompilationMessage;
     _ = CompilationInfo;
@@ -114,4 +122,5 @@ test "syntax" {
     _ = ComputePassTimestampWrite;
     _ = RenderPassTimestampWrite;
     _ = RenderPassDepthStencilAttachment;
+    _ = RenderPassColorAttachment;
 }
