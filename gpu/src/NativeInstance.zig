@@ -741,6 +741,11 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             c.wgpuRenderPassEncoderSetPipeline(@ptrCast(c.WGPURenderPassEncoder, ptr), @ptrCast(c.WGPURenderPipeline, pipeline.ptr));
         }
     }).setPipeline,
+    .draw = (struct {
+        pub fn draw(ptr: *anyopaque, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
+            c.wgpuRenderPassEncoderDraw(@ptrCast(c.WGPURenderPassEncoder, ptr), vertex_count, instance_count, first_vertex, first_instance);
+        }
+    }).draw,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {
