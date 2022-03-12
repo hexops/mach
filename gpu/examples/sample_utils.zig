@@ -20,7 +20,7 @@ fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*any
 const Setup = struct {
     native_instance: gpu.NativeInstance,
     instance: c.WGPUInstance,
-    backend_type: c.WGPUBackendType,
+    backend_type: gpu.Adapter.BackendType,
     device: gpu.Device,
     window: glfw.Window,
 };
@@ -32,24 +32,24 @@ fn getEnvVarOwned(allocator: std.mem.Allocator, key: []const u8) error{ OutOfMem
     };
 }
 
-fn detectBackendType(allocator: std.mem.Allocator) !c.WGPUBackendType {
-    const WGPU_BACKEND = try getEnvVarOwned(allocator, "WGPU_BACKEND");
-    if (WGPU_BACKEND) |backend| {
+fn detectBackendType(allocator: std.mem.Allocator) !gpu.Adapter.BackendType {
+    const GPU_BACKEND = try getEnvVarOwned(allocator, "GPU_BACKEND");
+    if (GPU_BACKEND) |backend| {
         defer allocator.free(backend);
-        if (std.ascii.eqlIgnoreCase(backend, "opengl")) return c.WGPUBackendType_OpenGL;
-        if (std.ascii.eqlIgnoreCase(backend, "opengles")) return c.WGPUBackendType_OpenGLES;
-        if (std.ascii.eqlIgnoreCase(backend, "d3d11")) return c.WGPUBackendType_D3D11;
-        if (std.ascii.eqlIgnoreCase(backend, "d3d12")) return c.WGPUBackendType_D3D12;
-        if (std.ascii.eqlIgnoreCase(backend, "metal")) return c.WGPUBackendType_Metal;
-        if (std.ascii.eqlIgnoreCase(backend, "null")) return c.WGPUBackendType_Null;
-        if (std.ascii.eqlIgnoreCase(backend, "vulkan")) return c.WGPUBackendType_Vulkan;
+        if (std.ascii.eqlIgnoreCase(backend, "opengl")) return .opengl;
+        if (std.ascii.eqlIgnoreCase(backend, "opengles")) return .opengles;
+        if (std.ascii.eqlIgnoreCase(backend, "d3d11")) return .d3d11;
+        if (std.ascii.eqlIgnoreCase(backend, "d3d12")) return .d3d12;
+        if (std.ascii.eqlIgnoreCase(backend, "metal")) return .metal;
+        if (std.ascii.eqlIgnoreCase(backend, "null")) return .nul;
+        if (std.ascii.eqlIgnoreCase(backend, "vulkan")) return .vulkan;
         @panic("unknown BACKEND type");
     }
 
     const target = @import("builtin").target;
-    if (target.isDarwin()) return c.WGPUBackendType_Metal;
-    if (target.os.tag == .windows) return c.WGPUBackendType_D3D12;
-    return c.WGPUBackendType_Vulkan;
+    if (target.isDarwin()) return .metal;
+    if (target.os.tag == .windows) return .d3d12;
+    return .vulkan;
 }
 
 pub fn setup(allocator: std.mem.Allocator) !Setup {
@@ -112,9 +112,9 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
     };
 }
 
-fn glfwWindowHintsForBackend(backend: c.WGPUBackendType) glfw.Window.Hints {
+fn glfwWindowHintsForBackend(backend: gpu.Adapter.BackendType) glfw.Window.Hints {
     return switch (backend) {
-        c.WGPUBackendType_OpenGL => .{
+        .opengl => .{
             // Ask for OpenGL 4.4 which is what the GL backend requires for compute shaders and
             // texture views.
             .context_version_major = 4,
@@ -122,7 +122,7 @@ fn glfwWindowHintsForBackend(backend: c.WGPUBackendType) glfw.Window.Hints {
             .opengl_forward_compat = true,
             .opengl_profile = .opengl_core_profile,
         },
-        c.WGPUBackendType_OpenGLES => .{
+        .opengles => .{
             .context_version_major = 3,
             .context_version_minor = 1,
             .client_api = .opengl_es_api,
@@ -136,21 +136,25 @@ fn glfwWindowHintsForBackend(backend: c.WGPUBackendType) glfw.Window.Hints {
     };
 }
 
-fn discoverAdapters(instance: c.MachDawnNativeInstance, window: glfw.Window, typ: c.WGPUBackendType) !void {
-    if (typ == c.WGPUBackendType_OpenGL) {
-        try glfw.makeContextCurrent(window);
-        const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGL{
-            .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*anyopaque, glfw.getProcAddress),
-        };
-        _ = c.machDawnNativeInstance_discoverAdapters(instance, typ, &adapter_options);
-    } else if (typ == c.WGPUBackendType_OpenGLES) {
-        try glfw.makeContextCurrent(window);
-        const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGLES{
-            .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*anyopaque, glfw.getProcAddress),
-        };
-        _ = c.machDawnNativeInstance_discoverAdapters(instance, typ, &adapter_options);
-    } else {
-        c.machDawnNativeInstance_discoverDefaultAdapters(instance);
+fn discoverAdapters(instance: c.MachDawnNativeInstance, window: glfw.Window, typ: gpu.Adapter.BackendType) !void {
+    switch (typ) {
+        .opengl => {
+            try glfw.makeContextCurrent(window);
+            const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGL{
+                .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*anyopaque, glfw.getProcAddress),
+            };
+            _ = c.machDawnNativeInstance_discoverAdapters(instance, @enumToInt(typ), &adapter_options);
+        },
+        .opengles => {
+            try glfw.makeContextCurrent(window);
+            const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGLES{
+                .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*anyopaque, glfw.getProcAddress),
+            };
+            _ = c.machDawnNativeInstance_discoverAdapters(instance, @enumToInt(typ), &adapter_options);
+        },
+        else => {
+            c.machDawnNativeInstance_discoverDefaultAdapters(instance);
+        },
     }
 }
 
