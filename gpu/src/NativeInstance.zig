@@ -736,6 +736,11 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             c.wgpuRenderPassEncoderSetLabel(@ptrCast(c.WGPURenderPassEncoder, ptr), label);
         }
     }).setLabel,
+    .setPipeline = (struct {
+        pub fn setPipeline(ptr: *anyopaque, pipeline: RenderPipeline) void {
+            c.wgpuRenderPassEncoderSetPipeline(@ptrCast(c.WGPURenderPassEncoder, ptr), @ptrCast(c.WGPURenderPipeline, pipeline.ptr));
+        }
+    }).setPipeline,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {
