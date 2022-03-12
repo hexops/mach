@@ -89,17 +89,22 @@ pub fn main() !void {
     });
 
     // Fragment state
-    var blend = std.mem.zeroes(c.WGPUBlendState);
-    blend.color.operation = c.WGPUBlendOperation_Add;
-    blend.color.srcFactor = c.WGPUBlendFactor_One;
-    blend.color.dstFactor = c.WGPUBlendFactor_One;
-    blend.alpha.operation = c.WGPUBlendOperation_Add;
-    blend.alpha.srcFactor = c.WGPUBlendFactor_One;
-    blend.alpha.dstFactor = c.WGPUBlendFactor_One;
+    const blend = gpu.BlendState{
+        .color = .{
+            .operation = .add,
+            .src_factor = .one,
+            .dst_factor = .one,
+        },
+        .alpha = .{
+            .operation = .add,
+            .src_factor = .one,
+            .dst_factor = .one,
+        },
+    };
 
     var color_target = std.mem.zeroes(c.WGPUColorTargetState);
     color_target.format = @enumToInt(window_data.swap_chain_format);
-    color_target.blend = &blend;
+    color_target.blend = @ptrCast(*const c.WGPUBlendState, &blend);
     color_target.writeMask = c.WGPUColorWriteMask_All;
 
     var fragment = std.mem.zeroes(c.WGPUFragmentState);
