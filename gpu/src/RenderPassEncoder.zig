@@ -2,6 +2,7 @@ const QuerySet = @import("QuerySet.zig");
 const RenderPassColorAttachment = @import("structs.zig").RenderPassColorAttachment;
 const RenderPassDepthStencilAttachment = @import("structs.zig").RenderPassDepthStencilAttachment;
 const RenderPassTimestampWrite = @import("structs.zig").RenderPassTimestampWrite;
+const RenderPipeline = @import("RenderPipeline.zig");
 
 const RenderPassEncoder = @This();
 
@@ -30,6 +31,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void wgpuRenderPassEncoderSetBlendConstant(WGPURenderPassEncoder renderPassEncoder, WGPUColor const * color);
     // WGPU_EXPORT void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
+    setPipeline: fn (ptr: *anyopaque, pipeline: RenderPipeline) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderSetPipeline(WGPURenderPassEncoder renderPassEncoder, WGPURenderPipeline pipeline);
     // WGPU_EXPORT void wgpuRenderPassEncoderSetScissorRect(WGPURenderPassEncoder renderPassEncoder, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
     // WGPU_EXPORT void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder renderPassEncoder, uint32_t reference);
@@ -50,6 +52,10 @@ pub inline fn setLabel(pass: RenderPassEncoder, label: [:0]const u8) void {
     pass.vtable.setLabel(pass.ptr, label);
 }
 
+pub inline fn setPipeline(pass: RenderPassEncoder, pipeline: RenderPipeline) void {
+    pass.vtable.setPipeline(pass.ptr, pipeline);
+}
+
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     color_attachments: []const RenderPassColorAttachment,
@@ -62,5 +68,7 @@ test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = setLabel;
+    _ = setPipeline;
     _ = Descriptor;
 }
