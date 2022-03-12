@@ -182,15 +182,12 @@ fn frame(params: FrameParams) !void {
         const use_legacy_api = pl.surface == null;
         if (!use_legacy_api) {
             pl.swap_chain = params.device.nativeCreateSwapChain(pl.surface, &pl.target_desc);
-        } else {
-            c.wgpuSwapChainConfigure(
-                @ptrCast(c.WGPUSwapChain, pl.swap_chain.?.ptr),
-                @enumToInt(pl.swap_chain_format),
-                c.WGPUTextureUsage_RenderAttachment,
-                @intCast(u32, pl.target_desc.width),
-                @intCast(u32, pl.target_desc.height),
-            );
-        }
+        } else pl.swap_chain.?.configure(
+            pl.swap_chain_format,
+            .render_attachment,
+            pl.target_desc.width,
+            pl.target_desc.height,
+        );
         pl.current_desc = pl.target_desc;
     }
 
