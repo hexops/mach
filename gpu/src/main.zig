@@ -102,6 +102,7 @@ pub const RenderPassDepthStencilAttachment = @import("structs.zig").RenderPassDe
 pub const RenderPassColorAttachment = @import("structs.zig").RenderPassColorAttachment;
 pub const VertexState = @import("structs.zig").VertexState;
 pub const FragmentState = @import("structs.zig").FragmentState;
+pub const ColorTargetState = @import("structs.zig").ColorTargetState;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;
