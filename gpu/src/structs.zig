@@ -6,6 +6,7 @@ const TextureView = @import("TextureView.zig");
 const ShaderModule = @import("ShaderModule.zig");
 const QuerySet = @import("QuerySet.zig");
 const StencilFaceState = @import("data.zig").StencilFaceState;
+const Color = @import("data.zig").Color;
 const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 const IndexFormat = @import("enums.zig").IndexFormat;
