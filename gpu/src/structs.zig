@@ -7,6 +7,7 @@ const ShaderModule = @import("ShaderModule.zig");
 const QuerySet = @import("QuerySet.zig");
 const StencilFaceState = @import("data.zig").StencilFaceState;
 const Color = @import("data.zig").Color;
+const VertexBufferLayout = @import("data.zig").VertexBufferLayout;
 const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 const IndexFormat = @import("enums.zig").IndexFormat;
@@ -118,6 +119,13 @@ pub const VertexState = struct {
     buffers: []const VertexBufferLayout,
 };
 
+pub const FragmentState = struct {
+    module: ShaderModule,
+    entry_point: [*:0]const u8,
+    constants: []const ConstantEntry,
+    targets: []const ColorTargetState,
+};
+
 test "syntax" {
     _ = CompilationMessage;
     _ = CompilationInfo;
@@ -132,4 +140,5 @@ test "syntax" {
     _ = RenderPassDepthStencilAttachment;
     _ = RenderPassColorAttachment;
     _ = VertexState;
+    _ = FragmentState;
 }
