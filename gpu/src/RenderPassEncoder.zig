@@ -20,7 +20,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder renderPassEncoder, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance);
     // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexedIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
     // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
-    // WGPU_EXPORT void wgpuRenderPassEncoderEnd(WGPURenderPassEncoder renderPassEncoder);
+    end: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder renderPassEncoder);
     // WGPU_EXPORT void wgpuRenderPassEncoderEndPass(WGPURenderPassEncoder renderPassEncoder);
     // WGPU_EXPORT void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder renderPassEncoder, uint32_t bundlesCount, WGPURenderBundle const * bundles);
@@ -56,6 +56,10 @@ pub inline fn draw(
     first_instance: u32,
 ) void {
     pass.vtable.draw(pass.ptr, vertex_count, instance_count, first_vertex, first_instance);
+}
+
+pub inline fn end(pass: RenderPassEncoder) void {
+    pass.vtable.end(pass.ptr);
 }
 
 pub inline fn setLabel(pass: RenderPassEncoder, label: [:0]const u8) void {

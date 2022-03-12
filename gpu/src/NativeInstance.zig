@@ -731,6 +731,11 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             c.wgpuRenderPassEncoderRelease(@ptrCast(c.WGPURenderPassEncoder, ptr));
         }
     }).release,
+    .end = (struct {
+        pub fn end(ptr: *anyopaque) void {
+            c.wgpuRenderPassEncoderEnd(@ptrCast(c.WGPURenderPassEncoder, ptr));
+        }
+    }).end,
     .setLabel = (struct {
         pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
             c.wgpuRenderPassEncoderSetLabel(@ptrCast(c.WGPURenderPassEncoder, ptr), label);
