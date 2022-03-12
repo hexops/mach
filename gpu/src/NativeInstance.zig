@@ -380,13 +380,43 @@ const device_vtable = Device.VTable{
     }).destroy,
     .createRenderPipeline = (struct {
         pub fn createRenderPipeline(ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
-            const desc = convertRenderPipelineDescriptor(descriptor);
+            var tmp_depth_stencil: c.WGPUDepthStencilState = undefined;
+            var tmp_fragment_state: c.WGPUFragmentState = undefined;
+            const desc = convertRenderPipelineDescriptor(descriptor, &tmp_depth_stencil, &tmp_fragment_state);
             return wrapRenderPipeline(c.wgpuDeviceCreateRenderPipeline(@ptrCast(c.WGPUDevice, ptr), &desc));
         }
     }).createRenderPipeline,
 };
 
-inline fn convertRenderPipelineDescriptor(d: *const RenderPipeline.Descriptor) c.WGPURenderPipelineDescriptor {
+inline fn convertRenderPipelineDescriptor(
+    d: *const RenderPipeline.Descriptor,
+    tmp_depth_stencil: *c.WGPUDepthStencilState,
+    tmp_fragment_state: *c.WGPUFragmentState,
+) c.WGPURenderPipelineDescriptor {
+    tmp_depth_stencil.* = c.WGPUDepthStencilState{
+        .nextInChain = null,
+        .format = @enumToInt(d.depth_stencil.format),
+        .depthWriteEnabled = d.depth_stencil.depth_write_enabled,
+        .depthCompare = @enumToInt(d.depth_stencil.depth_compare),
+        .stencilFront = @bitCast(c.WGPUStencilFaceState, d.depth_stencil.stencil_front),
+        .stencilBack = @bitCast(c.WGPUStencilFaceState, d.depth_stencil.stencil_back),
+        .stencilReadMask = d.depth_stencil.stencil_read_mask,
+        .stencilWriteMask = d.depth_stencil.stencil_write_mask,
+        .depthBias = d.depth_stencil.depth_bias,
+        .depthBiasSlopeScale = d.depth_stencil.depth_bias_slope_scale,
+        .depthBiasClamp = d.depth_stencil.depth_bias_clamp,
+    };
+
+    tmp_fragment_state.* = c.WGPUFragmentState{
+        .nextInChain = null,
+        .module = @ptrCast(c.WGPUShaderModule, d.fragment.module.ptr),
+        .entryPoint = d.vertex.entry_point,
+        .constantCount = 0, // d.fragment.constants.len,
+        .constants = null, // TODO: need to convert entire list to WGPUConstantEntry
+        .targetCount = 0, // d.fragment.targets.len,
+        .targets = null, // TODO: need to convert entire list to WGPUColorTargetState
+    };
+
     return c.WGPURenderPipelineDescriptor{
         .nextInChain = null,
         .label = d.label,
@@ -407,36 +437,14 @@ inline fn convertRenderPipelineDescriptor(d: *const RenderPipeline.Descriptor) c
             .frontFace = @enumToInt(d.primitive.front_face),
             .cullMode = @enumToInt(d.primitive.cull_mode),
         },
-        // TODO: don't create ptr on stack or something
-        .depthStencil = &c.WGPUDepthStencilState{
-            .nextInChain = null,
-            .format = @enumToInt(d.depth_stencil.format),
-            .depthWriteEnabled = d.depth_stencil.depth_write_enabled,
-            .depthCompare = @enumToInt(d.depth_stencil.depth_compare),
-            .stencilFront = @bitCast(c.WGPUStencilFaceState, d.depth_stencil.stencil_front),
-            .stencilBack = @bitCast(c.WGPUStencilFaceState, d.depth_stencil.stencil_back),
-            .stencilReadMask = d.depth_stencil.stencil_read_mask,
-            .stencilWriteMask = d.depth_stencil.stencil_write_mask,
-            .depthBias = d.depth_stencil.depth_bias,
-            .depthBiasSlopeScale = d.depth_stencil.depth_bias_slope_scale,
-            .depthBiasClamp = d.depth_stencil.depth_bias_clamp,
-        },
+        .depthStencil = tmp_depth_stencil,
         .multisample = c.WGPUMultisampleState{
             .nextInChain = null,
             .count = d.multisample.count,
             .mask = d.multisample.mask,
             .alphaToCoverageEnabled = d.multisample.alpha_to_coverage_enabled,
         },
-        // TODO: don't create ptr on stack or something
-        .fragment = &c.WGPUFragmentState{
-            .nextInChain = null,
-            .module = @ptrCast(c.WGPUShaderModule, d.fragment.module.ptr),
-            .entryPoint = d.vertex.entry_point,
-            .constantCount = 0, // d.fragment.constants.len,
-            .constants = null, // TODO: need to convert entire list to WGPUConstantEntry
-            .targetCount = 0, // d.fragment.targets.len,
-            .targets = null, // TODO: need to convert entire list to WGPUColorTargetState
-        },
+        .fragment = tmp_fragment_state,
     };
 }
 
