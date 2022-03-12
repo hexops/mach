@@ -7,7 +7,6 @@ const StencilOperation = @import("enums.zig").StencilOperation;
 const VertexFormat = @import("enums.zig").VertexFormat;
 const VertexStepMode = @import("enums.zig").VertexStepMode;
 
-// TODO: docs
 pub const Limits = extern struct {
     max_texture_dimension_1d: u32,
     max_texture_dimension_2d: u32,

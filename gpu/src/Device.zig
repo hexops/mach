@@ -81,7 +81,6 @@ pub inline fn destroy(device: Device) void {
     device.vtable.destroy(device.ptr);
 }
 
-// TODO: docs
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     required_features: ?[]Feature = null,
