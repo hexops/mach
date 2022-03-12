@@ -8,6 +8,7 @@ const QuerySet = @import("QuerySet.zig");
 const StencilFaceState = @import("data.zig").StencilFaceState;
 const Color = @import("data.zig").Color;
 const VertexBufferLayout = @import("data.zig").VertexBufferLayout;
+const BlendState = @import("data.zig").BlendState;
 const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 const IndexFormat = @import("enums.zig").IndexFormat;
@@ -19,6 +20,7 @@ const ComputePassTimestampLocation = @import("enums.zig").ComputePassTimestampLo
 const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestampLocation;
 const LoadOp = @import("enums.zig").LoadOp;
 const StoreOp = @import("enums.zig").StoreOp;
+const ColorWriteMask = @import("enums.zig").ColorWriteMask;
 
 pub const CompilationMessage = struct {
     message: [:0]const u8,
@@ -124,6 +126,12 @@ pub const FragmentState = struct {
     entry_point: [*:0]const u8,
     constants: []const ConstantEntry,
     targets: []const ColorTargetState,
+};
+
+pub const ColorTargetState = struct {
+    format: Texture.Format,
+    blend: *const BlendState,
+    write_mask: ColorWriteMask,
 };
 
 test "syntax" {

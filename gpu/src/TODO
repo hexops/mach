@@ -87,13 +87,6 @@ typedef struct WGPUImageCopyTexture {
     WGPUTextureAspect aspect;
 } WGPUImageCopyTexture;
 
-typedef struct WGPUColorTargetState {
-    WGPUChainedStruct const * nextInChain;
-    WGPUTextureFormat format;
-    WGPUBlendState const * blend;
-    WGPUColorWriteMaskFlags writeMask;
-} WGPUColorTargetState;
-
 typedef struct WGPUSupportedLimits {
     WGPUChainedStructOut * nextInChain;
     WGPULimits limits;
