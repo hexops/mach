@@ -207,7 +207,7 @@ fn frame(params: FrameParams) !void {
     };
     const pass = encoder.beginRenderPass(&render_pass_info);
     pass.setPipeline(params.pipeline);
-    c.wgpuRenderPassEncoderDraw(@ptrCast(c.WGPURenderPassEncoder, pass.ptr), 3, 1, 0, 0);
+    pass.draw(3, 1, 0, 0);
     c.wgpuRenderPassEncoderEnd(@ptrCast(c.WGPURenderPassEncoder, pass.ptr));
     pass.release();
 
