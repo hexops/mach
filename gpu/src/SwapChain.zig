@@ -71,5 +71,8 @@ test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = configure;
+    _ = getCurrentTextureView;
+    _ = present;
     _ = Descriptor;
 }

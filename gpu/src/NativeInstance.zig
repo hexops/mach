@@ -382,7 +382,7 @@ const device_vtable = Device.VTable{
         pub fn createCommandEncoder(ptr: *anyopaque, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder {
             const desc: ?*c.WGPUCommandEncoderDescriptor = if (descriptor) |d| &.{
                 .nextInChain = null,
-                .label = d.label,
+                .label = if (d.label) |l| l else "",
             } else null;
             return wrapCommandEncoder(c.wgpuDeviceCreateCommandEncoder(@ptrCast(c.WGPUDevice, ptr), desc));
         }
@@ -430,7 +430,7 @@ inline fn convertRenderPipelineDescriptor(
 
     return c.WGPURenderPipelineDescriptor{
         .nextInChain = null,
-        .label = d.label,
+        .label = if (d.label) |l| l else null,
         .layout = if (d.layout) |v| @ptrCast(c.WGPUPipelineLayout, v.ptr) else null,
         .vertex = c.WGPUVertexState{
             .nextInChain = null,
@@ -996,6 +996,33 @@ const command_encoder_vtable = CommandEncoder.VTable{
             c.wgpuCommandEncoderSetLabel(@ptrCast(c.WGPUCommandEncoder, ptr), label);
         }
     }).setLabel,
+    .beginRenderPass = (struct {
+        pub fn beginRenderPass(ptr: *anyopaque, d: *const RenderPassEncoder.Descriptor) RenderPassEncoder {
+            const desc = c.WGPURenderPassDescriptor{
+                .nextInChain = null,
+                .label = if (d.label) |l| l else null,
+                .colorAttachmentCount = 0, // TODO
+                .colorAttachments = null, // TODO
+                .depthStencilAttachment = &c.WGPURenderPassDepthStencilAttachment{
+                    .view = @ptrCast(c.WGPUTextureView, d.depth_stencil_attachment.view.ptr),
+                    .depthLoadOp = @enumToInt(d.depth_stencil_attachment.depth_load_op),
+                    .depthStoreOp = @enumToInt(d.depth_stencil_attachment.depth_store_op),
+                    .clearDepth = d.depth_stencil_attachment.clear_depth,
+                    .depthClearValue = d.depth_stencil_attachment.depth_clear_value,
+                    .depthReadOnly = d.depth_stencil_attachment.depth_read_only,
+                    .stencilLoadOp = @enumToInt(d.depth_stencil_attachment.stencil_load_op),
+                    .stencilStoreOp = @enumToInt(d.depth_stencil_attachment.stencil_store_op),
+                    .clearStencil = d.depth_stencil_attachment.clear_stencil,
+                    .stencilClearValue = d.depth_stencil_attachment.stencil_clear_value,
+                    .stencilReadOnly = d.depth_stencil_attachment.stencil_read_only,
+                },
+                .occlusionQuerySet = @ptrCast(c.WGPUQuerySet, d.occlusion_query_set.ptr),
+                .timestampWriteCount = 0, // TODO
+                .timestampWrites = null, // TODO
+            };
+            return wrapRenderPassEncoder(c.wgpuCommandEncoderBeginRenderPass(@ptrCast(c.WGPUCommandEncoder, ptr), &desc));
+        }
+    }).beginRenderPass,
 };
 
 fn wrapComputePassEncoder(enc: c.WGPUComputePassEncoder) ComputePassEncoder {
