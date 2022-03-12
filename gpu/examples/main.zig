@@ -192,23 +192,24 @@ fn frame(params: FrameParams) !void {
     }
 
     const back_buffer_view = pl.swap_chain.?.getCurrentTextureView();
-    var render_pass_info = std.mem.zeroes(c.WGPURenderPassDescriptor);
-    var color_attachment = std.mem.zeroes(c.WGPURenderPassColorAttachment);
-    color_attachment.view = @ptrCast(c.WGPUTextureView, back_buffer_view.ptr);
-    color_attachment.resolveTarget = null;
-    color_attachment.clearValue = c.WGPUColor{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 };
-    color_attachment.loadOp = c.WGPULoadOp_Clear;
-    color_attachment.storeOp = c.WGPUStoreOp_Store;
-    render_pass_info.colorAttachmentCount = 1;
-    render_pass_info.colorAttachments = &color_attachment;
-    render_pass_info.depthStencilAttachment = null;
+    const color_attachment = gpu.RenderPassColorAttachment{
+        .view = back_buffer_view,
+        .resolve_target = null,
+        .clear_value = std.mem.zeroes(gpu.Color),
+        .load_op = .clear,
+        .store_op = .store,
+    };
 
     const encoder = params.device.createCommandEncoder(null);
-    const pass = c.wgpuCommandEncoderBeginRenderPass(@ptrCast(c.WGPUCommandEncoder, encoder.ptr), &render_pass_info);
-    c.wgpuRenderPassEncoderSetPipeline(pass, @ptrCast(c.WGPURenderPipeline, params.pipeline.ptr));
-    c.wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
-    c.wgpuRenderPassEncoderEnd(pass);
-    c.wgpuRenderPassEncoderRelease(pass);
+    const render_pass_info = gpu.RenderPassEncoder.Descriptor{
+        .color_attachments = &.{color_attachment},
+        .depth_stencil_attachment = null,
+    };
+    const pass = encoder.beginRenderPass(&render_pass_info);
+    c.wgpuRenderPassEncoderSetPipeline(@ptrCast(c.WGPURenderPassEncoder, pass.ptr), @ptrCast(c.WGPURenderPipeline, params.pipeline.ptr));
+    c.wgpuRenderPassEncoderDraw(@ptrCast(c.WGPURenderPassEncoder, pass.ptr), 3, 1, 0, 0);
+    c.wgpuRenderPassEncoderEnd(@ptrCast(c.WGPURenderPassEncoder, pass.ptr));
+    pass.release();
 
     var commands = c.wgpuCommandEncoderFinish(@ptrCast(c.WGPUCommandEncoder, encoder.ptr), null);
     encoder.release();
