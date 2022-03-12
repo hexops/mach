@@ -1,5 +1,6 @@
 const std = @import("std");
 const Texture = @import("Texture.zig");
+const TextureView = @import("TextureView.zig");
 const PresentMode = @import("enums.zig").PresentMode;
 
 const SwapChain = @This();
@@ -13,9 +14,8 @@ pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
     configure: fn (ptr: *anyopaque, format: Texture.Format, allowed_usage: Texture.Usage, width: u32, height: u32) void,
-    // TODO:
-    // WGPU_EXPORT WGPUTextureView wgpuSwapChainGetCurrentTextureView(WGPUSwapChain swapChain);
-    // WGPU_EXPORT void wgpuSwapChainPresent(WGPUSwapChain swapChain);
+    getCurrentTextureView: fn (ptr: *anyopaque) TextureView,
+    present: fn (ptr: *anyopaque) void,
 };
 
 pub inline fn reference(swap_chain: SwapChain) void {
@@ -26,6 +26,7 @@ pub inline fn release(swap_chain: SwapChain) void {
     swap_chain.vtable.release(swap_chain.ptr);
 }
 
+// TODO: remove this and/or prefix with dawn? Seems to be deprecated / not in upstream webgpu.h
 pub inline fn configure(
     swap_chain: SwapChain,
     format: Texture.Format,
@@ -34,6 +35,14 @@ pub inline fn configure(
     height: u32,
 ) void {
     swap_chain.vtable.configure(swap_chain.ptr, format, allowed_usage, width, height);
+}
+
+pub inline fn getCurrentTextureView(swap_chain: SwapChain) TextureView {
+    return swap_chain.vtable.getCurrentTextureView(swap_chain.ptr);
+}
+
+pub inline fn present(swap_chain: SwapChain) void {
+    swap_chain.vtable.present(swap_chain.ptr);
 }
 
 pub const Descriptor = struct {
