@@ -393,42 +393,44 @@ inline fn convertRenderPipelineDescriptor(
     tmp_depth_stencil: *c.WGPUDepthStencilState,
     tmp_fragment_state: *c.WGPUFragmentState,
 ) c.WGPURenderPipelineDescriptor {
-    tmp_depth_stencil.* = c.WGPUDepthStencilState{
-        .nextInChain = null,
-        .format = @enumToInt(d.depth_stencil.format),
-        .depthWriteEnabled = d.depth_stencil.depth_write_enabled,
-        .depthCompare = @enumToInt(d.depth_stencil.depth_compare),
-        .stencilFront = @bitCast(c.WGPUStencilFaceState, d.depth_stencil.stencil_front),
-        .stencilBack = @bitCast(c.WGPUStencilFaceState, d.depth_stencil.stencil_back),
-        .stencilReadMask = d.depth_stencil.stencil_read_mask,
-        .stencilWriteMask = d.depth_stencil.stencil_write_mask,
-        .depthBias = d.depth_stencil.depth_bias,
-        .depthBiasSlopeScale = d.depth_stencil.depth_bias_slope_scale,
-        .depthBiasClamp = d.depth_stencil.depth_bias_clamp,
-    };
+    if (d.depth_stencil) |ds| {
+        tmp_depth_stencil.* = c.WGPUDepthStencilState{
+            .nextInChain = null,
+            .format = @enumToInt(ds.format),
+            .depthWriteEnabled = ds.depth_write_enabled,
+            .depthCompare = @enumToInt(ds.depth_compare),
+            .stencilFront = @bitCast(c.WGPUStencilFaceState, ds.stencil_front),
+            .stencilBack = @bitCast(c.WGPUStencilFaceState, ds.stencil_back),
+            .stencilReadMask = ds.stencil_read_mask,
+            .stencilWriteMask = ds.stencil_write_mask,
+            .depthBias = ds.depth_bias,
+            .depthBiasSlopeScale = ds.depth_bias_slope_scale,
+            .depthBiasClamp = ds.depth_bias_clamp,
+        };
+    }
 
     tmp_fragment_state.* = c.WGPUFragmentState{
         .nextInChain = null,
         .module = @ptrCast(c.WGPUShaderModule, d.fragment.module.ptr),
         .entryPoint = d.vertex.entry_point,
-        .constantCount = @intCast(u32, d.fragment.constants.len),
-        .constants = @ptrCast(*const c.WGPUConstantEntry, &d.fragment.constants[0]),
-        .targetCount = @intCast(u32, d.fragment.targets.len),
-        .targets = @ptrCast(*const c.WGPUColorTargetState, &d.fragment.targets[0]),
+        .constantCount = if (d.fragment.constants) |v| @intCast(u32, v.len) else 0,
+        .constants = if (d.fragment.constants) |v| @ptrCast(*const c.WGPUConstantEntry, &v[0]) else null,
+        .targetCount = if (d.fragment.targets) |v| @intCast(u32, v.len) else 0,
+        .targets = if (d.fragment.targets) |v| @ptrCast(*const c.WGPUColorTargetState, &v[0]) else null,
     };
 
     return c.WGPURenderPipelineDescriptor{
         .nextInChain = null,
         .label = d.label,
-        .layout = @ptrCast(c.WGPUPipelineLayout, d.layout.ptr),
+        .layout = if (d.layout) |v| @ptrCast(c.WGPUPipelineLayout, v.ptr) else null,
         .vertex = c.WGPUVertexState{
             .nextInChain = null,
             .module = @ptrCast(c.WGPUShaderModule, d.vertex.module.ptr),
             .entryPoint = d.vertex.entry_point,
-            .constantCount = @intCast(u32, d.vertex.constants.len),
-            .constants = @ptrCast(*const c.WGPUConstantEntry, &d.vertex.constants[0]),
-            .bufferCount = @intCast(u32, d.vertex.buffers.len),
-            .buffers = @ptrCast(*const c.WGPUVertexBufferLayout, &d.vertex.buffers[0]),
+            .constantCount = if (d.vertex.constants) |v| @intCast(u32, v.len) else 0,
+            .constants = if (d.vertex.constants) |v| @ptrCast(*const c.WGPUConstantEntry, &v[0]) else null,
+            .bufferCount = if (d.vertex.buffers) |v| @intCast(u32, v.len) else 0,
+            .buffers = if (d.vertex.buffers) |v| @ptrCast(*const c.WGPUVertexBufferLayout, &v[0]) else null,
         },
         .primitive = c.WGPUPrimitiveState{
             .nextInChain = null,
@@ -437,7 +439,7 @@ inline fn convertRenderPipelineDescriptor(
             .frontFace = @enumToInt(d.primitive.front_face),
             .cullMode = @enumToInt(d.primitive.cull_mode),
         },
-        .depthStencil = tmp_depth_stencil,
+        .depthStencil = if (d.depth_stencil != null) tmp_depth_stencil else null,
         .multisample = c.WGPUMultisampleState{
             .nextInChain = null,
             .count = d.multisample.count,
