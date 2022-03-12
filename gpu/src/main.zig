@@ -103,6 +103,8 @@ pub const RenderPassColorAttachment = @import("structs.zig").RenderPassColorAtta
 pub const VertexState = @import("structs.zig").VertexState;
 pub const FragmentState = @import("structs.zig").FragmentState;
 pub const ColorTargetState = @import("structs.zig").ColorTargetState;
+pub const ImageCopyBuffer = @import("structs.zig").ImageCopyBuffer;
+pub const ImageCopyTexture = @import("structs.zig").ImageCopyTexture;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;

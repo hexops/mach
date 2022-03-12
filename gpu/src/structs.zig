@@ -9,6 +9,7 @@ const StencilFaceState = @import("data.zig").StencilFaceState;
 const Color = @import("data.zig").Color;
 const VertexBufferLayout = @import("data.zig").VertexBufferLayout;
 const BlendState = @import("data.zig").BlendState;
+const Origin3D = @import("data.zig").Origin3D;
 const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 const IndexFormat = @import("enums.zig").IndexFormat;
@@ -134,6 +135,18 @@ pub const ColorTargetState = struct {
     write_mask: ColorWriteMask,
 };
 
+pub const ImageCopyBuffer = struct {
+    layout: Texture.DataLayout,
+    buffer: Buffer,
+};
+
+pub const ImageCopyTexture = struct {
+    texture: Texture,
+    mip_level: u32,
+    origin: Origin3D,
+    aspect: Texture.Aspect,
+};
+
 test "syntax" {
     _ = CompilationMessage;
     _ = CompilationInfo;
@@ -149,4 +162,6 @@ test "syntax" {
     _ = RenderPassColorAttachment;
     _ = VertexState;
     _ = FragmentState;
+    _ = ImageCopyBuffer;
+    _ = ImageCopyTexture;
 }
