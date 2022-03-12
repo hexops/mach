@@ -206,7 +206,7 @@ fn frame(params: FrameParams) !void {
         .depth_stencil_attachment = null,
     };
     const pass = encoder.beginRenderPass(&render_pass_info);
-    c.wgpuRenderPassEncoderSetPipeline(@ptrCast(c.WGPURenderPassEncoder, pass.ptr), @ptrCast(c.WGPURenderPipeline, params.pipeline.ptr));
+    pass.setPipeline(params.pipeline);
     c.wgpuRenderPassEncoderDraw(@ptrCast(c.WGPURenderPassEncoder, pass.ptr), 3, 1, 0, 0);
     c.wgpuRenderPassEncoderEnd(@ptrCast(c.WGPURenderPassEncoder, pass.ptr));
     pass.release();
