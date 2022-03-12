@@ -29,7 +29,6 @@ pub inline fn release(interface: Interface) void {
     interface.vtable.release(interface.ptr);
 }
 
-// TODO: docs
 pub const RequestAdapterOptions = struct {
     // TODO:
     //power_preference: PowerPreference,
@@ -45,7 +44,6 @@ pub const RequestAdapterErrorCode = error{
     Unknown,
 };
 
-// TODO: docs
 pub const RequestAdapterError = struct {
     message: []const u8,
     code: RequestAdapterErrorCode,
@@ -57,12 +55,10 @@ pub const RequestAdapterResponseTag = enum {
 };
 
 pub const RequestAdapterResponse = union(RequestAdapterResponseTag) {
-    // TODO: docs
     adapter: Adapter,
     err: RequestAdapterError,
 };
 
-// TODO: docs
 pub fn requestAdapter(interface: Interface, options: *const RequestAdapterOptions) callconv(.Async) RequestAdapterResponse {
     var frame_buffer = std.heap.page_allocator.allocAdvanced(
         u8,

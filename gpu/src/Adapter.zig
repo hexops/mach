@@ -42,7 +42,6 @@ limits: Limits,
 /// Always false on native implementations of WebGPU (TODO: why is this not queryable in Dawn?)
 fallback: bool,
 
-// TODO: docs
 properties: Properties,
 
 /// The type erased pointer to the Adapter implementation
@@ -75,7 +74,6 @@ pub fn hasFeature(adapter: Adapter, feature: Feature) bool {
     return false;
 }
 
-// TODO: docs
 pub const Properties = struct {
     vendor_id: u32,
     device_id: u32,
@@ -85,7 +83,6 @@ pub const Properties = struct {
     backend_type: BackendType,
 };
 
-// TODO: docs
 pub const Type = enum(u32) {
     discrete_gpu,
     integrated_gpu,
@@ -93,7 +90,6 @@ pub const Type = enum(u32) {
     unknown,
 };
 
-// TODO: docs
 pub fn typeName(t: Type) []const u8 {
     return switch (t) {
         .discrete_gpu => "Discrete GPU",
@@ -103,7 +99,6 @@ pub fn typeName(t: Type) []const u8 {
     };
 }
 
-// TODO: docs
 pub const BackendType = enum(u32) {
     nul,
     webgpu,
@@ -115,7 +110,6 @@ pub const BackendType = enum(u32) {
     opengles,
 };
 
-// TODO: docs
 pub fn backendTypeName(t: BackendType) []const u8 {
     return switch (t) {
         .nul => "Null",
@@ -134,7 +128,6 @@ pub const RequestDeviceErrorCode = error{
     Unknown,
 };
 
-// TODO: docs
 pub const RequestDeviceError = struct {
     message: []const u8,
     code: RequestDeviceErrorCode,
@@ -146,12 +139,10 @@ pub const RequestDeviceResponseTag = enum {
 };
 
 pub const RequestDeviceResponse = union(RequestDeviceResponseTag) {
-    // TODO: docs
     device: Device,
     err: RequestDeviceError,
 };
 
-// TODO: docs
 pub fn requestDevice(adapter: Adapter, descriptor: *const Device.Descriptor) callconv(.Async) RequestDeviceResponse {
     var frame_buffer = std.heap.page_allocator.allocAdvanced(
         u8,
