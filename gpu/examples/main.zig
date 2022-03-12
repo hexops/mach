@@ -191,10 +191,10 @@ fn frame(params: FrameParams) !void {
         pl.current_desc = pl.target_desc;
     }
 
-    const back_buffer_view = c.wgpuSwapChainGetCurrentTextureView(@ptrCast(c.WGPUSwapChain, pl.swap_chain.?.ptr));
+    const back_buffer_view = pl.swap_chain.?.getCurrentTextureView();
     var render_pass_info = std.mem.zeroes(c.WGPURenderPassDescriptor);
     var color_attachment = std.mem.zeroes(c.WGPURenderPassColorAttachment);
-    color_attachment.view = back_buffer_view;
+    color_attachment.view = @ptrCast(c.WGPUTextureView, back_buffer_view.ptr);
     color_attachment.resolveTarget = null;
     color_attachment.clearValue = c.WGPUColor{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 };
     color_attachment.loadOp = c.WGPULoadOp_Clear;
@@ -216,6 +216,6 @@ fn frame(params: FrameParams) !void {
     const buf = gpu.CommandBuffer{ .ptr = &commands, .vtable = undefined };
     params.queue.submit(1, &buf);
     c.wgpuCommandBufferRelease(commands);
-    c.wgpuSwapChainPresent(@ptrCast(c.WGPUSwapChain, pl.swap_chain.?.ptr));
-    c.wgpuTextureViewRelease(back_buffer_view);
+    pl.swap_chain.?.present();
+    back_buffer_view.release();
 }
