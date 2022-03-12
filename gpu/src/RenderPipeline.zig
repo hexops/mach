@@ -1,3 +1,10 @@
+const PipelineLayout = @import("PipelineLayout.zig");
+const VertexState = @import("structs.zig").VertexState;
+const PrimitiveState = @import("structs.zig").PrimitiveState;
+const DepthStencilState = @import("structs.zig").DepthStencilState;
+const MultisampleState = @import("structs.zig").MultisampleState;
+const FragmentState = @import("structs.zig").FragmentState;
+
 const RenderPipeline = @This();
 
 /// The type erased pointer to the RenderPipeline implementation
@@ -25,8 +32,19 @@ pub inline fn setLabel(pipeline: RenderPipeline, label: [:0]const u8) void {
     pipeline.vtable.setLabel(pipeline.ptr, label);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    layout: PipelineLayout,
+    vertex: VertexState,
+    primitive: PrimitiveState,
+    depth_stencil: *const DepthStencilState,
+    multisample: MultisampleState,
+    fragment: *const FragmentState,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = Descriptor;
 }
