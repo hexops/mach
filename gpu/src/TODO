@@ -57,17 +57,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
 
 
 
-typedef struct WGPURenderPassDescriptor {
-    WGPUChainedStruct const * nextInChain;
-    char const * label;
-    uint32_t colorAttachmentCount;
-    WGPURenderPassColorAttachment const * colorAttachments;
-    WGPURenderPassDepthStencilAttachment const * depthStencilAttachment;
-    WGPUQuerySet occlusionQuerySet;
-    uint32_t timestampWriteCount;
-    WGPURenderPassTimestampWrite const * timestampWrites;
-} WGPURenderPassDescriptor;
-
 typedef struct WGPURenderPipelineDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;

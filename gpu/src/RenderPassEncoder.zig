@@ -1,3 +1,8 @@
+const QuerySet = @import("QuerySet.zig");
+const RenderPassColorAttachment = @import("structs.zig").RenderPassColorAttachment;
+const RenderPassDepthStencilAttachment = @import("structs.zig").RenderPassDepthStencilAttachment;
+const RenderPassTimestampWrite = @import("structs.zig").RenderPassTimestampWrite;
+
 const RenderPassEncoder = @This();
 
 /// The type erased pointer to the RenderPassEncoder implementation
@@ -45,8 +50,17 @@ pub inline fn setLabel(pass: RenderPassEncoder, label: [:0]const u8) void {
     pass.vtable.setLabel(pass.ptr, label);
 }
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+    color_attachments: []const RenderPassColorAttachment,
+    depth_stencil_attachment: *const RenderPassDepthStencilAttachment,
+    occlusion_query_set: QuerySet,
+    timestamp_writes: []RenderPassTimestampWrite,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = Descriptor;
 }
