@@ -1006,6 +1006,15 @@ const command_encoder_vtable = CommandEncoder.VTable{
             c.wgpuCommandEncoderRelease(@ptrCast(c.WGPUCommandEncoder, ptr));
         }
     }).release,
+    .finish = (struct {
+        pub fn finish(ptr: *anyopaque, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer {
+            const desc: ?*c.WGPUCommandBufferDescriptor = if (descriptor) |d| &.{
+                .nextInChain = null,
+                .label = if (d.label) |l| l else "",
+            } else null;
+            return wrapCommandBuffer(c.wgpuCommandEncoderFinish(@ptrCast(c.WGPUCommandEncoder, ptr), desc));
+        }
+    }).finish,
     .setLabel = (struct {
         pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
             c.wgpuCommandEncoderSetLabel(@ptrCast(c.WGPUCommandEncoder, ptr), label);
