@@ -1,4 +1,5 @@
 const RenderPassEncoder = @import("RenderPassEncoder.zig");
+const CommandBuffer = @import("CommandBuffer.zig");
 
 const CommandEncoder = @This();
 
@@ -19,7 +20,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToBuffer(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyBuffer const * destination, WGPUExtent3D const * copySize);
     // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
     // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTextureInternal(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
-    // WGPU_EXPORT WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder commandEncoder, WGPUCommandBufferDescriptor const * descriptor);
+    finish: fn (ptr: *anyopaque, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer,
     // WGPU_EXPORT void wgpuCommandEncoderInjectValidationError(WGPUCommandEncoder commandEncoder, char const * message);
     // WGPU_EXPORT void wgpuCommandEncoderInsertDebugMarker(WGPUCommandEncoder commandEncoder, char const * markerLabel);
     // WGPU_EXPORT void wgpuCommandEncoderPopDebugGroup(WGPUCommandEncoder commandEncoder);
@@ -36,6 +37,10 @@ pub inline fn reference(enc: CommandEncoder) void {
 
 pub inline fn release(enc: CommandEncoder) void {
     enc.vtable.release(enc.ptr);
+}
+
+pub inline fn finish(enc: CommandEncoder, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer {
+    return enc.vtable.finish(enc.ptr, descriptor);
 }
 
 pub inline fn setLabel(enc: CommandEncoder, label: [:0]const u8) void {
