@@ -143,20 +143,6 @@ typedef struct WGPUPrimitiveDepthClampingState {
     bool clampDepth;
 } WGPUPrimitiveDepthClampingState;
 
-typedef struct WGPURenderPassDepthStencilAttachment {
-    WGPUTextureView view;
-    WGPULoadOp depthLoadOp;
-    WGPUStoreOp depthStoreOp;
-    float clearDepth;
-    float depthClearValue;
-    bool depthReadOnly;
-    WGPULoadOp stencilLoadOp;
-    WGPUStoreOp stencilStoreOp;
-    uint32_t clearStencil;
-    uint32_t stencilClearValue;
-    bool stencilReadOnly;
-} WGPURenderPassDepthStencilAttachment;
-
 typedef struct WGPURenderPassColorAttachment {
     WGPUTextureView view;
     WGPUTextureView resolveTarget;
