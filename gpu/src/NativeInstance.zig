@@ -587,6 +587,16 @@ const swap_chain_vtable = SwapChain.VTable{
             );
         }
     }).configure,
+    .getCurrentTextureView = (struct {
+        pub fn getCurrentTextureView(ptr: *anyopaque) TextureView {
+            return wrapTextureView(c.wgpuSwapChainGetCurrentTextureView(@ptrCast(c.WGPUSwapChain, ptr)));
+        }
+    }).getCurrentTextureView,
+    .present = (struct {
+        pub fn present(ptr: *anyopaque) void {
+            c.wgpuSwapChainPresent(@ptrCast(c.WGPUSwapChain, ptr));
+        }
+    }).present,
 };
 
 fn wrapTextureView(texture_view: c.WGPUTextureView) TextureView {
