@@ -73,39 +73,6 @@ typedef struct WGPUCopyTextureForBrowserOptions {
     WGPUAlphaMode dstAlphaMode;
 } WGPUCopyTextureForBrowserOptions;
 
-typedef struct WGPUImageCopyBuffer {
-    WGPUChainedStruct const * nextInChain;
-    WGPUTextureDataLayout layout;
-    WGPUBuffer buffer;
-} WGPUImageCopyBuffer;
-
-typedef struct WGPUImageCopyTexture {
-    WGPUChainedStruct const * nextInChain;
-    WGPUTexture texture;
-    uint32_t mipLevel;
-    WGPUOrigin3D origin;
-    WGPUTextureAspect aspect;
-} WGPUImageCopyTexture;
-
-typedef struct WGPUSupportedLimits {
-    WGPUChainedStructOut * nextInChain;
-    WGPULimits limits;
-} WGPUSupportedLimits;
-
-typedef struct WGPUExternalTextureBindingEntry {
-    WGPUChainedStruct chain;
-    WGPUExternalTexture externalTexture;
-} WGPUExternalTextureBindingEntry;
-
-typedef struct WGPUExternalTextureBindingLayout {
-    WGPUChainedStruct chain;
-} WGPUExternalTextureBindingLayout;
-
-typedef struct WGPUPrimitiveDepthClampingState {
-    WGPUChainedStruct chain;
-    bool clampDepth;
-} WGPUPrimitiveDepthClampingState;
-
 
 
 
