@@ -32,12 +32,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
     const char* const * forceDisabledToggles;
 } WGPUDawnTogglesDeviceDescriptor;
 
-
-
-
-
-
-
 // TODO: Dawn-specific?
 typedef struct WGPUCopyTextureForBrowserOptions {
     WGPUChainedStruct const * nextInChain;
@@ -52,8 +46,6 @@ typedef struct WGPUCopyTextureForBrowserOptions {
 
 
 
-
-
 typedef void (*WGPUBufferMapCallback)(WGPUBufferMapAsyncStatus status, void * userdata);
 typedef void (*WGPUCompilationInfoCallback)(WGPUCompilationInfoRequestStatus status, WGPUCompilationInfo const * compilationInfo, void * userdata);
 typedef void (*WGPUCreateComputePipelineAsyncCallback)(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const * message, void * userdata);
@@ -62,8 +54,6 @@ typedef void (*WGPUDeviceLostCallback)(WGPUDeviceLostReason reason, char const *
 typedef void (*WGPUErrorCallback)(WGPUErrorType type, char const * message, void * userdata);
 typedef void (*WGPULoggingCallback)(WGPULoggingType type, char const * message, void * userdata);
 typedef void (*WGPUProc)();
-
-WGPU_EXPORT WGPUProc wgpuGetProcAddress(WGPUDevice device, char const * procName);
 
 typedef enum WGPUSType {
     // webgpu.h upstream:
