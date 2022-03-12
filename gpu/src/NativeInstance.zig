@@ -379,12 +379,12 @@ const device_vtable = Device.VTable{
         }
     }).destroy,
     .createCommandEncoder = (struct {
-        pub fn createCommandEncoder(ptr: *anyopaque, descriptor: *const CommandEncoder.Descriptor) CommandEncoder {
-            const desc = c.WGPUCommandEncoderDescriptor{
+        pub fn createCommandEncoder(ptr: *anyopaque, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder {
+            const desc: ?*c.WGPUCommandEncoderDescriptor = if (descriptor) |d| &.{
                 .nextInChain = null,
-                .label = descriptor.label,
-            };
-            return wrapCommandEncoder(c.wgpuDeviceCreateCommandEncoder(@ptrCast(c.WGPUDevice, ptr), &desc));
+                .label = d.label,
+            } else null;
+            return wrapCommandEncoder(c.wgpuDeviceCreateCommandEncoder(@ptrCast(c.WGPUDevice, ptr), desc));
         }
     }).createCommandEncoder,
     .createRenderPipeline = (struct {
