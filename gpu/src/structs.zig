@@ -69,7 +69,8 @@ pub const DepthStencilState = struct {
 };
 
 // TODO: how does this map to browser API?
-pub const ConstantEntry = struct {
+pub const ConstantEntry = extern struct {
+    reserved: ?*anyopaque = null,
     key: [*:0]const u8,
     value: f64,
 };
@@ -129,7 +130,8 @@ pub const FragmentState = struct {
     targets: []const ColorTargetState,
 };
 
-pub const ColorTargetState = struct {
+pub const ColorTargetState = extern struct {
+    reserved: ?*anyopaque = null,
     format: Texture.Format,
     blend: *const BlendState,
     write_mask: ColorWriteMask,

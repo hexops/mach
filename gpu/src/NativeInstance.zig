@@ -411,10 +411,10 @@ inline fn convertRenderPipelineDescriptor(
         .nextInChain = null,
         .module = @ptrCast(c.WGPUShaderModule, d.fragment.module.ptr),
         .entryPoint = d.vertex.entry_point,
-        .constantCount = 0, // d.fragment.constants.len,
-        .constants = null, // TODO: need to convert entire list to WGPUConstantEntry
-        .targetCount = 0, // d.fragment.targets.len,
-        .targets = null, // TODO: need to convert entire list to WGPUColorTargetState
+        .constantCount = @intCast(u32, d.fragment.constants.len),
+        .constants = @ptrCast(*const c.WGPUConstantEntry, &d.fragment.constants[0]),
+        .targetCount = @intCast(u32, d.fragment.targets.len),
+        .targets = @ptrCast(*const c.WGPUColorTargetState, &d.fragment.targets[0]),
     };
 
     return c.WGPURenderPipelineDescriptor{
@@ -425,10 +425,10 @@ inline fn convertRenderPipelineDescriptor(
             .nextInChain = null,
             .module = @ptrCast(c.WGPUShaderModule, d.vertex.module.ptr),
             .entryPoint = d.vertex.entry_point,
-            .constantCount = 0, // d.vertex.constants.len,
-            .constants = null, // TODO: need to convert entire list to WGPUConstantEntry
-            .bufferCount = 0, // d.vertex.buffers.len
-            .buffers = null, // TODO: need to convert entire list to WGPUVertexBufferLayout
+            .constantCount = @intCast(u32, d.vertex.constants.len),
+            .constants = @ptrCast(*const c.WGPUConstantEntry, &d.vertex.constants[0]),
+            .bufferCount = @intCast(u32, d.vertex.buffers.len),
+            .buffers = @ptrCast(*const c.WGPUVertexBufferLayout, &d.vertex.buffers[0]),
         },
         .primitive = c.WGPUPrimitiveState{
             .nextInChain = null,
