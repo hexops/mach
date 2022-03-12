@@ -23,7 +23,7 @@ pub fn main() !void {
 
     // If targeting OpenGL, we can't use the newer WGPUSurface API. Instead, we need to use the
     // older Dawn-specific API. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
-    const use_legacy_api = setup.backend_type == c.WGPUBackendType_OpenGL or setup.backend_type == c.WGPUBackendType_OpenGLES;
+    const use_legacy_api = setup.backend_type == .opengl or setup.backend_type == .opengles;
     var descriptor: gpu.SwapChain.Descriptor = undefined;
     if (!use_legacy_api) {
         window_data.swap_chain_format = .bgra8_unorm;
@@ -42,7 +42,7 @@ pub fn main() !void {
             comptime sample_utils.detectGLFWOptions(),
         );
     } else {
-        const binding = c.machUtilsCreateBinding(setup.backend_type, @ptrCast(*c.GLFWwindow, setup.window.handle), @ptrCast(c.WGPUDevice, setup.device.ptr));
+        const binding = c.machUtilsCreateBinding(@enumToInt(setup.backend_type), @ptrCast(*c.GLFWwindow, setup.window.handle), @ptrCast(c.WGPUDevice, setup.device.ptr));
         if (binding == null) {
             @panic("failed to create Dawn backend binding");
         }
