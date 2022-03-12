@@ -73,7 +73,7 @@ pub const ConstantEntry = struct {
 pub const ProgrammableStageDescriptor = struct {
     label: ?[*:0]const u8 = null,
     module: ShaderModule,
-    entryPoint: [*:0]const u8,
+    entry_point: [*:0]const u8,
     constants: []const ConstantEntry,
 };
 
@@ -111,6 +111,13 @@ pub const RenderPassColorAttachment = struct {
     clear_value: Color,
 };
 
+pub const VertexState = struct {
+    module: ShaderModule,
+    entry_point: [*:0]const u8,
+    constants: []const ConstantEntry,
+    buffers: []const VertexBufferLayout,
+};
+
 test "syntax" {
     _ = CompilationMessage;
     _ = CompilationInfo;
@@ -124,4 +131,5 @@ test "syntax" {
     _ = RenderPassTimestampWrite;
     _ = RenderPassDepthStencilAttachment;
     _ = RenderPassColorAttachment;
+    _ = VertexState;
 }

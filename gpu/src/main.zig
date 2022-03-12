@@ -100,6 +100,7 @@ pub const ComputePassTimestampWrite = @import("structs.zig").ComputePassTimestam
 pub const RenderPassTimestampWrite = @import("structs.zig").RenderPassTimestampWrite;
 pub const RenderPassDepthStencilAttachment = @import("structs.zig").RenderPassDepthStencilAttachment;
 pub const RenderPassColorAttachment = @import("structs.zig").RenderPassColorAttachment;
+pub const VertexState = @import("structs.zig").VertexState;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;
