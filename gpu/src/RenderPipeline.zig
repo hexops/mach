@@ -34,10 +34,10 @@ pub inline fn setLabel(pipeline: RenderPipeline, label: [:0]const u8) void {
 
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
-    layout: PipelineLayout,
+    layout: ?PipelineLayout,
     vertex: VertexState,
     primitive: PrimitiveState,
-    depth_stencil: *const DepthStencilState,
+    depth_stencil: ?*const DepthStencilState,
     multisample: MultisampleState,
     fragment: *const FragmentState,
 };

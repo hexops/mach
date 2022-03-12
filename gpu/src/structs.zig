@@ -79,7 +79,7 @@ pub const ProgrammableStageDescriptor = struct {
     label: ?[*:0]const u8 = null,
     module: ShaderModule,
     entry_point: [*:0]const u8,
-    constants: []const ConstantEntry,
+    constants: ?[]const ConstantEntry,
 };
 
 pub const ComputePassTimestampWrite = struct {
@@ -119,15 +119,15 @@ pub const RenderPassColorAttachment = struct {
 pub const VertexState = struct {
     module: ShaderModule,
     entry_point: [*:0]const u8,
-    constants: []const ConstantEntry,
-    buffers: []const VertexBufferLayout,
+    constants: ?[]const ConstantEntry = null,
+    buffers: ?[]const VertexBufferLayout = null,
 };
 
 pub const FragmentState = struct {
     module: ShaderModule,
     entry_point: [*:0]const u8,
-    constants: []const ConstantEntry,
-    targets: []const ColorTargetState,
+    constants: ?[]const ConstantEntry = null,
+    targets: ?[]const ColorTargetState = null,
 };
 
 pub const ColorTargetState = extern struct {
