@@ -142,6 +142,16 @@ pub const ColorWriteMask = @import("enums.zig").ColorWriteMask;
 pub const MapMode = @import("enums.zig").MapMode;
 pub const ShaderStage = @import("enums.zig").ShaderStage;
 
+// Constants
+const array_layer_count_undefined: u32 = 0xffffffff;
+const copy_stride_undefined: u32 = 0xffffffff;
+const limit_u32_undefined: u32 = 0xffffffff;
+const limit_u64_undefined: u32 = 0xffffffffffffffff;
+const mip_level_count_undefined: u32 = 0xffffffff;
+const stride_undefined: u32 = 0xffffffff;
+const whole_map_size: u32 = std.math.maxInt(c_int);
+const whole_size: u64 = 0xffffffffffffffff;
+
 test "syntax" {
     // Root interface/implementations
     _ = Interface;
