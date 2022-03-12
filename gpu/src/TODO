@@ -143,15 +143,6 @@ typedef struct WGPUPrimitiveDepthClampingState {
     bool clampDepth;
 } WGPUPrimitiveDepthClampingState;
 
-typedef struct WGPURenderPassColorAttachment {
-    WGPUTextureView view;
-    WGPUTextureView resolveTarget;
-    WGPULoadOp loadOp;
-    WGPUStoreOp storeOp;
-    WGPUColor clearColor;
-    WGPUColor clearValue;
-} WGPURenderPassColorAttachment;
-
 
 
 
