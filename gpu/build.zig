@@ -31,4 +31,9 @@ pub fn build(b: *std.build.Builder) void {
     example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
     glfw.link(b, example, .{});
     gpu_dawn.link(b, example, .{});
+
+    const example_run_cmd = example.run();
+    example_run_cmd.step.dependOn(b.getInstallStep());
+    const example_run_step = b.step("run-example", "Run the example");
+    example_run_step.dependOn(&example_run_cmd.step);
 }
