@@ -16,7 +16,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void * wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
     // WGPU_EXPORT void wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapModeFlags mode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userdata);
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
-    // WGPU_EXPORT void wgpuBufferUnmap(WGPUBuffer buffer);
+    unmap: fn (ptr: *anyopaque) void,
 };
 
 pub inline fn reference(buf: Buffer) void {
@@ -33,6 +33,10 @@ pub inline fn destroy(buf: Buffer) void {
 
 pub inline fn setLabel(buf: Buffer, label: [:0]const u8) void {
     buf.vtable.setLabel(buf.ptr, label);
+}
+
+pub inline fn unmap(buf: Buffer) void {
+    buf.vtable.unmap(buf.ptr);
 }
 
 pub const Descriptor = struct {

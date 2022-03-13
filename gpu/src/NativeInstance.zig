@@ -976,6 +976,11 @@ const buffer_vtable = Buffer.VTable{
             c.wgpuBufferDestroy(@ptrCast(c.WGPUBuffer, ptr));
         }
     }).destroy,
+    .unmap = (struct {
+        pub fn unmap(ptr: *anyopaque) void {
+            c.wgpuBufferUnmap(@ptrCast(c.WGPUBuffer, ptr));
+        }
+    }).unmap,
 };
 
 fn wrapCommandBuffer(buffer: c.WGPUCommandBuffer) CommandBuffer {
