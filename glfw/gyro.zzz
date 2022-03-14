@@ -1,0 +1,26 @@
+pkgs:
+  mach-glfw:
+    description: Ziggified GLFW bindings
+    source_url: https://github.com/hexops/mach-glfw
+    version: 0.0.0
+    root: src/main.zig
+    tags:
+      bindings
+    files:
+      README.md
+      LICENSE
+      LICENSE-APACHE
+      LICENSE-MIT
+
+  mach-glfw-build:
+    description: build.zig for GLFW linking
+    source_url: https://github.com/hexops/mach-glfw
+    version: 0.0.0
+    root: build.zig
+    tags:
+      build
+    files:
+      README.md
+      LICENSE
+      LICENSE-APACHE
+      LICENSE-MIT

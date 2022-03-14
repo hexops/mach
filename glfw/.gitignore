@@ -16,3 +16,6 @@ zig-out/
 /build/
 /build-*/
 /docgen_tmp/
+.gyro/
+deps.zig
+gyro.lock
