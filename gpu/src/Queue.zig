@@ -2,7 +2,7 @@ const CommandBuffer = @import("CommandBuffer.zig");
 
 const Queue = @This();
 
-on_submitted_work_done: ?OnSubmittedWorkDone = null,
+on_submitted_work_done: ?WorkDoneCallback = null,
 
 /// The type erased pointer to the Queue implementation
 /// Equal to c.WGPUQueue for NativeInstance.
@@ -32,18 +32,24 @@ pub inline fn submit(queue: Queue, commands: []const CommandBuffer) void {
     queue.vtable.submit(queue, commands);
 }
 
-pub const OnSubmittedWorkDone = struct {
-    userdata: *anyopaque,
-    callback: fn (status: WorkDoneStatus, userdata: *anyopaque) void,
+pub const WorkDoneCallback = struct {
+    type_erased_ctx: *anyopaque,
+    type_erased_callback: fn (ctx: *anyopaque, status: WorkDoneStatus) callconv(.Inline) void,
 
-    fn init(comptime Context: type, userdata: *Context, comptime callback: fn (status: WorkDoneStatus, userdata: *Context) void) OnSubmittedWorkDone {
+    pub fn init(
+        comptime Context: type,
+        ctx: *Context,
+        comptime callback: fn (ctx: *Context, status: WorkDoneStatus) void,
+    ) WorkDoneCallback {
+        const erased = (struct {
+            pub inline fn erased(type_erased_ctx: *anyopaque, status: WorkDoneStatus) void {
+                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), status);
+            }
+        }).erased;
+
         return .{
-            .userdata = userdata,
-            .callback = (struct {
-                pub inline fn untyped(status: WorkDoneStatus, _userdata: *anyopaque) void {
-                    callback(status, @ptrCast(*Context, @alignCast(@alignOf(*Context), _userdata)));
-                }
-            }).untyped,
+            .type_erased_ctx = ctx,
+            .type_erased_callback = erased,
         };
     }
 };
@@ -61,6 +67,6 @@ test "syntax" {
     _ = reference;
     _ = release;
     _ = submit;
-    _ = OnSubmittedWorkDone;
+    _ = WorkDoneCallback;
     _ = WorkDoneStatus;
 }
