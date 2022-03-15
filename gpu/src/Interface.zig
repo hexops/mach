@@ -13,13 +13,14 @@ const Interface = @This();
 ptr: *anyopaque,
 vtable: *const VTable,
 
-// The @frameSize(func) of the implementations requestAdapter async function
-request_adapter_frame_size: usize,
-
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    requestAdapter: fn requestAdapter(ptr: *anyopaque, options: *const RequestAdapterOptions) callconv(.Async) RequestAdapterResponse,
+    requestAdapter: fn requestAdapter(
+        ptr: *anyopaque,
+        options: *const RequestAdapterOptions,
+        callback: *RequestAdapterCallback,
+    ) void,
 };
 
 pub inline fn reference(interface: Interface) void {
@@ -59,24 +60,53 @@ pub const RequestAdapterResponse = union(RequestAdapterResponseTag) {
     err: RequestAdapterError,
 };
 
-pub fn requestAdapter(interface: Interface, options: *const RequestAdapterOptions) callconv(.Async) RequestAdapterResponse {
-    var frame_buffer = std.heap.page_allocator.allocAdvanced(
-        u8,
-        16,
-        interface.request_adapter_frame_size,
-        std.mem.Allocator.Exact.at_least,
-    ) catch {
-        return .{ .err = .{
-            .message = "Out of memory",
-            .code = RequestAdapterErrorCode.Error,
-        } };
-    };
-    defer std.heap.page_allocator.free(frame_buffer);
+pub fn requestAdapter(
+    interface: Interface,
+    options: *const RequestAdapterOptions,
+    callback: *RequestAdapterCallback,
+) void {
+    interface.vtable.requestAdapter(interface.ptr, options, callback);
+}
 
-    var result: RequestAdapterResponse = undefined;
-    const f = @asyncCall(frame_buffer, &result, interface.vtable.requestAdapter, .{ interface.ptr, options });
-    resume f;
-    return result;
+pub const RequestAdapterCallback = struct {
+    type_erased_ctx: *anyopaque,
+    type_erased_callback: fn (ctx: *anyopaque, response: RequestAdapterResponse) callconv(.Inline) void,
+
+    pub fn init(
+        comptime Context: type,
+        ctx: *Context,
+        comptime callback: fn (ctx: *Context, response: RequestAdapterResponse) void,
+    ) RequestAdapterCallback {
+        const erased = (struct {
+            pub inline fn erased(type_erased_ctx: *anyopaque, response: RequestAdapterResponse) void {
+                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), response);
+            }
+        }).erased;
+
+        return .{
+            .type_erased_ctx = ctx,
+            .type_erased_callback = erased,
+        };
+    }
+};
+
+/// A helper which invokes requestAdapter and blocks until the adapter is recieved.
+pub fn waitForAdapter(interface: Interface, options: *const RequestAdapterOptions) RequestAdapterResponse {
+    const Context = RequestAdapterResponse;
+    var response: Context = undefined;
+    var callback = RequestAdapterCallback.init(Context, &response, (struct {
+        pub fn callback(ctx: *Context, callback_response: RequestAdapterResponse) void {
+            ctx.* = callback_response;
+        }
+    }).callback);
+
+    interface.requestAdapter(options, &callback);
+
+    // TODO: FUTURE: Once crbug.com/dawn/1122 is fixed, we should process events here otherwise our
+    // callback would not be invoked:
+    //c.wgpuInstanceProcessEvents(interface.instance)
+
+    return response;
 }
 
 test "syntax" {
@@ -88,4 +118,5 @@ test "syntax" {
     _ = RequestAdapterError;
     _ = RequestAdapterResponse;
     _ = requestAdapter;
+    _ = waitForAdapter;
 }
