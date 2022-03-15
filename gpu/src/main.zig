@@ -49,10 +49,15 @@ pub const RequestAdapterErrorCode = Interface.RequestAdapterErrorCode;
 pub const RequestAdapterError = Interface.RequestAdapterError;
 pub const RequestAdapterResponse = Interface.RequestAdapterResponse;
 
+pub const Adapter = @import("Adapter.zig");
+pub const RequestDeviceErrorCode = Adapter.RequestDeviceErrorCode;
+pub const RequestDeviceError = Adapter.RequesatDeviceError;
+pub const RequestDeviceCallback = Adapter.RequestDeviceCallback;
+pub const RequestDeviceResponse = Adapter.RequestDeviceResponse;
+
 pub const NativeInstance = @import("NativeInstance.zig");
 
 // Interfaces
-pub const Adapter = @import("Adapter.zig");
 pub const Device = @import("Device.zig");
 pub const Surface = @import("Surface.zig");
 pub const Queue = @import("Queue.zig");

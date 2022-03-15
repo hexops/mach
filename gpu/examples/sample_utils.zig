@@ -92,7 +92,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
         props.driver_description,
     });
 
-    const device = switch (nosuspend backend_adapter.requestDevice(&.{})) {
+    const device = switch (backend_adapter.waitForDevice(&.{})) {
         .device => |v| v,
         .err => |err| {
             std.debug.print("failed to get device: error={} {s}\n", .{ err.code, err.message });

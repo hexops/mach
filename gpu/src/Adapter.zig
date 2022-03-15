@@ -49,13 +49,14 @@ properties: Properties,
 ptr: *anyopaque,
 vtable: *const VTable,
 
-// The @frameSize(func) of the implementations requestDevice async function
-request_device_frame_size: usize,
-
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    requestDevice: fn requestDevice(ptr: *anyopaque, descriptor: *const Device.Descriptor) callconv(.Async) RequestDeviceResponse,
+    requestDevice: fn requestDevice(
+        ptr: *anyopaque,
+        descriptor: *const Device.Descriptor,
+        callback: *RequestDeviceCallback,
+    ) void,
 };
 
 pub inline fn reference(adapter: Adapter) void {
@@ -143,24 +144,53 @@ pub const RequestDeviceResponse = union(RequestDeviceResponseTag) {
     err: RequestDeviceError,
 };
 
-pub fn requestDevice(adapter: Adapter, descriptor: *const Device.Descriptor) callconv(.Async) RequestDeviceResponse {
-    var frame_buffer = std.heap.page_allocator.allocAdvanced(
-        u8,
-        16,
-        adapter.request_device_frame_size,
-        std.mem.Allocator.Exact.at_least,
-    ) catch {
-        return .{ .err = .{
-            .message = "Out of memory",
-            .code = RequestDeviceErrorCode.Error,
-        } };
-    };
-    defer std.heap.page_allocator.free(frame_buffer);
+pub fn requestDevice(
+    adapter: Adapter,
+    descriptor: *const Device.Descriptor,
+    callback: *RequestDeviceCallback,
+) void {
+    adapter.vtable.requestDevice(adapter.ptr, descriptor, callback);
+}
 
-    var result: RequestDeviceResponse = undefined;
-    const f = @asyncCall(frame_buffer, &result, adapter.vtable.requestDevice, .{ adapter.ptr, descriptor });
-    resume f;
-    return result;
+pub const RequestDeviceCallback = struct {
+    type_erased_ctx: *anyopaque,
+    type_erased_callback: fn (ctx: *anyopaque, response: RequestDeviceResponse) callconv(.Inline) void,
+
+    pub fn init(
+        comptime Context: type,
+        ctx: *Context,
+        comptime callback: fn (ctx: *Context, response: RequestDeviceResponse) void,
+    ) RequestDeviceCallback {
+        const erased = (struct {
+            pub inline fn erased(type_erased_ctx: *anyopaque, response: RequestDeviceResponse) void {
+                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), response);
+            }
+        }).erased;
+
+        return .{
+            .type_erased_ctx = ctx,
+            .type_erased_callback = erased,
+        };
+    }
+};
+
+/// A helper which invokes requestDevice and blocks until the device is recieved.
+pub fn waitForDevice(adapter: Adapter, descriptor: *const Device.Descriptor) RequestDeviceResponse {
+    const Context = RequestDeviceResponse;
+    var response: Context = undefined;
+    var callback = RequestDeviceCallback.init(Context, &response, (struct {
+        pub fn callback(ctx: *Context, callback_response: RequestDeviceResponse) void {
+            ctx.* = callback_response;
+        }
+    }).callback);
+
+    adapter.requestDevice(descriptor, &callback);
+
+    // TODO: FUTURE: Once crbug.com/dawn/1122 is fixed, we should process events here otherwise our
+    // callback would not be invoked:
+    //c.wgpuInstanceProcessEvents(adapter.instance)
+
+    return response;
 }
 
 test "syntax" {
@@ -172,5 +202,6 @@ test "syntax" {
     _ = RequestDeviceErrorCode;
     _ = RequestDeviceError;
     _ = RequestDeviceResponse;
+    _ = RequestDeviceCallback;
     _ = requestDevice;
 }

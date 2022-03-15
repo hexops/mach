@@ -12,6 +12,7 @@ const Adapter = @import("Adapter.zig");
 const RequestDeviceErrorCode = Adapter.RequestDeviceErrorCode;
 const RequestDeviceError = Adapter.RequestDeviceError;
 const RequestDeviceResponse = Adapter.RequestDeviceResponse;
+const RequestDeviceCallback = Adapter.RequestDeviceCallback;
 
 const Device = @import("Device.zig");
 const Surface = @import("Surface.zig");
@@ -230,7 +231,6 @@ fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
 
         .ptr = adapter.?,
         .vtable = &adapter_vtable,
-        .request_device_frame_size = @frameSize(adapter_vtable.requestDevice),
     };
 }
 
@@ -246,7 +246,11 @@ const adapter_vtable = Adapter.VTable{
         }
     }).release,
     .requestDevice = (struct {
-        pub fn requestDevice(ptr: *anyopaque, descriptor: *const Device.Descriptor) callconv(.Async) RequestDeviceResponse {
+        pub fn requestDevice(
+            ptr: *anyopaque,
+            descriptor: *const Device.Descriptor,
+            callback: *RequestDeviceCallback,
+        ) void {
             const adapter = @ptrCast(c.WGPUAdapter, @alignCast(@alignOf(c.WGPUAdapter), ptr));
 
             const required_limits = if (descriptor.required_limits) |l| c.WGPURequiredLimits{
@@ -262,14 +266,13 @@ const adapter_vtable = Adapter.VTable{
                 .requiredLimits = if (required_limits) |*l| l else null,
             };
 
-            const callback = (struct {
-                pub fn callback(status: c.WGPURequestDeviceStatus, device: c.WGPUDevice, message: [*c]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                    const _callback_response = @ptrCast(*Adapter.RequestDeviceResponse, @alignCast(@alignOf(*Adapter.RequestDeviceResponse), userdata));
+            const cCallback = (struct {
+                pub fn cCallback(status: c.WGPURequestDeviceStatus, device: c.WGPUDevice, message: [*c]const u8, userdata: ?*anyopaque) callconv(.C) void {
+                    const callback_info = @ptrCast(*RequestDeviceCallback, @alignCast(@alignOf(*RequestDeviceCallback), userdata.?));
 
-                    // Store the response into a field on the native instance for later reading.
-                    _callback_response.* = if (status == c.WGPURequestDeviceStatus_Success) .{
+                    const response = if (status == c.WGPURequestDeviceStatus_Success) RequestDeviceResponse{
                         .device = wrapDevice(device.?),
-                    } else .{
+                    } else RequestDeviceResponse{
                         .err = Adapter.RequestDeviceError{
                             .message = std.mem.span(message),
                             .code = switch (status) {
@@ -279,18 +282,12 @@ const adapter_vtable = Adapter.VTable{
                             },
                         },
                     };
+
+                    callback_info.type_erased_callback(callback_info.type_erased_ctx, response);
                 }
-            }).callback;
+            }).cCallback;
 
-            var callback_response: Adapter.RequestDeviceResponse = undefined;
-            c.wgpuAdapterRequestDevice(adapter, &desc, callback, &callback_response);
-            // TODO: Once crbug.com/dawn/1122 is fixed, we should process events here otherwise our
-            // callback will not be invoked.
-            // c.wgpuInstanceProcessEvents(native.instance)
-            suspend {} // must suspend so that async caller can resume
-
-            // Return the response, asserting the callback has executed at this point.
-            return callback_response;
+            c.wgpuAdapterRequestDevice(adapter, &desc, cCallback, callback);
         }
     }).requestDevice,
 };
