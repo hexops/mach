@@ -204,4 +204,5 @@ test "syntax" {
     _ = RequestDeviceResponse;
     _ = RequestDeviceCallback;
     _ = requestDevice;
+    _ = waitForDevice;
 }

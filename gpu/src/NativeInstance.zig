@@ -6,13 +6,14 @@ const Interface = @import("Interface.zig");
 const RequestAdapterOptions = Interface.RequestAdapterOptions;
 const RequestAdapterErrorCode = Interface.RequestAdapterErrorCode;
 const RequestAdapterError = Interface.RequestAdapterError;
+const RequestAdapterCallback = Interface.RequestAdapterCallback;
 const RequestAdapterResponse = Interface.RequestAdapterResponse;
 
 const Adapter = @import("Adapter.zig");
 const RequestDeviceErrorCode = Adapter.RequestDeviceErrorCode;
 const RequestDeviceError = Adapter.RequestDeviceError;
-const RequestDeviceResponse = Adapter.RequestDeviceResponse;
 const RequestDeviceCallback = Adapter.RequestDeviceCallback;
+const RequestDeviceResponse = Adapter.RequestDeviceResponse;
 
 const Device = @import("Device.zig");
 const Surface = @import("Surface.zig");
@@ -64,7 +65,11 @@ const interface_vtable = Interface.VTable{
         }
     }).release,
     .requestAdapter = (struct {
-        pub fn requestAdapter(ptr: *anyopaque, options: *const RequestAdapterOptions) callconv(.Async) RequestAdapterResponse {
+        pub fn requestAdapter(
+            ptr: *anyopaque,
+            options: *const RequestAdapterOptions,
+            callback: *RequestAdapterCallback,
+        ) void {
             const native = @ptrCast(*NativeInstance, @alignCast(@alignOf(*NativeInstance), ptr));
 
             const opt = c.WGPURequestAdapterOptions{
@@ -74,14 +79,14 @@ const interface_vtable = Interface.VTable{
                 .forceFallbackAdapter = options.force_fallback_adapter,
             };
 
-            const callback = (struct {
-                pub fn callback(status: c.WGPURequestAdapterStatus, adapter: c.WGPUAdapter, message: [*c]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                    const _callback_response = @ptrCast(*Interface.RequestAdapterResponse, @alignCast(@alignOf(*Interface.RequestAdapterResponse), userdata));
+            const cCallback = (struct {
+                pub fn cCallback(status: c.WGPURequestAdapterStatus, adapter: c.WGPUAdapter, message: [*c]const u8, userdata: ?*anyopaque) callconv(.C) void {
+                    const callback_info = @ptrCast(*RequestAdapterCallback, @alignCast(@alignOf(*RequestAdapterCallback), userdata.?));
 
                     // Store the response into a field on the native instance for later reading.
-                    _callback_response.* = if (status == c.WGPURequestAdapterStatus_Success) .{
+                    const response = if (status == c.WGPURequestAdapterStatus_Success) RequestAdapterResponse{
                         .adapter = wrapAdapter(adapter.?),
-                    } else .{
+                    } else RequestAdapterResponse{
                         .err = Interface.RequestAdapterError{
                             .message = std.mem.span(message),
                             .code = switch (status) {
@@ -92,18 +97,12 @@ const interface_vtable = Interface.VTable{
                             },
                         },
                     };
+
+                    callback_info.type_erased_callback(callback_info.type_erased_ctx, response);
                 }
-            }).callback;
+            }).cCallback;
 
-            var callback_response: Interface.RequestAdapterResponse = undefined;
-            c.wgpuInstanceRequestAdapter(native.instance, &opt, callback, &callback_response);
-            // TODO: Once crbug.com/dawn/1122 is fixed, we should process events here otherwise our
-            // callback will not be invoked.
-            // c.wgpuInstanceProcessEvents(native.instance)
-            suspend {} // must suspend so that async caller can resume
-
-            // Return the response, asserting the callback has executed at this point.
-            return callback_response;
+            c.wgpuInstanceRequestAdapter(native.instance, &opt, cCallback, callback);
         }
     }).requestAdapter,
 };
@@ -113,7 +112,6 @@ pub fn interface(native: *NativeInstance) Interface {
     return .{
         .ptr = native,
         .vtable = &interface_vtable,
-        .request_adapter_frame_size = @frameSize(interface_vtable.requestAdapter),
     };
 }
 

@@ -47,6 +47,7 @@ pub const Interface = @import("Interface.zig");
 pub const RequestAdapterOptions = Interface.RequestAdapterOptions;
 pub const RequestAdapterErrorCode = Interface.RequestAdapterErrorCode;
 pub const RequestAdapterError = Interface.RequestAdapterError;
+pub const RequestAdapterCallback = Interface.RequestAdapterCallback;
 pub const RequestAdapterResponse = Interface.RequestAdapterResponse;
 
 pub const Adapter = @import("Adapter.zig");
