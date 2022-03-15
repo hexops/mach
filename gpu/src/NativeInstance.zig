@@ -514,18 +514,18 @@ const queue_vtable = Queue.VTable{
                 // to remove it instead"
                 const signal_value: u64 = 0;
 
-                const callback = (struct {
-                    pub fn callback(status: c.WGPUQueueWorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
+                const cCallback = (struct {
+                    pub fn cCallback(status: c.WGPUQueueWorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
                         const callback_info = @ptrCast(*Queue.WorkDoneCallback, @alignCast(@alignOf(*Queue.WorkDoneCallback), userdata));
                         callback_info.type_erased_callback(
                             callback_info.type_erased_ctx,
                             @intToEnum(Queue.WorkDoneStatus, status),
                         );
                     }
-                }).callback;
+                }).cCallback;
 
                 var mut_on_submitted_work_done = on_submitted_work_done;
-                c.wgpuQueueOnSubmittedWorkDone(wgpu_queue, signal_value, callback, &mut_on_submitted_work_done);
+                c.wgpuQueueOnSubmittedWorkDone(wgpu_queue, signal_value, cCallback, &mut_on_submitted_work_done);
             }
 
             var few_commands: [16]c.WGPUCommandBuffer = undefined;
@@ -971,6 +971,23 @@ const buffer_vtable = Buffer.VTable{
             c.wgpuBufferDestroy(@ptrCast(c.WGPUBuffer, ptr));
         }
     }).destroy,
+    .mapAsync = (struct {
+        pub fn mapAsync(
+            ptr: *anyopaque,
+            mode: Buffer.MapMode,
+            offset: usize,
+            size: usize,
+            callback: *Buffer.MapCallback,
+        ) void {
+            const cCallback = (struct {
+                pub fn cCallback(status: c.WGPUBufferMapAsyncStatus, userdata: ?*anyopaque) callconv(.C) void {
+                    const callback_info = @ptrCast(*Buffer.MapCallback, @alignCast(@alignOf(*Buffer.MapCallback), userdata.?));
+                    callback_info.type_erased_callback(callback_info.type_erased_ctx, @intToEnum(Buffer.MapAsyncStatus, status));
+                }
+            }).cCallback;
+            c.wgpuBufferMapAsync(@ptrCast(c.WGPUBuffer, ptr), @enumToInt(mode), offset, size, cCallback, callback);
+        }
+    }).mapAsync,
     .unmap = (struct {
         pub fn unmap(ptr: *anyopaque) void {
             c.wgpuBufferUnmap(@ptrCast(c.WGPUBuffer, ptr));

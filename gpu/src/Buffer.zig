@@ -14,8 +14,14 @@ pub const VTable = struct {
     // TODO:
     // WGPU_EXPORT void const * wgpuBufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
     // WGPU_EXPORT void * wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
-    // WGPU_EXPORT void wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapModeFlags mode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userdata);
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
+    mapAsync: fn (
+        ptr: *anyopaque,
+        mode: MapMode,
+        offset: usize,
+        size: usize,
+        callback: *MapCallback,
+    ) void,
     unmap: fn (ptr: *anyopaque) void,
 };
 
@@ -34,6 +40,38 @@ pub inline fn destroy(buf: Buffer) void {
 pub inline fn setLabel(buf: Buffer, label: [:0]const u8) void {
     buf.vtable.setLabel(buf.ptr, label);
 }
+
+pub inline fn mapAsync(
+    buf: Buffer,
+    mode: MapMode,
+    offset: usize,
+    size: usize,
+    callback: *MapCallback,
+) void {
+    buf.vtable.mapAsync(buf.ptr, mode, offset, size, callback);
+}
+
+pub const MapCallback = struct {
+    type_erased_ctx: *anyopaque,
+    type_erased_callback: fn (ctx: *anyopaque, status: MapAsyncStatus) callconv(.Inline) void,
+
+    pub fn init(
+        comptime Context: type,
+        ctx: *Context,
+        comptime callback: fn (ctx: *Context, status: MapAsyncStatus) void,
+    ) MapCallback {
+        const erased = (struct {
+            pub inline fn erased(type_erased_ctx: *anyopaque, status: MapAsyncStatus) void {
+                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), status);
+            }
+        }).erased;
+
+        return .{
+            .type_erased_ctx = ctx,
+            .type_erased_callback = erased,
+        };
+    }
+};
 
 pub inline fn unmap(buf: Buffer) void {
     buf.vtable.unmap(buf.ptr);
@@ -68,6 +106,12 @@ pub const MapAsyncStatus = enum(u32) {
     unmapped_before_callback = 0x00000005,
 };
 
+pub const MapMode = enum(u32) {
+    none = 0x00000000,
+    read = 0x00000001,
+    write = 0x00000002,
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
@@ -78,4 +122,5 @@ test "syntax" {
     _ = BindingType;
     _ = BindingLayout;
     _ = MapAsyncStatus;
+    _ = MapMode;
 }

@@ -265,12 +265,6 @@ pub const ColorWriteMask = enum(u32) {
     all = 0x0000000F,
 };
 
-pub const MapMode = enum(u32) {
-    none = 0x00000000,
-    read = 0x00000001,
-    write = 0x00000002,
-};
-
 pub const ShaderStage = enum(u32) {
     none = 0x00000000,
     vertex = 0x00000001,
@@ -315,6 +309,5 @@ test "syntax" {
     _ = VertexStepMode;
     _ = BufferUsage;
     _ = ColorWriteMask;
-    _ = MapMode;
     _ = ShaderStage;
 }
