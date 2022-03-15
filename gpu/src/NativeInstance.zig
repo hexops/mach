@@ -516,10 +516,10 @@ const queue_vtable = Queue.VTable{
 
                 const callback = (struct {
                     pub fn callback(status: c.WGPUQueueWorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
-                        const _on_submitted_work_done = @ptrCast(*Queue.OnSubmittedWorkDone, @alignCast(@alignOf(*Queue.OnSubmittedWorkDone), userdata));
-                        _on_submitted_work_done.callback(
+                        const callback_info = @ptrCast(*Queue.WorkDoneCallback, @alignCast(@alignOf(*Queue.WorkDoneCallback), userdata));
+                        callback_info.type_erased_callback(
+                            callback_info.type_erased_ctx,
                             @intToEnum(Queue.WorkDoneStatus, status),
-                            _on_submitted_work_done.userdata,
                         );
                     }
                 }).callback;
