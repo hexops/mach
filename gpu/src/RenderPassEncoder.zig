@@ -27,8 +27,8 @@ pub const VTable = struct {
     drawIndexedIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     drawIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     beginOcclusionQuery: fn (ptr: *anyopaque, query_index: u32) void,
+    endOcclusionQuery: fn (ptr: *anyopaque) void,
     end: fn (ptr: *anyopaque) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder renderPassEncoder);
     // WGPU_EXPORT void wgpuRenderPassEncoderEndPass(WGPURenderPassEncoder renderPassEncoder);
     // WGPU_EXPORT void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder renderPassEncoder, uint32_t bundlesCount, WGPURenderBundle const * bundles);
     // WGPU_EXPORT void wgpuRenderPassEncoderInsertDebugMarker(WGPURenderPassEncoder renderPassEncoder, char const * markerLabel);
@@ -86,6 +86,10 @@ pub inline fn drawIndirect(pass: RenderPassEncoder, indirect_buffer: Buffer, ind
 
 pub inline fn beginOcclusionQuery(pass: RenderPassEncoder, query_index: u32) void {
     pass.vtable.beginOcclusionQuery(pass.ptr, query_index);
+}
+
+pub inline fn endOcclusionQuery(pass: RenderPassEncoder, query_index: u32) void {
+    pass.vtable.endOcclusionQuery(pass.ptr, query_index);
 }
 
 pub inline fn end(pass: RenderPassEncoder) void {
