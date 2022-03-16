@@ -11,8 +11,9 @@ pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
     destroy: fn (ptr: *anyopaque) void,
-    // TODO:
+    // TODO: typed buffer pointer?
     // WGPU_EXPORT void const * wgpuBufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
+    // TODO: typed buffer pointer?
     // WGPU_EXPORT void * wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     mapAsync: fn (
