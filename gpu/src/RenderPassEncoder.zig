@@ -3,6 +3,7 @@ const RenderPassColorAttachment = @import("structs.zig").RenderPassColorAttachme
 const RenderPassDepthStencilAttachment = @import("structs.zig").RenderPassDepthStencilAttachment;
 const RenderPassTimestampWrite = @import("structs.zig").RenderPassTimestampWrite;
 const RenderPipeline = @import("RenderPipeline.zig");
+const Buffer = @import("Buffer.zig");
 
 const RenderPassEncoder = @This();
 
@@ -24,7 +25,7 @@ pub const VTable = struct {
         base_vertex: i32,
         first_instance: u32,
     ) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexedIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+    drawIndexedIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
     end: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder renderPassEncoder);
@@ -73,6 +74,10 @@ pub inline fn drawIndexed(
     first_instance: u32,
 ) void {
     pass.vtable.drawIndexed(pass.ptr, index_count, instance_count, first_index, base_vertex, first_instance);
+}
+
+pub inline fn drawIndexedIndirect(pass: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+    pass.vtable.drawIndexedIndirect(pass.ptr, indirect_buffer, indirect_offset);
 }
 
 pub inline fn beginOcclusionQuery(pass: RenderPassEncoder, query_index: u32) void {
