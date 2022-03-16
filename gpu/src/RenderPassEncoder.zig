@@ -32,8 +32,8 @@ pub const VTable = struct {
     end: fn (ptr: *anyopaque) void,
     executeBundles: fn (ptr: *anyopaque, bundles: []RenderBundle) void,
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderPopDebugGroup(WGPURenderPassEncoder renderPassEncoder);
-    // WGPU_EXPORT void wgpuRenderPassEncoderPushDebugGroup(WGPURenderPassEncoder renderPassEncoder, char const * groupLabel);
+    popDebugGroup: fn (ptr: *anyopaque) void,
+    pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
     // WGPU_EXPORT void wgpuRenderPassEncoderSetBlendConstant(WGPURenderPassEncoder renderPassEncoder, WGPUColor const * color);
     // WGPU_EXPORT void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
@@ -87,8 +87,8 @@ pub inline fn beginOcclusionQuery(pass: RenderPassEncoder, query_index: u32) voi
     pass.vtable.beginOcclusionQuery(pass.ptr, query_index);
 }
 
-pub inline fn endOcclusionQuery(pass: RenderPassEncoder, query_index: u32) void {
-    pass.vtable.endOcclusionQuery(pass.ptr, query_index);
+pub inline fn endOcclusionQuery(pass: RenderPassEncoder) void {
+    pass.vtable.endOcclusionQuery(pass.ptr);
 }
 
 pub inline fn end(pass: RenderPassEncoder) void {
@@ -101,6 +101,14 @@ pub inline fn executeBundles(pass: RenderPassEncoder, bundles: []RenderBundle) v
 
 pub inline fn insertDebugMarker(pass: RenderPassEncoder, marker_label: [*:0]const u8) void {
     pass.vtable.insertDebugMarker(pass.ptr, marker_label);
+}
+
+pub inline fn popDebugGroup(pass: RenderPassEncoder) void {
+    pass.vtable.popDebugGroup(pass.ptr);
+}
+
+pub inline fn pushDebugGroup(pass: RenderPassEncoder, group_label: [*:0]const u8) void {
+    pass.vtable.pushDebugGroup(pass.ptr, group_label);
 }
 
 pub inline fn setLabel(pass: RenderPassEncoder, label: [:0]const u8) void {
@@ -128,7 +136,12 @@ test {
     _ = drawIndexedIndirect;
     _ = drawIndirect;
     _ = beginOcclusionQuery;
+    _ = endOcclusionQuery;
     _ = end;
+    _ = executeBundles;
+    _ = insertDebugMarker;
+    _ = popDebugGroup;
+    _ = pushDebugGroup;
     _ = setLabel;
     _ = setPipeline;
     _ = Descriptor;
