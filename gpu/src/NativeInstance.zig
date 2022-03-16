@@ -855,6 +855,14 @@ const render_pipeline_vtable = RenderPipeline.VTable{
             c.wgpuRenderPipelineSetLabel(@ptrCast(c.WGPURenderPipeline, ptr), label);
         }
     }).setLabel,
+    .getBindGroupLayout = (struct {
+        pub fn getBindGroupLayout(ptr: *anyopaque, group_index: u32) BindGroupLayout {
+            return wrapBindGroupLayout(c.wgpuRenderPipelineGetBindGroupLayout(
+                @ptrCast(c.WGPURenderPipeline, ptr),
+                group_index,
+            ));
+        }
+    }).getBindGroupLayout,
 };
 
 fn wrapRenderPassEncoder(pass: c.WGPURenderPassEncoder) RenderPassEncoder {
