@@ -46,7 +46,7 @@ pub const VTable = struct {
     setStencilReference: fn (ptr: *anyopaque, reference: u32) void,
     setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
     setViewport: fn (ptr: *anyopaque, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void,
-    // writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
+    writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
 };
 
 pub inline fn reference(pass: RenderPassEncoder) void {
@@ -175,11 +175,9 @@ pub inline fn setViewport(
     pass.vtable.setViewport(pass.ptr, x, y, width, height, min_depth, max_depth);
 }
 
-// pub inline fn writeTimestamp(pass: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
-//     pass.vtable.writeTimestamp(pass.ptr, query_set, query_index);
-// }
-// // writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
-// // WGPU_EXPORT void wgpuRenderPassEncoderWriteTimestamp(WGPURenderPassEncoder renderPassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+pub inline fn writeTimestamp(pass: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
+    pass.vtable.writeTimestamp(pass.ptr, query_set, query_index);
+}
 
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
@@ -213,6 +211,6 @@ test {
     _ = setStencilReference;
     _ = setVertexBuffer;
     _ = setViewport;
-    // _ = writeTimestamp;
+    _ = writeTimestamp;
     _ = Descriptor;
 }

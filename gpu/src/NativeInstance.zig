@@ -1083,15 +1083,15 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             );
         }
     }).setViewport,
-    // .writeTimestamp = (struct {
-    //     pub fn writeTimestamp(ptr: *anyopaque, query_set: QuerySet, query_index: u32) void {
-    //         c.wgpuRenderPassEncoderWriteTimestamp(
-    //             @ptrCast(c.WGPURenderPassEncoder, ptr),
-    //             @ptrCast(c.WGPUQuerySet, query_set.ptr),
-    //             query_index,
-    //         );
-    //     }
-    // }).writeTimestamp,
+    .writeTimestamp = (struct {
+        pub fn writeTimestamp(ptr: *anyopaque, query_set: QuerySet, query_index: u32) void {
+            c.wgpuRenderPassEncoderWriteTimestamp(
+                @ptrCast(c.WGPURenderPassEncoder, ptr),
+                @ptrCast(c.WGPUQuerySet, query_set.ptr),
+                query_index,
+            );
+        }
+    }).writeTimestamp,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {
