@@ -18,6 +18,7 @@ const RequestDeviceResponse = Adapter.RequestDeviceResponse;
 const Device = @import("Device.zig");
 const Surface = @import("Surface.zig");
 const Limits = @import("data.zig").Limits;
+const Color = @import("data.zig").Color;
 const Queue = @import("Queue.zig");
 const CommandBuffer = @import("CommandBuffer.zig");
 const ShaderModule = @import("ShaderModule.zig");
@@ -1005,6 +1006,14 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             );
         }
     }).setBindGroup,
+    .setBlendConstant = (struct {
+        pub fn setBlendConstant(ptr: *anyopaque, color: *const Color) void {
+            c.wgpuRenderPassEncoderSetBlendConstant(
+                @ptrCast(c.WGPURenderPassEncoder, ptr),
+                @ptrCast(*const c.WGPUColor, color),
+            );
+        }
+    }).setBlendConstant,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {
