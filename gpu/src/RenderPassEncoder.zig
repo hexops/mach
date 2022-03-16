@@ -31,7 +31,7 @@ pub const VTable = struct {
     endOcclusionQuery: fn (ptr: *anyopaque) void,
     end: fn (ptr: *anyopaque) void,
     executeBundles: fn (ptr: *anyopaque, bundles: []RenderBundle) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderInsertDebugMarker(WGPURenderPassEncoder renderPassEncoder, char const * markerLabel);
+    insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderPopDebugGroup(WGPURenderPassEncoder renderPassEncoder);
     // WGPU_EXPORT void wgpuRenderPassEncoderPushDebugGroup(WGPURenderPassEncoder renderPassEncoder, char const * groupLabel);
     // WGPU_EXPORT void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
@@ -97,6 +97,10 @@ pub inline fn end(pass: RenderPassEncoder) void {
 
 pub inline fn executeBundles(pass: RenderPassEncoder, bundles: []RenderBundle) void {
     pass.vtable.executeBundles(pass.ptr, bundles);
+}
+
+pub inline fn insertDebugMarker(pass: RenderPassEncoder, marker_label: [*:0]const u8) void {
+    pass.vtable.insertDebugMarker(pass.ptr, marker_label);
 }
 
 pub inline fn setLabel(pass: RenderPassEncoder, label: [:0]const u8) void {
