@@ -940,6 +940,11 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             c.wgpuRenderPassEncoderBeginOcclusionQuery(@ptrCast(c.WGPURenderPassEncoder, ptr), query_index);
         }
     }).beginOcclusionQuery,
+    .endOcclusionQuery = (struct {
+        pub fn endOcclusionQuery(ptr: *anyopaque) void {
+            c.wgpuRenderPassEncoderEndOcclusionQuery(@ptrCast(c.WGPURenderPassEncoder, ptr));
+        }
+    }).endOcclusionQuery,
     .end = (struct {
         pub fn end(ptr: *anyopaque) void {
             c.wgpuRenderPassEncoderEnd(@ptrCast(c.WGPURenderPassEncoder, ptr));
