@@ -16,7 +16,14 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     beginOcclusionQuery: fn (ptr: *anyopaque, query_index: u32) void,
     draw: fn (ptr: *anyopaque, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder renderPassEncoder, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance);
+    drawIndexed: fn (
+        ptr: *anyopaque,
+        index_count: u32,
+        instance_count: u32,
+        first_index: u32,
+        base_vertex: i32,
+        first_instance: u32,
+    ) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexedIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
     // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
     end: fn (ptr: *anyopaque) void,
@@ -55,6 +62,17 @@ pub inline fn draw(
     first_instance: u32,
 ) void {
     pass.vtable.draw(pass.ptr, vertex_count, instance_count, first_vertex, first_instance);
+}
+
+pub inline fn drawIndexed(
+    pass: RenderPassEncoder,
+    index_count: u32,
+    instance_count: u32,
+    first_index: u32,
+    base_vertex: i32,
+    first_instance: u32,
+) void {
+    pass.vtable.drawIndexed(pass.ptr, index_count, instance_count, first_index, base_vertex, first_instance);
 }
 
 pub inline fn beginOcclusionQuery(pass: RenderPassEncoder, query_index: u32) void {

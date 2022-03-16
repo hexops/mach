@@ -903,6 +903,25 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             c.wgpuRenderPassEncoderDraw(@ptrCast(c.WGPURenderPassEncoder, ptr), vertex_count, instance_count, first_vertex, first_instance);
         }
     }).draw,
+    .drawIndexed = (struct {
+        pub fn drawIndexed(
+            ptr: *anyopaque,
+            index_count: u32,
+            instance_count: u32,
+            first_index: u32,
+            base_vertex: i32,
+            first_instance: u32,
+        ) void {
+            c.wgpuRenderPassEncoderDrawIndexed(
+                @ptrCast(c.WGPURenderPassEncoder, ptr),
+                index_count,
+                instance_count,
+                first_index,
+                base_vertex,
+                first_instance,
+            );
+        }
+    }).drawIndexed,
     .beginOcclusionQuery = (struct {
         pub fn beginOcclusionQuery(ptr: *anyopaque, query_index: u32) void {
             c.wgpuRenderPassEncoderBeginOcclusionQuery(@ptrCast(c.WGPURenderPassEncoder, ptr), query_index);
