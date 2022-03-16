@@ -119,7 +119,6 @@ pub const BlendFactor = @import("enums.zig").BlendFactor;
 pub const BlendOperation = @import("enums.zig").BlendOperation;
 pub const CompareFunction = @import("enums.zig").CompareFunction;
 pub const ComputePassTimestampLocation = @import("enums.zig").ComputePassTimestampLocation;
-pub const CreatePipelineAsyncStatus = @import("enums.zig").CreatePipelineAsyncStatus;
 pub const CullMode = @import("enums.zig").CullMode;
 pub const ErrorFilter = @import("enums.zig").ErrorFilter;
 pub const ErrorType = @import("enums.zig").ErrorType;

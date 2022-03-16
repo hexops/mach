@@ -382,6 +382,50 @@ const device_vtable = Device.VTable{
             return wrapCommandEncoder(c.wgpuDeviceCreateCommandEncoder(@ptrCast(c.WGPUDevice, ptr), desc));
         }
     }).createCommandEncoder,
+    .createComputePipelineAsync = (struct {
+        pub fn createComputePipelineAsync(
+            ptr: *anyopaque,
+            descriptor: *const ComputePipeline.Descriptor,
+            callback: *ComputePipeline.CreateCallback,
+        ) void {
+            const desc = c.WGPUComputePipelineDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| l else null,
+                .layout = @ptrCast(c.WGPUPipelineLayout, descriptor.layout.ptr),
+                .compute = c.WGPUProgrammableStageDescriptor{
+                    .nextInChain = null,
+                    .module = @ptrCast(c.WGPUShaderModule, descriptor.compute.module.ptr),
+                    .entryPoint = descriptor.compute.entry_point,
+                    .constantCount = if (descriptor.compute.constants) |v| @intCast(u32, v.len) else 0,
+                    .constants = if (descriptor.compute.constants) |v| @ptrCast(*const c.WGPUConstantEntry, &v[0]) else null,
+                },
+            };
+
+            const cCallback = (struct {
+                pub fn cCallback(
+                    status: c.WGPUCreatePipelineAsyncStatus,
+                    pipeline: c.WGPUComputePipeline,
+                    message: [*c]const u8,
+                    userdata: ?*anyopaque,
+                ) callconv(.C) void {
+                    const callback_info = @ptrCast(*ComputePipeline.CreateCallback, @alignCast(@alignOf(*ComputePipeline.CreateCallback), userdata));
+                    callback_info.type_erased_callback(
+                        callback_info.type_erased_ctx,
+                        @intToEnum(ComputePipeline.CreateStatus, status),
+                        wrapComputePipeline(pipeline),
+                        std.mem.span(message),
+                    );
+                }
+            }).cCallback;
+
+            c.wgpuDeviceCreateComputePipelineAsync(
+                @ptrCast(c.WGPUDevice, ptr),
+                &desc,
+                cCallback,
+                callback,
+            );
+        }
+    }).createComputePipelineAsync,
     .createRenderPipeline = (struct {
         pub fn createRenderPipeline(ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
             var tmp_depth_stencil: c.WGPUDepthStencilState = undefined;

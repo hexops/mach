@@ -74,14 +74,6 @@ pub const ComputePassTimestampLocation = enum(u32) {
     end = 0x00000001,
 };
 
-pub const CreatePipelineAsyncStatus = enum(u32) {
-    success = 0x00000000,
-    err = 0x00000001,
-    device_lost = 0x00000002,
-    device_destroyed = 0x00000003,
-    unknown = 0x00000004,
-};
-
 pub const CullMode = enum(u32) {
     none = 0x00000000,
     front = 0x00000001,
@@ -272,7 +264,6 @@ test "syntax" {
     _ = BlendOperation;
     _ = CompareFunction;
     _ = ComputePassTimestampLocation;
-    _ = CreatePipelineAsyncStatus;
     _ = CullMode;
     _ = ErrorFilter;
     _ = ErrorType;
