@@ -6,6 +6,7 @@ const RenderPipeline = @import("RenderPipeline.zig");
 const Buffer = @import("Buffer.zig");
 const RenderBundle = @import("RenderBundle.zig");
 const BindGroup = @import("BindGroup.zig");
+const Color = @import("data.zig").Color;
 
 const RenderPassEncoder = @This();
 
@@ -36,14 +37,20 @@ pub const VTable = struct {
     popDebugGroup: fn (ptr: *anyopaque) void,
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
     setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderSetBlendConstant(WGPURenderPassEncoder renderPassEncoder, WGPUColor const * color);
+    setBlendConstant: fn (ptr: *anyopaque, color: *const Color) void,
+    // setIndexBuffer: fn (ptr: *anyopaque, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     setPipeline: fn (ptr: *anyopaque, pipeline: RenderPipeline) void,
+    // setScissorRect: fn (ptr: *anyopaque, x: u32, y: u32, width: u32, height: u32) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderSetScissorRect(WGPURenderPassEncoder renderPassEncoder, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+    // setStencilReference: fn (ptr: *anyopaque, reference: u32) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder renderPassEncoder, uint32_t reference);
+    // setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
+    // setViewport: fn (ptr: *anyopaque, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder renderPassEncoder, float x, float y, float width, float height, float minDepth, float maxDepth);
+    // writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderWriteTimestamp(WGPURenderPassEncoder renderPassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
 };
 
@@ -121,6 +128,10 @@ pub inline fn setBindGroup(
     pass.vtable.setBindGroup(pass.ptr, group_index, group, dynamic_offsets);
 }
 
+pub inline fn setBlendConstant(pass: RenderPassEncoder, color: *const Color) void {
+    pass.vtable.setBlendConstant(pass.ptr, color);
+}
+
 pub inline fn setLabel(pass: RenderPassEncoder, label: [:0]const u8) void {
     pass.vtable.setLabel(pass.ptr, label);
 }
@@ -153,6 +164,7 @@ test {
     _ = popDebugGroup;
     _ = pushDebugGroup;
     _ = setBindGroup;
+    _ = setBlendConstant;
     _ = setLabel;
     _ = setPipeline;
     _ = Descriptor;
