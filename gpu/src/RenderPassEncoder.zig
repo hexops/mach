@@ -7,6 +7,7 @@ const Buffer = @import("Buffer.zig");
 const RenderBundle = @import("RenderBundle.zig");
 const BindGroup = @import("BindGroup.zig");
 const Color = @import("data.zig").Color;
+const IndexFormat = @import("enums.zig").IndexFormat;
 
 const RenderPassEncoder = @This();
 
@@ -38,8 +39,7 @@ pub const VTable = struct {
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
     setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
     setBlendConstant: fn (ptr: *anyopaque, color: *const Color) void,
-    // setIndexBuffer: fn (ptr: *anyopaque, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
+    setIndexBuffer: fn (ptr: *anyopaque, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     setPipeline: fn (ptr: *anyopaque, pipeline: RenderPipeline) void,
     // setScissorRect: fn (ptr: *anyopaque, x: u32, y: u32, width: u32, height: u32) void,
@@ -132,6 +132,16 @@ pub inline fn setBlendConstant(pass: RenderPassEncoder, color: *const Color) voi
     pass.vtable.setBlendConstant(pass.ptr, color);
 }
 
+pub inline fn setIndexBuffer(
+    pass: RenderPassEncoder,
+    buffer: Buffer,
+    format: IndexFormat,
+    offset: u64,
+    size: u64,
+) void {
+    pass.vtable.setIndexBuffer(pass.ptr, buffer, format, offset, size);
+}
+
 pub inline fn setLabel(pass: RenderPassEncoder, label: [:0]const u8) void {
     pass.vtable.setLabel(pass.ptr, label);
 }
@@ -165,6 +175,7 @@ test {
     _ = pushDebugGroup;
     _ = setBindGroup;
     _ = setBlendConstant;
+    _ = setIndexBuffer;
     _ = setLabel;
     _ = setPipeline;
     _ = Descriptor;
