@@ -14,8 +14,7 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    // TODO:
-    // WGPU_EXPORT void wgpuRenderPassEncoderBeginOcclusionQuery(WGPURenderPassEncoder renderPassEncoder, uint32_t queryIndex);
+    beginOcclusionQuery: fn (ptr: *anyopaque, query_index: u32) void,
     draw: fn (ptr: *anyopaque, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder renderPassEncoder, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance);
     // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexedIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
@@ -56,6 +55,10 @@ pub inline fn draw(
     first_instance: u32,
 ) void {
     pass.vtable.draw(pass.ptr, vertex_count, instance_count, first_vertex, first_instance);
+}
+
+pub inline fn beginOcclusionQuery(pass: RenderPassEncoder, query_index: u32) void {
+    pass.vtable.beginOcclusionQuery(pass.ptr, query_index);
 }
 
 pub inline fn end(pass: RenderPassEncoder) void {
