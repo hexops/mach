@@ -42,9 +42,61 @@ pub const Descriptor = struct {
     fragment: *const FragmentState,
 };
 
+pub const CreateStatus = enum(u32) {
+    success = 0x00000000,
+    err = 0x00000001,
+    device_lost = 0x00000002,
+    device_destroyed = 0x00000003,
+    unknown = 0x00000004,
+};
+
+pub const CreateCallback = struct {
+    type_erased_ctx: *anyopaque,
+    type_erased_callback: fn (
+        ctx: *anyopaque,
+        status: CreateStatus,
+        pipeline: RenderPipeline,
+        message: [:0]const u8,
+    ) callconv(.Inline) void,
+
+    pub fn init(
+        comptime Context: type,
+        ctx: *Context,
+        comptime callback: fn (
+            ctx: *Context,
+            status: CreateStatus,
+            pipeline: RenderPipeline,
+            message: [:0]const u8,
+        ) void,
+    ) CreateCallback {
+        const erased = (struct {
+            pub inline fn erased(
+                type_erased_ctx: *anyopaque,
+                status: CreateStatus,
+                pipeline: RenderPipeline,
+                message: [:0]const u8,
+            ) void {
+                callback(
+                    @ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)),
+                    status,
+                    pipeline,
+                    message,
+                );
+            }
+        }).erased;
+
+        return .{
+            .type_erased_ctx = ctx,
+            .type_erased_callback = erased,
+        };
+    }
+};
+
 test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
     _ = Descriptor;
+    _ = CreateStatus;
+    _ = CreateCallback;
 }

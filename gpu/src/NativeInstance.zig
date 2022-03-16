@@ -436,6 +436,41 @@ const device_vtable = Device.VTable{
             return wrapRenderPipeline(c.wgpuDeviceCreateRenderPipeline(@ptrCast(c.WGPUDevice, ptr), &desc));
         }
     }).createRenderPipeline,
+    .createRenderPipelineAsync = (struct {
+        pub fn createRenderPipelineAsync(
+            ptr: *anyopaque,
+            descriptor: *const RenderPipeline.Descriptor,
+            callback: *RenderPipeline.CreateCallback,
+        ) void {
+            var tmp_depth_stencil: c.WGPUDepthStencilState = undefined;
+            var tmp_fragment_state: c.WGPUFragmentState = undefined;
+            const desc = convertRenderPipelineDescriptor(descriptor, &tmp_depth_stencil, &tmp_fragment_state);
+
+            const cCallback = (struct {
+                pub fn cCallback(
+                    status: c.WGPUCreatePipelineAsyncStatus,
+                    pipeline: c.WGPURenderPipeline,
+                    message: [*c]const u8,
+                    userdata: ?*anyopaque,
+                ) callconv(.C) void {
+                    const callback_info = @ptrCast(*RenderPipeline.CreateCallback, @alignCast(@alignOf(*RenderPipeline.CreateCallback), userdata));
+                    callback_info.type_erased_callback(
+                        callback_info.type_erased_ctx,
+                        @intToEnum(RenderPipeline.CreateStatus, status),
+                        wrapRenderPipeline(pipeline),
+                        std.mem.span(message),
+                    );
+                }
+            }).cCallback;
+
+            c.wgpuDeviceCreateRenderPipelineAsync(
+                @ptrCast(c.WGPUDevice, ptr),
+                &desc,
+                cCallback,
+                callback,
+            );
+        }
+    }).createRenderPipelineAsync,
 };
 
 inline fn convertComputePipelineDescriptor(descriptor: *const ComputePipeline.Descriptor) c.WGPUComputePipelineDescriptor {
