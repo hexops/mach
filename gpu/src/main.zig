@@ -94,8 +94,6 @@ pub const BlendState = @import("data.zig").BlendState;
 pub const VertexBufferLayout = @import("data.zig").VertexBufferLayout;
 
 // Data structures not ABI-compatible with webgpu.h
-pub const CompilationMessage = @import("structs.zig").CompilationMessage;
-pub const CompilationInfo = @import("structs.zig").CompilationInfo;
 pub const MultisampleState = @import("structs.zig").MultisampleState;
 pub const PrimitiveState = @import("structs.zig").PrimitiveState;
 pub const StorageTextureBindingLayout = @import("structs.zig").StorageTextureBindingLayout;
@@ -120,8 +118,6 @@ pub const AlphaMode = @import("enums.zig").AlphaMode;
 pub const BlendFactor = @import("enums.zig").BlendFactor;
 pub const BlendOperation = @import("enums.zig").BlendOperation;
 pub const CompareFunction = @import("enums.zig").CompareFunction;
-pub const CompilationInfoRequestStatus = @import("enums.zig").CompilationInfoRequestStatus;
-pub const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 pub const ComputePassTimestampLocation = @import("enums.zig").ComputePassTimestampLocation;
 pub const CreatePipelineAsyncStatus = @import("enums.zig").CreatePipelineAsyncStatus;
 pub const CullMode = @import("enums.zig").CullMode;
@@ -192,7 +188,7 @@ test "syntax" {
     _ = Limits;
 
     // Data structures not ABI-compatible with webgpu.h
-    _ = CompilationMessage;
+    _ = MultisampleState;
 
     // Enumerations
     _ = Feature;

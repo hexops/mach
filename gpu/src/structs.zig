@@ -10,7 +10,6 @@ const Color = @import("data.zig").Color;
 const VertexBufferLayout = @import("data.zig").VertexBufferLayout;
 const BlendState = @import("data.zig").BlendState;
 const Origin3D = @import("data.zig").Origin3D;
-const CompilationMessageType = @import("enums.zig").CompilationMessageType;
 const PrimitiveTopology = @import("enums.zig").PrimitiveTopology;
 const IndexFormat = @import("enums.zig").IndexFormat;
 const FrontFace = @import("enums.zig").FrontFace;
@@ -22,19 +21,6 @@ const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestampLoca
 const LoadOp = @import("enums.zig").LoadOp;
 const StoreOp = @import("enums.zig").StoreOp;
 const ColorWriteMask = @import("enums.zig").ColorWriteMask;
-
-pub const CompilationMessage = struct {
-    message: [:0]const u8,
-    type: CompilationMessageType,
-    line_num: u64,
-    line_pos: u64,
-    offset: u64,
-    length: u64,
-};
-
-pub const CompilationInfo = struct {
-    messages: []const CompilationMessage,
-};
 
 pub const MultisampleState = struct {
     count: u32,
@@ -150,8 +136,6 @@ pub const ImageCopyTexture = struct {
 };
 
 test "syntax" {
-    _ = CompilationMessage;
-    _ = CompilationInfo;
     _ = MultisampleState;
     _ = PrimitiveState;
     _ = StorageTextureBindingLayout;
