@@ -25,8 +25,11 @@ vtable: *const VTable,
 
 pub const VTable = struct {
     // TODO:
+    // createBindGroup: fn (ptr: *anyopaque, descriptor: *const BindGroup.Descriptor) BindGroup,
     // WGPU_EXPORT WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const * descriptor);
+    // createBindGroupLayout: fn (ptr: *anyopaque, descriptor: *const BindGroupLayout.Descriptor) BindGroupLayout,
     // WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor);
+    // createBuffer: fn (ptr: *anyopaque, descriptor: *const Buffer.Descriptor) Buffer,
     // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
     createCommandEncoder: fn (ptr: *anyopaque, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder,
     createComputePipeline: fn (ptr: *anyopaque, descriptor: *const ComputePipeline.Descriptor) ComputePipeline,
@@ -35,10 +38,15 @@ pub const VTable = struct {
         descriptor: *const ComputePipeline.Descriptor,
         callback: *ComputePipeline.CreateCallback,
     ) void,
+    // createErrorBuffer: fn (ptr: *anyopaque) Buffer,
     // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device);
+    // createExternalTexture: fn (ptr: *anyopaque, descriptor: *const ExternalTexture.Descriptor) ExternalTexture,
     // WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, WGPUExternalTextureDescriptor const * externalTextureDescriptor);
+    // createPipelineLayout: fn (ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout,
     // WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
+    // createQuerySet: fn (ptr: *anyopaque, descriptor: *const QuerySet.Descriptor) QuerySet,
     // WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
+    // createRenderBundleEncoder: fn (ptr: *anyopaque, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder,
     // WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
     createRenderPipeline: fn (ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline,
     createRenderPipelineAsync: fn (
@@ -46,26 +54,39 @@ pub const VTable = struct {
         descriptor: *const RenderPipeline.Descriptor,
         callback: *RenderPipeline.CreateCallback,
     ) void,
+    // createSampler: fn (ptr: *anyopaque, descriptor: *const Sampler.Descriptor) Sampler,
     // WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor);
     createShaderModule: fn (ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule,
     nativeCreateSwapChain: fn (ptr: *anyopaque, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain,
+    // createTexture: fn (ptr: *anyopaque, descriptor: *const Texture.Descriptor) Texture,
     // WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
     destroy: fn (ptr: *anyopaque) void,
+    // TODO: should features be exposed as static slice?
     // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeature * features);
+    // TODO: should limits be exposed as static slice?
     // WGPU_EXPORT bool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits * limits);
     getQueue: fn (ptr: *anyopaque) Queue,
+    // TODO: should hasFeature be a helper method?
     // WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeature feature);
+    // injectError: fn (ptr: *anyopaque, type: ErrorType, message: [*:0]const u8) void,
     // WGPU_EXPORT void wgpuDeviceInjectError(WGPUDevice device, WGPUErrorType type, char const * message);
+    // loseForTesting: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuDeviceLoseForTesting(WGPUDevice device);
     // TODO: callback
+    // popErrorScope: fn (ptr: *anyopaque, callback: ErrorCallback) bool,
     // WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
+    // pushErrorScope: fn (ptr: *anyopaque, filter: ErrorFilter) void,
     // WGPU_EXPORT void wgpuDevicePushErrorScope(WGPUDevice device, WGPUErrorFilter filter);
     // TODO: callback
+    // setDeviceLostCallback: fn (ptr: *anyopaque, callback: DeviceLostCallback) void,
     // WGPU_EXPORT void wgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDeviceLostCallback callback, void * userdata);
     // TODO: callback
+    // setLoggingCallback: fn (ptr: *anyopaque, callback: LoggingCallback) void,
     // WGPU_EXPORT void wgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
     // TODO: callback
+    // setUncapturedErrorCallback: fn (ptr: *anyopaque, callback: UncapturedErrorCallback) void,
     // WGPU_EXPORT void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
+    // tick: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuDeviceTick(WGPUDevice device);
 
     reference: fn (ptr: *anyopaque) void,
