@@ -14,6 +14,7 @@ const Surface = @import("Surface.zig");
 const SwapChain = @import("SwapChain.zig");
 const RenderPipeline = @import("RenderPipeline.zig");
 const CommandEncoder = @import("CommandEncoder.zig");
+const ComputePipeline = @import("ComputePipeline.zig");
 
 const Device = @This();
 
@@ -29,8 +30,11 @@ pub const VTable = struct {
     // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
     createCommandEncoder: fn (ptr: *anyopaque, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder,
     // WGPU_EXPORT WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor);
-    // TODO: callback
-    // WGPU_EXPORT void wgpuDeviceCreateComputePipelineAsync(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor, WGPUCreateComputePipelineAsyncCallback callback, void * userdata);
+    createComputePipelineAsync: fn (
+        ptr: *anyopaque,
+        descriptor: *const ComputePipeline.Descriptor,
+        callback: *ComputePipeline.CreateCallback,
+    ) void,
     // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device);
     // WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, WGPUExternalTextureDescriptor const * externalTextureDescriptor);
     // WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
@@ -91,6 +95,14 @@ pub inline fn destroy(device: Device) void {
 
 pub inline fn createCommandEncoder(device: Device, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder {
     return device.vtable.createCommandEncoder(device.ptr, descriptor);
+}
+
+pub inline fn createComputePipelineAsync(
+    device: Device,
+    descriptor: *const ComputePipeline.Descriptor,
+    callback: *ComputePipeline.CreateCallback,
+) void {
+    device.vtable.createComputePipelineAsync(device.ptr, descriptor, callback);
 }
 
 pub inline fn createRenderPipeline(device: Device, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
