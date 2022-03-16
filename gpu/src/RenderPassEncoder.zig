@@ -108,7 +108,7 @@ pub const Descriptor = struct {
     timestamp_writes: ?[]RenderPassTimestampWrite = null,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

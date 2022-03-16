@@ -43,7 +43,7 @@ pub const Entry = struct {
     storage_texture: StorageTextureBindingLayout,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

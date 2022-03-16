@@ -152,7 +152,7 @@ const stride_undefined: u32 = 0xffffffff;
 const whole_map_size: u32 = std.math.maxInt(c_int);
 const whole_size: u64 = 0xffffffffffffffff;
 
-test "syntax" {
+test {
     // Root interface/implementations
     _ = Interface;
     _ = NativeInstance;

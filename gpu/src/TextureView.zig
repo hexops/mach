@@ -46,7 +46,7 @@ pub const Dimension = enum(u32) {
     dimension_3d = 0x00000006,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

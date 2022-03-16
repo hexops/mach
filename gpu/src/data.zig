@@ -86,7 +86,7 @@ pub const VertexBufferLayout = extern struct {
     attributes: *const VertexAttribute,
 };
 
-test "syntax" {
+test {
     _ = Limits;
     _ = Color;
     _ = Extent3D;

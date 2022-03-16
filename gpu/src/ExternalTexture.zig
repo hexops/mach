@@ -39,7 +39,7 @@ pub const Descriptor = struct {
     color_space: PredefinedColorSpace,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

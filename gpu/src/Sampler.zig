@@ -52,7 +52,7 @@ pub const Descriptor = struct {
     max_anisotropy: u16,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

@@ -62,7 +62,7 @@ pub const WorkDoneStatus = enum(u32) {
     Force32 = 0x7FFFFFFF,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

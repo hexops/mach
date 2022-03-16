@@ -138,7 +138,7 @@ pub const LostReason = enum(u32) {
     destroyed = 0x00000001,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = getQueue;
     _ = reference;

@@ -41,7 +41,7 @@ pub const Descriptor = struct {
     timestamp_writes: []const ComputePassTimestampWrite,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

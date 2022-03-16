@@ -47,7 +47,7 @@ pub const Descriptor = struct {
     stencil_read_only: bool,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

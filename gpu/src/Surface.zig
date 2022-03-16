@@ -58,7 +58,7 @@ pub const Descriptor = union(DescriptorTag) {
     },
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

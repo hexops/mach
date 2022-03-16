@@ -39,7 +39,7 @@ pub const Descriptor = struct {
     pipeline_statistics: []PipelineStatistic,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;
