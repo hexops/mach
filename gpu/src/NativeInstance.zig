@@ -979,6 +979,16 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             c.wgpuRenderPassEncoderInsertDebugMarker(@ptrCast(c.WGPURenderPassEncoder, ptr), marker_label);
         }
     }).insertDebugMarker,
+    .popDebugGroup = (struct {
+        pub fn popDebugGroup(ptr: *anyopaque) void {
+            c.wgpuRenderPassEncoderPopDebugGroup(@ptrCast(c.WGPURenderPassEncoder, ptr));
+        }
+    }).popDebugGroup,
+    .pushDebugGroup = (struct {
+        pub fn pushDebugGroup(ptr: *anyopaque, group_label: [*:0]const u8) void {
+            c.wgpuRenderPassEncoderPushDebugGroup(@ptrCast(c.WGPURenderPassEncoder, ptr), group_label);
+        }
+    }).pushDebugGroup,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {
