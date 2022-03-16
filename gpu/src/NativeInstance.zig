@@ -950,6 +950,30 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             c.wgpuRenderPassEncoderEnd(@ptrCast(c.WGPURenderPassEncoder, ptr));
         }
     }).end,
+    .executeBundles = (struct {
+        pub fn executeBundles(ptr: *anyopaque, bundles: []RenderBundle) void {
+            var few_bundles: [16]c.WGPURenderBundle = undefined;
+            const c_bundles = if (bundles.len <= 8) blk: {
+                for (bundles) |bundle, i| {
+                    few_bundles[i] = @ptrCast(c.WGPURenderBundle, bundle.ptr);
+                }
+                break :blk few_bundles[0..bundles.len];
+            } else blk: {
+                const mem = std.heap.page_allocator.alloc(c.WGPURenderBundle, bundles.len) catch unreachable;
+                for (bundles) |bundle, i| {
+                    mem[i] = @ptrCast(c.WGPURenderBundle, bundle.ptr);
+                }
+                break :blk mem;
+            };
+            defer if (bundles.len > 8) std.heap.page_allocator.free(c_bundles);
+
+            c.wgpuRenderPassEncoderExecuteBundles(
+                @ptrCast(c.WGPURenderPassEncoder, ptr),
+                @intCast(u32, c_bundles.len),
+                &c_bundles[0],
+            );
+        }
+    }).executeBundles,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {

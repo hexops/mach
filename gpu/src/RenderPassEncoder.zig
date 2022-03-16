@@ -4,6 +4,7 @@ const RenderPassDepthStencilAttachment = @import("structs.zig").RenderPassDepthS
 const RenderPassTimestampWrite = @import("structs.zig").RenderPassTimestampWrite;
 const RenderPipeline = @import("RenderPipeline.zig");
 const Buffer = @import("Buffer.zig");
+const RenderBundle = @import("RenderBundle.zig");
 
 const RenderPassEncoder = @This();
 
@@ -29,7 +30,7 @@ pub const VTable = struct {
     beginOcclusionQuery: fn (ptr: *anyopaque, query_index: u32) void,
     endOcclusionQuery: fn (ptr: *anyopaque) void,
     end: fn (ptr: *anyopaque) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder renderPassEncoder, uint32_t bundlesCount, WGPURenderBundle const * bundles);
+    executeBundles: fn (ptr: *anyopaque, bundles: []RenderBundle) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderInsertDebugMarker(WGPURenderPassEncoder renderPassEncoder, char const * markerLabel);
     // WGPU_EXPORT void wgpuRenderPassEncoderPopDebugGroup(WGPURenderPassEncoder renderPassEncoder);
     // WGPU_EXPORT void wgpuRenderPassEncoderPushDebugGroup(WGPURenderPassEncoder renderPassEncoder, char const * groupLabel);
@@ -92,6 +93,10 @@ pub inline fn endOcclusionQuery(pass: RenderPassEncoder, query_index: u32) void 
 
 pub inline fn end(pass: RenderPassEncoder) void {
     pass.vtable.end(pass.ptr);
+}
+
+pub inline fn executeBundles(pass: RenderPassEncoder, bundles: []RenderBundle) void {
+    pass.vtable.executeBundles(pass.ptr, bundles);
 }
 
 pub inline fn setLabel(pass: RenderPassEncoder, label: [:0]const u8) void {
