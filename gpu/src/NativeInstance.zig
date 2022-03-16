@@ -931,6 +931,15 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             );
         }
     }).drawIndexedIndirect,
+    .drawIndirect = (struct {
+        pub fn drawIndirect(ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void {
+            c.wgpuRenderPassEncoderDrawIndexedIndirect(
+                @ptrCast(c.WGPURenderPassEncoder, ptr),
+                @ptrCast(c.WGPUBuffer, indirect_buffer.ptr),
+                indirect_offset,
+            );
+        }
+    }).drawIndirect,
     .beginOcclusionQuery = (struct {
         pub fn beginOcclusionQuery(ptr: *anyopaque, query_index: u32) void {
             c.wgpuRenderPassEncoderBeginOcclusionQuery(@ptrCast(c.WGPURenderPassEncoder, ptr), query_index);

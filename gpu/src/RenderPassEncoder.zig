@@ -26,7 +26,7 @@ pub const VTable = struct {
         first_instance: u32,
     ) void,
     drawIndexedIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+    drawIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     end: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder renderPassEncoder);
     // WGPU_EXPORT void wgpuRenderPassEncoderEndPass(WGPURenderPassEncoder renderPassEncoder);
@@ -78,6 +78,10 @@ pub inline fn drawIndexed(
 
 pub inline fn drawIndexedIndirect(pass: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
     pass.vtable.drawIndexedIndirect(pass.ptr, indirect_buffer, indirect_offset);
+}
+
+pub inline fn drawIndirect(pass: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+    pass.vtable.drawIndirect(pass.ptr, indirect_buffer, indirect_offset);
 }
 
 pub inline fn beginOcclusionQuery(pass: RenderPassEncoder, query_index: u32) void {
