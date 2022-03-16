@@ -1032,6 +1032,17 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             );
         }
     }).setIndexBuffer,
+    .setScissorRect = (struct {
+        pub fn setScissorRect(ptr: *anyopaque, x: u32, y: u32, width: u32, height: u32) void {
+            c.wgpuRenderPassEncoderSetScissorRect(
+                @ptrCast(c.WGPURenderPassEncoder, ptr),
+                x,
+                y,
+                width,
+                height,
+            );
+        }
+    }).setScissorRect,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {
