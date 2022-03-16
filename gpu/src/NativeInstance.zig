@@ -786,6 +786,25 @@ const texture_vtable = Texture.VTable{
             c.wgpuTextureDestroy(@ptrCast(c.WGPUTexture, ptr));
         }
     }).destroy,
+    .createView = (struct {
+        pub fn createView(ptr: *anyopaque, descriptor: *const TextureView.Descriptor) TextureView {
+            const desc = c.WGPUTextureViewDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| l else "",
+                .format = @enumToInt(descriptor.format),
+                .dimension = @enumToInt(descriptor.dimension),
+                .baseMipLevel = descriptor.base_mip_level,
+                .mipLevelCount = descriptor.mip_level_count,
+                .baseArrayLayer = descriptor.base_array_layer,
+                .arrayLayerCount = descriptor.array_layer_count,
+                .aspect = @enumToInt(descriptor.aspect),
+            };
+            return wrapTextureView(c.wgpuTextureCreateView(
+                @ptrCast(c.WGPUTexture, ptr),
+                &desc,
+            ));
+        }
+    }).createView,
 };
 
 fn wrapSampler(sampler: c.WGPUSampler) Sampler {
