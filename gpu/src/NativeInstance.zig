@@ -1043,6 +1043,50 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             );
         }
     }).setScissorRect,
+    .setStencilReference = (struct {
+        pub fn setStencilReference(ptr: *anyopaque, reference: u32) void {
+            c.wgpuRenderPassEncoderSetStencilReference(
+                @ptrCast(c.WGPURenderPassEncoder, ptr),
+                reference,
+            );
+        }
+    }).setStencilReference,
+    // .setVertexBuffer = (struct {
+    //     pub fn setVertexBuffer(ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
+    //         c.wgpuRenderPassEncoderSetVertexBuffer(
+    //             @ptrCast(c.WGPURenderPassEncoder, ptr),
+    //             slot,
+    //             @ptrCast(c.WGPUBuffer, buffer.ptr),
+    //             offset,
+    //             size,
+    //         );
+    //     }
+    // }).setVertexBuffer,
+    // .setViewport = (struct {
+    //     pub fn setViewport(
+    //         ptr: *anyopaque,
+    //         x: f32,
+    //         y: f32,
+    //         width: f32,
+    //         height: f32,
+    //         min_depth: f32,
+    //         max_depth: f32,
+    //     ) void {
+    //         c.wgpuRenderPassEncoderSetViewport(
+    //             @ptrCast(c.WGPURenderPassEncoder, ptr),
+    //             x, y, width, height, min_depth, max_depth,
+    //         );
+    //     }
+    // }).setViewport,
+    // .writeTimestamp = (struct {
+    //     pub fn writeTimestamp(ptr: *anyopaque, query_set: QuerySet, query_index: u32) void {
+    //         c.wgpuRenderPassEncoderWriteTimestamp(
+    //             @ptrCast(c.WGPURenderPassEncoder, ptr),
+    //             @ptrCast(c.WGPUQuerySet, query_set.ptr),
+    //             query_index,
+    //         );
+    //     }
+    // }).writeTimestamp,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {

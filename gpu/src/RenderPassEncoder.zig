@@ -43,14 +43,10 @@ pub const VTable = struct {
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     setPipeline: fn (ptr: *anyopaque, pipeline: RenderPipeline) void,
     setScissorRect: fn (ptr: *anyopaque, x: u32, y: u32, width: u32, height: u32) void,
-    // setStencilReference: fn (ptr: *anyopaque, reference: u32) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder renderPassEncoder, uint32_t reference);
+    setStencilReference: fn (ptr: *anyopaque, reference: u32) void,
     // setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
     // setViewport: fn (ptr: *anyopaque, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder renderPassEncoder, float x, float y, float width, float height, float minDepth, float maxDepth);
     // writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderWriteTimestamp(WGPURenderPassEncoder renderPassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
 };
 
 pub inline fn reference(pass: RenderPassEncoder) void {
@@ -153,6 +149,42 @@ pub inline fn setScissorRect(pass: RenderPassEncoder, x: u32, y: u32, width: u32
     pass.vtable.setScissorRect(pass.ptr, x, y, width, height);
 }
 
+pub inline fn setStencilReference(pass: RenderPassEncoder, ref: u32) void {
+    pass.vtable.setStencilReference(pass.ptr, ref);
+}
+
+// pub inline fn setVertexBuffer(
+//     pass: RenderPassEncoder,
+//     slot: u32,
+//     buffer: Buffer,
+//     offset: u64,
+//     size: u64,
+// ) void {
+//     pass.vtable.setVertexBuffer(pass.ptr, slot, buffer, offset, size);
+// }
+// // setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
+// // WGPU_EXPORT void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
+
+// pub inline fn setViewport(
+//     pass: RenderPassEncoder,
+//     x: f32,
+//     y: f32,
+//     width: f32,
+//     height: f32,
+//     min_depth: f32,
+//     max_depth: f32,
+// ) void {
+//     pass.vtable.setViewport(pass.ptr, x, y, width, height, min_depth, max_depth);
+// }
+// // setViewport: fn (ptr: *anyopaque, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void,
+// // WGPU_EXPORT void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder renderPassEncoder, float x, float y, float width, float height, float minDepth, float maxDepth);
+
+// pub inline fn writeTimestamp(pass: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
+//     pass.vtable.writeTimestamp(pass.ptr, query_set, query_index);
+// }
+// // writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
+// // WGPU_EXPORT void wgpuRenderPassEncoderWriteTimestamp(WGPURenderPassEncoder renderPassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     color_attachments: []const RenderPassColorAttachment,
@@ -182,5 +214,9 @@ test {
     _ = setLabel;
     _ = setPipeline;
     _ = setPipeline;
+    _ = setStencilReference;
+    // _ = setVertexBuffer;
+    // _ = setViewport;
+    // _ = writeTimestamp;
     _ = Descriptor;
 }
