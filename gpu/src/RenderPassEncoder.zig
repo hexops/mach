@@ -44,7 +44,7 @@ pub const VTable = struct {
     setPipeline: fn (ptr: *anyopaque, pipeline: RenderPipeline) void,
     setScissorRect: fn (ptr: *anyopaque, x: u32, y: u32, width: u32, height: u32) void,
     setStencilReference: fn (ptr: *anyopaque, reference: u32) void,
-    // setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
+    setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
     // setViewport: fn (ptr: *anyopaque, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void,
     // writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
 };
@@ -153,17 +153,15 @@ pub inline fn setStencilReference(pass: RenderPassEncoder, ref: u32) void {
     pass.vtable.setStencilReference(pass.ptr, ref);
 }
 
-// pub inline fn setVertexBuffer(
-//     pass: RenderPassEncoder,
-//     slot: u32,
-//     buffer: Buffer,
-//     offset: u64,
-//     size: u64,
-// ) void {
-//     pass.vtable.setVertexBuffer(pass.ptr, slot, buffer, offset, size);
-// }
-// // setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
-// // WGPU_EXPORT void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
+pub inline fn setVertexBuffer(
+    pass: RenderPassEncoder,
+    slot: u32,
+    buffer: Buffer,
+    offset: u64,
+    size: u64,
+) void {
+    pass.vtable.setVertexBuffer(pass.ptr, slot, buffer, offset, size);
+}
 
 // pub inline fn setViewport(
 //     pass: RenderPassEncoder,
@@ -215,7 +213,7 @@ test {
     _ = setPipeline;
     _ = setPipeline;
     _ = setStencilReference;
-    // _ = setVertexBuffer;
+    _ = setVertexBuffer;
     // _ = setViewport;
     // _ = writeTimestamp;
     _ = Descriptor;

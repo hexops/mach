@@ -1051,17 +1051,17 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             );
         }
     }).setStencilReference,
-    // .setVertexBuffer = (struct {
-    //     pub fn setVertexBuffer(ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
-    //         c.wgpuRenderPassEncoderSetVertexBuffer(
-    //             @ptrCast(c.WGPURenderPassEncoder, ptr),
-    //             slot,
-    //             @ptrCast(c.WGPUBuffer, buffer.ptr),
-    //             offset,
-    //             size,
-    //         );
-    //     }
-    // }).setVertexBuffer,
+    .setVertexBuffer = (struct {
+        pub fn setVertexBuffer(ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
+            c.wgpuRenderPassEncoderSetVertexBuffer(
+                @ptrCast(c.WGPURenderPassEncoder, ptr),
+                slot,
+                @ptrCast(c.WGPUBuffer, buffer.ptr),
+                offset,
+                size,
+            );
+        }
+    }).setVertexBuffer,
     // .setViewport = (struct {
     //     pub fn setViewport(
     //         ptr: *anyopaque,
