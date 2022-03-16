@@ -903,6 +903,11 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             c.wgpuRenderPassEncoderDraw(@ptrCast(c.WGPURenderPassEncoder, ptr), vertex_count, instance_count, first_vertex, first_instance);
         }
     }).draw,
+    .beginOcclusionQuery = (struct {
+        pub fn beginOcclusionQuery(ptr: *anyopaque, query_index: u32) void {
+            c.wgpuRenderPassEncoderBeginOcclusionQuery(@ptrCast(c.WGPURenderPassEncoder, ptr), query_index);
+        }
+    }).beginOcclusionQuery,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {
