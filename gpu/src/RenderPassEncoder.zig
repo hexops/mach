@@ -15,7 +15,6 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    beginOcclusionQuery: fn (ptr: *anyopaque, query_index: u32) void,
     draw: fn (ptr: *anyopaque, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void,
     drawIndexed: fn (
         ptr: *anyopaque,
@@ -27,6 +26,7 @@ pub const VTable = struct {
     ) void,
     drawIndexedIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     drawIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
+    beginOcclusionQuery: fn (ptr: *anyopaque, query_index: u32) void,
     end: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder renderPassEncoder);
     // WGPU_EXPORT void wgpuRenderPassEncoderEndPass(WGPURenderPassEncoder renderPassEncoder);
@@ -113,6 +113,11 @@ test "syntax" {
     _ = reference;
     _ = release;
     _ = draw;
+    _ = drawIndexed;
+    _ = drawIndexedIndirect;
+    _ = drawIndirect;
+    _ = beginOcclusionQuery;
+    _ = end;
     _ = setLabel;
     _ = setPipeline;
     _ = Descriptor;
