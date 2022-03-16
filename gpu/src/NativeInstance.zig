@@ -974,6 +974,11 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             );
         }
     }).executeBundles,
+    .insertDebugMarker = (struct {
+        pub fn insertDebugMarker(ptr: *anyopaque, marker_label: [*:0]const u8) void {
+            c.wgpuRenderPassEncoderInsertDebugMarker(@ptrCast(c.WGPURenderPassEncoder, ptr), marker_label);
+        }
+    }).insertDebugMarker,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {
