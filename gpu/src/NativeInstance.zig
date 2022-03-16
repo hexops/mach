@@ -41,6 +41,7 @@ const ComputePassEncoder = @import("ComputePassEncoder.zig");
 const ComputePipeline = @import("ComputePipeline.zig");
 
 const PresentMode = @import("enums.zig").PresentMode;
+const IndexFormat = @import("enums.zig").IndexFormat;
 
 const NativeInstance = @This();
 
@@ -1014,6 +1015,23 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             );
         }
     }).setBlendConstant,
+    .setIndexBuffer = (struct {
+        pub fn setIndexBuffer(
+            ptr: *anyopaque,
+            buffer: Buffer,
+            format: IndexFormat,
+            offset: u64,
+            size: u64,
+        ) void {
+            c.wgpuRenderPassEncoderSetIndexBuffer(
+                @ptrCast(c.WGPURenderPassEncoder, ptr),
+                @ptrCast(c.WGPUBuffer, buffer.ptr),
+                @enumToInt(format),
+                offset,
+                size,
+            );
+        }
+    }).setIndexBuffer,
 };
 
 fn wrapRenderBundleEncoder(enc: c.WGPURenderBundleEncoder) RenderBundleEncoder {
