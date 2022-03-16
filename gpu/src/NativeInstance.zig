@@ -1312,6 +1312,14 @@ const compute_pipeline_vtable = ComputePipeline.VTable{
             c.wgpuComputePipelineSetLabel(@ptrCast(c.WGPUComputePipeline, ptr), label);
         }
     }).setLabel,
+    .getBindGroupLayout = (struct {
+        pub fn getBindGroupLayout(ptr: *anyopaque, group_index: u32) BindGroupLayout {
+            return wrapBindGroupLayout(c.wgpuComputePipelineGetBindGroupLayout(
+                @ptrCast(c.WGPUComputePipeline, ptr),
+                group_index,
+            ));
+        }
+    }).getBindGroupLayout,
 };
 
 test "syntax" {
