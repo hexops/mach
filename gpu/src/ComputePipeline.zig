@@ -1,5 +1,6 @@
 const PipelineLayout = @import("PipelineLayout.zig");
 const ProgrammableStageDescriptor = @import("structs.zig").ProgrammableStageDescriptor;
+const BindGroupLayout = @import("BindGroupLayout.zig");
 
 const ComputePipeline = @This();
 
@@ -11,9 +12,8 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    // TODO:
-    // WGPU_EXPORT WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComputePipeline computePipeline, uint32_t groupIndex);
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
+    getBindGroupLayout: fn (ptr: *anyopaque, group_index: u32) BindGroupLayout,
 };
 
 pub inline fn reference(pipeline: ComputePipeline) void {
@@ -26,6 +26,10 @@ pub inline fn release(pipeline: ComputePipeline) void {
 
 pub inline fn setLabel(pipeline: ComputePipeline, label: [:0]const u8) void {
     pipeline.vtable.setLabel(pipeline.ptr, label);
+}
+
+pub inline fn getBindGroupLayout(pipeline: ComputePipeline, group_index: u32) BindGroupLayout {
+    return pipeline.vtable.getBindGroupLayout(pipeline.ptr, group_index);
 }
 
 pub const Descriptor = struct {
@@ -88,6 +92,8 @@ test "syntax" {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = setLabel;
+    _ = getBindGroupLayout;
     _ = Descriptor;
     _ = CreateStatus;
     _ = CreateCallback;
