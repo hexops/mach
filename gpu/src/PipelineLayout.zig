@@ -32,7 +32,7 @@ pub const Descriptor = struct {
     bind_group_layouts: []const BindGroupLayout,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

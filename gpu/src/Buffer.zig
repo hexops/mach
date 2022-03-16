@@ -112,7 +112,7 @@ pub const MapMode = enum(u32) {
     write = 0x00000002,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

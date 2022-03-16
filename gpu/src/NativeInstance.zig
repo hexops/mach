@@ -1364,7 +1364,7 @@ const compute_pipeline_vtable = ComputePipeline.VTable{
     }).getBindGroupLayout,
 };
 
-test "syntax" {
+test {
     _ = wrap;
     _ = interface_vtable;
     _ = interface;

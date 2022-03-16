@@ -199,7 +199,7 @@ pub const DataLayout = struct {
     rows_per_image: u32,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

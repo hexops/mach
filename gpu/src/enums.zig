@@ -255,7 +255,7 @@ test "name" {
     try std.testing.expect(std.mem.eql(u8, @tagName(Feature.timestamp_query), "timestamp_query"));
 }
 
-test "syntax" {
+test {
     _ = Feature;
     _ = AddressMode;
     _ = PresentMode;

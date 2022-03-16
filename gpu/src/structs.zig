@@ -135,7 +135,7 @@ pub const ImageCopyTexture = struct {
     aspect: Texture.Aspect,
 };
 
-test "syntax" {
+test {
     _ = MultisampleState;
     _ = PrimitiveState;
     _ = StorageTextureBindingLayout;

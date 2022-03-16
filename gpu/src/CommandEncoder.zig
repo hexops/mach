@@ -55,7 +55,7 @@ pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

@@ -109,7 +109,7 @@ pub fn waitForAdapter(interface: Interface, options: *const RequestAdapterOption
     return response;
 }
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

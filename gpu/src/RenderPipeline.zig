@@ -96,7 +96,7 @@ pub const CreateCallback = struct {
     }
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;

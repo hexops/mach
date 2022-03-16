@@ -193,7 +193,7 @@ pub fn waitForDevice(adapter: Adapter, descriptor: *const Device.Descriptor) Req
     return response;
 }
 
-test "syntax" {
+test {
     _ = VTable;
     _ = hasFeature;
     _ = Properties;

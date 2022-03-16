@@ -67,7 +67,7 @@ pub const Descriptor = struct {
     }
 };
 
-test "syntax" {
+test {
     _ = VTable;
     _ = reference;
     _ = release;
