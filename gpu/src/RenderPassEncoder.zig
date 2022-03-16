@@ -5,6 +5,7 @@ const RenderPassTimestampWrite = @import("structs.zig").RenderPassTimestampWrite
 const RenderPipeline = @import("RenderPipeline.zig");
 const Buffer = @import("Buffer.zig");
 const RenderBundle = @import("RenderBundle.zig");
+const BindGroup = @import("BindGroup.zig");
 
 const RenderPassEncoder = @This();
 
@@ -34,7 +35,7 @@ pub const VTable = struct {
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     popDebugGroup: fn (ptr: *anyopaque) void,
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+    setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderSetBlendConstant(WGPURenderPassEncoder renderPassEncoder, WGPUColor const * color);
     // WGPU_EXPORT void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
@@ -111,6 +112,15 @@ pub inline fn pushDebugGroup(pass: RenderPassEncoder, group_label: [*:0]const u8
     pass.vtable.pushDebugGroup(pass.ptr, group_label);
 }
 
+pub inline fn setBindGroup(
+    pass: RenderPassEncoder,
+    group_index: u32,
+    group: BindGroup,
+    dynamic_offsets: []u32,
+) void {
+    pass.vtable.setBindGroup(pass.ptr, group_index, group, dynamic_offsets);
+}
+
 pub inline fn setLabel(pass: RenderPassEncoder, label: [:0]const u8) void {
     pass.vtable.setLabel(pass.ptr, label);
 }
@@ -142,6 +152,7 @@ test {
     _ = insertDebugMarker;
     _ = popDebugGroup;
     _ = pushDebugGroup;
+    _ = setBindGroup;
     _ = setLabel;
     _ = setPipeline;
     _ = Descriptor;
