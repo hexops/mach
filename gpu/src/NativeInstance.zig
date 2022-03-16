@@ -382,24 +382,26 @@ const device_vtable = Device.VTable{
             return wrapCommandEncoder(c.wgpuDeviceCreateCommandEncoder(@ptrCast(c.WGPUDevice, ptr), desc));
         }
     }).createCommandEncoder,
+    .createComputePipeline = (struct {
+        pub fn createComputePipeline(
+            ptr: *anyopaque,
+            descriptor: *const ComputePipeline.Descriptor,
+        ) ComputePipeline {
+            const desc = convertComputePipelineDescriptor(descriptor);
+
+            return wrapComputePipeline(c.wgpuDeviceCreateComputePipeline(
+                @ptrCast(c.WGPUDevice, ptr),
+                &desc,
+            ));
+        }
+    }).createComputePipeline,
     .createComputePipelineAsync = (struct {
         pub fn createComputePipelineAsync(
             ptr: *anyopaque,
             descriptor: *const ComputePipeline.Descriptor,
             callback: *ComputePipeline.CreateCallback,
         ) void {
-            const desc = c.WGPUComputePipelineDescriptor{
-                .nextInChain = null,
-                .label = if (descriptor.label) |l| l else null,
-                .layout = @ptrCast(c.WGPUPipelineLayout, descriptor.layout.ptr),
-                .compute = c.WGPUProgrammableStageDescriptor{
-                    .nextInChain = null,
-                    .module = @ptrCast(c.WGPUShaderModule, descriptor.compute.module.ptr),
-                    .entryPoint = descriptor.compute.entry_point,
-                    .constantCount = if (descriptor.compute.constants) |v| @intCast(u32, v.len) else 0,
-                    .constants = if (descriptor.compute.constants) |v| @ptrCast(*const c.WGPUConstantEntry, &v[0]) else null,
-                },
-            };
+            const desc = convertComputePipelineDescriptor(descriptor);
 
             const cCallback = (struct {
                 pub fn cCallback(
@@ -435,6 +437,21 @@ const device_vtable = Device.VTable{
         }
     }).createRenderPipeline,
 };
+
+inline fn convertComputePipelineDescriptor(descriptor: *const ComputePipeline.Descriptor) c.WGPUComputePipelineDescriptor {
+    return .{
+        .nextInChain = null,
+        .label = if (descriptor.label) |l| l else null,
+        .layout = @ptrCast(c.WGPUPipelineLayout, descriptor.layout.ptr),
+        .compute = c.WGPUProgrammableStageDescriptor{
+            .nextInChain = null,
+            .module = @ptrCast(c.WGPUShaderModule, descriptor.compute.module.ptr),
+            .entryPoint = descriptor.compute.entry_point,
+            .constantCount = if (descriptor.compute.constants) |v| @intCast(u32, v.len) else 0,
+            .constants = if (descriptor.compute.constants) |v| @ptrCast(*const c.WGPUConstantEntry, &v[0]) else null,
+        },
+    };
+}
 
 inline fn convertRenderPipelineDescriptor(
     d: *const RenderPipeline.Descriptor,

@@ -29,7 +29,7 @@ pub const VTable = struct {
     // WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor);
     // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
     createCommandEncoder: fn (ptr: *anyopaque, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder,
-    // WGPU_EXPORT WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor);
+    createComputePipeline: fn (ptr: *anyopaque, descriptor: *const ComputePipeline.Descriptor) ComputePipeline,
     createComputePipelineAsync: fn (
         ptr: *anyopaque,
         descriptor: *const ComputePipeline.Descriptor,
@@ -95,6 +95,13 @@ pub inline fn destroy(device: Device) void {
 
 pub inline fn createCommandEncoder(device: Device, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder {
     return device.vtable.createCommandEncoder(device.ptr, descriptor);
+}
+
+pub inline fn createComputePipeline(
+    device: Device,
+    descriptor: *const ComputePipeline.Descriptor,
+) ComputePipeline {
+    return device.vtable.createComputePipeline(device.ptr, descriptor);
 }
 
 pub inline fn createComputePipelineAsync(
