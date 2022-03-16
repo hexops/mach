@@ -41,8 +41,11 @@ pub const VTable = struct {
     // WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
     // WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
     createRenderPipeline: fn (ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline,
-    // TODO: callback
-    // WGPU_EXPORT void wgpuDeviceCreateRenderPipelineAsync(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor, WGPUCreateRenderPipelineAsyncCallback callback, void * userdata);
+    createRenderPipelineAsync: fn (
+        ptr: *anyopaque,
+        descriptor: *const RenderPipeline.Descriptor,
+        callback: *RenderPipeline.CreateCallback,
+    ) void,
     // WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor);
     createShaderModule: fn (ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule,
     nativeCreateSwapChain: fn (ptr: *anyopaque, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain,
@@ -116,6 +119,14 @@ pub inline fn createRenderPipeline(device: Device, descriptor: *const RenderPipe
     return device.vtable.createRenderPipeline(device.ptr, descriptor);
 }
 
+pub inline fn createRenderPipelineAsync(
+    device: Device,
+    descriptor: *const RenderPipeline.Descriptor,
+    callback: *RenderPipeline.CreateCallback,
+) void {
+    device.vtable.createRenderPipelineAsync(device.ptr, descriptor, callback);
+}
+
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     required_features: ?[]Feature = null,
@@ -136,7 +147,10 @@ test "syntax" {
     _ = nativeCreateSwapChain;
     _ = destroy;
     _ = createCommandEncoder;
+    _ = createComputePipeline;
+    _ = createComputePipelineAsync;
     _ = createRenderPipeline;
+    _ = createRenderPipelineAsync;
     _ = Descriptor;
     _ = LostReason;
 }
