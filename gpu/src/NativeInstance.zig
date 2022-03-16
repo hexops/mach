@@ -575,6 +575,25 @@ const shader_module_vtable = ShaderModule.VTable{
             c.wgpuShaderModuleSetLabel(@ptrCast(c.WGPUShaderModule, ptr), label);
         }
     }).setLabel,
+    .getCompilationInfo = (struct {
+        pub fn getCompilationInfo(ptr: *anyopaque, callback: *ShaderModule.CompilationInfoCallback) void {
+            const cCallback = (struct {
+                pub fn cCallback(status: c.WGPUCompilationInfoRequestStatus, info: [*c]const c.WGPUCompilationInfo, userdata: ?*anyopaque) callconv(.C) void {
+                    const callback_info = @ptrCast(*ShaderModule.CompilationInfoCallback, @alignCast(@alignOf(*ShaderModule.CompilationInfoCallback), userdata.?));
+
+                    callback_info.type_erased_callback(
+                        callback_info.type_erased_ctx,
+                        @intToEnum(ShaderModule.CompilationInfoRequestStatus, status),
+                        &ShaderModule.CompilationInfo{
+                            .messages = @bitCast([]const ShaderModule.CompilationMessage, info[0].messages[0..info[0].messageCount]),
+                        },
+                    );
+                }
+            }).cCallback;
+
+            c.wgpuShaderModuleGetCompilationInfo(@ptrCast(c.WGPUShaderModule, ptr), cCallback, callback);
+        }
+    }).getCompilationInfo,
 };
 
 fn wrapSwapChain(swap_chain: c.WGPUSwapChain) SwapChain {

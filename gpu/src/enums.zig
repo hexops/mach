@@ -69,19 +69,6 @@ pub const CompareFunction = enum(u32) {
     always = 0x00000008,
 };
 
-pub const CompilationInfoRequestStatus = enum(u32) {
-    success = 0x00000000,
-    err = 0x00000001,
-    device_lost = 0x00000002,
-    unknown = 0x00000003,
-};
-
-pub const CompilationMessageType = enum(u32) {
-    err = 0x00000000,
-    warning = 0x00000001,
-    info = 0x00000002,
-};
-
 pub const ComputePassTimestampLocation = enum(u32) {
     beginning = 0x00000000,
     end = 0x00000001,
@@ -284,8 +271,6 @@ test "syntax" {
     _ = BlendFactor;
     _ = BlendOperation;
     _ = CompareFunction;
-    _ = CompilationInfoRequestStatus;
-    _ = CompilationMessageType;
     _ = ComputePassTimestampLocation;
     _ = CreatePipelineAsyncStatus;
     _ = CullMode;
