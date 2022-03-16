@@ -42,8 +42,7 @@ pub const VTable = struct {
     setIndexBuffer: fn (ptr: *anyopaque, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     setPipeline: fn (ptr: *anyopaque, pipeline: RenderPipeline) void,
-    // setScissorRect: fn (ptr: *anyopaque, x: u32, y: u32, width: u32, height: u32) void,
-    // WGPU_EXPORT void wgpuRenderPassEncoderSetScissorRect(WGPURenderPassEncoder renderPassEncoder, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+    setScissorRect: fn (ptr: *anyopaque, x: u32, y: u32, width: u32, height: u32) void,
     // setStencilReference: fn (ptr: *anyopaque, reference: u32) void,
     // WGPU_EXPORT void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder renderPassEncoder, uint32_t reference);
     // setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
@@ -150,6 +149,10 @@ pub inline fn setPipeline(pass: RenderPassEncoder, pipeline: RenderPipeline) voi
     pass.vtable.setPipeline(pass.ptr, pipeline);
 }
 
+pub inline fn setScissorRect(pass: RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
+    pass.vtable.setScissorRect(pass.ptr, x, y, width, height);
+}
+
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     color_attachments: []const RenderPassColorAttachment,
@@ -177,6 +180,7 @@ test {
     _ = setBlendConstant;
     _ = setIndexBuffer;
     _ = setLabel;
+    _ = setPipeline;
     _ = setPipeline;
     _ = Descriptor;
 }
