@@ -1,4 +1,5 @@
 const Texture = @import("Texture.zig");
+const Buffer = @import("Buffer.zig");
 
 const RenderBundleEncoder = @This();
 
@@ -25,8 +26,7 @@ pub const VTable = struct {
         base_vertex: i32,
         first_instance: u32,
     ) void,
-    // drawIndexedIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
-    // WGPU_EXPORT void wgpuRenderBundleEncoderDrawIndexedIndirect(WGPURenderBundleEncoder renderBundleEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+    drawIndexedIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     // drawIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     // WGPU_EXPORT void wgpuRenderBundleEncoderDrawIndirect(WGPURenderBundleEncoder renderBundleEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
     // finish: fn (ptr: *anyopaque, descriptor: *const RenderBundle.Descriptor) void,
@@ -77,9 +77,9 @@ pub inline fn drawIndexed(
     enc.vtable.drawIndexed(enc.ptr, index_count, instance_count, first_index, base_vertex, first_instance);
 }
 
-// pub inline fn drawIndexedIndirect(enc: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
-//     enc.vtable.drawIndexedIndirect(enc.ptr, indirect_buffer, indirect_offset);
-// }
+pub inline fn drawIndexedIndirect(enc: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+    enc.vtable.drawIndexedIndirect(enc.ptr, indirect_buffer, indirect_offset);
+}
 
 // pub inline fn drawIndirect(enc: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
 //     enc.vtable.drawIndirect(enc.ptr, indirect_buffer, indirect_offset);
@@ -193,5 +193,6 @@ test {
     _ = release;
     _ = draw;
     _ = drawIndexed;
+    _ = drawIndexedIndirect;
     _ = Descriptor;
 }

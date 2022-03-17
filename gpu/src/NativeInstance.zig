@@ -1146,15 +1146,15 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
             );
         }
     }).drawIndexed,
-    // .drawIndexedIndirect = (struct {
-    //     pub fn drawIndexedIndirect(ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void {
-    //         c.wgpuRenderBundleEncoderDrawIndexedIndirect(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             @ptrCast(c.WGPUBuffer, indirect_buffer.ptr),
-    //             indirect_offset,
-    //         );
-    //     }
-    // }).drawIndexedIndirect,
+    .drawIndexedIndirect = (struct {
+        pub fn drawIndexedIndirect(ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void {
+            c.wgpuRenderBundleEncoderDrawIndexedIndirect(
+                @ptrCast(c.WGPURenderBundleEncoder, ptr),
+                @ptrCast(c.WGPUBuffer, indirect_buffer.ptr),
+                indirect_offset,
+            );
+        }
+    }).drawIndexedIndirect,
     // .drawIndirect = (struct {
     //     pub fn drawIndirect(ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void {
     //         c.wgpuRenderBundleEncoderDrawIndexedIndirect(
