@@ -2,6 +2,7 @@ const Texture = @import("Texture.zig");
 const Buffer = @import("Buffer.zig");
 const RenderBundle = @import("RenderBundle.zig");
 const BindGroup = @import("BindGroup.zig");
+const RenderPipeline = @import("RenderPipeline.zig");
 const IndexFormat = @import("enums.zig").IndexFormat;
 
 const RenderBundleEncoder = @This();
@@ -38,8 +39,7 @@ pub const VTable = struct {
     setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
     setIndexBuffer: fn (ptr: *anyopaque, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
-    // setPipeline: fn (ptr: *anyopaque, pipeline: RenderPipeline) void,
-    // WGPU_EXPORT void wgpuRenderBundleEncoderSetPipeline(WGPURenderBundleEncoder renderBundleEncoder, WGPURenderPipeline pipeline);
+    setPipeline: fn (ptr: *anyopaque, pipeline: RenderPipeline) void,
     // setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
     // WGPU_EXPORT void wgpuRenderBundleEncoderSetVertexBuffer(WGPURenderBundleEncoder renderBundleEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
 };
@@ -136,9 +136,9 @@ pub inline fn setLabel(enc: RenderBundleEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
 
-// pub inline fn setPipeline(enc: RenderBundleEncoder, pipeline: RenderPipeline) void {
-//     enc.vtable.setPipeline(enc.ptr, pipeline);
-// }
+pub inline fn setPipeline(enc: RenderBundleEncoder, pipeline: RenderPipeline) void {
+    enc.vtable.setPipeline(enc.ptr, pipeline);
+}
 
 // pub inline fn setScissorRect(enc: RenderBundleEncoder, x: u32, y: u32, width: u32, height: u32) void {
 //     enc.vtable.setScissorRect(enc.ptr, x, y, width, height);
@@ -197,5 +197,7 @@ test {
     _ = pushDebugGroup;
     _ = setBindGroup;
     _ = setIndexBuffer;
+    _ = setLabel;
+    _ = setPipeline;
     _ = Descriptor;
 }
