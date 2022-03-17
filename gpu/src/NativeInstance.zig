@@ -1610,6 +1610,11 @@ const compute_pass_encoder_vtable = ComputePassEncoder.VTable{
             c.wgpuComputePassEncoderRelease(@ptrCast(c.WGPUComputePassEncoder, ptr));
         }
     }).release,
+    .end = (struct {
+        pub fn end(ptr: *anyopaque) void {
+            c.wgpuComputePassEncoderEnd(@ptrCast(c.WGPUComputePassEncoder, ptr));
+        }
+    }).end,
     .setLabel = (struct {
         pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
             c.wgpuComputePassEncoderSetLabel(@ptrCast(c.WGPUComputePassEncoder, ptr), label);
