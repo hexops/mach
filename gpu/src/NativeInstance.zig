@@ -1117,11 +1117,11 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
             c.wgpuRenderBundleEncoderSetLabel(@ptrCast(c.WGPURenderBundleEncoder, ptr), label);
         }
     }).setLabel,
-    // .setPipeline = (struct {
-    //     pub fn setPipeline(ptr: *anyopaque, pipeline: RenderPipeline) void {
-    //         c.wgpuRenderBundleEncoderSetPipeline(@ptrCast(c.WGPURenderBundleEncoder, ptr), @ptrCast(c.WGPURenderPipeline, pipeline.ptr));
-    //     }
-    // }).setPipeline,
+    .setPipeline = (struct {
+        pub fn setPipeline(ptr: *anyopaque, pipeline: RenderPipeline) void {
+            c.wgpuRenderBundleEncoderSetPipeline(@ptrCast(c.WGPURenderBundleEncoder, ptr), @ptrCast(c.WGPURenderPipeline, pipeline.ptr));
+        }
+    }).setPipeline,
     .draw = (struct {
         pub fn draw(ptr: *anyopaque, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
             c.wgpuRenderBundleEncoderDraw(@ptrCast(c.WGPURenderBundleEncoder, ptr), vertex_count, instance_count, first_vertex, first_instance);
