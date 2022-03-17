@@ -28,8 +28,7 @@ pub const VTable = struct {
     finish: fn (ptr: *anyopaque, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer,
     // injectValidationError: fn (ptr: *anyopaque, message: [*:0]const u8) void,
     // WGPU_EXPORT void wgpuCommandEncoderInjectValidationError(WGPUCommandEncoder commandEncoder, char const * message);
-    // insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
-    // WGPU_EXPORT void wgpuCommandEncoderInsertDebugMarker(WGPUCommandEncoder commandEncoder, char const * markerLabel);
+    insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     // popDebugGroup: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuCommandEncoderPopDebugGroup(WGPUCommandEncoder commandEncoder);
     // pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
@@ -53,6 +52,10 @@ pub inline fn release(enc: CommandEncoder) void {
 
 pub inline fn finish(enc: CommandEncoder, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer {
     return enc.vtable.finish(enc.ptr, descriptor);
+}
+
+pub inline fn insertDebugMarker(enc: CommandEncoder, marker_label: [*:0]const u8) void {
+    enc.vtable.insertDebugMarker(enc.ptr, marker_label);
 }
 
 pub inline fn setLabel(enc: CommandEncoder, label: [:0]const u8) void {
