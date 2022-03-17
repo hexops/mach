@@ -40,8 +40,7 @@ pub const VTable = struct {
     setIndexBuffer: fn (ptr: *anyopaque, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     setPipeline: fn (ptr: *anyopaque, pipeline: RenderPipeline) void,
-    // setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
-    // WGPU_EXPORT void wgpuRenderBundleEncoderSetVertexBuffer(WGPURenderBundleEncoder renderBundleEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
+    setVertexBuffer: fn (ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void,
 };
 
 pub inline fn reference(enc: RenderBundleEncoder) void {
@@ -116,22 +115,6 @@ pub inline fn setIndexBuffer(
     enc.vtable.setIndexBuffer(enc.ptr, buffer, format, offset, size);
 }
 
-// pub inline fn beginOcclusionQuery(enc: RenderBundleEncoder, query_index: u32) void {
-//     enc.vtable.beginOcclusionQuery(enc.ptr, query_index);
-// }
-
-// pub inline fn endOcclusionQuery(enc: RenderBundleEncoder) void {
-//     enc.vtable.endOcclusionQuery(enc.ptr);
-// }
-
-// pub inline fn executeBundles(enc: RenderBundleEncoder, bundles: []RenderBundle) void {
-//     enc.vtable.executeBundles(enc.ptr, bundles);
-// }
-
-// pub inline fn setBlendConstant(enc: RenderBundleEncoder, color: *const Color) void {
-//     enc.vtable.setBlendConstant(enc.ptr, color);
-// }
-
 pub inline fn setLabel(enc: RenderBundleEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
@@ -140,39 +123,15 @@ pub inline fn setPipeline(enc: RenderBundleEncoder, pipeline: RenderPipeline) vo
     enc.vtable.setPipeline(enc.ptr, pipeline);
 }
 
-// pub inline fn setScissorRect(enc: RenderBundleEncoder, x: u32, y: u32, width: u32, height: u32) void {
-//     enc.vtable.setScissorRect(enc.ptr, x, y, width, height);
-// }
-
-// pub inline fn setStencilReference(enc: RenderBundleEncoder, ref: u32) void {
-//     enc.vtable.setStencilReference(enc.ptr, ref);
-// }
-
-// pub inline fn setVertexBuffer(
-//     enc: RenderBundleEncoder,
-//     slot: u32,
-//     buffer: Buffer,
-//     offset: u64,
-//     size: u64,
-// ) void {
-//     enc.vtable.setVertexBuffer(enc.ptr, slot, buffer, offset, size);
-// }
-
-// pub inline fn setViewport(
-//     enc: RenderBundleEncoder,
-//     x: f32,
-//     y: f32,
-//     width: f32,
-//     height: f32,
-//     min_depth: f32,
-//     max_depth: f32,
-// ) void {
-//     enc.vtable.setViewport(enc.ptr, x, y, width, height, min_depth, max_depth);
-// }
-
-// pub inline fn writeTimestamp(enc: RenderBundleEncoder, query_set: QuerySet, query_index: u32) void {
-//     enc.vtable.writeTimestamp(enc.ptr, query_set, query_index);
-// }
+pub inline fn setVertexBuffer(
+    enc: RenderBundleEncoder,
+    slot: u32,
+    buffer: Buffer,
+    offset: u64,
+    size: u64,
+) void {
+    enc.vtable.setVertexBuffer(enc.ptr, slot, buffer, offset, size);
+}
 
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
@@ -199,5 +158,6 @@ test {
     _ = setIndexBuffer;
     _ = setLabel;
     _ = setPipeline;
+    _ = setVertexBuffer;
     _ = Descriptor;
 }
