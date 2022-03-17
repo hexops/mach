@@ -1498,6 +1498,11 @@ const command_encoder_vtable = CommandEncoder.VTable{
             return wrapCommandBuffer(c.wgpuCommandEncoderFinish(@ptrCast(c.WGPUCommandEncoder, ptr), desc));
         }
     }).finish,
+    .injectValidationError = (struct {
+        pub fn injectValidationError(ptr: *anyopaque, message: [*:0]const u8) void {
+            c.wgpuCommandEncoderInjectValidationError(@ptrCast(c.WGPUCommandEncoder, ptr), message);
+        }
+    }).injectValidationError,
     .insertDebugMarker = (struct {
         pub fn insertDebugMarker(ptr: *anyopaque, marker_label: [*:0]const u8) void {
             c.wgpuCommandEncoderInsertDebugMarker(@ptrCast(c.WGPUCommandEncoder, ptr), marker_label);
