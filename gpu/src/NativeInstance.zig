@@ -1571,6 +1571,25 @@ const command_encoder_vtable = CommandEncoder.VTable{
             return wrapRenderPassEncoder(c.wgpuCommandEncoderBeginRenderPass(@ptrCast(c.WGPUCommandEncoder, ptr), &desc));
         }
     }).beginRenderPass,
+    .popDebugGroup = (struct {
+        pub fn popDebugGroup(ptr: *anyopaque) void {
+            c.wgpuCommandEncoderPopDebugGroup(@ptrCast(c.WGPUCommandEncoder, ptr));
+        }
+    }).popDebugGroup,
+    .pushDebugGroup = (struct {
+        pub fn pushDebugGroup(ptr: *anyopaque, group_label: [*:0]const u8) void {
+            c.wgpuCommandEncoderPushDebugGroup(@ptrCast(c.WGPUCommandEncoder, ptr), group_label);
+        }
+    }).pushDebugGroup,
+    .writeTimestamp = (struct {
+        pub fn writeTimestamp(ptr: *anyopaque, query_set: QuerySet, query_index: u32) void {
+            c.wgpuCommandEncoderWriteTimestamp(
+                @ptrCast(c.WGPUCommandEncoder, ptr),
+                @ptrCast(c.WGPUQuerySet, query_set.ptr),
+                query_index,
+            );
+        }
+    }).writeTimestamp,
 };
 
 fn wrapComputePassEncoder(enc: c.WGPUComputePassEncoder) ComputePassEncoder {

@@ -1,5 +1,6 @@
 const RenderPassEncoder = @import("RenderPassEncoder.zig");
 const CommandBuffer = @import("CommandBuffer.zig");
+const QuerySet = @import("QuerySet.zig");
 
 const CommandEncoder = @This();
 
@@ -29,17 +30,14 @@ pub const VTable = struct {
     // injectValidationError: fn (ptr: *anyopaque, message: [*:0]const u8) void,
     // WGPU_EXPORT void wgpuCommandEncoderInjectValidationError(WGPUCommandEncoder commandEncoder, char const * message);
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
-    // popDebugGroup: fn (ptr: *anyopaque) void,
-    // WGPU_EXPORT void wgpuCommandEncoderPopDebugGroup(WGPUCommandEncoder commandEncoder);
-    // pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
-    // WGPU_EXPORT void wgpuCommandEncoderPushDebugGroup(WGPUCommandEncoder commandEncoder, char const * groupLabel);
+    popDebugGroup: fn (ptr: *anyopaque) void,
+    pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
     // resolveQuerySet: fn (ptr: *anyopaque, query_set: QuerySet, first_query: u32, query_count: u32, destination: Buffer, destination_offset: u64) void,
     // WGPU_EXPORT void wgpuCommandEncoderResolveQuerySet(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t firstQuery, uint32_t queryCount, WGPUBuffer destination, uint64_t destinationOffset);
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     // TODO: typed buffer pointer?
     // WGPU_EXPORT void wgpuCommandEncoderWriteBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t bufferOffset, uint8_t const * data, uint64_t size);
-    // writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
-    // WGPU_EXPORT void wgpuCommandEncoderWriteTimestamp(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+    writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
 };
 
 pub inline fn reference(enc: CommandEncoder) void {
@@ -50,6 +48,10 @@ pub inline fn release(enc: CommandEncoder) void {
     enc.vtable.release(enc.ptr);
 }
 
+pub inline fn beginRenderPass(enc: CommandEncoder, descriptor: *const RenderPassEncoder.Descriptor) RenderPassEncoder {
+    return enc.vtable.beginRenderPass(enc.ptr, descriptor);
+}
+
 pub inline fn finish(enc: CommandEncoder, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer {
     return enc.vtable.finish(enc.ptr, descriptor);
 }
@@ -58,12 +60,20 @@ pub inline fn insertDebugMarker(enc: CommandEncoder, marker_label: [*:0]const u8
     enc.vtable.insertDebugMarker(enc.ptr, marker_label);
 }
 
+pub inline fn popDebugGroup(enc: CommandEncoder) void {
+    enc.vtable.popDebugGroup(enc.ptr);
+}
+
+pub inline fn pushDebugGroup(enc: CommandEncoder, group_label: [*:0]const u8) void {
+    enc.vtable.pushDebugGroup(enc.ptr, group_label);
+}
+
 pub inline fn setLabel(enc: CommandEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
 
-pub inline fn beginRenderPass(enc: CommandEncoder, descriptor: *const RenderPassEncoder.Descriptor) RenderPassEncoder {
-    return enc.vtable.beginRenderPass(enc.ptr, descriptor);
+pub inline fn writeTimestamp(pass: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
+    pass.vtable.writeTimestamp(pass.ptr, query_set, query_index);
 }
 
 pub const Descriptor = struct {
@@ -75,5 +85,11 @@ test {
     _ = reference;
     _ = release;
     _ = beginRenderPass;
+    _ = finish;
+    _ = insertDebugMarker;
+    _ = popDebugGroup;
+    _ = pushDebugGroup;
+    _ = setLabel;
+    _ = writeTimestamp;
     _ = Descriptor;
 }
