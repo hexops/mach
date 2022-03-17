@@ -1204,6 +1204,23 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
             );
         }
     }).setBindGroup,
+    .setIndexBuffer = (struct {
+        pub fn setIndexBuffer(
+            ptr: *anyopaque,
+            buffer: Buffer,
+            format: IndexFormat,
+            offset: u64,
+            size: u64,
+        ) void {
+            c.wgpuRenderBundleEncoderSetIndexBuffer(
+                @ptrCast(c.WGPURenderBundleEncoder, ptr),
+                @ptrCast(c.WGPUBuffer, buffer.ptr),
+                @enumToInt(format),
+                offset,
+                size,
+            );
+        }
+    }).setIndexBuffer,
     // .beginOcclusionQuery = (struct {
     //     pub fn beginOcclusionQuery(ptr: *anyopaque, query_index: u32) void {
     //         c.wgpuRenderBundleEncoderBeginOcclusionQuery(@ptrCast(c.WGPURenderBundleEncoder, ptr), query_index);
@@ -1246,23 +1263,6 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
     //         );
     //     }
     // }).setBlendConstant,
-    // .setIndexBuffer = (struct {
-    //     pub fn setIndexBuffer(
-    //         ptr: *anyopaque,
-    //         buffer: Buffer,
-    //         format: IndexFormat,
-    //         offset: u64,
-    //         size: u64,
-    //     ) void {
-    //         c.wgpuRenderBundleEncoderSetIndexBuffer(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             @ptrCast(c.WGPUBuffer, buffer.ptr),
-    //             @enumToInt(format),
-    //             offset,
-    //             size,
-    //         );
-    //     }
-    // }).setIndexBuffer,
     // .setScissorRect = (struct {
     //     pub fn setScissorRect(ptr: *anyopaque, x: u32, y: u32, width: u32, height: u32) void {
     //         c.wgpuRenderBundleEncoderSetScissorRect(
