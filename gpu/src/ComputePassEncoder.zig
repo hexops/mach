@@ -13,8 +13,7 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    // dispatch: fn (ptr: *anyopaque, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void,
-    // WGPU_EXPORT void wgpuComputePassEncoderDispatch(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX, uint32_t workgroupCountY, uint32_t workgroupCountZ);
+    dispatch: fn (ptr: *anyopaque, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void,
     // dispatchIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     // WGPU_EXPORT void wgpuComputePassEncoderDispatchIndirect(WGPUComputePassEncoder computePassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
     end: fn (ptr: *anyopaque) void,
@@ -33,6 +32,15 @@ pub inline fn reference(enc: ComputePassEncoder) void {
 
 pub inline fn release(enc: ComputePassEncoder) void {
     enc.vtable.release(enc.ptr);
+}
+
+pub inline fn dispatch(
+    enc: ComputePassEncoder,
+    workgroup_count_x: u32,
+    workgroup_count_y: u32,
+    workgroup_count_z: u32,
+) void {
+    enc.vtable.dispatch(enc.ptr, workgroup_count_x, workgroup_count_y, workgroup_count_z);
 }
 
 pub inline fn end(enc: ComputePassEncoder) void {
@@ -81,8 +89,14 @@ test {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = dispatch;
     _ = end;
     _ = insertDebugMarker;
+    _ = popDebugGroup;
+    _ = pushDebugGroup;
+    _ = setBindGroup;
     _ = setLabel;
+    _ = setPipeline;
+    _ = writeTimestamp;
     _ = Descriptor;
 }
