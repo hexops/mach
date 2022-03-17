@@ -2,6 +2,7 @@ const ComputePassEncoder = @import("ComputePassEncoder.zig");
 const RenderPassEncoder = @import("RenderPassEncoder.zig");
 const CommandBuffer = @import("CommandBuffer.zig");
 const QuerySet = @import("QuerySet.zig");
+const Buffer = @import("Buffer.zig");
 
 const CommandEncoder = @This();
 
@@ -15,8 +16,7 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     beginComputePass: fn (ptr: *anyopaque, descriptor: *const ComputePassEncoder.Descriptor) ComputePassEncoder,
     beginRenderPass: fn (ptr: *anyopaque, descriptor: *const RenderPassEncoder.Descriptor) RenderPassEncoder,
-    // clearBuffer: fn (ptr: *anyopaque, buffer: Buffer, offset: u64, size: u64) void,
-    // WGPU_EXPORT void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t offset, uint64_t size);
+    clearBuffer: fn (ptr: *anyopaque, buffer: Buffer, offset: u64, size: u64) void,
     // copyBufferToBuffer: fn (ptr: *anyopaque, source: Buffer, source_offset: u64, destination: Buffer, destination_offset: u64, size: u64) void,
     // WGPU_EXPORT void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size);
     // copyBufferToTexture: fn (ptr: *anyopaque, source: *const ImageCopyBuffer, destination: *const ImageCopyTexture, copy_size: Extent3D) void,
@@ -55,6 +55,10 @@ pub inline fn beginRenderPass(enc: CommandEncoder, descriptor: *const RenderPass
     return enc.vtable.beginRenderPass(enc.ptr, descriptor);
 }
 
+pub inline fn clearBuffer(enc: CommandEncoder, buffer: Buffer, offset: u64, size: u64) void {
+    enc.vtable.clearBuffer(enc.ptr, buffer, offset, size);
+}
+
 pub inline fn finish(enc: CommandEncoder, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer {
     return enc.vtable.finish(enc.ptr, descriptor);
 }
@@ -89,6 +93,7 @@ test {
     _ = release;
     _ = beginComputePass;
     _ = beginRenderPass;
+    _ = clearBuffer;
     _ = finish;
     _ = insertDebugMarker;
     _ = popDebugGroup;

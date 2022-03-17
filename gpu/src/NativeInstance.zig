@@ -1605,6 +1605,16 @@ const command_encoder_vtable = CommandEncoder.VTable{
             return wrapRenderPassEncoder(c.wgpuCommandEncoderBeginRenderPass(@ptrCast(c.WGPUCommandEncoder, ptr), &desc));
         }
     }).beginRenderPass,
+    .clearBuffer = (struct {
+        pub fn clearBuffer(ptr: *anyopaque, buffer: Buffer, offset: u64, size: u64) void {
+            c.wgpuCommandEncoderClearBuffer(
+                @ptrCast(c.WGPUCommandEncoder, ptr),
+                @ptrCast(c.WGPUBuffer, buffer.ptr),
+                offset,
+                size,
+            );
+        }
+    }).clearBuffer,
     .popDebugGroup = (struct {
         pub fn popDebugGroup(ptr: *anyopaque) void {
             c.wgpuCommandEncoderPopDebugGroup(@ptrCast(c.WGPUCommandEncoder, ptr));
