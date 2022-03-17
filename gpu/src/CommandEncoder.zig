@@ -3,6 +3,9 @@ const RenderPassEncoder = @import("RenderPassEncoder.zig");
 const CommandBuffer = @import("CommandBuffer.zig");
 const QuerySet = @import("QuerySet.zig");
 const Buffer = @import("Buffer.zig");
+const ImageCopyBuffer = @import("structs.zig").ImageCopyBuffer;
+const ImageCopyTexture = @import("structs.zig").ImageCopyTexture;
+const Extent3D = @import("data.zig").Extent3D;
 
 const CommandEncoder = @This();
 
@@ -18,11 +21,10 @@ pub const VTable = struct {
     beginRenderPass: fn (ptr: *anyopaque, descriptor: *const RenderPassEncoder.Descriptor) RenderPassEncoder,
     clearBuffer: fn (ptr: *anyopaque, buffer: Buffer, offset: u64, size: u64) void,
     copyBufferToBuffer: fn (ptr: *anyopaque, source: Buffer, source_offset: u64, destination: Buffer, destination_offset: u64, size: u64) void,
-    // copyBufferToTexture: fn (ptr: *anyopaque, source: *const ImageCopyBuffer, destination: *const ImageCopyTexture, copy_size: Extent3D) void,
-    // WGPU_EXPORT void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyBuffer const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
-    // copyTextureToBuffer: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyBuffer, copy_size: Extent3D) void,
+    copyBufferToTexture: fn (ptr: *anyopaque, source: *const ImageCopyBuffer, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void,
+    // copyTextureToBuffer: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyBuffer, copy_size: *const Extent3D) void,
     // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToBuffer(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyBuffer const * destination, WGPUExtent3D const * copySize);
-    // copyTextureToTexture: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: Extent3D) void,
+    // copyTextureToTexture: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void,
     // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
     finish: fn (ptr: *anyopaque, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer,
     // injectValidationError: fn (ptr: *anyopaque, message: [*:0]const u8) void,
@@ -69,6 +71,15 @@ pub inline fn copyBufferToBuffer(
     enc.vtable.copyBufferToBuffer(enc.ptr, source, source_offset, destination, destination_offset, size);
 }
 
+pub inline fn copyBufferToTexture(
+    enc: CommandEncoder,
+    source: *const ImageCopyBuffer,
+    destination: *const ImageCopyTexture,
+    copy_size: *const Extent3D,
+) void {
+    enc.vtable.copyBufferToTexture(enc.ptr, source, destination, copy_size);
+}
+
 pub inline fn finish(enc: CommandEncoder, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer {
     return enc.vtable.finish(enc.ptr, descriptor);
 }
@@ -105,6 +116,7 @@ test {
     _ = beginRenderPass;
     _ = clearBuffer;
     _ = copyBufferToBuffer;
+    _ = copyBufferToTexture;
     _ = finish;
     _ = insertDebugMarker;
     _ = popDebugGroup;

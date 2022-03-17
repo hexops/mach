@@ -15,10 +15,12 @@ const RequestDeviceError = Adapter.RequestDeviceError;
 const RequestDeviceCallback = Adapter.RequestDeviceCallback;
 const RequestDeviceResponse = Adapter.RequestDeviceResponse;
 
-const Device = @import("Device.zig");
-const Surface = @import("Surface.zig");
 const Limits = @import("data.zig").Limits;
 const Color = @import("data.zig").Color;
+const Extent3D = @import("data.zig").Extent3D;
+
+const Device = @import("Device.zig");
+const Surface = @import("Surface.zig");
 const Queue = @import("Queue.zig");
 const CommandBuffer = @import("CommandBuffer.zig");
 const ShaderModule = @import("ShaderModule.zig");
@@ -42,6 +44,9 @@ const ComputePipeline = @import("ComputePipeline.zig");
 
 const PresentMode = @import("enums.zig").PresentMode;
 const IndexFormat = @import("enums.zig").IndexFormat;
+
+const ImageCopyBuffer = @import("structs.zig").ImageCopyBuffer;
+const ImageCopyTexture = @import("structs.zig").ImageCopyTexture;
 
 const NativeInstance = @This();
 
@@ -1634,6 +1639,21 @@ const command_encoder_vtable = CommandEncoder.VTable{
             );
         }
     }).copyBufferToBuffer,
+    .copyBufferToTexture = (struct {
+        pub fn copyBufferToTexture(
+            ptr: *anyopaque,
+            source: *const ImageCopyBuffer,
+            destination: *const ImageCopyTexture,
+            copy_size: *const Extent3D,
+        ) void {
+            c.wgpuCommandEncoderCopyBufferToTexture(
+                @ptrCast(c.WGPUCommandEncoder, ptr),
+                &convertImageCopyBuffer(source),
+                &convertImageCopyTexture(destination),
+                @ptrCast(*const c.WGPUExtent3D, copy_size),
+            );
+        }
+    }).copyBufferToTexture,
     .popDebugGroup = (struct {
         pub fn popDebugGroup(ptr: *anyopaque) void {
             c.wgpuCommandEncoderPopDebugGroup(@ptrCast(c.WGPUCommandEncoder, ptr));
@@ -1654,6 +1674,33 @@ const command_encoder_vtable = CommandEncoder.VTable{
         }
     }).writeTimestamp,
 };
+
+inline fn convertImageCopyBuffer(v: *const ImageCopyBuffer) c.WGPUImageCopyBuffer {
+    return .{
+        .nextInChain = null,
+        .layout = convertTextureDataLayout(v.layout),
+        .buffer = @ptrCast(c.WGPUBuffer, v.buffer.ptr),
+    };
+}
+
+inline fn convertImageCopyTexture(v: *const ImageCopyTexture) c.WGPUImageCopyTexture {
+    return .{
+        .nextInChain = null,
+        .texture = @ptrCast(c.WGPUTexture, v.texture.ptr),
+        .mipLevel = v.mip_level,
+        .origin = @bitCast(c.WGPUOrigin3D, v.origin),
+        .aspect = @enumToInt(v.aspect),
+    };
+}
+
+inline fn convertTextureDataLayout(v: Texture.DataLayout) c.WGPUTextureDataLayout {
+    return .{
+        .nextInChain = null,
+        .offset = v.offset,
+        .bytesPerRow = v.bytes_per_row,
+        .rowsPerImage = v.rows_per_image,
+    };
+}
 
 fn wrapComputePassEncoder(enc: c.WGPUComputePassEncoder) ComputePassEncoder {
     return .{
