@@ -10,13 +10,13 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    // draw: fn (
-    //     ptr: *anyopaque,
-    //     vertex_count: u32,
-    //     instance_count: u32,
-    //     first_vertex: u32,
-    //     first_instance: u32,
-    // ) void,
+    draw: fn (
+        ptr: *anyopaque,
+        vertex_count: u32,
+        instance_count: u32,
+        first_vertex: u32,
+        first_instance: u32,
+    ) void,
     // WGPU_EXPORT void wgpuRenderBundleEncoderDraw(WGPURenderBundleEncoder renderBundleEncoder, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
     // drawIndexed: fn (
     //     ptr: *anyopaque,
@@ -58,9 +58,127 @@ pub inline fn release(enc: RenderBundleEncoder) void {
     enc.vtable.release(enc.ptr);
 }
 
+pub inline fn draw(
+    enc: RenderBundleEncoder,
+    vertex_count: u32,
+    instance_count: u32,
+    first_vertex: u32,
+    first_instance: u32,
+) void {
+    enc.vtable.draw(enc.ptr, vertex_count, instance_count, first_vertex, first_instance);
+}
+
+// pub inline fn drawIndexed(
+//     enc: RenderPassEncoder,
+//     index_count: u32,
+//     instance_count: u32,
+//     first_index: u32,
+//     base_vertex: i32,
+//     first_instance: u32,
+// ) void {
+//     enc.vtable.drawIndexed(enc.ptr, index_count, instance_count, first_index, base_vertex, first_instance);
+// }
+
+// pub inline fn drawIndexedIndirect(enc: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+//     enc.vtable.drawIndexedIndirect(enc.ptr, indirect_buffer, indirect_offset);
+// }
+
+// pub inline fn drawIndirect(enc: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+//     enc.vtable.drawIndirect(enc.ptr, indirect_buffer, indirect_offset);
+// }
+
+// pub inline fn beginOcclusionQuery(enc: RenderPassEncoder, query_index: u32) void {
+//     enc.vtable.beginOcclusionQuery(enc.ptr, query_index);
+// }
+
+// pub inline fn endOcclusionQuery(enc: RenderPassEncoder) void {
+//     enc.vtable.endOcclusionQuery(enc.ptr);
+// }
+
+// pub inline fn end(enc: RenderPassEncoder) void {
+//     enc.vtable.end(enc.ptr);
+// }
+
+// pub inline fn executeBundles(enc: RenderPassEncoder, bundles: []RenderBundle) void {
+//     enc.vtable.executeBundles(enc.ptr, bundles);
+// }
+
+// pub inline fn insertDebugMarker(enc: RenderPassEncoder, marker_label: [*:0]const u8) void {
+//     enc.vtable.insertDebugMarker(enc.ptr, marker_label);
+// }
+
+// pub inline fn popDebugGroup(enc: RenderPassEncoder) void {
+//     enc.vtable.popDebugGroup(enc.ptr);
+// }
+
+// pub inline fn pushDebugGroup(enc: RenderPassEncoder, group_label: [*:0]const u8) void {
+//     enc.vtable.pushDebugGroup(enc.ptr, group_label);
+// }
+
+// pub inline fn setBindGroup(
+//     enc: RenderPassEncoder,
+//     group_index: u32,
+//     group: BindGroup,
+//     dynamic_offsets: []u32,
+// ) void {
+//     enc.vtable.setBindGroup(enc.ptr, group_index, group, dynamic_offsets);
+// }
+
+// pub inline fn setBlendConstant(enc: RenderPassEncoder, color: *const Color) void {
+//     enc.vtable.setBlendConstant(enc.ptr, color);
+// }
+
+// pub inline fn setIndexBuffer(
+//     enc: RenderPassEncoder,
+//     buffer: Buffer,
+//     format: IndexFormat,
+//     offset: u64,
+//     size: u64,
+// ) void {
+//     enc.vtable.setIndexBuffer(enc.ptr, buffer, format, offset, size);
+// }
+
 pub inline fn setLabel(enc: RenderBundleEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
+
+// pub inline fn setPipeline(enc: RenderPassEncoder, pipeline: RenderPipeline) void {
+//     enc.vtable.setPipeline(enc.ptr, pipeline);
+// }
+
+// pub inline fn setScissorRect(enc: RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
+//     enc.vtable.setScissorRect(enc.ptr, x, y, width, height);
+// }
+
+// pub inline fn setStencilReference(enc: RenderPassEncoder, ref: u32) void {
+//     enc.vtable.setStencilReference(enc.ptr, ref);
+// }
+
+// pub inline fn setVertexBuffer(
+//     enc: RenderPassEncoder,
+//     slot: u32,
+//     buffer: Buffer,
+//     offset: u64,
+//     size: u64,
+// ) void {
+//     enc.vtable.setVertexBuffer(enc.ptr, slot, buffer, offset, size);
+// }
+
+// pub inline fn setViewport(
+//     enc: RenderPassEncoder,
+//     x: f32,
+//     y: f32,
+//     width: f32,
+//     height: f32,
+//     min_depth: f32,
+//     max_depth: f32,
+// ) void {
+//     enc.vtable.setViewport(enc.ptr, x, y, width, height, min_depth, max_depth);
+// }
+
+// pub inline fn writeTimestamp(enc: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
+//     enc.vtable.writeTimestamp(enc.ptr, query_set, query_index);
+// }
 
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
@@ -75,5 +193,6 @@ test {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = draw;
     _ = Descriptor;
 }
