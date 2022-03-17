@@ -17,8 +17,7 @@ pub const VTable = struct {
     beginComputePass: fn (ptr: *anyopaque, descriptor: *const ComputePassEncoder.Descriptor) ComputePassEncoder,
     beginRenderPass: fn (ptr: *anyopaque, descriptor: *const RenderPassEncoder.Descriptor) RenderPassEncoder,
     clearBuffer: fn (ptr: *anyopaque, buffer: Buffer, offset: u64, size: u64) void,
-    // copyBufferToBuffer: fn (ptr: *anyopaque, source: Buffer, source_offset: u64, destination: Buffer, destination_offset: u64, size: u64) void,
-    // WGPU_EXPORT void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size);
+    copyBufferToBuffer: fn (ptr: *anyopaque, source: Buffer, source_offset: u64, destination: Buffer, destination_offset: u64, size: u64) void,
     // copyBufferToTexture: fn (ptr: *anyopaque, source: *const ImageCopyBuffer, destination: *const ImageCopyTexture, copy_size: Extent3D) void,
     // WGPU_EXPORT void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyBuffer const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
     // copyTextureToBuffer: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyBuffer, copy_size: Extent3D) void,
@@ -59,6 +58,17 @@ pub inline fn clearBuffer(enc: CommandEncoder, buffer: Buffer, offset: u64, size
     enc.vtable.clearBuffer(enc.ptr, buffer, offset, size);
 }
 
+pub inline fn copyBufferToBuffer(
+    enc: CommandEncoder,
+    source: Buffer,
+    source_offset: u64,
+    destination: Buffer,
+    destination_offset: u64,
+    size: u64,
+) void {
+    enc.vtable.copyBufferToBuffer(enc.ptr, source, source_offset, destination, destination_offset, size);
+}
+
 pub inline fn finish(enc: CommandEncoder, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer {
     return enc.vtable.finish(enc.ptr, descriptor);
 }
@@ -94,6 +104,7 @@ test {
     _ = beginComputePass;
     _ = beginRenderPass;
     _ = clearBuffer;
+    _ = copyBufferToBuffer;
     _ = finish;
     _ = insertDebugMarker;
     _ = popDebugGroup;
