@@ -29,8 +29,7 @@ pub const VTable = struct {
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     popDebugGroup: fn (ptr: *anyopaque) void,
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
-    // resolveQuerySet: fn (ptr: *anyopaque, query_set: QuerySet, first_query: u32, query_count: u32, destination: Buffer, destination_offset: u64) void,
-    // WGPU_EXPORT void wgpuCommandEncoderResolveQuerySet(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t firstQuery, uint32_t queryCount, WGPUBuffer destination, uint64_t destinationOffset);
+    resolveQuerySet: fn (ptr: *anyopaque, query_set: QuerySet, first_query: u32, query_count: u32, destination: Buffer, destination_offset: u64) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     // TODO: typed buffer pointer?
     // WGPU_EXPORT void wgpuCommandEncoderWriteBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t bufferOffset, uint8_t const * data, uint64_t size);
@@ -115,6 +114,17 @@ pub inline fn pushDebugGroup(enc: CommandEncoder, group_label: [*:0]const u8) vo
     enc.vtable.pushDebugGroup(enc.ptr, group_label);
 }
 
+pub inline fn resolveQuerySet(
+    enc: CommandEncoder,
+    query_set: QuerySet,
+    first_query: u32,
+    query_count: u32,
+    destination: Buffer,
+    destination_offset: u64,
+) void {
+    enc.vtable.resolveQuerySet(enc.ptr, query_set, first_query, query_count, destination, destination_offset);
+}
+
 pub inline fn setLabel(enc: CommandEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
@@ -143,6 +153,7 @@ test {
     _ = insertDebugMarker;
     _ = popDebugGroup;
     _ = pushDebugGroup;
+    _ = resolveQuerySet;
     _ = setLabel;
     _ = writeTimestamp;
     _ = Descriptor;

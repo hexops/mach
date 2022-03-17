@@ -1508,6 +1508,25 @@ const command_encoder_vtable = CommandEncoder.VTable{
             c.wgpuCommandEncoderInsertDebugMarker(@ptrCast(c.WGPUCommandEncoder, ptr), marker_label);
         }
     }).insertDebugMarker,
+    .resolveQuerySet = (struct {
+        pub fn resolveQuerySet(
+            ptr: *anyopaque,
+            query_set: QuerySet,
+            first_query: u32,
+            query_count: u32,
+            destination: Buffer,
+            destination_offset: u64,
+        ) void {
+            c.wgpuCommandEncoderResolveQuerySet(
+                @ptrCast(c.WGPUCommandEncoder, ptr),
+                @ptrCast(c.WGPUQuerySet, query_set.ptr),
+                first_query,
+                query_count,
+                @ptrCast(c.WGPUBuffer, destination.ptr),
+                destination_offset,
+            );
+        }
+    }).resolveQuerySet,
     .setLabel = (struct {
         pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
             c.wgpuCommandEncoderSetLabel(@ptrCast(c.WGPUCommandEncoder, ptr), label);
