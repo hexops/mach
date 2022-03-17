@@ -1,5 +1,6 @@
 const Texture = @import("Texture.zig");
 const Buffer = @import("Buffer.zig");
+const RenderBundle = @import("RenderBundle.zig");
 
 const RenderBundleEncoder = @This();
 
@@ -28,8 +29,7 @@ pub const VTable = struct {
     ) void,
     drawIndexedIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     drawIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
-    // finish: fn (ptr: *anyopaque, descriptor: *const RenderBundle.Descriptor) void,
-    // WGPU_EXPORT WGPURenderBundle wgpuRenderBundleEncoderFinish(WGPURenderBundleEncoder renderBundleEncoder, WGPURenderBundleDescriptor const * descriptor);
+    finish: fn (ptr: *anyopaque, descriptor: *const RenderBundle.Descriptor) RenderBundle,
     // insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     // WGPU_EXPORT void wgpuRenderBundleEncoderInsertDebugMarker(WGPURenderBundleEncoder renderBundleEncoder, char const * markerLabel);
     // popDebugGroup: fn (ptr: *anyopaque) void,
@@ -84,16 +84,16 @@ pub inline fn drawIndirect(enc: RenderBundleEncoder, indirect_buffer: Buffer, in
     enc.vtable.drawIndirect(enc.ptr, indirect_buffer, indirect_offset);
 }
 
+pub inline fn finish(enc: RenderBundleEncoder, descriptor: *const RenderBundle.Descriptor) RenderBundle {
+    return enc.vtable.finish(enc.ptr, descriptor);
+}
+
 // pub inline fn beginOcclusionQuery(enc: RenderBundleEncoder, query_index: u32) void {
 //     enc.vtable.beginOcclusionQuery(enc.ptr, query_index);
 // }
 
 // pub inline fn endOcclusionQuery(enc: RenderBundleEncoder) void {
 //     enc.vtable.endOcclusionQuery(enc.ptr);
-// }
-
-// pub inline fn end(enc: RenderBundleEncoder) void {
-//     enc.vtable.end(enc.ptr);
 // }
 
 // pub inline fn executeBundles(enc: RenderBundleEncoder, bundles: []RenderBundle) void {
@@ -194,5 +194,6 @@ test {
     _ = drawIndexed;
     _ = drawIndexedIndirect;
     _ = drawIndirect;
+    _ = finish;
     _ = Descriptor;
 }
