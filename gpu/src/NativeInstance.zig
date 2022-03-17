@@ -1221,108 +1221,17 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
             );
         }
     }).setIndexBuffer,
-    // .beginOcclusionQuery = (struct {
-    //     pub fn beginOcclusionQuery(ptr: *anyopaque, query_index: u32) void {
-    //         c.wgpuRenderBundleEncoderBeginOcclusionQuery(@ptrCast(c.WGPURenderBundleEncoder, ptr), query_index);
-    //     }
-    // }).beginOcclusionQuery,
-    // .endOcclusionQuery = (struct {
-    //     pub fn endOcclusionQuery(ptr: *anyopaque) void {
-    //         c.wgpuRenderBundleEncoderEndOcclusionQuery(@ptrCast(c.WGPURenderBundleEncoder, ptr));
-    //     }
-    // }).endOcclusionQuery,
-    // .executeBundles = (struct {
-    //     pub fn executeBundles(ptr: *anyopaque, bundles: []RenderBundle) void {
-    //         var few_bundles: [16]c.WGPURenderBundle = undefined;
-    //         const c_bundles = if (bundles.len <= 8) blk: {
-    //             for (bundles) |bundle, i| {
-    //                 few_bundles[i] = @ptrCast(c.WGPURenderBundle, bundle.ptr);
-    //             }
-    //             break :blk few_bundles[0..bundles.len];
-    //         } else blk: {
-    //             const mem = std.heap.page_allocator.alloc(c.WGPURenderBundle, bundles.len) catch unreachable;
-    //             for (bundles) |bundle, i| {
-    //                 mem[i] = @ptrCast(c.WGPURenderBundle, bundle.ptr);
-    //             }
-    //             break :blk mem;
-    //         };
-    //         defer if (bundles.len > 8) std.heap.page_allocator.free(c_bundles);
-
-    //         c.wgpuRenderBundleEncoderExecuteBundles(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             @intCast(u32, c_bundles.len),
-    //             &c_bundles[0],
-    //         );
-    //     }
-    // }).executeBundles,
-    // .setBlendConstant = (struct {
-    //     pub fn setBlendConstant(ptr: *anyopaque, color: *const Color) void {
-    //         c.wgpuRenderBundleEncoderSetBlendConstant(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             @ptrCast(*const c.WGPUColor, color),
-    //         );
-    //     }
-    // }).setBlendConstant,
-    // .setScissorRect = (struct {
-    //     pub fn setScissorRect(ptr: *anyopaque, x: u32, y: u32, width: u32, height: u32) void {
-    //         c.wgpuRenderBundleEncoderSetScissorRect(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             x,
-    //             y,
-    //             width,
-    //             height,
-    //         );
-    //     }
-    // }).setScissorRect,
-    // .setStencilReference = (struct {
-    //     pub fn setStencilReference(ptr: *anyopaque, reference: u32) void {
-    //         c.wgpuRenderBundleEncoderSetStencilReference(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             reference,
-    //         );
-    //     }
-    // }).setStencilReference,
-    // .setVertexBuffer = (struct {
-    //     pub fn setVertexBuffer(ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
-    //         c.wgpuRenderBundleEncoderSetVertexBuffer(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             slot,
-    //             @ptrCast(c.WGPUBuffer, buffer.ptr),
-    //             offset,
-    //             size,
-    //         );
-    //     }
-    // }).setVertexBuffer,
-    // .setViewport = (struct {
-    //     pub fn setViewport(
-    //         ptr: *anyopaque,
-    //         x: f32,
-    //         y: f32,
-    //         width: f32,
-    //         height: f32,
-    //         min_depth: f32,
-    //         max_depth: f32,
-    //     ) void {
-    //         c.wgpuRenderBundleEncoderSetViewport(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             x,
-    //             y,
-    //             width,
-    //             height,
-    //             min_depth,
-    //             max_depth,
-    //         );
-    //     }
-    // }).setViewport,
-    // .writeTimestamp = (struct {
-    //     pub fn writeTimestamp(ptr: *anyopaque, query_set: QuerySet, query_index: u32) void {
-    //         c.wgpuRenderBundleEncoderWriteTimestamp(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             @ptrCast(c.WGPUQuerySet, query_set.ptr),
-    //             query_index,
-    //         );
-    //     }
-    // }).writeTimestamp,
+    .setVertexBuffer = (struct {
+        pub fn setVertexBuffer(ptr: *anyopaque, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
+            c.wgpuRenderBundleEncoderSetVertexBuffer(
+                @ptrCast(c.WGPURenderBundleEncoder, ptr),
+                slot,
+                @ptrCast(c.WGPUBuffer, buffer.ptr),
+                offset,
+                size,
+            );
+        }
+    }).setVertexBuffer,
 };
 
 fn wrapRenderBundle(bundle: c.WGPURenderBundle) RenderBundle {
