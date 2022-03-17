@@ -17,16 +17,14 @@ pub const VTable = struct {
         first_vertex: u32,
         first_instance: u32,
     ) void,
-    // WGPU_EXPORT void wgpuRenderBundleEncoderDraw(WGPURenderBundleEncoder renderBundleEncoder, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
-    // drawIndexed: fn (
-    //     ptr: *anyopaque,
-    //     index_count: u32,
-    //     instance_count: u32,
-    //     first_index: u32,
-    //     base_vertex: i32,
-    //     first_instance: u32,
-    // ) void,
-    // WGPU_EXPORT void wgpuRenderBundleEncoderDrawIndexed(WGPURenderBundleEncoder renderBundleEncoder, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance);
+    drawIndexed: fn (
+        ptr: *anyopaque,
+        index_count: u32,
+        instance_count: u32,
+        first_index: u32,
+        base_vertex: i32,
+        first_instance: u32,
+    ) void,
     // drawIndexedIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     // WGPU_EXPORT void wgpuRenderBundleEncoderDrawIndexedIndirect(WGPURenderBundleEncoder renderBundleEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
     // drawIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
@@ -68,55 +66,55 @@ pub inline fn draw(
     enc.vtable.draw(enc.ptr, vertex_count, instance_count, first_vertex, first_instance);
 }
 
-// pub inline fn drawIndexed(
-//     enc: RenderPassEncoder,
-//     index_count: u32,
-//     instance_count: u32,
-//     first_index: u32,
-//     base_vertex: i32,
-//     first_instance: u32,
-// ) void {
-//     enc.vtable.drawIndexed(enc.ptr, index_count, instance_count, first_index, base_vertex, first_instance);
-// }
+pub inline fn drawIndexed(
+    enc: RenderBundleEncoder,
+    index_count: u32,
+    instance_count: u32,
+    first_index: u32,
+    base_vertex: i32,
+    first_instance: u32,
+) void {
+    enc.vtable.drawIndexed(enc.ptr, index_count, instance_count, first_index, base_vertex, first_instance);
+}
 
-// pub inline fn drawIndexedIndirect(enc: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+// pub inline fn drawIndexedIndirect(enc: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
 //     enc.vtable.drawIndexedIndirect(enc.ptr, indirect_buffer, indirect_offset);
 // }
 
-// pub inline fn drawIndirect(enc: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+// pub inline fn drawIndirect(enc: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
 //     enc.vtable.drawIndirect(enc.ptr, indirect_buffer, indirect_offset);
 // }
 
-// pub inline fn beginOcclusionQuery(enc: RenderPassEncoder, query_index: u32) void {
+// pub inline fn beginOcclusionQuery(enc: RenderBundleEncoder, query_index: u32) void {
 //     enc.vtable.beginOcclusionQuery(enc.ptr, query_index);
 // }
 
-// pub inline fn endOcclusionQuery(enc: RenderPassEncoder) void {
+// pub inline fn endOcclusionQuery(enc: RenderBundleEncoder) void {
 //     enc.vtable.endOcclusionQuery(enc.ptr);
 // }
 
-// pub inline fn end(enc: RenderPassEncoder) void {
+// pub inline fn end(enc: RenderBundleEncoder) void {
 //     enc.vtable.end(enc.ptr);
 // }
 
-// pub inline fn executeBundles(enc: RenderPassEncoder, bundles: []RenderBundle) void {
+// pub inline fn executeBundles(enc: RenderBundleEncoder, bundles: []RenderBundle) void {
 //     enc.vtable.executeBundles(enc.ptr, bundles);
 // }
 
-// pub inline fn insertDebugMarker(enc: RenderPassEncoder, marker_label: [*:0]const u8) void {
+// pub inline fn insertDebugMarker(enc: RenderBundleEncoder, marker_label: [*:0]const u8) void {
 //     enc.vtable.insertDebugMarker(enc.ptr, marker_label);
 // }
 
-// pub inline fn popDebugGroup(enc: RenderPassEncoder) void {
+// pub inline fn popDebugGroup(enc: RenderBundleEncoder) void {
 //     enc.vtable.popDebugGroup(enc.ptr);
 // }
 
-// pub inline fn pushDebugGroup(enc: RenderPassEncoder, group_label: [*:0]const u8) void {
+// pub inline fn pushDebugGroup(enc: RenderBundleEncoder, group_label: [*:0]const u8) void {
 //     enc.vtable.pushDebugGroup(enc.ptr, group_label);
 // }
 
 // pub inline fn setBindGroup(
-//     enc: RenderPassEncoder,
+//     enc: RenderBundleEncoder,
 //     group_index: u32,
 //     group: BindGroup,
 //     dynamic_offsets: []u32,
@@ -124,12 +122,12 @@ pub inline fn draw(
 //     enc.vtable.setBindGroup(enc.ptr, group_index, group, dynamic_offsets);
 // }
 
-// pub inline fn setBlendConstant(enc: RenderPassEncoder, color: *const Color) void {
+// pub inline fn setBlendConstant(enc: RenderBundleEncoder, color: *const Color) void {
 //     enc.vtable.setBlendConstant(enc.ptr, color);
 // }
 
 // pub inline fn setIndexBuffer(
-//     enc: RenderPassEncoder,
+//     enc: RenderBundleEncoder,
 //     buffer: Buffer,
 //     format: IndexFormat,
 //     offset: u64,
@@ -142,20 +140,20 @@ pub inline fn setLabel(enc: RenderBundleEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
 
-// pub inline fn setPipeline(enc: RenderPassEncoder, pipeline: RenderPipeline) void {
+// pub inline fn setPipeline(enc: RenderBundleEncoder, pipeline: RenderPipeline) void {
 //     enc.vtable.setPipeline(enc.ptr, pipeline);
 // }
 
-// pub inline fn setScissorRect(enc: RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
+// pub inline fn setScissorRect(enc: RenderBundleEncoder, x: u32, y: u32, width: u32, height: u32) void {
 //     enc.vtable.setScissorRect(enc.ptr, x, y, width, height);
 // }
 
-// pub inline fn setStencilReference(enc: RenderPassEncoder, ref: u32) void {
+// pub inline fn setStencilReference(enc: RenderBundleEncoder, ref: u32) void {
 //     enc.vtable.setStencilReference(enc.ptr, ref);
 // }
 
 // pub inline fn setVertexBuffer(
-//     enc: RenderPassEncoder,
+//     enc: RenderBundleEncoder,
 //     slot: u32,
 //     buffer: Buffer,
 //     offset: u64,
@@ -165,7 +163,7 @@ pub inline fn setLabel(enc: RenderBundleEncoder, label: [:0]const u8) void {
 // }
 
 // pub inline fn setViewport(
-//     enc: RenderPassEncoder,
+//     enc: RenderBundleEncoder,
 //     x: f32,
 //     y: f32,
 //     width: f32,
@@ -176,7 +174,7 @@ pub inline fn setLabel(enc: RenderBundleEncoder, label: [:0]const u8) void {
 //     enc.vtable.setViewport(enc.ptr, x, y, width, height, min_depth, max_depth);
 // }
 
-// pub inline fn writeTimestamp(enc: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
+// pub inline fn writeTimestamp(enc: RenderBundleEncoder, query_set: QuerySet, query_index: u32) void {
 //     enc.vtable.writeTimestamp(enc.ptr, query_set, query_index);
 // }
 
@@ -194,5 +192,6 @@ test {
     _ = reference;
     _ = release;
     _ = draw;
+    _ = drawIndexed;
     _ = Descriptor;
 }

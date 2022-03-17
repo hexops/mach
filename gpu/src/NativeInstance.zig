@@ -1127,25 +1127,25 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
             c.wgpuRenderBundleEncoderDraw(@ptrCast(c.WGPURenderBundleEncoder, ptr), vertex_count, instance_count, first_vertex, first_instance);
         }
     }).draw,
-    // .drawIndexed = (struct {
-    //     pub fn drawIndexed(
-    //         ptr: *anyopaque,
-    //         index_count: u32,
-    //         instance_count: u32,
-    //         first_index: u32,
-    //         base_vertex: i32,
-    //         first_instance: u32,
-    //     ) void {
-    //         c.wgpuRenderBundleEncoderDrawIndexed(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             index_count,
-    //             instance_count,
-    //             first_index,
-    //             base_vertex,
-    //             first_instance,
-    //         );
-    //     }
-    // }).drawIndexed,
+    .drawIndexed = (struct {
+        pub fn drawIndexed(
+            ptr: *anyopaque,
+            index_count: u32,
+            instance_count: u32,
+            first_index: u32,
+            base_vertex: i32,
+            first_instance: u32,
+        ) void {
+            c.wgpuRenderBundleEncoderDrawIndexed(
+                @ptrCast(c.WGPURenderBundleEncoder, ptr),
+                index_count,
+                instance_count,
+                first_index,
+                base_vertex,
+                first_instance,
+            );
+        }
+    }).drawIndexed,
     // .drawIndexedIndirect = (struct {
     //     pub fn drawIndexedIndirect(ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void {
     //         c.wgpuRenderBundleEncoderDrawIndexedIndirect(
