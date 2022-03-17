@@ -1,6 +1,7 @@
 const ComputePassTimestampWrite = @import("structs.zig").ComputePassTimestampWrite;
 const ComputePipeline = @import("ComputePipeline.zig");
 const QuerySet = @import("QuerySet.zig");
+const BindGroup = @import("BindGroup.zig");
 
 const ComputePassEncoder = @This();
 
@@ -20,8 +21,7 @@ pub const VTable = struct {
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     popDebugGroup: fn (ptr: *anyopaque) void,
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
-    // setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
-    // WGPU_EXPORT void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+    setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     setPipeline: fn (ptr: *anyopaque, pipeline: ComputePipeline) void,
     writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
@@ -49,6 +49,15 @@ pub inline fn popDebugGroup(enc: ComputePassEncoder) void {
 
 pub inline fn pushDebugGroup(enc: ComputePassEncoder, group_label: [*:0]const u8) void {
     enc.vtable.pushDebugGroup(enc.ptr, group_label);
+}
+
+pub inline fn setBindGroup(
+    enc: ComputePassEncoder,
+    group_index: u32,
+    group: BindGroup,
+    dynamic_offsets: []u32,
+) void {
+    enc.vtable.setBindGroup(enc.ptr, group_index, group, dynamic_offsets);
 }
 
 pub inline fn setLabel(enc: ComputePassEncoder, label: [:0]const u8) void {

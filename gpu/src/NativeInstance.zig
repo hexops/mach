@@ -1615,6 +1615,22 @@ const compute_pass_encoder_vtable = ComputePassEncoder.VTable{
             c.wgpuComputePassEncoderEnd(@ptrCast(c.WGPUComputePassEncoder, ptr));
         }
     }).end,
+    .setBindGroup = (struct {
+        pub fn setBindGroup(
+            ptr: *anyopaque,
+            group_index: u32,
+            group: BindGroup,
+            dynamic_offsets: []u32,
+        ) void {
+            c.wgpuComputePassEncoderSetBindGroup(
+                @ptrCast(c.WGPUComputePassEncoder, ptr),
+                group_index,
+                @ptrCast(c.WGPUBindGroup, group.ptr),
+                @intCast(u32, dynamic_offsets.len),
+                &dynamic_offsets[0],
+            );
+        }
+    }).setBindGroup,
     .setLabel = (struct {
         pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
             c.wgpuComputePassEncoderSetLabel(@ptrCast(c.WGPUComputePassEncoder, ptr), label);
