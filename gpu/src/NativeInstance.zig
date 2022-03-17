@@ -1625,6 +1625,19 @@ const compute_pass_encoder_vtable = ComputePassEncoder.VTable{
             );
         }
     }).dispatch,
+    .dispatchIndirect = (struct {
+        pub fn dispatchIndirect(
+            ptr: *anyopaque,
+            indirect_buffer: Buffer,
+            indirect_offset: u64,
+        ) void {
+            c.wgpuComputePassEncoderDispatchIndirect(
+                @ptrCast(c.WGPUComputePassEncoder, ptr),
+                @ptrCast(c.WGPUBuffer, indirect_buffer.ptr),
+                indirect_offset,
+            );
+        }
+    }).dispatchIndirect,
     .end = (struct {
         pub fn end(ptr: *anyopaque) void {
             c.wgpuComputePassEncoderEnd(@ptrCast(c.WGPUComputePassEncoder, ptr));
