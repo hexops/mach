@@ -1,6 +1,7 @@
 const Texture = @import("Texture.zig");
 const Buffer = @import("Buffer.zig");
 const RenderBundle = @import("RenderBundle.zig");
+const BindGroup = @import("BindGroup.zig");
 
 const RenderBundleEncoder = @This();
 
@@ -33,8 +34,7 @@ pub const VTable = struct {
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     popDebugGroup: fn (ptr: *anyopaque) void,
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
-    // setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
-    // WGPU_EXPORT void wgpuRenderBundleEncoderSetBindGroup(WGPURenderBundleEncoder renderBundleEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+    setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
     // setIndexBuffer: fn (ptr: *anyopaque, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void,
     // WGPU_EXPORT void wgpuRenderBundleEncoderSetIndexBuffer(WGPURenderBundleEncoder renderBundleEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
@@ -97,6 +97,15 @@ pub inline fn pushDebugGroup(enc: RenderBundleEncoder, group_label: [*:0]const u
     enc.vtable.pushDebugGroup(enc.ptr, group_label);
 }
 
+pub inline fn setBindGroup(
+    enc: RenderBundleEncoder,
+    group_index: u32,
+    group: BindGroup,
+    dynamic_offsets: []u32,
+) void {
+    enc.vtable.setBindGroup(enc.ptr, group_index, group, dynamic_offsets);
+}
+
 // pub inline fn beginOcclusionQuery(enc: RenderBundleEncoder, query_index: u32) void {
 //     enc.vtable.beginOcclusionQuery(enc.ptr, query_index);
 // }
@@ -107,15 +116,6 @@ pub inline fn pushDebugGroup(enc: RenderBundleEncoder, group_label: [*:0]const u
 
 // pub inline fn executeBundles(enc: RenderBundleEncoder, bundles: []RenderBundle) void {
 //     enc.vtable.executeBundles(enc.ptr, bundles);
-// }
-
-// pub inline fn setBindGroup(
-//     enc: RenderBundleEncoder,
-//     group_index: u32,
-//     group: BindGroup,
-//     dynamic_offsets: []u32,
-// ) void {
-//     enc.vtable.setBindGroup(enc.ptr, group_index, group, dynamic_offsets);
 // }
 
 // pub inline fn setBlendConstant(enc: RenderBundleEncoder, color: *const Color) void {
@@ -195,5 +195,6 @@ test {
     _ = insertDebugMarker;
     _ = popDebugGroup;
     _ = pushDebugGroup;
+    _ = setBindGroup;
     _ = Descriptor;
 }

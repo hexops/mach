@@ -1188,6 +1188,22 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
             c.wgpuRenderBundleEncoderPushDebugGroup(@ptrCast(c.WGPURenderBundleEncoder, ptr), group_label);
         }
     }).pushDebugGroup,
+    .setBindGroup = (struct {
+        pub fn setBindGroup(
+            ptr: *anyopaque,
+            group_index: u32,
+            group: BindGroup,
+            dynamic_offsets: []u32,
+        ) void {
+            c.wgpuRenderBundleEncoderSetBindGroup(
+                @ptrCast(c.WGPURenderBundleEncoder, ptr),
+                group_index,
+                @ptrCast(c.WGPUBindGroup, group.ptr),
+                @intCast(u32, dynamic_offsets.len),
+                &dynamic_offsets[0],
+            );
+        }
+    }).setBindGroup,
     // .beginOcclusionQuery = (struct {
     //     pub fn beginOcclusionQuery(ptr: *anyopaque, query_index: u32) void {
     //         c.wgpuRenderBundleEncoderBeginOcclusionQuery(@ptrCast(c.WGPURenderBundleEncoder, ptr), query_index);
@@ -1222,22 +1238,6 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
     //         );
     //     }
     // }).executeBundles,
-    // .setBindGroup = (struct {
-    //     pub fn setBindGroup(
-    //         ptr: *anyopaque,
-    //         group_index: u32,
-    //         group: BindGroup,
-    //         dynamic_offsets: []u32,
-    //     ) void {
-    //         c.wgpuRenderBundleEncoderSetBindGroup(
-    //             @ptrCast(c.WGPURenderBundleEncoder, ptr),
-    //             group_index,
-    //             @ptrCast(c.WGPUBindGroup, group.ptr),
-    //             @intCast(u32, dynamic_offsets.len),
-    //             &dynamic_offsets[0],
-    //         );
-    //     }
-    // }).setBindGroup,
     // .setBlendConstant = (struct {
     //     pub fn setBlendConstant(ptr: *anyopaque, color: *const Color) void {
     //         c.wgpuRenderBundleEncoderSetBlendConstant(
