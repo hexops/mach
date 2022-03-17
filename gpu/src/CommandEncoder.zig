@@ -23,8 +23,7 @@ pub const VTable = struct {
     copyBufferToBuffer: fn (ptr: *anyopaque, source: Buffer, source_offset: u64, destination: Buffer, destination_offset: u64, size: u64) void,
     copyBufferToTexture: fn (ptr: *anyopaque, source: *const ImageCopyBuffer, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void,
     copyTextureToBuffer: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyBuffer, copy_size: *const Extent3D) void,
-    // copyTextureToTexture: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void,
-    // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
+    copyTextureToTexture: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void,
     finish: fn (ptr: *anyopaque, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer,
     // injectValidationError: fn (ptr: *anyopaque, message: [*:0]const u8) void,
     // WGPU_EXPORT void wgpuCommandEncoderInjectValidationError(WGPUCommandEncoder commandEncoder, char const * message);
@@ -88,6 +87,15 @@ pub inline fn copyTextureToBuffer(
     enc.vtable.copyTextureToBuffer(enc.ptr, source, destination, copy_size);
 }
 
+pub inline fn copyTextureToTexture(
+    enc: CommandEncoder,
+    source: *const ImageCopyTexture,
+    destination: *const ImageCopyTexture,
+    copy_size: *const Extent3D,
+) void {
+    enc.vtable.copyTextureToTexture(enc.ptr, source, destination, copy_size);
+}
+
 pub inline fn finish(enc: CommandEncoder, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer {
     return enc.vtable.finish(enc.ptr, descriptor);
 }
@@ -126,6 +134,7 @@ test {
     _ = copyBufferToBuffer;
     _ = copyBufferToTexture;
     _ = copyTextureToBuffer;
+    _ = copyTextureToTexture;
     _ = finish;
     _ = insertDebugMarker;
     _ = popDebugGroup;
