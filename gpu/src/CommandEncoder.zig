@@ -25,8 +25,7 @@ pub const VTable = struct {
     copyTextureToBuffer: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyBuffer, copy_size: *const Extent3D) void,
     copyTextureToTexture: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void,
     finish: fn (ptr: *anyopaque, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer,
-    // injectValidationError: fn (ptr: *anyopaque, message: [*:0]const u8) void,
-    // WGPU_EXPORT void wgpuCommandEncoderInjectValidationError(WGPUCommandEncoder commandEncoder, char const * message);
+    injectValidationError: fn (ptr: *anyopaque, message: [*:0]const u8) void,
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     popDebugGroup: fn (ptr: *anyopaque) void,
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
@@ -100,6 +99,10 @@ pub inline fn finish(enc: CommandEncoder, descriptor: ?*const CommandBuffer.Desc
     return enc.vtable.finish(enc.ptr, descriptor);
 }
 
+pub inline fn injectValidationError(enc: CommandEncoder, message: [*:0]const u8) void {
+    enc.vtable.injectValidationError(enc.ptr, message);
+}
+
 pub inline fn insertDebugMarker(enc: CommandEncoder, marker_label: [*:0]const u8) void {
     enc.vtable.insertDebugMarker(enc.ptr, marker_label);
 }
@@ -136,6 +139,7 @@ test {
     _ = copyTextureToBuffer;
     _ = copyTextureToTexture;
     _ = finish;
+    _ = injectValidationError;
     _ = insertDebugMarker;
     _ = popDebugGroup;
     _ = pushDebugGroup;
