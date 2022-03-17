@@ -1635,6 +1635,20 @@ const compute_pass_encoder_vtable = ComputePassEncoder.VTable{
             c.wgpuComputePassEncoderPushDebugGroup(@ptrCast(c.WGPUComputePassEncoder, ptr), group_label);
         }
     }).pushDebugGroup,
+    .setPipeline = (struct {
+        pub fn setPipeline(ptr: *anyopaque, pipeline: ComputePipeline) void {
+            c.wgpuComputePassEncoderSetPipeline(@ptrCast(c.WGPUComputePassEncoder, ptr), @ptrCast(c.WGPUComputePipeline, pipeline.ptr));
+        }
+    }).setPipeline,
+    .writeTimestamp = (struct {
+        pub fn writeTimestamp(ptr: *anyopaque, query_set: QuerySet, query_index: u32) void {
+            c.wgpuComputePassEncoderWriteTimestamp(
+                @ptrCast(c.WGPUComputePassEncoder, ptr),
+                @ptrCast(c.WGPUQuerySet, query_set.ptr),
+                query_index,
+            );
+        }
+    }).writeTimestamp,
 };
 
 fn wrapComputePipeline(pipeline: c.WGPUComputePipeline) ComputePipeline {
