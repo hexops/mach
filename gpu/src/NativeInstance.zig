@@ -1654,6 +1654,21 @@ const command_encoder_vtable = CommandEncoder.VTable{
             );
         }
     }).copyBufferToTexture,
+    .copyTextureToBuffer = (struct {
+        pub fn copyTextureToBuffer(
+            ptr: *anyopaque,
+            source: *const ImageCopyTexture,
+            destination: *const ImageCopyBuffer,
+            copy_size: *const Extent3D,
+        ) void {
+            c.wgpuCommandEncoderCopyTextureToBuffer(
+                @ptrCast(c.WGPUCommandEncoder, ptr),
+                &convertImageCopyTexture(source),
+                &convertImageCopyBuffer(destination),
+                @ptrCast(*const c.WGPUExtent3D, copy_size),
+            );
+        }
+    }).copyTextureToBuffer,
     .popDebugGroup = (struct {
         pub fn popDebugGroup(ptr: *anyopaque) void {
             c.wgpuCommandEncoderPopDebugGroup(@ptrCast(c.WGPUCommandEncoder, ptr));

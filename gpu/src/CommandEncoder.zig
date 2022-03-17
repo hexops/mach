@@ -22,8 +22,7 @@ pub const VTable = struct {
     clearBuffer: fn (ptr: *anyopaque, buffer: Buffer, offset: u64, size: u64) void,
     copyBufferToBuffer: fn (ptr: *anyopaque, source: Buffer, source_offset: u64, destination: Buffer, destination_offset: u64, size: u64) void,
     copyBufferToTexture: fn (ptr: *anyopaque, source: *const ImageCopyBuffer, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void,
-    // copyTextureToBuffer: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyBuffer, copy_size: *const Extent3D) void,
-    // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToBuffer(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyBuffer const * destination, WGPUExtent3D const * copySize);
+    copyTextureToBuffer: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyBuffer, copy_size: *const Extent3D) void,
     // copyTextureToTexture: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void,
     // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
     finish: fn (ptr: *anyopaque, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer,
@@ -80,6 +79,15 @@ pub inline fn copyBufferToTexture(
     enc.vtable.copyBufferToTexture(enc.ptr, source, destination, copy_size);
 }
 
+pub inline fn copyTextureToBuffer(
+    enc: CommandEncoder,
+    source: *const ImageCopyTexture,
+    destination: *const ImageCopyBuffer,
+    copy_size: *const Extent3D,
+) void {
+    enc.vtable.copyTextureToBuffer(enc.ptr, source, destination, copy_size);
+}
+
 pub inline fn finish(enc: CommandEncoder, descriptor: ?*const CommandBuffer.Descriptor) CommandBuffer {
     return enc.vtable.finish(enc.ptr, descriptor);
 }
@@ -117,6 +125,7 @@ test {
     _ = clearBuffer;
     _ = copyBufferToBuffer;
     _ = copyBufferToTexture;
+    _ = copyTextureToBuffer;
     _ = finish;
     _ = insertDebugMarker;
     _ = popDebugGroup;
