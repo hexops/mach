@@ -1173,6 +1173,11 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
             return wrapRenderBundle(c.wgpuRenderBundleEncoderFinish(@ptrCast(c.WGPURenderBundleEncoder, ptr), &desc));
         }
     }).finish,
+    .insertDebugMarker = (struct {
+        pub fn insertDebugMarker(ptr: *anyopaque, marker_label: [*:0]const u8) void {
+            c.wgpuRenderBundleEncoderInsertDebugMarker(@ptrCast(c.WGPURenderBundleEncoder, ptr), marker_label);
+        }
+    }).insertDebugMarker,
     // .beginOcclusionQuery = (struct {
     //     pub fn beginOcclusionQuery(ptr: *anyopaque, query_index: u32) void {
     //         c.wgpuRenderBundleEncoderBeginOcclusionQuery(@ptrCast(c.WGPURenderBundleEncoder, ptr), query_index);
@@ -1207,11 +1212,6 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
     //         );
     //     }
     // }).executeBundles,
-    // .insertDebugMarker = (struct {
-    //     pub fn insertDebugMarker(ptr: *anyopaque, marker_label: [*:0]const u8) void {
-    //         c.wgpuRenderBundleEncoderInsertDebugMarker(@ptrCast(c.WGPURenderBundleEncoder, ptr), marker_label);
-    //     }
-    // }).insertDebugMarker,
     // .popDebugGroup = (struct {
     //     pub fn popDebugGroup(ptr: *anyopaque) void {
     //         c.wgpuRenderBundleEncoderPopDebugGroup(@ptrCast(c.WGPURenderBundleEncoder, ptr));
