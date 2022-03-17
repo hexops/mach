@@ -17,8 +17,7 @@ pub const VTable = struct {
     end: fn (ptr: *anyopaque) void,
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     popDebugGroup: fn (ptr: *anyopaque) void,
-    // pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
-    // WGPU_EXPORT void wgpuComputePassEncoderPushDebugGroup(WGPUComputePassEncoder computePassEncoder, char const * groupLabel);
+    pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
     // setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
     // WGPU_EXPORT void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
@@ -46,6 +45,10 @@ pub inline fn insertDebugMarker(enc: ComputePassEncoder, marker_label: [*:0]cons
 
 pub inline fn popDebugGroup(enc: ComputePassEncoder) void {
     enc.vtable.popDebugGroup(enc.ptr);
+}
+
+pub inline fn pushDebugGroup(enc: ComputePassEncoder, group_label: [*:0]const u8) void {
+    enc.vtable.pushDebugGroup(enc.ptr, group_label);
 }
 
 pub inline fn setLabel(enc: ComputePassEncoder, label: [:0]const u8) void {
