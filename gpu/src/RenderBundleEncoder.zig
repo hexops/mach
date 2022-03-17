@@ -27,8 +27,7 @@ pub const VTable = struct {
         first_instance: u32,
     ) void,
     drawIndexedIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
-    // drawIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
-    // WGPU_EXPORT void wgpuRenderBundleEncoderDrawIndirect(WGPURenderBundleEncoder renderBundleEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+    drawIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     // finish: fn (ptr: *anyopaque, descriptor: *const RenderBundle.Descriptor) void,
     // WGPU_EXPORT WGPURenderBundle wgpuRenderBundleEncoderFinish(WGPURenderBundleEncoder renderBundleEncoder, WGPURenderBundleDescriptor const * descriptor);
     // insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
@@ -81,9 +80,9 @@ pub inline fn drawIndexedIndirect(enc: RenderBundleEncoder, indirect_buffer: Buf
     enc.vtable.drawIndexedIndirect(enc.ptr, indirect_buffer, indirect_offset);
 }
 
-// pub inline fn drawIndirect(enc: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
-//     enc.vtable.drawIndirect(enc.ptr, indirect_buffer, indirect_offset);
-// }
+pub inline fn drawIndirect(enc: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+    enc.vtable.drawIndirect(enc.ptr, indirect_buffer, indirect_offset);
+}
 
 // pub inline fn beginOcclusionQuery(enc: RenderBundleEncoder, query_index: u32) void {
 //     enc.vtable.beginOcclusionQuery(enc.ptr, query_index);
@@ -194,5 +193,6 @@ test {
     _ = draw;
     _ = drawIndexed;
     _ = drawIndexedIndirect;
+    _ = drawIndirect;
     _ = Descriptor;
 }
