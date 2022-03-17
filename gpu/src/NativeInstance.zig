@@ -1625,6 +1625,11 @@ const compute_pass_encoder_vtable = ComputePassEncoder.VTable{
             c.wgpuComputePassEncoderInsertDebugMarker(@ptrCast(c.WGPUComputePassEncoder, ptr), marker_label);
         }
     }).insertDebugMarker,
+    .popDebugGroup = (struct {
+        pub fn popDebugGroup(ptr: *anyopaque) void {
+            c.wgpuComputePassEncoderPopDebugGroup(@ptrCast(c.WGPUComputePassEncoder, ptr));
+        }
+    }).popDebugGroup,
 };
 
 fn wrapComputePipeline(pipeline: c.WGPUComputePipeline) ComputePipeline {
