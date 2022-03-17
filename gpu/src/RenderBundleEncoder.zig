@@ -31,8 +31,7 @@ pub const VTable = struct {
     drawIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     finish: fn (ptr: *anyopaque, descriptor: *const RenderBundle.Descriptor) RenderBundle,
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
-    // popDebugGroup: fn (ptr: *anyopaque) void,
-    // WGPU_EXPORT void wgpuRenderBundleEncoderPopDebugGroup(WGPURenderBundleEncoder renderBundleEncoder);
+    popDebugGroup: fn (ptr: *anyopaque) void,
     // pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
     // WGPU_EXPORT void wgpuRenderBundleEncoderPushDebugGroup(WGPURenderBundleEncoder renderBundleEncoder, char const * groupLabel);
     // setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
@@ -91,6 +90,10 @@ pub inline fn insertDebugMarker(enc: RenderBundleEncoder, marker_label: [*:0]con
     enc.vtable.insertDebugMarker(enc.ptr, marker_label);
 }
 
+pub inline fn popDebugGroup(enc: RenderBundleEncoder) void {
+    enc.vtable.popDebugGroup(enc.ptr);
+}
+
 // pub inline fn beginOcclusionQuery(enc: RenderBundleEncoder, query_index: u32) void {
 //     enc.vtable.beginOcclusionQuery(enc.ptr, query_index);
 // }
@@ -101,10 +104,6 @@ pub inline fn insertDebugMarker(enc: RenderBundleEncoder, marker_label: [*:0]con
 
 // pub inline fn executeBundles(enc: RenderBundleEncoder, bundles: []RenderBundle) void {
 //     enc.vtable.executeBundles(enc.ptr, bundles);
-// }
-
-// pub inline fn popDebugGroup(enc: RenderBundleEncoder) void {
-//     enc.vtable.popDebugGroup(enc.ptr);
 // }
 
 // pub inline fn pushDebugGroup(enc: RenderBundleEncoder, group_label: [*:0]const u8) void {
@@ -195,5 +194,6 @@ test {
     _ = drawIndirect;
     _ = finish;
     _ = insertDebugMarker;
+    _ = popDebugGroup;
     _ = Descriptor;
 }
