@@ -15,8 +15,7 @@ pub const VTable = struct {
     // dispatchIndirect: fn (ptr: *anyopaque, indirect_buffer: Buffer, indirect_offset: u64) void,
     // WGPU_EXPORT void wgpuComputePassEncoderDispatchIndirect(WGPUComputePassEncoder computePassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
     end: fn (ptr: *anyopaque) void,
-    // insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
-    // WGPU_EXPORT void wgpuComputePassEncoderInsertDebugMarker(WGPUComputePassEncoder computePassEncoder, char const * markerLabel);
+    insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     // popDebugGroup: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuComputePassEncoderPopDebugGroup(WGPUComputePassEncoder computePassEncoder);
     // pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
@@ -42,6 +41,10 @@ pub inline fn end(enc: ComputePassEncoder) void {
     enc.vtable.end(enc.ptr);
 }
 
+pub inline fn insertDebugMarker(enc: ComputePassEncoder, marker_label: [*:0]const u8) void {
+    enc.vtable.insertDebugMarker(enc.ptr, marker_label);
+}
+
 pub inline fn setLabel(enc: ComputePassEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
@@ -56,5 +59,7 @@ test {
     _ = reference;
     _ = release;
     _ = end;
+    _ = insertDebugMarker;
+    _ = setLabel;
     _ = Descriptor;
 }
