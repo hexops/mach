@@ -2,6 +2,7 @@ const Texture = @import("Texture.zig");
 const Buffer = @import("Buffer.zig");
 const RenderBundle = @import("RenderBundle.zig");
 const BindGroup = @import("BindGroup.zig");
+const IndexFormat = @import("enums.zig").IndexFormat;
 
 const RenderBundleEncoder = @This();
 
@@ -35,8 +36,7 @@ pub const VTable = struct {
     popDebugGroup: fn (ptr: *anyopaque) void,
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
     setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
-    // setIndexBuffer: fn (ptr: *anyopaque, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void,
-    // WGPU_EXPORT void wgpuRenderBundleEncoderSetIndexBuffer(WGPURenderBundleEncoder renderBundleEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
+    setIndexBuffer: fn (ptr: *anyopaque, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     // setPipeline: fn (ptr: *anyopaque, pipeline: RenderPipeline) void,
     // WGPU_EXPORT void wgpuRenderBundleEncoderSetPipeline(WGPURenderBundleEncoder renderBundleEncoder, WGPURenderPipeline pipeline);
@@ -106,6 +106,16 @@ pub inline fn setBindGroup(
     enc.vtable.setBindGroup(enc.ptr, group_index, group, dynamic_offsets);
 }
 
+pub inline fn setIndexBuffer(
+    enc: RenderBundleEncoder,
+    buffer: Buffer,
+    format: IndexFormat,
+    offset: u64,
+    size: u64,
+) void {
+    enc.vtable.setIndexBuffer(enc.ptr, buffer, format, offset, size);
+}
+
 // pub inline fn beginOcclusionQuery(enc: RenderBundleEncoder, query_index: u32) void {
 //     enc.vtable.beginOcclusionQuery(enc.ptr, query_index);
 // }
@@ -120,16 +130,6 @@ pub inline fn setBindGroup(
 
 // pub inline fn setBlendConstant(enc: RenderBundleEncoder, color: *const Color) void {
 //     enc.vtable.setBlendConstant(enc.ptr, color);
-// }
-
-// pub inline fn setIndexBuffer(
-//     enc: RenderBundleEncoder,
-//     buffer: Buffer,
-//     format: IndexFormat,
-//     offset: u64,
-//     size: u64,
-// ) void {
-//     enc.vtable.setIndexBuffer(enc.ptr, buffer, format, offset, size);
 // }
 
 pub inline fn setLabel(enc: RenderBundleEncoder, label: [:0]const u8) void {
@@ -196,5 +196,6 @@ test {
     _ = popDebugGroup;
     _ = pushDebugGroup;
     _ = setBindGroup;
+    _ = setIndexBuffer;
     _ = Descriptor;
 }
