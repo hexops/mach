@@ -1493,6 +1493,11 @@ const command_encoder_vtable = CommandEncoder.VTable{
             return wrapCommandBuffer(c.wgpuCommandEncoderFinish(@ptrCast(c.WGPUCommandEncoder, ptr), desc));
         }
     }).finish,
+    .insertDebugMarker = (struct {
+        pub fn insertDebugMarker(ptr: *anyopaque, marker_label: [*:0]const u8) void {
+            c.wgpuCommandEncoderInsertDebugMarker(@ptrCast(c.WGPUCommandEncoder, ptr), marker_label);
+        }
+    }).insertDebugMarker,
     .setLabel = (struct {
         pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
             c.wgpuCommandEncoderSetLabel(@ptrCast(c.WGPUCommandEncoder, ptr), label);
