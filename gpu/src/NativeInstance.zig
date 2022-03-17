@@ -1503,6 +1503,40 @@ const command_encoder_vtable = CommandEncoder.VTable{
             c.wgpuCommandEncoderSetLabel(@ptrCast(c.WGPUCommandEncoder, ptr), label);
         }
     }).setLabel,
+    .beginComputePass = (struct {
+        pub fn beginComputePass(ptr: *anyopaque, d: *const ComputePassEncoder.Descriptor) ComputePassEncoder {
+            var few_timestamp_writes: [8]c.WGPUComputePassTimestampWrite = undefined;
+            const timestamp_writes = if (d.timestamp_writes.len <= 8) blk: {
+                for (d.timestamp_writes) |v, i| {
+                    few_timestamp_writes[i] = c.WGPUComputePassTimestampWrite{
+                        .querySet = @ptrCast(c.WGPUQuerySet, v.query_set.ptr),
+                        .queryIndex = v.query_index,
+                        .location = @enumToInt(v.location),
+                    };
+                }
+                break :blk few_timestamp_writes[0..d.timestamp_writes.len];
+            } else blk: {
+                const mem = std.heap.page_allocator.alloc(c.WGPUComputePassTimestampWrite, d.timestamp_writes.len) catch unreachable;
+                for (d.timestamp_writes) |v, i| {
+                    mem[i] = c.WGPUComputePassTimestampWrite{
+                        .querySet = @ptrCast(c.WGPUQuerySet, v.query_set.ptr),
+                        .queryIndex = v.query_index,
+                        .location = @enumToInt(v.location),
+                    };
+                }
+                break :blk mem;
+            };
+            defer if (d.timestamp_writes.len > 8) std.heap.page_allocator.free(timestamp_writes);
+
+            const desc = c.WGPUComputePassDescriptor{
+                .nextInChain = null,
+                .label = if (d.label) |l| l else null,
+                .timestampWriteCount = @intCast(u32, timestamp_writes.len),
+                .timestampWrites = @ptrCast(*const c.WGPUComputePassTimestampWrite, &timestamp_writes[0]),
+            };
+            return wrapComputePassEncoder(c.wgpuCommandEncoderBeginComputePass(@ptrCast(c.WGPUCommandEncoder, ptr), &desc));
+        }
+    }).beginComputePass,
     .beginRenderPass = (struct {
         pub fn beginRenderPass(ptr: *anyopaque, d: *const RenderPassEncoder.Descriptor) RenderPassEncoder {
             var few_color_attachments: [8]c.WGPURenderPassColorAttachment = undefined;

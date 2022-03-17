@@ -1,3 +1,4 @@
+const ComputePassEncoder = @import("ComputePassEncoder.zig");
 const RenderPassEncoder = @import("RenderPassEncoder.zig");
 const CommandBuffer = @import("CommandBuffer.zig");
 const QuerySet = @import("QuerySet.zig");
@@ -12,9 +13,7 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    // TODO:
-    // beginComputePass: fn (ptr: *anyopaque, descriptor: *const ComputePassDescriptor) void,
-    // WGPU_EXPORT WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder, WGPUComputePassDescriptor const * descriptor);
+    beginComputePass: fn (ptr: *anyopaque, descriptor: *const ComputePassEncoder.Descriptor) ComputePassEncoder,
     beginRenderPass: fn (ptr: *anyopaque, descriptor: *const RenderPassEncoder.Descriptor) RenderPassEncoder,
     // clearBuffer: fn (ptr: *anyopaque, buffer: Buffer, offset: u64, size: u64) void,
     // WGPU_EXPORT void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t offset, uint64_t size);
@@ -46,6 +45,10 @@ pub inline fn reference(enc: CommandEncoder) void {
 
 pub inline fn release(enc: CommandEncoder) void {
     enc.vtable.release(enc.ptr);
+}
+
+pub inline fn beginComputePass(enc: CommandEncoder, descriptor: *const ComputePassEncoder.Descriptor) ComputePassEncoder {
+    return enc.vtable.beginComputePass(enc.ptr, descriptor);
 }
 
 pub inline fn beginRenderPass(enc: CommandEncoder, descriptor: *const RenderPassEncoder.Descriptor) RenderPassEncoder {
@@ -84,6 +87,7 @@ test {
     _ = VTable;
     _ = reference;
     _ = release;
+    _ = beginComputePass;
     _ = beginRenderPass;
     _ = finish;
     _ = insertDebugMarker;
