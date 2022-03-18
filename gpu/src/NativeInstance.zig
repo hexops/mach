@@ -321,6 +321,50 @@ const device_vtable = Device.VTable{
             return wrapQueue(c.wgpuDeviceGetQueue(@ptrCast(c.WGPUDevice, ptr)));
         }
     }).getQueue,
+    .createBindGroup = (struct {
+        pub fn createBindGroup(ptr: *anyopaque, descriptor: *const BindGroup.Descriptor) BindGroup {
+            var few_entries: [16]c.WGPUBindGroupEntry = undefined;
+            const entries = if (descriptor.entries.len <= 8) blk: {
+                for (descriptor.entries) |entry, i| {
+                    few_entries[i] = c.WGPUBindGroupEntry{
+                        .nextInChain = null,
+                        .binding = entry.binding,
+                        .buffer = @ptrCast(c.WGPUBuffer, entry.buffer.ptr),
+                        .offset = entry.offset,
+                        .size = entry.size,
+                        .sampler = @ptrCast(c.WGPUSampler, entry.sampler.ptr),
+                        .textureView = @ptrCast(c.WGPUTextureView, entry.texture_view.ptr),
+                    };
+                }
+                break :blk few_entries[0..descriptor.entries.len];
+            } else blk: {
+                const mem = std.heap.page_allocator.alloc(c.WGPUBindGroupEntry, descriptor.entries.len) catch unreachable;
+                for (descriptor.entries) |entry, i| {
+                    mem[i] = c.WGPUBindGroupEntry{
+                        .nextInChain = null,
+                        .binding = entry.binding,
+                        .buffer = @ptrCast(c.WGPUBuffer, entry.buffer.ptr),
+                        .offset = entry.offset,
+                        .size = entry.size,
+                        .sampler = @ptrCast(c.WGPUSampler, entry.sampler.ptr),
+                        .textureView = @ptrCast(c.WGPUTextureView, entry.texture_view.ptr),
+                    };
+                }
+                break :blk mem;
+            };
+            defer if (entries.len > 8) std.heap.page_allocator.free(entries);
+
+            const desc = c.WGPUBindGroupDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| l else null,
+                .layout = @ptrCast(c.WGPUBindGroupLayout, descriptor.layout.ptr),
+                .entryCount = @intCast(u32, entries.len),
+                .entries = &entries[0],
+            };
+
+            return wrapBindGroup(c.wgpuDeviceCreateBindGroup(@ptrCast(c.WGPUDevice, ptr), &desc));
+        }
+    }).createBindGroup,
     .createShaderModule = (struct {
         pub fn createShaderModule(ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule {
             switch (descriptor.code) {

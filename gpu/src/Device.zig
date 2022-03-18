@@ -15,6 +15,7 @@ const SwapChain = @import("SwapChain.zig");
 const RenderPipeline = @import("RenderPipeline.zig");
 const CommandEncoder = @import("CommandEncoder.zig");
 const ComputePipeline = @import("ComputePipeline.zig");
+const BindGroup = @import("BindGroup.zig");
 
 const Device = @This();
 
@@ -24,9 +25,9 @@ ptr: *anyopaque,
 vtable: *const VTable,
 
 pub const VTable = struct {
-    // TODO:
-    // createBindGroup: fn (ptr: *anyopaque, descriptor: *const BindGroup.Descriptor) BindGroup,
-    // WGPU_EXPORT WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const * descriptor);
+    reference: fn (ptr: *anyopaque) void,
+    release: fn (ptr: *anyopaque) void,
+    createBindGroup: fn (ptr: *anyopaque, descriptor: *const BindGroup.Descriptor) BindGroup,
     // createBindGroupLayout: fn (ptr: *anyopaque, descriptor: *const BindGroupLayout.Descriptor) BindGroupLayout,
     // WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor);
     // createBuffer: fn (ptr: *anyopaque, descriptor: *const Buffer.Descriptor) Buffer,
@@ -88,14 +89,7 @@ pub const VTable = struct {
     // WGPU_EXPORT void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
     // tick: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuDeviceTick(WGPUDevice device);
-
-    reference: fn (ptr: *anyopaque) void,
-    release: fn (ptr: *anyopaque) void,
 };
-
-pub inline fn getQueue(device: Device) Queue {
-    return device.vtable.getQueue(device.ptr);
-}
 
 pub inline fn reference(device: Device) void {
     device.vtable.reference(device.ptr);
@@ -103,6 +97,14 @@ pub inline fn reference(device: Device) void {
 
 pub inline fn release(device: Device) void {
     device.vtable.release(device.ptr);
+}
+
+pub inline fn getQueue(device: Device) Queue {
+    return device.vtable.getQueue(device.ptr);
+}
+
+pub inline fn createBindGroup(device: Device, descriptor: *const BindGroup.Descriptor) void {
+    device.vtable.createBindGroup(device.ptr, descriptor);
 }
 
 pub inline fn createShaderModule(device: Device, descriptor: *const ShaderModule.Descriptor) ShaderModule {
