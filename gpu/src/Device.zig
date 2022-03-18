@@ -40,8 +40,7 @@ pub const VTable = struct {
         descriptor: *const ComputePipeline.Descriptor,
         callback: *ComputePipeline.CreateCallback,
     ) void,
-    // createErrorBuffer: fn (ptr: *anyopaque) Buffer,
-    // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device);
+    createErrorBuffer: fn (ptr: *anyopaque) Buffer,
     // createExternalTexture: fn (ptr: *anyopaque, descriptor: *const ExternalTexture.Descriptor) ExternalTexture,
     // WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, WGPUExternalTextureDescriptor const * externalTextureDescriptor);
     // createPipelineLayout: fn (ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout,
@@ -149,6 +148,10 @@ pub inline fn createComputePipelineAsync(
     device.vtable.createComputePipelineAsync(device.ptr, descriptor, callback);
 }
 
+pub inline fn createErrorBuffer(device: Device) Buffer {
+    return device.vtable.createErrorBuffer(device.ptr);
+}
+
 pub inline fn createRenderPipeline(device: Device, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
     return device.vtable.createRenderPipeline(device.ptr, descriptor);
 }
@@ -191,6 +194,7 @@ test {
     _ = createCommandEncoder;
     _ = createComputePipeline;
     _ = createComputePipelineAsync;
+    _ = createErrorBuffer;
     _ = createRenderPipeline;
     _ = createRenderPipelineAsync;
     _ = tick;
