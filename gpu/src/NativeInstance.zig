@@ -504,6 +504,13 @@ const device_vtable = Device.VTable{
             );
         }
     }).createComputePipelineAsync,
+    .createErrorBuffer = (struct {
+        pub fn createErrorBuffer(ptr: *anyopaque) Buffer {
+            return wrapBuffer(c.wgpuDeviceCreateErrorBuffer(
+                @ptrCast(c.WGPUDevice, ptr),
+            ));
+        }
+    }).createErrorBuffer,
     .createRenderPipeline = (struct {
         pub fn createRenderPipeline(ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
             var tmp_depth_stencil: c.WGPUDepthStencilState = undefined;
