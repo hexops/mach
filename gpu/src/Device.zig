@@ -7,6 +7,7 @@
 //! https://gpuweb.github.io/gpuweb/#devices
 //! https://gpuweb.github.io/gpuweb/#gpuadapter
 const Feature = @import("enums.zig").Feature;
+const ErrorType = @import("enums.zig").ErrorType;
 const Limits = @import("data.zig").Limits;
 const Queue = @import("Queue.zig");
 const ShaderModule = @import("ShaderModule.zig");
@@ -69,8 +70,7 @@ pub const VTable = struct {
     getQueue: fn (ptr: *anyopaque) Queue,
     // TODO: should hasFeature be a helper method?
     // WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeature feature);
-    // injectError: fn (ptr: *anyopaque, type: ErrorType, message: [*:0]const u8) void,
-    // WGPU_EXPORT void wgpuDeviceInjectError(WGPUDevice device, WGPUErrorType type, char const * message);
+    injectError: fn (ptr: *anyopaque, type: ErrorType, message: [*:0]const u8) void,
     // loseForTesting: fn (ptr: *anyopaque) void,
     // WGPU_EXPORT void wgpuDeviceLoseForTesting(WGPUDevice device);
     // TODO: callback
@@ -100,6 +100,10 @@ pub inline fn release(device: Device) void {
 
 pub inline fn getQueue(device: Device) Queue {
     return device.vtable.getQueue(device.ptr);
+}
+
+pub inline fn injectError(device: Device, typ: ErrorType, message: [*:0]const u8) void {
+    device.vtable.injectError(device.ptr, typ, message);
 }
 
 pub inline fn createBindGroup(device: Device, descriptor: *const BindGroup.Descriptor) BindGroup {
@@ -173,6 +177,7 @@ test {
     _ = reference;
     _ = release;
     _ = getQueue;
+    _ = injectError;
     _ = createBindGroup;
     _ = createBindGroupLayout;
     _ = createShaderModule;
