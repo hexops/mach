@@ -187,7 +187,8 @@ pub const SampleType = enum(u32) {
     uint = 0x00000005,
 };
 
-pub const BindingLayout = struct {
+pub const BindingLayout = extern struct {
+    reserved: ?*anyopaque = null,
     sample_type: SampleType,
     view_dimension: TextureView.Dimension,
     multisampled: bool,

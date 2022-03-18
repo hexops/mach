@@ -34,7 +34,8 @@ pub const BindingType = enum(u32) {
     comparison = 0x00000003,
 };
 
-pub const BindingLayout = struct {
+pub const BindingLayout = extern struct {
+    reserved: ?*anyopaque = null,
     type: BindingType,
 };
 

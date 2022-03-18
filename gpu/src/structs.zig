@@ -35,7 +35,8 @@ pub const PrimitiveState = struct {
     cull_mode: CullMode,
 };
 
-pub const StorageTextureBindingLayout = struct {
+pub const StorageTextureBindingLayout = extern struct {
+    reserved: ?*anyopaque = null,
     access: StorageTextureAccess,
     format: Texture.Format,
     view_dimension: TextureView.Dimension,
