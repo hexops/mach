@@ -18,6 +18,7 @@ const CommandEncoder = @import("CommandEncoder.zig");
 const ComputePipeline = @import("ComputePipeline.zig");
 const BindGroup = @import("BindGroup.zig");
 const BindGroupLayout = @import("BindGroupLayout.zig");
+const Buffer = @import("Buffer.zig");
 
 const Device = @This();
 
@@ -31,8 +32,7 @@ pub const VTable = struct {
     release: fn (ptr: *anyopaque) void,
     createBindGroup: fn (ptr: *anyopaque, descriptor: *const BindGroup.Descriptor) BindGroup,
     createBindGroupLayout: fn (ptr: *anyopaque, descriptor: *const BindGroupLayout.Descriptor) BindGroupLayout,
-    // createBuffer: fn (ptr: *anyopaque, descriptor: *const Buffer.Descriptor) Buffer,
-    // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
+    createBuffer: fn (ptr: *anyopaque, descriptor: *const Buffer.Descriptor) Buffer,
     createCommandEncoder: fn (ptr: *anyopaque, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder,
     createComputePipeline: fn (ptr: *anyopaque, descriptor: *const ComputePipeline.Descriptor) ComputePipeline,
     createComputePipelineAsync: fn (
@@ -126,6 +126,10 @@ pub inline fn destroy(device: Device) void {
     device.vtable.destroy(device.ptr);
 }
 
+pub inline fn createBuffer(device: Device, descriptor: *const Buffer.Descriptor) Buffer {
+    return device.vtable.createBuffer(device.ptr, descriptor);
+}
+
 pub inline fn createCommandEncoder(device: Device, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder {
     return device.vtable.createCommandEncoder(device.ptr, descriptor);
 }
@@ -183,6 +187,7 @@ test {
     _ = createShaderModule;
     _ = nativeCreateSwapChain;
     _ = destroy;
+    _ = createBuffer;
     _ = createCommandEncoder;
     _ = createComputePipeline;
     _ = createComputePipelineAsync;
