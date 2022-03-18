@@ -441,6 +441,14 @@ const device_vtable = Device.VTable{
             c.wgpuDeviceDestroy(@ptrCast(c.WGPUDevice, ptr));
         }
     }).destroy,
+    .createBuffer = (struct {
+        pub fn createBuffer(ptr: *anyopaque, descriptor: *const Buffer.Descriptor) Buffer {
+            return wrapBuffer(c.wgpuDeviceCreateBuffer(
+                @ptrCast(c.WGPUDevice, ptr),
+                @ptrCast(*const c.WGPUBufferDescriptor, descriptor),
+            ));
+        }
+    }).createBuffer,
     .createCommandEncoder = (struct {
         pub fn createCommandEncoder(ptr: *anyopaque, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder {
             const desc: ?*c.WGPUCommandEncoderDescriptor = if (descriptor) |d| &.{

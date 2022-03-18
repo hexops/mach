@@ -78,7 +78,8 @@ pub inline fn unmap(buf: Buffer) void {
     buf.vtable.unmap(buf.ptr);
 }
 
-pub const Descriptor = struct {
+pub const Descriptor = extern struct {
+    reserved: ?*anyopaque = null,
     label: ?[*:0]const u8 = null,
     usage: BufferUsage,
     size: usize,
