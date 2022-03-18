@@ -34,7 +34,8 @@ pub const Descriptor = struct {
     entries: []const Entry,
 };
 
-pub const Entry = struct {
+pub const Entry = extern struct {
+    reserved: ?*anyopaque = null,
     binding: u32,
     visibility: ShaderStage,
     buffer: Buffer.BindingLayout,
