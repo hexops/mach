@@ -44,6 +44,7 @@ const ComputePipeline = @import("ComputePipeline.zig");
 
 const PresentMode = @import("enums.zig").PresentMode;
 const IndexFormat = @import("enums.zig").IndexFormat;
+const ErrorType = @import("enums.zig").ErrorType;
 
 const ImageCopyBuffer = @import("structs.zig").ImageCopyBuffer;
 const ImageCopyTexture = @import("structs.zig").ImageCopyTexture;
@@ -321,6 +322,11 @@ const device_vtable = Device.VTable{
             return wrapQueue(c.wgpuDeviceGetQueue(@ptrCast(c.WGPUDevice, ptr)));
         }
     }).getQueue,
+    .injectError = (struct {
+        pub fn injectError(ptr: *anyopaque, typ: ErrorType, message: [*:0]const u8) void {
+            c.wgpuDeviceInjectError(@ptrCast(c.WGPUDevice, ptr), @enumToInt(typ), message);
+        }
+    }).injectError,
     .createBindGroup = (struct {
         pub fn createBindGroup(ptr: *anyopaque, descriptor: *const BindGroup.Descriptor) BindGroup {
             var few_entries: [16]c.WGPUBindGroupEntry = undefined;
