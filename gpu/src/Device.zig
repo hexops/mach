@@ -87,8 +87,7 @@ pub const VTable = struct {
     // TODO: callback
     // setUncapturedErrorCallback: fn (ptr: *anyopaque, callback: UncapturedErrorCallback) void,
     // WGPU_EXPORT void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
-    // tick: fn (ptr: *anyopaque) void,
-    // WGPU_EXPORT void wgpuDeviceTick(WGPUDevice device);
+    tick: fn (ptr: *anyopaque) void,
 };
 
 pub inline fn reference(device: Device) void {
@@ -154,6 +153,10 @@ pub inline fn createRenderPipelineAsync(
     device.vtable.createRenderPipelineAsync(device.ptr, descriptor, callback);
 }
 
+pub inline fn tick(device: Device) void {
+    device.vtable.tick(device.ptr);
+}
+
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     required_features: ?[]Feature = null,
@@ -180,6 +183,7 @@ test {
     _ = createComputePipelineAsync;
     _ = createRenderPipeline;
     _ = createRenderPipelineAsync;
+    _ = tick;
     _ = Descriptor;
     _ = LostReason;
 }

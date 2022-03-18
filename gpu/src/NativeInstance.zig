@@ -533,6 +533,11 @@ const device_vtable = Device.VTable{
             );
         }
     }).createRenderPipelineAsync,
+    .tick = (struct {
+        pub fn tick(ptr: *anyopaque) void {
+            c.wgpuDeviceTick(@ptrCast(c.WGPUDevice, ptr));
+        }
+    }.tick),
 };
 
 inline fn convertComputePipelineDescriptor(descriptor: *const ComputePipeline.Descriptor) c.WGPUComputePipelineDescriptor {
