@@ -92,7 +92,8 @@ pub const BindingType = enum(u32) {
     read_only_storage = 0x00000003,
 };
 
-pub const BindingLayout = struct {
+pub const BindingLayout = extern struct {
+    reserved: ?*anyopaque = null,
     type: BindingType,
     has_dynamic_offset: bool,
     min_binding_size: u64,

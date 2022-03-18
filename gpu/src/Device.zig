@@ -16,6 +16,7 @@ const RenderPipeline = @import("RenderPipeline.zig");
 const CommandEncoder = @import("CommandEncoder.zig");
 const ComputePipeline = @import("ComputePipeline.zig");
 const BindGroup = @import("BindGroup.zig");
+const BindGroupLayout = @import("BindGroupLayout.zig");
 
 const Device = @This();
 
@@ -28,8 +29,7 @@ pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
     createBindGroup: fn (ptr: *anyopaque, descriptor: *const BindGroup.Descriptor) BindGroup,
-    // createBindGroupLayout: fn (ptr: *anyopaque, descriptor: *const BindGroupLayout.Descriptor) BindGroupLayout,
-    // WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor);
+    createBindGroupLayout: fn (ptr: *anyopaque, descriptor: *const BindGroupLayout.Descriptor) BindGroupLayout,
     // createBuffer: fn (ptr: *anyopaque, descriptor: *const Buffer.Descriptor) Buffer,
     // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
     createCommandEncoder: fn (ptr: *anyopaque, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder,
@@ -103,8 +103,12 @@ pub inline fn getQueue(device: Device) Queue {
     return device.vtable.getQueue(device.ptr);
 }
 
-pub inline fn createBindGroup(device: Device, descriptor: *const BindGroup.Descriptor) void {
-    device.vtable.createBindGroup(device.ptr, descriptor);
+pub inline fn createBindGroup(device: Device, descriptor: *const BindGroup.Descriptor) BindGroup {
+    return device.vtable.createBindGroup(device.ptr, descriptor);
+}
+
+pub inline fn createBindGroupLayout(device: Device, descriptor: *const BindGroupLayout.Descriptor) BindGroupLayout {
+    return device.vtable.createBindGroupLayout(device.ptr, descriptor);
 }
 
 pub inline fn createShaderModule(device: Device, descriptor: *const ShaderModule.Descriptor) ShaderModule {
@@ -163,9 +167,11 @@ pub const LostReason = enum(u32) {
 
 test {
     _ = VTable;
-    _ = getQueue;
     _ = reference;
     _ = release;
+    _ = getQueue;
+    _ = createBindGroup;
+    _ = createBindGroupLayout;
     _ = createShaderModule;
     _ = nativeCreateSwapChain;
     _ = destroy;

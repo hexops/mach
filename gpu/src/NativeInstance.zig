@@ -365,6 +365,48 @@ const device_vtable = Device.VTable{
             return wrapBindGroup(c.wgpuDeviceCreateBindGroup(@ptrCast(c.WGPUDevice, ptr), &desc));
         }
     }).createBindGroup,
+    .createBindGroupLayout = (struct {
+        pub fn createBindGroupLayout(ptr: *anyopaque, descriptor: *const BindGroupLayout.Descriptor) BindGroupLayout {
+            var few_entries: [16]c.WGPUBindGroupLayoutEntry = undefined;
+            const entries = if (descriptor.entries.len <= 8) blk: {
+                for (descriptor.entries) |entry, i| {
+                    few_entries[i] = c.WGPUBindGroupLayoutEntry{
+                        .nextInChain = null,
+                        .binding = entry.binding,
+                        .visibility = @enumToInt(entry.visibility),
+                        .buffer = @bitCast(c.WGPUBufferBindingLayout, entry.buffer),
+                        .sampler = @bitCast(c.WGPUSamplerBindingLayout, entry.sampler),
+                        .texture = @bitCast(c.WGPUTextureBindingLayout, entry.texture),
+                        .storageTexture = @bitCast(c.WGPUStorageTextureBindingLayout, entry.storage_texture),
+                    };
+                }
+                break :blk few_entries[0..descriptor.entries.len];
+            } else blk: {
+                const mem = std.heap.page_allocator.alloc(c.WGPUBindGroupLayoutEntry, descriptor.entries.len) catch unreachable;
+                for (descriptor.entries) |entry, i| {
+                    mem[i] = c.WGPUBindGroupLayoutEntry{
+                        .nextInChain = null,
+                        .binding = entry.binding,
+                        .visibility = @enumToInt(entry.visibility),
+                        .buffer = @bitCast(c.WGPUBufferBindingLayout, entry.buffer),
+                        .sampler = @bitCast(c.WGPUSamplerBindingLayout, entry.sampler),
+                        .texture = @bitCast(c.WGPUTextureBindingLayout, entry.texture),
+                        .storageTexture = @bitCast(c.WGPUStorageTextureBindingLayout, entry.storage_texture),
+                    };
+                }
+                break :blk mem;
+            };
+            defer if (entries.len > 8) std.heap.page_allocator.free(entries);
+
+            const desc = c.WGPUBindGroupLayoutDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| l else null,
+                .entryCount = @intCast(u32, entries.len),
+                .entries = &entries[0],
+            };
+            return wrapBindGroupLayout(c.wgpuDeviceCreateBindGroupLayout(@ptrCast(c.WGPUDevice, ptr), &desc));
+        }
+    }).createBindGroupLayout,
     .createShaderModule = (struct {
         pub fn createShaderModule(ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule {
             switch (descriptor.code) {
@@ -676,7 +718,7 @@ const queue_vtable = Queue.VTable{
             }
 
             var few_commands: [16]c.WGPUCommandBuffer = undefined;
-            const commands = if (cmds.len <= 8) blk: {
+            const commands = if (cmds.len <= 16) blk: {
                 for (cmds) |cmd, i| {
                     few_commands[i] = @ptrCast(c.WGPUCommandBuffer, cmd.ptr);
                 }
@@ -688,7 +730,7 @@ const queue_vtable = Queue.VTable{
                 }
                 break :blk mem;
             };
-            defer if (cmds.len > 8) std.heap.page_allocator.free(cmds);
+            defer if (cmds.len > 16) std.heap.page_allocator.free(cmds);
 
             c.wgpuQueueSubmit(
                 wgpu_queue,
