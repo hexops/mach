@@ -70,8 +70,7 @@ pub const VTable = struct {
     // TODO: should hasFeature be a helper method?
     // WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeature feature);
     injectError: fn (ptr: *anyopaque, type: ErrorType, message: [*:0]const u8) void,
-    // loseForTesting: fn (ptr: *anyopaque) void,
-    // WGPU_EXPORT void wgpuDeviceLoseForTesting(WGPUDevice device);
+    loseForTesting: fn (ptr: *anyopaque) void,
     // TODO: callback
     // popErrorScope: fn (ptr: *anyopaque, callback: ErrorCallback) bool,
     // WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
@@ -103,6 +102,10 @@ pub inline fn getQueue(device: Device) Queue {
 
 pub inline fn injectError(device: Device, typ: ErrorType, message: [*:0]const u8) void {
     device.vtable.injectError(device.ptr, typ, message);
+}
+
+pub inline fn loseForTesting(device: Device) void {
+    device.vtable.loseForTesting(device.ptr);
 }
 
 pub inline fn createBindGroup(device: Device, descriptor: *const BindGroup.Descriptor) BindGroup {
@@ -209,6 +212,7 @@ test {
     _ = release;
     _ = getQueue;
     _ = injectError;
+    _ = loseForTesting;
     _ = createBindGroup;
     _ = createBindGroupLayout;
     _ = createSampler;

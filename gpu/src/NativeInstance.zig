@@ -327,6 +327,11 @@ const device_vtable = Device.VTable{
             c.wgpuDeviceInjectError(@ptrCast(c.WGPUDevice, ptr), @enumToInt(typ), message);
         }
     }).injectError,
+    .loseForTesting = (struct {
+        pub fn loseForTesting(ptr: *anyopaque) void {
+            c.wgpuDeviceLoseForTesting(@ptrCast(c.WGPUDevice, ptr));
+        }
+    }).loseForTesting,
     .createBindGroup = (struct {
         pub fn createBindGroup(ptr: *anyopaque, descriptor: *const BindGroup.Descriptor) BindGroup {
             var few_entries: [16]c.WGPUBindGroupEntry = undefined;
