@@ -32,6 +32,12 @@ const Texture = @import("Texture.zig");
 
 const Device = @This();
 
+/// The features supported by the device (i.e. the ones with which it was created).
+features: []Feature,
+
+/// The limits supported by the device (which are exactly the ones with which it was created).
+limits: Limits,
+
 /// The type erased pointer to the Device implementation
 /// Equal to c.WGPUDevice for NativeInstance.
 ptr: *anyopaque,
@@ -66,10 +72,6 @@ pub const VTable = struct {
     nativeCreateSwapChain: fn (ptr: *anyopaque, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain,
     createTexture: fn (ptr: *anyopaque, descriptor: *const Texture.Descriptor) Texture,
     destroy: fn (ptr: *anyopaque) void,
-    // TODO: should features be exposed as static slice?
-    // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeature * features);
-    // TODO: should limits be exposed as static slice?
-    // WGPU_EXPORT bool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits * limits);
     getQueue: fn (ptr: *anyopaque) Queue,
     // TODO: should hasFeature be a helper method?
     // WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeature feature);

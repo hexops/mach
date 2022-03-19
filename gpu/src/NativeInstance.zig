@@ -304,7 +304,14 @@ const adapter_vtable = Adapter.VTable{
 
 fn wrapDevice(device: c.WGPUDevice) Device {
     // TODO: implement Device interface
+    // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeature * features);
+    // WGPU_EXPORT bool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits * limits);
+
     return .{
+        // TODO:
+        .features = undefined,
+        // TODO:
+        .limits = undefined,
         .ptr = device.?,
         .vtable = &device_vtable,
     };
