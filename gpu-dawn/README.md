@@ -37,6 +37,7 @@ The following platforms are not yet supported, but we hope to support soon:
 * iOS (Dawn does not officially support it yet)
 * Android (Dawn does not officially support it yet)
 * ARM Linux (aarch64)
+* Windows msvc target (Zig targets MinGW libc on Windows currently, msvc support should not be hard to add.)
 
 ## Binary releases
 
