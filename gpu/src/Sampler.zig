@@ -39,7 +39,8 @@ pub const BindingLayout = extern struct {
     type: BindingType,
 };
 
-pub const Descriptor = struct {
+pub const Descriptor = extern struct {
+    reserved: ?*anyopaque = null,
     label: ?[*:0]const u8 = null,
     address_mode_u: AddressMode,
     address_mode_v: AddressMode,
