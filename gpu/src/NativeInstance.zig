@@ -444,6 +444,14 @@ const device_vtable = Device.VTable{
             ));
         }
     }).nativeCreateSwapChain,
+    .createTexture = (struct {
+        pub fn createTexture(ptr: *anyopaque, descriptor: *const Texture.Descriptor) Texture {
+            return wrapTexture(c.wgpuDeviceCreateTexture(
+                @ptrCast(c.WGPUDevice, ptr),
+                @ptrCast(*const c.WGPUTextureDescriptor, descriptor),
+            ));
+        }
+    }).createTexture,
     .destroy = (struct {
         pub fn destroy(ptr: *anyopaque) void {
             c.wgpuDeviceDestroy(@ptrCast(c.WGPUDevice, ptr));
