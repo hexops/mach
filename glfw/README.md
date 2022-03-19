@@ -47,7 +47,7 @@ A minimal Vulkan example can be found in the [mach-glfw-vulkan-example](https://
 
 In a `libs` subdirectory of the root of your project:
 
-```sg
+```sh
 git clone https://github.com/hexops/mach-glfw
 ```
 
@@ -66,7 +66,7 @@ pub fn build(b: *Builder) void {
 
 ### Adding dependency (using Gyro)
 
-```sg
+```sh
 gyro add --src github hexops/mach-glfw --root src/main.zig --alias glfw
 gyro add --build-dep --src github hexops/mach-glfw --root build.zig --alias build-glfw
 ```
