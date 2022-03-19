@@ -50,6 +50,16 @@ When targeting native platforms, we build Google Chrome's WebGPU implementation,
 
 [Read more about why we believe WebGPU may be the future of graphics here](https://devlog.hexops.com/2021/mach-engine-the-future-of-graphics-with-zig#truly-cross-platform-graphics-api)
 
+## Learning resources
+
+First check out `examples/main.zig` which contains a standalone basic example.
+
+The following may also prove useful:
+
+* (long) Excellent introductory article: https://surma.dev/things/webgpu/
+* WebGPU Specification: https://gpuweb.github.io/gpuweb/
+* WebGPU Explainer: https://gpuweb.github.io/gpuweb/explainer/
+
 ## WebGPU version
 
 The interface and all documentation corresponds to the spec found at:
