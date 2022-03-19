@@ -144,17 +144,17 @@ pub const ErrorCallback = struct {
 
     pub fn init(
         comptime Context: type,
-        ctx: *Context,
-        comptime callback: fn (ctx: *Context, typ: ErrorType, message: [*:0]const u8) void,
+        ctx: Context,
+        comptime callback: fn (ctx: Context, typ: ErrorType, message: [*:0]const u8) void,
     ) ErrorCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, typ: ErrorType, message: [*:0]const u8) void {
-                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), typ, message);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), typ, message);
             }
         }).erased;
 
         return .{
-            .type_erased_ctx = ctx,
+            .type_erased_ctx = if (Context == void) undefined else ctx,
             .type_erased_callback = erased,
         };
     }
@@ -166,17 +166,17 @@ pub const LoggingCallback = struct {
 
     pub fn init(
         comptime Context: type,
-        ctx: *Context,
-        comptime callback: fn (ctx: *Context, typ: LoggingType, message: [*:0]const u8) void,
+        ctx: Context,
+        comptime callback: fn (ctx: Context, typ: LoggingType, message: [*:0]const u8) void,
     ) LoggingCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, typ: LoggingType, message: [*:0]const u8) void {
-                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), typ, message);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), typ, message);
             }
         }).erased;
 
         return .{
-            .type_erased_ctx = ctx,
+            .type_erased_ctx = if (Context == void) undefined else ctx,
             .type_erased_callback = erased,
         };
     }

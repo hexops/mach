@@ -74,17 +74,17 @@ pub const RequestAdapterCallback = struct {
 
     pub fn init(
         comptime Context: type,
-        ctx: *Context,
-        comptime callback: fn (ctx: *Context, response: RequestAdapterResponse) void,
+        ctx: Context,
+        comptime callback: fn (ctx: Context, response: RequestAdapterResponse) void,
     ) RequestAdapterCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, response: RequestAdapterResponse) void {
-                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), response);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), response);
             }
         }).erased;
 
         return .{
-            .type_erased_ctx = ctx,
+            .type_erased_ctx = if (Context == void) undefined else ctx,
             .type_erased_callback = erased,
         };
     }
@@ -92,10 +92,9 @@ pub const RequestAdapterCallback = struct {
 
 /// A helper which invokes requestAdapter and blocks until the adapter is recieved.
 pub fn waitForAdapter(interface: Interface, options: *const RequestAdapterOptions) RequestAdapterResponse {
-    const Context = RequestAdapterResponse;
-    var response: Context = undefined;
-    var callback = RequestAdapterCallback.init(Context, &response, (struct {
-        pub fn callback(ctx: *Context, callback_response: RequestAdapterResponse) void {
+    var response: RequestAdapterResponse = undefined;
+    var callback = RequestAdapterCallback.init(*RequestAdapterResponse, &response, (struct {
+        pub fn callback(ctx: *RequestAdapterResponse, callback_response: RequestAdapterResponse) void {
             ctx.* = callback_response;
         }
     }).callback);

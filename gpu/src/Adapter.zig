@@ -159,17 +159,17 @@ pub const RequestDeviceCallback = struct {
 
     pub fn init(
         comptime Context: type,
-        ctx: *Context,
-        comptime callback: fn (ctx: *Context, response: RequestDeviceResponse) void,
+        ctx: Context,
+        comptime callback: fn (ctx: Context, response: RequestDeviceResponse) void,
     ) RequestDeviceCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, response: RequestDeviceResponse) void {
-                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), response);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), response);
             }
         }).erased;
 
         return .{
-            .type_erased_ctx = ctx,
+            .type_erased_ctx = if (Context == void) undefined else ctx,
             .type_erased_callback = erased,
         };
     }
@@ -177,10 +177,9 @@ pub const RequestDeviceCallback = struct {
 
 /// A helper which invokes requestDevice and blocks until the device is recieved.
 pub fn waitForDevice(adapter: Adapter, descriptor: *const Device.Descriptor) RequestDeviceResponse {
-    const Context = RequestDeviceResponse;
-    var response: Context = undefined;
-    var callback = RequestDeviceCallback.init(Context, &response, (struct {
-        pub fn callback(ctx: *Context, callback_response: RequestDeviceResponse) void {
+    var response: RequestDeviceResponse = undefined;
+    var callback = RequestDeviceCallback.init(*RequestDeviceResponse, &response, (struct {
+        pub fn callback(ctx: *RequestDeviceResponse, callback_response: RequestDeviceResponse) void {
             ctx.* = callback_response;
         }
     }).callback);
