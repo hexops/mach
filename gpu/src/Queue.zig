@@ -1,3 +1,5 @@
+const std = @import("std");
+
 const CommandBuffer = @import("CommandBuffer.zig");
 const Buffer = @import("Buffer.zig");
 
@@ -34,7 +36,13 @@ pub inline fn submit(queue: Queue, commands: []const CommandBuffer) void {
 }
 
 pub inline fn writeBuffer(queue: Queue, buffer: Buffer, buffer_offset: u64, data: anytype) void {
-    queue.vtable.writeBuffer(queue.ptr, buffer, buffer_offset, @ptrCast(*const anyopaque, &data[0]), @intCast(u64, data.len));
+    queue.vtable.writeBuffer(
+        queue.ptr,
+        buffer,
+        buffer_offset,
+        @ptrCast(*const anyopaque, &data[0]),
+        @intCast(u64, data.len) * @sizeOf(@TypeOf(std.meta.Elem(data))),
+    );
 }
 
 pub const WorkDoneCallback = struct {

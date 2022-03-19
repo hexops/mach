@@ -1,3 +1,5 @@
+const std = @import("std");
+
 const ComputePassEncoder = @import("ComputePassEncoder.zig");
 const RenderPassEncoder = @import("RenderPassEncoder.zig");
 const CommandBuffer = @import("CommandBuffer.zig");
@@ -129,7 +131,13 @@ pub inline fn setLabel(enc: CommandEncoder, label: [:0]const u8) void {
 }
 
 pub inline fn writeBuffer(pass: RenderPassEncoder, buffer: Buffer, buffer_offset: u64, data: anytype) void {
-    pass.vtable.writeBuffer(pass.ptr, buffer, buffer_offset, @ptrCast(*const u8, &data[0]), @intCast(u64, data.len));
+    pass.vtable.writeBuffer(
+        pass.ptr,
+        buffer,
+        buffer_offset,
+        @ptrCast(*const u8, &data[0]),
+        @intCast(u64, data.len) * @sizeOf(@TypeOf(std.meta.Elem(data))),
+    );
 }
 
 pub inline fn writeTimestamp(pass: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
