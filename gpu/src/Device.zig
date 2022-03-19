@@ -20,6 +20,7 @@ const BindGroup = @import("BindGroup.zig");
 const BindGroupLayout = @import("BindGroupLayout.zig");
 const Buffer = @import("Buffer.zig");
 const ExternalTexture = @import("ExternalTexture.zig");
+const PipelineLayout = @import("PipelineLayout.zig");
 
 const Device = @This();
 
@@ -43,7 +44,7 @@ pub const VTable = struct {
     ) void,
     createErrorBuffer: fn (ptr: *anyopaque) Buffer,
     createExternalTexture: fn (ptr: *anyopaque, descriptor: *const ExternalTexture.Descriptor) ExternalTexture,
-    // createPipelineLayout: fn (ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout,
+    createPipelineLayout: fn (ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout,
     // createQuerySet: fn (ptr: *anyopaque, descriptor: *const QuerySet.Descriptor) QuerySet,
     // createRenderBundleEncoder: fn (ptr: *anyopaque, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder,
     createRenderPipeline: fn (ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline,
@@ -153,11 +154,9 @@ pub inline fn createExternalTexture(device: Device, descriptor: *const ExternalT
     return device.vtable.createExternalTexture(device.ptr, descriptor);
 }
 
-// pub inline fn createPipelineLayout(device: Device, descriptor: *const PipelineLayout.Descriptor) PipelineLayout {
-//     return device.vtable.createPipelineLayout(device.ptr, descriptor);
-// }
-// createPipelineLayout: fn (ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout,
-// WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
+pub inline fn createPipelineLayout(device: Device, descriptor: *const PipelineLayout.Descriptor) PipelineLayout {
+    return device.vtable.createPipelineLayout(device.ptr, descriptor);
+}
 
 // pub inline fn createQuerySet(device: Device, descriptor: *const QuerySet.Descriptor) QuerySet {
 //     return device.vtable.createQuerySet(device.ptr, descriptor);
@@ -215,7 +214,7 @@ test {
     _ = createComputePipelineAsync;
     _ = createErrorBuffer;
     _ = createExternalTexture;
-    // _ = createPipelineLayout;
+    _ = createPipelineLayout;
     // _ = createQuerySet;
     // _ = createRenderBundleEncoder;
     _ = createRenderPipeline;
