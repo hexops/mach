@@ -195,7 +195,8 @@ pub const BindingLayout = extern struct {
     multisampled: bool,
 };
 
-pub const DataLayout = struct {
+pub const DataLayout = extern struct {
+    reserved: ?*anyopaque = null,
     offset: u64,
     bytes_per_row: u32,
     rows_per_image: u32,

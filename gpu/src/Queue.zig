@@ -1,7 +1,10 @@
 const std = @import("std");
 
+const ImageCopyTexture = @import("structs.zig").ImageCopyTexture;
+const Extent3D = @import("data.zig").Extent3D;
 const CommandBuffer = @import("CommandBuffer.zig");
 const Buffer = @import("Buffer.zig");
+const Texture = @import("Texture.zig");
 
 const Queue = @This();
 
@@ -18,9 +21,21 @@ pub const VTable = struct {
     // TODO: dawn specific?
     // copyTextureForBrowser: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D, options: *const CopyTextureForBrowserOptions) void,
     submit: fn (queue: Queue, commands: []const CommandBuffer) void,
-    writeBuffer: fn (ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const anyopaque, size: u64) void,
-    // TODO(implement):
-    // writeTexture: fn (ptr: *anyopaque, destination: *const ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const TextureDataLayout, write_size: *const Extent3D);
+    writeBuffer: fn (
+        ptr: *anyopaque,
+        buffer: Buffer,
+        buffer_offset: u64,
+        data: *const anyopaque,
+        size: u64,
+    ) void,
+    writeTexture: fn (
+        ptr: *anyopaque,
+        destination: *const ImageCopyTexture,
+        data: *const anyopaque,
+        data_size: usize,
+        data_layout: *const Texture.DataLayout,
+        write_size: *const Extent3D,
+    ) void,
 };
 
 pub inline fn reference(queue: Queue) void {
@@ -42,6 +57,23 @@ pub inline fn writeBuffer(queue: Queue, buffer: Buffer, buffer_offset: u64, data
         buffer_offset,
         @ptrCast(*const anyopaque, &data[0]),
         @intCast(u64, data.len) * @sizeOf(@TypeOf(std.meta.Elem(data))),
+    );
+}
+
+pub inline fn writeTexture(
+    queue: Queue,
+    destination: *const ImageCopyTexture,
+    data: anytype,
+    data_layout: *const Texture.DataLayout,
+    write_size: *const Extent3D,
+) void {
+    queue.vtable.writeTexture(
+        queue.ptr,
+        destination,
+        @ptrCast(*const anyopaque, &data[0]),
+        @intCast(u64, data.len) * @sizeOf(@TypeOf(std.meta.Elem(data))),
+        data_layout,
+        write_size,
     );
 }
 
@@ -81,6 +113,7 @@ test {
     _ = release;
     _ = submit;
     _ = writeBuffer;
+    _ = writeTexture;
     _ = WorkDoneCallback;
     _ = WorkDoneStatus;
 }
