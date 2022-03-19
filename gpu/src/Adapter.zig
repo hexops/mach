@@ -27,6 +27,7 @@ const Adapter = @This();
 
 /// The features which can be used to create devices on this adapter.
 features: []Feature,
+_features: [std.enums.values(Feature).len]Feature = undefined,
 
 /// The best limits which can be used to create devices on this adapter.
 ///
