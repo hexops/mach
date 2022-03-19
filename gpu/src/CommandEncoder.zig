@@ -31,8 +31,7 @@ pub const VTable = struct {
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
     resolveQuerySet: fn (ptr: *anyopaque, query_set: QuerySet, first_query: u32, query_count: u32, destination: Buffer, destination_offset: u64) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
-    // TODO: typed buffer pointer?
-    // WGPU_EXPORT void wgpuCommandEncoderWriteBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t bufferOffset, uint8_t const * data, uint64_t size);
+    writeBuffer: fn (ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const u8, size: u64) void,
     writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
 };
 
@@ -129,6 +128,10 @@ pub inline fn setLabel(enc: CommandEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
 
+pub inline fn writeBuffer(pass: RenderPassEncoder, buffer: Buffer, buffer_offset: u64, data: anytype) void {
+    pass.vtable.writeBuffer(pass.ptr, buffer, buffer_offset, @ptrCast(*const u8, &data[0]), @intCast(u64, data.len));
+}
+
 pub inline fn writeTimestamp(pass: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
     pass.vtable.writeTimestamp(pass.ptr, query_set, query_index);
 }
@@ -155,6 +158,7 @@ test {
     _ = pushDebugGroup;
     _ = resolveQuerySet;
     _ = setLabel;
+    _ = writeBuffer;
     _ = writeTimestamp;
     _ = Descriptor;
 }

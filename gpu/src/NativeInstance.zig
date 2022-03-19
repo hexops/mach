@@ -2006,6 +2006,17 @@ const command_encoder_vtable = CommandEncoder.VTable{
             c.wgpuCommandEncoderPushDebugGroup(@ptrCast(c.WGPUCommandEncoder, ptr), group_label);
         }
     }).pushDebugGroup,
+    .writeBuffer = (struct {
+        pub fn writeBuffer(ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const u8, size: u64) void {
+            c.wgpuCommandEncoderWriteBuffer(
+                @ptrCast(c.WGPUCommandEncoder, ptr),
+                @ptrCast(c.WGPUBuffer, buffer.ptr),
+                buffer_offset,
+                data,
+                size,
+            );
+        }
+    }).writeBuffer,
     .writeTimestamp = (struct {
         pub fn writeTimestamp(ptr: *anyopaque, query_set: QuerySet, query_index: u32) void {
             c.wgpuCommandEncoderWriteTimestamp(
