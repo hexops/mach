@@ -15,7 +15,7 @@ pub const VTable = struct {
     // TODO: dawn specific?
     // copyTextureForBrowser: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D, options: *const CopyTextureForBrowserOptions) void,
     submit: fn (queue: Queue, commands: []const CommandBuffer) void,
-    // TODO:
+    // TODO(implement):
     // writeBuffer: fn (ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const anyopaque, size: usize);
     // writeTexture: fn (ptr: *anyopaque, destination: *const ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const TextureDataLayout, write_size: *const Extent3D);
 };

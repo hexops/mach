@@ -1896,8 +1896,8 @@ const command_encoder_vtable = CommandEncoder.VTable{
                     .stencilReadOnly = v.stencil_read_only,
                 } else null,
                 .occlusionQuerySet = if (d.occlusion_query_set) |v| @ptrCast(c.WGPUQuerySet, v.ptr) else null,
-                .timestampWriteCount = 0, // TODO
-                .timestampWrites = null, // TODO
+                .timestampWriteCount = 0, // TODO(implement)
+                .timestampWrites = null, // TODO(implement)
             };
             return wrapRenderPassEncoder(c.wgpuCommandEncoderBeginRenderPass(@ptrCast(c.WGPUCommandEncoder, ptr), &desc));
         }

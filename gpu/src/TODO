@@ -44,13 +44,6 @@ typedef struct WGPUCopyTextureForBrowserOptions {
     WGPUAlphaMode dstAlphaMode;
 } WGPUCopyTextureForBrowserOptions;
 
-
-
-typedef void (*WGPUDeviceLostCallback)(WGPUDeviceLostReason reason, char const * message, void * userdata);
-typedef void (*WGPUErrorCallback)(WGPUErrorType type, char const * message, void * userdata);
-typedef void (*WGPULoggingCallback)(WGPULoggingType type, char const * message, void * userdata);
-typedef void (*WGPUProc)();
-
 typedef enum WGPUSType {
     // webgpu.h upstream:
     WGPUSType_Invalid = 0x00000000,
