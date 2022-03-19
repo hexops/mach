@@ -60,7 +60,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
     // Create the test window and discover adapters using it (esp. for OpenGL)
     var hints = glfwWindowHintsForBackend(backend_type);
     hints.cocoa_retina_framebuffer = true;
-    const window = try glfw.Window.create(640, 480, "Dawn window", null, null, hints);
+    const window = try glfw.Window.create(640, 480, "mach/gpu window", null, null, hints);
 
     const backend_procs = c.machDawnNativeGetProcs();
     c.dawnProcSetProcs(backend_procs);
