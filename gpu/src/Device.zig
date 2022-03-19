@@ -24,6 +24,7 @@ const PipelineLayout = @import("PipelineLayout.zig");
 const QuerySet = @import("QuerySet.zig");
 const RenderBundleEncoder = @import("RenderBundleEncoder.zig");
 const Sampler = @import("Sampler.zig");
+const Texture = @import("Texture.zig");
 
 const Device = @This();
 
@@ -59,8 +60,7 @@ pub const VTable = struct {
     createSampler: fn (ptr: *anyopaque, descriptor: *const Sampler.Descriptor) Sampler,
     createShaderModule: fn (ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule,
     nativeCreateSwapChain: fn (ptr: *anyopaque, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain,
-    // createTexture: fn (ptr: *anyopaque, descriptor: *const Texture.Descriptor) Texture,
-    // WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
+    createTexture: fn (ptr: *anyopaque, descriptor: *const Texture.Descriptor) Texture,
     destroy: fn (ptr: *anyopaque) void,
     // TODO: should features be exposed as static slice?
     // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeature * features);
@@ -123,6 +123,10 @@ pub inline fn createShaderModule(device: Device, descriptor: *const ShaderModule
 
 pub inline fn nativeCreateSwapChain(device: Device, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain {
     return device.vtable.nativeCreateSwapChain(device.ptr, surface, descriptor);
+}
+
+pub inline fn createTexture(device: Device, descriptor: *const Texture.Descriptor) Texture {
+    return device.vtable.createTexture(device.ptr, descriptor);
 }
 
 pub inline fn destroy(device: Device) void {
@@ -210,6 +214,7 @@ test {
     _ = createSampler;
     _ = createShaderModule;
     _ = nativeCreateSwapChain;
+    _ = createTexture;
     _ = destroy;
     _ = createBuffer;
     _ = createCommandEncoder;

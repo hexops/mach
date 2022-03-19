@@ -38,6 +38,7 @@ pub inline fn createView(texture: Texture, descriptor: *const TextureView.Descri
 }
 
 pub const Descriptor = struct {
+    reserved: ?*anyopaque = null,
     label: ?[*:0]const u8 = null,
     usage: Usage,
     dimension: Dimension,
