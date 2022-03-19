@@ -11,10 +11,8 @@ pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
     destroy: fn (ptr: *anyopaque) void,
-    // TODO: typed buffer pointer?
-    // WGPU_EXPORT void const * wgpuBufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
-    // TODO: typed buffer pointer?
-    // WGPU_EXPORT void * wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
+    getConstMappedRange: fn (ptr: *anyopaque, offset: usize, size: usize) []const u8,
+    getMappedRange: fn (ptr: *anyopaque, offset: usize, size: usize) []u8,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     mapAsync: fn (
         ptr: *anyopaque,
@@ -36,6 +34,14 @@ pub inline fn release(buf: Buffer) void {
 
 pub inline fn destroy(buf: Buffer) void {
     buf.vtable.destroy(buf.ptr);
+}
+
+pub inline fn getConstMappedRange(buf: Buffer, offset: usize, size: usize) []const u8 {
+    return buf.vtable.getConstMappedRange(buf.ptr, offset, size);
+}
+
+pub inline fn getMappedRange(buf: Buffer, offset: usize, size: usize) []u8 {
+    return buf.vtable.getMappedRange(buf.ptr, offset, size);
 }
 
 pub inline fn setLabel(buf: Buffer, label: [:0]const u8) void {
@@ -120,6 +126,8 @@ test {
     _ = reference;
     _ = release;
     _ = destroy;
+    _ = getConstMappedRange;
+    _ = getMappedRange;
     _ = setLabel;
     _ = Descriptor;
     _ = BindingType;

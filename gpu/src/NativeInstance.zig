@@ -1700,6 +1700,18 @@ const buffer_vtable = Buffer.VTable{
             c.wgpuBufferRelease(@ptrCast(c.WGPUBuffer, ptr));
         }
     }).release,
+    .getConstMappedRange = (struct {
+        pub fn getConstMappedRange(ptr: *anyopaque, offset: usize, size: usize) []const u8 {
+            const range = c.wgpuBufferGetConstMappedRange(@ptrCast(c.WGPUBuffer, ptr), offset, size);
+            return @ptrCast([*c]const u8, range.?)[0..size];
+        }
+    }).getConstMappedRange,
+    .getMappedRange = (struct {
+        pub fn getMappedRange(ptr: *anyopaque, offset: usize, size: usize) []u8 {
+            const range = c.wgpuBufferGetMappedRange(@ptrCast(c.WGPUBuffer, ptr), offset, size);
+            return @ptrCast([*c]u8, range.?)[0..size];
+        }
+    }).getMappedRange,
     .setLabel = (struct {
         pub fn setLabel(ptr: *anyopaque, label: [:0]const u8) void {
             c.wgpuBufferSetLabel(@ptrCast(c.WGPUBuffer, ptr), label);
