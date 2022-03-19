@@ -523,12 +523,32 @@ const device_vtable = Device.VTable{
             return wrapExternalTexture(c.wgpuDeviceCreateExternalTexture(@ptrCast(c.WGPUDevice, ptr), &desc));
         }
     }).createExternalTexture,
+    .createPipelineLayout = (struct {
+        pub fn createPipelineLayout(ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout {
+            var few_bind_group_layouts: [16]c.WGPUBindGroupLayout = undefined;
+            const bind_group_layouts = if (descriptor.bind_group_layouts.len <= 16) blk: {
+                for (descriptor.bind_group_layouts) |layout, i| {
+                    few_bind_group_layouts[i] = @ptrCast(c.WGPUBindGroupLayout, layout.ptr);
+                }
+                break :blk few_bind_group_layouts[0..descriptor.bind_group_layouts.len];
+            } else blk: {
+                const mem = std.heap.page_allocator.alloc(c.WGPUBindGroupLayout, descriptor.bind_group_layouts.len) catch unreachable;
+                for (descriptor.bind_group_layouts) |layout, i| {
+                    mem[i] = @ptrCast(c.WGPUBindGroupLayout, layout.ptr);
+                }
+                break :blk mem;
+            };
+            defer if (descriptor.bind_group_layouts.len > 16) std.heap.page_allocator.free(descriptor.bind_group_layouts);
 
-    // pub inline fn createPipelineLayout(device: Device, descriptor: *const PipelineLayout.Descriptor) PipelineLayout {
-    //     return device.vtable.createPipelineLayout(device.ptr);
-    // }
-    // createPipelineLayout: fn (ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout,
-    // WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
+            const desc = c.WGPUPipelineLayoutDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| l else null,
+                .bindGroupLayoutCount = @intCast(u32, bind_group_layouts.len),
+                .bindGroupLayouts = &bind_group_layouts[0],
+            };
+            return wrapPipelineLayout(c.wgpuDeviceCreatePipelineLayout(@ptrCast(c.WGPUDevice, ptr), &desc));
+        }
+    }).createPipelineLayout,
 
     // pub inline fn createQuerySet(device: Device, descriptor: *const QuerySet.Descriptor) QuerySet {
     //     return device.vtable.createQuerySet(device.ptr);
