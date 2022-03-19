@@ -174,7 +174,7 @@ pub fn createSurfaceForWindow(
     const descriptor = if (glfw_options.win32) gpu.Surface.Descriptor{
         .windows_hwnd = .{
             .label = "basic surface",
-            .hinstance = std.os.windows.kernel32.GetModuleHandleW(null),
+            .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
             .hwnd = glfw_native.getWin32Window(window),
         },
     } else if (glfw_options.x11) gpu.Surface.Descriptor{
