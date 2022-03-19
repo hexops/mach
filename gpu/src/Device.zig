@@ -73,8 +73,6 @@ pub const VTable = struct {
     createTexture: fn (ptr: *anyopaque, descriptor: *const Texture.Descriptor) Texture,
     destroy: fn (ptr: *anyopaque) void,
     getQueue: fn (ptr: *anyopaque) Queue,
-    // TODO: should hasFeature be a helper method?
-    // WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeature feature);
     injectError: fn (ptr: *anyopaque, type: ErrorType, message: [*:0]const u8) void,
     loseForTesting: fn (ptr: *anyopaque) void,
     popErrorScope: fn (ptr: *anyopaque, callback: *ErrorCallback) bool,
@@ -91,6 +89,14 @@ pub inline fn reference(device: Device) void {
 
 pub inline fn release(device: Device) void {
     device.vtable.release(device.ptr);
+}
+
+/// Tests of the device has this feature & was created with it.
+pub fn hasFeature(device: Device, feature: Feature) bool {
+    for (device.features) |f| {
+        if (f == feature) return true;
+    }
+    return false;
 }
 
 pub inline fn getQueue(device: Device) Queue {
