@@ -75,9 +75,7 @@ pub const VTable = struct {
     loseForTesting: fn (ptr: *anyopaque) void,
     popErrorScope: fn (ptr: *anyopaque, callback: *ErrorCallback) bool,
     pushErrorScope: fn (ptr: *anyopaque, filter: ErrorFilter) void,
-    // TODO: callback
-    // setDeviceLostCallback: fn (ptr: *anyopaque, callback: DeviceLostCallback) void,
-    // WGPU_EXPORT void wgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDeviceLostCallback callback, void * userdata);
+    setLostCallback: fn (ptr: *anyopaque, callback: *LostCallback) void,
     // TODO: callback
     // setLoggingCallback: fn (ptr: *anyopaque, callback: LoggingCallback) void,
     // WGPU_EXPORT void wgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
@@ -112,6 +110,32 @@ pub inline fn popErrorScope(device: Device, callback: *ErrorCallback) bool {
 pub inline fn pushErrorScope(device: Device, filter: ErrorFilter) void {
     device.vtable.pushErrorScope(device.ptr, filter);
 }
+
+pub inline fn setLostCallback(device: Device, callback: *LostCallback) void {
+    device.vtable.setLostCallback(device.ptr, callback);
+}
+
+pub const LostCallback = struct {
+    type_erased_ctx: *anyopaque,
+    type_erased_callback: fn (ctx: *anyopaque, reason: LostReason, message: [*:0]const u8) callconv(.Inline) void,
+
+    pub fn init(
+        comptime Context: type,
+        ctx: *Context,
+        comptime callback: fn (ctx: *Context, reason: LostReason, message: [*:0]const u8) void,
+    ) LostCallback {
+        const erased = (struct {
+            pub inline fn erased(type_erased_ctx: *anyopaque, reason: LostReason, message: [*:0]const u8) void {
+                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), reason, message);
+            }
+        }).erased;
+
+        return .{
+            .type_erased_ctx = ctx,
+            .type_erased_callback = erased,
+        };
+    }
+};
 
 pub inline fn createBindGroup(device: Device, descriptor: *const BindGroup.Descriptor) BindGroup {
     return device.vtable.createBindGroup(device.ptr, descriptor);
@@ -223,6 +247,7 @@ test {
     _ = injectError;
     _ = loseForTesting;
     _ = popErrorScope;
+    _ = setLostCallback;
     _ = createBindGroup;
     _ = pushErrorScope;
     _ = createBindGroupLayout;

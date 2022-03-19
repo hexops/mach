@@ -335,10 +335,7 @@ const device_vtable = Device.VTable{
         }
     }).loseForTesting,
     .popErrorScope = (struct {
-        pub fn popErrorScope(
-            ptr: *anyopaque,
-            callback: *ErrorCallback,
-        ) bool {
+        pub fn popErrorScope(ptr: *anyopaque, callback: *ErrorCallback) bool {
             const cCallback = (struct {
                 pub fn cCallback(
                     typ: c.WGPUErrorType,
@@ -410,6 +407,30 @@ const device_vtable = Device.VTable{
             c.wgpuDevicePushErrorScope(@ptrCast(c.WGPUDevice, ptr), @enumToInt(filter));
         }
     }).pushErrorScope,
+    .setLostCallback = (struct {
+        pub fn setLostCallback(ptr: *anyopaque, callback: *Device.LostCallback) void {
+            const cCallback = (struct {
+                pub fn cCallback(
+                    reason: c.WGPUDeviceLostReason,
+                    message: [*c]const u8,
+                    userdata: ?*anyopaque,
+                ) callconv(.C) void {
+                    const callback_info = @ptrCast(*Device.LostCallback, @alignCast(@alignOf(*Device.LostCallback), userdata));
+                    callback_info.type_erased_callback(
+                        callback_info.type_erased_ctx,
+                        @intToEnum(Device.LostReason, reason),
+                        std.mem.span(message),
+                    );
+                }
+            }).cCallback;
+
+            c.wgpuDeviceSetDeviceLostCallback(
+                @ptrCast(c.WGPUDevice, ptr),
+                cCallback,
+                callback,
+            );
+        }
+    }).setLostCallback,
     .createBindGroupLayout = (struct {
         pub fn createBindGroupLayout(ptr: *anyopaque, descriptor: *const BindGroupLayout.Descriptor) BindGroupLayout {
             const desc = c.WGPUBindGroupLayoutDescriptor{
