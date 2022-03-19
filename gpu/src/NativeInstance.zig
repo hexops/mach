@@ -1877,6 +1877,31 @@ const command_encoder_vtable = CommandEncoder.VTable{
             };
             defer if (d.color_attachments.len > 8) std.heap.page_allocator.free(color_attachments);
 
+            var few_timestamp_writes: [8]c.WGPURenderPassTimestampWrite = undefined;
+            const timestamp_writes = if (d.timestamp_writes) |writes| blk: {
+                if (writes.len <= 8) {
+                    for (writes) |v, i| {
+                        few_timestamp_writes[i] = c.WGPURenderPassTimestampWrite{
+                            .querySet = @ptrCast(c.WGPUQuerySet, v.query_set.ptr),
+                            .queryIndex = v.query_index,
+                            .location = @enumToInt(v.location),
+                        };
+                    }
+                    break :blk few_timestamp_writes[0..writes.len];
+                } else {
+                    const mem = std.heap.page_allocator.alloc(c.WGPURenderPassTimestampWrite, writes.len) catch unreachable;
+                    for (writes) |v, i| {
+                        mem[i] = c.WGPURenderPassTimestampWrite{
+                            .querySet = @ptrCast(c.WGPUQuerySet, v.query_set.ptr),
+                            .queryIndex = v.query_index,
+                            .location = @enumToInt(v.location),
+                        };
+                    }
+                    break :blk mem;
+                }
+            } else null;
+            defer if (timestamp_writes != null and timestamp_writes.?.len > 8) std.heap.page_allocator.free(timestamp_writes.?);
+
             const desc = c.WGPURenderPassDescriptor{
                 .nextInChain = null,
                 .label = if (d.label) |l| l else null,
@@ -1896,8 +1921,8 @@ const command_encoder_vtable = CommandEncoder.VTable{
                     .stencilReadOnly = v.stencil_read_only,
                 } else null,
                 .occlusionQuerySet = if (d.occlusion_query_set) |v| @ptrCast(c.WGPUQuerySet, v.ptr) else null,
-                .timestampWriteCount = 0, // TODO(implement)
-                .timestampWrites = null, // TODO(implement)
+                .timestampWriteCount = if (timestamp_writes) |v| @intCast(u32, v.len) else 0,
+                .timestampWrites = if (timestamp_writes) |v| @ptrCast(*const c.WGPURenderPassTimestampWrite, &v[0]) else null,
             };
             return wrapRenderPassEncoder(c.wgpuCommandEncoderBeginRenderPass(@ptrCast(c.WGPUCommandEncoder, ptr), &desc));
         }
