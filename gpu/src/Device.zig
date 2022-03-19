@@ -6,6 +6,8 @@
 //!
 //! https://gpuweb.github.io/gpuweb/#devices
 //! https://gpuweb.github.io/gpuweb/#gpuadapter
+const std = @import("std");
+
 const Feature = @import("enums.zig").Feature;
 const ErrorType = @import("enums.zig").ErrorType;
 const ErrorFilter = @import("enums.zig").ErrorFilter;
@@ -34,6 +36,7 @@ const Device = @This();
 
 /// The features supported by the device (i.e. the ones with which it was created).
 features: []Feature,
+_features: [std.enums.values(Feature).len]Feature = undefined,
 
 /// The limits supported by the device (which are exactly the ones with which it was created).
 limits: Limits,

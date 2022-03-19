@@ -225,14 +225,11 @@ fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
         .backend_type = @intToEnum(Adapter.BackendType, c_props.backendType),
     };
 
-    var features: [std.enums.values(Feature).len]c.WGPUFeatureName = undefined;
-    const features_len = c.wgpuAdapterEnumerateFeatures(adapter.?, &features[0]);
-
     var supported_limits: c.WGPUSupportedLimits = undefined;
     if (!c.wgpuAdapterGetLimits(adapter.?, &supported_limits)) @panic("failed to get adapter limits (this is a bug in mach/gpu)");
 
-    return .{
-        .features = @bitCast([]Feature, features[0..features_len]),
+    var wrapped = Adapter{
+        .features = undefined,
         .limits = @bitCast(Limits, supported_limits.limits),
         .properties = properties,
 
@@ -242,6 +239,10 @@ fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
         .ptr = adapter.?,
         .vtable = &adapter_vtable,
     };
+
+    const features_len = c.wgpuAdapterEnumerateFeatures(adapter.?, @ptrCast(*c.WGPUFeatureName, &wrapped._features[0]));
+    wrapped.features = wrapped._features[0..features_len];
+    return wrapped;
 }
 
 const adapter_vtable = Adapter.VTable{
@@ -303,18 +304,19 @@ const adapter_vtable = Adapter.VTable{
 };
 
 fn wrapDevice(device: c.WGPUDevice) Device {
-    var features: [std.enums.values(Feature).len]c.WGPUFeatureName = undefined;
-    const features_len = c.wgpuDeviceEnumerateFeatures(device.?, &features[0]);
-
     var supported_limits: c.WGPUSupportedLimits = undefined;
     if (!c.wgpuDeviceGetLimits(device.?, &supported_limits)) @panic("failed to get device limits (this is a bug in mach/gpu)");
 
-    return .{
-        .features = @bitCast([]Feature, features[0..features_len]),
+    var wrapped = Device{
+        .features = undefined,
         .limits = @bitCast(Limits, supported_limits.limits),
         .ptr = device.?,
         .vtable = &device_vtable,
     };
+
+    const features_len = c.wgpuDeviceEnumerateFeatures(device.?, @ptrCast(*c.WGPUFeatureName, &wrapped._features[0]));
+    wrapped.features = wrapped._features[0..features_len];
+    return wrapped;
 }
 
 const device_vtable = Device.VTable{
