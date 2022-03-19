@@ -7,16 +7,16 @@ const objc = @cImport({
     @cInclude("objc/message.h");
 });
 
-// TODO: Make gpu.Device implement wgpuDeviceSetUncapturedErrorCallback
-// fn printDeviceError(error_type: c.WGPUErrorType, message: [*c]const u8, _: ?*anyopaque) callconv(.C) void {
-//     switch (error_type) {
-//         c.WGPUErrorType_Validation => std.debug.print("dawn: validation error: {s}\n", .{message}),
-//         c.WGPUErrorType_OutOfMemory => std.debug.print("dawn: out of memory: {s}\n", .{message}),
-//         c.WGPUErrorType_Unknown => std.debug.print("dawn: unknown error: {s}\n", .{message}),
-//         c.WGPUErrorType_DeviceLost => std.debug.print("dawn: device lost: {s}\n", .{message}),
-//         else => unreachable,
-//     }
-// }
+fn printUnhandledError(_: void, typ: gpu.ErrorType, message: [*:0]const u8) void {
+    switch (typ) {
+        .validation => std.debug.print("gpu: validation error: {s}\n", .{message}),
+        .out_of_memory => std.debug.print("gpu: out of memory: {s}\n", .{message}),
+        .device_lost => std.debug.print("gpu: device lost: {s}\n", .{message}),
+        .unknown => std.debug.print("gpu: unknown error: {s}\n", .{message}),
+        else => unreachable,
+    }
+}
+var printUnhandledErrorCallback = gpu.ErrorCallback.init(void, {}, printUnhandledError);
 
 const Setup = struct {
     native_instance: gpu.NativeInstance,
@@ -59,7 +59,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
 
     // Create the test window and discover adapters using it (esp. for OpenGL)
     var hints = glfwWindowHintsForBackend(backend_type);
-    hints.cocoa_retina_framebuffer = false;
+    hints.cocoa_retina_framebuffer = true;
     const window = try glfw.Window.create(640, 480, "Dawn window", null, null, hints);
 
     const backend_procs = c.machDawnNativeGetProcs();
@@ -100,8 +100,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
         },
     };
 
-    // TODO: Make gpu.Device implement wgpuDeviceSetUncapturedErrorCallback
-    // backend_procs.*.deviceSetUncapturedErrorCallback.?(backend_device, printDeviceError, null);
+    device.setUncapturedErrorCallback(&printUnhandledErrorCallback);
     return Setup{
         .native_instance = native_instance,
         .backend_type = backend_type,
