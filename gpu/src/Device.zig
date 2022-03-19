@@ -10,7 +10,9 @@ const Feature = @import("enums.zig").Feature;
 const ErrorType = @import("enums.zig").ErrorType;
 const ErrorFilter = @import("enums.zig").ErrorFilter;
 const Limits = @import("data.zig").Limits;
+const LoggingType = @import("enums.zig").LoggingType;
 const ErrorCallback = @import("structs.zig").ErrorCallback;
+const LoggingCallback = @import("structs.zig").LoggingCallback;
 const Queue = @import("Queue.zig");
 const ShaderModule = @import("ShaderModule.zig");
 const Surface = @import("Surface.zig");
@@ -76,9 +78,7 @@ pub const VTable = struct {
     popErrorScope: fn (ptr: *anyopaque, callback: *ErrorCallback) bool,
     pushErrorScope: fn (ptr: *anyopaque, filter: ErrorFilter) void,
     setLostCallback: fn (ptr: *anyopaque, callback: *LostCallback) void,
-    // TODO: callback
-    // setLoggingCallback: fn (ptr: *anyopaque, callback: LoggingCallback) void,
-    // WGPU_EXPORT void wgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
+    setLoggingCallback: fn (ptr: *anyopaque, callback: *LoggingCallback) void,
     setUncapturedErrorCallback: fn (ptr: *anyopaque, callback: *ErrorCallback) void,
     tick: fn (ptr: *anyopaque) void,
 };
@@ -220,6 +220,10 @@ pub inline fn createRenderPipelineAsync(
     device.vtable.createRenderPipelineAsync(device.ptr, descriptor, callback);
 }
 
+pub inline fn setLoggingCallback(device: Device, callback: *LoggingCallback) void {
+    device.vtable.setLoggingCallback(device.ptr, callback);
+}
+
 pub inline fn setUncapturedErrorCallback(device: Device, callback: *ErrorCallback) void {
     device.vtable.setUncapturedErrorCallback(device.ptr, callback);
 }
@@ -267,6 +271,8 @@ test {
     _ = createRenderBundleEncoder;
     _ = createRenderPipeline;
     _ = createRenderPipelineAsync;
+    _ = setLoggingCallback;
+    _ = setUncapturedErrorCallback;
     _ = tick;
     _ = Descriptor;
     _ = LostReason;

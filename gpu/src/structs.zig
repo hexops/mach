@@ -22,6 +22,7 @@ const LoadOp = @import("enums.zig").LoadOp;
 const StoreOp = @import("enums.zig").StoreOp;
 const ColorWriteMask = @import("enums.zig").ColorWriteMask;
 const ErrorType = @import("enums.zig").ErrorType;
+const LoggingType = @import("enums.zig").LoggingType;
 
 pub const MultisampleState = struct {
     count: u32,
@@ -159,6 +160,28 @@ pub const ErrorCallback = struct {
     }
 };
 
+pub const LoggingCallback = struct {
+    type_erased_ctx: *anyopaque,
+    type_erased_callback: fn (ctx: *anyopaque, typ: LoggingType, message: [*:0]const u8) callconv(.Inline) void,
+
+    pub fn init(
+        comptime Context: type,
+        ctx: *Context,
+        comptime callback: fn (ctx: *Context, typ: LoggingType, message: [*:0]const u8) void,
+    ) LoggingCallback {
+        const erased = (struct {
+            pub inline fn erased(type_erased_ctx: *anyopaque, typ: LoggingType, message: [*:0]const u8) void {
+                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), typ, message);
+            }
+        }).erased;
+
+        return .{
+            .type_erased_ctx = ctx,
+            .type_erased_callback = erased,
+        };
+    }
+};
+
 test {
     _ = MultisampleState;
     _ = PrimitiveState;
@@ -175,4 +198,5 @@ test {
     _ = ImageCopyBuffer;
     _ = ImageCopyTexture;
     _ = ErrorCallback;
+    _ = LoggingCallback;
 }
