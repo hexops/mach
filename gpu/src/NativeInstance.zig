@@ -47,6 +47,7 @@ const IndexFormat = @import("enums.zig").IndexFormat;
 const ErrorType = @import("enums.zig").ErrorType;
 const ErrorFilter = @import("enums.zig").ErrorFilter;
 const LoggingType = @import("enums.zig").LoggingType;
+const Feature = @import("enums.zig").Feature;
 
 const ImageCopyBuffer = @import("structs.zig").ImageCopyBuffer;
 const ImageCopyTexture = @import("structs.zig").ImageCopyTexture;
@@ -224,16 +225,15 @@ fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
         .backend_type = @intToEnum(Adapter.BackendType, c_props.backendType),
     };
 
-    // TODO: implement Adapter interface:
-    // WGPU_EXPORT size_t wgpuAdapterEnumerateFeatures(WGPUAdapter adapter, WGPUFeature * features);
-    // WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeature feature);
-    // WGPU_EXPORT bool wgpuAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits * limits);
+    var features: [std.enums.values(Feature).len]c.WGPUFeatureName = undefined;
+    const features_len = c.wgpuAdapterEnumerateFeatures(adapter.?, &features[0]);
+
+    var supported_limits: c.WGPUSupportedLimits = undefined;
+    if (!c.wgpuAdapterGetLimits(adapter.?, &supported_limits)) @panic("failed to get adapter limits (this is a bug in mach/gpu)");
 
     return .{
-        // TODO:
-        .features = undefined,
-        // TODO:
-        .limits = undefined,
+        .features = @bitCast([]Feature, features[0..features_len]),
+        .limits = @bitCast(Limits, supported_limits.limits),
         .properties = properties,
 
         // TODO: why is fallback not queryable on Dawn?
