@@ -562,13 +562,21 @@ const device_vtable = Device.VTable{
             return wrapQuerySet(c.wgpuDeviceCreateQuerySet(@ptrCast(c.WGPUDevice, ptr), &desc));
         }
     }).createQuerySet,
-
-    // pub inline fn createRenderBundleEncoder(device: Device, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder {
-    //     return device.vtable.createRenderBundleEncoder(device.ptr);
-    // }
-    // createRenderBundleEncoder: fn (ptr: *anyopaque, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder,
-    // WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
-
+    .createRenderBundleEncoder = (struct {
+        pub fn createRenderBundleEncoder(ptr: *anyopaque, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder {
+            const desc = c.WGPURenderBundleEncoderDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| l else null,
+                .colorFormatsCount = @intCast(u32, descriptor.color_formats.len),
+                .colorFormats = @ptrCast(*const c.WGPUTextureFormat, &descriptor.color_formats[0]),
+                .depthStencilFormat = @enumToInt(descriptor.depth_stencil_format),
+                .sampleCount = descriptor.sample_count,
+                .depthReadOnly = descriptor.depth_read_only,
+                .stencilReadOnly = descriptor.stencil_read_only,
+            };
+            return wrapRenderBundleEncoder(c.wgpuDeviceCreateRenderBundleEncoder(@ptrCast(c.WGPUDevice, ptr), &desc));
+        }
+    }).createRenderBundleEncoder,
     .createRenderPipeline = (struct {
         pub fn createRenderPipeline(ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
             var tmp_depth_stencil: c.WGPUDepthStencilState = undefined;

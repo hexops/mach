@@ -22,6 +22,7 @@ const Buffer = @import("Buffer.zig");
 const ExternalTexture = @import("ExternalTexture.zig");
 const PipelineLayout = @import("PipelineLayout.zig");
 const QuerySet = @import("QuerySet.zig");
+const RenderBundleEncoder = @import("RenderBundleEncoder.zig");
 
 const Device = @This();
 
@@ -47,7 +48,7 @@ pub const VTable = struct {
     createExternalTexture: fn (ptr: *anyopaque, descriptor: *const ExternalTexture.Descriptor) ExternalTexture,
     createPipelineLayout: fn (ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout,
     createQuerySet: fn (ptr: *anyopaque, descriptor: *const QuerySet.Descriptor) QuerySet,
-    // createRenderBundleEncoder: fn (ptr: *anyopaque, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder,
+    createRenderBundleEncoder: fn (ptr: *anyopaque, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder,
     createRenderPipeline: fn (ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline,
     createRenderPipelineAsync: fn (
         ptr: *anyopaque,
@@ -163,11 +164,9 @@ pub inline fn createQuerySet(device: Device, descriptor: *const QuerySet.Descrip
     return device.vtable.createQuerySet(device.ptr, descriptor);
 }
 
-// pub inline fn createRenderBundleEncoder(device: Device, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder {
-//     return device.vtable.createRenderBundleEncoder(device.ptr, descriptor);
-// }
-// createRenderBundleEncoder: fn (ptr: *anyopaque, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder,
-// WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
+pub inline fn createRenderBundleEncoder(device: Device, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder {
+    return device.vtable.createRenderBundleEncoder(device.ptr, descriptor);
+}
 
 pub inline fn createRenderPipeline(device: Device, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
     return device.vtable.createRenderPipeline(device.ptr, descriptor);
@@ -215,7 +214,7 @@ test {
     _ = createExternalTexture;
     _ = createPipelineLayout;
     _ = createQuerySet;
-    // _ = createRenderBundleEncoder;
+    _ = createRenderBundleEncoder;
     _ = createRenderPipeline;
     _ = createRenderPipelineAsync;
     _ = tick;
