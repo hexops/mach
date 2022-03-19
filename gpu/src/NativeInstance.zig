@@ -675,6 +675,33 @@ const device_vtable = Device.VTable{
             );
         }
     }).createRenderPipelineAsync,
+    .setUncapturedErrorCallback = (struct {
+        pub fn setUncapturedErrorCallback(
+            ptr: *anyopaque,
+            callback: *ErrorCallback,
+        ) void {
+            const cCallback = (struct {
+                pub fn cCallback(
+                    typ: c.WGPUErrorType,
+                    message: [*c]const u8,
+                    userdata: ?*anyopaque,
+                ) callconv(.C) void {
+                    const callback_info = @ptrCast(*ErrorCallback, @alignCast(@alignOf(*ErrorCallback), userdata));
+                    callback_info.type_erased_callback(
+                        callback_info.type_erased_ctx,
+                        @intToEnum(ErrorType, typ),
+                        std.mem.span(message),
+                    );
+                }
+            }).cCallback;
+
+            return c.wgpuDeviceSetUncapturedErrorCallback(
+                @ptrCast(c.WGPUDevice, ptr),
+                cCallback,
+                callback,
+            );
+        }
+    }).setUncapturedErrorCallback,
     .tick = (struct {
         pub fn tick(ptr: *anyopaque) void {
             c.wgpuDeviceTick(@ptrCast(c.WGPUDevice, ptr));
