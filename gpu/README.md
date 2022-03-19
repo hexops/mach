@@ -4,17 +4,9 @@
 
 ![](https://user-images.githubusercontent.com/3173176/137646296-72ba698e-c710-4daf-aa75-222f8d717d00.png)
 
-## Warning: Under heavy development!
-
-Not everything stated in this README is yet achieved. We're working on it! Of particular note, we are missing:
-
-* Android support
-* iOS support
-* Browser support
-
 ## Features
 
-* Desktop, mobile, and web support.
+* Desktop, (future) mobile, and (future) web support.
 * A modern graphics API similar to Metal, Vulkan, and DirectX 12. 
 * Cross-platform shading language
 * Compute shaders
@@ -25,6 +17,7 @@ Not everything stated in this README is yet achieved. We're working on it! Of pa
     * Texture compression (BC, ETC2, and ASTC)
     * Timestamp querying (for GPU profiling)
     * Indirect draw support
+    * (bindless in the future, but not today)
 
 ## Different approach to graphics API abstraction
 
@@ -50,6 +43,27 @@ When targeting native platforms, we build Google Chrome's WebGPU implementation,
 
 [Read more about why we believe WebGPU may be the future of graphics here](https://devlog.hexops.com/2021/mach-engine-the-future-of-graphics-with-zig#truly-cross-platform-graphics-api)
 
+## Warning: We're not fully done yet!
+
+We have quite a lot, but are also missing a lot. You should be made aware of the pros and cons:
+
+* ✅ One example rendering a triangle
+* ✅ `gpu.Interface` (akin to `std.mem.Allocator` but for interfacing with GPUs.)
+* ✅ 99% of Dawn's `webgpu.h` exposed
+* ✅ Ziggified API
+  * No chained structs (which make the `webgpu.h` API somewhat illegible)
+  * C enums -> Zig Enums
+  * C ptr+size -> Zig slices
+  * untyped pointers -> generic Zig functions
+* ✅ Mac/Linux/Windows support + cross compilation
+* ❌ Zig API finalization (may change as we learn more)
+* ❌ WebGPU API finalization (WebGPU is not 100% finalized yet!)
+* ❌ Nice examples
+* ❌ Clear documentation
+* ❌ Android support
+* ❌ iOS support
+* ❌ Browser support
+
 ## Learning resources
 
 First check out `examples/main.zig` which contains a standalone basic example.
@@ -59,16 +73,6 @@ The following may also prove useful:
 * (long) Excellent introductory article: https://surma.dev/things/webgpu/
 * WebGPU Specification: https://gpuweb.github.io/gpuweb/
 * WebGPU Explainer: https://gpuweb.github.io/gpuweb/explainer/
-
-## WebGPU version
-
-The interface and all documentation corresponds to the spec found at:
-
-https://github.com/gpuweb/gpuweb/tree/main/spec
-
-Revision: 3382f327520b4bcd5ea617fa7e7fe60e214f0d96
-
-Tracking this enables us to diff the spec and keep our interface up to date.
 
 ## Join the community
 
@@ -81,3 +85,13 @@ Issues are tracked in the [main Mach repository](https://github.com/hexops/mach/
 ## Contributing
 
 Contributions are very welcome. Pull requests must be sent to [the main repository](https://github.com/hexops/mach/tree/main/glfw) to avoid some complex merge conflicts we'd get by accepting contributions in both repositories. Once the changes are merged there, they'll get sync'd to this repository automatically.
+
+## WebGPU version
+
+The interface and all documentation corresponds to the spec found at:
+
+https://github.com/gpuweb/gpuweb/tree/main/spec
+
+Revision: 3382f327520b4bcd5ea617fa7e7fe60e214f0d96
+
+Tracking this enables us to diff the spec and keep our interface up to date.
