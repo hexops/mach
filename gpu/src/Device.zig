@@ -81,9 +81,7 @@ pub const VTable = struct {
     // TODO: callback
     // setLoggingCallback: fn (ptr: *anyopaque, callback: LoggingCallback) void,
     // WGPU_EXPORT void wgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
-    // TODO: callback
-    // setUncapturedErrorCallback: fn (ptr: *anyopaque, callback: UncapturedErrorCallback) void,
-    // WGPU_EXPORT void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
+    setUncapturedErrorCallback: fn (ptr: *anyopaque, callback: *ErrorCallback) void,
     tick: fn (ptr: *anyopaque) void,
 };
 
@@ -196,6 +194,10 @@ pub inline fn createRenderPipelineAsync(
     callback: *RenderPipeline.CreateCallback,
 ) void {
     device.vtable.createRenderPipelineAsync(device.ptr, descriptor, callback);
+}
+
+pub inline fn setUncapturedErrorCallback(device: Device, callback: *ErrorCallback) void {
+    device.vtable.setUncapturedErrorCallback(device.ptr, callback);
 }
 
 pub inline fn tick(device: Device) void {
