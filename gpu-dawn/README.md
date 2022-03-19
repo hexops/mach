@@ -78,3 +78,7 @@ Join the Mach engine community [on Matrix chat](https://matrix.to/#/#hexops:matr
 ## Issues
 
 Issues are tracked in the [main Mach repository](https://github.com/hexops/mach/issues?q=is%3Aissue+is%3Aopen+label%3Agpu-dawn).
+
+## License
+
+All Mach code (this repository) is under the Apache and MIT license at your choosing described in the `LICENSE` file. Dawn itself is [similarly permissively licensed](https://github.com/hexops/dawn/blob/main/LICENSE).
