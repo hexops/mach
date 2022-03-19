@@ -549,12 +549,19 @@ const device_vtable = Device.VTable{
             return wrapPipelineLayout(c.wgpuDeviceCreatePipelineLayout(@ptrCast(c.WGPUDevice, ptr), &desc));
         }
     }).createPipelineLayout,
-
-    // pub inline fn createQuerySet(device: Device, descriptor: *const QuerySet.Descriptor) QuerySet {
-    //     return device.vtable.createQuerySet(device.ptr);
-    // }
-    // createQuerySet: fn (ptr: *anyopaque, descriptor: *const QuerySet.Descriptor) QuerySet,
-    // WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
+    .createQuerySet = (struct {
+        pub fn createQuerySet(ptr: *anyopaque, descriptor: *const QuerySet.Descriptor) QuerySet {
+            const desc = c.WGPUQuerySetDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| l else null,
+                .type = @enumToInt(descriptor.type),
+                .count = descriptor.count,
+                .pipelineStatistics = @ptrCast(*const c.WGPUPipelineStatisticName, &descriptor.pipeline_statistics[0]),
+                .pipelineStatisticsCount = @intCast(u32, descriptor.pipeline_statistics.len),
+            };
+            return wrapQuerySet(c.wgpuDeviceCreateQuerySet(@ptrCast(c.WGPUDevice, ptr), &desc));
+        }
+    }).createQuerySet,
 
     // pub inline fn createRenderBundleEncoder(device: Device, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder {
     //     return device.vtable.createRenderBundleEncoder(device.ptr);
