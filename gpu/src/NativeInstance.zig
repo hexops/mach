@@ -920,6 +920,31 @@ const queue_vtable = Queue.VTable{
             );
         }
     }).writeBuffer,
+    .writeTexture = (struct {
+        pub fn writeTexture(
+            ptr: *anyopaque,
+            destination: *const ImageCopyTexture,
+            data: *const anyopaque,
+            data_size: usize,
+            data_layout: *const Texture.DataLayout,
+            write_size: *const Extent3D,
+        ) void {
+            c.wgpuQueueWriteTexture(
+                @ptrCast(c.WGPUQueue, ptr),
+                &c.WGPUImageCopyTexture{
+                    .nextInChain = null,
+                    .texture = @ptrCast(c.WGPUTexture, destination.texture.ptr),
+                    .mipLevel = destination.mip_level,
+                    .origin = @bitCast(c.WGPUOrigin3D, destination.origin),
+                    .aspect = @bitCast(c.WGPUTextureAspect, destination.aspect),
+                },
+                data,
+                data_size,
+                @ptrCast(*const c.WGPUTextureDataLayout, data_layout),
+                @ptrCast(*const c.WGPUExtent3D, write_size),
+            );
+        }
+    }).writeTexture,
 };
 
 fn wrapShaderModule(shader_module: c.WGPUShaderModule) ShaderModule {
