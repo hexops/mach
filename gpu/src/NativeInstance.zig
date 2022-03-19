@@ -226,6 +226,7 @@ fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
     };
 
     var supported_limits: c.WGPUSupportedLimits = undefined;
+    supported_limits.nextInChain = null;
     if (!c.wgpuAdapterGetLimits(adapter.?, &supported_limits)) @panic("failed to get adapter limits (this is a bug in mach/gpu)");
 
     var wrapped = Adapter{
@@ -305,6 +306,7 @@ const adapter_vtable = Adapter.VTable{
 
 fn wrapDevice(device: c.WGPUDevice) Device {
     var supported_limits: c.WGPUSupportedLimits = undefined;
+    supported_limits.nextInChain = null;
     if (!c.wgpuDeviceGetLimits(device.?, &supported_limits)) @panic("failed to get device limits (this is a bug in mach/gpu)");
 
     var wrapped = Device{
