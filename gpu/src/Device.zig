@@ -19,6 +19,7 @@ const ComputePipeline = @import("ComputePipeline.zig");
 const BindGroup = @import("BindGroup.zig");
 const BindGroupLayout = @import("BindGroupLayout.zig");
 const Buffer = @import("Buffer.zig");
+const ExternalTexture = @import("ExternalTexture.zig");
 
 const Device = @This();
 
@@ -41,14 +42,10 @@ pub const VTable = struct {
         callback: *ComputePipeline.CreateCallback,
     ) void,
     createErrorBuffer: fn (ptr: *anyopaque) Buffer,
-    // createExternalTexture: fn (ptr: *anyopaque, descriptor: *const ExternalTexture.Descriptor) ExternalTexture,
-    // WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, WGPUExternalTextureDescriptor const * externalTextureDescriptor);
+    createExternalTexture: fn (ptr: *anyopaque, descriptor: *const ExternalTexture.Descriptor) ExternalTexture,
     // createPipelineLayout: fn (ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout,
-    // WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
     // createQuerySet: fn (ptr: *anyopaque, descriptor: *const QuerySet.Descriptor) QuerySet,
-    // WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
     // createRenderBundleEncoder: fn (ptr: *anyopaque, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder,
-    // WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
     createRenderPipeline: fn (ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline,
     createRenderPipelineAsync: fn (
         ptr: *anyopaque,
@@ -152,6 +149,28 @@ pub inline fn createErrorBuffer(device: Device) Buffer {
     return device.vtable.createErrorBuffer(device.ptr);
 }
 
+pub inline fn createExternalTexture(device: Device, descriptor: *const ExternalTexture.Descriptor) ExternalTexture {
+    return device.vtable.createExternalTexture(device.ptr, descriptor);
+}
+
+// pub inline fn createPipelineLayout(device: Device, descriptor: *const PipelineLayout.Descriptor) PipelineLayout {
+//     return device.vtable.createPipelineLayout(device.ptr, descriptor);
+// }
+// createPipelineLayout: fn (ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout,
+// WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
+
+// pub inline fn createQuerySet(device: Device, descriptor: *const QuerySet.Descriptor) QuerySet {
+//     return device.vtable.createQuerySet(device.ptr, descriptor);
+// }
+// createQuerySet: fn (ptr: *anyopaque, descriptor: *const QuerySet.Descriptor) QuerySet,
+// WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
+
+// pub inline fn createRenderBundleEncoder(device: Device, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder {
+//     return device.vtable.createRenderBundleEncoder(device.ptr, descriptor);
+// }
+// createRenderBundleEncoder: fn (ptr: *anyopaque, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder,
+// WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
+
 pub inline fn createRenderPipeline(device: Device, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
     return device.vtable.createRenderPipeline(device.ptr, descriptor);
 }
@@ -195,6 +214,10 @@ test {
     _ = createComputePipeline;
     _ = createComputePipelineAsync;
     _ = createErrorBuffer;
+    _ = createExternalTexture;
+    // _ = createPipelineLayout;
+    // _ = createQuerySet;
+    // _ = createRenderBundleEncoder;
     _ = createRenderPipeline;
     _ = createRenderPipelineAsync;
     _ = tick;

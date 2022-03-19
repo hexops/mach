@@ -511,6 +511,37 @@ const device_vtable = Device.VTable{
             ));
         }
     }).createErrorBuffer,
+    .createExternalTexture = (struct {
+        pub fn createExternalTexture(ptr: *anyopaque, descriptor: *const ExternalTexture.Descriptor) ExternalTexture {
+            const desc = c.WGPUExternalTextureDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| l else null,
+                .plane0 = @ptrCast(c.WGPUTextureView, descriptor.plane0.ptr),
+                .plane1 = @ptrCast(c.WGPUTextureView, descriptor.plane1.ptr),
+                .colorSpace = @enumToInt(descriptor.color_space),
+            };
+            return wrapExternalTexture(c.wgpuDeviceCreateExternalTexture(@ptrCast(c.WGPUDevice, ptr), &desc));
+        }
+    }).createExternalTexture,
+
+    // pub inline fn createPipelineLayout(device: Device, descriptor: *const PipelineLayout.Descriptor) PipelineLayout {
+    //     return device.vtable.createPipelineLayout(device.ptr);
+    // }
+    // createPipelineLayout: fn (ptr: *anyopaque, descriptor: *const PipelineLayout.Descriptor) PipelineLayout,
+    // WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
+
+    // pub inline fn createQuerySet(device: Device, descriptor: *const QuerySet.Descriptor) QuerySet {
+    //     return device.vtable.createQuerySet(device.ptr);
+    // }
+    // createQuerySet: fn (ptr: *anyopaque, descriptor: *const QuerySet.Descriptor) QuerySet,
+    // WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
+
+    // pub inline fn createRenderBundleEncoder(device: Device, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder {
+    //     return device.vtable.createRenderBundleEncoder(device.ptr);
+    // }
+    // createRenderBundleEncoder: fn (ptr: *anyopaque, descriptor: *const RenderBundleEncoder.Descriptor) RenderBundleEncoder,
+    // WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
+
     .createRenderPipeline = (struct {
         pub fn createRenderPipeline(ptr: *anyopaque, descriptor: *const RenderPipeline.Descriptor) RenderPipeline {
             var tmp_depth_stencil: c.WGPUDepthStencilState = undefined;
