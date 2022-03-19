@@ -382,6 +382,14 @@ const device_vtable = Device.VTable{
             return wrapBindGroupLayout(c.wgpuDeviceCreateBindGroupLayout(@ptrCast(c.WGPUDevice, ptr), &desc));
         }
     }).createBindGroupLayout,
+    .createSampler = (struct {
+        pub fn createSampler(ptr: *anyopaque, descriptor: *const Sampler.Descriptor) Sampler {
+            return wrapSampler(c.wgpuDeviceCreateSampler(
+                @ptrCast(c.WGPUDevice, ptr),
+                @ptrCast(*const c.WGPUSamplerDescriptor, descriptor),
+            ));
+        }
+    }).createSampler,
     .createShaderModule = (struct {
         pub fn createShaderModule(ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule {
             switch (descriptor.code) {

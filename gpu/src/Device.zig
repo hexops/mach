@@ -23,6 +23,7 @@ const ExternalTexture = @import("ExternalTexture.zig");
 const PipelineLayout = @import("PipelineLayout.zig");
 const QuerySet = @import("QuerySet.zig");
 const RenderBundleEncoder = @import("RenderBundleEncoder.zig");
+const Sampler = @import("Sampler.zig");
 
 const Device = @This();
 
@@ -55,8 +56,7 @@ pub const VTable = struct {
         descriptor: *const RenderPipeline.Descriptor,
         callback: *RenderPipeline.CreateCallback,
     ) void,
-    // createSampler: fn (ptr: *anyopaque, descriptor: *const Sampler.Descriptor) Sampler,
-    // WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor);
+    createSampler: fn (ptr: *anyopaque, descriptor: *const Sampler.Descriptor) Sampler,
     createShaderModule: fn (ptr: *anyopaque, descriptor: *const ShaderModule.Descriptor) ShaderModule,
     nativeCreateSwapChain: fn (ptr: *anyopaque, surface: ?Surface, descriptor: *const SwapChain.Descriptor) SwapChain,
     // createTexture: fn (ptr: *anyopaque, descriptor: *const Texture.Descriptor) Texture,
@@ -111,6 +111,10 @@ pub inline fn createBindGroup(device: Device, descriptor: *const BindGroup.Descr
 
 pub inline fn createBindGroupLayout(device: Device, descriptor: *const BindGroupLayout.Descriptor) BindGroupLayout {
     return device.vtable.createBindGroupLayout(device.ptr, descriptor);
+}
+
+pub inline fn createSampler(device: Device, descriptor: *const Sampler.Descriptor) Sampler {
+    return device.vtable.createSampler(device.ptr, descriptor);
 }
 
 pub inline fn createShaderModule(device: Device, descriptor: *const ShaderModule.Descriptor) ShaderModule {
@@ -203,6 +207,7 @@ test {
     _ = injectError;
     _ = createBindGroup;
     _ = createBindGroupLayout;
+    _ = createSampler;
     _ = createShaderModule;
     _ = nativeCreateSwapChain;
     _ = destroy;
