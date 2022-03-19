@@ -43,15 +43,18 @@ A minimal Vulkan example can be found in the [mach-glfw-vulkan-example](https://
 
 ## Getting started
 
+### Adding dependency (using Git)
+
 In a `libs` subdirectory of the root of your project:
 
-```sg
+```sh
 git clone https://github.com/hexops/mach-glfw
 ```
 
 Then in your `build.zig` add:
 
 ```zig
+...
 const glfw = @import("libs/mach-glfw/build.zig");
 
 pub fn build(b: *Builder) void {
@@ -60,6 +63,33 @@ pub fn build(b: *Builder) void {
     glfw.link(b, exe, .{});
 }
 ```
+
+### Adding dependency (using Gyro)
+
+```sh
+gyro add --src github hexops/mach-glfw --root src/main.zig --alias glfw
+gyro add --build-dep --src github hexops/mach-glfw --root build.zig --alias build-glfw
+```
+
+Then in your `build.zig` add:
+
+```zig
+...
+const pkgs = @import("deps.zig").pkgs;
+const glfw = @import("build-glfw");
+
+pub fn build(b: *Builder) void {
+    ...
+
+    exe.addPackage(pkgs.glfw);
+    glfw.link(b, exe, .{});
+}
+```
+
+**WARNING: You should use `gyro build` instead of `zig build` now!**
+
+
+# Next steps
 
 Now in your code you may import and use GLFW:
 
