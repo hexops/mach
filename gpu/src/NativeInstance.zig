@@ -49,6 +49,7 @@ const ErrorFilter = @import("enums.zig").ErrorFilter;
 
 const ImageCopyBuffer = @import("structs.zig").ImageCopyBuffer;
 const ImageCopyTexture = @import("structs.zig").ImageCopyTexture;
+const ErrorCallback = @import("structs.zig").ErrorCallback;
 
 const NativeInstance = @This();
 
@@ -333,6 +334,33 @@ const device_vtable = Device.VTable{
             c.wgpuDeviceLoseForTesting(@ptrCast(c.WGPUDevice, ptr));
         }
     }).loseForTesting,
+    .popErrorScope = (struct {
+        pub fn popErrorScope(
+            ptr: *anyopaque,
+            callback: *ErrorCallback,
+        ) bool {
+            const cCallback = (struct {
+                pub fn cCallback(
+                    typ: c.WGPUErrorType,
+                    message: [*c]const u8,
+                    userdata: ?*anyopaque,
+                ) callconv(.C) void {
+                    const callback_info = @ptrCast(*ErrorCallback, @alignCast(@alignOf(*ErrorCallback), userdata));
+                    callback_info.type_erased_callback(
+                        callback_info.type_erased_ctx,
+                        @intToEnum(ErrorType, typ),
+                        std.mem.span(message),
+                    );
+                }
+            }).cCallback;
+
+            return c.wgpuDevicePopErrorScope(
+                @ptrCast(c.WGPUDevice, ptr),
+                cCallback,
+                callback,
+            );
+        }
+    }).popErrorScope,
     .createBindGroup = (struct {
         pub fn createBindGroup(ptr: *anyopaque, descriptor: *const BindGroup.Descriptor) BindGroup {
             var few_entries: [16]c.WGPUBindGroupEntry = undefined;

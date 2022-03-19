@@ -10,6 +10,7 @@ const Feature = @import("enums.zig").Feature;
 const ErrorType = @import("enums.zig").ErrorType;
 const ErrorFilter = @import("enums.zig").ErrorFilter;
 const Limits = @import("data.zig").Limits;
+const ErrorCallback = @import("structs.zig").ErrorCallback;
 const Queue = @import("Queue.zig");
 const ShaderModule = @import("ShaderModule.zig");
 const Surface = @import("Surface.zig");
@@ -72,9 +73,7 @@ pub const VTable = struct {
     // WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeature feature);
     injectError: fn (ptr: *anyopaque, type: ErrorType, message: [*:0]const u8) void,
     loseForTesting: fn (ptr: *anyopaque) void,
-    // TODO: callback
-    // popErrorScope: fn (ptr: *anyopaque, callback: ErrorCallback) bool,
-    // WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
+    popErrorScope: fn (ptr: *anyopaque, callback: *ErrorCallback) bool,
     pushErrorScope: fn (ptr: *anyopaque, filter: ErrorFilter) void,
     // TODO: callback
     // setDeviceLostCallback: fn (ptr: *anyopaque, callback: DeviceLostCallback) void,
@@ -106,6 +105,10 @@ pub inline fn injectError(device: Device, typ: ErrorType, message: [*:0]const u8
 
 pub inline fn loseForTesting(device: Device) void {
     device.vtable.loseForTesting(device.ptr);
+}
+
+pub inline fn popErrorScope(device: Device, callback: *ErrorCallback) bool {
+    return device.vtable.popErrorScope(device.ptr, callback);
 }
 
 pub inline fn pushErrorScope(device: Device, filter: ErrorFilter) void {
@@ -217,6 +220,7 @@ test {
     _ = getQueue;
     _ = injectError;
     _ = loseForTesting;
+    _ = popErrorScope;
     _ = createBindGroup;
     _ = pushErrorScope;
     _ = createBindGroupLayout;

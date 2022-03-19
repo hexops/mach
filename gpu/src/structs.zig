@@ -21,6 +21,7 @@ const RenderPassTimestampLocation = @import("enums.zig").RenderPassTimestampLoca
 const LoadOp = @import("enums.zig").LoadOp;
 const StoreOp = @import("enums.zig").StoreOp;
 const ColorWriteMask = @import("enums.zig").ColorWriteMask;
+const ErrorType = @import("enums.zig").ErrorType;
 
 pub const MultisampleState = struct {
     count: u32,
@@ -136,6 +137,28 @@ pub const ImageCopyTexture = struct {
     aspect: Texture.Aspect,
 };
 
+pub const ErrorCallback = struct {
+    type_erased_ctx: *anyopaque,
+    type_erased_callback: fn (ctx: *anyopaque, typ: ErrorType, message: [*:0]const u8) callconv(.Inline) void,
+
+    pub fn init(
+        comptime Context: type,
+        ctx: *Context,
+        comptime callback: fn (ctx: *Context, typ: ErrorType, message: [*:0]const u8) void,
+    ) ErrorCallback {
+        const erased = (struct {
+            pub inline fn erased(type_erased_ctx: *anyopaque, typ: ErrorType, message: [*:0]const u8) void {
+                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), typ, message);
+            }
+        }).erased;
+
+        return .{
+            .type_erased_ctx = ctx,
+            .type_erased_callback = erased,
+        };
+    }
+};
+
 test {
     _ = MultisampleState;
     _ = PrimitiveState;
@@ -151,4 +174,5 @@ test {
     _ = FragmentState;
     _ = ImageCopyBuffer;
     _ = ImageCopyTexture;
+    _ = ErrorCallback;
 }
