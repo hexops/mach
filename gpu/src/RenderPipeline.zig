@@ -65,9 +65,9 @@ pub const CreateCallback = struct {
 
     pub fn init(
         comptime Context: type,
-        ctx: *Context,
+        ctx: Context,
         comptime callback: fn (
-            ctx: *Context,
+            ctx: Context,
             status: CreateStatus,
             pipeline: RenderPipeline,
             message: [:0]const u8,
@@ -81,7 +81,7 @@ pub const CreateCallback = struct {
                 message: [:0]const u8,
             ) void {
                 callback(
-                    @ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)),
+                    @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)),
                     status,
                     pipeline,
                     message,
@@ -90,7 +90,7 @@ pub const CreateCallback = struct {
         }).erased;
 
         return .{
-            .type_erased_ctx = ctx,
+            .type_erased_ctx = if (Context == void) undefined else ctx,
             .type_erased_callback = erased,
         };
     }

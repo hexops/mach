@@ -132,17 +132,17 @@ pub const LostCallback = struct {
 
     pub fn init(
         comptime Context: type,
-        ctx: *Context,
-        comptime callback: fn (ctx: *Context, reason: LostReason, message: [*:0]const u8) void,
+        ctx: Context,
+        comptime callback: fn (ctx: Context, reason: LostReason, message: [*:0]const u8) void,
     ) LostCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, reason: LostReason, message: [*:0]const u8) void {
-                callback(@ptrCast(*Context, @alignCast(@alignOf(*Context), type_erased_ctx)), reason, message);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), reason, message);
             }
         }).erased;
 
         return .{
-            .type_erased_ctx = ctx,
+            .type_erased_ctx = if (Context == void) undefined else ctx,
             .type_erased_callback = erased,
         };
     }
