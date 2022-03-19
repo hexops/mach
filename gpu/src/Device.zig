@@ -8,6 +8,7 @@
 //! https://gpuweb.github.io/gpuweb/#gpuadapter
 const Feature = @import("enums.zig").Feature;
 const ErrorType = @import("enums.zig").ErrorType;
+const ErrorFilter = @import("enums.zig").ErrorFilter;
 const Limits = @import("data.zig").Limits;
 const Queue = @import("Queue.zig");
 const ShaderModule = @import("ShaderModule.zig");
@@ -74,8 +75,7 @@ pub const VTable = struct {
     // TODO: callback
     // popErrorScope: fn (ptr: *anyopaque, callback: ErrorCallback) bool,
     // WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
-    // pushErrorScope: fn (ptr: *anyopaque, filter: ErrorFilter) void,
-    // WGPU_EXPORT void wgpuDevicePushErrorScope(WGPUDevice device, WGPUErrorFilter filter);
+    pushErrorScope: fn (ptr: *anyopaque, filter: ErrorFilter) void,
     // TODO: callback
     // setDeviceLostCallback: fn (ptr: *anyopaque, callback: DeviceLostCallback) void,
     // WGPU_EXPORT void wgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDeviceLostCallback callback, void * userdata);
@@ -106,6 +106,10 @@ pub inline fn injectError(device: Device, typ: ErrorType, message: [*:0]const u8
 
 pub inline fn loseForTesting(device: Device) void {
     device.vtable.loseForTesting(device.ptr);
+}
+
+pub inline fn pushErrorScope(device: Device, filter: ErrorFilter) void {
+    device.vtable.pushErrorScope(device.ptr, filter);
 }
 
 pub inline fn createBindGroup(device: Device, descriptor: *const BindGroup.Descriptor) BindGroup {
@@ -214,6 +218,7 @@ test {
     _ = injectError;
     _ = loseForTesting;
     _ = createBindGroup;
+    _ = pushErrorScope;
     _ = createBindGroupLayout;
     _ = createSampler;
     _ = createShaderModule;
