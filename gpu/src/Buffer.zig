@@ -36,12 +36,14 @@ pub inline fn destroy(buf: Buffer) void {
     buf.vtable.destroy(buf.ptr);
 }
 
-pub inline fn getConstMappedRange(buf: Buffer, offset: usize, size: usize) []const u8 {
-    return buf.vtable.getConstMappedRange(buf.ptr, offset, size);
+pub inline fn getConstMappedRange(buf: Buffer, comptime T: type, offset: usize, len: usize) []const T {
+    const data = buf.vtable.getConstMappedRange(buf.ptr, offset, @sizeOf(T) * len);
+    return @ptrCast(*const T, &data[0])[0..len];
 }
 
-pub inline fn getMappedRange(buf: Buffer, offset: usize, size: usize) []u8 {
-    return buf.vtable.getMappedRange(buf.ptr, offset, size);
+pub inline fn getMappedRange(buf: Buffer, comptime T: type, offset: usize, len: usize) []T {
+    const data = buf.vtable.getMappedRange(buf.ptr, offset, @sizeOf(T) * len);
+    return @ptrCast(*T, &data[0])[0..len];
 }
 
 pub inline fn setLabel(buf: Buffer, label: [:0]const u8) void {
