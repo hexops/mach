@@ -303,15 +303,15 @@ const adapter_vtable = Adapter.VTable{
 };
 
 fn wrapDevice(device: c.WGPUDevice) Device {
-    // TODO: implement Device interface
-    // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeature * features);
-    // WGPU_EXPORT bool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits * limits);
+    var features: [std.enums.values(Feature).len]c.WGPUFeatureName = undefined;
+    const features_len = c.wgpuDeviceEnumerateFeatures(device.?, &features[0]);
+
+    var supported_limits: c.WGPUSupportedLimits = undefined;
+    if (!c.wgpuDeviceGetLimits(device.?, &supported_limits)) @panic("failed to get device limits (this is a bug in mach/gpu)");
 
     return .{
-        // TODO:
-        .features = undefined,
-        // TODO:
-        .limits = undefined,
+        .features = @bitCast([]Feature, features[0..features_len]),
+        .limits = @bitCast(Limits, supported_limits.limits),
         .ptr = device.?,
         .vtable = &device_vtable,
     };
