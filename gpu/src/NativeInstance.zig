@@ -909,6 +909,17 @@ const queue_vtable = Queue.VTable{
             );
         }
     }).submit,
+    .writeBuffer = (struct {
+        pub fn writeBuffer(ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const anyopaque, size: u64) void {
+            c.wgpuQueueWriteBuffer(
+                @ptrCast(c.WGPUQueue, ptr),
+                @ptrCast(c.WGPUBuffer, buffer.ptr),
+                buffer_offset,
+                data,
+                size,
+            );
+        }
+    }).writeBuffer,
 };
 
 fn wrapShaderModule(shader_module: c.WGPUShaderModule) ShaderModule {

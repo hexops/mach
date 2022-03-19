@@ -1,4 +1,5 @@
 const CommandBuffer = @import("CommandBuffer.zig");
+const Buffer = @import("Buffer.zig");
 
 const Queue = @This();
 
@@ -15,8 +16,8 @@ pub const VTable = struct {
     // TODO: dawn specific?
     // copyTextureForBrowser: fn (ptr: *anyopaque, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D, options: *const CopyTextureForBrowserOptions) void,
     submit: fn (queue: Queue, commands: []const CommandBuffer) void,
+    writeBuffer: fn (ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const anyopaque, size: u64) void,
     // TODO(implement):
-    // writeBuffer: fn (ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const anyopaque, size: usize);
     // writeTexture: fn (ptr: *anyopaque, destination: *const ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const TextureDataLayout, write_size: *const Extent3D);
 };
 
@@ -30,6 +31,10 @@ pub inline fn release(queue: Queue) void {
 
 pub inline fn submit(queue: Queue, commands: []const CommandBuffer) void {
     queue.vtable.submit(queue, commands);
+}
+
+pub inline fn writeBuffer(queue: Queue, buffer: Buffer, buffer_offset: u64, data: anytype) void {
+    queue.vtable.writeBuffer(queue.ptr, buffer, buffer_offset, @ptrCast(*const anyopaque, &data[0]), @intCast(u64, data.len));
 }
 
 pub const WorkDoneCallback = struct {
@@ -67,6 +72,7 @@ test {
     _ = reference;
     _ = release;
     _ = submit;
+    _ = writeBuffer;
     _ = WorkDoneCallback;
     _ = WorkDoneStatus;
 }
