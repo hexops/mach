@@ -111,6 +111,8 @@ pub const FragmentState = @import("structs.zig").FragmentState;
 pub const ColorTargetState = @import("structs.zig").ColorTargetState;
 pub const ImageCopyBuffer = @import("structs.zig").ImageCopyBuffer;
 pub const ImageCopyTexture = @import("structs.zig").ImageCopyTexture;
+pub const ErrorCallback = @import("structs.zig").ErrorCallback;
+pub const LoggingCallback = @import("structs.zig").LoggingCallback;
 
 // Enumerations
 pub const Feature = @import("enums.zig").Feature;
