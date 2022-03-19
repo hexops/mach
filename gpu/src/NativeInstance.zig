@@ -46,10 +46,12 @@ const PresentMode = @import("enums.zig").PresentMode;
 const IndexFormat = @import("enums.zig").IndexFormat;
 const ErrorType = @import("enums.zig").ErrorType;
 const ErrorFilter = @import("enums.zig").ErrorFilter;
+const LoggingType = @import("enums.zig").LoggingType;
 
 const ImageCopyBuffer = @import("structs.zig").ImageCopyBuffer;
 const ImageCopyTexture = @import("structs.zig").ImageCopyTexture;
 const ErrorCallback = @import("structs.zig").ErrorCallback;
+const LoggingCallback = @import("structs.zig").LoggingCallback;
 
 const NativeInstance = @This();
 
@@ -723,6 +725,33 @@ const device_vtable = Device.VTable{
             );
         }
     }).setUncapturedErrorCallback,
+    .setLoggingCallback = (struct {
+        pub fn setLoggingCallback(
+            ptr: *anyopaque,
+            callback: *LoggingCallback,
+        ) void {
+            const cCallback = (struct {
+                pub fn cCallback(
+                    typ: c.WGPULoggingType,
+                    message: [*c]const u8,
+                    userdata: ?*anyopaque,
+                ) callconv(.C) void {
+                    const callback_info = @ptrCast(*LoggingCallback, @alignCast(@alignOf(*LoggingCallback), userdata));
+                    callback_info.type_erased_callback(
+                        callback_info.type_erased_ctx,
+                        @intToEnum(LoggingType, typ),
+                        std.mem.span(message),
+                    );
+                }
+            }).cCallback;
+
+            return c.wgpuDeviceSetLoggingCallback(
+                @ptrCast(c.WGPUDevice, ptr),
+                cCallback,
+                callback,
+            );
+        }
+    }).setLoggingCallback,
     .tick = (struct {
         pub fn tick(ptr: *anyopaque) void {
             c.wgpuDeviceTick(@ptrCast(c.WGPUDevice, ptr));
