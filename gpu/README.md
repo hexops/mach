@@ -58,11 +58,12 @@ We have quite a lot, but are also missing a lot. You should be made aware of the
 * ✅ Mac/Linux/Windows support + cross compilation
 * ❌ Zig API finalization (may change as we learn more)
 * ❌ WebGPU API finalization (WebGPU is not 100% finalized yet!)
+* ❌ Browser implementation of `gpu.Interface`
 * ❌ Nice examples
 * ❌ Clear documentation
 * ❌ Android support
 * ❌ iOS support
-* ❌ Browser support
+* ❌ Dawn-specific API exposures
 
 ## Learning resources
 
