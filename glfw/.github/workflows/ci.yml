@@ -47,6 +47,7 @@ jobs:
         run: choco install git
       - name: Setup Zig
         run: |
+          $ProgressPreference = 'SilentlyContinue'
           Invoke-WebRequest -Uri "https://ziglang.org/builds/zig-windows-x86_64-0.10.0-dev.1107+7deadf430.zip" -OutFile "C:\zig.zip"
           cd C:\
           7z x zig.zip
