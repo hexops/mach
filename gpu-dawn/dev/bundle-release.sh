@@ -13,7 +13,7 @@ zig version > out/ZIG_VERSION
 
 # Bundle headers.json.gz
 pushd out
-python ../dev/dir_to_json.py > ../headers.json
+python3 ../dev/dir_to_json.py > ../headers.json
 popd
 gzip -9 headers.json
 
