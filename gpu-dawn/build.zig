@@ -299,7 +299,8 @@ pub fn ensureBinaryDownloaded(
         // A download failed, or extraction failed, so wipe out the directory to ensure we correctly
         // try again next time.
         std.fs.deleteTreeAbsolute(base_cache_dir) catch {};
-        @panic(@errorName(err));
+        std.log.err("mach/gpu-dawn: prebuilt binary download failed: {s}", .{@errorName(err)});
+        std.process.exit(1);
     };
 }
 
@@ -312,6 +313,8 @@ fn downloadBinary(
     is_windows: bool,
     version: []const u8,
 ) !void {
+    try ensureCanDownloadFiles(allocator);
+
     const download_dir = try std.fs.path.join(allocator, &.{ target_cache_dir, "download" });
     try std.fs.cwd().makePath(download_dir);
 
@@ -443,6 +446,23 @@ fn downloadFile(allocator: std.mem.Allocator, target_file: []const u8, url: []co
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
     _ = try child.spawnAndWait();
+}
+
+fn ensureCanDownloadFiles(allocator: std.mem.Allocator) !void {
+    const argv = &[_][]const u8{ "curl", "--version" };
+    const result = try std.ChildProcess.exec(.{
+        .allocator = allocator,
+        .argv = argv,
+        .cwd = thisDir(),
+    });
+    defer {
+        allocator.free(result.stderr);
+        allocator.free(result.stdout);
+    }
+    if (result.term.Exited != 0) {
+        std.log.err("mach: error: 'curl --version' failed. Is curl not installed?", .{});
+        std.process.exit(1);
+    }
 }
 
 fn isLinuxDesktopLike(target: std.Target) bool {
