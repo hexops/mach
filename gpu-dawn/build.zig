@@ -254,7 +254,13 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 }
 
-pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const u8, is_release: bool, is_windows: bool, version: []const u8) void {
+pub fn ensureBinaryDownloaded(
+    allocator: std.mem.Allocator,
+    zig_triple: []const u8,
+    is_release: bool,
+    is_windows: bool,
+    version: []const u8,
+) void {
     // If zig-cache/mach/gpu-dawn/<git revision> does not exist:
     //   If on a commit in the main branch => rm -r zig-cache/mach/gpu-dawn/
     //   else => noop
@@ -284,20 +290,36 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const 
     if (dirExists(target_cache_dir)) {
         return; // nothing to do, already have the binary
     }
+    downloadBinary(allocator, commit_cache_dir, release_tag, target_cache_dir, zig_triple, is_windows, version) catch |err| {
+        // A download failed, or extraction failed, so wipe out the directory to ensure we correctly
+        // try again next time.
+        std.fs.deleteTreeAbsolute(base_cache_dir) catch {};
+        @panic(@errorName(err));
+    };
+}
 
-    const download_dir = std.fs.path.join(allocator, &.{ target_cache_dir, "download" }) catch unreachable;
-    std.fs.cwd().makePath(download_dir) catch unreachable;
+fn downloadBinary(
+    allocator: std.mem.Allocator,
+    commit_cache_dir: []const u8,
+    release_tag: []const u8,
+    target_cache_dir: []const u8,
+    zig_triple: []const u8,
+    is_windows: bool,
+    version: []const u8,
+) !void {
+    const download_dir = try std.fs.path.join(allocator, &.{ target_cache_dir, "download" });
+    try std.fs.cwd().makePath(download_dir);
 
     // Replace "..." with "---" because GitHub releases has very weird restrictions on file names.
     // https://twitter.com/slimsag/status/1498025997987315713
-    const github_triple = std.mem.replaceOwned(u8, allocator, zig_triple, "...", "---") catch unreachable;
+    const github_triple = try std.mem.replaceOwned(u8, allocator, zig_triple, "...", "---");
 
     // Compose the download URL, e.g.:
     // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/libdawn_x86_64-macos-gnu_debug.a.gz
     const lib_prefix = if (is_windows) "dawn_" else "libdawn_";
     const lib_ext = if (is_windows) ".lib" else ".a";
     const lib_file_name = if (is_windows) "dawn.lib" else "libdawn.a";
-    const download_url = std.mem.concat(allocator, u8, &.{
+    const download_url = try std.mem.concat(allocator, u8, &.{
         "https://github.com/hexops/mach-gpu-dawn/releases/download/",
         version,
         "/",
@@ -307,36 +329,36 @@ pub fn ensureBinaryDownloaded(allocator: std.mem.Allocator, zig_triple: []const 
         release_tag,
         lib_ext,
         ".gz",
-    }) catch unreachable;
+    });
 
     // Download and decompress libdawn
-    const gz_target_file = std.fs.path.join(allocator, &.{ download_dir, "compressed.gz" }) catch unreachable;
-    downloadFile(allocator, gz_target_file, download_url) catch unreachable;
-    const target_file = std.fs.path.join(allocator, &.{ target_cache_dir, lib_file_name }) catch unreachable;
-    gzipDecompress(allocator, gz_target_file, target_file) catch unreachable;
+    const gz_target_file = try std.fs.path.join(allocator, &.{ download_dir, "compressed.gz" });
+    try downloadFile(allocator, gz_target_file, download_url);
+    const target_file = try std.fs.path.join(allocator, &.{ target_cache_dir, lib_file_name });
+    try gzipDecompress(allocator, gz_target_file, target_file);
 
     // If we don't yet have the headers (these are shared across architectures), download them.
-    const include_dir = std.fs.path.join(allocator, &.{ commit_cache_dir, "include" }) catch unreachable;
+    const include_dir = try std.fs.path.join(allocator, &.{ commit_cache_dir, "include" });
     if (!dirExists(include_dir)) {
         // Compose the headers download URL, e.g.:
         // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/headers.json.gz
-        const headers_download_url = std.mem.concat(allocator, u8, &.{
+        const headers_download_url = try std.mem.concat(allocator, u8, &.{
             "https://github.com/hexops/mach-gpu-dawn/releases/download/",
             version,
             "/headers.json.gz",
-        }) catch unreachable;
+        });
 
         // Download and decompress headers.json.gz
-        const headers_gz_target_file = std.fs.path.join(allocator, &.{ download_dir, "headers.json.gz" }) catch unreachable;
-        downloadFile(allocator, headers_gz_target_file, headers_download_url) catch unreachable;
-        const headers_target_file = std.fs.path.join(allocator, &.{ target_cache_dir, "headers.json" }) catch unreachable;
-        gzipDecompress(allocator, headers_gz_target_file, headers_target_file) catch unreachable;
+        const headers_gz_target_file = try std.fs.path.join(allocator, &.{ download_dir, "headers.json.gz" });
+        try downloadFile(allocator, headers_gz_target_file, headers_download_url);
+        const headers_target_file = try std.fs.path.join(allocator, &.{ target_cache_dir, "headers.json" });
+        try gzipDecompress(allocator, headers_gz_target_file, headers_target_file);
 
         // Extract headers JSON archive.
-        extractHeaders(allocator, headers_target_file, commit_cache_dir) catch unreachable;
+        try extractHeaders(allocator, headers_target_file, commit_cache_dir);
     }
 
-    std.fs.deleteTreeAbsolute(download_dir) catch unreachable;
+    try std.fs.deleteTreeAbsolute(download_dir);
 }
 
 fn extractHeaders(allocator: std.mem.Allocator, json_file: []const u8, out_dir: []const u8) !void {
