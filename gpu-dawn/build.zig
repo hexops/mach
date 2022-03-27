@@ -210,6 +210,11 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         std.log.err("-> open an issue: https://github.com/hexops/mach/issues", .{});
         std.log.err("-> build from source (takes 5-15 minutes):", .{});
         std.log.err("       use -Ddawn-from-source=true or set `Options.from_source = true`\n", .{});
+        if (target.os.tag == .macos) {
+            std.log.err("", .{});
+            if (target.cpu.arch.isX86()) std.log.err("-> Did you mean to use -Dtarget=x86_64-macos.12 ?", .{});
+            if (target.cpu.arch.isAARCH64()) std.log.err("-> Did you mean to use -Dtarget=aarch64-macos.12 ?", .{});
+        }
         std.process.exit(1);
     }
 
