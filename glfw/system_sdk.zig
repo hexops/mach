@@ -48,6 +48,10 @@ pub const Options = struct {
     linux_x86_64: []const u8 = "sdk-linux-x86_64",
     linux_x86_64_revision: []const u8 = "ab7fa8f3a05b06e0b06f4277b484e27004bfb20f",
 
+    /// The Linux aarch64 SDK repository name.
+    linux_aarch64: []const u8 = "sdk-linux-aarch64",
+    linux_aarch64_revision: []const u8 = "60c7b3023e65ee0b22668eb20f73786962437303",
+
     /// The Windows x86-64 SDK repository name.
     windows_x86_64: []const u8 = "sdk-windows-x86_64",
     windows_x86_64_revision: []const u8 = "5acba990efd112ea0ced364f0428e6ef6e7a5541",
@@ -64,7 +68,10 @@ pub fn include(b: *Builder, step: *std.build.LibExeObjStep, options: Options) vo
     switch (target.os.tag) {
         .windows => includeSdkWindowsX8664(b, step, options),
         .macos => includeSdkMacOS(b, step, options),
-        else => includeSdkLinuxX8664(b, step, options), // Assume Linux-like for now
+        else => switch (target.cpu.arch) { // Assume Linux-like for now
+            .aarch64 => includeSdkLinuxAarch64(b, step, options),
+            else => includeSdkLinuxX8664(b, step, options), // Assume x86-64 for now
+        },
     }
 }
 
@@ -107,6 +114,28 @@ fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     var sdk_root_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
     var wayland_protocols_include = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/share/wayland-generated" }) catch unreachable;
     var sdk_root_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib/x86_64-linux-gnu" }) catch unreachable;
+    defer {
+        b.allocator.free(sdk_root_includes);
+        b.allocator.free(wayland_protocols_include);
+        b.allocator.free(sdk_root_libs);
+    }
+    step.addSystemIncludeDir(sdk_root_includes);
+    step.addSystemIncludeDir(wayland_protocols_include);
+    step.addLibPath(sdk_root_libs);
+}
+
+fn includeSdkLinuxAarch64(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.linux_aarch64, options.linux_aarch64_revision) catch unreachable;
+
+    if (options.set_sysroot) {
+        var sdk_sysroot = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/" }) catch unreachable;
+        b.sysroot = sdk_sysroot;
+        return;
+    }
+
+    var sdk_root_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
+    var wayland_protocols_include = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/share/wayland-generated" }) catch unreachable;
+    var sdk_root_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib/aarch64-linux-gnu" }) catch unreachable;
     defer {
         b.allocator.free(sdk_root_includes);
         b.allocator.free(wayland_protocols_include);
