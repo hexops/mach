@@ -313,7 +313,7 @@ fn downloadBinary(
     is_windows: bool,
     version: []const u8,
 ) !void {
-    try ensureCanDownloadFiles(allocator);
+    ensureCanDownloadFiles(allocator);
 
     const download_dir = try std.fs.path.join(allocator, &.{ target_cache_dir, "download" });
     try std.fs.cwd().makePath(download_dir);
@@ -454,7 +454,10 @@ fn ensureCanDownloadFiles(allocator: std.mem.Allocator) !void {
         .allocator = allocator,
         .argv = argv,
         .cwd = thisDir(),
-    });
+    }) catch { // e.g. FileNotFound
+        std.log.err("mach: error: 'curl --version' failed. Is curl not installed?", .{});
+        std.process.exit(1);
+    };
     defer {
         allocator.free(result.stderr);
         allocator.free(result.stdout);
