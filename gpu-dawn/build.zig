@@ -503,7 +503,9 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: 
         }) catch unreachable;
     }
 
-    lib.addCSourceFile("src/dawn/dawn_native_mach.cpp", cpp_flags.items);
+    lib.addCSourceFile(std.fs.path.join(b.allocator, &.{
+        thisDir(), "src/dawn/dawn_native_mach.cpp",
+    }) catch unreachable, cpp_flags.items);
     return lib;
 }
 
