@@ -67,21 +67,45 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
 
     const instance = c.machDawnNativeInstance_init();
     var native_instance = gpu.NativeInstance.wrap(c.machDawnNativeInstance_get(instance).?);
-    const gpu_interface = native_instance.interface();
 
     // Discovers e.g. OpenGL adapters.
     try discoverAdapters(instance, window, backend_type);
 
     // Request an adapter.
-    const backend_adapter = switch (gpu_interface.waitForAdapter(&.{
-        .power_preference = .high_performance,
-    })) {
-        .adapter => |v| v,
-        .err => |err| {
-            std.debug.print("failed to get adapter: error={} {s}\n", .{ err.code, err.message });
-            std.process.exit(1);
-        },
-    };
+    //
+    // TODO: It would be nice if we could use gpu_interface.waitForAdapter here, however the webgpu.h
+    // API does not yet have a way to specify what type of backend you want (vulkan, opengl, etc.)
+    // In theory, I suppose we shouldn't need to and Dawn should just pick the best adapter - but in
+    // practice if Vulkan is not supported today waitForAdapter/requestAdapter merely generates an error.
+    //
+    // const gpu_interface = native_instance.interface();
+    // const backend_adapter = switch (gpu_interface.waitForAdapter(&.{
+    //     .power_preference = .high_performance,
+    // })) {
+    //     .adapter => |v| v,
+    //     .err => |err| {
+    //         std.debug.print("failed to get adapter: error={} {s}\n", .{ err.code, err.message });
+    //         std.process.exit(1);
+    //     },
+    // };
+    const adapters = c.machDawnNativeInstance_getAdapters(instance);
+    var dawn_adapter: ?c.MachDawnNativeAdapter = null;
+    var i: usize = 0;
+    while (i < c.machDawnNativeAdapters_length(adapters)) : (i += 1) {
+        const adapter = c.machDawnNativeAdapters_index(adapters, i);
+        const properties = c.machDawnNativeAdapter_getProperties(adapter);
+        const found_backend_type = @intToEnum(gpu.Adapter.BackendType, c.machDawnNativeAdapterProperties_getBackendType(properties));
+        if (found_backend_type == backend_type) {
+            dawn_adapter = adapter;
+        }
+    }
+    if (dawn_adapter == null) {
+        std.debug.print("no matching adapter found for {s}", .{@tagName(backend_type)});
+        std.debug.print("-> maybe try GPU_BACKEND=opengl ?\n", .{});
+        std.process.exit(1);
+    }
+    assert(dawn_adapter != null);
+    const backend_adapter = gpu.NativeInstance.fromWGPUAdapter(c.machDawnNativeAdapter_get(dawn_adapter.?).?);
 
     // Print which adapter we are going to use.
     const props = backend_adapter.properties;
