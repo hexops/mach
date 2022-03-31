@@ -448,9 +448,9 @@ fn downloadFile(allocator: std.mem.Allocator, target_file: []const u8, url: []co
     _ = try child.spawnAndWait();
 }
 
-fn ensureCanDownloadFiles(allocator: std.mem.Allocator) !void {
+fn ensureCanDownloadFiles(allocator: std.mem.Allocator) void {
     const argv = &[_][]const u8{ "curl", "--version" };
-    const result = try std.ChildProcess.exec(.{
+    const result = std.ChildProcess.exec(.{
         .allocator = allocator,
         .argv = argv,
         .cwd = thisDir(),
