@@ -47,6 +47,7 @@ MACH_EXPORT WGPUBackendType machDawnNativeAdapterProperties_getBackendType(MachD
 // underlying adapter.
 typedef struct MachDawnNativeAdapterImpl* MachDawnNativeAdapter;
 
+MACH_EXPORT WGPUAdapter machDawnNativeAdapter_get(MachDawnNativeAdapter adapter);
 MACH_EXPORT MachDawnNativeAdapterProperties machDawnNativeAdapter_getProperties(MachDawnNativeAdapter adapter);
 
 // An optional parameter of Adapter::CreateDevice() to send additional information when creating

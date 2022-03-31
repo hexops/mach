@@ -61,6 +61,10 @@ MACH_EXPORT MachDawnNativeAdapterProperties machDawnNativeAdapter_getProperties(
     self->GetProperties(cppProperties);
     return reinterpret_cast<MachDawnNativeAdapterProperties>(cppProperties);
 }
+MACH_EXPORT WGPUAdapter machDawnNativeAdapter_get(MachDawnNativeAdapter adapter) {
+    return reinterpret_cast<dawn_native::Adapter*>(adapter)->Get();
+}
+
 // TODO(dawn-native-mach):
 // std::vector<const char*> GetSupportedExtensions() const;
 // WGPUDeviceProperties GetAdapterProperties() const;
