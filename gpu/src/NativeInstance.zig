@@ -213,7 +213,11 @@ const surface_vtable = Surface.VTable{
     }).release,
 };
 
-fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
+pub inline fn fromWGPUAdapter(adapter: *anyopaque) Adapter {
+    return wrapAdapter(@ptrCast(c.WGPUAdapter, adapter));
+}
+
+pub fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
     var c_props: c.WGPUAdapterProperties = undefined;
     c.wgpuAdapterGetProperties(adapter, &c_props);
     const properties = Adapter.Properties{
