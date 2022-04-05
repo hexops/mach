@@ -71,7 +71,7 @@ jobs:
       - name: test
         run: cd ${{ matrix.project }} && zig build test
   x86_64-macos:
-    runs-on: macos-12
+    runs-on: macos-latest
     strategy:
       matrix:
         project: ['.', 'glfw']
