@@ -39,7 +39,7 @@ pub fn build(b: *std.build.Builder) void {
     example_run_step.dependOn(&example_run_cmd.step);
 }
 
-const Options = struct {
+pub const Options = struct {
     glfw_options: glfw.Options = .{},
     gpu_dawn_options: gpu_dawn.Options = .{},
 };
