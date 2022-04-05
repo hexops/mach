@@ -41,6 +41,11 @@ pub const Options = struct {
     system_sdk: system_sdk.Options = .{},
 };
 
+pub const pkg = .{
+    .name = "glfw",
+    .path = .{ .path = thisDir() ++ "/src/main.zig" },
+};
+
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const lib = buildLibrary(b, step, options);
     step.linkLibrary(lib);
