@@ -59,11 +59,11 @@ jobs:
           7z x zig.zip
           Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.10.0-dev.1600+af844931b\"
       - name: x86_64-windows -> x86_64-macos
-        run: cd ${{ matrix.project }} && zig build test -Dtarget=x86_64-macos.12...12-gnu
+        run: cd ${{ matrix.project }} && zig build test -Dtarget='x86_64-macos.12...12-gnu'
         env:
           AGREE: true
       - name: x86_64-windows -> aarch64-macos
-        run: cd ${{ matrix.project }} && zig build test -Dtarget=aarch64-macos.12...12-gnu
+        run: cd ${{ matrix.project }} && zig build test -Dtarget='aarch64-macos.12...12-gnu'
         env:
           AGREE: true
       - name: x86_64-windows -> x86_64-linux
