@@ -17,6 +17,7 @@ pub fn build(b: *std.build.Builder) void {
     main_tests.setTarget(target);
     main_tests.addPackage(pkg);
     main_tests.addPackage(gpu.pkg);
+    main_tests.addPackage(glfw.pkg);
     link(b, main_tests, options);
 
     const test_step = b.step("test", "Run library tests");
@@ -27,6 +28,7 @@ pub fn build(b: *std.build.Builder) void {
     example.setBuildMode(mode);
     example.addPackage(pkg);
     example.addPackage(gpu.pkg);
+    example.addPackage(glfw.pkg);
     link(b, example, options);
     example.install();
 
