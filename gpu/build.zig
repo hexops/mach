@@ -14,12 +14,12 @@ pub fn build(b: *std.build.Builder) void {
     lib.setTarget(target);
     lib.setBuildMode(mode);
     lib.install();
-    link(b, lib, .{.gpu_dawn_options = gpu_dawn_options});
+    link(b, lib, .{ .gpu_dawn_options = gpu_dawn_options });
 
     const main_tests = b.addTest("src/main.zig");
     main_tests.setTarget(target);
     main_tests.setBuildMode(mode);
-    link(b, main_tests, .{.gpu_dawn_options = gpu_dawn_options});
+    link(b, main_tests, .{ .gpu_dawn_options = gpu_dawn_options });
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);
@@ -31,7 +31,7 @@ pub fn build(b: *std.build.Builder) void {
     example.linkLibC();
     example.addPackagePath("gpu", "src/main.zig");
     example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
-    link(b, example, .{.gpu_dawn_options = gpu_dawn_options});
+    link(b, example, .{ .gpu_dawn_options = gpu_dawn_options });
 
     const example_run_cmd = example.run();
     example_run_cmd.step.dependOn(b.getInstallStep());
@@ -42,6 +42,12 @@ pub fn build(b: *std.build.Builder) void {
 const Options = struct {
     glfw_options: glfw.Options = .{},
     gpu_dawn_options: gpu_dawn.Options = .{},
+};
+
+pub const pkg = .{
+    .name = "gpu",
+    .path = .{ .path = thisDir() ++ "/src/main.zig" },
+    .dependencies = &.{glfw.pkg},
 };
 
 pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Options) void {
@@ -57,7 +63,6 @@ pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Opti
     gpu_dawn.link(b, lib, options.gpu_dawn_options);
     lib.install();
 
-    step.linkLibrary(lib);
     glfw.link(b, step, options.glfw_options);
     gpu_dawn.link(b, step, options.gpu_dawn_options);
 }
