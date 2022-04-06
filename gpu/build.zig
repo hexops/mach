@@ -44,7 +44,7 @@ pub const Options = struct {
     gpu_dawn_options: gpu_dawn.Options = .{},
 };
 
-pub const pkg = .{
+pub const pkg = std.build.Pkg{
     .name = "gpu",
     .path = .{ .path = thisDir() ++ "/src/main.zig" },
     .dependencies = &.{glfw.pkg},
