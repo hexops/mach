@@ -38,12 +38,12 @@ pub inline fn destroy(buf: Buffer) void {
 
 pub inline fn getConstMappedRange(buf: Buffer, comptime T: type, offset: usize, len: usize) []const T {
     const data = buf.vtable.getConstMappedRange(buf.ptr, offset, @sizeOf(T) * len);
-    return @ptrCast(*const T, &data[0])[0..len];
+    return @ptrCast([*]const T, data.ptr)[0..len];
 }
 
 pub inline fn getMappedRange(buf: Buffer, comptime T: type, offset: usize, len: usize) []T {
     const data = buf.vtable.getMappedRange(buf.ptr, offset, @sizeOf(T) * len);
-    return @ptrCast(*T, &data[0])[0..len];
+    return @ptrCast([*]T, data.ptr)[0..len];
 }
 
 pub inline fn setLabel(buf: Buffer, label: [:0]const u8) void {
