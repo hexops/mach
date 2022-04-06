@@ -104,7 +104,7 @@ pub fn main() !void {
     const color_target = gpu.ColorTargetState{
         .format = window_data.swap_chain_format,
         .blend = &blend,
-        .write_mask = .all,
+        .write_mask = gpu.ColorWriteMask.all,
     };
     const fragment = gpu.FragmentState{
         .module = fs_module,
