@@ -10,7 +10,7 @@ pub fn build(b: *std.build.Builder) void {
     const gpu_dawn_options = gpu_dawn.Options{
         .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
     };
-    const options = Options {.gpu_dawn_options = gpu_dawn_options};
+    const options = Options{ .gpu_dawn_options = gpu_dawn_options };
 
     const main_tests = b.addTest("src/main.zig");
     main_tests.setBuildMode(mode);
@@ -43,7 +43,7 @@ pub const Options = struct {
     gpu_dawn_options: gpu_dawn.Options = .{},
 };
 
-pub const pkg = .{
+pub const pkg = std.build.Pkg{
     .name = "mach",
     .path = .{ .path = thisDir() ++ "/src/main.zig" },
     .dependencies = &.{ gpu.pkg, glfw.pkg },
