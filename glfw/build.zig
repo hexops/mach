@@ -41,7 +41,7 @@ pub const Options = struct {
     system_sdk: system_sdk.Options = .{},
 };
 
-pub const pkg = .{
+pub const pkg = std.build.Pkg{
     .name = "glfw",
     .path = .{ .path = thisDir() ++ "/src/main.zig" },
 };
