@@ -30,11 +30,11 @@ pub inline fn setLabel(group: BindGroup, label: [:0]const u8) void {
 
 pub const Entry = struct {
     binding: u32,
-    buffer: Buffer,
+    buffer: ?Buffer,
     offset: u64,
     size: u64,
-    sampler: Sampler,
-    texture_view: TextureView,
+    sampler: ?Sampler,
+    texture_view: ?TextureView,
 };
 
 pub const Descriptor = struct {
