@@ -56,7 +56,7 @@ pub inline fn writeBuffer(queue: Queue, buffer: Buffer, buffer_offset: u64, data
         buffer,
         buffer_offset,
         @ptrCast(*const anyopaque, &data[0]),
-        @intCast(u64, data.len) * @sizeOf(@TypeOf(std.meta.Elem(data))),
+        @intCast(u64, data.len) * @sizeOf(std.meta.Elem(@TypeOf(data))),
     );
 }
 
@@ -71,7 +71,7 @@ pub inline fn writeTexture(
         queue.ptr,
         destination,
         @ptrCast(*const anyopaque, &data[0]),
-        @intCast(u64, data.len) * @sizeOf(@TypeOf(std.meta.Elem(data))),
+        @intCast(u64, data.len) * @sizeOf(std.meta.Elem(@TypeOf(data))),
         data_layout,
         write_size,
     );
