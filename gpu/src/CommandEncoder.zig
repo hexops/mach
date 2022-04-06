@@ -33,7 +33,7 @@ pub const VTable = struct {
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
     resolveQuerySet: fn (ptr: *anyopaque, query_set: QuerySet, first_query: u32, query_count: u32, destination: Buffer, destination_offset: u64) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
-    writeBuffer: fn (ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const u8, size: u64) void,
+    writeBuffer: fn (ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void,
     writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
 };
 
@@ -135,7 +135,7 @@ pub inline fn writeBuffer(pass: RenderPassEncoder, buffer: Buffer, buffer_offset
         pass.ptr,
         buffer,
         buffer_offset,
-        @ptrCast(*const u8, &data[0]),
+        @ptrCast([*]const u8, data.ptr),
         @intCast(u64, data.len) * @sizeOf(std.meta.Elem(@TypeOf(data))),
     );
 }

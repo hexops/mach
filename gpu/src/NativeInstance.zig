@@ -245,7 +245,7 @@ pub fn wrapAdapter(adapter: c.WGPUAdapter) Adapter {
         .vtable = &adapter_vtable,
     };
 
-    const features_len = c.wgpuAdapterEnumerateFeatures(adapter.?, @ptrCast(*c.WGPUFeatureName, &wrapped._features[0]));
+    const features_len = c.wgpuAdapterEnumerateFeatures(adapter.?, @ptrCast([*]c.WGPUFeatureName, &wrapped._features));
     wrapped.features = wrapped._features[0..features_len];
     return wrapped;
 }
@@ -278,7 +278,7 @@ const adapter_vtable = Adapter.VTable{
                 .nextInChain = null,
                 .label = if (descriptor.label) |l| l else null,
                 .requiredFeaturesCount = if (descriptor.required_features) |f| @intCast(u32, f.len) else 0,
-                .requiredFeatures = if (descriptor.required_features) |f| @ptrCast([*c]const c_uint, &f[0]) else null,
+                .requiredFeatures = if (descriptor.required_features) |f| @ptrCast([*]const c_uint, f.ptr) else null,
                 .requiredLimits = if (required_limits) |*l| l else null,
             };
 
@@ -320,7 +320,7 @@ fn wrapDevice(device: c.WGPUDevice) Device {
         .vtable = &device_vtable,
     };
 
-    const features_len = c.wgpuDeviceEnumerateFeatures(device.?, @ptrCast(*c.WGPUFeatureName, &wrapped._features[0]));
+    const features_len = c.wgpuDeviceEnumerateFeatures(device.?, @ptrCast([*]c.WGPUFeatureName, &wrapped._features));
     wrapped.features = wrapped._features[0..features_len];
     return wrapped;
 }
@@ -410,7 +410,7 @@ const device_vtable = Device.VTable{
                 .label = if (descriptor.label) |l| l else null,
                 .layout = @ptrCast(c.WGPUBindGroupLayout, descriptor.layout.ptr),
                 .entryCount = @intCast(u32, entries.len),
-                .entries = &entries[0],
+                .entries = entries.ptr,
             };
 
             return wrapBindGroup(c.wgpuDeviceCreateBindGroup(@ptrCast(c.WGPUDevice, ptr), &desc));
@@ -451,7 +451,7 @@ const device_vtable = Device.VTable{
                 .nextInChain = null,
                 .label = if (descriptor.label) |l| l else null,
                 .entryCount = @intCast(u32, descriptor.entries.len),
-                .entries = @ptrCast(*const c.WGPUBindGroupLayoutEntry, &descriptor.entries[0]),
+                .entries = @ptrCast([*]const c.WGPUBindGroupLayoutEntry, descriptor.entries.ptr),
             };
             return wrapBindGroupLayout(c.wgpuDeviceCreateBindGroupLayout(@ptrCast(c.WGPUDevice, ptr), &desc));
         }
@@ -487,7 +487,7 @@ const device_vtable = Device.VTable{
                             .next = null,
                             .sType = c.WGPUSType_ShaderModuleSPIRVDescriptor,
                         },
-                        .code = @ptrCast([*c]const u32, &spirv[0]),
+                        .code = spirv.ptr,
                         .codeSize = @intCast(u32, spirv.len),
                     };
                     const desc = c.WGPUShaderModuleDescriptor{
@@ -634,7 +634,7 @@ const device_vtable = Device.VTable{
                 .nextInChain = null,
                 .label = if (descriptor.label) |l| l else null,
                 .bindGroupLayoutCount = @intCast(u32, bind_group_layouts.len),
-                .bindGroupLayouts = &bind_group_layouts[0],
+                .bindGroupLayouts = bind_group_layouts.ptr,
             };
             return wrapPipelineLayout(c.wgpuDeviceCreatePipelineLayout(@ptrCast(c.WGPUDevice, ptr), &desc));
         }
@@ -646,7 +646,7 @@ const device_vtable = Device.VTable{
                 .label = if (descriptor.label) |l| l else null,
                 .type = @enumToInt(descriptor.type),
                 .count = descriptor.count,
-                .pipelineStatistics = @ptrCast(*const c.WGPUPipelineStatisticName, &descriptor.pipeline_statistics[0]),
+                .pipelineStatistics = @ptrCast([*]const c.WGPUPipelineStatisticName, descriptor.pipeline_statistics.ptr),
                 .pipelineStatisticsCount = @intCast(u32, descriptor.pipeline_statistics.len),
             };
             return wrapQuerySet(c.wgpuDeviceCreateQuerySet(@ptrCast(c.WGPUDevice, ptr), &desc));
@@ -658,7 +658,7 @@ const device_vtable = Device.VTable{
                 .nextInChain = null,
                 .label = if (descriptor.label) |l| l else null,
                 .colorFormatsCount = @intCast(u32, descriptor.color_formats.len),
-                .colorFormats = @ptrCast(*const c.WGPUTextureFormat, &descriptor.color_formats[0]),
+                .colorFormats = @ptrCast([*]const c.WGPUTextureFormat, descriptor.color_formats.ptr),
                 .depthStencilFormat = @enumToInt(descriptor.depth_stencil_format),
                 .sampleCount = descriptor.sample_count,
                 .depthReadOnly = descriptor.depth_read_only,
@@ -781,7 +781,7 @@ inline fn convertComputePipelineDescriptor(descriptor: *const ComputePipeline.De
             .module = @ptrCast(c.WGPUShaderModule, descriptor.compute.module.ptr),
             .entryPoint = descriptor.compute.entry_point,
             .constantCount = if (descriptor.compute.constants) |v| @intCast(u32, v.len) else 0,
-            .constants = if (descriptor.compute.constants) |v| @ptrCast(*const c.WGPUConstantEntry, &v[0]) else null,
+            .constants = if (descriptor.compute.constants) |v| @ptrCast([*]const c.WGPUConstantEntry, v.ptr) else null,
         },
     };
 }
@@ -812,9 +812,9 @@ inline fn convertRenderPipelineDescriptor(
         .module = @ptrCast(c.WGPUShaderModule, d.fragment.module.ptr),
         .entryPoint = d.vertex.entry_point,
         .constantCount = if (d.fragment.constants) |v| @intCast(u32, v.len) else 0,
-        .constants = if (d.fragment.constants) |v| @ptrCast(*const c.WGPUConstantEntry, &v[0]) else null,
+        .constants = if (d.fragment.constants) |v| @ptrCast([*]const c.WGPUConstantEntry, v.ptr) else null,
         .targetCount = if (d.fragment.targets) |v| @intCast(u32, v.len) else 0,
-        .targets = if (d.fragment.targets) |v| @ptrCast(*const c.WGPUColorTargetState, &v[0]) else null,
+        .targets = if (d.fragment.targets) |v| @ptrCast([*]const c.WGPUColorTargetState, v.ptr) else null,
     };
 
     return c.WGPURenderPipelineDescriptor{
@@ -826,9 +826,9 @@ inline fn convertRenderPipelineDescriptor(
             .module = @ptrCast(c.WGPUShaderModule, d.vertex.module.ptr),
             .entryPoint = d.vertex.entry_point,
             .constantCount = if (d.vertex.constants) |v| @intCast(u32, v.len) else 0,
-            .constants = if (d.vertex.constants) |v| @ptrCast(*const c.WGPUConstantEntry, &v[0]) else null,
+            .constants = if (d.vertex.constants) |v| @ptrCast([*]const c.WGPUConstantEntry, v.ptr) else null,
             .bufferCount = if (d.vertex.buffers) |v| @intCast(u32, v.len) else 0,
-            .buffers = if (d.vertex.buffers) |v| @ptrCast(*const c.WGPUVertexBufferLayout, &v[0]) else null,
+            .buffers = if (d.vertex.buffers) |v| @ptrCast([*]const c.WGPUVertexBufferLayout, v.ptr) else null,
         },
         .primitive = c.WGPUPrimitiveState{
             .nextInChain = null,
@@ -908,7 +908,7 @@ const queue_vtable = Queue.VTable{
             c.wgpuQueueSubmit(
                 wgpu_queue,
                 @intCast(u32, commands.len),
-                @ptrCast(*c.WGPUCommandBuffer, &commands[0]),
+                @ptrCast([*]c.WGPUCommandBuffer, commands.ptr),
             );
         }
     }).submit,
@@ -1272,7 +1272,7 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             c.wgpuRenderPassEncoderExecuteBundles(
                 @ptrCast(c.WGPURenderPassEncoder, ptr),
                 @intCast(u32, c_bundles.len),
-                &c_bundles[0],
+                c_bundles.ptr,
             );
         }
     }).executeBundles,
@@ -1303,7 +1303,7 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
                 group_index,
                 @ptrCast(c.WGPUBindGroup, group.ptr),
                 @intCast(u32, dynamic_offsets.len),
-                &dynamic_offsets[0],
+                dynamic_offsets.ptr,
             );
         }
     }).setBindGroup,
@@ -1500,7 +1500,7 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
                 group_index,
                 @ptrCast(c.WGPUBindGroup, group.ptr),
                 @intCast(u32, dynamic_offsets.len),
-                &dynamic_offsets[0],
+                dynamic_offsets.ptr,
             );
         }
     }).setBindGroup,
@@ -1868,7 +1868,7 @@ const command_encoder_vtable = CommandEncoder.VTable{
                 .nextInChain = null,
                 .label = if (d.label) |l| l else null,
                 .timestampWriteCount = @intCast(u32, timestamp_writes.len),
-                .timestampWrites = @ptrCast(*const c.WGPUComputePassTimestampWrite, &timestamp_writes[0]),
+                .timestampWrites = @ptrCast([*]const c.WGPUComputePassTimestampWrite, timestamp_writes.ptr),
             };
             return wrapComputePassEncoder(c.wgpuCommandEncoderBeginComputePass(@ptrCast(c.WGPUCommandEncoder, ptr), &desc));
         }
@@ -1945,7 +1945,7 @@ const command_encoder_vtable = CommandEncoder.VTable{
                 .nextInChain = null,
                 .label = if (d.label) |l| l else null,
                 .colorAttachmentCount = @intCast(u32, color_attachments.len),
-                .colorAttachments = &color_attachments[0],
+                .colorAttachments = color_attachments.ptr,
                 .depthStencilAttachment = if (d.depth_stencil_attachment) |v| &c.WGPURenderPassDepthStencilAttachment{
                     .view = @ptrCast(c.WGPUTextureView, v.view.ptr),
                     .depthLoadOp = @enumToInt(v.depth_load_op),
@@ -1961,7 +1961,7 @@ const command_encoder_vtable = CommandEncoder.VTable{
                 } else null,
                 .occlusionQuerySet = if (d.occlusion_query_set) |v| @ptrCast(c.WGPUQuerySet, v.ptr) else null,
                 .timestampWriteCount = if (timestamp_writes) |v| @intCast(u32, v.len) else 0,
-                .timestampWrites = if (timestamp_writes) |v| @ptrCast(*const c.WGPURenderPassTimestampWrite, &v[0]) else null,
+                .timestampWrites = if (timestamp_writes) |v| @ptrCast([*]const c.WGPURenderPassTimestampWrite, v.ptr) else null,
             };
             return wrapRenderPassEncoder(c.wgpuCommandEncoderBeginRenderPass(@ptrCast(c.WGPUCommandEncoder, ptr), &desc));
         }
@@ -2051,7 +2051,7 @@ const command_encoder_vtable = CommandEncoder.VTable{
         }
     }).pushDebugGroup,
     .writeBuffer = (struct {
-        pub fn writeBuffer(ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: *const u8, size: u64) void {
+        pub fn writeBuffer(ptr: *anyopaque, buffer: Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
             c.wgpuCommandEncoderWriteBuffer(
                 @ptrCast(c.WGPUCommandEncoder, ptr),
                 @ptrCast(c.WGPUBuffer, buffer.ptr),
@@ -2162,7 +2162,7 @@ const compute_pass_encoder_vtable = ComputePassEncoder.VTable{
                 group_index,
                 @ptrCast(c.WGPUBindGroup, group.ptr),
                 @intCast(u32, dynamic_offsets.len),
-                &dynamic_offsets[0],
+                dynamic_offsets.ptr,
             );
         }
     }).setBindGroup,
