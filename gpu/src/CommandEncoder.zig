@@ -136,7 +136,7 @@ pub inline fn writeBuffer(pass: RenderPassEncoder, buffer: Buffer, buffer_offset
         buffer,
         buffer_offset,
         @ptrCast(*const u8, &data[0]),
-        @intCast(u64, data.len) * @sizeOf(@TypeOf(std.meta.Elem(data))),
+        @intCast(u64, data.len) * @sizeOf(std.meta.Elem(@TypeOf(data))),
     );
 }
 
