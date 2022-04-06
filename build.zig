@@ -1,7 +1,7 @@
 const std = @import("std");
-const gpu = @import("gpu/build.zig");
+pub const gpu = @import("gpu/build.zig");
 const gpu_dawn = @import("gpu-dawn/build.zig");
-const glfw = @import("glfw/build.zig");
+pub const glfw = @import("glfw/build.zig");
 
 pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
