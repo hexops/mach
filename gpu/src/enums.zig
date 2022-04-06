@@ -221,34 +221,69 @@ pub const VertexStepMode = enum(u32) {
     instance = 0x00000001,
 };
 
-pub const BufferUsage = enum(u32) {
-    none = 0x00000000,
-    map_read = 0x00000001,
-    map_write = 0x00000002,
-    copy_src = 0x00000004,
-    copy_dst = 0x00000008,
-    index = 0x00000010,
-    vertex = 0x00000020,
-    uniform = 0x00000040,
-    storage = 0x00000080,
-    indirect = 0x00000100,
-    query_resolve = 0x00000200,
+pub const BufferUsage = packed struct {
+    map_read: bool = false,
+    map_write: bool = false,
+    copy_src: bool = false,
+    copy_dst: bool = false,
+    index: bool = false,
+    vertex: bool = false,
+    uniform: bool = false,
+    storage: bool = false,
+    indirect: bool = false,
+    query_resolve: bool = false,
+
+    _pad0: u6 = 0,
+    _pad1: u16 = 0,
+
+    comptime {
+        std.debug.assert(
+            @sizeOf(@This()) == @sizeOf(u32) and
+                @bitSizeOf(@This()) == @bitSizeOf(u32),
+        );
+    }
 };
 
-pub const ColorWriteMask = enum(u32) {
-    none = 0x00000000,
-    red = 0x00000001,
-    green = 0x00000002,
-    blue = 0x00000004,
-    alpha = 0x00000008,
-    all = 0x0000000F,
+pub const ColorWriteMask = packed struct {
+    red: bool = false,
+    green: bool = false,
+    blue: bool = false,
+    alpha: bool = false,
+
+    _pad0: u4 = 0,
+    _pad1: u8 = 0,
+    _pad2: u16 = 0,
+
+    comptime {
+        std.debug.assert(
+            @sizeOf(@This()) == @sizeOf(u32) and
+                @bitSizeOf(@This()) == @bitSizeOf(u32),
+        );
+    }
+
+    pub const all = ColorWriteMask{
+        .red = true,
+        .green = true,
+        .blue = true,
+        .alpha = true,
+    };
 };
 
-pub const ShaderStage = enum(u32) {
-    none = 0x00000000,
-    vertex = 0x00000001,
-    fragment = 0x00000002,
-    compute = 0x00000004,
+pub const ShaderStage = packed struct {
+    vertex: bool = false,
+    fragment: bool = false,
+    compute: bool = false,
+
+    _pad0: u5 = 0,
+    _pad1: u8 = 0,
+    _pad2: u16 = 0,
+
+    comptime {
+        std.debug.assert(
+            @sizeOf(@This()) == @sizeOf(u32) and
+                @bitSizeOf(@This()) == @bitSizeOf(u32),
+        );
+    }
 };
 
 test "name" {
