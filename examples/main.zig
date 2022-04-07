@@ -75,7 +75,7 @@ pub fn main() !void {
     vs_module.release();
     fs_module.release();
 
-    try app.run(frame);
+    try app.run(.{ .frame = frame });
 }
 
 const FrameParams = struct {
