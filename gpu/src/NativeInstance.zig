@@ -504,7 +504,7 @@ const device_vtable = Device.VTable{
             const desc = c.WGPUSwapChainDescriptor{
                 .nextInChain = null,
                 .label = if (descriptor.label) |l| l else null,
-                .usage = @enumToInt(descriptor.usage),
+                .usage = @bitCast(u32, descriptor.usage),
                 .format = @enumToInt(descriptor.format),
                 .width = descriptor.width,
                 .height = descriptor.height,
@@ -1017,7 +1017,7 @@ const swap_chain_vtable = SwapChain.VTable{
             c.wgpuSwapChainConfigure(
                 @ptrCast(c.WGPUSwapChain, ptr),
                 @enumToInt(format),
-                @enumToInt(allowed_usage),
+                @bitCast(u32, allowed_usage),
                 width,
                 height,
             );

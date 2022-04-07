@@ -150,7 +150,7 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
                 swap_chain_format = .bgra8_unorm;
                 descriptor = .{
                     .label = "basic swap chain",
-                    .usage = .render_attachment,
+                    .usage = .{ .render_attachment = true },
                     .format = swap_chain_format,
                     .width = framebuffer_size.width,
                     .height = framebuffer_size.height,
@@ -174,7 +174,7 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
                 swap_chain_format = @intToEnum(gpu.Texture.Format, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
                 swap_chain.?.configure(
                     swap_chain_format,
-                    .render_attachment,
+                    .{ .render_attachment = true },
                     framebuffer_size.width,
                     framebuffer_size.height,
                 );
@@ -221,7 +221,7 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
                         app.swap_chain = app.device.nativeCreateSwapChain(app.surface, &app.target_desc);
                     } else app.swap_chain.?.configure(
                         app.swap_chain_format,
-                        .render_attachment,
+                        .{ .render_attachment = true },
                         app.target_desc.width,
                         app.target_desc.height,
                     );

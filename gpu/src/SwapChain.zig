@@ -57,7 +57,7 @@ pub const Descriptor = struct {
     pub fn equal(a: *const Descriptor, b: *const Descriptor) bool {
         if ((a.label == null) != (b.label == null)) return false;
         if (a.label != null and !std.mem.eql(u8, a.label.?, b.label.?)) return false;
-        if (a.usage != b.usage) return false;
+        if (!a.usage.equal(b.usage)) return false;
         if (a.format != b.format) return false;
         if (a.width != b.width) return false;
         if (a.height != b.height) return false;
