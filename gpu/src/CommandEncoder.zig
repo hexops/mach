@@ -130,9 +130,9 @@ pub inline fn setLabel(enc: CommandEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
 
-pub inline fn writeBuffer(pass: RenderPassEncoder, buffer: Buffer, buffer_offset: u64, data: anytype) void {
-    pass.vtable.writeBuffer(
-        pass.ptr,
+pub inline fn writeBuffer(enc: CommandEncoder, buffer: Buffer, buffer_offset: u64, data: anytype) void {
+    enc.vtable.writeBuffer(
+        enc.ptr,
         buffer,
         buffer_offset,
         @ptrCast([*]const u8, data.ptr),
