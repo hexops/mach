@@ -1,3 +1,5 @@
+const std = @import("std");
+
 const Extent3D = @import("data.zig").Extent3D;
 
 const TextureView = @import("TextureView.zig");
@@ -48,14 +50,33 @@ pub const Descriptor = struct {
     sample_count: u32,
 };
 
-pub const Usage = enum(u32) {
-    none = 0x00000000,
-    copy_src = 0x00000001,
-    copy_dst = 0x00000002,
-    texture_binding = 0x00000004,
-    storage_binding = 0x00000008,
-    render_attachment = 0x00000010,
-    present = 0x00000020,
+pub const Usage = packed struct {
+    copy_src: bool = false,
+    copy_dst: bool = false,
+    texture_binding: bool = false,
+    storage_binding: bool = false,
+    render_attachment: bool = false,
+    present: bool = false,
+
+    _pad0: u2 = 0,
+    _pad1: u8 = 0,
+    _pad2: u16 = 0,
+
+    comptime {
+        std.debug.assert(
+            @sizeOf(@This()) == @sizeOf(u32) and
+                @bitSizeOf(@This()) == @bitSizeOf(u32),
+        );
+    }
+
+    pub fn equal(a: Usage, b: Usage) bool {
+        return a.copy_src == b.copy_src and
+            a.copy_dst == b.copy_dst and
+            a.texture_binding == b.texture_binding and
+            a.storage_binding == b.storage_binding and
+            a.render_attachment == b.render_attachment and
+            a.present == b.present;
+    }
 };
 
 pub const Format = enum(u32) {
