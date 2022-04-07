@@ -197,9 +197,17 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
             };
         }
 
-        const FrameFunc = fn (app: *Self, ctx: Context) error{OutOfMemory}!void;
+        const Funcs = struct {
+            // Run once per frame
+            frame: fn (app: *Self, ctx: Context) error{OutOfMemory}!void,
+            // Run once at the start, and whenever the swapchain is recreated
+            resize: ?fn (app: *Self, ctx: Context, width: u32, height: u32) error{OutOfMemory}!void = null,
+        };
 
-        pub fn run(app: *Self, frame: FrameFunc) !void {
+        pub fn run(app: *Self, funcs: Funcs) !void {
+            if (app.swap_chain != null and funcs.resize != null) {
+                try funcs.resize.?(app, app.context, app.current_desc.width, app.current_desc.height);
+            }
             while (!app.window.shouldClose()) {
                 try glfw.pollEvents();
 
@@ -217,10 +225,13 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
                         app.target_desc.width,
                         app.target_desc.height,
                     );
+                    if (funcs.resize) |f| {
+                        try f(app, app.context, app.target_desc.width, app.target_desc.height);
+                    }
                     app.current_desc = app.target_desc;
                 }
 
-                try frame(app, app.context);
+                try funcs.frame(app, app.context);
                 std.time.sleep(16 * std.time.ns_per_ms); // TODO: this is very naive
             }
         }
