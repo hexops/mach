@@ -50,13 +50,13 @@ pub inline fn submit(queue: Queue, commands: []const CommandBuffer) void {
     queue.vtable.submit(queue, commands);
 }
 
-pub inline fn writeBuffer(queue: Queue, buffer: Buffer, buffer_offset: u64, data: anytype) void {
+pub inline fn writeBuffer(queue: Queue, buffer: Buffer, buffer_offset: u64, comptime T: type, data: []const T) void {
     queue.vtable.writeBuffer(
         queue.ptr,
         buffer,
         buffer_offset,
         @ptrCast(*const anyopaque, data.ptr),
-        @intCast(u64, data.len) * @sizeOf(std.meta.Elem(@TypeOf(data))),
+        @intCast(u64, data.len) * @sizeOf(T),
     );
 }
 
