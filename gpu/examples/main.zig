@@ -29,7 +29,7 @@ pub fn main() !void {
         window_data.swap_chain_format = .bgra8_unorm;
         descriptor = .{
             .label = "basic swap chain",
-            .usage = .render_attachment,
+            .usage = .{ .render_attachment = true },
             .format = window_data.swap_chain_format,
             .width = framebuffer_size.width,
             .height = framebuffer_size.height,
@@ -53,7 +53,7 @@ pub fn main() !void {
         window_data.swap_chain_format = @intToEnum(gpu.Texture.Format, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
         window_data.swap_chain.?.configure(
             window_data.swap_chain_format,
-            .render_attachment,
+            .{ .render_attachment = true },
             framebuffer_size.width,
             framebuffer_size.height,
         );
@@ -184,7 +184,7 @@ fn frame(params: FrameParams) !void {
             pl.swap_chain = params.device.nativeCreateSwapChain(pl.surface, &pl.target_desc);
         } else pl.swap_chain.?.configure(
             pl.swap_chain_format,
-            .render_attachment,
+            .{.render_attachment = true},
             pl.target_desc.width,
             pl.target_desc.height,
         );
