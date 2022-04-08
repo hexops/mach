@@ -1357,9 +1357,9 @@ pub inline fn getUserPointer(self: Window, comptime T: type) ?*T {
 ///
 /// @callback_param `window` the window that moved.
 /// @callback_param `xpos` the new x-coordinate, in screen coordinates, of the upper-left corner of
-/// the content area of the window. 
+/// the content area of the window.
 /// @callback_param `ypos` the new y-coordinate, in screen coordinates, of the upper-left corner of
-/// the content area of the window. 
+/// the content area of the window.
 ///
 /// wayland: This callback will never be called, as there is no way for an application to know its
 /// global position.

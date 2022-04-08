@@ -20,7 +20,7 @@ pub const BackendOptions = struct {
     osmesa: bool = false,
 };
 
-/// This function returns a type which allows provides an interface to access 
+/// This function returns a type which allows provides an interface to access
 /// the native handles based on backends selected.
 ///
 /// The available window API options are:
@@ -78,7 +78,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Returns the display device name of the specified monitor.
         ///
-        /// return: The UTF-8 encoded display device name (for example `\\.\DISPLAY1\Monitor0`) 
+        /// return: The UTF-8 encoded display device name (for example `\\.\DISPLAY1\Monitor0`)
         /// of the specified monitor.
         ///
         /// Possible errors include glfw.Error.NotInitalized.
@@ -282,7 +282,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
         ///
         /// The returned string is allocated and freed by GLFW. You should not free it
-        /// yourself. It is valid until the next call to getX11SelectionString or 
+        /// yourself. It is valid until the next call to getX11SelectionString or
         /// setX11SelectionString, or until the library is terminated.
         ///
         /// thread_safety: This function must only be called from the main thread.
