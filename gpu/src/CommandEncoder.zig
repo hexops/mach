@@ -130,13 +130,13 @@ pub inline fn setLabel(enc: CommandEncoder, label: [:0]const u8) void {
     enc.vtable.setLabel(enc.ptr, label);
 }
 
-pub inline fn writeBuffer(enc: CommandEncoder, buffer: Buffer, buffer_offset: u64, data: anytype) void {
+pub inline fn writeBuffer(enc: CommandEncoder, buffer: Buffer, buffer_offset: u64, comptime T: type, data: []const T) void {
     enc.vtable.writeBuffer(
         enc.ptr,
         buffer,
         buffer_offset,
         @ptrCast([*]const u8, data.ptr),
-        @intCast(u64, data.len) * @sizeOf(std.meta.Elem(@TypeOf(data))),
+        @intCast(u64, data.len) * @sizeOf(T),
     );
 }
 
