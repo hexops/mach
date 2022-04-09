@@ -398,7 +398,8 @@ fn gzipDecompress(allocator: std.mem.Allocator, src_absolute_path: []const u8, d
     var file = try std.fs.openFileAbsolute(src_absolute_path, .{ .mode = .read_only });
     defer file.close();
 
-    var gzip_stream = try std.compress.gzip.gzipStream(allocator, file.reader());
+    var buf_stream = std.io.bufferedReader(file.reader());
+    var gzip_stream = try std.compress.gzip.gzipStream(allocator, buf_stream.reader());
     defer gzip_stream.deinit();
 
     // Read and decompress the whole file
