@@ -239,7 +239,7 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
             };
         }
 
-        const Funcs = struct {
+        pub const Funcs = struct {
             // Run once per frame
             frame: fn (app: *Self, ctx: Context) error{OutOfMemory}!void,
             // Run once at the start, and whenever the swapchain is recreated
