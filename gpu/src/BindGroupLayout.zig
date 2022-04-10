@@ -40,11 +40,12 @@ pub const Entry = extern struct {
     reserved: ?*anyopaque = null,
     binding: u32,
     visibility: ShaderStage,
-    buffer: Buffer.BindingLayout = .{},
-    sampler: Sampler.BindingLayout = .{},
-    texture: Texture.BindingLayout = .{},
-    storage_texture: StorageTextureBindingLayout = .{},
+    buffer: Buffer.BindingLayout = .{ .type = .none },
+    sampler: Sampler.BindingLayout = .{ .type = .none },
+    texture: Texture.BindingLayout = .{ .sample_type = .none },
+    storage_texture: StorageTextureBindingLayout = .{ .access = .none, .format = .none },
 
+    /// Helper to create a buffer BindGroupLayout.Entry.
     pub fn buffer(
         binding: u32,
         visibility: ShaderStage,
@@ -63,6 +64,7 @@ pub const Entry = extern struct {
         };
     }
 
+    /// Helper to create a sampler BindGroupLayout.Entry.
     pub fn sampler(binding: u32, visibility: ShaderStage, binding_type: Sampler.BindingType) Entry {
         return .{
             .binding = binding,
@@ -71,6 +73,7 @@ pub const Entry = extern struct {
         };
     }
 
+    /// Helper to create a texture BindGroupLayout.Entry.
     pub fn texture(
         binding: u32,
         visibility: ShaderStage,
@@ -89,6 +92,7 @@ pub const Entry = extern struct {
         };
     }
 
+    /// Helper to create a storage texture BindGroupLayout.Entry.
     pub fn storageTexture(
         binding: u32,
         visibility: ShaderStage,
