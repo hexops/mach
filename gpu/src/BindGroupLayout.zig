@@ -1,7 +1,9 @@
 const Buffer = @import("Buffer.zig");
 const Sampler = @import("Sampler.zig");
 const Texture = @import("Texture.zig");
+const TextureView = @import("TextureView.zig");
 const StorageTextureBindingLayout = @import("structs.zig").StorageTextureBindingLayout;
+const StorageTextureAccess = @import("enums.zig").StorageTextureAccess;
 const ShaderStage = @import("enums.zig").ShaderStage;
 
 const BindGroupLayout = @This();
@@ -38,10 +40,76 @@ pub const Entry = extern struct {
     reserved: ?*anyopaque = null,
     binding: u32,
     visibility: ShaderStage,
-    buffer: Buffer.BindingLayout,
-    sampler: Sampler.BindingLayout,
-    texture: Texture.BindingLayout,
-    storage_texture: StorageTextureBindingLayout,
+    buffer: Buffer.BindingLayout = .{ .type = .none },
+    sampler: Sampler.BindingLayout = .{ .type = .none },
+    texture: Texture.BindingLayout = .{ .sample_type = .none },
+    storage_texture: StorageTextureBindingLayout = .{ .access = .none, .format = .none },
+
+    /// Helper to create a buffer BindGroupLayout.Entry.
+    pub fn buffer(
+        binding: u32,
+        visibility: ShaderStage,
+        binding_type: Buffer.BindingType,
+        has_dynamic_offset: bool,
+        min_binding_size: u64,
+    ) Entry {
+        return .{
+            .binding = binding,
+            .visibility = visibility,
+            .buffer = .{
+                .type = binding_type,
+                .has_dynamic_offset = has_dynamic_offset,
+                .min_binding_size = min_binding_size,
+            },
+        };
+    }
+
+    /// Helper to create a sampler BindGroupLayout.Entry.
+    pub fn sampler(binding: u32, visibility: ShaderStage, binding_type: Sampler.BindingType) Entry {
+        return .{
+            .binding = binding,
+            .visibility = visibility,
+            .sampler = .{ .type = binding_type },
+        };
+    }
+
+    /// Helper to create a texture BindGroupLayout.Entry.
+    pub fn texture(
+        binding: u32,
+        visibility: ShaderStage,
+        sample_type: Texture.SampleType,
+        view_dimension: TextureView.Dimension,
+        multisampled: bool,
+    ) Entry {
+        return .{
+            .binding = binding,
+            .visibility = visibility,
+            .texture = .{
+                .sample_type = sample_type,
+                .view_dimension = view_dimension,
+                .multisampled = multisampled,
+            },
+        };
+    }
+
+    /// Helper to create a storage texture BindGroupLayout.Entry.
+    pub fn storageTexture(
+        binding: u32,
+        visibility: ShaderStage,
+        access: StorageTextureAccess,
+        format: Texture.Format,
+        view_dimension: TextureView.Dimension,
+    ) Entry {
+        return .{
+            .binding = binding,
+            .visibility = visibility,
+            .storage_texture = .{
+                .access = access,
+                .format = format,
+                .view_dimension = view_dimension,
+            },
+        };
+    }
 };
 
 test {
@@ -51,4 +119,14 @@ test {
     _ = setLabel;
     _ = Descriptor;
     _ = Entry;
+
+    const desc = BindGroupLayout.Descriptor{
+        .entries = &.{
+            BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0),
+            BindGroupLayout.Entry.sampler(1, .{ .vertex = true }, .filtering),
+            BindGroupLayout.Entry.texture(2, .{ .fragment = true }, .float, .dimension_2d, false),
+            BindGroupLayout.Entry.storageTexture(3, .{ .fragment = true }, .none, .rgba32_float, .dimension_2d),
+        },
+    };
+    _ = desc;
 }

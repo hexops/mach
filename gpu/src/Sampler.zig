@@ -36,7 +36,7 @@ pub const BindingType = enum(u32) {
 
 pub const BindingLayout = extern struct {
     reserved: ?*anyopaque = null,
-    type: BindingType,
+    type: BindingType = .filtering,
 };
 
 pub const Descriptor = extern struct {

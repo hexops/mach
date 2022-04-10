@@ -211,9 +211,9 @@ pub const SampleType = enum(u32) {
 
 pub const BindingLayout = extern struct {
     reserved: ?*anyopaque = null,
-    sample_type: SampleType,
-    view_dimension: TextureView.Dimension,
-    multisampled: bool,
+    sample_type: SampleType = .float,
+    view_dimension: TextureView.Dimension = .dimension_2d,
+    multisampled: bool = false,
 };
 
 pub const DataLayout = extern struct {

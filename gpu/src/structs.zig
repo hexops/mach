@@ -39,9 +39,9 @@ pub const PrimitiveState = struct {
 
 pub const StorageTextureBindingLayout = extern struct {
     reserved: ?*anyopaque = null,
-    access: StorageTextureAccess,
+    access: StorageTextureAccess = .write_only,
     format: Texture.Format,
-    view_dimension: TextureView.Dimension,
+    view_dimension: TextureView.Dimension = .dimension_2d,
 };
 
 pub const DepthStencilState = struct {

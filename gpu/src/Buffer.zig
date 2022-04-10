@@ -103,9 +103,9 @@ pub const BindingType = enum(u32) {
 
 pub const BindingLayout = extern struct {
     reserved: ?*anyopaque = null,
-    type: BindingType,
-    has_dynamic_offset: bool,
-    min_binding_size: u64,
+    type: BindingType = .uniform,
+    has_dynamic_offset: bool = false,
+    min_binding_size: u64 = 0,
 };
 
 pub const MapAsyncStatus = enum(u32) {
