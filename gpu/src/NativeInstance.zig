@@ -807,15 +807,17 @@ inline fn convertRenderPipelineDescriptor(
         };
     }
 
-    tmp_fragment_state.* = c.WGPUFragmentState{
-        .nextInChain = null,
-        .module = @ptrCast(c.WGPUShaderModule, d.fragment.module.ptr),
-        .entryPoint = d.vertex.entry_point,
-        .constantCount = if (d.fragment.constants) |v| @intCast(u32, v.len) else 0,
-        .constants = if (d.fragment.constants) |v| @ptrCast([*]const c.WGPUConstantEntry, v.ptr) else null,
-        .targetCount = if (d.fragment.targets) |v| @intCast(u32, v.len) else 0,
-        .targets = if (d.fragment.targets) |v| @ptrCast([*]const c.WGPUColorTargetState, v.ptr) else null,
-    };
+    if (d.fragment) |frag| {
+        tmp_fragment_state.* = c.WGPUFragmentState{
+            .nextInChain = null,
+            .module = @ptrCast(c.WGPUShaderModule, frag.module.ptr),
+            .entryPoint = frag.entry_point,
+            .constantCount = if (frag.constants) |v| @intCast(u32, v.len) else 0,
+            .constants = if (frag.constants) |v| @ptrCast([*]const c.WGPUConstantEntry, v.ptr) else null,
+            .targetCount = if (frag.targets) |v| @intCast(u32, v.len) else 0,
+            .targets = if (frag.targets) |v| @ptrCast([*]const c.WGPUColorTargetState, v.ptr) else null,
+        };
+    }
 
     return c.WGPURenderPipelineDescriptor{
         .nextInChain = null,
@@ -844,7 +846,7 @@ inline fn convertRenderPipelineDescriptor(
             .mask = d.multisample.mask,
             .alphaToCoverageEnabled = d.multisample.alpha_to_coverage_enabled,
         },
-        .fragment = tmp_fragment_state,
+        .fragment = if (d.fragment != null) tmp_fragment_state else null,
     };
 }
 

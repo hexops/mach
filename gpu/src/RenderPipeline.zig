@@ -43,7 +43,7 @@ pub const Descriptor = struct {
     primitive: PrimitiveState,
     depth_stencil: ?*const DepthStencilState,
     multisample: MultisampleState,
-    fragment: *const FragmentState,
+    fragment: ?*const FragmentState,
 };
 
 pub const CreateStatus = enum(u32) {
