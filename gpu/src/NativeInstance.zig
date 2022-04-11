@@ -1298,7 +1298,7 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             ptr: *anyopaque,
             group_index: u32,
             group: BindGroup,
-            dynamic_offsets: []u32,
+            dynamic_offsets: []const u32,
         ) void {
             c.wgpuRenderPassEncoderSetBindGroup(
                 @ptrCast(c.WGPURenderPassEncoder, ptr),
@@ -1495,7 +1495,7 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
             ptr: *anyopaque,
             group_index: u32,
             group: BindGroup,
-            dynamic_offsets: []u32,
+            dynamic_offsets: []const u32,
         ) void {
             c.wgpuRenderBundleEncoderSetBindGroup(
                 @ptrCast(c.WGPURenderBundleEncoder, ptr),
@@ -2157,7 +2157,7 @@ const compute_pass_encoder_vtable = ComputePassEncoder.VTable{
             ptr: *anyopaque,
             group_index: u32,
             group: BindGroup,
-            dynamic_offsets: []u32,
+            dynamic_offsets: []const u32,
         ) void {
             c.wgpuComputePassEncoderSetBindGroup(
                 @ptrCast(c.WGPUComputePassEncoder, ptr),
