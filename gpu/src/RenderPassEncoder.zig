@@ -37,7 +37,7 @@ pub const VTable = struct {
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     popDebugGroup: fn (ptr: *anyopaque) void,
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
-    setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
+    setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []const u32) void,
     setBlendConstant: fn (ptr: *anyopaque, color: *const Color) void,
     setIndexBuffer: fn (ptr: *anyopaque, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
@@ -118,7 +118,7 @@ pub inline fn setBindGroup(
     pass: RenderPassEncoder,
     group_index: u32,
     group: BindGroup,
-    dynamic_offsets: []u32,
+    dynamic_offsets: []const u32,
 ) void {
     pass.vtable.setBindGroup(pass.ptr, group_index, group, dynamic_offsets);
 }
