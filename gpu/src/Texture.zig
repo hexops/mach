@@ -218,7 +218,7 @@ pub const BindingLayout = extern struct {
 
 pub const DataLayout = extern struct {
     reserved: ?*anyopaque = null,
-    offset: u64,
+    offset: u64 = 0,
     bytes_per_row: u32,
     rows_per_image: u32,
 };

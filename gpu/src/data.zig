@@ -45,21 +45,21 @@ pub const Color = extern struct {
 
 pub const Extent3D = extern struct {
     width: u32,
-    height: u32,
-    depth_or_array_layers: u32,
+    height: u32 = 1,
+    depth_or_array_layers: u32 = 1,
 };
 
 pub const Origin3D = extern struct {
-    x: u32,
-    y: u32,
-    z: u32,
+    x: u32 = 0,
+    y: u32 = 0,
+    z: u32 = 0,
 };
 
 pub const StencilFaceState = extern struct {
-    compare: CompareFunction,
-    fail_op: StencilOperation,
-    depth_fail_op: StencilOperation,
-    pass_op: StencilOperation,
+    compare: CompareFunction = .always,
+    fail_op: StencilOperation = .keep,
+    depth_fail_op: StencilOperation = .keep,
+    pass_op: StencilOperation = .keep,
 };
 
 pub const VertexAttribute = extern struct {
@@ -69,9 +69,9 @@ pub const VertexAttribute = extern struct {
 };
 
 pub const BlendComponent = extern struct {
-    operation: BlendOperation,
-    src_factor: BlendFactor,
-    dst_factor: BlendFactor,
+    operation: BlendOperation = .add,
+    src_factor: BlendFactor = .one,
+    dst_factor: BlendFactor = .zero,
 };
 
 pub const BlendState = extern struct {
@@ -81,7 +81,7 @@ pub const BlendState = extern struct {
 
 pub const VertexBufferLayout = extern struct {
     array_stride: u64,
-    step_mode: VertexStepMode,
+    step_mode: VertexStepMode = .vertex,
     attribute_count: u32,
     attributes: [*]const VertexAttribute,
 };
