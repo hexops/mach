@@ -236,14 +236,14 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     const include_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, "include" }) catch unreachable;
 
     step.addLibraryPath(target_cache_dir);
-    step.linkSystemLibrary("dawn");
+    step.linkSystemLibraryName("dawn");
     step.linkLibCpp();
 
     step.addIncludeDir(include_dir);
     step.addIncludeDir(thisDir() ++ "/src/dawn");
 
     if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
-        step.linkSystemLibrary("X11");
+        step.linkSystemLibraryName("X11");
     }
     if (options.metal.?) {
         step.linkFramework("Metal");
@@ -254,8 +254,8 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         step.linkFramework("QuartzCore");
     }
     if (options.d3d12.?) {
-        step.linkSystemLibrary("ole32");
-        step.linkSystemLibrary("dxguid");
+        step.linkSystemLibraryName("ole32");
+        step.linkSystemLibraryName("dxguid");
     }
 }
 
@@ -701,8 +701,8 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
     var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
     if (options.d3d12.?) {
-        lib.linkSystemLibrary("dxgi");
-        lib.linkSystemLibrary("dxguid");
+        lib.linkSystemLibraryName("dxgi");
+        lib.linkSystemLibraryName("dxguid");
 
         for ([_][]const u8{
             "src/dawn/mingw_helpers.cpp",
@@ -739,7 +739,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     }
 
     if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
-        lib.linkSystemLibrary("X11");
+        lib.linkSystemLibraryName("X11");
         for ([_][]const u8{
             "src/dawn/native/XlibXcbFunctions.cpp",
         }) |path| {
@@ -1136,7 +1136,7 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (target.os.tag == .macos) lib.linkFramework("CoreFoundation");
-    if (target.os.tag == .windows) lib.linkSystemLibrary("bcrypt");
+    if (target.os.tag == .windows) lib.linkSystemLibraryName("bcrypt");
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
     flags.appendSlice(&.{
@@ -1304,10 +1304,10 @@ fn buildLibDxcompiler(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     };
     system_sdk.include(b, lib, .{});
 
-    lib.linkSystemLibrary("oleaut32");
-    lib.linkSystemLibrary("ole32");
-    lib.linkSystemLibrary("dbghelp");
-    lib.linkSystemLibrary("dxguid");
+    lib.linkSystemLibraryName("oleaut32");
+    lib.linkSystemLibraryName("ole32");
+    lib.linkSystemLibraryName("dbghelp");
+    lib.linkSystemLibraryName("dxguid");
     lib.linkLibCpp();
 
     var flags = std.ArrayList([]const u8).init(b.allocator);

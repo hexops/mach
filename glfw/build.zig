@@ -115,14 +115,14 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => {
-            step.linkSystemLibrary("gdi32");
-            step.linkSystemLibrary("user32");
-            step.linkSystemLibrary("shell32");
+            step.linkSystemLibraryName("gdi32");
+            step.linkSystemLibraryName("user32");
+            step.linkSystemLibraryName("shell32");
             if (options.opengl) {
-                step.linkSystemLibrary("opengl32");
+                step.linkSystemLibraryName("opengl32");
             }
             if (options.gles) {
-                step.linkSystemLibrary("GLESv3");
+                step.linkSystemLibraryName("GLESv3");
             }
         },
         .macos => {
@@ -134,7 +134,7 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
             if (options.opengl) {
                 step.linkFramework("OpenGL");
             }
-            step.linkSystemLibrary("objc");
+            step.linkSystemLibraryName("objc");
             step.linkFramework("AppKit");
             step.linkFramework("CoreServices");
             step.linkFramework("CoreGraphics");
@@ -144,20 +144,20 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
             // Assume Linux-like
             switch (options.linux_window_manager) {
                 .X11 => {
-                    step.linkSystemLibrary("X11");
-                    step.linkSystemLibrary("xcb");
-                    step.linkSystemLibrary("Xau");
-                    step.linkSystemLibrary("Xdmcp");
+                    step.linkSystemLibraryName("X11");
+                    step.linkSystemLibraryName("xcb");
+                    step.linkSystemLibraryName("Xau");
+                    step.linkSystemLibraryName("Xdmcp");
                 },
-                .Wayland => step.linkSystemLibrary("wayland-client"),
+                .Wayland => step.linkSystemLibraryName("wayland-client"),
             }
             // Note: no need to link against vulkan, GLFW finds it dynamically at runtime.
             // https://www.glfw.org/docs/3.3/vulkan_guide.html#vulkan_loader
             if (options.opengl) {
-                step.linkSystemLibrary("GL");
+                step.linkSystemLibraryName("GL");
             }
             if (options.gles) {
-                step.linkSystemLibrary("GLESv3");
+                step.linkSystemLibraryName("GLESv3");
             }
         },
     }
