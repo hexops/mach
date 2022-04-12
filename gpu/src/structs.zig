@@ -1,4 +1,5 @@
 //! Structures which are not ABI compatible with webgpu.h
+const math = @import("std").math;
 const Buffer = @import("Buffer.zig");
 const Sampler = @import("Sampler.zig");
 const Texture = @import("Texture.zig");
@@ -25,16 +26,16 @@ const ErrorType = @import("enums.zig").ErrorType;
 const LoggingType = @import("enums.zig").LoggingType;
 
 pub const MultisampleState = struct {
-    count: u32,
-    mask: u32,
-    alpha_to_coverage_enabled: bool,
+    count: u32 = 1,
+    mask: u32 = 0xffff_ffff,
+    alpha_to_coverage_enabled: bool = false,
 };
 
 pub const PrimitiveState = struct {
-    topology: PrimitiveTopology,
-    strip_index_format: IndexFormat,
-    front_face: FrontFace,
-    cull_mode: CullMode,
+    topology: PrimitiveTopology = .triangle_list,
+    strip_index_format: IndexFormat = .none,
+    front_face: FrontFace = .ccw,
+    cull_mode: CullMode = .none,
 };
 
 pub const StorageTextureBindingLayout = extern struct {
@@ -46,15 +47,15 @@ pub const StorageTextureBindingLayout = extern struct {
 
 pub const DepthStencilState = struct {
     format: Texture.Format,
-    depth_write_enabled: bool,
-    depth_compare: CompareFunction,
-    stencil_front: StencilFaceState,
-    stencil_back: StencilFaceState,
-    stencil_read_mask: u32,
-    stencil_write_mask: u32,
-    depth_bias: i32,
-    depth_bias_slope_scale: f32,
-    depth_bias_clamp: f32,
+    depth_write_enabled: bool = false,
+    depth_compare: CompareFunction = .always,
+    stencil_front: StencilFaceState = .{},
+    stencil_back: StencilFaceState = .{},
+    stencil_read_mask: u32 = 0xffff_ffff,
+    stencil_write_mask: u32 = 0xffff_ffff,
+    depth_bias: i32 = 0,
+    depth_bias_slope_scale: f32 = 0.0,
+    depth_bias_clamp: f32 = 0.0,
 };
 
 // TODO: how does this map to browser API?
@@ -87,22 +88,22 @@ pub const RenderPassDepthStencilAttachment = struct {
     view: TextureView,
     depth_load_op: LoadOp,
     depth_store_op: StoreOp,
-    clear_depth: f32,
-    depth_clear_value: f32,
-    depth_read_only: bool,
+    clear_depth: f32 = math.nan_f32,
+    depth_clear_value: f32 = 0.0,
+    depth_read_only: bool = false,
     stencil_load_op: LoadOp,
     stencil_store_op: StoreOp,
-    clear_stencil: u32,
-    stencil_clear_value: u32,
-    stencil_read_only: bool,
+    clear_stencil: u32 = 0,
+    stencil_clear_value: u32 = 0.0,
+    stencil_read_only: bool = false,
 };
 
 pub const RenderPassColorAttachment = struct {
     view: TextureView,
-    resolve_target: ?TextureView,
+    resolve_target: ?TextureView = null,
     load_op: LoadOp,
     store_op: StoreOp,
-    clear_value: Color,
+    clear_value: Color = .{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 },
 };
 
 pub const VertexState = struct {
@@ -123,7 +124,7 @@ pub const ColorTargetState = extern struct {
     reserved: ?*anyopaque = null,
     format: Texture.Format,
     blend: *const BlendState,
-    write_mask: ColorWriteMask,
+    write_mask: ColorWriteMask = ColorWriteMask.all,
 };
 
 pub const ImageCopyBuffer = struct {
@@ -133,9 +134,9 @@ pub const ImageCopyBuffer = struct {
 
 pub const ImageCopyTexture = struct {
     texture: Texture,
-    mip_level: u32,
-    origin: Origin3D,
-    aspect: Texture.Aspect,
+    mip_level: u32 = 0,
+    origin: Origin3D = .{},
+    aspect: Texture.Aspect = .all,
 };
 
 pub const ErrorCallback = struct {
