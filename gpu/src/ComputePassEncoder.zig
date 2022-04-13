@@ -20,7 +20,7 @@ pub const VTable = struct {
     insertDebugMarker: fn (ptr: *anyopaque, marker_label: [*:0]const u8) void,
     popDebugGroup: fn (ptr: *anyopaque) void,
     pushDebugGroup: fn (ptr: *anyopaque, group_label: [*:0]const u8) void,
-    setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: []u32) void,
+    setBindGroup: fn (ptr: *anyopaque, group_index: u32, group: BindGroup, dynamic_offsets: ?[]u32) void,
     setLabel: fn (ptr: *anyopaque, label: [:0]const u8) void,
     setPipeline: fn (ptr: *anyopaque, pipeline: ComputePipeline) void,
     writeTimestamp: fn (ptr: *anyopaque, query_set: QuerySet, query_index: u32) void,
@@ -71,7 +71,7 @@ pub inline fn setBindGroup(
     enc: ComputePassEncoder,
     group_index: u32,
     group: BindGroup,
-    dynamic_offsets: []u32,
+    dynamic_offsets: ?[]u32,
 ) void {
     enc.vtable.setBindGroup(enc.ptr, group_index, group, dynamic_offsets);
 }

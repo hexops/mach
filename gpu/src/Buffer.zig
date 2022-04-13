@@ -43,7 +43,7 @@ pub inline fn getConstMappedRange(buf: Buffer, comptime T: type, offset: usize, 
 
 pub inline fn getMappedRange(buf: Buffer, comptime T: type, offset: usize, len: usize) []T {
     const data = buf.vtable.getMappedRange(buf.ptr, offset, @sizeOf(T) * len);
-    return @ptrCast([*]T, data.ptr)[0..len];
+    return @ptrCast([*]T, @alignCast(@alignOf(T), data.ptr))[0..len];
 }
 
 pub inline fn setLabel(buf: Buffer, label: [:0]const u8) void {
@@ -91,7 +91,7 @@ pub const Descriptor = extern struct {
     label: ?[*:0]const u8 = null,
     usage: BufferUsage,
     size: usize,
-    mapped_at_creation: bool,
+    mapped_at_creation: bool = false,
 };
 
 pub const BindingType = enum(u32) {

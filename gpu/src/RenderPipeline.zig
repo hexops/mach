@@ -38,12 +38,12 @@ pub inline fn getBindGroupLayout(pipeline: RenderPipeline, group_index: u32) Bin
 
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
-    layout: ?PipelineLayout,
+    layout: ?PipelineLayout = null,
     vertex: VertexState,
-    primitive: PrimitiveState,
-    depth_stencil: ?*const DepthStencilState,
-    multisample: MultisampleState,
-    fragment: ?*const FragmentState,
+    primitive: PrimitiveState = .{},
+    depth_stencil: ?*const DepthStencilState = null,
+    multisample: MultisampleState = .{},
+    fragment: ?*const FragmentState = null,
 };
 
 pub const CreateStatus = enum(u32) {

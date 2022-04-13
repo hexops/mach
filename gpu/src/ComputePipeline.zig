@@ -34,7 +34,7 @@ pub inline fn getBindGroupLayout(pipeline: ComputePipeline, group_index: u32) Bi
 
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
-    layout: PipelineLayout,
+    layout: ?PipelineLayout = null,
     compute: ProgrammableStageDescriptor,
 };
 
