@@ -19,7 +19,7 @@ vtable: *const VTable,
 pub const VTable = struct {
     reference: fn (ptr: *anyopaque) void,
     release: fn (ptr: *anyopaque) void,
-    beginComputePass: fn (ptr: *anyopaque, descriptor: *const ComputePassEncoder.Descriptor) ComputePassEncoder,
+    beginComputePass: fn (ptr: *anyopaque, descriptor: ?*const ComputePassEncoder.Descriptor) ComputePassEncoder,
     beginRenderPass: fn (ptr: *anyopaque, descriptor: *const RenderPassEncoder.Descriptor) RenderPassEncoder,
     clearBuffer: fn (ptr: *anyopaque, buffer: Buffer, offset: u64, size: u64) void,
     copyBufferToBuffer: fn (ptr: *anyopaque, source: Buffer, source_offset: u64, destination: Buffer, destination_offset: u64, size: u64) void,
@@ -45,7 +45,7 @@ pub inline fn release(enc: CommandEncoder) void {
     enc.vtable.release(enc.ptr);
 }
 
-pub inline fn beginComputePass(enc: CommandEncoder, descriptor: *const ComputePassEncoder.Descriptor) ComputePassEncoder {
+pub inline fn beginComputePass(enc: CommandEncoder, descriptor: ?*const ComputePassEncoder.Descriptor) ComputePassEncoder {
     return enc.vtable.beginComputePass(enc.ptr, descriptor);
 }
 

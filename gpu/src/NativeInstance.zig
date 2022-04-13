@@ -775,7 +775,7 @@ inline fn convertComputePipelineDescriptor(descriptor: *const ComputePipeline.De
     return .{
         .nextInChain = null,
         .label = if (descriptor.label) |l| l else null,
-        .layout = @ptrCast(c.WGPUPipelineLayout, descriptor.layout.ptr),
+        .layout = if (descriptor.layout) |l| @ptrCast(c.WGPUPipelineLayout, l.ptr) else null,
         .compute = c.WGPUProgrammableStageDescriptor{
             .nextInChain = null,
             .module = @ptrCast(c.WGPUShaderModule, descriptor.compute.module.ptr),
@@ -1842,37 +1842,41 @@ const command_encoder_vtable = CommandEncoder.VTable{
         }
     }).setLabel,
     .beginComputePass = (struct {
-        pub fn beginComputePass(ptr: *anyopaque, d: *const ComputePassEncoder.Descriptor) ComputePassEncoder {
-            var few_timestamp_writes: [8]c.WGPUComputePassTimestampWrite = undefined;
-            const timestamp_writes = if (d.timestamp_writes.len <= 8) blk: {
-                for (d.timestamp_writes) |v, i| {
-                    few_timestamp_writes[i] = c.WGPUComputePassTimestampWrite{
-                        .querySet = @ptrCast(c.WGPUQuerySet, v.query_set.ptr),
-                        .queryIndex = v.query_index,
-                        .location = @enumToInt(v.location),
-                    };
-                }
-                break :blk few_timestamp_writes[0..d.timestamp_writes.len];
-            } else blk: {
-                const mem = std.heap.page_allocator.alloc(c.WGPUComputePassTimestampWrite, d.timestamp_writes.len) catch unreachable;
-                for (d.timestamp_writes) |v, i| {
-                    mem[i] = c.WGPUComputePassTimestampWrite{
-                        .querySet = @ptrCast(c.WGPUQuerySet, v.query_set.ptr),
-                        .queryIndex = v.query_index,
-                        .location = @enumToInt(v.location),
-                    };
-                }
-                break :blk mem;
-            };
-            defer if (d.timestamp_writes.len > 8) std.heap.page_allocator.free(timestamp_writes);
+        pub fn beginComputePass(ptr: *anyopaque, descriptor: ?*const ComputePassEncoder.Descriptor) ComputePassEncoder {
+            if (descriptor) |d| {
+                var few_timestamp_writes: [8]c.WGPUComputePassTimestampWrite = undefined;
+                const timestamp_writes = if (d.timestamp_writes.len <= 8) blk: {
+                    for (d.timestamp_writes) |v, i| {
+                        few_timestamp_writes[i] = c.WGPUComputePassTimestampWrite{
+                            .querySet = @ptrCast(c.WGPUQuerySet, v.query_set.ptr),
+                            .queryIndex = v.query_index,
+                            .location = @enumToInt(v.location),
+                        };
+                    }
+                    break :blk few_timestamp_writes[0..d.timestamp_writes.len];
+                } else blk: {
+                    const mem = std.heap.page_allocator.alloc(c.WGPUComputePassTimestampWrite, d.timestamp_writes.len) catch unreachable;
+                    for (d.timestamp_writes) |v, i| {
+                        mem[i] = c.WGPUComputePassTimestampWrite{
+                            .querySet = @ptrCast(c.WGPUQuerySet, v.query_set.ptr),
+                            .queryIndex = v.query_index,
+                            .location = @enumToInt(v.location),
+                        };
+                    }
+                    break :blk mem;
+                };
+                defer if (d.timestamp_writes.len > 8) std.heap.page_allocator.free(timestamp_writes);
 
-            const desc = c.WGPUComputePassDescriptor{
-                .nextInChain = null,
-                .label = if (d.label) |l| l else null,
-                .timestampWriteCount = @intCast(u32, timestamp_writes.len),
-                .timestampWrites = @ptrCast([*]const c.WGPUComputePassTimestampWrite, timestamp_writes.ptr),
-            };
-            return wrapComputePassEncoder(c.wgpuCommandEncoderBeginComputePass(@ptrCast(c.WGPUCommandEncoder, ptr), &desc));
+                const desc = c.WGPUComputePassDescriptor{
+                    .nextInChain = null,
+                    .label = if (d.label) |l| l else null,
+                    .timestampWriteCount = @intCast(u32, timestamp_writes.len),
+                    .timestampWrites = @ptrCast([*]const c.WGPUComputePassTimestampWrite, timestamp_writes.ptr),
+                };
+                return wrapComputePassEncoder(c.wgpuCommandEncoderBeginComputePass(@ptrCast(c.WGPUCommandEncoder, ptr), &desc));
+            } else {
+                return wrapComputePassEncoder(c.wgpuCommandEncoderBeginComputePass(@ptrCast(c.WGPUCommandEncoder, ptr), null));
+            }
         }
     }).beginComputePass,
     .beginRenderPass = (struct {
@@ -2157,14 +2161,14 @@ const compute_pass_encoder_vtable = ComputePassEncoder.VTable{
             ptr: *anyopaque,
             group_index: u32,
             group: BindGroup,
-            dynamic_offsets: []const u32,
+            dynamic_offsets: ?[]const u32,
         ) void {
             c.wgpuComputePassEncoderSetBindGroup(
                 @ptrCast(c.WGPUComputePassEncoder, ptr),
                 group_index,
                 @ptrCast(c.WGPUBindGroup, group.ptr),
-                @intCast(u32, dynamic_offsets.len),
-                dynamic_offsets.ptr,
+                if (dynamic_offsets) |d| @intCast(u32, d.len) else 0,
+                if (dynamic_offsets) |d| d.ptr else null,
             );
         }
     }).setBindGroup,

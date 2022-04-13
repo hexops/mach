@@ -182,7 +182,7 @@ pub inline fn writeTimestamp(pass: RenderPassEncoder, query_set: QuerySet, query
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     color_attachments: []const RenderPassColorAttachment,
-    depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment,
+    depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment = null,
     occlusion_query_set: ?QuerySet = null,
     timestamp_writes: ?[]RenderPassTimestampWrite = null,
 };

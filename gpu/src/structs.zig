@@ -69,7 +69,7 @@ pub const ProgrammableStageDescriptor = struct {
     label: ?[*:0]const u8 = null,
     module: ShaderModule,
     entry_point: [*:0]const u8,
-    constants: ?[]const ConstantEntry,
+    constants: ?[]const ConstantEntry = null,
 };
 
 pub const ComputePassTimestampWrite = struct {
@@ -123,7 +123,7 @@ pub const FragmentState = struct {
 pub const ColorTargetState = extern struct {
     reserved: ?*anyopaque = null,
     format: Texture.Format,
-    blend: *const BlendState,
+    blend: ?*const BlendState = null,
     write_mask: ColorWriteMask = ColorWriteMask.all,
 };
 
