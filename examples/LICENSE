@@ -1,0 +1,3 @@
+The following examples have been ported from https://github.com/austinEng/webgpu-samples and are licensed under BSD 3-Clause License (provided in LICENSE.webgpu-samples):
+
+* ./boids/
