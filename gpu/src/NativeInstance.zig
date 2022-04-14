@@ -1898,7 +1898,7 @@ const command_encoder_vtable = CommandEncoder.VTable{
                         .view = @ptrCast(c.WGPUTextureView, v.view.ptr),
                         .resolveTarget = if (v.resolve_target) |t| @ptrCast(c.WGPUTextureView, t.ptr) else null,
                         .loadOp = @enumToInt(v.load_op),
-                        .storeOp = @enumToInt(v.load_op),
+                        .storeOp = @enumToInt(v.store_op),
                         .clearValue = @bitCast(c.WGPUColor, v.clear_value),
                         // deprecated:
                         .clearColor = c.WGPUColor{
@@ -1917,7 +1917,7 @@ const command_encoder_vtable = CommandEncoder.VTable{
                         .view = @ptrCast(c.WGPUTextureView, v.view.ptr),
                         .resolveTarget = if (v.resolve_target) |t| @ptrCast(c.WGPUTextureView, t.ptr) else null,
                         .loadOp = @enumToInt(v.load_op),
-                        .storeOp = @enumToInt(v.load_op),
+                        .storeOp = @enumToInt(v.store_op),
                         .clearValue = @bitCast(c.WGPUColor, v.clear_value),
                         // deprecated:
                         .clearColor = c.WGPUColor{
