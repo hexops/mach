@@ -23,14 +23,31 @@ pub fn build(b: *std.build.Builder) void {
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);
 
-
-    inline for ([_][] const u8{"triangle", "boids"}) |name| {
+    inline for ([_][]const u8{ "triangle", "boids" }) |name| {
         const example = b.addExecutable("example-" ++ name, "examples/" ++ name ++ "/main.zig");
         example.setTarget(target);
         example.setBuildMode(mode);
         example.addPackage(pkg);
         example.addPackage(gpu.pkg);
         example.addPackage(glfw.pkg);
+        link(b, example, options);
+        example.install();
+
+        const example_run_cmd = example.run();
+        example_run_cmd.step.dependOn(b.getInstallStep());
+        const example_run_step = b.step("run-example-" ++ name, "Run the example");
+        example_run_step.dependOn(&example_run_cmd.step);
+    }
+
+    const zmath_pkg = @import("zmath/build.zig").pkg;
+    inline for ([_][]const u8{ "mandelbrot", "fragment-shader", "rotating-cube" }) |name| {
+        const example = b.addExecutable("example-" ++ name, "examples/" ++ name ++ "/main.zig");
+        example.setTarget(target);
+        example.setBuildMode(mode);
+        example.addPackage(pkg);
+        example.addPackage(gpu.pkg);
+        example.addPackage(glfw.pkg);
+        example.addPackage(zmath_pkg);
         link(b, example, options);
         example.install();
 
