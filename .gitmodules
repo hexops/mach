@@ -9,3 +9,6 @@
         shallow = true
         branch = "mach"
 
+[submodule "/media/data/Projects/ZigProgramming/testing-mach/forked/mach/gpu-dawn/libs/dawn"]
+	path = /media/data/Projects/ZigProgramming/testing-mach/forked/mach/gpu-dawn/libs/dawn
+	url = https://github.com/hexops/dawn
