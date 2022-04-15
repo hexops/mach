@@ -246,9 +246,9 @@ fn frame(app: *App, params: *FrameParams) !void {
 
     {
         const time = @intToFloat(f32, timer.read()) / @as(f32, std.time.ns_per_s);
-        const model = zm.rotationZ(time * (std.math.pi / 2.0));
+        const model = zm.mul(zm.rotationX(time * (std.math.pi / 2.0)), zm.rotationZ(time * (std.math.pi / 2.0)));
         const view = zm.lookAtRh(
-            zm.f32x4(2, 2, 2, 1),
+            zm.f32x4(0, 4, 2, 1),
             zm.f32x4(0, 0, 0, 1),
             zm.f32x4(0, 0, 1, 0),
         );

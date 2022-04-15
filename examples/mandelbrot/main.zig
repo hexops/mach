@@ -134,19 +134,23 @@ pub fn main() !void {
     const queue = app.device.getQueue();
 
     const vertex_buffer = app.device.createBuffer(&.{
-        .usage = .{ .copy_dst = true, .vertex = true },
+        .usage = .{ .vertex = true },
         .size = @sizeOf(Vertex) * vertices.len,
-        .mapped_at_creation = false,
+        .mapped_at_creation = true,
     });
-    queue.writeBuffer(vertex_buffer, 0, Vertex, vertices[0..]);
+    var vertex_mapped = vertex_buffer.getMappedRange(Vertex, 0, vertices.len);
+    std.mem.copy(Vertex, vertex_mapped, vertices[0..]);
+    vertex_buffer.unmap();
     defer vertex_buffer.release();
 
     const index_buffer = app.device.createBuffer(&.{
-        .usage = .{ .copy_dst = true, .index = true },
-        .size = @sizeOf(u16) * indices.len,
-        .mapped_at_creation = false,
+        .usage = .{ .index = true },
+        .size = @sizeOf(@TypeOf(indices[0])) * indices.len,
+        .mapped_at_creation = true,
     });
-    queue.writeBuffer(index_buffer, 0, @TypeOf(indices[0]), indices[0..]);
+    var index_mapped = index_buffer.getMappedRange(@TypeOf(indices[0]), 0, indices.len);
+    std.mem.copy(@TypeOf(indices[0]), index_mapped, indices[0..]);
+    index_buffer.unmap();
     defer index_buffer.release();
 
     const uniform_buffer = app.device.createBuffer(&.{
@@ -231,7 +235,7 @@ fn frame(app: *App, params: *FrameParams) !void {
 
     const pass = encoder.beginRenderPass(&render_pass_info);
     pass.setVertexBuffer(0, params.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
-    pass.setIndexBuffer(params.index_buffer, .uint16, 0, @sizeOf(u16) * indices.len);
+    pass.setIndexBuffer(params.index_buffer, .uint16, 0, @sizeOf(@TypeOf(indices[0])) * indices.len);
     pass.setPipeline(params.pipeline);
     pass.setBindGroup(0, params.bind_group, &.{0});
     pass.drawIndexed(indices.len, 1, 0, 0, 0);

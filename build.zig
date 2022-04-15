@@ -40,7 +40,7 @@ pub fn build(b: *std.build.Builder) void {
     }
 
     const zmath_pkg = @import("zmath/build.zig").pkg;
-    inline for ([_][]const u8{ "mandelbrot", "fragment-shader", "rotating-cube" }) |name| {
+    inline for ([_][]const u8{ "mandelbrot", "fragment-shader", "rotating-cube", "two-cubes" }) |name| {
         const example = b.addExecutable("example-" ++ name, "examples/" ++ name ++ "/main.zig");
         example.setTarget(target);
         example.setBuildMode(mode);

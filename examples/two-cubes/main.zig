@@ -7,28 +7,72 @@ const zm = @import("zmath");
 const App = mach.App(*FrameParams, .{});
 
 const Vertex = struct {
-    pos: @Vector(3, f32),
+    pos: @Vector(4, f32),
+    col: @Vector(4, f32),
     uv: @Vector(2, f32),
 };
 
-// These vertices will make a simple square, on which we will draw with our fragment shader
 const vertices = [_]Vertex{
-    .{ .pos = .{ -0.5, 0, -0.5 }, .uv = .{ 0, 0 } },
-    .{ .pos = .{ 0.5, 0, -0.5 }, .uv = .{ 1, 0 } },
-    .{ .pos = .{ 0.5, 0, 0.5 }, .uv = .{ 1, 1 } },
-    .{ .pos = .{ -0.5, 0, 0.5 }, .uv = .{ 0, 1 } },
-};
-// GPUs expext triangles so we can either rewrite some vertices in the Vertex buffer,
-// Or we can use an Index buffer so that we can send less data to the gpu
-const indices = [_]u16{ 0, 1, 2, 2, 3, 0 };
+    .{ .pos = .{ 1, -1, 1, 1 }, .col = .{ 1, 0, 1, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ -1, -1, 1, 1 }, .col = .{ 0, 0, 1, 1 }, .uv = .{ 0, 1 } },
+    .{ .pos = .{ -1, -1, -1, 1 }, .col = .{ 0, 0, 0, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ 1, -1, -1, 1 }, .col = .{ 1, 0, 0, 1 }, .uv = .{ 1, 0 } },
+    .{ .pos = .{ 1, -1, 1, 1 }, .col = .{ 1, 0, 1, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ -1, -1, -1, 1 }, .col = .{ 0, 0, 0, 1 }, .uv = .{ 0, 0 } },
 
-// The data we will send to the gpu on each frame.
-// In other gpu APIs we may want to send this data using
-// different methods (like push constants on vulkan) but
-// these are not defined yet in the current gpuweb specification
+    .{ .pos = .{ 1, 1, 1, 1 }, .col = .{ 1, 1, 1, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ 1, -1, 1, 1 }, .col = .{ 1, 0, 1, 1 }, .uv = .{ 0, 1 } },
+    .{ .pos = .{ 1, -1, -1, 1 }, .col = .{ 1, 0, 0, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ 1, 1, -1, 1 }, .col = .{ 1, 1, 0, 1 }, .uv = .{ 1, 0 } },
+    .{ .pos = .{ 1, 1, 1, 1 }, .col = .{ 1, 1, 1, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ 1, -1, -1, 1 }, .col = .{ 1, 0, 0, 1 }, .uv = .{ 0, 0 } },
+
+    .{ .pos = .{ -1, 1, 1, 1 }, .col = .{ 0, 1, 1, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ 1, 1, 1, 1 }, .col = .{ 1, 1, 1, 1 }, .uv = .{ 0, 1 } },
+    .{ .pos = .{ 1, 1, -1, 1 }, .col = .{ 1, 1, 0, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ -1, 1, -1, 1 }, .col = .{ 0, 1, 0, 1 }, .uv = .{ 1, 0 } },
+    .{ .pos = .{ -1, 1, 1, 1 }, .col = .{ 0, 1, 1, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ 1, 1, -1, 1 }, .col = .{ 1, 1, 0, 1 }, .uv = .{ 0, 0 } },
+
+    .{ .pos = .{ -1, -1, 1, 1 }, .col = .{ 0, 0, 1, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ -1, 1, 1, 1 }, .col = .{ 0, 1, 1, 1 }, .uv = .{ 0, 1 } },
+    .{ .pos = .{ -1, 1, -1, 1 }, .col = .{ 0, 1, 0, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ -1, -1, -1, 1 }, .col = .{ 0, 0, 0, 1 }, .uv = .{ 1, 0 } },
+    .{ .pos = .{ -1, -1, 1, 1 }, .col = .{ 0, 0, 1, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ -1, 1, -1, 1 }, .col = .{ 0, 1, 0, 1 }, .uv = .{ 0, 0 } },
+
+    .{ .pos = .{ 1, 1, 1, 1 }, .col = .{ 1, 1, 1, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ -1, 1, 1, 1 }, .col = .{ 0, 1, 1, 1 }, .uv = .{ 0, 1 } },
+    .{ .pos = .{ -1, -1, 1, 1 }, .col = .{ 0, 0, 1, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ -1, -1, 1, 1 }, .col = .{ 0, 0, 1, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ 1, -1, 1, 1 }, .col = .{ 1, 0, 1, 1 }, .uv = .{ 1, 0 } },
+    .{ .pos = .{ 1, 1, 1, 1 }, .col = .{ 1, 1, 1, 1 }, .uv = .{ 1, 1 } },
+
+    .{ .pos = .{ 1, -1, -1, 1 }, .col = .{ 1, 0, 0, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ -1, -1, -1, 1 }, .col = .{ 0, 0, 0, 1 }, .uv = .{ 0, 1 } },
+    .{ .pos = .{ -1, 1, -1, 1 }, .col = .{ 0, 1, 0, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ 1, 1, -1, 1 }, .col = .{ 1, 1, 0, 1 }, .uv = .{ 1, 0 } },
+    .{ .pos = .{ 1, -1, -1, 1 }, .col = .{ 1, 0, 0, 1 }, .uv = .{ 1, 1 } },
+    .{ .pos = .{ -1, 1, -1, 1 }, .col = .{ 0, 1, 0, 1 }, .uv = .{ 0, 0 } },
+};
+
+// If you want to use indices for the cube
+// const vertices = [_]Vertex{
+//     .{ .pos = .{ -0.5, -0.5, -0.5 }, .col = .{ 1, 0, 0 } },
+//     .{ .pos = .{ 0.5, -0.5, -0.5 }, .col = .{ 0, 1, 0 } },
+//     .{ .pos = .{ 0.5, 0.5, -0.5 }, .col = .{ 0, 0, 1 } },
+//     .{ .pos = .{ -0.5, 0.5, -0.5 }, .col = .{ 0, 0, 0 } },
+
+//     .{ .pos = .{ -0.5, -0.5, 0.5 }, .col = .{ 1, 0, 0 } },
+//     .{ .pos = .{ 0.5, -0.5, 0.5 }, .col = .{ 0, 1, 0 } },
+//     .{ .pos = .{ 0.5, 0.5, 0.5 }, .col = .{ 0, 0, 1 } },
+//     .{ .pos = .{ -0.5, 0.5, 0.5 }, .col = .{ 0, 0, 0 } },
+// };
+
+// const indices = [_]u16{ 0, 1, 2, 2, 3, 0, 0, 1, 4, 4, 5, 1, 5, 1, 6, 6, 1, 2, 3, 2, 7, 7, 6, 2, 0, 3, 4, 4, 7, 3, 4, 5, 6, 6, 7, 4 };
+
 const UniformBufferObject = struct {
     mat: zm.Mat,
-    time: f32,
 };
 
 var timer: std.time.Timer = undefined;
@@ -41,7 +85,6 @@ pub fn main() !void {
     const ctx = try allocator.create(FrameParams);
     var app = try App.init(allocator, ctx, .{});
 
-    // I prefer closing the example windows pressing space for simple examples
     app.window.setKeyCallback(struct {
         fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
             _ = scancode;
@@ -54,17 +97,15 @@ pub fn main() !void {
             }
         }
     }.callback);
-    // On linux it has a strange effect when you try to minimize the width or height to zero
-    // This prevents the problem, note that it doesn't stop you from minimizing the window
     try app.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
     const vs_module = app.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
-    // Tell the vertex shader how to read the Vertex buffer
+
     const vertex_attributes = [_]gpu.VertexAttribute{
-        .{ .format = .float32x3, .offset = @offsetOf(Vertex, "pos"), .shader_location = 0 }, // main( @location(0) .... check vert.wgsl
+        .{ .format = .float32x4, .offset = @offsetOf(Vertex, "pos"), .shader_location = 0 },
         .{ .format = .float32x2, .offset = @offsetOf(Vertex, "uv"), .shader_location = 1 },
     };
     const vertex_buffer_layout = gpu.VertexBufferLayout{
@@ -103,9 +144,7 @@ pub fn main() !void {
         .constants = null,
     };
 
-    // Tell the vertex and fragment shader they will receive a uniform buffer
-    // The binding is the @binding(0) in our shaders
-    const bgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true, .fragment = true }, .uniform, true, 0);
+    const bgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
     const bgl = app.device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor{
             .entries = &.{bgle},
@@ -133,7 +172,7 @@ pub fn main() !void {
         },
         .primitive = .{
             .front_face = .ccw,
-            .cull_mode = .none,
+            .cull_mode = .back,
             .topology = .triangle_list,
             .strip_index_format = .none,
         },
@@ -141,9 +180,6 @@ pub fn main() !void {
 
     const queue = app.device.getQueue();
 
-    // Create and write the buffers to GPU memory
-    // The structs we are passing will tell the gpu that we will write
-    // to *_mapped and the gpu will then copy it to its buffers
     const vertex_buffer = app.device.createBuffer(&.{
         .usage = .{ .vertex = true },
         .size = @sizeOf(Vertex) * vertices.len,
@@ -154,24 +190,15 @@ pub fn main() !void {
     vertex_buffer.unmap();
     defer vertex_buffer.release();
 
-    const index_buffer = app.device.createBuffer(&.{
-        .usage = .{ .index = true },
-        .size = @sizeOf(@TypeOf(indices[0])) * indices.len,
-        .mapped_at_creation = true,
-    });
-    var index_mapped = index_buffer.getMappedRange(@TypeOf(indices[0]), 0, indices.len);
-    std.mem.copy(@TypeOf(indices[0]), index_mapped, indices[0..]);
-    index_buffer.unmap();
-    defer index_buffer.release();
-
+    // uniformBindGroup offset must be 256-byte aligned
+    const uniform_offset = 256;
     const uniform_buffer = app.device.createBuffer(&.{
-        .usage = .{ .copy_dst = true, .uniform = true },
-        .size = @sizeOf(UniformBufferObject),
+        .usage = .{ .uniform = true, .copy_dst = true },
+        .size = @sizeOf(UniformBufferObject) + uniform_offset,
         .mapped_at_creation = false,
     });
     defer uniform_buffer.release();
-    // Specify which buffer corresponds to the UniformBufferObject to send to the GPU
-    const bind_group = app.device.createBindGroup(
+    const bind_group1 = app.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
             .entries = &.{
@@ -179,15 +206,24 @@ pub fn main() !void {
             },
         },
     );
-    defer bind_group.release();
+    defer bind_group1.release();
+    const bind_group2 = app.device.createBindGroup(
+        &gpu.BindGroup.Descriptor{
+            .layout = bgl,
+            .entries = &.{
+                gpu.BindGroup.Entry.buffer(0, uniform_buffer, uniform_offset, @sizeOf(UniformBufferObject)),
+            },
+        },
+    );
+    defer bind_group2.release();
 
     ctx.* = FrameParams{
         .pipeline = app.device.createRenderPipeline(&pipeline_descriptor),
         .queue = queue,
         .vertex_buffer = vertex_buffer,
-        .index_buffer = index_buffer,
         .uniform_buffer = uniform_buffer,
-        .bind_group = bind_group,
+        .bind_group1 = bind_group1,
+        .bind_group2 = bind_group2,
     };
 
     vs_module.release();
@@ -202,9 +238,9 @@ const FrameParams = struct {
     pipeline: gpu.RenderPipeline,
     queue: gpu.Queue,
     vertex_buffer: gpu.Buffer,
-    index_buffer: gpu.Buffer,
     uniform_buffer: gpu.Buffer,
-    bind_group: gpu.BindGroup,
+    bind_group1: gpu.BindGroup,
+    bind_group2: gpu.BindGroup,
 };
 
 fn frame(app: *App, params: *FrameParams) !void {
@@ -223,41 +259,47 @@ fn frame(app: *App, params: *FrameParams) !void {
         .depth_stencil_attachment = null,
     };
 
-    // The data to send to the UniformBufferObject
     {
         const time = @intToFloat(f32, timer.read()) / @as(f32, std.time.ns_per_s);
-
-        // These matrices multiplied together will translate our vertices
-        // in world coordinates, instead of relative to the viewport,
-        // check https://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices/
-        // for a better explaination
-        const model = zm.rotationY(time * (std.math.pi / 1.0));
+        const rotation1 = zm.mul(zm.rotationX(time * (std.math.pi / 2.0)), zm.rotationZ(time * (std.math.pi / 2.0)));
+        const rotation2 = zm.mul(zm.rotationZ(time * (std.math.pi / 2.0)), zm.rotationX(time * (std.math.pi / 2.0)));
+        const model1 = zm.mul(rotation1, zm.translation(-2, 0, 0));
+        const model2 = zm.mul(rotation2, zm.translation(2, 0, 0));
         const view = zm.lookAtRh(
-            zm.f32x4(0, 2, 0, 1),
+            zm.f32x4(0, -4, 2, 1),
             zm.f32x4(0, 0, 0, 1),
             zm.f32x4(0, 0, 1, 0),
         );
         const proj = zm.perspectiveFovRh(
-            (std.math.pi / 4.0),
+            (2.0 * std.math.pi / 5.0),
             @intToFloat(f32, app.current_desc.width) / @intToFloat(f32, app.current_desc.height),
-            0.1,
-            10,
+            1,
+            100,
         );
-        const mvp = zm.mul(zm.mul(model, view), proj);
-        const ubo = UniformBufferObject{
-            .mat = zm.transpose(mvp),
-            .time = time,
+        const mvp1 = zm.mul(zm.mul(model1, view), proj);
+        const mvp2 = zm.mul(zm.mul(model2, view), proj);
+        const ubo1 = UniformBufferObject{
+            .mat = zm.transpose(mvp1),
         };
-        encoder.writeBuffer(params.uniform_buffer, 0, UniformBufferObject, &.{ubo});
+        const ubo2 = UniformBufferObject{
+            .mat = zm.transpose(mvp2),
+        };
+
+        encoder.writeBuffer(params.uniform_buffer, 0, UniformBufferObject, &.{ubo1});
+
+        // bind_group2 offset
+        encoder.writeBuffer(params.uniform_buffer, 256, UniformBufferObject, &.{ubo2});
     }
 
-    // Set the vertex/index buffers, the bind group, and use indexed draw
     const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setVertexBuffer(0, params.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
-    pass.setIndexBuffer(params.index_buffer, .uint16, 0, @sizeOf(@TypeOf(indices[0])) * indices.len);
     pass.setPipeline(params.pipeline);
-    pass.setBindGroup(0, params.bind_group, &.{0});
-    pass.drawIndexed(indices.len, 1, 0, 0, 0);
+    pass.setVertexBuffer(0, params.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
+
+    pass.setBindGroup(0, params.bind_group1, &.{0});
+    pass.draw(vertices.len, 1, 0, 0);
+    pass.setBindGroup(0, params.bind_group2, &.{0});
+    pass.draw(vertices.len, 1, 0, 0);
+
     pass.end();
     pass.release();
 
