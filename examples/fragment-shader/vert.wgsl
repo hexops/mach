@@ -22,7 +22,7 @@ struct VertexOut {
      @location(1) uv : vec2<f32>
 ) -> VertexOut {
      var output : VertexOut;
-     output.position_clip = ubo.transform * vec4(position, 1.0);
+     output.position_clip = vec4(position, 1.0) * ubo.transform;
      output.frag_uv = uv;
      return output;
 }

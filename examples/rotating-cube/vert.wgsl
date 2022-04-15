@@ -10,7 +10,7 @@ struct VertexOut {
      @location(1) uv: vec2<f32> 
 ) -> VertexOut {
      var output : VertexOut;
-     output.position_clip = ubo * position;
+     output.position_clip = position * ubo;
      output.fragUV = uv;
      output.fragPosition = 0.5 * (position + vec4<f32>(1.0, 1.0, 1.0, 1.0));
      return output;

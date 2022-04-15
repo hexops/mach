@@ -258,8 +258,9 @@ fn frame(app: *App, params: *FrameParams) !void {
             0.1,
             10,
         );
+        const mvp = zm.mul(zm.mul(model, view), proj);
         const ubo = UniformBufferObject{
-            .mat = zm.mul(zm.mul(model, view), proj),
+            .mat = zm.transpose(mvp),
         };
         encoder.writeBuffer(params.uniform_buffer, 0, UniformBufferObject, &.{ubo});
     }
