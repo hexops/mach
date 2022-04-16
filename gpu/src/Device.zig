@@ -177,7 +177,9 @@ pub inline fn destroy(device: Device) void {
 }
 
 pub inline fn createBuffer(device: Device, descriptor: *const Buffer.Descriptor) Buffer {
-    return device.vtable.createBuffer(device.ptr, descriptor);
+    var local_descriptor = descriptor.*;
+    local_descriptor.size += local_descriptor.size % 4;
+    return device.vtable.createBuffer(device.ptr, &local_descriptor);
 }
 
 pub inline fn createCommandEncoder(device: Device, descriptor: ?*const CommandEncoder.Descriptor) CommandEncoder {
