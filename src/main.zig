@@ -10,6 +10,24 @@ const c = @import("c.zig").c;
 /// can only be specified at compile-time.
 pub const AppConfig = struct {};
 
+pub const VSyncMode = enum {
+    /// Potential screen tearing.
+    /// No synchronization with monitor, render frames as fast as possible.
+    none,
+
+    /// No tearing, synchronizes rendering with monitor refresh rate, rendering frames when ready.
+    ///
+    /// Tries to stay one frame ahead of the monitor, so when it's ready for the next frame it is
+    /// already prepared.
+    double,
+
+    /// No tearing, synchronizes rendering with monitor refresh rate, rendering frames when ready.
+    ///
+    /// Tries to stay two frames ahead of the monitor, so when it's ready for the next frame it is
+    /// already prepared.
+    triple,
+};
+
 /// Application options that can be configured at init time.
 pub const Options = struct {
     /// The title of the window.
@@ -20,6 +38,9 @@ pub const Options = struct {
 
     /// The height of the window.
     height: u32 = 480,
+
+    /// Monitor synchronization modes.
+    vsync: VSyncMode = .double,
 
     /// GPU features required by the application.
     required_features: ?[]gpu.Feature = null,
@@ -154,7 +175,11 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
                     .format = swap_chain_format,
                     .width = framebuffer_size.width,
                     .height = framebuffer_size.height,
-                    .present_mode = .fifo,
+                    .present_mode = switch (options.vsync) {
+                        .none => .immediate,
+                        .double => .fifo,
+                        .triple => .mailbox,
+                    },
                     .implementation = 0,
                 };
                 surface = util.createSurfaceForWindow(
