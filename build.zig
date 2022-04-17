@@ -2,6 +2,7 @@ const std = @import("std");
 pub const gpu = @import("gpu/build.zig");
 const gpu_dawn = @import("gpu-dawn/build.zig");
 pub const glfw = @import("glfw/build.zig");
+const Pkg = std.build.Pkg;
 
 pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
@@ -23,37 +24,29 @@ pub fn build(b: *std.build.Builder) void {
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);
 
-    inline for ([_][]const u8{ "triangle", "boids" }) |name| {
-        const example = b.addExecutable("example-" ++ name, "examples/" ++ name ++ "/main.zig");
-        example.setTarget(target);
-        example.setBuildMode(mode);
-        example.addPackage(pkg);
-        example.addPackage(gpu.pkg);
-        example.addPackage(glfw.pkg);
-        link(b, example, options);
-        example.install();
+    inline for ([_]ExampleDefinition{
+        .{ .name = "triangle" },
+        .{ .name = "boids" },
+        .{ .name = "fragment-shader", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "mandelbrot", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
+    }) |example| {
+        const example_exe = b.addExecutable("example-" ++ example.name, "examples/" ++ example.name ++ "/main.zig");
+        example_exe.setTarget(target);
+        example_exe.setBuildMode(mode);
+        example_exe.addPackage(pkg);
+        example_exe.addPackage(gpu.pkg);
+        example_exe.addPackage(glfw.pkg);
+        inline for (example.packages) |additional_package| {
+            example_exe.addPackage(additional_package);
+        }
+        link(b, example_exe, options);
+        example_exe.install();
 
-        const example_run_cmd = example.run();
+        const example_run_cmd = example_exe.run();
         example_run_cmd.step.dependOn(b.getInstallStep());
-        const example_run_step = b.step("run-example-" ++ name, "Run the example");
-        example_run_step.dependOn(&example_run_cmd.step);
-    }
-
-    const zmath_pkg = @import("zmath/build.zig").pkg;
-    inline for ([_][]const u8{ "mandelbrot", "fragment-shader", "rotating-cube", "two-cubes" }) |name| {
-        const example = b.addExecutable("example-" ++ name, "examples/" ++ name ++ "/main.zig");
-        example.setTarget(target);
-        example.setBuildMode(mode);
-        example.addPackage(pkg);
-        example.addPackage(gpu.pkg);
-        example.addPackage(glfw.pkg);
-        example.addPackage(zmath_pkg);
-        link(b, example, options);
-        example.install();
-
-        const example_run_cmd = example.run();
-        example_run_cmd.step.dependOn(b.getInstallStep());
-        const example_run_step = b.step("run-example-" ++ name, "Run the example");
+        const example_run_step = b.step("run-example-" ++ example.name, "Run the example");
         example_run_step.dependOn(&example_run_cmd.step);
     }
 }
@@ -61,6 +54,15 @@ pub fn build(b: *std.build.Builder) void {
 pub const Options = struct {
     glfw_options: glfw.Options = .{},
     gpu_dawn_options: gpu_dawn.Options = .{},
+};
+
+const ExampleDefinition = struct {
+    name: []const u8,
+    packages: []const Pkg = &[_]Pkg{},
+};
+
+const Packages = struct {
+    const zmath = @import("zmath/build.zig").pkg;
 };
 
 pub const pkg = std.build.Pkg{
