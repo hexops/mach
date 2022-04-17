@@ -52,6 +52,11 @@ pub const Options = struct {
     power_preference: gpu.PowerPreference = .none,
 };
 
+/// Default GLFW error handling callback
+fn glfwErrorCallback(error_code: glfw.Error, description: [:0]const u8) void {
+    std.debug.print("glfw: {}: {s}\n", .{ error_code, description });
+}
+
 /// A Mach application.
 ///
 /// The Context type is your own data type which can later be accessed via app.context from within
@@ -87,6 +92,7 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
         pub fn init(allocator: std.mem.Allocator, context: Context, options: Options) !Self {
             const backend_type = try util.detectBackendType(allocator);
 
+            glfw.setErrorCallback(glfwErrorCallback);
             try glfw.init(.{});
 
             // Create the test window and discover adapters using it (esp. for OpenGL)
