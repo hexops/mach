@@ -9,3 +9,6 @@
         shallow = true
         branch = "mach"
 
+[submodule "examples/libs/zmath"]
+	path = examples/libs/zmath
+	url = https://github.com/PiergiorgioZagaria/zmath
