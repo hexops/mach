@@ -67,11 +67,20 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
         swap_chain: ?gpu.SwapChain,
         swap_chain_format: gpu.Texture.Format,
 
+        /// The amount of time (in seconds) that has passed since the last frame was rendered.
+        ///
+        /// For example, if you are animating a cube which should rotate 360 degrees every second,
+        /// instead of writing (360.0 / 60.0) and assuming the frame rate is 60hz, write
+        /// (360.0 * app.delta_time)
+        delta_time: f64 = 0,
+        delta_time_ns: u64 = 0,
+
         // Internals
         native_instance: gpu.NativeInstance,
         surface: ?gpu.Surface,
         current_desc: gpu.SwapChain.Descriptor,
         target_desc: gpu.SwapChain.Descriptor,
+        timer: std.time.Timer,
 
         const Self = @This();
 
@@ -217,6 +226,7 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
                 .surface = surface,
                 .swap_chain = swap_chain,
                 .swap_chain_format = swap_chain_format,
+                .timer = try std.time.Timer.start(),
                 .current_desc = descriptor,
                 .target_desc = descriptor,
             };
@@ -235,6 +245,9 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
             }
             while (!app.window.shouldClose()) {
                 try glfw.pollEvents();
+
+                app.delta_time_ns = app.timer.lap();
+                app.delta_time = @intToFloat(f64, app.delta_time_ns) / @intToFloat(f64, std.time.ns_per_s);
 
                 var framebuffer_size = try app.window.getFramebufferSize();
                 app.target_desc.width = framebuffer_size.width;
@@ -257,7 +270,6 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
                 }
 
                 try funcs.frame(app, app.context);
-                std.time.sleep(16 * std.time.ns_per_ms); // TODO: this is very naive
             }
         }
     };
