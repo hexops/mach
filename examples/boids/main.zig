@@ -11,11 +11,22 @@ const FrameParams = struct {
     sprite_vertex_buffer: gpu.Buffer,
     particle_buffers: [2]gpu.Buffer,
     particle_bind_groups: [2]gpu.BindGroup,
+    sim_param_buffer: gpu.Buffer,
     frame_counter: usize,
 };
 const App = mach.App(*FrameParams, .{});
 
 const num_particle = 1500;
+
+var sim_params = [_]f32 {
+    0.04,  // .delta_T
+    0.1,   // .rule_1_distance
+    0.025, // .rule_2_distance
+    0.025, // .rule_3_distance
+    0.02,  // .rule_1_scale
+    0.05,  // .rule_2_scale
+    0.005, // .rule_3_scale
+};
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -108,22 +119,12 @@ pub fn main() !void {
     });
     app.device.getQueue().writeBuffer(sprite_vertex_buffer, 0, f32, &vert_buffer_data);
 
-    const sim_params = [_]f32 {
-        0.04,  // .delta_T
-        0.1,   // .rule_1_distance
-        0.025, // .rule_2_distance
-        0.025, // .rule_3_distance
-        0.02,  // .rule_1_scale
-        0.05,  // .rule_2_scale
-        0.005, // .rule_3_scale
-    };
-
     const sim_param_buffer = app.device.createBuffer(&gpu.Buffer.Descriptor{
         .usage = .{.uniform = true, .copy_dst = true},
         .size = sim_params.len * @sizeOf(f32),
     });
     app.device.getQueue().writeBuffer(sim_param_buffer, 0, f32, &sim_params);
-    
+
     var initial_particle_data: [num_particle*4]f32 = undefined;
     var rng = std.rand.DefaultPrng.init(0);
     const random = rng.random();
@@ -164,6 +165,7 @@ pub fn main() !void {
         .sprite_vertex_buffer = sprite_vertex_buffer,
         .particle_buffers = particle_buffers,
         .particle_bind_groups = particle_bind_groups,
+        .sim_param_buffer = sim_param_buffer,
         .frame_counter = 0,
     };
 
@@ -185,6 +187,9 @@ fn frame(app: *App, params: *FrameParams) !void {
             color_attachment,
         }
     };
+
+    sim_params[0] = @floatCast(f32, app.delta_time);
+    app.device.getQueue().writeBuffer(params.sim_param_buffer, 0, f32, &sim_params);
 
     const command_encoder = app.device.createCommandEncoder(null);
     {
