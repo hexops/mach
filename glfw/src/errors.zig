@@ -127,6 +127,27 @@ pub inline fn getError() Error!void {
     return convertError(c.glfwGetError(null));
 }
 
+/// Returns and clears the last error description for the calling thread.
+///
+/// This function returns a UTF-8 encoded human-readable description of the last error that occured 
+/// on the calling thread. If no error has occurred since the last call, it returns null.
+///
+/// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
+/// yourself. It is guaranteed to be valid only until the next error occurs or the library is
+/// terminated.
+///
+/// @remark This function may be called before @ref glfwInit.
+///
+/// @thread_safety This function may be called from any thread.
+pub inline fn getErrorString() ?[]const u8 {
+    var desc: [*c]const u8 = null;
+    const error_code = c.glfwGetError(&desc);
+    convertError(error_code) catch {
+        return mem.sliceTo(desc, 0);
+    };
+    return null;
+}
+
 /// Sets the error callback.
 ///
 /// This function sets the error callback, which is called with an error code
@@ -183,4 +204,8 @@ test "errorCallback" {
         pub fn callback(_: Error, _: [:0]const u8) void {}
     };
     setErrorCallback(TestStruct.callback);
+}
+
+test "error string" {
+    try testing.expect(getErrorString() == null);
 }
