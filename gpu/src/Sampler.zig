@@ -49,7 +49,7 @@ pub const Descriptor = extern struct {
     min_filter: FilterMode,
     mipmap_filter: FilterMode,
     lod_min_clamp: f32,
-    load_max_clamp: f32,
+    lod_max_clamp: f32,
     compare: CompareFunction,
     max_anisotropy: u16,
 };
