@@ -280,6 +280,7 @@ const adapter_vtable = Adapter.VTable{
                 .requiredFeaturesCount = if (descriptor.required_features) |f| @intCast(u32, f.len) else 0,
                 .requiredFeatures = if (descriptor.required_features) |f| @ptrCast([*]const c_uint, f.ptr) else null,
                 .requiredLimits = if (required_limits) |*l| l else null,
+                .defaultQueue = if (descriptor.default_queue) |q| .{ .nextInChain = null, .label = q.label } else .{ .nextInChain = null, .label = null },
             };
 
             const cCallback = (struct {
@@ -520,10 +521,19 @@ const device_vtable = Device.VTable{
     }).nativeCreateSwapChain,
     .createTexture = (struct {
         pub fn createTexture(ptr: *anyopaque, descriptor: *const Texture.Descriptor) Texture {
-            return wrapTexture(c.wgpuDeviceCreateTexture(
-                @ptrCast(c.WGPUDevice, ptr),
-                @ptrCast(*const c.WGPUTextureDescriptor, descriptor),
-            ));
+            const desc = c.WGPUTextureDescriptor{
+                .nextInChain = null,
+                .label = if (descriptor.label) |l| l else null,
+                .usage = @bitCast(u32, descriptor.usage),
+                .dimension = @enumToInt(descriptor.dimension),
+                .size = @bitCast(c.WGPUExtent3D, descriptor.size),
+                .format = @enumToInt(descriptor.format),
+                .mipLevelCount = descriptor.mip_level_count,
+                .sampleCount = descriptor.sample_count,
+                .viewFormatCount = if (descriptor.view_formats) |vf| @intCast(u32, vf.len) else 0,
+                .viewFormats = if (descriptor.view_formats) |vf| @ptrCast([*]const c.WGPUTextureFormat, vf.ptr) else null,
+            };
+            return wrapTexture(c.wgpuDeviceCreateTexture(@ptrCast(c.WGPUDevice, ptr), &desc));
         }
     }).createTexture,
     .destroy = (struct {
