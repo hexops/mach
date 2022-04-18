@@ -1,3 +1,4 @@
+const std = @import("std");
 const ShaderModule = @This();
 
 /// The type erased pointer to the ShaderModule implementation
@@ -39,7 +40,7 @@ pub const CompilationInfoCallback = struct {
     ) CompilationInfoCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, status: CompilationInfoRequestStatus) void {
-                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), status);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(std.meta.alignment(Context), type_erased_ctx)), status);
             }
         }).erased;
 

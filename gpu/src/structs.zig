@@ -1,4 +1,5 @@
 //! Structures which are not ABI compatible with webgpu.h
+const std = @import("std");
 const math = @import("std").math;
 const Buffer = @import("Buffer.zig");
 const Sampler = @import("Sampler.zig");
@@ -150,7 +151,7 @@ pub const ErrorCallback = struct {
     ) ErrorCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, typ: ErrorType, message: [*:0]const u8) void {
-                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), typ, message);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(std.meta.alignment(Context), type_erased_ctx)), typ, message);
             }
         }).erased;
 
@@ -172,7 +173,7 @@ pub const LoggingCallback = struct {
     ) LoggingCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, typ: LoggingType, message: [*:0]const u8) void {
-                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), typ, message);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(std.meta.alignment(Context), type_erased_ctx)), typ, message);
             }
         }).erased;
 

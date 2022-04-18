@@ -88,7 +88,7 @@ pub const WorkDoneCallback = struct {
     ) WorkDoneCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, status: WorkDoneStatus) void {
-                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), status);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(std.meta.alignment(Context), type_erased_ctx)), status);
             }
         }).erased;
 

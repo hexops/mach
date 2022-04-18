@@ -1,3 +1,4 @@
+const std = @import("std");
 const PipelineLayout = @import("PipelineLayout.zig");
 const ProgrammableStageDescriptor = @import("structs.zig").ProgrammableStageDescriptor;
 const BindGroupLayout = @import("BindGroupLayout.zig");
@@ -73,7 +74,7 @@ pub const CreateCallback = struct {
                 message: [:0]const u8,
             ) void {
                 callback(
-                    @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)),
+                    if (Context == void) {} else @ptrCast(Context, @alignCast(std.meta.alignment(Context), type_erased_ctx)),
                     status,
                     pipeline,
                     message,
