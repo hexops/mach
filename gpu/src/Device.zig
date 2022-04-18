@@ -249,6 +249,7 @@ pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     required_features: ?[]Feature = null,
     required_limits: ?Limits = null,
+    default_queue: ?Queue.Descriptor = null,
 };
 
 pub const LostReason = enum(u32) {

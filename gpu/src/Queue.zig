@@ -99,6 +99,10 @@ pub const WorkDoneCallback = struct {
     }
 };
 
+pub const Descriptor = struct {
+    label: ?[*:0]const u8 = null,
+};
+
 pub const WorkDoneStatus = enum(u32) {
     Success = 0x00000000,
     Error = 0x00000001,

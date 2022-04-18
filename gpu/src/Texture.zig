@@ -48,6 +48,7 @@ pub const Descriptor = struct {
     format: Format,
     mip_level_count: u32,
     sample_count: u32,
+    view_formats: ?[]const Format = null,
 };
 
 pub const Usage = packed struct {
