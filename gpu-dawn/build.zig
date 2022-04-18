@@ -662,8 +662,8 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         "-DTINT_BUILD_HLSL_WRITER=1",
         "-DTINT_BUILD_GLSL_WRITER=1",
 
-        include("libs/dawn/third_party/tint"),
-        include("libs/dawn/third_party/tint/include"),
+        include("libs/dawn/"),
+        include("libs/dawn/include/tint"),
 
         include("libs/dawn/out/Debug/gen/include"),
         include("libs/dawn/out/Debug/gen/src"),
@@ -899,7 +899,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     return lib;
 }
 
-// Builds third party tint sources; derived from third_party/tint/src/tint/BUILD.gn
+// Builds tint sources; derived from src/tint/BUILD.gn
 fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     const lib = if (!options.separate_libs) step else blk: {
         var main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/dawn/dummy.zig" }) catch unreachable;
@@ -922,9 +922,8 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
         "-DTINT_BUILD_HLSL_WRITER=1",
         "-DTINT_BUILD_GLSL_WRITER=1",
 
-        include("libs/dawn"),
-        include("libs/dawn/third_party/tint"),
-        include("libs/dawn/third_party/tint/include"),
+        include("libs/dawn/"),
+        include("libs/dawn/include/tint"),
 
         // Required for TINT_BUILD_SPV_READER=1 and TINT_BUILD_SPV_WRITER=1, if specified
         include("libs/dawn/third_party/vulkan-deps"),
@@ -938,19 +937,19 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // libtint_core_all_src
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
-            "libs/dawn/third_party/tint/src/tint/ast/",
-            "libs/dawn/third_party/tint/src/tint/",
-            "libs/dawn/third_party/tint/src/tint/diagnostic/",
-            "libs/dawn/third_party/tint/src/tint/inspector/",
-            "libs/dawn/third_party/tint/src/tint/reader/",
-            "libs/dawn/third_party/tint/src/tint/resolver/",
-            "libs/dawn/third_party/tint/src/tint/utils",
-            "libs/dawn/third_party/tint/src/tint/text/",
-            "libs/dawn/third_party/tint/src/tint/transform/",
-            "libs/dawn/third_party/tint/src/tint/transform/utils",
-            "libs/dawn/third_party/tint/src/tint/writer/",
-            "libs/dawn/third_party/tint/src/tint/ast/",
-            "libs/dawn/third_party/tint/src/tint/val/",
+            "libs/dawn/src/tint/ast/",
+            "libs/dawn/src/tint",
+            "libs/dawn/src/tint/diagnostic/",
+            "libs/dawn/src/tint/inspector/",
+            "libs/dawn/src/tint/reader/",
+            "libs/dawn/src/tint/resolver/",
+            "libs/dawn/src/tint/utils/",
+            "libs/dawn/src/tint/text/",
+            "libs/dawn/src/tint/transform/",
+            "libs/dawn/src/tint/transform/utils",
+            "libs/dawn/src/tint/writer/",
+            "libs/dawn/src/tint/ast/",
+            "libs/dawn/src/tint/val/",
         },
         .flags = flags.items,
         .excluding_contains = &.{ "test", "bench", "printer_windows", "printer_linux", "printer_other", "glsl.cc" },
@@ -959,15 +958,15 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     switch (target.os.tag) {
-        .windows => cpp_sources.append(thisDir() ++ "/libs/dawn/third_party/tint/src/tint/diagnostic/printer_windows.cc") catch unreachable,
-        .linux => cpp_sources.append(thisDir() ++ "/libs/dawn/third_party/tint/src/tint/diagnostic/printer_linux.cc") catch unreachable,
-        else => cpp_sources.append(thisDir() ++ "/libs/dawn/third_party/tint/src/tint/diagnostic/printer_other.cc") catch unreachable,
+        .windows => cpp_sources.append(thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_windows.cc") catch unreachable,
+        .linux => cpp_sources.append(thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_linux.cc") catch unreachable,
+        else => cpp_sources.append(thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_other.cc") catch unreachable,
     }
 
     // libtint_sem_src
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
-            "libs/dawn/third_party/tint/src/tint/sem/",
+            "libs/dawn/src/tint/sem/",
         },
         .flags = flags.items,
         .excluding_contains = &.{ "test", "benchmark" },
@@ -976,7 +975,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // libtint_spv_reader_src
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
-            "libs/dawn/third_party/tint/src/tint/reader/spirv/",
+            "libs/dawn/src/tint/reader/spirv/",
         },
         .flags = flags.items,
         .excluding_contains = &.{ "test", "benchmark" },
@@ -985,7 +984,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // libtint_spv_writer_src
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
-            "libs/dawn/third_party/tint/src/tint/writer/spirv/",
+            "libs/dawn/src/tint/writer/spirv/",
         },
         .flags = flags.items,
         .excluding_contains = &.{ "test", "bench" },
@@ -995,7 +994,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // libtint_wgsl_reader_src
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
-            "libs/dawn/third_party/tint/src/tint/reader/wgsl/",
+            "libs/dawn/src/tint/reader/wgsl/",
         },
         .flags = flags.items,
         .excluding_contains = &.{ "test", "bench" },
@@ -1005,7 +1004,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // libtint_wgsl_writer_src
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
-            "libs/dawn/third_party/tint/src/tint/writer/wgsl/",
+            "libs/dawn/src/tint/writer/wgsl/",
         },
         .flags = flags.items,
         .excluding_contains = &.{ "test", "bench" },
@@ -1015,7 +1014,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // libtint_msl_writer_src
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
-            "libs/dawn/third_party/tint/src/tint/writer/msl/",
+            "libs/dawn/src/tint/writer/msl/",
         },
         .flags = flags.items,
         .excluding_contains = &.{ "test", "bench" },
@@ -1025,7 +1024,7 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // libtint_hlsl_writer_src
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
-            "libs/dawn/third_party/tint/src/tint/writer/hlsl/",
+            "libs/dawn/src/tint/writer/hlsl/",
         },
         .flags = flags.items,
         .excluding_contains = &.{ "test", "bench" },
@@ -1035,17 +1034,11 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // libtint_glsl_writer_src
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
-            "libs/dawn/third_party/tint/src/tint/writer/glsl/",
+            "libs/dawn/src/tint/writer/glsl/",
         },
         .flags = flags.items,
         .excluding_contains = &.{ "test", "bench" },
     }) catch unreachable;
-    for ([_][]const u8{
-        "third_party/tint/src/tint/transform/glsl.cc",
-    }) |path| {
-        var abs_path = std.fs.path.join(b.allocator, &.{ thisDir(), "libs/dawn", path }) catch unreachable;
-        cpp_sources.append(abs_path) catch unreachable;
-    }
 
     var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
     cpp_flags.appendSlice(flags.items) catch unreachable;
