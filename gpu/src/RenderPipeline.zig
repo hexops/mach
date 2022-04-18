@@ -82,7 +82,7 @@ pub const CreateCallback = struct {
                 message: [:0]const u8,
             ) void {
                 callback(
-                    @ptrCast(Context, @alignCast(std.meta.alignment(Context), type_erased_ctx)),
+                    if (Context == void) {} else @ptrCast(Context, @alignCast(std.meta.alignment(Context), type_erased_ctx)),
                     status,
                     pipeline,
                     message,
