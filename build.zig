@@ -24,6 +24,9 @@ pub fn build(b: *std.build.Builder) void {
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);
 
+    // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
+    ensureDependencySubmodule(b.allocator, "examples/libs/zmath") catch unreachable;
+
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },
         .{ .name = "boids" },
@@ -60,7 +63,13 @@ const ExampleDefinition = struct {
 };
 
 const Packages = struct {
-    const zmath = @import("examples/libs/zmath/build.zig").pkg;
+    const zmath = zmath_pkg;
+};
+
+// Declared here because submodule may not be cloned at the time build.zig runs.
+const zmath_pkg = std.build.Pkg{
+    .name = "zmath",
+    .path = .{ .path = "examples/libs/zmath/src/zmath.zig" },
 };
 
 pub const pkg = std.build.Pkg{
@@ -92,4 +101,16 @@ pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Opti
 
 fn thisDir() []const u8 {
     return std.fs.path.dirname(@src().file) orelse ".";
+}
+
+fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
+    if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
+        if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
+    } else |_| {}
+    const child = try std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
+    child.cwd = thisDir();
+    child.stderr = std.io.getStdErr();
+    child.stdout = std.io.getStdOut();
+
+    _ = try child.spawnAndWait();
 }
