@@ -84,17 +84,6 @@ pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Opti
         .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
     };
 
-    const main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/main.zig" }) catch unreachable;
-    const lib = b.addStaticLibrary("mach", main_abs);
-    lib.setBuildMode(step.build_mode);
-    lib.setTarget(step.target);
-    lib.addPackage(gpu.pkg);
-    lib.addPackage(glfw.pkg);
-
-    glfw.link(b, lib, options.glfw_options);
-    gpu.link(b, lib, gpu_options);
-    lib.install();
-
     glfw.link(b, step, options.glfw_options);
     gpu.link(b, step, gpu_options);
 }
