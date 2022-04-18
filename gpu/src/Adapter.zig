@@ -164,7 +164,7 @@ pub const RequestDeviceCallback = struct {
     ) RequestDeviceCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, response: RequestDeviceResponse) void {
-                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), response);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(std.meta.alignment(Context), type_erased_ctx)), response);
             }
         }).erased;
 

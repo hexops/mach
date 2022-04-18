@@ -173,7 +173,7 @@ pub const LoggingCallback = struct {
     ) LoggingCallback {
         const erased = (struct {
             pub inline fn erased(type_erased_ctx: *anyopaque, typ: LoggingType, message: [*:0]const u8) void {
-                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), type_erased_ctx)), typ, message);
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(std.meta.alignment(Context), type_erased_ctx)), typ, message);
             }
         }).erased;
 
