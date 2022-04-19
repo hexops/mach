@@ -18,6 +18,6 @@ rm src/CMakeLists.txt src/*.in
 cd ..
 git clone --depth 1 https://github.com/KhronosGroup/Vulkan-Headers vulkan_headers/
 cd vulkan_headers
-rm -rf .git registry/ *.gn *.txt *.md cmake/ 
+rm -rf .git .github registry/ *.gn *.txt *.md cmake/ 
 rm -rf include/vk_video
 rm .cmake-format.py .gitattributes .gitignore
