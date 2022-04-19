@@ -664,6 +664,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
         include("libs/dawn/"),
         include("libs/dawn/include/tint"),
+        include("libs/dawn/third_party/vulkan-deps/vulkan-tools/src/"),
 
         include("libs/dawn/out/Debug/gen/include"),
         include("libs/dawn/out/Debug/gen/src"),
