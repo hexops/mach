@@ -1,20 +1,54 @@
-<a href="https://hexops.com/mach"><img alt="Mach - Game engine & graphics toolkit for the future" src="https://raw.githubusercontent.com/hexops/media/main/mach/logo_tagline_semi.svg"></img></a>
+<div align="center"><em>Mach is still early stages - see <a href="https://machengine.org/#early-stages">what we have today</a> and <a href="https://twitter.com/machengine">stay tuned</a></em></div>
 
-<h2 align="center">Learn more at <a href="https://hexops.com/mach">hexops.com/mach</a></h2>
+# Mach: game engine & graphics toolkit for the future
+
+Written in [Zig](https://ziglang.org/), Mach is for creating games, graphical applications, and desktop/mobile apps:
+
+* Data-driven, tooling oriented
+* Composable
+* Competitive with Unity and Unreal in spirit (a fully fledged editor in the future, etc.)
+
+<a href="https://user-images.githubusercontent.com/3173176/163936001-fd9eb918-7c29-4dcc-bfcb-5586f2ea1f9a.gif"><img align="left" src="https://user-images.githubusercontent.com/3173176/163936001-fd9eb918-7c29-4dcc-bfcb-5586f2ea1f9a.gif" alt="boids demo" width="300px"></img></a>
+
+## Cross-platform graphics in ~60 seconds
+
+```sh
+git clone https://github.com/hexops/mach
+cd mach/
+zig build run-example-boids
+```
+
+Cross-platform graphics, a unified shader language & compute shaders.
+
+(Requires [zig 0.10.x](https://ziglang.org/) | [known issues](https://github.com/hexops/mach/blob/main/doc/known-issues.md#known-issues))
+
+<img align="right" src="https://machengine.org/img/coder.svg" width="300px"></img>
 
 ## Join the conversation
 
-Our community exists [on Matrix chat](https://matrix.to/#/#hexops:matrix.org), join in and help build the future of game engines & graphics in Zig!
+Join us [on Matrix chat](https://matrix.to/#/#hexops:matrix.org) in building the future of game engines & graphics in Zig!
 
-You can also follow [@machengine on Twitter](https://twitter.com/machengine) for updates.
+Follow [@machengine on Twitter](https://twitter.com/machengine) for updates.
 
-## ⚠️ in-development ⚠️
+Contributors are very welcome! There are lots of places you can help out with little knowledge, so feel free to reach out!
 
-Under heavy development, not ready for use currently. 
+## Sponsor development
+
+<img align="left" src="https://user-images.githubusercontent.com/3173176/163940979-6a1c1e5a-690d-4e6c-ad74-e1407ba7c867.png" width="150px"></img>
+
+No, it’s not Tom from myspace - it’s me, @slimsag! It’s taken [almost a year to get here](https://devlog.hexops.com/2022/mach-v0.1-zig-graphics-in-60s) - staring at broken CI pipelines, C++ compiler errors, [buying hardware](https://twitter.com/slimsag/status/1507506138144681986) to test every OS+arch possible, and more.
+
+There are few things in life that I am more serious about than this work. I dedicate ~48 hours/week to my dayjob, and ~50h/week to Zig building Mach and running [zigmonthly.org](https://zigmonthly.org). After three years of aggressively pushing for progress in this exact way, [I have no plans to slow down anytime soon.](https://devlog.hexops.com/2021/I-write-code-100-hours-a-week)
+
+## Learn more & examples: [machengine.org](https://machengine.org)
+
+<div align="center">
+  <a href="https://machengine.org"><img width="500px" src="https://user-images.githubusercontent.com/3173176/163927590-6a28d30c-6955-4e9f-9a65-88095aa67299.png"></img></a>
+</div>
 
 ## Supported platforms
 
-Mach is still incredibly early stages, so far we have support for building from the following OS to the following targets:
+Mach is still early stages, so far we have support for building from the following OS to the following targets:
 
 | Building for     | From macOS x86_64 | From macOS M1/aarch64 | From Linux x86_64 | From Windows x86_64 |
 |------------------|-------------------|-----------------------|-------------------|---------------------|
@@ -30,19 +64,16 @@ Mach is still incredibly early stages, so far we have support for building from 
 * 🏃 Planned or in progress.
 * ⚠️ Implemented, but has known issues (e.g. bugs in Zig.)
 
-## Subrepositories / projects
+## Libraries
 
-Whether you're interested in using all of Mach, or just some parts of it, you get to choose.
-Our libraries all aim to have the same zero-fuss installation, cross compilation, and platform
-support:
+Mach has many libraries you can use for game development in Zig - you don't have to use the entire engine. All our libraries aim to have the same zero-fuss installation, cross compilation, and platform support:
 
 * [mach-glfw](https://github.com/hexops/mach-glfw): Ziggified GLFW bindings with 100% API coverage
+* [mach-gpu-dawn](https://github.com/hexops/mach-gpu-dawn): Google's Dawn WebGPU implementation, cross-compiled with Zig into a single static library 
+* [mach-system-sdk](https://github.com/hexops/mach-system-sdk): More libraries for cross-compilation with Zig
 
 ## Contributing
 
-Mach is maintained as a monorepo. When changed are merged to this repository, we use some git fu to pick out the commits to subdirectories and push them ot sub-repositories. For example, commits to the `glfw/` directory also get pushed to the separate [mach-glfw](https://github.com/hexops/mach-glfw) repository after being merged here.
+Mach is maintained as a monorepo. When changed are merged to this repository, we use some git-fu to pick out the commits to subdirectories and push them ot sub-repositories all automagically. Changes to the `glfw/` directory in this repository get pushed to the separate [mach-glfw](https://github.com/hexops/mach-glfw) repository automagically after being merged here, for example.
 
-There are only two requirements:
-
-1. Pull requests to sub-repositories must be sent to this monorepo, not to the sub-repository itself - to avoid some annoying merge conflicts that can arise.
-2. Individual commits may not change multiple sub-repositories at the same time (e.g. a commit to `glfw/` cannot also include changes to `gpu/`, to avoid confusion.)
+Please prefix commits / pull requests with the project name (`glfw: fix an issue`, `gpu: fix an issue`, `examples: fix an issue`, etc.) and if possible only one project per commit. If you don't know how to do this, no worries, we can help!

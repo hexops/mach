@@ -78,7 +78,7 @@ pub const Options = struct {
     from_source: bool = false,
 
     /// The binary release version to use from https://github.com/hexops/mach-gpu-dawn/releases
-    binary_version: []const u8 = "release-946a14b",
+    binary_version: []const u8 = "release-196b5e6",
 
     /// Detects the default options to use for the given target.
     pub fn detectDefaults(self: Options, target: std.Target) Options {
@@ -664,6 +664,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
 
         include("libs/dawn/"),
         include("libs/dawn/include/tint"),
+        include("libs/dawn/third_party/vulkan-deps/vulkan-tools/src/"),
 
         include("libs/dawn/out/Debug/gen/include"),
         include("libs/dawn/out/Debug/gen/src"),
