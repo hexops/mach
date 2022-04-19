@@ -2,11 +2,11 @@
 
 # Mach: game engine & graphics toolkit for the future
 
-Mach is a game engine & graphics toolkit written in [Zig](https://ziglang.org/) for the future:
+Written in [Zig](https://ziglang.org/), Mach is for creating games, graphical applications, and desktop/mobile apps:
 
 * Data-driven, tooling oriented
 * Composable
-* Competitive with Unity and Unreal in spirit (a fully fledged editor, etc.)
+* Competitive with Unity and Unreal in spirit (a fully fledged editor in the future, etc.)
 
 <a href="https://user-images.githubusercontent.com/3173176/163936001-fd9eb918-7c29-4dcc-bfcb-5586f2ea1f9a.gif"><img align="left" src="https://user-images.githubusercontent.com/3173176/163936001-fd9eb918-7c29-4dcc-bfcb-5586f2ea1f9a.gif" alt="boids demo" width="300px"></img></a>
 
@@ -32,9 +32,19 @@ Follow [@machengine on Twitter](https://twitter.com/machengine) for updates.
 
 Contributors are very welcome! There are lots of places you can help out with little knowledge, so feel free to reach out!
 
-## Learn more: [machengine.org](https://machengine.org)
+## Sponsor development
 
-[![](https://user-images.githubusercontent.com/3173176/163927590-6a28d30c-6955-4e9f-9a65-88095aa67299.png)](https://machengine.org)
+<img align="left" src="https://user-images.githubusercontent.com/3173176/163940979-6a1c1e5a-690d-4e6c-ad74-e1407ba7c867.png" width="150px"></img>
+
+No, it’s not Tom from myspace - it’s me, @slimsag! It’s taken [almost a year to get here](https://devlog.hexops.com/2022/mach-v0.1-zig-graphics-in-60s) - staring at broken CI pipelines, C++ compiler errors, [buying hardware](https://twitter.com/slimsag/status/1507506138144681986) to test every OS+arch possible, and more.
+
+There are few things in life that I am more serious about than this work. I dedicate ~48 hours/week to my dayjob, and ~50h/week to Zig building Mach and running [zigmonthly.org](https://zigmonthly.org). After three years of aggressively pushing for progress in this exact way, [I have no plans to slow down anytime soon.](https://devlog.hexops.com/2021/I-write-code-100-hours-a-week)
+
+## Learn more & examples: [machengine.org](https://machengine.org)
+
+<div align="center">
+  <a href="https://machengine.org"><img width="500px" src="https://user-images.githubusercontent.com/3173176/163927590-6a28d30c-6955-4e9f-9a65-88095aa67299.png"></img></a>
+</div>
 
 ## Supported platforms
 
