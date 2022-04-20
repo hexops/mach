@@ -61,12 +61,12 @@ pub fn main() !void {
         .color = .{
             .operation = .add,
             .src_factor = .one,
-            .dst_factor = .one,
+            .dst_factor = .zero,
         },
         .alpha = .{
             .operation = .add,
             .src_factor = .one,
-            .dst_factor = .one,
+            .dst_factor = .zero,
         },
     };
     const color_target = gpu.ColorTargetState{
