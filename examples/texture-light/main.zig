@@ -71,9 +71,9 @@ const FrameParams = struct {
     depth_size: glfw.Window.Size,
     keys: u8 = 0,
 
-    const up:    u8 = 0b0001;
-    const down:  u8 = 0b0010;
-    const left:  u8 = 0b0100;
+    const up: u8 = 0b0001;
+    const down: u8 = 0b0010;
+    const left: u8 = 0b0100;
     const right: u8 = 0b1000;
 };
 
@@ -96,9 +96,7 @@ fn frame(app: *App, params: *FrameParams) !void {
     if (params.keys & FrameParams.down != 0)
         params.camera.eye -= fwd * speed;
 
-    if (params.keys & FrameParams.right != 0) params.camera.eye += right * speed
-    else if (params.keys & FrameParams.left != 0) params.camera.eye -= right * speed
-    else params.camera.eye += right * (speed * @Vector(4, f32){0.5, 0.5, 0.5, 0.5});
+    if (params.keys & FrameParams.right != 0) params.camera.eye += right * speed else if (params.keys & FrameParams.left != 0) params.camera.eye -= right * speed else params.camera.eye += right * (speed * @Vector(4, f32){ 0.5, 0.5, 0.5, 0.5 });
 
     params.camera.update(params.queue);
 
@@ -114,15 +112,13 @@ fn frame(app: *App, params: *FrameParams) !void {
 
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
-        .clear_value = gpu.Color{.r=0.0, .g=0.0, .b=0.4, .a=1.0},
+        .clear_value = gpu.Color{ .r = 0.0, .g = 0.0, .b = 0.4, .a = 1.0 },
         .load_op = .clear,
         .store_op = .store,
     };
 
     const render_pass_descriptor = gpu.RenderPassEncoder.Descriptor{
-        .color_attachments = &.{
-            color_attachment
-        },
+        .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = &.{
             .view = params.depth.view,
             .depth_load_op = .clear,
@@ -143,9 +139,9 @@ fn frame(app: *App, params: *FrameParams) !void {
     pass.setBindGroup(2, params.light.bind_group, &.{});
     pass.setVertexBuffer(0, params.cube.mesh.buffer, 0, params.cube.mesh.size);
     pass.setVertexBuffer(1, params.cube.instance.buffer, 0, params.cube.instance.size);
-    pass.draw(4, params.cube.instance.len,  0, 0);
-    pass.draw(4, params.cube.instance.len,  4, 0);
-    pass.draw(4, params.cube.instance.len,  8, 0);
+    pass.draw(4, params.cube.instance.len, 0, 0);
+    pass.draw(4, params.cube.instance.len, 4, 0);
+    pass.draw(4, params.cube.instance.len, 8, 0);
     pass.draw(4, params.cube.instance.len, 12, 0);
     pass.draw(4, params.cube.instance.len, 16, 0);
     pass.draw(4, params.cube.instance.len, 20, 0);
@@ -155,9 +151,9 @@ fn frame(app: *App, params: *FrameParams) !void {
     pass.setBindGroup(0, params.camera.bind_group, &.{});
     pass.setBindGroup(1, params.light.bind_group, &.{});
     pass.setVertexBuffer(0, params.cube.mesh.buffer, 0, params.cube.mesh.size);
-    pass.draw(4, 1,  0, 0);
-    pass.draw(4, 1,  4, 0);
-    pass.draw(4, 1,  8, 0);
+    pass.draw(4, 1, 0, 0);
+    pass.draw(4, 1, 4, 0);
+    pass.draw(4, 1, 8, 0);
     pass.draw(4, 1, 12, 0);
     pass.draw(4, 1, 16, 0);
     pass.draw(4, 1, 20, 0);
@@ -173,7 +169,7 @@ fn frame(app: *App, params: *FrameParams) !void {
 
 const Camera = struct {
     const Self = @This();
-    
+
     eye: Vec,
     target: Vec,
     up: Vec,
@@ -210,7 +206,7 @@ const Camera = struct {
         };
 
         const buffer = .{
-            .buffer = initBuffer(device, .{.uniform=true}, &@bitCast([20]f32, uniform)),
+            .buffer = initBuffer(device, .{ .uniform = true }, &@bitCast([20]f32, uniform)),
             .size = @sizeOf(@TypeOf(uniform)),
         };
 
@@ -277,7 +273,7 @@ const Cube = struct {
         const texture = Brick.texture(device);
 
         // instance buffer
-        var ibuf: [IPR*IPR*16]f32 = undefined;
+        var ibuf: [IPR * IPR * 16]f32 = undefined;
 
         var z: usize = 0;
         while (z < IPR) : (z += 1) {
@@ -300,13 +296,13 @@ const Cube = struct {
             }
         }
 
-        const instance = Buffer {
-            .buffer = initBuffer(device, .{.vertex=true}, &ibuf),
+        const instance = Buffer{
+            .buffer = initBuffer(device, .{ .vertex = true }, &ibuf),
             .len = IPR * IPR,
             .size = @sizeOf(@TypeOf(ibuf)),
         };
 
-        return Self {
+        return Self{
             .mesh = mesh(device),
             .texture = texture,
             .instance = instance,
@@ -367,7 +363,7 @@ const Cube = struct {
                 .entry_point = "vs_main",
                 .buffers = &.{
                     Self.vertexBufferLayout(),
-                    Self.instanceLayout(), 
+                    Self.instanceLayout(),
                 },
             },
             .depth_stencil = &.{
@@ -384,7 +380,7 @@ const Cube = struct {
             },
         };
 
-        return device.createRenderPipeline(&descriptor); 
+        return device.createRenderPipeline(&descriptor);
     }
 
     fn mesh(device: gpu.Device) Buffer {
@@ -395,39 +391,39 @@ const Cube = struct {
         const h = v * 2;
         const buf = asFloats(.{
             // z+ face
-            0, 0, 1,  0,  0,  1,  0, h,
-            1, 0, 1,  0,  0,  1,  v, h,
-            0, 1, 1,  0,  0,  1,  0, 0,
-            1, 1, 1,  0,  0,  1,  v, 0,
+            0, 0, 1, 0,  0,  1,  0, h,
+            1, 0, 1, 0,  0,  1,  v, h,
+            0, 1, 1, 0,  0,  1,  0, 0,
+            1, 1, 1, 0,  0,  1,  v, 0,
             // z- face
-            1, 0, 0,  0,  0, -1,  0, h,
-            0, 0, 0,  0,  0, -1,  v, h,
-            1, 1, 0,  0,  0, -1,  0, 0,
-            0, 1, 0,  0,  0, -1,  v, 0,
+            1, 0, 0, 0,  0,  -1, 0, h,
+            0, 0, 0, 0,  0,  -1, v, h,
+            1, 1, 0, 0,  0,  -1, 0, 0,
+            0, 1, 0, 0,  0,  -1, v, 0,
             // x+ face
-            1, 0, 1,  1,  0,  0,  0, h,
-            1, 0, 0,  1,  0,  0,  v, h,
-            1, 1, 1,  1,  0,  0,  0, 0,
-            1, 1, 0,  1,  0,  0,  v, 0,
+            1, 0, 1, 1,  0,  0,  0, h,
+            1, 0, 0, 1,  0,  0,  v, h,
+            1, 1, 1, 1,  0,  0,  0, 0,
+            1, 1, 0, 1,  0,  0,  v, 0,
             // x- face
-            0, 0, 0, -1,  0,  0,  0, h,
-            0, 0, 1, -1,  0,  0,  v, h,
-            0, 1, 0, -1,  0,  0,  0, 0,
-            0, 1, 1, -1,  0,  0,  v, 0,
+            0, 0, 0, -1, 0,  0,  0, h,
+            0, 0, 1, -1, 0,  0,  v, h,
+            0, 1, 0, -1, 0,  0,  0, 0,
+            0, 1, 1, -1, 0,  0,  v, 0,
             // y+ face
-            1, 1, 0,  0,  1,  0,  0, h,
-            0, 1, 0,  0,  1,  0,  v, h,
-            1, 1, 1,  0,  1,  0,  0, 0,
-            0, 1, 1,  0,  1,  0,  v, 0,
+            1, 1, 0, 0,  1,  0,  0, h,
+            0, 1, 0, 0,  1,  0,  v, h,
+            1, 1, 1, 0,  1,  0,  0, 0,
+            0, 1, 1, 0,  1,  0,  v, 0,
             // y- face
-            0, 0, 0,  0, -1,  0,  0, h,
-            1, 0, 0,  0, -1,  0,  v, h,
-            0, 0, 1,  0, -1,  0,  0, 0,
-            1, 0, 1,  0, -1,  0,  v, 0,
+            0, 0, 0, 0,  -1, 0,  0, h,
+            1, 0, 0, 0,  -1, 0,  v, h,
+            0, 0, 1, 0,  -1, 0,  0, 0,
+            1, 0, 1, 0,  -1, 0,  v, 0,
         });
 
-        return Buffer {
-            .buffer = initBuffer(device, .{.vertex=true}, &buf),
+        return Buffer{
+            .buffer = initBuffer(device, .{ .vertex = true }, &buf),
             .size = @sizeOf(@TypeOf(buf)),
         };
     }
@@ -459,7 +455,7 @@ const Cube = struct {
     }
 
     fn instanceLayout() gpu.VertexBufferLayout {
-         const attributes = [_]gpu.VertexAttribute{
+        const attributes = [_]gpu.VertexAttribute{
             .{
                 .format = .float32x4,
                 .offset = 0,
@@ -488,7 +484,7 @@ const Cube = struct {
             .attribute_count = attributes.len,
             .attributes = &attributes,
         };
-   }
+    }
 };
 
 fn asFloats(comptime arr: anytype) [arr.len]f32 {
@@ -510,8 +506,8 @@ const Brick = struct {
         return Texture.fromData(device, W, H, slice);
     }
 
-    fn data() [W*H*4]u8 {
-        comptime var out: [W*H*4]u8 = undefined;
+    fn data() [W * H * 4]u8 {
+        comptime var out: [W * H * 4]u8 = undefined;
 
         // fill all the texture with brick color
         comptime var i = 0;
@@ -579,7 +575,7 @@ const Texture = struct {
     }
 
     fn fromData(device: gpu.Device, width: u32, height: u32, data: anytype) Self {
-        const extent = gpu.Extent3D {
+        const extent = gpu.Extent3D{
             .width = width,
             .height = height,
         };
@@ -617,9 +613,11 @@ const Texture = struct {
         });
 
         device.getQueue().writeTexture(
-            &gpu.ImageCopyTexture{ .texture = texture, },
+            &gpu.ImageCopyTexture{
+                .texture = texture,
+            },
             data,
-            &gpu.Texture.DataLayout {
+            &gpu.Texture.DataLayout{
                 .bytes_per_row = 4 * width,
                 .rows_per_image = height,
             },
@@ -635,7 +633,7 @@ const Texture = struct {
             },
         });
 
-        return Self {
+        return Self{
             .view = view,
             .texture = texture,
             .sampler = sampler,
@@ -644,7 +642,7 @@ const Texture = struct {
     }
 
     fn depth(device: gpu.Device, width: u32, height: u32) Self {
-        const extent = gpu.Extent3D {
+        const extent = gpu.Extent3D{
             .width = width,
             .height = height,
         };
@@ -684,11 +682,11 @@ const Texture = struct {
             .max_anisotropy = 1,
         });
 
-        return Self {
+        return Self{
             .texture = texture,
-            .view    = view,
+            .view = view,
             .sampler = sampler,
-            .bind_group = undefined,  // not used
+            .bind_group = undefined, // not used
         };
     }
 
@@ -706,7 +704,7 @@ const Texture = struct {
 
 const Light = struct {
     const Self = @This();
-    
+
     uniform: Uniform,
     buffer: Buffer,
     bind_group: gpu.BindGroup,
@@ -725,18 +723,18 @@ const Light = struct {
         };
 
         const buffer = .{
-            .buffer = initBuffer(device, .{.uniform = true}, &@bitCast([8]f32, uniform)),
+            .buffer = initBuffer(device, .{ .uniform = true }, &@bitCast([8]f32, uniform)),
             .size = @sizeOf(@TypeOf(uniform)),
         };
 
         const bind_group = device.createBindGroup(&gpu.BindGroup.Descriptor{
             .layout = Self.bindGroupLayout(device),
-            .entries = &[_]gpu.BindGroup.Entry {
+            .entries = &[_]gpu.BindGroup.Entry{
                 gpu.BindGroup.Entry.buffer(0, buffer.buffer, 0, buffer.size),
             },
         });
 
-        return Self {
+        return Self{
             .buffer = buffer,
             .uniform = uniform,
             .bind_group = bind_group,
@@ -746,7 +744,7 @@ const Light = struct {
 
     fn update(self: *Self, queue: gpu.Queue, delta: f32) void {
         const old = self.uniform;
-        const new = Light.Uniform {
+        const new = Light.Uniform{
             .position = zm.qmul(zm.quatFromAxisAngle(vec3u(0, 1, 0), delta), old.position),
             .color = old.color,
         };
@@ -832,7 +830,7 @@ const Light = struct {
             },
         };
 
-        return device.createRenderPipeline(&descriptor); 
+        return device.createRenderPipeline(&descriptor);
     }
 };
 
@@ -840,7 +838,7 @@ inline fn initBuffer(device: gpu.Device, usage: gpu.BufferUsage, data: anytype) 
     std.debug.assert(@typeInfo(@TypeOf(data)) == .Pointer);
     const T = std.meta.Elem(@TypeOf(data));
 
-    var u = usage; 
+    var u = usage;
     u.copy_dst = true;
     const buffer = device.createBuffer(&.{
         .size = @sizeOf(T) * data.len,
@@ -873,7 +871,7 @@ fn vec4(x: f32, y: f32, z: f32, w: f32) Vec {
 // todo indside Cube
 const Instance = struct {
     const Self = @This();
-    
+
     position: Vec,
     rotation: Quat,
 
@@ -890,20 +888,35 @@ fn keyCallback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.A
     if (action == .press) {
         switch (key) {
             .q, .escape, .space => window.setShouldClose(true),
-            .w, .up    => { global_params.keys |= FrameParams.up; },
-            .s, .down  => { global_params.keys |= FrameParams.down; },
-            .a, .left  => { global_params.keys |= FrameParams.left; },
-            .d, .right => { global_params.keys |= FrameParams.right; },
+            .w, .up => {
+                global_params.keys |= FrameParams.up;
+            },
+            .s, .down => {
+                global_params.keys |= FrameParams.down;
+            },
+            .a, .left => {
+                global_params.keys |= FrameParams.left;
+            },
+            .d, .right => {
+                global_params.keys |= FrameParams.right;
+            },
             else => {},
         }
     } else if (action == .release) {
         switch (key) {
-            .w, .up    => { global_params.keys &= ~FrameParams.up; },
-            .s, .down  => { global_params.keys &= ~FrameParams.down; },
-            .a, .left  => { global_params.keys &= ~FrameParams.left; },
-            .d, .right => { global_params.keys &= ~FrameParams.right; },
+            .w, .up => {
+                global_params.keys &= ~FrameParams.up;
+            },
+            .s, .down => {
+                global_params.keys &= ~FrameParams.down;
+            },
+            .a, .left => {
+                global_params.keys &= ~FrameParams.left;
+            },
+            .d, .right => {
+                global_params.keys &= ~FrameParams.right;
+            },
             else => {},
         }
     }
 }
-
