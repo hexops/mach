@@ -1,6 +1,6 @@
 // in this example:
 //   - comptime generated image data for texture
-//   - Blinn-Phong lightning
+//   - Blinn-Phong lighting
 //   - several pipelines
 //
 // quit with escape, q or space
