@@ -38,7 +38,7 @@ pub fn main() !void {
 
     const vs_module = app.device.createShaderModule(&.{
         .label = "my vertex shader",
-        .code = .{ .wgsl = @embedFile("instanced.vert.wgsl") },
+        .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
 
     const vertex_attributes = [_]gpu.VertexAttribute{
@@ -160,8 +160,6 @@ const FrameParams = struct {
 var i: u32 = 0;
 
 fn frame(app: *App, params: *FrameParams) !void {
-
-    std.log.info("{}", .{i});
     i += 1;
     
     const back_buffer_view = app.swap_chain.?.getCurrentTextureView();
