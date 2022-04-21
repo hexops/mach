@@ -4,7 +4,7 @@ const gpu = @import("gpu");
 
 const App = mach.App(*FrameParams, .{});
 
-pub fn main() !void {
+pub fn init() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var allocator = gpa.allocator();
 
@@ -77,6 +77,12 @@ pub fn main() !void {
 
     try app.run(.{ .frame = frame });
 }
+
+pub fn update() !bool {
+    return false;
+}
+
+pub fn deinit() void {}
 
 const FrameParams = struct {
     pipeline: gpu.RenderPipeline,
