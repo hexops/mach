@@ -50,7 +50,7 @@ pub fn main() !void {
     const eye = vec3(5.0, 7.0, 5.0);
     const target = vec3(0.0, 0.0, 0.0);
 
-    const size = try app.window.getSize();
+    const size = try app.window.getFramebufferSize();
     const aspect_ratio = @intToFloat(f32, size.width) / @intToFloat(f32, size.height);
 
     ctx.* = FrameParams{
