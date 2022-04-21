@@ -226,10 +226,7 @@ fn recreatePipeline(app: *const App, fragment_shader_code: [:0]const u8, bgl: ?*
     // popErrorScope() returns always true, (unless maybe it fails to capture the error scope?)
     _ = app.device.popErrorScope(&gpu.ErrorCallback.init(*bool, &error_occurred, struct {
         fn callback(ctx: *bool, typ: gpu.ErrorType, message: [*:0]const u8) void {
-            _ = typ;
-            // The only way to check wether an error actually occurred, since the function
-            // is called anyway, even without errors
-            if (std.mem.len(message) > 0) {
+            if (typ != .noError) {
                 std.debug.print("🔴🔴🔴🔴:\n{s}\n", .{message});
                 ctx.* = true;
             }
@@ -310,5 +307,23 @@ fn recreatePipeline(app: *const App, fragment_shader_code: [:0]const u8, bgl: ?*
             .strip_index_format = .none,
         },
     };
-    return app.device.createRenderPipeline(&pipeline_descriptor);
+
+    // Create the render pipeline. Even if the shader compilation succeeded, this could fail if the
+    // shader is missing a `main` entrypoint.
+    app.device.pushErrorScope(.validation);
+    const pipeline = app.device.createRenderPipeline(&pipeline_descriptor);
+    // popErrorScope() returns always true, (unless maybe it fails to capture the error scope?)
+    _ = app.device.popErrorScope(&gpu.ErrorCallback.init(*bool, &error_occurred, struct {
+        fn callback(ctx: *bool, typ: gpu.ErrorType, message: [*:0]const u8) void {
+            if (typ != .noError) {
+                std.debug.print("🔴🔴🔴🔴:\n{s}\n", .{message});
+                ctx.* = true;
+            }
+        }
+    }.callback));
+    if (error_occurred) {
+        // Retry with black_screen_frag which we know will work.
+        return recreatePipeline(app, @embedFile("black_screen_frag.wgsl"), bgl);
+    }
+    return pipeline;
 }
