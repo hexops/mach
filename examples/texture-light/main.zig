@@ -44,9 +44,6 @@ pub fn main() !void {
     // }.callback);
     try app.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
-    const queue = app.device.getQueue();
-    const device = app.device;
-
     const eye = vec3(5.0, 7.0, 5.0);
     const target = vec3(0.0, 0.0, 0.0);
 
@@ -54,11 +51,12 @@ pub fn main() !void {
     const aspect_ratio = @intToFloat(f32, size.width) / @intToFloat(f32, size.height);
 
     ctx.* = FrameParams{
-        .queue = queue,
+        .queue = app.device.getQueue(),
         .cube = Cube.init(app),
         .light = Light.init(app),
-        .depth = Texture.depth(device, size.width, size.height),
-        .camera = Camera.init(device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0),
+        .depth = Texture.depth(app.device, size.width, size.height),
+        .depth_size = size,
+        .camera = Camera.init(app.device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0),
     };
 
     try app.run(.{ .frame = frame });
@@ -70,6 +68,7 @@ const FrameParams = struct {
     camera: Camera,
     light: Light,
     depth: Texture,
+    depth_size: glfw.Window.Size,
     keys: u8 = 0,
 
     const up:    u8 = 0b0001;
@@ -79,6 +78,12 @@ const FrameParams = struct {
 };
 
 fn frame(app: *App, params: *FrameParams) !void {
+    // If window is resized, recreate depth buffer otherwise we cannot use it.
+    const size = app.window.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
+    if (size.width != params.depth_size.width or size.height != params.depth_size.height) {
+        params.depth = Texture.depth(app.device, size.width, size.height);
+        params.depth_size = size;
+    }
 
     // move camera
     const speed = zm.f32x4s(0.2);
