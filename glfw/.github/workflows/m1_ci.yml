@@ -9,7 +9,7 @@ on:
   - push
 jobs:
   aarch64-macos:
-    if: github.repository == 'hexops/mach-glfw'
+    if: ${{ github.repository == 'hexops/mach-glfw' }}
     runs-on: [self-hosted, macOS, ARM64]
     defaults:
       run:

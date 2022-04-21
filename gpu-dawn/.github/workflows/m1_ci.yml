@@ -6,8 +6,7 @@ on:
       - completed
 jobs:
   aarch64-macos:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    if: github.repository == 'hexops/mach-gpu-dawn'
+    if: ${{ github.repository == 'hexops/mach-gpu-dawn' && github.event.workflow_run.conclusion == 'success' }}
     runs-on: [self-hosted, macOS, ARM64]
     defaults:
       run:
