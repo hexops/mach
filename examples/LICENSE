@@ -3,3 +3,4 @@ The following examples have been ported from https://github.com/austinEng/webgpu
 * ./boids/
 * ./rotating-cube/
 * ./two-cubes/
+* ./instanced-cube
