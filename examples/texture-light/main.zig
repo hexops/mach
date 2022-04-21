@@ -86,7 +86,7 @@ fn frame(app: *App, params: *FrameParams) !void {
     }
 
     // move camera
-    const speed = zm.f32x4s(0.2);
+    const speed = zm.f32x4s(@floatCast(f32, app.delta_time * 5));
     const fwd = zm.normalize3(params.camera.target - params.camera.eye);
     const right = zm.normalize3(zm.cross3(fwd, params.camera.up));
 
@@ -96,16 +96,15 @@ fn frame(app: *App, params: *FrameParams) !void {
     if (params.keys & FrameParams.down != 0)
         params.camera.eye -= fwd * speed;
 
-    if (params.keys & FrameParams.right != 0)
-        params.camera.eye += right * speed;
-
-    if (params.keys & FrameParams.left != 0)
-        params.camera.eye -= right * speed;
+    if (params.keys & FrameParams.right != 0) params.camera.eye += right * speed
+    else if (params.keys & FrameParams.left != 0) params.camera.eye -= right * speed
+    else params.camera.eye += right * (speed * @Vector(4, f32){0.5, 0.5, 0.5, 0.5});
 
     params.camera.update(params.queue);
 
     // move light
-    params.light.update(params.queue);
+    const light_speed = @floatCast(f32, app.delta_time * 2.5);
+    params.light.update(params.queue, light_speed);
 
     const back_buffer_view = app.swap_chain.?.getCurrentTextureView();
     defer back_buffer_view.release();
@@ -268,7 +267,7 @@ const Cube = struct {
     instance: Buffer,
     texture: Texture,
 
-    const IPR = 10; // instances per row
+    const IPR = 20; // instances per row
     const SPACING = 2; // spacing between cubes
     const DISPLACEMENT = vec3u(IPR * SPACING / 2, 0, IPR * SPACING / 2);
 
@@ -745,10 +744,10 @@ const Light = struct {
         };
     }
 
-    fn update(self: *Self, queue: gpu.Queue) void {
+    fn update(self: *Self, queue: gpu.Queue, delta: f32) void {
         const old = self.uniform;
         const new = Light.Uniform {
-            .position = zm.qmul(zm.quatFromAxisAngle(vec3u(0, 1, 0), 0.05), old.position),
+            .position = zm.qmul(zm.quatFromAxisAngle(vec3u(0, 1, 0), delta), old.position),
             .color = old.color,
         };
         queue.writeBuffer(self.buffer.buffer, 0, Light.Uniform, &.{new});
