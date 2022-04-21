@@ -1,3 +1,7 @@
+// A slight modification / translation of https://www.shadertoy.com/view/XlGBW3
+// to WGSL.
+// License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+
 struct UniformBufferObject {
     resolution: vec2<f32>,
     time: f32,
