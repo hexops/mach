@@ -129,7 +129,7 @@ pub inline fn getError() Error!void {
 
 /// Returns and clears the last error description for the calling thread.
 ///
-/// This function returns a UTF-8 encoded human-readable description of the last error that occured 
+/// This function returns a UTF-8 encoded human-readable description of the last error that occured
 /// on the calling thread. If no error has occurred since the last call, it returns null.
 ///
 /// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
