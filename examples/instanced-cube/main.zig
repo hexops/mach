@@ -116,7 +116,7 @@ pub fn main() !void {
     const x_count = 4;
     const y_count = 4;
     const num_instances = x_count * y_count;
-    
+
     const uniform_buffer = app.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(UniformBufferObject) * num_instances,
@@ -161,7 +161,7 @@ var i: u32 = 0;
 
 fn frame(app: *App, params: *FrameParams) !void {
     i += 1;
-    
+
     const back_buffer_view = app.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
@@ -170,7 +170,7 @@ fn frame(app: *App, params: *FrameParams) !void {
         .load_op = .clear,
         .store_op = .store,
     };
-    
+
     const encoder = app.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
@@ -183,7 +183,7 @@ fn frame(app: *App, params: *FrameParams) !void {
             10,
             30,
         );
-        
+
         var ubos: [16]UniformBufferObject = undefined;
         const time = @intToFloat(f32, timer.read()) / @as(f32, std.time.ns_per_s);
         const step: f32 = 4.0;
@@ -191,7 +191,7 @@ fn frame(app: *App, params: *FrameParams) !void {
         var x: u8 = 0;
         while (x < 4) : (x += 1) {
             var y: u8 = 0;
-            while (y < 4) : (y += 1) {            
+            while (y < 4) : (y += 1) {
                 const trans = zm.translation(step * (@intToFloat(f32, x) - 2.0 + 0.5), step * (@intToFloat(f32, y) - 2.0 + 0.5), -20);
                 const localTime = time + @intToFloat(f32, m) * 0.5;
                 const model = zm.mul(zm.mul(zm.mul(zm.rotationX(localTime * (std.math.pi / 2.1)), zm.rotationY(localTime * (std.math.pi / 0.9))), zm.rotationZ(localTime * (std.math.pi / 1.3))), trans);
@@ -200,7 +200,7 @@ fn frame(app: *App, params: *FrameParams) !void {
                     .mat = mvp,
                 };
                 ubos[m] = ubo;
-                m += 1; 
+                m += 1;
             }
         }
         encoder.writeBuffer(params.uniform_buffer, 0, UniformBufferObject, &ubos);
