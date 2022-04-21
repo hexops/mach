@@ -13,13 +13,19 @@ This repository is a separate copy of the same library in the [main Mach reposit
 
 ## Building from source
 
-Building Dawn from source using this method is as simple as:
+Building Dawn from source using this method is simple:
 
 ```sh
 git clone https://github.com/hexops/mach-gpu-dawn
 cd mach-gpu-dawn
+
+rm -rf libs/mach-glfw
+git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+
 zig build -Ddawn-from-source=true
 ```
+
+(Please make sure to use Zig nightly, e.g. v0.10, not v0.9, which you can get a binary release of at the very top of this page: https://ziglang.org/download/)
 
 This will take ~10 minutes to finish (see the 'binary releases' section below.) You can add the following options:
 
