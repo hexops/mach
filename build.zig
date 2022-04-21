@@ -51,7 +51,6 @@ pub fn build(b: *std.build.Builder) void {
         example_run_step.dependOn(&example_run_cmd.step);
     }
 
-    // Is it ok to leave this here?
     const shaderexp_exe = b.addExecutable("shaderexp", "shaderexp/main.zig");
     shaderexp_exe.setTarget(target);
     shaderexp_exe.setBuildMode(mode);
