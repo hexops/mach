@@ -184,7 +184,7 @@ fn frame(params: FrameParams) !void {
             pl.swap_chain = params.device.nativeCreateSwapChain(pl.surface, &pl.target_desc);
         } else pl.swap_chain.?.configure(
             pl.swap_chain_format,
-            .{.render_attachment = true},
+            .{ .render_attachment = true },
             pl.target_desc.width,
             pl.target_desc.height,
         );
