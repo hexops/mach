@@ -13,13 +13,13 @@ pub fn build(b: *std.build.Builder) void {
     };
     const options = Options{ .gpu_dawn_options = gpu_dawn_options };
 
+    // TODO: re-enable tests
     const main_tests = b.addTest("src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     main_tests.addPackage(pkg);
     main_tests.addPackage(gpu.pkg);
     main_tests.addPackage(glfw.pkg);
-    link(b, main_tests, options);
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);
@@ -31,24 +31,28 @@ pub fn build(b: *std.build.Builder) void {
 
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },
-        .{ .name = "boids" },
-        .{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
-        .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
+        //.{ .name = "boids" },
+        //.{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
+        //.{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
+        //.{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
+        //.{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
+        //.{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
+        //.{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
     }) |example| {
-        const example_exe = b.addExecutable("example-" ++ example.name, "examples/" ++ example.name ++ "/main.zig");
+        const example_name = example.name;
+        const example_app = MachApp.createApplication(
+            b,
+            "example-" ++ example_name,
+            "examples/" ++ example_name ++ "/main.zig",
+            &.{ glfw.pkg, gpu.pkg, pkg },
+        );
+        const example_exe = example_app.step;
         example_exe.setTarget(target);
         example_exe.setBuildMode(mode);
-        example_exe.addPackage(pkg);
-        example_exe.addPackage(gpu.pkg);
-        example_exe.addPackage(glfw.pkg);
         inline for (example.packages) |additional_package| {
             example_exe.addPackage(additional_package);
         }
-        link(b, example_exe, options);
+        example_app.link(options);
         example_exe.install();
 
         const example_run_cmd = example_exe.run();
@@ -57,19 +61,19 @@ pub fn build(b: *std.build.Builder) void {
         example_run_step.dependOn(&example_run_cmd.step);
     }
 
-    const shaderexp_exe = b.addExecutable("shaderexp", "shaderexp/main.zig");
-    shaderexp_exe.setTarget(target);
-    shaderexp_exe.setBuildMode(mode);
-    shaderexp_exe.addPackage(pkg);
-    shaderexp_exe.addPackage(gpu.pkg);
-    shaderexp_exe.addPackage(glfw.pkg);
-    link(b, shaderexp_exe, options);
-    shaderexp_exe.install();
+    //const shaderexp_exe = b.addExecutable("shaderexp", "shaderexp/main.zig");
+    //shaderexp_exe.setTarget(target);
+    //shaderexp_exe.setBuildMode(mode);
+    //shaderexp_exe.addPackage(pkg);
+    //shaderexp_exe.addPackage(gpu.pkg);
+    //shaderexp_exe.addPackage(glfw.pkg);
+    //link(b, shaderexp_exe, options);
+    //shaderexp_exe.install();
 
-    const shaderexp_run_cmd = shaderexp_exe.run();
-    shaderexp_run_cmd.step.dependOn(b.getInstallStep());
-    const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
-    shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
+    //const shaderexp_run_cmd = shaderexp_exe.run();
+    //shaderexp_run_cmd.step.dependOn(b.getInstallStep());
+    //const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
+    //shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
 }
 
 pub const Options = struct {
@@ -94,21 +98,42 @@ const Packages = struct {
     };
 };
 
+const MachApp = struct {
+    step: *std.build.LibExeObjStep,
+    b: *std.build.Builder,
+
+    pub fn createApplication(b: *std.build.Builder, name: []const u8, src: []const u8, deps: []const Pkg) MachApp {
+        const exe = b.addExecutable(name, "src/entry/native.zig");
+        exe.addPackage(.{
+            .name = "app",
+            .path = .{ .path = src },
+            .dependencies = deps,
+        });
+        exe.addPackage(gpu.pkg);
+        exe.addPackage(glfw.pkg);
+
+        return .{
+            .b = b,
+            .step = exe,
+        };
+    }
+
+    pub fn link(app: *const MachApp, options: Options) void {
+        const gpu_options = gpu.Options{
+            .glfw_options = @bitCast(@import("gpu/libs/mach-glfw/build.zig").Options, options.glfw_options),
+            .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
+        };
+
+        glfw.link(app.b, app.step, options.glfw_options);
+        gpu.link(app.b, app.step, gpu_options);
+    }
+};
+
 pub const pkg = std.build.Pkg{
     .name = "mach",
     .path = .{ .path = thisDir() ++ "/src/main.zig" },
     .dependencies = &.{ gpu.pkg, glfw.pkg },
 };
-
-pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const gpu_options = gpu.Options{
-        .glfw_options = @bitCast(@import("gpu/libs/mach-glfw/build.zig").Options, options.glfw_options),
-        .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
-    };
-
-    glfw.link(b, step, options.glfw_options);
-    gpu.link(b, step, gpu_options);
-}
 
 fn thisDir() []const u8 {
     return std.fs.path.dirname(@src().file) orelse ".";
