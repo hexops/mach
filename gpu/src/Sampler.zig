@@ -42,16 +42,16 @@ pub const BindingLayout = extern struct {
 pub const Descriptor = extern struct {
     reserved: ?*anyopaque = null,
     label: ?[*:0]const u8 = null,
-    address_mode_u: AddressMode,
-    address_mode_v: AddressMode,
-    address_mode_w: AddressMode,
-    mag_filter: FilterMode,
-    min_filter: FilterMode,
-    mipmap_filter: FilterMode,
-    lod_min_clamp: f32,
-    lod_max_clamp: f32,
-    compare: CompareFunction,
-    max_anisotropy: u16,
+    address_mode_u: AddressMode = .clamp_to_edge,
+    address_mode_v: AddressMode = .clamp_to_edge,
+    address_mode_w: AddressMode = .clamp_to_edge,
+    mag_filter: FilterMode = .nearest,
+    min_filter: FilterMode = .nearest,
+    mipmap_filter: FilterMode = .nearest,
+    lod_min_clamp: f32 = 0,
+    lod_max_clamp: f32 = 32,
+    compare: CompareFunction = .none,
+    max_anisotropy: u16 = 1,
 };
 
 test {
