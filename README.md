@@ -58,6 +58,7 @@ Mach is still early stages, so far we have support for building from the followi
 | Windows x86_64   | ✅                | ✅                     | ✅                | ✅                  |
 | iOS              | 🏃                | 🏃                     | 🏃                | 🏃                  |
 | Android          | 🏃                | 🏃                     | 🏃                | 🏃                  |
+| Web (Wasm)       | 🏃                | 🏃                     | 🏃                | 🏃                  |
 
 * ✅ Tested and verified via CI.
 * ✔️ Should work, not tested via CI yet.

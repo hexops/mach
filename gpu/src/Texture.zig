@@ -43,11 +43,11 @@ pub const Descriptor = struct {
     reserved: ?*anyopaque = null,
     label: ?[*:0]const u8 = null,
     usage: Usage,
-    dimension: Dimension,
+    dimension: Dimension = .dimension_2d,
     size: Extent3D,
     format: Format,
-    mip_level_count: u32,
-    sample_count: u32,
+    mip_level_count: u32 = 1,
+    sample_count: u32 = 1,
     view_formats: ?[]const Format = null,
 };
 

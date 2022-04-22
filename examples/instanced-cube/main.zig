@@ -57,21 +57,9 @@ pub fn main() !void {
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
 
-    const blend = gpu.BlendState{
-        .color = .{
-            .operation = .add,
-            .src_factor = .one,
-            .dst_factor = .zero,
-        },
-        .alpha = .{
-            .operation = .add,
-            .src_factor = .one,
-            .dst_factor = .zero,
-        },
-    };
     const color_target = gpu.ColorTargetState{
         .format = app.swap_chain_format,
-        .blend = &blend,
+        .blend = null,
         .write_mask = gpu.ColorWriteMask.all,
     };
     const fragment = gpu.FragmentState{
@@ -115,8 +103,6 @@ pub fn main() !void {
         },
     };
 
-    const queue = app.device.getQueue();
-
     const vertex_buffer = app.device.createBuffer(&.{
         .usage = .{ .vertex = true },
         .size = @sizeOf(Vertex) * vertices.len,
@@ -127,40 +113,32 @@ pub fn main() !void {
     vertex_buffer.unmap();
     defer vertex_buffer.release();
 
-    // uniformBindGroup offset must be 256-byte aligned
-    const uniform_offset = 256;
+    const x_count = 4;
+    const y_count = 4;
+    const num_instances = x_count * y_count;
+
     const uniform_buffer = app.device.createBuffer(&.{
-        .usage = .{ .uniform = true, .copy_dst = true },
-        .size = @sizeOf(UniformBufferObject) + uniform_offset,
+        .usage = .{ .copy_dst = true, .uniform = true },
+        .size = @sizeOf(UniformBufferObject) * num_instances,
         .mapped_at_creation = false,
     });
     defer uniform_buffer.release();
-    const bind_group1 = app.device.createBindGroup(
+    const bind_group = app.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
             .entries = &.{
-                gpu.BindGroup.Entry.buffer(0, uniform_buffer, 0, @sizeOf(UniformBufferObject)),
+                gpu.BindGroup.Entry.buffer(0, uniform_buffer, 0, @sizeOf(UniformBufferObject) * num_instances),
             },
         },
     );
-    defer bind_group1.release();
-    const bind_group2 = app.device.createBindGroup(
-        &gpu.BindGroup.Descriptor{
-            .layout = bgl,
-            .entries = &.{
-                gpu.BindGroup.Entry.buffer(0, uniform_buffer, uniform_offset, @sizeOf(UniformBufferObject)),
-            },
-        },
-    );
-    defer bind_group2.release();
+    defer bind_group.release();
 
     ctx.* = FrameParams{
         .pipeline = app.device.createRenderPipeline(&pipeline_descriptor),
-        .queue = queue,
+        .queue = app.device.getQueue(),
         .vertex_buffer = vertex_buffer,
         .uniform_buffer = uniform_buffer,
-        .bind_group1 = bind_group1,
-        .bind_group2 = bind_group2,
+        .bind_group = bind_group,
     };
 
     vs_module.release();
@@ -176,11 +154,14 @@ const FrameParams = struct {
     queue: gpu.Queue,
     vertex_buffer: gpu.Buffer,
     uniform_buffer: gpu.Buffer,
-    bind_group1: gpu.BindGroup,
-    bind_group2: gpu.BindGroup,
+    bind_group: gpu.BindGroup,
 };
 
+var i: u32 = 0;
+
 fn frame(app: *App, params: *FrameParams) !void {
+    i += 1;
+
     const back_buffer_view = app.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
@@ -193,50 +174,43 @@ fn frame(app: *App, params: *FrameParams) !void {
     const encoder = app.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
-        .depth_stencil_attachment = null,
     };
 
     {
-        const time = @intToFloat(f32, timer.read()) / @as(f32, std.time.ns_per_s);
-        const rotation1 = zm.mul(zm.rotationX(time * (std.math.pi / 2.0)), zm.rotationZ(time * (std.math.pi / 2.0)));
-        const rotation2 = zm.mul(zm.rotationZ(time * (std.math.pi / 2.0)), zm.rotationX(time * (std.math.pi / 2.0)));
-        const model1 = zm.mul(rotation1, zm.translation(-2, 0, 0));
-        const model2 = zm.mul(rotation2, zm.translation(2, 0, 0));
-        const view = zm.lookAtRh(
-            zm.f32x4(0, -4, 2, 1),
-            zm.f32x4(0, 0, 0, 1),
-            zm.f32x4(0, 0, 1, 0),
-        );
         const proj = zm.perspectiveFovRh(
-            (2.0 * std.math.pi / 5.0),
+            (std.math.pi / 3.0),
             @intToFloat(f32, app.current_desc.width) / @intToFloat(f32, app.current_desc.height),
-            1,
-            100,
+            10,
+            30,
         );
-        const mvp1 = zm.mul(zm.mul(model1, view), proj);
-        const mvp2 = zm.mul(zm.mul(model2, view), proj);
-        const ubo1 = UniformBufferObject{
-            .mat = zm.transpose(mvp1),
-        };
-        const ubo2 = UniformBufferObject{
-            .mat = zm.transpose(mvp2),
-        };
 
-        encoder.writeBuffer(params.uniform_buffer, 0, UniformBufferObject, &.{ubo1});
-
-        // bind_group2 offset
-        encoder.writeBuffer(params.uniform_buffer, 256, UniformBufferObject, &.{ubo2});
+        var ubos: [16]UniformBufferObject = undefined;
+        const time = @intToFloat(f32, timer.read()) / @as(f32, std.time.ns_per_s);
+        const step: f32 = 4.0;
+        var m: u8 = 0;
+        var x: u8 = 0;
+        while (x < 4) : (x += 1) {
+            var y: u8 = 0;
+            while (y < 4) : (y += 1) {
+                const trans = zm.translation(step * (@intToFloat(f32, x) - 2.0 + 0.5), step * (@intToFloat(f32, y) - 2.0 + 0.5), -20);
+                const localTime = time + @intToFloat(f32, m) * 0.5;
+                const model = zm.mul(zm.mul(zm.mul(zm.rotationX(localTime * (std.math.pi / 2.1)), zm.rotationY(localTime * (std.math.pi / 0.9))), zm.rotationZ(localTime * (std.math.pi / 1.3))), trans);
+                const mvp = zm.mul(model, proj);
+                const ubo = UniformBufferObject{
+                    .mat = mvp,
+                };
+                ubos[m] = ubo;
+                m += 1;
+            }
+        }
+        encoder.writeBuffer(params.uniform_buffer, 0, UniformBufferObject, &ubos);
     }
 
     const pass = encoder.beginRenderPass(&render_pass_info);
     pass.setPipeline(params.pipeline);
     pass.setVertexBuffer(0, params.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
-
-    pass.setBindGroup(0, params.bind_group1, &.{0});
-    pass.draw(vertices.len, 1, 0, 0);
-    pass.setBindGroup(0, params.bind_group2, &.{0});
-    pass.draw(vertices.len, 1, 0, 0);
-
+    pass.setBindGroup(0, params.bind_group, &.{0});
+    pass.draw(vertices.len, 16, 0, 0);
     pass.end();
     pass.release();
 

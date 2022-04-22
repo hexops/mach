@@ -32,6 +32,8 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "boids" },
         .{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
     }) |example| {
         const example_exe = b.addExecutable("example-" ++ example.name, "examples/" ++ example.name ++ "/main.zig");
         example_exe.setTarget(target);
@@ -50,6 +52,20 @@ pub fn build(b: *std.build.Builder) void {
         const example_run_step = b.step("run-example-" ++ example.name, "Run the example");
         example_run_step.dependOn(&example_run_cmd.step);
     }
+
+    const shaderexp_exe = b.addExecutable("shaderexp", "shaderexp/main.zig");
+    shaderexp_exe.setTarget(target);
+    shaderexp_exe.setBuildMode(mode);
+    shaderexp_exe.addPackage(pkg);
+    shaderexp_exe.addPackage(gpu.pkg);
+    shaderexp_exe.addPackage(glfw.pkg);
+    link(b, shaderexp_exe, options);
+    shaderexp_exe.install();
+
+    const shaderexp_run_cmd = shaderexp_exe.run();
+    shaderexp_run_cmd.step.dependOn(b.getInstallStep());
+    const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
+    shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
 }
 
 pub const Options = struct {
