@@ -27,7 +27,7 @@ pub inline fn setLabel(texture_view: TextureView, label: [:0]const u8) void {
 
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
-    format: Texture.Format,
+    format: Texture.Format = .none,
     dimension: TextureView.Dimension,
     base_mip_level: u32 = 0,
     mip_level_count: u32,
