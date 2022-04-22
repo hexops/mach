@@ -29,11 +29,11 @@ pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     format: Texture.Format,
     dimension: TextureView.Dimension,
-    base_mip_level: u32,
+    base_mip_level: u32 = 0,
     mip_level_count: u32,
-    base_array_layer: u32,
+    base_array_layer: u32 = 0,
     array_layer_count: u32,
-    aspect: Texture.Aspect,
+    aspect: Texture.Aspect = .all,
 };
 
 pub const Dimension = enum(u32) {
