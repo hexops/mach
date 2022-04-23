@@ -142,6 +142,7 @@ pub fn App(comptime Context: type, comptime config: AppConfig) type {
                 const found_backend_type = @intToEnum(gpu.Adapter.BackendType, c.machDawnNativeAdapterProperties_getBackendType(properties));
                 if (found_backend_type == backend_type) {
                     dawn_adapter = adapter;
+                    break;
                 }
             }
             if (dawn_adapter == null) {
