@@ -25,14 +25,17 @@ pub inline fn setLabel(texture_view: TextureView, label: [:0]const u8) void {
     texture_view.vtable.setLabel(texture_view.ptr, label);
 }
 
+const mip_level_count_undefined: u32 = 0xffffffff;
+const array_layer_count_undefined: u32 = 0xffffffff;
+
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
     format: Texture.Format = .none,
-    dimension: TextureView.Dimension,
+    dimension: TextureView.Dimension = .dimension_none,
     base_mip_level: u32 = 0,
-    mip_level_count: u32,
+    mip_level_count: u32 = mip_level_count_undefined,
     base_array_layer: u32 = 0,
-    array_layer_count: u32,
+    array_layer_count: u32 = array_layer_count_undefined,
     aspect: Texture.Aspect = .all,
 };
 
