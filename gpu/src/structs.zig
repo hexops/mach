@@ -87,13 +87,13 @@ pub const RenderPassTimestampWrite = struct {
 
 pub const RenderPassDepthStencilAttachment = struct {
     view: TextureView,
-    depth_load_op: LoadOp,
-    depth_store_op: StoreOp,
+    depth_load_op: LoadOp = .none,
+    depth_store_op: StoreOp = .none,
     clear_depth: f32 = math.nan_f32,
     depth_clear_value: f32 = 0.0,
     depth_read_only: bool = false,
-    stencil_load_op: LoadOp,
-    stencil_store_op: StoreOp,
+    stencil_load_op: LoadOp = .none,
+    stencil_store_op: StoreOp = .none,
     clear_stencil: u32 = 0,
     stencil_clear_value: u32 = 0.0,
     stencil_read_only: bool = false,
