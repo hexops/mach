@@ -4,3 +4,4 @@ The following examples have been ported from https://github.com/austinEng/webgpu
 * ./rotating-cube/
 * ./two-cubes/
 * ./instanced-cube
+* ./textured-cube

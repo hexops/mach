@@ -34,6 +34,7 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
     }) |example| {
         const example_exe = b.addExecutable("example-" ++ example.name, "examples/" ++ example.name ++ "/main.zig");
         example_exe.setTarget(target);
@@ -79,13 +80,15 @@ const ExampleDefinition = struct {
 };
 
 const Packages = struct {
-    const zmath = zmath_pkg;
-};
-
-// Declared here because submodule may not be cloned at the time build.zig runs.
-const zmath_pkg = std.build.Pkg{
-    .name = "zmath",
-    .path = .{ .path = "examples/libs/zmath/src/zmath.zig" },
+    // Declared here because submodule may not be cloned at the time build.zig runs.
+    const zmath = std.build.Pkg{
+        .name = "zmath",
+        .path = .{ .path = "examples/libs/zmath/src/zmath.zig" },
+    };
+    const zigimg = std.build.Pkg{
+        .name = "zigimg",
+        .path = .{ .path = "examples/libs/zigimg/zigimg.zig" },
+    };
 };
 
 pub const pkg = std.build.Pkg{
