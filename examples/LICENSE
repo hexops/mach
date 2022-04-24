@@ -5,3 +5,4 @@ The following examples have been ported from https://github.com/austinEng/webgpu
 * ./two-cubes/
 * ./instanced-cube
 * ./textured-cube
+* ./fractal-cube

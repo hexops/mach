@@ -35,6 +35,7 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
+        .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
     }) |example| {
         const example_exe = b.addExecutable("example-" ++ example.name, "examples/" ++ example.name ++ "/main.zig");
         example_exe.setTarget(target);
