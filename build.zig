@@ -26,6 +26,8 @@ pub fn build(b: *std.build.Builder) void {
 
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "examples/libs/zmath") catch unreachable;
+    ensureDependencySubmodule(b.allocator, "examples/libs/zigimg") catch unreachable;
+    ensureDependencySubmodule(b.allocator, "examples/libs/assets") catch unreachable;
 
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },
