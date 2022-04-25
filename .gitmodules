@@ -17,4 +17,4 @@
 	url = https://github.com/zigimg/zigimg
 [submodule "examples/assets"]
 	path = examples/assets
-	url = https://github.com/hexops/mach-examples-assets
+	url = https://github.com/hexops/mach-example-assets
