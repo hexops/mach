@@ -12,3 +12,9 @@
 [submodule "examples/libs/zmath"]
 	path = examples/libs/zmath
 	url = https://github.com/PiergiorgioZagaria/zmath
+[submodule "examples/libs/zigimg"]
+	path = examples/libs/zigimg
+	url = https://github.com/zigimg/zigimg
+[submodule "examples/assets"]
+	path = examples/assets
+	url = https://github.com/hexops/mach-example-assets

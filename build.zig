@@ -26,6 +26,8 @@ pub fn build(b: *std.build.Builder) void {
 
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "examples/libs/zmath") catch unreachable;
+    ensureDependencySubmodule(b.allocator, "examples/libs/zigimg") catch unreachable;
+    ensureDependencySubmodule(b.allocator, "examples/assets") catch unreachable;
 
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },
@@ -34,6 +36,8 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
+        .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
     }) |example| {
         const example_exe = b.addExecutable("example-" ++ example.name, "examples/" ++ example.name ++ "/main.zig");
         example_exe.setTarget(target);
@@ -79,13 +83,15 @@ const ExampleDefinition = struct {
 };
 
 const Packages = struct {
-    const zmath = zmath_pkg;
-};
-
-// Declared here because submodule may not be cloned at the time build.zig runs.
-const zmath_pkg = std.build.Pkg{
-    .name = "zmath",
-    .path = .{ .path = "examples/libs/zmath/src/zmath.zig" },
+    // Declared here because submodule may not be cloned at the time build.zig runs.
+    const zmath = std.build.Pkg{
+        .name = "zmath",
+        .path = .{ .path = "examples/libs/zmath/src/zmath.zig" },
+    };
+    const zigimg = std.build.Pkg{
+        .name = "zigimg",
+        .path = .{ .path = "examples/libs/zigimg/zigimg.zig" },
+    };
 };
 
 pub const pkg = std.build.Pkg{
