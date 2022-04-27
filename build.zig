@@ -103,7 +103,7 @@ const MachApp = struct {
     b: *std.build.Builder,
 
     pub fn createApplication(b: *std.build.Builder, name: []const u8, src: []const u8, deps: []const Pkg) MachApp {
-        const exe = b.addExecutable(name, "src/entry/native.zig");
+        const exe = b.addExecutable(name, "src/entry_native.zig");
         exe.addPackage(.{
             .name = "app",
             .path = .{ .path = src },
