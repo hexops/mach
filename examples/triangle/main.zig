@@ -2,21 +2,19 @@ const std = @import("std");
 const mach = @import("mach");
 const gpu = @import("gpu");
 
-const App = mach.App(*FrameParams, .{});
+pub const options: mach.Engine.Options = .{};
 
-pub fn init() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    var allocator = gpa.allocator();
+pipeline: gpu.RenderPipeline,
+queue: gpu.Queue,
 
-    const ctx = try allocator.create(FrameParams);
-    var app = try App.init(allocator, ctx, .{});
-
-    const vs_module = app.device.createShaderModule(&.{
+const Self = @This();
+pub fn init(self: *Self, engine: *mach.Engine) !void {
+    const vs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
 
-    const fs_module = app.device.createShaderModule(&.{
+    const fs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my fragment shader",
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
@@ -35,7 +33,7 @@ pub fn init() !void {
         },
     };
     const color_target = gpu.ColorTargetState{
-        .format = app.swap_chain_format,
+        .format = engine.gpu_driver.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMask.all,
     };
@@ -67,30 +65,17 @@ pub fn init() !void {
         },
     };
 
-    ctx.* = FrameParams{
-        .pipeline = app.device.createRenderPipeline(&pipeline_descriptor),
-        .queue = app.device.getQueue(),
-    };
+    self.pipeline = engine.gpu_driver.device.createRenderPipeline(&pipeline_descriptor);
+    self.queue = engine.gpu_driver.device.getQueue();
 
     vs_module.release();
     fs_module.release();
-
-    try app.run(.{ .frame = frame });
 }
 
-pub fn update() !bool {
-    return false;
-}
+pub fn deinit(_: *Self, _: *mach.Engine) void {}
 
-pub fn deinit() void {}
-
-const FrameParams = struct {
-    pipeline: gpu.RenderPipeline,
-    queue: gpu.Queue,
-};
-
-fn frame(app: *App, params: *FrameParams) !void {
-    const back_buffer_view = app.swap_chain.?.getCurrentTextureView();
+pub fn update(self: *Self, engine: *mach.Engine) !bool {
+    const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .resolve_target = null,
@@ -99,13 +84,13 @@ fn frame(app: *App, params: *FrameParams) !void {
         .store_op = .store,
     };
 
-    const encoder = app.device.createCommandEncoder(null);
+    const encoder = engine.gpu_driver.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = null,
     };
     const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setPipeline(params.pipeline);
+    pass.setPipeline(self.pipeline);
     pass.draw(3, 1, 0, 0);
     pass.end();
     pass.release();
@@ -113,8 +98,10 @@ fn frame(app: *App, params: *FrameParams) !void {
     var command = encoder.finish(null);
     encoder.release();
 
-    params.queue.submit(&.{command});
+    self.queue.submit(&.{command});
     command.release();
-    app.swap_chain.?.present();
+    engine.gpu_driver.swap_chain.?.present();
     back_buffer_view.release();
+
+    return true;
 }
