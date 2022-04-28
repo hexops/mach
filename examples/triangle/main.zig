@@ -2,13 +2,12 @@ const std = @import("std");
 const mach = @import("mach");
 const gpu = @import("gpu");
 
-pub const options: mach.Engine.Options = .{};
+const App = @This();
 
 pipeline: gpu.RenderPipeline,
 queue: gpu.Queue,
 
-const Self = @This();
-pub fn init(self: *Self, engine: *mach.Engine) !void {
+pub fn init(app: *App, engine: *mach.Engine) !void {
     const vs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
@@ -65,16 +64,16 @@ pub fn init(self: *Self, engine: *mach.Engine) !void {
         },
     };
 
-    self.pipeline = engine.gpu_driver.device.createRenderPipeline(&pipeline_descriptor);
-    self.queue = engine.gpu_driver.device.getQueue();
+    app.pipeline = engine.gpu_driver.device.createRenderPipeline(&pipeline_descriptor);
+    app.queue = engine.gpu_driver.device.getQueue();
 
     vs_module.release();
     fs_module.release();
 }
 
-pub fn deinit(_: *Self, _: *mach.Engine) void {}
+pub fn deinit(_: *App, _: *mach.Engine) void {}
 
-pub fn update(self: *Self, engine: *mach.Engine) !bool {
+pub fn update(app: *App, engine: *mach.Engine) !bool {
     const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
@@ -90,7 +89,7 @@ pub fn update(self: *Self, engine: *mach.Engine) !bool {
         .depth_stencil_attachment = null,
     };
     const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setPipeline(self.pipeline);
+    pass.setPipeline(app.pipeline);
     pass.draw(3, 1, 0, 0);
     pass.end();
     pass.release();
@@ -98,7 +97,7 @@ pub fn update(self: *Self, engine: *mach.Engine) !bool {
     var command = encoder.finish(null);
     encoder.release();
 
-    self.queue.submit(&.{command});
+    app.queue.submit(&.{command});
     command.release();
     engine.gpu_driver.swap_chain.?.present();
     back_buffer_view.release();
