@@ -39,12 +39,13 @@ pub fn build(b: *std.build.Builder) void {
         //.{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
         //.{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
     }) |example| {
-        const example_name = example.name;
-        const example_app = MachApp.createApplication(
+        const example_app = App.init(
             b,
-            "example-" ++ example_name,
-            "examples/" ++ example_name ++ "/main.zig",
-            &.{ glfw.pkg, gpu.pkg, pkg },
+            .{
+                .name = "example-" ++ example.name,
+                .src = "examples/" ++ example.name ++ "/main.zig",
+                .deps = &.{ glfw.pkg, gpu.pkg, pkg },
+            },
         );
         const example_exe = example_app.step;
         example_exe.setTarget(target);
@@ -98,16 +99,20 @@ const Packages = struct {
     };
 };
 
-const MachApp = struct {
+const App = struct {
     step: *std.build.LibExeObjStep,
     b: *std.build.Builder,
 
-    pub fn createApplication(b: *std.build.Builder, name: []const u8, src: []const u8, deps: []const Pkg) MachApp {
-        const exe = b.addExecutable(name, "src/entry_native.zig");
+    pub fn init(b: *std.build.Builder, options: struct {
+        name: []const u8,
+        src: []const u8,
+        deps: ?[]const Pkg = null,
+    }) App {
+        const exe = b.addExecutable(options.name, "src/entry_native.zig");
         exe.addPackage(.{
             .name = "app",
-            .path = .{ .path = src },
-            .dependencies = deps,
+            .path = .{ .path = options.src },
+            .dependencies = options.deps,
         });
         exe.addPackage(gpu.pkg);
         exe.addPackage(glfw.pkg);
@@ -118,7 +123,7 @@ const MachApp = struct {
         };
     }
 
-    pub fn link(app: *const MachApp, options: Options) void {
+    pub fn link(app: *const App, options: Options) void {
         const gpu_options = gpu.Options{
             .glfw_options = @bitCast(@import("gpu/libs/mach-glfw/build.zig").Options, options.glfw_options),
             .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
