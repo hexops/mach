@@ -166,6 +166,13 @@ fn init(allocator: Allocator, options: Options) !Engine {
     };
 }
 
+// TODO: check signatures
+comptime {
+    if (!@hasDecl(App, "init")) @compileError("App must export 'pub fn init(app: *App, engine: *mach.Engine) !void'");
+    if (!@hasDecl(App, "deinit")) @compileError("App must export 'pub fn deinit(app: *App, engine: *mach.Engine) void'");
+    if (!@hasDecl(App, "update")) @compileError("App must export 'pub fn update(app: *App, engine: *mach.Engine) !bool'");
+}
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -198,9 +205,9 @@ pub fn main() !void {
                 engine.gpu_driver.target_desc.height,
             );
 
-            //if (funcs.resize) |f| {
-            //    try f(app, app.context, app.target_desc.width, app.target_desc.height);
-            //}
+            if (@hasDecl(App, "resize")) {
+                try app.resize(&engine, engine.gpu_driver.target_desc.width, engine.gpu_driver.target_desc.height);
+            }
             engine.gpu_driver.current_desc = engine.gpu_driver.target_desc;
         }
 
