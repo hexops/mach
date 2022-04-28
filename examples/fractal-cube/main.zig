@@ -162,7 +162,7 @@ pub fn main() !void {
         .size = .{ .width = app.current_desc.width, .height = app.current_desc.height },
         .format = app.swap_chain_format,
     });
-    defer cube_texture.release();
+    defer cube_texture_render.release();
 
     const sampler = app.device.createSampler(&gpu.Sampler.Descriptor{
         .mag_filter = .linear,
@@ -183,7 +183,7 @@ pub fn main() !void {
         .mip_level_count = 1,
         .array_layer_count = 1,
     });
-    defer cube_texture_view.release();
+    defer cube_texture_view_render.release();
 
     const bind_group = app.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
