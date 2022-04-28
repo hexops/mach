@@ -177,7 +177,8 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    var engine = try init(allocator, App.options);
+    const options = if (@hasDecl(App, "options")) App.options else Options{};
+    var engine = try init(allocator, options);
     var app: App = undefined;
 
     try app.init(&engine);
