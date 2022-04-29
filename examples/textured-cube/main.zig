@@ -7,23 +7,26 @@ const zigimg = @import("zigimg");
 const Vertex = @import("cube_mesh.zig").Vertex;
 const vertices = @import("cube_mesh.zig").vertices;
 
-const App = mach.App(*FrameParams, .{});
-
 const UniformBufferObject = struct {
     mat: zm.Mat,
 };
 
 var timer: std.time.Timer = undefined;
 
-pub fn main() !void {
+pipeline: gpu.RenderPipeline,
+queue: gpu.Queue,
+vertex_buffer: gpu.Buffer,
+uniform_buffer: gpu.Buffer,
+bind_group: gpu.BindGroup,
+depth_texture: gpu.Texture,
+depth_size: glfw.Window.Size,
+
+const App = @This();
+
+pub fn init(app: *App, engine: *mach.Engine) !void {
     timer = try std.time.Timer.start();
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    var allocator = gpa.allocator();
 
-    const ctx = try allocator.create(FrameParams);
-    var app = try App.init(allocator, ctx, .{});
-
-    app.window.setKeyCallback(struct {
+    engine.core.internal.window.setKeyCallback(struct {
         fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
             _ = scancode;
             _ = mods;
@@ -35,9 +38,9 @@ pub fn main() !void {
             }
         }
     }.callback);
-    try app.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.core.internal.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
-    const vs_module = app.device.createShaderModule(&.{
+    const vs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
@@ -53,7 +56,7 @@ pub fn main() !void {
         .attributes = &vertex_attributes,
     };
 
-    const fs_module = app.device.createShaderModule(&.{
+    const fs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my fragment shader",
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
@@ -71,7 +74,7 @@ pub fn main() !void {
         },
     };
     const color_target = gpu.ColorTargetState{
-        .format = app.swap_chain_format,
+        .format = engine.gpu_driver.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMask.all,
     };
@@ -105,9 +108,9 @@ pub fn main() !void {
             .cull_mode = .back,
         },
     };
-    const pipeline = app.device.createRenderPipeline(&pipeline_descriptor);
+    const pipeline = engine.gpu_driver.device.createRenderPipeline(&pipeline_descriptor);
 
-    const vertex_buffer = app.device.createBuffer(&.{
+    const vertex_buffer = engine.gpu_driver.device.createBuffer(&.{
         .usage = .{ .vertex = true },
         .size = @sizeOf(Vertex) * vertices.len,
         .mapped_at_creation = true,
@@ -115,17 +118,16 @@ pub fn main() !void {
     var vertex_mapped = vertex_buffer.getMappedRange(Vertex, 0, vertices.len);
     std.mem.copy(Vertex, vertex_mapped, vertices[0..]);
     vertex_buffer.unmap();
-    defer vertex_buffer.release();
 
     // Create a sampler with linear filtering for smooth interpolation.
-    const sampler = app.device.createSampler(&.{
+    const sampler = engine.gpu_driver.device.createSampler(&.{
         .mag_filter = .linear,
         .min_filter = .linear,
     });
-    const queue = app.device.getQueue();
-    const img = try zigimg.Image.fromFilePath(allocator, "examples/assets/gotta-go-fast.png");
+    const queue = engine.gpu_driver.device.getQueue();
+    const img = try zigimg.Image.fromFilePath(engine.allocator, "examples/assets/gotta-go-fast.png");
     const img_size = gpu.Extent3D{ .width = @intCast(u32, img.width), .height = @intCast(u32, img.height) };
-    const cube_texture = app.device.createTexture(&.{
+    const cube_texture = engine.gpu_driver.device.createTexture(&.{
         .size = img_size,
         .format = .rgba8_unorm,
         .usage = .{
@@ -141,20 +143,20 @@ pub fn main() !void {
     switch (img.pixels.?) {
         .Rgba32 => |pixels| queue.writeTexture(&.{ .texture = cube_texture }, pixels, &data_layout, &img_size),
         .Rgb24 => |pixels| {
-            const data = try rgb24ToRgba32(allocator, pixels);
+            const data = try rgb24ToRgba32(engine.allocator, pixels);
             //defer data.deinit(allocator);
             queue.writeTexture(&.{ .texture = cube_texture }, data.Rgba32, &data_layout, &img_size);
         },
         else => @panic("unsupported image color format"),
     }
 
-    const uniform_buffer = app.device.createBuffer(&.{
+    const uniform_buffer = engine.gpu_driver.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(UniformBufferObject),
         .mapped_at_creation = false,
     });
-    defer uniform_buffer.release();
-    const bind_group = app.device.createBindGroup(
+
+    const bind_group = engine.gpu_driver.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = pipeline.getBindGroupLayout(0),
             .entries = &.{
@@ -164,10 +166,9 @@ pub fn main() !void {
             },
         },
     );
-    defer bind_group.release();
 
-    const size = try app.window.getFramebufferSize();
-    const depth_texture = app.device.createTexture(&gpu.Texture.Descriptor{
+    const size = try engine.core.internal.window.getFramebufferSize();
+    const depth_texture = engine.gpu_driver.device.createTexture(&gpu.Texture.Descriptor{
         .size = gpu.Extent3D{
             .width = size.width,
             .height = size.height,
@@ -179,37 +180,29 @@ pub fn main() !void {
         },
     });
 
-    ctx.* = FrameParams{
-        .pipeline = pipeline,
-        .queue = queue,
-        .vertex_buffer = vertex_buffer,
-        .uniform_buffer = uniform_buffer,
-        .bind_group = bind_group,
-        .depth_texture = depth_texture,
-        .depth_size = size,
-    };
+    app.pipeline = pipeline;
+    app.queue = queue;
+    app.vertex_buffer = vertex_buffer;
+    app.uniform_buffer = uniform_buffer;
+    app.bind_group = bind_group;
+    app.depth_texture = depth_texture;
+    app.depth_size = size;
 
     vs_module.release();
     fs_module.release();
-
-    try app.run(.{ .frame = frame });
 }
 
-const FrameParams = struct {
-    pipeline: gpu.RenderPipeline,
-    queue: gpu.Queue,
-    vertex_buffer: gpu.Buffer,
-    uniform_buffer: gpu.Buffer,
-    bind_group: gpu.BindGroup,
-    depth_texture: gpu.Texture,
-    depth_size: glfw.Window.Size,
-};
+pub fn deinit(app: *App, _: *mach.Engine) void {
+    app.vertex_buffer.release();
+    app.uniform_buffer.release();
+    app.bind_group.release();
+}
 
-fn frame(app: *App, params: *FrameParams) !void {
+pub fn update(app: *App, engine: *mach.Engine) !bool {
     // If window is resized, recreate depth buffer otherwise we cannot use it.
-    const size = app.window.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
-    if (size.width != params.depth_size.width or size.height != params.depth_size.height) {
-        params.depth_texture = app.device.createTexture(&gpu.Texture.Descriptor{
+    const size = engine.core.internal.window.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
+    if (size.width != app.depth_size.width or size.height != app.depth_size.height) {
+        app.depth_texture = engine.gpu_driver.device.createTexture(&gpu.Texture.Descriptor{
             .size = gpu.Extent3D{
                 .width = size.width,
                 .height = size.height,
@@ -220,10 +213,10 @@ fn frame(app: *App, params: *FrameParams) !void {
                 .texture_binding = true,
             },
         });
-        params.depth_size = size;
+        app.depth_size = size;
     }
 
-    const back_buffer_view = app.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .clear_value = .{ .r = 0.5, .g = 0.5, .b = 0.5, .a = 0.0 },
@@ -231,11 +224,11 @@ fn frame(app: *App, params: *FrameParams) !void {
         .store_op = .store,
     };
 
-    const encoder = app.device.createCommandEncoder(null);
+    const encoder = engine.gpu_driver.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = &.{
-            .view = params.depth_texture.createView(&gpu.TextureView.Descriptor{
+            .view = app.depth_texture.createView(&gpu.TextureView.Descriptor{
                 .format = .depth24_plus,
                 .dimension = .dimension_2d,
                 .array_layer_count = 1,
@@ -257,7 +250,7 @@ fn frame(app: *App, params: *FrameParams) !void {
         );
         const proj = zm.perspectiveFovRh(
             (std.math.pi / 4.0),
-            @intToFloat(f32, app.current_desc.width) / @intToFloat(f32, app.current_desc.height),
+            @intToFloat(f32, engine.gpu_driver.current_desc.width) / @intToFloat(f32, engine.gpu_driver.current_desc.height),
             0.1,
             10,
         );
@@ -265,13 +258,13 @@ fn frame(app: *App, params: *FrameParams) !void {
         const ubo = UniformBufferObject{
             .mat = zm.transpose(mvp),
         };
-        encoder.writeBuffer(params.uniform_buffer, 0, UniformBufferObject, &.{ubo});
+        encoder.writeBuffer(app.uniform_buffer, 0, UniformBufferObject, &.{ubo});
     }
 
     const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setPipeline(params.pipeline);
-    pass.setVertexBuffer(0, params.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
-    pass.setBindGroup(0, params.bind_group, &.{});
+    pass.setPipeline(app.pipeline);
+    pass.setVertexBuffer(0, app.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
+    pass.setBindGroup(0, app.bind_group, &.{});
     pass.draw(vertices.len, 1, 0, 0);
     pass.end();
     pass.release();
@@ -279,10 +272,12 @@ fn frame(app: *App, params: *FrameParams) !void {
     var command = encoder.finish(null);
     encoder.release();
 
-    params.queue.submit(&.{command});
+    app.queue.submit(&.{command});
     command.release();
-    app.swap_chain.?.present();
+    engine.gpu_driver.swap_chain.?.present();
     back_buffer_view.release();
+
+    return true;
 }
 
 fn rgb24ToRgba32(allocator: std.mem.Allocator, in: []zigimg.color.Rgb24) !zigimg.color.ColorStorage {

@@ -16,51 +16,11 @@ const Vec = zm.Vec;
 const Mat = zm.Mat;
 const Quat = zm.Quat;
 
-const App = mach.App(*FrameParams, .{});
+const App = @This();
+
+ctx: FrameParams = .{},
 
 var global_params: *FrameParams = undefined;
-
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    var allocator = gpa.allocator();
-
-    const ctx = try allocator.create(FrameParams);
-    global_params = ctx; // TODO ugly hack to use ctx from glfw callbacks
-    var app = try App.init(allocator, ctx, .{});
-
-    app.window.setKeyCallback(keyCallback);
-    // todo
-    // app.window.setKeyCallback(struct {
-    //     fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
-    //         _ = scancode;
-    //         _ = mods;
-    //         if (action == .press) {
-    //             switch (key) {
-    //                 .space => window.setShouldClose(true),
-    //                 else => {},
-    //             }
-    //         }
-    //     }
-    // }.callback);
-    try app.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
-
-    const eye = vec3(5.0, 7.0, 5.0);
-    const target = vec3(0.0, 0.0, 0.0);
-
-    const size = try app.window.getFramebufferSize();
-    const aspect_ratio = @intToFloat(f32, size.width) / @intToFloat(f32, size.height);
-
-    ctx.* = FrameParams{
-        .queue = app.device.getQueue(),
-        .cube = Cube.init(app),
-        .light = Light.init(app),
-        .depth = Texture.depth(app.device, size.width, size.height),
-        .depth_size = size,
-        .camera = Camera.init(app.device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0),
-    };
-
-    try app.run(.{ .frame = frame });
-}
 
 const FrameParams = struct {
     queue: gpu.Queue,
@@ -77,37 +37,74 @@ const FrameParams = struct {
     const right: u8 = 0b1000;
 };
 
-fn frame(app: *App, params: *FrameParams) !void {
+pub fn init(app: *App, engine: *mach.Engine) !void {
+    engine.core.internal.window.setKeyCallback(keyCallback);
+    // todo
+    // engine.core.internal.window.setKeyCallback(struct {
+    //     fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
+    //         _ = scancode;
+    //         _ = mods;
+    //         if (action == .press) {
+    //             switch (key) {
+    //                 .space => window.setShouldClose(true),
+    //                 else => {},
+    //             }
+    //         }
+    //     }
+    // }.callback);
+    try engine.core.internal.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+
+    const eye = vec3(5.0, 7.0, 5.0);
+    const target = vec3(0.0, 0.0, 0.0);
+
+    const size = try engine.core.internal.window.getFramebufferSize();
+    const aspect_ratio = @intToFloat(f32, size.width) / @intToFloat(f32, size.height);
+
+    app.ctx = FrameParams{
+        .queue = engine.gpu_driver.device.getQueue(),
+        .cube = Cube.init(engine),
+        .light = Light.init(engine),
+        .depth = Texture.depth(engine.gpu_driver.device, size.width, size.height),
+        .depth_size = size,
+        .camera = Camera.init(engine.gpu_driver.device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0),
+    };
+
+    global_params = &app.ctx; // TODO ugly hack to use ctx from glfw callbacks
+}
+
+pub fn deinit(_: *App, _: *mach.Engine) void {}
+
+pub fn update(app: *App, engine: *mach.Engine) !bool {
     // If window is resized, recreate depth buffer otherwise we cannot use it.
-    const size = app.window.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
-    if (size.width != params.depth_size.width or size.height != params.depth_size.height) {
-        params.depth = Texture.depth(app.device, size.width, size.height);
-        params.depth_size = size;
+    const size = engine.core.internal.window.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
+    if (size.width != app.ctx.depth_size.width or size.height != app.ctx.depth_size.height) {
+        app.ctx.depth = Texture.depth(engine.gpu_driver.device, size.width, size.height);
+        app.ctx.depth_size = size;
     }
 
     // move camera
-    const speed = zm.f32x4s(@floatCast(f32, app.delta_time * 5));
-    const fwd = zm.normalize3(params.camera.target - params.camera.eye);
-    const right = zm.normalize3(zm.cross3(fwd, params.camera.up));
+    const speed = zm.f32x4s(@floatCast(f32, engine.delta_time * 5));
+    const fwd = zm.normalize3(app.ctx.camera.target - app.ctx.camera.eye);
+    const right = zm.normalize3(zm.cross3(fwd, app.ctx.camera.up));
 
-    if (params.keys & FrameParams.up != 0)
-        params.camera.eye += fwd * speed;
+    if (app.ctx.keys & FrameParams.up != 0)
+        app.ctx.camera.eye += fwd * speed;
 
-    if (params.keys & FrameParams.down != 0)
-        params.camera.eye -= fwd * speed;
+    if (app.ctx.keys & FrameParams.down != 0)
+        app.ctx.camera.eye -= fwd * speed;
 
-    if (params.keys & FrameParams.right != 0) params.camera.eye += right * speed else if (params.keys & FrameParams.left != 0) params.camera.eye -= right * speed else params.camera.eye += right * (speed * @Vector(4, f32){ 0.5, 0.5, 0.5, 0.5 });
+    if (app.ctx.keys & FrameParams.right != 0) app.ctx.camera.eye += right * speed else if (app.ctx.keys & FrameParams.left != 0) app.ctx.camera.eye -= right * speed else app.ctx.camera.eye += right * (speed * @Vector(4, f32){ 0.5, 0.5, 0.5, 0.5 });
 
-    params.camera.update(params.queue);
+    app.ctx.camera.update(app.ctx.queue);
 
     // move light
-    const light_speed = @floatCast(f32, app.delta_time * 2.5);
-    params.light.update(params.queue, light_speed);
+    const light_speed = @floatCast(f32, engine.delta_time * 2.5);
+    app.ctx.light.update(app.ctx.queue, light_speed);
 
-    const back_buffer_view = app.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
     defer back_buffer_view.release();
 
-    const encoder = app.device.createCommandEncoder(null);
+    const encoder = engine.gpu_driver.device.createCommandEncoder(null);
     defer encoder.release();
 
     const color_attachment = gpu.RenderPassColorAttachment{
@@ -120,7 +117,7 @@ fn frame(app: *App, params: *FrameParams) !void {
     const render_pass_descriptor = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = &.{
-            .view = params.depth.view,
+            .view = app.ctx.depth.view,
             .depth_load_op = .clear,
             .depth_store_op = .store,
             .stencil_load_op = .none,
@@ -133,24 +130,24 @@ fn frame(app: *App, params: *FrameParams) !void {
     defer pass.release();
 
     // brick cubes
-    pass.setPipeline(params.cube.pipeline);
-    pass.setBindGroup(0, params.camera.bind_group, &.{});
-    pass.setBindGroup(1, params.cube.texture.bind_group, &.{});
-    pass.setBindGroup(2, params.light.bind_group, &.{});
-    pass.setVertexBuffer(0, params.cube.mesh.buffer, 0, params.cube.mesh.size);
-    pass.setVertexBuffer(1, params.cube.instance.buffer, 0, params.cube.instance.size);
-    pass.draw(4, params.cube.instance.len, 0, 0);
-    pass.draw(4, params.cube.instance.len, 4, 0);
-    pass.draw(4, params.cube.instance.len, 8, 0);
-    pass.draw(4, params.cube.instance.len, 12, 0);
-    pass.draw(4, params.cube.instance.len, 16, 0);
-    pass.draw(4, params.cube.instance.len, 20, 0);
+    pass.setPipeline(app.ctx.cube.pipeline);
+    pass.setBindGroup(0, app.ctx.camera.bind_group, &.{});
+    pass.setBindGroup(1, app.ctx.cube.texture.bind_group, &.{});
+    pass.setBindGroup(2, app.ctx.light.bind_group, &.{});
+    pass.setVertexBuffer(0, app.ctx.cube.mesh.buffer, 0, app.ctx.cube.mesh.size);
+    pass.setVertexBuffer(1, app.ctx.cube.instance.buffer, 0, app.ctx.cube.instance.size);
+    pass.draw(4, app.ctx.cube.instance.len, 0, 0);
+    pass.draw(4, app.ctx.cube.instance.len, 4, 0);
+    pass.draw(4, app.ctx.cube.instance.len, 8, 0);
+    pass.draw(4, app.ctx.cube.instance.len, 12, 0);
+    pass.draw(4, app.ctx.cube.instance.len, 16, 0);
+    pass.draw(4, app.ctx.cube.instance.len, 20, 0);
 
     // light source
-    pass.setPipeline(params.light.pipeline);
-    pass.setBindGroup(0, params.camera.bind_group, &.{});
-    pass.setBindGroup(1, params.light.bind_group, &.{});
-    pass.setVertexBuffer(0, params.cube.mesh.buffer, 0, params.cube.mesh.size);
+    pass.setPipeline(app.ctx.light.pipeline);
+    pass.setBindGroup(0, app.ctx.camera.bind_group, &.{});
+    pass.setBindGroup(1, app.ctx.light.bind_group, &.{});
+    pass.setVertexBuffer(0, app.ctx.cube.mesh.buffer, 0, app.ctx.cube.mesh.size);
     pass.draw(4, 1, 0, 0);
     pass.draw(4, 1, 4, 0);
     pass.draw(4, 1, 8, 0);
@@ -163,8 +160,10 @@ fn frame(app: *App, params: *FrameParams) !void {
     var command = encoder.finish(null);
     defer command.release();
 
-    params.queue.submit(&.{command});
-    app.swap_chain.?.present();
+    app.ctx.queue.submit(&.{command});
+    engine.gpu_driver.swap_chain.?.present();
+
+    return true;
 }
 
 const Camera = struct {
@@ -267,8 +266,8 @@ const Cube = struct {
     const SPACING = 2; // spacing between cubes
     const DISPLACEMENT = vec3u(IPR * SPACING / 2, 0, IPR * SPACING / 2);
 
-    fn init(app: App) Self {
-        const device = app.device;
+    fn init(engine: *mach.Engine) Self {
+        const device = engine.gpu_driver.device;
 
         const texture = Brick.texture(device);
 
@@ -306,12 +305,12 @@ const Cube = struct {
             .mesh = mesh(device),
             .texture = texture,
             .instance = instance,
-            .pipeline = pipeline(app),
+            .pipeline = pipeline(engine),
         };
     }
 
-    fn pipeline(app: App) gpu.RenderPipeline {
-        const device = app.device;
+    fn pipeline(engine: *mach.Engine) gpu.RenderPipeline {
+        const device = engine.gpu_driver.device;
 
         const layout_descriptor = gpu.PipelineLayout.Descriptor{
             .bind_group_layouts = &.{
@@ -343,7 +342,7 @@ const Cube = struct {
         };
 
         const color_target = gpu.ColorTargetState{
-            .format = app.swap_chain_format,
+            .format = engine.gpu_driver.swap_chain_format,
             .write_mask = gpu.ColorWriteMask.all,
             .blend = &blend,
         };
@@ -715,8 +714,8 @@ const Light = struct {
         color: Vec,
     };
 
-    fn init(app: App) Self {
-        const device = app.device;
+    fn init(engine: *mach.Engine) Self {
+        const device = engine.gpu_driver.device;
         const uniform = .{
             .color = vec3u(1, 1, 1),
             .position = vec3u(3, 7, 2),
@@ -738,7 +737,7 @@ const Light = struct {
             .buffer = buffer,
             .uniform = uniform,
             .bind_group = bind_group,
-            .pipeline = Self.pipeline(app),
+            .pipeline = Self.pipeline(engine),
         };
     }
 
@@ -762,8 +761,8 @@ const Light = struct {
         });
     }
 
-    fn pipeline(app: App) gpu.RenderPipeline {
-        const device = app.device;
+    fn pipeline(engine: *mach.Engine) gpu.RenderPipeline {
+        const device = engine.gpu_driver.device;
 
         const layout_descriptor = gpu.PipelineLayout.Descriptor{
             .bind_group_layouts = &.{
@@ -794,7 +793,7 @@ const Light = struct {
         };
 
         const color_target = gpu.ColorTargetState{
-            .format = app.swap_chain_format,
+            .format = engine.gpu_driver.swap_chain_format,
             .write_mask = gpu.ColorWriteMask.all,
             .blend = &blend,
         };

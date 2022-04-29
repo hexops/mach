@@ -31,28 +31,25 @@ pub fn build(b: *std.build.Builder) void {
 
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },
-        //.{ .name = "boids" },
-        //.{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
-        //.{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
-        //.{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
-        //.{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
-        //.{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
-        //.{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "boids" },
+        .{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
+        .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
     }) |example| {
         const example_app = App.init(
             b,
             .{
                 .name = "example-" ++ example.name,
                 .src = "examples/" ++ example.name ++ "/main.zig",
-                .deps = &.{ glfw.pkg, gpu.pkg, pkg },
+                .deps = comptime example.packages ++ &[_]Pkg{ glfw.pkg, gpu.pkg, pkg },
             },
         );
         const example_exe = example_app.step;
         example_exe.setTarget(target);
         example_exe.setBuildMode(mode);
-        inline for (example.packages) |additional_package| {
-            example_exe.addPackage(additional_package);
-        }
         example_app.link(options);
         example_exe.install();
 
