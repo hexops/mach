@@ -30,6 +30,9 @@ jobs:
           AGREE: true
       - name: x86_64-linux -> x86_64-windows
         run: cd ${{ matrix.project }} && zig build test -Dtarget=x86_64-windows-gnu
+      - name: compile all examples
+        if: matrix.project == '.'
+        run: cd ${{ matrix.project }} && zig build compile-all
       - name: launch xvfb
         run: Xvfb :99 -screen 0 1680x720x24 > /dev/null 2>&1 &
       - name: test
@@ -68,6 +71,9 @@ jobs:
           AGREE: true
       - name: x86_64-windows -> x86_64-linux
         run: cd ${{ matrix.project }} && zig build test -Dtarget=x86_64-linux-gnu
+      - name: compile all examples
+        if: matrix.project == '.'
+        run: cd ${{ matrix.project }} && zig build compile-all
       - name: test
         run: cd ${{ matrix.project }} && zig build test
   x86_64-macos:

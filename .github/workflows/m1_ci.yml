@@ -39,3 +39,8 @@ jobs:
         run: zig build test -Dtarget=x86_64-windows-gnu
       - name: aarch64-macos -> x86_64-linux
         run: zig build test -Dtarget=x86_64-linux-gnu
+      - name: compile all examples
+        if: matrix.project == '.'
+        run: cd ${{ matrix.project }} && zig build compile-all
+        env:
+          AGREE: true
