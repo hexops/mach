@@ -1308,14 +1308,14 @@ const render_pass_encoder_vtable = RenderPassEncoder.VTable{
             ptr: *anyopaque,
             group_index: u32,
             group: BindGroup,
-            dynamic_offsets: []const u32,
+            dynamic_offsets: ?[]const u32,
         ) void {
             c.wgpuRenderPassEncoderSetBindGroup(
                 @ptrCast(c.WGPURenderPassEncoder, ptr),
                 group_index,
                 @ptrCast(c.WGPUBindGroup, group.ptr),
-                @intCast(u32, dynamic_offsets.len),
-                dynamic_offsets.ptr,
+                if (dynamic_offsets) |d| @intCast(u32, d.len) else 0,
+                if (dynamic_offsets) |d| d.ptr else null,
             );
         }
     }).setBindGroup,
@@ -1505,14 +1505,14 @@ const render_bundle_encoder_vtable = RenderBundleEncoder.VTable{
             ptr: *anyopaque,
             group_index: u32,
             group: BindGroup,
-            dynamic_offsets: []const u32,
+            dynamic_offsets: ?[]const u32,
         ) void {
             c.wgpuRenderBundleEncoderSetBindGroup(
                 @ptrCast(c.WGPURenderBundleEncoder, ptr),
                 group_index,
                 @ptrCast(c.WGPUBindGroup, group.ptr),
-                @intCast(u32, dynamic_offsets.len),
-                dynamic_offsets.ptr,
+                if (dynamic_offsets) |d| @intCast(u32, d.len) else 0,
+                if (dynamic_offsets) |d| d.ptr else null,
             );
         }
     }).setBindGroup,
