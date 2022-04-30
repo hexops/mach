@@ -54,7 +54,7 @@ pub fn build(b: *std.build.Builder) void {
         example_exe.install();
 
         const example_run_cmd = example_exe.run();
-        example_run_cmd.step.dependOn(b.getInstallStep());
+        example_run_cmd.step.dependOn(&example_exe.install_step.?.step);
         const example_run_step = b.step("run-example-" ++ example.name, "Run the example");
         example_run_step.dependOn(&example_run_cmd.step);
     }
@@ -74,9 +74,12 @@ pub fn build(b: *std.build.Builder) void {
     shaderexp_exe.install();
 
     const shaderexp_run_cmd = shaderexp_exe.run();
-    shaderexp_run_cmd.step.dependOn(b.getInstallStep());
+    shaderexp_run_cmd.step.dependOn(&shaderexp_exe.install_step.?.step);
     const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
     shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
+
+    const compile_all = b.step("compile-all", "Compile all examples and applications");
+    compile_all.dependOn(b.getInstallStep());
 }
 
 pub const Options = struct {
