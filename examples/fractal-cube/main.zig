@@ -160,14 +160,12 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .size = .{ .width = engine.gpu_driver.current_desc.width, .height = engine.gpu_driver.current_desc.height },
         .format = engine.gpu_driver.swap_chain_format,
     });
-    defer cube_texture.release();
     // The texture on which we render
     const cube_texture_render = engine.gpu_driver.device.createTexture(&gpu.Texture.Descriptor{
         .usage = .{ .render_attachment = true, .copy_src = true },
         .size = .{ .width = engine.gpu_driver.current_desc.width, .height = engine.gpu_driver.current_desc.height },
         .format = engine.gpu_driver.swap_chain_format,
     });
-    defer cube_texture_render.release();
 
     const sampler = engine.gpu_driver.device.createSampler(&gpu.Sampler.Descriptor{
         .mag_filter = .linear,
@@ -186,7 +184,6 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .mip_level_count = 1,
         .array_layer_count = 1,
     });
-    defer cube_texture_view_render.release();
 
     const bind_group = engine.gpu_driver.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
@@ -222,9 +219,10 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
     app.vertex_buffer.release();
     app.uniform_buffer.release();
     app.cube_texture.release();
+    app.cube_texture_render.release();
     app.sampler.release();
     app.cube_texture_view.release();
-    app.cube_texture_view.release();
+    app.cube_texture_view_render.release();
     app.bind_group.release();
     app.depth_texture.?.release();
 }
