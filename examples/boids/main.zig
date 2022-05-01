@@ -179,7 +179,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
         const pass_encoder = command_encoder.beginComputePass(null);
         pass_encoder.setPipeline(app.compute_pipeline);
         pass_encoder.setBindGroup(0, app.particle_bind_groups[app.frame_counter % 2], null);
-        pass_encoder.dispatch(@floatToInt(u32, std.math.ceil(@as(f32, num_particle) / 64)), 1, 1);
+        pass_encoder.dispatch(@floatToInt(u32, @ceil(@as(f32, num_particle) / 64)), 1, 1);
         pass_encoder.end();
         pass_encoder.release();
     }
