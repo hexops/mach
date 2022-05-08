@@ -75,6 +75,6 @@ Mach has many libraries you can use for game development in Zig - you don't have
 
 ## Contributing
 
-Mach is maintained as a monorepo. When changed are merged to this repository, we use some git-fu to pick out the commits to subdirectories and push them ot sub-repositories all automagically. Changes to the `glfw/` directory in this repository get pushed to the separate [mach-glfw](https://github.com/hexops/mach-glfw) repository automagically after being merged here, for example.
+Mach is maintained as a monorepo. When changes are merged to this repository, we use some git-fu to pick out the commits to subdirectories and push them to sub-repositories automagically. Changes to the `glfw/` directory in this repository get pushed to the separate [mach-glfw](https://github.com/hexops/mach-glfw) repository after being merged here, for example.
 
-Please prefix commits / pull requests with the project name (`glfw: fix an issue`, `gpu: fix an issue`, `examples: fix an issue`, etc.) and if possible only one project per commit. If you don't know how to do this, no worries, we can help!
+Please prefix commits / pull requests with the project name (`glfw: fix an issue`, `gpu: fix an issue`, `examples: fix an issue`, etc.) and if possible only one project per commit. If you don't know how to do this, no worries, we can help - just send your PR anyway!

@@ -68,7 +68,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
 	let all = ambient_color + diffuse_color + specular_color;
 
-	let result = all * object_color.rbg;
+	let result = all * object_color.rgb;
 
 	return vec4<f32>(result, object_color.a);
 

@@ -122,7 +122,6 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .size = @sizeOf(UniformBufferObject) * num_instances,
         .mapped_at_creation = false,
     });
-    defer uniform_buffer.release();
     const bind_group = engine.gpu_driver.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
@@ -147,13 +146,10 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
 pub fn deinit(app: *App, _: *mach.Engine) void {
     app.vertex_buffer.release();
     app.bind_group.release();
+    app.uniform_buffer.release();
 }
 
-var i: u32 = 0;
-
 pub fn update(app: *App, engine: *mach.Engine) !bool {
-    i += 1;
-
     const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,

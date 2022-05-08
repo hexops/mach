@@ -180,7 +180,7 @@ fn ensureSubmodules(allocator: std.mem.Allocator) !void {
     if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
-    const child = try std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", "--recursive" }, allocator);
+    var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", "--recursive" }, allocator);
     child.cwd = thisDir();
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
@@ -442,7 +442,7 @@ fn gitClone(allocator: std.mem.Allocator, repository: []const u8, dir: []const u
 
 fn downloadFile(allocator: std.mem.Allocator, target_file: []const u8, url: []const u8) !void {
     std.debug.print("downloading {s}..\n", .{url});
-    const child = try std.ChildProcess.init(&.{ "curl", "-L", "-o", target_file, url }, allocator);
+    var child = std.ChildProcess.init(&.{ "curl", "-L", "-o", target_file, url }, allocator);
     child.cwd = thisDir();
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();

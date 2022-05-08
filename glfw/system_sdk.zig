@@ -234,7 +234,7 @@ fn determineSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const
 }
 
 fn exec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
-    const child = try std.ChildProcess.init(argv, allocator);
+    var child = std.ChildProcess.init(argv, allocator);
     child.cwd = cwd;
     _ = try child.spawnAndWait();
 }
