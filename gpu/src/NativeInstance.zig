@@ -879,10 +879,10 @@ const queue_vtable = Queue.VTable{
         }
     }).release,
     .submit = (struct {
-        pub fn submit(queue: Queue, cmds: []const CommandBuffer) void {
+        pub fn submit(queue: *Queue, cmds: []const CommandBuffer) void {
             const wgpu_queue = @ptrCast(c.WGPUQueue, queue.ptr);
 
-            if (queue.on_submitted_work_done) |on_submitted_work_done| {
+            if (queue.on_submitted_work_done) |_| {
                 // Note: signalValue is not available in the web API, and it's usage is undocumented
                 // kainino says "It's basically reserved for future use, though it's been suggested
                 // to remove it instead"
@@ -898,8 +898,12 @@ const queue_vtable = Queue.VTable{
                     }
                 }).cCallback;
 
-                var mut_on_submitted_work_done = on_submitted_work_done;
-                c.wgpuQueueOnSubmittedWorkDone(wgpu_queue, signal_value, cCallback, &mut_on_submitted_work_done);
+                c.wgpuQueueOnSubmittedWorkDone(
+                    wgpu_queue,
+                    signal_value,
+                    cCallback,
+                    &queue.on_submitted_work_done,
+                );
             }
 
             var few_commands: [16]c.WGPUCommandBuffer = undefined;
