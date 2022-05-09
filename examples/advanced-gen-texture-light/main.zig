@@ -38,7 +38,7 @@ const FrameParams = struct {
 };
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
-    engine.core.internal.window.setKeyCallback(keyCallback);
+    engine.core.setKeyCallback(keyCallback);
     // todo
     // engine.core.internal.window.setKeyCallback(struct {
     //     fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
@@ -879,14 +879,10 @@ const Instance = struct {
     }
 };
 
-fn keyCallback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
-    _ = window;
-    _ = scancode;
-    _ = mods;
-
+fn keyCallback(_: *App, engine: *mach.Engine, key: mach.Key, action: mach.Action) void {
     if (action == .press) {
         switch (key) {
-            .q, .escape, .space => window.setShouldClose(true),
+            .q, .escape, .space => engine.core.internal.window.setShouldClose(true),
             .w, .up => {
                 global_params.keys |= FrameParams.up;
             },
