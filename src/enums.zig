@@ -127,5 +127,6 @@ pub const Key = enum {
     period,
     slash,
     grave,
+
     unknown,
 };
