@@ -28,6 +28,10 @@ pub fn main() !void {
     try app.init(&engine);
     defer app.deinit(&engine);
 
+    if (@hasDecl(@TypeOf(engine.core.internal), "initCallback")) {
+        engine.core.internal.initCallback(&app, &engine);
+    }
+
     const window = engine.core.internal.window;
     while (!window.shouldClose()) {
         try glfw.pollEvents();

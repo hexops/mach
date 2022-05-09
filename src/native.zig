@@ -1,14 +1,21 @@
 const std = @import("std");
 const glfw = @import("glfw");
 const gpu = @import("gpu");
+const App = @import("app");
 const Engine = @import("Engine.zig");
+const enums = @import("enums.zig");
 const util = @import("util.zig");
 const c = @import("c.zig").c;
 
 pub const CoreGlfw = struct {
     window: glfw.Window,
     backend_type: gpu.Adapter.BackendType,
+    user_ptr: UserPtr = undefined,
 
+    const UserPtr = struct {
+        app: *App,
+        engine: *Engine,
+    };
     pub fn init(allocator: std.mem.Allocator, engine: *Engine) !CoreGlfw {
         const options = engine.options;
         const backend_type = try util.detectBackendType(allocator);
@@ -31,6 +38,42 @@ pub const CoreGlfw = struct {
         return CoreGlfw{
             .window = window,
             .backend_type = backend_type,
+        };
+    }
+
+    pub fn initCallback(self: *CoreGlfw, app: *App, engine: *Engine) void {
+        self.user_ptr = UserPtr{
+            .app = app,
+            .engine = engine,
+        };
+
+        self.window.setUserPointer(&self.user_ptr);
+    }
+
+    pub fn setKeyCallback(self: *CoreGlfw, comptime cb: fn (app: *App, engine: *Engine, key: enums.Key, action: enums.Action) void) void {
+        const callback = struct {
+            fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
+                const usrptr = window.getUserPointer(UserPtr) orelse unreachable;
+                cb(usrptr.app, usrptr.engine, CoreGlfw.toMachKey(key), CoreGlfw.toMachAction(action));
+                _ = scancode;
+                _ = mods;
+            }
+        }.callback;
+        self.window.setKeyCallback(callback);
+    }
+
+    fn toMachAction(action: glfw.Action) enums.Action {
+        return switch (action) {
+            .press => .press,
+            .release => .release,
+            .repeat => .repeat,
+        };
+    }
+
+    fn toMachKey(key: glfw.Key) enums.Key {
+        return switch (key) {
+            .space => .space,
+            else => unreachable,
         };
     }
 
