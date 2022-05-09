@@ -18,19 +18,15 @@ const Quat = zm.Quat;
 
 const App = @This();
 
-ctx: FrameParams = .{},
+queue: gpu.Queue,
+cube: Cube,
+camera: Camera,
+light: Light,
+depth: Texture,
+depth_size: glfw.Window.Size,
+keys: u8 = 0,
 
-var global_params: *FrameParams = undefined;
-
-const FrameParams = struct {
-    queue: gpu.Queue,
-    cube: Cube,
-    camera: Camera,
-    light: Light,
-    depth: Texture,
-    depth_size: glfw.Window.Size,
-    keys: u8 = 0,
-
+const Dir = struct {
     const up: u8 = 0b0001;
     const down: u8 = 0b0010;
     const left: u8 = 0b0100;
@@ -60,16 +56,12 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const size = try engine.core.internal.window.getFramebufferSize();
     const aspect_ratio = @intToFloat(f32, size.width) / @intToFloat(f32, size.height);
 
-    app.ctx = FrameParams{
-        .queue = engine.gpu_driver.device.getQueue(),
-        .cube = Cube.init(engine),
-        .light = Light.init(engine),
-        .depth = Texture.depth(engine.gpu_driver.device, size.width, size.height),
-        .depth_size = size,
-        .camera = Camera.init(engine.gpu_driver.device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0),
-    };
-
-    global_params = &app.ctx; // TODO ugly hack to use ctx from glfw callbacks
+    app.queue = engine.gpu_driver.device.getQueue();
+    app.cube = Cube.init(engine);
+    app.light = Light.init(engine);
+    app.depth = Texture.depth(engine.gpu_driver.device, size.width, size.height);
+    app.depth_size = size;
+    app.camera = Camera.init(engine.gpu_driver.device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0);
 }
 
 pub fn deinit(_: *App, _: *mach.Engine) void {}
@@ -77,29 +69,29 @@ pub fn deinit(_: *App, _: *mach.Engine) void {}
 pub fn update(app: *App, engine: *mach.Engine) !bool {
     // If window is resized, recreate depth buffer otherwise we cannot use it.
     const size = engine.core.internal.window.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
-    if (size.width != app.ctx.depth_size.width or size.height != app.ctx.depth_size.height) {
-        app.ctx.depth = Texture.depth(engine.gpu_driver.device, size.width, size.height);
-        app.ctx.depth_size = size;
+    if (size.width != app.depth_size.width or size.height != app.depth_size.height) {
+        app.depth = Texture.depth(engine.gpu_driver.device, size.width, size.height);
+        app.depth_size = size;
     }
 
     // move camera
     const speed = zm.f32x4s(@floatCast(f32, engine.delta_time * 5));
-    const fwd = zm.normalize3(app.ctx.camera.target - app.ctx.camera.eye);
-    const right = zm.normalize3(zm.cross3(fwd, app.ctx.camera.up));
+    const fwd = zm.normalize3(app.camera.target - app.camera.eye);
+    const right = zm.normalize3(zm.cross3(fwd, app.camera.up));
 
-    if (app.ctx.keys & FrameParams.up != 0)
-        app.ctx.camera.eye += fwd * speed;
+    if (app.keys & Dir.up != 0)
+        app.camera.eye += fwd * speed;
 
-    if (app.ctx.keys & FrameParams.down != 0)
-        app.ctx.camera.eye -= fwd * speed;
+    if (app.keys & Dir.down != 0)
+        app.camera.eye -= fwd * speed;
 
-    if (app.ctx.keys & FrameParams.right != 0) app.ctx.camera.eye += right * speed else if (app.ctx.keys & FrameParams.left != 0) app.ctx.camera.eye -= right * speed else app.ctx.camera.eye += right * (speed * @Vector(4, f32){ 0.5, 0.5, 0.5, 0.5 });
+    if (app.keys & Dir.right != 0) app.camera.eye += right * speed else if (app.keys & Dir.left != 0) app.camera.eye -= right * speed else app.camera.eye += right * (speed * @Vector(4, f32){ 0.5, 0.5, 0.5, 0.5 });
 
-    app.ctx.camera.update(app.ctx.queue);
+    app.camera.update(app.queue);
 
     // move light
     const light_speed = @floatCast(f32, engine.delta_time * 2.5);
-    app.ctx.light.update(app.ctx.queue, light_speed);
+    app.light.update(app.queue, light_speed);
 
     const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
     defer back_buffer_view.release();
@@ -117,7 +109,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     const render_pass_descriptor = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = &.{
-            .view = app.ctx.depth.view,
+            .view = app.depth.view,
             .depth_load_op = .clear,
             .depth_store_op = .store,
             .stencil_load_op = .none,
@@ -130,24 +122,24 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     defer pass.release();
 
     // brick cubes
-    pass.setPipeline(app.ctx.cube.pipeline);
-    pass.setBindGroup(0, app.ctx.camera.bind_group, &.{});
-    pass.setBindGroup(1, app.ctx.cube.texture.bind_group, &.{});
-    pass.setBindGroup(2, app.ctx.light.bind_group, &.{});
-    pass.setVertexBuffer(0, app.ctx.cube.mesh.buffer, 0, app.ctx.cube.mesh.size);
-    pass.setVertexBuffer(1, app.ctx.cube.instance.buffer, 0, app.ctx.cube.instance.size);
-    pass.draw(4, app.ctx.cube.instance.len, 0, 0);
-    pass.draw(4, app.ctx.cube.instance.len, 4, 0);
-    pass.draw(4, app.ctx.cube.instance.len, 8, 0);
-    pass.draw(4, app.ctx.cube.instance.len, 12, 0);
-    pass.draw(4, app.ctx.cube.instance.len, 16, 0);
-    pass.draw(4, app.ctx.cube.instance.len, 20, 0);
+    pass.setPipeline(app.cube.pipeline);
+    pass.setBindGroup(0, app.camera.bind_group, &.{});
+    pass.setBindGroup(1, app.cube.texture.bind_group, &.{});
+    pass.setBindGroup(2, app.light.bind_group, &.{});
+    pass.setVertexBuffer(0, app.cube.mesh.buffer, 0, app.cube.mesh.size);
+    pass.setVertexBuffer(1, app.cube.instance.buffer, 0, app.cube.instance.size);
+    pass.draw(4, app.cube.instance.len, 0, 0);
+    pass.draw(4, app.cube.instance.len, 4, 0);
+    pass.draw(4, app.cube.instance.len, 8, 0);
+    pass.draw(4, app.cube.instance.len, 12, 0);
+    pass.draw(4, app.cube.instance.len, 16, 0);
+    pass.draw(4, app.cube.instance.len, 20, 0);
 
     // light source
-    pass.setPipeline(app.ctx.light.pipeline);
-    pass.setBindGroup(0, app.ctx.camera.bind_group, &.{});
-    pass.setBindGroup(1, app.ctx.light.bind_group, &.{});
-    pass.setVertexBuffer(0, app.ctx.cube.mesh.buffer, 0, app.ctx.cube.mesh.size);
+    pass.setPipeline(app.light.pipeline);
+    pass.setBindGroup(0, app.camera.bind_group, &.{});
+    pass.setBindGroup(1, app.light.bind_group, &.{});
+    pass.setVertexBuffer(0, app.cube.mesh.buffer, 0, app.cube.mesh.size);
     pass.draw(4, 1, 0, 0);
     pass.draw(4, 1, 4, 0);
     pass.draw(4, 1, 8, 0);
@@ -160,7 +152,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     var command = encoder.finish(null);
     defer command.release();
 
-    app.ctx.queue.submit(&.{command});
+    app.queue.submit(&.{command});
     engine.gpu_driver.swap_chain.?.present();
 
     return true;
@@ -879,37 +871,37 @@ const Instance = struct {
     }
 };
 
-fn keyCallback(_: *App, engine: *mach.Engine, key: mach.Key, action: mach.Action) void {
+fn keyCallback(app: *App, engine: *mach.Engine, key: mach.Key, action: mach.Action) void {
     if (action == .press) {
         switch (key) {
             .q, .escape, .space => engine.core.internal.window.setShouldClose(true),
             .w, .up => {
-                global_params.keys |= FrameParams.up;
+                app.keys |= Dir.up;
             },
             .s, .down => {
-                global_params.keys |= FrameParams.down;
+                app.keys |= Dir.down;
             },
             .a, .left => {
-                global_params.keys |= FrameParams.left;
+                app.keys |= Dir.left;
             },
             .d, .right => {
-                global_params.keys |= FrameParams.right;
+                app.keys |= Dir.right;
             },
             else => {},
         }
     } else if (action == .release) {
         switch (key) {
             .w, .up => {
-                global_params.keys &= ~FrameParams.up;
+                app.keys &= ~Dir.up;
             },
             .s, .down => {
-                global_params.keys &= ~FrameParams.down;
+                app.keys &= ~Dir.down;
             },
             .a, .left => {
-                global_params.keys &= ~FrameParams.left;
+                app.keys &= ~Dir.left;
             },
             .d, .right => {
-                global_params.keys &= ~FrameParams.right;
+                app.keys &= ~Dir.right;
             },
             else => {},
         }
