@@ -24,13 +24,11 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     timer = try std.time.Timer.start();
 
     // TODO: higher level input handlers
-    engine.core.internal.window.setKeyCallback(struct {
-        fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
-            _ = scancode;
-            _ = mods;
+    engine.core.setKeyCallback(struct {
+        fn callback(_: *App, eng: *mach.Engine, key: mach.Key, action: mach.Action) void {
             if (action == .press) {
                 switch (key) {
-                    .space => window.setShouldClose(true),
+                    .space => eng.core.internal.window.setShouldClose(true),
                     else => {},
                 }
             }
