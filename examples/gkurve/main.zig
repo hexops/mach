@@ -50,19 +50,17 @@ frag_uniform_buffer: gpu.Buffer,
 bind_group: gpu.BindGroup,
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
-    engine.core.internal.window.setKeyCallback(struct {
-        fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
-            _ = scancode;
-            _ = mods;
+    engine.core.setKeyCallback(struct {
+        fn callback(_: *App, eng: *mach.Engine, key: mach.Key, action: mach.Action) void {
             if (action == .press) {
                 switch (key) {
-                    .space => window.setShouldClose(true),
+                    .space => eng.core.setShouldClose(true),
                     else => {},
                 }
             }
         }
     }.callback);
-    try engine.core.internal.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
     const vs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my vertex shader",

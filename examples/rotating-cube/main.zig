@@ -28,13 +28,13 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         fn callback(_: *App, eng: *mach.Engine, key: mach.Key, action: mach.Action) void {
             if (action == .press) {
                 switch (key) {
-                    .space => eng.core.internal.window.setShouldClose(true),
+                    .space => eng.core.setShouldClose(true),
                     else => {},
                 }
             }
         }
     }.callback);
-    try engine.core.internal.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
     const vs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my vertex shader",

@@ -19,7 +19,7 @@ vertex_buffer: gpu.Buffer,
 uniform_buffer: gpu.Buffer,
 bind_group: gpu.BindGroup,
 depth_texture: gpu.Texture,
-depth_size: glfw.Window.Size,
+depth_size: mach.Size,
 
 const App = @This();
 
@@ -30,13 +30,13 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         fn callback(_: *App, eng: *mach.Engine, key: mach.Key, action: mach.Action) void {
             if (action == .press) {
                 switch (key) {
-                    .space => eng.core.internal.window.setShouldClose(true),
+                    .space => eng.core.setShouldClose(true),
                     else => {},
                 }
             }
         }
     }.callback);
-    try engine.core.internal.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
     const vs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my vertex shader",
@@ -165,7 +165,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     );
 
-    const size = try engine.core.internal.window.getFramebufferSize();
+    const size = try engine.core.getFramebufferSize();
     const depth_texture = engine.gpu_driver.device.createTexture(&gpu.Texture.Descriptor{
         .size = gpu.Extent3D{
             .width = size.width,
@@ -198,7 +198,7 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
     // If window is resized, recreate depth buffer otherwise we cannot use it.
-    const size = engine.core.internal.window.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
+    const size = engine.core.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
     if (size.width != app.depth_size.width or size.height != app.depth_size.height) {
         app.depth_texture = engine.gpu_driver.device.createTexture(&gpu.Texture.Descriptor{
             .size = gpu.Extent3D{

@@ -23,7 +23,7 @@ cube: Cube,
 camera: Camera,
 light: Light,
 depth: Texture,
-depth_size: glfw.Window.Size,
+depth_size: mach.Size,
 keys: u8 = 0,
 
 const Dir = struct {
@@ -48,12 +48,12 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     //         }
     //     }
     // }.callback);
-    try engine.core.internal.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
     const eye = vec3(5.0, 7.0, 5.0);
     const target = vec3(0.0, 0.0, 0.0);
 
-    const size = try engine.core.internal.window.getFramebufferSize();
+    const size = try engine.core.getFramebufferSize();
     const aspect_ratio = @intToFloat(f32, size.width) / @intToFloat(f32, size.height);
 
     app.queue = engine.gpu_driver.device.getQueue();
@@ -68,7 +68,7 @@ pub fn deinit(_: *App, _: *mach.Engine) void {}
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
     // If window is resized, recreate depth buffer otherwise we cannot use it.
-    const size = engine.core.internal.window.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
+    const size = engine.core.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
     if (size.width != app.depth_size.width or size.height != app.depth_size.height) {
         app.depth = Texture.depth(engine.gpu_driver.device, size.width, size.height);
         app.depth_size = size;
@@ -874,7 +874,7 @@ const Instance = struct {
 fn keyCallback(app: *App, engine: *mach.Engine, key: mach.Key, action: mach.Action) void {
     if (action == .press) {
         switch (key) {
-            .q, .escape, .space => engine.core.internal.window.setShouldClose(true),
+            .q, .escape, .space => engine.core.setShouldClose(true),
             .w, .up => {
                 app.keys |= Dir.up;
             },
