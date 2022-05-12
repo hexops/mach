@@ -3,6 +3,7 @@ const Allocator = std.mem.Allocator;
 const glfw = @import("glfw");
 const gpu = @import("gpu");
 const App = @import("app");
+const structs = @import("structs.zig");
 const enums = @import("enums.zig");
 
 pub const VSyncMode = enum {
@@ -70,6 +71,18 @@ timer: std.time.Timer,
 
 pub const Core = struct {
     internal: GetCoreInternalType(),
+
+    pub fn setShouldClose(core: *Core, value: bool) void {
+        core.internal.setShouldClose(value);
+    }
+
+    pub fn getFramebufferSize(core: *Core) !structs.Size {
+        return core.internal.getFramebufferSize();
+    }
+
+    pub fn setSizeLimits(core: *Core, min: structs.SizeOptional, max: structs.SizeOptional) !void {
+        return core.internal.setSizeLimits(min, max);
+    }
 
     pub fn setKeyCallback(core: *Core, comptime cb: fn (app: *App, engine: *Engine, key: enums.Key, action: enums.Action) void) void {
         core.internal.setKeyCallback(cb);

@@ -3,6 +3,7 @@ const glfw = @import("glfw");
 const gpu = @import("gpu");
 const App = @import("app");
 const Engine = @import("Engine.zig");
+const structs = @import("structs.zig");
 const enums = @import("enums.zig");
 const util = @import("util.zig");
 const c = @import("c.zig").c;
@@ -48,6 +49,22 @@ pub const CoreGlfw = struct {
         };
 
         self.window.setUserPointer(&self.user_ptr);
+    }
+
+    pub fn setShouldClose(self: *CoreGlfw, value: bool) void {
+        self.window.setShouldClose(value);
+    }
+
+    pub fn getFramebufferSize(self: *CoreGlfw) !structs.Size {
+        const size = try self.window.getFramebufferSize();
+        return @bitCast(structs.Size, size);
+    }
+
+    pub fn setSizeLimits(self: *CoreGlfw, min: structs.SizeOptional, max: structs.SizeOptional) !void {
+        try self.window.setSizeLimits(
+            @bitCast(glfw.Window.SizeOptional, min),
+            @bitCast(glfw.Window.SizeOptional, max),
+        );
     }
 
     pub fn setKeyCallback(self: *CoreGlfw, comptime cb: fn (app: *App, engine: *Engine, key: enums.Key, action: enums.Action) void) void {
