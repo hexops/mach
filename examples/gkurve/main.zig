@@ -16,9 +16,9 @@ pub const Vertex = struct {
 };
 // Simple triangle
 pub const vertices = [_]Vertex{
-    .{ .pos = .{ 0, 0.5, 0, 1 }, .uv = .{ 0.5, 1 }, .bary = .{ 0, 0, 1 } },
-    .{ .pos = .{ -0.5, -0.5, 0, 1 }, .uv = .{ 0, 0 }, .bary = .{ 1, 0, 0 } },
-    .{ .pos = .{ 0.5, -0.5, 0, 1 }, .uv = .{ 1, 0 }, .bary = .{ 0, 1, 0 } },
+    .{ .pos = .{ 0, 250, 0, 1 }, .uv = .{ 0.5, 1 }, .bary = .{ 0, 0, 1 } },
+    .{ .pos = .{ -250, -250, 0, 1 }, .uv = .{ 0, 0 }, .bary = .{ 1, 0, 0 } },
+    .{ .pos = .{ 250, -250, 0, 1 }, .uv = .{ 1, 0 }, .bary = .{ 0, 1, 0 } },
 };
 
 // TODO: Need to ask Ayush about this, ideally we have a square window in this example because it
@@ -214,12 +214,19 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     };
 
     {
+        const proj = zm.orthographicRh(
+            @intToFloat(f32, engine.gpu_driver.current_desc.width),
+            @intToFloat(f32, engine.gpu_driver.current_desc.height),
+            -100,
+            100,
+        );
+
         // TODO:
         // Use better positioning system
         const ubos = [_]VertexUniform{
-            .{ .mat = zm.translation(0.5, 0.5, 0) },
-            .{ .mat = zm.translation(-0.5, 0, 0) },
-            .{ .mat = zm.translation(0.5, -0.5, 0) },
+            .{ .mat = zm.mul(zm.translation(250, 250, 0), proj) },
+            .{ .mat = zm.mul(zm.translation(-250, 0, 0), proj) },
+            .{ .mat = zm.mul(zm.translation(250, -250, 0), proj) },
         };
         encoder.writeBuffer(app.vertex_uniform_buffer, 0, VertexUniform, &ubos);
     }
