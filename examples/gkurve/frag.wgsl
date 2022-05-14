@@ -2,11 +2,11 @@ struct FragUniform {
     type_: u32,
     padding: vec3<f32>,
 }
-@binding(1) @group(0) var<uniform> ubos : array<FragUniform, 3>;
+@binding(1) @group(0) var<uniform> ubos: array<FragUniform, 3>;
 
 @stage(fragment) fn main( 
-    @location(0) uv : vec2<f32>,
-    @location(1) bary : vec3<f32>,
+    @location(0) uv: vec2<f32>,
+    @location(1) bary: vec3<f32>,
     @interpolate(flat) @location(2) instance_index: u32,
 ) -> @location(0) vec4<f32> {
     // Example 1: Visualize barycentric coordinates:
