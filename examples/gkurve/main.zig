@@ -12,13 +12,19 @@ const glfw = @import("glfw");
 pub const Vertex = struct {
     pos: @Vector(4, f32),
     uv: @Vector(2, f32),
+    bary: @Vector(3, f32) = .{ 0, 0, 0 },
 };
 // Simple triangle
 pub const vertices = [_]Vertex{
-    .{ .pos = .{ 0, 0.5, 0, 1 }, .uv = .{ 0.5, 1 } },
-    .{ .pos = .{ -0.5, -0.5, 0, 1 }, .uv = .{ 0, 0 } },
-    .{ .pos = .{ 0.5, -0.5, 0, 1 }, .uv = .{ 1, 0 } },
+    .{ .pos = .{ 0, 0.5, 0, 1 }, .uv = .{ 0.5, 1 }, .bary = .{ 0, 0, 1 } },
+    .{ .pos = .{ -0.5, -0.5, 0, 1 }, .uv = .{ 0, 0 }, .bary = .{ 1, 0, 0 } },
+    .{ .pos = .{ 0.5, -0.5, 0, 1 }, .uv = .{ 1, 0 }, .bary = .{ 0, 1, 0 } },
 };
+
+// TODO: Need to ask Ayush about this, ideally we have a square window in this example because it
+// would mean our triangles are not being "stretched" out which would make debugging nicer.
+// For some reason this doesn't compile atm.
+// pub const options = mach.Engine.Options{ .width = 512, .height = 512 };
 
 // The uniform read by the vertex shader, it contains the matrix
 // that will move vertices
@@ -26,13 +32,11 @@ const VertexUniform = struct {
     mat: zm.Mat,
 };
 
-// The uniform read by the fragment shader, the points are used
-// to calculate the bezier curve, and more or less coincide with uvs
-// (Vec4 for alignment)
 const FragUniform = struct {
-    points: [3]@Vector(4, f32),
     // TODO use an enum? Remember that it will be casted to u32 in wgsl
     type: u32,
+    // Padding for struct alignment to 16 bytes (minimum in WebGPU uniform).
+    padding: @Vector(3, f32) = undefined,
 };
 // TODO texture and sampler, create buffers and use an index field
 // in FragUniform to tell which texture to read
@@ -69,6 +73,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const vertex_attributes = [_]gpu.VertexAttribute{
         .{ .format = .float32x4, .offset = @offsetOf(Vertex, "pos"), .shader_location = 0 },
         .{ .format = .float32x2, .offset = @offsetOf(Vertex, "uv"), .shader_location = 1 },
+        .{ .format = .float32x3, .offset = @offsetOf(Vertex, "bary"), .shader_location = 2 },
     };
     const vertex_buffer_layout = gpu.VertexBufferLayout{
         .array_stride = @sizeOf(Vertex),
@@ -151,29 +156,12 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     var frag_uniform_mapped = frag_uniform_buffer.getMappedRange(FragUniform, 0, num_instances);
     const tmp_frag_ubo = [_]FragUniform{
         .{
-            // The points correspond to the left point, middle point, right point (when viewed regularly)
-            // in UV coordinates
-            .points = [_]@Vector(4, f32){
-                .{ 0, 0, 0, 0 },
-                .{ 0.5, 1, 0, 0 },
-                .{ 1, 0, 0, 0 },
-            },
             .type = 1,
         },
         .{
-            .points = [_]@Vector(4, f32){
-                .{ 0, 0, 0, 0 },
-                .{ 0.5, 1, 0, 0 },
-                .{ 1, 0, 0, 0 },
-            },
             .type = 0,
         },
         .{
-            .points = [_]@Vector(4, f32){
-                .{ 0, 0, 0, 0 },
-                .{ 0.5, 1, 0, 0 },
-                .{ 1, 0, 0, 0 },
-            },
             .type = 2,
         },
     };
