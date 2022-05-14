@@ -12,13 +12,12 @@ const glfw = @import("glfw");
 pub const Vertex = struct {
     pos: @Vector(4, f32),
     uv: @Vector(2, f32),
-    bary: @Vector(3, f32) = .{ 0, 0, 0 },
 };
 // Simple triangle
 pub const vertices = [_]Vertex{
-    .{ .pos = .{ 0, 250, 0, 1 }, .uv = .{ 0.5, 1 }, .bary = .{ 0, 0, 1 } },
-    .{ .pos = .{ -250, -250, 0, 1 }, .uv = .{ 0, 0 }, .bary = .{ 1, 0, 0 } },
-    .{ .pos = .{ 250, -250, 0, 1 }, .uv = .{ 1, 0 }, .bary = .{ 0, 1, 0 } },
+    .{ .pos = .{ 0, 250, 0, 1 }, .uv = .{ 0.5, 1 } },
+    .{ .pos = .{ -250, -250, 0, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ 250, -250, 0, 1 }, .uv = .{ 1, 0 } },
 };
 
 // TODO: Need to ask Ayush about this, ideally we have a square window in this example because it
@@ -73,7 +72,6 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const vertex_attributes = [_]gpu.VertexAttribute{
         .{ .format = .float32x4, .offset = @offsetOf(Vertex, "pos"), .shader_location = 0 },
         .{ .format = .float32x2, .offset = @offsetOf(Vertex, "uv"), .shader_location = 1 },
-        .{ .format = .float32x3, .offset = @offsetOf(Vertex, "bary"), .shader_location = 2 },
     };
     const vertex_buffer_layout = gpu.VertexBufferLayout{
         .array_stride = @sizeOf(Vertex),
