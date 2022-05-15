@@ -13,24 +13,6 @@ pub const Vertex = struct {
     pos: @Vector(4, f32),
     uv: @Vector(2, f32),
 };
-// Simple triangle
-const WINDOW_WIDTH = 640;
-const WINDOW_HEIGHT = 480;
-const TRIANGLE_SCALE = 250;
-const TRIANGLE_HEIGHT = TRIANGLE_SCALE * @sqrt(0.75);
-pub const vertices = [_]Vertex{
-    .{ .pos = .{ WINDOW_WIDTH / 2 + TRIANGLE_SCALE / 2, WINDOW_HEIGHT / 2 + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
-    .{ .pos = .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 0, 1 }, .uv = .{ 0, 0 } },
-    .{ .pos = .{ WINDOW_WIDTH / 2 + TRIANGLE_SCALE, WINDOW_HEIGHT / 2 + 0, 0, 1 }, .uv = .{ 1, 0 } },
-
-    .{ .pos = .{ WINDOW_WIDTH / 2 + TRIANGLE_SCALE / 2, WINDOW_HEIGHT / 2, 0, 1 }, .uv = .{ 0.5, 1 } },
-    .{ .pos = .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0, 0 } },
-    .{ .pos = .{ WINDOW_WIDTH / 2 + TRIANGLE_SCALE, WINDOW_HEIGHT / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 1, 0 } },
-
-    .{ .pos = .{ WINDOW_WIDTH / 2 - TRIANGLE_SCALE / 2, WINDOW_HEIGHT / 2 + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
-    .{ .pos = .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 0, 1 }, .uv = .{ 0, 0 } },
-    .{ .pos = .{ WINDOW_WIDTH / 2 - TRIANGLE_SCALE, WINDOW_HEIGHT / 2 + 0, 0, 1 }, .uv = .{ 1, 0 } },
-};
 
 pub const options = mach.Options{ .width = 640, .height = 480 };
 
@@ -56,6 +38,7 @@ vertex_buffer: gpu.Buffer,
 vertex_uniform_buffer: gpu.Buffer,
 frag_uniform_buffer: gpu.Buffer,
 bind_group: gpu.BindGroup,
+vertices_len: u32,
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
     engine.core.setKeyCallback(struct {
@@ -136,6 +119,28 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
             .strip_index_format = .none,
         },
     };
+
+    const framebuffer_size = try engine.core.getFramebufferSize();
+    const fb_width = @intToFloat(f32, framebuffer_size.width);
+    const fb_height = @intToFloat(f32, framebuffer_size.height);
+    const fb_scale = fb_width / 640;
+    const TRIANGLE_SCALE = 250 * fb_scale;
+    const TRIANGLE_HEIGHT = TRIANGLE_SCALE * @sqrt(0.75);
+    const vertices = [_]Vertex{
+        .{ .pos = .{ fb_width / 2 + TRIANGLE_SCALE / 2, fb_height / 2 + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
+        .{ .pos = .{ fb_width / 2, fb_height / 2, 0, 1 }, .uv = .{ 0, 0 } },
+        .{ .pos = .{ fb_width / 2 + TRIANGLE_SCALE, fb_height / 2 + 0, 0, 1 }, .uv = .{ 1, 0 } },
+
+        .{ .pos = .{ fb_width / 2 + TRIANGLE_SCALE / 2, fb_height / 2, 0, 1 }, .uv = .{ 0.5, 1 } },
+        .{ .pos = .{ fb_width / 2, fb_height / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0, 0 } },
+        .{ .pos = .{ fb_width / 2 + TRIANGLE_SCALE, fb_height / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 1, 0 } },
+
+        .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE / 2, fb_height / 2 + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
+        .{ .pos = .{ fb_width / 2, fb_height / 2, 0, 1 }, .uv = .{ 0, 0 } },
+        .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE, fb_height / 2 + 0, 0, 1 }, .uv = .{ 1, 0 } },
+    };
+    app.vertices_len = vertices.len;
+
     const vertex_buffer = engine.gpu_driver.device.createBuffer(&.{
         .usage = .{ .vertex = true },
         .size = @sizeOf(Vertex) * vertices.len,
@@ -240,9 +245,9 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
 
     const pass = encoder.beginRenderPass(&render_pass_info);
     pass.setPipeline(app.pipeline);
-    pass.setVertexBuffer(0, app.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
+    pass.setVertexBuffer(0, app.vertex_buffer, 0, @sizeOf(Vertex) * app.vertices_len);
     pass.setBindGroup(0, app.bind_group, &.{ 0, 0 });
-    pass.draw(vertices.len, 1, 0, 0);
+    pass.draw(app.vertices_len, 1, 0, 0);
     pass.end();
     pass.release();
 
