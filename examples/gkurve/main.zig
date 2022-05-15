@@ -14,11 +14,22 @@ pub const Vertex = struct {
     uv: @Vector(2, f32),
 };
 // Simple triangle
-const triangle_half_height = 250*@sqrt(0.75);
+const WINDOW_WIDTH = 640;
+const WINDOW_HEIGHT = 480;
+const TRIANGLE_SCALE = 250;
+const TRIANGLE_HEIGHT = TRIANGLE_SCALE * @sqrt(0.75);
 pub const vertices = [_]Vertex{
-    .{ .pos = .{ 0, triangle_half_height, 0, 1 }, .uv = .{ 0.5, 1 } },
-    .{ .pos = .{ -250, -triangle_half_height, 0, 1 }, .uv = .{ 0, 0 } },
-    .{ .pos = .{ 250, -triangle_half_height, 0, 1 }, .uv = .{ 1, 0 } },
+    .{ .pos = .{ WINDOW_WIDTH / 2 + TRIANGLE_SCALE / 2, WINDOW_HEIGHT / 2 + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
+    .{ .pos = .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 0, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ WINDOW_WIDTH / 2 + TRIANGLE_SCALE, WINDOW_HEIGHT / 2 + 0, 0, 1 }, .uv = .{ 1, 0 } },
+
+    .{ .pos = .{ WINDOW_WIDTH / 2 + TRIANGLE_SCALE / 2, WINDOW_HEIGHT / 2, 0, 1 }, .uv = .{ 0.5, 1 } },
+    .{ .pos = .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ WINDOW_WIDTH / 2 + TRIANGLE_SCALE, WINDOW_HEIGHT / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 1, 0 } },
+
+    .{ .pos = .{ WINDOW_WIDTH / 2 - TRIANGLE_SCALE / 2, WINDOW_HEIGHT / 2 + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
+    .{ .pos = .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 0, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ WINDOW_WIDTH / 2 - TRIANGLE_SCALE, WINDOW_HEIGHT / 2 + 0, 0, 1 }, .uv = .{ 1, 0 } },
 };
 
 // TODO: Need to ask Ayush about this, ideally we have a square window in this example because it
@@ -40,10 +51,6 @@ const FragUniform = struct {
 };
 // TODO texture and sampler, create buffers and use an index field
 // in FragUniform to tell which texture to read
-
-// Hard-coded, if you change it remember to change it in the shaders
-const num_instances = 3;
-
 const App = @This();
 
 pipeline: gpu.RenderPipeline,
@@ -100,7 +107,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     };
 
     const vbgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
-    const fbgle = gpu.BindGroupLayout.Entry.buffer(1, .{ .fragment = true }, .uniform, true, 0);
+    const fbgle = gpu.BindGroupLayout.Entry.buffer(1, .{ .fragment = true }, .read_only_storage, true, 0);
     const bgl = engine.gpu_driver.device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor{
             .entries = &.{ vbgle, fbgle },
@@ -143,16 +150,16 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
 
     const vertex_uniform_buffer = engine.gpu_driver.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
-        .size = @sizeOf(VertexUniform) * num_instances,
+        .size = @sizeOf(VertexUniform),
         .mapped_at_creation = false,
     });
 
     const frag_uniform_buffer = engine.gpu_driver.device.createBuffer(&.{
-        .usage = .{ .uniform = true },
-        .size = @sizeOf(FragUniform) * num_instances,
+        .usage = .{ .storage = true },
+        .size = @sizeOf(FragUniform) * vertices.len / 3,
         .mapped_at_creation = true,
     });
-    var frag_uniform_mapped = frag_uniform_buffer.getMappedRange(FragUniform, 0, num_instances);
+    var frag_uniform_mapped = frag_uniform_buffer.getMappedRange(FragUniform, 0, vertices.len / 3);
     const tmp_frag_ubo = [_]FragUniform{
         .{
             .type = 1,
@@ -171,8 +178,8 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
             .entries = &.{
-                gpu.BindGroup.Entry.buffer(0, vertex_uniform_buffer, 0, @sizeOf(VertexUniform) * num_instances),
-                gpu.BindGroup.Entry.buffer(1, frag_uniform_buffer, 0, @sizeOf(FragUniform) * num_instances),
+                gpu.BindGroup.Entry.buffer(0, vertex_uniform_buffer, 0, @sizeOf(VertexUniform)),
+                gpu.BindGroup.Entry.buffer(1, frag_uniform_buffer, 0, @sizeOf(FragUniform) * vertices.len / 3),
             },
         },
     );
@@ -213,6 +220,13 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     };
 
     {
+        // Using a view allows us to move the camera without having to change the actual
+        // global poitions of each vertex
+        const view = zm.lookAtRh(
+            zm.f32x4(0, 0, 1, 1),
+            zm.f32x4(0, 0, 0, 1),
+            zm.f32x4(0, 1, 0, 0),
+        );
         const proj = zm.orthographicRh(
             @intToFloat(f32, engine.gpu_driver.current_desc.width),
             @intToFloat(f32, engine.gpu_driver.current_desc.height),
@@ -220,21 +234,18 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
             100,
         );
 
-        // TODO:
-        // Use better positioning system
-        const ubos = [_]VertexUniform{
-            .{ .mat = zm.mul(zm.translation(250, triangle_half_height, 0), proj) },
-            .{ .mat = zm.mul(zm.translation(-250, 0, 0), proj) },
-            .{ .mat = zm.mul(zm.translation(250, -triangle_half_height, 0), proj) },
+        const mvp = zm.mul(zm.mul(view, proj), zm.translation(-1, -1, 0));
+        const ubos = VertexUniform{
+            .mat = mvp,
         };
-        encoder.writeBuffer(app.vertex_uniform_buffer, 0, VertexUniform, &ubos);
+        encoder.writeBuffer(app.vertex_uniform_buffer, 0, VertexUniform, &.{ubos});
     }
 
     const pass = encoder.beginRenderPass(&render_pass_info);
     pass.setPipeline(app.pipeline);
     pass.setVertexBuffer(0, app.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
     pass.setBindGroup(0, app.bind_group, &.{ 0, 0 });
-    pass.draw(vertices.len, num_instances, 0, 0);
+    pass.draw(vertices.len, 1, 0, 0);
     pass.end();
     pass.release();
 
