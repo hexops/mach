@@ -14,10 +14,11 @@ pub const Vertex = struct {
     uv: @Vector(2, f32),
 };
 // Simple triangle
+const triangle_half_height = 250*@sqrt(0.75);
 pub const vertices = [_]Vertex{
-    .{ .pos = .{ 0, 250, 0, 1 }, .uv = .{ 0.5, 1 } },
-    .{ .pos = .{ -250, -250, 0, 1 }, .uv = .{ 0, 0 } },
-    .{ .pos = .{ 250, -250, 0, 1 }, .uv = .{ 1, 0 } },
+    .{ .pos = .{ 0, triangle_half_height, 0, 1 }, .uv = .{ 0.5, 1 } },
+    .{ .pos = .{ -250, -triangle_half_height, 0, 1 }, .uv = .{ 0, 0 } },
+    .{ .pos = .{ 250, -triangle_half_height, 0, 1 }, .uv = .{ 1, 0 } },
 };
 
 // TODO: Need to ask Ayush about this, ideally we have a square window in this example because it
@@ -222,9 +223,9 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
         // TODO:
         // Use better positioning system
         const ubos = [_]VertexUniform{
-            .{ .mat = zm.mul(zm.translation(250, 250, 0), proj) },
+            .{ .mat = zm.mul(zm.translation(250, triangle_half_height, 0), proj) },
             .{ .mat = zm.mul(zm.translation(-250, 0, 0), proj) },
-            .{ .mat = zm.mul(zm.translation(250, -250, 0), proj) },
+            .{ .mat = zm.mul(zm.translation(250, -triangle_half_height, 0), proj) },
         };
         encoder.writeBuffer(app.vertex_uniform_buffer, 0, VertexUniform, &ubos);
     }
