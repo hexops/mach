@@ -2,12 +2,12 @@ struct FragUniform {
     type_: u32,
     padding: vec3<f32>,
 }
-@binding(1) @group(0) var<uniform> ubos: array<FragUniform, 3>;
+@binding(1) @group(0) var<storage> ubos: array<FragUniform>;
 
 @stage(fragment) fn main( 
     @location(0) uv: vec2<f32>,
     @location(1) bary: vec3<f32>,
-    @interpolate(flat) @location(2) instance_index: u32,
+    @interpolate(flat) @location(2) triangle_index: u32,
 ) -> @location(0) vec4<f32> {
     // Example 1: Visualize barycentric coordinates:
     // return vec4<f32>(bary.x, bary.y, bary.z, 1.0);
@@ -17,10 +17,10 @@ struct FragUniform {
 
     // Example 2: Render gkurves
     var inversion = -1.0;
-    if(ubos[instance_index].type_ == 1u) {
+    if(ubos[triangle_index].type_ == 1u) {
         // Solid triangle
         return vec4<f32>(0.0, 1.0, 0.0, 1.0);
-    } else if(ubos[instance_index].type_ == 2u) {
+    } else if(ubos[triangle_index].type_ == 2u) {
         // Concave (inverted quadratic bezier curve)
         inversion = -1.0;
     } else {
