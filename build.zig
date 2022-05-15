@@ -114,7 +114,7 @@ const App = struct {
         src: []const u8,
         deps: ?[]const Pkg = null,
     }) App {
-        const exe = b.addExecutable(options.name, "src/entry_native.zig");
+        const exe = b.addExecutable(options.name, "src/native.zig");
         exe.addPackage(.{
             .name = "app",
             .path = .{ .path = options.src },

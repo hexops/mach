@@ -21,10 +21,7 @@ pub const vertices = [_]Vertex{
     .{ .pos = .{ 0.5, -0.5, 0, 1 }, .uv = .{ 1, 0 }, .bary = .{ 0, 1, 0 } },
 };
 
-// TODO: Need to ask Ayush about this, ideally we have a square window in this example because it
-// would mean our triangles are not being "stretched" out which would make debugging nicer.
-// For some reason this doesn't compile atm.
-// pub const options = mach.Engine.Options{ .width = 512, .height = 512 };
+pub const options = mach.Options{ .width = 512, .height = 512 };
 
 // The uniform read by the vertex shader, it contains the matrix
 // that will move vertices
