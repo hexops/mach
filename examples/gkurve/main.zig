@@ -32,7 +32,7 @@ pub const vertices = [_]Vertex{
     .{ .pos = .{ WINDOW_WIDTH / 2 - TRIANGLE_SCALE, WINDOW_HEIGHT / 2 + 0, 0, 1 }, .uv = .{ 1, 0 } },
 };
 
-pub const options = mach.Options{ .width = 512, .height = 512 };
+pub const options = mach.Options{ .width = 640, .height = 480 };
 
 // The uniform read by the vertex shader, it contains the matrix
 // that will move vertices
