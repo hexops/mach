@@ -10,7 +10,7 @@ const UniformBufferObject = struct {
     mat: zm.Mat,
 };
 
-var timer: std.time.Timer = undefined;
+var timer: mach.Timer = undefined;
 
 pipeline: gpu.RenderPipeline,
 queue: gpu.Queue,
@@ -21,7 +21,7 @@ bind_group: gpu.BindGroup,
 const App = @This();
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
-    timer = try std.time.Timer.start();
+    timer = try mach.Timer.start();
 
     engine.core.setKeyCallback(struct {
         fn callback(_: *App, eng: *mach.Engine, key: mach.Key, action: mach.Action) void {
@@ -171,7 +171,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
         );
 
         var ubos: [16]UniformBufferObject = undefined;
-        const time = @intToFloat(f32, timer.read()) / @as(f32, std.time.ns_per_s);
+        const time = timer.read();
         const step: f32 = 4.0;
         var m: u8 = 0;
         var x: u8 = 0;

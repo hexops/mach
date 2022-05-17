@@ -11,7 +11,7 @@ const UniformBufferObject = struct {
     mat: zm.Mat,
 };
 
-var timer: std.time.Timer = undefined;
+var timer: mach.Timer = undefined;
 
 pipeline: gpu.RenderPipeline,
 queue: gpu.Queue,
@@ -24,7 +24,7 @@ depth_size: mach.Size,
 const App = @This();
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
-    timer = try std.time.Timer.start();
+    timer = try mach.Timer.start();
 
     engine.core.setKeyCallback(struct {
         fn callback(_: *App, eng: *mach.Engine, key: mach.Key, action: mach.Action) void {
@@ -239,7 +239,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     };
 
     {
-        const time = @intToFloat(f32, timer.read()) / @as(f32, std.time.ns_per_s);
+        const time = timer.read();
         const model = zm.mul(zm.rotationX(time * (std.math.pi / 2.0)), zm.rotationZ(time * (std.math.pi / 2.0)));
         const view = zm.lookAtRh(
             zm.f32x4(0, 4, 2, 1),
