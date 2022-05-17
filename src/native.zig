@@ -387,8 +387,8 @@ pub fn main() !void {
     while (!window.shouldClose()) {
         try glfw.pollEvents();
 
-        engine.delta_time_ns = engine.timer.lap();
-        engine.delta_time = @intToFloat(f64, engine.delta_time_ns) / @intToFloat(f64, std.time.ns_per_s);
+        engine.delta_time_ns = engine.timer.lapPrecise();
+        engine.delta_time = @intToFloat(f32, engine.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
         var framebuffer_size = try window.getFramebufferSize();
         engine.gpu_driver.target_desc.width = framebuffer_size.width;

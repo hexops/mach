@@ -5,6 +5,7 @@ const gpu = @import("gpu");
 const App = @import("app");
 const structs = @import("structs.zig");
 const enums = @import("enums.zig");
+const Timer = @import("Timer.zig");
 
 const Engine = @This();
 
@@ -23,9 +24,9 @@ options: structs.Options,
 /// For example, if you are animating a cube which should rotate 360 degrees every second,
 /// instead of writing (360.0 / 60.0) and assuming the frame rate is 60hz, write
 /// (360.0 * engine.delta_time)
-delta_time: f64 = 0,
+delta_time: f32 = 0,
 delta_time_ns: u64 = 0,
-timer: std.time.Timer,
+timer: Timer,
 
 pub const Core = struct {
     internal: GetCoreInternalType(),
@@ -64,7 +65,7 @@ pub fn init(allocator: std.mem.Allocator, options: structs.Options) !Engine {
     var engine = Engine{
         .allocator = allocator,
         .options = options,
-        .timer = try std.time.Timer.start(),
+        .timer = try Timer.start(),
         .core = undefined,
         .gpu_driver = undefined,
     };
