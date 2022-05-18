@@ -1,4 +1,5 @@
 const gpu = @import("gpu");
+const enums = @import("enums.zig");
 
 pub const Size = struct {
     width: u32,
@@ -50,4 +51,13 @@ pub const Options = struct {
 
     /// Whether the application has a preference for low power or high performance GPU.
     power_preference: gpu.PowerPreference = .none,
+};
+
+pub const Event = union(enum) {
+    key_press: struct {
+        key: enums.Key,
+    },
+    key_release: struct {
+        key: enums.Key,
+    },
 };

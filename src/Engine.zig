@@ -2,7 +2,6 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const glfw = @import("glfw");
 const gpu = @import("gpu");
-const App = @import("app");
 const structs = @import("structs.zig");
 const enums = @import("enums.zig");
 const Timer = @import("Timer.zig");
@@ -43,8 +42,8 @@ pub const Core = struct {
         return core.internal.setSizeLimits(min, max);
     }
 
-    pub fn setKeyCallback(core: *Core, comptime cb: fn (app: *App, engine: *Engine, key: enums.Key, action: enums.Action) void) void {
-        core.internal.setKeyCallback(cb);
+    pub fn pollEvent(core: *Core) ?structs.Event {
+        return core.internal.pollEvent();
     }
 };
 

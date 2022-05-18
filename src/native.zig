@@ -11,12 +11,17 @@ const c = @import("c.zig").c;
 pub const CoreGlfw = struct {
     window: glfw.Window,
     backend_type: gpu.Adapter.BackendType,
+    allocator: std.mem.Allocator,
+    events: EventQueue = .{},
     user_ptr: UserPtr = undefined,
 
+    const EventQueue = std.TailQueue(structs.Event);
+    const EventNode = EventQueue.Node;
+
     const UserPtr = struct {
-        app: *App,
-        engine: *Engine,
+        core: *CoreGlfw,
     };
+
     pub fn init(allocator: std.mem.Allocator, engine: *Engine) !CoreGlfw {
         const options = engine.options;
         const backend_type = try util.detectBackendType(allocator);
@@ -39,16 +44,44 @@ pub const CoreGlfw = struct {
         return CoreGlfw{
             .window = window,
             .backend_type = backend_type,
+            .allocator = engine.allocator,
         };
     }
 
-    fn initCallback(self: *CoreGlfw, app: *App, engine: *Engine) void {
-        self.user_ptr = UserPtr{
-            .app = app,
-            .engine = engine,
-        };
+    fn pushEvent(self: *CoreGlfw, event: structs.Event) void {
+        const node = self.allocator.create(EventNode) catch unreachable;
+        node.* = .{ .data = event };
+        self.events.append(node);
+    }
+
+    fn initCallback(self: *CoreGlfw) void {
+        self.user_ptr = UserPtr{ .core = self };
 
         self.window.setUserPointer(&self.user_ptr);
+
+        const callback = struct {
+            fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
+                const core = (window.getUserPointer(UserPtr) orelse unreachable).core;
+
+                switch (action) {
+                    .press => core.pushEvent(.{
+                        .key_press = .{
+                            .key = toMachKey(key),
+                        },
+                    }),
+                    .release => core.pushEvent(.{
+                        .key_release = .{
+                            .key = toMachKey(key),
+                        },
+                    }),
+                    else => {},
+                }
+
+                _ = scancode;
+                _ = mods;
+            }
+        }.callback;
+        self.window.setKeyCallback(callback);
     }
 
     pub fn setShouldClose(self: *CoreGlfw, value: bool) void {
@@ -67,16 +100,9 @@ pub const CoreGlfw = struct {
         );
     }
 
-    pub fn setKeyCallback(self: *CoreGlfw, comptime cb: fn (app: *App, engine: *Engine, key: enums.Key, action: enums.Action) void) void {
-        const callback = struct {
-            fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
-                const usrptr = window.getUserPointer(UserPtr) orelse unreachable;
-                cb(usrptr.app, usrptr.engine, CoreGlfw.toMachKey(key), CoreGlfw.toMachAction(action));
-                _ = scancode;
-                _ = mods;
-            }
-        }.callback;
-        self.window.setKeyCallback(callback);
+    pub fn pollEvent(self: *CoreGlfw) ?structs.Event {
+        if (self.events.popFirst()) |n| return n.data;
+        return null;
     }
 
     fn toMachAction(action: glfw.Action) enums.Action {
@@ -381,7 +407,7 @@ pub fn main() !void {
     defer app.deinit(&engine);
 
     // Glfw specific: initialize the user pointer used in callbacks
-    engine.core.internal.initCallback(&app, &engine);
+    engine.core.internal.initCallback();
 
     const window = engine.core.internal.window;
     while (!window.shouldClose()) {
