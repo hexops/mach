@@ -22,8 +22,7 @@ queue: gpu.Queue,
 cube: Cube,
 camera: Camera,
 light: Light,
-depth: Texture,
-depth_size: mach.Size,
+depth: ?Texture,
 keys: u8 = 0,
 
 const Dir = struct {
@@ -59,21 +58,15 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     app.queue = engine.gpu_driver.device.getQueue();
     app.cube = Cube.init(engine);
     app.light = Light.init(engine);
-    app.depth = Texture.depth(engine.gpu_driver.device, size.width, size.height);
-    app.depth_size = size;
+    app.depth = null;
     app.camera = Camera.init(engine.gpu_driver.device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0);
 }
 
-pub fn deinit(_: *App, _: *mach.Engine) void {}
+pub fn deinit(app: *App, _: *mach.Engine) void {
+    app.depth.?.release();
+}
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
-    // If window is resized, recreate depth buffer otherwise we cannot use it.
-    const size = engine.core.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
-    if (size.width != app.depth_size.width or size.height != app.depth_size.height) {
-        app.depth = Texture.depth(engine.gpu_driver.device, size.width, size.height);
-        app.depth_size = size;
-    }
-
     // move camera
     const speed = zm.f32x4s(@floatCast(f32, engine.delta_time * 5));
     const fwd = zm.normalize3(app.camera.target - app.camera.eye);
@@ -109,7 +102,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     const render_pass_descriptor = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = &.{
-            .view = app.depth.view,
+            .view = app.depth.?.view,
             .depth_load_op = .clear,
             .depth_store_op = .store,
             .stencil_load_op = .none,
@@ -156,6 +149,15 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     engine.gpu_driver.swap_chain.?.present();
 
     return true;
+}
+
+pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {
+    // If window is resized, recreate depth buffer otherwise we cannot use it.
+    if (app.depth != null) {
+        app.depth.?.release();
+    }
+    // It also recreates the sampler, which is a waste, but for an example it's ok
+    app.depth = Texture.depth(engine.gpu_driver.device, width, height);
 }
 
 const Camera = struct {

@@ -18,8 +18,8 @@ queue: gpu.Queue,
 vertex_buffer: gpu.Buffer,
 uniform_buffer: gpu.Buffer,
 bind_group: gpu.BindGroup,
-depth_texture: gpu.Texture,
-depth_size: mach.Size,
+depth_texture: ?gpu.Texture,
+depth_texture_view: gpu.TextureView,
 
 const App = @This();
 
@@ -165,26 +165,13 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     );
 
-    const size = try engine.core.getFramebufferSize();
-    const depth_texture = engine.gpu_driver.device.createTexture(&gpu.Texture.Descriptor{
-        .size = gpu.Extent3D{
-            .width = size.width,
-            .height = size.height,
-        },
-        .format = .depth24_plus,
-        .usage = .{
-            .render_attachment = true,
-            .texture_binding = true,
-        },
-    });
-
     app.pipeline = pipeline;
     app.queue = queue;
     app.vertex_buffer = vertex_buffer;
     app.uniform_buffer = uniform_buffer;
     app.bind_group = bind_group;
-    app.depth_texture = depth_texture;
-    app.depth_size = size;
+    app.depth_texture = null;
+    app.depth_texture_view = undefined;
 
     vs_module.release();
     fs_module.release();
@@ -194,26 +181,11 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
     app.vertex_buffer.release();
     app.uniform_buffer.release();
     app.bind_group.release();
+    app.depth_texture.?.release();
+    app.depth_texture_view.release();
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
-    // If window is resized, recreate depth buffer otherwise we cannot use it.
-    const size = engine.core.getFramebufferSize() catch unreachable; // TODO: return type inference can't handle this
-    if (size.width != app.depth_size.width or size.height != app.depth_size.height) {
-        app.depth_texture = engine.gpu_driver.device.createTexture(&gpu.Texture.Descriptor{
-            .size = gpu.Extent3D{
-                .width = size.width,
-                .height = size.height,
-            },
-            .format = .depth24_plus,
-            .usage = .{
-                .render_attachment = true,
-                .texture_binding = true,
-            },
-        });
-        app.depth_size = size;
-    }
-
     const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
@@ -226,12 +198,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = &.{
-            .view = app.depth_texture.createView(&gpu.TextureView.Descriptor{
-                .format = .depth24_plus,
-                .dimension = .dimension_2d,
-                .array_layer_count = 1,
-                .mip_level_count = 1,
-            }),
+            .view = app.depth_texture_view,
             .depth_clear_value = 1.0,
             .depth_load_op = .clear,
             .depth_store_op = .store,
@@ -276,6 +243,32 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     back_buffer_view.release();
 
     return true;
+}
+
+pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {
+    // If window is resized, recreate depth buffer otherwise we cannot use it.
+    if (app.depth_texture != null) {
+        app.depth_texture.?.release();
+        app.depth_texture_view.release();
+    }
+    app.depth_texture = engine.gpu_driver.device.createTexture(&gpu.Texture.Descriptor{
+        .size = gpu.Extent3D{
+            .width = width,
+            .height = height,
+        },
+        .format = .depth24_plus,
+        .usage = .{
+            .render_attachment = true,
+            .texture_binding = true,
+        },
+    });
+
+    app.depth_texture_view = app.depth_texture.?.createView(&gpu.TextureView.Descriptor{
+        .format = .depth24_plus,
+        .dimension = .dimension_2d,
+        .array_layer_count = 1,
+        .mip_level_count = 1,
+    });
 }
 
 fn rgb24ToRgba32(allocator: std.mem.Allocator, in: []zigimg.color.Rgb24) !zigimg.color.ColorStorage {

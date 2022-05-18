@@ -30,6 +30,7 @@ vertex_buffer: gpu.Buffer,
 uniform_buffer: gpu.Buffer,
 bind_group: gpu.BindGroup,
 depth_texture: ?gpu.Texture,
+depth_texture_view: gpu.TextureView,
 cube_texture: gpu.Texture,
 cube_texture_view: gpu.TextureView,
 cube_texture_render: gpu.Texture,
@@ -200,6 +201,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     app.uniform_buffer = uniform_buffer;
     app.bind_group = bind_group;
     app.depth_texture = null;
+    app.depth_texture_view = undefined;
     app.cube_texture = cube_texture;
     app.cube_texture_view = cube_texture_view;
     app.cube_texture_render = cube_texture_render;
@@ -223,6 +225,7 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
     app.cube_texture_view_render.release();
     app.bind_group.release();
     app.depth_texture.?.release();
+    app.depth_texture_view.release();
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
@@ -245,12 +248,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     };
 
     const depth_stencil_attachment = gpu.RenderPassDepthStencilAttachment{
-        .view = app.depth_texture.?.createView(&gpu.TextureView.Descriptor{
-            .format = .depth24_plus,
-            .dimension = .dimension_2d,
-            .array_layer_count = 1,
-            .mip_level_count = 1,
-        }),
+        .view = app.depth_texture_view,
         .depth_load_op = .clear,
         .depth_store_op = .store,
         .depth_clear_value = 1.0,
@@ -347,6 +345,14 @@ pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {
             .format = engine.gpu_driver.swap_chain_format,
         });
 
+        app.depth_texture_view.release();
+        app.depth_texture_view = app.depth_texture.?.createView(&gpu.TextureView.Descriptor{
+            .format = .depth24_plus,
+            .dimension = .dimension_2d,
+            .array_layer_count = 1,
+            .mip_level_count = 1,
+        });
+
         app.cube_texture_view.release();
         app.cube_texture_view = app.cube_texture.createView(&gpu.TextureView.Descriptor{
             .format = engine.gpu_driver.swap_chain_format,
@@ -374,11 +380,16 @@ pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {
             },
         );
     } else {
-        // The first time resize is called, width and height are set to 0
         app.depth_texture = engine.gpu_driver.device.createTexture(&gpu.Texture.Descriptor{
             .usage = .{ .render_attachment = true },
-            .size = .{ .width = engine.gpu_driver.current_desc.width, .height = engine.gpu_driver.current_desc.height },
+            .size = .{ .width = width, .height = height },
             .format = .depth24_plus,
+        });
+        app.depth_texture_view = app.depth_texture.?.createView(&gpu.TextureView.Descriptor{
+            .format = .depth24_plus,
+            .dimension = .dimension_2d,
+            .array_layer_count = 1,
+            .mip_level_count = 1,
         });
     }
 }
