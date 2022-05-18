@@ -105,14 +105,6 @@ pub const CoreGlfw = struct {
         return null;
     }
 
-    fn toMachAction(action: glfw.Action) enums.Action {
-        return switch (action) {
-            .press => .press,
-            .release => .release,
-            .repeat => .repeat,
-        };
-    }
-
     fn toMachKey(key: glfw.Key) enums.Key {
         return switch (key) {
             .a => .a,
