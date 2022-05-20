@@ -101,7 +101,10 @@ pub const CoreGlfw = struct {
     }
 
     pub fn pollEvent(self: *CoreGlfw) ?structs.Event {
-        if (self.events.popFirst()) |n| return n.data;
+        if (self.events.popFirst()) |n| {
+            defer self.allocator.destroy(n);
+            return n.data;
+        }
         return null;
     }
 
