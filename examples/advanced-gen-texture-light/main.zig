@@ -33,19 +33,6 @@ const Dir = struct {
 };
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
-    // todo
-    // engine.core.internal.window.setKeyCallback(struct {
-    //     fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
-    //         _ = scancode;
-    //         _ = mods;
-    //         if (action == .press) {
-    //             switch (key) {
-    //                 .space => window.setShouldClose(true),
-    //                 else => {},
-    //             }
-    //         }
-    //     }
-    // }.callback);
     try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
     const eye = vec3(5.0, 7.0, 5.0);
