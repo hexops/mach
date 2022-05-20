@@ -24,16 +24,6 @@ const App = @This();
 pub fn init(app: *App, engine: *mach.Engine) !void {
     timer = try mach.Timer.start();
 
-    engine.core.setKeyCallback(struct {
-        fn callback(_: *App, eng: *mach.Engine, key: mach.Key, action: mach.Action) void {
-            if (action == .press) {
-                switch (key) {
-                    .space => eng.core.setShouldClose(true),
-                    else => {},
-                }
-            }
-        }
-    }.callback);
     try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
     const vs_module = engine.gpu_driver.device.createShaderModule(&.{
@@ -173,6 +163,16 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
+    while (engine.core.pollEvent()) |event| {
+        switch (event) {
+            .key_press => |ev| {
+                if (ev.key == .space)
+                    engine.core.setShouldClose(true);
+            },
+            else => {},
+        }
+    }
+
     const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
