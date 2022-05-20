@@ -33,7 +33,6 @@ const Dir = struct {
 };
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
-    engine.core.setKeyCallback(keyCallback);
     // todo
     // engine.core.internal.window.setKeyCallback(struct {
     //     fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
@@ -67,6 +66,42 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
+    while (engine.core.pollEvent()) |event| {
+        switch (event) {
+            .key_press => |ev| switch (ev.key) {
+                .q, .escape, .space => engine.core.setShouldClose(true),
+                .w, .up => {
+                    app.keys |= Dir.up;
+                },
+                .s, .down => {
+                    app.keys |= Dir.down;
+                },
+                .a, .left => {
+                    app.keys |= Dir.left;
+                },
+                .d, .right => {
+                    app.keys |= Dir.right;
+                },
+                else => {},
+            },
+            .key_release => |ev| switch (ev.key) {
+                .w, .up => {
+                    app.keys &= ~Dir.up;
+                },
+                .s, .down => {
+                    app.keys &= ~Dir.down;
+                },
+                .a, .left => {
+                    app.keys &= ~Dir.left;
+                },
+                .d, .right => {
+                    app.keys &= ~Dir.right;
+                },
+                else => {},
+            },
+        }
+    }
+
     // move camera
     const speed = zm.f32x4s(@floatCast(f32, engine.delta_time * 5));
     const fwd = zm.normalize3(app.camera.target - app.camera.eye);
@@ -872,40 +907,3 @@ const Instance = struct {
         return zm.mul(zm.quatToMat(self.rotation), zm.translationV(self.position));
     }
 };
-
-fn keyCallback(app: *App, engine: *mach.Engine, key: mach.Key, action: mach.Action) void {
-    if (action == .press) {
-        switch (key) {
-            .q, .escape, .space => engine.core.setShouldClose(true),
-            .w, .up => {
-                app.keys |= Dir.up;
-            },
-            .s, .down => {
-                app.keys |= Dir.down;
-            },
-            .a, .left => {
-                app.keys |= Dir.left;
-            },
-            .d, .right => {
-                app.keys |= Dir.right;
-            },
-            else => {},
-        }
-    } else if (action == .release) {
-        switch (key) {
-            .w, .up => {
-                app.keys &= ~Dir.up;
-            },
-            .s, .down => {
-                app.keys &= ~Dir.down;
-            },
-            .a, .left => {
-                app.keys &= ~Dir.left;
-            },
-            .d, .right => {
-                app.keys &= ~Dir.right;
-            },
-            else => {},
-        }
-    }
-}
