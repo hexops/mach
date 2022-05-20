@@ -6,7 +6,7 @@ struct FragUniform {
 
 @stage(fragment) fn main( 
     @location(0) uv: vec2<f32>,
-    @location(1) bary: vec3<f32>,
+    @interpolate(linear) @location(1) bary: vec3<f32>,
     @interpolate(flat) @location(2) triangle_index: u32,
 ) -> @location(0) vec4<f32> {
     // Example 1: Visualize barycentric coordinates:
@@ -15,7 +15,7 @@ struct FragUniform {
     // return vec4<f32>(0.0, bary.y, 0.0, 1.0); // bottom-right of triangle
     // return vec4<f32>(0.0, bary.z, 0.0, 1.0); // top of triangle
 
-    // Example 2: Render gkurves
+    // Example 2: Render gkurve primitives
     var inversion = -1.0;
     if(ubos[triangle_index].type_ == 1u) {
         // Solid triangle
@@ -24,13 +24,31 @@ struct FragUniform {
         // Concave (inverted quadratic bezier curve)
         inversion = -1.0;
     } else {
-        // Convex (inverted quadratic bezier curve)
+        // Convex (quadratic bezier curve)
         inversion = 1.0;
     }
 
-    var dist = (-(pow(bary.z, 4.0) - bary.y * bary.x)) * inversion;
-    if (dist < 0.0) {
-        discard;
-    }
+	// Gradients
+	let px = dpdx(bary.xy);
+	let py = dpdy(bary.xy);
+
+	// Chain rule
+	let fx = (2.0 * bary.x) * px.x - px.y;
+	let fy = (2.0 * bary.x) * py.x - py.y;
+
+	// Signed distance
+	var dist = (bary.x * bary.x - bary.y) / sqrt(fx * fx + fy * fy);
+    // var dist = bary.z*bary.z - bary.y;
+
+    dist *= inversion;
+    dist /= 128.0;
+    dist /= 1.75;
+
+    // Border rendering.
+    if (dist > 0.0 && dist <= 0.1) { return vec4<f32>(1.0, 0.0, 0.0, 1.0); }
+    if (dist > 0.2 && dist <= 0.3) { return vec4<f32>(0.0, 0.0, 1.0, 1.0); }
+
+    // Fill color
+    if (dist < 0.0) { discard; }
     return vec4<f32>(0.0, 1.0, 0.0, 1.0);
 }

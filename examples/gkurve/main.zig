@@ -125,9 +125,9 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .{ .pos = .{ fb_width / 2, fb_height / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0, 0 } },
         .{ .pos = .{ fb_width / 2 + TRIANGLE_SCALE, fb_height / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 1, 0 } },
 
-        .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE / 2, fb_height / 2 + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
-        .{ .pos = .{ fb_width / 2, fb_height / 2, 0, 1 }, .uv = .{ 0, 0 } },
-        .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE, fb_height / 2 + 0, 0, 1 }, .uv = .{ 1, 0 } },
+        .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE / 2, (fb_height / 2 - TRIANGLE_HEIGHT / 2) + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
+        .{ .pos = .{ fb_width / 2, fb_height / 2 - TRIANGLE_HEIGHT / 2, 0, 1 }, .uv = .{ 0, 0 } },
+        .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE, fb_height / 2 - TRIANGLE_HEIGHT / 2, 0, 1 }, .uv = .{ 1, 0 } },
     };
     app.vertices_len = vertices.len;
 
@@ -223,7 +223,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
 
     {
         // Using a view allows us to move the camera without having to change the actual
-        // global poitions of each vertex
+        // global positions of each vertex
         const view = zm.lookAtRh(
             zm.f32x4(0, 0, 1, 1),
             zm.f32x4(0, 0, 0, 1),
@@ -235,6 +235,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
             -100,
             100,
         );
+
 
         const mvp = zm.mul(zm.mul(view, proj), zm.translation(-1, -1, 0));
         const ubos = VertexUniform{
