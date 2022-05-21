@@ -71,7 +71,7 @@ pub inline fn writeTexture(
         queue.ptr,
         destination,
         @ptrCast(*const anyopaque, data.ptr),
-        @intCast(u64, data.len) * @sizeOf(std.meta.Elem(@TypeOf(data))),
+        @intCast(usize, data.len) * @sizeOf(std.meta.Elem(@TypeOf(data))),
         data_layout,
         write_size,
     );
