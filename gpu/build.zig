@@ -45,8 +45,10 @@ pub const pkg = std.build.Pkg{
 };
 
 pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    glfw.link(b, step, options.glfw_options);
-    gpu_dawn.link(b, step, options.gpu_dawn_options);
+    if (step.target.toTarget().cpu.arch != .wasm32) {
+        glfw.link(b, step, options.glfw_options);
+        gpu_dawn.link(b, step, options.gpu_dawn_options);
+    }
 }
 
 fn thisDir() []const u8 {
