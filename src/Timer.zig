@@ -6,7 +6,29 @@ const Timer = @This();
 backing_timer: BackingTimerType = undefined,
 
 // TODO: verify declarations and its signatures
-const BackingTimerType = if (builtin.cpu.arch == .wasm32) void else std.time.Timer;
+const BackingTimerType = if (builtin.cpu.arch == .wasm32) struct {
+    pad0: u8 = 0,
+
+    const WasmTimer = @This();
+
+    fn start() !WasmTimer {
+        return WasmTimer{};
+    }
+
+    fn read(_: *WasmTimer) u64 {
+        return 0;
+    }
+
+    fn reset(_: *WasmTimer) void {}
+
+    fn lap(_: *WasmTimer) u64 {
+        return 0;
+    }
+
+    fn timeToNs(_: f64) u64 {
+        return 0;
+    }
+} else std.time.Timer;
 
 /// Initialize the timer.
 pub fn start() !Timer {
