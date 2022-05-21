@@ -126,8 +126,8 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .{ .pos = .{ fb_width / 2 + TRIANGLE_SCALE, fb_height / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 1, 0 } },
 
         .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE / 2, (fb_height / 2 - TRIANGLE_HEIGHT / 2) + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
-        .{ .pos = .{ fb_width / 2, fb_height / 2 - TRIANGLE_HEIGHT / 2, 0, 1 }, .uv = .{ 0, 0 } },
-        .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE, fb_height / 2 - TRIANGLE_HEIGHT / 2, 0, 1 }, .uv = .{ 1, 0 } },
+        .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE, fb_height / 2 - TRIANGLE_HEIGHT / 2, 0, 1 }, .uv = .{ 0, 0 } },
+        .{ .pos = .{ fb_width / 2, fb_height / 2 - TRIANGLE_HEIGHT / 2, 0, 1 }, .uv = .{ 1, 0 } },
     };
     app.vertices_len = vertices.len;
 
