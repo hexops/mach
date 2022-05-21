@@ -1,5 +1,6 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const builtin = @import("builtin");
 const glfw = @import("glfw");
 const gpu = @import("gpu");
 const structs = @import("structs.zig");
@@ -88,9 +89,11 @@ pub fn init(allocator: std.mem.Allocator, options: structs.Options) !Engine {
 }
 
 fn GetCoreInternalType() type {
+    if (builtin.cpu.arch == .wasm32) return @import("wasm.zig").CoreWasm;
     return @import("native.zig").CoreGlfw;
 }
 
 fn GetGpuDriverInternalType() type {
+    if (builtin.cpu.arch == .wasm32) return @import("wasm.zig").GpuDriverWeb;
     return @import("native.zig").GpuDriverNative;
 }
