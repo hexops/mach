@@ -45,17 +45,15 @@ pub fn build(b: *std.build.Builder) void {
             .{
                 .name = "example-" ++ example.name,
                 .src = "examples/" ++ example.name ++ "/main.zig",
+                .target = target,
                 .deps = comptime example.packages ++ &[_]Pkg{ glfw.pkg, gpu.pkg, pkg },
             },
         );
-        const example_exe = example_app.step;
-        example_exe.setTarget(target);
-        example_exe.setBuildMode(mode);
+        example_app.setBuildMode(mode);
         example_app.link(options);
-        example_exe.install();
 
-        const example_run_cmd = example_exe.run();
-        example_run_cmd.step.dependOn(&example_exe.install_step.?.step);
+        const example_run_cmd = example_app.run();
+        example_run_cmd.step.dependOn(&example_app.getInstallStep().?.step);
         const example_run_step = b.step("run-example-" ++ example.name, "Run the example");
         example_run_step.dependOn(&example_run_cmd.step);
     }
@@ -65,17 +63,15 @@ pub fn build(b: *std.build.Builder) void {
         .{
             .name = "shaderexp",
             .src = "shaderexp/main.zig",
+            .target = target,
             .deps = &.{ glfw.pkg, gpu.pkg, pkg },
         },
     );
-    const shaderexp_exe = shaderexp_app.step;
-    shaderexp_exe.setTarget(target);
-    shaderexp_exe.setBuildMode(mode);
+    shaderexp_app.setBuildMode(mode);
     shaderexp_app.link(options);
-    shaderexp_exe.install();
 
-    const shaderexp_run_cmd = shaderexp_exe.run();
-    shaderexp_run_cmd.step.dependOn(&shaderexp_exe.install_step.?.step);
+    const shaderexp_run_cmd = shaderexp_app.run();
+    shaderexp_run_cmd.step.dependOn(&shaderexp_app.getInstallStep().?.step);
     const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
     shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
 
@@ -106,26 +102,45 @@ const Packages = struct {
 };
 
 const App = struct {
-    step: *std.build.LibExeObjStep,
     b: *std.build.Builder,
+    name: []const u8,
+    step: *std.build.LibExeObjStep,
 
     pub fn init(b: *std.build.Builder, options: struct {
         name: []const u8,
         src: []const u8,
+        target: std.zig.CrossTarget,
         deps: ?[]const Pkg = null,
     }) App {
-        const exe = b.addExecutable(options.name, "src/native.zig");
-        exe.addPackage(.{
+        const app_pkg = std.build.Pkg{
             .name = "app",
             .path = .{ .path = options.src },
             .dependencies = options.deps,
-        });
-        exe.addPackage(gpu.pkg);
-        exe.addPackage(glfw.pkg);
+        };
+
+        const step = blk: {
+            if (options.target.toTarget().cpu.arch == .wasm32) {
+                // TODO: use options.name
+                const lib = b.addSharedLibrary("application", "src/wasm.zig", .unversioned);
+
+                break :blk lib;
+            } else {
+                const exe = b.addExecutable(options.name, "src/native.zig");
+                exe.addPackage(gpu.pkg);
+                exe.addPackage(glfw.pkg);
+
+                break :blk exe;
+            }
+        };
+
+        step.addPackage(app_pkg);
+        step.setTarget(options.target);
+        step.install();
 
         return .{
             .b = b,
-            .step = exe,
+            .step = step,
+            .name = options.name,
         };
     }
 
@@ -137,6 +152,21 @@ const App = struct {
 
         glfw.link(app.b, app.step, options.glfw_options);
         gpu.link(app.b, app.step, gpu_options);
+    }
+
+    pub fn setBuildMode(app: *const App, mode: std.builtin.Mode) void {
+        app.step.setBuildMode(mode);
+    }
+
+    pub fn getInstallStep(app: *const App) ?*std.build.InstallArtifactStep {
+        return app.step.install_step;
+    }
+
+    pub fn run(app: *const App) *std.build.RunStep {
+        if (app.step.target.toTarget().cpu.arch != .wasm32) {
+            return app.step.run();
+        }
+        unreachable;
     }
 };
 
