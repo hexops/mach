@@ -31,13 +31,13 @@ pub fn build(b: *std.build.Builder) void {
 
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },
-        .{ .name = "boids" },
+        //.{ .name = "boids" },
         .{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
         .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
+        //.{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
         .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
     }) |example| {
         const example_app = App.init(
@@ -52,28 +52,32 @@ pub fn build(b: *std.build.Builder) void {
         example_app.setBuildMode(mode);
         example_app.link(options);
 
-        const example_run_cmd = example_app.run();
-        example_run_cmd.step.dependOn(&example_app.getInstallStep().?.step);
-        const example_run_step = b.step("run-example-" ++ example.name, "Run the example");
-        example_run_step.dependOn(&example_run_cmd.step);
+        if (target.toTarget().cpu.arch != .wasm32) {
+            const example_run_cmd = example_app.run();
+            example_run_cmd.step.dependOn(&example_app.getInstallStep().?.step);
+            const example_run_step = b.step("run-example-" ++ example.name, "Run the example");
+            example_run_step.dependOn(&example_run_cmd.step);
+        }
     }
 
-    const shaderexp_app = App.init(
-        b,
-        .{
-            .name = "shaderexp",
-            .src = "shaderexp/main.zig",
-            .target = target,
-            .deps = &.{ glfw.pkg, gpu.pkg, pkg },
-        },
-    );
-    shaderexp_app.setBuildMode(mode);
-    shaderexp_app.link(options);
+    if (target.toTarget().cpu.arch != .wasm32) {
+        const shaderexp_app = App.init(
+            b,
+            .{
+                .name = "shaderexp",
+                .src = "shaderexp/main.zig",
+                .target = target,
+                .deps = &.{ glfw.pkg, gpu.pkg, pkg },
+            },
+        );
+        shaderexp_app.setBuildMode(mode);
+        shaderexp_app.link(options);
 
-    const shaderexp_run_cmd = shaderexp_app.run();
-    shaderexp_run_cmd.step.dependOn(&shaderexp_app.getInstallStep().?.step);
-    const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
-    shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
+        const shaderexp_run_cmd = shaderexp_app.run();
+        shaderexp_run_cmd.step.dependOn(&shaderexp_app.getInstallStep().?.step);
+        const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
+        shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
+    }
 
     const compile_all = b.step("compile-all", "Compile all examples and applications");
     compile_all.dependOn(b.getInstallStep());
@@ -122,6 +126,7 @@ const App = struct {
             if (options.target.toTarget().cpu.arch == .wasm32) {
                 // TODO: use options.name
                 const lib = b.addSharedLibrary("application", "src/wasm.zig", .unversioned);
+                lib.addPackage(gpu.pkg);
 
                 break :blk lib;
             } else {
@@ -150,8 +155,10 @@ const App = struct {
             .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
         };
 
-        glfw.link(app.b, app.step, options.glfw_options);
-        gpu.link(app.b, app.step, gpu_options);
+        if (app.step.target.toTarget().cpu.arch != .wasm32) {
+            glfw.link(app.b, app.step, options.glfw_options);
+            gpu.link(app.b, app.step, gpu_options);
+        }
     }
 
     pub fn setBuildMode(app: *const App, mode: std.builtin.Mode) void {
