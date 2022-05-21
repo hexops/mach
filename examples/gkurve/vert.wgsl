@@ -19,7 +19,7 @@ struct VertexOut {
     output.position_clip = ubo.matrix * position;
     output.frag_uv = uv;
 
-    // Generates [0, 0], [0.5, 0.0], [1.0, 1.0]
+    // Generates [0.0, 0.0], [0.5, 0.0], [1.0, 1.0]
     //
     // Equal to:
     //
@@ -32,8 +32,8 @@ struct VertexOut {
     // }
     //
     output.frag_bary = vec2<f32>(
-        f32(((vertex_index+2u) % 3u * 2u) % 3u),
-        f32(((vertex_index+2u) % 3u * 2u) & 2u) * 2.0,
+        f32((vertex_index+1u) % 3u) * 0.5,
+        1.0 - f32((((vertex_index + 3u) % 3u) + 1u) % 2u),
     );
     output.triangle_index = vertex_index / 3u;
     return output;
