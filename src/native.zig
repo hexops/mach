@@ -93,6 +93,11 @@ pub const CoreGlfw = struct {
         return @bitCast(structs.Size, size);
     }
 
+    pub fn getWindowSize(self: *CoreGlfw) !structs.Size {
+        const size = try self.window.getSize();
+        return @bitCast(structs.Size, size);
+    }
+
     pub fn setSizeLimits(self: *CoreGlfw, min: structs.SizeOptional, max: structs.SizeOptional) !void {
         try self.window.setSizeLimits(
             @bitCast(glfw.Window.SizeOptional, min),
