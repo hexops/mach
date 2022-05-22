@@ -32,14 +32,15 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     app.vertices = try std.ArrayList(draw.Vertex).initCapacity(engine.allocator, 9);
     app.fragment_uniform_list = try std.ArrayList(draw.FragUniform).initCapacity(engine.allocator, 3);
 
-    const WINDOW_WIDTH = 640;
-    const WINDOW_HEIGHT = 480;
-    // const TRIANGLE_SCALE = 250;
-    // try draw.equilateralTriangle(app, .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 }, TRIANGLE_SCALE, .{ .texture_index = 1 });
-    // try draw.equilateralTriangle(app, .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 - TRIANGLE_SCALE }, TRIANGLE_SCALE, .{ .type = .concave, .texture_index = 1 });
-    // try draw.equilateralTriangle(app, .{ WINDOW_WIDTH / 2 - TRIANGLE_SCALE, WINDOW_HEIGHT / 2 - TRIANGLE_SCALE / 2 }, TRIANGLE_SCALE, .{ .type = .convex });
+    const wsize = try engine.core.getWindowSize();
+    const window_width = @intToFloat(f32, wsize.width);
+    const window_height = @intToFloat(f32, wsize.height);
+    // const triangle_scale = 250;
+    // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 }, triangle_scale, .{ .texture_index = 1 });
+    // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 - triangle_scale }, triangle_scale, .{ .type = .concave, .texture_index = 1 });
+    // try draw.equilateralTriangle(app, .{ window_width / 2 - triangle_scale, window_height / 2 - triangle_scale / 2 }, triangle_scale, .{ .type = .convex });
     // try draw.quad(app, .{ 0, 0 }, .{ 200, 200 }, .{ .texture_index = 1 });
-    try draw.circle(app, .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 }, WINDOW_HEIGHT / 2 - 10, .{ 0, 0.5, 0.75, 1.0 });
+    try draw.circle(app, .{ window_width / 2, window_height / 2 }, window_height / 2 - 10, .{ 0, 0.5, 0.75, 1.0 });
 
     const vs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my vertex shader",
@@ -241,7 +242,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
             app.update_frag_uniform_buffer = false;
         }
         if (app.update_vertex_uniform_buffer) {
-            encoder.writeBuffer(app.vertex_uniform_buffer, 0, draw.VertexUniform, &.{getVertexUniformBufferObject(engine)});
+            encoder.writeBuffer(app.vertex_uniform_buffer, 0, draw.VertexUniform, &.{try getVertexUniformBufferObject(engine)});
             app.update_vertex_uniform_buffer = false;
         }
     }
@@ -279,23 +280,21 @@ fn rgb24ToRgba32(allocator: std.mem.Allocator, in: []zigimg.color.Rgb24) !zigimg
 }
 
 // Move to draw.zig
-pub fn getVertexUniformBufferObject(engine: *mach.Engine) draw.VertexUniform {
-    // Using a view allows us to move the camera without having to change the actual
-    // global poitions of each vertex
-    // const view = zm.lookAtRh(
-    //     zm.f32x4(0, 0, 1, 1),
-    //     zm.f32x4(0, 0, 0, 1),
-    //     zm.f32x4(0, 1, 0, 0),
-    // );
+pub fn getVertexUniformBufferObject(engine: *mach.Engine) !draw.VertexUniform {
+    // Note: We use window width/height here, not framebuffer width/height.
+    // On e.g. macOS, window size may be 640x480 while framebuffer size may be
+    // 1280x960 (subpixels.) Doing this lets us use a pixel, not subpixel,
+    // coordinate system.
+    const window_size = try engine.core.getWindowSize();
     const proj = zm.orthographicRh(
-        @intToFloat(f32, engine.gpu_driver.current_desc.width),
-        @intToFloat(f32, engine.gpu_driver.current_desc.height),
+        @intToFloat(f32, window_size.width),
+        @intToFloat(f32, window_size.height),
         -100,
         100,
     );
 
     const mvp = zm.mul(proj, zm.translation(-1, -1, 0));
-    return .{
+    return draw.VertexUniform{
         .mat = mvp,
     };
 }
