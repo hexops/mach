@@ -31,15 +31,23 @@ pub fn build(b: *std.build.Builder) void {
 
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },
-        //.{ .name = "boids" },
+        .{ .name = "boids" },
         .{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
         .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
-        //.{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
         .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg }, .std_platform_only = true },
+        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg }, .std_platform_only = true },
     }) |example| {
+        // FIXME: this is workaround for a problem that some examples (having the std_platform_only=true field) as
+        // well as zigimg uses IO which is not supported in freestanding environments. So break out of this loop
+        // as soon as any such examples is found. This does means that any example which works on wasm should be
+        // placed before those who dont.
+        if (example.std_platform_only)
+            if (target.toTarget().cpu.arch == .wasm32)
+                break;
+
         const example_app = App.init(
             b,
             .{
@@ -91,6 +99,7 @@ pub const Options = struct {
 const ExampleDefinition = struct {
     name: []const u8,
     packages: []const Pkg = &[_]Pkg{},
+    std_platform_only: bool = false,
 };
 
 const Packages = struct {
