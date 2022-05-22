@@ -1,5 +1,3 @@
-//! This implementation comes from https://gist.github.com/mitchellh/0c023dbd381c42e145b5da8d58b1487f
-//!
 //! Implements a texture atlas (https://en.wikipedia.org/wiki/Texture_atlas).
 //!
 //! The implementation is based on "A Thousand Ways to Pack the Bin - A
