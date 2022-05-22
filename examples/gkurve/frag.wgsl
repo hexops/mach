@@ -1,12 +1,11 @@
 struct FragUniform {
     type_: u32,
-    texture_index: i32,
-    padding: vec2<f32>,
+    padding: vec3<f32>,
     blend_color: vec4<f32>,
 }
 @binding(1) @group(0) var<storage> ubos: array<FragUniform>;
 @binding(2) @group(0) var mySampler: sampler;
-@binding(3) @group(0) var myTexture: texture_2d_array<f32>;
+@binding(3) @group(0) var myTexture: texture_2d<f32>;
 
 @stage(fragment) fn main( 
     @location(0) uv: vec2<f32>,
@@ -28,7 +27,7 @@ struct FragUniform {
     // (These two could be cut with vec2(0.0,1.0) + uv * vec2(1.0,-1.0))
     var correct_uv = uv;
     correct_uv.y = 1.0 - correct_uv.y;
-    let color = textureSample(myTexture, mySampler, correct_uv, ubos[triangle_index].texture_index) * ubos[triangle_index].blend_color;
+    let color = textureSample(myTexture, mySampler, correct_uv) * ubos[triangle_index].blend_color;
 
     // Gradients
     let px = dpdx(bary.xy);
