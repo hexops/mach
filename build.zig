@@ -59,6 +59,7 @@ pub fn build(b: *std.build.Builder) void {
         );
         example_app.setBuildMode(mode);
         example_app.link(options);
+        example_app.install();
 
         if (target.toTarget().cpu.arch != .wasm32) {
             const example_run_cmd = example_app.run();
@@ -80,6 +81,7 @@ pub fn build(b: *std.build.Builder) void {
         );
         shaderexp_app.setBuildMode(mode);
         shaderexp_app.link(options);
+        shaderexp_app.install();
 
         const shaderexp_run_cmd = shaderexp_app.run();
         shaderexp_run_cmd.step.dependOn(&shaderexp_app.getInstallStep().?.step);
@@ -149,13 +151,16 @@ const App = struct {
 
         step.addPackage(app_pkg);
         step.setTarget(options.target);
-        step.install();
 
         return .{
             .b = b,
             .step = step,
             .name = options.name,
         };
+    }
+
+    pub fn install(app: *const App) void {
+        app.step.install();
     }
 
     pub fn link(app: *const App, options: Options) void {
