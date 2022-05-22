@@ -1,8 +1,12 @@
 struct FragUniform {
     type_: u32,
-    padding: vec3<f32>,
+    texture_index: i32,
+    padding: vec2<f32>,
+    blend_color: vec4<f32>,
 }
 @binding(1) @group(0) var<storage> ubos: array<FragUniform>;
+@binding(2) @group(0) var mySampler: sampler;
+@binding(3) @group(0) var myTexture: texture_2d_array<f32>;
 
 @stage(fragment) fn main( 
     @location(0) uv: vec2<f32>,
@@ -15,17 +19,16 @@ struct FragUniform {
     // return vec4<f32>(0.0, bary.y, 0.0, 1.0); // [1.0 (bottom-left vertex), 1.0 (top-right face)]
 
     // Example 2: Render gkurve primitives
-    var inversion = -1.0;
-    if(ubos[triangle_index].type_ == 1u) {
-        // Solid triangle
-        return vec4<f32>(0.0, 1.0, 0.0, 1.0);
-    } else if(ubos[triangle_index].type_ == 2u) {
-        // Concave (inverted quadratic bezier curve)
-        inversion = -1.0;
-    } else {
-        // Convex (quadratic bezier curve)
-        inversion = 1.0;
-    }
+    // Concave (inverted quadratic bezier curve)
+    // inversion = -1.0;
+    // Convex (inverted quadratic bezier curve)
+    // inversion = 1.0;
+    let inversion = select( 1.0, -1.0, ubos[triangle_index].type_ == 1u);
+    // Texture uvs
+    // (These two could be cut with vec2(0.0,1.0) + uv * vec2(1.0,-1.0))
+    var correct_uv = uv;
+    correct_uv.y = 1.0 - correct_uv.y;
+    let color = textureSample(myTexture, mySampler, correct_uv, ubos[triangle_index].texture_index) * ubos[triangle_index].blend_color;
 
     // Gradients
     let px = dpdx(bary.xy);
@@ -42,10 +45,18 @@ struct FragUniform {
     dist /= 300.0;
 
     // Border rendering.
-    if (dist > 0.0 && dist <= 0.1) { return vec4<f32>(1.0, 0.0, 0.0, 1.0); }
-    if (dist > 0.2 && dist <= 0.3) { return vec4<f32>(0.0, 0.0, 1.0, 1.0); }
+    // if (dist > 0.0 && dist <= 0.1) { return vec4<f32>(1.0, 0.0, 0.0, 1.0); }
+    // if (dist > 0.2 && dist <= 0.3) { return vec4<f32>(0.0, 0.0, 1.0, 1.0); }
 
-    // Fill color
-    if (dist < 0.0) { discard; }
-    return vec4<f32>(0.0, 1.0, 0.0, 1.0);
+    // WIREFRAME
+    // var barys = bary;
+    // barys.z = 1.0 - barys.x - barys.y;
+    // let deltas = fwidth(barys);
+    // let smoothing = deltas * 1.0;
+    // let thickness = deltas * 0.25;
+    // barys = smoothstep(thickness, thickness + smoothing, barys);
+    // let min_bary = min(barys.x, min(barys.y, barys.z));
+    // color = vec4(min_bary * color.xyz, 1.0);
+
+    return color * f32(dist >= 0.0 || ubos[triangle_index].type_ == 2u);
 }

@@ -1,69 +1,56 @@
 // TODO:
-// - add texture and sampler.
-// - find a way to use dynamic arrays in wgsl for ubos
-// - understand how to move the triangles via matrix multplication
+// - handle textures better witexture atlas
+// - handle adding and removing triangles and quads better
 
 const std = @import("std");
 const mach = @import("mach");
 const gpu = @import("gpu");
 const zm = @import("zmath");
+const zigimg = @import("zigimg");
 const glfw = @import("glfw");
-
-pub const Vertex = struct {
-    pos: @Vector(4, f32),
-    uv: @Vector(2, f32),
-};
+const draw = @import("draw.zig");
 
 pub const options = mach.Options{ .width = 640, .height = 480 };
 
-// The uniform read by the vertex shader, it contains the matrix
-// that will move vertices
-const VertexUniform = struct {
-    mat: zm.Mat,
-};
-
-const FragUniform = struct {
-    // TODO use an enum? Remember that it will be casted to u32 in wgsl
-    type: u32,
-    // Padding for struct alignment to 16 bytes (minimum in WebGPU uniform).
-    padding: @Vector(3, f32) = undefined,
-};
-// TODO texture and sampler, create buffers and use an index field
-// in FragUniform to tell which texture to read
-const App = @This();
+pub const App = @This();
 
 pipeline: gpu.RenderPipeline,
 queue: gpu.Queue,
 vertex_buffer: gpu.Buffer,
+vertices: std.ArrayList(draw.Vertex),
+update_vertex_buffer: bool,
 vertex_uniform_buffer: gpu.Buffer,
+update_vertex_uniform_buffer: bool,
 frag_uniform_buffer: gpu.Buffer,
+fragment_uniform_list: std.ArrayList(draw.FragUniform),
+update_frag_uniform_buffer: bool,
 bind_group: gpu.BindGroup,
-vertices_len: u32,
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
     try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+
+    app.vertices = try std.ArrayList(draw.Vertex).initCapacity(engine.allocator, 9);
+    app.fragment_uniform_list = try std.ArrayList(draw.FragUniform).initCapacity(engine.allocator, 3);
+
+    const WINDOW_WIDTH = 640;
+    const WINDOW_HEIGHT = 480;
+    // const TRIANGLE_SCALE = 250;
+    // try draw.equilateralTriangle(app, .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 }, TRIANGLE_SCALE, .{ .texture_index = 1 });
+    // try draw.equilateralTriangle(app, .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 - TRIANGLE_SCALE }, TRIANGLE_SCALE, .{ .type = .concave, .texture_index = 1 });
+    // try draw.equilateralTriangle(app, .{ WINDOW_WIDTH / 2 - TRIANGLE_SCALE, WINDOW_HEIGHT / 2 - TRIANGLE_SCALE / 2 }, TRIANGLE_SCALE, .{ .type = .convex });
+    // try draw.quad(app, .{ 0, 0 }, .{ 200, 200 }, .{ .texture_index = 1 });
+    try draw.circle(app, .{ WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 }, WINDOW_HEIGHT / 2 - 10, .{ 0, 0.5, 0.75, 1.0 });
 
     const vs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
-    const vertex_attributes = [_]gpu.VertexAttribute{
-        .{ .format = .float32x4, .offset = @offsetOf(Vertex, "pos"), .shader_location = 0 },
-        .{ .format = .float32x2, .offset = @offsetOf(Vertex, "uv"), .shader_location = 1 },
-    };
-    const vertex_buffer_layout = gpu.VertexBufferLayout{
-        .array_stride = @sizeOf(Vertex),
-        .step_mode = .vertex,
-        .attribute_count = vertex_attributes.len,
-        .attributes = &vertex_attributes,
-    };
 
     const fs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my fragment shader",
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
 
-    // Fragment state
     const color_target = gpu.ColorTargetState{
         .format = engine.gpu_driver.swap_chain_format,
         .blend = null,
@@ -78,9 +65,11 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
 
     const vbgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
     const fbgle = gpu.BindGroupLayout.Entry.buffer(1, .{ .fragment = true }, .read_only_storage, true, 0);
+    const sbgle = gpu.BindGroupLayout.Entry.sampler(2, .{ .fragment = true }, .filtering);
+    const tbgle = gpu.BindGroupLayout.Entry.texture(3, .{ .fragment = true }, .float, .dimension_2d_array, false);
     const bgl = engine.gpu_driver.device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor{
-            .entries = &.{ vbgle, fbgle },
+            .entries = &.{ vbgle, fbgle, sbgle, tbgle },
         },
     );
     const bind_group_layouts = [_]gpu.BindGroupLayout{bgl};
@@ -95,7 +84,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .vertex = .{
             .module = vs_module,
             .entry_point = "main",
-            .buffers = &.{vertex_buffer_layout},
+            .buffers = &.{draw.VERTEX_BUFFER_LAYOUT},
         },
         .multisample = .{
             .count = 1,
@@ -110,78 +99,97 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     };
 
-    const framebuffer_size = try engine.core.getFramebufferSize();
-    const fb_width = @intToFloat(f32, framebuffer_size.width);
-    const fb_height = @intToFloat(f32, framebuffer_size.height);
-    const fb_scale = fb_width / 640;
-    const TRIANGLE_SCALE = 250 * fb_scale;
-    const TRIANGLE_HEIGHT = TRIANGLE_SCALE * @sqrt(0.75);
-    const vertices = [_]Vertex{
-        .{ .pos = .{ fb_width / 2 + TRIANGLE_SCALE / 2, fb_height / 2 + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
-        .{ .pos = .{ fb_width / 2, fb_height / 2, 0, 1 }, .uv = .{ 0, 0 } },
-        .{ .pos = .{ fb_width / 2 + TRIANGLE_SCALE, fb_height / 2 + 0, 0, 1 }, .uv = .{ 1, 0 } },
-
-        .{ .pos = .{ fb_width / 2 + TRIANGLE_SCALE / 2, fb_height / 2, 0, 1 }, .uv = .{ 0.5, 1 } },
-        .{ .pos = .{ fb_width / 2, fb_height / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0, 0 } },
-        .{ .pos = .{ fb_width / 2 + TRIANGLE_SCALE, fb_height / 2 - TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 1, 0 } },
-
-        .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE / 2, (fb_height / 2 - TRIANGLE_HEIGHT / 2) + TRIANGLE_HEIGHT, 0, 1 }, .uv = .{ 0.5, 1 } },
-        .{ .pos = .{ fb_width / 2 - TRIANGLE_SCALE, fb_height / 2 - TRIANGLE_HEIGHT / 2, 0, 1 }, .uv = .{ 0, 0 } },
-        .{ .pos = .{ fb_width / 2, fb_height / 2 - TRIANGLE_HEIGHT / 2, 0, 1 }, .uv = .{ 1, 0 } },
-    };
-    app.vertices_len = vertices.len;
-
     const vertex_buffer = engine.gpu_driver.device.createBuffer(&.{
-        .usage = .{ .vertex = true },
-        .size = @sizeOf(Vertex) * vertices.len,
-        .mapped_at_creation = true,
+        .usage = .{ .copy_dst = true, .vertex = true },
+        .size = @sizeOf(draw.Vertex) * app.vertices.items.len,
+        .mapped_at_creation = false,
     });
-    var vertex_mapped = vertex_buffer.getMappedRange(Vertex, 0, vertices.len);
-    std.mem.copy(Vertex, vertex_mapped, vertices[0..]);
-    vertex_buffer.unmap();
 
     const vertex_uniform_buffer = engine.gpu_driver.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
-        .size = @sizeOf(VertexUniform),
+        .size = @sizeOf(draw.VertexUniform),
         .mapped_at_creation = false,
     });
 
     const frag_uniform_buffer = engine.gpu_driver.device.createBuffer(&.{
-        .usage = .{ .storage = true },
-        .size = @sizeOf(FragUniform) * vertices.len / 3,
-        .mapped_at_creation = true,
+        .usage = .{ .copy_dst = true, .storage = true },
+        .size = @sizeOf(draw.FragUniform) * app.fragment_uniform_list.items.len,
+        .mapped_at_creation = false,
     });
-    var frag_uniform_mapped = frag_uniform_buffer.getMappedRange(FragUniform, 0, vertices.len / 3);
-    const tmp_frag_ubo = [_]FragUniform{
-        .{
-            .type = 1,
+
+    const sampler = engine.gpu_driver.device.createSampler(&.{
+        .mag_filter = .linear,
+        .min_filter = .linear,
+    });
+
+    const queue = engine.gpu_driver.device.getQueue();
+    const img = try zigimg.Image.fromFilePath(engine.allocator, "examples/assets/gotta-go-fast.png");
+    defer img.deinit();
+    const img_size = gpu.Extent3D{ .width = @intCast(u32, img.width), .height = @intCast(u32, img.height), .depth_or_array_layers = 2 };
+    const quad_texture = engine.gpu_driver.device.createTexture(&.{
+        .size = img_size,
+        .format = .rgba8_unorm,
+        .usage = .{
+            .texture_binding = true,
+            .copy_dst = true,
+            .render_attachment = true,
         },
-        .{
-            .type = 0,
-        },
-        .{
-            .type = 2,
-        },
+    });
+    const data_layout = gpu.Texture.DataLayout{
+        .bytes_per_row = @intCast(u32, img.width * 4),
+        .rows_per_image = @intCast(u32, img.height),
     };
-    std.mem.copy(FragUniform, frag_uniform_mapped, &tmp_frag_ubo);
-    frag_uniform_buffer.unmap();
+    switch (img.pixels.?) {
+        .Rgba32 => |pixels| queue.writeTexture(
+            &.{ .texture = quad_texture, .origin = .{ .x = 0, .y = 0, .z = 1 } },
+            pixels,
+            &data_layout,
+            &.{ .width = img_size.width, .height = img_size.height },
+        ),
+        .Rgb24 => |pixels| {
+            const data = try rgb24ToRgba32(engine.allocator, pixels);
+            defer data.deinit(engine.allocator);
+            queue.writeTexture(
+                &.{ .texture = quad_texture, .origin = .{ .x = 0, .y = 0, .z = 1 } },
+                data.Rgba32,
+                &data_layout,
+                &.{ .width = img_size.width, .height = img_size.height },
+            );
+        },
+        else => @panic("unsupported image color format"),
+    }
+
+    const white_texture_data = try engine.allocator.alloc(zigimg.color.Rgba32, img.width * img.height);
+    defer engine.allocator.free(white_texture_data);
+    std.mem.set(zigimg.color.Rgba32, white_texture_data, zigimg.color.Rgba32.initRGBA(0xff, 0xff, 0xff, 0xff));
+    queue.writeTexture(
+        &.{ .texture = quad_texture, .origin = .{ .x = 0, .y = 0, .z = 0 } },
+        white_texture_data,
+        &data_layout,
+        &.{ .width = img_size.width, .height = img_size.height },
+    );
 
     const bind_group = engine.gpu_driver.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
             .entries = &.{
-                gpu.BindGroup.Entry.buffer(0, vertex_uniform_buffer, 0, @sizeOf(VertexUniform)),
-                gpu.BindGroup.Entry.buffer(1, frag_uniform_buffer, 0, @sizeOf(FragUniform) * vertices.len / 3),
+                gpu.BindGroup.Entry.buffer(0, vertex_uniform_buffer, 0, @sizeOf(draw.VertexUniform)),
+                gpu.BindGroup.Entry.buffer(1, frag_uniform_buffer, 0, @sizeOf(draw.FragUniform) * app.vertices.items.len / 3),
+                gpu.BindGroup.Entry.sampler(2, sampler),
+                gpu.BindGroup.Entry.textureView(3, quad_texture.createView(&gpu.TextureView.Descriptor{ .dimension = .dimension_2d_array })),
             },
         },
     );
 
     app.pipeline = engine.gpu_driver.device.createRenderPipeline(&pipeline_descriptor);
-    app.queue = engine.gpu_driver.device.getQueue();
+    app.queue = queue;
     app.vertex_buffer = vertex_buffer;
     app.vertex_uniform_buffer = vertex_uniform_buffer;
     app.frag_uniform_buffer = frag_uniform_buffer;
     app.bind_group = bind_group;
+    app.update_vertex_buffer = true;
+    app.update_vertex_uniform_buffer = true;
+    app.update_frag_uniform_buffer = true;
 
     vs_module.release();
     fs_module.release();
@@ -194,6 +202,8 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
     app.vertex_uniform_buffer.release();
     app.frag_uniform_buffer.release();
     app.bind_group.release();
+    app.vertices.deinit();
+    app.fragment_uniform_list.deinit();
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
@@ -222,33 +232,25 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     };
 
     {
-        // Using a view allows us to move the camera without having to change the actual
-        // global positions of each vertex
-        const view = zm.lookAtRh(
-            zm.f32x4(0, 0, 1, 1),
-            zm.f32x4(0, 0, 0, 1),
-            zm.f32x4(0, 1, 0, 0),
-        );
-        const proj = zm.orthographicRh(
-            @intToFloat(f32, engine.gpu_driver.current_desc.width),
-            @intToFloat(f32, engine.gpu_driver.current_desc.height),
-            -100,
-            100,
-        );
-
-
-        const mvp = zm.mul(zm.mul(view, proj), zm.translation(-1, -1, 0));
-        const ubos = VertexUniform{
-            .mat = mvp,
-        };
-        encoder.writeBuffer(app.vertex_uniform_buffer, 0, VertexUniform, &.{ubos});
+        if (app.update_vertex_buffer) {
+            encoder.writeBuffer(app.vertex_buffer, 0, draw.Vertex, app.vertices.items);
+            app.update_vertex_buffer = false;
+        }
+        if (app.update_frag_uniform_buffer) {
+            encoder.writeBuffer(app.frag_uniform_buffer, 0, draw.FragUniform, app.fragment_uniform_list.items);
+            app.update_frag_uniform_buffer = false;
+        }
+        if (app.update_vertex_uniform_buffer) {
+            encoder.writeBuffer(app.vertex_uniform_buffer, 0, draw.VertexUniform, &.{getVertexUniformBufferObject(engine)});
+            app.update_vertex_uniform_buffer = false;
+        }
     }
 
     const pass = encoder.beginRenderPass(&render_pass_info);
     pass.setPipeline(app.pipeline);
-    pass.setVertexBuffer(0, app.vertex_buffer, 0, @sizeOf(Vertex) * app.vertices_len);
+    pass.setVertexBuffer(0, app.vertex_buffer, 0, @sizeOf(draw.Vertex) * app.vertices.items.len);
     pass.setBindGroup(0, app.bind_group, &.{ 0, 0 });
-    pass.draw(app.vertices_len, 1, 0, 0);
+    pass.draw(@truncate(u32, app.vertices.items.len), 1, 0, 0);
     pass.end();
     pass.release();
 
@@ -261,4 +263,39 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     back_buffer_view.release();
 
     return true;
+}
+
+pub fn resize(app: *App, _: *mach.Engine, _: u32, _: u32) !void {
+    app.update_vertex_uniform_buffer = true;
+}
+
+fn rgb24ToRgba32(allocator: std.mem.Allocator, in: []zigimg.color.Rgb24) !zigimg.color.ColorStorage {
+    const out = try zigimg.color.ColorStorage.init(allocator, .Rgba32, in.len);
+    var i: usize = 0;
+    while (i < in.len) : (i += 1) {
+        out.Rgba32[i] = zigimg.color.Rgba32{ .R = in[i].R, .G = in[i].G, .B = in[i].B, .A = 255 };
+    }
+    return out;
+}
+
+// Move to draw.zig
+pub fn getVertexUniformBufferObject(engine: *mach.Engine) draw.VertexUniform {
+    // Using a view allows us to move the camera without having to change the actual
+    // global poitions of each vertex
+    // const view = zm.lookAtRh(
+    //     zm.f32x4(0, 0, 1, 1),
+    //     zm.f32x4(0, 0, 0, 1),
+    //     zm.f32x4(0, 1, 0, 0),
+    // );
+    const proj = zm.orthographicRh(
+        @intToFloat(f32, engine.gpu_driver.current_desc.width),
+        @intToFloat(f32, engine.gpu_driver.current_desc.height),
+        -100,
+        100,
+    );
+
+    const mvp = zm.mul(proj, zm.translation(-1, -1, 0));
+    return .{
+        .mat = mvp,
+    };
 }
