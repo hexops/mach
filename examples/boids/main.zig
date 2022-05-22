@@ -195,7 +195,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
 
     app.frame_counter += 1;
     if (app.frame_counter % 60 == 0) {
-        std.debug.print("Frame {}\n", .{app.frame_counter});
+        std.log.info("Frame {}", .{app.frame_counter});
     }
 
     var command = command_encoder.finish(null);
