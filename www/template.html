@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      canvas {
+        border: 1px solid;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { mach } from "./mach.js";
+
+      let imports = {
+        env: mach,
+      };
+
+      fetch("application.wasm")
+        .then(response => response.arrayBuffer())
+        .then(buffer => WebAssembly.instantiate(buffer, imports))
+        .then(results => results.instance)
+        .then(instance => {
+          mach.init(instance);
+          instance.exports.wasmInit();
+
+          let update = function() {
+            const r = instance.exports.wasmUpdate();
+            if (r) requestAnimationFrame(update)
+            else instance.exports.wasmDeinit();
+          };
+
+          requestAnimationFrame(update);
+        })
+        .catch(err => console.log(err));
+    </script>
+  </body>
+</html>
