@@ -40,7 +40,11 @@ pub const CoreWasm = struct {
 
     pub fn setShouldClose(_: *CoreWasm, _: bool) void {}
 
-    pub fn getFramebufferSize(core: *CoreWasm) !structs.Size {
+    pub fn getFramebufferSize(_: *CoreWasm) !structs.Size {
+        return structs.Size{ .width = 0, .height = 0 };
+    }
+
+    pub fn getWindowSize(core: *CoreWasm) !structs.Size {
         return structs.Size{
             .width = js.machCanvasGetWidth(core.id),
             .height = js.machCanvasGetHeight(core.id),
