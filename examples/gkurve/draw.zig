@@ -3,10 +3,13 @@ const ArrayList = std.ArrayList;
 const gpu = @import("gpu");
 const App = @import("main.zig").App;
 const zm = @import("zmath");
+const UVData = @import("atlas.zig").UVData;
+
+const Vec2 = @Vector(2, f32);
 
 pub const Vertex = struct {
     pos: @Vector(4, f32),
-    uv: @Vector(2, f32),
+    uv: Vec2,
 };
 const VERTEX_ATTRIBUTES = [_]gpu.VertexAttribute{
     .{ .format = .float32x4, .offset = @offsetOf(Vertex, "pos"), .shader_location = 0 },
@@ -30,19 +33,18 @@ const GkurveType = enum(u32) {
 
 pub const FragUniform = struct {
     type: GkurveType = .filled,
-    texture_index: i32 = 0,
     // Padding for struct alignment to 16 bytes (minimum in WebGPU uniform).
-    padding: @Vector(2, f32) = undefined,
+    padding: @Vector(3, f32) = undefined,
     blend_color: @Vector(4, f32) = @Vector(4, f32){ 1, 1, 1, 1 },
 };
 
-pub fn equilateralTriangle(app: *App, position: @Vector(2, f32), scale: f32, uniform: FragUniform) !void {
+pub fn equilateralTriangle(app: *App, position: Vec2, scale: f32, uniform: FragUniform, uv_data: UVData) !void {
     const triangle_height = scale * @sqrt(0.75);
 
     try app.vertices.appendSlice(&[3]Vertex{
-        .{ .pos = .{ position[0] + scale / 2, position[1] + triangle_height, 0, 1 }, .uv = .{ 0.5, 1 } },
-        .{ .pos = .{ position[0], position[1], 0, 1 }, .uv = .{ 0, 0 } },
-        .{ .pos = .{ position[0] + scale, position[1], 0, 1 }, .uv = .{ 1, 0 } },
+        .{ .pos = .{ position[0] + scale / 2, position[1] + triangle_height, 0, 1 }, .uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 0.5, 1 } },
+        .{ .pos = .{ position[0], position[1], 0, 1 }, .uv = uv_data.bottom_left },
+        .{ .pos = .{ position[0] + scale, position[1], 0, 1 }, .uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 1, 0 } },
     });
 
     try app.fragment_uniform_list.append(uniform);
@@ -51,15 +53,19 @@ pub fn equilateralTriangle(app: *App, position: @Vector(2, f32), scale: f32, uni
     app.update_frag_uniform_buffer = true;
 }
 
-pub fn quad(app: *App, position: @Vector(2, f32), scale: @Vector(2, f32), uniform: FragUniform) !void {
-    try app.vertices.appendSlice(&[6]Vertex{
-        .{ .pos = .{ position[0], position[1] + scale[1], 0, 1 }, .uv = .{ 0, 1 } },
-        .{ .pos = .{ position[0], position[1], 0, 1 }, .uv = .{ 0, 0 } },
-        .{ .pos = .{ position[0] + scale[0], position[1], 0, 1 }, .uv = .{ 1, 0 } },
+pub fn quad(app: *App, position: Vec2, scale: Vec2, uniform: FragUniform, uv_data: UVData) !void {
+    const bottom_right_uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 1, 0 };
+    const up_left_uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 0, 1 };
+    const up_right_uv = uv_data.bottom_left + uv_data.width_and_height;
 
-        .{ .pos = .{ position[0], position[1] + scale[1], 0, 1 }, .uv = .{ 0, 1 } },
-        .{ .pos = .{ position[0] + scale[0], position[1] + scale[1], 0, 1 }, .uv = .{ 1, 1 } },
-        .{ .pos = .{ position[0] + scale[0], position[1], 0, 1 }, .uv = .{ 1, 0 } },
+    try app.vertices.appendSlice(&[6]Vertex{
+        .{ .pos = .{ position[0], position[1] + scale[1], 0, 1 }, .uv = up_left_uv },
+        .{ .pos = .{ position[0], position[1], 0, 1 }, .uv = uv_data.bottom_left },
+        .{ .pos = .{ position[0] + scale[0], position[1], 0, 1 }, .uv = bottom_right_uv },
+
+        .{ .pos = .{ position[0] + scale[0], position[1] + scale[1], 0, 1 }, .uv = up_right_uv },
+        .{ .pos = .{ position[0], position[1] + scale[1], 0, 1 }, .uv = up_left_uv },
+        .{ .pos = .{ position[0] + scale[0], position[1], 0, 1 }, .uv = bottom_right_uv },
     });
 
     try app.fragment_uniform_list.appendSlice(&.{ uniform, uniform });
@@ -68,46 +74,68 @@ pub fn quad(app: *App, position: @Vector(2, f32), scale: @Vector(2, f32), unifor
     app.update_frag_uniform_buffer = true;
 }
 
-pub fn circle(app: *App, position: @Vector(2, f32), radius: f32, blend_color: @Vector(4, f32)) !void {
-    const Vec4 = @Vector(4, f32);
-    const low_mid = Vec4{ position[0], position[1] - radius, 0, 1 };
-    const high_mid = Vec4{ position[0], position[1] + radius, 0, 1 };
+pub fn circle(app: *App, position: Vec2, radius: f32, blend_color: @Vector(4, f32), uv_data: UVData) !void {
+    const low_mid = Vertex{
+        .pos = .{ position[0], position[1] - radius, 0, 1 },
+        .uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 0.5, 0 },
+    };
+    const high_mid = Vertex{
+        .pos = .{ position[0], position[1] + radius, 0, 1 },
+        .uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 0.5, 1 },
+    };
 
-    const mid_left = Vec4{ position[0] - radius, position[1], 0, 1 };
-    const mid_right = Vec4{ position[0] + radius, position[1], 0, 1 };
+    const mid_left = Vertex{
+        .pos = .{ position[0] - radius, position[1], 0, 1 },
+        .uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 0, 0.5 },
+    };
+    const mid_right = Vertex{
+        .pos = .{ position[0] + radius, position[1], 0, 1 },
+        .uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 1, 0.5 },
+    };
 
     const p = 0.95 * radius;
 
-    const high_right = Vec4{ position[0] + p, position[1] + p, 0, 1 };
-    const high_left = Vec4{ position[0] - p, position[1] + p, 0, 1 };
-    const low_right = Vec4{ position[0] + p, position[1] - p, 0, 1 };
-    const low_left = Vec4{ position[0] - p, position[1] - p, 0, 1 };
+    const high_right = Vertex{
+        .pos = .{ position[0] + p, position[1] + p, 0, 1 },
+        .uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 1, 0.75 },
+    };
+    const high_left = Vertex{
+        .pos = .{ position[0] - p, position[1] + p, 0, 1 },
+        .uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 0, 0.75 },
+    };
+    const low_right = Vertex{
+        .pos = .{ position[0] + p, position[1] - p, 0, 1 },
+        .uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 1, 0.25 },
+    };
+    const low_left = Vertex{
+        .pos = .{ position[0] - p, position[1] - p, 0, 1 },
+        .uv = uv_data.bottom_left + uv_data.width_and_height * Vec2{ 0, 0.25 },
+    };
 
-    // TODO: Fix UVs
     try app.vertices.appendSlice(&[_]Vertex{
-        .{ .pos = low_mid, .uv = .{ 0.5, 0 } },
-        .{ .pos = mid_right, .uv = .{ 0.5, 0 } },
-        .{ .pos = high_mid, .uv = .{ 0.5, 0 } },
+        low_mid,
+        mid_right,
+        high_mid,
 
-        .{ .pos = high_mid, .uv = .{ 0.5, 0 } },
-        .{ .pos = mid_left, .uv = .{ 0.5, 0 } },
-        .{ .pos = low_mid, .uv = .{ 0.5, 0 } },
+        high_mid,
+        mid_left,
+        low_mid,
 
-        .{ .pos = low_right, .uv = .{ 0.5, 0 } },
-        .{ .pos = mid_right, .uv = .{ 0.5, 0 } },
-        .{ .pos = low_mid, .uv = .{ 0.5, 0 } },
+        low_right,
+        mid_right,
+        low_mid,
 
-        .{ .pos = high_right, .uv = .{ 0.5, 0 } },
-        .{ .pos = high_mid, .uv = .{ 0.5, 0 } },
-        .{ .pos = mid_right, .uv = .{ 0.5, 0 } },
+        high_right,
+        high_mid,
+        mid_right,
 
-        .{ .pos = high_left, .uv = .{ 0.5, 0 } },
-        .{ .pos = mid_left, .uv = .{ 0.5, 0 } },
-        .{ .pos = high_mid, .uv = .{ 0.5, 0 } },
+        high_left,
+        mid_left,
+        high_mid,
 
-        .{ .pos = low_left, .uv = .{ 0.5, 0 } },
-        .{ .pos = low_mid, .uv = .{ 0.5, 0 } },
-        .{ .pos = mid_left, .uv = .{ 0.5, 0 } },
+        low_left,
+        low_mid,
+        mid_left,
     });
 
     try app.fragment_uniform_list.appendSlice(&[_]FragUniform{

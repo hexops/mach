@@ -9,6 +9,7 @@ const zm = @import("zmath");
 const zigimg = @import("zigimg");
 const glfw = @import("glfw");
 const draw = @import("draw.zig");
+const Atlas = @import("atlas.zig").Atlas;
 
 pub const options = mach.Options{ .width = 640, .height = 480 };
 
@@ -29,6 +30,59 @@ bind_group: gpu.BindGroup,
 pub fn init(app: *App, engine: *mach.Engine) !void {
     try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
+    const queue = engine.gpu_driver.device.getQueue();
+
+    const AtlasRGB8 = Atlas(zigimg.color.Rgba32);
+    // TODO: Refactor texture atlas size number
+    var texture_atlas_data: AtlasRGB8 = try AtlasRGB8.init(engine.allocator, 640);
+    defer texture_atlas_data.deinit(engine.allocator);
+    const atlas_size = gpu.Extent3D{ .width = texture_atlas_data.size, .height = texture_atlas_data.size };
+    const atlas_float_size = @intToFloat(f32, texture_atlas_data.size);
+
+    const texture = engine.gpu_driver.device.createTexture(&.{
+        .size = atlas_size,
+        .format = .rgba8_unorm,
+        .usage = .{
+            .texture_binding = true,
+            .copy_dst = true,
+            .render_attachment = true,
+        },
+    });
+    const data_layout = gpu.Texture.DataLayout{
+        .bytes_per_row = @intCast(u32, atlas_size.width * 4),
+        .rows_per_image = @intCast(u32, atlas_size.height),
+    };
+
+    const img = try zigimg.Image.fromFilePath(engine.allocator, "examples/assets/gotta-go-fast.png");
+    defer img.deinit();
+
+    const atlas_img_region = try texture_atlas_data.reserve(engine.allocator, @truncate(u32, img.width), @truncate(u32, img.height));
+    const img_uv_data = atlas_img_region.getUVData(atlas_float_size);
+
+    switch (img.pixels.?) {
+        .Rgba32 => |pixels| texture_atlas_data.set(atlas_img_region, pixels),
+        .Rgb24 => |pixels| {
+            const data = try rgb24ToRgba32(engine.allocator, pixels);
+            defer data.deinit(engine.allocator);
+            texture_atlas_data.set(atlas_img_region, data.Rgba32);
+        },
+        else => @panic("unsupported image color format"),
+    }
+
+    const white_tex_scale = 80;
+    const atlas_white_region = try texture_atlas_data.reserve(engine.allocator, white_tex_scale, white_tex_scale);
+    const white_texture_uv_data = atlas_white_region.getUVData(atlas_float_size);
+    var white_tex_data = try engine.allocator.alloc(zigimg.color.Rgba32, white_tex_scale * white_tex_scale);
+    std.mem.set(zigimg.color.Rgba32, white_tex_data, zigimg.color.Rgba32.initRGB(0xff, 0xff, 0xff));
+    texture_atlas_data.set(atlas_white_region, white_tex_data);
+
+    queue.writeTexture(
+        &.{ .texture = texture },
+        texture_atlas_data.data,
+        &data_layout,
+        &.{ .width = texture_atlas_data.size, .height = texture_atlas_data.size },
+    );
+
     app.vertices = try std.ArrayList(draw.Vertex).initCapacity(engine.allocator, 9);
     app.fragment_uniform_list = try std.ArrayList(draw.FragUniform).initCapacity(engine.allocator, 3);
 
@@ -36,11 +90,12 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const window_width = @intToFloat(f32, wsize.width);
     const window_height = @intToFloat(f32, wsize.height);
     // const triangle_scale = 250;
-    // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 }, triangle_scale, .{ .texture_index = 1 });
-    // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 - triangle_scale }, triangle_scale, .{ .type = .concave, .texture_index = 1 });
-    // try draw.equilateralTriangle(app, .{ window_width / 2 - triangle_scale, window_height / 2 - triangle_scale / 2 }, triangle_scale, .{ .type = .convex });
-    // try draw.quad(app, .{ 0, 0 }, .{ 200, 200 }, .{ .texture_index = 1 });
-    try draw.circle(app, .{ window_width / 2, window_height / 2 }, window_height / 2 - 10, .{ 0, 0.5, 0.75, 1.0 });
+    _ = img_uv_data;
+    // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 }, triangle_scale, .{}, img_uv_data);
+    // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 - triangle_scale }, triangle_scale, .{ .type = .concave }, img_uv_data);
+    // try draw.equilateralTriangle(app, .{ window_width / 2 - triangle_scale, window_height / 2 - triangle_scale / 2 }, triangle_scale, .{ .type = .convex }, white_texture_uv_data);
+    // try draw.quad(app, .{ 0, 0 }, .{ 200, 200 }, .{}, img_uv_data);
+    try draw.circle(app, .{ window_width / 2, window_height / 2 }, window_height / 2 - 10, .{ 0, 0.5, 0.75, 1.0 }, white_texture_uv_data);
 
     const vs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my vertex shader",
@@ -67,7 +122,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const vbgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
     const fbgle = gpu.BindGroupLayout.Entry.buffer(1, .{ .fragment = true }, .read_only_storage, true, 0);
     const sbgle = gpu.BindGroupLayout.Entry.sampler(2, .{ .fragment = true }, .filtering);
-    const tbgle = gpu.BindGroupLayout.Entry.texture(3, .{ .fragment = true }, .float, .dimension_2d_array, false);
+    const tbgle = gpu.BindGroupLayout.Entry.texture(3, .{ .fragment = true }, .float, .dimension_2d, false);
     const bgl = engine.gpu_driver.device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor{
             .entries = &.{ vbgle, fbgle, sbgle, tbgle },
@@ -123,53 +178,6 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .min_filter = .linear,
     });
 
-    const queue = engine.gpu_driver.device.getQueue();
-    const img = try zigimg.Image.fromFilePath(engine.allocator, "examples/assets/gotta-go-fast.png");
-    defer img.deinit();
-    const img_size = gpu.Extent3D{ .width = @intCast(u32, img.width), .height = @intCast(u32, img.height), .depth_or_array_layers = 2 };
-    const quad_texture = engine.gpu_driver.device.createTexture(&.{
-        .size = img_size,
-        .format = .rgba8_unorm,
-        .usage = .{
-            .texture_binding = true,
-            .copy_dst = true,
-            .render_attachment = true,
-        },
-    });
-    const data_layout = gpu.Texture.DataLayout{
-        .bytes_per_row = @intCast(u32, img.width * 4),
-        .rows_per_image = @intCast(u32, img.height),
-    };
-    switch (img.pixels.?) {
-        .Rgba32 => |pixels| queue.writeTexture(
-            &.{ .texture = quad_texture, .origin = .{ .x = 0, .y = 0, .z = 1 } },
-            pixels,
-            &data_layout,
-            &.{ .width = img_size.width, .height = img_size.height },
-        ),
-        .Rgb24 => |pixels| {
-            const data = try rgb24ToRgba32(engine.allocator, pixels);
-            defer data.deinit(engine.allocator);
-            queue.writeTexture(
-                &.{ .texture = quad_texture, .origin = .{ .x = 0, .y = 0, .z = 1 } },
-                data.Rgba32,
-                &data_layout,
-                &.{ .width = img_size.width, .height = img_size.height },
-            );
-        },
-        else => @panic("unsupported image color format"),
-    }
-
-    const white_texture_data = try engine.allocator.alloc(zigimg.color.Rgba32, img.width * img.height);
-    defer engine.allocator.free(white_texture_data);
-    std.mem.set(zigimg.color.Rgba32, white_texture_data, zigimg.color.Rgba32.initRGBA(0xff, 0xff, 0xff, 0xff));
-    queue.writeTexture(
-        &.{ .texture = quad_texture, .origin = .{ .x = 0, .y = 0, .z = 0 } },
-        white_texture_data,
-        &data_layout,
-        &.{ .width = img_size.width, .height = img_size.height },
-    );
-
     const bind_group = engine.gpu_driver.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
@@ -177,7 +185,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
                 gpu.BindGroup.Entry.buffer(0, vertex_uniform_buffer, 0, @sizeOf(draw.VertexUniform)),
                 gpu.BindGroup.Entry.buffer(1, frag_uniform_buffer, 0, @sizeOf(draw.FragUniform) * app.vertices.items.len / 3),
                 gpu.BindGroup.Entry.sampler(2, sampler),
-                gpu.BindGroup.Entry.textureView(3, quad_texture.createView(&gpu.TextureView.Descriptor{ .dimension = .dimension_2d_array })),
+                gpu.BindGroup.Entry.textureView(3, texture.createView(&gpu.TextureView.Descriptor{ .dimension = .dimension_2d })),
             },
         },
     );
