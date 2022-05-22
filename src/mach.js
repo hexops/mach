@@ -26,6 +26,19 @@ const mach = {
     }
   },
 
+  machLogWrite(str, len) {
+    log_buf += mach.getString(str, len);
+  },
+
+  machLogFlush() {
+    console.log(log_buf);
+    log_buf = "";
+  },
+
+  machPanic(str, len) {
+    throw Error(mach.getString(str, len));
+  },
+
   machCanvasInit(width, height, id) {
     let canvas = document.createElement("canvas");
     canvas.id = "#mach-canvas-" + mach.canvases.length;
