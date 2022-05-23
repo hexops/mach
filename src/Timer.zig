@@ -38,26 +38,26 @@ pub fn start() !Timer {
 }
 
 /// Reads the timer value since start or the last reset in nanoseconds.
-pub fn readPrecise(timer: *Timer) u64 {
+pub inline fn readPrecise(timer: *Timer) u64 {
     return timer.backing_timer.read();
 }
 
 /// Reads the timer value since start or the last reset in seconds.
-pub fn read(timer: *Timer) f32 {
+pub inline fn read(timer: *Timer) f32 {
     return @intToFloat(f32, timer.readPrecise()) / @intToFloat(f32, std.time.ns_per_s);
 }
 
 /// Resets the timer value to 0/now.
-pub fn reset(timer: *Timer) void {
+pub inline fn reset(timer: *Timer) void {
     timer.backing_timer.reset();
 }
 
 /// Returns the current value of the timer in nanoseconds, then resets it.
-pub fn lapPrecise(timer: *Timer) u64 {
+pub inline fn lapPrecise(timer: *Timer) u64 {
     return timer.backing_timer.lap();
 }
 
 /// Returns the current value of the timer in seconds, then resets it.
-pub fn lap(timer: *Timer) f32 {
+pub inline fn lap(timer: *Timer) f32 {
     return @intToFloat(f32, timer.lapPrecise()) / @intToFloat(f32, std.time.ns_per_s);
 }
