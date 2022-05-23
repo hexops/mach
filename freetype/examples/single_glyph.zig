@@ -30,7 +30,7 @@ pub fn main() !void {
     const lib = try freetype.Library.init();
     defer lib.deinit();
 
-    const face = try lib.newFace("test/assets/FiraSans-Regular.ttf", 0);
+    const face = try lib.newFace("upstream/assets/FiraSans-Regular.ttf", 0);
     defer face.deinit();
 
     try face.setCharSize(40 * 64, 0, 50, 0);
