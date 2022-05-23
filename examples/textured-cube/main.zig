@@ -129,11 +129,11 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .rows_per_image = @intCast(u32, img.height),
     };
     switch (img.pixels.?) {
-        .Rgba32 => |pixels| queue.writeTexture(&.{ .texture = cube_texture }, pixels, &data_layout, &img_size),
+        .Rgba32 => |pixels| queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, zigimg.color.Rgba32, pixels),
         .Rgb24 => |pixels| {
             const data = try rgb24ToRgba32(engine.allocator, pixels);
             //defer data.deinit(allocator);
-            queue.writeTexture(&.{ .texture = cube_texture }, data.Rgba32, &data_layout, &img_size);
+            queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, zigimg.color.Rgba32, data.Rgba32);
         },
         else => @panic("unsupported image color format"),
     }

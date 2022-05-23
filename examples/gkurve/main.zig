@@ -78,9 +78,10 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
 
     queue.writeTexture(
         &.{ .texture = texture },
-        texture_atlas_data.data,
         &data_layout,
         &.{ .width = texture_atlas_data.size, .height = texture_atlas_data.size },
+        zigimg.color.Rgba32,
+        texture_atlas_data.data,
     );
 
     app.vertices = try std.ArrayList(draw.Vertex).initCapacity(engine.allocator, 9);
