@@ -1,7 +1,7 @@
 const freetype = @import("freetype");
 
-const firasnas_font_path = "test/assets/FiraSans-Regular.ttf";
-const firasnas_font_data = @embedFile("assets/FiraSans-Regular.ttf");
+const firasnas_font_path = "upstream/assets/FiraSans-Regular.ttf";
+const firasnas_font_data = @embedFile("../upstream/assets/FiraSans-Regular.ttf");
 
 test "new face from file" {
     const lib = try freetype.Library.init();
@@ -42,13 +42,13 @@ test "load glyph" {
 
 test "attach file" {
     const lib = try freetype.Library.init();
-    const face = try lib.newFace("test/assets/DejaVuSans.pfb", 0);
-    try face.attachFile("test/assets/DejaVuSans.pfm");
+    const face = try lib.newFace("upstream/assets/DejaVuSans.pfb", 0);
+    try face.attachFile("upstream/assets/DejaVuSans.pfm");
 }
 
 test "attach from memory" {
     const lib = try freetype.Library.init();
-    const face = try lib.newFace("test/assets/DejaVuSans.pfb", 0);
-    const file = @embedFile("assets/DejaVuSans.pfm");
+    const face = try lib.newFace("upstream/assets/DejaVuSans.pfb", 0);
+    const file = @embedFile("../upstream/assets/DejaVuSans.pfm");
     try face.attachMemory(file);
 }
