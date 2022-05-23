@@ -7,26 +7,35 @@ backing_timer: BackingTimerType = undefined,
 
 // TODO: verify declarations and its signatures
 const BackingTimerType = if (builtin.cpu.arch == .wasm32) struct {
-    pad0: u8 = 0,
+    initial: f64 = undefined,
+
+    const js = struct {
+        extern fn machPerfNow() f64;
+    };
 
     const WasmTimer = @This();
 
     fn start() !WasmTimer {
-        return WasmTimer{};
+        return WasmTimer{ .initial = js.machPerfNow() };
     }
 
-    fn read(_: *WasmTimer) u64 {
-        return 0;
+    fn read(timer: *WasmTimer) u64 {
+        return timeToNs(js.machPerfNow() - timer.initial);
     }
 
-    fn reset(_: *WasmTimer) void {}
-
-    fn lap(_: *WasmTimer) u64 {
-        return 0;
+    fn reset(timer: *WasmTimer) void {
+        timer.initial = js.machPerfNow();
     }
 
-    fn timeToNs(_: f64) u64 {
-        return 0;
+    fn lap(timer: *WasmTimer) u64 {
+        const now = js.machPerfNow();
+        const initial = timer.initial;
+        timer.initial = now;
+        return timeToNs(now - initial);
+    }
+
+    fn timeToNs(t: f64) u64 {
+        return @floatToInt(u64, t) * 1000000;
     }
 } else std.time.Timer;
 

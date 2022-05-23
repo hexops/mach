@@ -85,6 +85,10 @@ const mach = {
     const cv = mach.canvases[canvas];
     return cv.canvas.height;
   },
+
+  machPerfNow() {
+    return performance.now();
+  },
 };
 
 export { mach };
