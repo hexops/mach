@@ -19,3 +19,6 @@
 [submodule "examples/assets"]
 	path = examples/assets
 	url = https://github.com/hexops/mach-example-assets
+[submodule "freetype/upstream"]
+	path = freetype/upstream
+	url = https://github.com/hexops/freetype
