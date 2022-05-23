@@ -12,6 +12,9 @@ pub fn buildFreeType(b: *std.build.Builder, mode: std.builtin.Mode, target: std.
     defer b.allocator.free(main_abs);
     defer b.allocator.free(include_path);
 
+    // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
+    ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
+
     const lib = b.addStaticLibrary("freetype", main_abs);
     lib.defineCMacro("FT2_BUILD_LIBRARY", "1");
     lib.setBuildMode(mode);
@@ -121,3 +124,15 @@ const freetype_base_sources = &[_][]const u8{
     "src/type42/type42.c",
     "src/winfonts/winfnt.c",
 };
+
+fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
+    if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
+        if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
+    } else |_| {}
+    var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
+    child.cwd = thisDir();
+    child.stderr = std.io.getStdErr();
+    child.stdout = std.io.getStdOut();
+
+    _ = try child.spawnAndWait();
+}
