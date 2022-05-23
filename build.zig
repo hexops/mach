@@ -61,6 +61,9 @@ pub fn build(b: *std.build.Builder) void {
         example_app.link(options);
         example_app.install();
 
+        const example_compile_step = b.step("example-" ++ example.name, "Compile the example");
+        example_compile_step.dependOn(&example_app.getInstallStep().?.step);
+
         if (target.toTarget().cpu.arch != .wasm32) {
             const example_run_cmd = example_app.run();
             example_run_cmd.step.dependOn(&example_app.getInstallStep().?.step);
@@ -82,6 +85,9 @@ pub fn build(b: *std.build.Builder) void {
         shaderexp_app.setBuildMode(mode);
         shaderexp_app.link(options);
         shaderexp_app.install();
+
+        const shaderexp_compile_step = b.step("shaderexp", "Compile shaderexp");
+        shaderexp_compile_step.dependOn(&shaderexp_app.getInstallStep().?.step);
 
         const shaderexp_run_cmd = shaderexp_app.run();
         shaderexp_run_cmd.step.dependOn(&shaderexp_app.getInstallStep().?.step);
