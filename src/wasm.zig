@@ -12,6 +12,7 @@ const js = struct {
     extern fn machCanvasGetWidth(canvas: CanvasId) u32;
     extern fn machCanvasGetHeight(canvas: CanvasId) u32;
 
+    extern fn machPerfNow() f64;
     extern fn machLog(str: [*]const u8, len: u32) void;
     extern fn machLogWrite(str: [*]const u8, len: u32) void;
     extern fn machLogFlush() void;
@@ -20,11 +21,11 @@ const js = struct {
 
 pub const CanvasId = u32;
 
-pub const CoreWasm = struct {
+pub const Core = struct {
     id: CanvasId,
     selector_id: []const u8,
 
-    pub fn init(allocator: std.mem.Allocator, eng: *Engine) !CoreWasm {
+    pub fn init(allocator: std.mem.Allocator, eng: *Engine) !Core {
         const options = eng.options;
         var selector = [1]u8{0} ** 15;
         const id = js.machCanvasInit(options.width, options.height, &selector[0]);
@@ -32,35 +33,64 @@ pub const CoreWasm = struct {
         const title = std.mem.span(options.title);
         js.machCanvasSetTitle(id, title.ptr, title.len);
 
-        return CoreWasm{
+        return Core{
             .id = id,
             .selector_id = try allocator.dupe(u8, selector[0 .. selector.len - @as(u32, if (selector[selector.len - 1] == 0) 1 else 0)]),
         };
     }
 
-    pub fn setShouldClose(_: *CoreWasm, _: bool) void {}
+    pub fn setShouldClose(_: *Core, _: bool) void {}
 
-    pub fn getFramebufferSize(_: *CoreWasm) !structs.Size {
+    pub fn getFramebufferSize(_: *Core) !structs.Size {
         return structs.Size{ .width = 0, .height = 0 };
     }
 
-    pub fn getWindowSize(core: *CoreWasm) !structs.Size {
+    pub fn getWindowSize(core: *Core) !structs.Size {
         return structs.Size{
             .width = js.machCanvasGetWidth(core.id),
             .height = js.machCanvasGetHeight(core.id),
         };
     }
 
-    pub fn setSizeLimits(_: *CoreWasm, _: structs.SizeOptional, _: structs.SizeOptional) !void {}
+    pub fn setSizeLimits(_: *Core, _: structs.SizeOptional, _: structs.SizeOptional) !void {}
 
-    pub fn pollEvent(_: *CoreWasm) ?structs.Event {
+    pub fn pollEvent(_: *Core) ?structs.Event {
         return null;
     }
 };
 
-pub const GpuDriverWeb = struct {
-    pub fn init(_: std.mem.Allocator, _: *Engine) !GpuDriverWeb {
-        return GpuDriverWeb{};
+pub const GpuDriver = struct {
+    pub fn init(_: std.mem.Allocator, _: *Engine) !GpuDriver {
+        return GpuDriver{};
+    }
+};
+
+pub const BackingTimer = struct {
+    initial: f64 = undefined,
+
+    const WasmTimer = @This();
+
+    pub fn start() !WasmTimer {
+        return WasmTimer{ .initial = js.machPerfNow() };
+    }
+
+    pub fn read(timer: *WasmTimer) u64 {
+        return timeToNs(js.machPerfNow() - timer.initial);
+    }
+
+    pub fn reset(timer: *WasmTimer) void {
+        timer.initial = js.machPerfNow();
+    }
+
+    pub fn lap(timer: *WasmTimer) u64 {
+        const now = js.machPerfNow();
+        const initial = timer.initial;
+        timer.initial = now;
+        return timeToNs(now - initial);
+    }
+
+    fn timeToNs(t: f64) u64 {
+        return @floatToInt(u64, t) * 1000000;
     }
 };
 

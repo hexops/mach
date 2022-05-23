@@ -3,6 +3,7 @@ const Allocator = std.mem.Allocator;
 const builtin = @import("builtin");
 const glfw = @import("glfw");
 const gpu = @import("gpu");
+const platform = @import("platform.zig");
 const structs = @import("structs.zig");
 const enums = @import("enums.zig");
 const Timer = @import("Timer.zig");
@@ -29,7 +30,7 @@ delta_time_ns: u64 = 0,
 timer: Timer,
 
 pub const Core = struct {
-    internal: GetCoreInternalType(),
+    internal: platform.CoreType,
 
     pub fn setShouldClose(core: *Core, value: bool) void {
         core.internal.setShouldClose(value);
@@ -59,7 +60,7 @@ pub const Core = struct {
 };
 
 pub const GpuDriver = struct {
-    internal: GetGpuDriverInternalType(),
+    internal: platform.GpuDriverType,
 
     device: gpu.Device,
     backend_type: gpu.Adapter.BackendType,
@@ -82,18 +83,8 @@ pub fn init(allocator: std.mem.Allocator, options: structs.Options) !Engine {
 
     // Note: if in future, there is a conflict in init() signature of different backends,
     // move these calls to the entry point file, which is native.zig for Glfw, for example
-    engine.core.internal = try GetCoreInternalType().init(allocator, &engine);
-    engine.gpu_driver.internal = try GetGpuDriverInternalType().init(allocator, &engine);
+    engine.core.internal = try platform.CoreType.init(allocator, &engine);
+    engine.gpu_driver.internal = try platform.GpuDriverType.init(allocator, &engine);
 
     return engine;
-}
-
-fn GetCoreInternalType() type {
-    if (builtin.cpu.arch == .wasm32) return @import("wasm.zig").CoreWasm;
-    return @import("native.zig").CoreGlfw;
-}
-
-fn GetGpuDriverInternalType() type {
-    if (builtin.cpu.arch == .wasm32) return @import("wasm.zig").GpuDriverWeb;
-    return @import("native.zig").GpuDriverNative;
 }

@@ -1,48 +1,14 @@
 const std = @import("std");
-const builtin = @import("builtin");
+const platform = @import("platform.zig");
 
 const Timer = @This();
 
-backing_timer: BackingTimerType = undefined,
-
-// TODO: verify declarations and its signatures
-const BackingTimerType = if (builtin.cpu.arch == .wasm32) struct {
-    initial: f64 = undefined,
-
-    const js = struct {
-        extern fn machPerfNow() f64;
-    };
-
-    const WasmTimer = @This();
-
-    fn start() !WasmTimer {
-        return WasmTimer{ .initial = js.machPerfNow() };
-    }
-
-    fn read(timer: *WasmTimer) u64 {
-        return timeToNs(js.machPerfNow() - timer.initial);
-    }
-
-    fn reset(timer: *WasmTimer) void {
-        timer.initial = js.machPerfNow();
-    }
-
-    fn lap(timer: *WasmTimer) u64 {
-        const now = js.machPerfNow();
-        const initial = timer.initial;
-        timer.initial = now;
-        return timeToNs(now - initial);
-    }
-
-    fn timeToNs(t: f64) u64 {
-        return @floatToInt(u64, t) * 1000000;
-    }
-} else std.time.Timer;
+backing_timer: platform.BackingTimerType = undefined,
 
 /// Initialize the timer.
 pub fn start() !Timer {
     return Timer{
-        .backing_timer = try BackingTimerType.start(),
+        .backing_timer = try platform.BackingTimerType.start(),
     };
 }
 

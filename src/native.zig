@@ -8,7 +8,7 @@ const enums = @import("enums.zig");
 const util = @import("util.zig");
 const c = @import("c.zig").c;
 
-pub const CoreGlfw = struct {
+pub const Core = struct {
     window: glfw.Window,
     backend_type: gpu.Adapter.BackendType,
     allocator: std.mem.Allocator,
@@ -19,14 +19,14 @@ pub const CoreGlfw = struct {
     const EventNode = EventQueue.Node;
 
     const UserPtr = struct {
-        core: *CoreGlfw,
+        core: *Core,
     };
 
-    pub fn init(allocator: std.mem.Allocator, engine: *Engine) !CoreGlfw {
+    pub fn init(allocator: std.mem.Allocator, engine: *Engine) !Core {
         const options = engine.options;
         const backend_type = try util.detectBackendType(allocator);
 
-        glfw.setErrorCallback(CoreGlfw.errorCallback);
+        glfw.setErrorCallback(Core.errorCallback);
         try glfw.init(.{});
 
         // Create the test window and discover adapters using it (esp. for OpenGL)
@@ -41,20 +41,20 @@ pub const CoreGlfw = struct {
             hints,
         );
 
-        return CoreGlfw{
+        return Core{
             .window = window,
             .backend_type = backend_type,
             .allocator = engine.allocator,
         };
     }
 
-    fn pushEvent(self: *CoreGlfw, event: structs.Event) void {
+    fn pushEvent(self: *Core, event: structs.Event) void {
         const node = self.allocator.create(EventNode) catch unreachable;
         node.* = .{ .data = event };
         self.events.append(node);
     }
 
-    fn initCallback(self: *CoreGlfw) void {
+    fn initCallback(self: *Core) void {
         self.user_ptr = UserPtr{ .core = self };
 
         self.window.setUserPointer(&self.user_ptr);
@@ -84,28 +84,28 @@ pub const CoreGlfw = struct {
         self.window.setKeyCallback(callback);
     }
 
-    pub fn setShouldClose(self: *CoreGlfw, value: bool) void {
+    pub fn setShouldClose(self: *Core, value: bool) void {
         self.window.setShouldClose(value);
     }
 
-    pub fn getFramebufferSize(self: *CoreGlfw) !structs.Size {
+    pub fn getFramebufferSize(self: *Core) !structs.Size {
         const size = try self.window.getFramebufferSize();
         return @bitCast(structs.Size, size);
     }
 
-    pub fn getWindowSize(self: *CoreGlfw) !structs.Size {
+    pub fn getWindowSize(self: *Core) !structs.Size {
         const size = try self.window.getSize();
         return @bitCast(structs.Size, size);
     }
 
-    pub fn setSizeLimits(self: *CoreGlfw, min: structs.SizeOptional, max: structs.SizeOptional) !void {
+    pub fn setSizeLimits(self: *Core, min: structs.SizeOptional, max: structs.SizeOptional) !void {
         try self.window.setSizeLimits(
             @bitCast(glfw.Window.SizeOptional, min),
             @bitCast(glfw.Window.SizeOptional, max),
         );
     }
 
-    pub fn pollEvent(self: *CoreGlfw) ?structs.Event {
+    pub fn pollEvent(self: *Core) ?structs.Event {
         if (self.events.popFirst()) |n| {
             defer self.allocator.destroy(n);
             return n.data;
@@ -250,10 +250,10 @@ pub const CoreGlfw = struct {
     }
 };
 
-pub const GpuDriverNative = struct {
+pub const GpuDriver = struct {
     native_instance: gpu.NativeInstance,
 
-    pub fn init(_: std.mem.Allocator, engine: *Engine) !GpuDriverNative {
+    pub fn init(_: std.mem.Allocator, engine: *Engine) !GpuDriver {
         const options = engine.options;
         const window = engine.core.internal.window;
         const backend_type = engine.core.internal.backend_type;
@@ -382,11 +382,13 @@ pub const GpuDriverNative = struct {
         engine.gpu_driver.current_desc = descriptor;
         engine.gpu_driver.target_desc = descriptor;
 
-        return GpuDriverNative{
+        return GpuDriver{
             .native_instance = native_instance,
         };
     }
 };
+
+pub const BackingTimer = std.time.Timer;
 
 // TODO: check signatures
 comptime {
