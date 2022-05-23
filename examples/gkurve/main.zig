@@ -89,8 +89,12 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const wsize = try engine.core.getWindowSize();
     const window_width = @intToFloat(f32, wsize.width);
     const window_height = @intToFloat(f32, wsize.height);
-    // const triangle_scale = 250;
+    const triangle_scale = 250;
+    _ = window_width;
+    _ = window_height;
+    _ = triangle_scale;
     _ = img_uv_data;
+    _ = white_texture_uv_data;
     // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 }, triangle_scale, .{}, img_uv_data);
     // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 - triangle_scale }, triangle_scale, .{ .type = .concave }, img_uv_data);
     // try draw.equilateralTriangle(app, .{ window_width / 2 - triangle_scale, window_height / 2 - triangle_scale / 2 }, triangle_scale, .{ .type = .convex }, white_texture_uv_data);
@@ -107,9 +111,22 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
 
+    const blend = gpu.BlendState{
+        .color = .{
+            .operation = .add,
+            .src_factor = .src_alpha,
+            .dst_factor = .one_minus_src_alpha,
+        },
+        .alpha = .{
+            .operation = .add,
+            .src_factor = .one,
+            .dst_factor = .zero,
+        },
+    };
+
     const color_target = gpu.ColorTargetState{
         .format = engine.gpu_driver.swap_chain_format,
-        .blend = null,
+        .blend = &blend,
         .write_mask = gpu.ColorWriteMask.all,
     };
     const fragment = gpu.FragmentState{
