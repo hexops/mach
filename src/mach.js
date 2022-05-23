@@ -42,8 +42,10 @@ const mach = {
   machCanvasInit(width, height, id) {
     let canvas = document.createElement("canvas");
     canvas.id = "#mach-canvas-" + mach.canvases.length;
-    canvas.width = width;
-    canvas.height = height;
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
+    canvas.width = Math.floor(width * window.devicePixelRatio);
+    canvas.height = Math.floor(height * window.devicePixelRatio);
     canvas.tabIndex = 1;
 
     mach.setString(canvas.id, id);
@@ -71,17 +73,29 @@ const mach = {
   machCanvasSetSize(canvas, width, height) {
     const cv = mach.canvases[canvas];
     if (width > 0 && height > 0) {
-      cv.canvas.width = width;
-      cv.canvas.height = height;
+      cv.canvas.style.width = width + "px";
+      cv.canvas.style.height = height + "px";
+      cv.canvas.width = width * window.devicePixelRatio;
+      cv.canvas.height = height * window.devicePixelRatio;
     }
   },
 
-  machCanvasGetWidth(canvas) {
+  machCanvasGetWindowWidth(canvas) {
+    const cv = mach.canvases[canvas];
+    return cv.canvas.width / window.devicePixelRatio;
+  },
+
+  machCanvasGetWindowHeight(canvas) {
+    const cv = mach.canvases[canvas];
+    return cv.canvas.height / window.devicePixelRatio;
+  },
+
+  machCanvasGetFramebufferWidth(canvas) {
     const cv = mach.canvases[canvas];
     return cv.canvas.width;
   },
 
-  machCanvasGetHeight(canvas) {
+  machCanvasGetFramebufferHeight(canvas) {
     const cv = mach.canvases[canvas];
     return cv.canvas.height;
   },

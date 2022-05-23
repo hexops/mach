@@ -9,8 +9,10 @@ const js = struct {
     extern fn machCanvasDeinit(canvas: CanvasId) void;
     extern fn machCanvasSetTitle(canvas: CanvasId, title: [*]const u8, len: u32) void;
     extern fn machCanvasSetSize(canvas: CanvasId, width: u32, height: u32) void;
-    extern fn machCanvasGetWidth(canvas: CanvasId) u32;
-    extern fn machCanvasGetHeight(canvas: CanvasId) u32;
+    extern fn machCanvasGetWindowWidth(canvas: CanvasId) u32;
+    extern fn machCanvasGetWindowHeight(canvas: CanvasId) u32;
+    extern fn machCanvasGetFramebufferWidth(canvas: CanvasId) u32;
+    extern fn machCanvasGetFramebufferHeight(canvas: CanvasId) u32;
 
     extern fn machPerfNow() f64;
     extern fn machLog(str: [*]const u8, len: u32) void;
@@ -41,14 +43,17 @@ pub const Core = struct {
 
     pub fn setShouldClose(_: *Core, _: bool) void {}
 
-    pub fn getFramebufferSize(_: *Core) !structs.Size {
-        return structs.Size{ .width = 0, .height = 0 };
+    pub fn getFramebufferSize(core: *Core) !structs.Size {
+        return structs.Size{
+            .width = js.machCanvasGetFramebufferWidth(core.id),
+            .height = js.machCanvasGetFramebufferHeight(core.id),
+        };
     }
 
     pub fn getWindowSize(core: *Core) !structs.Size {
         return structs.Size{
-            .width = js.machCanvasGetWidth(core.id),
-            .height = js.machCanvasGetHeight(core.id),
+            .width = js.machCanvasGetWindowWidth(core.id),
+            .height = js.machCanvasGetWindowHeight(core.id),
         };
     }
 
