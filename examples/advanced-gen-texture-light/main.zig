@@ -518,7 +518,7 @@ const Brick = struct {
 
     fn texture(device: gpu.Device) Texture {
         const slice: []const u8 = &data();
-        return Texture.fromData(device, W, H, slice);
+        return Texture.fromData(device, W, H, u8, slice);
     }
 
     fn data() [W * H * 4]u8 {
@@ -589,7 +589,7 @@ const Texture = struct {
         self.sampler.release();
     }
 
-    fn fromData(device: gpu.Device, width: u32, height: u32, data: anytype) Self {
+    fn fromData(device: gpu.Device, width: u32, height: u32, comptime T: type, data: []const T) Self {
         const extent = gpu.Extent3D{
             .width = width,
             .height = height,
@@ -631,12 +631,13 @@ const Texture = struct {
             &gpu.ImageCopyTexture{
                 .texture = texture,
             },
-            data,
             &gpu.Texture.DataLayout{
                 .bytes_per_row = 4 * width,
                 .rows_per_image = height,
             },
             &extent,
+            T,
+            data,
         );
 
         const bind_group_layout = Self.bindGroupLayout(device);
