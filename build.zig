@@ -61,13 +61,13 @@ pub fn build(b: *std.build.Builder) void {
         example_app.link(options);
         example_app.install();
 
-        const example_compile_step = b.step("example-" ++ example.name, "Compile the example");
+        const example_compile_step = b.step("example-" ++ example.name, "Compile '" ++ example.name ++ "' example");
         example_compile_step.dependOn(&example_app.getInstallStep().?.step);
 
         if (target.toTarget().cpu.arch != .wasm32) {
             const example_run_cmd = example_app.run();
             example_run_cmd.step.dependOn(&example_app.getInstallStep().?.step);
-            const example_run_step = b.step("run-example-" ++ example.name, "Run the example");
+            const example_run_step = b.step("run-example-" ++ example.name, "Run '" ++ example.name ++ "' example");
             example_run_step.dependOn(&example_run_cmd.step);
         }
     }
