@@ -9,7 +9,6 @@ const convertError = @import("error.zig").convertError;
 
 const GlyphSlot = @This();
 
-pub const GlyphMetrics = c.FT_Glyph_Metrics;
 pub const SubGlyphInfo = struct {
     index: i32,
     flags: u32,
@@ -41,11 +40,8 @@ pub fn glyph(self: GlyphSlot) Error!Glyph {
 }
 
 pub fn outline(self: GlyphSlot) ?Outline {
-    const out = self.handle.*.outline;
-    const format = self.handle.*.format;
-
-    return if (format == c.FT_GLYPH_FORMAT_OUTLINE)
-        Outline.init(out)
+    return if (self.format() == .outline)
+        Outline.init(&self.handle.*.outline)
     else
         null;
 }
@@ -74,6 +70,10 @@ pub fn advance(self: GlyphSlot) types.Vector {
     return self.handle.*.advance;
 }
 
-pub fn metrics(self: GlyphSlot) GlyphMetrics {
+pub fn format(self: GlyphSlot) Glyph.Format {
+    return @intToEnum(Glyph.Format, self.handle.*.format);
+}
+
+pub fn metrics(self: GlyphSlot) Glyph.GlyphMetrics {
     return self.handle.*.metrics;
 }

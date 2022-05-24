@@ -1,6 +1,7 @@
 const std = @import("std");
 const c = @import("c.zig");
 const BitmapGlyph = @import("BitmapGlyph.zig");
+const GlyphSlot = @import("GlyphSlot.zig");
 const Stroker = @import("Stroker.zig");
 const types = @import("types.zig");
 const Error = @import("error.zig").Error;
@@ -8,14 +9,14 @@ const convertError = @import("error.zig").convertError;
 
 const Glyph = @This();
 
-pub const BBox = c.FT_BBox;
-pub const RenderMode = enum(u3) {
-    normal = c.FT_RENDER_MODE_NORMAL,
-    light = c.FT_RENDER_MODE_LIGHT,
-    mono = c.FT_RENDER_MODE_MONO,
-    lcd = c.FT_RENDER_MODE_LCD,
-    lcd_v = c.FT_RENDER_MODE_LCD_V,
-    sdf = c.FT_RENDER_MODE_SDF,
+pub const GlyphMetrics = c.FT_Glyph_Metrics;
+pub const GlyphFormat = enum(u3) {
+    none = c.FT_GLYPH_FORMAT_NONE,
+    composite = c.FT_GLYPH_FORMAT_COMPOSITE,
+    bitmap = c.FT_GLYPH_FORMAT_BITMAP,
+    outline = c.FT_GLYPH_FORMAT_OUTLINE,
+    plotter = c.FT_GLYPH_FORMAT_PLOTTER,
+    svg = c.FT_GLYPH_FORMAT_SVG,
 };
 pub const BBoxMode = enum(u2) {
     // https://freetype.org/freetype2/docs/reference/ft2-glyph_management.html#ft_glyph_bbox_mode
@@ -48,8 +49,8 @@ pub fn transform(self: Glyph, matrix: ?types.Matrix, delta: ?types.Vector) Error
     try convertError(c.FT_Glyph_Transform(self.handle, &m, &d));
 }
 
-pub fn getCBox(self: Glyph, bbox_mode: BBoxMode) BBox {
-    var res = std.mem.zeroes(BBox);
+pub fn getCBox(self: Glyph, bbox_mode: BBoxMode) types.BBox {
+    var res = std.mem.zeroes(types.BBox);
     c.FT_Glyph_Get_CBox(self.handle, @enumToInt(bbox_mode), &res);
     return res;
 }
@@ -71,6 +72,10 @@ pub fn strokeBorder(self: Glyph, stroker: Stroker, inside: bool) Error!Glyph {
     var res = self.handle;
     try convertError(c.FT_Glyph_StrokeBorder(&res, stroker.handle, if (inside) 1 else 0, 0));
     return Glyph.init(res);
+}
+
+pub fn format(self: GlyphSlot) GlyphFormat {
+    return @intToEnum(GlyphFormat, self.handle.*.format);
 }
 
 pub fn advanceX(self: Glyph) isize {

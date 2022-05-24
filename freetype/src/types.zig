@@ -4,6 +4,17 @@ const utils = @import("utils.zig");
 
 pub const Vector = c.FT_Vector;
 pub const Matrix = c.FT_Matrix;
+pub const Pos = c.FT_Pos;
+pub const BBox = c.FT_BBox;
+
+pub const RenderMode = enum(u3) {
+    normal = c.FT_RENDER_MODE_NORMAL,
+    light = c.FT_RENDER_MODE_LIGHT,
+    mono = c.FT_RENDER_MODE_MONO,
+    lcd = c.FT_RENDER_MODE_LCD,
+    lcd_v = c.FT_RENDER_MODE_LCD_V,
+    sdf = c.FT_RENDER_MODE_SDF,
+};
 
 pub const OpenFlags = packed struct {
     memory: bool = false,
