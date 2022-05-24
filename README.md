@@ -4,9 +4,9 @@
 
 Written in [Zig](https://ziglang.org/), Mach is for creating games, graphical applications, and desktop/mobile apps:
 
-* Data-driven, tooling oriented
-* Composable
-* Competitive with Unity and Unreal in spirit (a fully fledged editor in the future, etc.)
+- Data-driven, tooling oriented
+- Composable
+- Competitive with Unity and Unreal in spirit (a fully fledged editor in the future, etc.)
 
 <a href="https://user-images.githubusercontent.com/3173176/163936001-fd9eb918-7c29-4dcc-bfcb-5586f2ea1f9a.gif"><img align="left" src="https://user-images.githubusercontent.com/3173176/163936001-fd9eb918-7c29-4dcc-bfcb-5586f2ea1f9a.gif" alt="boids demo" width="300px"></img></a>
 
@@ -38,7 +38,7 @@ Contributors are very welcome! There are lots of places you can help out with li
 
 No, it’s not Tom from myspace - it’s me, @slimsag! It’s taken [almost a year to get here](https://devlog.hexops.com/2022/mach-v0.1-zig-graphics-in-60s) - staring at broken CI pipelines, C++ compiler errors, [buying hardware](https://twitter.com/slimsag/status/1507506138144681986) to test every OS+arch possible, and more.
 
-There are few things in life that I am more serious about than this work. I dedicate ~48 hours/week to my dayjob, and ~50h/week to Zig building Mach and running [zigmonthly.org](https://zigmonthly.org). After three years of aggressively pushing for progress in this exact way, [I have no plans to slow down anytime soon.](https://devlog.hexops.com/2021/I-write-code-100-hours-a-week)
+There are few things in life that I am more serious about than this work. I dedicate ~48 hours/week to my dayjob, and ~50h/week to Zig building Mach and running [zigmonthly.org](https://zigmonthly.org). After three years of aggressively pushing for progress in this exact way, [I have no plans to slow down anytime soon.](https://devlog.hexops.com/2021/i-write-code-100-hours-a-week)
 
 ## Learn more & examples: [machengine.org](https://machengine.org)
 
@@ -51,27 +51,27 @@ There are few things in life that I am more serious about than this work. I dedi
 Mach is still early stages, so far we have support for building from the following OS to the following targets:
 
 | Building for     | From macOS x86_64 | From macOS M1/aarch64 | From Linux x86_64 | From Windows x86_64 |
-|------------------|-------------------|-----------------------|-------------------|---------------------|
-| macOS x86_64     | ✅                | ✅                     | ✅                | ✅                  |
-| macOS M1/aarch64 | ✅                | ✅                     | ✅                | ✅                  |
-| Linux x86_64     | ✅                | ✅                     | ✅                | ✅                  |
-| Windows x86_64   | ✅                | ✅                     | ✅                | ✅                  |
-| iOS              | 🏃                | 🏃                     | 🏃                | 🏃                  |
-| Android          | 🏃                | 🏃                     | 🏃                | 🏃                  |
-| Web (Wasm)       | 🏃                | 🏃                     | 🏃                | 🏃                  |
+| ---------------- | ----------------- | --------------------- | ----------------- | ------------------- |
+| macOS x86_64     | ✅                | ✅                    | ✅                | ✅                  |
+| macOS M1/aarch64 | ✅                | ✅                    | ✅                | ✅                  |
+| Linux x86_64     | ✅                | ✅                    | ✅                | ✅                  |
+| Windows x86_64   | ✅                | ✅                    | ✅                | ✅                  |
+| iOS              | 🏃                | 🏃                    | 🏃                | 🏃                  |
+| Android          | 🏃                | 🏃                    | 🏃                | 🏃                  |
+| Web (Wasm)       | 🏃                | 🏃                    | 🏃                | 🏃                  |
 
-* ✅ Tested and verified via CI.
-* ✔️ Should work, not tested via CI yet.
-* 🏃 Planned or in progress.
-* ⚠️ Implemented, but has known issues (e.g. bugs in Zig.)
+- ✅ Tested and verified via CI.
+- ✔️ Should work, not tested via CI yet.
+- 🏃 Planned or in progress.
+- ⚠️ Implemented, but has known issues (e.g. bugs in Zig.)
 
 ## Libraries
 
 Mach has many libraries you can use for game development in Zig - you don't have to use the entire engine. All our libraries aim to have the same zero-fuss installation, cross compilation, and platform support:
 
-* [mach-glfw](https://github.com/hexops/mach-glfw): Ziggified GLFW bindings with 100% API coverage
-* [mach-gpu-dawn](https://github.com/hexops/mach-gpu-dawn): Google's Dawn WebGPU implementation, cross-compiled with Zig into a single static library 
-* [mach-system-sdk](https://github.com/hexops/mach-system-sdk): More libraries for cross-compilation with Zig
+- [mach-glfw](https://github.com/hexops/mach-glfw): Ziggified GLFW bindings with 100% API coverage
+- [mach-gpu-dawn](https://github.com/hexops/mach-gpu-dawn): Google's Dawn WebGPU implementation, cross-compiled with Zig into a single static library
+- [mach-system-sdk](https://github.com/hexops/mach-system-sdk): More libraries for cross-compilation with Zig
 
 ## Contributing
 
