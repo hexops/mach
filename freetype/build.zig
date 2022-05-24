@@ -11,11 +11,13 @@ pub fn build(b: *std.build.Builder) !void {
     const dedicated_tests = b.addTest("src/main.zig");
     dedicated_tests.setBuildMode(mode);
     dedicated_tests.setTarget(target);
+    dedicated_tests.addPackage(pkg);
     link(b, dedicated_tests, .{});
 
     const main_tests = b.addTest("test/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
+    main_tests.addPackage(pkg);
     link(b, main_tests, .{ .custom_config_path = "./test/ft" });
 
     const test_step = b.step("test", "Run library tests");
