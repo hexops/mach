@@ -8,6 +8,68 @@ This repository is a separate copy of the same library in the [main Mach reposit
 
 [Just as with Mach](https://github.com/hexops/mach#zero-fuss-installation--cross-compilation), you get zero fuss installation & cross compilation using these Freetype bindings. **only `zig` and `git` are needed to build from any OS and produce binaries for every OS.** No system dependencies at all.
 
+## Usage
+
+## Getting started
+
+### Adding dependency (using Git)
+
+In a `libs` subdirectory of the root of your project:
+
+```sh
+git clone https://github.com/hexops/mach-freetype
+```
+
+Then in your `build.zig` add:
+
+```zig
+...
+const freetype = @import("libs/mach-freetype/build.zig");
+
+pub fn build(b: *Builder) void {
+    ...
+    exe.addPackagePath("freetype", freetype.pkg);
+    freetype.link(b, exe, .{});
+}
+```
+
+<details>
+<description>Optional: Using Gyro dependency manager</description>
+
+```sh
+gyro add --src github hexops/mach-freetype --root src/main.zig --alias freetype
+gyro add --build-dep --src github hexops/mach-freetype --root build.zig --alias build-freetype
+```
+
+Then in your `build.zig` add:
+
+```zig
+...
+const pkgs = @import("deps.zig").pkgs;
+const freetype = @import("build-freetype");
+
+pub fn build(b: *Builder) void {
+    ...
+
+    exe.addPackage(pkgs.freetype);
+    freetype.link(b, exe, .{});
+}
+```
+
+**WARNING: You should use `gyro build` instead of `zig build` now!**
+
+</details>
+
+Now you can import in code:
+
+```zig
+const freetype = @import("freetype");
+```
+
+## Examples
+
+See the `examples/` directory.
+
 ## Join the community
 
 Join the Mach engine community [on Matrix chat](https://matrix.to/#/#hexops:matrix.org) to discuss this project, ask questions, get help, etc.
