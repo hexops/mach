@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        project: ['.', 'glfw']
+        project: ['.', 'glfw', 'freetype']
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
     # to the branch.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
@@ -45,7 +45,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        project: ['.', 'glfw']
+        project: ['.', 'glfw', 'freetype']
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
     # to the branch.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
@@ -80,7 +80,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        project: ['.', 'glfw']
+        project: ['.', 'glfw', 'freetype']
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
     # to the branch.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
