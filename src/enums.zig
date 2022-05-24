@@ -1,3 +1,25 @@
+pub const VSyncMode = enum {
+    /// Potential screen tearing.
+    /// No synchronization with monitor, render frames as fast as possible.
+    ///
+    /// Not available on WASM, fallback to double
+    none,
+
+    /// No tearing, synchronizes rendering with monitor refresh rate, rendering frames when ready.
+    ///
+    /// Tries to stay one frame ahead of the monitor, so when it's ready for the next frame it is
+    /// already prepared.
+    double,
+
+    /// No tearing, synchronizes rendering with monitor refresh rate, rendering frames when ready.
+    ///
+    /// Tries to stay two frames ahead of the monitor, so when it's ready for the next frame it is
+    /// already prepared.
+    ///
+    /// Not available on WASM, fallback to double
+    triple,
+};
+
 pub const Key = enum {
     a,
     b,

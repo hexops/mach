@@ -106,6 +106,8 @@ export fn wasmInit() void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
+    // NOTE: On wasm, vsync is double by default and cannot be changed.
+    // Hence options.vsync is not used anywhere.
     const options = if (@hasDecl(App, "options")) App.options else structs.Options{};
     engine = Engine.init(allocator, options) catch unreachable;
 

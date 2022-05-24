@@ -11,24 +11,6 @@ pub const SizeOptional = struct {
     height: ?u32,
 };
 
-pub const VSyncMode = enum {
-    /// Potential screen tearing.
-    /// No synchronization with monitor, render frames as fast as possible.
-    none,
-
-    /// No tearing, synchronizes rendering with monitor refresh rate, rendering frames when ready.
-    ///
-    /// Tries to stay one frame ahead of the monitor, so when it's ready for the next frame it is
-    /// already prepared.
-    double,
-
-    /// No tearing, synchronizes rendering with monitor refresh rate, rendering frames when ready.
-    ///
-    /// Tries to stay two frames ahead of the monitor, so when it's ready for the next frame it is
-    /// already prepared.
-    triple,
-};
-
 /// Application options that can be configured at init time.
 pub const Options = struct {
     /// The title of the window.
@@ -41,7 +23,7 @@ pub const Options = struct {
     height: u32 = 480,
 
     /// Monitor synchronization modes.
-    vsync: VSyncMode = .double,
+    vsync: enums.VSyncMode = .double,
 
     /// GPU features required by the application.
     required_features: ?[]gpu.Feature = null,
