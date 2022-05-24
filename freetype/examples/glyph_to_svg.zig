@@ -1,0 +1,149 @@
+const std = @import("std");
+const freetype = @import("freetype");
+
+const OutlinePrinter = struct {
+    library: freetype.Library,
+    face: freetype.Face,
+    output_file: std.fs.File,
+    path: std.io.FixedBufferStream([]u8),
+
+    xMin: isize,
+    yMin: isize,
+    width: isize,
+    height: isize,
+
+    const Self = @This();
+
+    pub fn init(file: std.fs.File) freetype.Error!Self {
+        var buf: [1000]u8 = undefined;
+        var lib = try freetype.Library.init();
+        return Self{
+            .library = lib,
+            .face = try lib.newFace("upstream/assets/FiraSans-Regular.ttf", 0),
+            .output_file = file,
+            .path = std.io.fixedBufferStream(&buf),
+            .xMin = 0,
+            .yMin = 0,
+            .width = 0,
+            .height = 0,
+        };
+    }
+
+    pub fn deinit(self: Self) void {
+        defer self.library.deinit();
+        defer self.face.deinit();
+    }
+
+    pub fn outlineExists(self: Self) bool {
+        const outline = self.face.glyph.outline() orelse return false;
+        if (outline.numContours() <= 0 or outline.numPoints() <= 0)
+            return false;
+        outline.check() catch return false;
+        return true;
+    }
+
+    pub fn flipOutline(self: Self) void {
+        const multiplier = 65536;
+        const matrix = freetype.Matrix{
+            .xx = 1 * multiplier,
+            .xy = 0 * multiplier,
+            .yx = 0 * multiplier,
+            .yy = -1 * multiplier,
+        };
+        self.face.glyph.outline().?.transform(matrix);
+    }
+
+    pub fn extractOutline(self: *Self) !void {
+        try self.path.writer().writeAll(
+            \\  <path d='
+            \\
+        );
+        var callbacks = freetype.C.FT_Outline_Funcs{
+            .move_to = moveToFunction,
+            .line_to = lineToFunction,
+            .conic_to = conicToFunction,
+            .cubic_to = cubicToFunction,
+            .shift = 0,
+            .delta = 0,
+        };
+        try self.face.glyph.outline().?.decompose(self, &callbacks);
+        try self.path.writer().writeAll(
+            \\          '
+            \\        fill='red'/>
+            \\
+        );
+    }
+
+    pub fn computeViewBox(self: *Self) !void {
+        const boundingBox = try self.face.glyph.outline().?.bbox();
+
+        var xMin: freetype.Pos = boundingBox.xMin;
+        var yMin: freetype.Pos = boundingBox.yMin;
+        var xMax: freetype.Pos = boundingBox.xMax;
+        var yMax: freetype.Pos = boundingBox.yMax;
+
+        self.xMin = xMin;
+        self.yMin = yMin;
+        self.width = xMax - xMin;
+        self.height = yMax - yMin;
+    }
+
+    pub fn printSVG(self: Self) !void {
+        try self.output_file.writer().print(
+            \\<svg xmlns='http://www.w3.org/2000/svg'
+            \\  xmlns:xlink='http://www.w3.org/1999/xlink'
+            \\  viewBox='{d} {d} {d} {d}'>
+            \\  {s}
+            \\</svg>
+        , .{ self.xMin, self.yMin, self.width, self.height, self.path.getWritten() });
+    }
+
+    pub fn moveToFunction(to: [*c]const freetype.Vector, self_ptr: ?*anyopaque) callconv(.C) c_int {
+        var self = @ptrCast(*Self, @alignCast(std.meta.alignment(Self), self_ptr));
+        self.path.writer().print("            M {d} {d}\n", .{ to.*.x, to.*.y }) catch unreachable;
+        return 0;
+    }
+
+    pub fn lineToFunction(to: [*c]const freetype.Vector, self_ptr: ?*anyopaque) callconv(.C) c_int {
+        var self = @ptrCast(*Self, @alignCast(std.meta.alignment(Self), self_ptr));
+        self.path.writer().print("            L {d} {d}\n", .{ to.*.x, to.*.y }) catch unreachable;
+        return 0;
+    }
+
+    pub fn conicToFunction(control: [*c]const freetype.Vector, to: [*c]const freetype.Vector, self_ptr: ?*anyopaque) callconv(.C) c_int {
+        var self = @ptrCast(*Self, @alignCast(std.meta.alignment(Self), self_ptr));
+        self.path.writer().print("           Q {d} {d}, {d} {d}\n", .{ control.*.x, control.*.y, to.*.x, to.*.y }) catch unreachable;
+        return 0;
+    }
+
+    pub fn cubicToFunction(control_0: [*c]const freetype.Vector, control_1: [*c]const freetype.Vector, to: [*c]const freetype.Vector, self_ptr: ?*anyopaque) callconv(.C) c_int {
+        var self = @ptrCast(*Self, @alignCast(std.meta.alignment(Self), self_ptr));
+        self.path.writer().print("           C {d} {d}, {d} {d}, {d} {d}\n", .{ control_0.*.x, control_0.*.y, control_1.*.x, control_1.*.y, to.*.x, to.*.y }) catch unreachable;
+        return 0;
+    }
+
+    pub fn run(self: *Self, symbol: u8) !void {
+        try self.face.loadChar(symbol, .{ .no_scale = true, .no_bitmap = true });
+
+        var outline_exists = self.outlineExists();
+
+        if (!outline_exists) // Outline doesn't exist.
+            return error.Fuck;
+
+        self.flipOutline();
+
+        try self.extractOutline();
+
+        try self.computeViewBox();
+
+        try self.printSVG();
+    }
+};
+
+pub fn main() !void {
+    var file = try std.fs.cwd().createFile("out.svg", .{});
+    defer file.close();
+    var outline_printer = try OutlinePrinter.init(file);
+    defer outline_printer.deinit();
+    try outline_printer.run('A');
+}
