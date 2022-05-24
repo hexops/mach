@@ -115,6 +115,9 @@ export fn wasmInit() void {
 }
 
 export fn wasmUpdate() bool {
+    engine.delta_time_ns = engine.timer.lapPrecise();
+    engine.delta_time = @intToFloat(f32, engine.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
+
     return app.update(&engine) catch false;
 }
 
