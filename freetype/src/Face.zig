@@ -239,19 +239,17 @@ pub fn numGlyphs(self: Face) i64 {
 }
 
 pub fn familyName(self: Face) ?[:0]const u8 {
-    const family = self.handle.*.family_name;
-    return if (family == null)
-        null
+    return if (self.handle.*.family_name) |family|
+        std.mem.span(family)
     else
-        std.mem.span(family);
+        null;
 }
 
 pub fn styleName(self: Face) ?[:0]const u8 {
-    const style = self.handle.*.style_name;
-    return if (style == null)
-        null
+    return if (self.handle.*.style_name) |style_name|
+        std.mem.span(style_name)
     else
-        std.mem.span(style);
+        null;
 }
 
 pub fn styleFlags(self: Face) StyleFlags {
@@ -267,9 +265,8 @@ pub fn sizeMetrics(self: Face) ?SizeMetrics {
 }
 
 pub fn postscriptName(self: Face) ?[:0]const u8 {
-    const face_name = c.FT_Get_Postscript_Name(self.handle);
-    return if (face_name == null)
-        null
+    return if (c.FT_Get_Postscript_Name(self.handle)) |face_name|
+        std.mem.span(face_name)
     else
-        std.mem.span(face_name);
+        null;
 }
