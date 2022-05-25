@@ -5,7 +5,7 @@ const Glyph = @import("Glyph.zig");
 const Outline = @import("Outline.zig");
 const Bitmap = @import("Bitmap.zig");
 const Error = @import("error.zig").Error;
-const convertError = @import("error.zig").convertError;
+const intToError = @import("error.zig").intToError;
 
 const GlyphSlot = @This();
 
@@ -24,18 +24,18 @@ pub fn init(handle: c.FT_GlyphSlot) GlyphSlot {
 }
 
 pub fn render(self: GlyphSlot, render_mode: types.RenderMode) Error!void {
-    return convertError(c.FT_Render_Glyph(self.handle, @enumToInt(render_mode)));
+    return intToError(c.FT_Render_Glyph(self.handle, @enumToInt(render_mode)));
 }
 
 pub fn subGlyphInfo(self: GlyphSlot, sub_index: u32) Error!SubGlyphInfo {
     var info = std.mem.zeroes(SubGlyphInfo);
-    try convertError(c.FT_Get_SubGlyph_Info(self.handle, sub_index, &info.index, &info.flags, &info.arg1, &info.arg2, @ptrCast(*c.FT_Matrix, &info.transform)));
+    try intToError(c.FT_Get_SubGlyph_Info(self.handle, sub_index, &info.index, &info.flags, &info.arg1, &info.arg2, @ptrCast(*c.FT_Matrix, &info.transform)));
     return info;
 }
 
 pub fn glyph(self: GlyphSlot) Error!Glyph {
     var out = std.mem.zeroes(c.FT_Glyph);
-    try convertError(c.FT_Get_Glyph(self.handle, &out));
+    try intToError(c.FT_Get_Glyph(self.handle, &out));
     return Glyph.init(out);
 }
 

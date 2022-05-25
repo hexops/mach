@@ -3,7 +3,7 @@ const c = @import("c.zig");
 const types = @import("types.zig");
 const Glyph = @import("Glyph.zig");
 const Error = @import("error.zig").Error;
-const convertError = @import("error.zig").convertError;
+const intToError = @import("error.zig").intToError;
 const errorToInt = @import("error.zig").errorToInt;
 
 const Outline = @This();
@@ -35,7 +35,7 @@ pub fn contours(self: Outline) []const i16 {
 }
 
 pub fn check(self: Outline) Error!void {
-    try convertError(c.FT_Outline_Check(self.handle));
+    try intToError(c.FT_Outline_Check(self.handle));
 }
 
 pub fn transform(self: Outline, matrix: ?types.Matrix) void {
@@ -45,7 +45,7 @@ pub fn transform(self: Outline, matrix: ?types.Matrix) void {
 
 pub fn bbox(self: Outline) Error!types.BBox {
     var res = std.mem.zeroes(types.BBox);
-    try convertError(c.FT_Outline_Get_BBox(self.handle, @ptrCast(*c.FT_BBox, &res)));
+    try intToError(c.FT_Outline_Get_BBox(self.handle, @ptrCast(*c.FT_BBox, &res)));
     return res;
 }
 
@@ -128,7 +128,7 @@ pub fn OutlineFuncsWrapper(comptime Context: type) type {
 
 pub fn decompose(self: Outline, ctx: anytype, callbacks: OutlineFuncs(@TypeOf(ctx))) Error!void {
     var wrapper = OutlineFuncsWrapper(@TypeOf(ctx)){ .ctx = ctx, .callbacks = callbacks };
-    try convertError(c.FT_Outline_Decompose(
+    try intToError(c.FT_Outline_Decompose(
         self.handle,
         &c.FT_Outline_Funcs{
             .move_to = @TypeOf(wrapper).move_to,
