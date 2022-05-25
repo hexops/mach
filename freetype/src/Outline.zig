@@ -4,6 +4,7 @@ const types = @import("types.zig");
 const Glyph = @import("Glyph.zig");
 const Error = @import("error.zig").Error;
 const convertError = @import("error.zig").convertError;
+const errorToInt = @import("error.zig").errorToInt;
 
 const Outline = @This();
 
@@ -48,6 +49,95 @@ pub fn bbox(self: Outline) Error!types.BBox {
     return res;
 }
 
-pub fn decompose(self: Outline, callbacks_ctx: anytype, callbacks: *c.FT_Outline_Funcs) Error!void {
-    try convertError(c.FT_Outline_Decompose(self.handle, callbacks, @ptrCast(?*anyopaque, callbacks_ctx)));
+pub fn OutlineFuncs(comptime Context: type) type {
+    return struct {
+        move_to: fn (ctx: Context, to: types.Vector) Error!void,
+        line_to: fn (ctx: Context, to: types.Vector) Error!void,
+        conic_to: fn (ctx: Context, control: types.Vector, to: types.Vector) Error!void,
+        cubic_to: fn (ctx: Context, control_0: types.Vector, control_1: types.Vector, to: types.Vector) Error!void,
+        shift: c_int,
+        delta: isize,
+    };
+}
+
+pub fn OutlineFuncsWrapper(comptime Context: type) type {
+    return struct {
+        const Self = @This();
+        ctx: Context,
+        callbacks: OutlineFuncs(Context),
+
+        fn getSelf(ptr: ?*anyopaque) *Self {
+            return @ptrCast(*Self, @alignCast(@alignOf(Self), ptr));
+        }
+
+        fn castVec(vec: [*c]const c.FT_Vector) types.Vector {
+            return @intToPtr(*types.Vector, @ptrToInt(vec)).*;
+        }
+
+        pub fn move_to(to: [*c]const c.FT_Vector, ctx: ?*anyopaque) callconv(.C) c_int {
+            const self = getSelf(ctx);
+            return if (self.callbacks.move_to(self.ctx, castVec(to))) |_|
+                0
+            else |err|
+                errorToInt(err);
+        }
+
+        pub fn line_to(to: [*c]const c.FT_Vector, ctx: ?*anyopaque) callconv(.C) c_int {
+            const self = getSelf(ctx);
+            return if (self.callbacks.line_to(self.ctx, castVec(to))) |_|
+                0
+            else |err|
+                errorToInt(err);
+        }
+
+        pub fn conic_to(
+            control: [*c]const c.FT_Vector,
+            to: [*c]const c.FT_Vector,
+            ctx: ?*anyopaque,
+        ) callconv(.C) c_int {
+            const self = getSelf(ctx);
+            return if (self.callbacks.conic_to(
+                self.ctx,
+                castVec(control),
+                castVec(to),
+            )) |_|
+                0
+            else |err|
+                errorToInt(err);
+        }
+
+        pub fn cubic_to(
+            control_0: [*c]const c.FT_Vector,
+            control_1: [*c]const c.FT_Vector,
+            to: [*c]const c.FT_Vector,
+            ctx: ?*anyopaque,
+        ) callconv(.C) c_int {
+            const self = getSelf(ctx);
+            return if (self.callbacks.cubic_to(
+                self.ctx,
+                castVec(control_0),
+                castVec(control_1),
+                castVec(to),
+            )) |_|
+                0
+            else |err|
+                errorToInt(err);
+        }
+    };
+}
+
+pub fn decompose(self: Outline, ctx: anytype, callbacks: OutlineFuncs(@TypeOf(ctx))) Error!void {
+    var wrapper = OutlineFuncsWrapper(@TypeOf(ctx)){ .ctx = ctx, .callbacks = callbacks };
+    try convertError(c.FT_Outline_Decompose(
+        self.handle,
+        &c.FT_Outline_Funcs{
+            .move_to = @TypeOf(wrapper).move_to,
+            .line_to = @TypeOf(wrapper).line_to,
+            .conic_to = @TypeOf(wrapper).conic_to,
+            .cubic_to = @TypeOf(wrapper).cubic_to,
+            .shift = callbacks.shift,
+            .delta = callbacks.delta,
+        },
+        &wrapper,
+    ));
 }
