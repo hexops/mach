@@ -23,6 +23,26 @@ pub fn build(b: *std.build.Builder) !void {
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&dedicated_tests.step);
     test_step.dependOn(&main_tests.step);
+
+    inline for ([_][]const u8{
+        "single_glyph",
+        "glyph_to_svg",
+    }) |example| {
+        const example_exe = b.addExecutable("example-" ++ example, "examples/" ++ example ++ ".zig");
+        example_exe.setBuildMode(mode);
+        example_exe.setTarget(target);
+        example_exe.addPackage(pkg);
+        link(b, example_exe, .{});
+        example_exe.install();
+
+        const example_compile_step = b.step("example-" ++ example, "Compile '" ++ example ++ "' example");
+        example_compile_step.dependOn(b.getInstallStep());
+
+        const example_run_cmd = example_exe.run();
+        example_run_cmd.step.dependOn(b.getInstallStep());
+        const example_run_step = b.step("run-example-" ++ example, "Run '" ++ example ++ "' example");
+        example_run_step.dependOn(&example_run_cmd.step);
+    }
 }
 
 pub const Options = struct {
