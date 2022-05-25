@@ -4,7 +4,7 @@ const types = @import("types.zig");
 const GlyphSlot = @import("GlyphSlot.zig");
 const Library = @import("Library.zig");
 const Error = @import("error.zig").Error;
-const convertError = @import("error.zig").convertError;
+const intToError = @import("error.zig").intToError;
 const utils = @import("utils.zig");
 
 const Face = @This();
@@ -98,7 +98,7 @@ pub fn init(handle: c.FT_Face) Face {
 }
 
 pub fn deinit(self: Face) void {
-    convertError(c.FT_Done_Face(self.handle)) catch |err| {
+    intToError(c.FT_Done_Face(self.handle)) catch |err| {
         std.log.err("mach/freetype: Failed to destroy Face: {}", .{err});
     };
 }
@@ -118,23 +118,23 @@ pub fn attachMemory(self: Face, bytes: []const u8) Error!void {
 }
 
 pub fn attachStream(self: Face, args: types.OpenArgs) Error!void {
-    return convertError(c.FT_Attach_Stream(self.handle, &args.toCInterface()));
+    return intToError(c.FT_Attach_Stream(self.handle, &args.toCInterface()));
 }
 
 pub fn setCharSize(self: Face, pt_width: i32, pt_height: i32, horz_resolution: u16, vert_resolution: u16) Error!void {
-    return convertError(c.FT_Set_Char_Size(self.handle, pt_width, pt_height, horz_resolution, vert_resolution));
+    return intToError(c.FT_Set_Char_Size(self.handle, pt_width, pt_height, horz_resolution, vert_resolution));
 }
 
 pub fn setPixelSizes(self: Face, pixel_width: u32, pixel_height: u32) Error!void {
-    return convertError(c.FT_Set_Pixel_Sizes(self.handle, pixel_width, pixel_height));
+    return intToError(c.FT_Set_Pixel_Sizes(self.handle, pixel_width, pixel_height));
 }
 
 pub fn loadGlyph(self: Face, index: u32, flags: LoadFlags) Error!void {
-    return convertError(c.FT_Load_Glyph(self.handle, index, flags.toBitFields()));
+    return intToError(c.FT_Load_Glyph(self.handle, index, flags.toBitFields()));
 }
 
 pub fn loadChar(self: Face, char: u32, flags: LoadFlags) Error!void {
-    return convertError(c.FT_Load_Char(self.handle, char, flags.toBitFields()));
+    return intToError(c.FT_Load_Char(self.handle, char, flags.toBitFields()));
 }
 
 pub fn setTransform(self: Face, matrix: ?types.Matrix, delta: ?types.Vector) Error!void {
@@ -150,7 +150,7 @@ pub fn getCharIndex(self: Face, index: u32) ?u32 {
 
 pub fn getKerning(self: Face, left_char_index: u32, right_char_index: u32, mode: KerningMode) Error!types.Vector {
     var vec = std.mem.zeroes(types.Vector);
-    try convertError(c.FT_Get_Kerning(self.handle, left_char_index, right_char_index, @enumToInt(mode), @ptrCast(*c.FT_Vector, &vec)));
+    try intToError(c.FT_Get_Kerning(self.handle, left_char_index, right_char_index, @enumToInt(mode), @ptrCast(*c.FT_Vector, &vec)));
     return vec;
 }
 

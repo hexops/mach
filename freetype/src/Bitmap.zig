@@ -1,7 +1,7 @@
 const std = @import("std");
 const c = @import("c.zig");
 const Error = @import("error.zig").Error;
-const convertError = @import("error.zig").convertError;
+const intToError = @import("error.zig").intToError;
 
 const Bitmap = @This();
 

@@ -2,7 +2,7 @@ const std = @import("std");
 const c = @import("c.zig");
 const Bitmap = @import("Bitmap.zig");
 const Error = @import("error.zig").Error;
-const convertError = @import("error.zig").convertError;
+const intToError = @import("error.zig").intToError;
 
 const BitmapGlyph = @This();
 
@@ -18,7 +18,7 @@ pub fn deinit(self: BitmapGlyph) void {
 
 pub fn clone(self: BitmapGlyph) Error!BitmapGlyph {
     var res = std.mem.zeroes(c.FT_Glyph);
-    try convertError(c.FT_Glyph_Copy(@ptrCast(c.FT_Glyph, self.handle), &res));
+    try intToError(c.FT_Glyph_Copy(@ptrCast(c.FT_Glyph, self.handle), &res));
     return BitmapGlyph.init(@ptrCast(c.FT_BitmapGlyph, res));
 }
 

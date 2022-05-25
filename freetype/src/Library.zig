@@ -4,7 +4,7 @@ const types = @import("types.zig");
 const Face = @import("Face.zig");
 const Stroker = @import("Stroker.zig");
 const Error = @import("error.zig").Error;
-const convertError = @import("error.zig").convertError;
+const intToError = @import("error.zig").intToError;
 
 const Library = @This();
 
@@ -19,12 +19,12 @@ handle: c.FT_Library,
 
 pub fn init() Error!Library {
     var ft = std.mem.zeroes(Library);
-    try convertError(c.FT_Init_FreeType(&ft.handle));
+    try intToError(c.FT_Init_FreeType(&ft.handle));
     return ft;
 }
 
 pub fn deinit(self: Library) void {
-    convertError(c.FT_Done_FreeType(self.handle)) catch |err| {
+    intToError(c.FT_Done_FreeType(self.handle)) catch |err| {
         std.log.err("mach/freetype: Failed to deinitialize Library: {}", .{err});
     };
 }
@@ -45,16 +45,16 @@ pub fn newFaceMemory(self: Library, bytes: []const u8, face_index: i32) Error!Fa
 
 pub fn openFace(self: Library, args: types.OpenArgs, face_index: i32) Error!Face {
     var face = std.mem.zeroes(c.FT_Face);
-    try convertError(c.FT_Open_Face(self.handle, &args.toCInterface(), face_index, &face));
+    try intToError(c.FT_Open_Face(self.handle, &args.toCInterface(), face_index, &face));
     return Face.init(face);
 }
 
 pub fn newStroker(self: Library) Error!Stroker {
     var stroker = std.mem.zeroes(c.FT_Stroker);
-    try convertError(c.FT_Stroker_New(self.handle, &stroker));
+    try intToError(c.FT_Stroker_New(self.handle, &stroker));
     return Stroker.init(stroker);
 }
 
 pub fn setLcdFilter(self: Library, lcd_filter: LcdFilter) Error!void {
-    return convertError(c.FT_Library_SetLcdFilter(self.handle, @enumToInt(lcd_filter)));
+    return intToError(c.FT_Library_SetLcdFilter(self.handle, @enumToInt(lcd_filter)));
 }
