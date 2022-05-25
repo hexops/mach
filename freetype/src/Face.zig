@@ -9,7 +9,16 @@ const utils = @import("utils.zig");
 
 const Face = @This();
 
-pub const SizeMetrics = c.FT_Size_Metrics;
+pub const SizeMetrics = extern struct {
+    x_ppem: u16,
+    y_ppem: u16,
+    x_scale: c_long,
+    y_scale: c_long,
+    ascender: c_long,
+    descender: c_long,
+    height: c_long,
+    max_advance: c_long,
+};
 pub const KerningMode = enum(u2) {
     default = c.FT_KERNING_DEFAULT,
     unfitted = c.FT_KERNING_UNFITTED,
@@ -131,7 +140,7 @@ pub fn loadChar(self: Face, char: u32, flags: LoadFlags) Error!void {
 pub fn setTransform(self: Face, matrix: ?types.Matrix, delta: ?types.Vector) Error!void {
     var m = matrix orelse std.mem.zeroes(types.Matrix);
     var d = delta orelse std.mem.zeroes(types.Vector);
-    return c.FT_Set_Transform(self.handle, &m, &d);
+    return c.FT_Set_Transform(self.handle, @ptrCast(*c.FT_Matrix, &m), @ptrCast(*c.FT_Vector, &d));
 }
 
 pub fn getCharIndex(self: Face, index: u32) ?u32 {
@@ -141,7 +150,7 @@ pub fn getCharIndex(self: Face, index: u32) ?u32 {
 
 pub fn getKerning(self: Face, left_char_index: u32, right_char_index: u32, mode: KerningMode) Error!types.Vector {
     var vec = std.mem.zeroes(types.Vector);
-    try convertError(c.FT_Get_Kerning(self.handle, left_char_index, right_char_index, @enumToInt(mode), &vec));
+    try convertError(c.FT_Get_Kerning(self.handle, left_char_index, right_char_index, @enumToInt(mode), @ptrCast(*c.FT_Vector, &vec)));
     return vec;
 }
 
@@ -251,11 +260,10 @@ pub fn styleFlags(self: Face) StyleFlags {
 }
 
 pub fn sizeMetrics(self: Face) ?SizeMetrics {
-    const size = self.handle.*.size;
-    return if (size == null)
-        null
+    return if (self.handle.*.size) |size|
+        @ptrCast(*SizeMetrics, &size.*.metrics).*
     else
-        size.*.metrics;
+        null;
 }
 
 pub fn postscriptName(self: Face) ?[:0]const u8 {

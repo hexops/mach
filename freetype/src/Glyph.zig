@@ -45,19 +45,19 @@ pub fn clone(self: Glyph) Error!Glyph {
 pub fn transform(self: Glyph, matrix: ?types.Matrix, delta: ?types.Vector) Error!void {
     var m = matrix orelse std.mem.zeroes(types.Matrix);
     var d = delta orelse std.mem.zeroes(types.Vector);
-    try convertError(c.FT_Glyph_Transform(self.handle, &m, &d));
+    try convertError(c.FT_Glyph_Transform(self.handle, @ptrCast(*c.FT_Matrix, &m), @ptrCast(*c.FT_Vector, &d)));
 }
 
 pub fn getCBox(self: Glyph, bbox_mode: BBoxMode) types.BBox {
     var res = std.mem.zeroes(types.BBox);
-    c.FT_Glyph_Get_CBox(self.handle, @enumToInt(bbox_mode), &res);
+    c.FT_Glyph_Get_CBox(self.handle, @enumToInt(bbox_mode), @ptrCast(*c.FT_BBox, &res));
     return res;
 }
 
 pub fn toBitmap(self: Glyph, render_mode: types.RenderMode, origin: ?types.Vector) Error!BitmapGlyph {
     var res = self.handle;
     var o = origin orelse std.mem.zeroes(types.Vector);
-    try convertError(c.FT_Glyph_To_Bitmap(&res, @enumToInt(render_mode), &o, 0));
+    try convertError(c.FT_Glyph_To_Bitmap(&res, @enumToInt(render_mode), @ptrCast(*c.FT_Vector, &o), 0));
     return BitmapGlyph.init(@ptrCast(c.FT_BitmapGlyph, self.handle));
 }
 
