@@ -3,6 +3,137 @@ const text_decoder = new TextDecoder();
 const text_encoder = new TextEncoder();
 let log_buf = "";
 
+// TODO: Arrange in numberical order of value
+function convertKeyCode(code) {
+  const mapKeyCode = {
+    KeyA: 0,
+    KeyB: 1,
+    KeyC: 2,
+    KeyD: 3,
+    KeyE: 4,
+    KeyF: 5,
+    KeyG: 6,
+    KeyH: 7,
+    KeyI: 8,
+    KeyJ: 9,
+    KeyK: 10,
+    KeyL: 11,
+    KeyM: 12,
+    KeyN: 13,
+    KeyO: 14,
+    KeyP: 15,
+    KeyQ: 16,
+    KeyR: 17,
+    KeyS: 18,
+    KeyT: 19,
+    KeyU: 20,
+    KeyV: 21,
+    KeyW: 22,
+    KeyX: 23,
+    KeyY: 24,
+    KeyZ: 25,
+    Digit0: 26,
+    Digit1: 27,
+    Digit2: 28,
+    Digit3: 29,
+    Digit4: 30,
+    Digit5: 31,
+    Digit6: 32,
+    Digit7: 33,
+    Digit8: 34,
+    Digit9: 35,
+    Enter: 78,
+    Escape: 79,
+    Backspace: 105,
+    Tab: 80,
+    Space: 106,
+    Minus: 107,
+    Equal: 108,
+    BracketLeft: 109,
+    BracketRight: 110,
+    Backslash: 111,
+    ShiftLeft: 81,
+    ShiftRight: 82,
+    ControlLeft: 83,
+    ControlRight: 84,
+    AltLeft: 85,
+    AltRight: 86,
+    OSLeft: 87,
+    MetaLeft: 87,
+    OSRight: 88,
+    MetaRight: 88,
+    Semicolon: 112,
+    Quote: 113,
+    Backquote: 117,
+    ContextMenu: 89,
+    Comma: 114,
+    Period: 115,
+    Slash: 116,
+    CapsLock: 91,
+    PrintScreen: 92,
+    ScrollLock: 93,
+    Pause: 94,
+    Insert: 100,
+    Home: 96,
+    PageUp: 98,
+    Delete: 95,
+    End: 97,
+    PageDown: 99,
+    ArrowRight: 102,
+    ArrowLeft: 101,
+    ArrowDown: 104,
+    ArrowUp: 103,
+    NumLock: 90,
+    NumpadDivide: 61,
+    NumpadMultiply: 62,
+    NumpadSubtract: 63,
+    NumpadAdd: 64,
+    Numpad1: 66,
+    Numpad2: 67,
+    Numpad3: 68,
+    Numpad4: 69,
+    Numpad5: 70,
+    Numpad6: 71,
+    Numpad7: 72,
+    Numpad8: 73,
+    Numpad9: 74,
+    Numpad0: 65,
+    NumpadDecimal: 75,
+    NumpadEqual: 76,
+    NumpadEnter: 77,
+    F1: 36,
+    F2: 37,
+    F3: 38,
+    F4: 39,
+    F5: 40,
+    F6: 41,
+    F7: 42,
+    F8: 43,
+    F9: 44,
+    F10: 45,
+    F11: 46,
+    F12: 47,
+    F13: 48,
+    F14: 49,
+    F15: 50,
+    F16: 51,
+    F17: 52,
+    F18: 53,
+    F19: 54,
+    F20: 55,
+    F21: 56,
+    F22: 57,
+    F23: 58,
+    F24: 59,
+    F25: 60,
+  };
+
+  const k = mapKeyCode[code];
+  if (k != undefined)
+    return k;
+  return 118; // Unknown
+}
+
 const mach = {
   canvases: [],
   wasm: undefined,
@@ -52,6 +183,14 @@ const mach = {
 
     canvas.addEventListener("contextmenu", (ev) => ev.preventDefault());
 
+    canvas.addEventListener("keydown", (ev) => {
+      mach.events.push(...[1, convertKeyCode(ev.code)]);
+    });
+
+    canvas.addEventListener("keyup", (ev) => {
+      mach.events.push(...[2, convertKeyCode(ev.code)]);
+    });
+
     document.body.appendChild(canvas);
     return mach.canvases.push({ canvas: canvas, title: undefined }) - 1;
   },
@@ -98,6 +237,13 @@ const mach = {
   machCanvasGetFramebufferHeight(canvas) {
     const cv = mach.canvases[canvas];
     return cv.canvas.height;
+  },
+
+  machEventShift() {
+    if (mach.events.length < 0)
+      return 0;
+
+    return mach.events.shift();
   },
 
   machPerfNow() {
