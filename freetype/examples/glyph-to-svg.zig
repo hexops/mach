@@ -53,7 +53,7 @@ const OutlinePrinter = struct {
 
     pub fn extractOutline(self: *Self) !void {
         try self.path_stream.writer().writeAll("<path d='");
-        var callbacks = freetype.C.FT_Outline_Funcs{
+        var callbacks = freetype.Outline.OutlineFuncs(*Self){
             .move_to = moveToFunction,
             .line_to = lineToFunction,
             .conic_to = conicToFunction,
@@ -61,7 +61,7 @@ const OutlinePrinter = struct {
             .shift = 0,
             .delta = 0,
         };
-        try self.face.glyph.outline().?.decompose(self, &callbacks);
+        try self.face.glyph.outline().?.decompose(self, callbacks);
         try self.path_stream.writer().writeAll("' fill='#000'/>");
     }
 
@@ -83,28 +83,20 @@ const OutlinePrinter = struct {
         , .{ self.xMin, self.yMin, self.width, self.height, self.path_stream.getWritten() });
     }
 
-    pub fn moveToFunction(to: [*c]const freetype.Vector, self_ptr: ?*anyopaque) callconv(.C) c_int {
-        var self = @ptrCast(*Self, @alignCast(std.meta.alignment(Self), self_ptr));
-        self.path_stream.writer().print("M {d} {d}\t", .{ to.*.x, to.*.y }) catch unreachable;
-        return 0;
+    pub fn moveToFunction(self: *Self, to: freetype.Vector) freetype.Error!void {
+        self.path_stream.writer().print("M {d} {d}\t", .{ to.x, to.y }) catch unreachable;
     }
 
-    pub fn lineToFunction(to: [*c]const freetype.Vector, self_ptr: ?*anyopaque) callconv(.C) c_int {
-        var self = @ptrCast(*Self, @alignCast(std.meta.alignment(Self), self_ptr));
-        self.path_stream.writer().print("L {d} {d}\t", .{ to.*.x, to.*.y }) catch unreachable;
-        return 0;
+    pub fn lineToFunction(self: *Self, to: freetype.Vector) freetype.Error!void {
+        self.path_stream.writer().print("L {d} {d}\t", .{ to.x, to.y }) catch unreachable;
     }
 
-    pub fn conicToFunction(control: [*c]const freetype.Vector, to: [*c]const freetype.Vector, self_ptr: ?*anyopaque) callconv(.C) c_int {
-        var self = @ptrCast(*Self, @alignCast(std.meta.alignment(Self), self_ptr));
-        self.path_stream.writer().print("Q {d} {d}, {d} {d}\t", .{ control.*.x, control.*.y, to.*.x, to.*.y }) catch unreachable;
-        return 0;
+    pub fn conicToFunction(self: *Self, control: freetype.Vector, to: freetype.Vector) freetype.Error!void {
+        self.path_stream.writer().print("Q {d} {d}, {d} {d}\t", .{ control.x, control.y, to.x, to.y }) catch unreachable;
     }
 
-    pub fn cubicToFunction(control_0: [*c]const freetype.Vector, control_1: [*c]const freetype.Vector, to: [*c]const freetype.Vector, self_ptr: ?*anyopaque) callconv(.C) c_int {
-        var self = @ptrCast(*Self, @alignCast(std.meta.alignment(Self), self_ptr));
-        self.path_stream.writer().print("C {d} {d}, {d} {d}, {d} {d}\t", .{ control_0.*.x, control_0.*.y, control_1.*.x, control_1.*.y, to.*.x, to.*.y }) catch unreachable;
-        return 0;
+    pub fn cubicToFunction(self: *Self, control_0: freetype.Vector, control_1: freetype.Vector, to: freetype.Vector) freetype.Error!void {
+        self.path_stream.writer().print("C {d} {d}, {d} {d}, {d} {d}\t", .{ control_0.x, control_0.y, control_1.x, control_1.y, to.x, to.y }) catch unreachable;
     }
 
     pub fn run(self: *Self, symbol: u8) !void {
