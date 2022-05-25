@@ -28,7 +28,7 @@ const freetype = @import("libs/mach-freetype/build.zig");
 
 pub fn build(b: *Builder) void {
     ...
-    exe.addPackagePath("freetype", freetype.pkg);
+    exe.addPackage(freetype.pkg);
     freetype.link(b, exe, .{});
 }
 ```
