@@ -8,15 +8,6 @@ const convertError = @import("error.zig").convertError;
 
 const Glyph = @This();
 
-pub const BBox = c.FT_BBox;
-pub const RenderMode = enum(u3) {
-    normal = c.FT_RENDER_MODE_NORMAL,
-    light = c.FT_RENDER_MODE_LIGHT,
-    mono = c.FT_RENDER_MODE_MONO,
-    lcd = c.FT_RENDER_MODE_LCD,
-    lcd_v = c.FT_RENDER_MODE_LCD_V,
-    sdf = c.FT_RENDER_MODE_SDF,
-};
 pub const BBoxMode = enum(u2) {
     // https://freetype.org/freetype2/docs/reference/ft2-glyph_management.html#ft_glyph_bbox_mode
     // both `unscaled` and `subpixel` constants are set to 0
@@ -24,6 +15,15 @@ pub const BBoxMode = enum(u2) {
     gridfit = c.FT_GLYPH_BBOX_GRIDFIT,
     truncate = c.FT_GLYPH_BBOX_TRUNCATE,
     pixels = c.FT_GLYPH_BBOX_PIXELS,
+};
+pub const GlyphMetrics = c.FT_Glyph_Metrics;
+pub const GlyphFormat = enum(u32) {
+    none = c.FT_GLYPH_FORMAT_NONE,
+    composite = c.FT_GLYPH_FORMAT_COMPOSITE,
+    bitmap = c.FT_GLYPH_FORMAT_BITMAP,
+    outline = c.FT_GLYPH_FORMAT_OUTLINE,
+    plotter = c.FT_GLYPH_FORMAT_PLOTTER,
+    svg = c.FT_GLYPH_FORMAT_SVG,
 };
 
 handle: c.FT_Glyph,
@@ -48,13 +48,13 @@ pub fn transform(self: Glyph, matrix: ?types.Matrix, delta: ?types.Vector) Error
     try convertError(c.FT_Glyph_Transform(self.handle, &m, &d));
 }
 
-pub fn getCBox(self: Glyph, bbox_mode: BBoxMode) BBox {
-    var res = std.mem.zeroes(BBox);
+pub fn getCBox(self: Glyph, bbox_mode: BBoxMode) types.BBox {
+    var res = std.mem.zeroes(types.BBox);
     c.FT_Glyph_Get_CBox(self.handle, @enumToInt(bbox_mode), &res);
     return res;
 }
 
-pub fn toBitmap(self: Glyph, render_mode: RenderMode, origin: ?types.Vector) Error!BitmapGlyph {
+pub fn toBitmap(self: Glyph, render_mode: types.RenderMode, origin: ?types.Vector) Error!BitmapGlyph {
     var res = self.handle;
     var o = origin orelse std.mem.zeroes(types.Vector);
     try convertError(c.FT_Glyph_To_Bitmap(&res, @enumToInt(render_mode), &o, 0));
@@ -71,6 +71,10 @@ pub fn strokeBorder(self: Glyph, stroker: Stroker, inside: bool) Error!Glyph {
     var res = self.handle;
     try convertError(c.FT_Glyph_StrokeBorder(&res, stroker.handle, if (inside) 1 else 0, 0));
     return Glyph.init(res);
+}
+
+pub fn format(self: Glyph) GlyphFormat {
+    return @intToEnum(GlyphFormat, self.handle.*.format);
 }
 
 pub fn advanceX(self: Glyph) isize {
