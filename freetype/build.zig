@@ -25,8 +25,8 @@ pub fn build(b: *std.build.Builder) !void {
     test_step.dependOn(&main_tests.step);
 
     inline for ([_][]const u8{
-        "single_glyph",
-        "glyph_to_svg",
+        "single-glyph",
+        "glyph-to-svg",
     }) |example| {
         const example_exe = b.addExecutable("example-" ++ example, "examples/" ++ example ++ ".zig");
         example_exe.setBuildMode(mode);
