@@ -13,8 +13,9 @@ const js = struct {
     extern fn machCanvasGetWindowHeight(canvas: CanvasId) u32;
     extern fn machCanvasGetFramebufferWidth(canvas: CanvasId) u32;
     extern fn machCanvasGetFramebufferHeight(canvas: CanvasId) u32;
-
+    extern fn machEventShift() u32;
     extern fn machPerfNow() f64;
+
     extern fn machLog(str: [*]const u8, len: u32) void;
     extern fn machLogWrite(str: [*]const u8, len: u32) void;
     extern fn machLogFlush() void;
@@ -60,7 +61,17 @@ pub const Core = struct {
     pub fn setSizeLimits(_: *Core, _: structs.SizeOptional, _: structs.SizeOptional) !void {}
 
     pub fn pollEvent(_: *Core) ?structs.Event {
-        return null;
+        const event_type = js.machEventShift();
+
+        return switch (event_type) {
+            1 => structs.Event{
+                .key_press = .{ .key = @intToEnum(enums.Key, js.machEventShift()) },
+            },
+            2 => structs.Event{
+                .key_release = .{ .key = @intToEnum(enums.Key, js.machEventShift()) },
+            },
+            else => null,
+        };
     }
 };
 
