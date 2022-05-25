@@ -9,7 +9,6 @@ pub const StrokerLineCap = enum(u2) {
     round = c.FT_STROKER_LINECAP_ROUND,
     square = c.FT_STROKER_LINECAP_SQUARE,
 };
-
 pub const StrokerLineJoin = enum(u2) {
     round = c.FT_STROKER_LINEJOIN_ROUND,
     bevel = c.FT_STROKER_LINEJOIN_BEVEL,

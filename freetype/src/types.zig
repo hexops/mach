@@ -18,7 +18,6 @@ pub const BBox = extern struct {
     xMax: c_long,
     yMax: c_long,
 };
-
 pub const RenderMode = enum(u3) {
     normal = c.FT_RENDER_MODE_NORMAL,
     light = c.FT_RENDER_MODE_LIGHT,
@@ -27,7 +26,6 @@ pub const RenderMode = enum(u3) {
     lcd_v = c.FT_RENDER_MODE_LCD_V,
     sdf = c.FT_RENDER_MODE_SDF,
 };
-
 pub const OpenFlags = packed struct {
     memory: bool = false,
     stream: bool = false,
