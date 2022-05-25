@@ -22,7 +22,7 @@ pub fn numContours(self: Outline) u15 {
 }
 
 pub fn points(self: Outline) []const types.Vector {
-    return self.handle.*.points[0..self.numPoints()];
+    return @ptrCast([]types.Vector, self.handle.*.points[0..self.numPoints()]);
 }
 
 pub fn tags(self: Outline) []const u8 {
@@ -39,12 +39,12 @@ pub fn check(self: Outline) Error!void {
 
 pub fn transform(self: Outline, matrix: ?types.Matrix) void {
     var m = matrix orelse std.mem.zeroes(types.Matrix);
-    c.FT_Outline_Transform(self.handle, &m);
+    c.FT_Outline_Transform(self.handle, @ptrCast(*c.FT_Matrix, &m));
 }
 
 pub fn bbox(self: Outline) Error!types.BBox {
     var res = std.mem.zeroes(types.BBox);
-    try convertError(c.FT_Outline_Get_BBox(self.handle, &res));
+    try convertError(c.FT_Outline_Get_BBox(self.handle, @ptrCast(*c.FT_BBox, &res)));
     return res;
 }
 

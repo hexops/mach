@@ -2,10 +2,22 @@ const std = @import("std");
 const c = @import("c.zig");
 const utils = @import("utils.zig");
 
-pub const Vector = c.FT_Vector;
-pub const Matrix = c.FT_Matrix;
-pub const Pos = c.FT_Pos;
-pub const BBox = c.FT_BBox;
+pub const Vector = extern struct {
+    x: c_long,
+    y: c_long,
+};
+pub const Matrix = extern struct {
+    xx: c_long,
+    xy: c_long,
+    yx: c_long,
+    yy: c_long,
+};
+pub const BBox = extern struct {
+    xMin: c_long,
+    yMin: c_long,
+    xMax: c_long,
+    yMax: c_long,
+};
 
 pub const RenderMode = enum(u3) {
     normal = c.FT_RENDER_MODE_NORMAL,
