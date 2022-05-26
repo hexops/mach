@@ -1,5 +1,5 @@
 // TODO:
-// - handle textures better witexture atlas
+// - handle textures better with texture atlas
 // - handle adding and removing triangles and quads better
 
 const std = @import("std");
@@ -10,10 +10,14 @@ const zigimg = @import("zigimg");
 const glfw = @import("glfw");
 const draw = @import("draw.zig");
 const Atlas = @import("atlas.zig").Atlas;
+const ft = @import("freetype");
+const Label = @import("text.zig");
 
 pub const options = mach.Options{ .width = 640, .height = 480 };
 
 pub const App = @This();
+
+const AtlasRGB8 = Atlas(zigimg.color.Rgba32);
 
 pipeline: gpu.RenderPipeline,
 queue: gpu.Queue,
@@ -26,18 +30,17 @@ frag_uniform_buffer: gpu.Buffer,
 fragment_uniform_list: std.ArrayList(draw.FragUniform),
 update_frag_uniform_buffer: bool,
 bind_group: gpu.BindGroup,
+texture_atlas_data: AtlasRGB8,
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
     try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
     const queue = engine.gpu_driver.device.getQueue();
 
-    const AtlasRGB8 = Atlas(zigimg.color.Rgba32);
     // TODO: Refactor texture atlas size number
-    var texture_atlas_data: AtlasRGB8 = try AtlasRGB8.init(engine.allocator, 640);
-    defer texture_atlas_data.deinit(engine.allocator);
-    const atlas_size = gpu.Extent3D{ .width = texture_atlas_data.size, .height = texture_atlas_data.size };
-    const atlas_float_size = @intToFloat(f32, texture_atlas_data.size);
+    app.texture_atlas_data = try AtlasRGB8.init(engine.allocator, 1280);
+    const atlas_size = gpu.Extent3D{ .width = app.texture_atlas_data.size, .height = app.texture_atlas_data.size };
+    const atlas_float_size = @intToFloat(f32, app.texture_atlas_data.size);
 
     const texture = engine.gpu_driver.device.createTexture(&.{
         .size = atlas_size,
@@ -56,36 +59,45 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const img = try zigimg.Image.fromMemory(engine.allocator, @embedFile("../assets/gotta-go-fast.png"));
     defer img.deinit();
 
-    const atlas_img_region = try texture_atlas_data.reserve(engine.allocator, @truncate(u32, img.width), @truncate(u32, img.height));
+    const atlas_img_region = try app.texture_atlas_data.reserve(engine.allocator, @truncate(u32, img.width), @truncate(u32, img.height));
     const img_uv_data = atlas_img_region.getUVData(atlas_float_size);
 
     switch (img.pixels.?) {
-        .Rgba32 => |pixels| texture_atlas_data.set(atlas_img_region, pixels),
+        .Rgba32 => |pixels| app.texture_atlas_data.set(atlas_img_region, pixels),
         .Rgb24 => |pixels| {
             const data = try rgb24ToRgba32(engine.allocator, pixels);
             defer data.deinit(engine.allocator);
-            texture_atlas_data.set(atlas_img_region, data.Rgba32);
+            app.texture_atlas_data.set(atlas_img_region, data.Rgba32);
         },
         else => @panic("unsupported image color format"),
     }
 
     const white_tex_scale = 80;
-    const atlas_white_region = try texture_atlas_data.reserve(engine.allocator, white_tex_scale, white_tex_scale);
+    const atlas_white_region = try app.texture_atlas_data.reserve(engine.allocator, white_tex_scale, white_tex_scale);
     const white_texture_uv_data = atlas_white_region.getUVData(atlas_float_size);
     var white_tex_data = try engine.allocator.alloc(zigimg.color.Rgba32, white_tex_scale * white_tex_scale);
     std.mem.set(zigimg.color.Rgba32, white_tex_data, zigimg.color.Rgba32.initRGB(0xff, 0xff, 0xff));
-    texture_atlas_data.set(atlas_white_region, white_tex_data);
+    app.texture_atlas_data.set(atlas_white_region, white_tex_data);
+
+    app.vertices = try std.ArrayList(draw.Vertex).initCapacity(engine.allocator, 9);
+    app.fragment_uniform_list = try std.ArrayList(draw.FragUniform).initCapacity(engine.allocator, 3);
+
+    // Quick test for using freetype
+    const lib = try ft.Library.init();
+    defer lib.deinit();
+
+    var label = try Label.init(lib, "freetype/upstream/assets/FiraSans-Regular.ttf", 0, 40, engine.allocator);
+    defer label.deinit();
+
+    try label.print(app, "All your game's bases are belong to us", .{}, @Vector(2, f32){ 0, 420 }, @Vector(4, f32){ 1, 1, 1, 1 });
 
     queue.writeTexture(
         &.{ .texture = texture },
         &data_layout,
-        &.{ .width = texture_atlas_data.size, .height = texture_atlas_data.size },
+        &.{ .width = app.texture_atlas_data.size, .height = app.texture_atlas_data.size },
         zigimg.color.Rgba32,
-        texture_atlas_data.data,
+        app.texture_atlas_data.data,
     );
-
-    app.vertices = try std.ArrayList(draw.Vertex).initCapacity(engine.allocator, 9);
-    app.fragment_uniform_list = try std.ArrayList(draw.FragUniform).initCapacity(engine.allocator, 3);
 
     const wsize = try engine.core.getWindowSize();
     const window_width = @intToFloat(f32, wsize.width);
@@ -99,8 +111,8 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 }, triangle_scale, .{}, img_uv_data);
     // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 - triangle_scale }, triangle_scale, .{ .type = .concave }, img_uv_data);
     // try draw.equilateralTriangle(app, .{ window_width / 2 - triangle_scale, window_height / 2 - triangle_scale / 2 }, triangle_scale, .{ .type = .convex }, white_texture_uv_data);
-    // try draw.quad(app, .{ 0, 0 }, .{ 200, 200 }, .{}, img_uv_data);
-    try draw.circle(app, .{ window_width / 2, window_height / 2 }, window_height / 2 - 10, .{ 0, 0.5, 0.75, 1.0 }, white_texture_uv_data);
+    // try draw.quad(app, .{ 0, 0 }, .{ 480, 480 }, .{}, .{ .bottom_left = .{ 0, 0 }, .width_and_height = .{ 1, 1 } });
+    // try draw.circle(app, .{ window_width / 2, window_height / 2 }, window_height / 2 - 10, .{ 0, 0.5, 0.75, 1.0 }, white_texture_uv_data);
 
     const vs_module = engine.gpu_driver.device.createShaderModule(&.{
         .label = "my vertex shader",
@@ -224,13 +236,14 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     bgl.release();
 }
 
-pub fn deinit(app: *App, _: *mach.Engine) void {
+pub fn deinit(app: *App, engine: *mach.Engine) void {
     app.vertex_buffer.release();
     app.vertex_uniform_buffer.release();
     app.frag_uniform_buffer.release();
     app.bind_group.release();
     app.vertices.deinit();
     app.fragment_uniform_list.deinit();
+    app.texture_atlas_data.deinit(engine.allocator);
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
