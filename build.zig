@@ -54,7 +54,7 @@ pub fn build(b: *std.build.Builder) void {
                 .name = "example-" ++ example.name,
                 .src = "examples/" ++ example.name ++ "/main.zig",
                 .target = target,
-                .deps = comptime example.packages ++ &[_]Pkg{ glfw.pkg, gpu.pkg, pkg },
+                .deps = example.packages,
             },
         );
         example_app.setBuildMode(mode);
@@ -79,7 +79,6 @@ pub fn build(b: *std.build.Builder) void {
                 .name = "shaderexp",
                 .src = "shaderexp/main.zig",
                 .target = target,
-                .deps = &.{ glfw.pkg, gpu.pkg, pkg },
             },
         );
         shaderexp_app.setBuildMode(mode);
@@ -133,10 +132,16 @@ pub const App = struct {
         target: std.zig.CrossTarget,
         deps: ?[]const Pkg = null,
     }) App {
+        const mach_deps: []const Pkg = &.{ glfw.pkg, gpu.pkg, pkg };
+        const deps = if (options.deps) |app_deps|
+            std.mem.concat(b.allocator, Pkg, &.{ mach_deps, app_deps }) catch unreachable
+        else
+            mach_deps;
+
         const app_pkg = std.build.Pkg{
             .name = "app",
             .path = .{ .path = options.src },
-            .dependencies = options.deps,
+            .dependencies = deps,
         };
 
         const step = blk: {
@@ -200,7 +205,7 @@ pub const App = struct {
 pub const pkg = std.build.Pkg{
     .name = "mach",
     .path = .{ .path = thisDir() ++ "/src/main.zig" },
-    .dependencies = &.{ gpu.pkg, glfw.pkg },
+    .dependencies = &.{gpu.pkg},
 };
 
 fn thisDir() []const u8 {
