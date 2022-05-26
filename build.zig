@@ -121,6 +121,8 @@ const Packages = struct {
     };
 };
 
+const web_install_dir = std.build.InstallDir{ .custom = "www" };
+
 pub const App = struct {
     b: *std.build.Builder,
     name: []const u8,
@@ -172,6 +174,27 @@ pub const App = struct {
 
     pub fn install(app: *const App) void {
         app.step.install();
+
+        // Install additional files (src/mach.js and template.html)
+        // in case of wasm
+        if (app.step.target.toTarget().cpu.arch == .wasm32) {
+            // Set install directory to '{prefix}/www'
+            app.step.install_step.?.dest_dir = web_install_dir;
+
+            const install_mach_js = app.b.addInstallFileWithDir(
+                .{ .path = thisDir() ++ "/src/mach.js" },
+                web_install_dir,
+                "mach.js",
+            );
+            app.step.install_step.?.step.dependOn(&install_mach_js.step);
+
+            const install_template_html = app.b.addInstallFileWithDir(
+                .{ .path = thisDir() ++ "/www/template.html" },
+                web_install_dir,
+                "application.html",
+            );
+            app.step.install_step.?.step.dependOn(&install_template_html.step);
+        }
     }
 
     pub fn link(app: *const App, options: Options) void {
