@@ -122,7 +122,7 @@ const Packages = struct {
     };
 };
 
-const App = struct {
+pub const App = struct {
     b: *std.build.Builder,
     name: []const u8,
     step: *std.build.LibExeObjStep,
@@ -142,12 +142,12 @@ const App = struct {
         const step = blk: {
             if (options.target.toTarget().cpu.arch == .wasm32) {
                 // TODO: use options.name
-                const lib = b.addSharedLibrary("application", "src/wasm.zig", .unversioned);
+                const lib = b.addSharedLibrary("application", thisDir() ++ "/src/wasm.zig", .unversioned);
                 lib.addPackage(gpu.pkg);
 
                 break :blk lib;
             } else {
-                const exe = b.addExecutable(options.name, "src/native.zig");
+                const exe = b.addExecutable(options.name, thisDir() ++ "/src/native.zig");
                 exe.addPackage(gpu.pkg);
                 exe.addPackage(glfw.pkg);
 
