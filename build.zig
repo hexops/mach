@@ -147,8 +147,7 @@ pub const App = struct {
 
         const step = blk: {
             if (options.target.toTarget().cpu.arch == .wasm32) {
-                // TODO: use options.name
-                const lib = b.addSharedLibrary("application", thisDir() ++ "/src/wasm.zig", .unversioned);
+                const lib = b.addSharedLibrary(options.name, thisDir() ++ "/src/wasm.zig", .unversioned);
                 lib.addPackage(gpu.pkg);
 
                 break :blk lib;
@@ -187,12 +186,15 @@ pub const App = struct {
             );
             app.getInstallStep().?.step.dependOn(&install_mach_js.step);
 
-            const install_template_html = app.b.addInstallFileWithDir(
-                .{ .path = thisDir() ++ "/www/template.html" },
-                web_install_dir,
-                "application.html",
-            );
-            app.getInstallStep().?.step.dependOn(&install_template_html.step);
+            const html_generator = app.b.addExecutable("html-generator", thisDir() ++ "/tools/html-generator.zig");
+            const run_html_generator = html_generator.run();
+            run_html_generator.addArgs(&.{ std.mem.concat(
+                app.b.allocator,
+                u8,
+                &.{ app.name, ".html" },
+            ) catch unreachable, app.name });
+            run_html_generator.cwd = app.b.getInstallPath(web_install_dir, "");
+            app.getInstallStep().?.step.dependOn(&run_html_generator.step);
         }
     }
 
@@ -237,13 +239,12 @@ pub const App = struct {
                     .macos, .windows => "open",
                     else => "xdg-open", // Assume linux-like
                 },
-                // TODO: use actual application name
-                app.b.fmt("http://{s}:{s}/{s}.html", .{ address, port, "application" }),
+                app.b.fmt("http://{s}:{s}/{s}.html", .{ address, port, app.name }),
             });
             launch.step.dependOn(&app.getInstallStep().?.step);
 
             const serve = http_server.run();
-            serve.addArgs(&.{ "application", address, port });
+            serve.addArgs(&.{ app.name, address, port });
             serve.step.dependOn(&launch.step);
             serve.cwd = app.b.getInstallPath(web_install_dir, "");
 
