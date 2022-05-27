@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 pub const gpu = @import("gpu/build.zig");
 const gpu_dawn = @import("gpu-dawn/build.zig");
 pub const glfw = @import("glfw/build.zig");
@@ -64,12 +65,10 @@ pub fn build(b: *std.build.Builder) void {
         const example_compile_step = b.step("example-" ++ example.name, "Compile '" ++ example.name ++ "' example");
         example_compile_step.dependOn(&example_app.getInstallStep().?.step);
 
-        if (target.toTarget().cpu.arch != .wasm32) {
-            const example_run_cmd = example_app.run();
-            example_run_cmd.step.dependOn(&example_app.getInstallStep().?.step);
-            const example_run_step = b.step("run-example-" ++ example.name, "Run '" ++ example.name ++ "' example");
-            example_run_step.dependOn(&example_run_cmd.step);
-        }
+        const example_run_cmd = example_app.run();
+        example_run_cmd.step.dependOn(&example_app.getInstallStep().?.step);
+        const example_run_step = b.step("run-example-" ++ example.name, "Run '" ++ example.name ++ "' example");
+        example_run_step.dependOn(&example_run_cmd.step);
     }
 
     if (target.toTarget().cpu.arch != .wasm32) {
@@ -218,10 +217,32 @@ pub const App = struct {
     }
 
     pub fn run(app: *const App) *std.build.RunStep {
-        if (app.step.target.toTarget().cpu.arch != .wasm32) {
+        if (app.step.target.toTarget().cpu.arch == .wasm32) {
+            const http_server = app.b.addExecutable("http-server", "tools/http-server.zig");
+            http_server.addPackage(.{
+                .name = "apple_pie",
+                .path = .{ .path = "tools/libs/apple_pie/src/apple_pie.zig" },
+            });
+
+            const launch = app.b.addSystemCommand(&.{
+                switch (builtin.os.tag) {
+                    .macos, .windows => "open",
+                    else => "xdg-open", // Assume linux-like
+                },
+                // TODO: use actual application name
+                "http://127.0.0.1:8000/application.html",
+            });
+            launch.step.dependOn(&app.step.install_step.?.step);
+
+            const serve = http_server.run();
+            serve.addArg("application");
+            serve.step.dependOn(&launch.step);
+            serve.cwd = app.b.getInstallPath(web_install_dir, "");
+
+            return serve;
+        } else {
             return app.step.run();
         }
-        unreachable;
     }
 };
 
