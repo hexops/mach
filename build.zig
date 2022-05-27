@@ -229,18 +229,21 @@ pub const App = struct {
             // This is because running the server would block the process (a limitation of current
             // RunStep). So we assume that (xdg-)open is a launcher and not a blocking process.
 
+            const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch "127.0.0.1";
+            const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch "8000";
+
             const launch = app.b.addSystemCommand(&.{
                 switch (builtin.os.tag) {
                     .macos, .windows => "open",
                     else => "xdg-open", // Assume linux-like
                 },
                 // TODO: use actual application name
-                "http://127.0.0.1:8000/application.html",
+                app.b.fmt("http://{s}:{s}/{s}.html", .{ address, port, "application" }),
             });
             launch.step.dependOn(&app.getInstallStep().?.step);
 
             const serve = http_server.run();
-            serve.addArg("application");
+            serve.addArgs(&.{ "application", address, port });
             serve.step.dependOn(&launch.step);
             serve.cwd = app.b.getInstallPath(web_install_dir, "");
 
