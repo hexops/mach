@@ -53,7 +53,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .rows_per_image = @intCast(u32, atlas_size.height),
     };
 
-    const img = try zigimg.Image.fromFilePath(engine.allocator, "examples/assets/gotta-go-fast.png");
+    const img = try zigimg.Image.fromMemory(engine.allocator, @embedFile("../assets/gotta-go-fast.png"));
     defer img.deinit();
 
     const atlas_img_region = try texture_atlas_data.reserve(engine.allocator, @truncate(u32, img.width), @truncate(u32, img.height));

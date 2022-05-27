@@ -37,8 +37,8 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg }, .std_platform_only = true },
-        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg }, .std_platform_only = true },
+        .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
+        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
     }) |example| {
         // FIXME: this is workaround for a problem that some examples (having the std_platform_only=true field) as
         // well as zigimg uses IO which is not supported in freestanding environments. So break out of this loop

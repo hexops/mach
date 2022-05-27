@@ -113,7 +113,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .min_filter = .linear,
     });
     const queue = engine.gpu_driver.device.getQueue();
-    const img = try zigimg.Image.fromFilePath(engine.allocator, "examples/assets/gotta-go-fast.png");
+    const img = try zigimg.Image.fromMemory(engine.allocator, @embedFile("../assets/gotta-go-fast.png"));
     const img_size = gpu.Extent3D{ .width = @intCast(u32, img.width), .height = @intCast(u32, img.height) };
     const cube_texture = engine.gpu_driver.device.createTexture(&.{
         .size = img_size,
