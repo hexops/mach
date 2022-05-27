@@ -178,21 +178,21 @@ pub const App = struct {
         // in case of wasm
         if (app.step.target.toTarget().cpu.arch == .wasm32) {
             // Set install directory to '{prefix}/www'
-            app.step.install_step.?.dest_dir = web_install_dir;
+            app.getInstallStep().?.dest_dir = web_install_dir;
 
             const install_mach_js = app.b.addInstallFileWithDir(
                 .{ .path = thisDir() ++ "/src/mach.js" },
                 web_install_dir,
                 "mach.js",
             );
-            app.step.install_step.?.step.dependOn(&install_mach_js.step);
+            app.getInstallStep().?.step.dependOn(&install_mach_js.step);
 
             const install_template_html = app.b.addInstallFileWithDir(
                 .{ .path = thisDir() ++ "/www/template.html" },
                 web_install_dir,
                 "application.html",
             );
-            app.step.install_step.?.step.dependOn(&install_template_html.step);
+            app.getInstallStep().?.step.dependOn(&install_template_html.step);
         }
     }
 
@@ -218,11 +218,16 @@ pub const App = struct {
 
     pub fn run(app: *const App) *std.build.RunStep {
         if (app.step.target.toTarget().cpu.arch == .wasm32) {
-            const http_server = app.b.addExecutable("http-server", "tools/http-server.zig");
+            const http_server = app.b.addExecutable("http-server", thisDir() ++ "/tools/http-server.zig");
             http_server.addPackage(.{
                 .name = "apple_pie",
                 .path = .{ .path = "tools/libs/apple_pie/src/apple_pie.zig" },
             });
+
+            // NOTE: The launch actually takes place in reverse order. The browser is launched first
+            // and then the http-server.
+            // This is because running the server would block the process (a limitation of current
+            // RunStep). So we assume that (xdg-)open is a launcher and not a blocking process.
 
             const launch = app.b.addSystemCommand(&.{
                 switch (builtin.os.tag) {
@@ -232,7 +237,7 @@ pub const App = struct {
                 // TODO: use actual application name
                 "http://127.0.0.1:8000/application.html",
             });
-            launch.step.dependOn(&app.step.install_step.?.step);
+            launch.step.dependOn(&app.getInstallStep().?.step);
 
             const serve = http_server.run();
             serve.addArg("application");
