@@ -216,6 +216,7 @@ fn determineSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const
         return sdk_root_dir;
     } else |err| return switch (err) {
         error.FileNotFound => {
+            ensureGit(allocator);
             std.log.info("cloning required sdk..\ngit clone https://github.com/{s}/{s} '{s}'..\n", .{ org, name, sdk_root_dir });
             if (std.mem.startsWith(u8, name, "sdk-macos-")) {
                 if (!try confirmAppleSDKAgreement(allocator)) @panic("cannot continue");
@@ -268,5 +269,25 @@ fn confirmAppleSDKAgreement(allocator: std.mem.Allocator) !bool {
         return std.mem.eql(u8, in, "y") or std.mem.eql(u8, in, "Y") or std.mem.eql(u8, in, "yes") or std.mem.eql(u8, in, "");
     } else {
         return false;
+    }
+}
+
+fn ensureGit(allocator: std.mem.Allocator) void {
+    const argv = &[_][]const u8{ "git", "--version" };
+    const result = std.ChildProcess.exec(.{
+        .allocator = allocator,
+        .argv = argv,
+        .cwd = ".",
+    }) catch { // e.g. FileNotFound
+        std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
+        std.process.exit(1);
+    };
+    defer {
+        allocator.free(result.stderr);
+        allocator.free(result.stdout);
+    }
+    if (result.term.Exited != 0) {
+        std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
+        std.process.exit(1);
     }
 }
