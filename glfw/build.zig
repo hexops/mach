@@ -43,7 +43,7 @@ pub const Options = struct {
 
 pub const pkg = std.build.Pkg{
     .name = "glfw",
-    .path = .{ .path = thisDir() ++ "/src/main.zig" },
+    .source = .{ .path = thisDir() ++ "/src/main.zig" },
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {

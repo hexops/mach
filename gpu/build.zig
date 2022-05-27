@@ -40,7 +40,7 @@ pub const Options = struct {
 
 pub const pkg = std.build.Pkg{
     .name = "gpu",
-    .path = .{ .path = thisDir() ++ "/src/main.zig" },
+    .source = .{ .path = thisDir() ++ "/src/main.zig" },
     .dependencies = &.{glfw.pkg},
 };
 
