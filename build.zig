@@ -118,11 +118,11 @@ const Packages = struct {
     // Declared here because submodule may not be cloned at the time build.zig runs.
     const zmath = std.build.Pkg{
         .name = "zmath",
-        .path = .{ .path = "examples/libs/zmath/src/zmath.zig" },
+        .source = .{ .path = "examples/libs/zmath/src/zmath.zig" },
     };
     const zigimg = std.build.Pkg{
         .name = "zigimg",
-        .path = .{ .path = "examples/libs/zigimg/zigimg.zig" },
+        .source = .{ .path = "examples/libs/zigimg/zigimg.zig" },
     };
 };
 
@@ -147,7 +147,7 @@ pub const App = struct {
 
         const app_pkg = std.build.Pkg{
             .name = "app",
-            .path = .{ .path = options.src },
+            .source = .{ .path = options.src },
             .dependencies = deps,
         };
 
@@ -231,7 +231,7 @@ pub const App = struct {
             const http_server = app.b.addExecutable("http-server", thisDir() ++ "/tools/http-server.zig");
             http_server.addPackage(.{
                 .name = "apple_pie",
-                .path = .{ .path = "tools/libs/apple_pie/src/apple_pie.zig" },
+                .source = .{ .path = "tools/libs/apple_pie/src/apple_pie.zig" },
             });
 
             // NOTE: The launch actually takes place in reverse order. The browser is launched first
@@ -265,7 +265,7 @@ pub const App = struct {
 
 pub const pkg = std.build.Pkg{
     .name = "mach",
-    .path = .{ .path = thisDir() ++ "/src/main.zig" },
+    .source = .{ .path = thisDir() ++ "/src/main.zig" },
     .dependencies = &.{gpu.pkg},
 };
 
