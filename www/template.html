@@ -3,35 +3,35 @@
   <head>
     <meta charset="utf-8">
     <style>
-      canvas {
+      canvas {{
         border: 1px solid;
-      }
+      }}
     </style>
   </head>
   <body>
     <script type="module">
-      import { mach } from "./mach.js";
+      import {{ mach }} from "./mach.js";
 
-      let imports = {
+      let imports = {{
         env: mach,
-      };
+      }};
 
-      fetch("application.wasm")
+	  fetch("{s}.wasm")
         .then(response => response.arrayBuffer())
         .then(buffer => WebAssembly.instantiate(buffer, imports))
         .then(results => results.instance)
-        .then(instance => {
+        .then(instance => {{
           mach.init(instance);
           instance.exports.wasmInit();
 
-          let update = function() {
+          let update = function() {{
             const r = instance.exports.wasmUpdate();
             if (r) requestAnimationFrame(update)
             else instance.exports.wasmDeinit();
-          };
+          }};
 
           requestAnimationFrame(update);
-        })
+        }})
         .catch(err => console.error(err));
     </script>
   </body>
