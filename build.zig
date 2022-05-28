@@ -220,6 +220,8 @@ pub const App = struct {
 
     pub fn run(app: *const App) *std.build.RunStep {
         if (app.step.target.toTarget().cpu.arch == .wasm32) {
+            ensureDependencySubmodule(app.b.allocator, "tools/libs/apple_pie") catch unreachable;
+
             const http_server = app.b.addExecutable("http-server", thisDir() ++ "/tools/http-server.zig");
             http_server.addPackage(.{
                 .name = "apple_pie",
