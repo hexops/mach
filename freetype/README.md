@@ -71,7 +71,7 @@ const freetype = @import("freetype");
 See the `examples/` directory. for running each example do:
 
 ```sh
-zig build run-example-<name> # e.g run-example-single_glyph
+zig build run-example-<name> # e.g run-example-single-glyph
 ```
 
 ## Join the community
