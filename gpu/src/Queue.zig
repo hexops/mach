@@ -105,11 +105,10 @@ pub const Descriptor = struct {
 };
 
 pub const WorkDoneStatus = enum(u32) {
-    Success = 0x00000000,
-    Error = 0x00000001,
-    Unknown = 0x00000002,
-    DeviceLost = 0x00000003,
-    Force32 = 0x7FFFFFFF,
+    success = 0x00000000,
+    err = 0x00000001,
+    unknown = 0x00000002,
+    device_lost = 0x00000003,
 };
 
 test {
