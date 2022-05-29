@@ -201,6 +201,8 @@ fn determineSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const
         else => |e| return e,
     }
 
+    ensureGit(allocator);
+
     // If the SDK exists, return it. Otherwise, clone it.
     if (std.fs.openDirAbsolute(sdk_root_dir, .{})) {
         const current_revision = try getCurrentGitRevision(allocator, sdk_root_dir);
@@ -216,7 +218,6 @@ fn determineSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const
         return sdk_root_dir;
     } else |err| return switch (err) {
         error.FileNotFound => {
-            ensureGit(allocator);
             std.log.info("cloning required sdk..\ngit clone https://github.com/{s}/{s} '{s}'..\n", .{ org, name, sdk_root_dir });
             if (std.mem.startsWith(u8, name, "sdk-macos-")) {
                 if (!try confirmAppleSDKAgreement(allocator)) @panic("cannot continue");
