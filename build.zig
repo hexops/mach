@@ -27,6 +27,7 @@ pub fn build(b: *std.build.Builder) void {
     test_step.dependOn(&main_tests.step);
 
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
+    ensureGit(b.allocator);
     ensureDependencySubmodule(b.allocator, "examples/libs/zmath") catch unreachable;
     ensureDependencySubmodule(b.allocator, "examples/libs/zigimg") catch unreachable;
     ensureDependencySubmodule(b.allocator, "examples/assets") catch unreachable;
@@ -284,4 +285,24 @@ fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !vo
     child.stdout = std.io.getStdOut();
 
     _ = try child.spawnAndWait();
+}
+
+fn ensureGit(allocator: std.mem.Allocator) void {
+    const argv = &[_][]const u8{ "git", "--version" };
+    const result = std.ChildProcess.exec(.{
+        .allocator = allocator,
+        .argv = argv,
+        .cwd = ".",
+    }) catch { // e.g. FileNotFound
+        std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
+        std.process.exit(1);
+    };
+    defer {
+        allocator.free(result.stderr);
+        allocator.free(result.stdout);
+    }
+    if (result.term.Exited != 0) {
+        std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
+        std.process.exit(1);
+    }
 }
