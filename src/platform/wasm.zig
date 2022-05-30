@@ -110,6 +110,11 @@ pub const BackingTimer = struct {
     }
 };
 
+const common = @import("common.zig");
+comptime {
+    common.checkApplication(App);
+}
+
 var app: App = undefined;
 var engine: Engine = undefined;
 
