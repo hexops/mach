@@ -15,6 +15,9 @@ pub const Core = struct {
     events: EventQueue = .{},
     user_ptr: UserPtr = undefined,
 
+    last_window_size: structs.Size,
+    last_framebuffer_size: structs.Size,
+
     const EventQueue = std.TailQueue(structs.Event);
     const EventNode = EventQueue.Node;
 
@@ -41,10 +44,15 @@ pub const Core = struct {
             hints,
         );
 
+        const window_size = try window.getSize();
+        const framebuffer_size = try window.getFramebufferSize();
+
         return Core{
             .window = window,
             .backend_type = backend_type,
             .allocator = engine.allocator,
+            .last_window_size = .{ .width = window_size.width, .height = window_size.height },
+            .last_framebuffer_size = .{ .width = framebuffer_size.width, .height = framebuffer_size.height },
         };
     }
 
@@ -82,20 +90,36 @@ pub const Core = struct {
             }
         }.callback;
         self.window.setKeyCallback(callback);
+
+        const size_callback = struct {
+            fn callback(window: glfw.Window, width: i32, height: i32) void {
+                const core = (window.getUserPointer(UserPtr) orelse unreachable).core;
+                core.last_window_size.width = @intCast(u32, width);
+                core.last_window_size.height = @intCast(u32, height);
+            }
+        }.callback;
+        self.window.setSizeCallback(size_callback);
+
+        const framebuffer_size_callback = struct {
+            fn callback(window: glfw.Window, width: u32, height: u32) void {
+                const core = (window.getUserPointer(UserPtr) orelse unreachable).core;
+                core.last_framebuffer_size.width = width;
+                core.last_framebuffer_size.height = height;
+            }
+        }.callback;
+        self.window.setFramebufferSizeCallback(framebuffer_size_callback);
     }
 
     pub fn setShouldClose(self: *Core, value: bool) void {
         self.window.setShouldClose(value);
     }
 
-    pub fn getFramebufferSize(self: *Core) !structs.Size {
-        const size = try self.window.getFramebufferSize();
-        return @bitCast(structs.Size, size);
+    pub fn getFramebufferSize(self: *Core) structs.Size {
+        return self.last_framebuffer_size;
     }
 
-    pub fn getWindowSize(self: *Core) !structs.Size {
-        const size = try self.window.getSize();
-        return @bitCast(structs.Size, size);
+    pub fn getWindowSize(self: *Core) structs.Size {
+        return self.last_window_size;
     }
 
     pub fn setSizeLimits(self: *Core, min: structs.SizeOptional, max: structs.SizeOptional) !void {
@@ -325,7 +349,7 @@ pub const GpuDriver = struct {
             },
         };
 
-        var framebuffer_size = try window.getFramebufferSize();
+        var framebuffer_size = try engine.core.getFramebufferSize();
 
         // If targeting OpenGL, we can't use the newer WGPUSurface API. Instead, we need to use the
         // older Dawn-specific API. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
@@ -416,7 +440,7 @@ pub fn main() !void {
         engine.delta_time_ns = engine.timer.lapPrecise();
         engine.delta_time = @intToFloat(f32, engine.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
-        var framebuffer_size = try window.getFramebufferSize();
+        var framebuffer_size = try engine.core.getFramebufferSize();
         engine.gpu_driver.target_desc.width = framebuffer_size.width;
         engine.gpu_driver.target_desc.height = framebuffer_size.height;
 
