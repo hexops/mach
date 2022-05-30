@@ -390,11 +390,9 @@ pub const GpuDriver = struct {
 
 pub const BackingTimer = std.time.Timer;
 
-// TODO: check signatures
+const common = @import("common.zig");
 comptime {
-    if (!@hasDecl(App, "init")) @compileError("App must export 'pub fn init(app: *App, engine: *mach.Engine) !void'");
-    if (!@hasDecl(App, "deinit")) @compileError("App must export 'pub fn deinit(app: *App, engine: *mach.Engine) void'");
-    if (!@hasDecl(App, "update")) @compileError("App must export 'pub fn update(app: *App, engine: *mach.Engine) !bool'");
+    common.checkApplication(App);
 }
 
 pub fn main() !void {
