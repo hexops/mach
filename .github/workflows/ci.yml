@@ -33,6 +33,9 @@ jobs:
       - name: compile all examples
         if: matrix.project == '.'
         run: cd ${{ matrix.project }} && zig build compile-all
+      - name: compile all examples (WASM)
+        if: matrix.project == '.'
+        run: cd ${{ matrix.project }} && zig build compile-all -Dtarget=wasm32-freestanding-none
       - name: launch xvfb
         run: Xvfb :99 -screen 0 1680x720x24 > /dev/null 2>&1 &
       - name: test
@@ -74,6 +77,9 @@ jobs:
       - name: compile all examples
         if: matrix.project == '.'
         run: cd ${{ matrix.project }} && zig build compile-all
+      - name: compile all examples (WASM)
+        if: matrix.project == '.'
+        run: cd ${{ matrix.project }} && zig build compile-all -Dtarget=wasm32-freestanding-none
       - name: test
         run: cd ${{ matrix.project }} && zig build test
   x86_64-macos:
