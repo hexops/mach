@@ -2,9 +2,9 @@ const std = @import("std");
 const glfw = @import("glfw");
 const gpu = @import("gpu");
 const App = @import("app");
-const Engine = @import("Engine.zig");
-const structs = @import("structs.zig");
-const enums = @import("enums.zig");
+const Engine = @import("../Engine.zig");
+const structs = @import("../structs.zig");
+const enums = @import("../enums.zig");
 const util = @import("util.zig");
 const c = @import("c.zig").c;
 

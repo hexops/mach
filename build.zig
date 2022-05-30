@@ -153,12 +153,12 @@ pub const App = struct {
 
         const step = blk: {
             if (options.target.toTarget().cpu.arch == .wasm32) {
-                const lib = b.addSharedLibrary(options.name, thisDir() ++ "/src/wasm.zig", .unversioned);
+                const lib = b.addSharedLibrary(options.name, thisDir() ++ "/src/platform/wasm.zig", .unversioned);
                 lib.addPackage(gpu.pkg);
 
                 break :blk lib;
             } else {
-                const exe = b.addExecutable(options.name, thisDir() ++ "/src/native.zig");
+                const exe = b.addExecutable(options.name, thisDir() ++ "/src/platform/native.zig");
                 exe.addPackage(gpu.pkg);
                 exe.addPackage(glfw.pkg);
 
@@ -166,6 +166,7 @@ pub const App = struct {
             }
         };
 
+        step.main_pkg_path = thisDir() ++ "/src";
         step.addPackage(app_pkg);
         step.setTarget(options.target);
 
@@ -186,7 +187,7 @@ pub const App = struct {
             app.getInstallStep().?.dest_dir = web_install_dir;
 
             const install_mach_js = app.b.addInstallFileWithDir(
-                .{ .path = thisDir() ++ "/src/mach.js" },
+                .{ .path = thisDir() ++ "/src/platform/mach.js" },
                 web_install_dir,
                 "mach.js",
             );

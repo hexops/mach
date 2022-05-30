@@ -1,8 +1,8 @@
 const std = @import("std");
 const App = @import("app");
-const Engine = @import("Engine.zig");
-const structs = @import("structs.zig");
-const enums = @import("enums.zig");
+const Engine = @import("../Engine.zig");
+const structs = @import("../structs.zig");
+const enums = @import("../enums.zig");
 
 const js = struct {
     extern fn machCanvasInit(width: u32, height: u32, selector_id: *u8) CanvasId;
