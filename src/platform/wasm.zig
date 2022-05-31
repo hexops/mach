@@ -44,14 +44,14 @@ pub const Core = struct {
 
     pub fn setShouldClose(_: *Core, _: bool) void {}
 
-    pub fn getFramebufferSize(core: *Core) !structs.Size {
+    pub fn getFramebufferSize(core: *Core) structs.Size {
         return structs.Size{
             .width = js.machCanvasGetFramebufferWidth(core.id),
             .height = js.machCanvasGetFramebufferHeight(core.id),
         };
     }
 
-    pub fn getWindowSize(core: *Core) !structs.Size {
+    pub fn getWindowSize(core: *Core) structs.Size {
         return structs.Size{
             .width = js.machCanvasGetWindowWidth(core.id),
             .height = js.machCanvasGetWindowHeight(core.id),

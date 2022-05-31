@@ -349,7 +349,7 @@ pub const GpuDriver = struct {
             },
         };
 
-        var framebuffer_size = try engine.core.getFramebufferSize();
+        var framebuffer_size = engine.core.getFramebufferSize();
 
         // If targeting OpenGL, we can't use the newer WGPUSurface API. Instead, we need to use the
         // older Dawn-specific API. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
@@ -440,7 +440,7 @@ pub fn main() !void {
         engine.delta_time_ns = engine.timer.lapPrecise();
         engine.delta_time = @intToFloat(f32, engine.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
-        var framebuffer_size = try engine.core.getFramebufferSize();
+        var framebuffer_size = engine.core.getFramebufferSize();
         engine.gpu_driver.target_desc.width = framebuffer_size.width;
         engine.gpu_driver.target_desc.height = framebuffer_size.height;
 
