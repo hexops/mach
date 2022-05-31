@@ -24,11 +24,11 @@ const js = struct {
 
 pub const CanvasId = u32;
 
-pub const Core = struct {
+pub const Platform = struct {
     id: CanvasId,
     selector_id: []const u8,
 
-    pub fn init(allocator: std.mem.Allocator, eng: *Engine) !Core {
+    pub fn init(allocator: std.mem.Allocator, eng: *Engine) !Platform {
         const options = eng.options;
         var selector = [1]u8{0} ** 15;
         const id = js.machCanvasInit(options.width, options.height, &selector[0]);
@@ -36,31 +36,31 @@ pub const Core = struct {
         const title = std.mem.span(options.title);
         js.machCanvasSetTitle(id, title.ptr, title.len);
 
-        return Core{
+        return Platform{
             .id = id,
             .selector_id = try allocator.dupe(u8, selector[0 .. selector.len - @as(u32, if (selector[selector.len - 1] == 0) 1 else 0)]),
         };
     }
 
-    pub fn setShouldClose(_: *Core, _: bool) void {}
+    pub fn setShouldClose(_: *Platform, _: bool) void {}
 
-    pub fn getFramebufferSize(core: *Core) structs.Size {
+    pub fn getFramebufferSize(platform: *Platform) structs.Size {
         return structs.Size{
-            .width = js.machCanvasGetFramebufferWidth(core.id),
-            .height = js.machCanvasGetFramebufferHeight(core.id),
+            .width = js.machCanvasGetFramebufferWidth(platform.id),
+            .height = js.machCanvasGetFramebufferHeight(platform.id),
         };
     }
 
-    pub fn getWindowSize(core: *Core) structs.Size {
+    pub fn getWindowSize(platform: *Platform) structs.Size {
         return structs.Size{
-            .width = js.machCanvasGetWindowWidth(core.id),
-            .height = js.machCanvasGetWindowHeight(core.id),
+            .width = js.machCanvasGetWindowWidth(platform.id),
+            .height = js.machCanvasGetWindowHeight(platform.id),
         };
     }
 
-    pub fn setSizeLimits(_: *Core, _: structs.SizeOptional, _: structs.SizeOptional) !void {}
+    pub fn setSizeLimits(_: *Platform, _: structs.SizeOptional, _: structs.SizeOptional) !void {}
 
-    pub fn pollEvent(_: *Core) ?structs.Event {
+    pub fn pollEvent(_: *Platform) ?structs.Event {
         const event_type = js.machEventShift();
 
         return switch (event_type) {
@@ -72,12 +72,6 @@ pub const Core = struct {
             },
             else => null,
         };
-    }
-};
-
-pub const GpuDriver = struct {
-    pub fn init(_: std.mem.Allocator, _: *Engine) !GpuDriver {
-        return GpuDriver{};
     }
 };
 
