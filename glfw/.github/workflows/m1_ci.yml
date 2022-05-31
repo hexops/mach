@@ -23,7 +23,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Setup Zig
         run: |
-          zig version
+          sudo rm -rf /usr/local/bin/zig /usr/local/bin/lib/
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-aarch64-0.10.0-dev.2431+0e6285c8f.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: test
         run: zig build test
         env:
