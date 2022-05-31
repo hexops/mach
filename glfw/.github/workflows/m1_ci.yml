@@ -1,4 +1,4 @@
-name: CI
+name: M1
 on:
   # SECURITY: This must be a push event only, otherwise our M1 mac runner would be compromised by
   # third-party pull requests which could run arbitrary code. This way, we can restrict it to
