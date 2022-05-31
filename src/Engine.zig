@@ -10,12 +10,6 @@ const Timer = @import("Timer.zig");
 
 const Engine = @This();
 
-/// Window, events, inputs etc.
-core: Core,
-
-/// WebGPU driver - stores device, swap chains, targets and more
-gpu_driver: GpuDriver,
-
 allocator: Allocator,
 
 options: structs.Options,
@@ -29,62 +23,50 @@ delta_time: f32 = 0,
 delta_time_ns: u64 = 0,
 timer: Timer,
 
-pub const Core = struct {
-    internal: platform.CoreType,
+device: gpu.Device,
+backend_type: gpu.Adapter.BackendType,
+swap_chain: ?gpu.SwapChain,
+swap_chain_format: gpu.Texture.Format,
 
-    pub fn setShouldClose(core: *Core, value: bool) void {
-        core.internal.setShouldClose(value);
-    }
+surface: ?gpu.Surface,
+current_desc: gpu.SwapChain.Descriptor,
+target_desc: gpu.SwapChain.Descriptor,
 
-    // Returns the framebuffer size, in subpixel units.
-    //
-    // e.g. returns 1280x960 on macOS for a window that is 640x480
-    pub fn getFramebufferSize(core: *Core) structs.Size {
-        return core.internal.getFramebufferSize();
-    }
-
-    // Returns the widow size, in pixel units.
-    //
-    // e.g. returns 640x480 on macOS for a window that is 640x480
-    pub fn getWindowSize(core: *Core) structs.Size {
-        return core.internal.getWindowSize();
-    }
-
-    pub fn setSizeLimits(core: *Core, min: structs.SizeOptional, max: structs.SizeOptional) !void {
-        return core.internal.setSizeLimits(min, max);
-    }
-
-    pub fn pollEvent(core: *Core) ?structs.Event {
-        return core.internal.pollEvent();
-    }
-};
-
-pub const GpuDriver = struct {
-    internal: platform.GpuDriverType,
-
-    device: gpu.Device,
-    backend_type: gpu.Adapter.BackendType,
-    swap_chain: ?gpu.SwapChain,
-    swap_chain_format: gpu.Texture.Format,
-
-    surface: ?gpu.Surface,
-    current_desc: gpu.SwapChain.Descriptor,
-    target_desc: gpu.SwapChain.Descriptor,
-};
+internal: platform.Type,
 
 pub fn init(allocator: std.mem.Allocator, options: structs.Options) !Engine {
-    var engine = Engine{
-        .allocator = allocator,
-        .options = options,
-        .timer = try Timer.start(),
-        .core = undefined,
-        .gpu_driver = undefined,
-    };
+    var engine: Engine = undefined;
+    engine.allocator = allocator;
+    engine.options = options;
+    engine.timer = try Timer.start();
 
-    // Note: if in future, there is a conflict in init() signature of different backends,
-    // move these calls to the entry point file, which is native.zig for Glfw, for example
-    engine.core.internal = try platform.CoreType.init(allocator, &engine);
-    engine.gpu_driver.internal = try platform.GpuDriverType.init(allocator, &engine);
+    engine.internal = try platform.Type.init(allocator, &engine);
 
     return engine;
+}
+
+pub fn setShouldClose(engine: *Engine, value: bool) void {
+    engine.internal.setShouldClose(value);
+}
+
+// Returns the framebuffer size, in subpixel units.
+//
+// e.g. returns 1280x960 on macOS for a window that is 640x480
+pub fn getFramebufferSize(engine: *Engine) structs.Size {
+    return engine.internal.getFramebufferSize();
+}
+
+// Returns the widow size, in pixel units.
+//
+// e.g. returns 1280x960 on macOS for a window that is 640x480
+pub fn getWindowSize(engine: *Engine) structs.Size {
+    return engine.internal.getWindowSize();
+}
+
+pub fn setSizeLimits(engine: *Engine, min: structs.SizeOptional, max: structs.SizeOptional) !void {
+    return engine.internal.setSizeLimits(min, max);
+}
+
+pub fn pollEvent(engine: *Engine) ?structs.Event {
+    return engine.internal.pollEvent();
 }

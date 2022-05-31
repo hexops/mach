@@ -8,7 +8,7 @@ const enums = @import("../enums.zig");
 const util = @import("util.zig");
 const c = @import("c.zig").c;
 
-pub const Core = struct {
+pub const Platform = struct {
     window: glfw.Window,
     backend_type: gpu.Adapter.BackendType,
     allocator: std.mem.Allocator,
@@ -18,18 +18,20 @@ pub const Core = struct {
     last_window_size: structs.Size,
     last_framebuffer_size: structs.Size,
 
+    native_instance: gpu.NativeInstance,
+
     const EventQueue = std.TailQueue(structs.Event);
     const EventNode = EventQueue.Node;
 
     const UserPtr = struct {
-        core: *Core,
+        platform: *Platform,
     };
 
-    pub fn init(allocator: std.mem.Allocator, engine: *Engine) !Core {
+    pub fn init(allocator: std.mem.Allocator, engine: *Engine) !Platform {
         const options = engine.options;
         const backend_type = try util.detectBackendType(allocator);
 
-        glfw.setErrorCallback(Core.errorCallback);
+        glfw.setErrorCallback(Platform.errorCallback);
         try glfw.init(.{});
 
         // Create the test window and discover adapters using it (esp. for OpenGL)
@@ -47,37 +49,160 @@ pub const Core = struct {
         const window_size = try window.getSize();
         const framebuffer_size = try window.getFramebufferSize();
 
-        return Core{
+        const backend_procs = c.machDawnNativeGetProcs();
+        c.dawnProcSetProcs(backend_procs);
+
+        const instance = c.machDawnNativeInstance_init();
+        var native_instance = gpu.NativeInstance.wrap(c.machDawnNativeInstance_get(instance).?);
+
+        // Discover e.g. OpenGL adapters.
+        try util.discoverAdapters(instance, window, backend_type);
+
+        // Request an adapter.
+        //
+        // TODO: It would be nice if we could use gpu_interface.waitForAdapter here, however the webgpu.h
+        // API does not yet have a way to specify what type of backend you want (vulkan, opengl, etc.)
+        // In theory, I suppose we shouldn't need to and Dawn should just pick the best adapter - but in
+        // practice if Vulkan is not supported today waitForAdapter/requestAdapter merely generates an error.
+        //
+        // const gpu_interface = native_instance.interface();
+        // const backend_adapter = switch (gpu_interface.waitForAdapter(&.{
+        //     .power_preference = .high_performance,
+        // })) {
+        //     .adapter => |v| v,
+        //     .err => |err| {
+        //         std.debug.print("mach: failed to get adapter: error={} {s}\n", .{ err.code, err.message });
+        //         std.process.exit(1);
+        //     },
+        // };
+        const adapters = c.machDawnNativeInstance_getAdapters(instance);
+        var dawn_adapter: ?c.MachDawnNativeAdapter = null;
+        var i: usize = 0;
+        while (i < c.machDawnNativeAdapters_length(adapters)) : (i += 1) {
+            const adapter = c.machDawnNativeAdapters_index(adapters, i);
+            const properties = c.machDawnNativeAdapter_getProperties(adapter);
+            const found_backend_type = @intToEnum(gpu.Adapter.BackendType, c.machDawnNativeAdapterProperties_getBackendType(properties));
+            if (found_backend_type == backend_type) {
+                dawn_adapter = adapter;
+                break;
+            }
+        }
+        if (dawn_adapter == null) {
+            std.debug.print("mach: no matching adapter found for {s}", .{@tagName(backend_type)});
+            std.debug.print("-> maybe try GPU_BACKEND=opengl ?\n", .{});
+            std.process.exit(1);
+        }
+        std.debug.assert(dawn_adapter != null);
+        const backend_adapter = gpu.NativeInstance.fromWGPUAdapter(c.machDawnNativeAdapter_get(dawn_adapter.?).?);
+
+        // Print which adapter we are going to use.
+        const props = backend_adapter.properties;
+        std.debug.print("mach: found {s} backend on {s} adapter: {s}, {s}\n", .{
+            gpu.Adapter.backendTypeName(props.backend_type),
+            gpu.Adapter.typeName(props.adapter_type),
+            props.name,
+            props.driver_description,
+        });
+
+        const device = switch (backend_adapter.waitForDevice(&.{
+            .required_features = options.required_features,
+            .required_limits = options.required_limits,
+        })) {
+            .device => |v| v,
+            .err => |err| {
+                // TODO: return a proper error type
+                std.debug.print("mach: failed to get device: error={} {s}\n", .{ err.code, err.message });
+                std.process.exit(1);
+            },
+        };
+
+        // If targeting OpenGL, we can't use the newer WGPUSurface API. Instead, we need to use the
+        // older Dawn-specific API. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
+        const use_legacy_api = backend_type == .opengl or backend_type == .opengles;
+        var descriptor: gpu.SwapChain.Descriptor = undefined;
+        var swap_chain: ?gpu.SwapChain = null;
+        var swap_chain_format: gpu.Texture.Format = undefined;
+        var surface: ?gpu.Surface = null;
+        if (!use_legacy_api) {
+            swap_chain_format = .bgra8_unorm;
+            descriptor = .{
+                .label = "basic swap chain",
+                .usage = .{ .render_attachment = true },
+                .format = swap_chain_format,
+                .width = framebuffer_size.width,
+                .height = framebuffer_size.height,
+                .present_mode = switch (options.vsync) {
+                    .none => .immediate,
+                    .double => .fifo,
+                    .triple => .mailbox,
+                },
+                .implementation = 0,
+            };
+            surface = util.createSurfaceForWindow(
+                &native_instance,
+                window,
+                comptime util.detectGLFWOptions(),
+            );
+        } else {
+            const binding = c.machUtilsCreateBinding(@enumToInt(backend_type), @ptrCast(*c.GLFWwindow, window.handle), @ptrCast(c.WGPUDevice, device.ptr));
+            if (binding == null) {
+                @panic("failed to create Dawn backend binding");
+            }
+            descriptor = std.mem.zeroes(gpu.SwapChain.Descriptor);
+            descriptor.implementation = c.machUtilsBackendBinding_getSwapChainImplementation(binding);
+            swap_chain = device.nativeCreateSwapChain(null, &descriptor);
+
+            swap_chain_format = @intToEnum(gpu.Texture.Format, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
+            swap_chain.?.configure(
+                swap_chain_format,
+                .{ .render_attachment = true },
+                framebuffer_size.width,
+                framebuffer_size.height,
+            );
+        }
+
+        device.setUncapturedErrorCallback(&util.printUnhandledErrorCallback);
+
+        engine.device = device;
+        engine.backend_type = backend_type;
+        engine.surface = surface;
+        engine.swap_chain = swap_chain;
+        engine.swap_chain_format = swap_chain_format;
+        engine.current_desc = descriptor;
+        engine.target_desc = descriptor;
+
+        return Platform{
             .window = window,
             .backend_type = backend_type,
             .allocator = engine.allocator,
             .last_window_size = .{ .width = window_size.width, .height = window_size.height },
             .last_framebuffer_size = .{ .width = framebuffer_size.width, .height = framebuffer_size.height },
+            .native_instance = native_instance,
         };
     }
 
-    fn pushEvent(self: *Core, event: structs.Event) void {
-        const node = self.allocator.create(EventNode) catch unreachable;
+    fn pushEvent(platform: *Platform, event: structs.Event) void {
+        const node = platform.allocator.create(EventNode) catch unreachable;
         node.* = .{ .data = event };
-        self.events.append(node);
+        platform.events.append(node);
     }
 
-    fn initCallback(self: *Core) void {
-        self.user_ptr = UserPtr{ .core = self };
+    fn initCallback(platform: *Platform) void {
+        platform.user_ptr = UserPtr{ .platform = platform };
 
-        self.window.setUserPointer(&self.user_ptr);
+        platform.window.setUserPointer(&platform.user_ptr);
 
         const callback = struct {
             fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
-                const core = (window.getUserPointer(UserPtr) orelse unreachable).core;
+                const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
 
                 switch (action) {
-                    .press => core.pushEvent(.{
+                    .press => pf.pushEvent(.{
                         .key_press = .{
                             .key = toMachKey(key),
                         },
                     }),
-                    .release => core.pushEvent(.{
+                    .release => pf.pushEvent(.{
                         .key_release = .{
                             .key = toMachKey(key),
                         },
@@ -89,49 +214,49 @@ pub const Core = struct {
                 _ = mods;
             }
         }.callback;
-        self.window.setKeyCallback(callback);
+        platform.window.setKeyCallback(callback);
 
         const size_callback = struct {
             fn callback(window: glfw.Window, width: i32, height: i32) void {
-                const core = (window.getUserPointer(UserPtr) orelse unreachable).core;
-                core.last_window_size.width = @intCast(u32, width);
-                core.last_window_size.height = @intCast(u32, height);
+                const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
+                pf.last_window_size.width = @intCast(u32, width);
+                pf.last_window_size.height = @intCast(u32, height);
             }
         }.callback;
-        self.window.setSizeCallback(size_callback);
+        platform.window.setSizeCallback(size_callback);
 
         const framebuffer_size_callback = struct {
             fn callback(window: glfw.Window, width: u32, height: u32) void {
-                const core = (window.getUserPointer(UserPtr) orelse unreachable).core;
-                core.last_framebuffer_size.width = width;
-                core.last_framebuffer_size.height = height;
+                const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
+                pf.last_framebuffer_size.width = width;
+                pf.last_framebuffer_size.height = height;
             }
         }.callback;
-        self.window.setFramebufferSizeCallback(framebuffer_size_callback);
+        platform.window.setFramebufferSizeCallback(framebuffer_size_callback);
     }
 
-    pub fn setShouldClose(self: *Core, value: bool) void {
-        self.window.setShouldClose(value);
+    pub fn setShouldClose(platform: *Platform, value: bool) void {
+        platform.window.setShouldClose(value);
     }
 
-    pub fn getFramebufferSize(self: *Core) structs.Size {
-        return self.last_framebuffer_size;
+    pub fn getFramebufferSize(platform: *Platform) structs.Size {
+        return platform.last_framebuffer_size;
     }
 
-    pub fn getWindowSize(self: *Core) structs.Size {
-        return self.last_window_size;
+    pub fn getWindowSize(platform: *Platform) structs.Size {
+        return platform.last_window_size;
     }
 
-    pub fn setSizeLimits(self: *Core, min: structs.SizeOptional, max: structs.SizeOptional) !void {
-        try self.window.setSizeLimits(
+    pub fn setSizeLimits(platform: *Platform, min: structs.SizeOptional, max: structs.SizeOptional) !void {
+        try platform.window.setSizeLimits(
             @bitCast(glfw.Window.SizeOptional, min),
             @bitCast(glfw.Window.SizeOptional, max),
         );
     }
 
-    pub fn pollEvent(self: *Core) ?structs.Event {
-        if (self.events.popFirst()) |n| {
-            defer self.allocator.destroy(n);
+    pub fn pollEvent(platform: *Platform) ?structs.Event {
+        if (platform.events.popFirst()) |n| {
+            defer platform.allocator.destroy(n);
             return n.data;
         }
         return null;
@@ -274,144 +399,6 @@ pub const Core = struct {
     }
 };
 
-pub const GpuDriver = struct {
-    native_instance: gpu.NativeInstance,
-
-    pub fn init(_: std.mem.Allocator, engine: *Engine) !GpuDriver {
-        const options = engine.options;
-        const window = engine.core.internal.window;
-        const backend_type = engine.core.internal.backend_type;
-
-        const backend_procs = c.machDawnNativeGetProcs();
-        c.dawnProcSetProcs(backend_procs);
-
-        const instance = c.machDawnNativeInstance_init();
-        var native_instance = gpu.NativeInstance.wrap(c.machDawnNativeInstance_get(instance).?);
-
-        // Discover e.g. OpenGL adapters.
-        try util.discoverAdapters(instance, window, backend_type);
-
-        // Request an adapter.
-        //
-        // TODO: It would be nice if we could use gpu_interface.waitForAdapter here, however the webgpu.h
-        // API does not yet have a way to specify what type of backend you want (vulkan, opengl, etc.)
-        // In theory, I suppose we shouldn't need to and Dawn should just pick the best adapter - but in
-        // practice if Vulkan is not supported today waitForAdapter/requestAdapter merely generates an error.
-        //
-        // const gpu_interface = native_instance.interface();
-        // const backend_adapter = switch (gpu_interface.waitForAdapter(&.{
-        //     .power_preference = .high_performance,
-        // })) {
-        //     .adapter => |v| v,
-        //     .err => |err| {
-        //         std.debug.print("mach: failed to get adapter: error={} {s}\n", .{ err.code, err.message });
-        //         std.process.exit(1);
-        //     },
-        // };
-        const adapters = c.machDawnNativeInstance_getAdapters(instance);
-        var dawn_adapter: ?c.MachDawnNativeAdapter = null;
-        var i: usize = 0;
-        while (i < c.machDawnNativeAdapters_length(adapters)) : (i += 1) {
-            const adapter = c.machDawnNativeAdapters_index(adapters, i);
-            const properties = c.machDawnNativeAdapter_getProperties(adapter);
-            const found_backend_type = @intToEnum(gpu.Adapter.BackendType, c.machDawnNativeAdapterProperties_getBackendType(properties));
-            if (found_backend_type == backend_type) {
-                dawn_adapter = adapter;
-                break;
-            }
-        }
-        if (dawn_adapter == null) {
-            std.debug.print("mach: no matching adapter found for {s}", .{@tagName(backend_type)});
-            std.debug.print("-> maybe try GPU_BACKEND=opengl ?\n", .{});
-            std.process.exit(1);
-        }
-        std.debug.assert(dawn_adapter != null);
-        const backend_adapter = gpu.NativeInstance.fromWGPUAdapter(c.machDawnNativeAdapter_get(dawn_adapter.?).?);
-
-        // Print which adapter we are going to use.
-        const props = backend_adapter.properties;
-        std.debug.print("mach: found {s} backend on {s} adapter: {s}, {s}\n", .{
-            gpu.Adapter.backendTypeName(props.backend_type),
-            gpu.Adapter.typeName(props.adapter_type),
-            props.name,
-            props.driver_description,
-        });
-
-        const device = switch (backend_adapter.waitForDevice(&.{
-            .required_features = options.required_features,
-            .required_limits = options.required_limits,
-        })) {
-            .device => |v| v,
-            .err => |err| {
-                // TODO: return a proper error type
-                std.debug.print("mach: failed to get device: error={} {s}\n", .{ err.code, err.message });
-                std.process.exit(1);
-            },
-        };
-
-        var framebuffer_size = engine.core.getFramebufferSize();
-
-        // If targeting OpenGL, we can't use the newer WGPUSurface API. Instead, we need to use the
-        // older Dawn-specific API. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
-        const use_legacy_api = backend_type == .opengl or backend_type == .opengles;
-        var descriptor: gpu.SwapChain.Descriptor = undefined;
-        var swap_chain: ?gpu.SwapChain = null;
-        var swap_chain_format: gpu.Texture.Format = undefined;
-        var surface: ?gpu.Surface = null;
-        if (!use_legacy_api) {
-            swap_chain_format = .bgra8_unorm;
-            descriptor = .{
-                .label = "basic swap chain",
-                .usage = .{ .render_attachment = true },
-                .format = swap_chain_format,
-                .width = framebuffer_size.width,
-                .height = framebuffer_size.height,
-                .present_mode = switch (options.vsync) {
-                    .none => .immediate,
-                    .double => .fifo,
-                    .triple => .mailbox,
-                },
-                .implementation = 0,
-            };
-            surface = util.createSurfaceForWindow(
-                &native_instance,
-                window,
-                comptime util.detectGLFWOptions(),
-            );
-        } else {
-            const binding = c.machUtilsCreateBinding(@enumToInt(backend_type), @ptrCast(*c.GLFWwindow, window.handle), @ptrCast(c.WGPUDevice, device.ptr));
-            if (binding == null) {
-                @panic("failed to create Dawn backend binding");
-            }
-            descriptor = std.mem.zeroes(gpu.SwapChain.Descriptor);
-            descriptor.implementation = c.machUtilsBackendBinding_getSwapChainImplementation(binding);
-            swap_chain = device.nativeCreateSwapChain(null, &descriptor);
-
-            swap_chain_format = @intToEnum(gpu.Texture.Format, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
-            swap_chain.?.configure(
-                swap_chain_format,
-                .{ .render_attachment = true },
-                framebuffer_size.width,
-                framebuffer_size.height,
-            );
-        }
-
-        device.setUncapturedErrorCallback(&util.printUnhandledErrorCallback);
-
-        engine.gpu_driver.device = device;
-        engine.gpu_driver.backend_type = backend_type;
-        engine.gpu_driver.surface = surface;
-        engine.gpu_driver.swap_chain = swap_chain;
-        engine.gpu_driver.swap_chain_format = swap_chain_format;
-        engine.gpu_driver.current_desc = descriptor;
-        engine.gpu_driver.target_desc = descriptor;
-
-        return GpuDriver{
-            .native_instance = native_instance,
-        };
-    }
-};
-
 pub const BackingTimer = std.time.Timer;
 
 const common = @import("common.zig");
@@ -431,34 +418,34 @@ pub fn main() !void {
     defer app.deinit(&engine);
 
     // Glfw specific: initialize the user pointer used in callbacks
-    engine.core.internal.initCallback();
+    engine.internal.initCallback();
 
-    const window = engine.core.internal.window;
+    const window = engine.internal.window;
     while (!window.shouldClose()) {
         try glfw.pollEvents();
 
         engine.delta_time_ns = engine.timer.lapPrecise();
         engine.delta_time = @intToFloat(f32, engine.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
-        var framebuffer_size = engine.core.getFramebufferSize();
-        engine.gpu_driver.target_desc.width = framebuffer_size.width;
-        engine.gpu_driver.target_desc.height = framebuffer_size.height;
+        var framebuffer_size = engine.getFramebufferSize();
+        engine.target_desc.width = framebuffer_size.width;
+        engine.target_desc.height = framebuffer_size.height;
 
-        if (engine.gpu_driver.swap_chain == null or !engine.gpu_driver.current_desc.equal(&engine.gpu_driver.target_desc)) {
-            const use_legacy_api = engine.gpu_driver.surface == null;
+        if (engine.swap_chain == null or !engine.current_desc.equal(&engine.target_desc)) {
+            const use_legacy_api = engine.surface == null;
             if (!use_legacy_api) {
-                engine.gpu_driver.swap_chain = engine.gpu_driver.device.nativeCreateSwapChain(engine.gpu_driver.surface, &engine.gpu_driver.target_desc);
-            } else engine.gpu_driver.swap_chain.?.configure(
-                engine.gpu_driver.swap_chain_format,
+                engine.swap_chain = engine.device.nativeCreateSwapChain(engine.surface, &engine.target_desc);
+            } else engine.swap_chain.?.configure(
+                engine.swap_chain_format,
                 .{ .render_attachment = true },
-                engine.gpu_driver.target_desc.width,
-                engine.gpu_driver.target_desc.height,
+                engine.target_desc.width,
+                engine.target_desc.height,
             );
 
             if (@hasDecl(App, "resize")) {
-                try app.resize(&engine, engine.gpu_driver.target_desc.width, engine.gpu_driver.target_desc.height);
+                try app.resize(&engine, engine.target_desc.width, engine.target_desc.height);
             }
-            engine.gpu_driver.current_desc = engine.gpu_driver.target_desc;
+            engine.current_desc = engine.target_desc;
         }
 
         const success = try app.update(&engine);
