@@ -25,21 +25,21 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
-        run: zig build install -Ddawn-from-source=true -Dtarget=aarch64-macos.12-gnu
+        run: zig build install -Ddawn-from-source=true -Dtarget=aarch64-macos.12-none
         env:
           AGREE: true
       - name: upload (debug)
         run: ./dev/upload-release.sh
         env:
-          RELEASE_NAME: aarch64-macos-gnu_debug
+          RELEASE_NAME: aarch64-macos-none_debug
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: install (release-fast)
-        run: zig build install -Ddawn-from-source=true -Drelease-fast=true -Dtarget=aarch64-macos.12-gnu
+        run: zig build install -Ddawn-from-source=true -Drelease-fast=true -Dtarget=aarch64-macos.12-none
         env:
           AGREE: true
       - name: upload (release-fast)
         run: ./dev/upload-release.sh
         env:
-          RELEASE_NAME: aarch64-macos-gnu_release-fast
+          RELEASE_NAME: aarch64-macos-none_release-fast
           UPLOAD_HEADERS: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
