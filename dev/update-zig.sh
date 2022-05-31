@@ -6,7 +6,7 @@ update_zig() {
     gsed -i 's|\(Currently tested with: \).*|\1'"$1"'|' $2
     gsed -i 's|\(https://ziglang.org/builds/zig-[^/ -]*-[^/ -]*-\)[^/ ]*\(\(\.tar\.xz\)[^/ ]*\)|\1'"$1"'\2|' $2
     gsed -i 's|\(https://ziglang.org/builds/zig-[^/ -]*-[^/ -]*-\)[^/ ]*\(\(\.zip\)[^/ ]*\)|\1'"$1"'\2|' $2
-    gsed -i 's|\(C:\\zig-[^/ -]*-[^/ -]*-\)[^/ \\]*\(.*\)"|\1'"$1"'\2|' $2
+    gsed -i 's|\(C:\\zig-[^/ -]*-[^/ -]*-\)[^/ \\]*\(.*"\)|\1'"$1"'\2|' $2
 }
 
 if [ -n "${ZIG_VERSION:-}" ]; then
