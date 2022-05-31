@@ -1,4 +1,4 @@
-name: CI M1
+name: M1
 on:
   workflow_run:
     workflows: ["Draft release"]
