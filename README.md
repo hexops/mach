@@ -65,6 +65,12 @@ Mach is still early stages, so far we have support for building from the followi
 - 🏃 Planned or in progress.
 - ⚠️ Implemented, but has known issues (e.g. bugs in Zig.)
 
+## Supported Zig version
+
+Mach targets Zig nightly, binary releases are available at https://ziglang.org/download
+
+Currently tested with: zig-0.10.0-dev.2431+0e6285c8f
+
 ## Libraries
 
 Mach has many libraries you can use for game development in Zig - you don't have to use the entire engine. All our libraries aim to have the same zero-fuss installation, cross compilation, and platform support:
