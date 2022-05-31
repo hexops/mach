@@ -38,7 +38,7 @@ Contributors are very welcome! There are lots of places you can help out with li
 
 No, it’s not Tom from myspace - it’s me, @slimsag! It’s taken [almost a year to get here](https://devlog.hexops.com/2022/mach-v0.1-zig-graphics-in-60s) - staring at broken CI pipelines, C++ compiler errors, [buying hardware](https://twitter.com/slimsag/status/1507506138144681986) to test every OS+arch possible, and more.
 
-There are few things in life that I am more serious about than this work. I dedicate ~48 hours/week to my dayjob, and ~50h/week to Zig building Mach and running [zigmonthly.org](https://zigmonthly.org). After three years of aggressively pushing for progress in this exact way, [I have no plans to slow down anytime soon.](https://devlog.hexops.com/2021/i-write-code-100-hours-a-week)
+There are few things in life that I am more serious about than this work. I dedicate ~48 hours/week to my dayjob, and ~50h/week to Zig building Mach and running [zigmonthly.org](https://zigmonthly.org). After three years of aggressively pushing for progress in this exact way, [I have no plans to slow down anytime soon.](https://devlog.hexops.com/2021/I-write-code-100-hours-a-week)
 
 ## Learn more & examples: [machengine.org](https://machengine.org)
 
