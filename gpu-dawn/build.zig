@@ -194,7 +194,6 @@ pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         .linux => target.cpu.arch.isX86() and (target.abi.isGnu() or target.abi.isMusl()),
         .macos => blk: {
             if (!target.cpu.arch.isX86() and !target.cpu.arch.isAARCH64()) break :blk false;
-            if (!target.abi.isGnu()) break :blk false;
 
             // If min. target macOS version is lesser than the min version we have available, then
             // our binary is incompatible with the target.
