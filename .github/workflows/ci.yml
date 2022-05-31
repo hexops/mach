@@ -21,11 +21,11 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.2439+c84f5a5f9.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: x86_64-linux -> x86_64-macos
-        run: cd ${{ matrix.project }} && zig build test -Dtarget=x86_64-macos.12...12-gnu
+        run: cd ${{ matrix.project }} && zig build test -Dtarget=x86_64-macos.12-none
         env:
           AGREE: true
       - name: x86_64-linux -> aarch64-macos
-        run: cd ${{ matrix.project }} && zig build test -Dtarget=aarch64-macos.12...12-gnu
+        run: cd ${{ matrix.project }} && zig build test -Dtarget=aarch64-macos.12-none
         env:
           AGREE: true
       - name: x86_64-linux -> x86_64-windows
@@ -65,11 +65,11 @@ jobs:
           7z x zig.zip
           Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.10.0-dev.2017+a0a2ce92c\"
       - name: x86_64-windows -> x86_64-macos
-        run: cd ${{ matrix.project }} && zig build test -Dtarget='x86_64-macos.12...12-gnu'
+        run: cd ${{ matrix.project }} && zig build test -Dtarget='x86_64-macos.12-none'
         env:
           AGREE: true
       - name: x86_64-windows -> aarch64-macos
-        run: cd ${{ matrix.project }} && zig build test -Dtarget='aarch64-macos.12...12-gnu'
+        run: cd ${{ matrix.project }} && zig build test -Dtarget='aarch64-macos.12-none'
         env:
           AGREE: true
       - name: x86_64-windows -> x86_64-linux
@@ -105,7 +105,7 @@ jobs:
       #   env:
       #     AGREE: true
       - name: x86_64-macos -> aarch64-macos
-        run: cd ${{ matrix.project }} && zig build test -Dtarget=aarch64-macos.12...12-gnu
+        run: cd ${{ matrix.project }} && zig build test -Dtarget=aarch64-macos.12-none
         env:
           AGREE: true
       - name: x86_64-macos -> x86_64-windows

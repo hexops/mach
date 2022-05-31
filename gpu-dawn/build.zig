@@ -323,7 +323,7 @@ fn downloadBinary(
     const github_triple = try std.mem.replaceOwned(u8, allocator, zig_triple, "...", "---");
 
     // Compose the download URL, e.g.:
-    // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/libdawn_x86_64-macos-gnu_debug.a.gz
+    // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/libdawn_x86_64-macos-none_debug.a.gz
     const lib_prefix = if (is_windows) "dawn_" else "libdawn_";
     const lib_ext = if (is_windows) ".lib" else ".a";
     const lib_file_name = if (is_windows) "dawn.lib" else "libdawn.a";
