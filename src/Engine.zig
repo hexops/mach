@@ -39,14 +39,14 @@ pub const Core = struct {
     // Returns the framebuffer size, in subpixel units.
     //
     // e.g. returns 1280x960 on macOS for a window that is 640x480
-    pub fn getFramebufferSize(core: *Core) !structs.Size {
+    pub fn getFramebufferSize(core: *Core) structs.Size {
         return core.internal.getFramebufferSize();
     }
 
     // Returns the widow size, in pixel units.
     //
-    // e.g. returns 1280x960 on macOS for a window that is 640x480
-    pub fn getWindowSize(core: *Core) !structs.Size {
+    // e.g. returns 640x480 on macOS for a window that is 640x480
+    pub fn getWindowSize(core: *Core) structs.Size {
         return core.internal.getWindowSize();
     }
 
