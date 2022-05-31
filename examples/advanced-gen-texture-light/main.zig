@@ -38,7 +38,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const eye = vec3(5.0, 7.0, 5.0);
     const target = vec3(0.0, 0.0, 0.0);
 
-    const size = try engine.core.getFramebufferSize();
+    const size = engine.core.getFramebufferSize();
     const aspect_ratio = @intToFloat(f32, size.width) / @intToFloat(f32, size.height);
 
     app.queue = engine.gpu_driver.device.getQueue();

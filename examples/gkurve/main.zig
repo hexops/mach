@@ -99,7 +99,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         app.texture_atlas_data.data,
     );
 
-    const wsize = try engine.core.getWindowSize();
+    const wsize = engine.core.getWindowSize();
     const window_width = @intToFloat(f32, wsize.width);
     const window_height = @intToFloat(f32, wsize.height);
     const triangle_scale = 250;
@@ -324,7 +324,7 @@ pub fn getVertexUniformBufferObject(engine: *mach.Engine) !draw.VertexUniform {
     // On e.g. macOS, window size may be 640x480 while framebuffer size may be
     // 1280x960 (subpixels.) Doing this lets us use a pixel, not subpixel,
     // coordinate system.
-    const window_size = try engine.core.getWindowSize();
+    const window_size = engine.core.getWindowSize();
     const proj = zm.orthographicRh(
         @intToFloat(f32, window_size.width),
         @intToFloat(f32, window_size.height),
