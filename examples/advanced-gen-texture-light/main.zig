@@ -33,7 +33,9 @@ const Dir = struct {
 };
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
-    try engine.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.setOptions(.{
+        .size_min = .{ .width = 20, .height = 20 },
+    });
 
     const eye = vec3(5.0, 7.0, 5.0);
     const target = vec3(0.0, 0.0, 0.0);
