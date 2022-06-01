@@ -43,6 +43,7 @@ pub const Platform = struct {
     }
 
     pub fn setOptions(platform: *Platform, options: structs.Options) !void {
+        // NOTE: size limits do not exists on wasm
         js.machCanvasSetSize(platform.id, options.width, options.height);
 
         const title = std.mem.span(options.title);
@@ -64,8 +65,6 @@ pub const Platform = struct {
             .height = js.machCanvasGetWindowHeight(platform.id),
         };
     }
-
-    pub fn setSizeLimits(_: *Platform, _: structs.SizeOptional, _: structs.SizeOptional) !void {}
 
     pub fn pollEvent(_: *Platform) ?structs.Event {
         const event_type = js.machEventShift();

@@ -71,10 +71,6 @@ pub fn getWindowSize(engine: *Engine) structs.Size {
     return engine.internal.getWindowSize();
 }
 
-pub fn setSizeLimits(engine: *Engine, min: structs.SizeOptional, max: structs.SizeOptional) !void {
-    return engine.internal.setSizeLimits(min, max);
-}
-
 pub fn pollEvent(engine: *Engine) ?structs.Event {
     return engine.internal.pollEvent();
 }
