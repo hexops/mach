@@ -26,9 +26,9 @@ const App = @This();
 pub fn init(app: *App, engine: *mach.Engine) !void {
     timer = try mach.Timer.start();
 
-    try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
-    const vs_module = engine.gpu_driver.device.createShaderModule(&.{
+    const vs_module = engine.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
@@ -44,7 +44,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .attributes = &vertex_attributes,
     };
 
-    const fs_module = engine.gpu_driver.device.createShaderModule(&.{
+    const fs_module = engine.device.createShaderModule(&.{
         .label = "my fragment shader",
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
@@ -62,7 +62,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     };
     const color_target = gpu.ColorTargetState{
-        .format = engine.gpu_driver.swap_chain_format,
+        .format = engine.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMask.all,
     };
@@ -96,9 +96,9 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
             .cull_mode = .back,
         },
     };
-    const pipeline = engine.gpu_driver.device.createRenderPipeline(&pipeline_descriptor);
+    const pipeline = engine.device.createRenderPipeline(&pipeline_descriptor);
 
-    const vertex_buffer = engine.gpu_driver.device.createBuffer(&.{
+    const vertex_buffer = engine.device.createBuffer(&.{
         .usage = .{ .vertex = true },
         .size = @sizeOf(Vertex) * vertices.len,
         .mapped_at_creation = true,
@@ -108,14 +108,14 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     vertex_buffer.unmap();
 
     // Create a sampler with linear filtering for smooth interpolation.
-    const sampler = engine.gpu_driver.device.createSampler(&.{
+    const sampler = engine.device.createSampler(&.{
         .mag_filter = .linear,
         .min_filter = .linear,
     });
-    const queue = engine.gpu_driver.device.getQueue();
+    const queue = engine.device.getQueue();
     const img = try zigimg.Image.fromMemory(engine.allocator, @embedFile("../assets/gotta-go-fast.png"));
     const img_size = gpu.Extent3D{ .width = @intCast(u32, img.width), .height = @intCast(u32, img.height) };
-    const cube_texture = engine.gpu_driver.device.createTexture(&.{
+    const cube_texture = engine.device.createTexture(&.{
         .size = img_size,
         .format = .rgba8_unorm,
         .usage = .{
@@ -138,13 +138,13 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         else => @panic("unsupported image color format"),
     }
 
-    const uniform_buffer = engine.gpu_driver.device.createBuffer(&.{
+    const uniform_buffer = engine.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(UniformBufferObject),
         .mapped_at_creation = false,
     });
 
-    const bind_group = engine.gpu_driver.device.createBindGroup(
+    const bind_group = engine.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = pipeline.getBindGroupLayout(0),
             .entries = &.{
@@ -176,17 +176,17 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
-    while (engine.core.pollEvent()) |event| {
+    while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 if (ev.key == .space)
-                    engine.core.setShouldClose(true);
+                    engine.setShouldClose(true);
             },
             else => {},
         }
     }
 
-    const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .clear_value = .{ .r = 0.5, .g = 0.5, .b = 0.5, .a = 0.0 },
@@ -194,7 +194,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
         .store_op = .store,
     };
 
-    const encoder = engine.gpu_driver.device.createCommandEncoder(null);
+    const encoder = engine.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = &.{
@@ -215,7 +215,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
         );
         const proj = zm.perspectiveFovRh(
             (std.math.pi / 4.0),
-            @intToFloat(f32, engine.gpu_driver.current_desc.width) / @intToFloat(f32, engine.gpu_driver.current_desc.height),
+            @intToFloat(f32, engine.current_desc.width) / @intToFloat(f32, engine.current_desc.height),
             0.1,
             10,
         );
@@ -239,7 +239,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
 
     app.queue.submit(&.{command});
     command.release();
-    engine.gpu_driver.swap_chain.?.present();
+    engine.swap_chain.?.present();
     back_buffer_view.release();
 
     return true;
@@ -251,7 +251,7 @@ pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {
         app.depth_texture.?.release();
         app.depth_texture_view.release();
     }
-    app.depth_texture = engine.gpu_driver.device.createTexture(&gpu.Texture.Descriptor{
+    app.depth_texture = engine.device.createTexture(&gpu.Texture.Descriptor{
         .size = gpu.Extent3D{
             .width = width,
             .height = height,

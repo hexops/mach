@@ -33,16 +33,16 @@ bind_group: gpu.BindGroup,
 texture_atlas_data: AtlasRGB8,
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
-    try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
-    const queue = engine.gpu_driver.device.getQueue();
+    const queue = engine.device.getQueue();
 
     // TODO: Refactor texture atlas size number
     app.texture_atlas_data = try AtlasRGB8.init(engine.allocator, 1280);
     const atlas_size = gpu.Extent3D{ .width = app.texture_atlas_data.size, .height = app.texture_atlas_data.size };
     const atlas_float_size = @intToFloat(f32, app.texture_atlas_data.size);
 
-    const texture = engine.gpu_driver.device.createTexture(&.{
+    const texture = engine.device.createTexture(&.{
         .size = atlas_size,
         .format = .rgba8_unorm,
         .usage = .{
@@ -99,7 +99,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         app.texture_atlas_data.data,
     );
 
-    const wsize = engine.core.getWindowSize();
+    const wsize = engine.getWindowSize();
     const window_width = @intToFloat(f32, wsize.width);
     const window_height = @intToFloat(f32, wsize.height);
     const triangle_scale = 250;
@@ -114,12 +114,12 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     // try draw.quad(app, .{ 0, 0 }, .{ 480, 480 }, .{}, .{ .bottom_left = .{ 0, 0 }, .width_and_height = .{ 1, 1 } });
     // try draw.circle(app, .{ window_width / 2, window_height / 2 }, window_height / 2 - 10, .{ 0, 0.5, 0.75, 1.0 }, white_texture_uv_data);
 
-    const vs_module = engine.gpu_driver.device.createShaderModule(&.{
+    const vs_module = engine.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
 
-    const fs_module = engine.gpu_driver.device.createShaderModule(&.{
+    const fs_module = engine.device.createShaderModule(&.{
         .label = "my fragment shader",
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
@@ -138,7 +138,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     };
 
     const color_target = gpu.ColorTargetState{
-        .format = engine.gpu_driver.swap_chain_format,
+        .format = engine.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMask.all,
     };
@@ -153,13 +153,13 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const fbgle = gpu.BindGroupLayout.Entry.buffer(1, .{ .fragment = true }, .read_only_storage, true, 0);
     const sbgle = gpu.BindGroupLayout.Entry.sampler(2, .{ .fragment = true }, .filtering);
     const tbgle = gpu.BindGroupLayout.Entry.texture(3, .{ .fragment = true }, .float, .dimension_2d, false);
-    const bgl = engine.gpu_driver.device.createBindGroupLayout(
+    const bgl = engine.device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor{
             .entries = &.{ vbgle, fbgle, sbgle, tbgle },
         },
     );
     const bind_group_layouts = [_]gpu.BindGroupLayout{bgl};
-    const pipeline_layout = engine.gpu_driver.device.createPipelineLayout(&.{
+    const pipeline_layout = engine.device.createPipelineLayout(&.{
         .bind_group_layouts = &bind_group_layouts,
     });
 
@@ -185,30 +185,30 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     };
 
-    const vertex_buffer = engine.gpu_driver.device.createBuffer(&.{
+    const vertex_buffer = engine.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .vertex = true },
         .size = @sizeOf(draw.Vertex) * app.vertices.items.len,
         .mapped_at_creation = false,
     });
 
-    const vertex_uniform_buffer = engine.gpu_driver.device.createBuffer(&.{
+    const vertex_uniform_buffer = engine.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(draw.VertexUniform),
         .mapped_at_creation = false,
     });
 
-    const frag_uniform_buffer = engine.gpu_driver.device.createBuffer(&.{
+    const frag_uniform_buffer = engine.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .storage = true },
         .size = @sizeOf(draw.FragUniform) * app.fragment_uniform_list.items.len,
         .mapped_at_creation = false,
     });
 
-    const sampler = engine.gpu_driver.device.createSampler(&.{
+    const sampler = engine.device.createSampler(&.{
         .mag_filter = .linear,
         .min_filter = .linear,
     });
 
-    const bind_group = engine.gpu_driver.device.createBindGroup(
+    const bind_group = engine.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
             .entries = &.{
@@ -220,7 +220,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     );
 
-    app.pipeline = engine.gpu_driver.device.createRenderPipeline(&pipeline_descriptor);
+    app.pipeline = engine.device.createRenderPipeline(&pipeline_descriptor);
     app.queue = queue;
     app.vertex_buffer = vertex_buffer;
     app.vertex_uniform_buffer = vertex_uniform_buffer;
@@ -247,17 +247,17 @@ pub fn deinit(app: *App, engine: *mach.Engine) void {
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
-    while (engine.core.pollEvent()) |event| {
+    while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 if (ev.key == .space)
-                    engine.core.setShouldClose(true);
+                    engine.setShouldClose(true);
             },
             else => {},
         }
     }
 
-    const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .resolve_target = null,
@@ -266,7 +266,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
         .store_op = .store,
     };
 
-    const encoder = engine.gpu_driver.device.createCommandEncoder(null);
+    const encoder = engine.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
     };
@@ -299,7 +299,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
 
     app.queue.submit(&.{command});
     command.release();
-    engine.gpu_driver.swap_chain.?.present();
+    engine.swap_chain.?.present();
     back_buffer_view.release();
 
     return true;
@@ -324,7 +324,7 @@ pub fn getVertexUniformBufferObject(engine: *mach.Engine) !draw.VertexUniform {
     // On e.g. macOS, window size may be 640x480 while framebuffer size may be
     // 1280x960 (subpixels.) Doing this lets us use a pixel, not subpixel,
     // coordinate system.
-    const window_size = engine.core.getWindowSize();
+    const window_size = engine.getWindowSize();
     const proj = zm.orthographicRh(
         @intToFloat(f32, window_size.width),
         @intToFloat(f32, window_size.height),

@@ -33,19 +33,19 @@ const Dir = struct {
 };
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
-    try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
     const eye = vec3(5.0, 7.0, 5.0);
     const target = vec3(0.0, 0.0, 0.0);
 
-    const size = engine.core.getFramebufferSize();
+    const size = engine.getFramebufferSize();
     const aspect_ratio = @intToFloat(f32, size.width) / @intToFloat(f32, size.height);
 
-    app.queue = engine.gpu_driver.device.getQueue();
+    app.queue = engine.device.getQueue();
     app.cube = Cube.init(engine);
     app.light = Light.init(engine);
     app.depth = null;
-    app.camera = Camera.init(engine.gpu_driver.device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0);
+    app.camera = Camera.init(engine.device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0);
 }
 
 pub fn deinit(app: *App, _: *mach.Engine) void {
@@ -53,10 +53,10 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
-    while (engine.core.pollEvent()) |event| {
+    while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| switch (ev.key) {
-                .q, .escape, .space => engine.core.setShouldClose(true),
+                .q, .escape, .space => engine.setShouldClose(true),
                 .w, .up => {
                     app.keys |= Dir.up;
                 },
@@ -108,10 +108,10 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     const light_speed = @floatCast(f32, engine.delta_time * 2.5);
     app.light.update(app.queue, light_speed);
 
-    const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
     defer back_buffer_view.release();
 
-    const encoder = engine.gpu_driver.device.createCommandEncoder(null);
+    const encoder = engine.device.createCommandEncoder(null);
     defer encoder.release();
 
     const color_attachment = gpu.RenderPassColorAttachment{
@@ -168,7 +168,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     defer command.release();
 
     app.queue.submit(&.{command});
-    engine.gpu_driver.swap_chain.?.present();
+    engine.swap_chain.?.present();
 
     return true;
 }
@@ -179,7 +179,7 @@ pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {
         app.depth.?.release();
     }
     // It also recreates the sampler, which is a waste, but for an example it's ok
-    app.depth = Texture.depth(engine.gpu_driver.device, width, height);
+    app.depth = Texture.depth(engine.device, width, height);
 }
 
 const Camera = struct {
@@ -283,7 +283,7 @@ const Cube = struct {
     const DISPLACEMENT = vec3u(IPR * SPACING / 2, 0, IPR * SPACING / 2);
 
     fn init(engine: *mach.Engine) Self {
-        const device = engine.gpu_driver.device;
+        const device = engine.device;
 
         const texture = Brick.texture(device);
 
@@ -326,7 +326,7 @@ const Cube = struct {
     }
 
     fn pipeline(engine: *mach.Engine) gpu.RenderPipeline {
-        const device = engine.gpu_driver.device;
+        const device = engine.device;
 
         const layout_descriptor = gpu.PipelineLayout.Descriptor{
             .bind_group_layouts = &.{
@@ -358,7 +358,7 @@ const Cube = struct {
         };
 
         const color_target = gpu.ColorTargetState{
-            .format = engine.gpu_driver.swap_chain_format,
+            .format = engine.swap_chain_format,
             .write_mask = gpu.ColorWriteMask.all,
             .blend = &blend,
         };
@@ -732,7 +732,7 @@ const Light = struct {
     };
 
     fn init(engine: *mach.Engine) Self {
-        const device = engine.gpu_driver.device;
+        const device = engine.device;
         const uniform = .{
             .color = vec3u(1, 1, 1),
             .position = vec3u(3, 7, 2),
@@ -779,7 +779,7 @@ const Light = struct {
     }
 
     fn pipeline(engine: *mach.Engine) gpu.RenderPipeline {
-        const device = engine.gpu_driver.device;
+        const device = engine.device;
 
         const layout_descriptor = gpu.PipelineLayout.Descriptor{
             .bind_group_layouts = &.{
@@ -810,7 +810,7 @@ const Light = struct {
         };
 
         const color_target = gpu.ColorTargetState{
-            .format = engine.gpu_driver.swap_chain_format,
+            .format = engine.swap_chain_format,
             .write_mask = gpu.ColorWriteMask.all,
             .blend = &blend,
         };
