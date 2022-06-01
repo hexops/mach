@@ -42,6 +42,13 @@ pub const Platform = struct {
         };
     }
 
+    pub fn setOptions(platform: *Platform, options: structs.Options) !void {
+        js.machCanvasSetSize(platform.id, options.width, options.height);
+
+        const title = std.mem.span(options.title);
+        js.machCanvasSetTitle(platform.id, title.ptr, title.len);
+    }
+
     pub fn setShouldClose(_: *Platform, _: bool) void {}
 
     pub fn getFramebufferSize(platform: *Platform) structs.Size {
@@ -116,11 +123,7 @@ export fn wasmInit() void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    // NOTE: On wasm, vsync is double by default and cannot be changed.
-    // Hence options.vsync is not used anywhere.
-    const options = if (@hasDecl(App, "options")) App.options else structs.Options{};
-    engine = Engine.init(allocator, options) catch unreachable;
-
+    engine = Engine.init(allocator) catch unreachable;
     app.init(&engine) catch {};
 }
 

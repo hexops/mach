@@ -235,6 +235,11 @@ pub const Platform = struct {
         platform.window.setFramebufferSizeCallback(framebuffer_size_callback);
     }
 
+    pub fn setOptions(platform: *Platform, options: structs.Options) !void {
+        try platform.window.setSize(.{ .width = options.width, .height = options.height });
+        try platform.window.setTitle(options.title);
+    }
+
     pub fn setShouldClose(platform: *Platform, value: bool) void {
         platform.window.setShouldClose(value);
     }
@@ -410,8 +415,7 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    const options = if (@hasDecl(App, "options")) App.options else structs.Options{};
-    var engine = try Engine.init(allocator, options);
+    var engine = try Engine.init(allocator);
     var app: App = undefined;
 
     try app.init(&engine);
