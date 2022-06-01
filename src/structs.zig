@@ -25,6 +25,12 @@ pub const Options = struct {
     /// The height of the window.
     height: u32 = 480,
 
+    /// The minimum allowed size for the window.
+    size_min: SizeOptional = .{ .width = null, .height = null },
+
+    /// The maximum allowed size for the window.
+    size_max: SizeOptional = .{ .width = null, .height = null },
+
     /// Monitor synchronization modes.
     vsync: enums.VSyncMode = .double,
 

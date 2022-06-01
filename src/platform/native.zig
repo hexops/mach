@@ -238,6 +238,10 @@ pub const Platform = struct {
     pub fn setOptions(platform: *Platform, options: structs.Options) !void {
         try platform.window.setSize(.{ .width = options.width, .height = options.height });
         try platform.window.setTitle(options.title);
+        try platform.window.setSizeLimits(
+            @bitCast(glfw.Window.SizeOptional, options.size_min),
+            @bitCast(glfw.Window.SizeOptional, options.size_max),
+        );
     }
 
     pub fn setShouldClose(platform: *Platform, value: bool) void {
@@ -250,13 +254,6 @@ pub const Platform = struct {
 
     pub fn getWindowSize(platform: *Platform) structs.Size {
         return platform.last_window_size;
-    }
-
-    pub fn setSizeLimits(platform: *Platform, min: structs.SizeOptional, max: structs.SizeOptional) !void {
-        try platform.window.setSizeLimits(
-            @bitCast(glfw.Window.SizeOptional, min),
-            @bitCast(glfw.Window.SizeOptional, max),
-        );
     }
 
     pub fn pollEvent(platform: *Platform) ?structs.Event {
