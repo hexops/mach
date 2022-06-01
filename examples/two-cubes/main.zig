@@ -24,9 +24,9 @@ const App = @This();
 pub fn init(app: *App, engine: *mach.Engine) !void {
     timer = try mach.Timer.start();
 
-    try engine.core.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
-    const vs_module = engine.gpu_driver.device.createShaderModule(&.{
+    const vs_module = engine.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
@@ -42,7 +42,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .attributes = &vertex_attributes,
     };
 
-    const fs_module = engine.gpu_driver.device.createShaderModule(&.{
+    const fs_module = engine.device.createShaderModule(&.{
         .label = "my fragment shader",
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
@@ -60,7 +60,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     };
     const color_target = gpu.ColorTargetState{
-        .format = engine.gpu_driver.swap_chain_format,
+        .format = engine.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMask.all,
     };
@@ -72,14 +72,14 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     };
 
     const bgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
-    const bgl = engine.gpu_driver.device.createBindGroupLayout(
+    const bgl = engine.device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor{
             .entries = &.{bgle},
         },
     );
 
     const bind_group_layouts = [_]gpu.BindGroupLayout{bgl};
-    const pipeline_layout = engine.gpu_driver.device.createPipelineLayout(&.{
+    const pipeline_layout = engine.device.createPipelineLayout(&.{
         .bind_group_layouts = &bind_group_layouts,
     });
 
@@ -105,9 +105,9 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     };
 
-    const queue = engine.gpu_driver.device.getQueue();
+    const queue = engine.device.getQueue();
 
-    const vertex_buffer = engine.gpu_driver.device.createBuffer(&.{
+    const vertex_buffer = engine.device.createBuffer(&.{
         .usage = .{ .vertex = true },
         .size = @sizeOf(Vertex) * vertices.len,
         .mapped_at_creation = true,
@@ -118,13 +118,13 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
 
     // uniformBindGroup offset must be 256-byte aligned
     const uniform_offset = 256;
-    const uniform_buffer = engine.gpu_driver.device.createBuffer(&.{
+    const uniform_buffer = engine.device.createBuffer(&.{
         .usage = .{ .uniform = true, .copy_dst = true },
         .size = @sizeOf(UniformBufferObject) + uniform_offset,
         .mapped_at_creation = false,
     });
 
-    const bind_group1 = engine.gpu_driver.device.createBindGroup(
+    const bind_group1 = engine.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
             .entries = &.{
@@ -133,7 +133,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     );
 
-    const bind_group2 = engine.gpu_driver.device.createBindGroup(
+    const bind_group2 = engine.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
             .entries = &.{
@@ -142,7 +142,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     );
 
-    app.pipeline = engine.gpu_driver.device.createRenderPipeline(&pipeline_descriptor);
+    app.pipeline = engine.device.createRenderPipeline(&pipeline_descriptor);
     app.queue = queue;
     app.vertex_buffer = vertex_buffer;
     app.uniform_buffer = uniform_buffer;
@@ -163,17 +163,17 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
-    while (engine.core.pollEvent()) |event| {
+    while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 if (ev.key == .space)
-                    engine.core.setShouldClose(true);
+                    engine.setShouldClose(true);
             },
             else => {},
         }
     }
 
-    const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .resolve_target = null,
@@ -182,7 +182,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
         .store_op = .store,
     };
 
-    const encoder = engine.gpu_driver.device.createCommandEncoder(null);
+    const encoder = engine.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = null,
@@ -201,7 +201,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
         );
         const proj = zm.perspectiveFovRh(
             (2.0 * std.math.pi / 5.0),
-            @intToFloat(f32, engine.gpu_driver.current_desc.width) / @intToFloat(f32, engine.gpu_driver.current_desc.height),
+            @intToFloat(f32, engine.current_desc.width) / @intToFloat(f32, engine.current_desc.height),
             1,
             100,
         );
@@ -237,7 +237,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
 
     app.queue.submit(&.{command});
     command.release();
-    engine.gpu_driver.swap_chain.?.present();
+    engine.swap_chain.?.present();
     back_buffer_view.release();
 
     return true;
