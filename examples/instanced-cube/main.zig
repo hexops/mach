@@ -23,7 +23,9 @@ const App = @This();
 pub fn init(app: *App, engine: *mach.Engine) !void {
     timer = try mach.Timer.start();
 
-    try engine.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.setOptions(.{
+        .size_min = .{ .width = 20, .height = 20 },
+    });
 
     const vs_module = engine.device.createShaderModule(&.{
         .label = "my vertex shader",

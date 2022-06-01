@@ -13,8 +13,6 @@ const Atlas = @import("atlas.zig").Atlas;
 const ft = @import("freetype");
 const Label = @import("text.zig");
 
-pub const options = mach.Options{ .width = 640, .height = 480 };
-
 pub const App = @This();
 
 const AtlasRGB8 = Atlas(zigimg.color.Rgba32);
@@ -33,7 +31,11 @@ bind_group: gpu.BindGroup,
 texture_atlas_data: AtlasRGB8,
 
 pub fn init(app: *App, engine: *mach.Engine) !void {
-    try engine.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.setOptions(.{
+        .width = 640,
+        .height = 480,
+        .size_min = .{ .width = 20, .height = 20 },
+    });
 
     const queue = engine.device.getQueue();
 

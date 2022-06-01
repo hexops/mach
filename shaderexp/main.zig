@@ -42,7 +42,9 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     // On linux if we don't set a minimum size, you can squish the window to 0 pixels of width and height,
     // this makes some strange effects when that happens, so it's better to leave a minimum size to avoid that,
     // this doesn't prevent you from minimizing the window.
-    try engine.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.setOptions(.{
+        .size_min = .{ .width = 20, .height = 20 },
+    });
 
     var fragment_file: std.fs.File = undefined;
     var last_mtime: i128 = undefined;
