@@ -12,6 +12,9 @@ pub const SizeOptional = struct {
 };
 
 /// Application options that can be configured at init time.
+pub const StartupOptions = struct {};
+
+/// Application options that can be configured at run time.
 pub const Options = struct {
     /// The title of the window.
     title: [*:0]const u8 = "Mach engine",

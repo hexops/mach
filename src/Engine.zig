@@ -34,15 +34,23 @@ target_desc: gpu.SwapChain.Descriptor,
 
 internal: platform.Type,
 
-pub fn init(allocator: std.mem.Allocator, options: structs.Options) !Engine {
+pub fn init(allocator: std.mem.Allocator) !Engine {
     var engine: Engine = undefined;
     engine.allocator = allocator;
-    engine.options = options;
+    engine.options = structs.Options{};
     engine.timer = try Timer.start();
 
     engine.internal = try platform.Type.init(allocator, &engine);
 
     return engine;
+}
+
+/// Set runtime options for application, like title, window size etc.
+///
+/// See mach.Options for details
+pub fn setOptions(engine: *Engine, options: structs.Options) !void {
+    try engine.internal.setOptions(options);
+    engine.options = options;
 }
 
 pub fn setShouldClose(engine: *Engine, value: bool) void {
