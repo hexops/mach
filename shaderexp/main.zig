@@ -39,22 +39,10 @@ last_mtime: i128,
 pub fn init(app: *App, engine: *mach.Engine) !void {
     timer = try std.time.Timer.start();
 
-    engine.core.internal.window.setKeyCallback(struct {
-        fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
-            _ = scancode;
-            _ = mods;
-            if (action == .press) {
-                switch (key) {
-                    .space => window.setShouldClose(true),
-                    else => {},
-                }
-            }
-        }
-    }.callback);
     // On linux if we don't set a minimum size, you can squish the window to 0 pixels of width and height,
     // this makes some strange effects when that happens, so it's better to leave a minimum size to avoid that,
     // this doesn't prevent you from minimizing the window.
-    try engine.core.internal.window.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
+    try engine.setSizeLimits(.{ .width = 20, .height = 20 }, .{ .width = null, .height = null });
 
     var fragment_file: std.fs.File = undefined;
     var last_mtime: i128 = undefined;
@@ -72,9 +60,9 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     }
     var code = try fragment_file.readToEndAllocOptions(engine.allocator, std.math.maxInt(u16), null, 1, 0);
 
-    const queue = engine.gpu_driver.device.getQueue();
+    const queue = engine.device.getQueue();
 
-    const vertex_buffer = engine.gpu_driver.device.createBuffer(&.{
+    const vertex_buffer = engine.device.createBuffer(&.{
         .usage = .{ .vertex = true },
         .size = @sizeOf(Vertex) * vertices.len,
         .mapped_at_creation = true,
@@ -83,7 +71,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     std.mem.copy(Vertex, vertex_mapped, vertices[0..]);
     vertex_buffer.unmap();
 
-    const index_buffer = engine.gpu_driver.device.createBuffer(&.{
+    const index_buffer = engine.device.createBuffer(&.{
         .usage = .{ .index = true },
         .size = @sizeOf(u16) * indices.len,
         .mapped_at_creation = true,
@@ -97,12 +85,12 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     var bgl: gpu.BindGroupLayout = undefined;
     const pipeline = recreatePipeline(engine, code, &bgl);
 
-    const uniform_buffer = engine.gpu_driver.device.createBuffer(&.{
+    const uniform_buffer = engine.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(UniformBufferObject),
         .mapped_at_creation = false,
     });
-    const bind_group = engine.gpu_driver.device.createBindGroup(
+    const bind_group = engine.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
             .entries = &.{
@@ -136,6 +124,16 @@ pub fn deinit(app: *App, engine: *mach.Engine) void {
 }
 
 pub fn update(app: *App, engine: *mach.Engine) !bool {
+    while (engine.pollEvent()) |event| {
+        switch (event) {
+            .key_press => |ev| {
+                if (ev.key == .space)
+                    engine.setShouldClose(true);
+            },
+            else => {},
+        }
+    }
+
     if (app.fragment_shader_file.stat()) |stat| {
         if (app.last_mtime < stat.mtime) {
             std.log.info("The fragment shader has been changed", .{});
@@ -151,7 +149,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
         std.log.err("Something went wrong when attempting to stat file: {}\n", .{err});
     }
 
-    const back_buffer_view = engine.gpu_driver.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .resolve_target = null,
@@ -160,7 +158,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
         .store_op = .store,
     };
 
-    const encoder = engine.gpu_driver.device.createCommandEncoder(null);
+    const encoder = engine.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = null,
@@ -168,7 +166,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
 
     const time = @intToFloat(f32, timer.read()) / @as(f32, std.time.ns_per_s);
     const ubo = UniformBufferObject{
-        .resolution = .{ @intToFloat(f32, engine.gpu_driver.current_desc.width), @intToFloat(f32, engine.gpu_driver.current_desc.height) },
+        .resolution = .{ @intToFloat(f32, engine.current_desc.width), @intToFloat(f32, engine.current_desc.height) },
         .time = time,
     };
     encoder.writeBuffer(app.uniform_buffer, 0, UniformBufferObject, &.{ubo});
@@ -187,14 +185,14 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
 
     app.queue.submit(&.{command});
     command.release();
-    engine.gpu_driver.swap_chain.?.present();
+    engine.swap_chain.?.present();
     back_buffer_view.release();
 
     return true;
 }
 
 fn recreatePipeline(engine: *mach.Engine, fragment_shader_code: [:0]const u8, bgl: ?*gpu.BindGroupLayout) gpu.RenderPipeline {
-    const vs_module = engine.gpu_driver.device.createShaderModule(&.{
+    const vs_module = engine.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
@@ -212,14 +210,14 @@ fn recreatePipeline(engine: *mach.Engine, fragment_shader_code: [:0]const u8, bg
 
     // Check wether the fragment shader code compiled successfully, if not
     // print the validation layer error and show a black screen
-    engine.gpu_driver.device.pushErrorScope(.validation);
-    var fs_module = engine.gpu_driver.device.createShaderModule(&gpu.ShaderModule.Descriptor{
+    engine.device.pushErrorScope(.validation);
+    var fs_module = engine.device.createShaderModule(&gpu.ShaderModule.Descriptor{
         .label = "my fragment shader",
         .code = .{ .wgsl = fragment_shader_code },
     });
     var error_occurred: bool = false;
     // popErrorScope() returns always true, (unless maybe it fails to capture the error scope?)
-    _ = engine.gpu_driver.device.popErrorScope(&gpu.ErrorCallback.init(*bool, &error_occurred, struct {
+    _ = engine.device.popErrorScope(&gpu.ErrorCallback.init(*bool, &error_occurred, struct {
         fn callback(ctx: *bool, typ: gpu.ErrorType, message: [*:0]const u8) void {
             if (typ != .noError) {
                 std.debug.print("🔴🔴🔴🔴:\n{s}\n", .{message});
@@ -228,7 +226,7 @@ fn recreatePipeline(engine: *mach.Engine, fragment_shader_code: [:0]const u8, bg
         }
     }.callback));
     if (error_occurred) {
-        fs_module = engine.gpu_driver.device.createShaderModule(&gpu.ShaderModule.Descriptor{
+        fs_module = engine.device.createShaderModule(&gpu.ShaderModule.Descriptor{
             .label = "my fragment shader",
             .code = .{ .wgsl = @embedFile("black_screen_frag.wgsl") },
         });
@@ -248,7 +246,7 @@ fn recreatePipeline(engine: *mach.Engine, fragment_shader_code: [:0]const u8, bg
         },
     };
     const color_target = gpu.ColorTargetState{
-        .format = engine.gpu_driver.swap_chain_format,
+        .format = engine.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMask.all,
     };
@@ -261,7 +259,7 @@ fn recreatePipeline(engine: *mach.Engine, fragment_shader_code: [:0]const u8, bg
 
     const bgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .fragment = true }, .uniform, true, 0);
     // bgl is needed outside, for the creation of the uniform_buffer in main
-    const bgl_tmp = engine.gpu_driver.device.createBindGroupLayout(
+    const bgl_tmp = engine.device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor{
             .entries = &.{bgle},
         },
@@ -276,7 +274,7 @@ fn recreatePipeline(engine: *mach.Engine, fragment_shader_code: [:0]const u8, bg
     }
 
     const bind_group_layouts = [_]gpu.BindGroupLayout{bgl_tmp};
-    const pipeline_layout = engine.gpu_driver.device.createPipelineLayout(&.{
+    const pipeline_layout = engine.device.createPipelineLayout(&.{
         .bind_group_layouts = &bind_group_layouts,
     });
     defer pipeline_layout.release();
@@ -305,10 +303,10 @@ fn recreatePipeline(engine: *mach.Engine, fragment_shader_code: [:0]const u8, bg
 
     // Create the render pipeline. Even if the shader compilation succeeded, this could fail if the
     // shader is missing a `main` entrypoint.
-    engine.gpu_driver.device.pushErrorScope(.validation);
-    const pipeline = engine.gpu_driver.device.createRenderPipeline(&pipeline_descriptor);
+    engine.device.pushErrorScope(.validation);
+    const pipeline = engine.device.createRenderPipeline(&pipeline_descriptor);
     // popErrorScope() returns always true, (unless maybe it fails to capture the error scope?)
-    _ = engine.gpu_driver.device.popErrorScope(&gpu.ErrorCallback.init(*bool, &error_occurred, struct {
+    _ = engine.device.popErrorScope(&gpu.ErrorCallback.init(*bool, &error_occurred, struct {
         fn callback(ctx: *bool, typ: gpu.ErrorType, message: [*:0]const u8) void {
             if (typ != .noError) {
                 std.debug.print("🔴🔴🔴🔴:\n{s}\n", .{message});
