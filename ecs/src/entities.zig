@@ -16,12 +16,6 @@ pub fn ComponentStorage(comptime Component: type) type {
         /// A reference to the total number of entities with the same type as is being stored here.
         total_rows: *usize,
 
-        /// The actual component data. This starts as empty, and then based on the first call to
-        /// .set() or .setDense() is initialized as dense storage (an array) or sparse storage (a
-        /// hashmap.)
-        ///
-        /// Sparse storage may turn to dense storage if someone later calls .set(), see that method
-        /// for details.
         data: std.ArrayListUnmanaged(Component) = .{},
 
         const Self = @This();
@@ -30,9 +24,6 @@ pub fn ComponentStorage(comptime Component: type) type {
             storage.data.deinit(allocator);
         }
 
-        // If the storage of this component is sparse, it is turned dense as calling this method
-        // indicates that the caller expects to set this component for most entities rather than
-        // sparsely.
         pub fn set(storage: *Self, allocator: Allocator, row_index: u32, component: Component) !void {
             if (storage.data.items.len <= row_index) try storage.data.appendNTimes(allocator, undefined, storage.data.items.len + 1 - row_index);
             storage.data.items[row_index] = component;
@@ -53,11 +44,6 @@ pub fn ComponentStorage(comptime Component: type) type {
         pub inline fn copy(dst: *Self, allocator: Allocator, src_row: u32, dst_row: u32, src: *Self) !void {
             try dst.set(allocator, dst_row, src.get(src_row));
         }
-
-        pub inline fn copySparse(dst: *Self, allocator: Allocator, src_row: u32, dst_row: u32, src: *Self) !void {
-            // TODO: setSparse!
-            try dst.set(allocator, dst_row, src.get(src_row));
-        }
     };
 }
 
@@ -72,7 +58,6 @@ pub const ErasedComponentStorage = struct {
     remove: fn (erased: *anyopaque, row: u32) void,
     cloneType: fn (erased: ErasedComponentStorage, total_entities: *usize, allocator: Allocator, retval: *ErasedComponentStorage) error{OutOfMemory}!void,
     copy: fn (dst_erased: *anyopaque, allocator: Allocator, src_row: u32, dst_row: u32, src_erased: *anyopaque) error{OutOfMemory}!void,
-    copySparse: fn (dst_erased: *anyopaque, allocator: Allocator, src_row: u32, dst_row: u32, src_erased: *anyopaque) error{OutOfMemory}!void,
 
     pub fn cast(ptr: *anyopaque, comptime Component: type) *ComponentStorage(Component) {
         var aligned = @alignCast(@alignOf(*ComponentStorage(Component)), ptr);
@@ -604,13 +589,6 @@ pub const Entities = struct {
                     return dst.copy(allocator, src_row, dst_row, src);
                 }
             }).copy,
-            .copySparse = (struct {
-                pub fn copySparse(dst_erased: *anyopaque, allocator: Allocator, src_row: u32, dst_row: u32, src_erased: *anyopaque) !void {
-                    var dst = ErasedComponentStorage.cast(dst_erased, Component);
-                    var src = ErasedComponentStorage.cast(src_erased, Component);
-                    return dst.copySparse(allocator, src_row, dst_row, src);
-                }
-            }).copySparse,
         };
     }
 
