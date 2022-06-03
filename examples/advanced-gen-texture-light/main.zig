@@ -88,6 +88,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
                 },
                 else => {},
             },
+            else => {},
         }
     }
 

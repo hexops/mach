@@ -51,4 +51,13 @@ pub const Event = union(enum) {
     key_release: struct {
         key: enums.Key,
     },
+    mouse_motion: struct {
+        // These are in window coordinates (not framebuffer coords)
+        x: f64,
+        y: f64,
+    },
+    mouse_button: struct {
+        button: enums.MouseButton,
+        action: enums.Action,
+    },
 };
