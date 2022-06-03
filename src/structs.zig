@@ -60,4 +60,8 @@ pub const Event = union(enum) {
         button: enums.MouseButton,
         action: enums.Action,
     },
+    scroll: struct {
+        xoffset: f64,
+        yoffset: f64,
+    },
 };

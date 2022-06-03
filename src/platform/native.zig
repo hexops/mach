@@ -243,6 +243,19 @@ pub const Platform = struct {
         }.callback;
         platform.window.setMouseButtonCallback(mouse_button_callback);
 
+        const scroll_callback = struct {
+            fn callback(window: glfw.Window, xoffset: f64, yoffset: f64) void {
+                const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
+                pf.pushEvent(.{
+                    .scroll = .{
+                        .xoffset = xoffset,
+                        .yoffset = yoffset,
+                    },
+                });
+            }
+        }.callback;
+        platform.window.setScrollCallback(scroll_callback);
+
         const size_callback = struct {
             fn callback(window: glfw.Window, width: i32, height: i32) void {
                 const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
