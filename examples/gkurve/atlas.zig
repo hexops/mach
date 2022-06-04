@@ -25,7 +25,7 @@ const Node = struct {
     width: u32,
 };
 
-const Error = error{
+pub const Error = error{
     /// Atlas cannot fit the desired region. You must enlarge the atlas.
     AtlasFull,
 };
