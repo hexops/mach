@@ -11,7 +11,8 @@ const glfw = @import("glfw");
 const draw = @import("draw.zig");
 const Atlas = @import("atlas.zig").Atlas;
 const ft = @import("freetype");
-const Label = @import("text.zig");
+const Label = @import("label.zig");
+const ResizableLabel = @import("resizable_label.zig");
 
 pub const App = @This();
 
@@ -75,7 +76,11 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     }
 
     const white_tex_scale = 80;
-    const atlas_white_region = try app.texture_atlas_data.reserve(engine.allocator, white_tex_scale, white_tex_scale);
+    var atlas_white_region = try app.texture_atlas_data.reserve(engine.allocator, white_tex_scale, white_tex_scale);
+    atlas_white_region.x += 1;
+    atlas_white_region.y += 1;
+    atlas_white_region.width -= 2;
+    atlas_white_region.height -= 2;
     const white_texture_uv_data = atlas_white_region.getUVData(atlas_float_size);
     var white_tex_data = try engine.allocator.alloc(zigimg.color.Rgba32, white_tex_scale * white_tex_scale);
     std.mem.set(zigimg.color.Rgba32, white_tex_data, zigimg.color.Rgba32.initRGB(0xff, 0xff, 0xff));
@@ -88,10 +93,16 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const lib = try ft.Library.init();
     defer lib.deinit();
 
-    var label = try Label.init(lib, "freetype/upstream/assets/FiraSans-Regular.ttf", 0, 40, engine.allocator);
+    const size_multiplier = 5;
+    const character = 'e';
+    var label = try Label.init(lib, "freetype/upstream/assets/FiraSans-Regular.ttf", 0, 110 * size_multiplier, engine.allocator);
     defer label.deinit();
+    try label.print(app, &.{character}, .{}, @Vector(2, f32){ 50 * size_multiplier, 40 }, @Vector(4, f32){ 1, 1, 1, 1 });
 
-    try label.print(app, "All your game's bases are belong to us", .{}, @Vector(2, f32){ 0, 420 }, @Vector(4, f32){ 1, 1, 1, 1 });
+    var resizable_label: ResizableLabel = undefined;
+    try resizable_label.init(lib, "freetype/upstream/assets/FiraSans-Regular.ttf", 0, engine.allocator, white_texture_uv_data);
+    defer resizable_label.deinit();
+    try resizable_label.print(app, &.{character}, .{}, @Vector(4, f32){ 0, 40, 0, 0 }, @Vector(4, f32){ 1, 1, 1, 1 }, 80 * size_multiplier);
 
     queue.writeTexture(
         &.{ .texture = texture },
@@ -206,8 +217,8 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     });
 
     const sampler = engine.device.createSampler(&.{
-        .mag_filter = .linear,
-        .min_filter = .linear,
+        // .mag_filter = .linear,
+        // .min_filter = .linear,
     });
 
     const bind_group = engine.device.createBindGroup(
