@@ -31,12 +31,6 @@ pub const MouseButton = enum {
     eight,
 };
 
-pub const Action = enum {
-    release,
-    press,
-    repeat,
-};
-
 pub const Key = enum {
     a,
     b,

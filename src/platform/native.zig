@@ -232,12 +232,21 @@ pub const Platform = struct {
         const mouse_button_callback = struct {
             fn callback(window: glfw.Window, button: glfw.mouse_button.MouseButton, action: glfw.Action, mods: glfw.Mods) void {
                 const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
-                pf.pushEvent(.{
-                    .mouse_button = .{
-                        .button = toMachButton(button),
-                        .action = toMachAction(action),
-                    },
-                });
+
+                switch (action) {
+                    .press => pf.pushEvent(.{
+                        .mouse_press = .{
+                            .button = toMachButton(button),
+                        },
+                    }),
+                    .release => pf.pushEvent(.{
+                        .mouse_release = .{
+                            .button = toMachButton(button),
+                        },
+                    }),
+                    else => {},
+                }
+
                 _ = mods;
             }
         }.callback;
@@ -314,14 +323,6 @@ pub const Platform = struct {
             .six => .six,
             .seven => .seven,
             .eight => .eight,
-        };
-    }
-
-    fn toMachAction(action: glfw.Action) enums.Action {
-        return switch (action) {
-            .release => .release,
-            .press => .press,
-            .repeat => .repeat,
         };
     }
 
