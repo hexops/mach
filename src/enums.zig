@@ -20,6 +20,17 @@ pub const VSyncMode = enum {
     triple,
 };
 
+pub const MouseButton = enum {
+    left,
+    right,
+    middle,
+    four,
+    five,
+    six,
+    seven,
+    eight,
+};
+
 pub const Key = enum {
     a,
     b,

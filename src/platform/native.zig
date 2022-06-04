@@ -216,6 +216,55 @@ pub const Platform = struct {
         }.callback;
         platform.window.setKeyCallback(callback);
 
+        const mouse_motion_callback = struct {
+            fn callback(window: glfw.Window, xpos: f64, ypos: f64) void {
+                const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
+                pf.pushEvent(.{
+                    .mouse_motion = .{
+                        .x = xpos,
+                        .y = ypos,
+                    },
+                });
+            }
+        }.callback;
+        platform.window.setCursorPosCallback(mouse_motion_callback);
+
+        const mouse_button_callback = struct {
+            fn callback(window: glfw.Window, button: glfw.mouse_button.MouseButton, action: glfw.Action, mods: glfw.Mods) void {
+                const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
+
+                switch (action) {
+                    .press => pf.pushEvent(.{
+                        .mouse_press = .{
+                            .button = toMachButton(button),
+                        },
+                    }),
+                    .release => pf.pushEvent(.{
+                        .mouse_release = .{
+                            .button = toMachButton(button),
+                        },
+                    }),
+                    else => {},
+                }
+
+                _ = mods;
+            }
+        }.callback;
+        platform.window.setMouseButtonCallback(mouse_button_callback);
+
+        const scroll_callback = struct {
+            fn callback(window: glfw.Window, xoffset: f64, yoffset: f64) void {
+                const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
+                pf.pushEvent(.{
+                    .scroll = .{
+                        .xoffset = xoffset,
+                        .yoffset = yoffset,
+                    },
+                });
+            }
+        }.callback;
+        platform.window.setScrollCallback(scroll_callback);
+
         const size_callback = struct {
             fn callback(window: glfw.Window, width: i32, height: i32) void {
                 const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
@@ -262,6 +311,19 @@ pub const Platform = struct {
             return n.data;
         }
         return null;
+    }
+
+    fn toMachButton(button: glfw.mouse_button.MouseButton) enums.MouseButton {
+        return switch (button) {
+            .left => .left,
+            .right => .right,
+            .middle => .middle,
+            .four => .four,
+            .five => .five,
+            .six => .six,
+            .seven => .seven,
+            .eight => .eight,
+        };
     }
 
     fn toMachKey(key: glfw.Key) enums.Key {
