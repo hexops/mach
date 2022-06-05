@@ -191,6 +191,22 @@ const mach = {
       mach.events.push(...[2, convertKeyCode(ev.code)]);
     });
 
+    canvas.addEventListener("mousemove", (ev) => {
+      mach.events.push(...[3, ev.clientX, ev.clientY]);
+	});
+
+    canvas.addEventListener("mousedown", (ev) => {
+      mach.events.push(...[4, ev.button]);
+	});
+
+    canvas.addEventListener("mouseup", (ev) => {
+      mach.events.push(...[5, ev.button]);
+	});
+
+    canvas.addEventListener("wheel", (ev) => {
+      mach.events.push(...[6, ev.deltaX, ev.deltaY]);
+	});
+
     document.body.appendChild(canvas);
     return mach.canvases.push({ canvas: canvas, title: undefined }) - 1;
   },
@@ -244,6 +260,10 @@ const mach = {
       return 0;
 
     return mach.events.shift();
+  },
+
+  machEventShiftFloat() {
+    return mach.machEventShift();
   },
 
   machPerfNow() {

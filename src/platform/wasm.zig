@@ -13,7 +13,8 @@ const js = struct {
     extern fn machCanvasGetWindowHeight(canvas: CanvasId) u32;
     extern fn machCanvasGetFramebufferWidth(canvas: CanvasId) u32;
     extern fn machCanvasGetFramebufferHeight(canvas: CanvasId) u32;
-    extern fn machEventShift() u32;
+    extern fn machEventShift() i32;
+    extern fn machEventShiftFloat() f64;
     extern fn machPerfNow() f64;
 
     extern fn machLog(str: [*]const u8, len: u32) void;
@@ -76,7 +77,47 @@ pub const Platform = struct {
             2 => structs.Event{
                 .key_release = .{ .key = @intToEnum(enums.Key, js.machEventShift()) },
             },
+            3 => structs.Event{
+                .mouse_motion = .{
+                    .x = @intToFloat(f64, js.machEventShift()),
+                    .y = @intToFloat(f64, js.machEventShift()),
+                },
+            },
+            4 => structs.Event{
+                .mouse_press = .{
+                    .button = toMachButton(js.machEventShift()),
+                },
+            },
+            5 => structs.Event{
+                .mouse_release = .{
+                    .button = toMachButton(js.machEventShift()),
+                },
+            },
+            6 => structs.Event{
+                .mouse_scroll = .{
+                    .xoffset = @floatCast(f32, sign(js.machEventShiftFloat())),
+                    .yoffset = @floatCast(f32, sign(js.machEventShiftFloat())),
+                },
+            },
             else => null,
+        };
+    }
+
+    inline fn sign(val: f64) f64 {
+        return switch (val) {
+            0.0 => 0.0,
+            else => -val,
+        };
+    }
+
+    fn toMachButton(button: i32) enums.MouseButton {
+        return switch (button) {
+            0 => .left,
+            1 => .middle,
+            2 => .right,
+            3 => .four,
+            4 => .five,
+            else => unreachable,
         };
     }
 };
