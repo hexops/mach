@@ -359,30 +359,33 @@ fn uniteOutsideAndInsideVertices(ctx: *OutlineContext) void {
 }
 // TODO: Return also allocation error
 fn moveToFunction(ctx: *OutlineContext, _to: ft.Vector) ft.Error!void {
-    // std.log.info("M {} {}", .{ to.x, to.y });
     uniteOutsideAndInsideVertices(ctx);
 
     const to = Vec2{ @intToFloat(f32, _to.x), @intToFloat(f32, _to.y) };
 
-    // TODO: Use raycasting of the edges for better accuracy on wether a point is inside the outline or not
-    const new_point_is_inside = blk: {
-        if (ctx.outline_verts.items.len == 0) {
-            break :blk false;
-        }
+    // To check wether a point is carving a polygon,
+    // Cast a ray to the right of the point and check
+    // when this ray intersects the edges of the polygons,
+    // if the number of intersections is odd -> inside,
+    // if it's even -> outside
+    var new_point_is_inside = false;
+    for (ctx.outline_verts.items) |polygon| {
+        var i: usize = 1;
+        while (i < polygon.items.len) : (i += 1) {
+            const v1 = polygon.items[i - 1];
+            const v2 = polygon.items[i];
 
-        var minx: f32 = std.math.f32_max;
-        var maxx: f32 = std.math.f32_min;
-        var miny: f32 = std.math.f32_max;
-        var maxy: f32 = std.math.f32_min;
-        for (ctx.outline_verts.items[ctx.outline_verts.items.len - 1].items) |item| {
-            minx = @minimum(item[0], minx);
-            maxx = @maximum(item[0], maxx);
-            miny = @minimum(item[1], miny);
-            maxy = @maximum(item[1], maxy);
-        }
+            const min_y = @minimum(v1[1], v2[1]);
+            const max_y = @maximum(v1[1], v2[1]);
+            const min_x = @minimum(v1[0], v2[0]);
 
-        break :blk (to[0] >= minx) and (to[0] <= maxx) and (to[1] >= miny) and (to[1] <= maxy);
-    };
+            // If the point is at the same y as another, it may be counted twice,
+            // That's why we add the last !=
+            if (to[1] >= min_y and to[1] <= max_y and to[0] >= min_x and to[1] != v2[1]) {
+                new_point_is_inside = !new_point_is_inside;
+            }
+        }
+    }
 
     // If the point is inside, put it in the inside verts
     if (new_point_is_inside) {
