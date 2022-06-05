@@ -15,6 +15,7 @@ const js = struct {
     extern fn machCanvasGetFramebufferHeight(canvas: CanvasId) u32;
     extern fn machEventShift() i32;
     extern fn machEventShiftFloat() f64;
+    extern fn machChangeShift() u32;
     extern fn machPerfNow() f64;
 
     extern fn machLog(str: [*]const u8, len: u32) void;
@@ -29,6 +30,9 @@ pub const Platform = struct {
     id: CanvasId,
     selector_id: []const u8,
 
+    last_window_size: structs.Size,
+    last_framebuffer_size: structs.Size,
+
     pub fn init(allocator: std.mem.Allocator, eng: *Engine) !Platform {
         const options = eng.options;
         var selector = [1]u8{0} ** 15;
@@ -40,6 +44,14 @@ pub const Platform = struct {
         return Platform{
             .id = id,
             .selector_id = try allocator.dupe(u8, selector[0 .. selector.len - @as(u32, if (selector[selector.len - 1] == 0) 1 else 0)]),
+            .last_window_size = .{
+                .width = js.machCanvasGetWindowWidth(id),
+                .height = js.machCanvasGetWindowHeight(id),
+            },
+            .last_framebuffer_size = .{
+                .width = js.machCanvasGetFramebufferWidth(id),
+                .height = js.machCanvasGetFramebufferHeight(id),
+            },
         };
     }
 
@@ -54,17 +66,34 @@ pub const Platform = struct {
     pub fn setShouldClose(_: *Platform, _: bool) void {}
 
     pub fn getFramebufferSize(platform: *Platform) structs.Size {
-        return structs.Size{
-            .width = js.machCanvasGetFramebufferWidth(platform.id),
-            .height = js.machCanvasGetFramebufferHeight(platform.id),
-        };
+        return platform.last_framebuffer_size;
     }
 
     pub fn getWindowSize(platform: *Platform) structs.Size {
-        return structs.Size{
-            .width = js.machCanvasGetWindowWidth(platform.id),
-            .height = js.machCanvasGetWindowHeight(platform.id),
-        };
+        return platform.last_window_size;
+    }
+
+    fn pollChanges(platform: *Platform) void {
+        const change_type = js.machChangeShift();
+
+        switch (change_type) {
+            1 => {
+                const width = js.machChangeShift();
+                const height = js.machChangeShift();
+                const device_pixel_ratio = js.machChangeShift();
+
+                platform.last_window_size = .{
+                    .width = @divFloor(width, device_pixel_ratio),
+                    .height = @divFloor(height, device_pixel_ratio),
+                };
+
+                platform.last_framebuffer_size = .{
+                    .width = width,
+                    .height = height,
+                };
+            },
+            else => {},
+        }
     }
 
     pub fn pollEvent(_: *Platform) ?structs.Event {
@@ -168,6 +197,9 @@ export fn wasmInit() void {
 }
 
 export fn wasmUpdate() bool {
+    // Poll internal events, like resize
+    engine.internal.pollChanges();
+
     engine.delta_time_ns = engine.timer.lapPrecise();
     engine.delta_time = @intToFloat(f32, engine.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
