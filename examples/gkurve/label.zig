@@ -21,7 +21,7 @@ const GlyphInfo = struct {
 
 face: ft.Face,
 size: i32,
-char_map: std.AutoHashMap(u8, GlyphInfo),
+char_map: std.AutoHashMap(u21, GlyphInfo),
 allocator: std.mem.Allocator,
 
 const WriterContext = struct {
@@ -48,7 +48,7 @@ pub fn init(lib: ft.Library, font_path: []const u8, face_index: i32, char_size: 
     return Label{
         .face = try lib.newFace(font_path, face_index),
         .size = char_size,
-        .char_map = std.AutoHashMap(u8, GlyphInfo).init(allocator),
+        .char_map = std.AutoHashMap(u21, GlyphInfo).init(allocator),
         .allocator = allocator,
     };
 }
@@ -60,7 +60,11 @@ pub fn deinit(label: *Label) void {
 
 fn write(ctx: WriterContext, bytes: []const u8) WriterError!usize {
     var offset = Vec2{ 0, 0 };
-    for (bytes) |char| {
+    var j: usize = 0;
+    while (j < bytes.len) {
+        const len = std.unicode.utf8ByteSequenceLength(bytes[j]) catch unreachable;
+        const char = std.unicode.utf8Decode(bytes[j..(j + len)]) catch unreachable;
+        j += len;
         switch (char) {
             '\n' => {
                 offset[0] = 0;

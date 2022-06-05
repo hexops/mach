@@ -34,7 +34,7 @@ const CharVertices = struct {
 };
 
 face: ft.Face,
-char_map: std.AutoHashMap(u8, CharVertices),
+char_map: std.AutoHashMap(u21, CharVertices),
 allocator: std.mem.Allocator,
 tessellator: Tessellator,
 white_texture: UVData,
@@ -66,7 +66,7 @@ pub fn writer(label: *ResizableLabel, app: *App, position: Vec4, text_color: Vec
 pub fn init(self: *ResizableLabel, lib: ft.Library, font_path: []const u8, face_index: i32, allocator: std.mem.Allocator, white_texture: UVData) !void {
     self.* = ResizableLabel{
         .face = try lib.newFace(font_path, face_index),
-        .char_map = std.AutoHashMap(u8, CharVertices).init(allocator),
+        .char_map = std.AutoHashMap(u21, CharVertices).init(allocator),
         .allocator = allocator,
         .tessellator = undefined,
         .white_texture = white_texture,
@@ -94,7 +94,11 @@ pub fn deinit(label: *ResizableLabel) void {
 // FIXME: many useless allocations for the arraylists
 fn write(ctx: WriterContext, bytes: []const u8) WriterError!usize {
     var offset = Vec4{ 0, 0, 0, 0 };
-    for (bytes) |char| {
+    var c: usize = 0;
+    while (c < bytes.len) {
+        const len = std.unicode.utf8ByteSequenceLength(bytes[c]) catch unreachable;
+        const char = std.unicode.utf8Decode(bytes[c..(c + len)]) catch unreachable;
+        c += len;
         switch (char) {
             '\n' => {
                 offset[0] = 0;
