@@ -62,8 +62,8 @@ pub const Event = union(enum) {
     mouse_release: struct {
         button: enums.MouseButton,
     },
-    scroll: struct {
-        xoffset: f64,
-        yoffset: f64,
+    mouse_scroll: struct {
+        xoffset: f32,
+        yoffset: f32,
     },
 };
