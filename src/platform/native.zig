@@ -256,9 +256,9 @@ pub const Platform = struct {
             fn callback(window: glfw.Window, xoffset: f64, yoffset: f64) void {
                 const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
                 pf.pushEvent(.{
-                    .scroll = .{
-                        .xoffset = xoffset,
-                        .yoffset = yoffset,
+                    .mouse_scroll = .{
+                        .xoffset = @floatCast(f32, xoffset),
+                        .yoffset = @floatCast(f32, yoffset),
                     },
                 });
             }
