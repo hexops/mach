@@ -137,10 +137,21 @@ function convertKeyCode(code) {
 const mach = {
   canvases: [],
   wasm: undefined,
+  observer: undefined,
   events: [],
+  changes: [],
 
   init(wasm) {
     this.wasm = wasm;
+    this.observer = new MutationObserver((mutables) => {
+      mutables.forEach((mutable) => {
+        if (mutable.type === 'attributes') {
+          if (mutable.attributeName === "width" || mutable.attributeName === "height") {
+            mutable.target.dispatchEvent(new Event("mach-canvas-resize"));
+          }
+        }
+      })
+    })
   },
 
   getString(str, len) {
@@ -179,6 +190,8 @@ const mach = {
     canvas.height = Math.floor(height * window.devicePixelRatio);
     canvas.tabIndex = 1;
 
+    mach.observer.observe(canvas, { attributes: true });
+
     mach.setString(canvas.id, id);
 
     canvas.addEventListener("contextmenu", (ev) => ev.preventDefault());
@@ -206,6 +219,12 @@ const mach = {
     canvas.addEventListener("wheel", (ev) => {
       mach.events.push(...[6, ev.deltaX, ev.deltaY]);
 	});
+
+    canvas.addEventListener("mach-canvas-resize", (ev) => {
+      const cv_index = mach.canvases.findIndex((el) => el.canvas === ev.currentTarget);
+      const cv = mach.canvases[cv_index];
+      mach.changes.push(...[1, cv.canvas.width, cv.canvas.height, window.devicePixelRatio]);
+    });
 
     document.body.appendChild(canvas);
     return mach.canvases.push({ canvas: canvas, title: undefined }) - 1;
@@ -264,6 +283,13 @@ const mach = {
 
   machEventShiftFloat() {
     return mach.machEventShift();
+  },
+
+  machChangeShift() {
+    if (mach.changes.length < 0)
+      return 0;
+
+    return mach.changes.shift();
   },
 
   machPerfNow() {
