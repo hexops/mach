@@ -1,11 +1,8 @@
 const std = @import("std");
-const meta = std.meta;
-const mem = std.mem;
-const testing = std.testing;
 
 pub fn structToBitFields(comptime IntType: type, comptime EnumDataType: type, flags: anytype) IntType {
     var value: IntType = 0;
-    inline for (comptime meta.fieldNames(EnumDataType)) |field_name| {
+    inline for (comptime std.meta.fieldNames(EnumDataType)) |field_name| {
         if (@field(flags, field_name)) {
             value |= @enumToInt(@field(EnumDataType, field_name));
         }
@@ -14,8 +11,8 @@ pub fn structToBitFields(comptime IntType: type, comptime EnumDataType: type, fl
 }
 
 pub fn bitFieldsToStruct(comptime StructType: type, comptime EnumDataType: type, flags: anytype) StructType {
-    var value = mem.zeroes(StructType);
-    inline for (comptime meta.fieldNames(EnumDataType)) |field_name| {
+    var value = std.mem.zeroes(StructType);
+    inline for (comptime std.meta.fieldNames(EnumDataType)) |field_name| {
         if (flags & (@enumToInt(@field(EnumDataType, field_name))) != 0) {
             @field(value, field_name) = true;
         }
@@ -36,13 +33,13 @@ const TestStruct = packed struct {
 };
 
 test "struct fields to bit fields" {
-    try testing.expectEqual(@as(u16, (1 << 1) | (1 << 3)), structToBitFields(u16, TestEnum, TestStruct{
+    try std.testing.expectEqual(@as(u16, (1 << 1) | (1 << 3)), structToBitFields(u16, TestEnum, TestStruct{
         .filed_1 = true,
         .filed_3 = true,
     }));
-    try testing.expectEqual(@as(u16, 0), structToBitFields(u16, TestEnum, TestStruct{}));
+    try std.testing.expectEqual(@as(u16, 0), structToBitFields(u16, TestEnum, TestStruct{}));
 }
 
 test "bit fields to struct" {
-    try testing.expectEqual(TestStruct{ .filed_1 = true, .filed_2 = true, .filed_3 = false }, bitFieldsToStruct(TestStruct, TestEnum, (1 << 1) | (1 << 2)));
+    try std.testing.expectEqual(TestStruct{ .filed_1 = true, .filed_2 = true, .filed_3 = false }, bitFieldsToStruct(TestStruct, TestEnum, (1 << 1) | (1 << 2)));
 }

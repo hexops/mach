@@ -1,3 +1,4 @@
+const testing = @import("std").testing;
 const freetype = @import("freetype");
 
 const firasnas_font_path = "upstream/assets/FiraSans-Regular.ttf";
@@ -19,7 +20,7 @@ test "new stroker" {
 }
 
 test "set lcd filter" {
-    if (@hasDecl(freetype.C, "FT_CONFIG_OPTION_SUBPIXEL_RENDERING")) {
+    if (@hasDecl(freetype.c, "FT_CONFIG_OPTION_SUBPIXEL_RENDERING")) {
         const lib = try freetype.Library.init();
         try lib.setLcdFilter(.default);
     } else {
@@ -51,4 +52,27 @@ test "attach from memory" {
     const face = try lib.newFace("upstream/assets/DejaVuSans.pfb", 0);
     const file = @embedFile("../upstream/assets/DejaVuSans.pfm");
     try face.attachMemory(file);
+}
+
+test "charmap iterator" {
+    const lib = try freetype.Library.init();
+    const face = try lib.newFace(firasnas_font_path, 0);
+    var iterator = face.getCharmapIterator();
+    var old_char: usize = 0;
+    while (iterator.next()) |c| {
+        try testing.expect(old_char != c);
+        old_char = c;
+    }
+}
+
+test "get name index" {
+    const lib = try freetype.Library.init();
+    const face = try lib.newFace(firasnas_font_path, 0);
+    try testing.expectEqual(@as(u32, 1120), face.getNameIndex("summation").?);
+}
+
+test "get index name" {
+    const lib = try freetype.Library.init();
+    const face = try lib.newFace(firasnas_font_path, 0);
+    try testing.expectEqualStrings("summation", try face.getGlyphName(1120));
 }

@@ -33,7 +33,7 @@ const OutlinePrinter = struct {
     }
 
     pub fn outlineExists(self: Self) bool {
-        const outline = self.face.glyph.outline() orelse return false;
+        const outline = self.face.glyph().outline() orelse return false;
         if (outline.numContours() <= 0 or outline.numPoints() <= 0)
             return false;
         outline.check() catch return false;
@@ -48,7 +48,7 @@ const OutlinePrinter = struct {
             .yx = 0 * multiplier,
             .yy = -1 * multiplier,
         };
-        self.face.glyph.outline().?.transform(matrix);
+        self.face.glyph().outline().?.transform(matrix);
     }
 
     pub fn extractOutline(self: *Self) !void {
@@ -61,12 +61,12 @@ const OutlinePrinter = struct {
             .shift = 0,
             .delta = 0,
         };
-        try self.face.glyph.outline().?.decompose(self, callbacks);
+        try self.face.glyph().outline().?.decompose(self, callbacks);
         try self.path_stream.writer().writeAll("' fill='#000'/>");
     }
 
     pub fn computeViewBox(self: *Self) !void {
-        const boundingBox = try self.face.glyph.outline().?.bbox();
+        const boundingBox = try self.face.glyph().outline().?.bbox();
         self.xMin = boundingBox.xMin;
         self.yMin = boundingBox.yMin;
         self.width = boundingBox.xMax - boundingBox.xMin;
@@ -99,7 +99,7 @@ const OutlinePrinter = struct {
         self.path_stream.writer().print("C {d} {d}, {d} {d}, {d} {d}\t", .{ control_0.x, control_0.y, control_1.x, control_1.y, to.x, to.y }) catch unreachable;
     }
 
-    pub fn run(self: *Self, symbol: u8) !void {
+    pub fn run(self: *Self, symbol: u32) !void {
         try self.face.loadChar(symbol, .{ .no_scale = true, .no_bitmap = true });
 
         if (!self.outlineExists())
@@ -118,5 +118,5 @@ pub fn main() !void {
 
     var outline_printer = try OutlinePrinter.init(file);
     defer outline_printer.deinit();
-    try outline_printer.run('a');
+    try outline_printer.run(@as(u32, 'ë'));
 }

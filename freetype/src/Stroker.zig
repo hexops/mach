@@ -1,15 +1,14 @@
 const c = @import("c.zig");
-const Error = @import("error.zig").Error;
-const intToError = @import("error.zig").intToError;
 
-const Stroker = @This();
+pub const Stroker = @This();
 
-pub const StrokerLineCap = enum(u2) {
+pub const LineCap = enum(u2) {
     butt = c.FT_STROKER_LINECAP_BUTT,
     round = c.FT_STROKER_LINECAP_ROUND,
     square = c.FT_STROKER_LINECAP_SQUARE,
 };
-pub const StrokerLineJoin = enum(u2) {
+
+pub const LineJoin = enum(u2) {
     round = c.FT_STROKER_LINEJOIN_ROUND,
     bevel = c.FT_STROKER_LINEJOIN_BEVEL,
     miterVariable = c.FT_STROKER_LINEJOIN_MITER_VARIABLE,
@@ -18,11 +17,7 @@ pub const StrokerLineJoin = enum(u2) {
 
 handle: c.FT_Stroker,
 
-pub fn init(handle: c.FT_Stroker) Stroker {
-    return Stroker{ .handle = handle };
-}
-
-pub fn set(self: Stroker, radius: i32, line_cap: StrokerLineCap, line_join: StrokerLineJoin, miter_limit: i32) void {
+pub fn set(self: Stroker, radius: i32, line_cap: LineCap, line_join: LineJoin, miter_limit: i32) void {
     c.FT_Stroker_Set(self.handle, radius, @enumToInt(line_cap), @enumToInt(line_join), miter_limit);
 }
 
