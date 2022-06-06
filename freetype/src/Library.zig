@@ -1,26 +1,26 @@
 const std = @import("std");
 const c = @import("c.zig");
-const types = @import("types.zig");
-const Face = @import("Face.zig");
-const Stroker = @import("Stroker.zig");
-const Error = @import("error.zig").Error;
 const intToError = @import("error.zig").intToError;
+const Error = @import("error.zig").Error;
+const Stroker = @import("Stroker.zig");
+const Face = @import("freetype.zig").Face;
+const OpenArgs = @import("freetype.zig").OpenArgs;
+const LcdFilter = @import("lcdfilter.zig").LcdFilter;
 
 const Library = @This();
 
-pub const LcdFilter = enum(u5) {
-    none = c.FT_LCD_FILTER_NONE,
-    default = c.FT_LCD_FILTER_DEFAULT,
-    light = c.FT_LCD_FILTER_LIGHT,
-    legacy = c.FT_LCD_FILTER_LEGACY,
+pub const Version = struct {
+    major: i32,
+    minor: i32,
+    patch: i32,
 };
 
 handle: c.FT_Library,
 
 pub fn init() Error!Library {
-    var ft = std.mem.zeroes(Library);
-    try intToError(c.FT_Init_FreeType(&ft.handle));
-    return ft;
+    var lib = Library{ .handle = undefined };
+    try intToError(c.FT_Init_FreeType(&lib.handle));
+    return lib;
 }
 
 pub fn deinit(self: Library) void {
@@ -43,16 +43,27 @@ pub fn newFaceMemory(self: Library, bytes: []const u8, face_index: i32) Error!Fa
     }, face_index);
 }
 
-pub fn openFace(self: Library, args: types.OpenArgs, face_index: i32) Error!Face {
-    var face = std.mem.zeroes(c.FT_Face);
-    try intToError(c.FT_Open_Face(self.handle, &args.toCInterface(), face_index, &face));
-    return Face.init(face);
+pub fn openFace(self: Library, args: OpenArgs, face_index: i32) Error!Face {
+    var f: c.FT_Face = undefined;
+    try intToError(c.FT_Open_Face(self.handle, &args.cast(), face_index, &f));
+    return Face{ .handle = f };
+}
+
+pub fn version(self: Library) Version {
+    var v: Version = undefined;
+    c.FT_Library_Version(
+        self.handle,
+        &v.major,
+        &v.minor,
+        &v.patch,
+    );
+    return v;
 }
 
 pub fn newStroker(self: Library) Error!Stroker {
-    var stroker = std.mem.zeroes(c.FT_Stroker);
-    try intToError(c.FT_Stroker_New(self.handle, &stroker));
-    return Stroker.init(stroker);
+    var s: c.FT_Stroker = undefined;
+    try intToError(c.FT_Stroker_New(self.handle, &s));
+    return Stroker{ .handle = s };
 }
 
 pub fn setLcdFilter(self: Library, lcd_filter: LcdFilter) Error!void {

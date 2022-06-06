@@ -15,7 +15,7 @@ const Vec4 = @Vector(4, f32);
 
 const GlyphInfo = struct {
     uv_data: UVData,
-    metrics: ft.Glyph.GlyphMetrics,
+    metrics: ft.GlyphMetrics,
 };
 
 face: ft.Face,
@@ -63,7 +63,7 @@ fn write(ctx: WriterContext, bytes: []const u8) ft.Error!usize {
         switch (char) {
             '\n' => {
                 offset[0] = 0;
-                offset[1] -= @intToFloat(f32, ctx.label.face.sizeMetrics().?.height >> 6);
+                offset[1] -= @intToFloat(f32, ctx.label.face.size().metrics().height >> 6);
             },
             ' ' => {
                 const v = ctx.label.char_map.getOrPut(char) catch unreachable;
@@ -73,7 +73,7 @@ fn write(ctx: WriterContext, bytes: []const u8) ft.Error!usize {
                     const glyph = ctx.label.face.glyph;
                     v.value_ptr.* = GlyphInfo{
                         .uv_data = undefined,
-                        .metrics = glyph.metrics(),
+                        .metrics = glyph().metrics(),
                     };
                 }
                 offset[0] += @intToFloat(f32, v.value_ptr.metrics.horiAdvance >> 6);
@@ -83,7 +83,7 @@ fn write(ctx: WriterContext, bytes: []const u8) ft.Error!usize {
                 if (!v.found_existing) {
                     try ctx.label.face.setCharSize(ctx.label.size * 64, 0, 50, 0);
                     try ctx.label.face.loadChar(char, .{ .render = true });
-                    const glyph = ctx.label.face.glyph;
+                    const glyph = ctx.label.face.glyph();
                     const glyph_bitmap = glyph.bitmap();
                     const glyph_width = glyph_bitmap.width();
                     const glyph_height = glyph_bitmap.rows();

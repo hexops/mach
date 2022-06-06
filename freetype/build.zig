@@ -40,6 +40,10 @@ pub fn build(b: *std.build.Builder) !void {
 
         const example_run_cmd = example_exe.run();
         example_run_cmd.step.dependOn(b.getInstallStep());
+        if (b.args) |args| {
+            example_run_cmd.addArgs(args);
+        }
+
         const example_run_step = b.step("run-example-" ++ example, "Run '" ++ example ++ "' example");
         example_run_step.dependOn(&example_run_cmd.step);
     }

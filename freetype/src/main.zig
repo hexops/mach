@@ -1,26 +1,38 @@
-pub const Library = @import("Library.zig");
-pub const Face = @import("Face.zig");
-pub const GlyphSlot = @import("GlyphSlot.zig");
+pub usingnamespace @import("freetype.zig");
+pub usingnamespace @import("types.zig");
+pub usingnamespace @import("image.zig");
+pub usingnamespace @import("color.zig");
+pub usingnamespace @import("lcdfilter.zig");
+pub const c = @import("c.zig");
 pub const Glyph = @import("Glyph.zig");
-pub const BitmapGlyph = @import("BitmapGlyph.zig");
-pub const Bitmap = @import("Bitmap.zig");
-pub const Outline = @import("Outline.zig");
 pub const Stroker = @import("Stroker.zig");
 pub const Error = @import("error.zig").Error;
-pub const C = @import("c.zig");
-pub usingnamespace @import("types.zig");
+
+const std = @import("std");
+
+fn refLiterallyAllDecls(comptime T: type) void {
+    switch (@typeInfo(T)) {
+        .Struct, .Union, .Opaque, .Enum => {
+            inline for (comptime std.meta.declarations(T)) |decl| {
+                if (decl.is_pub) {
+                    refLiterallyAllDecls(@TypeOf(@field(T, decl.name)));
+                    std.testing.refAllDecls(T);
+                }
+            }
+        },
+        else => {},
+    }
+}
 
 test {
-    const refAllDecls = @import("std").testing.refAllDecls;
-    refAllDecls(@import("Library.zig"));
-    refAllDecls(@import("Face.zig"));
-    refAllDecls(@import("GlyphSlot.zig"));
-    refAllDecls(@import("Glyph.zig"));
-    refAllDecls(@import("BitmapGlyph.zig"));
-    refAllDecls(@import("Bitmap.zig"));
-    refAllDecls(@import("Outline.zig"));
-    refAllDecls(@import("Stroker.zig"));
-    refAllDecls(@import("types.zig"));
-    refAllDecls(@import("error.zig"));
-    refAllDecls(@import("utils.zig"));
+    refLiterallyAllDecls(@This());
+    refLiterallyAllDecls(@import("color.zig"));
+    refLiterallyAllDecls(@import("error.zig"));
+    refLiterallyAllDecls(@import("utils.zig"));
+    refLiterallyAllDecls(@import("Face.zig"));
+    refLiterallyAllDecls(@import("GlyphSlot.zig"));
+    refLiterallyAllDecls(@import("Library.zig"));
+    refLiterallyAllDecls(@import("Outline.zig"));
+    refLiterallyAllDecls(Glyph);
+    refLiterallyAllDecls(Stroker);
 }
