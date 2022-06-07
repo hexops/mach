@@ -40,7 +40,7 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg, freetype.pkg }, .std_platform_only = true },
+        .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg, freetype.freetype_pkg }, .std_platform_only = true },
         .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
     }) |example| {
         // FIXME: this is workaround for a problem that some examples (having the std_platform_only=true field) as
@@ -62,7 +62,7 @@ pub fn build(b: *std.build.Builder) void {
         );
         example_app.setBuildMode(mode);
         inline for (example.packages) |p| {
-            if (std.mem.eql(u8, p.name, freetype.pkg.name))
+            if (std.mem.eql(u8, p.name, freetype.freetype_pkg.name))
                 freetype.link(example_app.b, example_app.step, .{});
         }
 
