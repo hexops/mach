@@ -371,6 +371,10 @@ pub const Entities = struct {
         // new component was added), or the same archetype storage table (if just updating the
         // value of a component.)
         var archetype_entry = try entities.archetypes.getOrPut(entities.allocator, new_hash);
+
+        // WARNING: entities.archetypes.getOrPut() can invalidate archetype, so we refresh it here
+        archetype = entities.archetypeByID(entity);
+
         if (!archetype_entry.found_existing) {
             archetype_entry.value_ptr.* = ArchetypeStorage{
                 .allocator = entities.allocator,
@@ -488,6 +492,10 @@ pub const Entities = struct {
         // new component was added), or the same archetype storage table (if just updating the
         // value of a component.)
         var archetype_entry = try entities.archetypes.getOrPut(entities.allocator, new_hash);
+
+        // WARNING: entities.archetypes.getOrPut() can invalidate archetype, so we refresh it here
+        archetype = entities.archetypeByID(entity);
+
         if (!archetype_entry.found_existing) {
             archetype_entry.value_ptr.* = ArchetypeStorage{
                 .allocator = entities.allocator,
