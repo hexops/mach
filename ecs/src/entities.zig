@@ -428,7 +428,7 @@ pub const Entities = struct {
         while (column_iter.next()) |entry| {
             var old_component_storage = entry.value_ptr;
             var new_component_storage = current_archetype_storage.components.get(entry.key_ptr.*).?;
-            new_component_storage.copy(new_component_storage.ptr, entities.allocator, new_row, old_ptr.row_index, old_component_storage.ptr) catch |err| {
+            new_component_storage.copy(new_component_storage.ptr, entities.allocator, old_ptr.row_index, new_row, old_component_storage.ptr) catch |err| {
                 current_archetype_storage.undoNew();
                 return err;
             };
@@ -528,7 +528,7 @@ pub const Entities = struct {
         while (column_iter.next()) |entry| {
             var src_component_storage = archetype.components.get(entry.key_ptr.*).?;
             var dst_component_storage = entry.value_ptr;
-            dst_component_storage.copy(dst_component_storage.ptr, entities.allocator, new_row, old_ptr.row_index, src_component_storage.ptr) catch |err| {
+            dst_component_storage.copy(dst_component_storage.ptr, entities.allocator, old_ptr.row_index, new_row, src_component_storage.ptr) catch |err| {
                 current_archetype_storage.undoNew();
                 return err;
             };
