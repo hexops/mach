@@ -13,6 +13,7 @@ const js = struct {
     extern fn machCanvasGetWindowHeight(canvas: CanvasId) u32;
     extern fn machCanvasGetFramebufferWidth(canvas: CanvasId) u32;
     extern fn machCanvasGetFramebufferHeight(canvas: CanvasId) u32;
+    extern fn machEmitCloseEvent() void;
     extern fn machEventShift() i32;
     extern fn machEventShiftFloat() f64;
     extern fn machChangeShift() u32;
@@ -63,7 +64,9 @@ pub const Platform = struct {
         js.machCanvasSetTitle(platform.id, title.ptr, title.len);
     }
 
-    pub fn setShouldClose(_: *Platform, _: bool) void {}
+    pub fn setShouldClose(_: *Platform, value: bool) void {
+        if (value) js.machEmitCloseEvent();
+    }
 
     pub fn getFramebufferSize(platform: *Platform) structs.Size {
         return platform.last_framebuffer_size;
