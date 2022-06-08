@@ -196,14 +196,14 @@ export fn wasmInit() void {
     app.init(&engine) catch {};
 }
 
-export fn wasmUpdate() bool {
+export fn wasmUpdate() void {
     // Poll internal events, like resize
     engine.internal.pollChanges();
 
     engine.delta_time_ns = engine.timer.lapPrecise();
     engine.delta_time = @intToFloat(f32, engine.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
-    return app.update(&engine) catch false;
+    app.update(&engine) catch engine.setShouldClose(true);
 }
 
 export fn wasmDeinit() void {

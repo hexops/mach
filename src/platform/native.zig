@@ -511,8 +511,6 @@ pub fn main() !void {
             engine.current_desc = engine.target_desc;
         }
 
-        const success = try app.update(&engine);
-        if (!success)
-            break;
+        try app.update(&engine);
     }
 }
