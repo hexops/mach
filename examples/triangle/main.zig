@@ -73,7 +73,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
 
 pub fn deinit(_: *App, _: *mach.Engine) void {}
 
-pub fn update(app: *App, engine: *mach.Engine) !bool {
+pub fn update(app: *App, engine: *mach.Engine) !void {
     const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
@@ -101,6 +101,4 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     command.release();
     engine.swap_chain.?.present();
     back_buffer_view.release();
-
-    return true;
 }

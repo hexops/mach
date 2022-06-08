@@ -177,7 +177,7 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
     app.depth_texture_view.release();
 }
 
-pub fn update(app: *App, engine: *mach.Engine) !bool {
+pub fn update(app: *App, engine: *mach.Engine) !void {
     while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
@@ -243,8 +243,6 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     command.release();
     engine.swap_chain.?.present();
     back_buffer_view.release();
-
-    return true;
 }
 
 pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {

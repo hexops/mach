@@ -125,7 +125,7 @@ pub fn deinit(app: *App, engine: *mach.Engine) void {
     app.bind_group.release();
 }
 
-pub fn update(app: *App, engine: *mach.Engine) !bool {
+pub fn update(app: *App, engine: *mach.Engine) !void {
     while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
@@ -143,7 +143,7 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
             app.fragment_shader_file.seekTo(0) catch unreachable;
             app.fragment_shader_code = app.fragment_shader_file.readToEndAllocOptions(engine.allocator, std.math.maxInt(u32), null, 1, 0) catch |err| {
                 std.log.err("Err: {}", .{err});
-                return false;
+                return engine.setShouldClose(true);
             };
             app.pipeline = recreatePipeline(engine, app.fragment_shader_code, null);
         }
@@ -189,8 +189,6 @@ pub fn update(app: *App, engine: *mach.Engine) !bool {
     command.release();
     engine.swap_chain.?.present();
     back_buffer_view.release();
-
-    return true;
 }
 
 fn recreatePipeline(engine: *mach.Engine, fragment_shader_code: [:0]const u8, bgl: ?*gpu.BindGroupLayout) gpu.RenderPipeline {
