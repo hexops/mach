@@ -274,6 +274,10 @@ const mach = {
     return cv.canvas.height;
   },
 
+  machEmitCloseEvent() {
+    window.dispatchEvent(new Event("mach-close"));
+  },
+
   machEventShift() {
     if (mach.events.length < 0)
       return 0;

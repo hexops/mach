@@ -24,12 +24,19 @@
           mach.init(instance);
           instance.exports.wasmInit();
 
+          let frame = true;
           let update = function() {{
+            if (!frame) return;
             instance.exports.wasmUpdate();
-            requestAnimationFrame(update);
+            window.requestAnimationFrame(update);
           }};
 
-          requestAnimationFrame(update);
+          window.requestAnimationFrame(update);
+
+          window.addEventListener("mach-close", () => {{
+            instance.exports.wasmDeinit();
+            frame = false;
+          }});
         }})
         .catch(err => console.error(err));
     </script>
