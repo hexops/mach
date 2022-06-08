@@ -33,6 +33,13 @@ pub fn build(b: *Builder) void {
 }
 ```
 
+and optionaly add harfbuzz:
+
+```zig
+exe.addPackage(freetype.harfbuzz_pkg);
+freetype.link(b, exe, .{ .harfbuzz = .{} });
+```
+
 <details>
 <description>Optional: Using Gyro dependency manager</description>
 

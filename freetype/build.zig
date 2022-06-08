@@ -6,7 +6,7 @@ const ft_include_path = ft_root ++ "/include";
 const hb_root = thisDir() ++ "/upstream/harfbuzz";
 const hb_include_path = ft_root ++ "/src";
 
-pub const freetype_pkg = std.build.Pkg{
+pub const pkg = std.build.Pkg{
     .name = "freetype",
     .source = .{ .path = thisDir() ++ "/src/freetype/main.zig" },
 };
@@ -31,7 +31,7 @@ pub fn build(b: *std.build.Builder) !void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
-    const freetype_tests = b.addTestSource(freetype_pkg.source);
+    const freetype_tests = b.addTestSource(pkg.source);
     freetype_tests.setBuildMode(mode);
     freetype_tests.setTarget(target);
     link(b, freetype_tests, .{});
@@ -39,7 +39,7 @@ pub fn build(b: *std.build.Builder) !void {
     const main_tests = b.addTest("test/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
-    main_tests.addPackage(freetype_pkg);
+    main_tests.addPackage(pkg);
     link(b, main_tests, .{ .freetype = .{ .ft_config_path = "./test/ft" } });
 
     const test_step = b.step("test", "Run library tests");
@@ -53,7 +53,7 @@ pub fn build(b: *std.build.Builder) !void {
         const example_exe = b.addExecutable("example-" ++ example, "examples/" ++ example ++ ".zig");
         example_exe.setBuildMode(mode);
         example_exe.setTarget(target);
-        example_exe.addPackage(freetype_pkg);
+        example_exe.addPackage(pkg);
         link(b, example_exe, .{});
         example_exe.install();
 
