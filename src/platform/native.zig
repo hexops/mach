@@ -17,6 +17,7 @@ pub const Platform = struct {
 
     last_window_size: structs.Size,
     last_framebuffer_size: structs.Size,
+    waitEventTimeout: ?f64 = null,
 
     native_instance: gpu.NativeInstance,
 
@@ -305,6 +306,15 @@ pub const Platform = struct {
         return platform.last_window_size;
     }
 
+    pub fn hasEvent(platform: *Platform) !bool {
+        try glfw.pollEvents();
+        return platform.events.first != null;
+    }
+
+    pub fn setWaitEvent(platform: *Platform, timeout: ?f64) void {
+        platform.waitEventTimeout = timeout;
+    }
+
     pub fn pollEvent(platform: *Platform) ?structs.Event {
         if (platform.events.popFirst()) |n| {
             defer platform.allocator.destroy(n);
@@ -512,5 +522,19 @@ pub fn main() !void {
         }
 
         try app.update(&engine);
+
+        if (engine.internal.waitEventTimeout) |timeout| {
+          // wait for an event
+          if (timeout == std.math.floatMax(f64)) {
+            // no timeout
+            try glfw.waitEvents();
+          }
+          else {
+            // with a timeout
+            try glfw.waitEventsTimeout(timeout);
+          }
+
+          engine.internal.waitEventTimeout = null;
+        }
     }
 }
