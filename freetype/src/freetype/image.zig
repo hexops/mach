@@ -45,8 +45,13 @@ pub const Bitmap = struct {
         return @intToEnum(PixelMode, self.handle.pixel_mode);
     }
 
-    pub fn buffer(self: Bitmap) []const u8 {
+    pub fn buffer(self: Bitmap) ?[]const u8 {
         const buffer_size = std.math.absCast(self.pitch()) * self.rows();
-        return self.handle.buffer[0..buffer_size];
+        return if (self.handle.buffer == null)
+            // freetype returns a null pointer for zero-length allocations
+            // https://github.com/hexops/freetype/blob/bbd80a52b7b749140ec87d24b6c767c5063be356/freetype/src/base/ftutil.c#L135
+            null
+        else
+            self.handle.buffer[0..buffer_size];
     }
 };

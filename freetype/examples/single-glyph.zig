@@ -21,7 +21,7 @@ pub fn main() !void {
     while (i < bitmap.rows()) : (i += 1) {
         var j: usize = 0;
         while (j < bitmap.width()) : (j += 1) {
-            const char: u8 = switch (bitmap.buffer()[i * bitmap.width() + j]) {
+            const char: u8 = switch (bitmap.buffer().?[i * bitmap.width() + j]) {
                 0 => ' ',
                 1...128 => ';',
                 else => '#',
