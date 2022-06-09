@@ -14,6 +14,8 @@ const js = struct {
     extern fn machCanvasGetFramebufferWidth(canvas: CanvasId) u32;
     extern fn machCanvasGetFramebufferHeight(canvas: CanvasId) u32;
     extern fn machEmitCloseEvent() void;
+    extern fn machSetWaitEvent(timeout: f64) void;
+    extern fn machHasEvent() bool;
     extern fn machEventShift() i32;
     extern fn machEventShiftFloat() f64;
     extern fn machChangeShift() u32;
@@ -68,6 +70,10 @@ pub const Platform = struct {
         if (value) js.machEmitCloseEvent();
     }
 
+    pub fn setWaitEvent(_: *Platform, timeout: f64) void {
+        js.machSetWaitEvent(timeout);
+    }
+
     pub fn getFramebufferSize(platform: *Platform) structs.Size {
         return platform.last_framebuffer_size;
     }
@@ -97,6 +103,10 @@ pub const Platform = struct {
             },
             else => {},
         }
+    }
+
+    pub fn hasEvent(_: *Platform) bool {
+        return js.machHasEvent();
     }
 
     pub fn pollEvent(_: *Platform) ?structs.Event {

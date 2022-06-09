@@ -140,6 +140,9 @@ const mach = {
   observer: undefined,
   events: [],
   changes: [],
+  update: undefined,
+  wait_event_timeout: 0,
+  wait_event_timer: undefined,
 
   init(wasm) {
     this.wasm = wasm;
@@ -181,6 +184,14 @@ const mach = {
     throw Error(mach.getString(str, len));
   },
 
+  machClearEventTimer() {
+    if (mach.wait_event_timer !== undefined) {
+      clearTimeout(mach.wait_event_timer);
+      mach.wait_event_timer = undefined;
+      window.requestAnimationFrame(mach.update);
+    }
+  },
+
   machCanvasInit(width, height, id) {
     let canvas = document.createElement("canvas");
     canvas.id = "#mach-canvas-" + mach.canvases.length;
@@ -198,32 +209,39 @@ const mach = {
 
     canvas.addEventListener("keydown", (ev) => {
       mach.events.push(...[1, convertKeyCode(ev.code)]);
+      mach.machClearEventTimer();
     });
 
     canvas.addEventListener("keyup", (ev) => {
       mach.events.push(...[2, convertKeyCode(ev.code)]);
+      mach.machClearEventTimer();
     });
 
     canvas.addEventListener("mousemove", (ev) => {
       mach.events.push(...[3, ev.clientX, ev.clientY]);
+      mach.machClearEventTimer();
 	});
 
     canvas.addEventListener("mousedown", (ev) => {
       mach.events.push(...[4, ev.button]);
+      mach.machClearEventTimer();
 	});
 
     canvas.addEventListener("mouseup", (ev) => {
       mach.events.push(...[5, ev.button]);
+      mach.machClearEventTimer();
 	});
 
     canvas.addEventListener("wheel", (ev) => {
       mach.events.push(...[6, ev.deltaX, ev.deltaY]);
+      mach.machClearEventTimer();
 	});
 
     canvas.addEventListener("mach-canvas-resize", (ev) => {
       const cv_index = mach.canvases.findIndex((el) => el.canvas === ev.currentTarget);
       const cv = mach.canvases[cv_index];
       mach.changes.push(...[1, cv.canvas.width, cv.canvas.height, window.devicePixelRatio]);
+      mach.machClearEventTimer();
     });
 
     document.body.appendChild(canvas);
@@ -278,8 +296,16 @@ const mach = {
     window.dispatchEvent(new Event("mach-close"));
   },
 
+  machSetWaitEvent(timeout) {
+    mach.wait_event_timeout = timeout;  
+  },
+
+  machHasEvent() {
+    return (mach.events.length > 0);
+  },
+
   machEventShift() {
-    if (mach.events.length < 0)
+    if (mach.events.length === 0)
       return 0;
 
     return mach.events.shift();
@@ -290,7 +316,7 @@ const mach = {
   },
 
   machChangeShift() {
-    if (mach.changes.length < 0)
+    if (mach.changes.length === 0)
       return 0;
 
     return mach.changes.shift();
