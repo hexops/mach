@@ -28,8 +28,18 @@
           let update = function() {{
             if (!frame) return;
             instance.exports.wasmUpdate();
-            window.requestAnimationFrame(update);
+            if (mach.wait_event_timeout > 0) {{
+              mach.wait_event_timer = setTimeout(() => {{
+                window.requestAnimationFrame(update);
+                }},
+                mach.wait_event_timeout * 1000);
+            }}
+            else {{
+              window.requestAnimationFrame(update);
+            }}
           }};
+
+          mach.update = update;
 
           window.requestAnimationFrame(update);
 
