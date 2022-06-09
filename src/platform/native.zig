@@ -17,7 +17,7 @@ pub const Platform = struct {
 
     last_window_size: structs.Size,
     last_framebuffer_size: structs.Size,
-    waitEventTimeout: ?f64 = null,
+    wait_event_timeout: f64 = 0.0,
 
     native_instance: gpu.NativeInstance,
 
@@ -306,13 +306,12 @@ pub const Platform = struct {
         return platform.last_window_size;
     }
 
-    pub fn hasEvent(platform: *Platform) !bool {
-        try glfw.pollEvents();
+    pub fn hasEvent(platform: *Platform) bool {
         return platform.events.first != null;
     }
 
-    pub fn setWaitEvent(platform: *Platform, timeout: ?f64) void {
-        platform.waitEventTimeout = timeout;
+    pub fn setWaitEvent(platform: *Platform, timeout: f64) void {
+        platform.wait_event_timeout = timeout;
     }
 
     pub fn pollEvent(platform: *Platform) ?structs.Event {
@@ -495,7 +494,21 @@ pub fn main() !void {
 
     const window = engine.internal.window;
     while (!window.shouldClose()) {
-        try glfw.pollEvents();
+        if (engine.internal.wait_event_timeout > 0.0) {
+          // wait for an event
+          if (engine.internal.wait_event_timeout == std.math.floatMax(f64)) {
+            // no timeout
+            try glfw.waitEvents();
+          }
+          else {
+            // with a timeout
+            try glfw.waitEventsTimeout(engine.internal.wait_event_timeout);
+          }
+        }
+        else {
+          // don't wait
+          try glfw.pollEvents();
+        }
 
         engine.delta_time_ns = engine.timer.lapPrecise();
         engine.delta_time = @intToFloat(f32, engine.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
@@ -522,19 +535,5 @@ pub fn main() !void {
         }
 
         try app.update(&engine);
-
-        if (engine.internal.waitEventTimeout) |timeout| {
-          // wait for an event
-          if (timeout == std.math.floatMax(f64)) {
-            // no timeout
-            try glfw.waitEvents();
-          }
-          else {
-            // with a timeout
-            try glfw.waitEventsTimeout(timeout);
-          }
-
-          engine.internal.waitEventTimeout = null;
-        }
     }
 }

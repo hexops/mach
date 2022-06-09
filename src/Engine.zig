@@ -58,10 +58,10 @@ pub fn setShouldClose(engine: *Engine, value: bool) void {
     engine.internal.setShouldClose(value);
 }
 
-// Signals mach to wait for an event with timeout before calling update()
-// again.  Mach resets to null, so call during each update() if needed.
+// Sets seconds to wait for an event with timeout before calling update()
+// again.
 //
-// timeout is in seconds (null disables waiting)
+// timeout is in seconds (<= 0.0 disables waiting)
 // - pass std.math.floatMax(f64) to wait with no timeout
 //
 // update() can be called earlier than timeout if an event happens (key press,
@@ -69,9 +69,7 @@ pub fn setShouldClose(engine: *Engine, value: bool) void {
 //
 // update() can be called a bit later than timeout due to timer precision and
 // process scheduling.
-//
-// Calling this multiple times means the last call's value is used.
-pub fn setWaitEvent(engine: *Engine, timeout: ?f64) void {
+pub fn setWaitEvent(engine: *Engine, timeout: f64) void {
     engine.internal.setWaitEvent(timeout);
 }
 
@@ -89,7 +87,7 @@ pub fn getWindowSize(engine: *Engine) structs.Size {
     return engine.internal.getWindowSize();
 }
 
-pub fn hasEvent(engine: *Engine) !bool {
+pub fn hasEvent(engine: *Engine) bool {
     return engine.internal.hasEvent();
 }
 
