@@ -21,7 +21,7 @@ pub const Buffer = struct {
         verify: bool = false,
         produce_unsafe_to_concat: bool = false,
 
-        pub const Flag = enum(u21) {
+        pub const Flag = enum(u7) {
             bot = c.HB_BUFFER_FLAG_BOT,
             eot = c.HB_BUFFER_FLAG_EOT,
             preserve_default_ignorables = c.HB_BUFFER_FLAG_PRESERVE_DEFAULT_IGNORABLES,
@@ -31,12 +31,12 @@ pub const Buffer = struct {
             produce_unsafe_to_concat = c.HB_BUFFER_FLAG_PRODUCE_UNSAFE_TO_CONCAT,
         };
 
-        pub fn from(bits: u21) Flags {
+        pub fn from(bits: u7) Flags {
             return utils.bitFieldsToStruct(Flags, Flag, bits);
         }
 
-        pub fn cast(flags: Flags) u21 {
-            return utils.structToBitFields(u21, Flag, flags);
+        pub fn cast(flags: Flags) u7 {
+            return utils.structToBitFields(u7, Flag, flags);
         }
     };
 
@@ -140,11 +140,11 @@ pub const Buffer = struct {
     }
 
     pub fn setLanguage(self: Buffer, lang: Language) void {
-        c.hb_buffer_set_language(self.handle, @enumToInt(lang));
+        c.hb_buffer_set_language(self.handle, lang.handle);
     }
 
     pub fn getLanguage(self: Buffer) Language {
-        return @intToEnum(Language, c.hb_buffer_get_language(self.handle));
+        return Language{ .handle = c.hb_buffer_get_language(self.handle) };
     }
 
     pub fn setFlags(self: Buffer, flags: Flags) void {
@@ -152,6 +152,6 @@ pub const Buffer = struct {
     }
 
     pub fn getFlags(self: Buffer) Flags {
-        return Flags.from(c.hb_buffer_get_flags(self.handle));
+        return Flags.from(@intCast(u7, c.hb_buffer_get_flags(self.handle)));
     }
 };

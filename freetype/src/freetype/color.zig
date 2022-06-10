@@ -107,15 +107,15 @@ pub const PaletteData = struct {
     }
 
     pub fn paletteNameIDs(self: PaletteData) ?[]const u16 {
-        return @ptrCast(?[]const u16, self.handle.palette_name_ids[0..self.numPalettes()]);
+        return self.handle.palette_name_ids[0..self.numPalettes()];
     }
 
     pub fn paletteFlags(self: PaletteData) ?[]const u16 {
-        return @ptrCast(?[]const u16, self.handle.palette_flags[0..self.numPalettes()]);
+        return self.handle.palette_flags[0..self.numPalettes()];
     }
 
     pub fn paletteFlag(self: PaletteData, index: usize) PaletteFlags {
-        return PaletteFlags.from(@intCast(u2, self.handle.*.palette_flags[index]));
+        return PaletteFlags.from(@intCast(u2, self.handle.palette_flags[index]));
     }
 
     pub fn numPaletteEntries(self: PaletteData) u16 {
@@ -123,7 +123,7 @@ pub const PaletteData = struct {
     }
 
     pub fn paletteEntryNameIDs(self: PaletteData) ?[]const u16 {
-        return @ptrCast(?[]const u16, self.handle.palette_entry_name_ids[0..self.numPaletteEntries()]);
+        return self.handle.palette_entry_name_ids[0..self.numPaletteEntries()];
     }
 };
 
@@ -141,7 +141,7 @@ pub const PaletteFlags = packed struct {
     }
 
     pub fn to(flags: PaletteFlags) u2 {
-        return utils.structToBitFields(u2, PaletteFlags, Flag, flags);
+        return utils.structToBitFields(u2, Flag, flags);
     }
 };
 

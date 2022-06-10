@@ -181,7 +181,7 @@ pub const Language = struct {
 
     pub fn init(name: []const u8) Language {
         return .{
-            .handle = c.hb_language_from_string(&name[0], name.len),
+            .handle = c.hb_language_from_string(&name[0], @intCast(c_int, name.len)),
         };
     }
 

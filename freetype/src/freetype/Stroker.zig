@@ -1,6 +1,6 @@
 const c = @import("c.zig");
 
-pub const Stroker = @This();
+const Stroker = @This();
 
 pub const LineCap = enum(u2) {
     butt = c.FT_STROKER_LINECAP_BUTT,

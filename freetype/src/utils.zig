@@ -21,15 +21,16 @@ pub fn bitFieldsToStruct(comptime StructType: type, comptime EnumDataType: type,
 }
 
 pub fn refAllDecls(comptime T: type) void {
-    switch (@typeInfo(T)) {
-        .Struct, .Union, .Opaque, .Enum => {
-            inline for (comptime std.meta.declarations(T)) |decl| {
-                if (decl.is_pub) {
-                    refAllDecls(@TypeOf(@field(T, decl.name)));
-                    std.testing.refAllDecls(T);
+    @setEvalBranchQuota(10000);
+    inline for (comptime std.meta.declarations(T)) |decl| {
+        if (decl.is_pub) {
+            if (@TypeOf(@field(T, decl.name)) == type) {
+                switch (@typeInfo(@field(T, decl.name))) {
+                    .Struct, .Enum, .Union, .Opaque => refAllDecls(@field(T, decl.name)),
+                    else => {},
                 }
             }
-        },
-        else => {},
+            _ = @field(T, decl.name);
+        }
     }
 }
