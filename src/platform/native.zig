@@ -495,19 +495,17 @@ pub fn main() !void {
     const window = engine.internal.window;
     while (!window.shouldClose()) {
         if (engine.internal.wait_event_timeout > 0.0) {
-          // wait for an event
-          if (engine.internal.wait_event_timeout == std.math.floatMax(f64)) {
-            // no timeout
-            try glfw.waitEvents();
-          }
-          else {
-            // with a timeout
-            try glfw.waitEventsTimeout(engine.internal.wait_event_timeout);
-          }
-        }
-        else {
-          // don't wait
-          try glfw.pollEvents();
+            // wait for an event
+            if (engine.internal.wait_event_timeout == std.math.floatMax(f64)) {
+                // no timeout
+                try glfw.waitEvents();
+            } else {
+                // with a timeout
+                try glfw.waitEventsTimeout(engine.internal.wait_event_timeout);
+            }
+        } else {
+            // don't wait
+            try glfw.pollEvents();
         }
 
         engine.delta_time_ns = engine.timer.lapPrecise();
