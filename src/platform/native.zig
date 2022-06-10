@@ -17,6 +17,7 @@ pub const Platform = struct {
 
     last_window_size: structs.Size,
     last_framebuffer_size: structs.Size,
+    last_position: glfw.Window.Pos,
     wait_event_timeout: f64 = 0.0,
 
     native_instance: gpu.NativeInstance,
@@ -178,6 +179,7 @@ pub const Platform = struct {
             .allocator = engine.allocator,
             .last_window_size = .{ .width = window_size.width, .height = window_size.height },
             .last_framebuffer_size = .{ .width = framebuffer_size.width, .height = framebuffer_size.height },
+            .last_position = try window.getPos(),
             .native_instance = native_instance,
         };
     }
@@ -292,6 +294,16 @@ pub const Platform = struct {
             @bitCast(glfw.Window.SizeOptional, options.size_min),
             @bitCast(glfw.Window.SizeOptional, options.size_max),
         );
+        if (options.fullscreen) {
+            platform.last_position = try platform.window.getPos();
+
+            const monitor = glfw.Monitor.getPrimary().?;
+            const video_mode = try monitor.getVideoMode();
+            try platform.window.setMonitor(monitor, 0, 0, video_mode.getWidth(), video_mode.getHeight(), null);
+        } else {
+            const position = platform.last_position;
+            try platform.window.setMonitor(null, position.x, position.y, options.width, options.height, null);
+        }
     }
 
     pub fn setShouldClose(platform: *Platform, value: bool) void {
