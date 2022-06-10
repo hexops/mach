@@ -222,8 +222,8 @@ pub const ArchetypeStorage = struct {
     pub fn getRaw(storage: *ArchetypeStorage, row_index: u32, name: []const u8) []u8 {
         for (storage.columns) |column| {
             if (!std.mem.eql(u8, column.name, name)) continue;
-            const start = column.offset+(column.size*row_index);
-            return storage.block[start..start+(column.size)];
+            const start = column.offset + (column.size * row_index);
+            return storage.block[start .. start + (column.size)];
         }
         @panic("no such component");
     }
@@ -240,17 +240,17 @@ pub const ArchetypeStorage = struct {
             };
             if (!ok) @panic("setRaw with non-matching column");
         }
-        mem.copy(u8, storage.block[column.offset+(row_index*column.size)..], component);
+        mem.copy(u8, storage.block[column.offset + (row_index * column.size) ..], component);
     }
 
     /// Swap-removes the specified row with the last row in the table.
     pub fn remove(storage: *ArchetypeStorage, row_index: u32) void {
         if (storage.len > 1) {
             for (storage.columns) |column| {
-                const dstStart = column.offset+(column.size*row_index);
-                const dst = storage.block[dstStart..dstStart+(column.size)];
-                const srcStart = column.offset+(column.size*(storage.len-1));
-                const src = storage.block[srcStart..srcStart+(column.size)];
+                const dstStart = column.offset + (column.size * row_index);
+                const dst = storage.block[dstStart .. dstStart + (column.size)];
+                const srcStart = column.offset + (column.size * (storage.len - 1));
+                const src = storage.block[srcStart .. srcStart + (column.size)];
                 std.mem.copy(u8, dst, src);
             }
         }
@@ -458,7 +458,7 @@ pub const Entities = struct {
         // A swap removal will be performed, update the entity stored in the last row of the
         // archetype table to point to the row the entity we are removing is currently located.
         if (archetype.len > 1) {
-            const last_row_entity_id = archetype.get(entities.allocator, archetype.len-1, "id", EntityID).?;
+            const last_row_entity_id = archetype.get(entities.allocator, archetype.len - 1, "id", EntityID).?;
             try entities.entities.put(entities.allocator, last_row_entity_id, Pointer{
                 .archetype_index = ptr.archetype_index,
                 .row_index = ptr.row_index,
@@ -499,12 +499,12 @@ pub const Entities = struct {
             // pointer. Refresh it now:
             archetype = entities.archetypeByID(entity);
 
-            const columns = entities.allocator.alloc(Column, archetype.columns.len+1) catch |err| {
+            const columns = entities.allocator.alloc(Column, archetype.columns.len + 1) catch |err| {
                 assert(entities.archetypes.swapRemove(new_hash));
                 return err;
             };
             mem.copy(Column, columns, archetype.columns);
-            columns[columns.len-1] = .{
+            columns[columns.len - 1] = .{
                 .name = name,
                 .typeId = typeId(@TypeOf(component)),
                 .size = @sizeOf(@TypeOf(component)),
@@ -608,7 +608,7 @@ pub const Entities = struct {
             // pointer. Refresh it now:
             archetype = entities.archetypeByID(entity);
 
-            const columns = entities.allocator.alloc(Column, archetype.columns.len-1) catch |err| {
+            const columns = entities.allocator.alloc(Column, archetype.columns.len - 1) catch |err| {
                 assert(entities.archetypes.swapRemove(new_hash));
                 return err;
             };
