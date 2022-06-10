@@ -25,21 +25,16 @@
           instance.exports.wasmInit();
 
           let frame = true;
+          let last_update_time = performance.now();
           let update = function() {{
             if (!frame) return;
-            instance.exports.wasmUpdate();
-            if (mach.wait_event_timeout > 0) {{
-              mach.wait_event_timer = setTimeout(() => {{
-                window.requestAnimationFrame(update);
-                }},
-                mach.wait_event_timeout * 1000);
+            if (mach.machHasEvent() ||
+                (last_update_time + (mach.wait_event_timeout * 1000)) <= performance.now()) {{
+              instance.exports.wasmUpdate();
+              last_update_time = performance.now();
             }}
-            else {{
-              window.requestAnimationFrame(update);
-            }}
+            window.requestAnimationFrame(update);
           }};
-
-          mach.update = update;
 
           window.requestAnimationFrame(update);
 
