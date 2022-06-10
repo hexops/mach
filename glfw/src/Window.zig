@@ -1187,7 +1187,7 @@ pub inline fn getMonitor(self: Window) ?Monitor {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_monitor, window_full_screen, glfw.Window.getMonitor, glfw.Window.setSize
-pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: i32, ypos: i32, width: i32, height: i32, refresh_rate: ?u32) error{PlatformError}!void {
+pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: u32, ypos: u32, width: u32, height: u32, refresh_rate: ?u32) error{PlatformError}!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowMonitor(
         self.handle,
