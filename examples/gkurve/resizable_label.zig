@@ -102,7 +102,7 @@ fn write(ctx: WriterContext, bytes: []const u8) WriterError!usize {
         switch (char) {
             '\n' => {
                 offset[0] = 0;
-                offset[1] -= @intToFloat(f32, ctx.label.face.sizeMetrics().?.height >> 6);
+                offset[1] -= @intToFloat(f32, ctx.label.face.size().metrics().height >> 6);
                 std.debug.todo("New line not implemented yet");
             },
             ' ' => {
@@ -123,7 +123,7 @@ fn write(ctx: WriterContext, bytes: []const u8) WriterError!usize {
                 const v = try ctx.label.char_map.getOrPut(char);
                 if (!v.found_existing) {
                     try ctx.label.face.loadChar(char, .{ .no_scale = true, .no_bitmap = true });
-                    const glyph = ctx.label.face.glyph;
+                    const glyph = ctx.label.face.glyph();
 
                     // Use a big scale and then scale to the actual text size
                     const multiplier = 1024 << 6;
@@ -167,7 +167,7 @@ fn write(ctx: WriterContext, bytes: []const u8) WriterError!usize {
                         .shift = 0,
                         .delta = 0,
                     };
-                    try ctx.label.face.glyph.outline().?.decompose(&outline_ctx, callbacks);
+                    try ctx.label.face.glyph().outline().?.decompose(&outline_ctx, callbacks);
 
                     uniteOutsideAndInsideVertices(&outline_ctx);
 
