@@ -20,26 +20,16 @@ pub fn bitFieldsToStruct(comptime StructType: type, comptime EnumDataType: type,
     return value;
 }
 
-const TestEnum = enum(u16) {
-    filed_1 = (1 << 1),
-    filed_2 = (1 << 2),
-    filed_3 = (1 << 3),
-};
-
-const TestStruct = packed struct {
-    filed_1: bool = false,
-    filed_2: bool = false,
-    filed_3: bool = false,
-};
-
-test "struct fields to bit fields" {
-    try std.testing.expectEqual(@as(u16, (1 << 1) | (1 << 3)), structToBitFields(u16, TestEnum, TestStruct{
-        .filed_1 = true,
-        .filed_3 = true,
-    }));
-    try std.testing.expectEqual(@as(u16, 0), structToBitFields(u16, TestEnum, TestStruct{}));
-}
-
-test "bit fields to struct" {
-    try std.testing.expectEqual(TestStruct{ .filed_1 = true, .filed_2 = true, .filed_3 = false }, bitFieldsToStruct(TestStruct, TestEnum, (1 << 1) | (1 << 2)));
+pub fn refAllDecls(comptime T: type) void {
+    switch (@typeInfo(T)) {
+        .Struct, .Union, .Opaque, .Enum => {
+            inline for (comptime std.meta.declarations(T)) |decl| {
+                if (decl.is_pub) {
+                    refAllDecls(@TypeOf(@field(T, decl.name)));
+                    std.testing.refAllDecls(T);
+                }
+            }
+        },
+        else => {},
+    }
 }

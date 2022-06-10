@@ -4,27 +4,37 @@ const Builder = std.build.Builder;
 const ft_root = thisDir() ++ "/upstream/freetype";
 const ft_include_path = ft_root ++ "/include";
 const hb_root = thisDir() ++ "/upstream/harfbuzz";
-const hb_include_path = ft_root ++ "/src";
+const hb_include_path = hb_root ++ "/src";
+
+const utils_pkg = std.build.Pkg{
+    .name = "utils",
+    .source = .{ .path = thisDir() ++ "/src/utils.zig" },
+};
 
 pub const pkg = std.build.Pkg{
     .name = "freetype",
     .source = .{ .path = thisDir() ++ "/src/freetype/main.zig" },
+    .dependencies = &.{utils_pkg},
 };
+
 pub const harfbuzz_pkg = std.build.Pkg{
     .name = "harfbuzz",
     .source = .{ .path = thisDir() ++ "/src/harfbuzz/main.zig" },
+    .dependencies = &.{utils_pkg},
 };
 
 pub const Options = struct {
     harfbuzz: ?HarfbuzzOptions = null,
     freetype: FreetypeOptions = .{},
 };
+
 pub const FreetypeOptions = struct {
     /// the path you specify freetype options
     /// via `ftoptions.h` and `ftmodule.h`
     /// e.g `test/ft/`
     ft_config_path: ?[]const u8 = null,
 };
+
 pub const HarfbuzzOptions = struct {};
 
 pub fn build(b: *std.build.Builder) !void {
@@ -34,7 +44,14 @@ pub fn build(b: *std.build.Builder) !void {
     const freetype_tests = b.addTestSource(pkg.source);
     freetype_tests.setBuildMode(mode);
     freetype_tests.setTarget(target);
+    freetype_tests.addPackage(utils_pkg);
     link(b, freetype_tests, .{});
+
+    const harfbuzz_tests = b.addTestSource(harfbuzz_pkg.source);
+    harfbuzz_tests.setBuildMode(mode);
+    harfbuzz_tests.setTarget(target);
+    harfbuzz_tests.addPackage(utils_pkg);
+    link(b, harfbuzz_tests, .{ .harfbuzz = .{} });
 
     const main_tests = b.addTest("test/main.zig");
     main_tests.setBuildMode(mode);
@@ -44,6 +61,7 @@ pub fn build(b: *std.build.Builder) !void {
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&freetype_tests.step);
+    test_step.dependOn(&harfbuzz_tests.step);
     test_step.dependOn(&main_tests.step);
 
     inline for ([_][]const u8{
@@ -80,6 +98,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
         const hb_lib = buildHarfbuzz(b, step, hb_options);
         hb_lib.linkLibrary(ft_lib);
         step.linkLibrary(hb_lib);
+        step.addIncludePath(hb_include_path);
     }
 }
 

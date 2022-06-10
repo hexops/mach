@@ -1,6 +1,6 @@
 const std = @import("std");
+const utils = @import("utils");
 const c = @import("c.zig");
-const utils = @import("utils.zig");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
 const GlyphSlot = @import("freetype.zig").GlyphSlot;
