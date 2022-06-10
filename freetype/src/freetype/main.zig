@@ -11,14 +11,12 @@ pub const Error = @import("error.zig").Error;
 const utils = @import("utils");
 
 test {
-    utils.refAllDecls(@This());
+    utils.refAllDecls(@import("freetype.zig"));
+    utils.refAllDecls(@import("types.zig"));
+    utils.refAllDecls(@import("image.zig"));
     utils.refAllDecls(@import("color.zig"));
+    utils.refAllDecls(@import("lcdfilter.zig"));
     utils.refAllDecls(@import("error.zig"));
-    utils.refAllDecls(@import("utils"));
-    utils.refAllDecls(@import("Face.zig"));
-    utils.refAllDecls(@import("GlyphSlot.zig"));
-    utils.refAllDecls(@import("Library.zig"));
-    utils.refAllDecls(@import("Outline.zig"));
     utils.refAllDecls(Glyph);
     utils.refAllDecls(Stroker);
 }

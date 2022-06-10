@@ -6,5 +6,7 @@ pub const c = @import("c.zig");
 const utils = @import("utils");
 
 test {
-    utils.refAllDecls(@This());
+    utils.refAllDecls(@import("blob.zig"));
+    utils.refAllDecls(@import("buffer.zig"));
+    utils.refAllDecls(@import("common.zig"));
 }

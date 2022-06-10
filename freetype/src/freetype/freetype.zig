@@ -75,7 +75,9 @@ pub const Size = struct {
     }
 
     pub fn deinit(self: Size) void {
-        c.FT_Done_Size(self.handle);
+        intToError(c.FT_Done_Size(self.handle)) catch |err| {
+            std.log.err("mach/freetype: Failed to destroy Size: {}", .{err});
+        };
     }
 };
 
@@ -207,7 +209,7 @@ pub const FSType = packed struct {
     }
 
     pub fn cast(flags: FSType) u10 {
-        return utils.structToBitFields(u10, FSType, Flag, flags);
+        return utils.structToBitFields(u10, Flag, flags);
     }
 };
 
@@ -225,7 +227,7 @@ pub const StyleFlags = packed struct {
     }
 
     pub fn cast(flags: StyleFlags) u2 {
-        return utils.structToBitFields(u2, StyleFlags, Flag, flags);
+        return utils.structToBitFields(u2, Flag, flags);
     }
 };
 
