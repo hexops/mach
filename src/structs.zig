@@ -31,6 +31,9 @@ pub const Options = struct {
     /// The maximum allowed size for the window.
     size_max: SizeOptional = .{ .width = null, .height = null },
 
+    /// Fullscreen window.
+    fullscreen: bool = false,
+
     /// Monitor synchronization modes.
     vsync: enums.VSyncMode = .double,
 
