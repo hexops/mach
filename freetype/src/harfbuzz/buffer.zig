@@ -4,6 +4,7 @@ const c = @import("c.zig");
 const Direction = @import("common.zig").Direction;
 const Script = @import("common.zig").Script;
 const Language = @import("common.zig").Language;
+const Font = @import("font.zig").Font;
 
 pub const ContentType = enum(u2) {
     invalid = c.HB_BUFFER_CONTENT_TYPE_INVALID,
@@ -17,7 +18,45 @@ pub const ClusterLevel = enum(u2) {
     characters = c.HB_BUFFER_CLUSTER_LEVEL_CHARACTERS,
 };
 
-pub const GlyphInfo = c.hb_glyph_info_t;
+pub const SerializeFormat = enum(u31) {
+    text = c.HB_BUFFER_SERIALIZE_FORMAT_TEXT,
+    json = c.HB_BUFFER_SERIALIZE_FORMAT_JSON,
+    invalid = c.HB_BUFFER_SERIALIZE_FORMAT_INVALID,
+};
+
+pub const GlyphInfo = extern struct {
+    codepoint: u32,
+    cluster: u32,
+
+    pub fn getFlags(self: GlyphInfo) GlyphFlags {
+        return GlyphFlags.from(@intCast(u2, hb_glyph_info_get_glyph_flags(&self)));
+    }
+};
+
+pub const Position = extern struct {
+    x_advance: i32,
+    y_advance: i32,
+    x_offset: i32,
+    y_offset: i32,
+};
+
+pub const GlyphFlags = packed struct {
+    unsafe_to_break: bool = false,
+    unsafe_to_concat: bool = false,
+
+    pub const Flag = enum(u2) {
+        unsafe_to_break = c.HB_GLYPH_FLAG_UNSAFE_TO_BREAK,
+        unsafe_to_concat = c.HB_GLYPH_FLAG_UNSAFE_TO_CONCAT,
+    };
+
+    pub fn from(bits: u2) GlyphFlags {
+        return utils.bitFieldsToStruct(GlyphFlags, Flag, bits);
+    }
+
+    pub fn cast(self: GlyphFlags) u2 {
+        return utils.structToBitFields(u2, Flag, self);
+    }
+};
 
 pub const SegmentProps = struct {
     direction: Direction,
@@ -40,6 +79,76 @@ pub const SegmentProps = struct {
             .script = @enumToInt(self.script),
             .language = self.language.handle,
         };
+    }
+
+    pub fn compare(a: SegmentProps, b: SegmentProps) bool {
+        return c.hb_segment_properties_equal(&a.cast(), &b.cast()) > 0;
+    }
+
+    pub fn hash(self: SegmentProps) usize {
+        return c.hb_segment_properties_hash(&self.cast());
+    }
+
+    pub fn overlay(self: SegmentProps, src: SegmentProps) void {
+        c.hb_segment_properties_overlay(&self.cast(), &src.cast());
+    }
+};
+
+pub const SerializeFlags = packed struct {
+    no_clusters: bool = false,
+    no_positions: bool = false,
+    no_glyph_names: bool = false,
+    glyph_extents: bool = false,
+    glyph_flags: bool = false,
+    no_advances: bool = false,
+
+    pub const Flag = enum(u6) {
+        no_clusters = c.HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS,
+        no_positions = c.HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS,
+        no_glyph_names = c.HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES,
+        glyph_extents = c.HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS,
+        glyph_flags = c.HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS,
+        no_advances = c.HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES,
+    };
+
+    pub fn from(bits: u6) SerializeFlags {
+        return utils.bitFieldsToStruct(SerializeFlags, Flag, bits);
+    }
+
+    pub fn cast(self: SerializeFlags) u6 {
+        return utils.structToBitFields(u6, Flag, self);
+    }
+};
+
+pub const DiffFlags = packed struct {
+    equal: bool = false,
+    content_type_mismatch: bool = false,
+    length_mismatch: bool = false,
+    notdef_present: bool = false,
+    dotted_circle_present: bool = false,
+    codepoint_mismatch: bool = false,
+    cluster_mismatch: bool = false,
+    glyph_flags_mismatch: bool = false,
+    position_mismatch: bool = false,
+
+    pub const Flag = enum(u8) {
+        equal = c.HB_BUFFER_DIFF_FLAG_EQUAL,
+        content_type_mismatch = c.HB_BUFFER_DIFF_FLAG_CONTENT_TYPE_MISMATCH,
+        length_mismatch = c.HB_BUFFER_DIFF_FLAG_LENGTH_MISMATCH,
+        notdef_present = c.HB_BUFFER_DIFF_FLAG_NOTDEF_PRESENT,
+        dotted_circle_present = c.HB_BUFFER_DIFF_FLAG_DOTTED_CIRCLE_PRESENT,
+        codepoint_mismatch = c.HB_BUFFER_DIFF_FLAG_CODEPOINT_MISMATCH,
+        cluster_mismatch = c.HB_BUFFER_DIFF_FLAG_CLUSTER_MISMATCH,
+        glyph_flags_mismatch = c.HB_BUFFER_DIFF_FLAG_GLYPH_FLAGS_MISMATCH,
+        position_mismatch = c.HB_BUFFER_DIFF_FLAG_POSITION_MISMATCH,
+    };
+
+    pub fn from(bits: u8) DiffFlags {
+        return utils.bitFieldsToStruct(DiffFlags, Flag, bits);
+    }
+
+    pub fn cast(self: DiffFlags) u8 {
+        return utils.structToBitFields(u8, Flag, self);
     }
 };
 
@@ -124,66 +233,160 @@ pub const Buffer = struct {
     }
 
     pub fn addCodepoints(self: Buffer, text: []const u32, item_offset: usize, item_length: usize) void {
-        c.hb_buffer_add_codepoints(self.handle, text.ptr, @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
+        c.hb_buffer_add_codepoints(self.handle, &text[0], @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
     }
 
     pub fn addUTF32(self: Buffer, text: []const u32, item_offset: usize, item_length: usize) void {
-        c.hb_buffer_add_utf32(self.handle, text.ptr, @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
+        c.hb_buffer_add_utf32(self.handle, &text[0], @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
     }
 
     pub fn addUTF16(self: Buffer, text: []const u16, item_offset: usize, item_length: usize) void {
-        c.hb_buffer_add_utf16(self.handle, text.ptr, @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
+        c.hb_buffer_add_utf16(self.handle, &text[0], @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
     }
 
     pub fn addUTF8(self: Buffer, text: []const u8, item_offset: usize, item_length: usize) void {
-        c.hb_buffer_add_utf8(self.handle, text.ptr, @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
+        c.hb_buffer_add_utf8(self.handle, &text[0], @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
     }
 
     pub fn addLatin1(self: Buffer, text: []const u8, item_offset: usize, item_length: usize) void {
-        c.hb_buffer_add_latin1(self.handle, text.ptr, @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
+        c.hb_buffer_add_latin1(self.handle, &text[0], @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
     }
 
     pub fn append(self: Buffer, source: Buffer, start: usize, end: usize) void {
         c.hb_buffer_append(self.handle, source.handle, @intCast(c_uint, start), @intCast(c_uint, end));
     }
 
-    pub fn setContentType(self: Buffer, content_type: ContentType) void {
-        c.hb_buffer_set_content_type(self.handle, @enumToInt(content_type));
-    }
-
     pub fn getContentType(self: Buffer) ContentType {
         return @intToEnum(ContentType, c.hb_buffer_get_content_type(self.handle));
     }
 
-    pub fn setDirection(self: Buffer, direction: Direction) void {
-        c.hb_buffer_set_direction(self.handle, @enumToInt(direction));
+    pub fn setContentType(self: Buffer, content_type: ContentType) void {
+        c.hb_buffer_set_content_type(self.handle, @enumToInt(content_type));
     }
 
     pub fn getDirection(self: Buffer) Direction {
         return @intToEnum(Direction, c.hb_buffer_get_direction(self.handle));
     }
 
-    pub fn setScript(self: Buffer, script: Script) void {
-        c.hb_buffer_set_script(self.handle, @enumToInt(script));
+    pub fn setDirection(self: Buffer, direction: Direction) void {
+        c.hb_buffer_set_direction(self.handle, @enumToInt(direction));
     }
 
     pub fn getScript(self: Buffer) Script {
         return @intToEnum(Script, c.hb_buffer_get_script(self.handle));
     }
 
-    pub fn setLanguage(self: Buffer, lang: Language) void {
-        c.hb_buffer_set_language(self.handle, lang.handle);
+    pub fn setScript(self: Buffer, script: Script) void {
+        c.hb_buffer_set_script(self.handle, @enumToInt(script));
     }
 
     pub fn getLanguage(self: Buffer) Language {
         return Language{ .handle = c.hb_buffer_get_language(self.handle) };
     }
 
-    pub fn setFlags(self: Buffer, flags: Flags) void {
-        c.hb_buffer_set_flags(self.handle, flags.cast());
+    pub fn setLanguage(self: Buffer, lang: Language) void {
+        c.hb_buffer_set_language(self.handle, lang.handle);
     }
 
     pub fn getFlags(self: Buffer) Flags {
         return Flags.from(@intCast(u7, c.hb_buffer_get_flags(self.handle)));
     }
+
+    pub fn setFlags(self: Buffer, flags: Flags) void {
+        c.hb_buffer_set_flags(self.handle, flags.cast());
+    }
+
+    pub fn getClusterLevel(self: Buffer) ClusterLevel {
+        return @intToEnum(ClusterLevel, c.hb_buffer_get_cluster_level(self.handle));
+    }
+
+    pub fn setClusterLevel(self: Buffer, level: ClusterLevel) void {
+        c.hb_buffer_set_cluster_level(self.handle, @enumToInt(level));
+    }
+
+    pub fn getLength(self: Buffer) usize {
+        return c.hb_buffer_get_length(self.handle);
+    }
+
+    pub fn setLength(self: Buffer, new_len: usize) error{OutOfMemory}!void {
+        if (c.hb_buffer_set_length(self.handle, @intCast(c_uint, new_len)) < 1)
+            return error.OutOfMemory;
+    }
+
+    pub fn getSegmentProps(self: Buffer) SegmentProps {
+        var props: c.hb_segment_properties_t = undefined;
+        c.hb_buffer_get_segment_properties(self.handle, &props);
+        return SegmentProps.from(props);
+    }
+
+    pub fn setSegmentProps(self: Buffer, props: SegmentProps) void {
+        c.hb_buffer_set_segment_properties(self.handle, &props.cast());
+    }
+
+    pub fn guessSegmentProps(self: Buffer) void {
+        c.hb_buffer_guess_segment_properties(self.handle);
+    }
+
+    pub fn getGlyphInfos(self: Buffer) []GlyphInfo {
+        return hb_buffer_get_glyph_infos(self.handle, null)[0..self.getLength()];
+    }
+
+    pub fn getGlyphPositions(self: Buffer) ?[]Position {
+        return if (hb_buffer_get_glyph_positions(self.handle, null)) |positions|
+            positions[0..self.getLength()]
+        else
+            null;
+    }
+
+    pub fn hasPositions(self: Buffer) bool {
+        return c.hb_buffer_has_positions(self.handle) > 0;
+    }
+
+    pub fn getInvisibleGlyph(self: Buffer) u32 {
+        return c.hb_buffer_get_invisible_glyph(self.handle);
+    }
+
+    pub fn setInvisibleGlyph(self: Buffer, codepoint: u32) void {
+        c.hb_buffer_set_invisible_glyph(self.handle, codepoint);
+    }
+
+    pub fn getGlyphNotFound(self: Buffer) u32 {
+        return c.hb_buffer_get_not_found_glyph(self.handle);
+    }
+
+    pub fn setGlyphNotFound(self: Buffer, codepoint: u32) void {
+        c.hb_buffer_set_not_found_glyph(self.handle, codepoint);
+    }
+
+    pub fn getReplacementCodepoint(self: Buffer) u32 {
+        return c.hb_buffer_get_replacement_codepoint(self.handle);
+    }
+
+    pub fn setReplacementCodepoint(self: Buffer, codepoint: u32) void {
+        c.hb_buffer_set_replacement_codepoint(self.handle, codepoint);
+    }
+
+    pub fn normalizeGlyphs(self: Buffer) void {
+        c.hb_buffer_normalize_glyphs(self.handle);
+    }
+
+    pub fn reverse(self: Buffer) void {
+        c.hb_buffer_reverse(self.handle);
+    }
+
+    pub fn reverseRange(self: Buffer, start: usize, end: usize) void {
+        c.hb_buffer_reverse_range(self.handle, @intCast(c_uint, start), @intCast(c_uint, end));
+    }
+
+    pub fn reverseClusters(self: Buffer) void {
+        c.hb_buffer_reverse_clusters(self.handle);
+    }
+
+    pub fn diff(self: Buffer, ref: Buffer, dottedcircle_glyph: u32, position_fuzz: usize) DiffFlags {
+        return DiffFlags.from(@intCast(u8, c.hb_buffer_diff(self.handle, ref.handle, dottedcircle_glyph, @intCast(c_uint, position_fuzz))));
+    }
 };
+
+pub extern fn hb_glyph_info_get_glyph_flags(info: [*c]const GlyphInfo) c.hb_glyph_flags_t;
+pub extern fn hb_buffer_get_glyph_infos(buffer: ?*c.hb_buffer_t, length: [*c]c_uint) [*c]GlyphInfo;
+pub extern fn hb_buffer_get_glyph_positions(buffer: ?*c.hb_buffer_t, length: [*c]c_uint) [*c]Position;
