@@ -59,7 +59,7 @@ const glfw = @import("libs/mach-glfw/build.zig");
 
 pub fn build(b: *Builder) void {
     ...
-    exe.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
+    exe.addPackage(glfw.pkg);
     glfw.link(b, exe, .{});
 }
 ```
