@@ -35,7 +35,7 @@ pub const Blob = struct {
         };
     }
 
-    pub fn getEmpty() Blob {
+    pub fn initEmpty() Blob {
         return .{ .handle = c.hb_blob_get_empty().? };
     }
 
