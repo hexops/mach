@@ -46,9 +46,11 @@ test "inclusion" {
 test "example" {
     const allocator = testing.allocator;
 
+    const all_components = .{};
+
     //-------------------------------------------------------------------------
     // Create a world.
-    var world = try World.init(allocator);
+    var world = try World(all_components).init(allocator);
     defer world.deinit();
 
     const player1 = try world.entities.new();
@@ -61,7 +63,7 @@ test "example" {
     try world.entities.setComponent(player3, "physics", @as(u16, 1234));
 
     const physics = (struct {
-        pub fn physics(adapter: *Adapter) void {
+        pub fn physics(adapter: *Adapter(all_components)) void {
             var iter = adapter.query(&.{"physics"});
             std.debug.print("\nphysics ran\n", .{});
             while (iter.next()) |row| {
@@ -73,7 +75,7 @@ test "example" {
     try world.register("physics", physics);
 
     const rendering = (struct {
-        pub fn rendering(adapter: *Adapter) void {
+        pub fn rendering(adapter: *Adapter(all_components)) void {
             var iter = adapter.query(&.{"geometry"});
             std.debug.print("\nrendering ran\n", .{});
             while (iter.next()) |row| {
