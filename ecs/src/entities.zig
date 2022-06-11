@@ -340,365 +340,370 @@ pub const void_archetype_hash = std.math.maxInt(u64);
 ///   row index, enabling entities to "move" from one archetype table to another seamlessly and
 ///   making lookup by entity ID a few cheap array indexing operations.
 /// * ComponentStorage(T) is a column of data within a table for a single type of component `T`.
-pub const Entities = struct {
-    allocator: Allocator,
+pub fn Entities(all_components: anytype) type {
+    _ = all_components;
+    return struct {
+        allocator: Allocator,
 
-    /// TODO!
-    counter: EntityID = 0,
+        /// TODO!
+        counter: EntityID = 0,
 
-    /// A mapping of entity IDs (array indices) to where an entity's component values are actually
-    /// stored.
-    entities: std.AutoHashMapUnmanaged(EntityID, Pointer) = .{},
+        /// A mapping of entity IDs (array indices) to where an entity's component values are actually
+        /// stored.
+        entities: std.AutoHashMapUnmanaged(EntityID, Pointer) = .{},
 
-    /// A mapping of archetype hash to their storage.
-    ///
-    /// Database equivalent: table name -> tables representing entities.
-    archetypes: std.AutoArrayHashMapUnmanaged(u64, ArchetypeStorage) = .{},
+        /// A mapping of archetype hash to their storage.
+        ///
+        /// Database equivalent: table name -> tables representing entities.
+        archetypes: std.AutoArrayHashMapUnmanaged(u64, ArchetypeStorage) = .{},
 
-    /// Points to where an entity is stored, specifically in which archetype table and in which row
-    /// of that table. That is, the entity's component values are stored at:
-    ///
-    /// ```
-    /// Entities.archetypes[ptr.archetype_index].rows[ptr.row_index]
-    /// ```
-    ///
-    pub const Pointer = struct {
-        archetype_index: u16,
-        row_index: u32,
-    };
+        const Self = @This();
 
-    pub const Iterator = struct {
-        entities: *Entities,
-        components: []const []const u8,
-        archetype_index: usize = 0,
-        row_index: u32 = 0,
-
-        pub const Entry = struct {
-            entity: EntityID,
-
-            pub fn unlock(e: Entry) void {
-                _ = e;
-            }
+        /// Points to where an entity is stored, specifically in which archetype table and in which row
+        /// of that table. That is, the entity's component values are stored at:
+        ///
+        /// ```
+        /// Entities.archetypes[ptr.archetype_index].rows[ptr.row_index]
+        /// ```
+        ///
+        pub const Pointer = struct {
+            archetype_index: u16,
+            row_index: u32,
         };
 
-        pub fn next(iter: *Iterator) ?Entry {
-            const entities = iter.entities;
+        pub const Iterator = struct {
+            entities: *Self,
+            components: []const []const u8,
+            archetype_index: usize = 0,
+            row_index: u32 = 0,
 
-            // If the archetype table we're looking at does not contain the components we're
-            // querying for, keep searching through tables until we find one that does.
-            var archetype = entities.archetypes.entries.get(iter.archetype_index).value;
-            while (!archetype.hasComponents(iter.components) or iter.row_index >= archetype.len) {
-                iter.archetype_index += 1;
-                iter.row_index = 0;
-                if (iter.archetype_index >= entities.archetypes.count()) {
-                    return null;
+            pub const Entry = struct {
+                entity: EntityID,
+
+                pub fn unlock(e: Entry) void {
+                    _ = e;
                 }
-                archetype = entities.archetypes.entries.get(iter.archetype_index).value;
-            }
-
-            const row_entity_id = archetype.get(iter.entities.allocator, iter.row_index, "id", EntityID).?;
-            iter.row_index += 1;
-            return Entry{ .entity = row_entity_id };
-        }
-    };
-
-    pub fn query(entities: *Entities, components: []const []const u8) Iterator {
-        return Iterator{
-            .entities = entities,
-            .components = components,
-        };
-    }
-
-    pub fn init(allocator: Allocator) !Entities {
-        var entities = Entities{ .allocator = allocator };
-
-        const columns = try allocator.alloc(Column, 1);
-        columns[0] = .{
-            .name = "id",
-            .typeId = typeId(EntityID),
-            .size = @sizeOf(EntityID),
-            .alignment = @alignOf(EntityID),
-            .offset = undefined,
-        };
-
-        try entities.archetypes.put(allocator, void_archetype_hash, ArchetypeStorage{
-            .allocator = allocator,
-            .len = 0,
-            .capacity = 0,
-            .columns = columns,
-            .block = undefined,
-            .hash = void_archetype_hash,
-        });
-
-        return entities;
-    }
-
-    pub fn deinit(entities: *Entities) void {
-        entities.entities.deinit(entities.allocator);
-
-        var iter = entities.archetypes.iterator();
-        while (iter.next()) |entry| {
-            entities.allocator.free(entry.value_ptr.block);
-            entry.value_ptr.deinit(entities.allocator);
-        }
-        entities.archetypes.deinit(entities.allocator);
-    }
-
-    /// Returns a new entity.
-    pub fn new(entities: *Entities) !EntityID {
-        const new_id = entities.counter;
-        entities.counter += 1;
-
-        var void_archetype = entities.archetypes.getPtr(void_archetype_hash).?;
-        const new_row = try void_archetype.append(entities.allocator, .{ .id = new_id });
-        const void_pointer = Pointer{
-            .archetype_index = 0, // void archetype is guaranteed to be first index
-            .row_index = new_row,
-        };
-
-        entities.entities.put(entities.allocator, new_id, void_pointer) catch |err| {
-            void_archetype.undoAppend();
-            return err;
-        };
-        return new_id;
-    }
-
-    /// Removes an entity.
-    pub fn remove(entities: *Entities, entity: EntityID) !void {
-        var archetype = entities.archetypeByID(entity);
-        const ptr = entities.entities.get(entity).?;
-
-        // A swap removal will be performed, update the entity stored in the last row of the
-        // archetype table to point to the row the entity we are removing is currently located.
-        if (archetype.len > 1) {
-            const last_row_entity_id = archetype.get(entities.allocator, archetype.len - 1, "id", EntityID).?;
-            try entities.entities.put(entities.allocator, last_row_entity_id, Pointer{
-                .archetype_index = ptr.archetype_index,
-                .row_index = ptr.row_index,
-            });
-        }
-
-        // Perform a swap removal to remove our entity from the archetype table.
-        archetype.remove(ptr.row_index);
-
-        _ = entities.entities.remove(entity);
-    }
-
-    /// Returns the archetype storage for the given entity.
-    pub inline fn archetypeByID(entities: *Entities, entity: EntityID) *ArchetypeStorage {
-        const ptr = entities.entities.get(entity).?;
-        return &entities.archetypes.values()[ptr.archetype_index];
-    }
-
-    /// Sets the named component to the specified value for the given entity,
-    /// moving the entity from it's current archetype table to the new archetype
-    /// table if required.
-    pub fn setComponent(entities: *Entities, entity: EntityID, comptime name: []const u8, component: anytype) !void {
-        var archetype = entities.archetypeByID(entity);
-
-        // Determine the old hash for the archetype.
-        const old_hash = archetype.hash;
-
-        // Determine the new hash for the archetype + new component
-        var have_already = archetype.hasComponent(name);
-        const new_hash = if (have_already) old_hash else old_hash ^ std.hash_map.hashString(name);
-
-        // Find the archetype storage for this entity. Could be a new archetype storage table (if a
-        // new component was added), or the same archetype storage table (if just updating the
-        // value of a component.)
-        var archetype_entry = try entities.archetypes.getOrPut(entities.allocator, new_hash);
-        if (!archetype_entry.found_existing) {
-            // getOrPut allocated, so the archetype we retrieved earlier may no longer be a valid
-            // pointer. Refresh it now:
-            archetype = entities.archetypeByID(entity);
-
-            const columns = entities.allocator.alloc(Column, archetype.columns.len + 1) catch |err| {
-                assert(entities.archetypes.swapRemove(new_hash));
-                return err;
             };
-            mem.copy(Column, columns, archetype.columns);
-            columns[columns.len - 1] = .{
-                .name = name,
-                .typeId = typeId(@TypeOf(component)),
-                .size = @sizeOf(@TypeOf(component)),
-                .alignment = if (@sizeOf(@TypeOf(component)) == 0) 1 else @alignOf(@TypeOf(component)),
+
+            pub fn next(iter: *Iterator) ?Entry {
+                const entities = iter.entities;
+
+                // If the archetype table we're looking at does not contain the components we're
+                // querying for, keep searching through tables until we find one that does.
+                var archetype = entities.archetypes.entries.get(iter.archetype_index).value;
+                while (!archetype.hasComponents(iter.components) or iter.row_index >= archetype.len) {
+                    iter.archetype_index += 1;
+                    iter.row_index = 0;
+                    if (iter.archetype_index >= entities.archetypes.count()) {
+                        return null;
+                    }
+                    archetype = entities.archetypes.entries.get(iter.archetype_index).value;
+                }
+
+                const row_entity_id = archetype.get(iter.entities.allocator, iter.row_index, "id", EntityID).?;
+                iter.row_index += 1;
+                return Entry{ .entity = row_entity_id };
+            }
+        };
+
+        pub fn query(entities: *Self, components: []const []const u8) Iterator {
+            return Iterator{
+                .entities = entities,
+                .components = components,
+            };
+        }
+
+        pub fn init(allocator: Allocator) !Self {
+            var entities = Self{ .allocator = allocator };
+
+            const columns = try allocator.alloc(Column, 1);
+            columns[0] = .{
+                .name = "id",
+                .typeId = typeId(EntityID),
+                .size = @sizeOf(EntityID),
+                .alignment = @alignOf(EntityID),
                 .offset = undefined,
             };
-            std.sort.sort(Column, columns, {}, by_alignment_name);
 
-            archetype_entry.value_ptr.* = ArchetypeStorage{
-                .allocator = entities.allocator,
+            try entities.archetypes.put(allocator, void_archetype_hash, ArchetypeStorage{
+                .allocator = allocator,
                 .len = 0,
                 .capacity = 0,
                 .columns = columns,
                 .block = undefined,
-                .hash = undefined,
-            };
+                .hash = void_archetype_hash,
+            });
 
-            const new_archetype = archetype_entry.value_ptr;
-            new_archetype.calculateHash();
+            return entities;
         }
 
-        // Either new storage (if the entity moved between storage tables due to having a new
-        // component) or the prior storage (if the entity already had the component and it's value
-        // is merely being updated.)
-        var current_archetype_storage = archetype_entry.value_ptr;
+        pub fn deinit(entities: *Self) void {
+            entities.entities.deinit(entities.allocator);
 
-        if (new_hash == old_hash) {
-            // Update the value of the existing component of the entity.
+            var iter = entities.archetypes.iterator();
+            while (iter.next()) |entry| {
+                entities.allocator.free(entry.value_ptr.block);
+                entry.value_ptr.deinit(entities.allocator);
+            }
+            entities.archetypes.deinit(entities.allocator);
+        }
+
+        /// Returns a new entity.
+        pub fn new(entities: *Self) !EntityID {
+            const new_id = entities.counter;
+            entities.counter += 1;
+
+            var void_archetype = entities.archetypes.getPtr(void_archetype_hash).?;
+            const new_row = try void_archetype.append(entities.allocator, .{ .id = new_id });
+            const void_pointer = Pointer{
+                .archetype_index = 0, // void archetype is guaranteed to be first index
+                .row_index = new_row,
+            };
+
+            entities.entities.put(entities.allocator, new_id, void_pointer) catch |err| {
+                void_archetype.undoAppend();
+                return err;
+            };
+            return new_id;
+        }
+
+        /// Removes an entity.
+        pub fn remove(entities: *Self, entity: EntityID) !void {
+            var archetype = entities.archetypeByID(entity);
             const ptr = entities.entities.get(entity).?;
-            current_archetype_storage.set(entities.allocator, ptr.row_index, name, component);
+
+            // A swap removal will be performed, update the entity stored in the last row of the
+            // archetype table to point to the row the entity we are removing is currently located.
+            if (archetype.len > 1) {
+                const last_row_entity_id = archetype.get(entities.allocator, archetype.len - 1, "id", EntityID).?;
+                try entities.entities.put(entities.allocator, last_row_entity_id, Pointer{
+                    .archetype_index = ptr.archetype_index,
+                    .row_index = ptr.row_index,
+                });
+            }
+
+            // Perform a swap removal to remove our entity from the archetype table.
+            archetype.remove(ptr.row_index);
+
+            _ = entities.entities.remove(entity);
+        }
+
+        /// Returns the archetype storage for the given entity.
+        pub inline fn archetypeByID(entities: *Self, entity: EntityID) *ArchetypeStorage {
+            const ptr = entities.entities.get(entity).?;
+            return &entities.archetypes.values()[ptr.archetype_index];
+        }
+
+        /// Sets the named component to the specified value for the given entity,
+        /// moving the entity from it's current archetype table to the new archetype
+        /// table if required.
+        pub fn setComponent(entities: *Self, entity: EntityID, comptime name: []const u8, component: anytype) !void {
+            var archetype = entities.archetypeByID(entity);
+
+            // Determine the old hash for the archetype.
+            const old_hash = archetype.hash;
+
+            // Determine the new hash for the archetype + new component
+            var have_already = archetype.hasComponent(name);
+            const new_hash = if (have_already) old_hash else old_hash ^ std.hash_map.hashString(name);
+
+            // Find the archetype storage for this entity. Could be a new archetype storage table (if a
+            // new component was added), or the same archetype storage table (if just updating the
+            // value of a component.)
+            var archetype_entry = try entities.archetypes.getOrPut(entities.allocator, new_hash);
+            if (!archetype_entry.found_existing) {
+                // getOrPut allocated, so the archetype we retrieved earlier may no longer be a valid
+                // pointer. Refresh it now:
+                archetype = entities.archetypeByID(entity);
+
+                const columns = entities.allocator.alloc(Column, archetype.columns.len + 1) catch |err| {
+                    assert(entities.archetypes.swapRemove(new_hash));
+                    return err;
+                };
+                mem.copy(Column, columns, archetype.columns);
+                columns[columns.len - 1] = .{
+                    .name = name,
+                    .typeId = typeId(@TypeOf(component)),
+                    .size = @sizeOf(@TypeOf(component)),
+                    .alignment = if (@sizeOf(@TypeOf(component)) == 0) 1 else @alignOf(@TypeOf(component)),
+                    .offset = undefined,
+                };
+                std.sort.sort(Column, columns, {}, by_alignment_name);
+
+                archetype_entry.value_ptr.* = ArchetypeStorage{
+                    .allocator = entities.allocator,
+                    .len = 0,
+                    .capacity = 0,
+                    .columns = columns,
+                    .block = undefined,
+                    .hash = undefined,
+                };
+
+                const new_archetype = archetype_entry.value_ptr;
+                new_archetype.calculateHash();
+            }
+
+            // Either new storage (if the entity moved between storage tables due to having a new
+            // component) or the prior storage (if the entity already had the component and it's value
+            // is merely being updated.)
+            var current_archetype_storage = archetype_entry.value_ptr;
+
+            if (new_hash == old_hash) {
+                // Update the value of the existing component of the entity.
+                const ptr = entities.entities.get(entity).?;
+                current_archetype_storage.set(entities.allocator, ptr.row_index, name, component);
+                return;
+            }
+
+            // Copy to all component values for our entity from the old archetype storage (archetype)
+            // to the new one (current_archetype_storage).
+            const new_row = try current_archetype_storage.appendUndefined(entities.allocator);
+            const old_ptr = entities.entities.get(entity).?;
+
+            // Update the storage/columns for all of the existing components on the entity.
+            current_archetype_storage.set(entities.allocator, new_row, "id", entity);
+            for (archetype.columns) |column| {
+                if (std.mem.eql(u8, column.name, "id")) continue;
+                for (current_archetype_storage.columns) |corresponding| {
+                    if (std.mem.eql(u8, column.name, corresponding.name)) {
+                        const old_value_raw = archetype.getRaw(old_ptr.row_index, column.name);
+                        current_archetype_storage.setRaw(new_row, corresponding, old_value_raw) catch |err| {
+                            current_archetype_storage.undoAppend();
+                            return err;
+                        };
+                        break;
+                    }
+                }
+            }
+
+            // Update the storage/column for the new component.
+            current_archetype_storage.set(entities.allocator, new_row, name, component);
+
+            archetype.remove(old_ptr.row_index);
+            const swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, "id", EntityID).?;
+            // TODO: try is wrong here and below?
+            // if we removed the last entry from archetype, then swapped_entity_id == entity
+            // so the second entities.put will clobber this one
+            try entities.entities.put(entities.allocator, swapped_entity_id, old_ptr);
+
+            try entities.entities.put(entities.allocator, entity, Pointer{
+                .archetype_index = @intCast(u16, archetype_entry.index),
+                .row_index = new_row,
+            });
             return;
         }
 
-        // Copy to all component values for our entity from the old archetype storage (archetype)
-        // to the new one (current_archetype_storage).
-        const new_row = try current_archetype_storage.appendUndefined(entities.allocator);
-        const old_ptr = entities.entities.get(entity).?;
+        /// gets the named component of the given type (which must be correct, otherwise undefined
+        /// behavior will occur). Returns null if the component does not exist on the entity.
+        pub fn getComponent(entities: *Self, entity: EntityID, name: []const u8, comptime Component: type) ?Component {
+            var archetype = entities.archetypeByID(entity);
 
-        // Update the storage/columns for all of the existing components on the entity.
-        current_archetype_storage.set(entities.allocator, new_row, "id", entity);
-        for (archetype.columns) |column| {
-            if (std.mem.eql(u8, column.name, "id")) continue;
-            for (current_archetype_storage.columns) |corresponding| {
-                if (std.mem.eql(u8, column.name, corresponding.name)) {
-                    const old_value_raw = archetype.getRaw(old_ptr.row_index, column.name);
-                    current_archetype_storage.setRaw(new_row, corresponding, old_value_raw) catch |err| {
-                        current_archetype_storage.undoAppend();
-                        return err;
-                    };
-                    break;
-                }
-            }
+            const ptr = entities.entities.get(entity).?;
+            return archetype.get(entities.allocator, ptr.row_index, name, Component);
         }
 
-        // Update the storage/column for the new component.
-        current_archetype_storage.set(entities.allocator, new_row, name, component);
+        /// Removes the named component from the entity, or noop if it doesn't have such a component.
+        pub fn removeComponent(entities: *Self, entity: EntityID, name: []const u8) !void {
+            var archetype = entities.archetypeByID(entity);
+            if (!archetype.hasComponent(name)) return;
 
-        archetype.remove(old_ptr.row_index);
-        const swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, "id", EntityID).?;
-        // TODO: try is wrong here and below?
-        // if we removed the last entry from archetype, then swapped_entity_id == entity
-        // so the second entities.put will clobber this one
-        try entities.entities.put(entities.allocator, swapped_entity_id, old_ptr);
+            // Determine the old hash for the archetype.
+            const old_hash = archetype.hash;
 
-        try entities.entities.put(entities.allocator, entity, Pointer{
-            .archetype_index = @intCast(u16, archetype_entry.index),
-            .row_index = new_row,
-        });
-        return;
-    }
-
-    /// gets the named component of the given type (which must be correct, otherwise undefined
-    /// behavior will occur). Returns null if the component does not exist on the entity.
-    pub fn getComponent(entities: *Entities, entity: EntityID, name: []const u8, comptime Component: type) ?Component {
-        var archetype = entities.archetypeByID(entity);
-
-        const ptr = entities.entities.get(entity).?;
-        return archetype.get(entities.allocator, ptr.row_index, name, Component);
-    }
-
-    /// Removes the named component from the entity, or noop if it doesn't have such a component.
-    pub fn removeComponent(entities: *Entities, entity: EntityID, name: []const u8) !void {
-        var archetype = entities.archetypeByID(entity);
-        if (!archetype.hasComponent(name)) return;
-
-        // Determine the old hash for the archetype.
-        const old_hash = archetype.hash;
-
-        // Determine the new hash for the archetype with the component removed
-        var new_hash: u64 = 0;
-        for (archetype.columns) |column| {
-            if (!std.mem.eql(u8, column.name, name)) new_hash ^= std.hash_map.hashString(column.name);
-        }
-        assert(new_hash != old_hash);
-
-        // Find the archetype storage this entity will move to. Note that although an entity with
-        // (A, B, C) components implies archetypes ((A), (A, B), (A, B, C)) exist there is no
-        // guarantee that archetype (A, C) exists - and so removing a component sometimes does
-        // require creating a new archetype table!
-        var archetype_entry = try entities.archetypes.getOrPut(entities.allocator, new_hash);
-        if (!archetype_entry.found_existing) {
-            // getOrPut allocated, so the archetype we retrieved earlier may no longer be a valid
-            // pointer. Refresh it now:
-            archetype = entities.archetypeByID(entity);
-
-            const columns = entities.allocator.alloc(Column, archetype.columns.len - 1) catch |err| {
-                assert(entities.archetypes.swapRemove(new_hash));
-                return err;
-            };
-            var i: usize = 0;
+            // Determine the new hash for the archetype with the component removed
+            var new_hash: u64 = 0;
             for (archetype.columns) |column| {
-                if (std.mem.eql(u8, column.name, name)) continue;
-                columns[i] = column;
-                i += 1;
+                if (!std.mem.eql(u8, column.name, name)) new_hash ^= std.hash_map.hashString(column.name);
+            }
+            assert(new_hash != old_hash);
+
+            // Find the archetype storage this entity will move to. Note that although an entity with
+            // (A, B, C) components implies archetypes ((A), (A, B), (A, B, C)) exist there is no
+            // guarantee that archetype (A, C) exists - and so removing a component sometimes does
+            // require creating a new archetype table!
+            var archetype_entry = try entities.archetypes.getOrPut(entities.allocator, new_hash);
+            if (!archetype_entry.found_existing) {
+                // getOrPut allocated, so the archetype we retrieved earlier may no longer be a valid
+                // pointer. Refresh it now:
+                archetype = entities.archetypeByID(entity);
+
+                const columns = entities.allocator.alloc(Column, archetype.columns.len - 1) catch |err| {
+                    assert(entities.archetypes.swapRemove(new_hash));
+                    return err;
+                };
+                var i: usize = 0;
+                for (archetype.columns) |column| {
+                    if (std.mem.eql(u8, column.name, name)) continue;
+                    columns[i] = column;
+                    i += 1;
+                }
+
+                archetype_entry.value_ptr.* = ArchetypeStorage{
+                    .allocator = entities.allocator,
+                    .len = 0,
+                    .capacity = 0,
+                    .columns = columns,
+                    .block = undefined,
+                    .hash = undefined,
+                };
+
+                const new_archetype = archetype_entry.value_ptr;
+                new_archetype.calculateHash();
             }
 
-            archetype_entry.value_ptr.* = ArchetypeStorage{
-                .allocator = entities.allocator,
-                .len = 0,
-                .capacity = 0,
-                .columns = columns,
-                .block = undefined,
-                .hash = undefined,
-            };
+            var current_archetype_storage = archetype_entry.value_ptr;
 
-            const new_archetype = archetype_entry.value_ptr;
-            new_archetype.calculateHash();
-        }
+            // Copy to all component values for our entity from the old archetype storage (archetype)
+            // to the new one (current_archetype_storage).
+            const new_row = try current_archetype_storage.appendUndefined(entities.allocator);
+            const old_ptr = entities.entities.get(entity).?;
 
-        var current_archetype_storage = archetype_entry.value_ptr;
-
-        // Copy to all component values for our entity from the old archetype storage (archetype)
-        // to the new one (current_archetype_storage).
-        const new_row = try current_archetype_storage.appendUndefined(entities.allocator);
-        const old_ptr = entities.entities.get(entity).?;
-
-        // Update the storage/columns for all of the existing components on the entity that exist in
-        // the new archetype table (i.e. excluding the component to remove.)
-        current_archetype_storage.set(entities.allocator, new_row, "id", entity);
-        for (current_archetype_storage.columns) |column| {
-            if (std.mem.eql(u8, column.name, "id")) continue;
-            for (archetype.columns) |corresponding| {
-                if (std.mem.eql(u8, column.name, corresponding.name)) {
-                    const old_value_raw = archetype.getRaw(old_ptr.row_index, column.name);
-                    current_archetype_storage.setRaw(new_row, column, old_value_raw) catch |err| {
-                        current_archetype_storage.undoAppend();
-                        return err;
-                    };
-                    break;
+            // Update the storage/columns for all of the existing components on the entity that exist in
+            // the new archetype table (i.e. excluding the component to remove.)
+            current_archetype_storage.set(entities.allocator, new_row, "id", entity);
+            for (current_archetype_storage.columns) |column| {
+                if (std.mem.eql(u8, column.name, "id")) continue;
+                for (archetype.columns) |corresponding| {
+                    if (std.mem.eql(u8, column.name, corresponding.name)) {
+                        const old_value_raw = archetype.getRaw(old_ptr.row_index, column.name);
+                        current_archetype_storage.setRaw(new_row, column, old_value_raw) catch |err| {
+                            current_archetype_storage.undoAppend();
+                            return err;
+                        };
+                        break;
+                    }
                 }
             }
+
+            archetype.remove(old_ptr.row_index);
+            const swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, "id", EntityID).?;
+            // TODO: try is wrong here and below?
+            // if we removed the last entry from archetype, then swapped_entity_id == entity
+            // so the second entities.put will clobber this one
+            try entities.entities.put(entities.allocator, swapped_entity_id, old_ptr);
+
+            try entities.entities.put(entities.allocator, entity, Pointer{
+                .archetype_index = @intCast(u16, archetype_entry.index),
+                .row_index = new_row,
+            });
         }
 
-        archetype.remove(old_ptr.row_index);
-        const swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, "id", EntityID).?;
-        // TODO: try is wrong here and below?
-        // if we removed the last entry from archetype, then swapped_entity_id == entity
-        // so the second entities.put will clobber this one
-        try entities.entities.put(entities.allocator, swapped_entity_id, old_ptr);
+        // TODO: iteration over all entities
+        // TODO: iteration over all entities with components (U, V, ...)
+        // TODO: iteration over all entities with type T
+        // TODO: iteration over all entities with type T and components (U, V, ...)
 
-        try entities.entities.put(entities.allocator, entity, Pointer{
-            .archetype_index = @intCast(u16, archetype_entry.index),
-            .row_index = new_row,
-        });
-    }
+        // TODO: "indexes" - a few ideas we could express:
+        //
+        // * Graph relations index: e.g. parent-child entity relations for a DOM / UI / scene graph.
+        // * Spatial index: "give me all entities within 5 units distance from (x, y, z)"
+        // * Generic index: "give me all entities where arbitraryFunction(e) returns true"
+        //
 
-    // TODO: iteration over all entities
-    // TODO: iteration over all entities with components (U, V, ...)
-    // TODO: iteration over all entities with type T
-    // TODO: iteration over all entities with type T and components (U, V, ...)
-
-    // TODO: "indexes" - a few ideas we could express:
-    //
-    // * Graph relations index: e.g. parent-child entity relations for a DOM / UI / scene graph.
-    // * Spatial index: "give me all entities within 5 units distance from (x, y, z)"
-    // * Generic index: "give me all entities where arbitraryFunction(e) returns true"
-    //
-
-    // TODO: ability to remove archetype entirely, deleting all entities in it
-    // TODO: ability to remove archetypes with no entities (garbage collection)
-};
+        // TODO: ability to remove archetype entirely, deleting all entities in it
+        // TODO: ability to remove archetypes with no entities (garbage collection)
+    };
+}
 
 test "entity ID size" {
     try testing.expectEqual(8, @sizeOf(EntityID));
@@ -707,9 +712,11 @@ test "entity ID size" {
 test "example" {
     const allocator = testing.allocator;
 
+    const all_components = .{};
+
     //-------------------------------------------------------------------------
     // Create a world.
-    var world = try Entities.init(allocator);
+    var world = try Entities(all_components).init(allocator);
     defer world.deinit();
 
     //-------------------------------------------------------------------------
