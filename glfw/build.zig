@@ -66,8 +66,12 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const include_glfw_src = "-I" ++ thisDir() ++ "/upstream/glfw/src";
     switch (target.os.tag) {
-        .windows => lib.addCSourceFile(thisDir() ++ "/src/sources_windows.c", &.{ "-D_GLFW_WIN32", include_glfw_src }),
+        .windows => lib.addCSourceFiles(&.{
+            thisDir() ++ "/src/sources_all.c",
+            thisDir() ++ "/src/sources_windows.c",
+        }, &.{ "-D_GLFW_WIN32", include_glfw_src }),
         .macos => lib.addCSourceFiles(&.{
+            thisDir() ++ "/src/sources_all.c",
             thisDir() ++ "/src/sources_macos.m",
             thisDir() ++ "/src/sources_macos.c",
         }, &.{ "-D_GLFW_COCOA", include_glfw_src }),
@@ -86,6 +90,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
                 .X11 => "-D_GLFW_X11",
                 .Wayland => "-D_GLFW_WAYLAND",
             };
+            sources.append(thisDir() ++ "/src/sources_all.c") catch unreachable;
             sources.append(thisDir() ++ "/src/sources_linux.c") catch unreachable;
             switch (options.linux_window_manager) {
                 .X11 => sources.append(thisDir() ++ "/src/sources_linux_x11.c") catch unreachable,

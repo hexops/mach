@@ -7,3 +7,8 @@
 #include "egl_context.c"
 #include "context.c"
 #include "window.c"
+#include "platform.c"
+#include "null_init.c"
+#include "null_monitor.c"
+#include "null_window.c"
+#include "null_joystick.c"
