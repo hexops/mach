@@ -385,6 +385,9 @@ pub fn Native(comptime options: BackendOptions) type {
         ///
         /// Possible errors include glfw.Error.NotInitalized.
         ///
+        /// remark: Because EGL is initialized on demand, this function will return `EGL_NO_DISPLAY`
+        /// until the first context has been created via EGL.
+        ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getEGLDisplay() *anyopaque {
             internal_debug.assertInitialized();

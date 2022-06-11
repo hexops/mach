@@ -86,7 +86,7 @@ pub inline fn getCurrentContext() ?Window {
 /// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoCurrentContext and glfw.Error.PlatformError.
 ///
 /// This function is not called during context creation, leaving the swap interval set to whatever
-/// is the default on that platform. This is done because some swap interval extensions used by
+/// is the default for that API. This is done because some swap interval extensions used by
 /// GLFW do not allow the swap interval to be reset to zero once it has been set to a non-zero
 /// value.
 ///
