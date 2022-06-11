@@ -1,9 +1,7 @@
 [submodule "upstream/glfw"]
 	path = glfw/upstream/glfw
 	url = https://github.com/glfw/glfw.git
-	branch = "3.3-stable"
 	
 [submodule "upstream/vulkan_headers"]
 	path = glfw/upstream/vulkan_headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
-	branch = "sdk-1.3.211"
