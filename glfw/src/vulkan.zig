@@ -7,6 +7,35 @@ const Window = @import("Window.zig");
 
 const internal_debug = @import("internal_debug.zig");
 
+/// Sets the desired Vulkan `vkGetInstanceProcAddr` function.
+///
+/// This function sets the `vkGetInstanceProcAddr` function that GLFW will use for all
+/// Vulkan related entry point queries.
+///
+/// This feature is mostly useful on macOS, if your copy of the Vulkan loader is in
+/// a location where GLFW cannot find it through dynamic loading, or if you are still
+/// using the static library version of the loader.
+///
+/// If set to `NULL`, GLFW will try to load the Vulkan loader dynamically by its standard
+/// name and get this function from there.  This is the default behavior.
+///
+/// The standard name of the loader is `vulkan-1.dll` on Windows, `libvulkan.so.1` on
+/// Linux and other Unix-like systems and `libvulkan.1.dylib` on macOS.  If your code is
+/// also loading it via these names then you probably don't need to use this function.
+///
+/// The function address you set is never reset by GLFW, but it only takes effect during
+/// initialization.  Once GLFW has been initialized, any updates will be ignored until the
+/// library is terminated and initialized again.
+///
+/// remark: This function may be called before glfw.Init.
+///
+/// thread_safety: This function must only be called from the main thread.
+pub fn initVulkanLoader(loader_function: ?VKGetInstanceProcAddr) void {
+    c.glfwInitVulkanLoader(loader_function orelse null);
+}
+
+pub const VKGetInstanceProcAddr = fn (vk_instance: c.VkInstance, name: [*c]const u8) callconv(.C) ?VKProc;
+
 /// Returns whether the Vulkan loader and an ICD have been found.
 ///
 /// This function returns whether the Vulkan loader and any minimally functional ICD have been
@@ -49,9 +78,6 @@ pub inline fn vulkanSupported() bool {
 /// Additional extensions may be required by future versions of GLFW. You should check if any
 /// extensions you wish to enable are already in the returned array, as it is an error to specify
 /// an extension more than once in the `VkInstanceCreateInfo` struct.
-///
-/// macos: GLFW currently supports both the `VK_MVK_macos_surface` and the newer
-/// `VK_EXT_metal_surface` extensions.
 ///
 /// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
 /// yourself. It is guaranteed to be valid only until the library is terminated.
@@ -197,10 +223,19 @@ pub inline fn getPhysicalDevicePresentationSupport(
 /// appropriate for the error. Appropriate use of glfw.vulkanSupported and glfw.getRequiredInstanceExtensions
 /// should eliminate almost all occurrences of these errors.
 ///
+/// macos: GLFW prefers the `VK_EXT_metal_surface` extension, with the `VK_MVK_macos_surface`
+/// extension as a fallback. The name of the selected extension, if any, is included in the array
+/// returned by glfw.getRequiredInstanceExtensions.
+///
 /// macos: This function currently only supports the `VK_MVK_macos_surface` extension from MoltenVK.
 ///
 /// macos: This function creates and sets a `CAMetalLayer` instance for the window content view,
 /// which is required for MoltenVK to function.
+///
+/// x11: By default GLFW prefers the `VK_KHR_xcb_surface` extension, with the `VK_KHR_xlib_surface`
+/// extension as a fallback. You can make `VK_KHR_xlib_surface` the preferred extension by setting
+/// glfw.InitHints.x11_xcb_vulkan_surface. The name of the selected extension, if any, is included
+/// in the array returned by glfw.getRequiredInstanceExtensions.
 ///
 /// @thread_safety This function may be called from any thread. For synchronization details of
 /// Vulkan objects, see the Vulkan specification.
@@ -262,4 +297,5 @@ test "syntax" {
     // context.
     _ = getPhysicalDevicePresentationSupport;
     _ = createWindowSurface;
+    _ = initVulkanLoader;
 }
