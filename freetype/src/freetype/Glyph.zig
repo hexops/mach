@@ -106,11 +106,11 @@ const SvgGlyph = struct {
         return self.handle.*.svg_document[0..self.svgBufferLen()];
     }
 
-    pub fn svgBufferLen(self: SvgGlyph) usize {
+    pub fn svgBufferLen(self: SvgGlyph) u32 {
         return self.handle.*.svg_document_length;
     }
 
-    pub fn glyphIndex(self: SvgGlyph) usize {
+    pub fn glyphIndex(self: SvgGlyph) u32 {
         return self.handle.*.glyph_index;
     }
 
