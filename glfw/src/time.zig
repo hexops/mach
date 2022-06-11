@@ -17,7 +17,7 @@ const internal_debug = @import("internal_debug.zig");
 ///
 /// The resolution of the timer is system dependent, but is usually on the order
 /// of a few micro- or nanoseconds. It uses the highest-resolution monotonic
-/// time source on each supported platform.
+/// time source on each supported operating system.
 ///
 /// @return The current time, in seconds, or zero if an
 /// error occurred.
