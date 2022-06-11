@@ -114,7 +114,7 @@ pub const PaletteData = struct {
         return self.handle.palette_flags[0..self.numPalettes()];
     }
 
-    pub fn paletteFlag(self: PaletteData, index: usize) PaletteFlags {
+    pub fn paletteFlag(self: PaletteData, index: u32) PaletteFlags {
         return PaletteFlags.from(@intCast(u2, self.handle.palette_flags[index]));
     }
 

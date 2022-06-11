@@ -85,7 +85,7 @@ pub const SegmentProps = struct {
         return c.hb_segment_properties_equal(&a.cast(), &b.cast()) > 0;
     }
 
-    pub fn hash(self: SegmentProps) usize {
+    pub fn hash(self: SegmentProps) u32 {
         return c.hb_segment_properties_hash(&self.cast());
     }
 
@@ -228,32 +228,32 @@ pub const Buffer = struct {
         return c.hb_buffer_allocation_successful(self.handle) > 0;
     }
 
-    pub fn add(self: Buffer, codepoint: u32, cluster: usize) void {
-        c.hb_buffer_add(self.handle, codepoint, @intCast(c_uint, cluster));
+    pub fn add(self: Buffer, codepoint: u32, cluster: u32) void {
+        c.hb_buffer_add(self.handle, codepoint, cluster);
     }
 
-    pub fn addCodepoints(self: Buffer, text: []const u32, item_offset: usize, item_length: usize) void {
-        c.hb_buffer_add_codepoints(self.handle, &text[0], @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
+    pub fn addCodepoints(self: Buffer, text: []const u32, item_offset: u32, item_length: ?u31) void {
+        c.hb_buffer_add_codepoints(self.handle, &text[0], @intCast(c_int, text.len), item_offset, if (item_length) |l| l else @intCast(c_int, text.len));
     }
 
-    pub fn addUTF32(self: Buffer, text: []const u32, item_offset: usize, item_length: usize) void {
-        c.hb_buffer_add_utf32(self.handle, &text[0], @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
+    pub fn addUTF32(self: Buffer, text: []const u32, item_offset: u32, item_length: ?u31) void {
+        c.hb_buffer_add_utf32(self.handle, &text[0], @intCast(c_int, text.len), item_offset, if (item_length) |l| l else @intCast(c_int, text.len));
     }
 
-    pub fn addUTF16(self: Buffer, text: []const u16, item_offset: usize, item_length: usize) void {
-        c.hb_buffer_add_utf16(self.handle, &text[0], @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
+    pub fn addUTF16(self: Buffer, text: []const u16, item_offset: u32, item_length: ?u31) void {
+        c.hb_buffer_add_utf16(self.handle, &text[0], @intCast(c_int, text.len), item_offset, if (item_length) |l| l else @intCast(c_int, text.len));
     }
 
-    pub fn addUTF8(self: Buffer, text: []const u8, item_offset: usize, item_length: usize) void {
-        c.hb_buffer_add_utf8(self.handle, &text[0], @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
+    pub fn addUTF8(self: Buffer, text: []const u8, item_offset: u32, item_length: ?u31) void {
+        c.hb_buffer_add_utf8(self.handle, &text[0], @intCast(c_int, text.len), item_offset, if (item_length) |l| l else @intCast(c_int, text.len));
     }
 
-    pub fn addLatin1(self: Buffer, text: []const u8, item_offset: usize, item_length: usize) void {
-        c.hb_buffer_add_latin1(self.handle, &text[0], @intCast(c_int, text.len), @intCast(c_uint, item_offset), @intCast(c_int, item_length));
+    pub fn addLatin1(self: Buffer, text: []const u8, item_offset: u32, item_length: ?u31) void {
+        c.hb_buffer_add_latin1(self.handle, &text[0], @intCast(c_int, text.len), item_offset, if (item_length) |l| l else @intCast(c_int, text.len));
     }
 
-    pub fn append(self: Buffer, source: Buffer, start: usize, end: usize) void {
-        c.hb_buffer_append(self.handle, source.handle, @intCast(c_uint, start), @intCast(c_uint, end));
+    pub fn append(self: Buffer, source: Buffer, start: u32, end: u32) void {
+        c.hb_buffer_append(self.handle, source.handle, start, end);
     }
 
     pub fn getContentType(self: Buffer) ContentType {
@@ -304,12 +304,12 @@ pub const Buffer = struct {
         c.hb_buffer_set_cluster_level(self.handle, @enumToInt(level));
     }
 
-    pub fn getLength(self: Buffer) usize {
+    pub fn getLength(self: Buffer) u32 {
         return c.hb_buffer_get_length(self.handle);
     }
 
-    pub fn setLength(self: Buffer, new_len: usize) error{OutOfMemory}!void {
-        if (c.hb_buffer_set_length(self.handle, @intCast(c_uint, new_len)) < 1)
+    pub fn setLength(self: Buffer, new_len: u32) error{OutOfMemory}!void {
+        if (c.hb_buffer_set_length(self.handle, new_len) < 1)
             return error.OutOfMemory;
     }
 
@@ -374,16 +374,16 @@ pub const Buffer = struct {
         c.hb_buffer_reverse(self.handle);
     }
 
-    pub fn reverseRange(self: Buffer, start: usize, end: usize) void {
-        c.hb_buffer_reverse_range(self.handle, @intCast(c_uint, start), @intCast(c_uint, end));
+    pub fn reverseRange(self: Buffer, start: u32, end: u32) void {
+        c.hb_buffer_reverse_range(self.handle, start, end);
     }
 
     pub fn reverseClusters(self: Buffer) void {
         c.hb_buffer_reverse_clusters(self.handle);
     }
 
-    pub fn diff(self: Buffer, ref: Buffer, dottedcircle_glyph: u32, position_fuzz: usize) DiffFlags {
-        return DiffFlags.from(@intCast(u8, c.hb_buffer_diff(self.handle, ref.handle, dottedcircle_glyph, @intCast(c_uint, position_fuzz))));
+    pub fn diff(self: Buffer, ref: Buffer, dottedcircle_glyph: u32, position_fuzz: u32) DiffFlags {
+        return DiffFlags.from(@intCast(u8, c.hb_buffer_diff(self.handle, ref.handle, dottedcircle_glyph, position_fuzz)));
     }
 };
 
