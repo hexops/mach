@@ -46,7 +46,10 @@ test "inclusion" {
 test "example" {
     const allocator = testing.allocator;
 
-    const all_components = .{};
+    const all_components = .{
+        .physics = u16,
+        .geometry = u16,
+    };
 
     //-------------------------------------------------------------------------
     // Create a world.
@@ -56,11 +59,11 @@ test "example" {
     const player1 = try world.entities.new();
     const player2 = try world.entities.new();
     const player3 = try world.entities.new();
-    try world.entities.setComponent(player1, "physics", @as(u16, 1234));
-    try world.entities.setComponent(player1, "geometry", @as(u16, 1234));
+    try world.entities.setComponent(player1, .physics, 1234);
+    try world.entities.setComponent(player1, .geometry, 1234);
 
-    try world.entities.setComponent(player2, "physics", @as(u16, 1234));
-    try world.entities.setComponent(player3, "physics", @as(u16, 1234));
+    try world.entities.setComponent(player2, .physics, 1234);
+    try world.entities.setComponent(player3, .physics, 1234);
 
     const physics = (struct {
         pub fn physics(adapter: *Adapter(all_components)) void {
