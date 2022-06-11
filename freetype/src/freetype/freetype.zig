@@ -126,12 +126,12 @@ pub const LoadFlags = packed struct {
         color = c.FT_LOAD_COLOR,
     };
 
-    pub fn from(bits: u21) LoadFlags {
+    pub fn from(bits: u24) LoadFlags {
         return utils.bitFieldsToStruct(LoadFlags, Flag, bits);
     }
 
-    pub fn cast(self: LoadFlags) u21 {
-        return utils.structToBitFields(u21, Flag, self);
+    pub fn cast(self: LoadFlags) u24 {
+        return utils.structToBitFields(u24, Flag, self);
     }
 };
 
