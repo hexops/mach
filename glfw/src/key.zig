@@ -8,7 +8,7 @@
 //! The naming of the key codes follow these rules:
 //!
 //! - The US keyboard layout is used
-//! - Names of printable alpha-numeric characters are used (e.g. "a", "r", "three", etc.)
+//! - Names of printable alphanumeric characters are used (e.g. "a", "r", "three", etc.)
 //! - For non-alphanumeric characters, Unicode:ish names are used (e.g. "comma", "left_bracket",
 //!   etc.). Note that some names do not correspond to the Unicode standard (usually for brevity)
 //! - Keys that lack a clear US mapping are named "world_x"
