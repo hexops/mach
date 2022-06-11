@@ -182,13 +182,12 @@ const mach = {
     throw Error(mach.getString(str, len));
   },
 
-  machCanvasInit(width, height, id) {
+  machCanvasInit(id) {
     let canvas = document.createElement("canvas");
     canvas.id = "#mach-canvas-" + mach.canvases.length;
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
-    canvas.width = Math.floor(width * window.devicePixelRatio);
-    canvas.height = Math.floor(height * window.devicePixelRatio);
+    canvas.style.border = "1px solid";
+    canvas.style.position = "absolute";
+    canvas.style.display = "block";
     canvas.tabIndex = 1;
 
     mach.observer.observe(canvas, { attributes: true });
@@ -250,8 +249,24 @@ const mach = {
     if (width > 0 && height > 0) {
       cv.canvas.style.width = width + "px";
       cv.canvas.style.height = height + "px";
-      cv.canvas.width = width * window.devicePixelRatio;
-      cv.canvas.height = height * window.devicePixelRatio;
+      cv.canvas.width = Math.floor(width * window.devicePixelRatio);
+      cv.canvas.height = Math.floor(height * window.devicePixelRatio);
+    }
+  },
+
+  machCanvasSetFullscreen(canvas, value) {
+    const cv = mach.canvases[canvas];
+    if (value) {
+      cv.canvas.style.border = "0px";
+      cv.canvas.style.width = "100%";
+      cv.canvas.style.height = "100%";
+      cv.canvas.style.top = "0";
+      cv.canvas.style.left = "0";
+      cv.canvas.style.margin = "0px";
+    } else {
+      cv.canvas.style.border = "1px solid;"
+      cv.canvas.style.top = "2px";
+      cv.canvas.style.left = "2px";
     }
   },
 

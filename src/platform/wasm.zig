@@ -5,10 +5,11 @@ const structs = @import("../structs.zig");
 const enums = @import("../enums.zig");
 
 const js = struct {
-    extern fn machCanvasInit(width: u32, height: u32, selector_id: *u8) CanvasId;
+    extern fn machCanvasInit(selector_id: *u8) CanvasId;
     extern fn machCanvasDeinit(canvas: CanvasId) void;
     extern fn machCanvasSetTitle(canvas: CanvasId, title: [*]const u8, len: u32) void;
     extern fn machCanvasSetSize(canvas: CanvasId, width: u32, height: u32) void;
+    extern fn machCanvasSetFullscreen(canvas: CanvasId, value: bool) void;
     extern fn machCanvasGetWindowWidth(canvas: CanvasId) u32;
     extern fn machCanvasGetWindowHeight(canvas: CanvasId) u32;
     extern fn machCanvasGetFramebufferWidth(canvas: CanvasId) u32;
@@ -37,14 +38,10 @@ pub const Platform = struct {
     last_framebuffer_size: structs.Size,
 
     pub fn init(allocator: std.mem.Allocator, eng: *Engine) !Platform {
-        const options = eng.options;
         var selector = [1]u8{0} ** 15;
-        const id = js.machCanvasInit(options.width, options.height, &selector[0]);
+        const id = js.machCanvasInit(&selector[0]);
 
-        const title = std.mem.span(options.title);
-        js.machCanvasSetTitle(id, title.ptr, title.len);
-
-        return Platform{
+        var platform = Platform{
             .id = id,
             .selector_id = try allocator.dupe(u8, selector[0 .. selector.len - @as(u32, if (selector[selector.len - 1] == 0) 1 else 0)]),
             .last_window_size = .{
@@ -56,6 +53,9 @@ pub const Platform = struct {
                 .height = js.machCanvasGetFramebufferHeight(id),
             },
         };
+
+        try platform.setOptions(eng.options);
+        return platform;
     }
 
     pub fn setOptions(platform: *Platform, options: structs.Options) !void {
@@ -64,6 +64,8 @@ pub const Platform = struct {
 
         const title = std.mem.span(options.title);
         js.machCanvasSetTitle(platform.id, title.ptr, title.len);
+
+        js.machCanvasSetFullscreen(platform.id, options.fullscreen);
     }
 
     pub fn setShouldClose(_: *Platform, value: bool) void {
