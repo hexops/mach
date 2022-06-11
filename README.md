@@ -8,7 +8,11 @@ Written in [Zig](https://ziglang.org/), Mach is for creating games, graphical ap
 - Composable
 - Competitive with Unity and Unreal in spirit (a fully fledged editor in the future, etc.)
 
-<a href="https://user-images.githubusercontent.com/3173176/163936001-fd9eb918-7c29-4dcc-bfcb-5586f2ea1f9a.gif"><img align="left" src="https://user-images.githubusercontent.com/3173176/163936001-fd9eb918-7c29-4dcc-bfcb-5586f2ea1f9a.gif" alt="boids demo" width="300px"></img></a>
+<a href="https://user-images.githubusercontent.com/3173176/173177664-2ac9e90b-9429-4b09-aaf9-b80b53fee49f.gif"><img align="left" src="https://user-images.githubusercontent.com/3173176/173177664-2ac9e90b-9429-4b09-aaf9-b80b53fee49f.gif" alt="example-advanced-gen-texture-light" height="250px"></img></a>
+<a href="https://user-images.githubusercontent.com/3173176/163936001-fd9eb918-7c29-4dcc-bfcb-5586f2ea1f9a.gif"><img align="left" src="https://user-images.githubusercontent.com/3173176/163936001-fd9eb918-7c29-4dcc-bfcb-5586f2ea1f9a.gif" alt="example-boids" height="250px"></img></a>
+<a href="https://user-images.githubusercontent.com/3173176/173177646-a3f0982c-f07b-496f-947b-265bdc71ece9.gif"><img src="https://user-images.githubusercontent.com/3173176/173177646-a3f0982c-f07b-496f-947b-265bdc71ece9.gif" alt="example-textured-cube" height="250px"></img></a>
+
+[Example showcase](https://machengine.org/gpu/)
 
 ## Cross-platform graphics in ~60 seconds
 
@@ -22,15 +26,22 @@ Cross-platform graphics, a unified shader language & compute shaders.
 
 (Requires [zig 0.10.x](https://ziglang.org/) | [known issues](https://github.com/hexops/mach/blob/main/doc/known-issues.md#known-issues))
 
-<img align="right" src="https://machengine.org/img/coder.svg" width="300px"></img>
+## Libraries
 
-## Join the conversation
+Mach has many libraries you can use for game development in Zig - **you don't have to use the entire engine.** All our libraries aim to have the same zero-fuss installation, cross compilation, and platform support:
 
-Join us [on Matrix chat](https://matrix.to/#/#hexops:matrix.org) in building the future of game engines & graphics in Zig!
+- [mach-glfw](https://github.com/hexops/mach-glfw): Ziggified GLFW bindings with 100% API coverage
+- [mach-freetype](https://github.com/hexops/mach-freetype): Ziggified Freetype 2 & HarfBuzz bindings
+- [mach-gpu-dawn](https://github.com/hexops/mach-gpu-dawn): Google's Dawn WebGPU implementation, cross-compiled with Zig into a single static library
+- [mach-system-sdk](https://github.com/hexops/mach-system-sdk): More libraries for cross-compilation with Zig
 
-Follow [@machengine on Twitter](https://twitter.com/machengine) for updates.
+## Join the community
 
-Contributors are very welcome! There are lots of places you can help out with little knowledge, so feel free to reach out!
+* [#hexops:matrix.org Matrix chat](https://matrix.to/#/#hexops:matrix.org), come discuss the future of game engines & graphics in Zig!
+* [machengine.org](https://machengine.org)
+* Follow [@machengine on Twitter](https://twitter.com/machengine) for updates.
+
+Contributors are very welcome! There are lots of places you can help out with little knowledge, so feel free to join the Matrix chat and say hi!
 
 ## Sponsor development
 
@@ -39,12 +50,6 @@ Contributors are very welcome! There are lots of places you can help out with li
 No, it’s not Tom from myspace - it’s me, @slimsag! It’s taken [almost a year to get here](https://devlog.hexops.com/2022/mach-v0.1-zig-graphics-in-60s) - staring at broken CI pipelines, C++ compiler errors, [buying hardware](https://twitter.com/slimsag/status/1507506138144681986) to test every OS+arch possible, and more.
 
 There are few things in life that I am more serious about than this work. I dedicate ~48 hours/week to my dayjob, and ~50h/week to Zig building Mach and running [zigmonthly.org](https://zigmonthly.org). After three years of aggressively pushing for progress in this exact way, [I have no plans to slow down anytime soon.](https://devlog.hexops.com/2021/i-write-code-100-hours-a-week)
-
-## Learn more & examples: [machengine.org](https://machengine.org)
-
-<div align="center">
-  <a href="https://machengine.org"><img width="500px" src="https://user-images.githubusercontent.com/3173176/163927590-6a28d30c-6955-4e9f-9a65-88095aa67299.png"></img></a>
-</div>
 
 ## Supported platforms
 
@@ -70,14 +75,6 @@ Mach is still early stages, so far we have support for building from the followi
 Mach targets Zig nightly, binary releases are available at https://ziglang.org/download
 
 Currently tested with: 0.10.0-dev.2439+c84f5a5f9
-
-## Libraries
-
-Mach has many libraries you can use for game development in Zig - you don't have to use the entire engine. All our libraries aim to have the same zero-fuss installation, cross compilation, and platform support:
-
-- [mach-glfw](https://github.com/hexops/mach-glfw): Ziggified GLFW bindings with 100% API coverage
-- [mach-gpu-dawn](https://github.com/hexops/mach-gpu-dawn): Google's Dawn WebGPU implementation, cross-compiled with Zig into a single static library
-- [mach-system-sdk](https://github.com/hexops/mach-system-sdk): More libraries for cross-compilation with Zig
 
 ## Contributing
 
