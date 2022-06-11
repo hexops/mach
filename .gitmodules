@@ -25,3 +25,6 @@
 [submodule "tools/libs/apple_pie"]
 	path = tools/libs/apple_pie
 	url = https://github.com/Luukdegram/apple_pie
+[submodule "glfw/upstream"]
+	path = glfw/upstream
+	url = https://github.com/hexops/glfw
