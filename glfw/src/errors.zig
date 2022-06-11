@@ -40,7 +40,7 @@ pub const Error = error{
     /// GLFW could not find support for the requested API on the system.
     ///
     /// The installed graphics driver does not support the requested API, or does not support it
-    /// via the chosen context creation backend. Below are a few examples.
+    /// via the chosen context creation API. Below are a few examples.
     ///
     /// Some pre-installed Windows graphics drivers do not support OpenGL. AMD only supports
     /// OpenGL ES via EGL, while Nvidia and Intel only support it via a WGL or GLX extension. macOS
@@ -87,6 +87,65 @@ pub const Error = error{
     /// A window that does not have an OpenGL or OpenGL ES context was passed to a function that
     /// requires it to have one.
     NoWindowContext,
+
+    /// The specified cursor shape is not available.
+    ///
+    /// The specified standard cursor shape is not available, either because the
+    /// current platform cursor theme does not provide it or because it is not
+    /// available on the platform.
+    ///
+    /// analysis: Platform or system settings limitation. Pick another standard cursor shape or
+    /// create a custom cursor.
+    CursorUnavailable,
+
+    /// The requested feature is not provided by the platform.
+    ///
+    /// The requested feature is not provided by the platform, so GLFW is unable to
+    /// implement it. The documentation for each function notes if it could emit
+    /// this error.
+    ///
+    /// analysis: Platform or platform version limitation. The error can be ignored
+    /// unless the feature is critical to the application.
+    ///
+    /// A function call that emits this error has no effect other than the error and
+    /// updating any existing out parameters.
+    ///
+    FeatureUnavailable,
+
+    /// The requested feature is not implemented for the platform.
+    ///
+    /// The requested feature has not yet been implemented in GLFW for this platform.
+    ///
+    /// analysis: An incomplete implementation of GLFW for this platform, hopefully
+    /// fixed in a future release. The error can be ignored unless the feature is
+    /// critical to the application.
+    ///
+    /// A function call that emits this error has no effect other than the error and
+    /// updating any existing out parameters.
+    ///
+    FeatureUnimplemented,
+
+    /// Platform unavailable or no matching platform was found.
+    ///
+    /// If emitted during initialization, no matching platform was found. If glfw.InitHint.platform
+    /// is set to `.any_platform`, GLFW could not detect any of the platforms supported by this
+    /// library binary, except for the Null platform. If set to a specific platform, it is either
+    /// not supported by this library binary or GLFW was not able to detect it.
+    ///
+    /// If emitted by a native access function, GLFW was initialized for a different platform
+    /// than the function is for.
+    ///
+    /// analysis: Failure to detect any platform usually only happens on non-macOS Unix
+    /// systems, either when no window system is running or the program was run from
+    /// a terminal that does not have the necessary environment variables. Fall back to
+    /// a different platform if possible or notify the user that no usable platform was
+    /// detected.
+    ///
+    /// Failure to detect a specific platform may have the same cause as above or be because
+    /// support for that platform was not compiled in. Call glfw.platformSupported to
+    /// check whether a specific platform is supported by a library binary.
+    ///
+    PlatformUnavailable,
 };
 
 fn convertError(e: c_int) Error!void {
@@ -102,6 +161,10 @@ fn convertError(e: c_int) Error!void {
         c.GLFW_PLATFORM_ERROR => Error.PlatformError,
         c.GLFW_FORMAT_UNAVAILABLE => Error.FormatUnavailable,
         c.GLFW_NO_WINDOW_CONTEXT => Error.NoWindowContext,
+        c.GLFW_CURSOR_UNAVAILABLE => Error.CursorUnavailable,
+        c.GLFW_FEATURE_UNAVAILABLE => Error.FeatureUnavailable,
+        c.GLFW_FEATURE_UNIMPLEMENTED => Error.FeatureUnimplemented,
+        c.GLFW_PLATFORM_UNAVAILABLE => Error.PlatformUnavailable,
         else => unreachable,
     };
 }
@@ -153,16 +216,16 @@ pub inline fn getErrorString() ?[]const u8 {
 /// This function sets the error callback, which is called with an error code
 /// and a human-readable description each time a GLFW error occurs.
 ///
-/// The error code is set before the callback is called.  Calling @ref
+/// The error code is set before the callback is called. Calling @ref
 /// glfwGetError from the error callback will return the same value as the error
 /// code argument.
 ///
-/// The error callback is called on the thread where the error occurred.  If you
+/// The error callback is called on the thread where the error occurred. If you
 /// are using GLFW from multiple threads, your error callback needs to be
 /// written accordingly.
 ///
 /// Because the description string may have been generated specifically for that
-/// error, it is not guaranteed to be valid after the callback has returned.  If
+/// error, it is not guaranteed to be valid after the callback has returned. If
 /// you wish to use it after the callback returns, you need to make a copy.
 ///
 /// Once set, the error callback remains set even after the library has been
