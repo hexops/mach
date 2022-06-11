@@ -57,6 +57,7 @@ const Hint = enum(c_int) {
     center_cursor = c.GLFW_CENTER_CURSOR,
     transparent_framebuffer = c.GLFW_TRANSPARENT_FRAMEBUFFER,
     focus_on_show = c.GLFW_FOCUS_ON_SHOW,
+    mouse_passthrough = c.GLFW_MOUSE_PASSTHROUGH,
     scale_to_monitor = c.GLFW_SCALE_TO_MONITOR,
 
     /// Framebuffer hints
@@ -96,10 +97,10 @@ const Hint = enum(c_int) {
     context_robustness = c.GLFW_CONTEXT_ROBUSTNESS,
     context_release_behavior = c.GLFW_CONTEXT_RELEASE_BEHAVIOR,
     context_no_error = c.GLFW_CONTEXT_NO_ERROR,
+    // NOTE: This supersedes opengl_debug_context / GLFW_OPENGL_DEBUG_CONTEXT
+    context_debug = c.GLFW_CONTEXT_DEBUG,
 
     opengl_forward_compat = c.GLFW_OPENGL_FORWARD_COMPAT,
-    opengl_debug_context = c.GLFW_OPENGL_DEBUG_CONTEXT,
-
     opengl_profile = c.GLFW_OPENGL_PROFILE,
 
     /// macOS specific
@@ -116,6 +117,9 @@ const Hint = enum(c_int) {
 
     /// X11 specific
     x11_instance_name = c.GLFW_X11_INSTANCE_NAME,
+
+    /// Windows specific
+    win32_keyboard_menu = c.GLFW_WIN32_KEYBOARD_MENU,
 };
 
 /// Window hints
@@ -131,6 +135,7 @@ pub const Hints = struct {
     center_cursor: bool = true,
     transparent_framebuffer: bool = false,
     focus_on_show: bool = true,
+    mouse_passthrough: bool = false,
     scale_to_monitor: bool = false,
 
     /// Framebuffer hints
@@ -173,9 +178,9 @@ pub const Hints = struct {
     /// Note: disables the context creating errors,
     /// instead turning them into undefined behavior.
     context_no_error: bool = false,
+    context_debug: bool = false,
 
     opengl_forward_compat: bool = false,
-    opengl_debug_context: bool = false,
 
     opengl_profile: OpenGLProfile = .opengl_any_profile,
 
@@ -193,6 +198,9 @@ pub const Hints = struct {
 
     /// X11 specific
     x11_instance_name: [:0]const u8 = "",
+
+    /// Windows specific
+    win32_keyboard_menu: bool = false,
 
     pub const PositiveCInt = std.math.IntFittingRange(0, std.math.maxInt(c_int));
 
@@ -325,23 +333,21 @@ pub const Hints = struct {
 /// `glfw.opengl_forward_compat` and `glfw.opengl_profile` hints accordingly. OpenGL 3.0 and 3.1
 /// contexts are not supported at all on macOS.
 ///
+/// macos: The OS only supports core profile contexts for OpenGL versions 3.2 and later. Before
+/// creating an OpenGL context of version 3.2 or later you must set the `glfw.opengl_profile` hint
+/// accordingly. OpenGL 3.0 and 3.1 contexts are not supported at all on macOS.
+///
 /// macos: The GLFW window has no icon, as it is not a document window, but the dock icon will be
 /// the same as the application bundle's icon. For more information on bundles, see the
 /// [Bundle Programming Guide](https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/)
 /// in the Mac Developer Library.
-///
-/// macos: The first time a window is created the menu bar is created. If GLFW finds a `MainMenu.nib`
-/// it is loaded and assumed to contain a menu bar. Otherwise a minimal menu bar is created
-/// manually with common commands like Hide, Quit and About. The About entry opens a minimal about
-/// dialog with information from the application's bundle. Menu bar creation can be disabled
-/// entirely with the glfw.cocoa_menubar init hint.
 ///
 /// macos: On OS X 10.10 and later the window frame will not be rendered at full resolution on
 /// Retina displays unless the glfw.cocoa_retina_framebuffer hint is true (1) and the `NSHighResolutionCapable`
 /// key is enabled in the application bundle's `Info.plist`. For more information, see
 /// [High Resolution Guidelines for OS X](https://developer.apple.com/library/mac/documentation/GraphicsAnimation/Conceptual/HighResolutionOSX/Explained/Explained.html)
 /// in the Mac Developer Library. The GLFW test and example programs use a custom `Info.plist`
-/// template for this, which can be found as `CMake/MacOSXBundleInfo.plist.in` in the source tree.
+/// template for this, which can be found as `CMake/Info.plist.in` in the source tree.
 ///
 /// macos: When activating frame autosaving with glfw.cocoa_frame_name, the specified window size
 /// and position may be overridden by previously saved values.
@@ -515,22 +521,20 @@ pub inline fn setTitle(self: Window, title: [*:0]const u8) error{PlatformError}!
 /// The desired image sizes varies depending on platform and system settings. The selected images
 /// will be rescaled as needed. Good sizes include 16x16, 32x32 and 48x48.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-///
 /// @pointer_lifetime The specified image data is copied before this function returns.
 ///
-/// macos: The GLFW window has no icon, as it is not a document window, so this function does
-/// nothing. The dock icon will be the same as the application bundle's icon. For more information
-/// on bundles, see the [Bundle Programming Guide](https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/)
+/// macos: Regular windows do not have icons on macOS. This function will emit FeatureUnavailable.
+/// The dock icon will be the same as the application bundle's icon. For more information on
+/// bundles, see the [Bundle Programming Guide](https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/)
 /// in the Mac Developer Library.
 ///
 /// wayland: There is no existing protocol to change an icon, the window will thus inherit the one
-/// defined in the application's desktop file. This function always emits glfw.Error.PlatformError.
+/// defined in the application's desktop file. This function will emit glfw.Error.FeatureUnavailable.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_icon
-pub inline fn setIcon(self: Window, allocator: mem.Allocator, images: ?[]Image) (mem.Allocator.Error || error{PlatformError})!void {
+pub inline fn setIcon(self: Window, allocator: mem.Allocator, images: ?[]Image) (mem.Allocator.Error || error{ InvalidValue, FeatureUnavailable })!void {
     internal_debug.assertInitialized();
     if (images) |im| {
         const tmp = try allocator.alloc(c.GLFWimage, im.len);
@@ -540,7 +544,8 @@ pub inline fn setIcon(self: Window, allocator: mem.Allocator, images: ?[]Image) 
     } else c.glfwSetWindowIcon(self.handle, 0, null);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
+        Error.InvalidValue => |e| e,
+        Error.FeatureUnavailable => |e| e,
         else => unreachable,
     };
 }
@@ -555,22 +560,22 @@ pub const Pos = struct {
 /// This function retrieves the position, in screen coordinates, of the upper-left corner of the
 /// content area of the specified window.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.FeatureUnavailable.
 ///
 /// wayland: There is no way for an application to retrieve the global position of its windows,
-/// this function will always emit glfw.Error.PlatformError.
+/// this function will always emit glfw.Error.FeatureUnavailable.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_pos glfw.Window.setPos
-pub inline fn getPos(self: Window) error{PlatformError}!Pos {
+pub inline fn getPos(self: Window) error{FeatureUnavailable}!Pos {
     internal_debug.assertInitialized();
     var x: c_int = 0;
     var y: c_int = 0;
     c.glfwGetWindowPos(self.handle, &x, &y);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
+        Error.FeatureUnavailable => |e| e,
         else => unreachable,
     };
     return Pos{ .x = @intCast(u32, x), .y = @intCast(u32, y) };
@@ -588,20 +593,20 @@ pub inline fn getPos(self: Window) error{PlatformError}!Pos {
 /// The window manager may put limits on what positions are allowed. GLFW cannot and should not
 /// override these limits.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.NotInitialized and glfw.Error.FeatureUnavailable.
 ///
 /// wayland: There is no way for an application to set the global position of its windows, this
-/// function will always emit glfw.Error.PlatformError.
+/// function will always emit glfw.Error.FeatureUnavailable.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_pos, glfw.Window.getPos
-pub inline fn setPos(self: Window, pos: Pos) error{PlatformError}!void {
+pub inline fn setPos(self: Window, pos: Pos) error{FeatureUnavailable}!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowPos(self.handle, @intCast(c_int, pos.x), @intCast(c_int, pos.y));
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
+        Error.FeatureUnavailable => |e| e,
         else => unreachable,
     };
 }
@@ -845,7 +850,7 @@ pub const ContentScale = struct {
 /// DPI and scaling settings. This relies on the system DPI and scaling settings being somewhat
 /// correct.
 ///
-/// On systems where each monitors can have its own content scale, the window content scale will
+/// On platforms where each monitors can have its own content scale, the window content scale will
 /// depend on which monitor the system considers the window to be on.
 ///
 /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
@@ -904,17 +909,16 @@ pub inline fn getOpacity(self: Window) error{PlatformError}!f32 {
 /// A window created with framebuffer transparency may not use whole window transparency. The
 /// results of doing this are undefined.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_transparency, glfw.Window.getOpacity
-pub inline fn setOpacity(self: Window, opacity: f32) error{PlatformError}!void {
+pub inline fn setOpacity(self: Window, opacity: f32) error{ PlatformError, FeatureUnavailable }!void {
     internal_debug.assertInitialized();
     c.glfwSetWindowOpacity(self.handle, opacity);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.PlatformError => |e| e,
+        Error.FeatureUnavailable => |e| e,
         else => unreachable,
     };
 }
@@ -929,8 +933,8 @@ pub inline fn setOpacity(self: Window, opacity: f32) error{PlatformError}!void {
 ///
 /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
 ///
-/// wayland: There is no concept of iconification in wl_shell, this function will emit
-/// glfw.Error.PlatformError when using this deprecated protocol.
+/// wayland: Once a window is iconified, glfw.Window.restorebe able to restore it. This is a design
+/// decision of the xdg-shell protocol.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -999,7 +1003,9 @@ pub inline fn maximize(self: Window) error{PlatformError}!void {
 /// to change this behavior for all newly created windows, or change the
 /// behavior for an existing window with glfw.Window.setAttrib.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// wayland: Because Wayland wants every frame of the desktop to be complete, this function does
+/// not immediately make the window visible. Instead it will become visible the next time the window
+/// framebuffer is updated after this call.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -1050,20 +1056,18 @@ pub inline fn hide(self: Window) error{PlatformError}!void {
 ///
 /// For a less disruptive way of getting the user's attention, see [attention requests (window_attention).
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
-///
-/// wayland: It is not possible for an application to bring its windows
-/// to front, this function will always emit glfw.Error.PlatformError.
+/// wayland It is not possible for an application to set the input focus. This function will emit glfw.Error.FeatureUnavailable.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_focus, window_attention
-pub inline fn focus(self: Window) error{PlatformError}!void {
+pub inline fn focus(self: Window) error{ PlatformError, FeatureUnavailable }!void {
     internal_debug.assertInitialized();
     c.glfwFocusWindow(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.PlatformError => |e| e,
+        Error.FeatureUnavailable => |e| e,
         else => unreachable,
     };
 }
@@ -1218,6 +1222,8 @@ pub const Attrib = enum(c_int) {
     transparent_framebuffer = c.GLFW_TRANSPARENT_FRAMEBUFFER,
     hovered = c.GLFW_HOVERED,
     focus_on_show = c.GLFW_FOCUS_ON_SHOW,
+    mouse_passthrough = c.GLFW_MOUSE_PASSTHROUGH,
+    doublebuffer = c.GLFW_DOUBLEBUFFER,
 
     client_api = c.GLFW_CLIENT_API,
     context_creation_api = c.GLFW_CONTEXT_CREATION_API,
@@ -1228,9 +1234,9 @@ pub const Attrib = enum(c_int) {
     context_robustness = c.GLFW_CONTEXT_ROBUSTNESS,
     context_release_behavior = c.GLFW_CONTEXT_RELEASE_BEHAVIOR,
     context_no_error = c.GLFW_CONTEXT_NO_ERROR,
+    context_debug = c.GLFW_CONTEXT_DEBUG,
 
     opengl_forward_compat = c.GLFW_OPENGL_FORWARD_COMPAT,
-    opengl_debug_context = c.GLFW_OPENGL_DEBUG_CONTEXT,
     opengl_profile = c.GLFW_OPENGL_PROFILE,
 };
 
@@ -1299,6 +1305,8 @@ pub inline fn setAttrib(self: Window, attrib: Attrib, value: bool) error{Platfor
         .floating,
         .auto_iconify,
         .focus_on_show,
+        .mouse_passthrough,
+        .doublebuffer,
         => true,
         else => false,
     });
@@ -1572,9 +1580,6 @@ pub inline fn setFocusCallback(self: Window, comptime callback: ?fn (window: Win
 /// @callback_param `window` the window which was iconified or restored.
 /// @callback_param `iconified` `true` if the window was iconified, or `false` if it was restored.
 ///
-/// wayland: The wl_shell protocol has no concept of iconification,
-/// this callback will never be called when using this deprecated protocol.
-///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_iconify
@@ -1747,7 +1752,7 @@ pub const InputModeCursor = enum(c_int) {
 };
 
 /// Sets the input mode of the cursor, whether it should behave normally, be hidden, or grabbed.
-pub inline fn setInputModeCursor(self: Window, value: InputModeCursor) error{PlatformError}!void {
+pub inline fn setInputModeCursor(self: Window, value: InputModeCursor) error{ PlatformError, FeatureUnavailable }!void {
     return self.setInputMode(InputMode.cursor, value);
 }
 
@@ -1761,7 +1766,7 @@ pub inline fn getInputModeCursor(self: Window) InputModeCursor {
 ///
 /// This is useful when you are only interested in whether keys have been pressed but not when or
 /// in which order.
-pub inline fn setInputModeStickyKeys(self: Window, enabled: bool) error{PlatformError}!void {
+pub inline fn setInputModeStickyKeys(self: Window, enabled: bool) error{ PlatformError, FeatureUnavailable }!void {
     return self.setInputMode(InputMode.sticky_keys, enabled);
 }
 
@@ -1776,7 +1781,7 @@ pub inline fn getInputModeStickyKeys(self: Window) bool {
 ///
 /// This is useful when you are only interested in whether buttons have been pressed but not when
 /// or in which order.
-pub inline fn setInputModeStickyMouseButtons(self: Window, enabled: bool) error{PlatformError}!void {
+pub inline fn setInputModeStickyMouseButtons(self: Window, enabled: bool) error{ PlatformError, FeatureUnavailable }!void {
     return self.setInputMode(InputMode.sticky_mouse_buttons, enabled);
 }
 
@@ -1788,7 +1793,7 @@ pub inline fn getInputModeStickyMouseButtons(self: Window) bool {
 /// Sets the input mode of locking key modifiers, if enabled callbacks that receive modifier bits
 /// will also have the glfw.mod.caps_lock bit set when the event was generated with Caps Lock on,
 /// and the glfw.mod.num_lock bit when Num Lock was on.
-pub inline fn setInputModeLockKeyMods(self: Window, enabled: bool) error{PlatformError}!void {
+pub inline fn setInputModeLockKeyMods(self: Window, enabled: bool) error{ PlatformError, FeatureUnavailable }!void {
     return self.setInputMode(InputMode.lock_key_mods, enabled);
 }
 
@@ -1801,9 +1806,9 @@ pub inline fn getInputModeLockKeyMods(self: Window) bool {
 /// mouse motion events will be sent, otherwise standard mouse motion events respecting the user's
 /// OS settings will be sent.
 ///
-/// If raw motion is not supported, attempting to set this will emit glfw.Error.PlatformError. Call
+/// If raw motion is not supported, attempting to set this will emit glfw.Error.FeatureUnavailable. Call
 /// glfw.rawMouseMotionSupported to check for support.
-pub inline fn setInputModeRawMouseMotion(self: Window, enabled: bool) error{PlatformError}!void {
+pub inline fn setInputModeRawMouseMotion(self: Window, enabled: bool) error{ PlatformError, FeatureUnavailable }!void {
     return self.setInputMode(InputMode.raw_mouse_motion, enabled);
 }
 
@@ -1859,12 +1864,10 @@ pub inline fn getInputMode(self: Window, mode: InputMode) i32 {
 /// @param[in] mode One of the `glfw.Window.InputMode` enumerations.
 /// @param[in] value The new value of the specified input mode.
 ///
-/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
-///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: glfw.Window.getInputMode
-pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) error{PlatformError}!void {
+pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) error{ PlatformError, FeatureUnavailable }!void {
     internal_debug.assertInitialized();
     const T = @TypeOf(value);
     std.debug.assert(switch (mode) {
@@ -1889,6 +1892,7 @@ pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) error{
         Error.NotInitialized => unreachable,
         Error.InvalidEnum => unreachable,
         Error.PlatformError => |e| e,
+        Error.FeatureUnavailable => |e| e,
         else => unreachable,
     };
 }
@@ -2085,7 +2089,7 @@ pub inline fn setCursor(self: Window, cursor: Cursor) error{PlatformError}!void 
 ///
 /// @callback_param[in] window The window that received the event.
 /// @callback_param[in] key The keyboard key (see keys) that was pressed or released.
-/// @callback_param[in] scancode The system-specific scancode of the key.
+/// @callback_param[in] scancode The platform-specific scancode of the key.
 /// @callback_param[in] action `glfw.Action.press`, `glfw.Action.release` or `glfw.Action.repeat`.
 /// Future releases may add more actions.
 /// @callback_param[in] mods Bit field describing which modifier keys (see mods) were held down.
@@ -3604,6 +3608,8 @@ test "hint-attribute default value parity" {
                 .maximized,
                 .transparent_framebuffer,
                 .focus_on_show,
+                .mouse_passthrough,
+                .doublebuffer,
                 .client_api,
                 .context_creation_api,
                 .context_version_major,
@@ -3611,8 +3617,8 @@ test "hint-attribute default value parity" {
                 .context_robustness,
                 .context_release_behavior,
                 .context_no_error, // Note: at the time of writing this, GLFW does not list the default value for this hint in the documentation
+                .context_debug,
                 .opengl_forward_compat,
-                .opengl_debug_context,
                 .opengl_profile,
                 => {
                     const expected = window_a.getAttrib(attrib_tag) catch |err| {
@@ -3644,6 +3650,7 @@ test "hint-attribute default value parity" {
         }
         // Future: we could consider hint values that can't be retrieved via attributes:
         // center_cursor
+        // mouse_passthrough
         // scale_to_monitor
         // red_bits
         // green_bits
