@@ -497,7 +497,14 @@ pub fn Entities(all_components: anytype) type {
         /// Sets the named component to the specified value for the given entity,
         /// moving the entity from it's current archetype table to the new archetype
         /// table if required.
-        pub fn setComponent(entities: *Self, entity: EntityID, comptime name: []const u8, component: anytype) !void {
+        pub fn setComponent(
+            entities: *Self,
+            entity: EntityID,
+            comptime component_name: std.meta.FieldEnum(@TypeOf(all_components)),
+            component: @field(all_components, std.meta.tagName(component_name)),
+        ) !void {
+            const name = std.meta.tagName(component_name);
+
             var archetype = entities.archetypeByID(entity);
 
             // Determine the old hash for the archetype.
@@ -595,7 +602,13 @@ pub fn Entities(all_components: anytype) type {
 
         /// gets the named component of the given type (which must be correct, otherwise undefined
         /// behavior will occur). Returns null if the component does not exist on the entity.
-        pub fn getComponent(entities: *Self, entity: EntityID, name: []const u8, comptime Component: type) ?Component {
+        pub fn getComponent(
+            entities: *Self,
+            entity: EntityID,
+            comptime component_name: std.meta.FieldEnum(@TypeOf(all_components)),
+        ) ?@field(all_components, std.meta.tagName(component_name)) {
+            const Component = comptime @field(all_components, std.meta.tagName(component_name));
+            const name = std.meta.tagName(component_name);
             var archetype = entities.archetypeByID(entity);
 
             const ptr = entities.entities.get(entity).?;
@@ -603,7 +616,12 @@ pub fn Entities(all_components: anytype) type {
         }
 
         /// Removes the named component from the entity, or noop if it doesn't have such a component.
-        pub fn removeComponent(entities: *Self, entity: EntityID, name: []const u8) !void {
+        pub fn removeComponent(
+            entities: *Self,
+            entity: EntityID,
+            comptime component_name: std.meta.FieldEnum(@TypeOf(all_components)),
+        ) !void {
+            const name = std.meta.tagName(component_name);
             var archetype = entities.archetypeByID(entity);
             if (!archetype.hasComponent(name)) return;
 
@@ -712,7 +730,19 @@ test "entity ID size" {
 test "example" {
     const allocator = testing.allocator;
 
-    const all_components = .{};
+    const Location = struct {
+        x: f32 = 0,
+        y: f32 = 0,
+        z: f32 = 0,
+    };
+
+    const Rotation = struct { degrees: f32 };
+
+    const all_components = .{
+        .location = Location,
+        .name = []const u8,
+        .rotation = Rotation,
+    };
 
     //-------------------------------------------------------------------------
     // Create a world.
@@ -720,37 +750,27 @@ test "example" {
     defer world.deinit();
 
     //-------------------------------------------------------------------------
-    // Define component types, any Zig type will do!
-    // A location component.
-    const Location = struct {
-        x: f32 = 0,
-        y: f32 = 0,
-        z: f32 = 0,
-    };
-
-    //-------------------------------------------------------------------------
     // Create first player entity.
     var player1 = try world.new();
-    try world.setComponent(player1, "name", "jane"); // add Name component
-    try world.setComponent(player1, "location", Location{}); // add Location component
+    try world.setComponent(player1, .name, "jane"); // add Name component
+    try world.setComponent(player1, .location, .{}); // add Location component
 
     // Create second player entity.
     var player2 = try world.new();
-    try testing.expect(world.getComponent(player2, "location", Location) == null);
-    try testing.expect(world.getComponent(player2, "name", []const u8) == null);
+    try testing.expect(world.getComponent(player2, .location) == null);
+    try testing.expect(world.getComponent(player2, .name) == null);
 
     //-------------------------------------------------------------------------
     // We can add new components at will.
-    const Rotation = struct { degrees: f32 };
-    try world.setComponent(player2, "rotation", Rotation{ .degrees = 90 });
-    try testing.expect(world.getComponent(player1, "rotation", Rotation) == null); // player1 has no rotation
+    try world.setComponent(player2, .rotation, .{ .degrees = 90 });
+    try testing.expect(world.getComponent(player1, .rotation) == null); // player1 has no rotation
 
     //-------------------------------------------------------------------------
     // Remove a component from any entity at will.
     // TODO: add a way to "cleanup" truly unused archetypes
-    try world.removeComponent(player1, "name");
-    try world.removeComponent(player1, "location");
-    try world.removeComponent(player1, "location"); // doesn't exist? no problem.
+    try world.removeComponent(player1, .name);
+    try world.removeComponent(player1, .location);
+    try world.removeComponent(player1, .location); // doesn't exist? no problem.
 
     //-------------------------------------------------------------------------
     // Introspect things.
