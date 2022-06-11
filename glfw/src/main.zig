@@ -52,16 +52,25 @@ const internal_debug = @import("internal_debug.zig");
 /// Additional calls to this function after successful initialization but before termination will
 /// return immediately with no error.
 ///
+/// The glfw.InitHint.platform init hint controls which platforms are considered during
+/// initialization. This also depends on which platforms the library was compiled to support.
+///
 /// macos: This function will change the current directory of the application to the
 /// `Contents/Resources` subdirectory of the application's bundle, if present. This can be disabled
-/// with the glfw.COCOA_CHDIR_RESOURCES init hint.
+/// with `glfw.InitHint.cocoa_chdir_resources`.
+///
+/// macos: This function will create the main menu and dock icon for the application. If GLFW finds
+/// a `MainMenu.nib` it is loaded and assumed to contain a menu bar. Otherwise a minimal menu bar is
+/// created manually with common commands like Hide, Quit and About. The About entry opens a minimal
+/// about dialog with information from the application's bundle. The menu bar and dock icon can be
+/// disabled entirely with `glfw.InitHint.cocoa_menubar`.
 ///
 /// x11: This function will set the `LC_CTYPE` category of the application locale according to the
 /// current environment if that category is still "C".  This is because the "C" locale breaks
 /// Unicode text input.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub inline fn init(hints: InitHints) error{PlatformError}!void {
+pub inline fn init(hints: InitHints) error{ PlatformUnavailable, PlatformError }!void {
     internal_debug.toggleInitialized();
     internal_debug.assertInitialized();
     errdefer {
@@ -77,10 +86,40 @@ pub inline fn init(hints: InitHints) error{PlatformError}!void {
 
     if (c.glfwInit() == c.GLFW_TRUE) return;
     getError() catch |err| return switch (err) {
+        Error.PlatformUnavailable => |e| e,
         Error.PlatformError => |e| e,
         else => unreachable,
     };
 }
+
+// TODO: implement custom allocator support
+//
+// /*! @brief Sets the init allocator to the desired value.
+//  *
+//  *  To use the default allocator, call this function with a `NULL` argument.
+//  *
+//  *  If you specify an allocator struct, every member must be a valid function
+//  *  pointer.  If any member is `NULL`, this function emits @ref
+//  *  GLFW_INVALID_VALUE and the init allocator is unchanged.
+//  *
+//  *  @param[in] allocator The allocator to use at the next initialization, or
+//  *  `NULL` to use the default one.
+//  *
+//  *  @errors Possible errors include @ref GLFW_INVALID_VALUE.
+//  *
+//  *  @pointer_lifetime The specified allocator is copied before this function
+//  *  returns.
+//  *
+//  *  @thread_safety This function must only be called from the main thread.
+//  *
+//  *  @sa @ref init_allocator
+//  *  @sa @ref glfwInit
+//  *
+//  *  @since Added in version 3.4.
+//  *
+//  *  @ingroup init
+//  */
+// GLFWAPI void glfwInitAllocator(const GLFWallocator* allocator);
 
 /// Terminates the GLFW library.
 ///
@@ -139,6 +178,16 @@ const InitHint = enum(c_int) {
     /// Possible values are `true` and `false`.
     joystick_hat_buttons = c.GLFW_JOYSTICK_HAT_BUTTONS,
 
+    /// ANGLE rendering backend init hint.
+    ///
+    /// Possible values are `AnglePlatformType` enums.
+    angle_platform_type = c.GLFW_ANGLE_PLATFORM_TYPE,
+
+    /// Platform selection init hint.
+    ///
+    /// Possible values are `PlatformType` enums.
+    platform = c.GLFW_PLATFORM,
+
     /// macOS specific init hint. Ignored on other platforms.
     ///
     /// Specifies whether to set the current directory to the application to the Contents/Resources
@@ -154,6 +203,31 @@ const InitHint = enum(c_int) {
     ///
     /// Possible values are `true` and `false`.
     cocoa_menubar = c.GLFW_COCOA_MENUBAR,
+
+    /// X11 specific init hint.
+    x11_xcb_vulkan_surface = c.GLFW_X11_XCB_VULKAN_SURFACE,
+};
+
+/// Angle platform type hints for glfw.InitHint.angle_platform_type
+pub const AnglePlatformType = enum(c_int) {
+    none = c.GLFW_ANGLE_PLATFORM_TYPE_NONE,
+    opengl = c.GLFW_ANGLE_PLATFORM_TYPE_OPENGL,
+    opengles = c.GLFW_ANGLE_PLATFORM_TYPE_OPENGLES,
+    d3d9 = c.GLFW_ANGLE_PLATFORM_TYPE_D3D9,
+    d3d11 = c.GLFW_ANGLE_PLATFORM_TYPE_D3D11,
+    vulkan = c.GLFW_ANGLE_PLATFORM_TYPE_VULKAN,
+    metal = c.GLFW_ANGLE_PLATFORM_TYPE_METAL,
+};
+
+/// Platform type hints for glfw.InitHint.platform
+pub const PlatformType = enum(c_int) {
+    /// Enables automatic platform detection.
+    any = c.GLFW_ANY_PLATFORM,
+    win32 = c.GLFW_PLATFORM_WIN32,
+    cocoa = c.GLFW_PLATFORM_COCOA,
+    wayland = c.GLFW_PLATFORM_WAYLAND,
+    x11 = c.GLFW_PLATFORM_X11,
+    nul = c.GLFW_PLATFORM_NULL,
 };
 
 /// Sets the specified init hint to the desired value.
@@ -195,23 +269,61 @@ fn initHint(hint: InitHint, value: anytype) void {
 /// Returns a string describing the compile-time configuration.
 ///
 /// This function returns the compile-time generated version string of the GLFW library binary. It
-/// describes the version, platform, compiler and any platform-specific compile-time options. It
-/// should not be confused with the OpenGL or OpenGL ES version string, queried with `glGetString`.
+/// describes the version, platform, compiler and any platform or operating system specific
+/// compile-time options. It should not be confused with the OpenGL or OpenGL ES version string,
+/// queried with `glGetString`.
 ///
 /// __Do not use the version string__ to parse the GLFW library version. Use the glfw.version
 /// constants instead.
 ///
-/// @return The ASCII encoded GLFW version string.
+/// __Do not use the version string__ to parse what platforms are supported. The
+/// `glfw.platformSupported` function lets you query platform support.
 ///
-/// @errors None.
+/// returns: The ASCII encoded GLFW version string.
 ///
-/// @remark This function may be called before @ref glfwInit.
+/// remark: This function may be called before @ref glfw.Init.
 ///
-/// @pointer_lifetime The returned string is static and compile-time generated.
+/// pointer_lifetime: The returned string is static and compile-time generated.
 ///
-/// @thread_safety This function may be called from any thread.
+/// thread_safety: This function may be called from any thread.
 pub inline fn getVersionString() [:0]const u8 {
     return std.mem.span(c.glfwGetVersionString());
+}
+
+/// Returns the currently selected platform.
+///
+/// This function returns the platform that was selected during initialization. The returned value
+/// will be one of `glfw.PlatformType.win32`, `glfw.PlatformType.cocoa`,
+/// `glfw.PlatformType.wayland`, `glfw.PlatformType.x11` or `glfw.PlatformType.nul`.
+///
+/// thread_safety: This function may be called from any thread.
+pub fn getPlatform() PlatformType {
+    internal_debug.assertInitialized();
+    const platform = @intToEnum(PlatformType, c.glfwGetPlatform());
+    getError() catch |err| return switch (err) {
+        Error.NotInitialized => unreachable,
+        else => unreachable,
+    };
+    return platform;
+}
+
+/// Returns whether the library includes support for the specified platform.
+///
+/// This function returns whether the library was compiled with support for the specified platform.
+/// The platform must be one of `glfw.PlatformType.win32`, `glfw.PlatformType.cocoa`,
+/// `glfw.PlatformType.wayland`, `glfw.PlatformType.x11` or `glfw.PlatformType.nul`.
+///
+/// remark: This function may be called before glfw.Init.
+///
+/// thread_safety: This function may be called from any thread.
+pub fn platformSupported(platform: PlatformType) bool {
+    internal_debug.assertInitialized();
+    const is_supported = c.glfwPlatformSupported(@enumToInt(platform));
+    getError() catch |err| return switch (err) {
+        Error.InvalidEnum => unreachable,
+        else => unreachable,
+    };
+    return is_supported == c.GLFW_TRUE;
 }
 
 /// Processes all pending events.
