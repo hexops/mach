@@ -1,0 +1,4 @@
+[submodule "glfw/upstream"]
+	path = glfw/upstream
+	url = https://github.com/hexops/glfw
+
