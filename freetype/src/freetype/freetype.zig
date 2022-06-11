@@ -130,8 +130,8 @@ pub const LoadFlags = packed struct {
         return utils.bitFieldsToStruct(LoadFlags, Flag, bits);
     }
 
-    pub fn cast(flags: LoadFlags) u21 {
-        return utils.structToBitFields(u21, Flag, flags);
+    pub fn cast(self: LoadFlags) u21 {
+        return utils.structToBitFields(u21, Flag, self);
     }
 };
 
@@ -208,8 +208,8 @@ pub const FSType = packed struct {
         return utils.bitFieldsToStruct(FSType, Flag, bits);
     }
 
-    pub fn cast(flags: FSType) u10 {
-        return utils.structToBitFields(u10, Flag, flags);
+    pub fn cast(self: FSType) u10 {
+        return utils.structToBitFields(u10, Flag, self);
     }
 };
 
@@ -226,8 +226,8 @@ pub const StyleFlags = packed struct {
         return utils.bitFieldsToStruct(StyleFlags, Flag, bits);
     }
 
-    pub fn cast(flags: StyleFlags) u2 {
-        return utils.structToBitFields(u2, Flag, flags);
+    pub fn cast(self: StyleFlags) u2 {
+        return utils.structToBitFields(u2, Flag, self);
     }
 };
 

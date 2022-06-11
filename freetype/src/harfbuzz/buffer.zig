@@ -11,6 +11,38 @@ pub const ContentType = enum(u2) {
     glyphs = c.HB_BUFFER_CONTENT_TYPE_GLYPHS,
 };
 
+pub const ClusterLevel = enum(u2) {
+    monotone_graphemes = c.HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES,
+    monotone_characters = c.HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS,
+    characters = c.HB_BUFFER_CLUSTER_LEVEL_CHARACTERS,
+};
+
+pub const GlyphInfo = c.hb_glyph_info_t;
+
+pub const SegmentProps = struct {
+    direction: Direction,
+    script: Script,
+    language: Language,
+
+    pub fn from(c_struct: c.hb_segment_properties_t) SegmentProps {
+        return .{
+            .direction = @intToEnum(Direction, c_struct.direction),
+            .script = @intToEnum(Script, c_struct.script),
+            .language = Language{ .handle = c_struct.language },
+        };
+    }
+
+    pub fn cast(self: SegmentProps) c.hb_segment_properties_t {
+        return .{
+            .reserved1 = undefined,
+            .reserved2 = undefined,
+            .direction = @enumToInt(self.direction),
+            .script = @enumToInt(self.script),
+            .language = self.language.handle,
+        };
+    }
+};
+
 pub const Buffer = struct {
     pub const Flags = packed struct {
         bot: bool = false,
@@ -35,8 +67,8 @@ pub const Buffer = struct {
             return utils.bitFieldsToStruct(Flags, Flag, bits);
         }
 
-        pub fn cast(flags: Flags) u7 {
-            return utils.structToBitFields(u7, Flag, flags);
+        pub fn cast(self: Flags) u7 {
+            return utils.structToBitFields(u7, Flag, self);
         }
     };
 
@@ -49,7 +81,7 @@ pub const Buffer = struct {
         return Buffer{ .handle = b.? };
     }
 
-    pub fn getEmpty() Buffer {
+    pub fn initEmpty() Buffer {
         return .{ .handle = c.hb_buffer_get_empty().? };
     }
 

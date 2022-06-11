@@ -88,7 +88,7 @@ pub fn render(self: GlyphSlot, render_mode: RenderMode) Error!void {
     return intToError(c.FT_Render_Glyph(self.handle, @enumToInt(render_mode)));
 }
 
-pub fn subGlyphInfo(self: GlyphSlot, sub_index: u32) Error!SubGlyphInfo {
+pub fn getSubGlyphInfo(self: GlyphSlot, sub_index: u32) Error!SubGlyphInfo {
     var info: SubGlyphInfo = undefined;
     try intToError(c.FT_Get_SubGlyph_Info(self.handle, sub_index, &info.index, &info.flags, &info.arg1, &info.arg2, &info.transform));
     return info;
