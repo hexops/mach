@@ -146,4 +146,4 @@ Issues are tracked in the [main Mach repository](https://github.com/hexops/mach/
 
 Contributions are very welcome. Pull requests must be sent to [the main repository](https://github.com/hexops/mach/tree/main/glfw) to avoid some complex merge conflicts we'd get by accepting contributions in both repositories. Once the changes are merged there, they'll get sync'd to this repository automatically.
 
-We track the latest stable release of GLFW, if you need a newer version we can start a development branch / figure that out - just open an issue.
+For now mach/glfw tracks the latest `master` revision of GLFW, as recorded [in this file](https://github.com/hexops/glfw/blob/main/VERSION), as this version has critical undefined behavior fixes required for GLFW to work with Zig. We will switch to stable releases of GLFW once GLFW 3.4 is tagged.
