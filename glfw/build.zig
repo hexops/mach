@@ -53,6 +53,9 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
 }
 
 fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+    // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
+    ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
+
     const main_abs = std.fs.path.join(b.allocator, &.{ thisDir(), "src/main.zig" }) catch unreachable;
     const lib = b.addStaticLibrary("glfw", main_abs);
     lib.setBuildMode(step.build_mode);
@@ -94,6 +97,18 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     linkGLFWDependencies(b, lib, options);
     lib.install();
     return lib;
+}
+
+fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
+    if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
+        if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
+    } else |_| {}
+    var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
+    child.cwd = thisDir();
+    child.stderr = std.io.getStdErr();
+    child.stdout = std.io.getStdOut();
+
+    _ = try child.spawnAndWait();
 }
 
 fn thisDir() []const u8 {
