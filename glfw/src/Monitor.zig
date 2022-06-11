@@ -49,7 +49,7 @@ pub inline fn getPos(self: Monitor) error{PlatformError}!Pos {
 ///
 /// This is the position of the upper-left corner of the work area of the monitor, along with the
 /// work area size. The work area is defined as the area of the monitor not occluded by the
-/// operating system task bar where present. If no task bar exists then the work area is the
+/// window system task bar where present. If no task bar exists then the work area is the
 /// monitor resolution in screen coordinates.
 const Workarea = struct {
     x: u32,
@@ -88,7 +88,7 @@ const PhysicalSize = struct {
 
 /// Returns the physical size of the monitor.
 ///
-/// Some systems do not provide accurate monitor size information, either because the monitor
+/// Some platforms do not provide accurate monitor size information, either because the monitor
 /// [EDID](https://en.wikipedia.org/wiki/Extended_display_identification_data)
 /// data is incorrect or because the driver does not report it accurately.
 ///
