@@ -24,6 +24,11 @@ pub fn App(
 ) type {
     // TODO: validate modules.mach is the expected type.
     // TODO: validate init has the right function signature
+
+    // Other modules would always allow the consumer to specify the selector, so they can rename the
+    // module in the global namespace. The mach.module is special, though, its name is reserved.
+    const selector = .mach;
+
     return struct {
         engine: ecs.World(modules),
 
@@ -31,8 +36,8 @@ pub fn App(
             app.* = .{
                 .engine = try ecs.World(modules).init(core.allocator),
             };
-            app.*.engine.globals.mach.core = core;
-            app.*.engine.globals.mach.device = core.device;
+            app.*.engine.set(selector, .core, core);
+            app.*.engine.set(selector, .device, core.device);
             try init(&app.engine);
         }
 
