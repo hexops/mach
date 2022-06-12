@@ -13,6 +13,6 @@ pub fn init(engine: *ecs.World(modules)) !void {
     const core = engine.get(.core);
     try core.setOptions(.{ .title = "Hello, ECS!" });
 
-    const device = core.device;
+    const device = engine.get(.device);
     _ = device; // use the GPU device ...
 }
