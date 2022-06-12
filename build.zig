@@ -287,7 +287,7 @@ pub const App = struct {
 pub const pkg = std.build.Pkg{
     .name = "mach",
     .source = .{ .path = thisDir() ++ "/src/main.zig" },
-    .dependencies = &.{gpu.pkg, ecs.pkg},
+    .dependencies = &.{ gpu.pkg, ecs.pkg },
 };
 
 fn thisDir() []const u8 {
