@@ -151,17 +151,22 @@ pub const ArchetypeStorage = struct {
             new_capacity_bytes += new_capacity * column.size;
         }
         const new_block = try gpa.alloc(u8, new_capacity_bytes);
-        if (storage.capacity > 0) mem.copy(u8, new_block, storage.block);
-        storage.block = new_block;
-        storage.capacity = @intCast(u32, new_capacity);
 
         var offset: usize = 0;
         for (storage.columns) |*column| {
-            const padding = column.alignment - (@ptrToInt(&storage.block[offset]) % column.alignment);
+            const align_mod = @ptrToInt(&new_block[offset]) % column.alignment;
+            const padding = if (align_mod == 0) 0 else column.alignment - align_mod;
             offset += padding;
+            if (storage.capacity > 0) {
+                const slice = storage.block[column.offset .. column.offset + storage.capacity * column.size];
+                mem.copy(u8, new_block[offset..], slice);
+            }
             column.offset = offset;
-            offset += storage.capacity * column.size;
+            offset += new_capacity * column.size;
         }
+
+        storage.block = new_block;
+        storage.capacity = @intCast(u32, new_capacity);
     }
 
     /// Sets the entire row's values in the table.
