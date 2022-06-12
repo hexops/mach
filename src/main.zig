@@ -8,10 +8,11 @@ pub const ecs = @import("ecs");
 
 // TODO: rename Engine -> Core
 
-/// The core module of Mach engine. This enables access to *Core APIs, such as
-/// to `.setOptions(.{.title = "foobar"})`, or to access the GPU `.device`.
+/// The Mach engine ECS module. This enables access to `engine.get(.mach, .core)` `*Core` APIs, as
+/// to for example `.setOptions(.{.title = "foobar"})`, or to access the GPU device via
+/// `engine.get(.mach, .device)`
 pub const module = ecs.Module(.{
-    .absolute_globals = struct{
+    .globals = struct {
         core: *Engine,
         device: gpu.Device,
     },
@@ -21,6 +22,8 @@ pub fn App(
     modules: anytype,
     init: anytype, // fn (engine: *ecs.World(modules)) !void
 ) type {
+    // TODO: validate modules.mach is the expected type.
+    // TODO: validate init has the right function signature
     return struct {
         engine: ecs.World(modules),
 
@@ -28,8 +31,8 @@ pub fn App(
             app.* = .{
                 .engine = try ecs.World(modules).init(core.allocator),
             };
-            app.*.engine.globals.core = core;
-            app.*.engine.globals.device = core.device;
+            app.*.engine.globals.mach.core = core;
+            app.*.engine.globals.mach.device = core.device;
             try init(&app.engine);
         }
 
