@@ -97,8 +97,9 @@ pub const ArchetypeStorage = struct {
     pub fn appendUndefined(storage: *ArchetypeStorage, gpa: Allocator) !u32 {
         try storage.ensureUnusedCapacity(gpa, 1);
         assert(storage.len < storage.capacity);
+        const row_index = storage.len;
         storage.len += 1;
-        return storage.len;
+        return row_index;
     }
 
     pub fn append(storage: *ArchetypeStorage, gpa: Allocator, row: anytype) !u32 {
