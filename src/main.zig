@@ -6,38 +6,42 @@ pub const ResourceManager = @import("resource/ResourceManager.zig");
 pub const gpu = @import("gpu");
 pub const ecs = @import("ecs");
 
+// TODO: rename Engine -> Core
+
+/// The core module of Mach engine. This enables access to *Core APIs, such as
+/// to `.setOptions(.{.title = "foobar"})`, or to access the GPU `.device`.
+pub const module = ecs.Singleton(*Engine);
+
 pub fn App(
-    all_components: anytype,
-    init: fn(
-        engine: *Engine,
-        world: *ecs.World(all_components),
-    ) error{OutOfMemory}!void,
+    modules: anytype,
+    init: anytype, // fn (engine: *ecs.World(modules)) !void
 ) type {
     return struct {
-        world: ecs.World(all_components),
+        engine: ecs.World(modules),
 
-        pub fn init(app: *@This(), engine: *Engine) !void {
+        pub fn init(app: *@This(), core: *Engine) !void {
             app.* = .{
-                .world = try ecs.World(all_components).init(engine.allocator),
+                .engine = try ecs.World(modules).init(core.allocator),
             };
-            try init(engine, &app.world);
+            app.*.engine.singletons.core = core;
+            try init(&app.engine);
         }
-        
-        pub fn deinit(app: *@This(), engine: *Engine) void {
+
+        pub fn deinit(app: *@This(), core: *Engine) void {
             _ = app;
-            _ = engine;
+            _ = core;
             // TODO
         }
-        
-        pub fn update(app: *@This(), engine: *Engine) !void {
+
+        pub fn update(app: *@This(), core: *Engine) !void {
             _ = app;
-            _ = engine;
+            _ = core;
             // TODO
         }
-        
-        pub fn resize(app: *@This(), engine: *Engine, width: u32, height: u32) !void {
+
+        pub fn resize(app: *@This(), core: *Engine, width: u32, height: u32) !void {
             _ = app;
-            _ = engine;
+            _ = core;
             _ = width;
             _ = height;
             // TODO
