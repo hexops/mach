@@ -154,8 +154,9 @@ pub const ArchetypeStorage = struct {
 
         var offset: usize = 0;
         for (storage.columns) |*column| {
-            const align_mod = @ptrToInt(&new_block[offset]) % column.alignment;
-            const padding = if (align_mod == 0) 0 else column.alignment - align_mod;
+            const addr = @ptrToInt(&new_block[offset]);
+            const aligned_addr = std.mem.alignForward(addr, column.alignment);
+            const padding = aligned_addr - addr;
             offset += padding;
             if (storage.capacity > 0) {
                 const slice = storage.block[column.offset .. column.offset + storage.capacity * column.size];
