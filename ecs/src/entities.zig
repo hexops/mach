@@ -177,6 +177,7 @@ pub const ArchetypeStorage = struct {
         const fields = std.meta.fields(@TypeOf(row));
         inline for (fields) |field, index| {
             const ColumnType = field.field_type;
+            if (@sizeOf(ColumnType) == 0) continue;
             const column = storage.columns[index];
             const columnValues = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &storage.block[column.offset]));
             columnValues[row_index] = @field(row, field.name);
@@ -186,6 +187,7 @@ pub const ArchetypeStorage = struct {
     /// Sets the value of the named components (columns) for the given row in the table.
     pub fn set(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, name: []const u8, component: anytype) void {
         const ColumnType = @TypeOf(component);
+        if (@sizeOf(ColumnType) == 0) return;
         for (storage.columns) |column| {
             if (!std.mem.eql(u8, column.name, name)) continue;
             if (is_debug) {
@@ -209,6 +211,7 @@ pub const ArchetypeStorage = struct {
     pub fn get(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, name: []const u8, comptime ColumnType: type) ?ColumnType {
         for (storage.columns) |column| {
             if (!std.mem.eql(u8, column.name, name)) continue;
+            if (@sizeOf(ColumnType) == 0) return {};
             if (is_debug) {
                 if (typeId(ColumnType) != column.typeId) {
                     const msg = std.mem.concat(gpa, u8, &.{
@@ -515,7 +518,7 @@ pub const Entities = struct {
                 .name = name,
                 .typeId = typeId(@TypeOf(component)),
                 .size = @sizeOf(@TypeOf(component)),
-                .alignment = @alignOf(@TypeOf(component)),
+                .alignment = if (@sizeOf(@TypeOf(component)) == 0) 1 else @alignOf(@TypeOf(component)),
                 .offset = undefined,
             };
             std.sort.sort(Column, columns, {}, by_alignment_name);
