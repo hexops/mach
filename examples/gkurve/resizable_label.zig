@@ -159,7 +159,7 @@ fn write(ctx: WriterContext, bytes: []const u8) WriterError!usize {
                     defer outline_ctx.concave_vertices.deinit();
                     defer outline_ctx.convex_vertices.deinit();
 
-                    const callbacks = ft.Outline.OutlineFuncs(*OutlineContext){
+                    const callbacks = ft.Outline.Funcs(*OutlineContext){
                         .move_to = moveToFunction,
                         .line_to = lineToFunction,
                         .conic_to = conicToFunction,
