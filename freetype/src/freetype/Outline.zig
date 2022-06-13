@@ -65,13 +65,9 @@ pub fn OutlineFuncsWrapper(comptime Context: type) type {
             return @ptrCast(*Self, @alignCast(@alignOf(Self), ptr));
         }
 
-        fn castVec(vec: [*c]const c.FT_Vector) Vector {
-            return @intToPtr(*Vector, @ptrToInt(vec)).*;
-        }
-
         pub fn move_to(to: [*c]const c.FT_Vector, ctx: ?*anyopaque) callconv(.C) c_int {
             const self = getSelf(ctx);
-            return if (self.callbacks.move_to(self.ctx, castVec(to))) |_|
+            return if (self.callbacks.move_to(self.ctx, to.*)) |_|
                 0
             else |err|
                 errorToInt(err);
@@ -79,7 +75,7 @@ pub fn OutlineFuncsWrapper(comptime Context: type) type {
 
         pub fn line_to(to: [*c]const c.FT_Vector, ctx: ?*anyopaque) callconv(.C) c_int {
             const self = getSelf(ctx);
-            return if (self.callbacks.line_to(self.ctx, castVec(to))) |_|
+            return if (self.callbacks.line_to(self.ctx, to.*)) |_|
                 0
             else |err|
                 errorToInt(err);
@@ -93,8 +89,8 @@ pub fn OutlineFuncsWrapper(comptime Context: type) type {
             const self = getSelf(ctx);
             return if (self.callbacks.conic_to(
                 self.ctx,
-                castVec(control),
-                castVec(to),
+                control.*,
+                to.*,
             )) |_|
                 0
             else |err|
@@ -110,9 +106,9 @@ pub fn OutlineFuncsWrapper(comptime Context: type) type {
             const self = getSelf(ctx);
             return if (self.callbacks.cubic_to(
                 self.ctx,
-                castVec(control_0),
-                castVec(control_1),
-                castVec(to),
+                control_0.*,
+                control_1.*,
+                to.*,
             )) |_|
                 0
             else |err|
