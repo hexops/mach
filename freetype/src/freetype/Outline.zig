@@ -44,7 +44,7 @@ pub fn bbox(self: Outline) Error!BBox {
     return b;
 }
 
-pub fn OutlineFuncs(comptime Context: type) type {
+pub fn Funcs(comptime Context: type) type {
     return struct {
         move_to: fn (ctx: Context, to: Vector) Error!void,
         line_to: fn (ctx: Context, to: Vector) Error!void,
@@ -55,11 +55,11 @@ pub fn OutlineFuncs(comptime Context: type) type {
     };
 }
 
-pub fn OutlineFuncsWrapper(comptime Context: type) type {
+pub fn FuncsWrapper(comptime Context: type) type {
     return struct {
         const Self = @This();
         ctx: Context,
-        callbacks: OutlineFuncs(Context),
+        callbacks: Funcs(Context),
 
         fn getSelf(ptr: ?*anyopaque) *Self {
             return @ptrCast(*Self, @alignCast(@alignOf(Self), ptr));
@@ -117,8 +117,8 @@ pub fn OutlineFuncsWrapper(comptime Context: type) type {
     };
 }
 
-pub fn decompose(self: Outline, ctx: anytype, callbacks: OutlineFuncs(@TypeOf(ctx))) Error!void {
-    var wrapper = OutlineFuncsWrapper(@TypeOf(ctx)){ .ctx = ctx, .callbacks = callbacks };
+pub fn decompose(self: Outline, ctx: anytype, callbacks: Funcs(@TypeOf(ctx))) Error!void {
+    var wrapper = FuncsWrapper(@TypeOf(ctx)){ .ctx = ctx, .callbacks = callbacks };
     try intToError(c.FT_Outline_Decompose(
         self.handle,
         &.{

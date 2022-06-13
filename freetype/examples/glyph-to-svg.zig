@@ -53,7 +53,7 @@ const OutlinePrinter = struct {
 
     pub fn extractOutline(self: *Self) !void {
         try self.path_stream.writer().writeAll("<path d='");
-        var callbacks = freetype.Outline.OutlineFuncs(*Self){
+        var callbacks = freetype.Outline.Funcs(*Self){
             .move_to = moveToFunction,
             .line_to = lineToFunction,
             .conic_to = conicToFunction,
