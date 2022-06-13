@@ -18,18 +18,16 @@ const modules = ecs.Modules(.{
     .renderer = renderer.module,
     .physics2d = physics2d.module,
 
-    // Sometimes, you might have two modules with the same name. In this case you can rename them -
-    // you just have to tell the module it's namespace:
+    // Note: Modules themselves will interact with the ECS, say by calling
+    // `.getComponent(.physics2d, .location)` and so the name here must match the module's
+    // expectation. You can't rename modules. Instead, we avoid collisions using some conventions:
     //
-    // .foo = renderer.Module(.foo),
-    // .bar = renderer.Module(.bar),
-    //
-    // This does mean, however, namespace-agnostic modules always need to be told where to find
-    // their dependencies. If renderer needed the ability to get physics2d component values, for
-    // example:
-    //
-    // .foo = renderer.Module(.foo, .physics2d),
-    // .bar = renderer.Module(.bar, .physics2d),
+    // * `mach` is always the Mach module.
+    // * One-word module names (`renderer`, `physics`, etc.) are reserved by Mach, you may use
+    //   one-word module names in your application but future versions of Mach may add modules with
+    //   that name and you'll have to rename yours to use that new functionality.
+    // * Two-word module names (`bullet_physics`, `ziglibs_box2d`) are encouraged for third-party
+    //   modules. If two conflict, you can't use them together without renaming one.
     //
 });
 
@@ -54,8 +52,8 @@ pub fn init(engine: *ecs.World(modules)) !void {
 
     // TODO: we could cut out the `.entities.` in this API to make it more brief:
     const player = try engine.entities.new();
-    try engine.entities.setComponent(player, .renderer, .location, .{.x = 0, .y = 0, .z = 0});
-    try engine.entities.setComponent(player, .physics2d, .location, .{.x = 0, .y = 0});
+    try engine.entities.setComponent(player, .renderer, .location, .{ .x = 0, .y = 0, .z = 0 });
+    try engine.entities.setComponent(player, .physics2d, .location, .{ .x = 0, .y = 0 });
     _ = player;
 
     // TODO: there could be an entities wrapper to interact with a single namespace so you don't
