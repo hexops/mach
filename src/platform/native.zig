@@ -20,6 +20,8 @@ pub const Platform = struct {
     last_position: glfw.Window.Pos,
     wait_event_timeout: f64 = 0.0,
 
+    cursors: [@typeInfo(enums.MouseCursor).Enum.fields.len]glfw.Cursor = undefined,
+
     native_instance: gpu.NativeInstance,
 
     const EventQueue = std.TailQueue(structs.Event);
@@ -173,6 +175,18 @@ pub const Platform = struct {
         engine.current_desc = descriptor;
         engine.target_desc = descriptor;
 
+        var mouse_cursors: [@typeInfo(enums.MouseCursor).Enum.fields.len]glfw.Cursor = undefined;
+        mouse_cursors[@enumToInt(enums.MouseCursor.arrow)] = try glfw.Cursor.createStandard(.arrow);
+        mouse_cursors[@enumToInt(enums.MouseCursor.ibeam)] = try glfw.Cursor.createStandard(.ibeam);
+        mouse_cursors[@enumToInt(enums.MouseCursor.crosshair)] = try glfw.Cursor.createStandard(.crosshair);
+        mouse_cursors[@enumToInt(enums.MouseCursor.pointing_hand)] = try glfw.Cursor.createStandard(.pointing_hand);
+        mouse_cursors[@enumToInt(enums.MouseCursor.resize_ew)] = try glfw.Cursor.createStandard(.resize_ew);
+        mouse_cursors[@enumToInt(enums.MouseCursor.resize_ns)] = try glfw.Cursor.createStandard(.resize_ns);
+        mouse_cursors[@enumToInt(enums.MouseCursor.resize_nwse)] = try glfw.Cursor.createStandard(.resize_nwse);
+        mouse_cursors[@enumToInt(enums.MouseCursor.resize_nesw)] = try glfw.Cursor.createStandard(.resize_nesw);
+        mouse_cursors[@enumToInt(enums.MouseCursor.resize_all)] = try glfw.Cursor.createStandard(.resize_all);
+        mouse_cursors[@enumToInt(enums.MouseCursor.not_allowed)] = try glfw.Cursor.createStandard(.not_allowed);
+
         return Platform{
             .window = window,
             .backend_type = backend_type,
@@ -181,6 +195,7 @@ pub const Platform = struct {
             .last_framebuffer_size = .{ .width = framebuffer_size.width, .height = framebuffer_size.height },
             .last_position = try window.getPos(),
             .native_instance = native_instance,
+            .cursors = mouse_cursors,
         };
     }
 
@@ -316,6 +331,10 @@ pub const Platform = struct {
 
     pub fn getWindowSize(platform: *Platform) structs.Size {
         return platform.last_window_size;
+    }
+
+    pub fn setMouseCursor(platform: *Platform, cursor: enums.MouseCursor) !void {
+        try platform.window.setCursor(platform.cursors[@enumToInt(cursor)]);
     }
 
     pub fn hasEvent(platform: *Platform) bool {
