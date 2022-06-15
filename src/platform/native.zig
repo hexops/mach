@@ -20,7 +20,7 @@ pub const Platform = struct {
     last_position: glfw.Window.Pos,
     wait_event_timeout: f64 = 0.0,
 
-    cursors: [@typeInfo(enums.MouseCursor).Enum.fields.len]glfw.Cursor = undefined,
+    cursors: [@typeInfo(enums.MouseCursor).Enum.fields.len]?glfw.Cursor = undefined,
 
     native_instance: gpu.NativeInstance,
 
@@ -175,17 +175,21 @@ pub const Platform = struct {
         engine.current_desc = descriptor;
         engine.target_desc = descriptor;
 
-        var mouse_cursors: [@typeInfo(enums.MouseCursor).Enum.fields.len]glfw.Cursor = undefined;
-        mouse_cursors[@enumToInt(enums.MouseCursor.arrow)] = try glfw.Cursor.createStandard(.arrow);
-        mouse_cursors[@enumToInt(enums.MouseCursor.ibeam)] = try glfw.Cursor.createStandard(.ibeam);
-        mouse_cursors[@enumToInt(enums.MouseCursor.crosshair)] = try glfw.Cursor.createStandard(.crosshair);
-        mouse_cursors[@enumToInt(enums.MouseCursor.pointing_hand)] = try glfw.Cursor.createStandard(.pointing_hand);
-        mouse_cursors[@enumToInt(enums.MouseCursor.resize_ew)] = try glfw.Cursor.createStandard(.resize_ew);
-        mouse_cursors[@enumToInt(enums.MouseCursor.resize_ns)] = try glfw.Cursor.createStandard(.resize_ns);
-        mouse_cursors[@enumToInt(enums.MouseCursor.resize_nwse)] = try glfw.Cursor.createStandard(.resize_nwse);
-        mouse_cursors[@enumToInt(enums.MouseCursor.resize_nesw)] = try glfw.Cursor.createStandard(.resize_nesw);
-        mouse_cursors[@enumToInt(enums.MouseCursor.resize_all)] = try glfw.Cursor.createStandard(.resize_all);
-        mouse_cursors[@enumToInt(enums.MouseCursor.not_allowed)] = try glfw.Cursor.createStandard(.not_allowed);
+        // Try to create glfw standard cursors for all our enums, but each
+        // could fail.  In the future we hope to provide custom backup images
+        // for these.
+        // See https://github.com/hexops/mach/pull/352 for more info
+        var mouse_cursors: [@typeInfo(enums.MouseCursor).Enum.fields.len]?glfw.Cursor = undefined;
+        mouse_cursors[@enumToInt(enums.MouseCursor.arrow)] = glfw.Cursor.createStandard(.arrow) catch null;
+        mouse_cursors[@enumToInt(enums.MouseCursor.ibeam)] = glfw.Cursor.createStandard(.ibeam) catch null;
+        mouse_cursors[@enumToInt(enums.MouseCursor.crosshair)] = glfw.Cursor.createStandard(.crosshair) catch null;
+        mouse_cursors[@enumToInt(enums.MouseCursor.pointing_hand)] = glfw.Cursor.createStandard(.pointing_hand) catch null;
+        mouse_cursors[@enumToInt(enums.MouseCursor.resize_ew)] = glfw.Cursor.createStandard(.resize_ew) catch null;
+        mouse_cursors[@enumToInt(enums.MouseCursor.resize_ns)] = glfw.Cursor.createStandard(.resize_ns) catch null;
+        mouse_cursors[@enumToInt(enums.MouseCursor.resize_nwse)] = glfw.Cursor.createStandard(.resize_nwse) catch null;
+        mouse_cursors[@enumToInt(enums.MouseCursor.resize_nesw)] = glfw.Cursor.createStandard(.resize_nesw) catch null;
+        mouse_cursors[@enumToInt(enums.MouseCursor.resize_all)] = glfw.Cursor.createStandard(.resize_all) catch null;
+        mouse_cursors[@enumToInt(enums.MouseCursor.not_allowed)] = glfw.Cursor.createStandard(.not_allowed) catch null;
 
         return Platform{
             .window = window,
@@ -334,7 +338,16 @@ pub const Platform = struct {
     }
 
     pub fn setMouseCursor(platform: *Platform, cursor: enums.MouseCursor) !void {
-        try platform.window.setCursor(platform.cursors[@enumToInt(cursor)]);
+        const glfw_cursor = platform.cursors[@enumToInt(cursor)];
+        if (glfw_cursor) |cur| {
+          try platform.window.setCursor(cur);
+        }
+        else {
+          // In the future we shouldn't hit this because we'll provide backup
+          // custom cursors.
+          // See https://github.com/hexops/mach/pull/352 for more info
+          std.debug.print("mach: setMouseCursor: {s} not yet supported\n", .{ cursor });
+        }
     }
 
     pub fn hasEvent(platform: *Platform) bool {
