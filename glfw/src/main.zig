@@ -23,6 +23,7 @@ pub const Image = @import("Image.zig");
 pub const Joystick = @import("Joystick.zig");
 pub const Monitor = @import("Monitor.zig");
 pub const mouse_button = @import("mouse_button.zig");
+pub const MouseButton = mouse_button.MouseButton;
 pub const version = @import("version.zig");
 pub const VideoMode = @import("VideoMode.zig");
 pub const Window = @import("Window.zig");
