@@ -356,7 +356,7 @@ pub const Platform = struct {
         if (platform.cursors[enum_int]) |cur| {
             try platform.window.setCursor(cur);
         } else {
-            // In the future we shouldn't hit this because we'll provide backup
+            // TODO: In the future we shouldn't hit this because we'll provide backup
             // custom cursors.
             // See https://github.com/hexops/mach/pull/352 for more info
             std.debug.print("mach: setMouseCursor: {s} not yet supported\n", .{cursor});
