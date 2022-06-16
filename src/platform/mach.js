@@ -294,6 +294,24 @@ const mach = {
     window.dispatchEvent(new Event("mach-close"));
   },
 
+  machSetMouseCursor(cursor_ptr, len) {
+    let mach_name = mach.getString(cursor_ptr, len);
+
+    if (mach_name === 'arrow') document.body.style.cursor = 'default';
+    else if (mach_name === 'ibeam') document.body.style.cursor = 'text';
+    else if (mach_name === 'crosshair') document.body.style.cursor = 'crosshair';
+    else if (mach_name === 'pointing_hand') document.body.style.cursor = 'pointer';
+    else if (mach_name === 'resize_ew') document.body.style.cursor = 'ew-resize';
+    else if (mach_name === 'resize_ns') document.body.style.cursor = 'ns-resize';
+    else if (mach_name === 'resize_nwse') document.body.style.cursor = 'nwse-resize';
+    else if (mach_name === 'resize_nesw') document.body.style.cursor = 'nesw-resize';
+    else if (mach_name === 'resize_all') document.body.style.cursor = 'move';
+    else if (mach_name === 'not_allowed') document.body.style.cursor = 'not-allowed';
+    else {
+      console.log("machSetMouseCursor failed for " + mach_name);
+    }
+  },
+
   machSetWaitEvent(timeout) {
     mach.wait_event_timeout = timeout;  
   },

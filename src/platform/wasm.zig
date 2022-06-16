@@ -14,6 +14,7 @@ const js = struct {
     extern fn machCanvasGetWindowHeight(canvas: CanvasId) u32;
     extern fn machCanvasGetFramebufferWidth(canvas: CanvasId) u32;
     extern fn machCanvasGetFramebufferHeight(canvas: CanvasId) u32;
+    extern fn machSetMouseCursor(cursor_name: [*]const u8, len: u32) void;
     extern fn machEmitCloseEvent() void;
     extern fn machSetWaitEvent(timeout: f64) void;
     extern fn machHasEvent() bool;
@@ -82,6 +83,11 @@ pub const Platform = struct {
 
     pub fn getWindowSize(platform: *Platform) structs.Size {
         return platform.last_window_size;
+    }
+
+    pub fn setMouseCursor(_: *Platform, cursor: enums.MouseCursor) !void {
+        const cursor_name = @tagName(cursor);
+        js.machSetMouseCursor(cursor_name.ptr, cursor_name.len);
     }
 
     fn pollChanges(platform: *Platform) void {

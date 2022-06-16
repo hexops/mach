@@ -87,6 +87,10 @@ pub fn getWindowSize(engine: *Engine) structs.Size {
     return engine.internal.getWindowSize();
 }
 
+pub fn setMouseCursor(engine: *Engine, cursor: enums.MouseCursor) !void {
+    try engine.internal.setMouseCursor(cursor);
+}
+
 pub fn hasEvent(engine: *Engine) bool {
     return engine.internal.hasEvent();
 }

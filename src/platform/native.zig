@@ -20,6 +20,10 @@ pub const Platform = struct {
     last_position: glfw.Window.Pos,
     wait_event_timeout: f64 = 0.0,
 
+    cursors: [@typeInfo(enums.MouseCursor).Enum.fields.len]?glfw.Cursor = undefined,
+    cursors_tried: [@typeInfo(enums.MouseCursor).Enum.fields.len]bool =
+        [_]bool{false} ** @typeInfo(enums.MouseCursor).Enum.fields.len,
+
     native_instance: gpu.NativeInstance,
 
     const EventQueue = std.TailQueue(structs.Event);
@@ -184,6 +188,14 @@ pub const Platform = struct {
         };
     }
 
+    pub fn deinit(platform: *Platform) void {
+        for (platform.cursors) |glfw_cursor| {
+            if (glfw_cursor) |cur| {
+                cur.destroy();
+            }
+        }
+    }
+
     fn pushEvent(platform: *Platform, event: structs.Event) void {
         const node = platform.allocator.create(EventNode) catch unreachable;
         node.* = .{ .data = event };
@@ -316,6 +328,39 @@ pub const Platform = struct {
 
     pub fn getWindowSize(platform: *Platform) structs.Size {
         return platform.last_window_size;
+    }
+
+    pub fn setMouseCursor(platform: *Platform, cursor: enums.MouseCursor) !void {
+        // Try to create glfw standard cursor, but could fail.  In the future
+        // we hope to provide custom backup images for these.
+        // See https://github.com/hexops/mach/pull/352 for more info
+
+        const enum_int = @enumToInt(cursor);
+        const tried = platform.cursors_tried[enum_int];
+        if (!tried) {
+            platform.cursors_tried[enum_int] = true;
+            platform.cursors[enum_int] = switch (cursor) {
+                .arrow => glfw.Cursor.createStandard(.arrow) catch null,
+                .ibeam => glfw.Cursor.createStandard(.ibeam) catch null,
+                .crosshair => glfw.Cursor.createStandard(.crosshair) catch null,
+                .pointing_hand => glfw.Cursor.createStandard(.pointing_hand) catch null,
+                .resize_ew => glfw.Cursor.createStandard(.resize_ew) catch null,
+                .resize_ns => glfw.Cursor.createStandard(.resize_ns) catch null,
+                .resize_nwse => glfw.Cursor.createStandard(.resize_nwse) catch null,
+                .resize_nesw => glfw.Cursor.createStandard(.resize_nesw) catch null,
+                .resize_all => glfw.Cursor.createStandard(.resize_all) catch null,
+                .not_allowed => glfw.Cursor.createStandard(.not_allowed) catch null,
+            };
+        }
+
+        if (platform.cursors[enum_int]) |cur| {
+            try platform.window.setCursor(cur);
+        } else {
+            // TODO: In the future we shouldn't hit this because we'll provide backup
+            // custom cursors.
+            // See https://github.com/hexops/mach/pull/352 for more info
+            std.debug.print("mach: setMouseCursor: {s} not yet supported\n", .{cursor});
+        }
     }
 
     pub fn hasEvent(platform: *Platform) bool {
@@ -496,6 +541,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     var engine = try Engine.init(allocator);
+    defer engine.internal.deinit();
     var app: App = undefined;
 
     try app.init(&engine);

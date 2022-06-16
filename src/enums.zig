@@ -20,6 +20,19 @@ pub const VSyncMode = enum {
     triple,
 };
 
+pub const MouseCursor = enum {
+    arrow,
+    ibeam,
+    crosshair,
+    pointing_hand,
+    resize_ew,
+    resize_ns,
+    resize_nwse,
+    resize_nesw,
+    resize_all,
+    not_allowed,
+};
+
 pub const MouseButton = enum {
     left,
     right,
