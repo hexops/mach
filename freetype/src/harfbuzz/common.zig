@@ -218,64 +218,52 @@ pub const Language = struct {
     }
 };
 
-pub const Feature = struct {
-    handle: c.hb_feature_t,
+pub const Feature = extern struct {
+    tag: c.hb_tag_t,
+    value: u32,
+    start: c_uint,
+    end: c_uint,
 
     pub fn fromString(str: []const u8) ?Feature {
-        var f: c.hb_feature_t = undefined;
-        return if (c.hb_feature_from_string(str.ptr, @intCast(c_int, str.len), &f) > 1)
-            Feature{ .handle = f }
+        var f: Feature = undefined;
+        return if (hb_feature_from_string(str.ptr, @intCast(c_int, str.len), &f) > 1)
+            f
         else
             null;
     }
 
     pub fn toString(self: *Feature, buf: []u8) void {
-        c.hb_feature_to_string(&self.handle, buf.ptr, @intCast(c_uint, buf.len));
-    }
-
-    pub fn tag(self: Feature) Tag {
-        return .{ .handle = self.handle.tag };
-    }
-
-    pub fn value(self: Feature) u32 {
-        return self.handle.value;
-    }
-
-    pub fn start(self: Feature) u32 {
-        return self.handle.start;
-    }
-
-    pub fn end(self: Feature) u32 {
-        return self.handle.end;
+        hb_feature_to_string(self, buf.ptr, @intCast(c_uint, buf.len));
     }
 };
 
-pub const Variation = struct {
-    handle: c.hb_variation_t,
+pub const Variation = extern struct {
+    tag: u32,
+    value: f32,
 
     pub fn fromString(str: []const u8) ?Variation {
-        var v: c.hb_variation_t = undefined;
-        return if (c.hb_variation_from_string(str.ptr, @intCast(c_int, str.len), &v) > 1)
-            Variation{ .handle = v }
+        var v: Variation = undefined;
+        return if (hb_variation_from_string(str.ptr, @intCast(c_int, str.len), &v) > 1)
+            v
         else
             null;
     }
 
     pub fn toString(self: *Variation, buf: []u8) void {
-        c.hb_variation_to_string(&self.handle, buf.ptr, @intCast(c_uint, buf.len));
+        hb_variation_to_string(self, buf.ptr, @intCast(c_uint, buf.len));
     }
 
-    pub fn tag(self: Feature) Tag {
-        return .{ .handle = self.handle.tag };
+    pub fn tag(self: Variation) Tag {
+        return .{ .handle = self.tag };
     }
 
-    pub fn value(self: Feature) u32 {
-        return self.handle.value;
+    pub fn value(self: Variation) f32 {
+        return self.value;
     }
 };
 
 pub const Tag = struct {
-    handle: c.hb_tag_t,
+    handle: u32,
 
     pub fn fromString(str: []const u8) Tag {
         return .{ .handle = c.hb_tag_from_string(str.ptr, @intCast(c_int, str.len)) };
@@ -287,3 +275,8 @@ pub const Tag = struct {
         return &str;
     }
 };
+
+pub extern fn hb_feature_from_string(str: [*c]const u8, len: c_int, feature: [*c]Feature) u8;
+pub extern fn hb_feature_to_string(feature: [*c]Feature, buf: [*c]u8, size: c_uint) void;
+pub extern fn hb_variation_from_string(str: [*c]const u8, len: c_int, variation: [*c]Variation) u8;
+pub extern fn hb_variation_to_string(variation: [*c]Variation, buf: [*c]u8, size: c_uint) void;
