@@ -3,7 +3,6 @@ const Face = @import("face.zig").Face;
 const Buffer = @import("buffer.zig").Buffer;
 const Feature = @import("common.zig").Feature;
 const SegmentProps = @import("buffer.zig").SegmentProps;
-const ShapePlan = @import("shape_plan.zig").ShapePlan;
 
 pub const Font = struct {
     handle: *c.hb_font_t,
