@@ -1,5 +1,9 @@
 const c = @import("c.zig");
 const Face = @import("face.zig").Face;
+const Buffer = @import("buffer.zig").Buffer;
+const Feature = @import("common.zig").Feature;
+const SegmentProps = @import("buffer.zig").SegmentProps;
+const ShapePlan = @import("shape_plan.zig").ShapePlan;
 
 pub const Font = struct {
     handle: *c.hb_font_t,
@@ -55,4 +59,26 @@ pub const Font = struct {
     pub fn setFace(self: Font, face: Face) void {
         return c.hb_font_set_face(self.handle, face.handle);
     }
+
+    pub fn shape(self: Font, buf: Buffer, features: ?[]const Feature) void {
+        hb_shape(
+            self.handle,
+            buf.handle,
+            if (features) |f| f.ptr else null,
+            if (features) |f| @intCast(c_uint, f.len) else 0,
+        );
+    }
+
+    pub fn shapeFull(self: Font, buf: Buffer, features: ?[]const Feature, shapers: []const []const u8) error{ShapingFailed}!void {
+        if (hb_shape_full(
+            self.handle,
+            buf.handle,
+            if (features) |f| f.ptr else null,
+            if (features) |f| @intCast(c_uint, f.len) else 0,
+            @ptrCast([*c]const [*c]const u8, shapers),
+        ) < 1) return error.ShapingFailed;
+    }
 };
+
+pub extern fn hb_shape(font: ?*c.hb_font_t, buffer: ?*c.hb_buffer_t, features: [*c]const Feature, num_features: c_uint) void;
+pub extern fn hb_shape_full(font: ?*c.hb_font_t, buffer: ?*c.hb_buffer_t, features: [*c]const Feature, num_features: c_uint, shaper_list: [*c]const [*c]const u8) u8;
