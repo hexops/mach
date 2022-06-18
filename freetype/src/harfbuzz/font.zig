@@ -1,3 +1,4 @@
+const freetype = @import("freetype");
 const c = @import("c");
 const Face = @import("face.zig").Face;
 const Buffer = @import("buffer.zig").Buffer;
@@ -11,6 +12,10 @@ pub const Font = struct {
         return .{ .handle = c.hb_font_create(face.handle).? };
     }
 
+    pub fn fromFtFace(face: freetype.Face) Font {
+        return .{ .handle = c.hb_ft_font_create_referenced(face.handle).? };
+    }
+
     pub fn createSubFont(self: Font) Font {
         return .{
             .handle = c.hb_font_create_sub_font(self.handle).?,
@@ -21,8 +26,20 @@ pub const Font = struct {
         c.hb_font_destroy(self.handle);
     }
 
+    pub fn ftFaceChanged(self: Font) void {
+        c.hb_ft_font_changed(self.handle);
+    }
+
+    pub fn setFtLoadFlags(self: Font, flags: freetype.LoadFlags) void {
+        c.hb_ft_font_set_load_flags(self.handle, flags.cast());
+    }
+
     pub fn getFace(self: Font) Face {
         return .{ .handle = c.hb_font_get_face(self.handle).? };
+    }
+
+    pub fn getFreetypeFace(self: Font) freetype.Face {
+        return .{ .handle = c.hb_ft_font_get_face(self.handle) };
     }
 
     pub fn getGlyph(self: Font, unicode: u32, variation_selector: u32) ?u32 {
