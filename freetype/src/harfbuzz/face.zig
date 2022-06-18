@@ -1,3 +1,4 @@
+const freetype = @import("freetype");
 const c = @import("c");
 const Blob = @import("blob.zig").Blob;
 
@@ -19,6 +20,10 @@ pub const Face = struct {
 
     pub fn init(blob: Blob, index: u16) Face {
         return .{ .handle = c.hb_face_create(blob.handle, index).? };
+    }
+
+    pub fn fromFtFace(face: freetype.Face) Face {
+        return .{ .handle = c.hb_ft_face_create_referenced(face.handle).? };
     }
 
     pub fn initEmpty() Face {
