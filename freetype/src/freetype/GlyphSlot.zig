@@ -1,4 +1,4 @@
-const c = @import("c.zig");
+const c = @import("c");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
 const Glyph = @import("Glyph.zig");

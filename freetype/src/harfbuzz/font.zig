@@ -1,4 +1,4 @@
-const c = @import("c.zig");
+const c = @import("c");
 const Face = @import("face.zig").Face;
 const Buffer = @import("buffer.zig").Buffer;
 const Feature = @import("common.zig").Feature;

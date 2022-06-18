@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c.zig");
+const c = @import("c");
 
 pub const Outline = @import("Outline.zig");
 
