@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c.zig");
+const c = @import("c");
 
 pub const Direction = enum(u3) {
     invalid = c.HB_DIRECTION_INVALID,

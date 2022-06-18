@@ -1,4 +1,4 @@
-const c = @import("c.zig");
+const c = @import("c");
 const Blob = @import("blob.zig").Blob;
 
 pub const UnicodeIterator = struct {

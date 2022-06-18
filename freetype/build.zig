@@ -6,6 +6,11 @@ const ft_include_path = ft_root ++ "/include";
 const hb_root = thisDir() ++ "/upstream/harfbuzz";
 const hb_include_path = hb_root ++ "/src";
 
+const c_pkg = std.build.Pkg{
+    .name = "c",
+    .source = .{ .path = thisDir() ++ "/src/c.zig" },
+};
+
 const utils_pkg = std.build.Pkg{
     .name = "utils",
     .source = .{ .path = thisDir() ++ "/src/utils.zig" },
@@ -14,13 +19,13 @@ const utils_pkg = std.build.Pkg{
 pub const pkg = std.build.Pkg{
     .name = "freetype",
     .source = .{ .path = thisDir() ++ "/src/freetype/main.zig" },
-    .dependencies = &.{utils_pkg},
+    .dependencies = &.{ c_pkg, utils_pkg },
 };
 
 pub const harfbuzz_pkg = std.build.Pkg{
     .name = "harfbuzz",
     .source = .{ .path = thisDir() ++ "/src/harfbuzz/main.zig" },
-    .dependencies = &.{utils_pkg},
+    .dependencies = &.{ c_pkg, utils_pkg, pkg },
 };
 
 pub const Options = struct {
@@ -44,18 +49,22 @@ pub fn build(b: *std.build.Builder) !void {
     const freetype_tests = b.addTestSource(pkg.source);
     freetype_tests.setBuildMode(mode);
     freetype_tests.setTarget(target);
+    freetype_tests.addPackage(c_pkg);
     freetype_tests.addPackage(utils_pkg);
     link(b, freetype_tests, .{});
 
     const harfbuzz_tests = b.addTestSource(harfbuzz_pkg.source);
     harfbuzz_tests.setBuildMode(mode);
     harfbuzz_tests.setTarget(target);
+    harfbuzz_tests.addPackage(c_pkg);
     harfbuzz_tests.addPackage(utils_pkg);
+    harfbuzz_tests.addPackage(pkg);
     link(b, harfbuzz_tests, .{ .harfbuzz = .{} });
 
     const main_tests = b.addTest("test/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
+    main_tests.addPackage(c_pkg);
     main_tests.addPackage(pkg);
     link(b, main_tests, .{ .freetype = .{ .ft_config_path = "./test/ft" } });
 
@@ -93,12 +102,11 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     const ft_lib = buildFreetype(b, step, options.freetype);
     step.linkLibrary(ft_lib);
     step.addIncludePath(ft_include_path);
+    step.addIncludePath(hb_include_path);
 
     if (options.harfbuzz) |hb_options| {
         const hb_lib = buildHarfbuzz(b, step, hb_options);
-        hb_lib.linkLibrary(ft_lib);
         step.linkLibrary(hb_lib);
-        step.addIncludePath(hb_include_path);
     }
 }
 
@@ -147,7 +155,8 @@ pub fn buildHarfbuzz(b: *Builder, step: *std.build.LibExeObjStep, options: Harfb
     lib.setTarget(step.target);
     lib.linkLibCpp();
     lib.addIncludePath(hb_include_path);
-    lib.addCSourceFiles(harfbuzz_base_sources, &.{});
+    lib.addIncludePath(ft_include_path);
+    lib.defineCMacro("HAVE_FREETYPE", "1");
     lib.install();
     return lib;
 }
@@ -208,45 +217,4 @@ const freetype_base_sources = &[_][]const u8{
     ft_root ++ "/src/type1/type1.c",
     ft_root ++ "/src/type42/type42.c",
     ft_root ++ "/src/winfonts/winfnt.c",
-};
-
-const harfbuzz_base_sources = &[_][]const u8{
-    hb_root ++ "/src/hb-aat-layout.cc",
-    hb_root ++ "/src/hb-aat-map.cc",
-    hb_root ++ "/src/hb-blob.cc",
-    hb_root ++ "/src/hb-buffer-serialize.cc",
-    hb_root ++ "/src/hb-buffer-verify.cc",
-    hb_root ++ "/src/hb-buffer.cc",
-    hb_root ++ "/src/hb-common.cc",
-    hb_root ++ "/src/hb-draw.cc",
-    hb_root ++ "/src/hb-face.cc",
-    hb_root ++ "/src/hb-fallback-shape.cc",
-    hb_root ++ "/src/hb-font.cc",
-    hb_root ++ "/src/hb-map.cc",
-    hb_root ++ "/src/hb-number.cc",
-    hb_root ++ "/src/hb-ot-cff1-table.cc",
-    hb_root ++ "/src/hb-ot-cff2-table.cc",
-    hb_root ++ "/src/hb-ot-color.cc",
-    hb_root ++ "/src/hb-ot-face.cc",
-    hb_root ++ "/src/hb-ot-font.cc",
-    hb_root ++ "/src/hb-ot-layout.cc",
-    hb_root ++ "/src/hb-ot-map.cc",
-    hb_root ++ "/src/hb-ot-math.cc",
-    hb_root ++ "/src/hb-ot-meta.cc",
-    hb_root ++ "/src/hb-ot-metrics.cc",
-    hb_root ++ "/src/hb-ot-name.cc",
-    hb_root ++ "/src/hb-ot-shape-fallback.cc",
-    hb_root ++ "/src/hb-ot-shape-normalize.cc",
-    hb_root ++ "/src/hb-ot-shape.cc",
-    hb_root ++ "/src/hb-ot-tag.cc",
-    hb_root ++ "/src/hb-ot-var.cc",
-    hb_root ++ "/src/hb-set.cc",
-    hb_root ++ "/src/hb-shape-plan.cc",
-    hb_root ++ "/src/hb-shape.cc",
-    hb_root ++ "/src/hb-shaper.cc",
-    hb_root ++ "/src/hb-static.cc",
-    hb_root ++ "/src/hb-style.cc",
-    hb_root ++ "/src/hb-ucd.cc",
-    hb_root ++ "/src/hb-unicode.cc",
-    hb_root ++ "/src/hb-ft.cc", // freetype integration
 };

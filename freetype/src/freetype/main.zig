@@ -3,7 +3,7 @@ pub usingnamespace @import("types.zig");
 pub usingnamespace @import("image.zig");
 pub usingnamespace @import("color.zig");
 pub usingnamespace @import("lcdfilter.zig");
-pub const c = @import("c.zig");
+pub const c = @import("c");
 pub const Glyph = @import("Glyph.zig");
 pub const Stroker = @import("Stroker.zig");
 pub const Error = @import("error.zig").Error;

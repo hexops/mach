@@ -1,5 +1,5 @@
 const utils = @import("utils");
-const c = @import("c.zig");
+const c = @import("c");
 const Face = @import("freetype.zig").Face;
 
 pub const Color = c.FT_Color;

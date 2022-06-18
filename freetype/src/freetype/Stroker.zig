@@ -1,4 +1,4 @@
-const c = @import("c.zig");
+const c = @import("c");
 
 const Stroker = @This();
 
