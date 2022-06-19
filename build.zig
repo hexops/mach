@@ -58,6 +58,7 @@ pub fn build(b: *std.build.Builder) void {
                 .src = "examples/" ++ example.name ++ "/main.zig",
                 .target = target,
                 .deps = example.packages,
+                .res_dirs = &.{thisDir() ++ "/examples/assets"},
             },
         );
         example_app.setBuildMode(mode);
@@ -133,12 +134,14 @@ pub const App = struct {
     b: *std.build.Builder,
     name: []const u8,
     step: *std.build.LibExeObjStep,
+    res_dirs: ?[]const []const u8,
 
     pub fn init(b: *std.build.Builder, options: struct {
         name: []const u8,
         src: []const u8,
         target: std.zig.CrossTarget,
         deps: ?[]const Pkg = null,
+        res_dirs: ?[]const []const u8 = null,
     }) App {
         const mach_deps: []const Pkg = &.{ glfw.pkg, gpu.pkg, pkg };
         const deps = if (options.deps) |app_deps|
@@ -175,6 +178,7 @@ pub const App = struct {
             .b = b,
             .step = step,
             .name = options.name,
+            .res_dirs = options.res_dirs,
         };
     }
 
@@ -203,6 +207,19 @@ pub const App = struct {
             ) catch unreachable, app.name });
             run_html_generator.cwd = app.b.getInstallPath(web_install_dir, "");
             app.getInstallStep().?.step.dependOn(&run_html_generator.step);
+        }
+
+        // Install resources
+        if (app.res_dirs) |res_dirs| {
+            for (res_dirs) |res| {
+                const install_res = app.b.addInstallDirectory(.{
+                    .source_dir = res,
+                    .install_dir = app.getInstallStep().?.dest_dir,
+                    .install_subdir = std.fs.path.basename(res),
+                    .exclude_extensions = &.{},
+                });
+                app.getInstallStep().?.step.dependOn(&install_res.step);
+            }
         }
     }
 
