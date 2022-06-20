@@ -6,7 +6,7 @@ const ResourceManager = @This();
 allocator: std.mem.Allocator,
 paths: []const []const u8,
 resource_types: []const ResourceType,
-resources: std.ArrayListUnmanaged(Resource) = .{},
+resources: std.StringHashMapUnmanaged(Resource) = .{},
 cwd: std.fs.Dir,
 
 pub fn init(allocator: std.mem.Allocator, paths: []const []const u8, resource_types: []const ResourceType) !ResourceManager {
@@ -28,6 +28,9 @@ pub const ResourceType = struct {
 };
 
 pub fn getResource(self: *ResourceManager, uri: []const u8) !Resource {
+    if (self.resources.get(uri)) |res|
+        return res;
+
     var file: ?std.fs.File = null;
     const uri_data = try uri_parser.parseUri(uri);
 
@@ -44,15 +47,26 @@ pub fn getResource(self: *ResourceManager, uri: []const u8) !Resource {
 
     if (file) |f| {
         var data = try f.reader().readAllAlloc(self.allocator, std.math.maxInt(usize));
-        errdefer data.deinit();
+        errdefer self.allocator.free(data);
 
-        return Resource{ .resource = @ptrCast(*anyopaque, &data.ptr), .size = data.len };
+        const res = Resource{
+            .uri = try self.allocator.dupe(u8, uri),
+            .resource = @ptrCast(*anyopaque, &data.ptr),
+            .size = data.len,
+        };
+        try self.resources.putNoClobber(self.allocator, uri, res);
+        return res;
     }
 
     return error.ResourceNotFound;
 }
 
+pub fn unloadResource(self: *ResourceManager, res: Resource) void {
+    _ = self.resources.remove(res.uri);
+}
+
 pub const Resource = struct {
+    uri: []const u8,
     resource: *anyopaque,
     size: u64,
 
