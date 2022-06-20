@@ -5,27 +5,40 @@ const ResourceManager = @This();
 
 allocator: std.mem.Allocator,
 paths: []const []const u8,
-resource_types: []const ResourceType,
+// TODO: Use comptime hash map for resource_types
+resource_map: std.StringArrayHashMapUnmanaged(ResourceType) = .{},
 resources: std.StringHashMapUnmanaged(Resource) = .{},
 cwd: std.fs.Dir,
+context: ?*anyopaque = null,
 
 pub fn init(allocator: std.mem.Allocator, paths: []const []const u8, resource_types: []const ResourceType) !ResourceManager {
     var cwd = try std.fs.openDirAbsolute(try std.fs.selfExeDirPathAlloc(allocator), .{});
     errdefer cwd.close();
 
+    var resource_map: std.StringArrayHashMapUnmanaged(ResourceType) = .{};
+    for (resource_types) |res| {
+        try resource_map.put(allocator, res.name, res);
+    }
+
     return ResourceManager{
         .allocator = allocator,
         .paths = paths,
-        .resource_types = resource_types,
+        .resource_map = resource_map,
         .cwd = cwd,
     };
 }
 
 pub const ResourceType = struct {
     name: []const u8,
-    load: fn (context: *anyopaque, mem: []const u8) error{ InvalidResource, CorruptData }!*anyopaque,
-    unload: fn (context: *anyopaque, resource: *anyopaque) void,
+    load: fn (context: ?*anyopaque, mem: []const u8) error{ InvalidResource, CorruptData }!*anyopaque,
+    unload: fn (context: ?*anyopaque, resource: *anyopaque) void,
 };
+
+pub fn setLoadContext(self: *ResourceManager, ctx: anytype) void {
+    var context = self.allocator.create(@TypeOf(ctx)) catch unreachable;
+    context.* = ctx;
+    self.context = context;
+}
 
 pub fn getResource(self: *ResourceManager, uri: []const u8) !Resource {
     if (self.resources.get(uri)) |res|
@@ -46,22 +59,33 @@ pub fn getResource(self: *ResourceManager, uri: []const u8) !Resource {
     }
 
     if (file) |f| {
-        var data = try f.reader().readAllAlloc(self.allocator, std.math.maxInt(usize));
-        errdefer self.allocator.free(data);
+        if (self.resource_map.get(uri_data.scheme)) |res_type| {
+            var data = try f.reader().readAllAlloc(self.allocator, std.math.maxInt(usize));
+            errdefer self.allocator.free(data);
 
-        const res = Resource{
-            .uri = try self.allocator.dupe(u8, uri),
-            .resource = @ptrCast(*anyopaque, &data.ptr),
-            .size = data.len,
-        };
-        try self.resources.putNoClobber(self.allocator, uri, res);
-        return res;
+            const resource = try res_type.load(self.context, data);
+            errdefer res_type.unload(self.context, resource);
+
+            const res = Resource{
+                .uri = try self.allocator.dupe(u8, uri),
+                .resource = resource,
+                .size = data.len,
+            };
+            try self.resources.putNoClobber(self.allocator, uri, res);
+            return res;
+        }
+        return error.UnknownResourceType;
     }
 
     return error.ResourceNotFound;
 }
 
 pub fn unloadResource(self: *ResourceManager, res: Resource) void {
+    const uri_data = uri_parser.parseUri(res.uri) catch unreachable;
+    if (self.resource_map.get(uri_data.scheme)) |res_type| {
+        res_type.unload(self.context, res.resource);
+    }
+
     _ = self.resources.remove(res.uri);
 }
 
