@@ -5,6 +5,7 @@ const ft_root = thisDir() ++ "/upstream/freetype";
 const ft_include_path = ft_root ++ "/include";
 const hb_root = thisDir() ++ "/upstream/harfbuzz";
 const hb_include_path = hb_root ++ "/src";
+const brotli_root = thisDir() ++ "/upstream/brotli";
 
 const c_pkg = std.build.Pkg{
     .name = "c",
@@ -29,8 +30,8 @@ pub const harfbuzz_pkg = std.build.Pkg{
 };
 
 pub const Options = struct {
-    harfbuzz: ?HarfbuzzOptions = null,
     freetype: FreetypeOptions = .{},
+    harfbuzz: ?HarfbuzzOptions = null,
 };
 
 pub const FreetypeOptions = struct {
@@ -38,6 +39,7 @@ pub const FreetypeOptions = struct {
     /// via `ftoptions.h` and `ftmodule.h`
     /// e.g `test/ft/`
     ft_config_path: ?[]const u8 = null,
+    brotli: bool = false,
 };
 
 pub const HarfbuzzOptions = struct {};
@@ -66,7 +68,10 @@ pub fn build(b: *std.build.Builder) !void {
     main_tests.setTarget(target);
     main_tests.addPackage(c_pkg);
     main_tests.addPackage(pkg);
-    link(b, main_tests, .{ .freetype = .{ .ft_config_path = "./test/ft" } });
+    link(b, main_tests, .{ .freetype = .{
+        .ft_config_path = "./test/ft",
+        .brotli = true,
+    } });
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&freetype_tests.step);
@@ -121,8 +126,15 @@ pub fn buildFreetype(b: *Builder, step: *std.build.LibExeObjStep, options: Freet
     lib.setTarget(step.target);
     lib.linkLibC();
     lib.addIncludePath(ft_include_path);
+
     if (options.ft_config_path) |path|
         lib.addIncludePath(path);
+
+    if (options.brotli) {
+        const brotli_lib = buildBrotli(b, step);
+        step.linkLibrary(brotli_lib);
+        lib.defineCMacro("FT_REQUIRE_BROTLI", "1");
+    }
 
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
 
@@ -157,6 +169,18 @@ pub fn buildHarfbuzz(b: *Builder, step: *std.build.LibExeObjStep, options: Harfb
     lib.addIncludePath(hb_include_path);
     lib.addIncludePath(ft_include_path);
     lib.defineCMacro("HAVE_FREETYPE", "1");
+    lib.install();
+    return lib;
+}
+
+pub fn buildBrotli(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+    const main_abs = brotli_root ++ "/common/constants.c";
+    const lib = b.addStaticLibrary("brotli", main_abs);
+    lib.setBuildMode(step.build_mode);
+    lib.setTarget(step.target);
+    lib.linkLibC();
+    lib.addIncludePath(brotli_root ++ "/include");
+    lib.addCSourceFiles(brotli_base_sources, &.{});
     lib.install();
     return lib;
 }
@@ -217,4 +241,35 @@ const freetype_base_sources = &[_][]const u8{
     ft_root ++ "/src/type1/type1.c",
     ft_root ++ "/src/type42/type42.c",
     ft_root ++ "/src/winfonts/winfnt.c",
+};
+
+const brotli_base_sources = &[_][]const u8{
+    brotli_root ++ "/enc/backward_references.c",
+    brotli_root ++ "/enc/fast_log.c",
+    brotli_root ++ "/enc/histogram.c",
+    brotli_root ++ "/enc/cluster.c",
+    brotli_root ++ "/enc/command.c",
+    brotli_root ++ "/enc/compress_fragment_two_pass.c",
+    brotli_root ++ "/enc/entropy_encode.c",
+    brotli_root ++ "/enc/bit_cost.c",
+    brotli_root ++ "/enc/memory.c",
+    brotli_root ++ "/enc/backward_references_hq.c",
+    brotli_root ++ "/enc/dictionary_hash.c",
+    brotli_root ++ "/enc/encoder_dict.c",
+    brotli_root ++ "/enc/block_splitter.c",
+    brotli_root ++ "/enc/compress_fragment.c",
+    brotli_root ++ "/enc/literal_cost.c",
+    brotli_root ++ "/enc/brotli_bit_stream.c",
+    brotli_root ++ "/enc/encode.c",
+    brotli_root ++ "/enc/static_dict.c",
+    brotli_root ++ "/enc/utf8_util.c",
+    brotli_root ++ "/enc/metablock.c",
+    brotli_root ++ "/dec/decode.c",
+    brotli_root ++ "/dec/bit_reader.c",
+    brotli_root ++ "/dec/huffman.c",
+    brotli_root ++ "/dec/state.c",
+    brotli_root ++ "/common/context.c",
+    brotli_root ++ "/common/dictionary.c",
+    brotli_root ++ "/common/transform.c",
+    brotli_root ++ "/common/platform.c",
 };
