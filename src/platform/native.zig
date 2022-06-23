@@ -8,6 +8,9 @@ const enums = @import("../enums.zig");
 const util = @import("util.zig");
 const c = @import("c.zig").c;
 
+pub const scope_levels = if (@hasDecl(App, "scope_levels")) App.scope_levels else [0]std.log.ScopeLevel{};
+pub const log_level = if (@hasDecl(App, "log_level")) App.log_level else std.log.default_level;
+
 pub const Platform = struct {
     window: glfw.Window,
     backend_type: gpu.Adapter.BackendType,
