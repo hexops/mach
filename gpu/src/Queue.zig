@@ -8,7 +8,10 @@ const Texture = @import("Texture.zig");
 
 const Queue = @This();
 
-on_submitted_work_done: ?WorkDoneCallback = null,
+/// Callback to executed when all work has been done
+/// This field must be set before calling `submit()` on the commands the callback waits for.
+/// Note that the address stored must be valid when the callback is executed.
+on_submitted_work_done: ?*WorkDoneCallback = null,
 
 /// The type erased pointer to the Queue implementation
 /// Equal to c.WGPUQueue for NativeInstance.
