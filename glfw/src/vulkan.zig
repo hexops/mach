@@ -176,7 +176,7 @@ pub inline fn getPhysicalDevicePresentationSupport(
     internal_debug.assertInitialized();
     const v = c.glfwGetPhysicalDevicePresentationSupport(
         @ptrCast(c.VkInstance, vk_instance),
-        @ptrCast(*c.VkPhysicalDevice, @alignCast(@alignOf(*c.VkPhysicalDevice), vk_physical_device)).*,
+        @ptrCast(c.VkPhysicalDevice, vk_physical_device),
         queue_family,
     );
     getError() catch |err| return switch (err) {
