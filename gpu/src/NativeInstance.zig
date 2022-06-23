@@ -902,7 +902,7 @@ const queue_vtable = Queue.VTable{
                     wgpu_queue,
                     signal_value,
                     cCallback,
-                    &queue.on_submitted_work_done,
+                    queue.on_submitted_work_done,
                 );
             }
 
