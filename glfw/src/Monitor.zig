@@ -164,7 +164,7 @@ pub inline fn getContentScale(self: Monitor) error{PlatformError}!ContentScale {
 /// see also: monitor_properties
 pub inline fn getName(self: Monitor) [*:0]const u8 {
     internal_debug.assertInitialized();
-    if (c.glfwGetMonitorName(self.handle)) |name| return name;
+    if (c.glfwGetMonitorName(self.handle)) |name| return @ptrCast([*:0]const u8, name);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         else => unreachable,
@@ -239,7 +239,7 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Alloca
         const slice = try allocator.alloc(VideoMode, @intCast(u32, count));
         var i: u32 = 0;
         while (i < count) : (i += 1) {
-            slice[i] = VideoMode{ .handle = modes[i] };
+            slice[i] = VideoMode{ .handle = @ptrCast([*c]const c.GLFWvidmode, modes)[i] };
         }
         return slice;
     }
@@ -390,7 +390,7 @@ pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
         const slice = try allocator.alloc(Monitor, @intCast(u32, count));
         var i: u32 = 0;
         while (i < count) : (i += 1) {
-            slice[i] = Monitor{ .handle = monitors[i].? };
+            slice[i] = Monitor{ .handle = @ptrCast([*c]const ?*c.GLFWmonitor, monitors)[i].? };
         }
         return slice;
     }

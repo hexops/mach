@@ -255,7 +255,7 @@ pub inline fn getName(self: Joystick) error{PlatformError}!?[:0]const u8 {
         else => unreachable,
     };
     return if (name_opt) |name|
-        std.mem.span(name)
+        std.mem.span(@ptrCast([*:0]const u8, name))
     else
         null;
 }
@@ -297,7 +297,7 @@ pub inline fn getGUID(self: Joystick) error{PlatformError}!?[:0]const u8 {
         else => unreachable,
     };
     return if (guid_opt) |guid|
-        std.mem.span(guid)
+        std.mem.span(@ptrCast([*:0]const u8, guid))
     else
         null;
 }
@@ -490,7 +490,7 @@ pub inline fn getGamepadName(self: Joystick) ?[:0]const u8 {
         else => unreachable,
     };
     return if (name_opt) |name|
-        std.mem.span(name)
+        std.mem.span(@ptrCast([*:0]const u8, name))
     else
         null;
 }
@@ -603,7 +603,8 @@ test "setUserPointer_syntax" {
     const joystick = glfw.Joystick{ .jid = .one };
 
     // Must be called from joystick callback, we cannot test it.
-    _ = joystick.setUserPointer;
+    _ = joystick;
+    _ = setUserPointer;
 }
 
 test "getUserPointer_syntax" {
@@ -614,7 +615,8 @@ test "getUserPointer_syntax" {
     const joystick = glfw.Joystick{ .jid = .one };
 
     // Must be called from joystick callback, we cannot test it.
-    _ = joystick.getUserPointer;
+    _ = joystick;
+    _ = getUserPointer;
 }
 
 test "setCallback" {

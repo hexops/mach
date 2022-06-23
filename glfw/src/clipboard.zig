@@ -48,7 +48,7 @@ pub inline fn setClipboardString(value: [*:0]const u8) error{PlatformError}!void
 /// see also: clipboard, glfwSetClipboardString
 pub inline fn getClipboardString() error{ FormatUnavailable, PlatformError }![:0]const u8 {
     internal_debug.assertInitialized();
-    if (c.glfwGetClipboardString(null)) |c_str| return std.mem.span(c_str);
+    if (c.glfwGetClipboardString(null)) |c_str| return std.mem.span(@ptrCast([*:0]const u8, c_str));
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.FormatUnavailable, Error.PlatformError => |e| e,

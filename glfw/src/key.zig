@@ -223,7 +223,7 @@ pub const Key = enum(c_int) {
             else => unreachable,
         };
         return if (name_opt) |name|
-            std.mem.span(name)
+            std.mem.span(@ptrCast([*:0]const u8, name))
         else
             null;
     }
