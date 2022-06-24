@@ -40,6 +40,13 @@ exe.addPackage(freetype.harfbuzz_pkg);
 freetype.link(b, exe, .{ .harfbuzz = .{} });
 ```
 
+You can also optionally build brotli compression (for WOFF2 font support):
+
+```zig
+    exe.addPackage(freetype.pkg);
+    freetype.link(b, exe, .{ .freetype = .{ .brotli = true } });
+```
+
 <details>
 <description>Optional: Using Gyro dependency manager</description>
 
