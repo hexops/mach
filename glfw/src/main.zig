@@ -288,7 +288,7 @@ fn initHint(hint: InitHint, value: anytype) void {
 ///
 /// thread_safety: This function may be called from any thread.
 pub inline fn getVersionString() [:0]const u8 {
-    return std.mem.span(c.glfwGetVersionString());
+    return std.mem.span(@ptrCast([*:0]const u8, c.glfwGetVersionString()));
 }
 
 /// Returns the currently selected platform.

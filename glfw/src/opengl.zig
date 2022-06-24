@@ -137,7 +137,7 @@ pub inline fn extensionSupported(extension: [:0]const u8) error{ NoCurrentContex
     std.debug.assert(extension.len != 0);
     std.debug.assert(extension[0] != 0);
 
-    const supported = c.glfwExtensionSupported(extension);
+    const supported = c.glfwExtensionSupported(extension.ptr);
     getError() catch |err| return switch (err) {
         Error.NoCurrentContext, Error.PlatformError => |e| e,
         Error.NotInitialized => unreachable,
@@ -147,12 +147,13 @@ pub inline fn extensionSupported(extension: [:0]const u8) error{ NoCurrentContex
     return supported == c.GLFW_TRUE;
 }
 
+const builtin = @import("builtin");
 /// Client API function pointer type.
 ///
 /// Generic function pointer used for returning client API function pointers.
 ///
 /// see also: context_glext, glfwGetProcAddress
-pub const GLProc = fn () callconv(.C) void;
+pub const GLProc = if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other) fn () callconv(.C) void else *const fn () callconv(.C) void;
 
 /// Returns the address of the specified function for the current context.
 ///
@@ -197,7 +198,7 @@ test "makeContextCurrent" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
+    const window = Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -222,7 +223,7 @@ test "swapInterval" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
+    const window = Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -239,7 +240,7 @@ test "getProcAddress" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
+    const window = Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
@@ -256,7 +257,7 @@ test "extensionSupported" {
     try glfw.init(.{});
     defer glfw.terminate();
 
-    const window = glfw.Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
+    const window = Window.create(640, 480, "Hello, Zig!", null, null, .{}) catch |err| {
         // return without fail, because most of our CI environments are headless / we cannot open
         // windows on them.
         std.debug.print("note: failed to create window: {}\n", .{err});
