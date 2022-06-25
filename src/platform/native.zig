@@ -556,16 +556,15 @@ pub fn main() !void {
     const window = engine.internal.window;
     while (!window.shouldClose()) {
         if (engine.internal.wait_event_timeout > 0.0) {
-            // wait for an event
-            if (engine.internal.wait_event_timeout == std.math.floatMax(f64)) {
-                // no timeout
+            if (engine.internal.wait_event_timeout == std.math.inf(f64)) {
+                // Wait for an event
                 try glfw.waitEvents();
             } else {
-                // with a timeout
+                // Wait for an event with a timeout
                 try glfw.waitEventsTimeout(engine.internal.wait_event_timeout);
             }
         } else {
-            // don't wait
+            // Don't wait for events
             try glfw.pollEvents();
         }
 
