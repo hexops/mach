@@ -30,6 +30,8 @@ pub const Entities = @import("entities.zig").Entities;
 
 pub const Adapter = @import("systems.zig").Adapter;
 pub const System = @import("systems.zig").System;
+pub const Module = @import("systems.zig").Module;
+pub const Modules = @import("systems.zig").Modules;
 pub const World = @import("systems.zig").World;
 
 // TODO:
@@ -46,50 +48,57 @@ test "inclusion" {
 test "example" {
     const allocator = testing.allocator;
 
-    const all_components = .{
-        .example = .{
-            .physics = u16,
-            .geometry = u16,
-        },
-    };
+    const modules = Modules(.{
+        .physics = Module(.{
+            .components = .{
+                .id = u16,
+            },
+        }),
+        .geometry = Module(.{
+            .components = .{
+                .id = u16,
+            },
+        }),
+    });
 
     //-------------------------------------------------------------------------
     // Create a world.
-    var world = try World(all_components).init(allocator);
+    var world = try World(modules).init(allocator);
     defer world.deinit();
 
     const player1 = try world.entities.new();
     const player2 = try world.entities.new();
     const player3 = try world.entities.new();
-    try world.entities.setComponent(player1, .example, .physics, 1234);
-    try world.entities.setComponent(player1, .example, .geometry, 1234);
+    try world.entities.setComponent(player1, .physics, .id, 1234);
+    try world.entities.setComponent(player1, .geometry, .id, 1234);
 
-    try world.entities.setComponent(player2, .example, .physics, 1234);
-    try world.entities.setComponent(player3, .example, .physics, 1234);
+    try world.entities.setComponent(player2, .physics, .id, 1234);
+    try world.entities.setComponent(player3, .physics, .id, 1234);
 
-    const physics = (struct {
-        pub fn physics(adapter: *Adapter(all_components)) void {
-            var iter = adapter.query(&.{"physics"});
-            std.debug.print("\nphysics ran\n", .{});
-            while (iter.next()) |row| {
-                std.debug.print("found entity: {}\n", .{row.entity});
-                defer row.unlock();
-            }
-        }
-    }).physics;
-    try world.register("physics", physics);
+    // TODO: integrate systems with modules.
+    // const physics = (struct {
+    //     pub fn physics(adapter: *Adapter(modules)) void {
+    //         var iter = adapter.query(&.{"physics"});
+    //         std.debug.print("\nphysics ran\n", .{});
+    //         while (iter.next()) |row| {
+    //             std.debug.print("found entity: {}\n", .{row.entity});
+    //             defer row.unlock();
+    //         }
+    //     }
+    // }).physics;
+    // try world.register("physics", physics);
 
-    const rendering = (struct {
-        pub fn rendering(adapter: *Adapter(all_components)) void {
-            var iter = adapter.query(&.{"geometry"});
-            std.debug.print("\nrendering ran\n", .{});
-            while (iter.next()) |row| {
-                std.debug.print("found entity: {}\n", .{row.entity});
-                defer row.unlock();
-            }
-        }
-    }).rendering;
-    try world.register("rendering", rendering);
+    // const rendering = (struct {
+    //     pub fn rendering(adapter: *Adapter(modules)) void {
+    //         var iter = adapter.query(&.{"geometry"});
+    //         std.debug.print("\nrendering ran\n", .{});
+    //         while (iter.next()) |row| {
+    //             std.debug.print("found entity: {}\n", .{row.entity});
+    //             defer row.unlock();
+    //         }
+    //     }
+    // }).rendering;
+    // try world.register("rendering", rendering);
 
     world.tick();
 }
