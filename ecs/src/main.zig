@@ -25,12 +25,12 @@
 const std = @import("std");
 const testing = std.testing;
 
-const EntityID = @import("entities.zig").EntityID;
-const Entities = @import("entities.zig").Entities;
+pub const EntityID = @import("entities.zig").EntityID;
+pub const Entities = @import("entities.zig").Entities;
 
-const Adapter = @import("systems.zig").Adapter;
-const System = @import("systems.zig").System;
-const World = @import("systems.zig").World;
+pub const Adapter = @import("systems.zig").Adapter;
+pub const System = @import("systems.zig").System;
+pub const World = @import("systems.zig").World;
 
 // TODO:
 // * Iteration
