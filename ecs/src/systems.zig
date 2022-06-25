@@ -106,12 +106,71 @@ fn namespacedComponents(comptime modules: anytype) NamespacedComponents(modules)
     return x;
 }
 
+/// Extracts namespaced globals from modules like this:
+///
+/// ```
+/// .{
+///     .renderer = .{
+///         .globals = struct{
+///             foo: *Bar,
+///             baz: Bam,
+///         },
+///         ...
+///     },
+///     .physics2d = .{
+///         .globals = struct{
+///             foo: *Instance,
+///         },
+///         ...
+///     },
+/// }
+/// ```
+///
+/// Into a namespaced global type like this:
+///
+/// ```
+/// struct{
+///     renderer: struct{
+///         foo: *Bar,
+///         baz: Bam,
+///     },
+///     physics2d: struct{
+///         foo: *Instance,
+///     },
+/// }
+/// ```
+///
+fn NamespacedGlobals(comptime modules: anytype) type {
+    var fields: []const StructField = &[0]StructField{};
+    inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
+        const module = @field(modules, module_field.name);
+        if (@hasField(@TypeOf(module), "globals")) {
+            fields = fields ++ [_]std.builtin.Type.StructField{.{
+                .name = module_field.name,
+                .field_type = module.globals,
+                .default_value = null,
+                .is_comptime = false,
+                .alignment = @alignOf(module.globals),
+            }};
+        }
+    }
+    return @Type(.{
+        .Struct = .{
+            .layout = .Auto,
+            .is_tuple = false,
+            .fields = fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+        },
+    });
+}
+
 pub fn World(comptime modules: anytype) type {
     const all_components = namespacedComponents(modules);
     return struct {
         allocator: Allocator,
         systems: std.StringArrayHashMapUnmanaged(System) = .{},
         entities: Entities(all_components),
+        globals: NamespacedGlobals(modules),
 
         const Self = @This();
         pub const System = fn (adapter: *Adapter(modules)) void;
@@ -120,12 +179,40 @@ pub fn World(comptime modules: anytype) type {
             return Self{
                 .allocator = allocator,
                 .entities = try Entities(all_components).init(allocator),
+                .globals = undefined,
             };
         }
 
         pub fn deinit(world: *Self) void {
             world.systems.deinit(world.allocator);
             world.entities.deinit();
+        }
+
+        /// Gets a global value called `.global_tag` from the module named `.module_tag`
+        pub fn get(world: *Self, module_tag: anytype, global_tag: anytype) @TypeOf(@field(
+            @field(world.globals, @tagName(module_tag)),
+            @tagName(global_tag),
+        )) {
+            return comptime @field(
+                @field(world.globals, @tagName(module_tag)),
+                @tagName(global_tag),
+            );
+        }
+
+        /// Sets a global value called `.global_tag` in the module named `.module_tag`
+        pub fn set(
+            world: *Self,
+            comptime module_tag: anytype,
+            comptime global_tag: anytype,
+            value: @TypeOf(@field(
+                @field(world.globals, @tagName(module_tag)),
+                @tagName(global_tag),
+            )),
+        ) void {
+            comptime @field(
+                @field(world.globals, @tagName(module_tag)),
+                @tagName(global_tag),
+            ) = value;
         }
 
         pub fn register(world: *Self, name: []const u8, system: System) !void {
