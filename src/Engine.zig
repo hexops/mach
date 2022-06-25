@@ -62,7 +62,7 @@ pub fn setShouldClose(engine: *Engine, value: bool) void {
 // again.
 //
 // timeout is in seconds (<= 0.0 disables waiting)
-// - pass std.math.floatMax(f64) to wait with no timeout
+// - pass std.math.inf(f64) to wait with no timeout
 //
 // update() can be called earlier than timeout if an event happens (key press,
 // mouse motion, etc.)
