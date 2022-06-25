@@ -13,6 +13,10 @@ pub fn build(b: *std.build.Builder) void {
 
 pub const pkg = std.build.Pkg{
     .name = "ecs",
-    .source = .{ .path = "src/main.zig" },
+    .source = .{ .path = thisDir() ++ "/src/main.zig" },
     .dependencies = &[_]std.build.Pkg{},
 };
+
+fn thisDir() []const u8 {
+    return std.fs.path.dirname(@src().file) orelse ".";
+}
