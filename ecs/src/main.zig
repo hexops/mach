@@ -53,6 +53,9 @@ test "example" {
             .components = .{
                 .id = u16,
             },
+            .globals = struct{
+                pointer: u8,
+            },
         }),
         .geometry = Module(.{
             .components = .{
@@ -65,6 +68,10 @@ test "example" {
     // Create a world.
     var world = try World(modules).init(allocator);
     defer world.deinit();
+
+    // Initialize globals.
+    world.set(.physics, .pointer, 123);
+    _ = world.get(.physics, .pointer); // == 123
 
     const player1 = try world.entities.new();
     const player2 = try world.entities.new();
