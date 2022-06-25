@@ -341,6 +341,7 @@ pub const void_archetype_hash = std.math.maxInt(u64);
 ///   making lookup by entity ID a few cheap array indexing operations.
 /// * ComponentStorage(T) is a column of data within a table for a single type of component `T`.
 pub fn Entities(all_components: anytype) type {
+    // TODO: validate all_components is a namespaced component set in the form we expect
     _ = all_components;
     return struct {
         allocator: Allocator,
@@ -500,10 +501,14 @@ pub fn Entities(all_components: anytype) type {
         pub fn setComponent(
             entities: *Self,
             entity: EntityID,
-            comptime component_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            component: @field(all_components, std.meta.tagName(component_name)),
+            comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
+            component: @field(
+                @field(all_components, @tagName(namespace_name)),
+                @tagName(component_name),
+            ),
         ) !void {
-            const name = std.meta.tagName(component_name);
+            const name = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
 
             var archetype = entities.archetypeByID(entity);
 
@@ -605,10 +610,17 @@ pub fn Entities(all_components: anytype) type {
         pub fn getComponent(
             entities: *Self,
             entity: EntityID,
-            comptime component_name: std.meta.FieldEnum(@TypeOf(all_components)),
-        ) ?@field(all_components, std.meta.tagName(component_name)) {
-            const Component = comptime @field(all_components, std.meta.tagName(component_name));
-            const name = std.meta.tagName(component_name);
+            comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
+        ) ?@field(
+            @field(all_components, @tagName(namespace_name)),
+            @tagName(component_name),
+        ) {
+            const Component = comptime @field(
+                @field(all_components, @tagName(namespace_name)),
+                @tagName(component_name),
+            );
+            const name = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             var archetype = entities.archetypeByID(entity);
 
             const ptr = entities.entities.get(entity).?;
@@ -619,9 +631,10 @@ pub fn Entities(all_components: anytype) type {
         pub fn removeComponent(
             entities: *Self,
             entity: EntityID,
-            comptime component_name: std.meta.FieldEnum(@TypeOf(all_components)),
+            comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
         ) !void {
-            const name = std.meta.tagName(component_name);
+            const name = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             var archetype = entities.archetypeByID(entity);
             if (!archetype.hasComponent(name)) return;
 
@@ -739,9 +752,11 @@ test "example" {
     const Rotation = struct { degrees: f32 };
 
     const all_components = .{
-        .location = Location,
-        .name = []const u8,
-        .rotation = Rotation,
+        .game = .{
+            .location = Location,
+            .name = []const u8,
+            .rotation = Rotation,
+        },
     };
 
     //-------------------------------------------------------------------------
@@ -752,25 +767,25 @@ test "example" {
     //-------------------------------------------------------------------------
     // Create first player entity.
     var player1 = try world.new();
-    try world.setComponent(player1, .name, "jane"); // add Name component
-    try world.setComponent(player1, .location, .{}); // add Location component
+    try world.setComponent(player1, .game, .name, "jane"); // add Name component
+    try world.setComponent(player1, .game, .location, .{}); // add Location component
 
     // Create second player entity.
     var player2 = try world.new();
-    try testing.expect(world.getComponent(player2, .location) == null);
-    try testing.expect(world.getComponent(player2, .name) == null);
+    try testing.expect(world.getComponent(player2, .game, .location) == null);
+    try testing.expect(world.getComponent(player2, .game, .name) == null);
 
     //-------------------------------------------------------------------------
     // We can add new components at will.
-    try world.setComponent(player2, .rotation, .{ .degrees = 90 });
-    try testing.expect(world.getComponent(player1, .rotation) == null); // player1 has no rotation
+    try world.setComponent(player2, .game, .rotation, .{ .degrees = 90 });
+    try testing.expect(world.getComponent(player1, .game, .rotation) == null); // player1 has no rotation
 
     //-------------------------------------------------------------------------
     // Remove a component from any entity at will.
     // TODO: add a way to "cleanup" truly unused archetypes
-    try world.removeComponent(player1, .name);
-    try world.removeComponent(player1, .location);
-    try world.removeComponent(player1, .location); // doesn't exist? no problem.
+    try world.removeComponent(player1, .game, .name);
+    try world.removeComponent(player1, .game, .location);
+    try world.removeComponent(player1, .game, .location); // doesn't exist? no problem.
 
     //-------------------------------------------------------------------------
     // Introspect things.
@@ -780,10 +795,10 @@ test "example" {
     var archetypes = world.archetypes.keys();
     try testing.expectEqual(@as(usize, 6), archetypes.len);
     try testing.expectEqual(@as(u64, void_archetype_hash), archetypes[0]);
-    try testing.expectEqual(@as(u64, 6893717443977936573), archetypes[1]);
-    try testing.expectEqual(@as(u64, 6672640730301731073), archetypes[2]);
-    try testing.expectEqual(@as(u64, 14420739110802803032), archetypes[3]);
-    try testing.expectEqual(@as(u64, 18216325908396511299), archetypes[4]);
+    try testing.expectEqual(@as(u64, 10567852867187873021), archetypes[1]);
+    try testing.expectEqual(@as(u64, 14072552683119202344), archetypes[2]);
+    try testing.expectEqual(@as(u64, 17945105277702244199), archetypes[3]);
+    try testing.expectEqual(@as(u64, 12546098194442238762), archetypes[4]);
     try testing.expectEqual(@as(u64, 4457032469566706731), archetypes[5]);
 
     // Number of (living) entities stored in an archetype table.
@@ -797,13 +812,13 @@ test "example" {
     // Components for a given archetype.
     var columns = world.archetypes.get(archetypes[2]).?.columns;
     try testing.expectEqual(@as(usize, 3), columns.len);
-    try testing.expectEqualStrings("location", columns[0].name);
-    try testing.expectEqualStrings("id", columns[1].name);
-    try testing.expectEqualStrings("name", columns[2].name);
+    try testing.expectEqualStrings("game.location", columns[0].name);
+    try testing.expectEqualStrings("game.name", columns[1].name);
+    try testing.expectEqualStrings("id", columns[2].name);
 
     // Archetype resolved via entity ID
     var player2_archetype = world.archetypeByID(player2);
-    try testing.expectEqual(@as(u64, 722178222806262412), player2_archetype.hash);
+    try testing.expectEqual(@as(u64, 4263961864502127795), player2_archetype.hash);
 
     // TODO: iterating components an entity has not currently supported.
 
