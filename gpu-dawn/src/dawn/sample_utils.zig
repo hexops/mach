@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const assert = std.debug.assert;
 const glfw = @import("glfw");
 const c = @import("c.zig").c;
@@ -129,16 +130,24 @@ fn glfwWindowHintsForBackend(backend: c.WGPUBackendType) glfw.Window.Hints {
 }
 
 fn discoverAdapter(instance: c.MachDawnNativeInstance, window: glfw.Window, typ: c.WGPUBackendType) !void {
+    // zig fmt: off
+    const ProcDecl =
+        if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other)
+            fn ([*c]const u8) callconv(.C) ?*anyopaque
+        else
+            *const fn ([*c]const u8) callconv(.C) ?*anyopaque;
+    // zig fmt: on
+
     if (typ == c.WGPUBackendType_OpenGL) {
         try glfw.makeContextCurrent(window);
         const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGL{
-            .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*anyopaque, glfw.getProcAddress),
+            .getProc = @ptrCast(ProcDecl, &glfw.getProcAddress),
         };
         _ = c.machDawnNativeInstance_discoverAdapters(instance, typ, &adapter_options);
     } else if (typ == c.WGPUBackendType_OpenGLES) {
         try glfw.makeContextCurrent(window);
         const adapter_options = c.MachDawnNativeAdapterDiscoveryOptions_OpenGLES{
-            .getProc = @ptrCast(fn ([*c]const u8) callconv(.C) ?*anyopaque, glfw.getProcAddress),
+            .getProc = @ptrCast(ProcDecl, &glfw.getProcAddress),
         };
         _ = c.machDawnNativeInstance_discoverAdapters(instance, typ, &adapter_options);
     } else {
