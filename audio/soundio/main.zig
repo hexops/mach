@@ -1,3 +1,1 @@
-test {
-    _ = @import("c.zig");
-}
+pub const Error = @import("error.zig").Error;
