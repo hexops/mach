@@ -6,20 +6,6 @@ const StructField = std.builtin.Type.StructField;
 
 const Entities = @import("entities.zig").Entities;
 
-pub fn Adapter(modules: anytype) type {
-    const all_components = NamespacedComponents(modules);
-    return struct {
-        world: *World(modules),
-
-        const Self = @This();
-        pub const Iterator = Entities(all_components).Iterator;
-
-        pub fn query(adapter: *Self, components: []const []const u8) Iterator {
-            return adapter.world.entities.query(components);
-        }
-    };
-}
-
 /// An ECS module can provide components, systems, and global values.
 pub fn Module(comptime Params: anytype) @TypeOf(Params) {
     // TODO: validate the type
@@ -168,12 +154,10 @@ pub fn World(comptime modules: anytype) type {
     const all_components = namespacedComponents(modules);
     return struct {
         allocator: Allocator,
-        systems: std.StringArrayHashMapUnmanaged(System) = .{},
         entities: Entities(all_components),
         globals: NamespacedGlobals(modules),
 
         const Self = @This();
-        pub const System = fn (adapter: *Adapter(modules)) void;
 
         pub fn init(allocator: Allocator) !Self {
             return Self{
@@ -184,7 +168,6 @@ pub fn World(comptime modules: anytype) type {
         }
 
         pub fn deinit(world: *Self) void {
-            world.systems.deinit(world.allocator);
             world.entities.deinit();
         }
 
@@ -213,26 +196,6 @@ pub fn World(comptime modules: anytype) type {
                 @field(world.globals, @tagName(module_tag)),
                 @tagName(global_tag),
             ) = value;
-        }
-
-        pub fn register(world: *Self, name: []const u8, system: System) !void {
-            try world.systems.put(world.allocator, name, system);
-        }
-
-        pub fn unregister(world: *Self, name: []const u8) void {
-            world.systems.orderedRemove(name);
-        }
-
-        pub fn tick(world: *Self) void {
-            var i: usize = 0;
-            while (i < world.systems.count()) : (i += 1) {
-                const system = world.systems.entries.get(i).value;
-
-                var adapter = Adapter(modules){
-                    .world = world,
-                };
-                system(&adapter);
-            }
         }
     };
 }
