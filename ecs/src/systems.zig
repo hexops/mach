@@ -2,7 +2,10 @@ const std = @import("std");
 const mem = std.mem;
 const Allocator = mem.Allocator;
 const testing = std.testing;
+const math = std.math;
 const StructField = std.builtin.Type.StructField;
+const EnumField = std.builtin.Type.EnumField;
+const UnionField = std.builtin.Type.UnionField;
 
 const Entities = @import("entities.zig").Entities;
 
@@ -16,6 +19,82 @@ pub fn Module(comptime Params: anytype) @TypeOf(Params) {
 pub fn Modules(modules: anytype) @TypeOf(modules) {
     // TODO: validate the type
     return modules;
+}
+
+/// Returns a tagged union representing the messages, turning this:
+///
+/// ```
+/// .{ .tick = void, .foo = i32 }
+/// ```
+///
+/// Into `T`:
+///
+/// ```
+/// const T = union(MessagesTag(messages)) {
+///     .tick = void,
+///     .foo = i32,
+/// };
+/// ```
+pub fn Messages(messages: anytype) type {
+    var fields: []const UnionField = &[0]UnionField{};
+    const message_fields = std.meta.fields(@TypeOf(messages));
+    inline for (message_fields) |message_field| {
+        const message_type = @field(messages, message_field.name);
+        fields = fields ++ [_]std.builtin.Type.UnionField{.{
+            .name = message_field.name,
+            .field_type = message_type,
+            .alignment = if (message_type == void) 0 else @alignOf(message_type),
+        }};
+    }
+
+    // Hack to workaround stage1 compiler bug. https://github.com/ziglang/zig/issues/8114
+    //
+    // return @Type(.{
+    //     .Union = .{
+    //         .layout = .Auto,
+    //         .tag_type = MessagesTag(messages),
+    //         .fields = fields,
+    //         .decls = &[_]std.builtin.Type.Declaration{},
+    //     },
+    // });
+    //
+    const Ref = union(enum) { temp };
+    var info = @typeInfo(Ref);
+    info.Union.tag_type = MessagesTag(messages);
+    info.Union.fields = fields;
+    return @Type(info);
+}
+
+/// Returns the tag enum for a tagged union representing the messages, turning this:
+///
+/// ```
+/// .{ .tick = void, .foo = i32 }
+/// ```
+///
+/// Into this:
+///
+/// ```
+/// enum { .tick, .foo };
+/// ```
+pub fn MessagesTag(messages: anytype) type {
+    var fields: []const EnumField = &[0]EnumField{};
+    const message_fields = std.meta.fields(@TypeOf(messages));
+    inline for (message_fields) |message_field, index| {
+        fields = fields ++ [_]std.builtin.Type.EnumField{.{
+            .name = message_field.name,
+            .value = index,
+        }};
+    }
+
+    return @Type(.{
+        .Enum = .{
+            .layout = .Auto,
+            .tag_type = std.meta.Int(.unsigned, @floatToInt(u16, math.ceil(math.log2(@intToFloat(f64, message_fields.len))))),
+            .fields = fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+            .is_exhaustive = true,
+        },
+    });
 }
 
 /// Returns the namespaced components struct **type**.
@@ -196,6 +275,17 @@ pub fn World(comptime modules: anytype) type {
                 @field(world.globals, @tagName(module_tag)),
                 @tagName(global_tag),
             ) = value;
+        }
+
+        /// Tick sends the global 'tick' message to all modules that are subscribed to it.
+        pub fn tick(world: *Self) void {
+            _ = world;
+            inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
+                const module = @field(modules, module_field.name);
+                if (@hasField(@TypeOf(module), "messages")) {
+                    if (@hasField(module.messages, "tick")) module.update(.tick);
+                }
+            }
         }
     };
 }

@@ -32,6 +32,8 @@ pub const Adapter = @import("systems.zig").Adapter;
 pub const System = @import("systems.zig").System;
 pub const Module = @import("systems.zig").Module;
 pub const Modules = @import("systems.zig").Modules;
+pub const Messages = @import("systems.zig").Messages;
+pub const MessagesTag = @import("systems.zig").MessagesTag;
 pub const World = @import("systems.zig").World;
 
 // TODO:
@@ -48,6 +50,17 @@ test "inclusion" {
 test "example" {
     const allocator = testing.allocator;
 
+    const PhysicsMsg = Messages(.{
+        .tick = void,
+    });
+    const physicsUpdate = (struct {
+        pub fn physicsUpdate(msg: PhysicsMsg) void {
+            switch (msg) {
+                .tick => std.debug.print("\nphysics tick!\n", .{}),
+            }
+        }
+    }).physicsUpdate;
+
     const modules = Modules(.{
         .physics = Module(.{
             .components = .{
@@ -56,6 +69,8 @@ test "example" {
             .globals = struct {
                 pointer: u8,
             },
+            .messages = PhysicsMsg,
+            .update = physicsUpdate,
         }),
         .renderer = Module(.{
             .components = .{
@@ -81,4 +96,6 @@ test "example" {
 
     try world.entities.setComponent(player2, .physics, .id, 1234);
     try world.entities.setComponent(player3, .physics, .id, 1234);
+
+    world.tick();
 }
