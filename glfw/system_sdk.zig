@@ -46,11 +46,11 @@ pub const Options = struct {
 
     /// The Linux x86-64 SDK repository name.
     linux_x86_64: []const u8 = "sdk-linux-x86_64",
-    linux_x86_64_revision: []const u8 = "080c403e2f0874fea02361e3c4501b79b3c0fade",
+    linux_x86_64_revision: []const u8 = "baace69c969b7577fbcd2dda2d4e139fb3a7bdf7",
 
     /// The Linux aarch64 SDK repository name.
     linux_aarch64: []const u8 = "sdk-linux-aarch64",
-    linux_aarch64_revision: []const u8 = "20414fe0f2cee80da348701dfc584025887592b2",
+    linux_aarch64_revision: []const u8 = "8f6ddaf6cc25df02925ef78448d512c3184abc63",
 
     /// The Windows x86-64 SDK repository name.
     windows_x86_64: []const u8 = "sdk-windows-x86_64",

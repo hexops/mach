@@ -318,6 +318,7 @@ pub inline fn setGamma(self: Monitor, gamma: f32) error{PlatformError}!void {
 ///
 /// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
 /// and returns glfw.Error.PlatformError.
+/// TODO: Is the documentation obsolete? On wayland the error returned is FeatureUnavailable
 ///
 /// The returned gamma ramp is `.owned = true` by GLFW, and is valid until the monitor is
 /// disconnected, this function is called again, or `glfw.terminate()` is called.
@@ -325,12 +326,12 @@ pub inline fn setGamma(self: Monitor, gamma: f32) error{PlatformError}!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_gamma
-pub inline fn getGammaRamp(self: Monitor) error{PlatformError}!GammaRamp {
+pub inline fn getGammaRamp(self: Monitor) error{ PlatformError, FeatureUnavailable }!GammaRamp {
     internal_debug.assertInitialized();
     if (c.glfwGetGammaRamp(self.handle)) |ramp| return GammaRamp.fromC(ramp.*);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
+        Error.PlatformError, Error.FeatureUnavailable => |e| e,
         else => unreachable,
     };
     // `glfwGetGammaRamp` returns `null` only for errors
