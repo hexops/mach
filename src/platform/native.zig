@@ -541,6 +541,7 @@ comptime {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var engine = try Engine.init(allocator);
