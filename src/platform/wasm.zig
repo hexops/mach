@@ -38,6 +38,9 @@ pub const Platform = struct {
     last_window_size: structs.Size,
     last_framebuffer_size: structs.Size,
 
+    last_cursor_position: structs.WindowPos,
+    last_key_mods: structs.KeyMods,
+
     pub fn init(allocator: std.mem.Allocator, eng: *Engine) !Platform {
         var selector = [1]u8{0} ** 15;
         const id = js.machCanvasInit(&selector[0]);
@@ -52,6 +55,20 @@ pub const Platform = struct {
             .last_framebuffer_size = .{
                 .width = js.machCanvasGetFramebufferWidth(id),
                 .height = js.machCanvasGetFramebufferHeight(id),
+            },
+
+            // TODO initialize these properly
+            .last_cursor_position = .{
+                .x = 0,
+                .y = 0,
+            },
+            .last_key_mods = .{
+                .shift = false,
+                .control = false,
+                .alt = false,
+                .super = false,
+                .caps_lock = false,
+                .num_lock = false,
             },
         };
 
@@ -117,38 +134,93 @@ pub const Platform = struct {
         return js.machHasEvent();
     }
 
-    pub fn pollEvent(_: *Platform) ?structs.Event {
+    pub fn pollEvent(platform: *Platform) ?structs.Event {
         const event_type = js.machEventShift();
 
         return switch (event_type) {
-            1 => structs.Event{
-                .key_press = .{ .key = @intToEnum(enums.Key, js.machEventShift()) },
+            1, 2 => key_down: {
+                const key = @intToEnum(enums.Key, js.machEventShift());
+                switch (key) {
+                    .left_shift, .right_shift => platform.last_key_mods.shift = true,
+                    .left_control, .right_control => platform.last_key_mods.control = true,
+                    .left_alt, .right_alt => platform.last_key_mods.alt = true,
+                    .left_super, .right_super => platform.last_key_mods.super = true,
+                    .caps_lock => platform.last_key_mods.caps_lock = true,
+                    .num_lock => platform.last_key_mods.num_lock = true,
+                    else => {},
+                }
+                break :key_down switch (event_type) {
+                    1 => structs.Event{
+                        .key_press = .{
+                            .key = key,
+                            .mods = platform.last_key_mods,
+                        },
+                    },
+                    2 => structs.Event{
+                        .key_repeat = .{
+                            .key = key,
+                            .mods = platform.last_key_mods,
+                        },
+                    },
+                    else => unreachable,
+                };
             },
-            2 => structs.Event{
-                .key_release = .{ .key = @intToEnum(enums.Key, js.machEventShift()) },
+            3 => key_release: {
+                const key = @intToEnum(enums.Key, js.machEventShift());
+                switch (key) {
+                    .left_shift, .right_shift => platform.last_key_mods.shift = false,
+                    .left_control, .right_control => platform.last_key_mods.control = false,
+                    .left_alt, .right_alt => platform.last_key_mods.alt = false,
+                    .left_super, .right_super => platform.last_key_mods.super = false,
+                    .caps_lock => platform.last_key_mods.caps_lock = false,
+                    .num_lock => platform.last_key_mods.num_lock = false,
+                    else => {},
+                }
+                break :key_release structs.Event{
+                    .key_release = .{
+                        .key = key,
+                        .mods = platform.last_key_mods,
+                    },
+                };
             },
-            3 => structs.Event{
-                .mouse_motion = .{
-                    .x = @intToFloat(f64, js.machEventShift()),
-                    .y = @intToFloat(f64, js.machEventShift()),
-                },
-            },
-            4 => structs.Event{
-                .mouse_press = .{
-                    .button = toMachButton(js.machEventShift()),
-                },
+            4 => mouse_motion: {
+                const x = @intToFloat(f64, js.machEventShift());
+                const y = @intToFloat(f64, js.machEventShift());
+                platform.last_cursor_position = .{
+                    .x = x,
+                    .y = y,
+                };
+                break :mouse_motion structs.Event{
+                    .mouse_motion = .{
+                        .pos = .{
+                            .x = x,
+                            .y = y,
+                        },
+                    },
+                };
             },
             5 => structs.Event{
-                .mouse_release = .{
+                .mouse_press = .{
                     .button = toMachButton(js.machEventShift()),
+                    .pos = platform.last_cursor_position,
+                    .mods = platform.last_key_mods,
                 },
             },
             6 => structs.Event{
+                .mouse_release = .{
+                    .button = toMachButton(js.machEventShift()),
+                    .pos = platform.last_cursor_position,
+                    .mods = platform.last_key_mods,
+                },
+            },
+            7 => structs.Event{
                 .mouse_scroll = .{
                     .xoffset = @floatCast(f32, sign(js.machEventShiftFloat())),
                     .yoffset = @floatCast(f32, sign(js.machEventShiftFloat())),
                 },
             },
+            8 => structs.Event.focus_gained,
+            9 => structs.Event.focus_lost,
             else => null,
         };
     }

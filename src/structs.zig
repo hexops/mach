@@ -48,25 +48,49 @@ pub const Options = struct {
 };
 
 pub const Event = union(enum) {
-    key_press: struct {
-        key: enums.Key,
-    },
-    key_release: struct {
-        key: enums.Key,
+    key_press: KeyEvent,
+    key_repeat: KeyEvent,
+    key_release: KeyEvent,
+    char_input: struct {
+        codepoint: u21,
     },
     mouse_motion: struct {
-        // These are in window coordinates (not framebuffer coords)
-        x: f64,
-        y: f64,
+        pos: WindowPos,
     },
-    mouse_press: struct {
-        button: enums.MouseButton,
-    },
-    mouse_release: struct {
-        button: enums.MouseButton,
-    },
+    mouse_press: MouseButtonEvent,
+    mouse_release: MouseButtonEvent,
     mouse_scroll: struct {
         xoffset: f32,
         yoffset: f32,
     },
+    focus_gained,
+    focus_lost,
+    window_closed,
+};
+
+pub const KeyEvent = struct {
+    key: enums.Key,
+    mods: KeyMods,
+};
+
+pub const MouseButtonEvent = struct {
+    button: enums.MouseButton,
+    pos: WindowPos,
+    mods: KeyMods,
+};
+
+pub const KeyMods = packed struct {
+    shift: bool,
+    control: bool,
+    alt: bool,
+    super: bool,
+    caps_lock: bool,
+    num_lock: bool,
+    _reserved: u2 = 0,
+};
+
+pub const WindowPos = struct {
+    // These are in window coordinates (not framebuffer coords)
+    x: f64,
+    y: f64,
 };
