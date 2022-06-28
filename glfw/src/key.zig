@@ -255,7 +255,7 @@ pub const Key = enum(c_int) {
     }
 };
 
-// Causes segfault on wayland
+// TODO: https://github.com/hexops/mach/issues/375
 // test "getName" {
 //     const glfw = @import("main.zig");
 //     try glfw.init(.{});
