@@ -38,9 +38,7 @@ pub const Options = struct {
     x11: bool = true,
 
     /// Only respected on Linux.
-    // TODO(build-system): update wayland-protocol source generation in linux system SDKs so we can
-    // turn this on by default.
-    wayland: bool = false,
+    wayland: bool = true,
 
     /// System SDK options.
     system_sdk: system_sdk.Options = .{},
@@ -170,7 +168,10 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         },
         else => {
             // Assume Linux-like
-            if (options.wayland) step.linkSystemLibraryName("wayland-client");
+            if (options.wayland) {
+                step.linkSystemLibraryName("wayland-client");
+                step.defineCMacro("WL_MARSHAL_FLAG_DESTROY", null);
+            }
             if (options.x11) {
                 step.linkSystemLibraryName("X11");
                 step.linkSystemLibraryName("xcb");
