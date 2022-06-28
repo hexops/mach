@@ -751,7 +751,9 @@ pub inline fn setSizeLimits(self: Window, min: SizeOptional, max: SizeOptional) 
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_sizelimits, glfw.Window.setSizeLimits
-pub inline fn setAspectRatio(self: Window, numerator: ?u32, denominator: ?u32) error{PlatformError}!void {
+///
+/// WARNING: on wayland it will return Error.FeatureUnimplemented
+pub inline fn setAspectRatio(self: Window, numerator: ?u32, denominator: ?u32) error{ PlatformError, FeatureUnimplemented }!void {
     internal_debug.assertInitialized();
 
     if (numerator != null and denominator != null) {
@@ -767,7 +769,7 @@ pub inline fn setAspectRatio(self: Window, numerator: ?u32, denominator: ?u32) e
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.InvalidValue => unreachable,
-        Error.PlatformError => |e| e,
+        Error.PlatformError, Error.FeatureUnimplemented => |e| e,
         else => unreachable,
     };
 }
@@ -1010,12 +1012,14 @@ pub inline fn maximize(self: Window) error{PlatformError}!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hide, glfw.Window.hide
-pub inline fn show(self: Window) error{PlatformError}!void {
+///
+/// WARNING: on wayland it will return Error.FeatureUnavailable
+pub inline fn show(self: Window) error{ PlatformError, FeatureUnavailable }!void {
     internal_debug.assertInitialized();
     c.glfwShowWindow(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
+        Error.PlatformError, Error.FeatureUnavailable => |e| e,
         else => unreachable,
     };
 }
@@ -1087,12 +1091,14 @@ pub inline fn focus(self: Window) error{ PlatformError, FeatureUnavailable }!voi
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_attention
-pub inline fn requestAttention(self: Window) error{PlatformError}!void {
+///
+/// WARNING: on wayland it will return Error.FeatureUnimplemented
+pub inline fn requestAttention(self: Window) error{ PlatformError, FeatureUnimplemented }!void {
     internal_debug.assertInitialized();
     c.glfwRequestWindowAttention(self.handle);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
+        Error.PlatformError, Error.FeatureUnimplemented => |e| e,
         else => unreachable,
     };
 }
@@ -2699,7 +2705,7 @@ test "setAspectRatio" {
     };
     defer window.destroy();
 
-    try window.setAspectRatio(4, 3);
+    window.setAspectRatio(4, 3) catch |err| std.debug.print("can't modify aspect ratio, wayland maybe? error={}\n", .{err});
 }
 
 test "getFramebufferSize" {
@@ -2879,7 +2885,7 @@ test "swapBuffers" {
     };
     defer window.destroy();
 
-    _ = try window.swapBuffers();
+    _ = window.swapBuffers() catch |err| std.debug.print("can't swap buffers, wayland maybe? error={}\n", .{err});
 }
 
 test "getMonitor" {
