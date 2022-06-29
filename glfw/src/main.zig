@@ -82,7 +82,11 @@ pub inline fn init(hints: InitHints) error{ PlatformUnavailable, PlatformError }
     inline for (comptime std.meta.fieldNames(InitHints)) |field_name| {
         const init_hint = @field(InitHint, field_name);
         const init_value = @field(hints, field_name);
-        initHint(init_hint, init_value);
+        if (@TypeOf(init_value) == PlatformType) {
+            initHint(init_hint, @enumToInt(init_value));
+        } else {
+            initHint(init_hint, init_value);
+        }
     }
 
     if (c.glfwInit() == c.GLFW_TRUE) return;
@@ -169,6 +173,11 @@ pub const InitHints = struct {
     /// specifies whether to create a basic menu bar, either from a nib or manually, when the first
     /// window is created, which is when AppKit is initialized.
     cocoa_menubar: bool = true,
+
+    /// Platform selection init hint.
+    ///
+    /// Possible values are `PlatformType` enums.
+    platform: PlatformType = .any,
 };
 
 /// Initialization hints for passing into glfw.initHint
@@ -223,6 +232,7 @@ pub const AnglePlatformType = enum(c_int) {
 /// Platform type hints for glfw.InitHint.platform
 pub const PlatformType = enum(c_int) {
     /// Enables automatic platform detection.
+    /// Will default to X11 on wayland.
     any = c.GLFW_ANY_PLATFORM,
     win32 = c.GLFW_PLATFORM_WIN32,
     cocoa = c.GLFW_PLATFORM_COCOA,
@@ -254,7 +264,6 @@ pub const PlatformType = enum(c_int) {
 fn initHint(hint: InitHint, value: anytype) void {
     switch (@typeInfo(@TypeOf(value))) {
         .Int, .ComptimeInt => {
-            std.debug.assert(value == c.GLFW_TRUE or value == c.GLFW_FALSE);
             c.glfwInitHint(@enumToInt(hint), @intCast(c_int, value));
         },
         .Bool => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, @boolToInt(value))),
