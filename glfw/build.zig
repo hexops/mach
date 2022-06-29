@@ -169,7 +169,6 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
         else => {
             // Assume Linux-like
             if (options.wayland) {
-                step.linkSystemLibraryName("wayland-client");
                 step.defineCMacro("WL_MARSHAL_FLAG_DESTROY", null);
             }
             if (options.x11) {
