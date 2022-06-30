@@ -8,8 +8,8 @@ const SoundIo = @This();
 
 handle: *c.SoundIo,
 
-pub fn init() Error!SoundIo {
-    return SoundIo{ .handle = c.soundio_create() orelse return Error.OutOfMemory };
+pub fn init() error{OutOfMemory}!SoundIo {
+    return SoundIo{ .handle = c.soundio_create() orelse return error.OutOfMemory };
 }
 
 pub fn deinit(self: SoundIo) void {
@@ -30,6 +30,10 @@ pub fn disconnect(self: SoundIo) void {
 
 pub fn flushEvents(self: SoundIo) void {
     c.soundio_flush_events(self.handle);
+}
+
+pub fn waitEvents(self: SoundIo) void {
+    c.soundio_wait_events(self.handle);
 }
 
 pub fn defaultInputDeviceIndex(self: SoundIo) ?u16 {

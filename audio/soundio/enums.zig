@@ -1,4 +1,4 @@
-pub const c = @import("c.zig");
+const c = @import("c.zig");
 
 pub const ChannelId = enum(u7) {
     invalid = c.SoundIoChannelIdInvalid,
