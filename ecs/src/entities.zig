@@ -572,9 +572,11 @@ pub const Entities = struct {
         // Update the storage/column for the new component.
         current_archetype_storage.set(entities.allocator, new_row, name, component);
 
-        var swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, "id", EntityID).?;
         archetype.remove(old_ptr.row_index);
+        const swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, "id", EntityID).?;
         // TODO: try is wrong here and below?
+        // if we removed the last entry from archetype, then swapped_entity_id == entity
+        // so the second entities.put will clobber this one
         try entities.entities.put(entities.allocator, swapped_entity_id, old_ptr);
 
         try entities.entities.put(entities.allocator, entity, Pointer{
@@ -666,9 +668,11 @@ pub const Entities = struct {
             }
         }
 
-        var swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, "id", EntityID).?;
         archetype.remove(old_ptr.row_index);
+        const swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, "id", EntityID).?;
         // TODO: try is wrong here and below?
+        // if we removed the last entry from archetype, then swapped_entity_id == entity
+        // so the second entities.put will clobber this one
         try entities.entities.put(entities.allocator, swapped_entity_id, old_ptr);
 
         try entities.entities.put(entities.allocator, entity, Pointer{
