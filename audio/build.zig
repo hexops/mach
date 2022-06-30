@@ -8,19 +8,22 @@ pub const pkg = std.build.Pkg{
     .source = .{ .path = thisDir() ++ "/main.zig" },
 };
 
+pub const Options = struct {};
+
 pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
 
     const soundio_tests = b.addTest("soundio/main.zig");
     soundio_tests.setBuildMode(mode);
     soundio_tests.addPackage(pkg);
-    link(b, soundio_tests);
+    link(b, soundio_tests, .{});
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&soundio_tests.step);
 }
 
-pub fn link(b: *Builder, step: *std.build.LibExeObjStep) void {
+pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+    _ = options;
     const soundio_lib = buildSoundIo(b, step);
     step.linkLibrary(soundio_lib);
     step.addIncludePath(soundio_path);
