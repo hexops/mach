@@ -166,6 +166,9 @@ pub const ArchetypeStorage = struct {
             offset += new_capacity * column.size;
         }
 
+        if (storage.capacity > 0) {
+            gpa.free(storage.block);
+        }
         storage.block = new_block;
         storage.capacity = @intCast(u32, new_capacity);
     }
