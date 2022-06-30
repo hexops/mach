@@ -8,10 +8,16 @@ pub const pkg = std.build.Pkg{
     .source = .{ .path = thisDir() ++ "/main.zig" },
 };
 
+const soundio_pkg = std.build.Pkg{
+    .name = "soundio",
+    .source = .{ .path = thisDir() ++ "/soundio/main.zig" },
+};
+
 pub const Options = struct {};
 
 pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
+    const target = b.standardTargetOptions(.{});
 
     const soundio_tests = b.addTest("soundio/main.zig");
     soundio_tests.setBuildMode(mode);
@@ -20,6 +26,29 @@ pub fn build(b: *Builder) void {
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&soundio_tests.step);
+
+    inline for ([_][]const u8{
+        "soundio-sine-wave",
+    }) |example| {
+        const example_exe = b.addExecutable("example-" ++ example, "examples/" ++ example ++ ".zig");
+        example_exe.setBuildMode(mode);
+        example_exe.setTarget(target);
+        example_exe.addPackage(soundio_pkg);
+        link(b, example_exe, .{});
+        example_exe.install();
+
+        const example_compile_step = b.step("example-" ++ example, "Compile '" ++ example ++ "' example");
+        example_compile_step.dependOn(b.getInstallStep());
+
+        const example_run_cmd = example_exe.run();
+        example_run_cmd.step.dependOn(b.getInstallStep());
+        if (b.args) |args| {
+            example_run_cmd.addArgs(args);
+        }
+
+        const example_run_step = b.step("run-example-" ++ example, "Run '" ++ example ++ "' example");
+        example_run_step.dependOn(&example_run_cmd.step);
+    }
 }
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
