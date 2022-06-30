@@ -65,7 +65,7 @@ pub const Event = union(enum) {
     },
     focus_gained,
     focus_lost,
-    window_closed,
+    closed,
 };
 
 pub const KeyEvent = struct {

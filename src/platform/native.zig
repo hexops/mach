@@ -311,7 +311,7 @@ pub const Platform = struct {
         const close_callback = struct {
             fn callback(window: glfw.Window) void {
                 const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
-                pf.pushEvent(.window_closed);
+                pf.pushEvent(.closed);
             }
         }.callback;
         platform.window.setCloseCallback(close_callback);
