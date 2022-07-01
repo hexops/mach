@@ -29,6 +29,8 @@ pub const Platform = struct {
 
     native_instance: gpu.NativeInstance,
 
+    last_cursor_position: structs.WindowPos,
+
     const EventQueue = std.TailQueue(structs.Event);
     const EventNode = EventQueue.Node;
 
@@ -180,6 +182,8 @@ pub const Platform = struct {
         engine.current_desc = descriptor;
         engine.target_desc = descriptor;
 
+        const cursor_pos = try window.getCursorPos();
+
         return Platform{
             .window = window,
             .backend_type = backend_type,
@@ -187,6 +191,10 @@ pub const Platform = struct {
             .last_window_size = .{ .width = window_size.width, .height = window_size.height },
             .last_framebuffer_size = .{ .width = framebuffer_size.width, .height = framebuffer_size.height },
             .last_position = try window.getPos(),
+            .last_cursor_position = .{
+                .x = cursor_pos.xpos,
+                .y = cursor_pos.ypos,
+            },
             .native_instance = native_instance,
         };
     }
@@ -210,37 +218,48 @@ pub const Platform = struct {
 
         platform.window.setUserPointer(&platform.user_ptr);
 
-        const callback = struct {
+        const key_callback = struct {
             fn callback(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
                 const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
-
+                const key_event = structs.KeyEvent{
+                    .key = toMachKey(key),
+                    .mods = toMachMods(mods),
+                };
                 switch (action) {
-                    .press => pf.pushEvent(.{
-                        .key_press = .{
-                            .key = toMachKey(key),
-                        },
-                    }),
-                    .release => pf.pushEvent(.{
-                        .key_release = .{
-                            .key = toMachKey(key),
-                        },
-                    }),
-                    else => {},
+                    .press => pf.pushEvent(.{ .key_press = key_event }),
+                    .repeat => pf.pushEvent(.{ .key_repeat = key_event }),
+                    .release => pf.pushEvent(.{ .key_release = key_event }),
                 }
-
                 _ = scancode;
-                _ = mods;
             }
         }.callback;
-        platform.window.setKeyCallback(callback);
+        platform.window.setKeyCallback(key_callback);
+
+        const char_callback = struct {
+            fn callback(window: glfw.Window, codepoint: u21) void {
+                const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
+                pf.pushEvent(.{
+                    .char_input = .{
+                        .codepoint = codepoint,
+                    },
+                });
+            }
+        }.callback;
+        platform.window.setCharCallback(char_callback);
 
         const mouse_motion_callback = struct {
             fn callback(window: glfw.Window, xpos: f64, ypos: f64) void {
                 const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
+                pf.last_cursor_position = .{
+                    .x = xpos,
+                    .y = ypos,
+                };
                 pf.pushEvent(.{
                     .mouse_motion = .{
-                        .x = xpos,
-                        .y = ypos,
+                        .pos = .{
+                            .x = xpos,
+                            .y = ypos,
+                        },
                     },
                 });
             }
@@ -250,17 +269,15 @@ pub const Platform = struct {
         const mouse_button_callback = struct {
             fn callback(window: glfw.Window, button: glfw.mouse_button.MouseButton, action: glfw.Action, mods: glfw.Mods) void {
                 const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
-
+                const mouse_button_event = structs.MouseButtonEvent{
+                    .button = toMachButton(button),
+                    .pos = pf.last_cursor_position,
+                    .mods = toMachMods(mods),
+                };
                 switch (action) {
-                    .press => pf.pushEvent(.{
-                        .mouse_press = .{
-                            .button = toMachButton(button),
-                        },
-                    }),
+                    .press => pf.pushEvent(.{ .mouse_press = mouse_button_event }),
                     .release => pf.pushEvent(.{
-                        .mouse_release = .{
-                            .button = toMachButton(button),
-                        },
+                        .mouse_release = mouse_button_event,
                     }),
                     else => {},
                 }
@@ -282,6 +299,22 @@ pub const Platform = struct {
             }
         }.callback;
         platform.window.setScrollCallback(scroll_callback);
+
+        const focus_callback = struct {
+            fn callback(window: glfw.Window, focused: bool) void {
+                const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
+                pf.pushEvent(if (focused) .focus_gained else .focus_lost);
+            }
+        }.callback;
+        platform.window.setFocusCallback(focus_callback);
+
+        const close_callback = struct {
+            fn callback(window: glfw.Window) void {
+                const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
+                pf.pushEvent(.closed);
+            }
+        }.callback;
+        platform.window.setCloseCallback(close_callback);
 
         const size_callback = struct {
             fn callback(window: glfw.Window, width: i32, height: i32) void {
@@ -523,6 +556,17 @@ pub const Platform = struct {
             .world_1 => .unknown,
             .world_2 => .unknown,
             .unknown => .unknown,
+        };
+    }
+
+    fn toMachMods(mods: glfw.Mods) structs.KeyMods {
+        return .{
+            .shift = mods.shift,
+            .control = mods.control,
+            .alt = mods.alt,
+            .super = mods.super,
+            .caps_lock = mods.caps_lock,
+            .num_lock = mods.num_lock,
         };
     }
 

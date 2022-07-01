@@ -196,28 +196,40 @@ const mach = {
     canvas.addEventListener("contextmenu", (ev) => ev.preventDefault());
 
     canvas.addEventListener("keydown", (ev) => {
-      mach.events.push(...[1, convertKeyCode(ev.code)]);
+        if (ev.repeat) {
+            mach.events.push(...[2, convertKeyCode(ev.code)]);
+        } else {
+            mach.events.push(...[1, convertKeyCode(ev.code)]);
+        }
     });
 
     canvas.addEventListener("keyup", (ev) => {
-      mach.events.push(...[2, convertKeyCode(ev.code)]);
+      mach.events.push(...[3, convertKeyCode(ev.code)]);
     });
 
     canvas.addEventListener("mousemove", (ev) => {
-      mach.events.push(...[3, ev.clientX, ev.clientY]);
+      mach.events.push(...[4, ev.clientX, ev.clientY]);
 	});
 
     canvas.addEventListener("mousedown", (ev) => {
-      mach.events.push(...[4, ev.button]);
-	});
-
-    canvas.addEventListener("mouseup", (ev) => {
       mach.events.push(...[5, ev.button]);
 	});
 
-    canvas.addEventListener("wheel", (ev) => {
-      mach.events.push(...[6, ev.deltaX, ev.deltaY]);
+    canvas.addEventListener("mouseup", (ev) => {
+      mach.events.push(...[6, ev.button]);
 	});
+
+    canvas.addEventListener("wheel", (ev) => {
+      mach.events.push(...[7, ev.deltaX, ev.deltaY]);
+	});
+
+    canvas.addEventListener("focus", (ev) => {
+        mach.events.push(...[8]);
+    });
+
+    canvas.addEventListener("blur", (ev) => {
+        mach.events.push(...[9]);
+    });
 
     canvas.addEventListener("mach-canvas-resize", (ev) => {
       const cv_index = mach.canvases.findIndex((el) => el.canvas === ev.currentTarget);
