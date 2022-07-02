@@ -86,6 +86,7 @@ fn buildSoundIo(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     if (target.isDarwin()) {
         lib.addCSourceFile(soundio_path ++ "/src/coreaudio.c", &.{});
+        lib.linkFramework("AudioToolbox");
         lib.linkFramework("CoreFoundation");
         lib.linkFramework("CoreAudio");
         config_file.writeAll("#define SOUNDIO_HAVE_COREAUDIO\n") catch unreachable;
