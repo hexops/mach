@@ -116,6 +116,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     });
     const queue = engine.device.getQueue();
     const img = try zigimg.Image.fromMemory(engine.allocator, @embedFile("../assets/gotta-go-fast.png"));
+    defer img.deinit();
     const img_size = gpu.Extent3D{ .width = @intCast(u32, img.width), .height = @intCast(u32, img.height) };
     const cube_texture = engine.device.createTexture(&.{
         .size = img_size,
@@ -134,7 +135,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .Rgba32 => |pixels| queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, zigimg.color.Rgba32, pixels),
         .Rgb24 => |pixels| {
             const data = try rgb24ToRgba32(engine.allocator, pixels);
-            //defer data.deinit(allocator);
+            defer data.deinit(engine.allocator);
             queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, zigimg.color.Rgba32, data.Rgba32);
         },
         else => @panic("unsupported image color format"),
