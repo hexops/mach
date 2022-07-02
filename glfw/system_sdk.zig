@@ -38,7 +38,7 @@ pub const Options = struct {
 
     /// The MacOS 12 SDK repository name.
     macos_sdk_12: []const u8 = "sdk-macos-12.0",
-    macos_sdk_12_revision: []const u8 = "b365132501f5577a357fab955d112fc1fee79f27",
+    macos_sdk_12_revision: []const u8 = "14613b4917c7059dad8f3789f55bb13a2548f83d",
 
     /// The MacOS 11 SDK repository name.
     macos_sdk_11: []const u8 = "sdk-macos-11.3",
