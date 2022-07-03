@@ -205,6 +205,9 @@ pub const Platform = struct {
                 cur.destroy();
             }
         }
+        while (platform.events.popFirst()) |ev| {
+            platform.allocator.destroy(ev);
+        }
     }
 
     fn pushEvent(platform: *Platform, event: structs.Event) void {
