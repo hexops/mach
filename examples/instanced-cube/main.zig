@@ -18,7 +18,7 @@ vertex_buffer: gpu.Buffer,
 uniform_buffer: gpu.Buffer,
 bind_group: gpu.BindGroup,
 
-const App = @This();
+pub const App = @This();
 
 pub fn init(app: *App, core: *mach.Core) !void {
     timer = try mach.Timer.start();

@@ -21,7 +21,7 @@ bind_group: gpu.BindGroup,
 depth_texture: ?gpu.Texture,
 depth_texture_view: gpu.TextureView,
 
-const App = @This();
+pub const App = @This();
 
 pub fn init(app: *App, core: *mach.Core) !void {
     timer = try mach.Timer.start();

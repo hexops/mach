@@ -3,7 +3,7 @@ const mach = @import("mach");
 const gpu = @import("gpu");
 const glfw = @import("glfw");
 
-const App = @This();
+pub const App = @This();
 
 const Vertex = struct {
     pos: @Vector(4, f32),

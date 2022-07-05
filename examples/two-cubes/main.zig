@@ -19,7 +19,7 @@ uniform_buffer: gpu.Buffer,
 bind_group1: gpu.BindGroup,
 bind_group2: gpu.BindGroup,
 
-const App = @This();
+pub const App = @This();
 
 pub fn init(app: *App, core: *mach.Core) !void {
     timer = try mach.Timer.start();

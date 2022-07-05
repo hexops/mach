@@ -16,7 +16,7 @@ const zm = @import("zmath");
 const Vertex = @import("cube_mesh.zig").Vertex;
 const vertices = @import("cube_mesh.zig").vertices;
 
-const App = @This();
+pub const App = @This();
 
 const UniformBufferObject = struct {
     mat: zm.Mat,

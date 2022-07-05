@@ -2,7 +2,7 @@ const std = @import("std");
 const mach = @import("mach");
 const gpu = @import("gpu");
 
-const App = @This();
+pub const App = @This();
 
 pipeline: gpu.RenderPipeline,
 queue: gpu.Queue,
