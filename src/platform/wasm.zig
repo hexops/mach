@@ -1,5 +1,5 @@
 const std = @import("std");
-const App = @import("app");
+const app_pkg = @import("app");
 const Core = @import("../Core.zig");
 const structs = @import("../structs.zig");
 const enums = @import("../enums.zig");
@@ -28,6 +28,12 @@ const js = struct {
     extern fn machLogFlush() void;
     extern fn machPanic(str: [*]const u8, len: u32) void;
 };
+
+const common = @import("common.zig");
+comptime {
+    common.checkApplication(app_pkg);
+}
+const App = app_pkg.App;
 
 pub const CanvasId = u32;
 
@@ -272,11 +278,6 @@ pub const BackingTimer = struct {
         return @floatToInt(u64, t) * 1000000;
     }
 };
-
-const common = @import("common.zig");
-comptime {
-    common.checkApplication(App);
-}
 
 var app: App = undefined;
 var core: Core = undefined;

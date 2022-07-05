@@ -1,12 +1,18 @@
 const std = @import("std");
 const glfw = @import("glfw");
 const gpu = @import("gpu");
-const App = @import("app");
+const app_pkg = @import("app");
 const Core = @import("../Core.zig");
 const structs = @import("../structs.zig");
 const enums = @import("../enums.zig");
 const util = @import("util.zig");
 const c = @import("c.zig").c;
+
+const common = @import("common.zig");
+comptime {
+    common.checkApplication(app_pkg);
+}
+const App = app_pkg.App;
 
 pub const scope_levels = if (@hasDecl(App, "scope_levels")) App.scope_levels else [0]std.log.ScopeLevel{};
 pub const log_level = if (@hasDecl(App, "log_level")) App.log_level else std.log.default_level;
@@ -580,11 +586,6 @@ pub const Platform = struct {
 };
 
 pub const BackingTimer = std.time.Timer;
-
-const common = @import("common.zig");
-comptime {
-    common.checkApplication(App);
-}
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
