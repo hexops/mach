@@ -3,6 +3,7 @@ const builtin = @import("builtin");
 pub const gpu = @import("gpu/build.zig");
 const gpu_dawn = @import("gpu-dawn/build.zig");
 pub const glfw = @import("glfw/build.zig");
+pub const ecs = @import("ecs/build.zig");
 const freetype = @import("freetype/build.zig");
 const Pkg = std.build.Pkg;
 
@@ -42,6 +43,7 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg, freetype.pkg }, .std_platform_only = true },
         .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
+        .{ .name = "ecs-app", .packages = &[_]Pkg{} },
     }) |example| {
         // FIXME: this is workaround for a problem that some examples (having the std_platform_only=true field) as
         // well as zigimg uses IO which is not supported in freestanding environments. So break out of this loop
@@ -285,7 +287,7 @@ pub const App = struct {
 pub const pkg = std.build.Pkg{
     .name = "mach",
     .source = .{ .path = thisDir() ++ "/src/main.zig" },
-    .dependencies = &.{gpu.pkg},
+    .dependencies = &.{ gpu.pkg, ecs.pkg },
 };
 
 fn thisDir() []const u8 {
