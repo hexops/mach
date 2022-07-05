@@ -1,6 +1,11 @@
 const Core = @import("../Core.zig");
 
-pub fn checkApplication(comptime App: type) void {
+pub fn checkApplication(comptime app_pkg: type) void {
+    if (!@hasDecl(app_pkg, "App")) {
+        @compileError("expected e.g. `pub const App = mach.App(modules, init)' (App definition missing in your main Zig file)");
+    }
+    const App = app_pkg.App;
+
     if (@hasDecl(App, "init")) {
         const InitFn = @TypeOf(@field(App, "init"));
         if (InitFn != fn (app: *App, core: *Core) @typeInfo(@typeInfo(InitFn).Fn.return_type.?).ErrorUnion.error_set!void)
