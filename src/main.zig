@@ -42,9 +42,8 @@ pub fn App(
         }
 
         pub fn deinit(app: *@This(), core: *Engine) void {
-            _ = app;
+            app.engine.deinit();
             _ = core;
-            // TODO
         }
 
         pub fn update(app: *@This(), core: *Engine) !void {
