@@ -3,8 +3,6 @@ const mach = @import("mach");
 const gpu = mach.gpu;
 const ecs = mach.ecs;
 
-// TODO: *mach.Engine would be renamed to *mach.Core
-// TODO: the "ecs" package would be renamed to "engine"
 // TODO: *ecs.World would be renamed to *engine.Engine
 
 const renderer = @import("renderer.zig");
@@ -38,7 +36,7 @@ pub const App = mach.App(modules, init);
 pub fn init(engine: *ecs.World(modules)) !void {
     // The engine *is* the ECS. That's where everything in Mach lives and operates.
 
-    // We can get the Mach core (previously called *Engine) to set window options, etc.:
+    // We can get the Mach core to set window options, etc.:
     const core = engine.get(.mach, .core);
     try core.setOptions(.{ .title = "Hello, ECS!" });
 

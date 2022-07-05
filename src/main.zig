@@ -6,14 +6,12 @@ pub const ResourceManager = @import("resource/ResourceManager.zig");
 pub const gpu = @import("gpu");
 pub const ecs = @import("ecs");
 
-// TODO: rename Engine -> Core
-
 /// The Mach engine ECS module. This enables access to `engine.get(.mach, .core)` `*Core` APIs, as
 /// to for example `.setOptions(.{.title = "foobar"})`, or to access the GPU device via
 /// `engine.get(.mach, .device)`
 pub const module = ecs.Module(.{
     .globals = struct {
-        core: *Engine,
+        core: *Core,
         device: gpu.Device,
     },
 });
@@ -32,7 +30,7 @@ pub fn App(
     return struct {
         engine: ecs.World(modules),
 
-        pub fn init(app: *@This(), core: *Engine) !void {
+        pub fn init(app: *@This(), core: *Core) !void {
             app.* = .{
                 .engine = try ecs.World(modules).init(core.allocator),
             };
@@ -41,18 +39,18 @@ pub fn App(
             try init(&app.engine);
         }
 
-        pub fn deinit(app: *@This(), core: *Engine) void {
+        pub fn deinit(app: *@This(), core: *Core) void {
             app.engine.deinit();
             _ = core;
         }
 
-        pub fn update(app: *@This(), core: *Engine) !void {
+        pub fn update(app: *@This(), core: *Core) !void {
             _ = app;
             _ = core;
             // TODO
         }
 
-        pub fn resize(app: *@This(), core: *Engine, width: u32, height: u32) !void {
+        pub fn resize(app: *@This(), core: *Core, width: u32, height: u32) !void {
             _ = app;
             _ = core;
             _ = width;
