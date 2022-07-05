@@ -2,7 +2,7 @@ const std = @import("std");
 const glfw = @import("glfw");
 const gpu = @import("gpu");
 const App = @import("app");
-const Engine = @import("../Engine.zig");
+const Core = @import("../Core.zig");
 const structs = @import("../structs.zig");
 const enums = @import("../enums.zig");
 const util = @import("util.zig");
@@ -38,8 +38,8 @@ pub const Platform = struct {
         platform: *Platform,
     };
 
-    pub fn init(allocator: std.mem.Allocator, engine: *Engine) !Platform {
-        const options = engine.options;
+    pub fn init(allocator: std.mem.Allocator, core: *Core) !Platform {
+        const options = core.options;
         const backend_type = try util.detectBackendType(allocator);
 
         glfw.setErrorCallback(Platform.errorCallback);
@@ -174,20 +174,20 @@ pub const Platform = struct {
 
         device.setUncapturedErrorCallback(&util.printUnhandledErrorCallback);
 
-        engine.device = device;
-        engine.backend_type = backend_type;
-        engine.surface = surface;
-        engine.swap_chain = swap_chain;
-        engine.swap_chain_format = swap_chain_format;
-        engine.current_desc = descriptor;
-        engine.target_desc = descriptor;
+        core.device = device;
+        core.backend_type = backend_type;
+        core.surface = surface;
+        core.swap_chain = swap_chain;
+        core.swap_chain_format = swap_chain_format;
+        core.current_desc = descriptor;
+        core.target_desc = descriptor;
 
         const cursor_pos = try window.getCursorPos();
 
         return Platform{
             .window = window,
             .backend_type = backend_type,
-            .allocator = engine.allocator,
+            .allocator = core.allocator,
             .last_window_size = .{ .width = window_size.width, .height = window_size.height },
             .last_framebuffer_size = .{ .width = framebuffer_size.width, .height = framebuffer_size.height },
             .last_position = try window.getPos(),
@@ -591,55 +591,55 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var engine = try Engine.init(allocator);
-    defer engine.internal.deinit();
+    var core = try Core.init(allocator);
+    defer core.internal.deinit();
     var app: App = undefined;
 
-    try app.init(&engine);
-    defer app.deinit(&engine);
+    try app.init(&core);
+    defer app.deinit(&core);
 
     // Glfw specific: initialize the user pointer used in callbacks
-    engine.internal.initCallback();
+    core.internal.initCallback();
 
-    const window = engine.internal.window;
+    const window = core.internal.window;
     while (!window.shouldClose()) {
-        if (engine.internal.wait_event_timeout > 0.0) {
-            if (engine.internal.wait_event_timeout == std.math.inf(f64)) {
+        if (core.internal.wait_event_timeout > 0.0) {
+            if (core.internal.wait_event_timeout == std.math.inf(f64)) {
                 // Wait for an event
                 try glfw.waitEvents();
             } else {
                 // Wait for an event with a timeout
-                try glfw.waitEventsTimeout(engine.internal.wait_event_timeout);
+                try glfw.waitEventsTimeout(core.internal.wait_event_timeout);
             }
         } else {
             // Don't wait for events
             try glfw.pollEvents();
         }
 
-        engine.delta_time_ns = engine.timer.lapPrecise();
-        engine.delta_time = @intToFloat(f32, engine.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
+        core.delta_time_ns = core.timer.lapPrecise();
+        core.delta_time = @intToFloat(f32, core.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
-        var framebuffer_size = engine.getFramebufferSize();
-        engine.target_desc.width = framebuffer_size.width;
-        engine.target_desc.height = framebuffer_size.height;
+        var framebuffer_size = core.getFramebufferSize();
+        core.target_desc.width = framebuffer_size.width;
+        core.target_desc.height = framebuffer_size.height;
 
-        if (engine.swap_chain == null or !engine.current_desc.equal(&engine.target_desc)) {
-            const use_legacy_api = engine.surface == null;
+        if (core.swap_chain == null or !core.current_desc.equal(&core.target_desc)) {
+            const use_legacy_api = core.surface == null;
             if (!use_legacy_api) {
-                engine.swap_chain = engine.device.nativeCreateSwapChain(engine.surface, &engine.target_desc);
-            } else engine.swap_chain.?.configure(
-                engine.swap_chain_format,
+                core.swap_chain = core.device.nativeCreateSwapChain(core.surface, &core.target_desc);
+            } else core.swap_chain.?.configure(
+                core.swap_chain_format,
                 .{ .render_attachment = true },
-                engine.target_desc.width,
-                engine.target_desc.height,
+                core.target_desc.width,
+                core.target_desc.height,
             );
 
             if (@hasDecl(App, "resize")) {
-                try app.resize(&engine, engine.target_desc.width, engine.target_desc.height);
+                try app.resize(&core, core.target_desc.width, core.target_desc.height);
             }
-            engine.current_desc = engine.target_desc;
+            core.current_desc = core.target_desc;
         }
 
-        try app.update(&engine);
+        try app.update(&core);
     }
 }

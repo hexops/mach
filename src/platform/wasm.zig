@@ -1,6 +1,6 @@
 const std = @import("std");
 const App = @import("app");
-const Engine = @import("../Engine.zig");
+const Core = @import("../Core.zig");
 const structs = @import("../structs.zig");
 const enums = @import("../enums.zig");
 
@@ -41,7 +41,7 @@ pub const Platform = struct {
     last_cursor_position: structs.WindowPos,
     last_key_mods: structs.KeyMods,
 
-    pub fn init(allocator: std.mem.Allocator, eng: *Engine) !Platform {
+    pub fn init(allocator: std.mem.Allocator, eng: *Core) !Platform {
         var selector = [1]u8{0} ** 15;
         const id = js.machCanvasInit(&selector[0]);
 
@@ -279,28 +279,28 @@ comptime {
 }
 
 var app: App = undefined;
-var engine: Engine = undefined;
+var core: Core = undefined;
 
 export fn wasmInit() void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    engine = Engine.init(allocator) catch unreachable;
-    app.init(&engine) catch {};
+    core = Core.init(allocator) catch unreachable;
+    app.init(&core) catch {};
 }
 
 export fn wasmUpdate() void {
     // Poll internal events, like resize
-    engine.internal.pollChanges();
+    core.internal.pollChanges();
 
-    engine.delta_time_ns = engine.timer.lapPrecise();
-    engine.delta_time = @intToFloat(f32, engine.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
+    core.delta_time_ns = core.timer.lapPrecise();
+    core.delta_time = @intToFloat(f32, core.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
-    app.update(&engine) catch engine.setShouldClose(true);
+    app.update(&core) catch core.setShouldClose(true);
 }
 
 export fn wasmDeinit() void {
-    app.deinit(&engine);
+    app.deinit(&core);
 }
 
 pub const log_level = if (@hasDecl(App, "log_level")) App.log_level else .info;
