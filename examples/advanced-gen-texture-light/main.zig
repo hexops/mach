@@ -32,33 +32,33 @@ const Dir = struct {
     const right: u8 = 0b1000;
 };
 
-pub fn init(app: *App, engine: *mach.Engine) !void {
-    try engine.setOptions(.{
+pub fn init(app: *App, core: *mach.Core) !void {
+    try core.setOptions(.{
         .size_min = .{ .width = 20, .height = 20 },
     });
 
     const eye = vec3(5.0, 7.0, 5.0);
     const target = vec3(0.0, 0.0, 0.0);
 
-    const size = engine.getFramebufferSize();
+    const size = core.getFramebufferSize();
     const aspect_ratio = @intToFloat(f32, size.width) / @intToFloat(f32, size.height);
 
-    app.queue = engine.device.getQueue();
-    app.cube = Cube.init(engine);
-    app.light = Light.init(engine);
+    app.queue = core.device.getQueue();
+    app.cube = Cube.init(core);
+    app.light = Light.init(core);
     app.depth = null;
-    app.camera = Camera.init(engine.device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0);
+    app.camera = Camera.init(core.device, eye, target, vec3(0.0, 1.0, 0.0), aspect_ratio, 45.0, 0.1, 100.0);
 }
 
-pub fn deinit(app: *App, _: *mach.Engine) void {
+pub fn deinit(app: *App, _: *mach.Core) void {
     app.depth.?.release();
 }
 
-pub fn update(app: *App, engine: *mach.Engine) !void {
-    while (engine.pollEvent()) |event| {
+pub fn update(app: *App, core: *mach.Core) !void {
+    while (core.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| switch (ev.key) {
-                .q, .escape, .space => engine.setShouldClose(true),
+                .q, .escape, .space => core.setShouldClose(true),
                 .w, .up => {
                     app.keys |= Dir.up;
                 },
@@ -93,7 +93,7 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
     }
 
     // move camera
-    const speed = zm.f32x4s(@floatCast(f32, engine.delta_time * 5));
+    const speed = zm.f32x4s(@floatCast(f32, core.delta_time * 5));
     const fwd = zm.normalize3(app.camera.target - app.camera.eye);
     const right = zm.normalize3(zm.cross3(fwd, app.camera.up));
 
@@ -108,13 +108,13 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
     app.camera.update(app.queue);
 
     // move light
-    const light_speed = @floatCast(f32, engine.delta_time * 2.5);
+    const light_speed = @floatCast(f32, core.delta_time * 2.5);
     app.light.update(app.queue, light_speed);
 
-    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = core.swap_chain.?.getCurrentTextureView();
     defer back_buffer_view.release();
 
-    const encoder = engine.device.createCommandEncoder(null);
+    const encoder = core.device.createCommandEncoder(null);
     defer encoder.release();
 
     const color_attachment = gpu.RenderPassColorAttachment{
@@ -171,16 +171,16 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
     defer command.release();
 
     app.queue.submit(&.{command});
-    engine.swap_chain.?.present();
+    core.swap_chain.?.present();
 }
 
-pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {
+pub fn resize(app: *App, core: *mach.Core, width: u32, height: u32) !void {
     // If window is resized, recreate depth buffer otherwise we cannot use it.
     if (app.depth != null) {
         app.depth.?.release();
     }
     // It also recreates the sampler, which is a waste, but for an example it's ok
-    app.depth = Texture.depth(engine.device, width, height);
+    app.depth = Texture.depth(core.device, width, height);
 }
 
 const Camera = struct {
@@ -283,8 +283,8 @@ const Cube = struct {
     const SPACING = 2; // spacing between cubes
     const DISPLACEMENT = vec3u(IPR * SPACING / 2, 0, IPR * SPACING / 2);
 
-    fn init(engine: *mach.Engine) Self {
-        const device = engine.device;
+    fn init(core: *mach.Core) Self {
+        const device = core.device;
 
         const texture = Brick.texture(device);
 
@@ -322,12 +322,12 @@ const Cube = struct {
             .mesh = mesh(device),
             .texture = texture,
             .instance = instance,
-            .pipeline = pipeline(engine),
+            .pipeline = pipeline(core),
         };
     }
 
-    fn pipeline(engine: *mach.Engine) gpu.RenderPipeline {
-        const device = engine.device;
+    fn pipeline(core: *mach.Core) gpu.RenderPipeline {
+        const device = core.device;
 
         const layout_descriptor = gpu.PipelineLayout.Descriptor{
             .bind_group_layouts = &.{
@@ -359,7 +359,7 @@ const Cube = struct {
         };
 
         const color_target = gpu.ColorTargetState{
-            .format = engine.swap_chain_format,
+            .format = core.swap_chain_format,
             .write_mask = gpu.ColorWriteMask.all,
             .blend = &blend,
         };
@@ -732,8 +732,8 @@ const Light = struct {
         color: Vec,
     };
 
-    fn init(engine: *mach.Engine) Self {
-        const device = engine.device;
+    fn init(core: *mach.Core) Self {
+        const device = core.device;
         const uniform = .{
             .color = vec3u(1, 1, 1),
             .position = vec3u(3, 7, 2),
@@ -755,7 +755,7 @@ const Light = struct {
             .buffer = buffer,
             .uniform = uniform,
             .bind_group = bind_group,
-            .pipeline = Self.pipeline(engine),
+            .pipeline = Self.pipeline(core),
         };
     }
 
@@ -779,8 +779,8 @@ const Light = struct {
         });
     }
 
-    fn pipeline(engine: *mach.Engine) gpu.RenderPipeline {
-        const device = engine.device;
+    fn pipeline(core: *mach.Core) gpu.RenderPipeline {
+        const device = core.device;
 
         const layout_descriptor = gpu.PipelineLayout.Descriptor{
             .bind_group_layouts = &.{
@@ -811,7 +811,7 @@ const Light = struct {
         };
 
         const color_target = gpu.ColorTargetState{
-            .format = engine.swap_chain_format,
+            .format = core.swap_chain_format,
             .write_mask = gpu.ColorWriteMask.all,
             .blend = &blend,
         };

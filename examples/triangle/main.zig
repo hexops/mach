@@ -7,13 +7,13 @@ const App = @This();
 pipeline: gpu.RenderPipeline,
 queue: gpu.Queue,
 
-pub fn init(app: *App, engine: *mach.Engine) !void {
-    const vs_module = engine.device.createShaderModule(&.{
+pub fn init(app: *App, core: *mach.Core) !void {
+    const vs_module = core.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
 
-    const fs_module = engine.device.createShaderModule(&.{
+    const fs_module = core.device.createShaderModule(&.{
         .label = "my fragment shader",
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
@@ -32,7 +32,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     };
     const color_target = gpu.ColorTargetState{
-        .format = engine.swap_chain_format,
+        .format = core.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMask.all,
     };
@@ -64,17 +64,17 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     };
 
-    app.pipeline = engine.device.createRenderPipeline(&pipeline_descriptor);
-    app.queue = engine.device.getQueue();
+    app.pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
+    app.queue = core.device.getQueue();
 
     vs_module.release();
     fs_module.release();
 }
 
-pub fn deinit(_: *App, _: *mach.Engine) void {}
+pub fn deinit(_: *App, _: *mach.Core) void {}
 
-pub fn update(app: *App, engine: *mach.Engine) !void {
-    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
+pub fn update(app: *App, core: *mach.Core) !void {
+    const back_buffer_view = core.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .resolve_target = null,
@@ -83,7 +83,7 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
         .store_op = .store,
     };
 
-    const encoder = engine.device.createCommandEncoder(null);
+    const encoder = core.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = null,
@@ -99,6 +99,6 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
 
     app.queue.submit(&.{command});
     command.release();
-    engine.swap_chain.?.present();
+    core.swap_chain.?.present();
     back_buffer_view.release();
 }

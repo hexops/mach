@@ -20,14 +20,14 @@ bind_group: gpu.BindGroup,
 
 const App = @This();
 
-pub fn init(app: *App, engine: *mach.Engine) !void {
+pub fn init(app: *App, core: *mach.Core) !void {
     timer = try mach.Timer.start();
 
-    try engine.setOptions(.{
+    try core.setOptions(.{
         .size_min = .{ .width = 20, .height = 20 },
     });
 
-    const vs_module = engine.device.createShaderModule(&.{
+    const vs_module = core.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
@@ -43,13 +43,13 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .attributes = &vertex_attributes,
     };
 
-    const fs_module = engine.device.createShaderModule(&.{
+    const fs_module = core.device.createShaderModule(&.{
         .label = "my fragment shader",
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
 
     const color_target = gpu.ColorTargetState{
-        .format = engine.swap_chain_format,
+        .format = core.swap_chain_format,
         .blend = null,
         .write_mask = gpu.ColorWriteMask.all,
     };
@@ -61,14 +61,14 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     };
 
     const bgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
-    const bgl = engine.device.createBindGroupLayout(
+    const bgl = core.device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor{
             .entries = &.{bgle},
         },
     );
 
     const bind_group_layouts = [_]gpu.BindGroupLayout{bgl};
-    const pipeline_layout = engine.device.createPipelineLayout(&.{
+    const pipeline_layout = core.device.createPipelineLayout(&.{
         .bind_group_layouts = &bind_group_layouts,
     });
 
@@ -94,7 +94,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     };
 
-    const vertex_buffer = engine.device.createBuffer(&.{
+    const vertex_buffer = core.device.createBuffer(&.{
         .usage = .{ .vertex = true },
         .size = @sizeOf(Vertex) * vertices.len,
         .mapped_at_creation = true,
@@ -107,12 +107,12 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const y_count = 4;
     const num_instances = x_count * y_count;
 
-    const uniform_buffer = engine.device.createBuffer(&.{
+    const uniform_buffer = core.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(UniformBufferObject) * num_instances,
         .mapped_at_creation = false,
     });
-    const bind_group = engine.device.createBindGroup(
+    const bind_group = core.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
             .entries = &.{
@@ -121,8 +121,8 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     );
 
-    app.pipeline = engine.device.createRenderPipeline(&pipeline_descriptor);
-    app.queue = engine.device.getQueue();
+    app.pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
+    app.queue = core.device.getQueue();
     app.vertex_buffer = vertex_buffer;
     app.uniform_buffer = uniform_buffer;
     app.bind_group = bind_group;
@@ -133,24 +133,24 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     bgl.release();
 }
 
-pub fn deinit(app: *App, _: *mach.Engine) void {
+pub fn deinit(app: *App, _: *mach.Core) void {
     app.vertex_buffer.release();
     app.bind_group.release();
     app.uniform_buffer.release();
 }
 
-pub fn update(app: *App, engine: *mach.Engine) !void {
-    while (engine.pollEvent()) |event| {
+pub fn update(app: *App, core: *mach.Core) !void {
+    while (core.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 if (ev.key == .space)
-                    engine.setShouldClose(true);
+                    core.setShouldClose(true);
             },
             else => {},
         }
     }
 
-    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = core.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .resolve_target = null,
@@ -159,7 +159,7 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
         .store_op = .store,
     };
 
-    const encoder = engine.device.createCommandEncoder(null);
+    const encoder = core.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{color_attachment},
     };
@@ -167,7 +167,7 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
     {
         const proj = zm.perspectiveFovRh(
             (std.math.pi / 3.0),
-            @intToFloat(f32, engine.current_desc.width) / @intToFloat(f32, engine.current_desc.height),
+            @intToFloat(f32, core.current_desc.width) / @intToFloat(f32, core.current_desc.height),
             10,
             30,
         );
@@ -207,6 +207,6 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
 
     app.queue.submit(&.{command});
     command.release();
-    engine.swap_chain.?.present();
+    core.swap_chain.?.present();
     back_buffer_view.release();
 }

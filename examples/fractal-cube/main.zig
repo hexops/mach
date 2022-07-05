@@ -4,8 +4,8 @@
 //! We also need a second texture to use on the cube, that after the render pass
 //! needs to copy the other texture. We can't use the same texture since
 //! it would interfere with the sincronization on the gpu during the render pass.
-//! This demo currently does not work on opengl, because engine.current_desc.width/height,
-//! are set to 0 after engine.init() and because webgpu does not implement copyTextureToTexture,
+//! This demo currently does not work on opengl, because core.current_desc.width/height,
+//! are set to 0 after core.init() and because webgpu does not implement copyTextureToTexture,
 //! for opengl
 
 const std = @import("std");
@@ -38,14 +38,14 @@ cube_texture_view_render: gpu.TextureView,
 sampler: gpu.Sampler,
 bgl: gpu.BindGroupLayout,
 
-pub fn init(app: *App, engine: *mach.Engine) !void {
+pub fn init(app: *App, core: *mach.Core) !void {
     timer = try mach.Timer.start();
 
-    try engine.setOptions(.{
+    try core.setOptions(.{
         .size_min = .{ .width = 20, .height = 20 },
     });
 
-    const vs_module = engine.device.createShaderModule(&.{
+    const vs_module = core.device.createShaderModule(&.{
         .label = "my vertex shader",
         .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
@@ -61,7 +61,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         .attributes = &vertex_attributes,
     };
 
-    const fs_module = engine.device.createShaderModule(&.{
+    const fs_module = core.device.createShaderModule(&.{
         .label = "my fragment shader",
         .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
@@ -79,7 +79,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     };
     const color_target = gpu.ColorTargetState{
-        .format = engine.swap_chain_format,
+        .format = core.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMask.all,
     };
@@ -93,14 +93,14 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     const bgle_buffer = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
     const bgle_sampler = gpu.BindGroupLayout.Entry.sampler(1, .{ .fragment = true }, .filtering);
     const bgle_textureview = gpu.BindGroupLayout.Entry.texture(2, .{ .fragment = true }, .float, .dimension_2d, false);
-    const bgl = engine.device.createBindGroupLayout(
+    const bgl = core.device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor{
             .entries = &.{ bgle_buffer, bgle_sampler, bgle_textureview },
         },
     );
 
     const bind_group_layouts = [_]gpu.BindGroupLayout{bgl};
-    const pipeline_layout = engine.device.createPipelineLayout(&.{
+    const pipeline_layout = core.device.createPipelineLayout(&.{
         .bind_group_layouts = &bind_group_layouts,
     });
 
@@ -130,7 +130,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     };
 
-    const vertex_buffer = engine.device.createBuffer(&.{
+    const vertex_buffer = core.device.createBuffer(&.{
         .usage = .{ .vertex = true },
         .size = @sizeOf(Vertex) * vertices.len,
         .mapped_at_creation = true,
@@ -139,44 +139,44 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     std.mem.copy(Vertex, vertex_mapped, vertices[0..]);
     vertex_buffer.unmap();
 
-    const uniform_buffer = engine.device.createBuffer(&.{
+    const uniform_buffer = core.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(UniformBufferObject),
         .mapped_at_creation = false,
     });
 
     // The texture to put on the cube
-    const cube_texture = engine.device.createTexture(&gpu.Texture.Descriptor{
+    const cube_texture = core.device.createTexture(&gpu.Texture.Descriptor{
         .usage = .{ .texture_binding = true, .copy_dst = true },
-        .size = .{ .width = engine.current_desc.width, .height = engine.current_desc.height },
-        .format = engine.swap_chain_format,
+        .size = .{ .width = core.current_desc.width, .height = core.current_desc.height },
+        .format = core.swap_chain_format,
     });
     // The texture on which we render
-    const cube_texture_render = engine.device.createTexture(&gpu.Texture.Descriptor{
+    const cube_texture_render = core.device.createTexture(&gpu.Texture.Descriptor{
         .usage = .{ .render_attachment = true, .copy_src = true },
-        .size = .{ .width = engine.current_desc.width, .height = engine.current_desc.height },
-        .format = engine.swap_chain_format,
+        .size = .{ .width = core.current_desc.width, .height = core.current_desc.height },
+        .format = core.swap_chain_format,
     });
 
-    const sampler = engine.device.createSampler(&gpu.Sampler.Descriptor{
+    const sampler = core.device.createSampler(&gpu.Sampler.Descriptor{
         .mag_filter = .linear,
         .min_filter = .linear,
     });
 
     const cube_texture_view = cube_texture.createView(&gpu.TextureView.Descriptor{
-        .format = engine.swap_chain_format,
+        .format = core.swap_chain_format,
         .dimension = .dimension_2d,
         .mip_level_count = 1,
         .array_layer_count = 1,
     });
     const cube_texture_view_render = cube_texture_render.createView(&gpu.TextureView.Descriptor{
-        .format = engine.swap_chain_format,
+        .format = core.swap_chain_format,
         .dimension = .dimension_2d,
         .mip_level_count = 1,
         .array_layer_count = 1,
     });
 
-    const bind_group = engine.device.createBindGroup(
+    const bind_group = core.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
             .entries = &.{
@@ -187,8 +187,8 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
         },
     );
 
-    app.pipeline = engine.device.createRenderPipeline(&pipeline_descriptor);
-    app.queue = engine.device.getQueue();
+    app.pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
+    app.queue = core.device.getQueue();
     app.vertex_buffer = vertex_buffer;
     app.uniform_buffer = uniform_buffer;
     app.bind_group = bind_group;
@@ -206,7 +206,7 @@ pub fn init(app: *App, engine: *mach.Engine) !void {
     pipeline_layout.release();
 }
 
-pub fn deinit(app: *App, _: *mach.Engine) void {
+pub fn deinit(app: *App, _: *mach.Core) void {
     app.bgl.release();
     app.vertex_buffer.release();
     app.uniform_buffer.release();
@@ -220,19 +220,19 @@ pub fn deinit(app: *App, _: *mach.Engine) void {
     app.depth_texture_view.release();
 }
 
-pub fn update(app: *App, engine: *mach.Engine) !void {
-    while (engine.pollEvent()) |event| {
+pub fn update(app: *App, core: *mach.Core) !void {
+    while (core.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 if (ev.key == .space)
-                    engine.setShouldClose(true);
+                    core.setShouldClose(true);
             },
             else => {},
         }
     }
 
     const cube_view = app.cube_texture_view_render;
-    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = core.swap_chain.?.getCurrentTextureView();
 
     const cube_color_attachment = gpu.RenderPassColorAttachment{
         .view = cube_view,
@@ -258,7 +258,7 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
         .stencil_store_op = .none,
     };
 
-    const encoder = engine.device.createCommandEncoder(null);
+    const encoder = core.device.createCommandEncoder(null);
     const cube_render_pass_info = gpu.RenderPassEncoder.Descriptor{
         .color_attachments = &.{cube_color_attachment},
         .depth_stencil_attachment = &depth_stencil_attachment,
@@ -278,7 +278,7 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
         );
         const proj = zm.perspectiveFovRh(
             (std.math.pi * 2.0 / 5.0),
-            @intToFloat(f32, engine.current_desc.width) / @intToFloat(f32, engine.current_desc.height),
+            @intToFloat(f32, core.current_desc.width) / @intToFloat(f32, core.current_desc.height),
             1,
             100,
         );
@@ -303,7 +303,7 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
         &gpu.ImageCopyTexture{
             .texture = app.cube_texture,
         },
-        &.{ .width = engine.current_desc.width, .height = engine.current_desc.height },
+        &.{ .width = core.current_desc.width, .height = core.current_desc.height },
     );
 
     const cube_pass = encoder.beginRenderPass(&cube_render_pass_info);
@@ -319,30 +319,30 @@ pub fn update(app: *App, engine: *mach.Engine) !void {
 
     app.queue.submit(&.{command});
     command.release();
-    engine.swap_chain.?.present();
+    core.swap_chain.?.present();
     back_buffer_view.release();
 }
 
-pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {
+pub fn resize(app: *App, core: *mach.Core, width: u32, height: u32) !void {
     if (app.depth_texture != null) {
         app.depth_texture.?.release();
-        app.depth_texture = engine.device.createTexture(&gpu.Texture.Descriptor{
+        app.depth_texture = core.device.createTexture(&gpu.Texture.Descriptor{
             .usage = .{ .render_attachment = true },
             .size = .{ .width = width, .height = height },
             .format = .depth24_plus,
         });
 
         app.cube_texture.release();
-        app.cube_texture = engine.device.createTexture(&gpu.Texture.Descriptor{
+        app.cube_texture = core.device.createTexture(&gpu.Texture.Descriptor{
             .usage = .{ .texture_binding = true, .copy_dst = true },
             .size = .{ .width = width, .height = height },
-            .format = engine.swap_chain_format,
+            .format = core.swap_chain_format,
         });
         app.cube_texture_render.release();
-        app.cube_texture_render = engine.device.createTexture(&gpu.Texture.Descriptor{
+        app.cube_texture_render = core.device.createTexture(&gpu.Texture.Descriptor{
             .usage = .{ .render_attachment = true, .copy_src = true },
             .size = .{ .width = width, .height = height },
-            .format = engine.swap_chain_format,
+            .format = core.swap_chain_format,
         });
 
         app.depth_texture_view.release();
@@ -355,21 +355,21 @@ pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {
 
         app.cube_texture_view.release();
         app.cube_texture_view = app.cube_texture.createView(&gpu.TextureView.Descriptor{
-            .format = engine.swap_chain_format,
+            .format = core.swap_chain_format,
             .dimension = .dimension_2d,
             .mip_level_count = 1,
             .array_layer_count = 1,
         });
         app.cube_texture_view_render.release();
         app.cube_texture_view_render = app.cube_texture_render.createView(&gpu.TextureView.Descriptor{
-            .format = engine.swap_chain_format,
+            .format = core.swap_chain_format,
             .dimension = .dimension_2d,
             .mip_level_count = 1,
             .array_layer_count = 1,
         });
 
         app.bind_group.release();
-        app.bind_group = engine.device.createBindGroup(
+        app.bind_group = core.device.createBindGroup(
             &gpu.BindGroup.Descriptor{
                 .layout = app.bgl,
                 .entries = &.{
@@ -380,7 +380,7 @@ pub fn resize(app: *App, engine: *mach.Engine, width: u32, height: u32) !void {
             },
         );
     } else {
-        app.depth_texture = engine.device.createTexture(&gpu.Texture.Descriptor{
+        app.depth_texture = core.device.createTexture(&gpu.Texture.Descriptor{
             .usage = .{ .render_attachment = true },
             .size = .{ .width = width, .height = height },
             .format = .depth24_plus,
