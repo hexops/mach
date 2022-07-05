@@ -12,7 +12,7 @@ particle_bind_groups: [2]gpu.BindGroup,
 sim_param_buffer: gpu.Buffer,
 frame_counter: usize,
 
-const App = @This();
+pub const App = @This();
 
 const num_particle = 1500;
 

@@ -16,7 +16,7 @@ const Vec = zm.Vec;
 const Mat = zm.Mat;
 const Quat = zm.Quat;
 
-const App = @This();
+pub const App = @This();
 
 queue: gpu.Queue,
 cube: Cube,
