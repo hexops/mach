@@ -79,6 +79,5 @@ test "get name index" {
 test "get index name" {
     const lib = try freetype.Library.init();
     const face = try lib.newFace(firasans_font_path, 0);
-    var name_buf: [30]u8 = undefined;
-    try testing.expectEqualStrings("summation", try face.getGlyphName(1120, &name_buf));
+    try testing.expectEqualStrings(try face.getGlyphName(1120), "summation");
 }
