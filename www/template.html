@@ -6,9 +6,10 @@
   <body>
     <script type="module">
       import {{ mach }} from "./mach.js";
+      import {{ zig }} from "./js-runtime.js";
 
       let imports = {{
-        env: mach,
+        env: {{  ...mach, ...zig }},
       }};
 
 	  fetch("{s}.wasm")
@@ -16,6 +17,7 @@
         .then(buffer => WebAssembly.instantiate(buffer, imports))
         .then(results => results.instance)
         .then(instance => {{
+          zig.init(instance);
           mach.init(instance);
           instance.exports.wasmInit();
 
