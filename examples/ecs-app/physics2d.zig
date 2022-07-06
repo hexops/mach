@@ -21,6 +21,6 @@ pub const Vec2 = struct { x: f32, y: f32 };
 fn update(msg: Message) void {
     switch (msg) {
         // TODO: implement queries, ability to set components, etc.
-        .tick => std.debug.print("\nphysics tick!\n", .{}),
+        .tick => std.log.debug("physics tick!", .{}),
     }
 }
