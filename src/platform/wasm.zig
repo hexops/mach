@@ -304,7 +304,7 @@ export fn wasmDeinit() void {
     app.deinit(&core);
 }
 
-pub const log_level = if (@hasDecl(App, "log_level")) App.log_level else .info;
+pub const log_level = if (@hasDecl(App, "log_level")) App.log_level else std.log.default_level;
 pub const scope_levels = if (@hasDecl(App, "scope_levels")) App.scope_levels else [0]std.log.ScopeLevel{};
 
 const LogError = error{};
