@@ -201,6 +201,7 @@ pub const App = struct {
             app.getInstallStep().?.step.dependOn(&install_mach_js.step);
 
             const html_generator = app.b.addExecutable("html-generator", thisDir() ++ "/tools/html-generator.zig");
+            html_generator.main_pkg_path = thisDir();
             const run_html_generator = html_generator.run();
             run_html_generator.addArgs(&.{ std.mem.concat(
                 app.b.allocator,
