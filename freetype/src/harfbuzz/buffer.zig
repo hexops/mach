@@ -333,7 +333,7 @@ pub const Buffer = struct {
 
     pub fn getGlyphPositions(self: Buffer) ?[]Position {
         return if (hb_buffer_get_glyph_positions(self.handle, null)) |positions|
-            positions[0..self.getLength()]
+            @ptrCast([*]Position, positions)[0..self.getLength()]
         else
             null;
     }

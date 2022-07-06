@@ -13,7 +13,7 @@ pub const Direction = enum(u3) {
     }
 
     pub fn toString(self: Direction) [:0]const u8 {
-        return std.mem.span(c.hb_direction_to_string(@enumToInt(self)));
+        return std.mem.span(@ptrCast([*:0]const u8, c.hb_direction_to_string(@enumToInt(self))));
     }
 };
 
@@ -210,7 +210,7 @@ pub const Language = struct {
     }
 
     pub fn toString(self: Language) [:0]const u8 {
-        return std.mem.span(c.hb_language_to_string(self.handle));
+        return std.mem.span(@ptrCast([*:0]const u8, c.hb_language_to_string(self.handle)));
     }
 
     pub fn getDefault() Language {

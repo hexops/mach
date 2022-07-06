@@ -123,7 +123,7 @@ pub fn getCharIndex(self: Face, char: u32) ?u32 {
 }
 
 pub fn getNameIndex(self: Face, name: [:0]const u8) ?u32 {
-    const i = c.FT_Get_Name_Index(self.handle, name);
+    const i = c.FT_Get_Name_Index(self.handle, name.ptr);
     return if (i == 0) null else i;
 }
 
@@ -146,7 +146,7 @@ pub fn getGlyphName(self: Face, index: u32, name_buf: *[30]u8) Error![]const u8 
 
 pub fn getPostscriptName(self: Face) ?[:0]const u8 {
     return if (c.FT_Get_Postscript_Name(self.handle)) |face_name|
-        std.mem.span(face_name)
+        std.mem.span(@ptrCast([*:0]const u8, face_name))
     else
         null;
 }
@@ -185,21 +185,21 @@ pub fn getCharVariantIsDefault(self: Face, char: u32, variant_selector: u32) ?bo
 
 pub fn getVariantSelectors(self: Face) ?[]u32 {
     return if (c.FT_Face_GetVariantSelectors(self.handle)) |chars|
-        @ptrCast([]u32, std.mem.sliceTo(chars, 0))
+        @ptrCast([]u32, std.mem.sliceTo(@ptrCast([*:0]u32, chars), 0))
     else
         null;
 }
 
 pub fn getVariantsOfChar(self: Face, char: u32) ?[]u32 {
     return if (c.FT_Face_GetVariantsOfChar(self.handle, char)) |variants|
-        @ptrCast([]u32, std.mem.sliceTo(variants, 0))
+        @ptrCast([]u32, std.mem.sliceTo(@ptrCast([*:0]u32, variants), 0))
     else
         null;
 }
 
 pub fn getCharsOfVariant(self: Face, variant_selector: u32) ?[]u32 {
     return if (c.FT_Face_GetCharsOfVariant(self.handle, variant_selector)) |chars|
-        @ptrCast([]u32, std.mem.sliceTo(chars, 0))
+        @ptrCast([]u32, std.mem.sliceTo(@ptrCast([*:0]u32, chars), 0))
     else
         null;
 }
@@ -288,14 +288,14 @@ pub fn numGlyphs(self: Face) u32 {
 
 pub fn familyName(self: Face) ?[:0]const u8 {
     return if (self.handle.*.family_name) |family|
-        std.mem.span(family)
+        std.mem.span(@ptrCast([*:0]const u8, family))
     else
         null;
 }
 
 pub fn styleName(self: Face) ?[:0]const u8 {
     return if (self.handle.*.style_name) |style_name|
-        std.mem.span(style_name)
+        std.mem.span(@ptrCast([*:0]const u8, style_name))
     else
         null;
 }
@@ -316,7 +316,7 @@ pub fn numCharmaps(self: Face) u32 {
 }
 
 pub fn charmaps(self: Face) []const CharMap {
-    return @ptrCast([]const CharMap, self.handle.*.charmaps[0..self.numCharmaps()]);
+    return @ptrCast([*]const CharMap, self.handle.*.charmaps)[0..self.numCharmaps()];
 }
 
 pub fn bbox(self: Face) BBox {

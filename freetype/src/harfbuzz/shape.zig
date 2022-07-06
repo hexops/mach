@@ -11,8 +11,9 @@ pub const ListShapers = struct {
 
     pub fn next(self: *ListShapers) ?[:0]const u8 {
         self.index += 1;
-        return std.mem.span(
+        return std.mem.span(@ptrCast(
+            ?[*:0]const u8,
             self.list[self.index - 1] orelse return null,
-        );
+        ));
     }
 };
