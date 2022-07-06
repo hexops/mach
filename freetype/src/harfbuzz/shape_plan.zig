@@ -68,7 +68,7 @@ pub const ShapePlan = struct {
     }
 
     pub fn getShaper(self: ShapePlan) [:0]const u8 {
-        return std.mem.span(c.hb_shape_plan_get_shaper(self.handle));
+        return std.mem.span(@ptrCast([*:0]const u8, c.hb_shape_plan_get_shaper(self.handle)));
     }
 };
 

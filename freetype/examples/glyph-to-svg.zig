@@ -1,6 +1,11 @@
 const std = @import("std");
 const freetype = @import("freetype");
 
+// Remove once the stage2 compiler fixes pkg std not found
+comptime {
+    _ = @import("utils");
+}
+
 const OutlinePrinter = struct {
     library: freetype.Library,
     face: freetype.Face,
@@ -14,13 +19,14 @@ const OutlinePrinter = struct {
 
     const Self = @This();
 
+    var buf = [_]u8{0} ** (1024 * 10);
     pub fn init(file: std.fs.File) freetype.Error!Self {
         var lib = try freetype.Library.init();
         return Self{
             .library = lib,
             .face = try lib.newFace("upstream/assets/FiraSans-Regular.ttf", 0),
             .output_file = file,
-            .path_stream = std.io.fixedBufferStream(&std.mem.zeroes([1024 * 10]u8)),
+            .path_stream = std.io.fixedBufferStream(&buf),
             .xMin = 0,
             .yMin = 0,
             .width = 0,

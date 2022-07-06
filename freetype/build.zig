@@ -67,11 +67,20 @@ pub fn build(b: *std.build.Builder) !void {
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     main_tests.addPackage(c_pkg);
+
+    // Remove once the stage2 compiler fixes pkg std not found
+    main_tests.addPackage(utils_pkg);
+
     main_tests.addPackage(pkg);
     link(b, main_tests, .{ .freetype = .{
         .ft_config_path = "./test/ft",
         .brotli = true,
     } });
+    var font_option = b.addOptions();
+
+    font_option.addOption([]const u8, "font", try std.fs.cwd().readFileAlloc(b.allocator, "upstream/assets/FiraSans-Regular.ttf", std.math.maxInt(u32)));
+    font_option.addOption([]const u8, "file", try std.fs.cwd().readFileAlloc(b.allocator, "upstream/assets/DejaVuSans.pfm", std.math.maxInt(u32)));
+    main_tests.addOptions("test_option", font_option);
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&freetype_tests.step);
@@ -86,6 +95,10 @@ pub fn build(b: *std.build.Builder) !void {
         example_exe.setBuildMode(mode);
         example_exe.setTarget(target);
         example_exe.addPackage(pkg);
+
+        // Remove once the stage2 compiler fixes pkg std not found
+        example_exe.addPackage(utils_pkg);
+
         link(b, example_exe, .{});
         example_exe.install();
 

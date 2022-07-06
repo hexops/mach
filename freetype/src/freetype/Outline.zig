@@ -1,4 +1,5 @@
 const c = @import("c");
+const builtin = @import("builtin");
 const intToError = @import("error.zig").intToError;
 const errorToInt = @import("error.zig").errorToInt;
 const Error = @import("error.zig").Error;
@@ -46,10 +47,10 @@ pub fn bbox(self: Outline) Error!BBox {
 
 pub fn Funcs(comptime Context: type) type {
     return struct {
-        move_to: fn (ctx: Context, to: Vector) Error!void,
-        line_to: fn (ctx: Context, to: Vector) Error!void,
-        conic_to: fn (ctx: Context, control: Vector, to: Vector) Error!void,
-        cubic_to: fn (ctx: Context, control_0: Vector, control_1: Vector, to: Vector) Error!void,
+        move_to: if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other) fn (ctx: Context, to: Vector) Error!void else *const fn (ctx: Context, to: Vector) Error!void,
+        line_to: if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other) fn (ctx: Context, to: Vector) Error!void else *const fn (ctx: Context, to: Vector) Error!void,
+        conic_to: if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other) fn (ctx: Context, control: Vector, to: Vector) Error!void else *const fn (ctx: Context, control: Vector, to: Vector) Error!void,
+        cubic_to: if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other) fn (ctx: Context, control_0: Vector, control_1: Vector, to: Vector) Error!void else *const fn (ctx: Context, control_0: Vector, control_1: Vector, to: Vector) Error!void,
         shift: i32,
         delta: i32,
     };
@@ -121,7 +122,7 @@ pub fn decompose(self: Outline, ctx: anytype, callbacks: Funcs(@TypeOf(ctx))) Er
     var wrapper = FuncsWrapper(@TypeOf(ctx)){ .ctx = ctx, .callbacks = callbacks };
     try intToError(c.FT_Outline_Decompose(
         self.handle,
-        &.{
+        &c.FT_Outline_Funcs{
             .move_to = @TypeOf(wrapper).move_to,
             .line_to = @TypeOf(wrapper).line_to,
             .conic_to = @TypeOf(wrapper).conic_to,
