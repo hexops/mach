@@ -76,11 +76,7 @@ pub fn build(b: *std.build.Builder) !void {
         .ft_config_path = "./test/ft",
         .brotli = true,
     } });
-    var font_option = b.addOptions();
-
-    font_option.addOption([]const u8, "font", try std.fs.cwd().readFileAlloc(b.allocator, "upstream/assets/FiraSans-Regular.ttf", std.math.maxInt(u32)));
-    font_option.addOption([]const u8, "file", try std.fs.cwd().readFileAlloc(b.allocator, "upstream/assets/DejaVuSans.pfm", std.math.maxInt(u32)));
-    main_tests.addOptions("test_option", font_option);
+    main_tests.main_pkg_path = thisDir();
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&freetype_tests.step);

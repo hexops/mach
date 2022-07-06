@@ -1,9 +1,8 @@
 const testing = @import("std").testing;
 const freetype = @import("freetype");
 
-const test_option = @import("test_option");
 const firasans_font_path = "upstream/assets/FiraSans-Regular.ttf";
-const firasans_font_data = test_option.font;
+const firasans_font_data = @embedFile("../upstream/assets/FiraSans-Regular.ttf");
 
 // Remove once the stage2 compiler fixes pkg std not found
 comptime {
@@ -56,7 +55,7 @@ test "attach file" {
 test "attach from memory" {
     const lib = try freetype.Library.init();
     const face = try lib.newFace("upstream/assets/DejaVuSans.pfb", 0);
-    const file = test_option.file;
+    const file = @embedFile("../upstream/assets/DejaVuSans.pfm");
     try face.attachMemory(file);
 }
 
