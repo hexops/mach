@@ -5,6 +5,7 @@ const gpu_dawn = @import("gpu-dawn/build.zig");
 pub const glfw = @import("glfw/build.zig");
 pub const ecs = @import("ecs/build.zig");
 const freetype = @import("freetype/build.zig");
+const js_runtime = @import("js-runtime/build.zig");
 const Pkg = std.build.Pkg;
 
 pub fn build(b: *std.build.Builder) void {
@@ -162,6 +163,7 @@ pub const App = struct {
             if (options.target.toTarget().cpu.arch == .wasm32) {
                 const lib = b.addSharedLibrary(options.name, thisDir() ++ "/src/platform/wasm.zig", .unversioned);
                 lib.addPackage(gpu.pkg);
+                lib.addPackage(js_runtime.pkg);
 
                 break :blk lib;
             } else {
@@ -194,12 +196,14 @@ pub const App = struct {
             // Set install directory to '{prefix}/www'
             app.getInstallStep().?.dest_dir = web_install_dir;
 
-            const install_mach_js = app.b.addInstallFileWithDir(
-                .{ .path = thisDir() ++ "/src/platform/mach.js" },
-                web_install_dir,
-                "mach.js",
-            );
-            app.getInstallStep().?.step.dependOn(&install_mach_js.step);
+            inline for (.{ "/src/platform/mach.js", "/js-runtime/src/js-runtime.js" }) |js| {
+                const install_js = app.b.addInstallFileWithDir(
+                    .{ .path = thisDir() ++ js },
+                    web_install_dir,
+                    std.fs.path.basename(js),
+                );
+                app.getInstallStep().?.step.dependOn(&install_js.step);
+            }
 
             const html_generator = app.b.addExecutable("html-generator", thisDir() ++ "/tools/html-generator.zig");
             html_generator.main_pkg_path = thisDir();
@@ -209,6 +213,7 @@ pub const App = struct {
                 u8,
                 &.{ app.name, ".html" },
             ) catch unreachable, app.name });
+
             run_html_generator.cwd = app.b.getInstallPath(web_install_dir, "");
             app.getInstallStep().?.step.dependOn(&run_html_generator.step);
         }
