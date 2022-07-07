@@ -62,11 +62,11 @@ pub const Value = extern struct {
         };
     }
 
-    pub fn value(val: *const Value, comptime tag: Tag, allocator: ?std.mem.Allocator) switch (tag) {
+    pub fn view(val: *const Value, comptime tag: Tag) switch (tag) {
         .object => Object,
         .num => f64,
         .bool => bool,
-        .str => std.mem.Allocator.Error![]const u8,
+        .str => String,
         .func => Function,
         .nulled, .undef => @compileError("Cannot get null or undefined as a value"),
     } {
@@ -74,12 +74,7 @@ pub const Value = extern struct {
             .object => Object{ .ref = val.val.ref },
             .num => val.val.num,
             .bool => val.val.bool,
-            .str => blk: {
-                const len = js.zigGetStringLength(val.val.ref);
-                var slice = try allocator.?.alloc(u8, len);
-                js.zigGetString(val.val.ref, slice.ptr);
-                break :blk slice;
-            },
+            .str => String{ .ref = val.val.ref },
             .func => Function{ .ref = val.val.ref },
             else => unreachable,
         };
@@ -156,6 +151,29 @@ pub const Function = struct {
     }
 };
 
+pub const String = struct {
+    ref: u64,
+
+    pub fn deinit(string: *const String) void {
+        js.zigCleanupObject(string.ref);
+    }
+
+    pub fn toValue(string: *const String) Value {
+        return .{ .tag = .str, .val = .{ .ref = string.ref } };
+    }
+
+    pub fn getLength(string: *const String) usize {
+        return js.zigGetStringLength(string.ref);
+    }
+
+    pub fn getOwnedSlice(string: *const String, allocator: std.mem.Allocator) ![]const u8 {
+        var slice = try allocator.alloc(u8, string.getLength());
+        errdefer allocator.free(slice);
+        js.zigGetString(string.ref, slice.ptr);
+        return slice;
+    }
+};
+
 export fn wasmCallFunction(id: *anyopaque, args: u32, len: u32) void {
     const obj = Object{ .ref = args };
     if (builtin.zig_backend == .stage1) {
@@ -178,8 +196,8 @@ pub fn createArray() Object {
     return .{ .ref = js.zigCreateArray() };
 }
 
-pub fn createString(string: []const u8) Value {
-    return .{ .tag = .str, .val = .{ .ref = js.zigCreateString(string.ptr, string.len) } };
+pub fn createString(string: []const u8) String {
+    return .{ .ref = js.zigCreateString(string.ptr, string.len) };
 }
 
 pub fn createNumber(num: f64) Value {
@@ -211,7 +229,7 @@ pub fn createFunction(fun: FunType) Function {
 }
 
 pub fn constructType(t: []const u8, args: []const Value) Value {
-    const constructor = global().get(t).value(.func, null);
+    const constructor = global().get(t).view(.func);
     defer constructor.deinit();
 
     return constructor.construct(args);
