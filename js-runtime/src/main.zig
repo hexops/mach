@@ -24,25 +24,14 @@ const js = struct {
 };
 
 pub const Value = extern struct {
-    tag: ValueTag,
+    tag: Tag,
     val: extern union {
         ref: u64,
         num: f64,
         bool: bool,
     },
 
-    const ValueTag = enum(u8) {
-        ref,
-        num,
-        bool,
-        str,
-        nulled,
-        undef,
-        func_js,
-        func_zig,
-    };
-
-    pub const Tag = enum {
+    pub const Tag = enum(u8) {
         object,
         num,
         bool,
@@ -53,15 +42,7 @@ pub const Value = extern struct {
     };
 
     pub fn is(val: *const Value, comptime tag: Tag) bool {
-        return switch (tag) {
-            .object => val.tag == .object,
-            .num => val.tag == .num,
-            .bool => val.tag == .bool,
-            .str => val.tag == .str,
-            .nulled => val.tag == .nulled,
-            .undef => val.tag == .undef,
-            .func => val.tag == .func_js or val.tag == .func_zig,
-        };
+        return val.tag == tag;
     }
 
     pub fn view(val: *const Value, comptime tag: Tag) switch (tag) {
@@ -107,7 +88,7 @@ pub const Object = struct {
     }
 
     pub fn toValue(obj: *const Object) Value {
-        return .{ .tag = .ref, .val = .{ .ref = obj.ref } };
+        return .{ .tag = .object, .val = .{ .ref = obj.ref } };
     }
 
     pub fn get(obj: *const Object, prop: []const u8) Value {
@@ -153,7 +134,7 @@ pub const Function = struct {
     }
 
     pub fn toValue(func: *const Function) Value {
-        return .{ .tag = .func_zig, .val = .{ .ref = func.ref } };
+        return .{ .tag = .func, .val = .{ .ref = func.ref } };
     }
 
     pub fn construct(func: *const Function, args: []const Value) Value {
