@@ -551,8 +551,8 @@ pub inline fn setIcon(self: Window, allocator: mem.Allocator, images: ?[]Image) 
 }
 
 pub const Pos = struct {
-    x: u32,
-    y: u32,
+    x: i64,
+    y: i64,
 };
 
 /// Retrieves the position of the content area of the specified window.
@@ -578,7 +578,7 @@ pub inline fn getPos(self: Window) error{FeatureUnavailable}!Pos {
         Error.FeatureUnavailable => |e| e,
         else => unreachable,
     };
-    return Pos{ .x = @intCast(u32, x), .y = @intCast(u32, y) };
+    return Pos{ .x = @intCast(i64, x), .y = @intCast(i64, y) };
 }
 
 /// Sets the position of the content area of the specified window.
