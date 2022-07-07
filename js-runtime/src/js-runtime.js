@@ -268,16 +268,14 @@ const zig = {
     memory.setString(ptr, values[value_map[val_id]]);
   },
 
-  zigFunctionCall(id, name, len, args, args_len, ret_ptr) {
+  functionCall(func, this_param, args, args_len, ret_ptr) {
     let memory = new MemoryBlock(zig.wasm.exports.memory.buffer);
     let argv = [];
     for (let i = 0; i < args_len; i += 1) {
       argv.push(zig.readObject(memory.slice(args + i * 16), memory));
     }
-    let result = values[id][memory.getString(name, len)].apply(
-      values[id],
-      argv
-    );
+
+    let result = func.apply(this_param, argv);
 
     let length = undefined;
     const type = zig.getType(result);
@@ -295,28 +293,19 @@ const zig = {
     zig.writeObject(memory.slice(ret_ptr), result, type);
   },
 
-  zigFunctionInvoke(id, args, args_len, ret_ptr) {
+  zigFunctionCall(id, name, len, args, args_len, ret_ptr) {
     let memory = new MemoryBlock(zig.wasm.exports.memory.buffer);
-    let argv = [];
-    for (let i = 0; i < args_len; i += 1) {
-      argv.push(zig.readObject(memory.slice(args + i * 16), memory));
-    }
-    let result = values[id].apply(undefined, argv);
+    zig.functionCall(
+      values[id][memory.getString(name, len)],
+      values[id],
+      args,
+      args_len,
+      ret_ptr
+    );
+  },
 
-    let length = undefined;
-    const type = zig.getType(result);
-    switch (type) {
-      case 3:
-        length = result.length;
-      case 0:
-      case 6:
-        result = zig.addValue(result);
-        break;
-    }
-
-    if (length !== undefined) result.__proto__.length = length;
-
-    zig.writeObject(memory.slice(ret_ptr), result, type);
+  zigFunctionInvoke(id, args, args_len, ret_ptr) {
+    zig.functionCall(values[id], undefined, args, args_len, ret_ptr);
   },
 
   wzLogWrite(str, len) {
