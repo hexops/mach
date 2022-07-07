@@ -172,6 +172,7 @@ const zig = {
   readObject(block, memory) {
     switch (block.getU8(0)) {
       case 0:
+      case 6:
       case 7:
         return values[block.getU64(8)];
         break;
