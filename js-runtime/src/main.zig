@@ -15,6 +15,7 @@ const js = struct {
     extern fn zigGetString(val_id: u64, ptr: [*]const u8) void;
     extern fn zigGetStringLength(val_id: u64) u32;
     extern fn zigValueEqual(val: *const anyopaque, other: *const anyopaque) bool;
+    extern fn zigValueInstanceOf(val: *const anyopaque, other: *const anyopaque) bool;
     extern fn zigDeleteIndex(id: u64, index: u32) void;
     extern fn zigFunctionCall(id: u64, name: [*]const u8, len: u32, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigFunctionInvoke(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
@@ -91,6 +92,10 @@ pub const Value = extern struct {
             // Using JS equality (===) is better here since lets say a ref can be dangling
             else => js.zigValueEqual(val, &other),
         };
+    }
+
+    pub fn instanceOf(val: *const Value, other: Value) bool {
+        return js.zigValueInstanceOf(val, &other);
     }
 };
 
