@@ -78,7 +78,7 @@ const zig = {
     this.wasm = wasm;
 
     values = [];
-    value_map = [];
+    value_map = {};
     this.addValue(globalThis);
   },
 
