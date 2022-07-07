@@ -14,6 +14,7 @@ const js = struct {
     extern fn zigSetIndex(id: u64, index: u32, set_ptr: *const anyopaque) void;
     extern fn zigGetString(val_id: u64, ptr: [*]const u8) void;
     extern fn zigGetStringLength(val_id: u64) u32;
+    extern fn zigValueEqual(val: *const anyopaque, other: *const anyopaque) bool;
     extern fn zigDeleteIndex(id: u64, index: u32) void;
     extern fn zigFunctionCall(id: u64, name: [*]const u8, len: u32, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigFunctionInvoke(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
@@ -77,6 +78,18 @@ pub const Value = extern struct {
             .str => String{ .ref = val.val.ref },
             .func => Function{ .ref = val.val.ref },
             else => unreachable,
+        };
+    }
+
+    pub fn eql(val: *const Value, other: Value) bool {
+        if (val.tag != other.tag)
+            return false;
+
+        return switch (val.tag) {
+            .num => val.val.num == other.val.num,
+            .bool => val.val.bool == other.val.bool,
+            // Using JS equality (===) is better here since lets say a ref can be dangling
+            else => js.zigValueEqual(val, &other),
         };
     }
 };
