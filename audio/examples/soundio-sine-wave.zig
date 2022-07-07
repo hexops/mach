@@ -56,8 +56,7 @@ pub fn main() !void {
     try sio.connect();
     sio.flushEvents();
 
-    const default_output_index = sio.defaultOutputDeviceIndex().?;
-    if (default_output_index < 0) return error.NoOutputDeviceFound;
+    const default_output_index = sio.defaultOutputDeviceIndex() orelse return error.NoOutputDeviceFound;
 
     const device = sio.getOutputDevice(default_output_index) orelse return error.OutOfMemory;
     defer device.unref();
