@@ -268,6 +268,13 @@ const zig = {
     memory.setString(ptr, values[value_map[val_id]]);
   },
 
+  zigValueEqual(val, other) {
+    let memory = new MemoryBlock(zig.wasm.exports.memory.buffer);
+    const val_js = zig.readObject(memory.slice(val), memory);
+    const other_js = zig.readObject(memory.slice(other), memory);
+    return val_js === other_js;
+  },
+
   functionCall(func, this_param, args, args_len, ret_ptr) {
     let memory = new MemoryBlock(zig.wasm.exports.memory.buffer);
     let argv = [];
