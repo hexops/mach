@@ -17,6 +17,7 @@ const js = struct {
     extern fn zigDeleteIndex(id: u64, index: u32) void;
     extern fn zigFunctionCall(id: u64, name: [*]const u8, len: u32, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigFunctionInvoke(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
+    extern fn zigConstructType(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigCleanupObject(id: u64) void;
 };
 
@@ -142,6 +143,12 @@ pub const Function = struct {
         return .{ .tag = .func_zig, .val = .{ .ref = func.ref } };
     }
 
+    pub fn construct(func: *const Function, args: []const Value) Value {
+        var ret: Value = undefined;
+        js.zigConstructType(func.ref, args.ptr, args.len, &ret);
+        return ret;
+    }
+
     pub fn invoke(func: *const Function, args: []const Value) Value {
         var ret: Value = undefined;
         js.zigFunctionInvoke(func.ref, args.ptr, args.len, &ret);
@@ -201,4 +208,11 @@ pub fn createFunction(fun: FunType) Function {
         return .{ .ref = js.zigCreateFunction(@intToPtr(*anyopaque, functions.items.len)) };
     }
     return .{ .ref = js.zigCreateFunction(&fun) };
+}
+
+pub fn constructType(t: []const u8, args: []const Value) Value {
+    const constructor = global().get(t).value(.func, null);
+    defer constructor.deinit();
+
+    return constructor.construct(args);
 }
