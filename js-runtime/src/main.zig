@@ -7,6 +7,7 @@ const js = struct {
     extern fn zigCreateArray() u32;
     extern fn zigCreateString(str: [*]const u8, len: u32) u32;
     extern fn zigCreateFunction(id: *const anyopaque) u32;
+    extern fn zigGetAttributeCount(id: u64) u32;
     extern fn zigGetProperty(id: u64, name: [*]const u8, len: u32, ret_ptr: *anyopaque) void;
     extern fn zigSetProperty(id: u64, name: [*]const u8, len: u32, set_ptr: *const anyopaque) void;
     extern fn zigDeleteProperty(id: u64, name: [*]const u8, len: u32) void;
@@ -89,6 +90,10 @@ pub const Object = struct {
 
     pub fn toValue(obj: *const Object) Value {
         return .{ .tag = .object, .val = .{ .ref = obj.ref } };
+    }
+
+    pub fn attributeCount(obj: *const Object) usize {
+        return js.zigGetAttributeCount(obj.ref);
     }
 
     pub fn get(obj: *const Object, prop: []const u8) Value {
