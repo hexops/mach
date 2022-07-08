@@ -252,6 +252,11 @@ const zig = {
     delete values[id][index];
   },
 
+  zigGetAttributeCount(id) {
+    let obj = values[id];
+    return Object.keys(obj).length;
+  },
+
   zigCleanupObject(id) {
     const idx = Number(id);
     delete value_map[values[idx].__uindex];
