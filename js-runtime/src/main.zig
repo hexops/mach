@@ -20,6 +20,7 @@ const js = struct {
     extern fn zigDeleteIndex(id: u64, index: u32) void;
     extern fn zigFunctionCall(id: u64, name: [*]const u8, len: u32, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigFunctionInvoke(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
+    extern fn zigGetParamCount(id: u64) u32;
     extern fn zigConstructType(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigCleanupObject(id: u64) void;
 };
@@ -140,6 +141,11 @@ pub const Function = struct {
 
     pub fn toValue(func: *const Function) Value {
         return .{ .tag = .func, .val = .{ .ref = func.ref } };
+    }
+
+    pub fn paramCount(func: *const Function) usize {
+        // FIXME: native functions would always return 0
+        return js.zigGetParamCount(func.ref);
     }
 
     pub fn construct(func: *const Function, args: []const Value) Value {

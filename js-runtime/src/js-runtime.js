@@ -327,6 +327,10 @@ const zig = {
     zig.functionCall(values[id], undefined, args, args_len, ret_ptr);
   },
 
+  zigGetParamCount(id) {
+    return values[id].length;
+  },
+
   zigConstructType(id, args, args_len, ret_ptr) {
     let memory = new MemoryBlock(zig.wasm.exports.memory.buffer);
     let argv = [];
