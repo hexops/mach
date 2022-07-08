@@ -80,6 +80,21 @@ pub const Value = extern struct {
     pub fn instanceOf(val: *const Value, other: Value) bool {
         return js.zigValueInstanceOf(val, &other);
     }
+
+    pub fn format(val: *const Value, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
+        switch (val.tag) {
+            .object => try writer.print("Object@{}({})", .{ val.val.ref, val.view(.object).attributeCount() }),
+            .num => if (val.val.num > 10000)
+                try writer.print("{e}", .{val.val.num})
+            else
+                try writer.print("{d}", .{val.val.num}),
+            .bool => try writer.writeAll(if (val.view(.bool)) "true" else "false"),
+            .str => try writer.print("String@{}({})", .{ val.val.ref, val.view(.str).getLength() }),
+            .func => try writer.print("Function@{}({})", .{ val.val.ref, val.view(.func).paramCount() }),
+            .nulled => try writer.writeAll("null"),
+            .undef => try writer.writeAll("undefined"),
+        }
+    }
 };
 
 pub const Object = struct {
