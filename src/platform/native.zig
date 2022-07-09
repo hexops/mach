@@ -359,7 +359,7 @@ pub const Platform = struct {
             try platform.window.setMonitor(monitor, 0, 0, video_mode.getWidth(), video_mode.getHeight(), null);
         } else {
             const position = platform.last_position;
-            try platform.window.setMonitor(null, position.x, position.y, options.width, options.height, null);
+            try platform.window.setMonitor(null, @intCast(i32, position.x), @intCast(i32, position.y), options.width, options.height, null);
         }
     }
 
