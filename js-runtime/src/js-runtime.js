@@ -331,15 +331,14 @@ const zig = {
     return values[id].length;
   },
 
-  zigConstructType(id, args, args_len, ret_ptr) {
+  zigConstructType(id, args, args_len) {
     let memory = new MemoryBlock(zig.wasm.exports.memory.buffer);
     let argv = [];
     for (let i = 0; i < args_len; i += 1) {
       argv.push(zig.readObject(memory.slice(args + i * 16), memory));
     }
 
-    const result = zig.addValue(new values[id](argv));
-    zig.writeObject(memory.slice(ret_ptr), result, 0);
+    return zig.addValue(new values[id](argv));
   },
 
   wzLogWrite(str, len) {

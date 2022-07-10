@@ -21,7 +21,7 @@ const js = struct {
     extern fn zigFunctionCall(id: u64, name: [*]const u8, len: u32, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigFunctionInvoke(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigGetParamCount(id: u64) u32;
-    extern fn zigConstructType(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
+    extern fn zigConstructType(id: u64, args: ?*const anyopaque, args_len: u32) u32;
     extern fn zigCleanupObject(id: u64) void;
 };
 
@@ -163,10 +163,8 @@ pub const Function = struct {
         return js.zigGetParamCount(func.ref);
     }
 
-    pub fn construct(func: *const Function, args: []const Value) Value {
-        var ret: Value = undefined;
-        js.zigConstructType(func.ref, args.ptr, args.len, &ret);
-        return ret;
+    pub fn construct(func: *const Function, args: []const Value) Object {
+        return .{ .ref = js.zigConstructType(func.ref, args.ptr, args.len) };
     }
 
     pub fn invoke(func: *const Function, args: []const Value) Value {
@@ -253,7 +251,7 @@ pub fn createFunction(fun: FunType) Function {
     return .{ .ref = js.zigCreateFunction(&fun) };
 }
 
-pub fn constructType(t: []const u8, args: []const Value) Value {
+pub fn constructType(t: []const u8, args: []const Value) Object {
     const constructor = global().get(t).view(.func);
     defer constructor.deinit();
 
