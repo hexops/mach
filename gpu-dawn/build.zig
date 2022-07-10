@@ -524,7 +524,11 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
     };
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
-    flags.append(include("libs/dawn/src")) catch unreachable;
+    flags.appendSlice(&.{
+        include("libs/dawn/src"),
+        include("libs/dawn/out/Debug/gen/include"),
+        include("libs/dawn/out/Debug/gen/src"),
+    }) catch unreachable;
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{"libs/dawn/src/dawn/common/"},
         .flags = flags.items,
