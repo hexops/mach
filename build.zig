@@ -138,7 +138,18 @@ pub const App = struct {
     b: *std.build.Builder,
     name: []const u8,
     step: *std.build.LibExeObjStep,
+    platform: Platform,
     res_dirs: ?[]const []const u8,
+
+    pub const Platform = enum {
+        native,
+        web,
+
+        pub fn fromTarget(target: std.Target) Platform {
+            if (target.cpu.arch == .wasm32) return .web;
+            return .native;
+        }
+    };
 
     pub fn init(b: *std.build.Builder, options: struct {
         name: []const u8,
@@ -147,20 +158,26 @@ pub const App = struct {
         deps: ?[]const Pkg = null,
         res_dirs: ?[]const []const u8 = null,
     }) App {
-        const mach_deps: []const Pkg = &.{ glfw.pkg, gpu.pkg, pkg };
-        const deps = if (options.deps) |app_deps|
-            std.mem.concat(b.allocator, Pkg, &.{ mach_deps, app_deps }) catch unreachable
-        else
-            mach_deps;
+        const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, options.target) catch unreachable).target;
+        const platform = Platform.fromTarget(target);
+
+        var deps = std.ArrayList(std.build.Pkg).init(b.allocator);
+        deps.append(pkg) catch unreachable;
+        deps.append(gpu.pkg) catch unreachable;
+        switch (platform) {
+            .native => deps.append(glfw.pkg) catch unreachable,
+            .web => deps.append(js_runtime.pkg) catch unreachable,
+        }
+        if (options.deps) |app_deps| deps.appendSlice(app_deps) catch unreachable;
 
         const app_pkg = std.build.Pkg{
             .name = "app",
             .source = .{ .path = options.src },
-            .dependencies = deps,
+            .dependencies = deps.toOwnedSlice(),
         };
 
         const step = blk: {
-            if (options.target.toTarget().cpu.arch == .wasm32) {
+            if (platform == .web) {
                 const lib = b.addSharedLibrary(options.name, thisDir() ++ "/src/platform/wasm.zig", .unversioned);
                 lib.addPackage(gpu.pkg);
                 lib.addPackage(js_runtime.pkg);
@@ -183,6 +200,7 @@ pub const App = struct {
             .b = b,
             .step = step,
             .name = options.name,
+            .platform = platform,
             .res_dirs = options.res_dirs,
         };
     }
@@ -192,7 +210,7 @@ pub const App = struct {
 
         // Install additional files (src/mach.js and template.html)
         // in case of wasm
-        if (app.step.target.toTarget().cpu.arch == .wasm32) {
+        if (app.platform == .web) {
             // Set install directory to '{prefix}/www'
             app.getInstallStep().?.dest_dir = web_install_dir;
 
@@ -238,7 +256,7 @@ pub const App = struct {
             .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
         };
 
-        if (app.step.target.toTarget().cpu.arch != .wasm32) {
+        if (app.platform != .web) {
             glfw.link(app.b, app.step, options.glfw_options);
             gpu.link(app.b, app.step, gpu_options);
         }
@@ -253,7 +271,7 @@ pub const App = struct {
     }
 
     pub fn run(app: *const App) *std.build.RunStep {
-        if (app.step.target.toTarget().cpu.arch == .wasm32) {
+        if (app.platform == .web) {
             ensureDependencySubmodule(app.b.allocator, "tools/libs/apple_pie") catch unreachable;
 
             const http_server = app.b.addExecutable("http-server", thisDir() ++ "/tools/http-server.zig");
