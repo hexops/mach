@@ -1,17 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUTextureUsage {
-    WGPUTextureUsage_None = 0x00000000,
-    WGPUTextureUsage_CopySrc = 0x00000001,
-    WGPUTextureUsage_CopyDst = 0x00000002,
-    WGPUTextureUsage_TextureBinding = 0x00000004,
-    WGPUTextureUsage_StorageBinding = 0x00000008,
-    WGPUTextureUsage_RenderAttachment = 0x00000010,
-    WGPUTextureUsage_Present = 0x00000020,
-    WGPUTextureUsage_Force32 = 0x7FFFFFFF
-} WGPUTextureUsage;
-typedef WGPUFlags WGPUTextureUsageFlags;
-
 typedef struct WGPUChainedStruct {
     struct WGPUChainedStruct const * next;
     WGPUSType sType;

@@ -1,3 +1,5 @@
+const std = @import("std");
+
 ptr: *anyopaque,
 
 pub const Aspect = enum(u32) {
@@ -127,4 +129,28 @@ pub const SampleType = enum(u32) {
     depth = 0x00000003,
     sint = 0x00000004,
     uint = 0x00000005,
+};
+
+pub const Usage = packed struct {
+    copy_src: bool = false,
+    copy_dst: bool = false,
+    texture_binding: bool = false,
+    storage_binding: bool = false,
+    render_attachment: bool = false,
+    present: bool = false,
+
+    _padding: u26 = 0,
+
+    comptime {
+        std.debug.assert(
+            @sizeOf(@This()) == @sizeOf(u32) and
+                @bitSizeOf(@This()) == @bitSizeOf(u32),
+        );
+    }
+
+    pub const none = Usage{};
+
+    pub fn equal(a: Usage, b: Usage) bool {
+        return @truncate(u6, @bitCast(u32, a)) == @truncate(u6, @bitCast(u32, b));
+    }
 };
