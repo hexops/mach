@@ -88,3 +88,9 @@ pub const CreatePipelineAsyncStatus = enum(u32) {
     device_destroyed = 0x00000003,
     unknown = 0x00000004,
 };
+
+pub const CullMode = enum(u32) {
+    none = 0x00000000,
+    front = 0x00000001,
+    back = 0x00000002,
+};
