@@ -42,3 +42,11 @@ pub const BlendFactor = enum(u32) {
     constant = 0x0000000B,
     one_minus_constant = 0x0000000C,
 };
+
+pub const BlendOperation = enum(u32) {
+    add = 0x00000000,
+    subtract = 0x00000001,
+    reverse_subtract = 0x00000002,
+    min = 0x00000003,
+    max = 0x00000004,
+};
