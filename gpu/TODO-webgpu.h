@@ -1,41 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-
-typedef enum WGPUVertexFormat {
-    WGPUVertexFormat_Undefined = 0x00000000,
-    WGPUVertexFormat_Uint8x2 = 0x00000001,
-    WGPUVertexFormat_Uint8x4 = 0x00000002,
-    WGPUVertexFormat_Sint8x2 = 0x00000003,
-    WGPUVertexFormat_Sint8x4 = 0x00000004,
-    WGPUVertexFormat_Unorm8x2 = 0x00000005,
-    WGPUVertexFormat_Unorm8x4 = 0x00000006,
-    WGPUVertexFormat_Snorm8x2 = 0x00000007,
-    WGPUVertexFormat_Snorm8x4 = 0x00000008,
-    WGPUVertexFormat_Uint16x2 = 0x00000009,
-    WGPUVertexFormat_Uint16x4 = 0x0000000A,
-    WGPUVertexFormat_Sint16x2 = 0x0000000B,
-    WGPUVertexFormat_Sint16x4 = 0x0000000C,
-    WGPUVertexFormat_Unorm16x2 = 0x0000000D,
-    WGPUVertexFormat_Unorm16x4 = 0x0000000E,
-    WGPUVertexFormat_Snorm16x2 = 0x0000000F,
-    WGPUVertexFormat_Snorm16x4 = 0x00000010,
-    WGPUVertexFormat_Float16x2 = 0x00000011,
-    WGPUVertexFormat_Float16x4 = 0x00000012,
-    WGPUVertexFormat_Float32 = 0x00000013,
-    WGPUVertexFormat_Float32x2 = 0x00000014,
-    WGPUVertexFormat_Float32x3 = 0x00000015,
-    WGPUVertexFormat_Float32x4 = 0x00000016,
-    WGPUVertexFormat_Uint32 = 0x00000017,
-    WGPUVertexFormat_Uint32x2 = 0x00000018,
-    WGPUVertexFormat_Uint32x3 = 0x00000019,
-    WGPUVertexFormat_Uint32x4 = 0x0000001A,
-    WGPUVertexFormat_Sint32 = 0x0000001B,
-    WGPUVertexFormat_Sint32x2 = 0x0000001C,
-    WGPUVertexFormat_Sint32x3 = 0x0000001D,
-    WGPUVertexFormat_Sint32x4 = 0x0000001E,
-    WGPUVertexFormat_Force32 = 0x7FFFFFFF
-} WGPUVertexFormat;
-
 typedef enum WGPUVertexStepMode {
     WGPUVertexStepMode_Vertex = 0x00000000,
     WGPUVertexStepMode_Instance = 0x00000001,

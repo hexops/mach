@@ -255,6 +255,40 @@ pub const StoreOp = enum(u32) {
     discard = 0x00000002,
 };
 
+pub const VertexFormat = enum(u32) {
+    undef = 0x00000000,
+    uint8x2 = 0x00000001,
+    uint8x4 = 0x00000002,
+    sint8x2 = 0x00000003,
+    sint8x4 = 0x00000004,
+    unorm8x2 = 0x00000005,
+    unorm8x4 = 0x00000006,
+    snorm8x2 = 0x00000007,
+    snorm8x4 = 0x00000008,
+    uint16x2 = 0x00000009,
+    uint16x4 = 0x0000000a,
+    sint16x2 = 0x0000000b,
+    sint16x4 = 0x0000000c,
+    unorm16x2 = 0x0000000d,
+    unorm16x4 = 0x0000000e,
+    snorm16x2 = 0x0000000f,
+    snorm16x4 = 0x00000010,
+    float16x2 = 0x00000011,
+    float16x4 = 0x00000012,
+    float32 = 0x00000013,
+    float32x2 = 0x00000014,
+    float32x3 = 0x00000015,
+    float32x4 = 0x00000016,
+    uint32 = 0x00000017,
+    uint32x2 = 0x00000018,
+    uint32x3 = 0x00000019,
+    uint32x4 = 0x0000001a,
+    sint32 = 0x0000001b,
+    sint32x2 = 0x0000001c,
+    sint32x3 = 0x0000001d,
+    sint32x4 = 0x0000001e,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
