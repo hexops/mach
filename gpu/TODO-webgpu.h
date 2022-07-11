@@ -1,14 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUTextureAspect {
-    WGPUTextureAspect_All = 0x00000000,
-    WGPUTextureAspect_StencilOnly = 0x00000001,
-    WGPUTextureAspect_DepthOnly = 0x00000002,
-    WGPUTextureAspect_Plane0Only = 0x00000003,
-    WGPUTextureAspect_Plane1Only = 0x00000004,
-    WGPUTextureAspect_Force32 = 0x7FFFFFFF
-} WGPUTextureAspect;
-
 typedef enum WGPUTextureComponentType {
     WGPUTextureComponentType_Float = 0x00000000,
     WGPUTextureComponentType_Sint = 0x00000001,
