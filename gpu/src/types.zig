@@ -102,6 +102,14 @@ pub const ErrorFilter = enum(u32) {
     out_of_memory = 0x00000001,
 };
 
+pub const ErrorType = enum(u32) {
+    no_error = 0x00000000,
+    validation = 0x00000001,
+    out_of_memory = 0x00000002,
+    unknown = 0x00000003,
+    device_lost = 0x00000004,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
