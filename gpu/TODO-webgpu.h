@@ -1,11 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPURenderPassTimestampLocation {
-    WGPURenderPassTimestampLocation_Beginning = 0x00000000,
-    WGPURenderPassTimestampLocation_End = 0x00000001,
-    WGPURenderPassTimestampLocation_Force32 = 0x7FFFFFFF
-} WGPURenderPassTimestampLocation;
-
 typedef enum WGPURequestAdapterStatus {
     WGPURequestAdapterStatus_Success = 0x00000000,
     WGPURequestAdapterStatus_Unavailable = 0x00000001,
