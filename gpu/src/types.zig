@@ -128,6 +128,11 @@ pub const FeatureName = enum(u32) {
     chromium_experimental_dp4a = 0x000003ed,
 };
 
+pub const FilterMode = enum(u32) {
+    nearest = 0x00000000,
+    linear = 0x00000001,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
