@@ -1,12 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPURequestDeviceStatus {
-    WGPURequestDeviceStatus_Success = 0x00000000,
-    WGPURequestDeviceStatus_Error = 0x00000001,
-    WGPURequestDeviceStatus_Unknown = 0x00000002,
-    WGPURequestDeviceStatus_Force32 = 0x7FFFFFFF
-} WGPURequestDeviceStatus;
-
 typedef enum WGPUSType {
     WGPUSType_Invalid = 0x00000000,
     WGPUSType_SurfaceDescriptorFromMetalLayer = 0x00000001,
