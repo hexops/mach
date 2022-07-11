@@ -1,12 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUAddressMode {
-    WGPUAddressMode_Repeat = 0x00000000,
-    WGPUAddressMode_MirrorRepeat = 0x00000001,
-    WGPUAddressMode_ClampToEdge = 0x00000002,
-    WGPUAddressMode_Force32 = 0x7FFFFFFF
-} WGPUAddressMode;
-
 typedef enum WGPUAlphaMode {
     WGPUAlphaMode_Premultiplied = 0x00000000,
     WGPUAlphaMode_Unpremultiplied = 0x00000001,
