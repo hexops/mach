@@ -244,6 +244,11 @@ pub const StencilOperation = enum(u32) {
     decrement_wrap = 0x00000007,
 };
 
+pub const StorageTextureAccess = enum(u32) {
+    undef = 0x00000000,
+    write_only = 0x00000001,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }

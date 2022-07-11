@@ -1,11 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUStorageTextureAccess {
-    WGPUStorageTextureAccess_Undefined = 0x00000000,
-    WGPUStorageTextureAccess_WriteOnly = 0x00000001,
-    WGPUStorageTextureAccess_Force32 = 0x7FFFFFFF
-} WGPUStorageTextureAccess;
-
 typedef enum WGPUStoreOp {
     WGPUStoreOp_Undefined = 0x00000000,
     WGPUStoreOp_Store = 0x00000001,
