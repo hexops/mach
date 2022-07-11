@@ -1,13 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUAdapterType {
-    WGPUAdapterType_DiscreteGPU = 0x00000000,
-    WGPUAdapterType_IntegratedGPU = 0x00000001,
-    WGPUAdapterType_CPU = 0x00000002,
-    WGPUAdapterType_Unknown = 0x00000003,
-    WGPUAdapterType_Force32 = 0x7FFFFFFF
-} WGPUAdapterType;
-
 typedef enum WGPUAddressMode {
     WGPUAddressMode_Repeat = 0x00000000,
     WGPUAddressMode_MirrorRepeat = 0x00000001,
