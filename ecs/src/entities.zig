@@ -523,11 +523,12 @@ pub fn Entities(all_components: anytype) type {
             // new component was added), or the same archetype storage table (if just updating the
             // value of a component.)
             var archetype_entry = try entities.archetypes.getOrPut(entities.allocator, new_hash);
-            if (!archetype_entry.found_existing) {
-                // getOrPut allocated, so the archetype we retrieved earlier may no longer be a valid
-                // pointer. Refresh it now:
-                archetype = entities.archetypeByID(entity);
 
+            // getOrPut allocated, so the archetype we retrieved earlier may no longer be a valid
+            // pointer. Refresh it now:
+            archetype = entities.archetypeByID(entity);
+
+            if (!archetype_entry.found_existing) {
                 const columns = entities.allocator.alloc(Column, archetype.columns.len + 1) catch |err| {
                     assert(entities.archetypes.swapRemove(new_hash));
                     return err;
@@ -653,11 +654,12 @@ pub fn Entities(all_components: anytype) type {
             // guarantee that archetype (A, C) exists - and so removing a component sometimes does
             // require creating a new archetype table!
             var archetype_entry = try entities.archetypes.getOrPut(entities.allocator, new_hash);
-            if (!archetype_entry.found_existing) {
-                // getOrPut allocated, so the archetype we retrieved earlier may no longer be a valid
-                // pointer. Refresh it now:
-                archetype = entities.archetypeByID(entity);
 
+            // getOrPut allocated, so the archetype we retrieved earlier may no longer be a valid
+            // pointer. Refresh it now:
+            archetype = entities.archetypeByID(entity);
+
+            if (!archetype_entry.found_existing) {
                 const columns = entities.allocator.alloc(Column, archetype.columns.len - 1) catch |err| {
                     assert(entities.archetypes.swapRemove(new_hash));
                     return err;
