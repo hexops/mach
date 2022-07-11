@@ -157,6 +157,14 @@ pub const LoggingType = enum(u32) {
     err = 0x00000003,
 };
 
+pub const PipelineStatisticName = enum(u32) {
+    vertex_shader_invocations = 0x00000000,
+    clipper_invocations = 0x00000001,
+    clipper_primitives_out = 0x00000002,
+    fragment_shader_invocations = 0x00000003,
+    compute_shader_invocations = 0x00000004,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
