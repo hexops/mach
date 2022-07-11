@@ -1,30 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUSType {
-    WGPUSType_Invalid = 0x00000000,
-    WGPUSType_SurfaceDescriptorFromMetalLayer = 0x00000001,
-    WGPUSType_SurfaceDescriptorFromWindowsHWND = 0x00000002,
-    WGPUSType_SurfaceDescriptorFromXlibWindow = 0x00000003,
-    WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector = 0x00000004,
-    WGPUSType_ShaderModuleSPIRVDescriptor = 0x00000005,
-    WGPUSType_ShaderModuleWGSLDescriptor = 0x00000006,
-    WGPUSType_PrimitiveDepthClipControl = 0x00000007,
-    WGPUSType_SurfaceDescriptorFromWaylandSurface = 0x00000008,
-    WGPUSType_SurfaceDescriptorFromAndroidNativeWindow = 0x00000009,
-    WGPUSType_SurfaceDescriptorFromWindowsCoreWindow = 0x0000000B,
-    WGPUSType_ExternalTextureBindingEntry = 0x0000000C,
-    WGPUSType_ExternalTextureBindingLayout = 0x0000000D,
-    WGPUSType_SurfaceDescriptorFromWindowsSwapChainPanel = 0x0000000E,
-    WGPUSType_RenderPassDescriptorMaxDrawCount = 0x0000000F,
-    WGPUSType_DawnTextureInternalUsageDescriptor = 0x000003E8,
-    WGPUSType_PrimitiveDepthClampingState = 0x000003E9,
-    WGPUSType_DawnTogglesDeviceDescriptor = 0x000003EA,
-    WGPUSType_DawnEncoderInternalUsageDescriptor = 0x000003EB,
-    WGPUSType_DawnInstanceDescriptor = 0x000003EC,
-    WGPUSType_DawnCacheDeviceDescriptor = 0x000003ED,
-    WGPUSType_Force32 = 0x7FFFFFFF
-} WGPUSType;
-
 typedef enum WGPUSamplerBindingType {
     WGPUSamplerBindingType_Undefined = 0x00000000,
     WGPUSamplerBindingType_Filtering = 0x00000001,
