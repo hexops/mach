@@ -1,13 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUTextureComponentType {
-    WGPUTextureComponentType_Float = 0x00000000,
-    WGPUTextureComponentType_Sint = 0x00000001,
-    WGPUTextureComponentType_Uint = 0x00000002,
-    WGPUTextureComponentType_DepthComparison = 0x00000003,
-    WGPUTextureComponentType_Force32 = 0x7FFFFFFF
-} WGPUTextureComponentType;
-
 typedef enum WGPUTextureDimension {
     WGPUTextureDimension_1D = 0x00000000,
     WGPUTextureDimension_2D = 0x00000001,
