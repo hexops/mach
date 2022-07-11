@@ -295,6 +295,35 @@ pub const VertexStepMode = enum(u32) {
     vertex_buffer_not_used = 0x00000002,
 };
 
+pub const ColorWriteMask = packed struct {
+    red: bool = false,
+    green: bool = false,
+    blue: bool = false,
+    alpha: bool = false,
+
+    _pad0: u4 = 0,
+    _pad1: u8 = 0,
+    _pad2: u16 = 0,
+
+    comptime {
+        std.debug.assert(
+            @sizeOf(@This()) == @sizeOf(u32) and
+                @bitSizeOf(@This()) == @bitSizeOf(u32),
+        );
+    }
+
+    pub const all = ColorWriteMask{
+        .red = true,
+        .green = true,
+        .blue = true,
+        .alpha = true,
+    };
+
+    pub fn equal(a: ColorWriteMask, b: ColorWriteMask) bool {
+        return @bitCast(a, u32) == @bitCast(b, u32);
+    }
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }

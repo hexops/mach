@@ -1,16 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUColorWriteMask {
-    WGPUColorWriteMask_None = 0x00000000,
-    WGPUColorWriteMask_Red = 0x00000001,
-    WGPUColorWriteMask_Green = 0x00000002,
-    WGPUColorWriteMask_Blue = 0x00000004,
-    WGPUColorWriteMask_Alpha = 0x00000008,
-    WGPUColorWriteMask_All = 0x0000000F,
-    WGPUColorWriteMask_Force32 = 0x7FFFFFFF
-} WGPUColorWriteMask;
-typedef WGPUFlags WGPUColorWriteMaskFlags;
-
 typedef enum WGPUMapMode {
     WGPUMapMode_None = 0x00000000,
     WGPUMapMode_Read = 0x00000001,
