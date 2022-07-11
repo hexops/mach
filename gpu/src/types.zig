@@ -177,6 +177,14 @@ pub const PresentMode = enum(u32) {
     fifo = 0x00000002,
 };
 
+pub const PrimitiveTopology = enum(u32) {
+    point_list = 0x00000000,
+    line_list = 0x00000001,
+    line_strip = 0x00000002,
+    triangle_list = 0x00000003,
+    triangle_strip = 0x00000004,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
