@@ -1,12 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUCompilationMessageType {
-    WGPUCompilationMessageType_Error = 0x00000000,
-    WGPUCompilationMessageType_Warning = 0x00000001,
-    WGPUCompilationMessageType_Info = 0x00000002,
-    WGPUCompilationMessageType_Force32 = 0x7FFFFFFF
-} WGPUCompilationMessageType;
-
 typedef enum WGPUComputePassTimestampLocation {
     WGPUComputePassTimestampLocation_Beginning = 0x00000000,
     WGPUComputePassTimestampLocation_End = 0x00000001,
