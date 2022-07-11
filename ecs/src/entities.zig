@@ -372,9 +372,37 @@ pub fn Entities(all_components: anytype) type {
             row_index: u32,
         };
 
+        pub const Query = Query: {
+            const namespaces = std.meta.fields(@TypeOf(all_components));
+            var fields: [namespaces.len]std.builtin.Type.UnionField = undefined;
+            inline for (namespaces) |namespace, i| {
+                const component_enum = std.meta.FieldEnum(namespace.field_type);
+                fields[i] = .{
+                    .name = namespace.name,
+                    .field_type = component_enum,
+                    .alignment = @alignOf(component_enum),
+                };
+            }
+
+            // need type_info variable (rather than embedding in @Type() call)
+            // to work around stage 1 bug
+            const type_info = std.builtin.Type{
+                .Union = .{
+                    .layout = .Auto,
+                    .tag_type = std.meta.FieldEnum(@TypeOf(all_components)),
+                    .fields = &fields,
+                    .decls = &.{},
+                },
+            };
+            break :Query @Type(type_info);
+        };
+
+        fn fullComponentName(comptime q: Query) []const u8 {
+            return @tagName(q) ++ "." ++ @tagName(@field(q, @tagName(std.meta.activeTag(q))));
+        }
+
         pub const Iterator = struct {
             entities: *Self,
-            components: []const []const u8,
             archetype_index: usize = 0,
             row_index: u32 = 0,
 
@@ -386,13 +414,13 @@ pub fn Entities(all_components: anytype) type {
                 }
             };
 
-            pub fn next(iter: *Iterator) ?Entry {
+            pub fn next(iter: *Iterator, comptime components: []const Query) ?Entry {
                 const entities = iter.entities;
 
                 // If the archetype table we're looking at does not contain the components we're
                 // querying for, keep searching through tables until we find one that does.
                 var archetype = entities.archetypes.entries.get(iter.archetype_index).value;
-                while (!archetype.hasComponents(iter.components) or iter.row_index >= archetype.len) {
+                while (!hasComponents(archetype, components) or iter.row_index >= archetype.len) {
                     iter.archetype_index += 1;
                     iter.row_index = 0;
                     if (iter.archetype_index >= entities.archetypes.count()) {
@@ -407,10 +435,18 @@ pub fn Entities(all_components: anytype) type {
             }
         };
 
-        pub fn query(entities: *Self, components: []const []const u8) Iterator {
+        fn hasComponents(storage: ArchetypeStorage, comptime components: []const Query) bool {
+            var archetype = storage;
+            if (components.len == 0) return false;
+            inline for (components) |component| {
+                if (!archetype.hasComponent(fullComponentName(component))) return false;
+            }
+            return true;
+        }
+
+        pub fn query(entities: *Self) Iterator {
             return Iterator{
                 .entities = entities,
-                .components = components,
             };
         }
 
