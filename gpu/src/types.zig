@@ -196,6 +196,13 @@ pub const RenderPassTimestampLocation = enum(u32) {
     end = 0x00000001,
 };
 
+pub const RequestAdapterStatus = enum(u32) {
+    success = 0x00000000,
+    unavailable = 0x00000001,
+    err = 0x00000002,
+    unknown = 0x00000003,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
