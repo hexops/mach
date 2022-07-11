@@ -1,14 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUShaderStage {
-    WGPUShaderStage_None = 0x00000000,
-    WGPUShaderStage_Vertex = 0x00000001,
-    WGPUShaderStage_Fragment = 0x00000002,
-    WGPUShaderStage_Compute = 0x00000004,
-    WGPUShaderStage_Force32 = 0x7FFFFFFF
-} WGPUShaderStage;
-typedef WGPUFlags WGPUShaderStageFlags;
-
 typedef enum WGPUTextureUsage {
     WGPUTextureUsage_None = 0x00000000,
     WGPUTextureUsage_CopySrc = 0x00000001,

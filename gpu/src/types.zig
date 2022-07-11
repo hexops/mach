@@ -338,8 +338,29 @@ pub const MapMode = packed struct {
 
     pub const undef = MapMode{};
 
-    pub fn equal(a: ColorWriteMask, b: ColorWriteMask) bool {
+    pub fn equal(a: MapMode, b: MapMode) bool {
         return @truncate(u2, @bitCast(u32, a)) == @truncate(u2, @bitCast(u32, b));
+    }
+};
+
+pub const ShaderStage = packed struct {
+    vertex: bool = false,
+    fragment: bool = false,
+    compute: bool = false,
+
+    _padding: u29 = 0,
+
+    comptime {
+        std.debug.assert(
+            @sizeOf(@This()) == @sizeOf(u32) and
+                @bitSizeOf(@This()) == @bitSizeOf(u32),
+        );
+    }
+
+    pub const none = ShaderStage{};
+
+    pub fn equal(a: ShaderStage, b: ShaderStage) bool {
+        return @truncate(u3, @bitCast(u32, a)) == @truncate(u3, @bitCast(u32, b));
     }
 };
 
