@@ -69,3 +69,9 @@ pub const CompilationInfoRequestStatus = enum(u32) {
     device_lost = 0x00000002,
     unknown = 0x00000003,
 };
+
+pub const CompilationMessageType = enum(u32) {
+    err = 0x00000000,
+    warning = 0x00000001,
+    info = 0x00000002,
+};
