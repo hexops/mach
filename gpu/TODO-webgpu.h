@@ -1,14 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUPrimitiveTopology {
-    WGPUPrimitiveTopology_PointList = 0x00000000,
-    WGPUPrimitiveTopology_LineList = 0x00000001,
-    WGPUPrimitiveTopology_LineStrip = 0x00000002,
-    WGPUPrimitiveTopology_TriangleList = 0x00000003,
-    WGPUPrimitiveTopology_TriangleStrip = 0x00000004,
-    WGPUPrimitiveTopology_Force32 = 0x7FFFFFFF
-} WGPUPrimitiveTopology;
-
 typedef enum WGPUQueryType {
     WGPUQueryType_Occlusion = 0x00000000,
     WGPUQueryType_PipelineStatistics = 0x00000001,
