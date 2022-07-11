@@ -1,12 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUPresentMode {
-    WGPUPresentMode_Immediate = 0x00000000,
-    WGPUPresentMode_Mailbox = 0x00000001,
-    WGPUPresentMode_Fifo = 0x00000002,
-    WGPUPresentMode_Force32 = 0x7FFFFFFF
-} WGPUPresentMode;
-
 typedef enum WGPUPrimitiveTopology {
     WGPUPrimitiveTopology_PointList = 0x00000000,
     WGPUPrimitiveTopology_LineList = 0x00000001,
