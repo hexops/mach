@@ -91,3 +91,19 @@ Contributions are very welcome. Pull requests must be sent to [the main reposito
 Dawn's `webgpu.h` is the authoritative source for our API. You can find [the current version we use here](https://github.com/hexops/dawn/blob/generated-2022-07-10/out/Debug/gen/webgpu-headers/webgpu.h).
 
 When updating, every single change is verified against [the WebGPU spec itself](https://github.com/gpuweb/gpuweb/tree/main/spec) to ensure our WebAssembly backend also functions effectively.
+
+The rules for translating `webgpu.h` are as follows:
+
+* `WGPUBuffer` -> `gpu.Buffer` (opaque pointer types only go into their own `Buffer.zig` file, with a `ptr: *anyopaque` field.)
+* `WGPUBufferBindingType` -> `gpu.Buffer.BindingType` (purely because it's prefix matches an opaque pointer type, it thus goes into that file.)
+* Reserved Zig keywords:
+  * `undefined` -> `undef`
+  * `null` -> `nul`
+  * `error` -> `err`
+* Constant names map using a few simple rules, but it's easiest to describe them with some concrete examples:
+  * `RG11B10Ufloat -> rg11_b10_ufloat`
+  * `Depth24PlusStencil8 -> depth24_plus_stencil8`
+  * `BC5RGUnorm -> bc5_rg_unorm`
+  * `BC6HRGBUfloat -> bc6_hrgb_ufloat`
+  * `ASTC4x4UnormSrgb -> astc4x4_unorm_srgb`
+* Sometimes an enum will begin with numbers, e.g. `WGPUTextureViewDimension_2DArray`. In this case, we add a prefix so instead of the enum field being `2d_array` it is `dimension_2d_array` (an enum field name must not start with a number in Zig.)
