@@ -249,6 +249,12 @@ pub const StorageTextureAccess = enum(u32) {
     write_only = 0x00000001,
 };
 
+pub const StoreOp = enum(u32) {
+    undef = 0x00000000,
+    store = 0x00000001,
+    discard = 0x00000002,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
