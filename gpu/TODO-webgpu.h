@@ -1,14 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUCreatePipelineAsyncStatus {
-    WGPUCreatePipelineAsyncStatus_Success = 0x00000000,
-    WGPUCreatePipelineAsyncStatus_Error = 0x00000001,
-    WGPUCreatePipelineAsyncStatus_DeviceLost = 0x00000002,
-    WGPUCreatePipelineAsyncStatus_DeviceDestroyed = 0x00000003,
-    WGPUCreatePipelineAsyncStatus_Unknown = 0x00000004,
-    WGPUCreatePipelineAsyncStatus_Force32 = 0x7FFFFFFF
-} WGPUCreatePipelineAsyncStatus;
-
 typedef enum WGPUCullMode {
     WGPUCullMode_None = 0x00000000,
     WGPUCullMode_Front = 0x00000001,
