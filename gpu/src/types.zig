@@ -110,6 +110,24 @@ pub const ErrorType = enum(u32) {
     device_lost = 0x00000004,
 };
 
+pub const FeatureName = enum(u32) {
+    undef = 0x00000000,
+    depth_clip_control = 0x00000001,
+    depth32_float_stencil8 = 0x00000002,
+    timestamp_query = 0x00000003,
+    pipeline_statistics_query = 0x00000004,
+    texture_compression_bc = 0x00000005,
+    texture_compression_etc2 = 0x00000006,
+    texture_compression_astc = 0x00000007,
+    indirect_first_instance = 0x00000008,
+    depth_clamping = 0x000003e8,
+    dawn_shader_float16 = 0x000003e9,
+    dawn_internal_usages = 0x000003ea,
+    dawn_multi_planar_formats = 0x000003eb,
+    dawn_native = 0x000003ec,
+    chromium_experimental_dp4a = 0x000003ed,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
