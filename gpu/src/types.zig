@@ -150,6 +150,13 @@ pub const LoadOp = enum(u32) {
     load = 0x00000002,
 };
 
+pub const LoggingType = enum(u32) {
+    verbose = 0x00000000,
+    info = 0x00000001,
+    warning = 0x00000002,
+    err = 0x00000003,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }

@@ -1,13 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPULoggingType {
-    WGPULoggingType_Verbose = 0x00000000,
-    WGPULoggingType_Info = 0x00000001,
-    WGPULoggingType_Warning = 0x00000002,
-    WGPULoggingType_Error = 0x00000003,
-    WGPULoggingType_Force32 = 0x7FFFFFFF
-} WGPULoggingType;
-
 typedef enum WGPUPipelineStatisticName {
     WGPUPipelineStatisticName_VertexShaderInvocations = 0x00000000,
     WGPUPipelineStatisticName_ClipperInvocations = 0x00000001,
