@@ -40,6 +40,6 @@ pub const Usage = packed struct {
     }
 
     pub fn equal(a: Usage, b: Usage) bool {
-        return @truncate(u10, @bitCast(u32, a)) == @truncate(u10, @bitCast(u32, b)) ;
+        return @truncate(u10, @bitCast(u32, a)) == @truncate(u10, @bitCast(u32, b));
     }
 };
