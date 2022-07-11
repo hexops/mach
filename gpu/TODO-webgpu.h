@@ -1,13 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUMapMode {
-    WGPUMapMode_None = 0x00000000,
-    WGPUMapMode_Read = 0x00000001,
-    WGPUMapMode_Write = 0x00000002,
-    WGPUMapMode_Force32 = 0x7FFFFFFF
-} WGPUMapMode;
-typedef WGPUFlags WGPUMapModeFlags;
-
 typedef enum WGPUShaderStage {
     WGPUShaderStage_None = 0x00000000,
     WGPUShaderStage_Vertex = 0x00000001,

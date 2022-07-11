@@ -319,7 +319,27 @@ pub const ColorWriteMask = packed struct {
     };
 
     pub fn equal(a: ColorWriteMask, b: ColorWriteMask) bool {
-        return @truncate(u4, @bitCast(u32, a)) == @truncate(u4, @bitCast(u32, b)) ;
+        return @truncate(u4, @bitCast(u32, a)) == @truncate(u4, @bitCast(u32, b));
+    }
+};
+
+pub const MapMode = packed struct {
+    read: bool = false,
+    write: bool = false,
+
+    _padding: u30 = 0,
+
+    comptime {
+        std.debug.assert(
+            @sizeOf(@This()) == @sizeOf(u32) and
+                @bitSizeOf(@This()) == @bitSizeOf(u32),
+        );
+    }
+
+    pub const undef = MapMode{};
+
+    pub fn equal(a: ColorWriteMask, b: ColorWriteMask) bool {
+        return @truncate(u2, @bitCast(u32, a)) == @truncate(u2, @bitCast(u32, b));
     }
 };
 
