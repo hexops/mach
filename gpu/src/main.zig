@@ -33,3 +33,45 @@ pub const Surface = @import("Surface.zig");
 pub const SwapChain = @import("SwapChain.zig");
 pub const Texture = @import("Texture.zig");
 pub const TextureView = @import("TextureView.zig");
+
+test {
+    refAllDecls(@import("Adapter.zig"));
+    refAllDecls(@import("BindGroup.zig"));
+    refAllDecls(@import("BindGroupLayout.zig"));
+    refAllDecls(@import("Buffer.zig"));
+    refAllDecls(@import("CommandBuffer.zig"));
+    refAllDecls(@import("CommandEncoder.zig"));
+    refAllDecls(@import("ComputePassEncoder.zig"));
+    refAllDecls(@import("ComputePipeline.zig"));
+    refAllDecls(@import("Device.zig"));
+    refAllDecls(@import("ExternalTexture.zig"));
+    refAllDecls(@import("Instance.zig"));
+    refAllDecls(@import("PipelineLayout.zig"));
+    refAllDecls(@import("QuerySet.zig"));
+    refAllDecls(@import("Queue.zig"));
+    refAllDecls(@import("RenderBundle.zig"));
+    refAllDecls(@import("RenderBundleEncoder.zig"));
+    refAllDecls(@import("RenderPassEncoder.zig"));
+    refAllDecls(@import("RenderPipeline.zig"));
+    refAllDecls(@import("Sampler.zig"));
+    refAllDecls(@import("ShaderModule.zig"));
+    refAllDecls(@import("Surface.zig"));
+    refAllDecls(@import("SwapChain.zig"));
+    refAllDecls(@import("Texture.zig"));
+    refAllDecls(@import("TextureView.zig"));
+}
+
+fn refAllDecls(comptime T: type) void {
+    @setEvalBranchQuota(10000);
+    inline for (comptime @import("std").meta.declarations(T)) |decl| {
+        if (decl.is_pub) {
+            if (@TypeOf(@field(T, decl.name)) == type) {
+                switch (@typeInfo(@field(T, decl.name))) {
+                    .Struct, .Enum, .Union, .Opaque => refAllDecls(@field(T, decl.name)),
+                    else => {},
+                }
+            }
+            _ = @field(T, decl.name);
+        }
+    }
+}
