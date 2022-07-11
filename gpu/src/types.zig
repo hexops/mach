@@ -165,6 +165,12 @@ pub const PipelineStatisticName = enum(u32) {
     compute_shader_invocations = 0x00000004,
 };
 
+pub const PowerPreference = enum(u32) {
+    undef = 0x00000000,
+    low_power = 0x00000001,
+    high_performance = 0x00000002,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }

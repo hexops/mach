@@ -1,12 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUPowerPreference {
-    WGPUPowerPreference_Undefined = 0x00000000,
-    WGPUPowerPreference_LowPower = 0x00000001,
-    WGPUPowerPreference_HighPerformance = 0x00000002,
-    WGPUPowerPreference_Force32 = 0x7FFFFFFF
-} WGPUPowerPreference;
-
 typedef enum WGPUPresentMode {
     WGPUPresentMode_Immediate = 0x00000000,
     WGPUPresentMode_Mailbox = 0x00000001,
