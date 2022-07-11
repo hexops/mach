@@ -144,6 +144,12 @@ pub const IndexFormat = enum(u32) {
     uint32 = 0x00000002,
 };
 
+pub const LoadOp = enum(u32) {
+    undef = 0x00000000,
+    clear = 0x00000001,
+    load = 0x00000002,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
