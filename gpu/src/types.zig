@@ -75,3 +75,8 @@ pub const CompilationMessageType = enum(u32) {
     warning = 0x00000001,
     info = 0x00000002,
 };
+
+pub const ComputePassTimestampLocation = enum(u32) {
+    beginning = 0x00000000,
+    end = 0x00000001,
+};
