@@ -1,3 +1,5 @@
+const std = @import("std");
+
 ptr: *anyopaque,
 
 pub const BindingType = enum(u32) {
@@ -28,9 +30,7 @@ pub const Usage = packed struct {
     indirect: bool = false,
     query_resolve: bool = false,
 
-    _pad0: u2 = 0,
-    _pad1: u8 = 0,
-    _pad2: u16 = 0,
+    _padding: u22 = 0,
 
     comptime {
         std.debug.assert(
@@ -40,6 +40,6 @@ pub const Usage = packed struct {
     }
 
     pub fn equal(a: Usage, b: Usage) bool {
-        return @bitCast(a, u32) == @bitCast(b, u32);
+        return @truncate(u10, @bitCast(u32, a)) == @truncate(u10, @bitCast(u32, b)) ;
     }
 };
