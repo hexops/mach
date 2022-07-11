@@ -1,11 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUAlphaMode {
-    WGPUAlphaMode_Premultiplied = 0x00000000,
-    WGPUAlphaMode_Unpremultiplied = 0x00000001,
-    WGPUAlphaMode_Force32 = 0x7FFFFFFF
-} WGPUAlphaMode;
-
 typedef enum WGPUBackendType {
     WGPUBackendType_Null = 0x00000000,
     WGPUBackendType_WebGPU = 0x00000001,
