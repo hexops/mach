@@ -34,6 +34,8 @@ pub const SwapChain = @import("SwapChain.zig");
 pub const Texture = @import("Texture.zig");
 pub const TextureView = @import("TextureView.zig");
 
+pub const AlphaMode = @import("types.zig").AlphaMode;
+
 test {
     refAllDecls(@import("Adapter.zig"));
     refAllDecls(@import("BindGroup.zig"));
@@ -59,6 +61,7 @@ test {
     refAllDecls(@import("SwapChain.zig"));
     refAllDecls(@import("Texture.zig"));
     refAllDecls(@import("TextureView.zig"));
+    refAllDecls(@import("types.zig"));
 }
 
 fn refAllDecls(comptime T: type) void {
