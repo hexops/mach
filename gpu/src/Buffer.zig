@@ -15,3 +15,31 @@ pub const MapAsyncStatus = enum(u32) {
     destroyed_before_callback = 0x00000004,
     unmapped_before_callback = 0x00000005,
 };
+
+pub const Usage = packed struct {
+    map_read: bool = false,
+    map_write: bool = false,
+    copy_src: bool = false,
+    copy_dst: bool = false,
+    index: bool = false,
+    vertex: bool = false,
+    uniform: bool = false,
+    storage: bool = false,
+    indirect: bool = false,
+    query_resolve: bool = false,
+
+    _pad0: u2 = 0,
+    _pad1: u8 = 0,
+    _pad2: u16 = 0,
+
+    comptime {
+        std.debug.assert(
+            @sizeOf(@This()) == @sizeOf(u32) and
+                @bitSizeOf(@This()) == @bitSizeOf(u32),
+        );
+    }
+
+    pub fn equal(a: Usage, b: Usage) bool {
+        return @bitCast(a, u32) == @bitCast(b, u32);
+    }
+};
