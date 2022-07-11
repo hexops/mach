@@ -1,30 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef struct WGPUAdapterImpl* WGPUAdapter;
-typedef struct WGPUBindGroupImpl* WGPUBindGroup;
-typedef struct WGPUBindGroupLayoutImpl* WGPUBindGroupLayout;
-typedef struct WGPUBufferImpl* WGPUBuffer;
-typedef struct WGPUCommandBufferImpl* WGPUCommandBuffer;
-typedef struct WGPUCommandEncoderImpl* WGPUCommandEncoder;
-typedef struct WGPUComputePassEncoderImpl* WGPUComputePassEncoder;
-typedef struct WGPUComputePipelineImpl* WGPUComputePipeline;
-typedef struct WGPUDeviceImpl* WGPUDevice;
-typedef struct WGPUExternalTextureImpl* WGPUExternalTexture;
-typedef struct WGPUInstanceImpl* WGPUInstance;
-typedef struct WGPUPipelineLayoutImpl* WGPUPipelineLayout;
-typedef struct WGPUQuerySetImpl* WGPUQuerySet;
-typedef struct WGPUQueueImpl* WGPUQueue;
-typedef struct WGPURenderBundleImpl* WGPURenderBundle;
-typedef struct WGPURenderBundleEncoderImpl* WGPURenderBundleEncoder;
-typedef struct WGPURenderPassEncoderImpl* WGPURenderPassEncoder;
-typedef struct WGPURenderPipelineImpl* WGPURenderPipeline;
-typedef struct WGPUSamplerImpl* WGPUSampler;
-typedef struct WGPUShaderModuleImpl* WGPUShaderModule;
-typedef struct WGPUSurfaceImpl* WGPUSurface;
-typedef struct WGPUSwapChainImpl* WGPUSwapChain;
-typedef struct WGPUTextureImpl* WGPUTexture;
-typedef struct WGPUTextureViewImpl* WGPUTextureView;
-
 typedef enum WGPUAdapterType {
     WGPUAdapterType_DiscreteGPU = 0x00000000,
     WGPUAdapterType_IntegratedGPU = 0x00000001,
