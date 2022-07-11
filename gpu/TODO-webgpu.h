@@ -1,13 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUQueueWorkDoneStatus {
-    WGPUQueueWorkDoneStatus_Success = 0x00000000,
-    WGPUQueueWorkDoneStatus_Error = 0x00000001,
-    WGPUQueueWorkDoneStatus_Unknown = 0x00000002,
-    WGPUQueueWorkDoneStatus_DeviceLost = 0x00000003,
-    WGPUQueueWorkDoneStatus_Force32 = 0x7FFFFFFF
-} WGPUQueueWorkDoneStatus;
-
 typedef enum WGPURenderPassTimestampLocation {
     WGPURenderPassTimestampLocation_Beginning = 0x00000000,
     WGPURenderPassTimestampLocation_End = 0x00000001,
