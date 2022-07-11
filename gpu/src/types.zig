@@ -233,6 +233,17 @@ pub const SType = enum(u32) {
     dawn_cache_device_descriptor = 0x000003ED,
 };
 
+pub const StencilOperation = enum(u32) {
+    keep = 0x00000000,
+    zero = 0x00000001,
+    replace = 0x00000002,
+    invert = 0x00000003,
+    increment_clamp = 0x00000004,
+    decrement_clamp = 0x00000005,
+    increment_wrap = 0x00000006,
+    decrement_wrap = 0x00000007,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
