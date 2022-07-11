@@ -1,13 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUCompilationInfoRequestStatus {
-    WGPUCompilationInfoRequestStatus_Success = 0x00000000,
-    WGPUCompilationInfoRequestStatus_Error = 0x00000001,
-    WGPUCompilationInfoRequestStatus_DeviceLost = 0x00000002,
-    WGPUCompilationInfoRequestStatus_Unknown = 0x00000003,
-    WGPUCompilationInfoRequestStatus_Force32 = 0x7FFFFFFF
-} WGPUCompilationInfoRequestStatus;
-
 typedef enum WGPUCompilationMessageType {
     WGPUCompilationMessageType_Error = 0x00000000,
     WGPUCompilationMessageType_Warning = 0x00000001,
