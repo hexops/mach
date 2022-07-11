@@ -1,14 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUErrorType {
-    WGPUErrorType_NoError = 0x00000000,
-    WGPUErrorType_Validation = 0x00000001,
-    WGPUErrorType_OutOfMemory = 0x00000002,
-    WGPUErrorType_Unknown = 0x00000003,
-    WGPUErrorType_DeviceLost = 0x00000004,
-    WGPUErrorType_Force32 = 0x7FFFFFFF
-} WGPUErrorType;
-
 typedef enum WGPUFeatureName {
     WGPUFeatureName_Undefined = 0x00000000,
     WGPUFeatureName_DepthClipControl = 0x00000001,
