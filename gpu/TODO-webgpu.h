@@ -1,11 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUFrontFace {
-    WGPUFrontFace_CCW = 0x00000000,
-    WGPUFrontFace_CW = 0x00000001,
-    WGPUFrontFace_Force32 = 0x7FFFFFFF
-} WGPUFrontFace;
-
 typedef enum WGPUIndexFormat {
     WGPUIndexFormat_Undefined = 0x00000000,
     WGPUIndexFormat_Uint16 = 0x00000001,
