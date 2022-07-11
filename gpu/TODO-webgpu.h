@@ -1,12 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUTextureDimension {
-    WGPUTextureDimension_1D = 0x00000000,
-    WGPUTextureDimension_2D = 0x00000001,
-    WGPUTextureDimension_3D = 0x00000002,
-    WGPUTextureDimension_Force32 = 0x7FFFFFFF
-} WGPUTextureDimension;
-
 typedef enum WGPUTextureFormat {
     WGPUTextureFormat_Undefined = 0x00000000,
     WGPUTextureFormat_R8Unorm = 0x00000001,
