@@ -1,3 +1,5 @@
+const testing = @import("std").testing;
+
 pub const AlphaMode = enum(u32) {
     premultiplied = 0x00000000,
     unpremultiplied = 0x00000001,
@@ -12,20 +14,20 @@ pub const BackendType = enum(u32) {
     vulkan,
     opengl,
     opengles,
-};
 
-pub fn backendTypeName(t: BackendType) []const u8 {
-    return switch (t) {
-        .nul => "Null",
-        .webgpu => "WebGPU",
-        .d3d11 => "D3D11",
-        .d3d12 => "D3D12",
-        .metal => "Metal",
-        .vulkan => "Vulkan",
-        .opengl => "OpenGL",
-        .opengles => "OpenGLES",
-    };
-}
+    pub fn name(t: BackendType) []const u8 {
+        return switch (t) {
+            .nul => "Null",
+            .webgpu => "WebGPU",
+            .d3d11 => "D3D11",
+            .d3d12 => "D3D12",
+            .metal => "Metal",
+            .vulkan => "Vulkan",
+            .opengl => "OpenGL",
+            .opengles => "OpenGLES",
+        };
+    }
+};
 
 pub const BlendFactor = enum(u32) {
     zero = 0x00000000,
@@ -94,3 +96,11 @@ pub const CullMode = enum(u32) {
     front = 0x00000001,
     back = 0x00000002,
 };
+
+test "BackendType name" {
+    try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
+}
+
+test "enum name" {
+    try testing.expectEqualStrings("front", @tagName(CullMode.front));
+}
