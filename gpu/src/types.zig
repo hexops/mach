@@ -209,6 +209,30 @@ pub const RequestDeviceStatus = enum(u32) {
     unknown = 0x00000002,
 };
 
+pub const SType = enum(u32) {
+    invalid = 0x00000000,
+    surface_descriptor_from_metal_layer = 0x00000001,
+    surface_descriptor_from_windows_hwnd = 0x00000002,
+    surface_descriptor_from_xlib_window = 0x00000003,
+    surface_descriptor_from_canvas_html_selector = 0x00000004,
+    shader_module_spirv_descriptor = 0x00000005,
+    shader_module_wgsl_descriptor = 0x00000006,
+    primitive_depth_clip_control = 0x00000007,
+    surface_descriptor_from_wayland_surface = 0x00000008,
+    surface_descriptor_from_android_native_window = 0x00000009,
+    surface_descriptor_from_windows_core_window = 0x0000000B,
+    external_texture_binding_entry = 0x0000000C,
+    external_texture_binding_layout = 0x0000000D,
+    surface_descriptor_from_windows_swap_chain_panel = 0x0000000E,
+    render_pass_descriptor_max_draw_count = 0x0000000F,
+    dawn_texture_internal_usage_descriptor = 0x000003E8,
+    primitive_depth_clamping_state = 0x000003E9,
+    dawn_toggles_device_descriptor = 0x000003EA,
+    dawn_encoder_internal_usage_descriptor = 0x000003EB,
+    dawn_instance_descriptor = 0x000003EC,
+    dawn_cache_device_descriptor = 0x000003ED,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
