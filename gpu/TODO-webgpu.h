@@ -1,11 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUDeviceLostReason {
-    WGPUDeviceLostReason_Undefined = 0x00000000,
-    WGPUDeviceLostReason_Destroyed = 0x00000001,
-    WGPUDeviceLostReason_Force32 = 0x7FFFFFFF
-} WGPUDeviceLostReason;
-
 typedef enum WGPUErrorFilter {
     WGPUErrorFilter_Validation = 0x00000000,
     WGPUErrorFilter_OutOfMemory = 0x00000001,
