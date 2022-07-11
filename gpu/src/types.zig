@@ -97,6 +97,11 @@ pub const CullMode = enum(u32) {
     back = 0x00000002,
 };
 
+pub const ErrorFilter = enum(u32) {
+    validation = 0x00000000,
+    out_of_memory = 0x00000001,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }

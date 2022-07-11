@@ -1,11 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUErrorFilter {
-    WGPUErrorFilter_Validation = 0x00000000,
-    WGPUErrorFilter_OutOfMemory = 0x00000001,
-    WGPUErrorFilter_Force32 = 0x7FFFFFFF
-} WGPUErrorFilter;
-
 typedef enum WGPUErrorType {
     WGPUErrorType_NoError = 0x00000000,
     WGPUErrorType_Validation = 0x00000001,
