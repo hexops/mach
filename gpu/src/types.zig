@@ -133,6 +133,11 @@ pub const FilterMode = enum(u32) {
     linear = 0x00000001,
 };
 
+pub const FrontFace = enum(u32) {
+    ccw = 0x00000000,
+    cw = 0x00000001,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
