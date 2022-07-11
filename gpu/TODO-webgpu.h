@@ -1,12 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUCullMode {
-    WGPUCullMode_None = 0x00000000,
-    WGPUCullMode_Front = 0x00000001,
-    WGPUCullMode_Back = 0x00000002,
-    WGPUCullMode_Force32 = 0x7FFFFFFF
-} WGPUCullMode;
-
 typedef enum WGPUDeviceLostReason {
     WGPUDeviceLostReason_Undefined = 0x00000000,
     WGPUDeviceLostReason_Destroyed = 0x00000001,
