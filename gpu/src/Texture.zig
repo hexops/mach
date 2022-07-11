@@ -119,3 +119,12 @@ pub const Format = enum(u32) {
     astc_12x12_unorm_srgb = 0x0000005e,
     r8_bg8_biplanar420_unorm = 0x0000005f,
 };
+
+pub const SampleType = enum(u32) {
+    undef = 0x00000000,
+    float = 0x00000001,
+    unfilterable_float = 0x00000002,
+    depth = 0x00000003,
+    sint = 0x00000004,
+    uint = 0x00000005,
+};
