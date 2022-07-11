@@ -289,6 +289,12 @@ pub const VertexFormat = enum(u32) {
     sint32x4 = 0x0000001e,
 };
 
+pub const VertexStepMode = enum(u32) {
+    vertex = 0x00000000,
+    instance = 0x00000001,
+    vertex_buffer_not_used = 0x00000002,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }

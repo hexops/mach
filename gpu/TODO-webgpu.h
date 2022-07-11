@@ -1,12 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUVertexStepMode {
-    WGPUVertexStepMode_Vertex = 0x00000000,
-    WGPUVertexStepMode_Instance = 0x00000001,
-    WGPUVertexStepMode_VertexBufferNotUsed = 0x00000002,
-    WGPUVertexStepMode_Force32 = 0x7FFFFFFF
-} WGPUVertexStepMode;
-
 typedef enum WGPUBufferUsage {
     WGPUBufferUsage_None = 0x00000000,
     WGPUBufferUsage_MapRead = 0x00000001,
