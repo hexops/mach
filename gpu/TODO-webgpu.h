@@ -1,22 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPUBlendFactor {
-    WGPUBlendFactor_Zero = 0x00000000,
-    WGPUBlendFactor_One = 0x00000001,
-    WGPUBlendFactor_Src = 0x00000002,
-    WGPUBlendFactor_OneMinusSrc = 0x00000003,
-    WGPUBlendFactor_SrcAlpha = 0x00000004,
-    WGPUBlendFactor_OneMinusSrcAlpha = 0x00000005,
-    WGPUBlendFactor_Dst = 0x00000006,
-    WGPUBlendFactor_OneMinusDst = 0x00000007,
-    WGPUBlendFactor_DstAlpha = 0x00000008,
-    WGPUBlendFactor_OneMinusDstAlpha = 0x00000009,
-    WGPUBlendFactor_SrcAlphaSaturated = 0x0000000A,
-    WGPUBlendFactor_Constant = 0x0000000B,
-    WGPUBlendFactor_OneMinusConstant = 0x0000000C,
-    WGPUBlendFactor_Force32 = 0x7FFFFFFF
-} WGPUBlendFactor;
-
 typedef enum WGPUBlendOperation {
     WGPUBlendOperation_Add = 0x00000000,
     WGPUBlendOperation_Subtract = 0x00000001,

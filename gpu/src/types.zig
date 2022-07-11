@@ -26,3 +26,19 @@ pub fn backendTypeName(t: BackendType) []const u8 {
         .opengles => "OpenGLES",
     };
 }
+
+pub const BlendFactor = enum(u32) {
+    zero = 0x00000000,
+    one = 0x00000001,
+    src = 0x00000002,
+    one_minus_src = 0x00000003,
+    src_alpha = 0x00000004,
+    one_minus_src_alpha = 0x00000005,
+    dst = 0x00000006,
+    one_minus_dst = 0x00000007,
+    dst_alpha = 0x00000008,
+    one_minus_dst_alpha = 0x00000009,
+    src_alpha_saturated = 0x0000000A,
+    constant = 0x0000000B,
+    one_minus_constant = 0x0000000C,
+};
