@@ -1,13 +1,5 @@
 typedef uint32_t WGPUFlags;
 
-typedef enum WGPURequestAdapterStatus {
-    WGPURequestAdapterStatus_Success = 0x00000000,
-    WGPURequestAdapterStatus_Unavailable = 0x00000001,
-    WGPURequestAdapterStatus_Error = 0x00000002,
-    WGPURequestAdapterStatus_Unknown = 0x00000003,
-    WGPURequestAdapterStatus_Force32 = 0x7FFFFFFF
-} WGPURequestAdapterStatus;
-
 typedef enum WGPURequestDeviceStatus {
     WGPURequestDeviceStatus_Success = 0x00000000,
     WGPURequestDeviceStatus_Error = 0x00000001,
