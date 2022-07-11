@@ -1,4 +1,5 @@
-const testing = @import("std").testing;
+const std = @import("std");
+const testing = std.testing;
 
 pub const AlphaMode = enum(u32) {
     premultiplied = 0x00000000,
@@ -301,9 +302,7 @@ pub const ColorWriteMask = packed struct {
     blue: bool = false,
     alpha: bool = false,
 
-    _pad0: u4 = 0,
-    _pad1: u8 = 0,
-    _pad2: u16 = 0,
+    _padding: u28 = 0,
 
     comptime {
         std.debug.assert(
@@ -320,7 +319,7 @@ pub const ColorWriteMask = packed struct {
     };
 
     pub fn equal(a: ColorWriteMask, b: ColorWriteMask) bool {
-        return @bitCast(a, u32) == @bitCast(b, u32);
+        return @truncate(u4, @bitCast(u32, a)) == @truncate(u4, @bitCast(u32, b)) ;
     }
 };
 
