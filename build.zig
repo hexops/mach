@@ -5,7 +5,7 @@ const gpu_dawn = @import("gpu-dawn/build.zig");
 pub const glfw = @import("glfw/build.zig");
 pub const ecs = @import("ecs/build.zig");
 const freetype = @import("freetype/build.zig");
-const js_runtime = @import("js-runtime/build.zig");
+const sysjs = @import("sysjs/build.zig");
 const Pkg = std.build.Pkg;
 
 pub fn build(b: *std.build.Builder) void {
@@ -166,7 +166,7 @@ pub const App = struct {
         deps.append(gpu.pkg) catch unreachable;
         switch (platform) {
             .native => deps.append(glfw.pkg) catch unreachable,
-            .web => deps.append(js_runtime.pkg) catch unreachable,
+            .web => deps.append(sysjs.pkg) catch unreachable,
         }
         if (options.deps) |app_deps| deps.appendSlice(app_deps) catch unreachable;
 
@@ -180,7 +180,7 @@ pub const App = struct {
             if (platform == .web) {
                 const lib = b.addSharedLibrary(options.name, thisDir() ++ "/src/platform/wasm.zig", .unversioned);
                 lib.addPackage(gpu.pkg);
-                lib.addPackage(js_runtime.pkg);
+                lib.addPackage(sysjs.pkg);
 
                 break :blk lib;
             } else {
@@ -214,7 +214,7 @@ pub const App = struct {
             // Set install directory to '{prefix}/www'
             app.getInstallStep().?.dest_dir = web_install_dir;
 
-            inline for (.{ "/src/platform/mach.js", "/js-runtime/src/js-runtime.js" }) |js| {
+            inline for (.{ "/src/platform/mach.js", "/sysjs/src/mach-sysjs.js" }) |js| {
                 const install_js = app.b.addInstallFileWithDir(
                     .{ .path = thisDir() ++ js },
                     web_install_dir,

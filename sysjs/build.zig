@@ -12,7 +12,7 @@ pub fn build(b: *std.build.Builder) void {
 }
 
 pub const pkg = std.build.Pkg{
-    .name = "js-runtime",
+    .name = "sysjs",
     .source = .{ .path = thisDir() ++ "/src/main.zig" },
     .dependencies = &[_]std.build.Pkg{},
 };
