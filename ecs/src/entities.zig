@@ -401,39 +401,43 @@ pub fn Entities(all_components: anytype) type {
             return @tagName(q) ++ "." ++ @tagName(@field(q, @tagName(std.meta.activeTag(q))));
         }
 
-        pub const Iterator = struct {
-            entities: *Self,
-            archetype_index: usize = 0,
-            row_index: u32 = 0,
+        pub fn Iter(comptime components: []const Query) type {
+            return struct {
+                entities: *Self,
+                archetype_index: usize = 0,
+                row_index: u32 = 0,
 
-            pub const Entry = struct {
-                entity: EntityID,
+                const Iterator = @This();
 
-                pub fn unlock(e: Entry) void {
-                    _ = e;
+                pub const Entry = struct {
+                    entity: EntityID,
+
+                    pub fn unlock(e: Entry) void {
+                        _ = e;
+                    }
+                };
+
+                pub fn next(iter: *Iterator) ?Entry {
+                    const entities = iter.entities;
+
+                    // If the archetype table we're looking at does not contain the components we're
+                    // querying for, keep searching through tables until we find one that does.
+                    var archetype = entities.archetypes.entries.get(iter.archetype_index).value;
+                    while (!hasComponents(archetype, components) or iter.row_index >= archetype.len) {
+                        iter.archetype_index += 1;
+                        iter.row_index = 0;
+                        if (iter.archetype_index >= entities.archetypes.count()) {
+                            return null;
+                        }
+                        archetype = entities.archetypes.entries.get(iter.archetype_index).value;
+                    }
+
+                    const row_entity_id = archetype.get(iter.entities.allocator, iter.row_index, "id", EntityID).?;
+                    iter.row_index += 1;
+                    return Entry{ .entity = row_entity_id };
                 }
             };
-
-            pub fn next(iter: *Iterator, comptime components: []const Query) ?Entry {
-                const entities = iter.entities;
-
-                // If the archetype table we're looking at does not contain the components we're
-                // querying for, keep searching through tables until we find one that does.
-                var archetype = entities.archetypes.entries.get(iter.archetype_index).value;
-                while (!hasComponents(archetype, components) or iter.row_index >= archetype.len) {
-                    iter.archetype_index += 1;
-                    iter.row_index = 0;
-                    if (iter.archetype_index >= entities.archetypes.count()) {
-                        return null;
-                    }
-                    archetype = entities.archetypes.entries.get(iter.archetype_index).value;
-                }
-
-                const row_entity_id = archetype.get(iter.entities.allocator, iter.row_index, "id", EntityID).?;
-                iter.row_index += 1;
-                return Entry{ .entity = row_entity_id };
-            }
-        };
+        }
 
         fn hasComponents(storage: ArchetypeStorage, comptime components: []const Query) bool {
             var archetype = storage;
@@ -444,8 +448,8 @@ pub fn Entities(all_components: anytype) type {
             return true;
         }
 
-        pub fn query(entities: *Self) Iterator {
-            return Iterator{
+        pub fn query(entities: *Self, comptime components: []const Query) Iter(components) {
+            return Iter(components){
                 .entities = entities,
             };
         }
