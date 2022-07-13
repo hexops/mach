@@ -107,6 +107,24 @@ pub fn build(b: *std.build.Builder) void {
 
     const compile_all = b.step("compile-all", "Compile all examples and applications");
     compile_all.dependOn(b.getInstallStep());
+
+    // compiles the `libmach` shared library
+    const lib = b.addSharedLibrary("mach", "src/bindings.zig", .unversioned);
+    const app_pkg = std.build.Pkg{
+        .name = "app",
+        .source = .{ .path = "src/platform/libmach.zig" },
+    };
+    lib.addPackage(app_pkg);
+    lib.addPackage(gpu.pkg);
+    lib.addPackage(glfw.pkg);
+    const gpu_options = gpu.Options{
+        .glfw_options = @bitCast(@import("gpu/libs/mach-glfw/build.zig").Options, options.glfw_options),
+        .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
+    };
+    glfw.link(b, lib, options.glfw_options);
+    gpu.link(b, lib, gpu_options);
+    lib.setOutputDir("./libmach/build");
+    lib.install();
 }
 
 pub const Options = struct {
