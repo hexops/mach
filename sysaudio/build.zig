@@ -4,7 +4,7 @@ const Builder = std.build.Builder;
 const soundio_path = thisDir() ++ "/upstream/soundio";
 
 pub const pkg = std.build.Pkg{
-    .name = "audio",
+    .name = "sysaudio",
     .source = .{ .path = thisDir() ++ "/src/main.zig" },
 };
 

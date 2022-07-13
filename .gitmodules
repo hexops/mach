@@ -28,6 +28,6 @@
 [submodule "glfw/upstream"]
 	path = glfw/upstream
 	url = https://github.com/hexops/glfw
-[submodule "audio/upstream"]
-	path = audio/upstream
+[submodule "sysaudio/upstream"]
+	path = sysaudio/upstream
 	url = https://github.com/hexops/soundio
