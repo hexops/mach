@@ -56,9 +56,7 @@ pub const CharmapIterator = struct {
 handle: c.FT_Face,
 
 pub fn deinit(self: Face) void {
-    intToError(c.FT_Done_Face(self.handle)) catch |err| {
-        std.log.err("mach/freetype: Failed to destroy Face: {}", .{err});
-    };
+    _ = c.FT_Done_Face(self.handle);
 }
 
 pub fn attachFile(self: Face, path: []const u8) Error!void {
