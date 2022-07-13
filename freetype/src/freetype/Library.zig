@@ -24,9 +24,7 @@ pub fn init() Error!Library {
 }
 
 pub fn deinit(self: Library) void {
-    intToError(c.FT_Done_FreeType(self.handle)) catch |err| {
-        std.log.err("mach/freetype: Failed to deinitialize Library: {}", .{err});
-    };
+    _ = c.FT_Done_FreeType(self.handle);
 }
 
 pub fn newFace(self: Library, path: []const u8, face_index: i32) Error!Face {
