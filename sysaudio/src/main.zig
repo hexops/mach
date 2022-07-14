@@ -2,7 +2,7 @@ const std = @import("std");
 const mem = std.mem;
 const testing = std.testing;
 const builtin = @import("builtin");
-const Backend = switch (builtin.os.tag) {
+const Backend = if (builtin.cpu.arch == .wasm32) @import("webaudio.zig") else switch (builtin.os.tag) {
     .linux,
     .windows,
     .macos,
