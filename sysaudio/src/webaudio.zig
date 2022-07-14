@@ -52,12 +52,24 @@ pub fn deinit(audio: Audio) void {
 
 pub fn waitEvents(_: Audio) void {}
 
+const default_channel_count = 2;
+const default_sample_rate = 48000;
+
 pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
-    const context = audio.context_constructor.construct(&.{});
+    // NOTE: WebAudio only supports F32 audio format, so config.format is unused
+    const mode = config.mode orelse .output;
+    const channels = config.channels orelse default_channel_count;
+    const sample_rate = config.sample_rate orelse default_sample_rate;
+
+    const context_options = js.createMap();
+    defer context_options.deinit();
+    context_options.set("sampleRate", js.createNumber(@intToFloat(f64, sample_rate)));
+
+    const context = audio.context_constructor.construct(&.{context_options.toValue()});
     _ = context.call("suspend", &.{});
 
-    const input_channels = if (config.mode.? == .input) js.createNumber(@intToFloat(f64, config.channels.?)) else js.createUndefined();
-    const output_channels = if (config.mode.? == .output) js.createNumber(@intToFloat(f64, config.channels.?)) else js.createUndefined();
+    const input_channels = if (mode == .input) js.createNumber(@intToFloat(f64, channels)) else js.createUndefined();
+    const output_channels = if (mode == .output) js.createNumber(@intToFloat(f64, channels)) else js.createUndefined();
 
     const node = context.call("createScriptProcessor", &.{ js.createNumber(4096), input_channels, output_channels }).view(.object);
     defer node.deinit();
