@@ -5,6 +5,7 @@ const gpu_dawn = @import("gpu-dawn/build.zig");
 pub const glfw = @import("glfw/build.zig");
 pub const ecs = @import("ecs/build.zig");
 const freetype = @import("freetype/build.zig");
+const sysaudio = @import("sysaudio/build.zig");
 const sysjs = @import("sysjs/build.zig");
 const Pkg = std.build.Pkg;
 
@@ -69,6 +70,9 @@ pub fn build(b: *std.build.Builder) void {
         inline for (example.packages) |p| {
             if (std.mem.eql(u8, p.name, freetype.pkg.name))
                 freetype.link(example_app.b, example_app.step, .{});
+
+            if (std.mem.eql(u8, p.name, sysaudio.pkg.name))
+                sysaudio.link(example_app.b, example_app.step, .{});
         }
 
         example_app.link(options);
