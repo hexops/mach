@@ -1,11 +1,13 @@
 const std = @import("std");
 const Builder = std.build.Builder;
+const sysjs = @import("libs/mach-sysjs/build.zig");
 
 const soundio_path = thisDir() ++ "/upstream/soundio";
 
 pub const pkg = std.build.Pkg{
     .name = "sysaudio",
     .source = .{ .path = thisDir() ++ "/src/main.zig" },
+    .dependencies = &.{sysjs.pkg},
 };
 
 const soundio_pkg = std.build.Pkg{
@@ -58,9 +60,11 @@ pub fn build(b: *Builder) void {
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     _ = options;
-    const soundio_lib = buildSoundIo(b, step);
-    step.linkLibrary(soundio_lib);
-    step.addIncludePath(soundio_path);
+    if (step.target.toTarget().cpu.arch != .wasm32) {
+        const soundio_lib = buildSoundIo(b, step);
+        step.linkLibrary(soundio_lib);
+        step.addIncludePath(soundio_path);
+    }
 }
 
 fn buildSoundIo(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
