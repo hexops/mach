@@ -11,6 +11,14 @@ pub const Device = struct {
     pub fn deinit(device: Device) void {
         device.context.deinit();
     }
+
+    pub fn pause(device: Device) void {
+        device.context.call("suspend", &.{});
+    }
+
+    pub fn start(device: Device) void {
+        _ = device.context.call("resume", &.{});
+    }
 };
 
 pub const DeviceIterator = struct {
