@@ -1,13 +1,3 @@
-typedef struct WGPUChainedStruct {
-    struct WGPUChainedStruct const * next;
-    WGPUSType sType;
-} WGPUChainedStruct;
-
-typedef struct WGPUChainedStructOut {
-    struct WGPUChainedStructOut * next;
-    WGPUSType sType;
-} WGPUChainedStructOut;
-
 typedef struct WGPUAdapterProperties {
     WGPUChainedStructOut * nextInChain;
     uint32_t vendorID;
