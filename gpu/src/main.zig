@@ -23,7 +23,7 @@ pub const Instance = @import("instance.zig").Instance;
 pub const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
 pub const QuerySet = @import("query_set.zig").QuerySet;
 pub const Queue = @import("queue.zig").Queue;
-pub const RenderBundle = @import("RenderBundle.zig");
+pub const RenderBundle = @import("render_bundle.zig").RenderBundle;
 pub const RenderBundleEncoder = @import("RenderBundleEncoder.zig");
 pub const RenderPassEncoder = @import("RenderPassEncoder.zig");
 pub const RenderPipeline = @import("RenderPipeline.zig");
@@ -51,7 +51,7 @@ test {
     refAllDecls(@import("pipeline_layout.zig"));
     refAllDecls(@import("query_set.zig"));
     refAllDecls(@import("queue.zig"));
-    refAllDecls(@import("RenderBundle.zig"));
+    refAllDecls(@import("render_bundle.zig"));
     refAllDecls(@import("RenderBundleEncoder.zig"));
     refAllDecls(@import("RenderPassEncoder.zig"));
     refAllDecls(@import("RenderPipeline.zig"));
