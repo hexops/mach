@@ -27,7 +27,7 @@ pub const RenderBundle = @import("render_bundle.zig").RenderBundle;
 pub const RenderBundleEncoder = @import("render_bundle_encoder.zig").RenderBundleEncoder;
 pub const RenderPassEncoder = @import("render_pass_encoder.zig").RenderPassEncoder;
 pub const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
-pub const Sampler = @import("Sampler.zig");
+pub const Sampler = @import("sampler.zig").Sampler;
 pub const ShaderModule = @import("ShaderModule.zig");
 pub const Surface = @import("Surface.zig");
 pub const SwapChain = @import("SwapChain.zig");
@@ -55,7 +55,7 @@ test {
     refAllDecls(@import("render_bundle_encoder.zig"));
     refAllDecls(@import("render_pass_encoder.zig"));
     refAllDecls(@import("render_pipeline.zig"));
-    refAllDecls(@import("Sampler.zig"));
+    refAllDecls(@import("sampler.zig"));
     refAllDecls(@import("ShaderModule.zig"));
     refAllDecls(@import("Surface.zig"));
     refAllDecls(@import("SwapChain.zig"));
