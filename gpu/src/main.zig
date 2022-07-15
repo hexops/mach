@@ -11,7 +11,7 @@ pub const whole_size = 0xffffffffffffffff;
 
 pub const Adapter = @import("adapter.zig").Adapter;
 pub const BindGroup = @import("bind_group.zig").BindGroup;
-pub const BindGroupLayout = @import("BindGroupLayout.zig");
+pub const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 pub const Buffer = @import("buffer.zig").Buffer;
 pub const CommandBuffer = @import("CommandBuffer.zig");
 pub const CommandEncoder = @import("CommandEncoder.zig");
@@ -39,7 +39,7 @@ pub const AlphaMode = @import("types.zig").AlphaMode;
 test {
     refAllDecls(@import("adapter.zig"));
     refAllDecls(@import("bind_group.zig"));
-    refAllDecls(@import("BindGroupLayout.zig"));
+    refAllDecls(@import("bind_group_layout.zig"));
     refAllDecls(@import("buffer.zig"));
     refAllDecls(@import("CommandBuffer.zig"));
     refAllDecls(@import("CommandEncoder.zig"));
