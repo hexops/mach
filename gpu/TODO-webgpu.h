@@ -13,13 +13,6 @@ typedef struct WGPUBufferDescriptor {
     bool mappedAtCreation;
 } WGPUBufferDescriptor;
 
-typedef struct WGPUColor {
-    double r;
-    double g;
-    double b;
-    double a;
-} WGPUColor;
-
 typedef struct WGPUCommandBufferDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label; // nullable
