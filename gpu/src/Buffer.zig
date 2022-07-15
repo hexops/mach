@@ -56,4 +56,12 @@ pub const Buffer = enum(usize) {
         has_dynamic_offset: bool = false,
         min_binding_size: u64 = 0,
     };
+
+    pub const Descriptor = extern struct {
+        next_in_chain: *const ChainedStruct,
+        label: ?[*:0]const u8 = null,
+        usage: Usage,
+        size: u64,
+        mapped_at_creation: bool,
+    };
 };
