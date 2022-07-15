@@ -17,7 +17,7 @@ pub const CommandBuffer = @import("command_buffer.zig").CommandBuffer;
 pub const CommandEncoder = @import("command_encoder.zig").CommandEncoder;
 pub const ComputePassEncoder = @import("compute_pass_encoder.zig").ComputePassEncoder;
 pub const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
-pub const Device = @import("Device.zig");
+pub const Device = @import("device.zig").Device;
 pub const ExternalTexture = @import("ExternalTexture.zig");
 pub const Instance = @import("Instance.zig");
 pub const PipelineLayout = @import("PipelineLayout.zig");
@@ -45,7 +45,7 @@ test {
     refAllDecls(@import("command_encoder.zig"));
     refAllDecls(@import("compute_pass_encoder.zig"));
     refAllDecls(@import("compute_pipeline.zig"));
-    refAllDecls(@import("Device.zig"));
+    refAllDecls(@import("device.zig"));
     refAllDecls(@import("ExternalTexture.zig"));
     refAllDecls(@import("Instance.zig"));
     refAllDecls(@import("PipelineLayout.zig"));
