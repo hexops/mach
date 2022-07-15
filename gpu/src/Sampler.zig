@@ -1,7 +1,6 @@
 pub const Sampler = enum(usize) {
     _,
 
-    // TODO: verify there is a use case for nullable value of this type.
     pub const none: Sampler = @intToEnum(Sampler, 0);
 
     pub const AddressMode = enum(u32) {

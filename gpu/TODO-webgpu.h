@@ -1,13 +1,3 @@
-typedef struct WGPUBindGroupEntry {
-    WGPUChainedStruct const * nextInChain;
-    uint32_t binding;
-    WGPUBuffer buffer; // nullable
-    uint64_t offset;
-    uint64_t size;
-    WGPUSampler sampler; // nullable
-    WGPUTextureView textureView; // nullable
-} WGPUBindGroupEntry;
-
 typedef struct WGPUBlendComponent {
     WGPUBlendOperation operation;
     WGPUBlendFactor srcFactor;
