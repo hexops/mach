@@ -3,6 +3,7 @@ const std = @import("std");
 pub const Texture = enum(usize) {
     _,
 
+    // TODO: verify there is a use case for nullable value of this type.
     pub const none: Texture = @intToEnum(Texture, 0);
 
     pub const Aspect = enum(u32) {

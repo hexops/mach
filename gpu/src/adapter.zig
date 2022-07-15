@@ -4,6 +4,7 @@ const ChainedStructOut = @import("types.zig").ChainedStructOut;
 pub const Adapter = enum(usize) {
     _,
 
+    // TODO: verify there is a use case for nullable value of this type.
     pub const none: Adapter = @intToEnum(Adapter, 0);
 
     pub const Type = enum(u32) {
