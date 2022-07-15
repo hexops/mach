@@ -1,4 +1,5 @@
 const std = @import("std");
+const ChainedStruct = @import("types.zig").ChainedStruct;
 
 pub const Buffer = enum(usize) {
     _,
@@ -47,5 +48,12 @@ pub const Buffer = enum(usize) {
         pub fn equal(a: Usage, b: Usage) bool {
             return @truncate(u10, @bitCast(u32, a)) == @truncate(u10, @bitCast(u32, b));
         }
+    };
+
+    pub const BindingLayout = extern struct {
+        next_in_chain: *const ChainedStruct,
+        type: BindingType,
+        has_dynamic_offset: bool = false,
+        min_binding_size: u64 = 0,
     };
 };

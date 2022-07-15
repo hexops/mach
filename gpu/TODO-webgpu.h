@@ -1,10 +1,3 @@
-typedef struct WGPUBufferBindingLayout {
-    WGPUChainedStruct const * nextInChain;
-    WGPUBufferBindingType type;
-    bool hasDynamicOffset;
-    uint64_t minBindingSize;
-} WGPUBufferBindingLayout;
-
 typedef struct WGPUBufferDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label; // nullable
