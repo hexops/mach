@@ -9,7 +9,7 @@ pub const stride_undefined = 0xffffffff;
 pub const whole_map_size = std.math.maxInt(usize);
 pub const whole_size = 0xffffffffffffffff;
 
-pub const Adapter = @import("Adapter.zig");
+pub const Adapter = @import("adapter.zig").Adapter;
 pub const BindGroup = @import("BindGroup.zig");
 pub const BindGroupLayout = @import("BindGroupLayout.zig");
 pub const Buffer = @import("buffer.zig").Buffer;
@@ -37,7 +37,7 @@ pub const TextureView = @import("TextureView.zig");
 pub const AlphaMode = @import("types.zig").AlphaMode;
 
 test {
-    refAllDecls(@import("Adapter.zig"));
+    refAllDecls(@import("adapter.zig"));
     refAllDecls(@import("BindGroup.zig"));
     refAllDecls(@import("BindGroupLayout.zig"));
     refAllDecls(@import("buffer.zig"));
