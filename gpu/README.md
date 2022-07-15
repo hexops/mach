@@ -94,7 +94,9 @@ When updating, every single change is verified against [the WebGPU spec itself](
 
 The rules for translating `webgpu.h` are as follows:
 
-* `WGPUBuffer` -> `gpu.Buffer` (opaque pointer types only go into their own `Buffer.zig` file, with a `ptr: *anyopaque` field.)
+* `WGPUBuffer` -> `gpu.Buffer`:
+  * Handles like these become a `pub const Buffer = enum(usize) {_}` to ensure they are still pointers compatible with the C ABI, while still allowing us to declare methods on them.
+  * As a result, `null` is represented as `gpu.Buffer.none` which is defined as `pub const none: Buffer = @intToEnum(Buffer, 0);` iff the type can be nullable.g
 * `WGPUBufferBindingType` -> `gpu.Buffer.BindingType` (purely because it's prefix matches an opaque pointer type, it thus goes into that file.)
 * Reserved Zig keywords:
   * `undefined` -> `undef`
