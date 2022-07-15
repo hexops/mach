@@ -1,4 +1,5 @@
 const testing = @import("std").testing;
+const ChainedStructOut = @import("types.zig").ChainedStructOut;
 
 ptr: *anyopaque,
 
@@ -16,6 +17,18 @@ pub const Type = enum(u32) {
             .unknown => "Unknown",
         };
     }
+};
+
+pub const Properties = extern struct {
+    next_in_chain: *ChainedStructOut,
+    vendor_id: u32,
+    vendor_name: [*:0]const u8,
+    architecture: [*:0]const u8,
+    device_id: u32,
+    name: [*:0]const u8,
+    driver_description: [*:0]const u8,
+    adapter_type: Type,
+    backend_type: Type,
 };
 
 test "Adapter.Type name" {
