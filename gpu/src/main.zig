@@ -14,7 +14,7 @@ pub const BindGroup = @import("bind_group.zig").BindGroup;
 pub const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 pub const Buffer = @import("buffer.zig").Buffer;
 pub const CommandBuffer = @import("command_buffer.zig").CommandBuffer;
-pub const CommandEncoder = @import("CommandEncoder.zig");
+pub const CommandEncoder = @import("command_encoder.zig").CommandEncoder;
 pub const ComputePassEncoder = @import("ComputePassEncoder.zig");
 pub const ComputePipeline = @import("ComputePipeline.zig");
 pub const Device = @import("Device.zig");
@@ -42,7 +42,7 @@ test {
     refAllDecls(@import("bind_group_layout.zig"));
     refAllDecls(@import("buffer.zig"));
     refAllDecls(@import("command_buffer.zig"));
-    refAllDecls(@import("CommandEncoder.zig"));
+    refAllDecls(@import("command_encoder.zig"));
     refAllDecls(@import("ComputePassEncoder.zig"));
     refAllDecls(@import("ComputePipeline.zig"));
     refAllDecls(@import("Device.zig"));
