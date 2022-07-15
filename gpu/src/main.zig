@@ -12,7 +12,7 @@ pub const whole_size = 0xffffffffffffffff;
 pub const Adapter = @import("Adapter.zig");
 pub const BindGroup = @import("BindGroup.zig");
 pub const BindGroupLayout = @import("BindGroupLayout.zig");
-pub const Buffer = @import("Buffer.zig");
+pub const Buffer = @import("buffer.zig").Buffer;
 pub const CommandBuffer = @import("CommandBuffer.zig");
 pub const CommandEncoder = @import("CommandEncoder.zig");
 pub const ComputePassEncoder = @import("ComputePassEncoder.zig");
@@ -40,7 +40,7 @@ test {
     refAllDecls(@import("Adapter.zig"));
     refAllDecls(@import("BindGroup.zig"));
     refAllDecls(@import("BindGroupLayout.zig"));
-    refAllDecls(@import("Buffer.zig"));
+    refAllDecls(@import("buffer.zig"));
     refAllDecls(@import("CommandBuffer.zig"));
     refAllDecls(@import("CommandEncoder.zig"));
     refAllDecls(@import("ComputePassEncoder.zig"));
