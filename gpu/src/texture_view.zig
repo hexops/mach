@@ -1,7 +1,6 @@
 pub const TextureView = enum(usize) {
     _,
 
-    // TODO: verify there is a use case for nullable value of this type.
     pub const none: TextureView = @intToEnum(TextureView, 0);
 
     pub const Dimension = enum(u32) {

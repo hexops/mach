@@ -3,7 +3,6 @@ const std = @import("std");
 pub const Buffer = enum(usize) {
     _,
 
-    // TODO: verify there is a use case for nullable value of this type.
     pub const none: Buffer = @intToEnum(Buffer, 0);
 
     pub const BindingType = enum(u32) {
