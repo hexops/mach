@@ -59,12 +59,6 @@ typedef struct WGPUDawnTogglesDeviceDescriptor {
     const char* const * forceDisabledToggles;
 } WGPUDawnTogglesDeviceDescriptor;
 
-typedef struct WGPUExtent3D {
-    width: u32,
-    height: u32,
-    depth_or_array_layers: u32,
-} WGPUExtent3D;
-
 typedef struct WGPUExternalTextureBindingEntry {
     WGPUChainedStruct chain;
     WGPUExternalTexture externalTexture;

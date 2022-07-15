@@ -387,6 +387,12 @@ pub const Color = extern struct {
     a: f64,
 };
 
+pub const Extent3D = extern struct {
+    width: u32,
+    height: u32,
+    depth_or_array_layers: u32,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
