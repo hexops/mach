@@ -1,9 +1,3 @@
-typedef struct WGPUBlendComponent {
-    WGPUBlendOperation operation;
-    WGPUBlendFactor srcFactor;
-    WGPUBlendFactor dstFactor;
-} WGPUBlendComponent;
-
 typedef struct WGPUBufferBindingLayout {
     WGPUChainedStruct const * nextInChain;
     WGPUBufferBindingType type;

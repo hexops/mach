@@ -374,6 +374,12 @@ pub const ChainedStructOut = extern struct {
     s_type: SType,
 };
 
+pub const BlendComponent = extern struct {
+    operation: BlendOperation = .add,
+    src_factor: BlendFactor = .one,
+    dst_factor: BlendFactor = .zero,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
