@@ -1,15 +1,3 @@
-typedef struct WGPUAdapterProperties {
-    WGPUChainedStructOut * nextInChain;
-    uint32_t vendorID;
-    char const * vendorName;
-    char const * architecture;
-    uint32_t deviceID;
-    char const * name;
-    char const * driverDescription;
-    WGPUAdapterType adapterType;
-    WGPUBackendType backendType;
-} WGPUAdapterProperties;
-
 typedef struct WGPUBindGroupEntry {
     WGPUChainedStruct const * nextInChain;
     uint32_t binding;
