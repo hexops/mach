@@ -380,6 +380,13 @@ pub const BlendComponent = extern struct {
     dst_factor: BlendFactor = .zero,
 };
 
+pub const Color = extern struct {
+    r: f64,
+    g: f64,
+    b: f64,
+    a: f64,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
