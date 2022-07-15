@@ -30,7 +30,7 @@ pub const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
 pub const Sampler = @import("sampler.zig").Sampler;
 pub const ShaderModule = @import("shader_module.zig").ShaderModule;
 pub const Surface = @import("surface.zig").Surface;
-pub const SwapChain = @import("SwapChain.zig");
+pub const SwapChain = @import("swap_chain.zig").SwapChain;
 pub const Texture = @import("Texture.zig");
 pub const TextureView = @import("TextureView.zig");
 
@@ -58,7 +58,7 @@ test {
     refAllDecls(@import("sampler.zig"));
     refAllDecls(@import("shader_module.zig"));
     refAllDecls(@import("surface.zig"));
-    refAllDecls(@import("SwapChain.zig"));
+    refAllDecls(@import("swap_chain.zig"));
     refAllDecls(@import("Texture.zig"));
     refAllDecls(@import("TextureView.zig"));
     refAllDecls(@import("types.zig"));
