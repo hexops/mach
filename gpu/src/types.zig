@@ -364,6 +364,16 @@ pub const ShaderStage = packed struct {
     }
 };
 
+pub const ChainedStruct = extern struct {
+    next: *const ChainedStruct,
+    s_type: SType,
+};
+
+pub const ChainedStructOut = extern struct {
+    next: *ChainedStructOut,
+    s_type: SType,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
