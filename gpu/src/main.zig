@@ -10,7 +10,7 @@ pub const whole_map_size = std.math.maxInt(usize);
 pub const whole_size = 0xffffffffffffffff;
 
 pub const Adapter = @import("adapter.zig").Adapter;
-pub const BindGroup = @import("BindGroup.zig");
+pub const BindGroup = @import("bind_group.zig").BindGroup;
 pub const BindGroupLayout = @import("BindGroupLayout.zig");
 pub const Buffer = @import("buffer.zig").Buffer;
 pub const CommandBuffer = @import("CommandBuffer.zig");
@@ -38,7 +38,7 @@ pub const AlphaMode = @import("types.zig").AlphaMode;
 
 test {
     refAllDecls(@import("adapter.zig"));
-    refAllDecls(@import("BindGroup.zig"));
+    refAllDecls(@import("bind_group.zig"));
     refAllDecls(@import("BindGroupLayout.zig"));
     refAllDecls(@import("buffer.zig"));
     refAllDecls(@import("CommandBuffer.zig"));
