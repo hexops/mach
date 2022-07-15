@@ -91,12 +91,6 @@ typedef struct WGPUMultisampleState {
     alpha_to_coverage_enabled: bool,
 } WGPUMultisampleState;
 
-typedef struct WGPUOrigin3D {
-    x: u32,
-    y: u32,
-    z: u32,
-} WGPUOrigin3D;
-
 typedef struct WGPUPipelineLayoutDescriptor {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,

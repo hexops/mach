@@ -424,6 +424,12 @@ pub const Limits = extern struct {
     max_compute_workgroups_per_dimension: u32,
 };
 
+pub const Origin3D = extern struct {
+    x: u32 = 0,
+    y: u32 = 0,
+    z: u32 = 0,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
