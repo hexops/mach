@@ -1,11 +1,3 @@
-typedef struct WGPUBufferDescriptor {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    WGPUBufferUsageFlags usage;
-    size: u64,
-    mapped_at_creation: bool,
-} WGPUBufferDescriptor;
-
 typedef struct WGPUCommandBufferDescriptor {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
