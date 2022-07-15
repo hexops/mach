@@ -1,8 +1,3 @@
-typedef struct WGPUCommandBufferDescriptor {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-} WGPUCommandBufferDescriptor;
-
 typedef struct WGPUCommandEncoderDescriptor {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
