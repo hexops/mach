@@ -19,7 +19,7 @@ pub const ComputePassEncoder = @import("compute_pass_encoder.zig").ComputePassEn
 pub const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
 pub const Device = @import("device.zig").Device;
 pub const ExternalTexture = @import("external_texture.zig").ExternalTexture;
-pub const Instance = @import("Instance.zig");
+pub const Instance = @import("instance.zig").Instance;
 pub const PipelineLayout = @import("PipelineLayout.zig");
 pub const QuerySet = @import("QuerySet.zig");
 pub const Queue = @import("Queue.zig");
@@ -47,7 +47,7 @@ test {
     refAllDecls(@import("compute_pipeline.zig"));
     refAllDecls(@import("device.zig"));
     refAllDecls(@import("external_texture.zig"));
-    refAllDecls(@import("Instance.zig"));
+    refAllDecls(@import("instance.zig"));
     refAllDecls(@import("PipelineLayout.zig"));
     refAllDecls(@import("QuerySet.zig"));
     refAllDecls(@import("Queue.zig"));
