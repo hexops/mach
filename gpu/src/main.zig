@@ -34,7 +34,15 @@ pub const SwapChain = @import("swap_chain.zig").SwapChain;
 pub const Texture = @import("texture.zig").Texture;
 pub const TextureView = @import("texture_view.zig").TextureView;
 
+// TODO: export all types.zig
 pub const AlphaMode = @import("types.zig").AlphaMode;
+pub const ComputePassTimestampLocation = @import("types.zig").ComputePassTimestampLocation;
+
+pub const ComputePassTimestampWrite = struct {
+    query_set: QuerySet,
+    query_index: u32,
+    location: ComputePassTimestampLocation,
+};
 
 test {
     refAllDecls(@import("adapter.zig"));

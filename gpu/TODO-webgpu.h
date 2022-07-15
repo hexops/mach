@@ -13,12 +13,6 @@ typedef struct WGPUCompilationMessage {
     length: u64,
 } WGPUCompilationMessage;
 
-typedef struct WGPUComputePassTimestampWrite {
-    WGPUQuerySet querySet;
-    query_index: u32,
-    WGPUComputePassTimestampLocation location;
-} WGPUComputePassTimestampWrite;
-
 typedef struct WGPUConstantEntry {
     next_in_chain: *const ChainedStruct,
     char const * key;
