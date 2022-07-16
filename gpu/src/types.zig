@@ -440,6 +440,12 @@ pub const CompilationMessage = extern struct {
     length: u64,
 };
 
+pub const ConstantEntry = extern struct {
+    next_in_chain: *const ChainedStruct,
+    key: [*:0]const u8,
+    value: f64,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
