@@ -1,7 +1,3 @@
-typedef struct WGPUExternalTextureBindingLayout {
-    WGPUChainedStruct chain;
-} WGPUExternalTextureBindingLayout;
-
 typedef struct WGPUExternalTextureDescriptor {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
