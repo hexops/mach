@@ -1,8 +1,3 @@
-typedef struct WGPUDawnEncoderInternalUsageDescriptor {
-    WGPUChainedStruct chain;
-    use_internal_usages: bool,
-} WGPUDawnEncoderInternalUsageDescriptor;
-
 typedef struct WGPUDawnInstanceDescriptor {
     WGPUChainedStruct chain;
     uint32_t additionalRuntimeSearchPathsCount;
