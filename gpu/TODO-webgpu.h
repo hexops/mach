@@ -1,8 +1,3 @@
-typedef struct WGPUDawnTextureInternalUsageDescriptor {
-    WGPUChainedStruct chain;
-    WGPUTextureUsageFlags internalUsage;
-} WGPUDawnTextureInternalUsageDescriptor;
-
 typedef struct WGPUDawnTogglesDeviceDescriptor {
     WGPUChainedStruct chain;
     uint32_t forceEnabledTogglesCount;
