@@ -1,11 +1,3 @@
-typedef struct WGPUDawnTogglesDeviceDescriptor {
-    WGPUChainedStruct chain;
-    uint32_t forceEnabledTogglesCount;
-    const char* const * forceEnabledToggles;
-    uint32_t forceDisabledTogglesCount;
-    const char* const * forceDisabledToggles;
-} WGPUDawnTogglesDeviceDescriptor;
-
 typedef struct WGPUExternalTextureBindingEntry {
     WGPUChainedStruct chain;
     WGPUExternalTexture externalTexture;
