@@ -1,7 +1,3 @@
-typedef struct WGPUInstanceDescriptor {
-    next_in_chain: *const ChainedStruct,
-} WGPUInstanceDescriptor;
-
 typedef struct WGPUMultisampleState {
     next_in_chain: *const ChainedStruct,
     count: u32,
