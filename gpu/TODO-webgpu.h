@@ -1,8 +1,3 @@
-typedef struct WGPUDawnCacheDeviceDescriptor {
-    WGPUChainedStruct chain;
-    char const * isolationKey;
-} WGPUDawnCacheDeviceDescriptor;
-
 typedef struct WGPUDawnEncoderInternalUsageDescriptor {
     WGPUChainedStruct chain;
     use_internal_usages: bool,

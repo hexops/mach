@@ -34,9 +34,12 @@ pub const SwapChain = @import("swap_chain.zig").SwapChain;
 pub const Texture = @import("texture.zig").Texture;
 pub const TextureView = @import("texture_view.zig").TextureView;
 
+pub const dawn = @import("dawn.zig");
+
 // TODO: export all types.zig
 pub const AlphaMode = @import("types.zig").AlphaMode;
 pub const ComputePassTimestampLocation = @import("types.zig").ComputePassTimestampLocation;
+pub const ChainedStruct = @import("types.zig").ChainedStruct;
 
 pub const ComputePassTimestampWrite = struct {
     query_set: QuerySet,
@@ -64,6 +67,7 @@ test {
     refAllDecls(@import("command_encoder.zig"));
     refAllDecls(@import("compute_pass_encoder.zig"));
     refAllDecls(@import("compute_pipeline.zig"));
+    refAllDecls(@import("dawn.zig"));
     refAllDecls(@import("device.zig"));
     refAllDecls(@import("external_texture.zig"));
     refAllDecls(@import("instance.zig"));
