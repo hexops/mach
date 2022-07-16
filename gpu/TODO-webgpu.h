@@ -1,9 +1,3 @@
-typedef struct WGPUConstantEntry {
-    next_in_chain: *const ChainedStruct,
-    char const * key;
-    value: f64,
-} WGPUConstantEntry;
-
 typedef struct WGPUCopyTextureForBrowserOptions {
     next_in_chain: *const ChainedStruct,
     flip_y: bool,
