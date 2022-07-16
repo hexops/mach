@@ -11,3 +11,10 @@ pub const EncoderInternalUsageDescriptor = struct {
     chain: ChainedStruct,
     use_internal_usages: bool,
 };
+
+pub const InstanceDescriptor = extern struct {
+    // TODO: file an issue on Dawn: why not named nextInChain?
+    chain: ChainedStruct,
+    additional_runtime_search_paths_count: u32,
+    additional_runtime_search_paths: [*]const u8,
+};

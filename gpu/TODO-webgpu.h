@@ -1,9 +1,3 @@
-typedef struct WGPUDawnInstanceDescriptor {
-    WGPUChainedStruct chain;
-    uint32_t additionalRuntimeSearchPathsCount;
-    const char* const * additionalRuntimeSearchPaths;
-} WGPUDawnInstanceDescriptor;
-
 typedef struct WGPUDawnTextureInternalUsageDescriptor {
     WGPUChainedStruct chain;
     WGPUTextureUsageFlags internalUsage;
