@@ -14,20 +14,17 @@ pub const EncoderInternalUsageDescriptor = struct {
 };
 
 pub const InstanceDescriptor = extern struct {
-    // TODO: file an issue on Dawn: why not named nextInChain?
     chain: ChainedStruct,
     additional_runtime_search_paths_count: u32,
     additional_runtime_search_paths: [*]const u8,
 };
 
 pub const TextureInternalUsageDescriptor = extern struct {
-    // TODO: file an issue on Dawn: why not named nextInChain?
     chain: ChainedStruct,
     internal_usage: Texture.UsageFlags,
 };
 
 pub const TogglesDeviceDescriptor = extern struct {
-    // TODO: file an issue on Dawn: why not named nextInChain?
     chain: ChainedStruct,
     force_enabled_toggles_count: u32,
     force_enabled_toggles: [*]const u8,

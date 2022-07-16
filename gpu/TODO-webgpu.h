@@ -1,8 +1,3 @@
-typedef struct WGPUExternalTextureBindingEntry {
-    WGPUChainedStruct chain;
-    WGPUExternalTexture externalTexture;
-} WGPUExternalTextureBindingEntry;
-
 typedef struct WGPUExternalTextureBindingLayout {
     WGPUChainedStruct chain;
 } WGPUExternalTextureBindingLayout;
