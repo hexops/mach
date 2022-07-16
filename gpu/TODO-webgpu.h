@@ -1,14 +1,3 @@
-typedef struct WGPUCopyTextureForBrowserOptions {
-    next_in_chain: *const ChainedStruct,
-    flip_y: bool,
-    needs_color_space_conversion: bool,
-    WGPUAlphaMode srcAlphaMode;
-    float const * srcTransferFunctionParameters; // nullable
-    float const * conversionMatrix; // nullable
-    float const * dstTransferFunctionParameters; // nullable
-    WGPUAlphaMode dstAlphaMode;
-} WGPUCopyTextureForBrowserOptions;
-
 typedef struct WGPUDawnCacheDeviceDescriptor {
     WGPUChainedStruct chain;
     char const * isolationKey;
