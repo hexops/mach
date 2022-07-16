@@ -25,3 +25,12 @@ pub const TextureInternalUsageDescriptor = extern struct {
     chain: ChainedStruct,
     internal_usage: Texture.UsageFlags,
 };
+
+pub const TogglesDeviceDescriptor = extern struct {
+    // TODO: file an issue on Dawn: why not named nextInChain?
+    chain: ChainedStruct,
+    force_enabled_toggles_count: u32,
+    force_enabled_toggles: [*]const u8,
+    force_disabled_toggles_count: u32,
+    force_disabled_toggles: [*]const u8,
+};
