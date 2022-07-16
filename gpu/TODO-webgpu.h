@@ -1,13 +1,3 @@
-typedef struct WGPUCompilationMessage {
-    next_in_chain: *const ChainedStruct,
-    char const * message; // nullable
-    WGPUCompilationMessageType type;
-    line_num: u64,
-    line_pos: u64,
-    offset: u64,
-    length: u64,
-} WGPUCompilationMessage;
-
 typedef struct WGPUConstantEntry {
     next_in_chain: *const ChainedStruct,
     char const * key;
