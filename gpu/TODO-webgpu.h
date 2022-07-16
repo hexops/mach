@@ -1,15 +1,3 @@
-typedef struct WGPUExternalTextureDescriptor {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    WGPUTextureView plane0;
-    WGPUTextureView plane1; // nullable
-    do_yuv_to_rgb_conversion_only: bool,
-    float const * yuvToRgbConversionMatrix; // nullable
-    float const * srcTransferFunctionParameters;
-    float const * dstTransferFunctionParameters;
-    float const * gamutConversionMatrix;
-} WGPUExternalTextureDescriptor;
-
 typedef struct WGPUInstanceDescriptor {
     next_in_chain: *const ChainedStruct,
 } WGPUInstanceDescriptor;
