@@ -1,8 +1,3 @@
-typedef struct WGPUCommandEncoderDescriptor {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-} WGPUCommandEncoderDescriptor;
-
 typedef struct WGPUCompilationMessage {
     next_in_chain: *const ChainedStruct,
     char const * message; // nullable
