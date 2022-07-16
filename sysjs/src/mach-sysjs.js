@@ -338,7 +338,7 @@ const zig = {
       argv.push(zig.readObject(memory.slice(args + i * 16), memory));
     }
 
-    return zig.addValue(new values[id](argv));
+    return zig.addValue(new values[id](...argv));
   },
 
   wzLogWrite(str, len) {
