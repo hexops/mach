@@ -1,4 +1,4 @@
-pub const ChainedStruct = @import("types.zig").ChainedStruct;
+const ChainedStruct = @import("types.zig").ChainedStruct;
 
 pub const Instance = enum(usize) {
     _,

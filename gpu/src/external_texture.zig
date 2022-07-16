@@ -1,5 +1,5 @@
-pub const ChainedStruct = @import("types.zig").ChainedStruct;
-pub const TextureView = @import("texture_view.zig").TextureView;
+const ChainedStruct = @import("types.zig").ChainedStruct;
+const TextureView = @import("texture_view.zig").TextureView;
 
 pub const ExternalTexture = enum(usize) {
     _,
