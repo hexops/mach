@@ -1,10 +1,3 @@
-typedef struct WGPUMultisampleState {
-    next_in_chain: *const ChainedStruct,
-    count: u32,
-    mask: u32,
-    alpha_to_coverage_enabled: bool,
-} WGPUMultisampleState;
-
 typedef struct WGPUPipelineLayoutDescriptor {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,

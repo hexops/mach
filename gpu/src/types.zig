@@ -446,6 +446,24 @@ pub const ConstantEntry = extern struct {
     value: f64,
 };
 
+pub const CopyTextureForBrowserOptions = extern struct {
+    next_in_chain: *const ChainedStruct,
+    flip_y: bool,
+    needs_color_space_conversion: bool,
+    src_alpha_mode: AlphaMode,
+    src_transfer_function_parameters: ?*const f32 = null,
+    conversion_matrix: ?*const f32 = null,
+    dst_transfer_function_parameters: ?*const f32 = null,
+    dst_alpha_mode: AlphaMode,
+};
+
+pub const MultisampleState = struct {
+    next_in_chain: *const ChainedStruct,
+    count: u32,
+    mask: u32,
+    alpha_to_coverage_enabled: bool,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
