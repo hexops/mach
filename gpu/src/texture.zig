@@ -135,7 +135,7 @@ pub const Texture = enum(usize) {
         uint = 0x00000005,
     };
 
-    pub const Usage = packed struct {
+    pub const UsageFlags = packed struct {
         copy_src: bool = false,
         copy_dst: bool = false,
         texture_binding: bool = false,
@@ -152,9 +152,9 @@ pub const Texture = enum(usize) {
             );
         }
 
-        pub const none = Usage{};
+        pub const none = UsageFlags{};
 
-        pub fn equal(a: Usage, b: Usage) bool {
+        pub fn equal(a: UsageFlags, b: UsageFlags) bool {
             return @truncate(u6, @bitCast(u32, a)) == @truncate(u6, @bitCast(u32, b));
         }
     };
