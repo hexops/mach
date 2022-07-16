@@ -1,10 +1,3 @@
-typedef struct WGPUPipelineLayoutDescriptor {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    uint32_t bindGroupLayoutCount;
-    WGPUBindGroupLayout const * bindGroupLayouts;
-} WGPUPipelineLayoutDescriptor;
-
 typedef struct WGPUPrimitiveDepthClampingState {
     WGPUChainedStruct chain;
     clamp_depth: bool,
