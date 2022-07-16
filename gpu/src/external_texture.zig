@@ -10,4 +10,8 @@ pub const ExternalTexture = enum(usize) {
         chain: ChainedStruct,
         external_texture: ExternalTexture,
     };
+
+    pub const BindingLayout = extern struct {
+        chain: ChainedStruct,
+    };
 };
