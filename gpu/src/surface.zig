@@ -42,4 +42,9 @@ pub const Surface = enum(usize) {
         hinstance: *anyopaque,
         hwnd: *anyopaque,
     };
+
+    pub const DescriptorFromWindowsSwapChainPanel = extern struct {
+        chain: ChainedStruct,
+        swap_chain_panel: *anyopaque,
+    };
 };
