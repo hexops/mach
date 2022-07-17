@@ -2,6 +2,7 @@ const std = @import("std");
 const testing = std.testing;
 const Texture = @import("texture.zig").Texture;
 const TextureView = @import("texture_view.zig").TextureView;
+const Buffer = @import("buffer.zig").Buffer;
 
 pub const AlphaMode = enum(u32) {
     premultiplied = 0x00000000,
@@ -532,6 +533,12 @@ pub const DepthStencilState = extern struct {
     depth_bias: i32,
     depth_bias_slope_scale: f32,
     depth_bias_clamp: f32,
+};
+
+pub const ImageCopyBuffer = extern struct {
+    next_in_chain: *const ChainedStruct,
+    layout: Texture.DataLayout,
+    buffer: Buffer,
 };
 
 test "BackendType name" {

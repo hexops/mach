@@ -1,9 +1,3 @@
-pub const ImageCopyBuffer = extern struct {
-    next_in_chain: *const ChainedStruct,
-    layout: TextureDataLayout,
-    buffer: Buffer
-};
-
 pub const ImageCopyTexture = extern struct {
     next_in_chain: *const ChainedStruct,
     texture: Texture,
