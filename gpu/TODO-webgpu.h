@@ -1,8 +1,3 @@
-pub const RequiredLimits = extern struct {
-    next_in_chain: *const ChainedStruct,
-    limits: Limits,
-};
-
 pub const SupportedLimits = extern struct {
     next_in_chain: *CHainedStructOut,
     limits: Limits,
