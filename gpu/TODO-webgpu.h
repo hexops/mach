@@ -1,8 +1,3 @@
-pub const BlendState = extern struct {
-    color: BlendComponent,
-    alpha: BlendComponent,
-};
-
 pub const CompilationInfo = extern struct {
     next_in_chain: *const ChainedStruct,
     message_count: u32,
