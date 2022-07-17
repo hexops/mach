@@ -1,406 +1,407 @@
-typedef struct WGPUPrimitiveDepthClampingState {
-    WGPUChainedStruct chain;
+
+pub const PrimitiveDepthClampingState = extern struct {
+    chain: ChainedStruct,
     clamp_depth: bool,
-} WGPUPrimitiveDepthClampingState;
+};
 
-typedef struct WGPUPrimitiveDepthClipControl {
-    WGPUChainedStruct chain;
+pub const PrimitiveDepthClipControl = extern struct {
+    chain: ChainedStruct,
     unclipped_depth: bool,
-} WGPUPrimitiveDepthClipControl;
+};
 
-typedef struct WGPUPrimitiveState {
+pub const PrimitiveState = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPUPrimitiveTopology topology;
-    WGPUIndexFormat stripIndexFormat;
-    WGPUFrontFace frontFace;
-    WGPUCullMode cullMode;
-} WGPUPrimitiveState;
+    topology: PrimitiveTopology,
+    strip_index_format: IndexFormat,
+    front_face: FrontFace,
+    cull_mode: CullMode,
+};
 
-typedef struct WGPUQuerySetDescriptor {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    WGPUQueryType type;
-    uint32_t count;
-    WGPUPipelineStatisticName const * pipelineStatistics;
-    uint32_t pipelineStatisticsCount;
-} WGPUQuerySetDescriptor;
-
-typedef struct WGPUQueueDescriptor {
+pub const WGPUQuerySetDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-} WGPUQueueDescriptor;
+    type: QueryType,
+    count: u32,
+    pipeline_statistics: [*]const PipelineStatisticsName,
+    pipeline_statistics_count: u32,
+};
 
-typedef struct WGPURenderBundleDescriptor {
+pub const WGPUQueueDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-} WGPURenderBundleDescriptor;
+};
 
-typedef struct WGPURenderBundleEncoderDescriptor {
+pub const WGPURenderBundleDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    uint32_t colorFormatsCount;
-    WGPUTextureFormat const * colorFormats;
-    WGPUTextureFormat depthStencilFormat;
+};
+
+pub const WGPURenderBundleEncoderDescriptor = extern struct {
+    next_in_chain: *const ChainedStruct,
+    label: ?[*:0]const u8 = null,
+    color_formats_count: u32,
+    color_formats: [*]const TextureFormat,
+    depth_stencil_format: TextureFormat,
     sample_count: u32,
     depth_read_only: bool,
     stencil_read_only: bool,
-} WGPURenderBundleEncoderDescriptor;
+};
 
-typedef struct WGPURenderPassDepthStencilAttachment {
-    WGPUTextureView view;
-    WGPULoadOp depthLoadOp;
-    WGPUStoreOp depthStoreOp;
+pub const WGPURenderPassDepthStencilAttachment = extern struct {
+    view: TextureView,
+    depth_load_op: LoadOp,
+    depth_store_op: StoreOp,
     clear_depth: f32,
     depth_clear_value: f32,
     depth_read_only: bool,
-    WGPULoadOp stencilLoadOp;
-    WGPUStoreOp stencilStoreOp;
+    stencil_load_op: LoadOp,
+    stencil_store_op: StoreOp,
     clear_stencil: u32,
     stencil_clear_value: u32,
     stencil_read_only: bool,
-} WGPURenderPassDepthStencilAttachment;
+};
 
-typedef struct WGPURenderPassDescriptorMaxDrawCount {
-    WGPUChainedStruct chain;
+pub const WGPURenderPassDescriptorMaxDrawCount = extern struct {
+    chain: ChainedStruct,
     max_draw_count: u64,
-} WGPURenderPassDescriptorMaxDrawCount;
+};
 
-typedef struct WGPURenderPassTimestampWrite {
-    WGPUQuerySet querySet;
+pub const WGPURenderPassTimestampWrite = extern struct {
+    query_set: QuerySet,
     query_index: u32,
-    WGPURenderPassTimestampLocation location;
-} WGPURenderPassTimestampWrite;
+    location: RenderPassTimestampLocation,
+};
 
-typedef struct WGPURequestAdapterOptions {
+pub const RequestAdapterOptions = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPUSurface compatibleSurface; // nullable
-    WGPUPowerPreference powerPreference;
+    compatible_surface: Surface = Surface.none, // nullable
+    power_preference: PowerPreference,
     force_fallback_adapter: bool,
-} WGPURequestAdapterOptions;
+};
 
-typedef struct WGPUSamplerBindingLayout {
+pub const SamplerBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPUSamplerBindingType type;
-} WGPUSamplerBindingLayout;
+    type: SamplerBindingType,
+};
 
-typedef struct WGPUSamplerDescriptor {
+pub const WGPUSamplerDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    WGPUAddressMode addressModeU;
-    WGPUAddressMode addressModeV;
-    WGPUAddressMode addressModeW;
-    WGPUFilterMode magFilter;
-    WGPUFilterMode minFilter;
-    WGPUFilterMode mipmapFilter;
+    address_mode_u: AddressMode,
+    address_mode_v: AddressMode,
+    address_mode_w: AddressMode,
+    mag_filter: FilterMode,
+    min_filter: FilterMode,
+    mipmap_filter: FilterMode,
     lod_min_clamp: f32,
     lod_max_clamp: f32,
-    WGPUCompareFunction compare;
+    compare: CompareFunction,
     max_anisotropy: u16,
-} WGPUSamplerDescriptor;
+};
 
-typedef struct WGPUShaderModuleDescriptor {
+pub const WGPUShaderModuleDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-} WGPUShaderModuleDescriptor;
+};
 
-typedef struct WGPUShaderModuleSPIRVDescriptor {
-    WGPUChainedStruct chain;
-    uint32_t codeSize;
-    uint32_t const * code;
-} WGPUShaderModuleSPIRVDescriptor;
+pub const WGPUShaderModuleSPIRVDescriptor = extern struct {
+    chain: ChainedStruct,
+    code_size: u32,
+    code: [*]const u32,
+};
 
-typedef struct WGPUShaderModuleWGSLDescriptor {
-    WGPUChainedStruct chain;
-    char const * source;
-} WGPUShaderModuleWGSLDescriptor;
+pub const WGPUShaderModuleWGSLDescriptor = extern struct {
+    chain: ChainedStruct,
+    source: [*:0]const u8,
+};
 
-typedef struct WGPUStencilFaceState {
-    WGPUCompareFunction compare;
-    WGPUStencilOperation failOp;
-    WGPUStencilOperation depthFailOp;
-    WGPUStencilOperation passOp;
-} WGPUStencilFaceState;
+pub const StencilFaceState = extern struct {
+    compare: CompareFunction,
+    fail_op: StencilOperation,
+    depth_fail_op: StencilOperation,
+    pass_op: StencilOperation,
+};
 
-typedef struct WGPUStorageTextureBindingLayout {
+pub const StorageTextureBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPUStorageTextureAccess access;
-    WGPUTextureFormat format;
-    WGPUTextureViewDimension viewDimension;
-} WGPUStorageTextureBindingLayout;
+    access: StorageTextureAccess,
+    format: TextureFormat,
+    view_dimension: TextureViewDimension,
+};
 
-typedef struct WGPUSurfaceDescriptor {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-} WGPUSurfaceDescriptor;
-
-typedef struct WGPUSurfaceDescriptorFromAndroidNativeWindow {
-    WGPUChainedStruct chain;
-    void * window;
-} WGPUSurfaceDescriptorFromAndroidNativeWindow;
-
-typedef struct WGPUSurfaceDescriptorFromCanvasHTMLSelector {
-    WGPUChainedStruct chain;
-    char const * selector;
-} WGPUSurfaceDescriptorFromCanvasHTMLSelector;
-
-typedef struct WGPUSurfaceDescriptorFromMetalLayer {
-    WGPUChainedStruct chain;
-    void * layer;
-} WGPUSurfaceDescriptorFromMetalLayer;
-
-typedef struct WGPUSurfaceDescriptorFromWaylandSurface {
-    WGPUChainedStruct chain;
-    void * display;
-    void * surface;
-} WGPUSurfaceDescriptorFromWaylandSurface;
-
-typedef struct WGPUSurfaceDescriptorFromWindowsCoreWindow {
-    WGPUChainedStruct chain;
-    void * coreWindow;
-} WGPUSurfaceDescriptorFromWindowsCoreWindow;
-
-typedef struct WGPUSurfaceDescriptorFromWindowsHWND {
-    WGPUChainedStruct chain;
-    void * hinstance;
-    void * hwnd;
-} WGPUSurfaceDescriptorFromWindowsHWND;
-
-typedef struct WGPUSurfaceDescriptorFromWindowsSwapChainPanel {
-    WGPUChainedStruct chain;
-    void * swapChainPanel;
-} WGPUSurfaceDescriptorFromWindowsSwapChainPanel;
-
-typedef struct WGPUSurfaceDescriptorFromXlibWindow {
-    WGPUChainedStruct chain;
-    void * display;
-    uint32_t window;
-} WGPUSurfaceDescriptorFromXlibWindow;
-
-typedef struct WGPUSwapChainDescriptor {
+pub const WGPUSurfaceDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    WGPUTextureUsageFlags usage;
-    WGPUTextureFormat format;
+};
+
+pub const WGPUSurfaceDescriptorFromAndroidNativeWindow = extern struct {
+    chain: ChainedStruct,
+    window: *anyopaque,
+};
+
+pub const WGPUSurfaceDescriptorFromCanvasHTMLSelector = extern struct {
+    chain: ChainedStruct,
+    selector: [*:0]const u8,
+};
+
+pub const WGPUSurfaceDescriptorFromMetalLayer = extern struct {
+    chain: ChainedStruct,
+    layer: *anyopaque,
+};
+
+pub const WGPUSurfaceDescriptorFromWaylandSurface = extern struct {
+    chain: ChainedStruct,
+    display: *anyopaque,
+    surface: *anyopaque,
+};
+
+pub const WGPUSurfaceDescriptorFromWindowsCoreWindow = extern struct {
+    chain: ChainedStruct,
+    core_window: *anyopaque,
+};
+
+pub const WGPUSurfaceDescriptorFromWindowsHWND = extern struct {
+    chain: ChainedStruct,
+    hinstance: *anyopaque,
+    hwnd: *anyopaque,
+};
+
+pub const WGPUSurfaceDescriptorFromWindowsSwapChainPanel = extern struct {
+    chain: ChainedStruct,
+    swap_chain_panel: *anyopaque,
+};
+
+pub const WGPUSurfaceDescriptorFromXlibWindow = extern struct {
+    chain: ChainedStruct,
+    display: *anyopaque,
+    window: u32,
+};
+
+pub const WGPUSwapChainDescriptor = extern struct {
+    next_in_chain: *const ChainedStruct,
+    label: ?[*:0]const u8 = null,
+    usage: TextureUsageFlags,
+    format: TextureFormat,
     width: u32,
     height: u32,
-    WGPUPresentMode presentMode;
+    present_mode: PresentMode,
     implementation: u64,
-} WGPUSwapChainDescriptor;
+};
 
-typedef struct WGPUTextureBindingLayout {
+pub const WGPUTextureBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPUTextureSampleType sampleType;
-    WGPUTextureViewDimension viewDimension;
+    sample_type: TextureSampleType,
+    view_dimension: TextureViewDimension,
     multisampled: bool,
-} WGPUTextureBindingLayout;
+};
 
-typedef struct WGPUTextureDataLayout {
+pub const WGPUTextureDataLayout = extern struct {
     next_in_chain: *const ChainedStruct,
     offset: u64,
     bytes_per_row: u32,
     rows_per_image: u32,
-} WGPUTextureDataLayout;
+};
 
-typedef struct WGPUTextureViewDescriptor {
+pub const WGPUTextureViewDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    WGPUTextureFormat format;
-    WGPUTextureViewDimension dimension;
+    format: TextureFormat,
+    dimension: TextureViewDimension,
     base_mip_level: u32,
     mip_level_count: u32,
     base_array_layer: u32,
     array_layer_count: u32,
-    WGPUTextureAspect aspect;
-} WGPUTextureViewDescriptor;
+    aspect: TextureAspect,
+};
 
-typedef struct WGPUVertexAttribute {
-    WGPUVertexFormat format;
+pub const VertexAttribute = extern struct {
+    format: VertexFormat,
     offset: u64,
     shader_location: u32,
-} WGPUVertexAttribute;
+};
 
-typedef struct WGPUBindGroupDescriptor {
+pub const WGPUBindGroupDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    WGPUBindGroupLayout layout;
-    uint32_t entryCount;
-    WGPUBindGroupEntry const * entries;
-} WGPUBindGroupDescriptor;
+    layout: BindGroupLayout,
+    entry_count: u32,
+    entries: [*]const BindGroupEntry,
+};
 
-typedef struct WGPUBindGroupLayoutEntry {
+pub const WGPUBindGroupLayoutEntry = extern struct {
     next_in_chain: *const ChainedStruct,
     binding: u32,
-    WGPUShaderStageFlags visibility;
-    WGPUBufferBindingLayout buffer;
-    WGPUSamplerBindingLayout sampler;
-    WGPUTextureBindingLayout texture;
-    WGPUStorageTextureBindingLayout storageTexture;
-} WGPUBindGroupLayoutEntry;
+    visibility: ShaderStageFlags,
+    buffer: BufferBindingLayout,
+    sampler: SamplerBindingLayout,
+    texture: TextureBindingLayout,
+    storage_texture: StorageTextureBindingLayout,
+};
 
-typedef struct WGPUBlendState {
-    WGPUBlendComponent color;
-    WGPUBlendComponent alpha;
-} WGPUBlendState;
+pub const BlendState = extern struct {
+    color: BlendComponent,
+    alpha: BlendComponent,
+};
 
-typedef struct WGPUCompilationInfo {
+pub const CompilationInfo = extern struct {
     next_in_chain: *const ChainedStruct,
-    uint32_t messageCount;
-    WGPUCompilationMessage const * messages;
-} WGPUCompilationInfo;
+    message_count: u32,
+    messages: [*]const CompilationMessage,
+};
 
-typedef struct WGPUComputePassDescriptor {
+pub const WGPUComputePassDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    uint32_t timestampWriteCount;
-    WGPUComputePassTimestampWrite const * timestampWrites;
-} WGPUComputePassDescriptor;
+    timestamp_write_count: u32,
+    timestamp_writes: [*]const ComputePassTimestampWrite,
+};
 
-typedef struct WGPUDepthStencilState {
+pub const DepthStencilState = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPUTextureFormat format;
+    format: TextureFormat,
     depth_write_enabled: bool,
-    WGPUCompareFunction depthCompare;
-    WGPUStencilFaceState stencilFront;
-    WGPUStencilFaceState stencilBack;
+    depth_compare: CompareFunction,
+    stencil_front: StencilFaceState,
+    stencil_back: StencilFaceState,
     stencil_read_mask: u32,
     stencil_write_mask: u32,
     depth_bias: i32,
     depth_bias_slope_scale: f32,
     depth_bias_clamp: f32,
-} WGPUDepthStencilState;
+};
 
-typedef struct WGPUImageCopyBuffer {
+pub const ImageCopyBuffer = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPUTextureDataLayout layout;
-    WGPUBuffer buffer;
-} WGPUImageCopyBuffer;
+    layout: TextureDataLayout,
+    buffer: Buffer
+};
 
-typedef struct WGPUImageCopyTexture {
+pub const ImageCopyTexture = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPUTexture texture;
+    texture: Texture,
     mip_level: u32,
-    WGPUOrigin3D origin;
-    WGPUTextureAspect aspect;
-} WGPUImageCopyTexture;
+    origin: Origin3D,
+    aspect: TextureAspect,
+};
 
-typedef struct WGPUProgrammableStageDescriptor {
+pub const WGPUProgrammableStageDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPUShaderModule module;
-    char const * entryPoint;
-    uint32_t constantCount;
-    WGPUConstantEntry const * constants;
-} WGPUProgrammableStageDescriptor;
+    module: ShaderModule,
+    entry_point: [*:0]const u8,
+    constant_count: u32,
+    constants: [*]const ConstantEntry,
+};
 
-typedef struct WGPURenderPassColorAttachment {
-    WGPUTextureView view; // nullable
-    WGPUTextureView resolveTarget; // nullable
-    WGPULoadOp loadOp;
-    WGPUStoreOp storeOp;
-    WGPUColor clearColor;
-    WGPUColor clearValue;
-} WGPURenderPassColorAttachment;
+pub const WGPURenderPassColorAttachment = extern struct {
+    view: TextureView = TextureView.none, // nullable
+    resolve_target: TextureView = TextureView.none, // nullable
+    load_op: LoadOp,
+    store_op: StoreOp,
+    clear_color: Color,
+    clear_value: Color,
+};
 
-typedef struct WGPURequiredLimits {
+pub const RequiredLimits = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPULimits limits;
-} WGPURequiredLimits;
+    limits: Limits,
+};
 
-typedef struct WGPUSupportedLimits {
-    WGPUChainedStructOut * nextInChain;
-    WGPULimits limits;
-} WGPUSupportedLimits;
+pub const SupportedLimits = extern struct {
+    next_in_chain: *CHainedStructOut,
+    limits: Limits,
+};
 
-typedef struct WGPUTextureDescriptor {
+pub const WGPUTextureDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    WGPUTextureUsageFlags usage;
-    WGPUTextureDimension dimension;
-    WGPUExtent3D size;
-    WGPUTextureFormat format;
+    usage: TextureUsageFlags,
+    dimension: TextureDimension,
+    size: Extent3D,
+    format: TextureFormat,
     mip_level_count: u32,
     sample_count: u32,
-    uint32_t viewFormatCount;
-    WGPUTextureFormat const * viewFormats;
-} WGPUTextureDescriptor;
+    view_format_count: u32,
+    view_formats: [*]const TextureFormat,
+};
 
-typedef struct WGPUVertexBufferLayout {
-    uint64_t arrayStride;
-    WGPUVertexStepMode stepMode;
-    uint32_t attributeCount;
-    WGPUVertexAttribute const * attributes;
-} WGPUVertexBufferLayout;
+pub const VertexBufferLayout = extern struct {
+    array_stride: u64,
+    step_mode: VertexStepMode,
+    attribute_count: u32,
+    attributes: [*]const VertexAttribute,
+};
 
-typedef struct WGPUBindGroupLayoutDescriptor {
+pub const WGPUBindGroupLayoutDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    uint32_t entryCount;
-    WGPUBindGroupLayoutEntry const * entries;
-} WGPUBindGroupLayoutDescriptor;
+    entry_count: u32,
+    entries: [*]const BindGroupLayoutEntry,
+};
 
-typedef struct WGPUColorTargetState {
+pub const ColorTargetState = extern struct {
     next_in_chain: *const ChainedStruct,
-    WGPUTextureFormat format;
-    WGPUBlendState const * blend; // nullable
-    WGPUColorWriteMaskFlags writeMask;
-} WGPUColorTargetState;
+    format: TextureFormat,
+    blend: ?*const BlendState = null,
+    write_mask: ColorWriteMaskFlags,
+};
 
-typedef struct WGPUComputePipelineDescriptor {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    WGPUPipelineLayout layout; // nullable
-    WGPUProgrammableStageDescriptor compute;
-} WGPUComputePipelineDescriptor;
-
-typedef struct WGPUDeviceDescriptor {
+pub const WGPUComputePipelineDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    uint32_t requiredFeaturesCount;
-    WGPUFeatureName const * requiredFeatures;
-    WGPURequiredLimits const * requiredLimits; // nullable
-    WGPUQueueDescriptor defaultQueue;
-} WGPUDeviceDescriptor;
+    layout: PipelineLayout = PipelineLayout.none, // nullable
+    compute: ProgrammableStageDescriptor,
+};
 
-typedef struct WGPURenderPassDescriptor {
+pub const WGPUDeviceDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    uint32_t colorAttachmentCount;
-    WGPURenderPassColorAttachment const * colorAttachments;
-    WGPURenderPassDepthStencilAttachment const * depthStencilAttachment; // nullable
-    WGPUQuerySet occlusionQuerySet; // nullable
-    uint32_t timestampWriteCount;
-    WGPURenderPassTimestampWrite const * timestampWrites;
-} WGPURenderPassDescriptor;
+    required_features_count: u32,
+    required_features: [*]const FeatureName,
+    required_limits: ?*const RequiredLimits = null, // nullable
+    default_queue: Queue.Descriptor,
+};
 
-typedef struct WGPUVertexState {
-    next_in_chain: *const ChainedStruct,
-    WGPUShaderModule module;
-    char const * entryPoint;
-    uint32_t constantCount;
-    WGPUConstantEntry const * constants;
-    uint32_t bufferCount;
-    WGPUVertexBufferLayout const * buffers;
-} WGPUVertexState;
-
-typedef struct WGPUFragmentState {
-    next_in_chain: *const ChainedStruct,
-    WGPUShaderModule module;
-    char const * entryPoint;
-    uint32_t constantCount;
-    WGPUConstantEntry const * constants;
-    uint32_t targetCount;
-    WGPUColorTargetState const * targets;
-} WGPUFragmentState;
-
-typedef struct WGPURenderPipelineDescriptor {
+pub const WGPURenderPassDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    WGPUPipelineLayout layout; // nullable
-    WGPUVertexState vertex;
-    WGPUPrimitiveState primitive;
-    WGPUDepthStencilState const * depthStencil; // nullable
-    WGPUMultisampleState multisample;
-    WGPUFragmentState const * fragment; // nullable
-} WGPURenderPipelineDescriptor;
+    color_attachment_count: u32,
+    color_attachments: [*]const RenderPassColorAttachment,
+    depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment = null, // nullable
+    occlusion_query_set: QuerySet = QuerySet.none, // nullable
+    timestamp_write_count: u32,
+    timestamp_writes: [*]const RenderPassTimestampWrite,
+};
+
+pub const VertexState = extern struct {
+    next_in_chain: *const ChainedStruct,
+    module: ShaderModule,
+    entry_point: [*:0]const u8,
+    constant_count: u32,
+    constants: [*]const ConstantEntry,
+    buffer_count: u32,
+    buffers: [*]const VertexBufferLayout,
+};
+
+pub const FragmentState = extern struct {
+    next_in_chain: *const ChainedStruct,
+    module: ShaderModule,
+    entry_point: [*:0]const u8,
+    constant_count: u32,
+    constants: [*]const ConstantEntry,
+    target_count: u32,
+    targets: [*]const ColorTargetState,
+};
+
+pub const WGPURenderPipelineDescriptor = extern struct {
+    next_in_chain: *const ChainedStruct,
+    label: ?[*:0]const u8 = null,
+    layout: PipelineLayout = PipelineLayout.none, // nullable
+    vertex: VertexState,
+    primitive: PrimitiveState,
+    depth_stencil: ?*const DepthStencilState = null, // nullable
+    multisample: MultisampleState,
+    fragment: ?*const FragmentState = null, // nullable
+};
 
 typedef void (*WGPUBufferMapCallback)(WGPUBufferMapAsyncStatus status, void * userdata);
 typedef void (*WGPUCompilationInfoCallback)(WGPUCompilationInfoRequestStatus status, WGPUCompilationInfo const * compilationInfo, void * userdata);
