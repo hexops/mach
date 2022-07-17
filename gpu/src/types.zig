@@ -300,7 +300,7 @@ pub const VertexStepMode = enum(u32) {
     vertex_buffer_not_used = 0x00000002,
 };
 
-pub const ColorWriteMask = packed struct {
+pub const ColorWriteMaskFlags = packed struct {
     red: bool = false,
     green: bool = false,
     blue: bool = false,
@@ -315,14 +315,14 @@ pub const ColorWriteMask = packed struct {
         );
     }
 
-    pub const all = ColorWriteMask{
+    pub const all = ColorWriteMaskFlags{
         .red = true,
         .green = true,
         .blue = true,
         .alpha = true,
     };
 
-    pub fn equal(a: ColorWriteMask, b: ColorWriteMask) bool {
+    pub fn equal(a: ColorWriteMaskFlags, b: ColorWriteMaskFlags) bool {
         return @truncate(u4, @bitCast(u32, a)) == @truncate(u4, @bitCast(u32, b));
     }
 };
@@ -582,6 +582,13 @@ pub const VertexBufferLayout = extern struct {
     step_mode: VertexStepMode,
     attribute_count: u32,
     attributes: [*]const VertexAttribute,
+};
+
+pub const ColorTargetState = extern struct {
+    next_in_chain: *const ChainedStruct,
+    format: Texture.Format,
+    blend: ?*const BlendState = null,
+    write_mask: ColorWriteMaskFlags,
 };
 
 test "BackendType name" {
