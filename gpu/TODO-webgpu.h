@@ -1,9 +1,3 @@
-pub const WGPURenderPassTimestampWrite = extern struct {
-    query_set: QuerySet,
-    query_index: u32,
-    location: RenderPassTimestampLocation,
-};
-
 pub const RequestAdapterOptions = extern struct {
     next_in_chain: *const ChainedStruct,
     compatible_surface: Surface = Surface.none, // nullable
