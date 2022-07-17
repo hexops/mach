@@ -1,8 +1,3 @@
-pub const WGPUSurfaceDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-};
-
 pub const WGPUSurfaceDescriptorFromAndroidNativeWindow = extern struct {
     chain: ChainedStruct,
     window: *anyopaque,
