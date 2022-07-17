@@ -572,6 +572,11 @@ pub const RequiredLimits = extern struct {
     limits: Limits,
 };
 
+pub const SupportedLimits = extern struct {
+    next_in_chain: *ChainedStructOut,
+    limits: Limits,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
