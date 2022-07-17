@@ -5,11 +5,20 @@ const js = @import("sysjs");
 
 const Audio = @This();
 
+pub const DataCallback = fn (device: *Device, user_data: ?*anyopaque, sample: *f32) void;
+
 pub const Device = struct {
     context: js.Object,
 
     pub fn deinit(device: Device) void {
         device.context.deinit();
+    }
+
+    pub fn setCallback(device: Device, callback: DataCallback, user_data: ?*anyopaque) void {
+        device.context.set("device", js.createNumber(@intToFloat(f64, @ptrToInt(&device))));
+        device.context.set("callback", js.createNumber(@intToFloat(f64, @ptrToInt(&callback))));
+        if (user_data) |ud|
+            device.context.set("user_data", js.createNumber(@intToFloat(f64, @ptrToInt(ud))));
     }
 
     pub fn pause(device: Device) void {
@@ -78,7 +87,7 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
     context.set("node", node.toValue());
 
     {
-        const audio_process_event = js.createFunction(audioProcessEvent);
+        const audio_process_event = js.createFunction(audioProcessEvent, &.{context.toValue()});
         defer audio_process_event.deinit();
         node.set("onaudioprocess", audio_process_event.toValue());
     }
@@ -92,9 +101,34 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
     return Device{ .context = context };
 }
 
-fn audioProcessEvent(args: js.Object, _: usize) js.Value {
+fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
+    const device_context = captures[0].view(.object);
+
     const audio_event = args.getIndex(0).view(.object);
-    _ = audio_event;
+    const output_buffer = audio_event.get("outputBuffer").view(.object);
+
+    const callback = device_context.get("callback");
+    if (!callback.is(.undef)) {
+        // Do not deinit, we are not making a new device, just creating a view to the current one.
+        var dev = Device{ .context = device_context };
+        const cb = @intToPtr(*DataCallback, @floatToInt(usize, callback.view(.num)));
+        const user_data = device_context.get("user_data");
+        const ud = if (user_data.is(.undef)) null else @intToPtr(*anyopaque, @floatToInt(usize, user_data.view(.num)));
+
+        var channel: usize = 0;
+        while (channel < @floatToInt(usize, output_buffer.get("numberOfChannels").view(.num))) : (channel += 1) {
+            const output_data = output_buffer.call("getChannelData", &.{js.createNumber(@intToFloat(f64, channel))}).view(.object);
+            defer output_data.deinit();
+
+            var sample: usize = 0;
+            while (sample < @floatToInt(usize, output_buffer.get("length").view(.num))) : (sample += 1) {
+                var ret_sample: f32 = undefined;
+                cb.*(&dev, ud, &ret_sample);
+                output_data.setIndex(sample, js.createNumber(ret_sample));
+            }
+        }
+    }
+
     return js.createUndefined();
 }
 
