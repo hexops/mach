@@ -1,13 +1,3 @@
-pub const WGPUBindGroupLayoutEntry = extern struct {
-    next_in_chain: *const ChainedStruct,
-    binding: u32,
-    visibility: ShaderStageFlags,
-    buffer: BufferBindingLayout,
-    sampler: SamplerBindingLayout,
-    texture: TextureBindingLayout,
-    storage_texture: StorageTextureBindingLayout,
-};
-
 pub const BlendState = extern struct {
     color: BlendComponent,
     alpha: BlendComponent,
