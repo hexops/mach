@@ -74,7 +74,7 @@ Mach is still early stages, so far we have support for building from the followi
 
 Mach targets Zig nightly, binary releases are available at https://ziglang.org/download
 
-Currently tested with: 0.10.0-dev.2439+c84f5a5f9
+Currently tested with: 0.10.0-dev.3027+0e26c6149
 
 ## Contributing
 
