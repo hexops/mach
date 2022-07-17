@@ -1,10 +1,3 @@
-pub const VertexBufferLayout = extern struct {
-    array_stride: u64,
-    step_mode: VertexStepMode,
-    attribute_count: u32,
-    attributes: [*]const VertexAttribute,
-};
-
 pub const WGPUBindGroupLayoutDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
