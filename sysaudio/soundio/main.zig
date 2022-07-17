@@ -6,24 +6,11 @@ pub const InStream = @import("InStream.zig");
 pub const OutStream = @import("OutStream.zig");
 pub const Error = @import("error.zig").Error;
 
-test {
-    refAllDecls(@import("SoundIo.zig"));
-    refAllDecls(@import("Device.zig"));
-    refAllDecls(@import("OutStream.zig"));
-    refAllDecls(@import("ChannelLayout.zig"));
-}
+const std = @import("std");
 
-fn refAllDecls(comptime T: type) void {
-    @setEvalBranchQuota(10000);
-    inline for (comptime @import("std").meta.declarations(T)) |decl| {
-        if (decl.is_pub) {
-            if (@TypeOf(@field(T, decl.name)) == type) {
-                switch (@typeInfo(@field(T, decl.name))) {
-                    .Struct, .Enum, .Union, .Opaque => refAllDecls(@field(T, decl.name)),
-                    else => {},
-                }
-            }
-            _ = @field(T, decl.name);
-        }
-    }
+test {
+    std.testing.refAllDeclsRecursive(@import("SoundIo.zig"));
+    std.testing.refAllDeclsRecursive(@import("Device.zig"));
+    std.testing.refAllDeclsRecursive(@import("OutStream.zig"));
+    std.testing.refAllDeclsRecursive(@import("ChannelLayout.zig"));
 }

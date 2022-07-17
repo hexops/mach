@@ -8,15 +8,15 @@ pub const Glyph = @import("Glyph.zig");
 pub const Stroker = @import("Stroker.zig");
 pub const Error = @import("error.zig").Error;
 
-const utils = @import("utils");
+const std = @import("std");
 
 test {
-    utils.refAllDecls(@import("freetype.zig"));
-    utils.refAllDecls(@import("types.zig"));
-    utils.refAllDecls(@import("image.zig"));
-    utils.refAllDecls(@import("color.zig"));
-    utils.refAllDecls(@import("lcdfilter.zig"));
-    utils.refAllDecls(@import("error.zig"));
-    utils.refAllDecls(Glyph);
-    utils.refAllDecls(Stroker);
+    std.testing.refAllDeclsRecursive(@import("freetype.zig"));
+    std.testing.refAllDeclsRecursive(@import("types.zig"));
+    std.testing.refAllDeclsRecursive(@import("image.zig"));
+    std.testing.refAllDeclsRecursive(@import("color.zig"));
+    std.testing.refAllDeclsRecursive(@import("lcdfilter.zig"));
+    std.testing.refAllDeclsRecursive(@import("error.zig"));
+    std.testing.refAllDeclsRecursive(Glyph);
+    std.testing.refAllDeclsRecursive(Stroker);
 }
