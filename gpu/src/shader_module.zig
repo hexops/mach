@@ -10,4 +10,10 @@ pub const ShaderModule = enum(usize) {
         next_in_chain: *const ChainedStruct,
         label: ?[*:0]const u8 = null,
     };
+
+    pub const SPIRVDescriptor = extern struct {
+        chain: ChainedStruct,
+        code_size: u32,
+        code: [*]const u32,
+    };
 };
