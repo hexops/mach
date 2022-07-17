@@ -1,12 +1,3 @@
-pub const WGPUDeviceDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    required_features_count: u32,
-    required_features: [*]const FeatureName,
-    required_limits: ?*const RequiredLimits = null, // nullable
-    default_queue: Queue.Descriptor,
-};
-
 pub const WGPURenderPassDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
