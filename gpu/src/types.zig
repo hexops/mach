@@ -1,5 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
+const Texture = @import("texture.zig").Texture;
+const TextureView = @import("texture_view.zig").TextureView;
 
 pub const AlphaMode = enum(u32) {
     premultiplied = 0x00000000,
@@ -492,6 +494,13 @@ pub const StencilFaceState = extern struct {
     fail_op: StencilOperation,
     depth_fail_op: StencilOperation,
     pass_op: StencilOperation,
+};
+
+pub const StorageTextureBindingLayout = extern struct {
+    next_in_chain: *const ChainedStruct,
+    access: StorageTextureAccess,
+    format: Texture.Format,
+    view_dimension: TextureView.Dimension,
 };
 
 test "BackendType name" {

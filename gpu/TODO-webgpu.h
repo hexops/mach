@@ -1,10 +1,3 @@
-pub const StorageTextureBindingLayout = extern struct {
-    next_in_chain: *const ChainedStruct,
-    access: StorageTextureAccess,
-    format: TextureFormat,
-    view_dimension: TextureViewDimension,
-};
-
 pub const WGPUSurfaceDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
