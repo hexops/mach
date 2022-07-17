@@ -567,6 +567,11 @@ pub const RenderPassColorAttachment = extern struct {
     clear_value: Color,
 };
 
+pub const RequiredLimits = extern struct {
+    next_in_chain: *const ChainedStruct,
+    limits: Limits,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
