@@ -167,4 +167,11 @@ pub const Texture = enum(usize) {
         view_dimension: TextureView.Dimension,
         multisampled: bool,
     };
+
+    pub const DataLayout = extern struct {
+        next_in_chain: *const ChainedStruct,
+        offset: u64,
+        bytes_per_row: u32,
+        rows_per_image: u32,
+    };
 };
