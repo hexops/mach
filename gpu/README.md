@@ -110,3 +110,4 @@ The rules for translating `webgpu.h` are as follows:
   * `ASTC4x4UnormSrgb -> astc4x4_unorm_srgb`
   * `maxTextureDimension3D -> max_texture_dimension_3d`
 * Sometimes an enum will begin with numbers, e.g. `WGPUTextureViewDimension_2DArray`. In this case, we add a prefix so instead of the enum field being `2d_array` it is `dimension_2d_array` (an enum field name must not start with a number in Zig.)
+* Dawn extension types `WGPUDawnFoobar` are placed under `gpu.dawn.Foobar`
