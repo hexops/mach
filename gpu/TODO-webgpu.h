@@ -1,10 +1,3 @@
-pub const WGPUComputePipelineDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    layout: PipelineLayout = PipelineLayout.none, // nullable
-    compute: ProgrammableStageDescriptor,
-};
-
 pub const WGPUDeviceDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
