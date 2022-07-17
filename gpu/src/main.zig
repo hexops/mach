@@ -42,6 +42,7 @@ pub const ComputePassTimestampLocation = @import("types.zig").ComputePassTimesta
 pub const ChainedStruct = @import("types.zig").ChainedStruct;
 pub const LoadOp = @import("types.zig").LoadOp;
 pub const StoreOp = @import("types.zig").StoreOp;
+pub const RenderPassTimestampLocation = @import("types.zig").RenderPassTimestampLocation;
 
 pub const ComputePassTimestampWrite = struct {
     query_set: QuerySet,
@@ -66,6 +67,12 @@ pub const RenderPassDepthStencilAttachment = extern struct {
 pub const RenderPassDescriptorMaxDrawCount = extern struct {
     chain: ChainedStruct,
     max_draw_count: u64,
+};
+
+pub const RenderPassTimestampWrite = extern struct {
+    query_set: QuerySet,
+    query_index: u32,
+    location: RenderPassTimestampLocation,
 };
 
 test {
