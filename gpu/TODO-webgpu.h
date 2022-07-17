@@ -1,15 +1,3 @@
-pub const WGPUTextureViewDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    format: TextureFormat,
-    dimension: TextureViewDimension,
-    base_mip_level: u32,
-    mip_level_count: u32,
-    base_array_layer: u32,
-    array_layer_count: u32,
-    aspect: TextureAspect,
-};
-
 pub const VertexAttribute = extern struct {
     format: VertexFormat,
     offset: u64,
