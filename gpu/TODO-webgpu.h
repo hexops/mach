@@ -1,10 +1,3 @@
-pub const ColorTargetState = extern struct {
-    next_in_chain: *const ChainedStruct,
-    format: TextureFormat,
-    blend: ?*const BlendState = null,
-    write_mask: ColorWriteMaskFlags,
-};
-
 pub const WGPUComputePipelineDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
