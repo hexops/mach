@@ -514,6 +514,12 @@ pub const BlendState = extern struct {
     alpha: BlendComponent,
 };
 
+pub const CompilationInfo = extern struct {
+    next_in_chain: *const ChainedStruct,
+    message_count: u32,
+    messages: [*]const CompilationMessage,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
