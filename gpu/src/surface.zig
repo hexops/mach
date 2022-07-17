@@ -10,4 +10,9 @@ pub const Surface = enum(usize) {
         next_in_chain: *const ChainedStruct,
         label: ?[*:0]const u8 = null,
     };
+
+    pub const DescriptorFromAndroidNativeWindow = extern struct {
+        chain: ChainedStruct,
+        window: *anyopaque,
+    };
 };
