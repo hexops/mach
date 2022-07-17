@@ -1,12 +1,3 @@
-pub const WGPUQuerySetDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    type: QueryType,
-    count: u32,
-    pipeline_statistics: [*]const PipelineStatisticsName,
-    pipeline_statistics_count: u32,
-};
-
 pub const WGPUQueueDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
