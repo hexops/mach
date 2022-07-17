@@ -1,11 +1,3 @@
-pub const ImageCopyTexture = extern struct {
-    next_in_chain: *const ChainedStruct,
-    texture: Texture,
-    mip_level: u32,
-    origin: Origin3D,
-    aspect: TextureAspect,
-};
-
 pub const WGPUProgrammableStageDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     module: ShaderModule,
