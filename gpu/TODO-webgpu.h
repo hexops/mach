@@ -1,8 +1,3 @@
-pub const SupportedLimits = extern struct {
-    next_in_chain: *CHainedStructOut,
-    limits: Limits,
-};
-
 pub const WGPUTextureDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
