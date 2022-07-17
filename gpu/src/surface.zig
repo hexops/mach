@@ -31,4 +31,9 @@ pub const Surface = enum(usize) {
         display: *anyopaque,
         surface: *anyopaque,
     };
+
+    pub const DescriptorFromWindowsCoreWindow = extern struct {
+        chain: ChainedStruct,
+        core_window: *anyopaque,
+    };
 };
