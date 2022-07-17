@@ -464,6 +464,11 @@ pub const MultisampleState = struct {
     alpha_to_coverage_enabled: bool,
 };
 
+pub const PrimitiveDepthClampingState = extern struct {
+    chain: ChainedStruct,
+    clamp_depth: bool,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
