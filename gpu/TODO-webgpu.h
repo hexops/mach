@@ -1,9 +1,3 @@
-pub const WGPUSurfaceDescriptorFromWaylandSurface = extern struct {
-    chain: ChainedStruct,
-    display: *anyopaque,
-    surface: *anyopaque,
-};
-
 pub const WGPUSurfaceDescriptorFromWindowsCoreWindow = extern struct {
     chain: ChainedStruct,
     core_window: *anyopaque,
