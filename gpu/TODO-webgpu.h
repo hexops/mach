@@ -1,9 +1,3 @@
-pub const CompilationInfo = extern struct {
-    next_in_chain: *const ChainedStruct,
-    message_count: u32,
-    messages: [*]const CompilationMessage,
-};
-
 pub const WGPUComputePassDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
