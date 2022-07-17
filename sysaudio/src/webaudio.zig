@@ -54,6 +54,7 @@ pub fn waitEvents(_: Audio) void {}
 
 const default_channel_count = 2;
 const default_sample_rate = 48000;
+const default_buffer_size = 512;
 
 pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
     // NOTE: WebAudio only supports F32 audio format, so config.format is unused
@@ -71,7 +72,7 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
     const input_channels = if (mode == .input) js.createNumber(@intToFloat(f64, channels)) else js.createUndefined();
     const output_channels = if (mode == .output) js.createNumber(@intToFloat(f64, channels)) else js.createUndefined();
 
-    const node = context.call("createScriptProcessor", &.{ js.createNumber(4096), input_channels, output_channels }).view(.object);
+    const node = context.call("createScriptProcessor", &.{ js.createNumber(default_buffer_size), input_channels, output_channels }).view(.object);
     defer node.deinit();
 
     context.set("node", node.toValue());
@@ -88,9 +89,7 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
         _ = node.call("connect", &.{destination.toValue()});
     }
 
-    return Device{
-        .context = context,
-    };
+    return Device{ .context = context };
 }
 
 fn audioProcessEvent(args: js.Object, _: usize) js.Value {
