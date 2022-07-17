@@ -1,17 +1,3 @@
-pub const WGPURenderPassDepthStencilAttachment = extern struct {
-    view: TextureView,
-    depth_load_op: LoadOp,
-    depth_store_op: StoreOp,
-    clear_depth: f32,
-    depth_clear_value: f32,
-    depth_read_only: bool,
-    stencil_load_op: LoadOp,
-    stencil_store_op: StoreOp,
-    clear_stencil: u32,
-    stencil_clear_value: u32,
-    stencil_read_only: bool,
-};
-
 pub const WGPURenderPassDescriptorMaxDrawCount = extern struct {
     chain: ChainedStruct,
     max_draw_count: u64,
