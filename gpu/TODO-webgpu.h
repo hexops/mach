@@ -1,8 +1,3 @@
-pub const WGPUShaderModuleWGSLDescriptor = extern struct {
-    chain: ChainedStruct,
-    source: [*:0]const u8,
-};
-
 pub const StencilFaceState = extern struct {
     compare: CompareFunction,
     fail_op: StencilOperation,
