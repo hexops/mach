@@ -1,14 +1,3 @@
-pub const WGPURenderPassDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    color_attachment_count: u32,
-    color_attachments: [*]const RenderPassColorAttachment,
-    depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment = null, // nullable
-    occlusion_query_set: QuerySet = QuerySet.none, // nullable
-    timestamp_write_count: u32,
-    timestamp_writes: [*]const RenderPassTimestampWrite,
-};
-
 pub const VertexState = extern struct {
     next_in_chain: *const ChainedStruct,
     module: ShaderModule,
