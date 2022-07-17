@@ -20,4 +20,9 @@ pub const Surface = enum(usize) {
         chain: ChainedStruct,
         selector: [*:0]const u8,
     };
+
+    pub const DescriptorFromMetalLayer = extern struct {
+        chain: ChainedStruct,
+        layer: *anyopaque,
+    };
 };

@@ -1,8 +1,3 @@
-pub const WGPUSurfaceDescriptorFromMetalLayer = extern struct {
-    chain: ChainedStruct,
-    layer: *anyopaque,
-};
-
 pub const WGPUSurfaceDescriptorFromWaylandSurface = extern struct {
     chain: ChainedStruct,
     display: *anyopaque,
