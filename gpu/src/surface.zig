@@ -47,4 +47,10 @@ pub const Surface = enum(usize) {
         chain: ChainedStruct,
         swap_chain_panel: *anyopaque,
     };
+
+    pub const DescriptorFromXlibWindow = extern struct {
+        chain: ChainedStruct,
+        display: *anyopaque,
+        window: u32,
+    };
 };
