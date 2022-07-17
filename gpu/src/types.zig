@@ -3,6 +3,7 @@ const testing = std.testing;
 const Texture = @import("texture.zig").Texture;
 const TextureView = @import("texture_view.zig").TextureView;
 const Buffer = @import("buffer.zig").Buffer;
+const ShaderModule = @import("shader_module.zig").ShaderModule;
 
 pub const AlphaMode = enum(u32) {
     premultiplied = 0x00000000,
@@ -547,6 +548,14 @@ pub const ImageCopyTexture = extern struct {
     mip_level: u32,
     origin: Origin3D,
     aspect: Texture.Aspect,
+};
+
+pub const ProgrammableStageDescriptor = extern struct {
+    next_in_chain: *const ChainedStruct,
+    module: ShaderModule,
+    entry_point: [*:0]const u8,
+    constant_count: u32,
+    constants: [*]const ConstantEntry,
 };
 
 test "BackendType name" {

@@ -1,11 +1,3 @@
-pub const WGPUProgrammableStageDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    module: ShaderModule,
-    entry_point: [*:0]const u8,
-    constant_count: u32,
-    constants: [*]const ConstantEntry,
-};
-
 pub const WGPURenderPassColorAttachment = extern struct {
     view: TextureView = TextureView.none, // nullable
     resolve_target: TextureView = TextureView.none, // nullable
