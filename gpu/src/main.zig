@@ -63,6 +63,11 @@ pub const RenderPassDepthStencilAttachment = extern struct {
     stencil_read_only: bool,
 };
 
+pub const RenderPassDescriptorMaxDrawCount = extern struct {
+    chain: ChainedStruct,
+    max_draw_count: u64,
+};
+
 test {
     refAllDecls(@import("adapter.zig"));
     refAllDecls(@import("bind_group.zig"));

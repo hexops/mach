@@ -1,8 +1,3 @@
-pub const WGPURenderPassDescriptorMaxDrawCount = extern struct {
-    chain: ChainedStruct,
-    max_draw_count: u64,
-};
-
 pub const WGPURenderPassTimestampWrite = extern struct {
     query_set: QuerySet,
     query_index: u32,
