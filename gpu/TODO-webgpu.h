@@ -1,11 +1,3 @@
-pub const PrimitiveState = extern struct {
-    next_in_chain: *const ChainedStruct,
-    topology: PrimitiveTopology,
-    strip_index_format: IndexFormat,
-    front_face: FrontFace,
-    cull_mode: CullMode,
-};
-
 pub const WGPUQuerySetDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
