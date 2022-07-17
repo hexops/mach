@@ -1,10 +1,3 @@
-pub const RequestAdapterOptions = extern struct {
-    next_in_chain: *const ChainedStruct,
-    compatible_surface: Surface = Surface.none, // nullable
-    power_preference: PowerPreference,
-    force_fallback_adapter: bool,
-};
-
 pub const SamplerBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
     type: SamplerBindingType,
