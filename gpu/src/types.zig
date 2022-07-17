@@ -577,6 +577,13 @@ pub const SupportedLimits = extern struct {
     limits: Limits,
 };
 
+pub const VertexBufferLayout = extern struct {
+    array_stride: u64,
+    step_mode: VertexStepMode,
+    attribute_count: u32,
+    attributes: [*]const VertexAttribute,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
