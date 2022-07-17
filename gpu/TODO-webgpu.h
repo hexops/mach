@@ -1,14 +1,3 @@
-pub const WGPUSwapChainDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    usage: TextureUsageFlags,
-    format: TextureFormat,
-    width: u32,
-    height: u32,
-    present_mode: PresentMode,
-    implementation: u64,
-};
-
 pub const WGPUTextureBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
     sample_type: TextureSampleType,
