@@ -474,6 +474,14 @@ pub const PrimitiveDepthClipControl = extern struct {
     unclipped_depth: bool,
 };
 
+pub const PrimitiveState = extern struct {
+    next_in_chain: *const ChainedStruct,
+    topology: PrimitiveTopology,
+    strip_index_format: IndexFormat,
+    front_face: FrontFace,
+    cull_mode: CullMode,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
