@@ -558,6 +558,15 @@ pub const ProgrammableStageDescriptor = extern struct {
     constants: [*]const ConstantEntry,
 };
 
+pub const RenderPassColorAttachment = extern struct {
+    view: TextureView = TextureView.none, // nullable
+    resolve_target: TextureView = TextureView.none, // nullable
+    load_op: LoadOp,
+    store_op: StoreOp,
+    clear_color: Color,
+    clear_value: Color,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }

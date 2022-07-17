@@ -1,12 +1,3 @@
-pub const WGPURenderPassColorAttachment = extern struct {
-    view: TextureView = TextureView.none, // nullable
-    resolve_target: TextureView = TextureView.none, // nullable
-    load_op: LoadOp,
-    store_op: StoreOp,
-    clear_color: Color,
-    clear_value: Color,
-};
-
 pub const RequiredLimits = extern struct {
     next_in_chain: *const ChainedStruct,
     limits: Limits,
