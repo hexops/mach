@@ -509,6 +509,11 @@ pub const VertexAttribute = extern struct {
     shader_location: u32,
 };
 
+pub const BlendState = extern struct {
+    color: BlendComponent,
+    alpha: BlendComponent,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
