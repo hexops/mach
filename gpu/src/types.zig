@@ -503,6 +503,12 @@ pub const StorageTextureBindingLayout = extern struct {
     view_dimension: TextureView.Dimension,
 };
 
+pub const VertexAttribute = extern struct {
+    format: VertexFormat,
+    offset: u64,
+    shader_location: u32,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }

@@ -1,9 +1,3 @@
-pub const VertexAttribute = extern struct {
-    format: VertexFormat,
-    offset: u64,
-    shader_location: u32,
-};
-
 pub const WGPUBindGroupDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
