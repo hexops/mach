@@ -541,6 +541,14 @@ pub const ImageCopyBuffer = extern struct {
     buffer: Buffer,
 };
 
+pub const ImageCopyTexture = extern struct {
+    next_in_chain: *const ChainedStruct,
+    texture: Texture,
+    mip_level: u32,
+    origin: Origin3D,
+    aspect: Texture.Aspect,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
