@@ -7,14 +7,14 @@ pub usingnamespace @import("shape.zig");
 pub usingnamespace @import("shape_plan.zig");
 pub const c = @import("c");
 
-const utils = @import("utils");
+const std = @import("std");
 
 test {
-    utils.refAllDecls(@import("blob.zig"));
-    utils.refAllDecls(@import("buffer.zig"));
-    utils.refAllDecls(@import("common.zig"));
-    utils.refAllDecls(@import("face.zig"));
-    utils.refAllDecls(@import("font.zig"));
-    utils.refAllDecls(@import("shape.zig"));
-    utils.refAllDecls(@import("shape_plan.zig"));
+    std.testing.refAllDeclsRecursive(@import("blob.zig"));
+    std.testing.refAllDeclsRecursive(@import("buffer.zig"));
+    std.testing.refAllDeclsRecursive(@import("common.zig"));
+    std.testing.refAllDeclsRecursive(@import("face.zig"));
+    std.testing.refAllDeclsRecursive(@import("font.zig"));
+    std.testing.refAllDeclsRecursive(@import("shape.zig"));
+    std.testing.refAllDeclsRecursive(@import("shape_plan.zig"));
 }
