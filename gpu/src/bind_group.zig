@@ -2,6 +2,7 @@ const Buffer = @import("buffer.zig").Buffer;
 const Sampler = @import("sampler.zig").Sampler;
 const TextureView = @import("texture_view.zig").TextureView;
 const ChainedStruct = @import("types.zig").ChainedStruct;
+const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 
 pub const BindGroup = enum(usize) {
     _,
@@ -17,5 +18,13 @@ pub const BindGroup = enum(usize) {
         size: u64,
         sampler: Sampler = Sampler.none, // nullable
         texture_view: TextureView = TextureView.none, // nullable
+    };
+
+    pub const Descriptor = extern struct {
+        next_in_chain: *const ChainedStruct,
+        label: ?[*:0]const u8 = null,
+        layout: BindGroupLayout,
+        entry_count: u32,
+        entries: [*]const Entry,
     };
 };

@@ -1,11 +1,3 @@
-pub const WGPUBindGroupDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    layout: BindGroupLayout,
-    entry_count: u32,
-    entries: [*]const BindGroupEntry,
-};
-
 pub const WGPUBindGroupLayoutEntry = extern struct {
     next_in_chain: *const ChainedStruct,
     binding: u32,
