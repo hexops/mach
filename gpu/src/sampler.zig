@@ -1,3 +1,5 @@
+const ChainedStruct = @import("types.zig").ChainedStruct;
+
 pub const Sampler = enum(usize) {
     _,
 
@@ -14,5 +16,10 @@ pub const Sampler = enum(usize) {
         filtering = 0x00000001,
         non_filtering = 0x00000002,
         comparison = 0x00000003,
+    };
+
+    pub const BindingLayout = extern struct {
+        next_in_chain: *const ChainedStruct,
+        type: BindingType,
     };
 };
