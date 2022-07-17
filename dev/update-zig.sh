@@ -2,11 +2,19 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"/..
 
+# the sed in macOS is pretty old so users
+# have to to use gsed which can be installed via homebrew
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    gsed=$(which sed)
+else
+    gsed=gsed
+fi
+
 update_zig() {
-    gsed -i 's|\(Currently tested with: \).*|\1'"$1"'|' $2
-    gsed -i 's|\(https://ziglang.org/builds/zig-[^/ -]*-[^/ -]*-\)[^/ ]*\(\(\.tar\.xz\)[^/ ]*\)|\1'"$1"'\2|' $2
-    gsed -i 's|\(https://ziglang.org/builds/zig-[^/ -]*-[^/ -]*-\)[^/ ]*\(\(\.zip\)[^/ ]*\)|\1'"$1"'\2|' $2
-    gsed -i 's|\(C:\\zig-[^/ -]*-[^/ -]*-\)[^/ \\]*\(.*"\)|\1'"$1"'\2|' $2
+    $gsed -i 's|\(Currently tested with: \).*|\1'"$1"'|' $2
+    $gsed -i 's|\(https://ziglang.org/builds/zig-[^/ -]*-[^/ -]*-\)[^/ ]*\(\(\.tar\.xz\)[^/ ]*\)|\1'"$1"'\2|' $2
+    $gsed -i 's|\(https://ziglang.org/builds/zig-[^/ -]*-[^/ -]*-\)[^/ ]*\(\(\.zip\)[^/ ]*\)|\1'"$1"'\2|' $2
+    $gsed -i 's|\(C:\\zig-[^/ -]*-[^/ -]*-\)[^/ \\]*\(.*"\)|\1'"$1"'\2|' $2
 }
 
 if [ -n "${ZIG_VERSION:-}" ]; then
