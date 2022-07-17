@@ -482,6 +482,11 @@ pub const PrimitiveState = extern struct {
     cull_mode: CullMode,
 };
 
+pub const RenderPassDescriptorMaxDrawCount = extern struct {
+    chain: ChainedStruct,
+    max_draw_count: u64,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
