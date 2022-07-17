@@ -520,6 +520,20 @@ pub const CompilationInfo = extern struct {
     messages: [*]const CompilationMessage,
 };
 
+pub const DepthStencilState = extern struct {
+    next_in_chain: *const ChainedStruct,
+    format: Texture.Format,
+    depth_write_enabled: bool,
+    depth_compare: CompareFunction,
+    stencil_front: StencilFaceState,
+    stencil_back: StencilFaceState,
+    stencil_read_mask: u32,
+    stencil_write_mask: u32,
+    depth_bias: i32,
+    depth_bias_slope_scale: f32,
+    depth_bias_clamp: f32,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
