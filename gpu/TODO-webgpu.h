@@ -1,9 +1,3 @@
-
-pub const PrimitiveDepthClampingState = extern struct {
-    chain: ChainedStruct,
-    clamp_depth: bool,
-};
-
 pub const PrimitiveDepthClipControl = extern struct {
     chain: ChainedStruct,
     unclipped_depth: bool,
