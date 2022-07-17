@@ -1,10 +1,3 @@
-pub const WGPUBindGroupLayoutDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    entry_count: u32,
-    entries: [*]const BindGroupLayoutEntry,
-};
-
 pub const ColorTargetState = extern struct {
     next_in_chain: *const ChainedStruct,
     format: TextureFormat,
