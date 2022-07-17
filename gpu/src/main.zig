@@ -44,6 +44,7 @@ pub const LoadOp = @import("types.zig").LoadOp;
 pub const StoreOp = @import("types.zig").StoreOp;
 pub const RenderPassTimestampLocation = @import("types.zig").RenderPassTimestampLocation;
 pub const PowerPreference = @import("types.zig").PowerPreference;
+pub const RenderPassColorAttachment = @import("types.zig").RenderPassColorAttachment;
 
 pub const ComputePassTimestampWrite = struct {
     query_set: QuerySet,
@@ -83,6 +84,17 @@ pub const ComputePassDescriptor = extern struct {
     label: ?[*:0]const u8 = null,
     timestamp_write_count: u32,
     timestamp_writes: [*]const ComputePassTimestampWrite,
+};
+
+pub const RenderPassDescriptor = extern struct {
+    next_in_chain: *const ChainedStruct,
+    label: ?[*:0]const u8 = null,
+    color_attachment_count: u32,
+    color_attachments: [*]const RenderPassColorAttachment,
+    depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment = null, // nullable
+    occlusion_query_set: QuerySet = QuerySet.none, // nullable
+    timestamp_write_count: u32,
+    timestamp_writes: [*]const RenderPassTimestampWrite,
 };
 
 test {
