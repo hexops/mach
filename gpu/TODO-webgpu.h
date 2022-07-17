@@ -1,8 +1,3 @@
-pub const WGPUSurfaceDescriptorFromWindowsSwapChainPanel = extern struct {
-    chain: ChainedStruct,
-    swap_chain_panel: *anyopaque,
-};
-
 pub const WGPUSurfaceDescriptorFromXlibWindow = extern struct {
     chain: ChainedStruct,
     display: *anyopaque,
