@@ -1,6 +1,7 @@
 const std = @import("std");
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const TextureView = @import("texture_view.zig").TextureView;
+const Extent3D = @import("types.zig").Extent3D;
 
 pub const Texture = enum(usize) {
     _,
@@ -173,5 +174,18 @@ pub const Texture = enum(usize) {
         offset: u64,
         bytes_per_row: u32,
         rows_per_image: u32,
+    };
+
+    pub const Descriptor = extern struct {
+        next_in_chain: *const ChainedStruct,
+        label: ?[*:0]const u8 = null,
+        usage: UsageFlags,
+        dimension: Dimension,
+        size: Extent3D,
+        format: Format,
+        mip_level_count: u32,
+        sample_count: u32,
+        view_format_count: u32,
+        view_formats: [*]const Format,
     };
 };

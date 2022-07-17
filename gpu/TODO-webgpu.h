@@ -1,16 +1,3 @@
-pub const WGPUTextureDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    usage: TextureUsageFlags,
-    dimension: TextureDimension,
-    size: Extent3D,
-    format: TextureFormat,
-    mip_level_count: u32,
-    sample_count: u32,
-    view_format_count: u32,
-    view_formats: [*]const TextureFormat,
-};
-
 pub const VertexBufferLayout = extern struct {
     array_stride: u64,
     step_mode: VertexStepMode,
