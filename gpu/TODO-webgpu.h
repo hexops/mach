@@ -1,8 +1,3 @@
-pub const PrimitiveDepthClipControl = extern struct {
-    chain: ChainedStruct,
-    unclipped_depth: bool,
-};
-
 pub const PrimitiveState = extern struct {
     next_in_chain: *const ChainedStruct,
     topology: PrimitiveTopology,

@@ -469,6 +469,11 @@ pub const PrimitiveDepthClampingState = extern struct {
     clamp_depth: bool,
 };
 
+pub const PrimitiveDepthClipControl = extern struct {
+    chain: ChainedStruct,
+    unclipped_depth: bool,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
