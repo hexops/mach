@@ -6,7 +6,7 @@ const js = struct {
     extern fn zigCreateMap() u32;
     extern fn zigCreateArray() u32;
     extern fn zigCreateString(str: [*]const u8, len: u32) u32;
-    extern fn zigCreateFunction(id: *const anyopaque) u32;
+    extern fn zigCreateFunction(id: *const anyopaque, captures: [*]Value, len: u32) u32;
     extern fn zigGetAttributeCount(id: u64) u32;
     extern fn zigGetProperty(id: u64, name: [*]const u8, len: u32, ret_ptr: *anyopaque) void;
     extern fn zigSetProperty(id: u64, name: [*]const u8, len: u32, set_ptr: *const anyopaque) void;
@@ -197,13 +197,17 @@ pub const String = struct {
     }
 };
 
-export fn wasmCallFunction(id: *anyopaque, args: u32, len: u32) void {
+export fn wasmCallFunction(id: *anyopaque, args: u32, len: u32, captures: [*]Value, captures_len: u32) void {
+    var captures_slice: []Value = undefined;
+    captures_slice.ptr = captures;
+    captures_slice.len = captures_len;
+
     const obj = Object{ .ref = args };
     if (builtin.zig_backend == .stage1) {
-        obj.set("return_value", functions.items[@ptrToInt(id) - 1](obj, len));
+        obj.set("return_value", functions.items[@ptrToInt(id) - 1](obj, len, captures_slice));
     } else {
         var func = @ptrCast(*FunType, @alignCast(std.meta.alignment(*FunType), id));
-        obj.set("return_value", func(obj, len));
+        obj.set("return_value", func(obj, len, captures_slice));
     }
 }
 
@@ -239,16 +243,16 @@ pub fn createUndefined() Value {
     return .{ .tag = .undef, .val = undefined };
 }
 
-const FunType = fn (args: Object, args_len: u32) Value;
+const FunType = fn (args: Object, args_len: u32, captures: []Value) Value;
 
 var functions: std.ArrayListUnmanaged(FunType) = .{};
 
-pub fn createFunction(fun: FunType) Function {
+pub fn createFunction(fun: FunType, captures: []Value) Function {
     if (builtin.zig_backend == .stage1) {
         functions.append(std.heap.page_allocator, fun) catch unreachable;
-        return .{ .ref = js.zigCreateFunction(@intToPtr(*anyopaque, functions.items.len)) };
+        return .{ .ref = js.zigCreateFunction(@intToPtr(*anyopaque, functions.items.len), captures.ptr, captures.len) };
     }
-    return .{ .ref = js.zigCreateFunction(&fun) };
+    return .{ .ref = js.zigCreateFunction(&fun, captures.ptr, captures.len) };
 }
 
 pub fn constructType(t: []const u8, args: []const Value) Object {

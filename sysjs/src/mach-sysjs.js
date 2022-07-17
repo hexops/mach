@@ -108,10 +108,10 @@ const zig = {
     return zig.addValue(memory.getString(str, len));
   },
 
-  zigCreateFunction(id) {
+  zigCreateFunction(id, captures, len) {
     return zig.addValue(function () {
       const args = zig.addValue(arguments);
-      zig.wasm.exports.wasmCallFunction(id, args, arguments.length);
+      zig.wasm.exports.wasmCallFunction(id, args, arguments.length, captures, len);
       const return_value = values[args]["return_value"];
       zig.zigCleanupObject(args);
       return return_value;
