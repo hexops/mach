@@ -1,18 +1,3 @@
-pub const WGPUSamplerDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    address_mode_u: AddressMode,
-    address_mode_v: AddressMode,
-    address_mode_w: AddressMode,
-    mag_filter: FilterMode,
-    min_filter: FilterMode,
-    mipmap_filter: FilterMode,
-    lod_min_clamp: f32,
-    lod_max_clamp: f32,
-    compare: CompareFunction,
-    max_anisotropy: u16,
-};
-
 pub const WGPUShaderModuleDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
