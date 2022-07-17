@@ -1,13 +1,3 @@
-pub const VertexState = extern struct {
-    next_in_chain: *const ChainedStruct,
-    module: ShaderModule,
-    entry_point: [*:0]const u8,
-    constant_count: u32,
-    constants: [*]const ConstantEntry,
-    buffer_count: u32,
-    buffers: [*]const VertexBufferLayout,
-};
-
 pub const FragmentState = extern struct {
     next_in_chain: *const ChainedStruct,
     module: ShaderModule,

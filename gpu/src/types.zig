@@ -591,6 +591,16 @@ pub const ColorTargetState = extern struct {
     write_mask: ColorWriteMaskFlags,
 };
 
+pub const VertexState = extern struct {
+    next_in_chain: *const ChainedStruct,
+    module: ShaderModule,
+    entry_point: [*:0]const u8,
+    constant_count: u32,
+    constants: [*]const ConstantEntry,
+    buffer_count: u32,
+    buffers: [*]const VertexBufferLayout,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
