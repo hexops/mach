@@ -16,4 +16,9 @@ pub const ShaderModule = enum(usize) {
         code_size: u32,
         code: [*]const u32,
     };
+
+    pub const WGSLDescriptor = extern struct {
+        chain: ChainedStruct,
+        source: [*:0]const u8,
+    };
 };
