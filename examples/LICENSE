@@ -7,3 +7,4 @@ The following examples have been ported from https://github.com/austinEng/webgpu
 * ./textured-cube
 * ./fractal-cube
 * ./image-blur
+* ./map-async
