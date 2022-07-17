@@ -1,8 +1,3 @@
-pub const SamplerBindingLayout = extern struct {
-    next_in_chain: *const ChainedStruct,
-    type: SamplerBindingType,
-};
-
 pub const WGPUSamplerDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
