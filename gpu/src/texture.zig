@@ -1,4 +1,6 @@
 const std = @import("std");
+const ChainedStruct = @import("types.zig").ChainedStruct;
+const TextureView = @import("texture_view.zig").TextureView;
 
 pub const Texture = enum(usize) {
     _,
@@ -157,5 +159,12 @@ pub const Texture = enum(usize) {
         pub fn equal(a: UsageFlags, b: UsageFlags) bool {
             return @truncate(u6, @bitCast(u32, a)) == @truncate(u6, @bitCast(u32, b));
         }
+    };
+
+    pub const BindingLayout = extern struct {
+        next_in_chain: *const ChainedStruct,
+        sample_type: SampleType,
+        view_dimension: TextureView.Dimension,
+        multisampled: bool,
     };
 };

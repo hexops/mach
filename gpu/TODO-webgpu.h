@@ -1,10 +1,3 @@
-pub const WGPUTextureBindingLayout = extern struct {
-    next_in_chain: *const ChainedStruct,
-    sample_type: TextureSampleType,
-    view_dimension: TextureViewDimension,
-    multisampled: bool,
-};
-
 pub const WGPUTextureDataLayout = extern struct {
     next_in_chain: *const ChainedStruct,
     offset: u64,
