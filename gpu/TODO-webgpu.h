@@ -1,8 +1,3 @@
-pub const WGPURenderBundleDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-};
-
 pub const WGPURenderBundleEncoderDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
