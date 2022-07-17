@@ -15,4 +15,9 @@ pub const Surface = enum(usize) {
         chain: ChainedStruct,
         window: *anyopaque,
     };
+
+    pub const DescriptorFromCanvasHTMLSelector = extern struct {
+        chain: ChainedStruct,
+        selector: [*:0]const u8,
+    };
 };

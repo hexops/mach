@@ -1,8 +1,3 @@
-pub const WGPUSurfaceDescriptorFromCanvasHTMLSelector = extern struct {
-    chain: ChainedStruct,
-    selector: [*:0]const u8,
-};
-
 pub const WGPUSurfaceDescriptorFromMetalLayer = extern struct {
     chain: ChainedStruct,
     layer: *anyopaque,
