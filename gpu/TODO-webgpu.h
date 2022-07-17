@@ -1,8 +1,3 @@
-pub const WGPUSurfaceDescriptorFromAndroidNativeWindow = extern struct {
-    chain: ChainedStruct,
-    window: *anyopaque,
-};
-
 pub const WGPUSurfaceDescriptorFromCanvasHTMLSelector = extern struct {
     chain: ChainedStruct,
     selector: [*:0]const u8,
