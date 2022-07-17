@@ -1,9 +1,3 @@
-pub const WGPUShaderModuleSPIRVDescriptor = extern struct {
-    chain: ChainedStruct,
-    code_size: u32,
-    code: [*]const u32,
-};
-
 pub const WGPUShaderModuleWGSLDescriptor = extern struct {
     chain: ChainedStruct,
     source: [*:0]const u8,
