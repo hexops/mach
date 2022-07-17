@@ -1,10 +1,3 @@
-pub const StencilFaceState = extern struct {
-    compare: CompareFunction,
-    fail_op: StencilOperation,
-    depth_fail_op: StencilOperation,
-    pass_op: StencilOperation,
-};
-
 pub const StorageTextureBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
     access: StorageTextureAccess,

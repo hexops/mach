@@ -487,6 +487,13 @@ pub const RenderPassDescriptorMaxDrawCount = extern struct {
     max_draw_count: u64,
 };
 
+pub const StencilFaceState = extern struct {
+    compare: CompareFunction,
+    fail_op: StencilOperation,
+    depth_fail_op: StencilOperation,
+    pass_op: StencilOperation,
+};
+
 test "BackendType name" {
     try testing.expectEqualStrings("Vulkan", BackendType.vulkan.name());
 }
