@@ -1456,7 +1456,7 @@ fn scanSources(
     excluding_contains: []const []const u8,
 ) !void {
     const abs_dir = try std.mem.concat(b.allocator, u8, &.{ (comptime thisDir()), "/", rel_dir });
-    var dir = try std.fs.openDirAbsolute(abs_dir, .{ .iterate = true });
+    var dir = try std.fs.openIterableDirAbsolute(abs_dir, .{});
     defer dir.close();
     var dir_it = dir.iterate();
     while (try dir_it.next()) |entry| {
