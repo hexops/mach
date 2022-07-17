@@ -461,7 +461,7 @@ pub const CopyTextureForBrowserOptions = extern struct {
     dst_alpha_mode: AlphaMode,
 };
 
-pub const MultisampleState = struct {
+pub const MultisampleState = extern struct {
     next_in_chain: *const ChainedStruct,
     count: u32,
     mask: u32,
