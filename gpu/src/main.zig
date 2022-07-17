@@ -40,11 +40,27 @@ pub const dawn = @import("dawn.zig");
 pub const AlphaMode = @import("types.zig").AlphaMode;
 pub const ComputePassTimestampLocation = @import("types.zig").ComputePassTimestampLocation;
 pub const ChainedStruct = @import("types.zig").ChainedStruct;
+pub const LoadOp = @import("types.zig").LoadOp;
+pub const StoreOp = @import("types.zig").StoreOp;
 
 pub const ComputePassTimestampWrite = struct {
     query_set: QuerySet,
     query_index: u32,
     location: ComputePassTimestampLocation,
+};
+
+pub const RenderPassDepthStencilAttachment = extern struct {
+    view: TextureView,
+    depth_load_op: LoadOp,
+    depth_store_op: StoreOp,
+    clear_depth: f32,
+    depth_clear_value: f32,
+    depth_read_only: bool,
+    stencil_load_op: LoadOp,
+    stencil_store_op: StoreOp,
+    clear_stencil: u32,
+    stencil_clear_value: u32,
+    stencil_read_only: bool,
 };
 
 test {
