@@ -78,6 +78,13 @@ pub const RequestAdapterOptions = extern struct {
     force_fallback_adapter: bool,
 };
 
+pub const ComputePassDescriptor = extern struct {
+    next_in_chain: *const ChainedStruct,
+    label: ?[*:0]const u8 = null,
+    timestamp_write_count: u32,
+    timestamp_writes: [*]const ComputePassTimestampWrite,
+};
+
 test {
     refAllDecls(@import("adapter.zig"));
     refAllDecls(@import("bind_group.zig"));

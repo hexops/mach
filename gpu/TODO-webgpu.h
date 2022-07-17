@@ -1,10 +1,3 @@
-pub const WGPUComputePassDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    timestamp_write_count: u32,
-    timestamp_writes: [*]const ComputePassTimestampWrite,
-};
-
 pub const DepthStencilState = extern struct {
     next_in_chain: *const ChainedStruct,
     format: TextureFormat,
