@@ -345,7 +345,7 @@ pub const MapMode = packed struct {
     }
 };
 
-pub const ShaderStage = packed struct {
+pub const ShaderStageFlags = packed struct {
     vertex: bool = false,
     fragment: bool = false,
     compute: bool = false,
@@ -359,9 +359,9 @@ pub const ShaderStage = packed struct {
         );
     }
 
-    pub const none = ShaderStage{};
+    pub const none = ShaderStageFlags{};
 
-    pub fn equal(a: ShaderStage, b: ShaderStage) bool {
+    pub fn equal(a: ShaderStageFlags, b: ShaderStageFlags) bool {
         return @truncate(u3, @bitCast(u32, a)) == @truncate(u3, @bitCast(u32, b));
     }
 };
