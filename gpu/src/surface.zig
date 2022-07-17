@@ -25,4 +25,10 @@ pub const Surface = enum(usize) {
         chain: ChainedStruct,
         layer: *anyopaque,
     };
+
+    pub const DescriptorFromWaylandSurface = extern struct {
+        chain: ChainedStruct,
+        display: *anyopaque,
+        surface: *anyopaque,
+    };
 };
