@@ -26,7 +26,10 @@ pub const SerializeFormat = enum(u31) {
 
 pub const GlyphInfo = extern struct {
     codepoint: u32,
+    mask: u32,
     cluster: u32,
+    var1: u32,
+    var2: u32,
 
     pub fn getFlags(self: GlyphInfo) GlyphFlags {
         return GlyphFlags.from(@intCast(u2, hb_glyph_info_get_glyph_flags(&self)));
@@ -328,12 +331,14 @@ pub const Buffer = struct {
     }
 
     pub fn getGlyphInfos(self: Buffer) []GlyphInfo {
-        return hb_buffer_get_glyph_infos(self.handle, null)[0..self.getLength()];
+        var length: u32 = 0;
+        return hb_buffer_get_glyph_infos(self.handle, &length)[0..length];
     }
 
     pub fn getGlyphPositions(self: Buffer) ?[]Position {
-        return if (hb_buffer_get_glyph_positions(self.handle, null)) |positions|
-            @ptrCast([*]Position, positions)[0..self.getLength()]
+        var length: u32 = 0;
+        return if (hb_buffer_get_glyph_positions(self.handle, &length)) |positions|
+            @ptrCast([*]Position, positions)[0..length]
         else
             null;
     }
