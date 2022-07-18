@@ -6,6 +6,7 @@ const Error = @import("error.zig").Error;
 const Matrix = @import("types.zig").Matrix;
 const BBox = @import("types.zig").BBox;
 const Vector = @import("image.zig").Vector;
+const Stroker = @import("stroke.zig").Stroker;
 
 const Outline = @This();
 
@@ -37,6 +38,14 @@ pub fn check(self: Outline) Error!void {
 
 pub fn transform(self: Outline, matrix: ?Matrix) void {
     c.FT_Outline_Transform(self.handle, if (matrix) |m| &m else null);
+}
+
+pub fn getInsideBorder(self: Outline) Stroker.Border {
+    return @intToEnum(Stroker.Border, c.FT_Outline_GetInsideBorder(self.handle));
+}
+
+pub fn getOutsideBorder(self: Outline) Stroker.Border {
+    return @intToEnum(Stroker.Border, c.FT_Outline_GetOutsideBorder(self.handle));
 }
 
 pub fn bbox(self: Outline) Error!BBox {
