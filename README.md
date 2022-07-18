@@ -37,7 +37,7 @@ Mach has many libraries you can use for game development in Zig - **you don't ha
 
 ## Join the community
 
-* [#hexops:matrix.org Matrix chat](https://matrix.to/#/#hexops:matrix.org), come discuss the future of game engines & graphics in Zig!
+* [#hexops:matrix.org Matrix chat](https://matrix.to/#/#hexops:matrix.org) and [Discord server](https://discord.gg/XNG3NZgCqp), come discuss the future of game engines & graphics in Zig!
 * [machengine.org](https://machengine.org)
 * Follow [@machengine on Twitter](https://twitter.com/machengine) for updates.
 
