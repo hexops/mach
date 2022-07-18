@@ -137,10 +137,8 @@ pub fn getTrackKerning(self: Face, point_size: i32, degree: i32) Error!i32 {
     return kerning;
 }
 
-pub fn getGlyphName(self: Face, index: u32) Error![]const u8 {
-    var buf: [32]u8 = undefined;
-    try intToError(c.FT_Get_Glyph_Name(self.handle, index, &buf, buf.len));
-    return std.mem.sliceTo(&buf, 0);
+pub fn getGlyphName(self: Face, index: u32, buf: []u8) Error!void {
+    try intToError(c.FT_Get_Glyph_Name(self.handle, index, buf.ptr, @intCast(c_uint, buf.len)));
 }
 
 pub fn getPostscriptName(self: Face) ?[:0]const u8 {

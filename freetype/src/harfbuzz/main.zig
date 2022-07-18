@@ -9,6 +9,11 @@ pub const c = @import("c");
 
 const std = @import("std");
 
+// Remove once the stage2 compiler fixes pkg std not found
+comptime {
+    _ = @import("utils");
+}
+
 test {
     std.testing.refAllDeclsRecursive(@import("blob.zig"));
     std.testing.refAllDeclsRecursive(@import("buffer.zig"));

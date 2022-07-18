@@ -1,4 +1,5 @@
-const testing = @import("std").testing;
+const std = @import("std");
+const testing = std.testing;
 const freetype = @import("freetype");
 
 const firasans_font_path = "upstream/assets/FiraSans-Regular.ttf";
@@ -79,5 +80,7 @@ test "get name index" {
 test "get index name" {
     const lib = try freetype.Library.init();
     const face = try lib.newFace(firasans_font_path, 0);
-    try testing.expectEqualStrings(try face.getGlyphName(1120), "summation");
+    var buf: [32]u8 = undefined;
+    try face.getGlyphName(1120, &buf);
+    try testing.expectEqualStrings(std.mem.sliceTo(&buf, 0), "summation");
 }
