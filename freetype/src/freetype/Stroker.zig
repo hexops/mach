@@ -11,8 +11,8 @@ pub const LineCap = enum(u2) {
 pub const LineJoin = enum(u2) {
     round = c.FT_STROKER_LINEJOIN_ROUND,
     bevel = c.FT_STROKER_LINEJOIN_BEVEL,
-    miterVariable = c.FT_STROKER_LINEJOIN_MITER_VARIABLE,
-    miterFixed = c.FT_STROKER_LINEJOIN_MITER_FIXED,
+    miter_variable = c.FT_STROKER_LINEJOIN_MITER_VARIABLE,
+    miter_fixed = c.FT_STROKER_LINEJOIN_MITER_FIXED,
 };
 
 handle: c.FT_Stroker,
