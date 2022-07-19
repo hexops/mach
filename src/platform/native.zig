@@ -222,7 +222,7 @@ pub const Platform = struct {
         platform.events.append(node);
     }
 
-    fn initCallback(platform: *Platform) void {
+    pub fn initCallback(platform: *Platform) void {
         platform.user_ptr = UserPtr{ .platform = platform };
 
         platform.window.setUserPointer(&platform.user_ptr);

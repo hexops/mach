@@ -15,50 +15,51 @@
 
 ;; Note: CFFI automatically translates C_style names into lispier kebab-case ones
 
-;; typedef void mach_core_callback(void*);
-(defctype mach-core-callback :pointer)
+;; void* mach_init(void);
+(defcfun "mach_init_core" :pointer)
+;; for some reason, calling "mach_init" always returns a null pointer, and I have no clue why...
+;; So I renamed the API function name to "mach_init_core" instead
 
-;; void mach_core_set_init(mach_core_callback);
-(defcfun "mach_core_set_init" :void
-  (callback mach-core-callback))
+;; int mach_update(void*, resize_callback);
+(defcfun "mach_update" :int
+  (core :pointer) (resize-fn :pointer))
 
-;; void mach_core_set_update(mach_core_callback);
-(defcfun "mach_core_set_update" :void
-  (callback mach-core-callback))
+;; void mach_deinit(void*);
+(defcfun "mach_deinit" :void
+  (core :pointer))
 
-;; void mach_core_set_deinit(mach_core_callback);
-(defcfun "mach_core_set_deinit" :void
-  (callback mach-core-callback))
+;; void mach_set_should_close(void*);
+(defcfun "mach_set_should_close" :void
+  (core :pointer))
 
-;; void mach_run(void);
-(defcfun "mach_run" :void)
+;; float mach_delta_time(void*);
+(defcfun "mach_delta_time" :float
+  (core :pointer))
 
-;; void core_set_should_close(void*);
-(defcfun "core_set_should_close" :void (core :pointer))
+;; bool mach_window_should_close(void*);
+(defcfun "mach_window_should_close" :bool
+  (core :pointer))
 
-;; float core_delta_time(void*);
-(defcfun "core_delta_time" :float (core :pointer))
-
-(defcallback my-init :void ((core :pointer))
-  (format t "Hello from my-init!~%"))
-
+;; main
 (defvar *elapsed* 0.0)
 
-(defcallback my-update :void ((core :pointer))
-  (format t "Hello from my-update ~a~%" *elapsed*)
-  (if (< *elapsed* 1.0)
-      (incf *elapsed* (core-delta-time core))
-      (core-set-should-close core)))
+(defcallback resize-fn :void ((core :pointer) (width :unsigned-int) (height :unsigned-int))
+  (format t "Resize Callback: ~S ~S~%" width height))
 
-(defcallback my-deinit :void ((core :pointer))
-  (format t "Hello from my-deinit!~%"))
+(setf core (mach-init-core))
 
-(mach-core-set-init (callback my-init))
+(format t "Core: ~S~%" core)
 
-(mach-core-set-update (callback my-update))
+(when (pointer-eq core (null-pointer))
+  (format t "Failed to initialize mach core~%")
+  (sb-ext:exit))
 
-(mach-core-set-deinit (callback my-deinit))
-
-(mach-run)
+(loop while (not (mach-window-should-close core))
+      do (progn
+           (when (= 0 (mach-update core (callback resize-fn)))
+             (format t "Error updating mach~%")
+             (sb-ext:exit))
+           (when (> (incf *elapsed* (mach-delta-time core)) 5.0)
+             (mach-set-should-close core))))
 
 (sb-ext:exit)
