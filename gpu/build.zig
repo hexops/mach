@@ -10,13 +10,8 @@ pub fn build(b: *std.build.Builder) void {
         .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
     };
 
-    const main_tests = b.addTest("src/main.zig");
-    main_tests.setTarget(target);
-    main_tests.setBuildMode(mode);
-    link(b, main_tests, .{ .gpu_dawn_options = gpu_dawn_options });
-
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&main_tests.step);
+    test_step.dependOn(&testStep(b, .{ .gpu_dawn_options = gpu_dawn_options }).step);
 
     const example = b.addExecutable("gpu-hello-triangle", "examples/main.zig");
     example.setTarget(target);
@@ -31,6 +26,12 @@ pub fn build(b: *std.build.Builder) void {
     example_run_cmd.step.dependOn(b.getInstallStep());
     const example_run_step = b.step("run-example", "Run the example");
     example_run_step.dependOn(&example_run_cmd.step);
+}
+
+pub fn testStep(b: *std.build.Builder, options: Options) *std.build.LibExeObjStep {
+    const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+    link(b, main_tests, options);
+    return main_tests;
 }
 
 pub const Options = struct {

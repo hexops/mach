@@ -1,14 +1,12 @@
 const std = @import("std");
 
 pub fn build(b: *std.build.Builder) void {
-    const mode = b.standardReleaseOptions();
-
-    const main_tests = b.addTest("src/main.zig");
-    main_tests.addPackage(pkg);
-    main_tests.setBuildMode(mode);
-
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&main_tests.step);
+    test_step.dependOn(&testStep(b).step);
+}
+
+pub fn testStep(b: *std.build.Builder) *std.build.LibExeObjStep {
+    return b.addTest(thisDir() ++ "/src/main.zig");
 }
 
 pub const pkg = std.build.Pkg{

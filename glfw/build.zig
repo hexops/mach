@@ -4,16 +4,14 @@ const Builder = std.build.Builder;
 const system_sdk = @import("system_sdk.zig");
 
 pub fn build(b: *Builder) void {
-    const mode = b.standardReleaseOptions();
-    const target = b.standardTargetOptions(.{});
-
-    const main_tests = b.addTest("src/main.zig");
-    main_tests.setBuildMode(mode);
-    main_tests.setTarget(target);
-    link(b, main_tests, .{});
-
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&main_tests.step);
+    test_step.dependOn(&testStep(b).step);
+}
+
+pub fn testStep(b: *Builder) *std.build.LibExeObjStep {
+    const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+    link(b, main_tests, .{});
+    return main_tests;
 }
 
 pub const LinuxWindowManager = enum {

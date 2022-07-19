@@ -21,18 +21,8 @@ pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
-    const soundio_tests = b.addTest("soundio/main.zig");
-    soundio_tests.setBuildMode(mode);
-    link(b, soundio_tests, .{});
-
-    const main_tests = b.addTest("src/main.zig");
-    main_tests.setBuildMode(mode);
-    main_tests.addPackage(soundio_pkg);
-    link(b, main_tests, .{});
-
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&soundio_tests.step);
-    test_step.dependOn(&main_tests.step);
+    test_step.dependOn(&testStep(b, .{}).step);
 
     inline for ([_][]const u8{
         "soundio-sine-wave",
@@ -56,6 +46,18 @@ pub fn build(b: *Builder) void {
         const example_run_step = b.step("run-example-" ++ example, "Run '" ++ example ++ "' example");
         example_run_step.dependOn(&example_run_cmd.step);
     }
+}
+
+pub fn testStep(b: *std.build.Builder, options: Options) *std.build.LibExeObjStep {
+    const soundio_tests = b.addTest(thisDir() ++ "/soundio/main.zig");
+    link(b, soundio_tests, options);
+
+    const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+    main_tests.addPackage(soundio_pkg);
+    main_tests.step.dependOn(&soundio_tests.step);
+    link(b, main_tests, options);
+
+    return main_tests;
 }
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
