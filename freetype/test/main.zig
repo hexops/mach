@@ -2,8 +2,12 @@ const std = @import("std");
 const testing = std.testing;
 const freetype = @import("freetype");
 
-const firasans_font_path = "upstream/assets/FiraSans-Regular.ttf";
-const firasans_font_data = @embedFile("../upstream/assets/FiraSans-Regular.ttf");
+const firasans_font_path = thisDir() ++ "/../upstream/assets/FiraSans-Regular.ttf";
+const firasans_font_data = @embedFile(thisDir() ++ "/../upstream/assets/FiraSans-Regular.ttf");
+
+fn thisDir() []const u8 {
+    return std.fs.path.dirname(@src().file) orelse ".";
+}
 
 // Remove once the stage2 compiler fixes pkg std not found
 comptime {
@@ -49,14 +53,14 @@ test "load glyph" {
 
 test "attach file" {
     const lib = try freetype.Library.init();
-    const face = try lib.createFace("upstream/assets/DejaVuSans.pfb", 0);
-    try face.attachFile("upstream/assets/DejaVuSans.pfm");
+    const face = try lib.createFace(thisDir() ++ "/../upstream/assets/DejaVuSans.pfb", 0);
+    try face.attachFile(thisDir() ++ "/../upstream/assets/DejaVuSans.pfm");
 }
 
 test "attach from memory" {
     const lib = try freetype.Library.init();
-    const face = try lib.createFace("upstream/assets/DejaVuSans.pfb", 0);
-    const file = @embedFile("../upstream/assets/DejaVuSans.pfm");
+    const face = try lib.createFace(thisDir() ++ "/../upstream/assets/DejaVuSans.pfb", 0);
+    const file = @embedFile(thisDir() ++ "/../upstream/assets/DejaVuSans.pfm");
     try face.attachMemory(file);
 }
 
