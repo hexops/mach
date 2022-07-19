@@ -65,7 +65,7 @@ pub fn writer(label: *ResizableLabel, app: *App, position: Vec4, text_color: Vec
 
 pub fn init(self: *ResizableLabel, lib: ft.Library, font_path: []const u8, face_index: i32, allocator: std.mem.Allocator, white_texture: UVData) !void {
     self.* = ResizableLabel{
-        .face = try lib.newFace(font_path, face_index),
+        .face = try lib.createFace(font_path, face_index),
         .char_map = std.AutoHashMap(u21, CharVertices).init(allocator),
         .allocator = allocator,
         .tessellator = undefined,
