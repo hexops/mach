@@ -27,14 +27,14 @@ pub fn deinit(self: Library) void {
     _ = c.FT_Done_FreeType(self.handle);
 }
 
-pub fn newFace(self: Library, path: []const u8, face_index: i32) Error!Face {
+pub fn createFace(self: Library, path: []const u8, face_index: i32) Error!Face {
     return self.openFace(.{
         .flags = .{ .path = true },
         .data = .{ .path = path },
     }, face_index);
 }
 
-pub fn newFaceMemory(self: Library, bytes: []const u8, face_index: i32) Error!Face {
+pub fn createFaceMemory(self: Library, bytes: []const u8, face_index: i32) Error!Face {
     return self.openFace(.{
         .flags = .{ .memory = true },
         .data = .{ .memory = bytes },
@@ -58,7 +58,7 @@ pub fn version(self: Library) Version {
     return v;
 }
 
-pub fn newStroker(self: Library) Error!Stroker {
+pub fn createStroker(self: Library) Error!Stroker {
     var s: c.FT_Stroker = undefined;
     try intToError(c.FT_Stroker_New(self.handle, &s));
     return Stroker{ .handle = s };

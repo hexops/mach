@@ -46,7 +46,7 @@ pub fn writer(label: *Label, app: *App, position: Vec2, text_color: Vec4) Writer
 
 pub fn init(lib: ft.Library, font_path: []const u8, face_index: i32, char_size: i32, allocator: std.mem.Allocator) !Label {
     return Label{
-        .face = try lib.newFace(font_path, face_index),
+        .face = try lib.createFace(font_path, face_index),
         .size = char_size,
         .char_map = std.AutoHashMap(u21, GlyphInfo).init(allocator),
         .allocator = allocator,
