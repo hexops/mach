@@ -15,29 +15,24 @@
 
 ;; Note: CFFI automatically translates C_style names into lispier kebab-case ones
 
-;; void* mach_init(void);
-(defcfun "mach_init_core" :pointer)
-;; for some reason, calling "mach_init" always returns a null pointer, and I have no clue why...
-;; So I renamed the API function name to "mach_init_core" instead
+(defcfun "mach_core_init" :pointer)
 
-;; int mach_update(void*, resize_callback);
-(defcfun "mach_update" :int
+(defcfun "mach_core_update" :int
   (core :pointer) (resize-fn :pointer))
 
-;; void mach_deinit(void*);
-(defcfun "mach_deinit" :void
+(defcfun "mach_core_deinit" :void
   (core :pointer))
 
 ;; void mach_set_should_close(void*);
-(defcfun "mach_set_should_close" :void
+(defcfun "mach_core_set_should_close" :void
   (core :pointer))
 
 ;; float mach_delta_time(void*);
-(defcfun "mach_delta_time" :float
+(defcfun "mach_core_delta_time" :float
   (core :pointer))
 
 ;; bool mach_window_should_close(void*);
-(defcfun "mach_window_should_close" :bool
+(defcfun "mach_core_window_should_close" :bool
   (core :pointer))
 
 ;; main
@@ -46,20 +41,18 @@
 (defcallback resize-fn :void ((core :pointer) (width :unsigned-int) (height :unsigned-int))
   (format t "Resize Callback: ~S ~S~%" width height))
 
-(setf core (mach-init-core))
-
-(format t "Core: ~S~%" core)
+(setf core (mach-core-init))
 
 (when (pointer-eq core (null-pointer))
   (format t "Failed to initialize mach core~%")
   (sb-ext:exit))
 
-(loop while (not (mach-window-should-close core))
+(loop while (not (mach-core-window-should-close core))
       do (progn
-           (when (= 0 (mach-update core (callback resize-fn)))
+           (when (= 0 (mach-core-update core (callback resize-fn)))
              (format t "Error updating mach~%")
              (sb-ext:exit))
-           (when (> (incf *elapsed* (mach-delta-time core)) 5.0)
-             (mach-set-should-close core))))
+           (when (> (incf *elapsed* (mach-core-delta-time core)) 5.0)
+             (mach-core-set-should-close core))))
 
 (sb-ext:exit)
