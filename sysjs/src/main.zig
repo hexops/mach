@@ -142,7 +142,7 @@ pub const Object = struct {
 
     pub fn call(obj: *const Object, fun: []const u8, args: []const Value) Value {
         var ret: Value = undefined;
-        js.zigFunctionCall(obj.ref, fun.ptr, fun.len, args.ptr, args.len, &ret);
+        js.zigFunctionCall(obj.ref, fun.ptr, @intCast(u32, fun.len), args.ptr, @intCast(u32, args.len), &ret);
         return ret;
     }
 };
@@ -164,12 +164,12 @@ pub const Function = struct {
     }
 
     pub fn construct(func: *const Function, args: []const Value) Object {
-        return .{ .ref = js.zigConstructType(func.ref, args.ptr, args.len) };
+        return .{ .ref = js.zigConstructType(func.ref, args.ptr, @intCast(u32, args.len)) };
     }
 
     pub fn invoke(func: *const Function, args: []const Value) Value {
         var ret: Value = undefined;
-        js.zigFunctionInvoke(func.ref, args.ptr, args.len, &ret);
+        js.zigFunctionInvoke(func.ref, args.ptr, @intCast(u32, args.len), &ret);
         return ret;
     }
 };
@@ -224,7 +224,7 @@ pub fn createArray() Object {
 }
 
 pub fn createString(string: []const u8) String {
-    return .{ .ref = js.zigCreateString(string.ptr, string.len) };
+    return .{ .ref = js.zigCreateString(string.ptr, @intCast(u32, string.len)) };
 }
 
 pub fn createNumber(num: f64) Value {
@@ -250,7 +250,7 @@ var functions: std.ArrayListUnmanaged(FunType) = .{};
 pub fn createFunction(fun: FunType, captures: []Value) Function {
     if (builtin.zig_backend == .stage1) {
         functions.append(std.heap.page_allocator, fun) catch unreachable;
-        return .{ .ref = js.zigCreateFunction(@intToPtr(*anyopaque, functions.items.len), captures.ptr, captures.len) };
+        return .{ .ref = js.zigCreateFunction(@intToPtr(*anyopaque, functions.items.len), captures.ptr, @intCast(u32, captures.len)) };
     }
     return .{ .ref = js.zigCreateFunction(&fun, captures.ptr, captures.len) };
 }
@@ -260,4 +260,8 @@ pub fn constructType(t: []const u8, args: []const Value) Object {
     defer constructor.deinit();
 
     return constructor.construct(args);
+}
+
+test {
+    std.testing.refAllDeclsRecursive(@This());
 }
