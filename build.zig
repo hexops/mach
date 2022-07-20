@@ -115,7 +115,8 @@ pub fn build(b: *std.build.Builder) void {
     compile_all.dependOn(b.getInstallStep());
 
     // compiles the `libmach` shared library
-    const lib = b.addSharedLibrary("mach", "src/bindings.zig", .unversioned);
+    const lib = b.addSharedLibrary("mach", "src/platform/libmach.zig", .unversioned);
+    lib.main_pkg_path = "src/";
     const app_pkg = std.build.Pkg{
         .name = "app",
         .source = .{ .path = "src/platform/libmach.zig" },

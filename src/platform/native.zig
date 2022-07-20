@@ -587,60 +587,81 @@ pub const Platform = struct {
 
 pub const BackingTimer = std.time.Timer;
 
+var app: App = undefined;
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var core = try Core.init(allocator);
-    defer core.internal.deinit();
-    var app: App = undefined;
+    var core = try core_init(allocator);
+    defer core_deinit(core);
 
-    try app.init(&core);
-    defer app.deinit(&core);
+    try app.init(core);
+    defer app.deinit(core);
 
-    // Glfw specific: initialize the user pointer used in callbacks
-    core.internal.initCallback();
+    while (!core.internal.window.shouldClose()) {
+        try core_update(core, null);
 
-    const window = core.internal.window;
-    while (!window.shouldClose()) {
-        if (core.internal.wait_event_timeout > 0.0) {
-            if (core.internal.wait_event_timeout == std.math.inf(f64)) {
-                // Wait for an event
-                try glfw.waitEvents();
-            } else {
-                // Wait for an event with a timeout
-                try glfw.waitEventsTimeout(core.internal.wait_event_timeout);
-            }
+        try app.update(core);
+    }
+}
+
+pub fn core_init(allocator: std.mem.Allocator) !*Core {
+    const core: *Core = try allocator.create(Core);
+    core.* = try Core.init(allocator);
+
+    // // Glfw specific: initialize the user pointer used in callbacks
+    core.*.internal.initCallback();
+
+    return core;
+}
+
+pub export fn core_deinit(core: *Core) void {
+    core.internal.deinit();
+    // assumes that core.allocator is the same allocator used to allocate core
+    core.allocator.destroy(core); // "I used the core to destroy the core"
+}
+
+pub const CoreResizeCallback = fn (*Core, u32, u32) callconv(.C) void;
+
+pub fn core_update(core: *Core, resize: ?CoreResizeCallback) !void {
+    if (core.internal.wait_event_timeout > 0.0) {
+        if (core.internal.wait_event_timeout == std.math.inf(f64)) {
+            // Wait for an event
+            try glfw.waitEvents();
         } else {
-            // Don't wait for events
-            try glfw.pollEvents();
+            // Wait for an event with a timeout
+            try glfw.waitEventsTimeout(core.internal.wait_event_timeout);
         }
+    } else {
+        // Don't wait for events
+        try glfw.pollEvents();
+    }
 
-        core.delta_time_ns = core.timer.lapPrecise();
-        core.delta_time = @intToFloat(f32, core.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
+    core.delta_time_ns = core.timer.lapPrecise();
+    core.delta_time = @intToFloat(f32, core.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
-        var framebuffer_size = core.getFramebufferSize();
-        core.target_desc.width = framebuffer_size.width;
-        core.target_desc.height = framebuffer_size.height;
+    var framebuffer_size = core.getFramebufferSize();
+    core.target_desc.width = framebuffer_size.width;
+    core.target_desc.height = framebuffer_size.height;
 
-        if (core.swap_chain == null or !core.current_desc.equal(&core.target_desc)) {
-            const use_legacy_api = core.surface == null;
-            if (!use_legacy_api) {
-                core.swap_chain = core.device.nativeCreateSwapChain(core.surface, &core.target_desc);
-            } else core.swap_chain.?.configure(
-                core.swap_chain_format,
-                .{ .render_attachment = true },
-                core.target_desc.width,
-                core.target_desc.height,
-            );
+    if (core.swap_chain == null or !core.current_desc.equal(&core.target_desc)) {
+        const use_legacy_api = core.surface == null;
+        if (!use_legacy_api) {
+            core.swap_chain = core.device.nativeCreateSwapChain(core.surface, &core.target_desc);
+        } else core.swap_chain.?.configure(
+            core.swap_chain_format,
+            .{ .render_attachment = true },
+            core.target_desc.width,
+            core.target_desc.height,
+        );
 
-            if (@hasDecl(App, "resize")) {
-                try app.resize(&core, core.target_desc.width, core.target_desc.height);
-            }
-            core.current_desc = core.target_desc;
+        if (@hasDecl(App, "resize")) {
+            try app.resize(core, core.target_desc.width, core.target_desc.height);
+        } else if (resize != null) {
+            resize.?(core, core.target_desc.width, core.target_desc.height);
         }
-
-        try app.update(&core);
+        core.current_desc = core.target_desc;
     }
 }
