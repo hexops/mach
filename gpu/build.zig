@@ -11,7 +11,7 @@ pub fn build(b: *std.build.Builder) void {
     };
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, .{ .gpu_dawn_options = gpu_dawn_options }).step);
+    test_step.dependOn(&testStep(b, mode, .{ .gpu_dawn_options = gpu_dawn_options }).step);
 
     const example = b.addExecutable("gpu-hello-triangle", "examples/main.zig");
     example.setTarget(target);
@@ -28,8 +28,9 @@ pub fn build(b: *std.build.Builder) void {
     example_run_step.dependOn(&example_run_cmd.step);
 }
 
-pub fn testStep(b: *std.build.Builder, options: Options) *std.build.LibExeObjStep {
+pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, options: Options) *std.build.LibExeObjStep {
     const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+    main_tests.setBuildMode(mode);
     link(b, main_tests, options);
     return main_tests;
 }

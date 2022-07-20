@@ -18,7 +18,7 @@ pub fn build(b: *Builder) void {
     link(b, lib, options);
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b).step);
+    test_step.dependOn(&testStep(b, mode).step);
 
     const dawn_example = b.addExecutable("dawn-example", "src/dawn/hello_triangle.zig");
     dawn_example.setBuildMode(mode);
@@ -34,8 +34,10 @@ pub fn build(b: *Builder) void {
     dawn_example_run_step.dependOn(&dawn_example_run_cmd.step);
 }
 
-pub fn testStep(b: *std.build.Builder) *std.build.LibExeObjStep {
-    return b.addTest(thisDir() ++ "/src/main.zig");
+pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode) *std.build.LibExeObjStep {
+    const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+    main_tests.setBuildMode(mode);
+    return main_tests;
 }
 
 pub const LinuxWindowManager = enum {

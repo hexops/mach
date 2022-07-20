@@ -49,7 +49,7 @@ pub fn build(b: *std.build.Builder) !void {
     const target = b.standardTargetOptions(.{});
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b).step);
+    test_step.dependOn(&testStep(b, mode).step);
 
     inline for ([_][]const u8{
         "single-glyph",
@@ -80,19 +80,22 @@ pub fn build(b: *std.build.Builder) !void {
     }
 }
 
-pub fn testStep(b: *Builder) *std.build.LibExeObjStep {
+pub fn testStep(b: *Builder, mode: std.builtin.Mode) *std.build.LibExeObjStep {
     const freetype_tests = b.addTestSource(pkg.source);
+    freetype_tests.setBuildMode(mode);
     freetype_tests.addPackage(c_pkg);
     freetype_tests.addPackage(utils_pkg);
     link(b, freetype_tests, .{});
 
     const harfbuzz_tests = b.addTestSource(harfbuzz_pkg.source);
+    harfbuzz_tests.setBuildMode(mode);
     harfbuzz_tests.addPackage(c_pkg);
     harfbuzz_tests.addPackage(utils_pkg);
     harfbuzz_tests.addPackage(pkg);
     link(b, harfbuzz_tests, .{ .harfbuzz = .{} });
 
     const main_tests = b.addTest(thisDir() ++ "/test/main.zig");
+    main_tests.setBuildMode(mode);
     main_tests.addPackage(c_pkg);
 
     // Remove once the stage2 compiler fixes pkg std not found

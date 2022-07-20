@@ -18,16 +18,24 @@ pub fn build(b: *std.build.Builder) void {
     };
     const options = Options{ .gpu_dawn_options = gpu_dawn_options };
 
-    // TODO: re-enable tests
     const main_tests = b.addTest("src/main.zig");
     main_tests.setBuildMode(mode);
-    main_tests.setTarget(target);
     main_tests.addPackage(pkg);
     main_tests.addPackage(gpu.pkg);
     main_tests.addPackage(glfw.pkg);
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);
+
+    const test_mach_step = b.step("test-mach", "Run Mach Core library tests");
+    test_mach_step.dependOn(&main_tests.step);
+    test_mach_step.dependOn(&gpu.testStep(b, mode, @bitCast(gpu.Options, options)).step);
+    test_mach_step.dependOn(&gpu_dawn.testStep(b, mode).step);
+    test_mach_step.dependOn(&glfw.testStep(b, mode).step);
+    test_mach_step.dependOn(&ecs.testStep(b, mode).step);
+    test_mach_step.dependOn(&freetype.testStep(b, mode).step);
+    test_mach_step.dependOn(&sysaudio.testStep(b, mode, .{}).step);
+    test_mach_step.dependOn(&sysjs.testStep(b, mode).step);
 
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureGit(b.allocator);
