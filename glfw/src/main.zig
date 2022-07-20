@@ -524,17 +524,11 @@ pub fn basicTest() !void {
     }
 }
 
-test "getVersionString" {
-    // Reference these so the tests in these files get pulled in / ran.
-    _ = Monitor;
-    _ = GammaRamp;
-    _ = Image;
-    _ = key;
-    _ = Joystick;
-    _ = VideoMode;
-    _ = Window;
-    _ = Cursor;
+test {
+    std.testing.refAllDeclsRecursive(@This());
+}
 
+test "getVersionString" {
     std.debug.print("\nGLFW version v{}.{}.{}\n", .{ version.major, version.minor, version.revision });
     std.debug.print("\nstring: {s}\n", .{getVersionString()});
 }
