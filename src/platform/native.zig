@@ -594,38 +594,37 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var core = try core_init(allocator);
-    defer core_deinit(core);
+    var core = try coreInit(allocator);
+    defer coreDeinit(core, allocator);
 
     try app.init(core);
     defer app.deinit(core);
 
     while (!core.internal.window.shouldClose()) {
-        try core_update(core, null);
+        try coreUpdate(core, null);
 
         try app.update(core);
     }
 }
 
-pub fn core_init(allocator: std.mem.Allocator) !*Core {
+pub fn coreInit(allocator: std.mem.Allocator) !*Core {
     const core: *Core = try allocator.create(Core);
     core.* = try Core.init(allocator);
 
-    // // Glfw specific: initialize the user pointer used in callbacks
+    // Glfw specific: initialize the user pointer used in callbacks
     core.*.internal.initCallback();
 
     return core;
 }
 
-pub export fn core_deinit(core: *Core) void {
+pub fn coreDeinit(core: *Core, allocator: std.mem.Allocator) void {
     core.internal.deinit();
-    // assumes that core.allocator is the same allocator used to allocate core
-    core.allocator.destroy(core); // "I used the core to destroy the core"
+    allocator.destroy(core);
 }
 
 pub const CoreResizeCallback = fn (*Core, u32, u32) callconv(.C) void;
 
-pub fn core_update(core: *Core, resize: ?CoreResizeCallback) !void {
+pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
     if (core.internal.wait_event_timeout > 0.0) {
         if (core.internal.wait_event_timeout == std.math.inf(f64)) {
             // Wait for an event

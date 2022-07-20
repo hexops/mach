@@ -38,24 +38,24 @@ const allocator = gpa.allocator();
 // Returns a pointer to a newly allocated Core
 // Will return a null pointer if an error occurred while initializing Core
 pub export fn mach_core_init() ?*Core {
-    const core = native.core_init(allocator) catch {
+    const core = native.coreInit(allocator) catch {
         return @intToPtr(?*Core, 0);
     };
     return core;
 }
 
 pub export fn mach_core_deinit(core: *Core) void {
-    native.core_deinit(core);
+    native.coreDeinit(core, allocator);
 }
 
-pub export fn mach_core_update(core: *Core, resize: ?native.CoreResizeCallback) MachReturn {
-    native.core_update(core, resize) catch {
-        return MachReturn.Failure;
+pub export fn mach_core_update(core: *Core, resize: ?native.CoreResizeCallback) MachStatus {
+    native.coreUpdate(core, resize) catch {
+        return MachStatus.Error;
     };
-    return MachReturn.Success;
+    return MachStatus.Success;
 }
 
-const MachReturn = enum(c_int) { 
-    Failure,
-    Success,
+const MachStatus = enum(c_int) { 
+    Success = 0x00000000,
+    Error = 0x00000001,
 };
