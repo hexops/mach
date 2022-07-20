@@ -52,7 +52,7 @@ pub const RequestAdapterResponse = Interface.RequestAdapterResponse;
 
 pub const Adapter = @import("Adapter.zig");
 pub const RequestDeviceErrorCode = Adapter.RequestDeviceErrorCode;
-pub const RequestDeviceError = Adapter.RequesatDeviceError;
+pub const RequestDeviceError = Adapter.RequestDeviceError;
 pub const RequestDeviceCallback = Adapter.RequestDeviceCallback;
 pub const RequestDeviceResponse = Adapter.RequestDeviceResponse;
 
@@ -155,42 +155,5 @@ const whole_map_size: u32 = std.math.maxInt(c_int);
 const whole_size: u64 = 0xffffffffffffffff;
 
 test {
-    // Root interface/implementations
-    _ = Interface;
-    _ = NativeInstance;
-
-    // Interfaces
-    _ = Adapter;
-    _ = Device;
-    _ = Surface;
-    _ = Limits;
-    _ = Queue;
-    _ = CommandBuffer;
-    _ = ShaderModule;
-    _ = SwapChain;
-    _ = TextureView;
-    _ = Texture;
-    _ = Sampler;
-    _ = RenderPipeline;
-    _ = RenderPassEncoder;
-    _ = RenderBundleEncoder;
-    _ = RenderBundle;
-    _ = QuerySet;
-    _ = PipelineLayout;
-    _ = ExternalTexture;
-    _ = BindGroup;
-    _ = BindGroupLayout;
-    _ = Buffer;
-    _ = CommandEncoder;
-    _ = ComputePassEncoder;
-    _ = ComputePipeline;
-
-    // Data structures ABI-compatible with webgpu.h
-    _ = Limits;
-
-    // Data structures not ABI-compatible with webgpu.h
-    _ = MultisampleState;
-
-    // Enumerations
-    _ = Feature;
+    std.testing.refAllDeclsRecursive(@This());
 }

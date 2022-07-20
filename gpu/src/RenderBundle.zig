@@ -18,10 +18,6 @@ pub inline fn release(bundle: RenderBundle) void {
     bundle.vtable.release(bundle.ptr);
 }
 
-pub inline fn setLabel(bundle: RenderBundle, label: [:0]const u8) void {
-    bundle.vtable.setLabel(bundle.ptr, label);
-}
-
 pub const Descriptor = struct {
     label: ?[*:0]const u8 = null,
 };
