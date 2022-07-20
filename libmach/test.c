@@ -4,17 +4,18 @@
 
 typedef void resize_callback(void*, uint32_t, uint32_t);
 
-typedef enum {
-  MachFailure,
-  MachSuccess
-} MachReturn;
+typedef enum MachStatus {
+    MachStatus_Success = 0x00000000,
+    MachStatus_Error = 0x00000001,
+    MachStatus_Force32 = 0x7FFFFFFF
+} MachStatus;
 
 // `libmach` exported API bindings
 void* mach_core_init(void);
 void mach_core_deinit(void*);
 void mach_core_set_should_close(void*);
 bool mach_core_window_should_close(void*);
-MachReturn mach_core_update(void*, resize_callback);
+MachStatus mach_core_update(void*, resize_callback);
 float mach_core_delta_time(void*);
 
 void resize_fn(void* core, uint32_t width, uint32_t height) {
@@ -32,7 +33,7 @@ int main() {
   }
 
   while (!mach_core_window_should_close(core)) {
-    if (mach_core_update(core, resize_fn) == MachFailure) {
+    if (mach_core_update(core, resize_fn) == MachStatus_Error) {
       printf("Error updating Mach\n");
       break;
     };

@@ -15,6 +15,10 @@
 
 ;; Note: CFFI automatically translates C_style names into lispier kebab-case ones
 
+(defcenum mach-status
+  (:success 0)
+  (:error 1))
+
 (defcfun "mach_core_init" :pointer)
 
 (defcfun "mach_core_update" :int
@@ -49,7 +53,8 @@
 
 (loop while (not (mach-core-window-should-close core))
       do (progn
-           (when (= 0 (mach-core-update core (callback resize-fn)))
+           (when (= (foreign-enum-value 'mach-status :error)
+                    (mach-core-update core (callback resize-fn)))
              (format t "Error updating mach~%")
              (sb-ext:exit))
            (when (> (incf *elapsed* (mach-core-delta-time core)) 5.0)
