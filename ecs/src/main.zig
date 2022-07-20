@@ -28,8 +28,6 @@ const testing = std.testing;
 pub const EntityID = @import("entities.zig").EntityID;
 pub const Entities = @import("entities.zig").Entities;
 
-pub const Adapter = @import("systems.zig").Adapter;
-pub const System = @import("systems.zig").System;
 pub const Module = @import("systems.zig").Module;
 pub const Modules = @import("systems.zig").Modules;
 pub const Messages = @import("systems.zig").Messages;
@@ -44,7 +42,7 @@ pub const World = @import("systems.zig").World;
 // * Sparse storage?
 
 test "inclusion" {
-    _ = Entities;
+    std.testing.refAllDeclsRecursive(@This());
 }
 
 test "example" {
