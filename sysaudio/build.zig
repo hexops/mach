@@ -22,7 +22,7 @@ pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, .{}).step);
+    test_step.dependOn(&testStep(b, mode, .{}).step);
 
     inline for ([_][]const u8{
         "soundio-sine-wave",
@@ -48,11 +48,13 @@ pub fn build(b: *Builder) void {
     }
 }
 
-pub fn testStep(b: *std.build.Builder, options: Options) *std.build.LibExeObjStep {
+pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, options: Options) *std.build.LibExeObjStep {
     const soundio_tests = b.addTest(thisDir() ++ "/soundio/main.zig");
+    soundio_tests.setBuildMode(mode);
     link(b, soundio_tests, options);
 
     const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+    main_tests.setBuildMode(mode);
     main_tests.addPackage(soundio_pkg);
     main_tests.step.dependOn(&soundio_tests.step);
     link(b, main_tests, options);
