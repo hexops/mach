@@ -83,6 +83,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
     atlas_white_region.height -= 2;
     const white_texture_uv_data = atlas_white_region.getUVData(atlas_float_size);
     var white_tex_data = try core.allocator.alloc(zigimg.color.Rgba32, white_tex_scale * white_tex_scale);
+    defer core.allocator.free(white_tex_data);
     std.mem.set(zigimg.color.Rgba32, white_tex_data, zigimg.color.Rgba32.initRGB(0xff, 0xff, 0xff));
     app.texture_atlas_data.set(atlas_white_region, white_tex_data);
 
