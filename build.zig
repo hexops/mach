@@ -20,6 +20,7 @@ pub fn build(b: *std.build.Builder) void {
 
     const main_tests = b.addTest("src/main.zig");
     main_tests.setBuildMode(mode);
+    main_tests.setTarget(target);
     main_tests.addPackage(pkg);
     main_tests.addPackage(gpu.pkg);
     main_tests.addPackage(glfw.pkg);
