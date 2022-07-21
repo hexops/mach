@@ -31,6 +31,14 @@ const CharVertices = struct {
     // But the other two points do, so put those in the indices
     convex_vertices: VertexList,
     convex_vertices_indices: std.ArrayList(u16),
+
+    fn deinit(self: CharVertices) void {
+        self.filled_vertices.deinit();
+        self.filled_vertices_indices.deinit();
+        self.concave_vertices.deinit();
+        self.convex_vertices.deinit();
+        self.convex_vertices_indices.deinit();
+    }
 };
 
 face: ft.Face,
@@ -77,16 +85,12 @@ pub fn init(self: *ResizableLabel, lib: ft.Library, font_path: []const u8, face_
 pub fn deinit(label: *ResizableLabel) void {
     label.face.deinit();
     label.tessellator.deinit();
-    // FIXME:
-    // std.debug.todo("valueIterator() doesn't stop? How do we deallocate the values?");
-    // while (label.char_map.valueIterator().next()) |value| {
-    //     _ = value;
-    // value.filled_vertices.deinit();
-    // value.filled_vertices_indices.deinit();
-    // value.convex_vertices.deinit();
-    // value.convex_vertices_indices.deinit();
-    // value.concave_vertices.deinit();
-    // }
+
+    var iter = label.char_map.valueIterator();
+    while (iter.next()) |ptr| {
+        ptr.deinit();
+    }
+
     label.char_map.deinit();
 }
 
