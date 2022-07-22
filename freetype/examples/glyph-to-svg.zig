@@ -24,7 +24,7 @@ const OutlinePrinter = struct {
         var lib = try freetype.Library.init();
         return Self{
             .library = lib,
-            .face = try lib.newFace("upstream/assets/FiraSans-Regular.ttf", 0),
+            .face = try lib.createFace("upstream/assets/FiraSans-Regular.ttf", 0),
             .output_file = file,
             .path_stream = std.io.fixedBufferStream(&buf),
             .xMin = 0,
