@@ -17,7 +17,7 @@ pub fn main() !void {
     const lib = try freetype.Library.init();
     defer lib.deinit();
 
-    const face = try lib.newFace("upstream/assets/FiraSans-Regular.ttf", 0);
+    const face = try lib.createFace("upstream/assets/FiraSans-Regular.ttf", 0);
     try face.setCharSize(60 * 48, 0, 50, 0);
     try face.loadChar(args[1][0], .{ .render = true });
     const bitmap = face.glyph().bitmap();
