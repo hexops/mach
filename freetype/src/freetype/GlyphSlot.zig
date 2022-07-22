@@ -60,6 +60,10 @@ pub fn format(self: GlyphSlot) GlyphFormat {
     return @intToEnum(GlyphFormat, self.handle.*.format);
 }
 
+pub fn ownBitmap(self: GlyphSlot) Error!void {
+    try intToError(c.FT_GlyphSlot_Own_Bitmap(self.handle));
+}
+
 pub fn bitmap(self: GlyphSlot) Bitmap {
     return .{ .handle = self.handle.*.bitmap };
 }

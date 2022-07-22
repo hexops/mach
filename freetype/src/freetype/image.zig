@@ -1,5 +1,9 @@
 const std = @import("std");
 const c = @import("c");
+const intToError = @import("error.zig").intToError;
+const Error = @import("error.zig").Error;
+const Library = @import("Library.zig");
+const Color = @import("color.zig").Color;
 
 pub const Outline = @import("Outline.zig");
 
@@ -28,6 +32,38 @@ pub const GlyphFormat = enum(u32) {
 
 pub const Bitmap = struct {
     handle: c.FT_Bitmap,
+
+    pub fn init() Bitmap {
+        var b: c.FT_Bitmap = undefined;
+        c.FT_Bitmap_Init(&b);
+        return .{ .handle = b };
+    }
+
+    pub fn deinit(self: *Bitmap, lib: Library) void {
+        _ = c.FT_Bitmap_Done(lib.handle, &self.handle);
+    }
+
+    pub fn copy(self: Bitmap, lib: Library) Error!Bitmap {
+        var b: c.FT_Bitmap = undefined;
+        try intToError(c.FT_Bitmap_Copy(lib.handle, &self.handle, &b));
+        return Bitmap{ .handle = b };
+    }
+
+    pub fn embolden(self: *Bitmap, lib: Library, x_strength: i32, y_strength: i32) Error!void {
+        try intToError(c.FT_Bitmap_Embolden(lib.handle, &self.handle, x_strength, y_strength));
+    }
+
+    pub fn convert(self: Bitmap, lib: Library, alignment: u29) Error!Bitmap {
+        var b: c.FT_Bitmap = undefined;
+        try intToError(c.FT_Bitmap_Convert(lib.handle, &self.handle, &b, alignment));
+        return Bitmap{ .handle = b };
+    }
+
+    pub fn blend(self: *Bitmap, lib: Library, source_offset: Vector, target_offset: *Vector, color: Color) Error!void {
+        var b: c.FT_Bitmap = undefined;
+        c.FT_Bitmap_Init(&b);
+        try intToError(c.FT_Bitmap_Blend(lib.handle, &self.handle, source_offset, &b, target_offset, color));
+    }
 
     pub fn width(self: Bitmap) u32 {
         return self.handle.width;
