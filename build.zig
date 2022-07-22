@@ -125,6 +125,8 @@ pub fn build(b: *std.build.Builder) void {
 
     // compiles the `libmach` shared library
     const lib = b.addSharedLibrary("mach", "src/platform/libmach.zig", .unversioned);
+    lib.setTarget(target);
+    lib.setBuildMode(mode);
     lib.main_pkg_path = "src/";
     const app_pkg = std.build.Pkg{
         .name = "app",
