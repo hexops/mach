@@ -6,4 +6,5 @@ pub usingnamespace @cImport({
     @cInclude("freetype/ftlcdfil.h");
     @cInclude("freetype/ftsizes.h");
     @cInclude("freetype/ftstroke.h");
+    @cInclude("freetype/fttrigon.h");
 });

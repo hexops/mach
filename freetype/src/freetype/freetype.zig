@@ -5,6 +5,7 @@ const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
 const Generic = @import("types.zig").Generic;
 
+pub usingnamespace @import("computations.zig");
 pub const Library = @import("Library.zig");
 pub const Face = @import("Face.zig");
 pub const GlyphSlot = @import("GlyphSlot.zig");
