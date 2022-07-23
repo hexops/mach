@@ -8,11 +8,11 @@ const native = @import("native.zig");
 pub const App = @This();
 
 // Dummy init, deinit, and update functions
-pub fn init(_: *App, _: *Core) !void { }
+pub fn init(_: *App, _: *Core) !void {}
 
-pub fn deinit(_: *App, _: *Core) void { }
+pub fn deinit(_: *App, _: *Core) void {}
 
-pub fn update(_: *App, _: *Core) !void { }
+pub fn update(_: *App, _: *Core) !void {}
 
 // Current Limitations:
 // 1. Currently, ecs seems to be using some weird compile-time type trickery, so I'm not exactly sure how
@@ -55,7 +55,7 @@ pub export fn mach_core_update(core: *Core, resize: ?native.CoreResizeCallback) 
     return MachStatus.Success;
 }
 
-const MachStatus = enum(c_int) { 
+const MachStatus = enum(c_int) {
     Success = 0x00000000,
     Error = 0x00000001,
 };
