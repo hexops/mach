@@ -5,7 +5,7 @@ const js = @import("sysjs");
 
 const Audio = @This();
 
-pub const DataCallback = fn (device: *Device, user_data: ?*anyopaque, sample: *f32) void;
+pub const DataCallback = fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
 
 pub const Device = struct {
     context: js.Object,
@@ -102,30 +102,61 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
 }
 
 fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
+    std.log.info("LEN {}", .{captures[0].val.ref}); // Doesnt works when removed
     const device_context = captures[0].view(.object);
+    std.log.info("REF: {} {}", .{ captures[0].val.ref, device_context.ref }); // Same ^
 
     const audio_event = args.getIndex(0).view(.object);
+    defer audio_event.deinit();
     const output_buffer = audio_event.get("outputBuffer").view(.object);
+    defer output_buffer.deinit();
 
     const callback = device_context.get("callback");
     if (!callback.is(.undef)) {
         // Do not deinit, we are not making a new device, just creating a view to the current one.
         var dev = Device{ .context = device_context };
         const cb = @intToPtr(*DataCallback, @floatToInt(usize, callback.view(.num)));
-        const user_data = device_context.get("user_data");
-        const ud = if (user_data.is(.undef)) null else @intToPtr(*anyopaque, @floatToInt(usize, user_data.view(.num)));
+        //const user_data = device_context.get("user_data");
+        //const ud = if (user_data.is(.undef)) null else @intToPtr(*anyopaque, @floatToInt(usize, user_data.view(.num)));
+        // The above used to work with the old code
+        const ud: ?*anyopaque = null;
 
         var channel: usize = 0;
         while (channel < @floatToInt(usize, output_buffer.get("numberOfChannels").view(.num))) : (channel += 1) {
+            const buffer_length = default_buffer_size * @sizeOf(f32);
+
+            const source = js.constructType("Uint8Array", &.{js.createNumber(buffer_length)});
+            defer source.deinit();
+
+            //var buffer: [buffer_length]u8 = undefined; // This should work
+            var buffer = std.heap.page_allocator.alloc(u8, buffer_length) catch unreachable;
+            defer std.heap.page_allocator.free(buffer);
+
+            std.log.info("before cb", .{});
+            cb.*(&dev, ud, buffer);
+            std.log.info("after cb", .{});
+            source.copyBytes(buffer);
+            //source.copyBytes((&[_]u8{ 0, 0, 20, 66 } ** 511) ++ (&[_]u8{ 0, 0, 0, 0 } ** (1)));
+
+            const float_source = js.constructType("Float32Array", &.{
+                source.get("buffer"),
+                source.get("byteOffset"),
+                js.createNumber(source.get("byteLength").view(.num) / 4),
+            });
+            defer float_source.deinit();
+
+            js.global().set("source", source.toValue());
+            js.global().set("float_source", float_source.toValue());
+            js.global().set("output_buffer", output_buffer.toValue());
+
+            // if (has copyToChannel) {
+            //_ = output_buffer.call("copyToChannel", &.{ float_source.toValue(), js.createNumber(@intToFloat(f64, channel)) });
+            // } else {
             const output_data = output_buffer.call("getChannelData", &.{js.createNumber(@intToFloat(f64, channel))}).view(.object);
             defer output_data.deinit();
 
-            var sample: usize = 0;
-            while (sample < @floatToInt(usize, output_buffer.get("length").view(.num))) : (sample += 1) {
-                var ret_sample: f32 = undefined;
-                cb.*(&dev, ud, &ret_sample);
-                output_data.setIndex(sample, js.createNumber(ret_sample));
-            }
+            _ = output_data.call("set", &.{float_source.toValue()});
+            // }
         }
     }
 
