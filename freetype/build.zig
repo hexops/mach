@@ -48,6 +48,12 @@ pub fn build(b: *std.build.Builder) !void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
+    const test_app = b.addStaticLibrary("test_app", null);
+    test_app.setBuildMode(mode);
+    test_app.setTarget(target);
+    link(b, test_app, .{ .freetype = .{ .brotli = true } });
+    test_app.install();
+
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&testStep(b, mode).step);
 
@@ -64,13 +70,13 @@ pub fn build(b: *std.build.Builder) !void {
         example_exe.addPackage(utils_pkg);
 
         link(b, example_exe, .{});
-        example_exe.install();
 
-        const example_compile_step = b.step("example-" ++ example, "Compile '" ++ example ++ "' example");
-        example_compile_step.dependOn(b.getInstallStep());
+        const example_install = b.addInstallArtifact(example_exe);
+
+        var example_compile_step = b.step("example-" ++ example, "Compile '" ++ example ++ "' example");
+        example_compile_step.dependOn(&example_install.step);
 
         const example_run_cmd = example_exe.run();
-        example_run_cmd.step.dependOn(b.getInstallStep());
         if (b.args) |args| {
             example_run_cmd.addArgs(args);
         }
