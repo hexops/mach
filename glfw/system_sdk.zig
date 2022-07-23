@@ -80,7 +80,7 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep, options: Options
     const mac_12 = target.os.version_range.semver.isAtLeast(.{ .major = 12, .minor = 0 }) orelse false;
     const sdk_name = if (mac_12) options.macos_sdk_12 else options.macos_sdk_11;
     const sdk_revision = if (mac_12) options.macos_sdk_12_revision else options.macos_sdk_11_revision;
-    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, sdk_name, sdk_revision) catch unreachable;
+    const sdk_root_dir = getSdkRoot(b.allocator, step, options.github_org, sdk_name, sdk_revision) catch unreachable;
 
     if (options.set_sysroot) {
         step.addFrameworkDir("/System/Library/Frameworks");
@@ -103,7 +103,7 @@ fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep, options: Options
 }
 
 fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.linux_x86_64, options.linux_x86_64_revision) catch unreachable;
+    const sdk_root_dir = getSdkRoot(b.allocator, step, options.github_org, options.linux_x86_64, options.linux_x86_64_revision) catch unreachable;
 
     if (options.set_sysroot) {
         var sdk_sysroot = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/" }) catch unreachable;
@@ -125,7 +125,7 @@ fn includeSdkLinuxX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Op
 }
 
 fn includeSdkLinuxAarch64(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.linux_aarch64, options.linux_aarch64_revision) catch unreachable;
+    const sdk_root_dir = getSdkRoot(b.allocator, step, options.github_org, options.linux_aarch64, options.linux_aarch64_revision) catch unreachable;
 
     if (options.set_sysroot) {
         var sdk_sysroot = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/" }) catch unreachable;
@@ -147,7 +147,7 @@ fn includeSdkLinuxAarch64(b: *Builder, step: *std.build.LibExeObjStep, options: 
 }
 
 fn includeSdkWindowsX8664(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const sdk_root_dir = getSdkRoot(b.allocator, options.github_org, options.windows_x86_64, options.windows_x86_64_revision) catch unreachable;
+    const sdk_root_dir = getSdkRoot(b.allocator, step, options.github_org, options.windows_x86_64, options.windows_x86_64_revision) catch unreachable;
 
     if (options.set_sysroot) {
         // We have no sysroot for Windows, but we still set one to prevent inclusion of other system
@@ -167,16 +167,22 @@ fn includeSdkWindowsX8664(b: *Builder, step: *std.build.LibExeObjStep, options: 
     step.addLibPath(sdk_libs);
 }
 
-var cached_sdk_root: ?[]const u8 = null;
+var cached_sdk_roots: ?std.AutoHashMap(*std.build.LibExeObjStep, []const u8) = null;
 
 /// returns the SDK root path, determining it iff necessary. In a real application, this may be
 /// tens or hundreds of times and so the result is cached in-memory (this also means the result
 /// cannot be freed until the result will never be used again, which is fine as the Zig build system
 /// Builder.allocator is an arena, you don't need to free.)
-fn getSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const u8, revision: []const u8) ![]const u8 {
-    if (cached_sdk_root) |cached| return cached;
-    cached_sdk_root = try determineSdkRoot(allocator, org, name, revision);
-    return cached_sdk_root.?;
+fn getSdkRoot(allocator: std.mem.Allocator, step: *std.build.LibExeObjStep, org: []const u8, name: []const u8, revision: []const u8) ![]const u8 {
+    if (cached_sdk_roots == null) {
+        cached_sdk_roots = std.AutoHashMap(*std.build.LibExeObjStep, []const u8).init(allocator);
+    }
+
+    var entry = try cached_sdk_roots.?.getOrPut(step);
+    if (entry.found_existing) return entry.value_ptr.*;
+    const sdk_root = try determineSdkRoot(allocator, org, name, revision);
+    entry.value_ptr.* = sdk_root;
+    return sdk_root;
 }
 
 fn determineSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const u8, revision: []const u8) ![]const u8 {
