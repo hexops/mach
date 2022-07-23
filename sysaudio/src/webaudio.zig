@@ -22,7 +22,7 @@ pub const Device = struct {
     }
 
     pub fn pause(device: Device) void {
-        device.context.call("suspend", &.{});
+        _ = device.context.call("suspend", &.{});
     }
 
     pub fn start(device: Device) void {
