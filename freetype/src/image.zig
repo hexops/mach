@@ -5,8 +5,6 @@ const Error = @import("error.zig").Error;
 const Library = @import("Library.zig");
 const Color = @import("color.zig").Color;
 
-pub const Outline = @import("Outline.zig");
-
 pub const Vector = c.FT_Vector;
 pub const GlyphMetrics = c.FT_Glyph_Metrics;
 

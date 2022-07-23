@@ -19,7 +19,7 @@ const utils_pkg = std.build.Pkg{
 
 pub const pkg = std.build.Pkg{
     .name = "freetype",
-    .source = .{ .path = thisDir() ++ "/src/freetype/main.zig" },
+    .source = .{ .path = thisDir() ++ "/src/main.zig" },
     .dependencies = &.{ c_pkg, utils_pkg },
 };
 
@@ -37,7 +37,6 @@ pub const Options = struct {
 pub const FreetypeOptions = struct {
     /// the path you specify freetype options
     /// via `ftoptions.h` and `ftmodule.h`
-    /// e.g `test/ft/`
     ft_config_path: ?[]const u8 = null,
     brotli: bool = false,
 };
@@ -55,7 +54,7 @@ pub fn build(b: *std.build.Builder) !void {
     test_app.install();
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode).step);
+    test_step.dependOn(&testStep(b, mode, target).step);
 
     inline for ([_][]const u8{
         "single-glyph",
@@ -86,37 +85,25 @@ pub fn build(b: *std.build.Builder) !void {
     }
 }
 
-pub fn testStep(b: *Builder, mode: std.builtin.Mode) *std.build.LibExeObjStep {
-    const freetype_tests = b.addTestSource(pkg.source);
-    freetype_tests.setBuildMode(mode);
-    freetype_tests.addPackage(c_pkg);
-    freetype_tests.addPackage(utils_pkg);
-    link(b, freetype_tests, .{});
-
-    const harfbuzz_tests = b.addTestSource(harfbuzz_pkg.source);
-    harfbuzz_tests.setBuildMode(mode);
-    harfbuzz_tests.addPackage(c_pkg);
-    harfbuzz_tests.addPackage(utils_pkg);
-    harfbuzz_tests.addPackage(pkg);
-    link(b, harfbuzz_tests, .{ .harfbuzz = .{} });
-
-    const main_tests = b.addTest(thisDir() ++ "/test/main.zig");
+pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTestExe("freetype-tests", thisDir() ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
+    main_tests.setTarget(target);
     main_tests.addPackage(c_pkg);
 
     // Remove once the stage2 compiler fixes pkg std not found
     main_tests.addPackage(utils_pkg);
 
     main_tests.addPackage(pkg);
-    link(b, main_tests, .{ .freetype = .{
-        .ft_config_path = thisDir() ++ "/test/ft",
-        .brotli = true,
-    } });
+    link(b, main_tests, .{
+        .freetype = .{
+            .brotli = true,
+        },
+        .harfbuzz = .{},
+    });
     main_tests.main_pkg_path = thisDir();
-    main_tests.step.dependOn(&freetype_tests.step);
-    main_tests.step.dependOn(&harfbuzz_tests.step);
-
-    return main_tests;
+    main_tests.install();
+    return main_tests.run();
 }
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {

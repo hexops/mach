@@ -4,11 +4,7 @@ const c = @import("c");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
 const Generic = @import("types.zig").Generic;
-
-pub usingnamespace @import("computations.zig");
-pub const Library = @import("Library.zig");
-pub const Face = @import("Face.zig");
-pub const GlyphSlot = @import("GlyphSlot.zig");
+const Face = @import("Face.zig");
 
 pub const SizeRequest = c.FT_Size_RequestRec;
 pub const BitmapSize = c.FT_Bitmap_Size;
