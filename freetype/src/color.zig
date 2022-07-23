@@ -1,6 +1,6 @@
 const utils = @import("utils");
 const c = @import("c");
-const Face = @import("freetype.zig").Face;
+const Face = @import("Face.zig");
 
 pub const Color = c.FT_Color;
 pub const LayerIterator = c.FT_LayerIterator;

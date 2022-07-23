@@ -3,7 +3,7 @@ const c = @import("c");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
 const Stroker = @import("stroke.zig").Stroker;
-const Face = @import("freetype.zig").Face;
+const Face = @import("Face.zig");
 const OpenArgs = @import("freetype.zig").OpenArgs;
 const LcdFilter = @import("lcdfilter.zig").LcdFilter;
 
