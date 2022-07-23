@@ -98,45 +98,5 @@ pub const RenderPassDescriptor = extern struct {
 };
 
 test {
-    refAllDecls(@import("adapter.zig"));
-    refAllDecls(@import("bind_group.zig"));
-    refAllDecls(@import("bind_group_layout.zig"));
-    refAllDecls(@import("buffer.zig"));
-    refAllDecls(@import("command_buffer.zig"));
-    refAllDecls(@import("command_encoder.zig"));
-    refAllDecls(@import("compute_pass_encoder.zig"));
-    refAllDecls(@import("compute_pipeline.zig"));
-    refAllDecls(@import("dawn.zig"));
-    refAllDecls(@import("device.zig"));
-    refAllDecls(@import("external_texture.zig"));
-    refAllDecls(@import("instance.zig"));
-    refAllDecls(@import("pipeline_layout.zig"));
-    refAllDecls(@import("query_set.zig"));
-    refAllDecls(@import("queue.zig"));
-    refAllDecls(@import("render_bundle.zig"));
-    refAllDecls(@import("render_bundle_encoder.zig"));
-    refAllDecls(@import("render_pass_encoder.zig"));
-    refAllDecls(@import("render_pipeline.zig"));
-    refAllDecls(@import("sampler.zig"));
-    refAllDecls(@import("shader_module.zig"));
-    refAllDecls(@import("surface.zig"));
-    refAllDecls(@import("swap_chain.zig"));
-    refAllDecls(@import("texture.zig"));
-    refAllDecls(@import("texture_view.zig"));
-    refAllDecls(@import("types.zig"));
-}
-
-fn refAllDecls(comptime T: type) void {
-    @setEvalBranchQuota(10000);
-    inline for (comptime @import("std").meta.declarations(T)) |decl| {
-        if (decl.is_pub) {
-            if (@TypeOf(@field(T, decl.name)) == type) {
-                switch (@typeInfo(@field(T, decl.name))) {
-                    .Struct, .Enum, .Union, .Opaque => refAllDecls(@field(T, decl.name)),
-                    else => {},
-                }
-            }
-            _ = @field(T, decl.name);
-        }
-    }
+    std.testing.refAllDeclsRecursive(@This());
 }
