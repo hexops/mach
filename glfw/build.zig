@@ -5,6 +5,14 @@ const system_sdk = @import("system_sdk.zig");
 
 pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
+    const target = b.standardTargetOptions(.{});
+
+    const test_app = b.addStaticLibrary("test_app", null);
+    test_app.setBuildMode(mode);
+    test_app.setTarget(target);
+    link(b, test_app, .{});
+    test_app.install();
+
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&testStep(b, mode).step);
 }
