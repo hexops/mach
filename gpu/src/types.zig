@@ -1,6 +1,9 @@
 const std = @import("std");
 const testing = std.testing;
 const Texture = @import("texture.zig").Texture;
+const TextureFormat = @import("texture.zig").TextureFormat;
+const TextureAspect = @import("texture.zig").TextureAspect;
+const TextureDataLayout = @import("texture.zig").TextureDataLayout;
 const TextureView = @import("texture_view.zig").TextureView;
 const TextureViewDimension = @import("texture_view.zig").TextureViewDimension;
 const Buffer = @import("buffer.zig").Buffer;
@@ -502,7 +505,7 @@ pub const StencilFaceState = extern struct {
 pub const StorageTextureBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
     access: StorageTextureAccess,
-    format: Texture.Format,
+    format: TextureFormat,
     view_dimension: TextureViewDimension,
 };
 
@@ -525,7 +528,7 @@ pub const CompilationInfo = extern struct {
 
 pub const DepthStencilState = extern struct {
     next_in_chain: *const ChainedStruct,
-    format: Texture.Format,
+    format: TextureFormat,
     depth_write_enabled: bool,
     depth_compare: CompareFunction,
     stencil_front: StencilFaceState,
@@ -539,7 +542,7 @@ pub const DepthStencilState = extern struct {
 
 pub const ImageCopyBuffer = extern struct {
     next_in_chain: *const ChainedStruct,
-    layout: Texture.DataLayout,
+    layout: TextureDataLayout,
     buffer: Buffer,
 };
 
@@ -548,7 +551,7 @@ pub const ImageCopyTexture = extern struct {
     texture: Texture,
     mip_level: u32,
     origin: Origin3D,
-    aspect: Texture.Aspect,
+    aspect: TextureAspect,
 };
 
 pub const ProgrammableStageDescriptor = extern struct {
@@ -587,7 +590,7 @@ pub const VertexBufferLayout = extern struct {
 
 pub const ColorTargetState = extern struct {
     next_in_chain: *const ChainedStruct,
-    format: Texture.Format,
+    format: TextureFormat,
     blend: ?*const BlendState = null,
     write_mask: ColorWriteMaskFlags,
 };

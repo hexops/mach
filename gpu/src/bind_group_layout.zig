@@ -5,6 +5,7 @@ const BufferBindingLayout = @import("buffer.zig").BufferBindingLayout;
 const Sampler = @import("sampler.zig").Sampler;
 const SamplerBindingLayout = @import("sampler.zig").SamplerBindingLayout;
 const Texture = @import("texture.zig").Texture;
+const TextureBindingLayout = @import("texture.zig").TextureBindingLayout;
 const StorageTextureBindingLayout = @import("types.zig").StorageTextureBindingLayout;
 
 pub const BindGroupLayout = *opaque {};
@@ -15,7 +16,7 @@ pub const BindGroupLayoutEntry = extern struct {
     visibility: ShaderStageFlags,
     buffer: BufferBindingLayout,
     sampler: SamplerBindingLayout,
-    texture: Texture.BindingLayout,
+    texture: TextureBindingLayout,
     storage_texture: StorageTextureBindingLayout,
 };
 

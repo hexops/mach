@@ -1,5 +1,6 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const Texture = @import("texture.zig").Texture;
+const TextureUsageFlags = @import("texture.zig").TextureUsageFlags;
 
 pub const CacheDeviceDescriptor = extern struct {
     // TODO: file an issue on Dawn: why not named nextInChain?
@@ -21,7 +22,7 @@ pub const InstanceDescriptor = extern struct {
 
 pub const TextureInternalUsageDescriptor = extern struct {
     chain: ChainedStruct,
-    internal_usage: Texture.UsageFlags,
+    internal_usage: TextureUsageFlags,
 };
 
 pub const TogglesDeviceDescriptor = extern struct {
