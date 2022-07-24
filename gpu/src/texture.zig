@@ -1,6 +1,7 @@
 const std = @import("std");
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const TextureView = @import("texture_view.zig").TextureView;
+const TextureViewDimension = @import("texture_view.zig").TextureViewDimension;
 const Extent3D = @import("types.zig").Extent3D;
 
 pub const Texture = enum(usize) {
@@ -165,7 +166,7 @@ pub const Texture = enum(usize) {
     pub const BindingLayout = extern struct {
         next_in_chain: *const ChainedStruct,
         sample_type: SampleType,
-        view_dimension: TextureView.Dimension,
+        view_dimension: TextureViewDimension,
         multisampled: bool,
     };
 

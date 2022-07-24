@@ -16,7 +16,7 @@ pub const ExternalTextureDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
     plane0: TextureView,
-    plane1: TextureView = TextureView.none, // nullable
+    plane1: ?TextureView,
     do_yuv_to_rgb_conversion_only: bool,
     yuv_to_rgb_conversion_matrix: ?[*]const f32 = null, // nullable
     src_transform_function_parameters: [*]const f32,
