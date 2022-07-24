@@ -19,7 +19,7 @@ pub const ComputePassEncoder = @import("compute_pass_encoder.zig").ComputePassEn
 pub const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
 pub const Device = @import("device.zig").Device;
 pub const ExternalTexture = @import("external_texture.zig").ExternalTexture;
-pub const Instance = @import("instance.zig").Instance;
+pub usingnamespace @import("instance.zig");
 pub const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
 pub const QuerySet = @import("query_set.zig").QuerySet;
 pub const Queue = @import("queue.zig").Queue;
