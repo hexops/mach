@@ -36,35 +36,26 @@ pub const TextureView = @import("texture_view.zig").TextureView;
 
 pub const dawn = @import("dawn.zig");
 
-// TODO: export all types.zig
-pub const AlphaMode = @import("types.zig").AlphaMode;
-pub const ComputePassTimestampLocation = @import("types.zig").ComputePassTimestampLocation;
-pub const ChainedStruct = @import("types.zig").ChainedStruct;
-pub const LoadOp = @import("types.zig").LoadOp;
-pub const StoreOp = @import("types.zig").StoreOp;
-pub const RenderPassTimestampLocation = @import("types.zig").RenderPassTimestampLocation;
-pub const PowerPreference = @import("types.zig").PowerPreference;
-pub const RenderPassColorAttachment = @import("types.zig").RenderPassColorAttachment;
+pub usingnamespace @import("types.zig");
+pub usingnamespace @import("interface.zig");
 
-pub const Interface = @import("interface.zig").Interface;
-pub const Export = @import("interface.zig").Export;
-pub const NullInterface = @import("interface.zig").NullInterface;
+const types = @import("types.zig");
 
 pub const ComputePassTimestampWrite = extern struct {
     query_set: QuerySet,
     query_index: u32,
-    location: ComputePassTimestampLocation,
+    location: types.ComputePassTimestampLocation,
 };
 
 pub const RenderPassDepthStencilAttachment = extern struct {
     view: TextureView,
-    depth_load_op: LoadOp,
-    depth_store_op: StoreOp,
+    depth_load_op: types.LoadOp,
+    depth_store_op: types.StoreOp,
     clear_depth: f32,
     depth_clear_value: f32,
     depth_read_only: bool,
-    stencil_load_op: LoadOp,
-    stencil_store_op: StoreOp,
+    stencil_load_op: types.LoadOp,
+    stencil_store_op: types.StoreOp,
     clear_stencil: u32,
     stencil_clear_value: u32,
     stencil_read_only: bool,
@@ -73,28 +64,28 @@ pub const RenderPassDepthStencilAttachment = extern struct {
 pub const RenderPassTimestampWrite = extern struct {
     query_set: QuerySet,
     query_index: u32,
-    location: RenderPassTimestampLocation,
+    location: types.RenderPassTimestampLocation,
 };
 
 pub const RequestAdapterOptions = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: *const types.ChainedStruct,
     compatible_surface: Surface = Surface.none, // nullable
-    power_preference: PowerPreference,
+    power_preference: types.PowerPreference,
     force_fallback_adapter: bool,
 };
 
 pub const ComputePassDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: *const types.ChainedStruct,
     label: ?[*:0]const u8 = null,
     timestamp_write_count: u32,
     timestamp_writes: [*]const ComputePassTimestampWrite,
 };
 
 pub const RenderPassDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: *const types.ChainedStruct,
     label: ?[*:0]const u8 = null,
     color_attachment_count: u32,
-    color_attachments: [*]const RenderPassColorAttachment,
+    color_attachments: [*]const types.RenderPassColorAttachment,
     depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment = null, // nullable
     occlusion_query_set: QuerySet = QuerySet.none, // nullable
     timestamp_write_count: u32,
