@@ -10,8 +10,6 @@ typedef void (*WGPUQueueWorkDoneCallback)(WGPUQueueWorkDoneStatus status, void *
 typedef void (*WGPURequestAdapterCallback)(WGPURequestAdapterStatus status, WGPUAdapter adapter, char const * message, void * userdata);
 typedef void (*WGPURequestDeviceCallback)(WGPURequestDeviceStatus status, WGPUDevice device, char const * message, void * userdata);
 
-WGPU_EXPORT WGPUProc wgpuGetProcAddress(WGPUDevice device, char const * procName);
-
 // Methods of Adapter
 WGPU_EXPORT WGPUDevice wgpuAdapterCreateDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor /* nullable */);
 WGPU_EXPORT size_t wgpuAdapterEnumerateFeatures(WGPUAdapter adapter, WGPUFeatureName * features);

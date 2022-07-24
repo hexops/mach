@@ -1,9 +1,11 @@
 const Instance = @import("instance.zig").Instance;
 const InstanceDescriptor = @import("instance.zig").InstanceDescriptor;
+const gpu = @import("main.zig");
 
 /// Verifies that a gpu.Interface implementation exposes the expected function declarations.
 pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "createInstance", fn (descriptor: *const InstanceDescriptor) callconv(.Inline) ?Instance);
+    assertDecl(Impl, "getProcAddress", fn (device: gpu.Device, proc_name: [*:0]const u8) callconv(.Inline) ?gpu.Proc);
     return Impl;
 }
 
@@ -21,6 +23,11 @@ pub fn Export(comptime Impl: type) type {
         export fn wgpuCreateInstance(descriptor: *const InstanceDescriptor) ?Instance {
             return Impl.createInstance(descriptor);
         }
+
+        // WGPU_EXPORT WGPUProc wgpuGetProcAddress(WGPUDevice device, char const * procName);
+        export fn getProcAddress(device: gpu.Device, proc_name: [*:0]const u8) ?gpu.Proc {
+            return Impl.getProcAddress(device, proc_name);
+        }
     };
 }
 
@@ -28,6 +35,12 @@ pub fn Export(comptime Impl: type) type {
 pub const NullInterface = Interface(struct {
     pub inline fn createInstance(descriptor: *const InstanceDescriptor) ?Instance {
         _ = descriptor;
+        return null;
+    }
+
+    pub inline fn getProcAddress(device: gpu.Device, proc_name: [*:0]const u8) ?gpu.Proc {
+        _ = device;
+        _ = proc_name;
         return null;
     }
 });
