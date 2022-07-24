@@ -9,3 +9,7 @@ pub const ecs = @import("ecs");
 // Engine exports
 pub const App = @import("engine.zig").App;
 pub const module = @import("engine.zig").module;
+
+test {
+    _ = void;
+}

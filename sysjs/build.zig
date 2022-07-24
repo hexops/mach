@@ -6,10 +6,11 @@ pub fn build(b: *std.build.Builder) void {
     test_step.dependOn(&testStep(b, mode).step);
 }
 
-pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode) *std.build.LibExeObjStep {
-    const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTestExe("sysjs-tests", thisDir() ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
-    return main_tests;
+    main_tests.setTarget(target);
+    return main_tests.run();
 }
 
 pub const pkg = std.build.Pkg{

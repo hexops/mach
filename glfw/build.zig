@@ -7,21 +7,17 @@ pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
-    const test_app = b.addStaticLibrary("test_app", null);
-    test_app.setBuildMode(mode);
-    test_app.setTarget(target);
-    link(b, test_app, .{});
-    test_app.install();
-
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode).step);
+    test_step.dependOn(&testStep(b, mode, target).step);
 }
 
-pub fn testStep(b: *Builder, mode: std.builtin.Mode) *std.build.LibExeObjStep {
-    const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTestExe("glfw_tests", thisDir() ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
+    main_tests.setTarget(target);
     link(b, main_tests, .{});
-    return main_tests;
+    main_tests.install();
+    return main_tests.run();
 }
 
 pub const LinuxWindowManager = enum {
@@ -67,7 +63,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
-    const main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/main.zig" }) catch unreachable;
+    const main_abs = thisDir() ++ "/src/main.zig";
     const lib = b.addStaticLibrary("glfw", main_abs);
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);

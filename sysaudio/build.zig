@@ -22,7 +22,7 @@ pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode, .{}).step);
+    test_step.dependOn(&testStep(b, mode, target, .{}).step);
 
     inline for ([_][]const u8{
         "soundio-sine-wave",
@@ -48,18 +48,23 @@ pub fn build(b: *Builder) void {
     }
 }
 
-pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, options: Options) *std.build.LibExeObjStep {
-    const soundio_tests = b.addTest(thisDir() ++ "/soundio/main.zig");
+pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.RunStep {
+    const soundio_tests = b.addTestExe("soundio-tests", thisDir() ++ "/soundio/main.zig");
     soundio_tests.setBuildMode(mode);
+    soundio_tests.setTarget(target);
     link(b, soundio_tests, options);
+    soundio_tests.install();
 
-    const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+    const main_tests = b.addTestExe("sysaudio-tests", thisDir() ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
+    main_tests.setTarget(target);
     main_tests.addPackage(soundio_pkg);
-    main_tests.step.dependOn(&soundio_tests.step);
     link(b, main_tests, options);
+    main_tests.install();
 
-    return main_tests;
+    const main_tests_run = main_tests.run();
+    main_tests_run.step.dependOn(&soundio_tests.run().step);
+    return main_tests_run;
 }
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {

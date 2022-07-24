@@ -11,28 +11,31 @@ pub fn build(b: *std.build.Builder) void {
     };
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode, .{ .gpu_dawn_options = gpu_dawn_options }).step);
+    test_step.dependOn(&testStep(b, mode, target, .{ .gpu_dawn_options = gpu_dawn_options }).step);
 
-    const example = b.addExecutable("gpu-hello-triangle", "examples/main.zig");
-    example.setTarget(target);
-    example.setBuildMode(mode);
-    example.install();
-    example.linkLibC();
-    example.addPackagePath("gpu", "src/main.zig");
-    example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
-    link(b, example, .{ .gpu_dawn_options = gpu_dawn_options });
+    //  const example = b.addExecutable("gpu-hello-triangle", "examples/main.zig");
+    // example.setBuildMode(mode);
+    //example.setTarget(target);
+    //  example.linkLibC();
+    // example.addPackagePath("gpu", "src/main.zig");
+    //   example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
+    // link(b, example, .{ .gpu_dawn_options = gpu_dawn_options });
 
-    const example_run_cmd = example.run();
-    example_run_cmd.step.dependOn(b.getInstallStep());
-    const example_run_step = b.step("run-example", "Run the example");
-    example_run_step.dependOn(&example_run_cmd.step);
+    // example.install();
+
+    // const example_run_cmd = example.run();
+    // example_run_cmd.step.dependOn(b.getInstallStep());
+    // const example_run_step = b.step("run-example", "Run the example");
+    // example_run_step.dependOn(&example_run_cmd.step);
 }
 
-pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, options: Options) *std.build.LibExeObjStep {
-    const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.RunStep {
+    const main_tests = b.addTestExe("gpu-tests", thisDir() ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
+    main_tests.setTarget(target);
     link(b, main_tests, options);
-    return main_tests;
+    main_tests.install();
+    return main_tests.run();
 }
 
 pub const Options = struct {
