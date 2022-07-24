@@ -11,14 +11,8 @@ pub fn build(b: *Builder) void {
         .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
     };
 
-    const lib = b.addStaticLibrary("gpu", "src/main.zig");
-    lib.setBuildMode(mode);
-    lib.setTarget(target);
-    lib.install();
-    link(b, lib, options);
-
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode).step);
+    test_step.dependOn(&testStep(b, mode, target).step);
 
     const dawn_example = b.addExecutable("dawn-example", "src/dawn/hello_triangle.zig");
     dawn_example.setBuildMode(mode);
@@ -34,10 +28,12 @@ pub fn build(b: *Builder) void {
     dawn_example_run_step.dependOn(&dawn_example_run_cmd.step);
 }
 
-pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode) *std.build.LibExeObjStep {
-    const main_tests = b.addTest(thisDir() ++ "/src/main.zig");
+pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTestExe("gpu-dawn-tests", thisDir() ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
-    return main_tests;
+    main_tests.setTarget(target);
+    main_tests.install();
+    return main_tests.run();
 }
 
 pub const LinuxWindowManager = enum {
