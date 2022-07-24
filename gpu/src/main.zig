@@ -72,7 +72,7 @@ pub const RenderPassTimestampWrite = extern struct {
 
 pub const RequestAdapterOptions = extern struct {
     next_in_chain: *const types.ChainedStruct,
-    compatible_surface: surface.Surface = surface.Surface.none, // nullable
+    compatible_surface: ?surface.Surface,
     power_preference: types.PowerPreference,
     force_fallback_adapter: bool,
 };
