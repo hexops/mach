@@ -9,7 +9,7 @@ pub const BindGroup = *opaque {};
 pub const BindGroupEntry = extern struct {
     next_in_chain: *const ChainedStruct,
     binding: u32,
-    buffer: Buffer = Buffer.none, // nullable
+    buffer: ?Buffer,
     offset: u64,
     size: u64,
     sampler: Sampler = Sampler.none, // nullable
