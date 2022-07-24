@@ -9,30 +9,30 @@ pub const stride_undefined = 0xffffffff;
 pub const whole_map_size = std.math.maxInt(usize);
 pub const whole_size = 0xffffffffffffffff;
 
-pub const Adapter = @import("adapter.zig").Adapter;
-pub const BindGroup = @import("bind_group.zig").BindGroup;
-pub const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
-pub const Buffer = @import("buffer.zig").Buffer;
-pub const CommandBuffer = @import("command_buffer.zig").CommandBuffer;
-pub const CommandEncoder = @import("command_encoder.zig").CommandEncoder;
-pub const ComputePassEncoder = @import("compute_pass_encoder.zig").ComputePassEncoder;
-pub const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
-pub const Device = @import("device.zig").Device;
-pub const ExternalTexture = @import("external_texture.zig").ExternalTexture;
+pub usingnamespace @import("adapter.zig");
+pub usingnamespace @import("bind_group.zig");
+pub usingnamespace @import("bind_group_layout.zig");
+pub usingnamespace @import("buffer.zig");
+pub usingnamespace @import("command_buffer.zig");
+pub usingnamespace @import("command_encoder.zig");
+pub usingnamespace @import("compute_pass_encoder.zig");
+pub usingnamespace @import("compute_pipeline.zig");
+pub usingnamespace @import("device.zig");
+pub usingnamespace @import("external_texture.zig");
 pub usingnamespace @import("instance.zig");
-pub const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
-pub const QuerySet = @import("query_set.zig").QuerySet;
-pub const Queue = @import("queue.zig").Queue;
-pub const RenderBundle = @import("render_bundle.zig").RenderBundle;
-pub const RenderBundleEncoder = @import("render_bundle_encoder.zig").RenderBundleEncoder;
-pub const RenderPassEncoder = @import("render_pass_encoder.zig").RenderPassEncoder;
-pub const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
-pub const Sampler = @import("sampler.zig").Sampler;
-pub const ShaderModule = @import("shader_module.zig").ShaderModule;
-pub const Surface = @import("surface.zig").Surface;
-pub const SwapChain = @import("swap_chain.zig").SwapChain;
-pub const Texture = @import("texture.zig").Texture;
-pub const TextureView = @import("texture_view.zig").TextureView;
+pub usingnamespace @import("pipeline_layout.zig");
+pub usingnamespace @import("query_set.zig");
+pub usingnamespace @import("queue.zig");
+pub usingnamespace @import("render_bundle.zig");
+pub usingnamespace @import("render_bundle_encoder.zig");
+pub usingnamespace @import("render_pass_encoder.zig");
+pub usingnamespace @import("render_pipeline.zig");
+pub usingnamespace @import("sampler.zig");
+pub usingnamespace @import("shader_module.zig");
+pub usingnamespace @import("surface.zig");
+pub usingnamespace @import("swap_chain.zig");
+pub usingnamespace @import("texture.zig");
+pub usingnamespace @import("texture_view.zig");
 
 pub const dawn = @import("dawn.zig");
 
@@ -40,15 +40,18 @@ pub usingnamespace @import("types.zig");
 pub usingnamespace @import("interface.zig");
 
 const types = @import("types.zig");
+const query_set = @import("query_set.zig");
+const texture_view = @import("texture_view.zig");
+const surface = @import("surface.zig");
 
 pub const ComputePassTimestampWrite = extern struct {
-    query_set: QuerySet,
+    query_set: query_set.QuerySet,
     query_index: u32,
     location: types.ComputePassTimestampLocation,
 };
 
 pub const RenderPassDepthStencilAttachment = extern struct {
-    view: TextureView,
+    view: texture_view.TextureView,
     depth_load_op: types.LoadOp,
     depth_store_op: types.StoreOp,
     clear_depth: f32,
@@ -62,14 +65,14 @@ pub const RenderPassDepthStencilAttachment = extern struct {
 };
 
 pub const RenderPassTimestampWrite = extern struct {
-    query_set: QuerySet,
+    query_set: query_set.QuerySet,
     query_index: u32,
     location: types.RenderPassTimestampLocation,
 };
 
 pub const RequestAdapterOptions = extern struct {
     next_in_chain: *const types.ChainedStruct,
-    compatible_surface: Surface = Surface.none, // nullable
+    compatible_surface: surface.Surface = surface.Surface.none, // nullable
     power_preference: types.PowerPreference,
     force_fallback_adapter: bool,
 };
@@ -87,7 +90,7 @@ pub const RenderPassDescriptor = extern struct {
     color_attachment_count: u32,
     color_attachments: [*]const types.RenderPassColorAttachment,
     depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment = null, // nullable
-    occlusion_query_set: QuerySet = QuerySet.none, // nullable
+    occlusion_query_set: query_set.QuerySet = query_set.QuerySet.none, // nullable
     timestamp_write_count: u32,
     timestamp_writes: [*]const RenderPassTimestampWrite,
 };
