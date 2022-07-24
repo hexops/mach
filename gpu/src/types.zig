@@ -2,6 +2,7 @@ const std = @import("std");
 const testing = std.testing;
 const Texture = @import("texture.zig").Texture;
 const TextureView = @import("texture_view.zig").TextureView;
+const TextureViewDimension = @import("texture_view.zig").TextureViewDimension;
 const Buffer = @import("buffer.zig").Buffer;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
 
@@ -502,7 +503,7 @@ pub const StorageTextureBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
     access: StorageTextureAccess,
     format: Texture.Format,
-    view_dimension: TextureView.Dimension,
+    view_dimension: TextureViewDimension,
 };
 
 pub const VertexAttribute = extern struct {
@@ -559,8 +560,8 @@ pub const ProgrammableStageDescriptor = extern struct {
 };
 
 pub const RenderPassColorAttachment = extern struct {
-    view: TextureView = TextureView.none, // nullable
-    resolve_target: TextureView = TextureView.none, // nullable
+    view: ?TextureView,
+    resolve_target: ?TextureView,
     load_op: LoadOp,
     store_op: StoreOp,
     clear_color: Color,
