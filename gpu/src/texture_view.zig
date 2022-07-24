@@ -1,5 +1,7 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const Texture = @import("texture.zig").Texture;
+const TextureFormat = @import("texture.zig").TextureFormat;
+const TextureAspect = @import("texture.zig").TextureAspect;
 
 pub const TextureView = *opaque {};
 
@@ -16,11 +18,11 @@ pub const TextureViewDimension = enum(u32) {
 pub const TextureViewDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    format: Texture.Format,
+    format: TextureFormat,
     dimension: TextureViewDimension,
     base_mip_level: u32,
     mip_level_count: u32,
     base_array_layer: u32,
     array_layer_count: u32,
-    aspect: Texture.Aspect,
+    aspect: TextureAspect,
 };
