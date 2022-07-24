@@ -1,8 +1,9 @@
 const Instance = @import("instance.zig").Instance;
+const InstanceDescriptor = @import("instance.zig").InstanceDescriptor;
 
 /// Verifies that a gpu.Interface implementation exposes the expected function declarations.
 pub fn Interface(comptime Impl: type) type {
-    assertDecl(Impl, "createInstance", fn (descriptor: *const Instance.Descriptor) callconv(.Inline) Instance);
+    assertDecl(Impl, "createInstance", fn (descriptor: *const InstanceDescriptor) callconv(.Inline) ?Instance);
     return Impl;
 }
 
@@ -17,7 +18,7 @@ pub fn Export(comptime Impl: type) type {
     _ = Interface(Impl); // verify implementation is a valid interface
     return struct {
         // WGPU_EXPORT WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const * descriptor);
-        export fn wgpuCreateInstance(descriptor: *const Instance.Descriptor) Instance {
+        export fn wgpuCreateInstance(descriptor: *const InstanceDescriptor) ?Instance {
             return Impl.createInstance(descriptor);
         }
     };
@@ -25,9 +26,9 @@ pub fn Export(comptime Impl: type) type {
 
 /// A no-operation gpu.Interface implementation.
 pub const NullInterface = Interface(struct {
-    pub inline fn createInstance(descriptor: *const Instance.Descriptor) Instance {
+    pub inline fn createInstance(descriptor: *const InstanceDescriptor) ?Instance {
         _ = descriptor;
-        return Instance.none;
+        return null;
     }
 });
 
