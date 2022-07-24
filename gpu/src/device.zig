@@ -2,6 +2,7 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const FeatureName = @import("types.zig").FeatureName;
 const RequiredLimits = @import("types.zig").RequiredLimits;
 const Queue = @import("queue.zig").Queue;
+const QueueDescriptor = @import("queue.zig").QueueDescriptor;
 
 pub const Device = *opaque {};
 
@@ -16,5 +17,5 @@ pub const DeviceDescriptor = extern struct {
     required_features_count: u32,
     required_features: [*]const FeatureName,
     required_limits: ?*const RequiredLimits = null, // nullable
-    default_queue: Queue.Descriptor,
+    default_queue: QueueDescriptor,
 };
