@@ -1,6 +1,7 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const ShaderStageFlags = @import("types.zig").ShaderStageFlags;
 const Buffer = @import("buffer.zig").Buffer;
+const BufferBindingLayout = @import("buffer.zig").BufferBindingLayout;
 const Sampler = @import("sampler.zig").Sampler;
 const Texture = @import("texture.zig").Texture;
 const StorageTextureBindingLayout = @import("types.zig").StorageTextureBindingLayout;
@@ -11,7 +12,7 @@ pub const BindGroupLayoutEntry = extern struct {
     next_in_chain: *const ChainedStruct,
     binding: u32,
     visibility: ShaderStageFlags,
-    buffer: Buffer.BindingLayout,
+    buffer: BufferBindingLayout,
     sampler: Sampler.BindingLayout,
     texture: Texture.BindingLayout,
     storage_texture: StorageTextureBindingLayout,
