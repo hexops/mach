@@ -15,7 +15,7 @@ pub const RenderPipeline = enum(usize) {
     pub const Descriptor = extern struct {
         next_in_chain: *const ChainedStruct,
         label: ?[*:0]const u8 = null,
-        layout: PipelineLayout = PipelineLayout.none, // nullable
+        layout: ?PipelineLayout,
         vertex: VertexState,
         primitive: PrimitiveState,
         depth_stencil: ?*const DepthStencilState = null, // nullable
