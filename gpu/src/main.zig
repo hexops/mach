@@ -46,6 +46,10 @@ pub const RenderPassTimestampLocation = @import("types.zig").RenderPassTimestamp
 pub const PowerPreference = @import("types.zig").PowerPreference;
 pub const RenderPassColorAttachment = @import("types.zig").RenderPassColorAttachment;
 
+pub const Interface = @import("interface.zig").Interface;
+pub const Export = @import("interface.zig").Export;
+pub const NullInterface = @import("interface.zig").NullInterface;
+
 pub const ComputePassTimestampWrite = extern struct {
     query_set: QuerySet,
     query_index: u32,
