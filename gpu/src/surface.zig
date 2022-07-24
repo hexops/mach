@@ -1,56 +1,51 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 
-pub const Surface = enum(usize) {
-    _,
+pub const Surface = *opaque {};
 
-    // TODO: verify there is a use case for nullable value of this type.
-    pub const none: Surface = @intToEnum(Surface, 0);
+pub const SurfaceDescriptor = extern struct {
+    next_in_chain: *const ChainedStruct,
+    label: ?[*:0]const u8 = null,
+};
 
-    pub const Descriptor = extern struct {
-        next_in_chain: *const ChainedStruct,
-        label: ?[*:0]const u8 = null,
-    };
+pub const SurfaceDescriptorFromAndroidNativeWindow = extern struct {
+    chain: ChainedStruct,
+    window: *anyopaque,
+};
 
-    pub const DescriptorFromAndroidNativeWindow = extern struct {
-        chain: ChainedStruct,
-        window: *anyopaque,
-    };
+pub const SurfaceDescriptorFromCanvasHTMLSelector = extern struct {
+    chain: ChainedStruct,
+    selector: [*:0]const u8,
+};
 
-    pub const DescriptorFromCanvasHTMLSelector = extern struct {
-        chain: ChainedStruct,
-        selector: [*:0]const u8,
-    };
+pub const SurfaceDescriptorFromMetalLayer = extern struct {
+    chain: ChainedStruct,
+    layer: *anyopaque,
+};
 
-    pub const DescriptorFromMetalLayer = extern struct {
-        chain: ChainedStruct,
-        layer: *anyopaque,
-    };
+pub const SurfaceDescriptorFromWaylandSurface = extern struct {
+    chain: ChainedStruct,
+    display: *anyopaque,
+    surface: *anyopaque,
+};
 
-    pub const DescriptorFromWaylandSurface = extern struct {
-        chain: ChainedStruct,
-        display: *anyopaque,
-        surface: *anyopaque,
-    };
+pub const SurfaceDescriptorFromWindowsCoreWindow = extern struct {
+    chain: ChainedStruct,
+    core_window: *anyopaque,
+};
 
-    pub const DescriptorFromWindowsCoreWindow = extern struct {
-        chain: ChainedStruct,
-        core_window: *anyopaque,
-    };
+pub const SurfaceDescriptorFromWindowsHWND = extern struct {
+    chain: ChainedStruct,
+    hinstance: *anyopaque,
+    hwnd: *anyopaque,
+};
 
-    pub const DescriptorFromWindowsHWND = extern struct {
-        chain: ChainedStruct,
-        hinstance: *anyopaque,
-        hwnd: *anyopaque,
-    };
+pub const SurfaceDescriptorFromWindowsSwapChainPanel = extern struct {
+    chain: ChainedStruct,
+    swap_chain_panel: *anyopaque,
+};
 
-    pub const DescriptorFromWindowsSwapChainPanel = extern struct {
-        chain: ChainedStruct,
-        swap_chain_panel: *anyopaque,
-    };
-
-    pub const DescriptorFromXlibWindow = extern struct {
-        chain: ChainedStruct,
-        display: *anyopaque,
-        window: u32,
-    };
+pub const SurfaceDescriptorFromXlibWindow = extern struct {
+    chain: ChainedStruct,
+    display: *anyopaque,
+    window: u32,
 };
