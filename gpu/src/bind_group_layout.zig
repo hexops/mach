@@ -3,6 +3,7 @@ const ShaderStageFlags = @import("types.zig").ShaderStageFlags;
 const Buffer = @import("buffer.zig").Buffer;
 const BufferBindingLayout = @import("buffer.zig").BufferBindingLayout;
 const Sampler = @import("sampler.zig").Sampler;
+const SamplerBindingLayout = @import("sampler.zig").SamplerBindingLayout;
 const Texture = @import("texture.zig").Texture;
 const StorageTextureBindingLayout = @import("types.zig").StorageTextureBindingLayout;
 
@@ -13,7 +14,7 @@ pub const BindGroupLayoutEntry = extern struct {
     binding: u32,
     visibility: ShaderStageFlags,
     buffer: BufferBindingLayout,
-    sampler: Sampler.BindingLayout,
+    sampler: SamplerBindingLayout,
     texture: Texture.BindingLayout,
     storage_texture: StorageTextureBindingLayout,
 };

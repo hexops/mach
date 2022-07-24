@@ -12,7 +12,7 @@ pub const BindGroupEntry = extern struct {
     buffer: ?Buffer,
     offset: u64,
     size: u64,
-    sampler: Sampler = Sampler.none, // nullable
+    sampler: ?Sampler,
     texture_view: TextureView = TextureView.none, // nullable
 };
 
