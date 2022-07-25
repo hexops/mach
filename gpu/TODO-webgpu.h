@@ -229,7 +229,9 @@ assertDecl(Impl, "computePassEncoderReference", fn (compute_pass_encoder: gpu.Co
 export fn wgpuComputePassEncoderRelease(compute_pass_encoder: gpu.ComputePassEncoder) void {
 assertDecl(Impl, "computePassEncoderRelease", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
 
-WGPU_EXPORT WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComputePipeline computePipeline, uint32_t groupIndex);
+// WGPU_EXPORT WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComputePipeline computePipeline, uint32_t groupIndex);
+export fn wgpuComputePipelineGetBindGroupLayout(compute_pipeline: gpu.ComputePipeline, group_index: u32) gpu.BindGroupLayout {
+assertDecl(Impl, "computePipelineGetBindGroupLayout", fn (compute_pipeline: gpu.ComputePipeline, group_index: u32) callconv(.Inline) gpu.BindGroupLayout);
 
 // WGPU_EXPORT void wgpuComputePipelineSetLabel(WGPUComputePipeline computePipeline, char const * label);
 export fn wgpuComputePipelineSetLabel(compute_pipeline: gpu.ComputePipeline, label: [*:0]const u8) void {
@@ -243,46 +245,133 @@ assertDecl(Impl, "computePipelineReference", fn (compute_pipeline: gpu.ComputePi
 export fn wgpuComputePipelineRelease(compute_pipeline: gpu.ComputePipeline) void {
 assertDecl(Impl, "computePipelineRelease", fn (compute_pipeline: gpu.ComputePipeline) callconv(.Inline) void);
 
-WGPU_EXPORT WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const * descriptor);
-WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor);
-WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
-WGPU_EXPORT WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommandEncoderDescriptor const * descriptor /* nullable */);
-WGPU_EXPORT WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor);
-WGPU_EXPORT void wgpuDeviceCreateComputePipelineAsync(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor, WGPUCreateComputePipelineAsyncCallback callback, void * userdata);
-WGPU_EXPORT WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device);
-WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateErrorExternalTexture(WGPUDevice device);
-WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, WGPUExternalTextureDescriptor const * externalTextureDescriptor);
-WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
-WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
-WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
-WGPU_EXPORT WGPURenderPipeline wgpuDeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor);
-WGPU_EXPORT void wgpuDeviceCreateRenderPipelineAsync(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor, WGPUCreateRenderPipelineAsyncCallback callback, void * userdata);
-WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor /* nullable */);
-WGPU_EXPORT WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor const * descriptor);
-WGPU_EXPORT WGPUSwapChain wgpuDeviceCreateSwapChain(WGPUDevice device, WGPUSurface surface /* nullable */, WGPUSwapChainDescriptor const * descriptor);
-WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
+// WGPU_EXPORT WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const * descriptor);
+export fn wgpuDeviceCreateBindGroup(device: gpu.Device, descriptor: *const gpu.BindGroupDescriptor) gpu.BindGroup {
+assertDecl(Impl, "deviceCreateBindGroup", fn (device: gpu.Device, descriptor: *const gpu.BindGroupDescriptor) callconv(.Inline) gpu.BindGroup);
+
+// WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor);
+export fn wgpuDeviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) gpu.BindGroupLayout {
+assertDecl(Impl, "deviceCreateBindGroupLayout", fn (device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) callconv(.Inline) gpu.BindGroupLayout);
+
+// WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
+export fn wgpuDeviceCreateBindGroup(device: gpu.Device, descriptor: *const gpu.BufferDescriptor) gpu.Buffer {
+assertDecl(Impl, "deviceCreateBindGroup", fn (device: gpu.Device, descriptor: *const gpu.BufferDescriptor) callconv(.Inline) gpu.Buffer);
+
+// WGPU_EXPORT WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommandEncoderDescriptor const * descriptor /* nullable */);
+export fn wgpuDeviceCreateCommandEncoder(device: gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) gpu.CommandEncoder {
+assertDecl(Impl, "deviceCreateCommandEncoder", fn (device: gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) callconv(.Inline) gpu.CommandEncoder);
+
+// WGPU_EXPORT WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor);
+export fn wgpuDeviceCreateComputePipeline(device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) gpu.ComputePipeline {
+assertDecl(Impl, "deviceCreateComputePipeline", fn (device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) callconv(.Inline) gpu.ComputePipeline);
+
+// WGPU_EXPORT void wgpuDeviceCreateComputePipelineAsync(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor, WGPUCreateComputePipelineAsyncCallback callback, void * userdata);
+export fn wgpuDeviceCreateComputePipelineAsync(device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
+assertDecl(Impl, "deviceCreateComputePipelineAsync", fn (device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
+
+// WGPU_EXPORT WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device);
+export fn wgpuDeviceCreateErrorBuffer(device: gpu.Device) gpu.Buffer {
+assertDecl(Impl, "deviceCreateErrorBuffer", fn (device: gpu.Device) callconv(.Inline) gpu.Buffer);
+
+// WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateErrorExternalTexture(WGPUDevice device);
+export fn wgpuDeviceCreateErrorExternalTexture(device: gpu.Device) gpu.ExternalTexture {
+assertDecl(Impl, "deviceCreateErrorExternalTexture", fn (device: gpu.Device) callconv(.Inline) gpu.ExternalTexture);
+
+// WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, WGPUExternalTextureDescriptor const * externalTextureDescriptor);
+export fn wgpuDeviceCreateExternalTexture(device: gpu.Device, external_texture_descriptor: *const gpu.ExternalTextureDescriptor) gpu.ExternalTexture {
+assertDecl(Impl, "deviceCreateExternalTexture", fn (device: gpu.Device, external_texture_descriptor: *const gpu.ExternalTextureDescriptor) callconv(.Inline) gpu.ExternalTexture);
+
+// WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
+export fn wgpuDeviceCreatePipelineLayout(device: gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayoutDescriptor) gpu.PipelineLayout {
+assertDecl(Impl, "deviceCreatePipelineLayout", fn (device: gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayoutDescriptor) callconv(.Inline) gpu.PipelineLayout);
+
+// WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
+export fn wgpuDeviceCreateQuerySet(device: gpu.Device, descriptor: *const gpu.QuerySetDescriptor) gpu.QuerySet {
+assertDecl(Impl, "deviceCreateQuerySet", fn (device: gpu.Device, descriptor: *const gpu.QuerySetDescriptor) callconv(.Inline) gpu.QuerySet);
+
+// WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
+export fn wgpuDeviceCreateRenderBundleEncoder(device: gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) gpu.RenderBundleEncoder {
+assertDecl(Impl, "deviceCreateRenderBundleEncoder", fn (device: gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) callconv(.Inline) gpu.RenderBundleEncoder);
+
+// WGPU_EXPORT WGPURenderPipeline wgpuDeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor);
+export fn wgpuDeviceCreateRenderPipeline(device: gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) gpu.RenderPipeline {
+assertDecl(Impl, "deviceCreateRenderPipeline", fn (device: gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) callconv(.Inline) gpu.RenderPipeline);
+
+// WGPU_EXPORT void wgpuDeviceCreateRenderPipelineAsync(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor, WGPUCreateRenderPipelineAsyncCallback callback, void * userdata);
+export fn wgpuDeviceCreateRenderPipelineAsync(device: gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
+assertDecl(Impl, "deviceCreateRenderPipelineAsync", fn (device: gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
+
+// WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor /* nullable */);
+export fn wgpuDeviceCreateRenderPipeline(device: gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) gpu.Sampler {
+assertDecl(Impl, "deviceCreateRenderPipeline", fn (device: gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) callconv(.Inline) gpu.Sampler);
+
+// WGPU_EXPORT WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor const * descriptor);
+export fn wgpuDeviceCreateShaderModule(device: gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) gpu.ShaderModule {
+assertDecl(Impl, "deviceCreateShaderModule", fn (device: gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) callconv(.Inline) gpu.ShaderModule);
+
+// WGPU_EXPORT WGPUSwapChain wgpuDeviceCreateSwapChain(WGPUDevice device, WGPUSurface surface /* nullable */, WGPUSwapChainDescriptor const * descriptor);
+export fn wgpuDeviceCreateShaderModule(device: gpu.Device, surface: ?Surface, descriptor: *const gpu.SwapChainDescriptor) gpu.SwapChain {
+assertDecl(Impl, "deviceCreateShaderModule", fn (device: gpu.Device, surface: ?Surface, descriptor: *const gpu.SwapChainDescriptor) callconv(.Inline) gpu.SwapChain);
+
+// WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
+export fn wgpuDeviceCreateTexture(device: gpu.Device, descriptor: *const gpu.TextureDescriptor) gpu.Texture {
+assertDecl(Impl, "deviceCreateTexture", fn (device: gpu.Device, descriptor: *const gpu.TextureDescriptor) callconv(.Inline) gpu.Texture);
 
 // WGPU_EXPORT void wgpuDeviceDestroy(WGPUDevice device);
 export fn wgpuDeviceDestroy(device: gpu.Device) void {
 assertDecl(Impl, "deviceDestroy", fn (device: gpu.Device) callconv(.Inline) void);
 
-WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeatureName * features);
-WGPU_EXPORT bool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits * limits);
-WGPU_EXPORT WGPUQueue wgpuDeviceGetQueue(WGPUDevice device);
-WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeatureName feature);
-WGPU_EXPORT void wgpuDeviceInjectError(WGPUDevice device, WGPUErrorType type, char const * message);
-WGPU_EXPORT void wgpuDeviceLoseForTesting(WGPUDevice device);
-WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
-WGPU_EXPORT void wgpuDevicePushErrorScope(WGPUDevice device, WGPUErrorFilter filter);
-WGPU_EXPORT void wgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDeviceLostCallback callback, void * userdata);
+// WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeatureName * features);
+export fn wgpuDeviceEnumerateFeatures(device: gpu.Device, features: [*]gpu.FeatureName) usize {
+assertDecl(Impl, "deviceEnumerateFeatures", fn (device: gpu.Device, features: [*]gpu.FeatureName) callconv(.Inline) usize);
+
+// WGPU_EXPORT bool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits * limits);
+export fn wgpuDeviceGetLimits(device: gpu.Device, limits: *gpu.SupportedLimits) bool {
+assertDecl(Impl, "deviceGetLimits", fn (device: gpu.Device, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
+
+// WGPU_EXPORT WGPUQueue wgpuDeviceGetQueue(WGPUDevice device);
+export fn wgpuDeviceGetQueue(device: gpu.Device) gpu.Queue {
+assertDecl(Impl, "deviceGetQueue", fn (device: gpu.Device) callconv(.Inline) gpu.Queue);
+
+// WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeatureName feature);
+export fn wgpuDeviceHasFeature(device: gpu.Device, feature: gpu.FeatureName) bool {
+assertDecl(Impl, "deviceHasFeature", fn (device: gpu.Device, feature: gpu.FeatureName) callconv(.Inline) bool);
+
+// WGPU_EXPORT void wgpuDeviceInjectError(WGPUDevice device, WGPUErrorType type, char const * message);
+export fn wgpuDeviceInjectError(device: gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) void {
+assertDecl(Impl, "deviceInjectError", fn (device: gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuDeviceLoseForTesting(WGPUDevice device);
+export fn wgpuDeviceLoseForTesting(device: gpu.Device) void {
+assertDecl(Impl, "deviceLoseForTesting", fn (device: gpu.Device) callconv(.Inline) void);
+
+// WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
+export fn wgpuDevicePopErrorScope(device: gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) bool {
+assertDecl(Impl, "devicePopErrorScope", fn (device: gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) callconv(.Inline) bool);
+
+// WGPU_EXPORT void wgpuDevicePushErrorScope(WGPUDevice device, WGPUErrorFilter filter);
+export fn wgpuDevicePushErrorScope(device: gpu.Device, filter: gpu.ErrorFilter) void {
+assertDecl(Impl, "devicePushErrorScope", fn (device: gpu.Device, filter: gpu.ErrorFilter) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDeviceLostCallback callback, void * userdata);
+export fn wgpuDeviceSetDeviceLostCallback(device: gpu.Device, callback: gpu.DeviceLostCallback, userdata: *anyopaque) void {
+assertDecl(Impl, "deviceSetDeviceLostCallback", fn (device: gpu.Device, callback: gpu.DeviceLostCallback, userdata: *anyopaque) callconv(.Inline) void);
 
 // WGPU_EXPORT void wgpuDeviceSetLabel(WGPUDevice device, char const * label);
 export fn wgpuDeviceSetLabel(device: gpu.Device, label: [*:0]const u8) void {
 assertDecl(Impl, "deviceSetLabel", fn (device: gpu.Device, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
-WGPU_EXPORT void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
-WGPU_EXPORT void wgpuDeviceTick(WGPUDevice device);
+// WGPU_EXPORT void wgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
+export fn wgpuDeviceSetLoggingCallback(device: gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) void {
+assertDecl(Impl, "deviceSetLoggingCallback", fn (device: gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
+export fn wgpuDeviceSetUncapturedErrorCallback(device: gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) void {
+assertDecl(Impl, "deviceSetUncapturedErrorCallback", fn (device: gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuDeviceTick(WGPUDevice device);
+export fn wgpuDeviceTick(device: gpu.Device) void {
+assertDecl(Impl, "deviceTick", fn (device: gpu.Device) callconv(.Inline) void);
 
 // WGPU_EXPORT void wgpuDeviceReference(WGPUDevice device);
 export fn wgpuDeviceReference(device: gpu.Device) void {
