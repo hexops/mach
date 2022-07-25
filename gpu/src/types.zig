@@ -9,6 +9,12 @@ const TextureViewDimension = @import("texture_view.zig").TextureViewDimension;
 const Buffer = @import("buffer.zig").Buffer;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
 
+pub const CompilationInfoCallback = fn (
+    status: CompilationInfoRequestStatus,
+    compilation_info: *const CompilationInfo,
+    userdata: *anyopaque,
+) callconv(.C) void;
+
 pub const AlphaMode = enum(u32) {
     premultiplied = 0x00000000,
     unpremultiplied = 0x00000001,
@@ -73,8 +79,6 @@ pub const CompareFunction = enum(u32) {
     not_equal = 0x00000007,
     always = 0x00000008,
 };
-
-pub const CompilationInfoCallback = fn (status: CompilationInfoRequestStatus, compilation_info: *const CompilationInfo, userdata: *anyopaque) callconv(.C) void;
 
 pub const CompilationInfoRequestStatus = enum(u32) {
     success = 0x00000000,
