@@ -91,27 +91,75 @@ assertDecl(Impl, "commandBufferReference", fn (command_buffer: gpu.CommandBuffer
 export fn wgpuCommandBufferRelease(command_buffer: gpu.CommandBuffer) void {
 assertDecl(Impl, "commandBufferRelease", fn (command_buffer: gpu.CommandBuffer) callconv(.Inline) void);
 
-WGPU_EXPORT WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder, WGPUComputePassDescriptor const * descriptor /* nullable */);
-WGPU_EXPORT WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder commandEncoder, WGPURenderPassDescriptor const * descriptor);
-WGPU_EXPORT void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t offset, uint64_t size);
-WGPU_EXPORT void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size);
-WGPU_EXPORT void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyBuffer const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
-WGPU_EXPORT void wgpuCommandEncoderCopyTextureToBuffer(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyBuffer const * destination, WGPUExtent3D const * copySize);
-WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
-WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTextureInternal(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
-WGPU_EXPORT WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder commandEncoder, WGPUCommandBufferDescriptor const * descriptor /* nullable */);
-WGPU_EXPORT void wgpuCommandEncoderInjectValidationError(WGPUCommandEncoder commandEncoder, char const * message);
-WGPU_EXPORT void wgpuCommandEncoderInsertDebugMarker(WGPUCommandEncoder commandEncoder, char const * markerLabel);
-WGPU_EXPORT void wgpuCommandEncoderPopDebugGroup(WGPUCommandEncoder commandEncoder);
-WGPU_EXPORT void wgpuCommandEncoderPushDebugGroup(WGPUCommandEncoder commandEncoder, char const * groupLabel);
-WGPU_EXPORT void wgpuCommandEncoderResolveQuerySet(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t firstQuery, uint32_t queryCount, WGPUBuffer destination, uint64_t destinationOffset);
+// WGPU_EXPORT WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder, WGPUComputePassDescriptor const * descriptor /* nullable */);
+export fn wgpuCommandEncoderBeginComputePass(command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) gpu.ComputePassEncoder {
+assertDecl(Impl, "commandEncoderBeginComputePass", fn (command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) callconv(.Inline) gpu.ComputePassEncoder);
+
+// WGPU_EXPORT WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder commandEncoder, WGPURenderPassDescriptor const * descriptor);
+export fn wgpuCommandEncoderBeginRenderPass(command_encoder: gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) gpu.RenderPassEncoder {
+assertDecl(Impl, "commandEncoderBeginRenderPass", fn (command_encoder: gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) callconv(.Inline) gpu.RenderPassEncoder);
+
+// WGPU_EXPORT void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t offset, uint64_t size);
+export fn wgpuCommandEncoderClearBuffer(command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, offset: u64, size: u64) void {
+assertDecl(Impl, "commandEncoderClearBuffer", fn (command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, offset: u64, size: u64) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size);
+export fn wgpuCommandEncoderCopyBufferToBuffer(command_encoder: gpu.CommandEncoder, source: gpu.Buffer, source_offset: u64, destination: gpu.Buffer, destination_offset: u64, size: u64) void {
+assertDecl(Impl, "commandEncoderCopyBufferToBuffer", fn (command_encoder: gpu.CommandEncoder, source: gpu.Buffer, source_offset: u64, destination: gpu.Buffer, destination_offset: u64, size: u64) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyBuffer const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
+export fn wgpuCommandEncoderCopyBufferToTexture(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyBuffer, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+assertDecl(Impl, "commandEncoderCopyBufferToTexture", fn (command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyBuffer, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuCommandEncoderCopyTextureToBuffer(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyBuffer const * destination, WGPUExtent3D const * copySize);
+export fn wgpuCommandEncoderCopyTextureToBuffer(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyBuffer, copy_size: *const gpu.Extent3D) void {
+assertDecl(Impl, "commandEncoderCopyTextureToBuffer", fn (command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyBuffer, copy_size: *const gpu.Extent3D) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
+export fn wgpuCommandEncoderCopyTextureToTexture(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+assertDecl(Impl, "commandEncoderCopyTextureToTexture", fn (command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) callconv(.Inline) void);
+
+// Note: the only difference between this and the non-internal variant is that this one checks
+// internal usage.
+// WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTextureInternal(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
+export fn wgpuCommandEncoderCopyTextureToTextureInternal(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+assertDecl(Impl, "commandEncoderCopyTextureToTextureInternal", fn (command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) callconv(.Inline) void);
+
+// WGPU_EXPORT WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder commandEncoder, WGPUCommandBufferDescriptor const * descriptor /* nullable */);
+export fn wgpuCommandEncoderFinish(command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.CommandBufferDescriptor) gpu.CommandBuffer {
+assertDecl(Impl, "commandEncoderFinish", fn (command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.CommandBufferDescriptor) callconv(.Inline) gpu.CommandBuffer);
+
+// WGPU_EXPORT void wgpuCommandEncoderInjectValidationError(WGPUCommandEncoder commandEncoder, char const * message);
+export fn wgpuCommandEncoderInjectValidationError(command_encoder: gpu.CommandEncoder, message: [*:0]const u8) void {
+assertDecl(Impl, "commandEncoderInjectValidationError", fn (command_encoder: gpu.CommandEncoder, message: [*:0]const u8) void);
+
+// WGPU_EXPORT void wgpuCommandEncoderInsertDebugMarker(WGPUCommandEncoder commandEncoder, char const * markerLabel);
+export fn wgpuCommandEncoderInsertDebugMarker(command_encoder: gpu.CommandEncoder, marker_label: [*:0]const u8) void {
+assertDecl(Impl, "commandEncoderInsertDebugMarker", fn (command_encoder: gpu.CommandEncoder, marker_label: [*:0]const u8) void);
+
+// WGPU_EXPORT void wgpuCommandEncoderPopDebugGroup(WGPUCommandEncoder commandEncoder);
+export fn wgpuCommandEncoderPopDebugGroup(command_encoder: gpu.CommandEncoder) void {
+assertDecl(Impl, "commandEncoderPopDebugGroup", fn (command_encoder: gpu.CommandEncoder) void);
+
+// WGPU_EXPORT void wgpuCommandEncoderPushDebugGroup(WGPUCommandEncoder commandEncoder, char const * groupLabel);
+export fn wgpuCommandEncoderPushDebugGroup(command_encoder: gpu.CommandEncoder, group_label: [*:0]const u8) void {
+assertDecl(Impl, "commandEncoderPushDebugGroup", fn (command_encoder: gpu.CommandEncoder, group_label: [*:0]const u8) void);
+
+// WGPU_EXPORT void wgpuCommandEncoderResolveQuerySet(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t firstQuery, uint32_t queryCount, WGPUBuffer destination, uint64_t destinationOffset);
+export fn wgpuCommandEncoderResolveQuerySet(command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, first_query: u32, query_count: u32, destination: gpu.Buffer, destination_offset: u64) void {
+assertDecl(Impl, "commandEncoderResolveQuerySet", fn (command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, first_query: u32, query_count: u32, destination: gpu.Buffer, destination_offset: u64) void);
 
 // WGPU_EXPORT void wgpuCommandEncoderSetLabel(WGPUCommandEncoder commandEncoder, char const * label);
 export fn wgpuCommandEncoderSetLabel(command_encoder: gpu.CommandEncoder, label: [*:0]const u8) void {
 assertDecl(Impl, "commandEncoderSetLabel", fn (command_encoder: gpu.CommandEncoder, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuCommandEncoderWriteBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t bufferOffset, uint8_t const * data, uint64_t size);
-WGPU_EXPORT void wgpuCommandEncoderWriteTimestamp(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+// WGPU_EXPORT void wgpuCommandEncoderWriteBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t bufferOffset, uint8_t const * data, uint64_t size);
+export fn wgpuCommandEncoderWriteBuffer(command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
+assertDecl(Impl, "commandEncoderWriteBuffer", fn (command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void);
+
+// WGPU_EXPORT void wgpuCommandEncoderWriteTimestamp(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+export fn wgpuCommandEncoderWriteTimestamp(command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, query_index: u32) void {
+assertDecl(Impl, "commandEncoderWriteTimestamp", fn (command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, query_index: u32) void);
 
 // WGPU_EXPORT void wgpuCommandEncoderReference(WGPUCommandEncoder commandEncoder);
 export fn wgpuCommandEncoderReference(command_encoder: gpu.CommandEncoder) void {
