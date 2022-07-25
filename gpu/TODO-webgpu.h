@@ -549,32 +549,93 @@ assertDecl(Impl, "renderBundleEncoderReference", fn (render_bundle_encoder: gpu.
 export fn wgpuRenderBundleEncoderRelease(render_bundle_encoder: gpu.RenderBundleEncoder) void {
 assertDecl(Impl, "renderBundleEncoderRelease", fn (render_bundle_encoder: gpu.RenderBundleEncoder) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuRenderPassEncoderBeginOcclusionQuery(WGPURenderPassEncoder renderPassEncoder, uint32_t queryIndex);
-WGPU_EXPORT void wgpuRenderPassEncoderDraw(WGPURenderPassEncoder renderPassEncoder, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
-WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder renderPassEncoder, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance);
-WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexedIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
-WGPU_EXPORT void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
-WGPU_EXPORT void wgpuRenderPassEncoderEnd(WGPURenderPassEncoder renderPassEncoder);
-WGPU_EXPORT void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder renderPassEncoder);
-WGPU_EXPORT void wgpuRenderPassEncoderEndPass(WGPURenderPassEncoder renderPassEncoder);
-WGPU_EXPORT void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder renderPassEncoder, uint32_t bundlesCount, WGPURenderBundle const * bundles);
-WGPU_EXPORT void wgpuRenderPassEncoderInsertDebugMarker(WGPURenderPassEncoder renderPassEncoder, char const * markerLabel);
-WGPU_EXPORT void wgpuRenderPassEncoderPopDebugGroup(WGPURenderPassEncoder renderPassEncoder);
-WGPU_EXPORT void wgpuRenderPassEncoderPushDebugGroup(WGPURenderPassEncoder renderPassEncoder, char const * groupLabel);
-WGPU_EXPORT void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
-WGPU_EXPORT void wgpuRenderPassEncoderSetBlendConstant(WGPURenderPassEncoder renderPassEncoder, WGPUColor const * color);
-WGPU_EXPORT void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
+// WGPU_EXPORT void wgpuRenderPassEncoderBeginOcclusionQuery(WGPURenderPassEncoder renderPassEncoder, uint32_t queryIndex);
+export fn wgpuRenderPassEncoderBeginOcclusionQuery(render_pass_encoder: gpu.RenderPassEncoder, query_index: u32) void {
+assertDecl(Impl, "renderPassEncoderBeginOcclusionQuery", fn (render_pass_encoder: gpu.RenderPassEncoder, query_index: u32) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderDraw(WGPURenderPassEncoder renderPassEncoder, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+export fn wgpuRenderPassEncoderDraw(render_pass_encoder: gpu.RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
+assertDecl(Impl, "renderPassEncoderDraw", fn (render_pass_encoder: gpu.RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder renderPassEncoder, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance);
+export fn wgpuRenderPassEncoderDrawIndexed(render_pass_encoder: gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+assertDecl(Impl, "renderPassEncoderDrawIndexed", fn (render_pass_encoder: gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexedIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+export fn wgpuRenderPassEncoderDrawIndexedIndirect(render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+assertDecl(Impl, "renderPassEncoderDrawIndexedIndirect", fn (render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+export fn wgpuRenderPassEncoderDrawIndirect(render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+assertDecl(Impl, "renderPassEncoderDrawIndirect", fn (render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderEnd(WGPURenderPassEncoder renderPassEncoder);
+export fn wgpuRenderPassEncoderEnd(render_pass_encoder: gpu.RenderPassEncoder) void {
+assertDecl(Impl, "renderPassEncoderEnd", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder renderPassEncoder);
+export fn wgpuRenderPassEncoderEndOcclusionQuery(render_pass_encoder: gpu.RenderPassEncoder) void {
+assertDecl(Impl, "renderPassEncoderEndOcclusionQuery", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderEndPass(WGPURenderPassEncoder renderPassEncoder);
+export fn wgpuRenderPassEncoderEndPass(render_pass_encoder: gpu.RenderPassEncoder) void {
+assertDecl(Impl, "renderPassEncoderEndPass", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder renderPassEncoder, uint32_t bundlesCount, WGPURenderBundle const * bundles);
+export fn wgpuRenderPassEncoderExecuteBundles(render_pass_encoder: gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const gpu.RenderBundle) void {
+assertDecl(Impl, "renderPassEncoderExecuteBundles", fn (render_pass_encoder: gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const gpu.RenderBundle) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderInsertDebugMarker(WGPURenderPassEncoder renderPassEncoder, char const * markerLabel);
+export fn wgpuRenderPassEncoderInsertDebugMarker(render_pass_encoder: gpu.RenderPassEncoder, marker_label: [*:0]const u8) void {
+assertDecl(Impl, "renderPassEncoderInsertDebugMarker", fn (render_pass_encoder: gpu.RenderPassEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderPopDebugGroup(WGPURenderPassEncoder renderPassEncoder);
+export fn wgpuRenderPassEncoderPopDebugGroup(render_pass_encoder: gpu.RenderPassEncoder) void {
+assertDecl(Impl, "renderPassEncoderPopDebugGroup", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderPushDebugGroup(WGPURenderPassEncoder renderPassEncoder, char const * groupLabel);
+export fn wgpuRenderPassEncoderPushDebugGroup(render_pass_encoder: gpu.RenderPassEncoder, group_label: [*:0]const u8) void {
+assertDecl(Impl, "renderPassEncoderPushDebugGroup", fn (render_pass_encoder: gpu.RenderPassEncoder, group_label: [*:0]const u8) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+export fn wgpuRenderPassEncoderSetBindGroup(render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+assertDecl(Impl, "renderPassEncoderSetBindGroup", fn (render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderSetBlendConstant(WGPURenderPassEncoder renderPassEncoder, WGPUColor const * color);
+export fn wgpuRenderPassEncoderSetBlendConstant(render_pass_encoder: gpu.RenderPassEncoder, color: *const gpu.Color) void {
+assertDecl(Impl, "renderPassEncoderSetBlendConstant", fn (render_pass_encoder: gpu.RenderPassEncoder, color: *const gpu.Color) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
+export fn wgpuRenderPassEncoderSetIndexBuffer(render_pass_encoder: gpu.RenderPassEncoder, buffer: gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) void {
+assertDecl(Impl, "renderPassEncoderSetIndexBuffer", fn (render_pass_encoder: gpu.RenderPassEncoder, buffer: gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) callconv(.Inline) void);
 
 // WGPU_EXPORT void wgpuRenderPassEncoderSetLabel(WGPURenderPassEncoder renderPassEncoder, char const * label);
 export fn wgpuRenderPassEncoderSetLabel(render_pass_encoder: gpu.RenderPassEncoder, label: [*:0]const u8) void {
 assertDecl(Impl, "renderPassEncoderSetLabel", fn (render_pass_encoder: gpu.RenderPassEncoder, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuRenderPassEncoderSetPipeline(WGPURenderPassEncoder renderPassEncoder, WGPURenderPipeline pipeline);
-WGPU_EXPORT void wgpuRenderPassEncoderSetScissorRect(WGPURenderPassEncoder renderPassEncoder, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
-WGPU_EXPORT void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder renderPassEncoder, uint32_t reference);
-WGPU_EXPORT void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
-WGPU_EXPORT void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder renderPassEncoder, float x, float y, float width, float height, float minDepth, float maxDepth);
-WGPU_EXPORT void wgpuRenderPassEncoderWriteTimestamp(WGPURenderPassEncoder renderPassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+// WGPU_EXPORT void wgpuRenderPassEncoderSetPipeline(WGPURenderPassEncoder renderPassEncoder, WGPURenderPipeline pipeline);
+export fn wgpuRenderPassEncoderSetPipeline(render_pass_encoder: gpu.RenderPassEncoder, pipeline: gpu.RenderPipeline) void {
+assertDecl(Impl, "renderPassEncoderSetPipeline", fn (render_pass_encoder: gpu.RenderPassEncoder, pipeline: gpu.RenderPipeline) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderSetScissorRect(WGPURenderPassEncoder renderPassEncoder, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+export fn wgpuRenderPassEncoderSetScissorRect(render_pass_encoder: gpu.RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
+assertDecl(Impl, "renderPassEncoderSetScissorRect", fn (render_pass_encoder: gpu.RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder renderPassEncoder, uint32_t reference);
+export fn wgpuRenderPassEncoderSetStencilReference(render_pass_encoder: gpu.RenderPassEncoder, reference: u32) void {
+assertDecl(Impl, "renderPassEncoderSetStencilReference", fn (render_pass_encoder: gpu.RenderPassEncoder, reference: u32) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
+export fn wgpuRenderPassEncoderSetVertexBuffer(render_pass_encoder: gpu.RenderPassEncoder, slot: u32, buffer: gpu.Buffer, offset: u64, size: u64) void {
+assertDecl(Impl, "renderPassEncoderSetVertexBuffer", fn (render_pass_encoder: gpu.RenderPassEncoder, slot: u32, buffer: gpu.Buffer, offset: u64, size: u64) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder renderPassEncoder, float x, float y, float width, float height, float minDepth, float maxDepth);
+export fn wgpuRenderPassEncoderSetViewport(render_pass_encoder: gpu.RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
+assertDecl(Impl, "renderPassEncoderSetViewport", fn (render_pass_encoder: gpu.RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderWriteTimestamp(WGPURenderPassEncoder renderPassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+export fn wgpuRenderPassEncoderWriteTimestamp(render_pass_encoder: gpu.RenderPassEncoder, query_set: gpu.QuerySet, query_index: u32) void {
+assertDecl(Impl, "renderPassEncoderWriteTimestamp", fn (render_pass_encoder: gpu.RenderPassEncoder, query_set: gpu.QuerySet, query_index: u32) callconv(.Inline) void);
 
 // WGPU_EXPORT void wgpuRenderPassEncoderReference(WGPURenderPassEncoder renderPassEncoder);
 export fn wgpuRenderPassEncoderReference(render_pass_encoder: gpu.RenderPassEncoder) void {
