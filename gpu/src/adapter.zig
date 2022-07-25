@@ -4,6 +4,7 @@ const Device = @import("device.zig").Device;
 const DeviceDescriptor = @import("device.zig").DeviceDescriptor;
 const FeatureName = @import("types.zig").FeatureName;
 const SupportedLimits = @import("types.zig").SupportedLimits;
+const RequestDeviceStatus = @import("types.zig").RequestDeviceStatus;
 const impl = @import("interface.zig").impl;
 
 pub const Adapter = *opaque {
@@ -24,6 +25,13 @@ pub const Adapter = *opaque {
         impl.adapterGetProperties(adapter, properties);
     }
 };
+
+pub const RequestDeviceCallback = fn (
+    status: RequestDeviceStatus,
+    device: Device,
+    message: [*:0]const u8,
+    userdata: *anyopaque,
+) callconv(.C) void;
 
 pub const AdapterType = enum(u32) {
     discrete_gpu,
