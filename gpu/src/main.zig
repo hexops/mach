@@ -101,4 +101,32 @@ pub const RenderPassDescriptor = extern struct {
 
 test {
     std.testing.refAllDeclsRecursive(@This());
+
+    // Due to usingnamespace imports, these are not referenceable via @This()
+    std.testing.refAllDeclsRecursive(@import("adapter.zig"));
+    std.testing.refAllDeclsRecursive(@import("bind_group.zig"));
+    std.testing.refAllDeclsRecursive(@import("bind_group_layout.zig"));
+    std.testing.refAllDeclsRecursive(@import("buffer.zig"));
+    std.testing.refAllDeclsRecursive(@import("command_buffer.zig"));
+    std.testing.refAllDeclsRecursive(@import("command_encoder.zig"));
+    std.testing.refAllDeclsRecursive(@import("compute_pass_encoder.zig"));
+    std.testing.refAllDeclsRecursive(@import("compute_pipeline.zig"));
+    std.testing.refAllDeclsRecursive(@import("device.zig"));
+    std.testing.refAllDeclsRecursive(@import("external_texture.zig"));
+    std.testing.refAllDeclsRecursive(@import("instance.zig"));
+    std.testing.refAllDeclsRecursive(@import("pipeline_layout.zig"));
+    std.testing.refAllDeclsRecursive(@import("query_set.zig"));
+    std.testing.refAllDeclsRecursive(@import("queue.zig"));
+    std.testing.refAllDeclsRecursive(@import("render_bundle.zig"));
+    std.testing.refAllDeclsRecursive(@import("render_bundle_encoder.zig"));
+    std.testing.refAllDeclsRecursive(@import("render_pass_encoder.zig"));
+    std.testing.refAllDeclsRecursive(@import("render_pipeline.zig"));
+    std.testing.refAllDeclsRecursive(@import("sampler.zig"));
+    std.testing.refAllDeclsRecursive(@import("shader_module.zig"));
+    std.testing.refAllDeclsRecursive(@import("surface.zig"));
+    std.testing.refAllDeclsRecursive(@import("swap_chain.zig"));
+    std.testing.refAllDeclsRecursive(@import("texture.zig"));
+    std.testing.refAllDeclsRecursive(@import("texture_view.zig"));
+    std.testing.refAllDeclsRecursive(@import("types.zig"));
+    std.testing.refAllDeclsRecursive(@import("interface.zig"));
 }
