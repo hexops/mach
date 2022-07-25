@@ -2,11 +2,17 @@ const testing = @import("std").testing;
 const ChainedStructOut = @import("types.zig").ChainedStructOut;
 const Device = @import("device.zig").Device;
 const DeviceDescriptor = @import("device.zig").DeviceDescriptor;
+const FeatureName = @import("types.zig").FeatureName;
 const impl = @import("interface.zig").impl;
 
 pub const Adapter = *opaque {
     pub inline fn createDevice(adapter: Adapter, descriptor: ?*const DeviceDescriptor) ?Device {
         return impl.createDevice(adapter, descriptor);
+    }
+
+    /// Call once with null to determine the array length, and again to fetch the feature list.
+    pub inline fn enumerateFeatures(adapter: Adapter, features: ?[*]FeatureName) usize {
+        return impl.adapterEnumerateFeatures(adapter, features);
     }
 };
 
