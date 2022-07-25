@@ -697,9 +697,17 @@ assertDecl(Impl, "surfaceReference", fn (surface: gpu.Surface) callconv(.Inline)
 export fn wgpuSurfaceRelease(surface: gpu.Surface) void {
 assertDecl(Impl, "surfaceRelease", fn (surface: gpu.Surface) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuSwapChainConfigure(WGPUSwapChain swapChain, WGPUTextureFormat format, WGPUTextureUsageFlags allowedUsage, uint32_t width, uint32_t height);
-WGPU_EXPORT WGPUTextureView wgpuSwapChainGetCurrentTextureView(WGPUSwapChain swapChain);
-WGPU_EXPORT void wgpuSwapChainPresent(WGPUSwapChain swapChain);
+// WGPU_EXPORT void wgpuSwapChainConfigure(WGPUSwapChain swapChain, WGPUTextureFormat format, WGPUTextureUsageFlags allowedUsage, uint32_t width, uint32_t height);
+export fn wgpuSwapChainConfigure(swap_chain: gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: gpu.TextureUsageFlags, width: u32, height: u32) void {
+assertDecl(Impl, "swapChainConfigure", fn (swap_chain: gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: gpu.TextureUsageFlags, width: u32, height: u32) callconv(.Inline) void);
+
+// WGPU_EXPORT WGPUTextureView wgpuSwapChainGetCurrentTextureView(WGPUSwapChain swapChain);
+export fn wgpuSwapChainGetCurrentTextureView(swap_chain: gpu.SwapChain) gpu.TextureView {
+assertDecl(Impl, "swapChainGetCurrentTextureView", fn (swap_chain: gpu.SwapChain) callconv(.Inline) gpu.TextureView);
+
+// WGPU_EXPORT void wgpuSwapChainPresent(WGPUSwapChain swapChain);
+export fn wgpuSwapChainPresent(swap_chain: gpu.SwapChain) void {
+assertDecl(Impl, "swapChainPresent", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
 
 // WGPU_EXPORT void wgpuSwapChainReference(WGPUSwapChain swapChain);
 export fn wgpuSwapChainReference(swap_chain: gpu.SwapChain) void {
