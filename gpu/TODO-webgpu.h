@@ -645,7 +645,9 @@ assertDecl(Impl, "renderPassEncoderReference", fn (render_pass_encoder: gpu.Rend
 export fn wgpuRenderPassEncoderRelease(render_pass_encoder: gpu.RenderPassEncoder) void {
 assertDecl(Impl, "renderPassEncoderRelease", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
 
-WGPU_EXPORT WGPUBindGroupLayout wgpuRenderPipelineGetBindGroupLayout(WGPURenderPipeline renderPipeline, uint32_t groupIndex);
+// WGPU_EXPORT WGPUBindGroupLayout wgpuRenderPipelineGetBindGroupLayout(WGPURenderPipeline renderPipeline, uint32_t groupIndex);
+export fn wgpuRenderPipelineGetBindGroupLayout(render_pipeline: gpu.RenderPipeline, group_index: u32) gpu.BindGroupLayout {
+assertDecl(Impl, "renderPipelineGetBindGroupLayout", fn (render_pipeline: gpu.RenderPipeline, group_index: u32) callconv(.Inline) gpu.BindGroupLayout);
 
 // WGPU_EXPORT void wgpuRenderPipelineSetLabel(WGPURenderPipeline renderPipeline, char const * label);
 export fn wgpuRenderPipelineSetLabel(render_pipeline: gpu.RenderPipeline, label: [*:0]const u8) void {
