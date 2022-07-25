@@ -2,6 +2,11 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 
 pub const Queue = *opaque {};
 
+pub const QueueWorkDoneCallback = fn (
+    status: QueueWorkDoneStatus,
+    userdata: *anyopaque,
+) callconv(.C) void;
+
 pub const QueueWorkDoneStatus = enum(u32) {
     success = 0x00000000,
     err = 0x00000001,
