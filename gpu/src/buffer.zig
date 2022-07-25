@@ -3,6 +3,8 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 
 pub const Buffer = *opaque {};
 
+pub const BufferMapCallback = fn (status: BufferMapAsyncStatus, userdata: *anyopaque) callconv(.C) void;
+
 pub const BufferBindingType = enum(u32) {
     undef = 0x00000000,
     uniform = 0x00000001,
