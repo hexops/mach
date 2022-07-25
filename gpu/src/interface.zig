@@ -2,10 +2,24 @@ const Instance = @import("instance.zig").Instance;
 const InstanceDescriptor = @import("instance.zig").InstanceDescriptor;
 const gpu = @import("main.zig");
 
+/// The gpu.Interface implementation that is used by the entire program. Only one may exist, since
+/// it is resolved fully at comptime with no vtable indirection, etc.
+pub const impl = blk: {
+    if (@import("builtin").is_test) {
+        break :blk NullInterface{};
+    } else {
+        const root = @import("root");
+        if (!@hasField(root, "gpu_interface")) @compileError("expected to find `pub const gpu_interface: gpu.Interface(T) = T{};` in root file");
+        _ = gpu.Interface(@TypeOf(root.gpu_interface)); // verify the type
+        break :blk root.gpu_interface;
+    }
+};
+
 /// Verifies that a gpu.Interface implementation exposes the expected function declarations.
 pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "createInstance", fn (descriptor: *const InstanceDescriptor) callconv(.Inline) ?Instance);
     assertDecl(Impl, "getProcAddress", fn (device: gpu.Device, proc_name: [*:0]const u8) callconv(.Inline) ?gpu.Proc);
+    assertDecl(Impl, "adapterCreateDevice", fn (adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) callconv(.Inline) ?gpu.Device);
     return Impl;
 }
 
@@ -25,8 +39,13 @@ pub fn Export(comptime Impl: type) type {
         }
 
         // WGPU_EXPORT WGPUProc wgpuGetProcAddress(WGPUDevice device, char const * procName);
-        export fn getProcAddress(device: gpu.Device, proc_name: [*:0]const u8) ?gpu.Proc {
+        export fn wgpuGetProcAddress(device: gpu.Device, proc_name: [*:0]const u8) ?gpu.Proc {
             return Impl.getProcAddress(device, proc_name);
+        }
+
+        // WGPU_EXPORT WGPUDevice wgpuAdapterCreateDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor /* nullable */);
+        export fn wgpuAdapterCreateDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?gpu.Device {
+            return Impl.adapterCreateDevice(adapter, descriptor);
         }
     };
 }
@@ -41,6 +60,12 @@ pub const NullInterface = Interface(struct {
     pub inline fn getProcAddress(device: gpu.Device, proc_name: [*:0]const u8) ?gpu.Proc {
         _ = device;
         _ = proc_name;
+        return null;
+    }
+
+    pub inline fn adapterCreateDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?gpu.Device {
+        _ = adapter;
+        _ = descriptor;
         return null;
     }
 });
