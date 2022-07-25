@@ -3,6 +3,7 @@ const ChainedStructOut = @import("types.zig").ChainedStructOut;
 const Device = @import("device.zig").Device;
 const DeviceDescriptor = @import("device.zig").DeviceDescriptor;
 const FeatureName = @import("types.zig").FeatureName;
+const SupportedLimits = @import("types.zig").SupportedLimits;
 const impl = @import("interface.zig").impl;
 
 pub const Adapter = *opaque {
@@ -13,6 +14,10 @@ pub const Adapter = *opaque {
     /// Call once with null to determine the array length, and again to fetch the feature list.
     pub inline fn enumerateFeatures(adapter: Adapter, features: ?[*]FeatureName) usize {
         return impl.adapterEnumerateFeatures(adapter, features);
+    }
+
+    pub inline fn getLimits(adapter: Adapter, limits: *SupportedLimits) bool {
+        return impl.adapterGetLimits(adapter, limits);
     }
 };
 

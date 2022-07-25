@@ -21,6 +21,7 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "getProcAddress", fn (device: gpu.Device, proc_name: [*:0]const u8) callconv(.Inline) ?gpu.Proc);
     assertDecl(Impl, "adapterCreateDevice", fn (adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) callconv(.Inline) ?gpu.Device);
     assertDecl(Impl, "adapterEnumerateFeatures", fn (adapter: gpu.Adapter, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
+    assertDecl(Impl, "adapterGetLimits", fn (adapter: gpu.Adapter, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
     return Impl;
 }
 
@@ -53,6 +54,11 @@ pub fn Export(comptime Impl: type) type {
         export fn wgpuAdapterEnumerateFeatures(adapter: gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
             return Impl.adapterEnumerateFeatures(adapter, features);
         }
+
+        // WGPU_EXPORT bool wgpuAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits * limits);
+        export fn wgpuAdapterGetLimits(adapter: gpu.Adapter, limits: *gpu.SupportedLimits) bool {
+            return Impl.adapterGetLimits(adapter, limits);
+        }
     };
 }
 
@@ -79,6 +85,12 @@ pub const NullInterface = Interface(struct {
         _ = adapter;
         _ = features;
         return 0;
+    }
+
+    pub inline fn adapterGetLimits(adapter: gpu.Adapter, limits: *gpu.SupportedLimits) bool {
+        _ = adapter;
+        _ = limits;
+        return false;
     }
 });
 
