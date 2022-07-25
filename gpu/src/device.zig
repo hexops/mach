@@ -6,6 +6,12 @@ const QueueDescriptor = @import("queue.zig").QueueDescriptor;
 
 pub const Device = *opaque {};
 
+pub const DeviceLostCallback = fn (
+    reason: DeviceLostReason,
+    message: [*:0]const u8,
+    userdata: *anyopaque,
+) callconv(.C) void;
+
 pub const DeviceLostReason = enum(u32) {
     undef = 0x00000000,
     destroyed = 0x00000001,
