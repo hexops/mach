@@ -21,6 +21,12 @@ pub const ErrorCallback = fn (
     userdata: *anyopaque,
 ) callconv(.C) void;
 
+pub const LoggingCallback = fn (
+    typ: LoggingType,
+    message: [*:0]const u8,
+    userdata: *anyopaque,
+) callconv(.C) void;
+
 pub const AlphaMode = enum(u32) {
     premultiplied = 0x00000000,
     unpremultiplied = 0x00000001,
