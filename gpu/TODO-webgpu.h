@@ -717,20 +717,45 @@ assertDecl(Impl, "swapChainReference", fn (swap_chain: gpu.SwapChain) callconv(.
 export fn wgpuSwapChainRelease(swap_chain: gpu.SwapChain) void {
 assertDecl(Impl, "swapChainRelease", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
 
-WGPU_EXPORT WGPUTextureView wgpuTextureCreateView(WGPUTexture texture, WGPUTextureViewDescriptor const * descriptor /* nullable */);
+// WGPU_EXPORT WGPUTextureView wgpuTextureCreateView(WGPUTexture texture, WGPUTextureViewDescriptor const * descriptor /* nullable */);
+export fn wgpuTextureCreateView(texture: gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) gpu.TextureView {
+assertDecl(Impl, "wgpuTextureCreateView", fn (texture: gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) callconv(.Inline) gpu.TextureView);
 
 // WGPU_EXPORT void wgpuTextureDestroy(WGPUTexture texture);
 export fn wgpuTextureDestroy(texture: gpu.Texture) void {
 assertDecl(Impl, "textureDestroy", fn (texture: gpu.Texture) callconv(.Inline) void);
 
-WGPU_EXPORT uint32_t wgpuTextureGetDepthOrArrayLayers(WGPUTexture texture);
-WGPU_EXPORT WGPUTextureDimension wgpuTextureGetDimension(WGPUTexture texture);
-WGPU_EXPORT WGPUTextureFormat wgpuTextureGetFormat(WGPUTexture texture);
-WGPU_EXPORT uint32_t wgpuTextureGetHeight(WGPUTexture texture);
-WGPU_EXPORT uint32_t wgpuTextureGetMipLevelCount(WGPUTexture texture);
-WGPU_EXPORT uint32_t wgpuTextureGetSampleCount(WGPUTexture texture);
-WGPU_EXPORT WGPUTextureUsage wgpuTextureGetUsage(WGPUTexture texture);
-WGPU_EXPORT uint32_t wgpuTextureGetWidth(WGPUTexture texture);
+// WGPU_EXPORT uint32_t wgpuTextureGetDepthOrArrayLayers(WGPUTexture texture);
+export fn wgpuTextureGetDepthOrArrayLayers(texture: gpu.Texture) u32 {
+assertDecl(Impl, "textureGetDepthOrArrayLayers", fn (texture: gpu.Texture) callconv(.Inline) u32);
+
+// WGPU_EXPORT WGPUTextureDimension wgpuTextureGetDimension(WGPUTexture texture);
+export fn wgpuTextureGetDimension(texture: gpu.Texture) gpu.TextureDimension {
+assertDecl(Impl, "textureGetDimension", fn (texture: gpu.Texture) callconv(.Inline) gpu.TextureDimension);
+
+// WGPU_EXPORT WGPUTextureFormat wgpuTextureGetFormat(WGPUTexture texture);
+export fn wgpuTextureGetFormat(texture: gpu.Texture) gpu.TextureFormat {
+assertDecl(Impl, "textureGetFormat", fn (texture: gpu.Texture) callconv(.Inline) gpu.TextureFormat);
+
+// WGPU_EXPORT uint32_t wgpuTextureGetHeight(WGPUTexture texture);
+export fn wgpuTextureGetHeight(texture: gpu.Texture) u32 {
+assertDecl(Impl, "textureGetHeight", fn (texture: gpu.Texture) callconv(.Inline) u32);
+
+// WGPU_EXPORT uint32_t wgpuTextureGetMipLevelCount(WGPUTexture texture);
+export fn wgpuTextureGetMipLevelCount(texture: gpu.Texture) u32 {
+assertDecl(Impl, "textureGetMipLevelCount", fn (texture: gpu.Texture) callconv(.Inline) u32);
+
+// WGPU_EXPORT uint32_t wgpuTextureGetSampleCount(WGPUTexture texture);
+export fn wgpuTextureGetSampleCount(texture: gpu.Texture) u32 {
+assertDecl(Impl, "textureGetSampleCount", fn (texture: gpu.Texture) callconv(.Inline) u32);
+
+// WGPU_EXPORT WGPUTextureUsage wgpuTextureGetUsage(WGPUTexture texture);
+export fn wgpuTextureGetUsage(texture: gpu.Texture) gpu.TextureUsage {
+assertDecl(Impl, "textureGetUsage", fn (texture: gpu.Texture) callconv(.Inline) gpu.TextureUsage);
+
+// WGPU_EXPORT uint32_t wgpuTextureGetWidth(WGPUTexture texture);
+export fn wgpuTextureGetWidth(texture: gpu.Texture) u32 {
+assertDecl(Impl, "textureGetWidth", fn (texture: gpu.Texture) callconv(.Inline) u32);
 
 // WGPU_EXPORT void wgpuTextureSetLabel(WGPUTexture texture, char const * label);
 export fn wgpuTextureSetLabel(texture: gpu.Texture, label: [*:0]const u8) void {
