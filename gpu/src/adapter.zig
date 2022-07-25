@@ -1,7 +1,14 @@
 const testing = @import("std").testing;
 const ChainedStructOut = @import("types.zig").ChainedStructOut;
+const Device = @import("device.zig").Device;
+const DeviceDescriptor = @import("device.zig").DeviceDescriptor;
+const impl = @import("interface.zig").impl;
 
-pub const Adapter = *opaque {};
+pub const Adapter = *opaque {
+    pub inline fn createDevice(adapter: Adapter, descriptor: ?*const DeviceDescriptor) ?Device {
+        return impl.createDevice(adapter, descriptor);
+    }
+};
 
 pub const AdapterType = enum(u32) {
     discrete_gpu,
