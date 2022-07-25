@@ -102,6 +102,7 @@ The rules for translating `webgpu.h` are as follows:
   * `undefined` -> `undef`
   * `null` -> `nul`
   * `error` -> `err`
+  * `type` -> `typ`
 * Constant names map using a few simple rules, but it's easiest to describe them with some concrete examples:
   * `RG11B10Ufloat -> rg11_b10_ufloat`
   * `Depth24PlusStencil8 -> depth24_plus_stencil8`
