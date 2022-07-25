@@ -169,23 +169,57 @@ assertDecl(Impl, "commandEncoderReference", fn (command_encoder: gpu.CommandEnco
 export fn wgpuCommandEncoderRelease(command_encoder: gpu.CommandEncoder) void {
 assertDecl(Impl, "commandEncoderRelease", fn (command_encoder: gpu.CommandEncoder) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuComputePassEncoderDispatch(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX, uint32_t workgroupCountY, uint32_t workgroupCountZ);
-WGPU_EXPORT void wgpuComputePassEncoderDispatchIndirect(WGPUComputePassEncoder computePassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
-WGPU_EXPORT void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX, uint32_t workgroupCountY, uint32_t workgroupCountZ);
-WGPU_EXPORT void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder computePassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
-WGPU_EXPORT void wgpuComputePassEncoderEnd(WGPUComputePassEncoder computePassEncoder);
-WGPU_EXPORT void wgpuComputePassEncoderEndPass(WGPUComputePassEncoder computePassEncoder);
-WGPU_EXPORT void wgpuComputePassEncoderInsertDebugMarker(WGPUComputePassEncoder computePassEncoder, char const * markerLabel);
-WGPU_EXPORT void wgpuComputePassEncoderPopDebugGroup(WGPUComputePassEncoder computePassEncoder);
-WGPU_EXPORT void wgpuComputePassEncoderPushDebugGroup(WGPUComputePassEncoder computePassEncoder, char const * groupLabel);
-WGPU_EXPORT void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+// WGPU_EXPORT void wgpuComputePassEncoderDispatch(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX, uint32_t workgroupCountY, uint32_t workgroupCountZ);
+export fn wgpuComputePassEncoderDispatch(compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
+assertDecl(Impl, "computePassEncoderDispatch", fn (compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuComputePassEncoderDispatchIndirect(WGPUComputePassEncoder computePassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+export fn wgpuComputePassEncoderDispatchIndirect(compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+assertDecl(Impl, "computePassEncoderDispatchIndirect", fn (compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX, uint32_t workgroupCountY, uint32_t workgroupCountZ);
+export fn wgpuComputePassEncoderDispatchWorkgroups(compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
+assertDecl(Impl, "computePassEncoderDispatchWorkgroups", fn (compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder computePassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+export fn wgpuComputePassEncoderDispatchWorkgroupsIndirect(compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+assertDecl(Impl, "wgpuComputePassEncoderDispatchWorkgroupsIndirect", fn (compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuComputePassEncoderEnd(WGPUComputePassEncoder computePassEncoder);
+export fn wgpuComputePassEncoderEnd(compute_pass_encoder: gpu.ComputePassEncoder) void {
+assertDecl(Impl, "computePassEncoderEnd", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuComputePassEncoderEndPass(WGPUComputePassEncoder computePassEncoder);
+export fn wgpuComputePassEncoderEndPass(compute_pass_encoder: gpu.ComputePassEncoder) void {
+assertDecl(Impl, "computePassEncoderEndPass", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuComputePassEncoderInsertDebugMarker(WGPUComputePassEncoder computePassEncoder, char const * markerLabel);
+export fn wgpuComputePassEncoderInsertDebugMarker(compute_pass_encoder: gpu.ComputePassEncoder, marker_label: [*:0]const u8) void {
+assertDecl(Impl, "computePassEncoderInsertDebugMarker", fn (compute_pass_encoder: gpu.ComputePassEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuComputePassEncoderPopDebugGroup(WGPUComputePassEncoder computePassEncoder);
+export fn wgpuComputePassEncoderPopDebugGroup(compute_pass_encoder: gpu.ComputePassEncoder) void {
+assertDecl(Impl, "computePassEncoderPopDebugGroup", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuComputePassEncoderPushDebugGroup(WGPUComputePassEncoder computePassEncoder, char const * groupLabel);
+export fn wgpuComputePassEncoderPushDebugGroup(compute_pass_encoder: gpu.ComputePassEncoder, group_label: [*:0]const u8) void {
+assertDecl(Impl, "computePassEncoderPushDebugGroup", fn (compute_pass_encoder: gpu.ComputePassEncoder, group_label: [*:0]const u8) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+export fn wgpuComputePassEncoderSetBindGroup(compute_pass_encoder: gpu.ComputePassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+assertDecl(Impl, "computePassEncoderSetBindGroup", fn (compute_pass_encoder: gpu.ComputePassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) callconv(.Inline) void);
 
 // WGPU_EXPORT void wgpuComputePassEncoderSetLabel(WGPUComputePassEncoder computePassEncoder, char const * label);
 export fn wgpuComputePassEncoderSetLabel(compute_pass_encoder: gpu.ComputePassEncoder, label: [*:0]const u8) void {
 assertDecl(Impl, "computePassEncoderSetLabel", fn (compute_pass_encoder: gpu.ComputePassEncoder, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuComputePassEncoderSetPipeline(WGPUComputePassEncoder computePassEncoder, WGPUComputePipeline pipeline);
-WGPU_EXPORT void wgpuComputePassEncoderWriteTimestamp(WGPUComputePassEncoder computePassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+// WGPU_EXPORT void wgpuComputePassEncoderSetPipeline(WGPUComputePassEncoder computePassEncoder, WGPUComputePipeline pipeline);
+export fn wgpuComputePassEncoderSetPipeline(compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) void {
+assertDecl(Impl, "computePassEncoderSetPipeline", fn (compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) callconv(.Inline) void);
+
+// WGPU_EXPORT void wgpuComputePassEncoderWriteTimestamp(WGPUComputePassEncoder computePassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+export fn wgpuComputePassEncoderWriteTimestamp(compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) void {
+assertDecl(Impl, "computePassEncoderWriteTimestamp", fn (compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) callconv(.Inline) void);
 
 // WGPU_EXPORT void wgpuComputePassEncoderReference(WGPUComputePassEncoder computePassEncoder);
 export fn wgpuComputePassEncoderReference(compute_pass_encoder: gpu.ComputePassEncoder) void {
