@@ -429,8 +429,13 @@ assertDecl(Impl, "pipelineLayoutRelease", fn (pipeline_layout: gpu.PipelineLayou
 export fn wgpuQuerySetDestroy(query_set: gpu.QuerySet) void {
 assertDecl(Impl, "querySetDestroy", fn (query_set: gpu.QuerySet) callconv(.Inline) void);
 
-WGPU_EXPORT uint32_t wgpuQuerySetGetCount(WGPUQuerySet querySet);
-WGPU_EXPORT WGPUQueryType wgpuQuerySetGetType(WGPUQuerySet querySet);
+// WGPU_EXPORT uint32_t wgpuQuerySetGetCount(WGPUQuerySet querySet);
+export fn wgpuQuerySetGetCount(query_set: gpu.QuerySet) u32 {
+assertDecl(Impl, "querySetGetCount", fn (query_set: gpu.QuerySet) callconv(.Inline) u32);
+
+// WGPU_EXPORT WGPUQueryType wgpuQuerySetGetType(WGPUQuerySet querySet);
+export fn wgpuQuerySetGetType(query_set: gpu.QuerySet) gpu.QueryType {
+assertDecl(Impl, "querySetGetType", fn (query_set: gpu.QuerySet) callconv(.Inline) gpu.QueryType);
 
 // WGPU_EXPORT void wgpuQuerySetSetLabel(WGPUQuerySet querySet, char const * label);
 export fn wgpuQuerySetSetLabel(query_set: gpu.QuerySet, label: [*:0]const u8) void {
