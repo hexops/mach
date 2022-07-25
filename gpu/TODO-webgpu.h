@@ -397,8 +397,13 @@ assertDecl(Impl, "externalTextureReference", fn (external_texture: gpu.ExternalT
 export fn wgpuExternalTextureRelease(external_texture: gpu.ExternalTexture) void {
 assertDecl(Impl, "externalTextureRelease", fn (external_texture: gpu.ExternalTexture) callconv(.Inline) void);
 
-WGPU_EXPORT WGPUSurface wgpuInstanceCreateSurface(WGPUInstance instance, WGPUSurfaceDescriptor const * descriptor);
-WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options, WGPURequestAdapterCallback callback, void * userdata);
+// WGPU_EXPORT WGPUSurface wgpuInstanceCreateSurface(WGPUInstance instance, WGPUSurfaceDescriptor const * descriptor);
+export fn wgpuInstanceCreateSurface(instance: gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) gpu.Surface {
+assertDecl(Impl, "instanceCreateSurface", fn (instance: gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) callconv(.Inline) gpu.Surface);
+
+// WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options, WGPURequestAdapterCallback callback, void * userdata);
+export fn wgpuInstanceRequestAdapter(instance: gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) void {
+assertDecl(Impl, "instanceRequestAdapter", fn (instance: gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) callconv(.Inline) void);
 
 // WGPU_EXPORT void wgpuInstanceReference(WGPUInstance instance);
 export fn wgpuInstanceReference(instance: gpu.Instance) void {
