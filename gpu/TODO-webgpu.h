@@ -1,4 +1,3 @@
-// Methods of Adapter
 // WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature);
 export fn wgpuAdapterHasFeature(adapter: gpu.Adapter, feature: gpu.FeatureName) bool {
 assertDecl(Impl, "adapterHasFeature", fn (adapter: gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
@@ -16,8 +15,6 @@ assertDecl(Impl, "adapterReference", fn (adapter: gpu.Adapter) callconv(.Inline)
 export fn wgpuAdapterRelease(adapter: gpu.Adapter) void {
 assertDecl(Impl, "adapterRelease", fn (adapter: gpu.Adapter) callconv(.Inline) void);
 
-
-// Methods of BindGroup
 // WGPU_EXPORT void wgpuBindGroupSetLabel(WGPUBindGroup bindGroup, char const * label);
 export fn wgpuBindGroupSetLabel(bind_group: gpu.BindGroup, label: [*:0]const u8) void {
 assertDecl(Impl, "bindGroupSetLabel", fn (bind_group: gpu.BindGroup, label: [*:0]const u8) callconv(.Inline) void);
@@ -30,13 +27,14 @@ assertDecl(Impl, "bindGroupReference", fn (bind_group: gpu.BindGroup) callconv(.
 export fn wgpuBindGroupRelease(bind_group: gpu.BindGroup) void {
 assertDecl(Impl, "bindGroupRelease", fn (bind_group: gpu.BindGroup) callconv(.Inline) void);
 
-
-// Methods of BindGroupLayout
 // WGPU_EXPORT void wgpuBindGroupLayoutSetLabel(WGPUBindGroupLayout bindGroupLayout, char const * label);
 export fn wgpuBindGroupLayoutSetLabel(bind_group_layout: gpu.BindGroupLayout, label: [*:0]const u8) void {
 assertDecl(Impl, "bindGroupLayoutSetLabel", fn (bind_group_layout: gpu.BindGroupLayout, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuBindGroupLayoutReference(WGPUBindGroupLayout bindGroupLayout);
+// WGPU_EXPORT void wgpuBindGroupLayoutReference(WGPUBindGroupLayout bindGroupLayout);
+export fn wgpuBindGroupLayoutReference(bind_group_layout: gpu.BindGroupLayout) void {
+assertDecl(Impl, "bindGroupLayoutReference", fn (bind_group_layout: gpu.BindGroupLayout) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuBindGroupLayoutRelease(WGPUBindGroupLayout bindGroupLayout);
 
 
@@ -53,7 +51,11 @@ export fn wgpuBufferSetLabel(buffer: gpu.Buffer, label: [*:0]const u8) void {
 assertDecl(Impl, "bufferSetLabel", fn (buffer: gpu.Buffer, label: [*:0]const u8) callconv(.Inline) void);
 
 WGPU_EXPORT void wgpuBufferUnmap(WGPUBuffer buffer);
-WGPU_EXPORT void wgpuBufferReference(WGPUBuffer buffer);
+
+// WGPU_EXPORT void wgpuBufferReference(WGPUBuffer buffer);
+export fn wgpuBufferReference(buffer: gpu.Buffer) void {
+assertDecl(Impl, "bufferReference", fn (buffer: gpu.Buffer) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuBufferRelease(WGPUBuffer buffer);
 
 
@@ -62,7 +64,10 @@ WGPU_EXPORT void wgpuBufferRelease(WGPUBuffer buffer);
 export fn wgpuCommandBufferSetLabel(command_buffer: gpu.CommandBuffer, label: [*:0]const u8) void {
 assertDecl(Impl, "commandBufferSetLabel", fn (command_buffer: gpu.CommandBuffer, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuCommandBufferReference(WGPUCommandBuffer commandBuffer);
+// WGPU_EXPORT void wgpuCommandBufferReference(WGPUCommandBuffer commandBuffer);
+export fn wgpuCommandBufferReference(command_buffer: gpu.CommandBuffer) void {
+assertDecl(Impl, "commandBufferReference", fn (command_buffer: gpu.CommandBuffer) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuCommandBufferRelease(WGPUCommandBuffer commandBuffer);
 
 
@@ -88,7 +93,11 @@ assertDecl(Impl, "commandEncoderSetLabel", fn (command_encoder: gpu.CommandEncod
 
 WGPU_EXPORT void wgpuCommandEncoderWriteBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t bufferOffset, uint8_t const * data, uint64_t size);
 WGPU_EXPORT void wgpuCommandEncoderWriteTimestamp(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
-WGPU_EXPORT void wgpuCommandEncoderReference(WGPUCommandEncoder commandEncoder);
+
+// WGPU_EXPORT void wgpuCommandEncoderReference(WGPUCommandEncoder commandEncoder);
+export fn wgpuCommandEncoderReference(command_encoder: gpu.CommandEncoder) void {
+assertDecl(Impl, "commandEncoderReference", fn (command_encoder: gpu.CommandEncoder) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuCommandEncoderRelease(WGPUCommandEncoder commandEncoder);
 
 
@@ -110,7 +119,11 @@ assertDecl(Impl, "computePassEncoderSetLabel", fn (compute_pass_encoder: gpu.Com
 
 WGPU_EXPORT void wgpuComputePassEncoderSetPipeline(WGPUComputePassEncoder computePassEncoder, WGPUComputePipeline pipeline);
 WGPU_EXPORT void wgpuComputePassEncoderWriteTimestamp(WGPUComputePassEncoder computePassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
-WGPU_EXPORT void wgpuComputePassEncoderReference(WGPUComputePassEncoder computePassEncoder);
+
+// WGPU_EXPORT void wgpuComputePassEncoderReference(WGPUComputePassEncoder computePassEncoder);
+export fn wgpuComputePassEncoderReference(compute_pass_encoder: gpu.ComputePassEncoder) void {
+assertDecl(Impl, "computePassEncoderReference", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuComputePassEncoderRelease(WGPUComputePassEncoder computePassEncoder);
 
 
@@ -121,7 +134,10 @@ WGPU_EXPORT WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComput
 export fn wgpuComputePipelineSetLabel(compute_pipeline: gpu.ComputePipeline, label: [*:0]const u8) void {
 assertDecl(Impl, "computePipelineSetLabel", fn (compute_pipeline: gpu.ComputePipeline, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuComputePipelineReference(WGPUComputePipeline computePipeline);
+// WGPU_EXPORT void wgpuComputePipelineReference(WGPUComputePipeline computePipeline);
+export fn wgpuComputePipelineReference(compute_pipeline: gpu.ComputePipeline) void {
+assertDecl(Impl, "computePipelineReference", fn (compute_pipeline: gpu.ComputePipeline) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuComputePipelineRelease(WGPUComputePipeline computePipeline);
 
 
@@ -162,7 +178,11 @@ assertDecl(Impl, "deviceSetLabel", fn (device: gpu.Device, label: [*:0]const u8)
 WGPU_EXPORT void wgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
 WGPU_EXPORT void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
 WGPU_EXPORT void wgpuDeviceTick(WGPUDevice device);
-WGPU_EXPORT void wgpuDeviceReference(WGPUDevice device);
+
+// WGPU_EXPORT void wgpuDeviceReference(WGPUDevice device);
+export fn wgpuDeviceReference(device: gpu.Device) void {
+assertDecl(Impl, "deviceReference", fn (device: gpu.Device) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuDeviceRelease(WGPUDevice device);
 
 
@@ -173,14 +193,21 @@ WGPU_EXPORT void wgpuExternalTextureDestroy(WGPUExternalTexture externalTexture)
 export fn wgpuExternalTextureSetLabel(external_texture: gpu.ExternalTexture, label: [*:0]const u8) void {
 assertDecl(Impl, "externalTextureSetLabel", fn (external_texture: gpu.ExternalTexture, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuExternalTextureReference(WGPUExternalTexture externalTexture);
+// WGPU_EXPORT void wgpuExternalTextureReference(WGPUExternalTexture externalTexture);
+export fn wgpuExternalTextureReference(external_texture: gpu.ExternalTexture) void {
+assertDecl(Impl, "externalTextureReference", fn (external_texture: gpu.ExternalTexture) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuExternalTextureRelease(WGPUExternalTexture externalTexture);
 
 
 // Methods of Instance
 WGPU_EXPORT WGPUSurface wgpuInstanceCreateSurface(WGPUInstance instance, WGPUSurfaceDescriptor const * descriptor);
 WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options, WGPURequestAdapterCallback callback, void * userdata);
-WGPU_EXPORT void wgpuInstanceReference(WGPUInstance instance);
+
+// WGPU_EXPORT void wgpuInstanceReference(WGPUInstance instance);
+export fn wgpuInstanceReference(instance: gpu.Instance) void {
+assertDecl(Impl, "instanceReference", fn (instance: gpu.Instance) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuInstanceRelease(WGPUInstance instance);
 
 
@@ -189,7 +216,10 @@ WGPU_EXPORT void wgpuInstanceRelease(WGPUInstance instance);
 export fn wgpuPipelineLayoutSetLabel(pipeline_layout: gpu.PipelineLayout, label: [*:0]const u8) void {
 assertDecl(Impl, "pipelineLayoutSetLabel", fn (pipeline_layout: gpu.PipelineLayout, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuPipelineLayoutReference(WGPUPipelineLayout pipelineLayout);
+// WGPU_EXPORT void wgpuPipelineLayoutReference(WGPUPipelineLayout pipelineLayout);
+export fn wgpuPipelineLayoutReference(pipeline_layout: gpu.PipelineLayout) void {
+assertDecl(Impl, "pipelineLayoutReference", fn (pipeline_layout: gpu.PipelineLayout) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuPipelineLayoutRelease(WGPUPipelineLayout pipelineLayout);
 
 
@@ -202,7 +232,10 @@ WGPU_EXPORT WGPUQueryType wgpuQuerySetGetType(WGPUQuerySet querySet);
 export fn wgpuQuerySetSetLabel(query_set: gpu.QuerySet, label: [*:0]const u8) void {
 assertDecl(Impl, "querySetSetLabel", fn (query_set: gpu.QuerySet, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuQuerySetReference(WGPUQuerySet querySet);
+// WGPU_EXPORT void wgpuQuerySetReference(WGPUQuerySet querySet);
+export fn wgpuQuerySetReference(query_set: gpu.QuerySet) void {
+assertDecl(Impl, "querySetReference", fn (query_set: gpu.QuerySet) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuQuerySetRelease(WGPUQuerySet querySet);
 
 
@@ -217,12 +250,20 @@ assertDecl(Impl, "queueSetLabel", fn (queue: gpu.Queue, label: [*:0]const u8) ca
 WGPU_EXPORT void wgpuQueueSubmit(WGPUQueue queue, uint32_t commandCount, WGPUCommandBuffer const * commands);
 WGPU_EXPORT void wgpuQueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const * data, size_t size);
 WGPU_EXPORT void wgpuQueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize);
-WGPU_EXPORT void wgpuQueueReference(WGPUQueue queue);
+
+// WGPU_EXPORT void wgpuQueueReference(WGPUQueue queue);
+export fn wgpuQueueReference(queue: gpu.Queue) void {
+assertDecl(Impl, "queueReference", fn (queue: gpu.Queue) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuQueueRelease(WGPUQueue queue);
 
 
 // Methods of RenderBundle
-WGPU_EXPORT void wgpuRenderBundleReference(WGPURenderBundle renderBundle);
+
+// WGPU_EXPORT void wgpuRenderBundleReference(WGPURenderBundle renderBundle);
+export fn wgpuRenderBundleReference(render_bundle: gpu.RenderBundle) void {
+assertDecl(Impl, "renderBundleReference", fn (render_bundle: gpu.RenderBundle) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuRenderBundleRelease(WGPURenderBundle renderBundle);
 
 
@@ -244,7 +285,11 @@ assertDecl(Impl, "renderBundleEncoderSetLabel", fn (render_bundle_encoder: gpu.R
 
 WGPU_EXPORT void wgpuRenderBundleEncoderSetPipeline(WGPURenderBundleEncoder renderBundleEncoder, WGPURenderPipeline pipeline);
 WGPU_EXPORT void wgpuRenderBundleEncoderSetVertexBuffer(WGPURenderBundleEncoder renderBundleEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
-WGPU_EXPORT void wgpuRenderBundleEncoderReference(WGPURenderBundleEncoder renderBundleEncoder);
+
+// WGPU_EXPORT void wgpuRenderBundleEncoderReference(WGPURenderBundleEncoder renderBundleEncoder);
+export fn wgpuRenderBundleEncoderReference(render_bundle_encoder: gpu.RenderBundleEncoder) void {
+assertDecl(Impl, "renderBundleEncoderReference", fn (render_bundle_encoder: gpu.RenderBundleEncoder) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuRenderBundleEncoderRelease(WGPURenderBundleEncoder renderBundleEncoder);
 
 
@@ -275,7 +320,11 @@ WGPU_EXPORT void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder 
 WGPU_EXPORT void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
 WGPU_EXPORT void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder renderPassEncoder, float x, float y, float width, float height, float minDepth, float maxDepth);
 WGPU_EXPORT void wgpuRenderPassEncoderWriteTimestamp(WGPURenderPassEncoder renderPassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
-WGPU_EXPORT void wgpuRenderPassEncoderReference(WGPURenderPassEncoder renderPassEncoder);
+
+// WGPU_EXPORT void wgpuRenderPassEncoderReference(WGPURenderPassEncoder renderPassEncoder);
+export fn wgpuRenderPassEncoderReference(render_pass_encoder: gpu.RenderPassEncoder) void {
+assertDecl(Impl, "renderPassEncoderReference", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuRenderPassEncoderRelease(WGPURenderPassEncoder renderPassEncoder);
 
 
@@ -286,7 +335,10 @@ WGPU_EXPORT WGPUBindGroupLayout wgpuRenderPipelineGetBindGroupLayout(WGPURenderP
 export fn wgpuRenderPipelineSetLabel(render_pipeline: gpu.RenderPipeline, label: [*:0]const u8) void {
 assertDecl(Impl, "renderPipelineSetLabel", fn (render_pipeline: gpu.RenderPipeline, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuRenderPipelineReference(WGPURenderPipeline renderPipeline);
+// WGPU_EXPORT void wgpuRenderPipelineReference(WGPURenderPipeline renderPipeline);
+export fn wgpuRenderPipelineReference(render_pipeline: gpu.RenderPipeline) void {
+assertDecl(Impl, "renderPipelineReference", fn (render_pipeline: gpu.RenderPipeline) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuRenderPipelineRelease(WGPURenderPipeline renderPipeline);
 
 
@@ -295,7 +347,10 @@ WGPU_EXPORT void wgpuRenderPipelineRelease(WGPURenderPipeline renderPipeline);
 export fn wgpuSamplerSetLabel(sampler: gpu.Sampler, label: [*:0]const u8) void {
 assertDecl(Impl, "samplerSetLabel", fn (sampler: gpu.Sampler, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuSamplerReference(WGPUSampler sampler);
+// WGPU_EXPORT void wgpuSamplerReference(WGPUSampler sampler);
+export fn wgpuSamplerReference(sampler: gpu.Sampler) void {
+assertDecl(Impl, "samplerReference", fn (sampler: gpu.Sampler) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuSamplerRelease(WGPUSampler sampler);
 
 
@@ -306,12 +361,18 @@ WGPU_EXPORT void wgpuShaderModuleGetCompilationInfo(WGPUShaderModule shaderModul
 export fn wgpuShaderModuleSetLabel(shader_module: gpu.ShaderModule, label: [*:0]const u8) void {
 assertDecl(Impl, "shaderModuleSetLabel", fn (shader_module: gpu.ShaderModule, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuShaderModuleReference(WGPUShaderModule shaderModule);
+// WGPU_EXPORT void wgpuShaderModuleReference(WGPUShaderModule shaderModule);
+export fn wgpuShaderModuleReference(shader_module: gpu.ShaderModule) void {
+assertDecl(Impl, "shaderModuleReference", fn (shader_module: gpu.ShaderModule) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuShaderModuleRelease(WGPUShaderModule shaderModule);
 
 
 // Methods of Surface
-WGPU_EXPORT void wgpuSurfaceReference(WGPUSurface surface);
+// WGPU_EXPORT void wgpuSurfaceReference(WGPUSurface surface);
+export fn wgpuSurfaceReference(surface: gpu.Surface) void {
+assertDecl(Impl, "surfaceReference", fn (surface: gpu.Surface) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuSurfaceRelease(WGPUSurface surface);
 
 
@@ -319,7 +380,11 @@ WGPU_EXPORT void wgpuSurfaceRelease(WGPUSurface surface);
 WGPU_EXPORT void wgpuSwapChainConfigure(WGPUSwapChain swapChain, WGPUTextureFormat format, WGPUTextureUsageFlags allowedUsage, uint32_t width, uint32_t height);
 WGPU_EXPORT WGPUTextureView wgpuSwapChainGetCurrentTextureView(WGPUSwapChain swapChain);
 WGPU_EXPORT void wgpuSwapChainPresent(WGPUSwapChain swapChain);
-WGPU_EXPORT void wgpuSwapChainReference(WGPUSwapChain swapChain);
+
+// WGPU_EXPORT void wgpuSwapChainReference(WGPUSwapChain swapChain);
+export fn wgpuSwapChainReference(swap_chain: gpu.SwapChain) void {
+assertDecl(Impl, "swapChainReference", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuSwapChainRelease(WGPUSwapChain swapChain);
 
 
@@ -339,7 +404,10 @@ WGPU_EXPORT uint32_t wgpuTextureGetWidth(WGPUTexture texture);
 export fn wgpuTextureSetLabel(texture: gpu.Texture, label: [*:0]const u8) void {
 assertDecl(Impl, "textureSetLabel", fn (texture: gpu.Texture, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuTextureReference(WGPUTexture texture);
+// WGPU_EXPORT void wgpuTextureReference(WGPUTexture texture);
+export fn wgpuTextureReference(texture: gpu.Texture) void {
+assertDecl(Impl, "textureReference", fn (texture: gpu.Texture) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuTextureRelease(WGPUTexture texture);
 
 
@@ -348,5 +416,8 @@ WGPU_EXPORT void wgpuTextureRelease(WGPUTexture texture);
 export fn wgpuTextureViewSetLabel(texture_view: gpu.TextureView, label: [*:0]const u8) void {
 assertDecl(Impl, "textureViewSetLabel", fn (texture_view: gpu.TextureView, label: [*:0]const u8) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuTextureViewReference(WGPUTextureView textureView);
+// WGPU_EXPORT void wgpuTextureViewReference(WGPUTextureView textureView);
+export fn wgpuTextureViewReference(texture_view: gpu.TextureView) void {
+assertDecl(Impl, "textureViewReference", fn (texture_view: gpu.TextureView) callconv(.Inline) void);
+
 WGPU_EXPORT void wgpuTextureViewRelease(WGPUTextureView textureView);
