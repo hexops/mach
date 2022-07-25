@@ -74,6 +74,8 @@ pub const CompareFunction = enum(u32) {
     always = 0x00000008,
 };
 
+pub const CompilationInfoCallback = fn (status: CompilationInfoRequestStatus, compilation_info: *const CompilationInfo, userdata: *anyopaque) callconv(.C) void;
+
 pub const CompilationInfoRequestStatus = enum(u32) {
     success = 0x00000000,
     err = 0x00000001,
