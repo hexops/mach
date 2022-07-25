@@ -20,6 +20,7 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "createInstance", fn (descriptor: *const InstanceDescriptor) callconv(.Inline) ?Instance);
     assertDecl(Impl, "getProcAddress", fn (device: gpu.Device, proc_name: [*:0]const u8) callconv(.Inline) ?gpu.Proc);
     assertDecl(Impl, "adapterCreateDevice", fn (adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) callconv(.Inline) ?gpu.Device);
+    assertDecl(Impl, "adapterEnumerateFeatures", fn (adapter: gpu.Adapter, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
     return Impl;
 }
 
@@ -47,6 +48,11 @@ pub fn Export(comptime Impl: type) type {
         export fn wgpuAdapterCreateDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?gpu.Device {
             return Impl.adapterCreateDevice(adapter, descriptor);
         }
+
+        // WGPU_EXPORT size_t wgpuAdapterEnumerateFeatures(WGPUAdapter adapter, WGPUFeatureName * features);
+        export fn wgpuAdapterEnumerateFeatures(adapter: gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
+            return Impl.adapterEnumerateFeatures(adapter, features);
+        }
     };
 }
 
@@ -67,6 +73,12 @@ pub const NullInterface = Interface(struct {
         _ = adapter;
         _ = descriptor;
         return null;
+    }
+
+    pub inline fn adapterEnumerateFeatures(adapter: gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
+        _ = adapter;
+        _ = features;
+        return 0;
     }
 });
 
