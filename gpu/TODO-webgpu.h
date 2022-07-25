@@ -10,10 +10,6 @@ typedef void (*WGPURequestAdapterCallback)(WGPURequestAdapterStatus status, WGPU
 typedef void (*WGPURequestDeviceCallback)(WGPURequestDeviceStatus status, WGPUDevice device, char const * message, void * userdata);
 
 // Methods of Adapter
-// WGPU_EXPORT void wgpuAdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties * properties);
-export fn wgpuAdapterGetProperties(adapter: gpu.Adapter, properties: *gpu.AdapterProperties) void {
-assertDecl(Impl, "adapterGetProperties", fn (adapter: gpu.Adapter, properties: *gpu.AdapterProperties) callconv(.Inline) void);
-
 // WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature);
 export fn wgpuAdapterHasFeature(adapter: gpu.Adapter, feature: gpu.FeatureName) bool {
 assertDecl(Impl, "adapterHasFeature", fn (adapter: gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
