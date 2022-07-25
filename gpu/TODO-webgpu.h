@@ -673,7 +673,9 @@ assertDecl(Impl, "samplerReference", fn (sampler: gpu.Sampler) callconv(.Inline)
 export fn wgpuSamplerRelease(sampler: gpu.Sampler) void {
 assertDecl(Impl, "samplerRelease", fn (sampler: gpu.Sampler) callconv(.Inline) void);
 
-WGPU_EXPORT void wgpuShaderModuleGetCompilationInfo(WGPUShaderModule shaderModule, WGPUCompilationInfoCallback callback, void * userdata);
+// WGPU_EXPORT void wgpuShaderModuleGetCompilationInfo(WGPUShaderModule shaderModule, WGPUCompilationInfoCallback callback, void * userdata);
+export fn wgpuShaderModuleGetCompilationInfo(shader_module: gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) void {
+assertDecl(Impl, "shaderModuleGetCompilationInfo", fn (shader_module: gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) callconv(.Inline) void);
 
 // WGPU_EXPORT void wgpuShaderModuleSetLabel(WGPUShaderModule shaderModule, char const * label);
 export fn wgpuShaderModuleSetLabel(shader_module: gpu.ShaderModule, label: [*:0]const u8) void {
