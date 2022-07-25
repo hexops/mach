@@ -44,6 +44,7 @@ const query_set = @import("query_set.zig");
 const texture_view = @import("texture_view.zig");
 const surface = @import("surface.zig");
 const compute_pipeline = @import("compute_pipeline.zig");
+const render_pipeline = @import("render_pipeline.zig");
 
 /// Generic function pointer type, used for returning API function pointers. Must be
 /// cast to a `fn (...) callconv(.C) T` before use.
@@ -52,6 +53,13 @@ pub const Proc = *anyopaque;
 pub const CreateComputePipelineAsyncCallback = fn (
     status: types.CreatePipelineAsyncStatus,
     compute_pipeline: compute_pipeline.ComputePipeline,
+    message: [*:0]const u8,
+    userdata: *anyopaque,
+) callconv(.C) void;
+
+pub const CreateRenderPipelineAsyncCallback = fn (
+    status: types.CreatePipelineAsyncStatus,
+    pipeline: render_pipeline.RenderPipeline,
     message: [*:0]const u8,
     userdata: *anyopaque,
 ) callconv(.C) void;
