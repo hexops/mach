@@ -19,6 +19,10 @@ pub const Adapter = *opaque {
     pub inline fn getLimits(adapter: Adapter, limits: *SupportedLimits) bool {
         return impl.adapterGetLimits(adapter, limits);
     }
+
+    pub inline fn getProperties(adapter: Adapter, properties: *AdapterProperties) void {
+        impl.adapterGetProperties(adapter, properties);
+    }
 };
 
 pub const AdapterType = enum(u32) {
