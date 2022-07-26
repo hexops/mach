@@ -7,6 +7,7 @@ pub const ecs = @import("ecs/build.zig");
 const freetype = @import("freetype/build.zig");
 const sysaudio = @import("sysaudio/build.zig");
 const sysjs = @import("sysjs/build.zig");
+const gamemode = @import("gamemode-zig/build.zig");
 const Pkg = std.build.Pkg;
 
 pub fn build(b: *std.build.Builder) void {
@@ -225,6 +226,13 @@ pub const App = struct {
                 const exe = b.addExecutable(options.name, thisDir() ++ "/src/platform/native.zig");
                 exe.addPackage(gpu.pkg);
                 exe.addPackage(glfw.pkg);
+
+                if (target.os.tag == .linux) {
+                    exe.addPackage(gamemode.pkg);
+                    // TODO: choose between system lib vs buildlib?
+                    gamemode.link(exe);
+                    // gamemode.buildAndLink(b, exe);
+                }
 
                 break :blk exe;
             }
