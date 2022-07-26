@@ -6,7 +6,7 @@ const gpu = @import("main.zig");
 /// it is resolved fully at comptime with no vtable indirection, etc.
 pub const impl = blk: {
     if (@import("builtin").is_test) {
-        break :blk NullInterface{};
+        break :blk StubInterface{};
     } else {
         const root = @import("root");
         if (!@hasField(root, "gpu_interface")) @compileError("expected to find `pub const gpu_interface: gpu.Interface(T) = T{};` in root file");
@@ -1048,8 +1048,8 @@ pub fn Export(comptime Impl: type) type {
     };
 }
 
-/// A no-operation gpu.Interface implementation.
-pub const NullInterface = Interface(struct {
+/// A stub gpu.Interface in which every function is implemented by `unreachable;`
+pub const StubInterface = Interface(struct {
     pub inline fn createInstance(descriptor: *const InstanceDescriptor) ?Instance {
         _ = descriptor;
         unreachable;
@@ -2291,6 +2291,6 @@ pub const NullInterface = Interface(struct {
     }
 });
 
-test "null" {
-    _ = Export(NullInterface);
+test "stub" {
+    _ = Export(StubInterface);
 }
