@@ -1,18 +1,3 @@
-// NOTE: descriptor is nullable, see https://bugs.chromium.org/p/dawn/issues/detail?id=1502
-// WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor, WGPURequestDeviceCallback callback, void * userdata);
-export fn wgpuAdapterRequestDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
-    impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
-}
-pub inline fn adapterRequestDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
-    _ = adapter;
-    _ = descriptor;
-    _ = callback;
-    _ = userdata;
-}
-pub inline fn requestDevice(adapter: Adapter, descriptor: ?*const DeviceDescriptor, callback: RequestDeviceCallback, userdata: *anyopaque) void {
-    impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
-}
-
 // WGPU_EXPORT void wgpuAdapterReference(WGPUAdapter adapter);
 export fn wgpuAdapterReference(adapter: gpu.Adapter) void {
     impl.adapterReference(adapter);
