@@ -25,7 +25,7 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "adapterGetProperties", fn (adapter: gpu.Adapter, properties: *gpu.AdapterProperties) callconv(.Inline) void);
     assertDecl(Impl, "adapterHasFeature", fn (adapter: gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
     assertDecl(Impl, "adapterRequestDevice", fn (adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) callconv(.Inline) void);
-    // assertDecl(Impl, "adapterReference", fn (adapter: gpu.Adapter) callconv(.Inline) void);
+    assertDecl(Impl, "adapterReference", fn (adapter: gpu.Adapter) callconv(.Inline) void);
     // assertDecl(Impl, "adapterRelease", fn (adapter: gpu.Adapter) callconv(.Inline) void);
     // assertDecl(Impl, "bindGroupSetLabel", fn (bind_group: gpu.BindGroup, label: [*:0]const u8) callconv(.Inline) void);
     // assertDecl(Impl, "bindGroupReference", fn (bind_group: gpu.BindGroup) callconv(.Inline) void);
@@ -271,6 +271,11 @@ pub fn Export(comptime Impl: type) type {
         export fn wgpuAdapterRequestDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
             Impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
         }
+
+        // WGPU_EXPORT void wgpuAdapterReference(WGPUAdapter adapter);
+        export fn wgpuAdapterReference(adapter: gpu.Adapter) void {
+            Impl.adapterReference(adapter);
+        }
     };
 }
 
@@ -321,6 +326,10 @@ pub const NullInterface = Interface(struct {
         _ = descriptor;
         _ = callback;
         _ = userdata;
+    }
+
+    pub inline fn adapterReference(adapter: gpu.Adapter) void {
+        _ = adapter;
     }
 });
 
