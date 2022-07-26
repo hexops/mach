@@ -1,14 +1,3 @@
-// WGPU_EXPORT void wgpuAdapterReference(WGPUAdapter adapter);
-export fn wgpuAdapterReference(adapter: gpu.Adapter) void {
-    impl.adapterReference(adapter);
-}
-pub inline fn adapterReference(adapter: gpu.Adapter) void {
-    _ = adapter;
-}
-pub inline fn reference(adapter: Adapter) void {
-    impl.adapterReference(adapter);
-}
-
 // WGPU_EXPORT void wgpuAdapterRelease(WGPUAdapter adapter);
 export fn wgpuAdapterRelease(adapter: gpu.Adapter) void {
     impl.adapterRelease(adapter);

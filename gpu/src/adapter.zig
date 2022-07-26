@@ -32,6 +32,10 @@ pub const Adapter = *opaque {
     pub inline fn requestDevice(adapter: Adapter, descriptor: ?*const DeviceDescriptor, callback: RequestDeviceCallback, userdata: *anyopaque) void {
         impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
     }
+
+    pub inline fn reference(adapter: Adapter) void {
+        impl.adapterReference(adapter);
+    }
 };
 
 pub const RequestDeviceCallback = fn (
