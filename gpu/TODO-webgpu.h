@@ -1,9 +1,5 @@
-// WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature);
-export fn wgpuAdapterHasFeature(adapter: gpu.Adapter, feature: gpu.FeatureName) bool {
-
 // NOTE: descriptor is nullable, see https://bugs.chromium.org/p/dawn/issues/detail?id=1502
 // WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor, WGPURequestDeviceCallback callback, void * userdata);
-export fn wgpuAdapterRequestDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
 
 // WGPU_EXPORT void wgpuAdapterReference(WGPUAdapter adapter);
 export fn wgpuAdapterReference(adapter: gpu.Adapter) void {
