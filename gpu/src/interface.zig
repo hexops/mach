@@ -281,6 +281,772 @@ pub fn Export(comptime Impl: type) type {
         export fn wgpuAdapterRelease(adapter: gpu.Adapter) void {
             Impl.adapterRelease(adapter);
         }
+
+        // TODO
+        // WGPU_EXPORT void wgpuBindGroupSetLabel(WGPUBindGroup bindGroup, char const * label);
+        // export fn wgpuBindGroupSetLabel(bind_group: gpu.BindGroup, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBindGroupReference(WGPUBindGroup bindGroup);
+        // export fn wgpuBindGroupReference(bind_group: gpu.BindGroup) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBindGroupRelease(WGPUBindGroup bindGroup);
+        // export fn wgpuBindGroupRelease(bind_group: gpu.BindGroup) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBindGroupLayoutSetLabel(WGPUBindGroupLayout bindGroupLayout, char const * label);
+        // export fn wgpuBindGroupLayoutSetLabel(bind_group_layout: gpu.BindGroupLayout, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBindGroupLayoutReference(WGPUBindGroupLayout bindGroupLayout);
+        // export fn wgpuBindGroupLayoutReference(bind_group_layout: gpu.BindGroupLayout) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBindGroupLayoutRelease(WGPUBindGroupLayout bindGroupLayout);
+        // export fn wgpuBindGroupLayoutRelease(bind_group_layout: gpu.BindGroupLayout) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBufferDestroy(WGPUBuffer buffer);
+        // export fn wgpuBufferDestroy(buffer: gpu.Buffer) void {
+
+        // TODO
+        // WGPU_EXPORT void const * wgpuBufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
+        // export fn wgpuBufferGetConstMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *const anyopaque {
+
+        // TODO
+        // WGPU_EXPORT void * wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
+        // export fn wgpuBufferGetMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *anyopaque {
+
+        // TODO
+        // WGPU_EXPORT uint64_t wgpuBufferGetSize(WGPUBuffer buffer);
+        // export fn wgpuBufferGetSize(buffer: gpu.Buffer) u64 {
+
+        // TODO
+        // WGPU_EXPORT WGPUBufferUsage wgpuBufferGetUsage(WGPUBuffer buffer);
+        // export fn wgpuBufferGetUsage(buffer: gpu.Buffer) gpu.BufferUsage {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapModeFlags mode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userdata);
+        // export fn wgpuBufferMapAsync(buffer: gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) u64 {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBufferSetLabel(WGPUBuffer buffer, char const * label);
+        // export fn wgpuBufferSetLabel(buffer: gpu.Buffer, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBufferUnmap(WGPUBuffer buffer);
+        // export fn wgpuBufferUnmap(buffer: gpu.Buffer) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBufferReference(WGPUBuffer buffer);
+        // export fn wgpuBufferReference(buffer: gpu.Buffer) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuBufferRelease(WGPUBuffer buffer);
+        // export fn wgpuBufferRelease(buffer: gpu.Buffer) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandBufferSetLabel(WGPUCommandBuffer commandBuffer, char const * label);
+        // export fn wgpuCommandBufferSetLabel(command_buffer: gpu.CommandBuffer, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandBufferReference(WGPUCommandBuffer commandBuffer);
+        // export fn wgpuCommandBufferReference(command_buffer: gpu.CommandBuffer) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandBufferRelease(WGPUCommandBuffer commandBuffer);
+        // export fn wgpuCommandBufferRelease(command_buffer: gpu.CommandBuffer) void {
+
+        // TODO
+        // WGPU_EXPORT WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder, WGPUComputePassDescriptor const * descriptor /* nullable */);
+        // export fn wgpuCommandEncoderBeginComputePass(command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) gpu.ComputePassEncoder {
+
+        // TODO
+        // WGPU_EXPORT WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder commandEncoder, WGPURenderPassDescriptor const * descriptor);
+        // export fn wgpuCommandEncoderBeginRenderPass(command_encoder: gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) gpu.RenderPassEncoder {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderClearBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t offset, uint64_t size);
+        // export fn wgpuCommandEncoderClearBuffer(command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, offset: u64, size: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size);
+        // export fn wgpuCommandEncoderCopyBufferToBuffer(command_encoder: gpu.CommandEncoder, source: gpu.Buffer, source_offset: u64, destination: gpu.Buffer, destination_offset: u64, size: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyBuffer const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
+        // export fn wgpuCommandEncoderCopyBufferToTexture(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyBuffer, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToBuffer(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyBuffer const * destination, WGPUExtent3D const * copySize);
+        // export fn wgpuCommandEncoderCopyTextureToBuffer(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyBuffer, copy_size: *const gpu.Extent3D) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
+        // export fn wgpuCommandEncoderCopyTextureToTexture(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+
+        // Note: the only difference between this and the non-internal variant is that this one checks
+        // internal usage.
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderCopyTextureToTextureInternal(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize);
+        // export fn wgpuCommandEncoderCopyTextureToTextureInternal(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+
+        // TODO
+        // WGPU_EXPORT WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder commandEncoder, WGPUCommandBufferDescriptor const * descriptor /* nullable */);
+        // export fn wgpuCommandEncoderFinish(command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.CommandBufferDescriptor) gpu.CommandBuffer {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderInjectValidationError(WGPUCommandEncoder commandEncoder, char const * message);
+        // export fn wgpuCommandEncoderInjectValidationError(command_encoder: gpu.CommandEncoder, message: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderInsertDebugMarker(WGPUCommandEncoder commandEncoder, char const * markerLabel);
+        // export fn wgpuCommandEncoderInsertDebugMarker(command_encoder: gpu.CommandEncoder, marker_label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderPopDebugGroup(WGPUCommandEncoder commandEncoder);
+        // export fn wgpuCommandEncoderPopDebugGroup(command_encoder: gpu.CommandEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderPushDebugGroup(WGPUCommandEncoder commandEncoder, char const * groupLabel);
+        // export fn wgpuCommandEncoderPushDebugGroup(command_encoder: gpu.CommandEncoder, group_label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderResolveQuerySet(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t firstQuery, uint32_t queryCount, WGPUBuffer destination, uint64_t destinationOffset);
+        // export fn wgpuCommandEncoderResolveQuerySet(command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, first_query: u32, query_count: u32, destination: gpu.Buffer, destination_offset: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderSetLabel(WGPUCommandEncoder commandEncoder, char const * label);
+        // export fn wgpuCommandEncoderSetLabel(command_encoder: gpu.CommandEncoder, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderWriteBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t bufferOffset, uint8_t const * data, uint64_t size);
+        // export fn wgpuCommandEncoderWriteBuffer(command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderWriteTimestamp(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+        // export fn wgpuCommandEncoderWriteTimestamp(command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, query_index: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderReference(WGPUCommandEncoder commandEncoder);
+        // export fn wgpuCommandEncoderReference(command_encoder: gpu.CommandEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuCommandEncoderRelease(WGPUCommandEncoder commandEncoder);
+        // export fn wgpuCommandEncoderRelease(command_encoder: gpu.CommandEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderDispatch(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX, uint32_t workgroupCountY, uint32_t workgroupCountZ);
+        // export fn wgpuComputePassEncoderDispatch(compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderDispatchIndirect(WGPUComputePassEncoder computePassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+        // export fn wgpuComputePassEncoderDispatchIndirect(compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX, uint32_t workgroupCountY, uint32_t workgroupCountZ);
+        // export fn wgpuComputePassEncoderDispatchWorkgroups(compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder computePassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+        // export fn wgpuComputePassEncoderDispatchWorkgroupsIndirect(compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderEnd(WGPUComputePassEncoder computePassEncoder);
+        // export fn wgpuComputePassEncoderEnd(compute_pass_encoder: gpu.ComputePassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderEndPass(WGPUComputePassEncoder computePassEncoder);
+        // export fn wgpuComputePassEncoderEndPass(compute_pass_encoder: gpu.ComputePassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderInsertDebugMarker(WGPUComputePassEncoder computePassEncoder, char const * markerLabel);
+        // export fn wgpuComputePassEncoderInsertDebugMarker(compute_pass_encoder: gpu.ComputePassEncoder, marker_label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderPopDebugGroup(WGPUComputePassEncoder computePassEncoder);
+        // export fn wgpuComputePassEncoderPopDebugGroup(compute_pass_encoder: gpu.ComputePassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderPushDebugGroup(WGPUComputePassEncoder computePassEncoder, char const * groupLabel);
+        // export fn wgpuComputePassEncoderPushDebugGroup(compute_pass_encoder: gpu.ComputePassEncoder, group_label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+        // export fn wgpuComputePassEncoderSetBindGroup(compute_pass_encoder: gpu.ComputePassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderSetLabel(WGPUComputePassEncoder computePassEncoder, char const * label);
+        // export fn wgpuComputePassEncoderSetLabel(compute_pass_encoder: gpu.ComputePassEncoder, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderSetPipeline(WGPUComputePassEncoder computePassEncoder, WGPUComputePipeline pipeline);
+        // export fn wgpuComputePassEncoderSetPipeline(compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderWriteTimestamp(WGPUComputePassEncoder computePassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+        // export fn wgpuComputePassEncoderWriteTimestamp(compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderReference(WGPUComputePassEncoder computePassEncoder);
+        // export fn wgpuComputePassEncoderReference(compute_pass_encoder: gpu.ComputePassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePassEncoderRelease(WGPUComputePassEncoder computePassEncoder);
+        // export fn wgpuComputePassEncoderRelease(compute_pass_encoder: gpu.ComputePassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComputePipeline computePipeline, uint32_t groupIndex);
+        // export fn wgpuComputePipelineGetBindGroupLayout(compute_pipeline: gpu.ComputePipeline, group_index: u32) gpu.BindGroupLayout {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePipelineSetLabel(WGPUComputePipeline computePipeline, char const * label);
+        // export fn wgpuComputePipelineSetLabel(compute_pipeline: gpu.ComputePipeline, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePipelineReference(WGPUComputePipeline computePipeline);
+        // export fn wgpuComputePipelineReference(compute_pipeline: gpu.ComputePipeline) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuComputePipelineRelease(WGPUComputePipeline computePipeline);
+        // export fn wgpuComputePipelineRelease(compute_pipeline: gpu.ComputePipeline) void {
+
+        // TODO
+        // WGPU_EXPORT WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const * descriptor);
+        // export fn wgpuDeviceCreateBindGroup(device: gpu.Device, descriptor: *const gpu.BindGroupDescriptor) gpu.BindGroup {
+
+        // TODO
+        // WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor);
+        // export fn wgpuDeviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) gpu.BindGroupLayout {
+
+        // TODO
+        // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
+        // export fn wgpuDeviceCreateBindGroup(device: gpu.Device, descriptor: *const gpu.BufferDescriptor) gpu.Buffer {
+
+        // TODO
+        // WGPU_EXPORT WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommandEncoderDescriptor const * descriptor /* nullable */);
+        // export fn wgpuDeviceCreateCommandEncoder(device: gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) gpu.CommandEncoder {
+
+        // TODO
+        // WGPU_EXPORT WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor);
+        // export fn wgpuDeviceCreateComputePipeline(device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) gpu.ComputePipeline {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceCreateComputePipelineAsync(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor, WGPUCreateComputePipelineAsyncCallback callback, void * userdata);
+        // export fn wgpuDeviceCreateComputePipelineAsync(device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
+
+        // TODO
+        // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device);
+        // export fn wgpuDeviceCreateErrorBuffer(device: gpu.Device) gpu.Buffer {
+
+        // TODO
+        // WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateErrorExternalTexture(WGPUDevice device);
+        // export fn wgpuDeviceCreateErrorExternalTexture(device: gpu.Device) gpu.ExternalTexture {
+
+        // TODO
+        // WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, WGPUExternalTextureDescriptor const * externalTextureDescriptor);
+        // export fn wgpuDeviceCreateExternalTexture(device: gpu.Device, external_texture_descriptor: *const gpu.ExternalTextureDescriptor) gpu.ExternalTexture {
+
+        // TODO
+        // WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
+        // export fn wgpuDeviceCreatePipelineLayout(device: gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayoutDescriptor) gpu.PipelineLayout {
+
+        // TODO
+        // WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
+        // export fn wgpuDeviceCreateQuerySet(device: gpu.Device, descriptor: *const gpu.QuerySetDescriptor) gpu.QuerySet {
+
+        // TODO
+        // WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
+        // export fn wgpuDeviceCreateRenderBundleEncoder(device: gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) gpu.RenderBundleEncoder {
+
+        // TODO
+        // WGPU_EXPORT WGPURenderPipeline wgpuDeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor);
+        // export fn wgpuDeviceCreateRenderPipeline(device: gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) gpu.RenderPipeline {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceCreateRenderPipelineAsync(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor, WGPUCreateRenderPipelineAsyncCallback callback, void * userdata);
+        // export fn wgpuDeviceCreateRenderPipelineAsync(device: gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
+
+        // TODO
+        // WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor /* nullable */);
+        // export fn wgpuDeviceCreateRenderPipeline(device: gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) gpu.Sampler {
+
+        // TODO
+        // WGPU_EXPORT WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor const * descriptor);
+        // export fn wgpuDeviceCreateShaderModule(device: gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) gpu.ShaderModule {
+
+        // TODO
+        // WGPU_EXPORT WGPUSwapChain wgpuDeviceCreateSwapChain(WGPUDevice device, WGPUSurface surface /* nullable */, WGPUSwapChainDescriptor const * descriptor);
+        // export fn wgpuDeviceCreateShaderModule(device: gpu.Device, surface: ?Surface, descriptor: *const gpu.SwapChainDescriptor) gpu.SwapChain {
+
+        // TODO
+        // WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
+        // export fn wgpuDeviceCreateTexture(device: gpu.Device, descriptor: *const gpu.TextureDescriptor) gpu.Texture {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceDestroy(WGPUDevice device);
+        // export fn wgpuDeviceDestroy(device: gpu.Device) void {
+
+        // TODO
+        // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeatureName * features);
+        // export fn wgpuDeviceEnumerateFeatures(device: gpu.Device, features: [*]gpu.FeatureName) usize {
+
+        // TODO
+        // WGPU_EXPORT bool wgpuDeviceGetLimits(WGPUDevice device, WGPUSupportedLimits * limits);
+        // export fn wgpuDeviceGetLimits(device: gpu.Device, limits: *gpu.SupportedLimits) bool {
+
+        // TODO
+        // WGPU_EXPORT WGPUQueue wgpuDeviceGetQueue(WGPUDevice device);
+        // export fn wgpuDeviceGetQueue(device: gpu.Device) gpu.Queue {
+
+        // TODO
+        // WGPU_EXPORT bool wgpuDeviceHasFeature(WGPUDevice device, WGPUFeatureName feature);
+        // export fn wgpuDeviceHasFeature(device: gpu.Device, feature: gpu.FeatureName) bool {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceInjectError(WGPUDevice device, WGPUErrorType type, char const * message);
+        // export fn wgpuDeviceInjectError(device: gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceLoseForTesting(WGPUDevice device);
+        // export fn wgpuDeviceLoseForTesting(device: gpu.Device) void {
+
+        // TODO
+        // WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
+        // export fn wgpuDevicePopErrorScope(device: gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) bool {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDevicePushErrorScope(WGPUDevice device, WGPUErrorFilter filter);
+        // export fn wgpuDevicePushErrorScope(device: gpu.Device, filter: gpu.ErrorFilter) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDeviceLostCallback callback, void * userdata);
+        // export fn wgpuDeviceSetDeviceLostCallback(device: gpu.Device, callback: gpu.DeviceLostCallback, userdata: *anyopaque) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceSetLabel(WGPUDevice device, char const * label);
+        // export fn wgpuDeviceSetLabel(device: gpu.Device, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
+        // export fn wgpuDeviceSetLoggingCallback(device: gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
+        // export fn wgpuDeviceSetUncapturedErrorCallback(device: gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceTick(WGPUDevice device);
+        // export fn wgpuDeviceTick(device: gpu.Device) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceReference(WGPUDevice device);
+        // export fn wgpuDeviceReference(device: gpu.Device) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuDeviceRelease(WGPUDevice device);
+        // export fn wgpuDeviceRelease(device: gpu.Device) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuExternalTextureDestroy(WGPUExternalTexture externalTexture);
+        // export fn wgpuExternalTextureDestroy(external_texture: gpu.ExternalTexture) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuExternalTextureSetLabel(WGPUExternalTexture externalTexture, char const * label);
+        // export fn wgpuExternalTextureSetLabel(external_texture: gpu.ExternalTexture, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuExternalTextureReference(WGPUExternalTexture externalTexture);
+        // export fn wgpuExternalTextureReference(external_texture: gpu.ExternalTexture) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuExternalTextureRelease(WGPUExternalTexture externalTexture);
+        // export fn wgpuExternalTextureRelease(external_texture: gpu.ExternalTexture) void {
+
+        // TODO
+        // WGPU_EXPORT WGPUSurface wgpuInstanceCreateSurface(WGPUInstance instance, WGPUSurfaceDescriptor const * descriptor);
+        // export fn wgpuInstanceCreateSurface(instance: gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) gpu.Surface {
+
+        // TODO
+        // WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options, WGPURequestAdapterCallback callback, void * userdata);
+        // export fn wgpuInstanceRequestAdapter(instance: gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuInstanceReference(WGPUInstance instance);
+        // export fn wgpuInstanceReference(instance: gpu.Instance) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuInstanceRelease(WGPUInstance instance);
+        // export fn wgpuInstanceRelease(instance: gpu.Instance) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuPipelineLayoutSetLabel(WGPUPipelineLayout pipelineLayout, char const * label);
+        // export fn wgpuPipelineLayoutSetLabel(pipeline_layout: gpu.PipelineLayout, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuPipelineLayoutReference(WGPUPipelineLayout pipelineLayout);
+        // export fn wgpuPipelineLayoutReference(pipeline_layout: gpu.PipelineLayout) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuPipelineLayoutRelease(WGPUPipelineLayout pipelineLayout);
+        // export fn wgpuPipelineLayoutRelease(pipeline_layout: gpu.PipelineLayout) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQuerySetDestroy(WGPUQuerySet querySet);
+        // export fn wgpuQuerySetDestroy(query_set: gpu.QuerySet) void {
+
+        // TODO
+        // WGPU_EXPORT uint32_t wgpuQuerySetGetCount(WGPUQuerySet querySet);
+        // export fn wgpuQuerySetGetCount(query_set: gpu.QuerySet) u32 {
+
+        // TODO
+        // WGPU_EXPORT WGPUQueryType wgpuQuerySetGetType(WGPUQuerySet querySet);
+        // export fn wgpuQuerySetGetType(query_set: gpu.QuerySet) gpu.QueryType {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQuerySetSetLabel(WGPUQuerySet querySet, char const * label);
+        // export fn wgpuQuerySetSetLabel(query_set: gpu.QuerySet, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQuerySetReference(WGPUQuerySet querySet);
+        // export fn wgpuQuerySetReference(query_set: gpu.QuerySet) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQuerySetRelease(WGPUQuerySet querySet);
+        // export fn wgpuQuerySetRelease(query_set: gpu.QuerySet) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQueueCopyTextureForBrowser(WGPUQueue queue, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize, WGPUCopyTextureForBrowserOptions const * options);
+        // export fn wgpuQueueCopyTextureForBrowser(queue: gpu.Queue, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D, options: *const gpu.CopyTextureForBrowserOptions) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQueueOnSubmittedWorkDone(WGPUQueue queue, uint64_t signalValue, WGPUQueueWorkDoneCallback callback, void * userdata);
+        // export fn wgpuQueueOnSubmittedWorkDone(queue: gpu.Queue, signal_value: u64, callback: gpu.QueueWorkDoneCallback, userdata: *anyopaque) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQueueSetLabel(WGPUQueue queue, char const * label);
+        // export fn wgpuQueueSetLabel(queue: gpu.Queue, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQueueSubmit(WGPUQueue queue, uint32_t commandCount, WGPUCommandBuffer const * commands);
+        // export fn wgpuQueueSubmit(queue: gpu.Queue, command_count: u32, commands: [*]gpu.CommandBuffer) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const * data, size_t size);
+        // export fn wgpuQueueWriteBuffer(queue: gpu.Queue, buffer: gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize);
+        // export fn wgpuQueueWriteTexture(queue: gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.TextureDataLayout, write_size: *const gpu.Extent3D) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQueueReference(WGPUQueue queue);
+        // export fn wgpuQueueReference(queue: gpu.Queue) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuQueueRelease(WGPUQueue queue);
+        // export fn wgpuQueueRelease(queue: gpu.Queue) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleReference(WGPURenderBundle renderBundle);
+        // export fn wgpuRenderBundleReference(render_bundle: gpu.RenderBundle) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleRelease(WGPURenderBundle renderBundle);
+        // export fn wgpuRenderBundleRelease(render_bundle: gpu.RenderBundle) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderDraw(WGPURenderBundleEncoder renderBundleEncoder, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+        // export fn wgpuRenderBundleEncoderDraw(render_bundle_encoder: gpu.RenderBundleEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderDrawIndexed(WGPURenderBundleEncoder renderBundleEncoder, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance);
+        // export fn wgpuRenderBundleEncoderDrawIndexed(render_bundle_encoder: gpu.RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderDrawIndexedIndirect(WGPURenderBundleEncoder renderBundleEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+        // export fn wgpuRenderBundleEncoderDrawIndexedIndirect(render_bundle_encoder: gpu.RenderBundleEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderDrawIndirect(WGPURenderBundleEncoder renderBundleEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+        // export fn wgpuRenderBundleEncoderDrawIndirect(render_bundle_encoder: gpu.RenderBundleEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+        // TODO
+        // WGPU_EXPORT WGPURenderBundle wgpuRenderBundleEncoderFinish(WGPURenderBundleEncoder renderBundleEncoder, WGPURenderBundleDescriptor const * descriptor /* nullable */);
+        // export fn wgpuRenderBundleEncoderFinish(render_bundle_encoder: gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundleDescriptor) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderInsertDebugMarker(WGPURenderBundleEncoder renderBundleEncoder, char const * markerLabel);
+        // export fn wgpuRenderBundleEncoderInsertDebugMarker(render_bundle_encoder: gpu.RenderBundleEncoder, marker_label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderPopDebugGroup(WGPURenderBundleEncoder renderBundleEncoder);
+        // export fn wgpuRenderBundleEncoderPopDebugGroup(render_bundle_encoder: gpu.RenderBundleEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderPushDebugGroup(WGPURenderBundleEncoder renderBundleEncoder, char const * groupLabel);
+        // export fn wgpuRenderBundleEncoderPushDebugGroup(render_bundle_encoder: gpu.RenderBundleEncoder, group_label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderSetBindGroup(WGPURenderBundleEncoder renderBundleEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+        // export fn wgpuRenderBundleEncoderSetBindGroup(render_bundle_encoder: gpu.RenderBundleEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderSetIndexBuffer(WGPURenderBundleEncoder renderBundleEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
+        // export fn wgpuRenderBundleEncoderSetIndexBuffer(render_bundle_encoder: gpu.RenderBundleEncoder, buffer: gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderSetLabel(WGPURenderBundleEncoder renderBundleEncoder, char const * label);
+        // export fn wgpuRenderBundleEncoderSetLabel(render_bundle_encoder: gpu.RenderBundleEncoder, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderSetPipeline(WGPURenderBundleEncoder renderBundleEncoder, WGPURenderPipeline pipeline);
+        // export fn wgpuRenderBundleEncoderSetPipeline(render_bundle_encoder: gpu.RenderBundleEncoder, pipeline: gpu.RenderPipeline) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderSetVertexBuffer(WGPURenderBundleEncoder renderBundleEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
+        // export fn wgpuRenderBundleEncoderSetVertexBuffer(render_bundle_encoder: gpu.RenderBundleEncoder, slot: u32, buffer: gpu.Buffer, offset: u64, size: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderReference(WGPURenderBundleEncoder renderBundleEncoder);
+        // export fn wgpuRenderBundleEncoderReference(render_bundle_encoder: gpu.RenderBundleEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderBundleEncoderRelease(WGPURenderBundleEncoder renderBundleEncoder);
+        // export fn wgpuRenderBundleEncoderRelease(render_bundle_encoder: gpu.RenderBundleEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderBeginOcclusionQuery(WGPURenderPassEncoder renderPassEncoder, uint32_t queryIndex);
+        // export fn wgpuRenderPassEncoderBeginOcclusionQuery(render_pass_encoder: gpu.RenderPassEncoder, query_index: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderDraw(WGPURenderPassEncoder renderPassEncoder, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+        // export fn wgpuRenderPassEncoderDraw(render_pass_encoder: gpu.RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder renderPassEncoder, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance);
+        // export fn wgpuRenderPassEncoderDrawIndexed(render_pass_encoder: gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexedIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+        // export fn wgpuRenderPassEncoderDrawIndexedIndirect(render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
+        // export fn wgpuRenderPassEncoderDrawIndirect(render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderEnd(WGPURenderPassEncoder renderPassEncoder);
+        // export fn wgpuRenderPassEncoderEnd(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder renderPassEncoder);
+        // export fn wgpuRenderPassEncoderEndOcclusionQuery(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderEndPass(WGPURenderPassEncoder renderPassEncoder);
+        // export fn wgpuRenderPassEncoderEndPass(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder renderPassEncoder, uint32_t bundlesCount, WGPURenderBundle const * bundles);
+        // export fn wgpuRenderPassEncoderExecuteBundles(render_pass_encoder: gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const gpu.RenderBundle) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderInsertDebugMarker(WGPURenderPassEncoder renderPassEncoder, char const * markerLabel);
+        // export fn wgpuRenderPassEncoderInsertDebugMarker(render_pass_encoder: gpu.RenderPassEncoder, marker_label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderPopDebugGroup(WGPURenderPassEncoder renderPassEncoder);
+        // export fn wgpuRenderPassEncoderPopDebugGroup(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderPushDebugGroup(WGPURenderPassEncoder renderPassEncoder, char const * groupLabel);
+        // export fn wgpuRenderPassEncoderPushDebugGroup(render_pass_encoder: gpu.RenderPassEncoder, group_label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+        // export fn wgpuRenderPassEncoderSetBindGroup(render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderSetBlendConstant(WGPURenderPassEncoder renderPassEncoder, WGPUColor const * color);
+        // export fn wgpuRenderPassEncoderSetBlendConstant(render_pass_encoder: gpu.RenderPassEncoder, color: *const gpu.Color) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size);
+        // export fn wgpuRenderPassEncoderSetIndexBuffer(render_pass_encoder: gpu.RenderPassEncoder, buffer: gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderSetLabel(WGPURenderPassEncoder renderPassEncoder, char const * label);
+        // export fn wgpuRenderPassEncoderSetLabel(render_pass_encoder: gpu.RenderPassEncoder, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderSetPipeline(WGPURenderPassEncoder renderPassEncoder, WGPURenderPipeline pipeline);
+        // export fn wgpuRenderPassEncoderSetPipeline(render_pass_encoder: gpu.RenderPassEncoder, pipeline: gpu.RenderPipeline) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderSetScissorRect(WGPURenderPassEncoder renderPassEncoder, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+        // export fn wgpuRenderPassEncoderSetScissorRect(render_pass_encoder: gpu.RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderSetStencilReference(WGPURenderPassEncoder renderPassEncoder, uint32_t reference);
+        // export fn wgpuRenderPassEncoderSetStencilReference(render_pass_encoder: gpu.RenderPassEncoder, reference: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEncoder, uint32_t slot, WGPUBuffer buffer, uint64_t offset, uint64_t size);
+        // export fn wgpuRenderPassEncoderSetVertexBuffer(render_pass_encoder: gpu.RenderPassEncoder, slot: u32, buffer: gpu.Buffer, offset: u64, size: u64) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderSetViewport(WGPURenderPassEncoder renderPassEncoder, float x, float y, float width, float height, float minDepth, float maxDepth);
+        // export fn wgpuRenderPassEncoderSetViewport(render_pass_encoder: gpu.RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderWriteTimestamp(WGPURenderPassEncoder renderPassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
+        // export fn wgpuRenderPassEncoderWriteTimestamp(render_pass_encoder: gpu.RenderPassEncoder, query_set: gpu.QuerySet, query_index: u32) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderReference(WGPURenderPassEncoder renderPassEncoder);
+        // export fn wgpuRenderPassEncoderReference(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPassEncoderRelease(WGPURenderPassEncoder renderPassEncoder);
+        // export fn wgpuRenderPassEncoderRelease(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+        // TODO
+        // WGPU_EXPORT WGPUBindGroupLayout wgpuRenderPipelineGetBindGroupLayout(WGPURenderPipeline renderPipeline, uint32_t groupIndex);
+        // export fn wgpuRenderPipelineGetBindGroupLayout(render_pipeline: gpu.RenderPipeline, group_index: u32) gpu.BindGroupLayout {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPipelineSetLabel(WGPURenderPipeline renderPipeline, char const * label);
+        // export fn wgpuRenderPipelineSetLabel(render_pipeline: gpu.RenderPipeline, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPipelineReference(WGPURenderPipeline renderPipeline);
+        // export fn wgpuRenderPipelineReference(render_pipeline: gpu.RenderPipeline) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuRenderPipelineRelease(WGPURenderPipeline renderPipeline);
+        // export fn wgpuRenderPipelineRelease(render_pipeline: gpu.RenderPipeline) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuSamplerSetLabel(WGPUSampler sampler, char const * label);
+        // export fn wgpuSamplerSetLabel(sampler: gpu.Sampler, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuSamplerReference(WGPUSampler sampler);
+        // export fn wgpuSamplerReference(sampler: gpu.Sampler) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuSamplerRelease(WGPUSampler sampler);
+        // export fn wgpuSamplerRelease(sampler: gpu.Sampler) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuShaderModuleGetCompilationInfo(WGPUShaderModule shaderModule, WGPUCompilationInfoCallback callback, void * userdata);
+        // export fn wgpuShaderModuleGetCompilationInfo(shader_module: gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuShaderModuleSetLabel(WGPUShaderModule shaderModule, char const * label);
+        // export fn wgpuShaderModuleSetLabel(shader_module: gpu.ShaderModule, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuShaderModuleReference(WGPUShaderModule shaderModule);
+        // export fn wgpuShaderModuleReference(shader_module: gpu.ShaderModule) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuShaderModuleRelease(WGPUShaderModule shaderModule);
+        // export fn wgpuShaderModuleRelease(shader_module: gpu.ShaderModule) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuSurfaceReference(WGPUSurface surface);
+        // export fn wgpuSurfaceReference(surface: gpu.Surface) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuSurfaceRelease(WGPUSurface surface);
+        // export fn wgpuSurfaceRelease(surface: gpu.Surface) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuSwapChainConfigure(WGPUSwapChain swapChain, WGPUTextureFormat format, WGPUTextureUsageFlags allowedUsage, uint32_t width, uint32_t height);
+        // export fn wgpuSwapChainConfigure(swap_chain: gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: gpu.TextureUsageFlags, width: u32, height: u32) void {
+
+        // TODO
+        // WGPU_EXPORT WGPUTextureView wgpuSwapChainGetCurrentTextureView(WGPUSwapChain swapChain);
+        // export fn wgpuSwapChainGetCurrentTextureView(swap_chain: gpu.SwapChain) gpu.TextureView {
+
+        // TODO
+        // WGPU_EXPORT void wgpuSwapChainPresent(WGPUSwapChain swapChain);
+        // export fn wgpuSwapChainPresent(swap_chain: gpu.SwapChain) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuSwapChainReference(WGPUSwapChain swapChain);
+        // export fn wgpuSwapChainReference(swap_chain: gpu.SwapChain) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuSwapChainRelease(WGPUSwapChain swapChain);
+        // export fn wgpuSwapChainRelease(swap_chain: gpu.SwapChain) void {
+
+        // TODO
+        // WGPU_EXPORT WGPUTextureView wgpuTextureCreateView(WGPUTexture texture, WGPUTextureViewDescriptor const * descriptor /* nullable */);
+        // export fn wgpuTextureCreateView(texture: gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) gpu.TextureView {
+
+        // TODO
+        // WGPU_EXPORT void wgpuTextureDestroy(WGPUTexture texture);
+        // export fn wgpuTextureDestroy(texture: gpu.Texture) void {
+
+        // TODO
+        // WGPU_EXPORT uint32_t wgpuTextureGetDepthOrArrayLayers(WGPUTexture texture);
+        // export fn wgpuTextureGetDepthOrArrayLayers(texture: gpu.Texture) u32 {
+
+        // TODO
+        // WGPU_EXPORT WGPUTextureDimension wgpuTextureGetDimension(WGPUTexture texture);
+        // export fn wgpuTextureGetDimension(texture: gpu.Texture) gpu.TextureDimension {
+
+        // TODO
+        // WGPU_EXPORT WGPUTextureFormat wgpuTextureGetFormat(WGPUTexture texture);
+        // export fn wgpuTextureGetFormat(texture: gpu.Texture) gpu.TextureFormat {
+
+        // TODO
+        // WGPU_EXPORT uint32_t wgpuTextureGetHeight(WGPUTexture texture);
+        // export fn wgpuTextureGetHeight(texture: gpu.Texture) u32 {
+
+        // TODO
+        // WGPU_EXPORT uint32_t wgpuTextureGetMipLevelCount(WGPUTexture texture);
+        // export fn wgpuTextureGetMipLevelCount(texture: gpu.Texture) u32 {
+
+        // TODO
+        // WGPU_EXPORT uint32_t wgpuTextureGetSampleCount(WGPUTexture texture);
+        // export fn wgpuTextureGetSampleCount(texture: gpu.Texture) u32 {
+
+        // TODO
+        // WGPU_EXPORT WGPUTextureUsage wgpuTextureGetUsage(WGPUTexture texture);
+        // export fn wgpuTextureGetUsage(texture: gpu.Texture) gpu.TextureUsage {
+
+        // TODO
+        // WGPU_EXPORT uint32_t wgpuTextureGetWidth(WGPUTexture texture);
+        // export fn wgpuTextureGetWidth(texture: gpu.Texture) u32 {
+
+        // TODO
+        // WGPU_EXPORT void wgpuTextureSetLabel(WGPUTexture texture, char const * label);
+        // export fn wgpuTextureSetLabel(texture: gpu.Texture, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuTextureReference(WGPUTexture texture);
+        // export fn wgpuTextureReference(texture: gpu.Texture) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuTextureRelease(WGPUTexture texture);
+        // export fn wgpuTextureRelease(texture: gpu.Texture) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuTextureViewSetLabel(WGPUTextureView textureView, char const * label);
+        // export fn wgpuTextureViewSetLabel(texture_view: gpu.TextureView, label: [*:0]const u8) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuTextureViewReference(WGPUTextureView textureView);
+        // export fn wgpuTextureViewReference(texture_view: gpu.TextureView) void {
+
+        // TODO
+        // WGPU_EXPORT void wgpuTextureViewRelease(WGPUTextureView textureView);
+        // export fn wgpuTextureViewRelease(texture_view: gpu.TextureView) void {
     };
 }
 
@@ -340,6 +1106,581 @@ pub const NullInterface = Interface(struct {
     pub inline fn adapterRelease(adapter: gpu.Adapter) void {
         _ = adapter;
     }
+
+    // TODO
+    // pub inline fn bindGroupSetLabel(bind_group: gpu.BindGroup, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn bindGroupReference(bind_group: gpu.BindGroup) void {
+
+    // TODO
+    // pub inline fn bindGroupRelease(bind_group: gpu.BindGroup) void {
+
+    // TODO
+    // pub inline fn bindGroupLayoutSetLabel(bind_group_layout: gpu.BindGroupLayout, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn bindGroupLayoutReference(bind_group_layout: gpu.BindGroupLayout) void {
+
+    // TODO
+    // pub inline fn bindGroupLayoutRelease(bind_group_layout: gpu.BindGroupLayout) void {
+
+    // TODO
+    // pub inline fn bufferDestroy(buffer: gpu.Buffer) void {
+
+    // TODO
+    // pub inline fn bufferGetConstMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *const anyopaque {
+
+    // TODO
+    // pub inline fn bufferGetMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *anyopaque {
+
+    // TODO
+    // pub inline fn bufferGetSize(buffer: gpu.Buffer) u64 {
+
+    // TODO
+    // pub inline fn bufferGetUsage(buffer: gpu.Buffer) gpu.BufferUsage {
+
+    // TODO
+    // pub inline fn bufferMapAsync(buffer: gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) u64 {
+
+    // TODO
+    // pub inline fn bufferSetLabel(buffer: gpu.Buffer, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn bufferUnmap(buffer: gpu.Buffer) void {
+
+    // TODO
+    // pub inline fn bufferReference(buffer: gpu.Buffer) void {
+
+    // TODO
+    // pub inline fn bufferRelease(buffer: gpu.Buffer) void {
+
+    // TODO
+    // pub inline fn commandBufferSetLabel(command_buffer: gpu.CommandBuffer, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn commandBufferReference(command_buffer: gpu.CommandBuffer) void {
+
+    // TODO
+    // pub inline fn commandBufferRelease(command_buffer: gpu.CommandBuffer) void {
+
+    // TODO
+    // pub inline fn commandEncoderBeginComputePass(command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) gpu.ComputePassEncoder {
+
+    // TODO
+    // pub inline fn commandEncoderBeginRenderPass(command_encoder: gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) gpu.RenderPassEncoder {
+
+    // TODO
+    // pub inline fn commandEncoderClearBuffer(command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, offset: u64, size: u64) void {
+
+    // TODO
+    // pub inline fn commandEncoderCopyBufferToBuffer(command_encoder: gpu.CommandEncoder, source: gpu.Buffer, source_offset: u64, destination: gpu.Buffer, destination_offset: u64, size: u64) void {
+
+    // TODO
+    // pub inline fn commandEncoderCopyBufferToTexture(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyBuffer, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+
+    // TODO
+    // pub inline fn commandEncoderCopyTextureToBuffer(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyBuffer, copy_size: *const gpu.Extent3D) void {
+
+    // TODO
+    // pub inline fn commandEncoderCopyTextureToTexture(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+
+    // Note: the only difference between this and the non-internal variant is that this one checks
+    // internal usage.
+    // TODO
+    // pub inline fn commandEncoderCopyTextureToTextureInternal(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+
+    // TODO
+    // pub inline fn commandEncoderFinish(command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.CommandBufferDescriptor) gpu.CommandBuffer {
+
+    // TODO
+    // pub inline fn commandEncoderInjectValidationError(command_encoder: gpu.CommandEncoder, message: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn commandEncoderInsertDebugMarker(command_encoder: gpu.CommandEncoder, marker_label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn commandEncoderPopDebugGroup(command_encoder: gpu.CommandEncoder) void {
+
+    // TODO
+    // pub inline fn commandEncoderPushDebugGroup(command_encoder: gpu.CommandEncoder, group_label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn commandEncoderResolveQuerySet(command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, first_query: u32, query_count: u32, destination: gpu.Buffer, destination_offset: u64) void {
+
+    // TODO
+    // pub inline fn commandEncoderSetLabel(command_encoder: gpu.CommandEncoder, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn commandEncoderWriteBuffer(command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
+
+    // TODO
+    // pub inline fn commandEncoderWriteTimestamp(command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, query_index: u32) void {
+
+    // TODO
+    // pub inline fn commandEncoderReference(command_encoder: gpu.CommandEncoder) void {
+
+    // TODO
+    // pub inline fn commandEncoderRelease(command_encoder: gpu.CommandEncoder) void {
+
+    // TODO
+    // pub inline fn computePassEncoderDispatch(compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
+
+    // TODO
+    // pub inline fn computePassEncoderDispatchIndirect(compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+    // TODO
+    // pub inline fn computePassEncoderDispatchWorkgroups(compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
+
+    // TODO
+    // pub inline fn computePassEncoderDispatchWorkgroupsIndirect(compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+    // TODO
+    // pub inline fn computePassEncoderEnd(compute_pass_encoder: gpu.ComputePassEncoder) void {
+
+    // TODO
+    // pub inline fn computePassEncoderEndPass(compute_pass_encoder: gpu.ComputePassEncoder) void {
+
+    // TODO
+    // pub inline fn computePassEncoderInsertDebugMarker(compute_pass_encoder: gpu.ComputePassEncoder, marker_label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn computePassEncoderPopDebugGroup(compute_pass_encoder: gpu.ComputePassEncoder) void {
+
+    // TODO
+    // pub inline fn computePassEncoderPushDebugGroup(compute_pass_encoder: gpu.ComputePassEncoder, group_label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn computePassEncoderSetBindGroup(compute_pass_encoder: gpu.ComputePassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+
+    // TODO
+    // pub inline fn computePassEncoderSetLabel(compute_pass_encoder: gpu.ComputePassEncoder, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn computePassEncoderSetPipeline(compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) void {
+
+    // TODO
+    // pub inline fn computePassEncoderWriteTimestamp(compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) void {
+
+    // TODO
+    // pub inline fn computePassEncoderReference(compute_pass_encoder: gpu.ComputePassEncoder) void {
+
+    // TODO
+    // pub inline fn computePassEncoderRelease(compute_pass_encoder: gpu.ComputePassEncoder) void {
+
+    // TODO
+    // pub inline fn computePipelineGetBindGroupLayout(compute_pipeline: gpu.ComputePipeline, group_index: u32) gpu.BindGroupLayout {
+
+    // TODO
+    // pub inline fn computePipelineSetLabel(compute_pipeline: gpu.ComputePipeline, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn computePipelineReference(compute_pipeline: gpu.ComputePipeline) void {
+
+    // TODO
+    // pub inline fn computePipelineRelease(compute_pipeline: gpu.ComputePipeline) void {
+
+    // TODO
+    // pub inline fn deviceCreateBindGroup(device: gpu.Device, descriptor: *const gpu.BindGroupDescriptor) gpu.BindGroup {
+
+    // TODO
+    // pub inline fn deviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) gpu.BindGroupLayout {
+
+    // TODO
+    // pub inline fn deviceCreateBindGroup(device: gpu.Device, descriptor: *const gpu.BufferDescriptor) gpu.Buffer {
+
+    // TODO
+    // pub inline fn deviceCreateCommandEncoder(device: gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) gpu.CommandEncoder {
+
+    // TODO
+    // pub inline fn deviceCreateComputePipeline(device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) gpu.ComputePipeline {
+
+    // TODO
+    // pub inline fn deviceCreateComputePipelineAsync(device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
+
+    // TODO
+    // pub inline fn deviceCreateErrorBuffer(device: gpu.Device) gpu.Buffer {
+
+    // TODO
+    // pub inline fn deviceCreateErrorExternalTexture(device: gpu.Device) gpu.ExternalTexture {
+
+    // TODO
+    // pub inline fn deviceCreateExternalTexture(device: gpu.Device, external_texture_descriptor: *const gpu.ExternalTextureDescriptor) gpu.ExternalTexture {
+
+    // TODO
+    // pub inline fn deviceCreatePipelineLayout(device: gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayoutDescriptor) gpu.PipelineLayout {
+
+    // TODO
+    // pub inline fn deviceCreateQuerySet(device: gpu.Device, descriptor: *const gpu.QuerySetDescriptor) gpu.QuerySet {
+
+    // TODO
+    // pub inline fn deviceCreateRenderBundleEncoder(device: gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) gpu.RenderBundleEncoder {
+
+    // TODO
+    // pub inline fn deviceCreateRenderPipeline(device: gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) gpu.RenderPipeline {
+
+    // TODO
+    // pub inline fn deviceCreateRenderPipelineAsync(device: gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
+
+    // TODO
+    // pub inline fn deviceCreateRenderPipeline(device: gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) gpu.Sampler {
+
+    // TODO
+    // pub inline fn deviceCreateShaderModule(device: gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) gpu.ShaderModule {
+
+    // TODO
+    // pub inline fn deviceCreateShaderModule(device: gpu.Device, surface: ?Surface, descriptor: *const gpu.SwapChainDescriptor) gpu.SwapChain {
+
+    // TODO
+    // pub inline fn deviceCreateTexture(device: gpu.Device, descriptor: *const gpu.TextureDescriptor) gpu.Texture {
+
+    // TODO
+    // pub inline fn deviceDestroy(device: gpu.Device) void {
+
+    // TODO
+    // pub inline fn deviceEnumerateFeatures(device: gpu.Device, features: [*]gpu.FeatureName) usize {
+
+    // TODO
+    // pub inline fn deviceGetLimits(device: gpu.Device, limits: *gpu.SupportedLimits) bool {
+
+    // TODO
+    // pub inline fn deviceGetQueue(device: gpu.Device) gpu.Queue {
+
+    // TODO
+    // pub inline fn deviceHasFeature(device: gpu.Device, feature: gpu.FeatureName) bool {
+
+    // TODO
+    // pub inline fn deviceInjectError(device: gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn deviceLoseForTesting(device: gpu.Device) void {
+
+    // TODO
+    // pub inline fn devicePopErrorScope(device: gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) bool {
+
+    // TODO
+    // pub inline fn devicePushErrorScope(device: gpu.Device, filter: gpu.ErrorFilter) void {
+
+    // TODO
+    // pub inline fn deviceSetDeviceLostCallback(device: gpu.Device, callback: gpu.DeviceLostCallback, userdata: *anyopaque) void {
+
+    // TODO
+    // pub inline fn deviceSetLabel(device: gpu.Device, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn deviceSetLoggingCallback(device: gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) void {
+
+    // TODO
+    // pub inline fn deviceSetUncapturedErrorCallback(device: gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) void {
+
+    // TODO
+    // pub inline fn deviceTick(device: gpu.Device) void {
+
+    // TODO
+    // pub inline fn deviceReference(device: gpu.Device) void {
+
+    // TODO
+    // pub inline fn deviceRelease(device: gpu.Device) void {
+
+    // TODO
+    // pub inline fn externalTextureDestroy(external_texture: gpu.ExternalTexture) void {
+
+    // TODO
+    // pub inline fn externalTextureSetLabel(external_texture: gpu.ExternalTexture, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn externalTextureReference(external_texture: gpu.ExternalTexture) void {
+
+    // TODO
+    // pub inline fn externalTextureRelease(external_texture: gpu.ExternalTexture) void {
+
+    // TODO
+    // pub inline fn instanceCreateSurface(instance: gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) gpu.Surface {
+
+    // TODO
+    // pub inline fn instanceRequestAdapter(instance: gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) void {
+
+    // TODO
+    // pub inline fn instanceReference(instance: gpu.Instance) void {
+
+    // TODO
+    // pub inline fn instanceRelease(instance: gpu.Instance) void {
+
+    // TODO
+    // pub inline fn pipelineLayoutSetLabel(pipeline_layout: gpu.PipelineLayout, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn pipelineLayoutReference(pipeline_layout: gpu.PipelineLayout) void {
+
+    // TODO
+    // pub inline fn pipelineLayoutRelease(pipeline_layout: gpu.PipelineLayout) void {
+
+    // TODO
+    // pub inline fn querySetDestroy(query_set: gpu.QuerySet) void {
+
+    // TODO
+    // pub inline fn querySetGetCount(query_set: gpu.QuerySet) u32 {
+
+    // TODO
+    // pub inline fn querySetGetType(query_set: gpu.QuerySet) gpu.QueryType {
+
+    // TODO
+    // pub inline fn querySetSetLabel(query_set: gpu.QuerySet, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn querySetReference(query_set: gpu.QuerySet) void {
+
+    // TODO
+    // pub inline fn querySetRelease(query_set: gpu.QuerySet) void {
+
+    // TODO
+    // pub inline fn queueCopyTextureForBrowser(queue: gpu.Queue, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D, options: *const gpu.CopyTextureForBrowserOptions) void {
+
+    // TODO
+    // pub inline fn queueOnSubmittedWorkDone(queue: gpu.Queue, signal_value: u64, callback: gpu.QueueWorkDoneCallback, userdata: *anyopaque) void {
+
+    // TODO
+    // pub inline fn queueSetLabel(queue: gpu.Queue, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn queueSubmit(queue: gpu.Queue, command_count: u32, commands: [*]gpu.CommandBuffer) void {
+
+    // TODO
+    // pub inline fn queueWriteBuffer(queue: gpu.Queue, buffer: gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) void {
+
+    // TODO
+    // pub inline fn queueWriteTexture(queue: gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.TextureDataLayout, write_size: *const gpu.Extent3D) void {
+
+    // TODO
+    // pub inline fn queueReference(queue: gpu.Queue) void {
+
+    // TODO
+    // pub inline fn queueRelease(queue: gpu.Queue) void {
+
+    // TODO
+    // pub inline fn renderBundleReference(render_bundle: gpu.RenderBundle) void {
+
+    // TODO
+    // pub inline fn renderBundleRelease(render_bundle: gpu.RenderBundle) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderDraw(render_bundle_encoder: gpu.RenderBundleEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderDrawIndexed(render_bundle_encoder: gpu.RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderDrawIndexedIndirect(render_bundle_encoder: gpu.RenderBundleEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderDrawIndirect(render_bundle_encoder: gpu.RenderBundleEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderFinish(render_bundle_encoder: gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundleDescriptor) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderInsertDebugMarker(render_bundle_encoder: gpu.RenderBundleEncoder, marker_label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderPopDebugGroup(render_bundle_encoder: gpu.RenderBundleEncoder) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderPushDebugGroup(render_bundle_encoder: gpu.RenderBundleEncoder, group_label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderSetBindGroup(render_bundle_encoder: gpu.RenderBundleEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderSetIndexBuffer(render_bundle_encoder: gpu.RenderBundleEncoder, buffer: gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderSetLabel(render_bundle_encoder: gpu.RenderBundleEncoder, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderSetPipeline(render_bundle_encoder: gpu.RenderBundleEncoder, pipeline: gpu.RenderPipeline) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderSetVertexBuffer(render_bundle_encoder: gpu.RenderBundleEncoder, slot: u32, buffer: gpu.Buffer, offset: u64, size: u64) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderReference(render_bundle_encoder: gpu.RenderBundleEncoder) void {
+
+    // TODO
+    // pub inline fn renderBundleEncoderRelease(render_bundle_encoder: gpu.RenderBundleEncoder) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderBeginOcclusionQuery(render_pass_encoder: gpu.RenderPassEncoder, query_index: u32) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderDraw(render_pass_encoder: gpu.RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderDrawIndexed(render_pass_encoder: gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderDrawIndexedIndirect(render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderDrawIndirect(render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderEnd(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderEndOcclusionQuery(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderEndPass(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderExecuteBundles(render_pass_encoder: gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const gpu.RenderBundle) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderInsertDebugMarker(render_pass_encoder: gpu.RenderPassEncoder, marker_label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderPopDebugGroup(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderPushDebugGroup(render_pass_encoder: gpu.RenderPassEncoder, group_label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderSetBindGroup(render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderSetBlendConstant(render_pass_encoder: gpu.RenderPassEncoder, color: *const gpu.Color) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderSetIndexBuffer(render_pass_encoder: gpu.RenderPassEncoder, buffer: gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderSetLabel(render_pass_encoder: gpu.RenderPassEncoder, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderSetPipeline(render_pass_encoder: gpu.RenderPassEncoder, pipeline: gpu.RenderPipeline) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderSetScissorRect(render_pass_encoder: gpu.RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderSetStencilReference(render_pass_encoder: gpu.RenderPassEncoder, reference: u32) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderSetVertexBuffer(render_pass_encoder: gpu.RenderPassEncoder, slot: u32, buffer: gpu.Buffer, offset: u64, size: u64) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderSetViewport(render_pass_encoder: gpu.RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderWriteTimestamp(render_pass_encoder: gpu.RenderPassEncoder, query_set: gpu.QuerySet, query_index: u32) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderReference(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+    // TODO
+    // pub inline fn renderPassEncoderRelease(render_pass_encoder: gpu.RenderPassEncoder) void {
+
+    // TODO
+    // pub inline fn renderPipelineGetBindGroupLayout(render_pipeline: gpu.RenderPipeline, group_index: u32) gpu.BindGroupLayout {
+
+    // TODO
+    // pub inline fn renderPipelineSetLabel(render_pipeline: gpu.RenderPipeline, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn renderPipelineReference(render_pipeline: gpu.RenderPipeline) void {
+
+    // TODO
+    // pub inline fn renderPipelineRelease(render_pipeline: gpu.RenderPipeline) void {
+
+    // TODO
+    // pub inline fn samplerSetLabel(sampler: gpu.Sampler, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn samplerReference(sampler: gpu.Sampler) void {
+
+    // TODO
+    // pub inline fn samplerRelease(sampler: gpu.Sampler) void {
+
+    // TODO
+    // pub inline fn shaderModuleGetCompilationInfo(shader_module: gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) void {
+
+    // TODO
+    // pub inline fn shaderModuleSetLabel(shader_module: gpu.ShaderModule, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn shaderModuleReference(shader_module: gpu.ShaderModule) void {
+
+    // TODO
+    // pub inline fn shaderModuleRelease(shader_module: gpu.ShaderModule) void {
+
+    // TODO
+    // pub inline fn surfaceReference(surface: gpu.Surface) void {
+
+    // TODO
+    // pub inline fn surfaceRelease(surface: gpu.Surface) void {
+
+    // TODO
+    // pub inline fn swapChainConfigure(swap_chain: gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: gpu.TextureUsageFlags, width: u32, height: u32) void {
+
+    // TODO
+    // pub inline fn swapChainGetCurrentTextureView(swap_chain: gpu.SwapChain) gpu.TextureView {
+
+    // TODO
+    // pub inline fn swapChainPresent(swap_chain: gpu.SwapChain) void {
+
+    // TODO
+    // pub inline fn swapChainReference(swap_chain: gpu.SwapChain) void {
+
+    // TODO
+    // pub inline fn swapChainRelease(swap_chain: gpu.SwapChain) void {
+
+    // TODO
+    // pub inline fn textureCreateView(texture: gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) gpu.TextureView {
+
+    // TODO
+    // pub inline fn textureDestroy(texture: gpu.Texture) void {
+
+    // TODO
+    // pub inline fn textureGetDepthOrArrayLayers(texture: gpu.Texture) u32 {
+
+    // TODO
+    // pub inline fn textureGetDimension(texture: gpu.Texture) gpu.TextureDimension {
+
+    // TODO
+    // pub inline fn textureGetFormat(texture: gpu.Texture) gpu.TextureFormat {
+
+    // TODO
+    // pub inline fn textureGetHeight(texture: gpu.Texture) u32 {
+
+    // TODO
+    // pub inline fn textureGetMipLevelCount(texture: gpu.Texture) u32 {
+
+    // TODO
+    // pub inline fn textureGetSampleCount(texture: gpu.Texture) u32 {
+
+    // TODO
+    // pub inline fn textureGetUsage(texture: gpu.Texture) gpu.TextureUsage {
+
+    // TODO
+    // pub inline fn textureGetWidth(texture: gpu.Texture) u32 {
+
+    // TODO
+    // pub inline fn textureSetLabel(texture: gpu.Texture, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn textureReference(texture: gpu.Texture) void {
+
+    // TODO
+    // pub inline fn textureRelease(texture: gpu.Texture) void {
+
+    // TODO
+    // pub inline fn textureViewSetLabel(texture_view: gpu.TextureView, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn textureViewReference(texture_view: gpu.TextureView) void {
+
+    // TODO
+    // pub inline fn textureViewRelease(texture_view: gpu.TextureView) void {
 });
 
 test "null" {

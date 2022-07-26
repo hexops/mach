@@ -3,7 +3,16 @@ const Texture = @import("texture.zig").Texture;
 const TextureFormat = @import("texture.zig").TextureFormat;
 const TextureAspect = @import("texture.zig").TextureAspect;
 
-pub const TextureView = *opaque {};
+pub const TextureView = *opaque {
+    // TODO
+    // pub inline fn textureViewSetLabel(texture_view: gpu.TextureView, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn textureViewReference(texture_view: gpu.TextureView) void {
+
+    // TODO
+    // pub inline fn textureViewRelease(texture_view: gpu.TextureView) void {
+};
 
 pub const TextureViewDimension = enum(u32) {
     dimension_undef = 0x00000000,

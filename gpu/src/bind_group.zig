@@ -4,7 +4,16 @@ const TextureView = @import("texture_view.zig").TextureView;
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 
-pub const BindGroup = *opaque {};
+pub const BindGroup = *opaque {
+    // TODO
+    // pub inline fn bindGroupSetLabel(bind_group: gpu.BindGroup, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn bindGroupReference(bind_group: gpu.BindGroup) void {
+
+    // TODO
+    // pub inline fn bindGroupRelease(bind_group: gpu.BindGroup) void {
+};
 
 pub const BindGroupEntry = extern struct {
     next_in_chain: *const ChainedStruct,

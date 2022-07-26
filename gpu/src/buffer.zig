@@ -1,7 +1,37 @@
 const std = @import("std");
 const ChainedStruct = @import("types.zig").ChainedStruct;
 
-pub const Buffer = *opaque {};
+pub const Buffer = *opaque {
+    // TODO
+    // pub inline fn bufferDestroy(buffer: gpu.Buffer) void {
+
+    // TODO
+    // pub inline fn bufferGetConstMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *const anyopaque {
+
+    // TODO
+    // pub inline fn bufferGetMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *anyopaque {
+
+    // TODO
+    // pub inline fn bufferGetSize(buffer: gpu.Buffer) u64 {
+
+    // TODO
+    // pub inline fn bufferGetUsage(buffer: gpu.Buffer) gpu.BufferUsage {
+
+    // TODO
+    // pub inline fn bufferMapAsync(buffer: gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) u64 {
+
+    // TODO
+    // pub inline fn bufferSetLabel(buffer: gpu.Buffer, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn bufferUnmap(buffer: gpu.Buffer) void {
+
+    // TODO
+    // pub inline fn bufferReference(buffer: gpu.Buffer) void {
+
+    // TODO
+    // pub inline fn bufferRelease(buffer: gpu.Buffer) void {
+};
 
 pub const BufferMapCallback = fn (status: BufferMapAsyncStatus, userdata: *anyopaque) callconv(.C) void;
 

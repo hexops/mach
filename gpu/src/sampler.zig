@@ -2,7 +2,16 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const FilterMode = @import("types.zig").FilterMode;
 const CompareFunction = @import("types.zig").CompareFunction;
 
-pub const Sampler = *opaque {};
+pub const Sampler = *opaque {
+    // TODO
+    // pub inline fn samplerSetLabel(sampler: gpu.Sampler, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn samplerReference(sampler: gpu.Sampler) void {
+
+    // TODO
+    // pub inline fn samplerRelease(sampler: gpu.Sampler) void {
+};
 
 pub const SamplerAddressMode = enum(u32) {
     repeat = 0x00000000,
