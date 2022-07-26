@@ -28,6 +28,10 @@ pub const Adapter = *opaque {
     pub inline fn hasFeature(adapter: Adapter, feature: FeatureName) bool {
         return impl.adapterHasFeature(adapter, feature);
     }
+
+    pub inline fn requestDevice(adapter: Adapter, descriptor: ?*const DeviceDescriptor, callback: RequestDeviceCallback, userdata: *anyopaque) void {
+        impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
+    }
 };
 
 pub const RequestDeviceCallback = fn (
