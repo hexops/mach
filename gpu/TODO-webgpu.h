@@ -1,17 +1,53 @@
 // NOTE: descriptor is nullable, see https://bugs.chromium.org/p/dawn/issues/detail?id=1502
 // WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor, WGPURequestDeviceCallback callback, void * userdata);
+export fn wgpuAdapterRequestDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
+    impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
+}
+pub inline fn adapterRequestDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
+    _ = adapter;
+    _ = descriptor;
+    _ = callback;
+    _ = userdata;
+}
+pub inline fn requestDevice(adapter: Adapter, descriptor: ?*const DeviceDescriptor, callback: RequestDeviceCallback, userdata: *anyopaque) void {
+    impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
+}
 
 // WGPU_EXPORT void wgpuAdapterReference(WGPUAdapter adapter);
 export fn wgpuAdapterReference(adapter: gpu.Adapter) void {
+    impl.adapterReference(adapter);
+}
+pub inline fn adapterReference(adapter: gpu.Adapter) void {
+    _ = adapter;
+}
+pub inline fn reference(adapter: Adapter) void {
+    impl.adapterReference(adapter);
+}
 
 // WGPU_EXPORT void wgpuAdapterRelease(WGPUAdapter adapter);
 export fn wgpuAdapterRelease(adapter: gpu.Adapter) void {
+    impl.adapterRelease(adapter);
+}
+pub inline fn adapterRelease(adapter: gpu.Adapter) void {
+    _ = adapter;
+}
+pub inline fn release(adapter: Adapter) void {
+    impl.adapterRelease(adapter);
+}
 
 // WGPU_EXPORT void wgpuBindGroupSetLabel(WGPUBindGroup bindGroup, char const * label);
 export fn wgpuBindGroupSetLabel(bind_group: gpu.BindGroup, label: [*:0]const u8) void {
 
 // WGPU_EXPORT void wgpuBindGroupReference(WGPUBindGroup bindGroup);
 export fn wgpuBindGroupReference(bind_group: gpu.BindGroup) void {
+    impl.bindGroupReference(bind_group);
+}
+pub inline fn bindGroupReference(bind_group: gpu.BindGroup) void {
+    _ = bind_group;
+}
+pub inline fn reference(bind_group: BindGroup) void {
+    impl.bindGroupReference(bind_group);
+}
 
 // WGPU_EXPORT void wgpuBindGroupRelease(WGPUBindGroup bindGroup);
 export fn wgpuBindGroupRelease(bind_group: gpu.BindGroup) void {
