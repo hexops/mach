@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
-# actionlint: https://github.com/rhysd/actionlint
-actionlint .github/workflows/ci.yml .github/workflows/m1_ci.yml
+set -exuo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")"/..
 
+# actionlint: https://github.com/rhysd/actionlint
+./actionlint $(find . | grep -v '\.git/' | grep '\.github/workflows/' | grep '.yml')
