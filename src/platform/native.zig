@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const glfw = @import("glfw");
 const gpu = @import("gpu");
 const app_pkg = @import("app");
@@ -44,7 +45,30 @@ pub const Platform = struct {
         platform: *Platform,
     };
 
+    fn getEnvVarOwned(allocator: std.mem.Allocator, key: []const u8) error{ OutOfMemory, InvalidUtf8 }!?[]u8 {
+        return std.process.getEnvVarOwned(allocator, key) catch |err| switch (err) {
+            error.EnvironmentVariableNotFound => @as(?[]u8, null),
+            else => |e| e,
+        };
+    }
     pub fn init(allocator: std.mem.Allocator, core: *Core) !Platform {
+        if (builtin.os.tag == .linux) {
+            const gamemode = @import("gamemode");
+            const GAMEMODE_ENV = try getEnvVarOwned(allocator, "GAMEMODE");
+            if (GAMEMODE_ENV == null) {
+                gamemode.requestStart() catch |err| {
+                    std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+                };
+            } else {
+                if (!std.ascii.eqlIgnoreCase(GAMEMODE_ENV.?, "off")) {
+                    gamemode.requestStart() catch |err| {
+                        std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+                    };
+                }
+                allocator.free(GAMEMODE_ENV.?);
+            }
+        }
+
         const options = core.options;
         const backend_type = try util.detectBackendType(allocator);
 
@@ -213,6 +237,23 @@ pub const Platform = struct {
         }
         while (platform.events.popFirst()) |ev| {
             platform.allocator.destroy(ev);
+        }
+
+        if (builtin.os.tag == .linux) {
+            const gamemode = @import("gamemode");
+            const GAMEMODE_ENV = getEnvVarOwned(platform.allocator, "GAMEMODE") catch unreachable;
+            if (GAMEMODE_ENV == null) {
+                gamemode.requestEnd() catch |err| {
+                    std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+                };
+            } else {
+                if (!std.ascii.eqlIgnoreCase(GAMEMODE_ENV.?, "off")) {
+                    gamemode.requestEnd() catch |err| {
+                        std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+                    };
+                }
+                platform.allocator.free(GAMEMODE_ENV.?);
+            }
         }
     }
 
