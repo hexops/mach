@@ -1,7 +1,19 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const TextureView = @import("texture_view.zig").TextureView;
 
-pub const ExternalTexture = *opaque {};
+pub const ExternalTexture = *opaque {
+    // TODO
+    // pub inline fn externalTextureDestroy(external_texture: gpu.ExternalTexture) void {
+
+    // TODO
+    // pub inline fn externalTextureSetLabel(external_texture: gpu.ExternalTexture, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn externalTextureReference(external_texture: gpu.ExternalTexture) void {
+
+    // TODO
+    // pub inline fn externalTextureRelease(external_texture: gpu.ExternalTexture) void {
+};
 
 pub const ExternalTextureBindingEntry = extern struct {
     chain: ChainedStruct,

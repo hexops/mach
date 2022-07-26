@@ -8,7 +8,16 @@ const Texture = @import("texture.zig").Texture;
 const TextureBindingLayout = @import("texture.zig").TextureBindingLayout;
 const StorageTextureBindingLayout = @import("types.zig").StorageTextureBindingLayout;
 
-pub const BindGroupLayout = *opaque {};
+pub const BindGroupLayout = *opaque {
+    // TODO
+    // pub inline fn bindGroupLayoutSetLabel(bind_group_layout: gpu.BindGroupLayout, label: [*:0]const u8) void {
+
+    // TODO
+    // pub inline fn bindGroupLayoutReference(bind_group_layout: gpu.BindGroupLayout) void {
+
+    // TODO
+    // pub inline fn bindGroupLayoutRelease(bind_group_layout: gpu.BindGroupLayout) void {
+};
 
 pub const BindGroupLayoutEntry = extern struct {
     next_in_chain: *const ChainedStruct,
