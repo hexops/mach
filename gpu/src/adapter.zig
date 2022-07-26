@@ -36,6 +36,10 @@ pub const Adapter = *opaque {
     pub inline fn reference(adapter: Adapter) void {
         impl.adapterReference(adapter);
     }
+
+    pub inline fn release(adapter: Adapter) void {
+        impl.adapterRelease(adapter);
+    }
 };
 
 pub const RequestDeviceCallback = fn (

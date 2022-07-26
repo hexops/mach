@@ -1,14 +1,3 @@
-// WGPU_EXPORT void wgpuAdapterRelease(WGPUAdapter adapter);
-export fn wgpuAdapterRelease(adapter: gpu.Adapter) void {
-    impl.adapterRelease(adapter);
-}
-pub inline fn adapterRelease(adapter: gpu.Adapter) void {
-    _ = adapter;
-}
-pub inline fn release(adapter: Adapter) void {
-    impl.adapterRelease(adapter);
-}
-
 // WGPU_EXPORT void wgpuBindGroupSetLabel(WGPUBindGroup bindGroup, char const * label);
 export fn wgpuBindGroupSetLabel(bind_group: gpu.BindGroup, label: [*:0]const u8) void {
 
