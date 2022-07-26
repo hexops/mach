@@ -23,7 +23,7 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "adapterEnumerateFeatures", fn (adapter: gpu.Adapter, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
     assertDecl(Impl, "adapterGetLimits", fn (adapter: gpu.Adapter, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
     assertDecl(Impl, "adapterGetProperties", fn (adapter: gpu.Adapter, properties: *gpu.AdapterProperties) callconv(.Inline) void);
-    // assertDecl(Impl, "adapterHasFeature", fn (adapter: gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
+    assertDecl(Impl, "adapterHasFeature", fn (adapter: gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
     // assertDecl(Impl, "adapterRequestDevice", fn (adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) callconv(.Inline) void);
     // assertDecl(Impl, "adapterReference", fn (adapter: gpu.Adapter) callconv(.Inline) void);
     // assertDecl(Impl, "adapterRelease", fn (adapter: gpu.Adapter) callconv(.Inline) void);
@@ -260,6 +260,11 @@ pub fn Export(comptime Impl: type) type {
         export fn wgpuAdapterGetProperties(adapter: gpu.Adapter, properties: *gpu.AdapterProperties) void {
             return Impl.adapterGetProperties(adapter, properties);
         }
+
+        // WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature);
+        export fn wgpuAdapterHasFeature(adapter: gpu.Adapter, feature: gpu.FeatureName) bool {
+            return Impl.adapterHasFeature(adapter, feature);
+        }
     };
 }
 
@@ -293,9 +298,16 @@ pub const NullInterface = Interface(struct {
         _ = limits;
         return false;
     }
+
     pub inline fn adapterGetProperties(adapter: gpu.Adapter, properties: *gpu.AdapterProperties) void {
         _ = adapter;
         _ = properties;
+    }
+
+    pub inline fn adapterHasFeature(adapter: gpu.Adapter, feature: gpu.FeatureName) bool {
+        _ = adapter;
+        _ = feature;
+        return false;
     }
 });
 
