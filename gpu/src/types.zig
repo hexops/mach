@@ -349,6 +349,7 @@ pub const ColorWriteMaskFlags = packed struct {
     }
 };
 
+// TODO: should be MapModeFlags, I typo'd it
 pub const MapMode = packed struct {
     read: bool = false,
     write: bool = false,
