@@ -1,25 +1,32 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const PipelineStatisticName = @import("types.zig").PipelineStatisticName;
 const QueryType = @import("types.zig").QueryType;
+const impl = @import("interface.zig").impl;
 
 pub const QuerySet = *opaque {
-    // TODO
-    // pub inline fn querySetDestroy(query_set: gpu.QuerySet) void {
+    pub inline fn destroy(query_set: QuerySet) void {
+        impl.querySetDestroy(query_set);
+    }
 
-    // TODO
-    // pub inline fn querySetGetCount(query_set: gpu.QuerySet) u32 {
+    pub inline fn getCount(query_set: QuerySet) u32 {
+        return impl.querySetGetCount(query_set);
+    }
 
-    // TODO
-    // pub inline fn querySetGetType(query_set: gpu.QuerySet) gpu.QueryType {
+    pub inline fn getType(query_set: QuerySet) QueryType {
+        return impl.querySetGetType(query_set);
+    }
 
-    // TODO
-    // pub inline fn querySetSetLabel(query_set: gpu.QuerySet, label: [*:0]const u8) void {
+    pub inline fn setLabel(query_set: QuerySet, label: [*:0]const u8) void {
+        impl.querySetSetLabel(query_set, label);
+    }
 
-    // TODO
-    // pub inline fn querySetReference(query_set: gpu.QuerySet) void {
+    pub inline fn reference(query_set: QuerySet) void {
+        impl.querySetReference(query_set);
+    }
 
-    // TODO
-    // pub inline fn querySetRelease(query_set: gpu.QuerySet) void {
+    pub inline fn release(query_set: QuerySet) void {
+        impl.querySetRelease(query_set);
+    }
 };
 
 pub const QuerySetDescriptor = extern struct {
