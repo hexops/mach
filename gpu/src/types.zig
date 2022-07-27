@@ -588,7 +588,13 @@ pub const RenderPassColorAttachment = extern struct {
     resolve_target: ?TextureView,
     load_op: LoadOp,
     store_op: StoreOp,
-    clear_color: Color,
+    /// deprecated
+    clear_color: Color = .{
+        .r = std.math.nan(f64),
+        .g = std.math.nan(f64),
+        .b = std.math.nan(f64),
+        .a = std.math.nan(f64),
+    },
     clear_value: Color,
 };
 
