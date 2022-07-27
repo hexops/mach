@@ -96,14 +96,14 @@ pub const BufferUsage = packed struct {
 };
 
 pub const BufferBindingLayout = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     type: BufferBindingType = .undef,
     has_dynamic_offset: bool = false,
     min_binding_size: u64 = 0,
 };
 
 pub const BufferDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     usage: BufferUsage,
     size: u64,

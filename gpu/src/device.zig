@@ -191,7 +191,7 @@ pub const DeviceLostReason = enum(u32) {
 };
 
 pub const DeviceDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     required_features_count: u32 = 0,
     required_features: ?[*]const FeatureName = null,

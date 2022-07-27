@@ -20,7 +20,7 @@ pub const BindGroup = *opaque {
 };
 
 pub const BindGroupEntry = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     binding: u32,
     buffer: ?Buffer,
     offset: u64 = 0,
@@ -30,7 +30,7 @@ pub const BindGroupEntry = extern struct {
 };
 
 pub const BindGroupDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     layout: BindGroupLayout,
     entry_count: u32,

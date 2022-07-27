@@ -24,7 +24,7 @@ pub const BindGroupLayout = *opaque {
 };
 
 pub const BindGroupLayoutEntry = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     binding: u32,
     visibility: ShaderStageFlags,
     buffer: BufferBindingLayout,
@@ -34,7 +34,7 @@ pub const BindGroupLayoutEntry = extern struct {
 };
 
 pub const BindGroupLayoutDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     entry_count: u32,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.

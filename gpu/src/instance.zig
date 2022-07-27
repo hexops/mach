@@ -32,5 +32,5 @@ pub const RequestAdapterCallback = fn (
 ) callconv(.C) void;
 
 pub const InstanceDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
 };

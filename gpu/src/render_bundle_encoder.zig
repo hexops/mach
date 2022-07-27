@@ -84,7 +84,7 @@ pub const RenderBundleEncoder = *opaque {
 };
 
 pub const RenderBundleEncoderDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     color_formats_count: u32,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.

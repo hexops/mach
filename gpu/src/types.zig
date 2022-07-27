@@ -460,7 +460,7 @@ pub const Origin3D = extern struct {
 };
 
 pub const CompilationMessage = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     message: ?[*:0]const u8,
     type: CompilationMessageType,
     line_num: u64,
@@ -470,13 +470,13 @@ pub const CompilationMessage = extern struct {
 };
 
 pub const ConstantEntry = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     key: [*:0]const u8,
     value: f64,
 };
 
 pub const CopyTextureForBrowserOptions = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     flip_y: bool = false,
     needs_color_space_conversion: bool = false,
     src_alpha_mode: AlphaMode = .unpremultiplied,
@@ -490,7 +490,7 @@ pub const CopyTextureForBrowserOptions = extern struct {
 };
 
 pub const MultisampleState = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     count: u32 = 1,
     mask: u32 = 0xFFFFFFFF,
     alpha_to_coverage_enabled: bool = false,
@@ -507,7 +507,7 @@ pub const PrimitiveDepthClipControl = extern struct {
 };
 
 pub const PrimitiveState = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     topology: PrimitiveTopology = .triangle_list,
     strip_index_format: IndexFormat = .undef,
     front_face: FrontFace = .ccw,
@@ -527,7 +527,7 @@ pub const StencilFaceState = extern struct {
 };
 
 pub const StorageTextureBindingLayout = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     access: StorageTextureAccess = .undef,
     format: TextureFormat = .undef,
     view_dimension: TextureViewDimension = .dimension_undef,
@@ -545,14 +545,14 @@ pub const BlendState = extern struct {
 };
 
 pub const CompilationInfo = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     message_count: u32,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     messages: ?[*]const CompilationMessage,
 };
 
 pub const DepthStencilState = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     format: TextureFormat,
     depth_write_enabled: bool = false,
     depth_compare: CompareFunction = .always,
@@ -566,13 +566,13 @@ pub const DepthStencilState = extern struct {
 };
 
 pub const ImageCopyBuffer = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     layout: TextureDataLayout,
     buffer: Buffer,
 };
 
 pub const ImageCopyTexture = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     texture: Texture,
     mip_level: u32 = 0,
     origin: Origin3D,
@@ -580,7 +580,7 @@ pub const ImageCopyTexture = extern struct {
 };
 
 pub const ProgrammableStageDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     module: ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32 = 0,
@@ -604,12 +604,12 @@ pub const RenderPassColorAttachment = extern struct {
 };
 
 pub const RequiredLimits = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     limits: Limits,
 };
 
 pub const SupportedLimits = extern struct {
-    next_in_chain: *ChainedStructOut,
+    next_in_chain: ?*ChainedStructOut = null,
     limits: Limits,
 };
 
@@ -622,14 +622,14 @@ pub const VertexBufferLayout = extern struct {
 };
 
 pub const ColorTargetState = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     format: TextureFormat,
     blend: ?*const BlendState,
     write_mask: ColorWriteMaskFlags = ColorWriteMaskFlags.all,
 };
 
 pub const VertexState = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     module: ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32 = 0,
@@ -641,7 +641,7 @@ pub const VertexState = extern struct {
 };
 
 pub const FragmentState = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     module: ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32 = 0,
