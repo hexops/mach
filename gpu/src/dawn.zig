@@ -4,7 +4,7 @@ const TextureUsageFlags = @import("texture.zig").TextureUsageFlags;
 
 pub const CacheDeviceDescriptor = extern struct {
     chain: ChainedStruct,
-    isolation_key: [*:0]const u8,
+    isolation_key: [*:0]const u8 = "",
 };
 
 pub const EncoderInternalUsageDescriptor = extern struct {
