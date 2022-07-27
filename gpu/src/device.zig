@@ -1,111 +1,182 @@
+const Queue = @import("queue.zig").Queue;
+const QueueDescriptor = @import("queue.zig").QueueDescriptor;
+const BindGroup = @import("bind_group.zig").BindGroup;
+const BindGroupDescriptor = @import("bind_group.zig").BindGroupDescriptor;
+const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
+const BindGroupLayoutDescriptor = @import("bind_group_layout.zig").BindGroupLayoutDescriptor;
+const Buffer = @import("buffer.zig").Buffer;
+const BufferDescriptor = @import("buffer.zig").BufferDescriptor;
+const CommandEncoder = @import("command_encoder.zig").CommandEncoder;
+const CommandEncoderDescriptor = @import("command_encoder.zig").CommandEncoderDescriptor;
+const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
+const ComputePipelineDescriptor = @import("compute_pipeline.zig").ComputePipelineDescriptor;
+const ExternalTexture = @import("external_texture.zig").ExternalTexture;
+const ExternalTextureDescriptor = @import("external_texture.zig").ExternalTextureDescriptor;
+const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
+const PipelineLayoutDescriptor = @import("pipeline_layout.zig").PipelineLayoutDescriptor;
+const QuerySet = @import("query_set.zig").QuerySet;
+const QuerySetDescriptor = @import("query_set.zig").QuerySetDescriptor;
+const RenderBundleEncoder = @import("render_bundle_encoder.zig").RenderBundleEncoder;
+const RenderBundleEncoderDescriptor = @import("render_bundle_encoder.zig").RenderBundleEncoderDescriptor;
+const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
+const RenderPipelineDescriptor = @import("render_pipeline.zig").RenderPipelineDescriptor;
+const Sampler = @import("sampler.zig").Sampler;
+const SamplerDescriptor = @import("sampler.zig").SamplerDescriptor;
+const ShaderModule = @import("shader_module.zig").ShaderModule;
+const ShaderModuleDescriptor = @import("shader_module.zig").ShaderModuleDescriptor;
+const Surface = @import("surface.zig").Surface;
+const SwapChain = @import("swap_chain.zig").SwapChain;
+const SwapChainDescriptor = @import("swap_chain.zig").SwapChainDescriptor;
+const Texture = @import("texture.zig").Texture;
+const TextureDescriptor = @import("texture.zig").TextureDescriptor;
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const FeatureName = @import("types.zig").FeatureName;
 const RequiredLimits = @import("types.zig").RequiredLimits;
-const Queue = @import("queue.zig").Queue;
-const QueueDescriptor = @import("queue.zig").QueueDescriptor;
+const SupportedLimits = @import("types.zig").SupportedLimits;
+const ErrorType = @import("types.zig").ErrorType;
+const ErrorFilter = @import("types.zig").ErrorFilter;
+const ErrorCallback = @import("types.zig").ErrorCallback;
+const LoggingCallback = @import("types.zig").LoggingCallback;
+const CreateComputePipelineAsyncCallback = @import("types.zig").CreateComputePipelineAsyncCallback;
+const CreateRenderPipelineAsyncCallback = @import("types.zig").CreateRenderPipelineAsyncCallback;
+const impl = @import("interface.zig").impl;
 
 pub const Device = *opaque {
-    // TODO
-    // pub inline fn deviceCreateBindGroup(device: gpu.Device, descriptor: *const gpu.BindGroupDescriptor) gpu.BindGroup {
+    pub inline fn createBindGroup(device: Device, descriptor: *const BindGroupDescriptor) BindGroup {
+        return impl.deviceCreateBindGroup(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) gpu.BindGroupLayout {
+    pub inline fn createBindGroupLayout(device: Device, descriptor: *const BindGroupLayoutDescriptor) BindGroupLayout {
+        return impl.deviceCreateBindGroupLayout(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateBindGroup(device: gpu.Device, descriptor: *const gpu.BufferDescriptor) gpu.Buffer {
+    pub inline fn createBuffer(device: Device, descriptor: *const BufferDescriptor) Buffer {
+        return impl.deviceCreateBuffer(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateCommandEncoder(device: gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) gpu.CommandEncoder {
+    pub inline fn createCommandEncoder(device: Device, descriptor: ?*const CommandEncoderDescriptor) CommandEncoder {
+        return impl.deviceCreateCommandEncoder(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateComputePipeline(device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) gpu.ComputePipeline {
+    pub inline fn createComputePipeline(device: Device, descriptor: *const ComputePipelineDescriptor) ComputePipeline {
+        return impl.deviceCreateComputePipeline(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateComputePipelineAsync(device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
+    pub inline fn createComputePipelineAsync(device: Device, descriptor: *const ComputePipelineDescriptor, callback: CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
+        impl.deviceCreateComputePipelineAsync(device, descriptor, callback, userdata);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateErrorBuffer(device: gpu.Device) gpu.Buffer {
+    pub inline fn createErrorBuffer(device: Device) Buffer {
+        return impl.deviceCreateErrorBuffer(device);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateErrorExternalTexture(device: gpu.Device) gpu.ExternalTexture {
+    pub inline fn createErrorExternalTexture(device: Device) ExternalTexture {
+        return impl.deviceCreateErrorExternalTexture(device);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateExternalTexture(device: gpu.Device, external_texture_descriptor: *const gpu.ExternalTextureDescriptor) gpu.ExternalTexture {
+    pub inline fn createExternalTexture(device: Device, external_texture_descriptor: *const ExternalTextureDescriptor) ExternalTexture {
+        return impl.deviceCreateExternalTexture(device, external_texture_descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreatePipelineLayout(device: gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayoutDescriptor) gpu.PipelineLayout {
+    pub inline fn createPipelineLayout(device: Device, pipeline_layout_descriptor: *const PipelineLayoutDescriptor) PipelineLayout {
+        return impl.deviceCreatePipelineLayout(device, pipeline_layout_descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateQuerySet(device: gpu.Device, descriptor: *const gpu.QuerySetDescriptor) gpu.QuerySet {
+    pub inline fn createQuerySet(device: Device, descriptor: *const QuerySetDescriptor) QuerySet {
+        return impl.deviceCreateQuerySet(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateRenderBundleEncoder(device: gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) gpu.RenderBundleEncoder {
+    pub inline fn createRenderBundleEncoder(device: Device, descriptor: *const RenderBundleEncoderDescriptor) RenderBundleEncoder {
+        return impl.deviceCreateRenderBundleEncoder(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateRenderPipeline(device: gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) gpu.RenderPipeline {
+    pub inline fn createRenderPipeline(device: Device, descriptor: *const RenderPipelineDescriptor) RenderPipeline {
+        return impl.deviceCreateRenderPipeline(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateRenderPipelineAsync(device: gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
+    pub inline fn createRenderPipelineAsync(device: Device, descriptor: *const RenderPipelineDescriptor, callback: CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
+        impl.deviceCreateRenderPipelineAsync(device, descriptor, callback, userdata);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateRenderPipeline(device: gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) gpu.Sampler {
+    pub inline fn createSampler(device: Device, descriptor: ?*const SamplerDescriptor) Sampler {
+        return impl.deviceCreateSampler(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateShaderModule(device: gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) gpu.ShaderModule {
+    pub inline fn createShaderModule(device: Device, descriptor: *const ShaderModuleDescriptor) ShaderModule {
+        return impl.deviceCreateShaderModule(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateShaderModule(device: gpu.Device, surface: ?Surface, descriptor: *const gpu.SwapChainDescriptor) gpu.SwapChain {
+    pub inline fn createSwapChain(device: Device, surface: ?Surface, descriptor: *const SwapChainDescriptor) SwapChain {
+        return impl.deviceCreateSwapChain(device, surface, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceCreateTexture(device: gpu.Device, descriptor: *const gpu.TextureDescriptor) gpu.Texture {
+    pub inline fn createTexture(device: Device, descriptor: *const TextureDescriptor) Texture {
+        return impl.deviceCreateTexture(device, descriptor);
+    }
 
-    // TODO
-    // pub inline fn deviceDestroy(device: gpu.Device) void {
+    pub inline fn destroy(device: Device) void {
+        impl.deviceDestroy(device);
+    }
 
-    // TODO
-    // pub inline fn deviceEnumerateFeatures(device: gpu.Device, features: [*]gpu.FeatureName) usize {
+    pub inline fn enumerateFeatures(device: Device, features: [*]FeatureName) usize {
+        return impl.deviceEnumerateFeatures(device, features);
+    }
 
-    // TODO
-    // pub inline fn deviceGetLimits(device: gpu.Device, limits: *gpu.SupportedLimits) bool {
+    pub inline fn getLimits(device: Device, limits: *SupportedLimits) bool {
+        return impl.deviceGetLimits(device, limits);
+    }
 
-    // TODO
-    // pub inline fn deviceGetQueue(device: gpu.Device) gpu.Queue {
+    pub inline fn getQueue(device: Device) Queue {
+        return impl.deviceGetQueue(device);
+    }
 
-    // TODO
-    // pub inline fn deviceHasFeature(device: gpu.Device, feature: gpu.FeatureName) bool {
+    pub inline fn hasFeature(device: Device, feature: FeatureName) bool {
+        return impl.deviceHasFeature(device, feature);
+    }
 
-    // TODO
-    // pub inline fn deviceInjectError(device: gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) void {
+    pub inline fn injectError(device: Device, typ: ErrorType, message: [*:0]const u8) void {
+        impl.deviceInjectError(device, typ, message);
+    }
 
-    // TODO
-    // pub inline fn deviceLoseForTesting(device: gpu.Device) void {
+    pub inline fn loseForTesting(device: Device) void {
+        impl.deviceLoseForTesting(device);
+    }
 
-    // TODO
-    // pub inline fn devicePopErrorScope(device: gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) bool {
+    pub inline fn popErrorScope(device: Device, callback: ErrorCallback, userdata: *anyopaque) bool {
+        return impl.devicePopErrorScope(device, callback, userdata);
+    }
 
-    // TODO
-    // pub inline fn devicePushErrorScope(device: gpu.Device, filter: gpu.ErrorFilter) void {
+    pub inline fn pushErrorScope(device: Device, filter: ErrorFilter) void {
+        impl.devicePushErrorScope(device, filter);
+    }
 
-    // TODO
-    // pub inline fn deviceSetDeviceLostCallback(device: gpu.Device, callback: gpu.DeviceLostCallback, userdata: *anyopaque) void {
+    pub inline fn setDeviceLostCallback(device: Device, callback: DeviceLostCallback, userdata: *anyopaque) void {
+        impl.deviceSetDeviceLostCallback(device, callback, userdata);
+    }
 
-    // TODO
-    // pub inline fn deviceSetLabel(device: gpu.Device, label: [*:0]const u8) void {
+    pub inline fn setLabel(device: Device, label: [*:0]const u8) void {
+        impl.deviceSetLabel(device, label);
+    }
 
-    // TODO
-    // pub inline fn deviceSetLoggingCallback(device: gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) void {
+    pub inline fn setLoggingCallback(device: Device, callback: LoggingCallback, userdata: *anyopaque) void {
+        impl.deviceSetLoggingCallback(device, callback, userdata);
+    }
 
-    // TODO
-    // pub inline fn deviceSetUncapturedErrorCallback(device: gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) void {
+    pub inline fn setUncapturedErrorCallback(device: Device, callback: ErrorCallback, userdata: *anyopaque) void {
+        impl.deviceSetUncapturedErrorCallback(device, callback, userdata);
+    }
 
-    // TODO
-    // pub inline fn deviceTick(device: gpu.Device) void {
+    pub inline fn tick(device: Device) void {
+        impl.deviceTick(device);
+    }
 
-    // TODO
-    // pub inline fn deviceReference(device: gpu.Device) void {
+    pub inline fn reference(device: Device) void {
+        impl.deviceReference(device);
+    }
 
-    // TODO
-    // pub inline fn deviceRelease(device: gpu.Device) void {
+    pub inline fn release(device: Device) void {
+        impl.deviceRelease(device);
+    }
 };
 
 pub const DeviceLostCallback = fn (
