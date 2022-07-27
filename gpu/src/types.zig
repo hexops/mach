@@ -542,7 +542,8 @@ pub const BlendState = extern struct {
 pub const CompilationInfo = extern struct {
     next_in_chain: *const ChainedStruct,
     message_count: u32,
-    messages: [*]const CompilationMessage,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    messages: ?[*]const CompilationMessage,
 };
 
 pub const DepthStencilState = extern struct {
@@ -578,7 +579,8 @@ pub const ProgrammableStageDescriptor = extern struct {
     module: ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32,
-    constants: [*]const ConstantEntry,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    constants: ?[*]const ConstantEntry,
 };
 
 pub const RenderPassColorAttachment = extern struct {
@@ -604,7 +606,8 @@ pub const VertexBufferLayout = extern struct {
     array_stride: u64,
     step_mode: VertexStepMode,
     attribute_count: u32,
-    attributes: [*]const VertexAttribute,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    attributes: ?[*]const VertexAttribute,
 };
 
 pub const ColorTargetState = extern struct {
@@ -619,9 +622,11 @@ pub const VertexState = extern struct {
     module: ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32,
-    constants: [*]const ConstantEntry,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    constants: ?[*]const ConstantEntry,
     buffer_count: u32,
-    buffers: [*]const VertexBufferLayout,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    buffers: ?[*]const VertexBufferLayout,
 };
 
 pub const FragmentState = extern struct {

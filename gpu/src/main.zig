@@ -112,11 +112,13 @@ pub const RenderPassDescriptor = extern struct {
     next_in_chain: *const types.ChainedStruct,
     label: ?[*:0]const u8 = null,
     color_attachment_count: u32,
-    color_attachments: [*]const types.RenderPassColorAttachment,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    color_attachments: ?[*]const types.RenderPassColorAttachment,
     depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment = null,
     occlusion_query_set: ?query_set.QuerySet,
     timestamp_write_count: u32,
-    timestamp_writes: [*]const RenderPassTimestampWrite,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    timestamp_writes: ?[*]const RenderPassTimestampWrite,
 };
 
 pub inline fn createInstance(descriptor: ?*const instance.InstanceDescriptor) ?instance.Instance {

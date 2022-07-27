@@ -238,5 +238,6 @@ pub const TextureDescriptor = extern struct {
     mip_level_count: u32 = 1,
     sample_count: u32 = 1,
     view_format_count: u32 = 0,
-    view_formats: [*]const TextureFormat,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    view_formats: ?[*]const TextureFormat,
 };
