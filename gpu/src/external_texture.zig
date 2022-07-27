@@ -35,7 +35,7 @@ pub const ExternalTextureDescriptor = extern struct {
     plane0: TextureView,
     plane1: ?TextureView,
     do_yuv_to_rgb_conversion_only: bool,
-    yuv_to_rgb_conversion_matrix: ?[*]const f32 = null, // nullable
+    yuv_to_rgb_conversion_matrix: ?[*]const f32 = null,
     src_transform_function_parameters: [*]const f32,
     dst_transform_function_parameters: [*]const f32,
     gamut_conversion_matrix: [*]const f32,

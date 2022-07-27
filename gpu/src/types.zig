@@ -610,8 +610,8 @@ pub const VertexBufferLayout = extern struct {
 pub const ColorTargetState = extern struct {
     next_in_chain: *const ChainedStruct,
     format: TextureFormat,
-    blend: ?*const BlendState = null,
-    write_mask: ColorWriteMaskFlags,
+    blend: ?*const BlendState,
+    write_mask: ColorWriteMaskFlags = ColorWriteMaskFlags.all,
 };
 
 pub const VertexState = extern struct {
@@ -628,10 +628,12 @@ pub const FragmentState = extern struct {
     next_in_chain: *const ChainedStruct,
     module: ShaderModule,
     entry_point: [*:0]const u8,
-    constant_count: u32,
-    constants: [*]const ConstantEntry,
+    constant_count: u32 = 0,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    constants: ?[*]const ConstantEntry = null,
     target_count: u32,
-    targets: [*]const ColorTargetState,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    targets: ?[*]const ColorTargetState,
 };
 
 test "BackendType name" {

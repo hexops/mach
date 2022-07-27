@@ -113,7 +113,7 @@ pub const RenderPassDescriptor = extern struct {
     label: ?[*:0]const u8 = null,
     color_attachment_count: u32,
     color_attachments: [*]const types.RenderPassColorAttachment,
-    depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment = null, // nullable
+    depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment = null,
     occlusion_query_set: ?query_set.QuerySet,
     timestamp_write_count: u32,
     timestamp_writes: [*]const RenderPassTimestampWrite,
