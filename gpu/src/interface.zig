@@ -202,22 +202,22 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "swapChainPresent", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
     assertDecl(Impl, "swapChainReference", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
     assertDecl(Impl, "swapChainRelease", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
-    // assertDecl(Impl, "textureCreateView", fn (texture: gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) callconv(.Inline) gpu.TextureView);
-    // assertDecl(Impl, "textureDestroy", fn (texture: gpu.Texture) callconv(.Inline) void);
-    // assertDecl(Impl, "textureGetDepthOrArrayLayers", fn (texture: gpu.Texture) callconv(.Inline) u32);
-    // assertDecl(Impl, "textureGetDimension", fn (texture: gpu.Texture) callconv(.Inline) gpu.TextureDimension);
-    // assertDecl(Impl, "textureGetFormat", fn (texture: gpu.Texture) callconv(.Inline) gpu.TextureFormat);
-    // assertDecl(Impl, "textureGetHeight", fn (texture: gpu.Texture) callconv(.Inline) u32);
-    // assertDecl(Impl, "textureGetMipLevelCount", fn (texture: gpu.Texture) callconv(.Inline) u32);
-    // assertDecl(Impl, "textureGetSampleCount", fn (texture: gpu.Texture) callconv(.Inline) u32);
-    // assertDecl(Impl, "textureGetUsage", fn (texture: gpu.Texture) callconv(.Inline) gpu.TextureUsageFlags);
-    // assertDecl(Impl, "textureGetWidth", fn (texture: gpu.Texture) callconv(.Inline) u32);
-    // assertDecl(Impl, "textureSetLabel", fn (texture: gpu.Texture, label: [*:0]const u8) callconv(.Inline) void);
-    // assertDecl(Impl, "textureReference", fn (texture: gpu.Texture) callconv(.Inline) void);
-    // assertDecl(Impl, "textureRelease", fn (texture: gpu.Texture) callconv(.Inline) void);
-    // assertDecl(Impl, "textureViewSetLabel", fn (texture_view: gpu.TextureView, label: [*:0]const u8) callconv(.Inline) void);
-    // assertDecl(Impl, "textureViewReference", fn (texture_view: gpu.TextureView) callconv(.Inline) void);
-    // assertDecl(Impl, "textureViewRelease", fn (texture_view: gpu.TextureView) callconv(.Inline) void);
+    assertDecl(Impl, "textureCreateView", fn (texture: gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) callconv(.Inline) gpu.TextureView);
+    assertDecl(Impl, "textureDestroy", fn (texture: gpu.Texture) callconv(.Inline) void);
+    assertDecl(Impl, "textureGetDepthOrArrayLayers", fn (texture: gpu.Texture) callconv(.Inline) u32);
+    assertDecl(Impl, "textureGetDimension", fn (texture: gpu.Texture) callconv(.Inline) gpu.TextureDimension);
+    assertDecl(Impl, "textureGetFormat", fn (texture: gpu.Texture) callconv(.Inline) gpu.TextureFormat);
+    assertDecl(Impl, "textureGetHeight", fn (texture: gpu.Texture) callconv(.Inline) u32);
+    assertDecl(Impl, "textureGetMipLevelCount", fn (texture: gpu.Texture) callconv(.Inline) u32);
+    assertDecl(Impl, "textureGetSampleCount", fn (texture: gpu.Texture) callconv(.Inline) u32);
+    assertDecl(Impl, "textureGetUsage", fn (texture: gpu.Texture) callconv(.Inline) gpu.TextureUsageFlags);
+    assertDecl(Impl, "textureGetWidth", fn (texture: gpu.Texture) callconv(.Inline) u32);
+    assertDecl(Impl, "textureSetLabel", fn (texture: gpu.Texture, label: [*:0]const u8) callconv(.Inline) void);
+    assertDecl(Impl, "textureReference", fn (texture: gpu.Texture) callconv(.Inline) void);
+    assertDecl(Impl, "textureRelease", fn (texture: gpu.Texture) callconv(.Inline) void);
+    assertDecl(Impl, "textureViewSetLabel", fn (texture_view: gpu.TextureView, label: [*:0]const u8) callconv(.Inline) void);
+    assertDecl(Impl, "textureViewReference", fn (texture_view: gpu.TextureView) callconv(.Inline) void);
+    assertDecl(Impl, "textureViewRelease", fn (texture_view: gpu.TextureView) callconv(.Inline) void);
     return Impl;
 }
 
