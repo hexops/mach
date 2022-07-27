@@ -1,19 +1,27 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const RequestAdapterStatus = @import("types.zig").RequestAdapterStatus;
+const Surface = @import("surface.zig").Surface;
+const SurfaceDescriptor = @import("surface.zig").SurfaceDescriptor;
 const Adapter = @import("adapter.zig").Adapter;
+const RequestAdapterOptions = @import("main.zig").RequestAdapterOptions;
+const impl = @import("interface.zig").impl;
 
 pub const Instance = *opaque {
-    // TODO
-    // pub inline fn instanceCreateSurface(instance: gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) gpu.Surface {
+    pub inline fn createSurface(instance: Instance, descriptor: *const SurfaceDescriptor) Surface {
+        return impl.instanceCreateSurface(instance, descriptor);
+    }
 
-    // TODO
-    // pub inline fn instanceRequestAdapter(instance: gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) void {
+    pub inline fn requestAdapter(instance: Instance, options: *const RequestAdapterOptions, callback: RequestAdapterCallback, userdata: *anyopaque) void {
+        impl.instanceRequestAdapter(instance, options, callback, userdata);
+    }
 
-    // TODO
-    // pub inline fn instanceReference(instance: gpu.Instance) void {
+    pub inline fn reference(instance: Instance) void {
+        impl.instanceReference(instance);
+    }
 
-    // TODO
-    // pub inline fn instanceRelease(instance: gpu.Instance) void {
+    pub inline fn release(instance: Instance) void {
+        impl.instanceRelease(instance);
+    }
 };
 
 pub const RequestAdapterCallback = fn (
