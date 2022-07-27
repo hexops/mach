@@ -1,46 +1,66 @@
+const Buffer = @import("buffer.zig").Buffer;
+const BindGroup = @import("bind_group.zig").BindGroup;
+const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
+const impl = @import("interface.zig").impl;
+
 pub const ComputePassEncoder = *opaque {
-    // TODO
-    // pub inline fn computePassEncoderDispatch(compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
+    pub inline fn dispatch(compute_pass_encoder: ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
+        impl.computePassEncoderDispatch(compute_pass_encoder, workgroup_count_x, workgroup_count_y, workgroup_count_z);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderDispatchIndirect(compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+    pub inline fn dispatchIndirect(compute_pass_encoder: ComputePassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+        impl.computePassEncoderDispatchIndirect(compute_pass_encoder, indirect_buffer, indirect_offset);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderDispatchWorkgroups(compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
+    pub inline fn dispatchWorkgroups(compute_pass_encoder: ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
+        impl.computePassEncoderDispatchWorkgroups(compute_pass_encoder, workgroup_count_x, workgroup_count_y, workgroup_count_z);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderDispatchWorkgroupsIndirect(compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+    pub inline fn dispatchWorkgroupsIndirect(compute_pass_encoder: ComputePassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+        impl.computePassEncoderDispatchWorkgroupsIndirect(compute_pass_encoder, indirect_buffer, indirect_offset);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderEnd(compute_pass_encoder: gpu.ComputePassEncoder) void {
+    pub inline fn end(compute_pass_encoder: ComputePassEncoder) void {
+        impl.computePassEncoderEnd(compute_pass_encoder);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderEndPass(compute_pass_encoder: gpu.ComputePassEncoder) void {
+    pub inline fn endPass(compute_pass_encoder: ComputePassEncoder) void {
+        impl.computePassEncoderEndPass(compute_pass_encoder);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderInsertDebugMarker(compute_pass_encoder: gpu.ComputePassEncoder, marker_label: [*:0]const u8) void {
+    pub inline fn insertDebugMarker(compute_pass_encoder: ComputePassEncoder, marker_label: [*:0]const u8) void {
+        impl.computePassEncoderInsertDebugMarker(compute_pass_encoder, marker_label);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderPopDebugGroup(compute_pass_encoder: gpu.ComputePassEncoder) void {
+    pub inline fn popDebugGroup(compute_pass_encoder: ComputePassEncoder) void {
+        impl.computePassEncoderPopDebugGroup(compute_pass_encoder);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderPushDebugGroup(compute_pass_encoder: gpu.ComputePassEncoder, group_label: [*:0]const u8) void {
+    pub inline fn pushDebugGroup(compute_pass_encoder: ComputePassEncoder, group_label: [*:0]const u8) void {
+        impl.computePassEncoderPushDebugGroup(compute_pass_encoder, group_label);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderSetBindGroup(compute_pass_encoder: gpu.ComputePassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+    pub inline fn setBindGroup(compute_pass_encoder: ComputePassEncoder, group_index: u32, group: BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+        impl.computePassEncoderSetBindGroup(compute_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderSetLabel(compute_pass_encoder: gpu.ComputePassEncoder, label: [*:0]const u8) void {
+    pub inline fn setLabel(compute_pass_encoder: ComputePassEncoder, label: [*:0]const u8) void {
+        impl.computePassEncoderSetLabel(compute_pass_encoder, label);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderSetPipeline(compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) void {
+    pub inline fn setPipeline(compute_pass_encoder: ComputePassEncoder, pipeline: ComputePipeline) void {
+        impl.computePassEncoderSetPipeline(compute_pass_encoder, pipeline);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderWriteTimestamp(compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) void {
+    pub inline fn writeTimestamp(compute_pass_encoder: ComputePassEncoder, pipeline: ComputePipeline) void {
+        impl.computePassEncoderWriteTimestamp(compute_pass_encoder, pipeline);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderReference(compute_pass_encoder: gpu.ComputePassEncoder) void {
+    pub inline fn reference(compute_pass_encoder: ComputePassEncoder) void {
+        impl.computePassEncoderReference(compute_pass_encoder);
+    }
 
-    // TODO
-    // pub inline fn computePassEncoderRelease(compute_pass_encoder: gpu.ComputePassEncoder) void {
+    pub inline fn release(compute_pass_encoder: ComputePassEncoder) void {
+        impl.computePassEncoderRelease(compute_pass_encoder);
+    }
 };
