@@ -1,36 +1,48 @@
 const std = @import("std");
 const ChainedStruct = @import("types.zig").ChainedStruct;
+const MapModeFlags = @import("types.zig").MapModeFlags;
+const impl = @import("interface.zig").impl;
 
 pub const Buffer = *opaque {
-    // TODO
-    // pub inline fn bufferDestroy(buffer: gpu.Buffer) void {
+    pub inline fn destroy(buffer: Buffer) void {
+        impl.bufferDestroy(buffer);
+    }
 
-    // TODO
-    // pub inline fn bufferGetConstMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *const anyopaque {
+    pub inline fn bufferGetConstMappedRange(buffer: Buffer, offset: usize, size: usize) *const anyopaque {
+        return impl.bufferGetConstMappedRange(buffer, offset, size);
+    }
 
-    // TODO
-    // pub inline fn bufferGetMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *anyopaque {
+    pub inline fn bufferGetMappedRange(buffer: Buffer, offset: usize, size: usize) *anyopaque {
+        return impl.bufferGetMappedRange(buffer, offset, size);
+    }
 
-    // TODO
-    // pub inline fn bufferGetSize(buffer: gpu.Buffer) u64 {
+    pub inline fn bufferGetSize(buffer: Buffer) u64 {
+        return impl.bufferGetSize(buffer);
+    }
 
-    // TODO
-    // pub inline fn bufferGetUsage(buffer: gpu.Buffer) gpu.BufferUsage {
+    pub inline fn bufferGetUsage(buffer: Buffer) BufferUsage {
+        return impl.bufferGetUsage(buffer);
+    }
 
-    // TODO
-    // pub inline fn bufferMapAsync(buffer: gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) u64 {
+    pub inline fn bufferMapAsync(buffer: Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) u64 {
+        return impl.bufferMapAsync(buffer, mode, offset, size, callback, userdata);
+    }
 
-    // TODO
-    // pub inline fn bufferSetLabel(buffer: gpu.Buffer, label: [*:0]const u8) void {
+    pub inline fn bufferSetLabel(buffer: Buffer, label: [*:0]const u8) void {
+        impl.bufferSetLabel(buffer, label);
+    }
 
-    // TODO
-    // pub inline fn bufferUnmap(buffer: gpu.Buffer) void {
+    pub inline fn bufferUnmap(buffer: Buffer) void {
+        impl.bufferUnmap(buffer);
+    }
 
-    // TODO
-    // pub inline fn bufferReference(buffer: gpu.Buffer) void {
+    pub inline fn bufferReference(buffer: Buffer) void {
+        impl.bufferReference(buffer);
+    }
 
-    // TODO
-    // pub inline fn bufferRelease(buffer: gpu.Buffer) void {
+    pub inline fn bufferRelease(buffer: Buffer) void {
+        impl.bufferRelease(buffer);
+    }
 };
 
 pub const BufferMapCallback = fn (status: BufferMapAsyncStatus, userdata: *anyopaque) callconv(.C) void;
