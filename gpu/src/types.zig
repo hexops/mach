@@ -578,9 +578,9 @@ pub const ProgrammableStageDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     module: ShaderModule,
     entry_point: [*:0]const u8,
-    constant_count: u32,
+    constant_count: u32 = 0,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    constants: ?[*]const ConstantEntry,
+    constants: ?[*]const ConstantEntry = null,
 };
 
 pub const RenderPassColorAttachment = extern struct {
