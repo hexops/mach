@@ -1,64 +1,95 @@
+const ComputePassEncoder = @import("compute_pass_encoder.zig").ComputePassEncoder;
+const RenderPassEncoder = @import("render_pass_encoder.zig").RenderPassEncoder;
+const CommandBuffer = @import("command_buffer.zig").CommandBuffer;
+const CommandBufferDescriptor = @import("command_buffer.zig").CommandBufferDescriptor;
+const Buffer = @import("buffer.zig").Buffer;
+const QuerySet = @import("query_set.zig").QuerySet;
+const RenderPassDescriptor = @import("main.zig").RenderPassDescriptor;
+const ComputePassDescriptor = @import("main.zig").ComputePassDescriptor;
 const ChainedStruct = @import("types.zig").ChainedStruct;
+const ImageCopyBuffer = @import("types.zig").ImageCopyBuffer;
+const ImageCopyTexture = @import("types.zig").ImageCopyTexture;
+const Extent3D = @import("types.zig").Extent3D;
+const impl = @import("interface.zig").impl;
 
 pub const CommandEncoder = *opaque {
-    // TODO
-    // pub inline fn commandEncoderBeginComputePass(command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) gpu.ComputePassEncoder {
+    pub inline fn beginComputePass(command_encoder: CommandEncoder, descriptor: ?*const ComputePassDescriptor) ComputePassEncoder {
+        return impl.commandEncoderBeginComputePass(command_encoder, descriptor);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderBeginRenderPass(command_encoder: gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) gpu.RenderPassEncoder {
+    pub inline fn beginRenderPass(command_encoder: CommandEncoder, descriptor: *const RenderPassDescriptor) RenderPassEncoder {
+        return impl.commandEncoderBeginRenderPass(command_encoder, descriptor);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderClearBuffer(command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, offset: u64, size: u64) void {
+    pub inline fn clearBuffer(command_encoder: CommandEncoder, buffer: Buffer, offset: u64, size: u64) void {
+        impl.commandEncoderClearBuffer(command_encoder, buffer, offset, size);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderCopyBufferToBuffer(command_encoder: gpu.CommandEncoder, source: gpu.Buffer, source_offset: u64, destination: gpu.Buffer, destination_offset: u64, size: u64) void {
+    pub inline fn copyBufferToBuffer(command_encoder: CommandEncoder, source: Buffer, source_offset: u64, destination: Buffer, destination_offset: u64, size: u64) void {
+        impl.commandEncoderCopyBufferToBuffer(command_encoder, source, source_offset, destination, destination_offset, size);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderCopyBufferToTexture(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyBuffer, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+    pub inline fn copyBufferToTexture(command_encoder: CommandEncoder, source: *const ImageCopyBuffer, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void {
+        impl.commandEncoderCopyBufferToTexture(command_encoder, source, destination, copy_size);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderCopyTextureToBuffer(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyBuffer, copy_size: *const gpu.Extent3D) void {
+    pub inline fn copyTextureToBuffer(command_encoder: CommandEncoder, source: *const ImageCopyTexture, destination: *const ImageCopyBuffer, copy_size: *const Extent3D) void {
+        impl.commandEncoderCopyTextureToBuffer(command_encoder, source, destination, copy_size);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderCopyTextureToTexture(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+    pub inline fn copyTextureToTexture(command_encoder: CommandEncoder, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void {
+        impl.commandEncoderCopyTextureToTexture(command_encoder, source, destination, copy_size);
+    }
 
     // Note: the only difference between this and the non-internal variant is that this one checks
     // internal usage.
-    // TODO
-    // pub inline fn commandEncoderCopyTextureToTextureInternal(command_encoder: gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
+    pub inline fn copyTextureToTextureInternal(command_encoder: CommandEncoder, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void {
+        impl.commandEncoderCopyTextureToTextureInternal(command_encoder, source, destination, copy_size);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderFinish(command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.CommandBufferDescriptor) gpu.CommandBuffer {
+    pub inline fn finish(command_encoder: CommandEncoder, descriptor: ?*const CommandBufferDescriptor) CommandBuffer {
+        return impl.commandEncoderFinish(command_encoder, descriptor);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderInjectValidationError(command_encoder: gpu.CommandEncoder, message: [*:0]const u8) void {
+    pub inline fn injectValidationError(command_encoder: CommandEncoder, message: [*:0]const u8) void {
+        impl.commandEncoderInjectValidationError(command_encoder, message);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderInsertDebugMarker(command_encoder: gpu.CommandEncoder, marker_label: [*:0]const u8) void {
+    pub inline fn insertDebugMarker(command_encoder: CommandEncoder, marker_label: [*:0]const u8) void {
+        impl.commandEncoderInsertDebugMarker(command_encoder, marker_label);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderPopDebugGroup(command_encoder: gpu.CommandEncoder) void {
+    pub inline fn popDebugGroup(command_encoder: CommandEncoder) void {
+        impl.commandEncoderPopDebugGroup(command_encoder);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderPushDebugGroup(command_encoder: gpu.CommandEncoder, group_label: [*:0]const u8) void {
+    pub inline fn pushDebugGroup(command_encoder: CommandEncoder, group_label: [*:0]const u8) void {
+        impl.commandEncoderPushDebugGroup(command_encoder, group_label);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderResolveQuerySet(command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, first_query: u32, query_count: u32, destination: gpu.Buffer, destination_offset: u64) void {
+    pub inline fn resolveQuerySet(command_encoder: CommandEncoder, query_set: QuerySet, first_query: u32, query_count: u32, destination: Buffer, destination_offset: u64) void {
+        impl.commandEncoderResolveQuerySet(command_encoder, query_set, first_query, query_count, destination, destination_offset);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderSetLabel(command_encoder: gpu.CommandEncoder, label: [*:0]const u8) void {
+    pub inline fn setLabel(command_encoder: CommandEncoder, label: [*:0]const u8) void {
+        impl.commandEncoderSetLabel(command_encoder, label);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderWriteBuffer(command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
+    pub inline fn writeBuffer(command_encoder: CommandEncoder, buffer: Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
+        impl.commandEncoderWriteBuffer(command_encoder, buffer, buffer_offset, data, size);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderWriteTimestamp(command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, query_index: u32) void {
+    pub inline fn writeTimestamp(command_encoder: CommandEncoder, query_set: QuerySet, query_index: u32) void {
+        impl.commandEncoderWriteTimestamp(command_encoder, query_set, query_index);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderReference(command_encoder: gpu.CommandEncoder) void {
+    pub inline fn reference(command_encoder: CommandEncoder) void {
+        impl.commandEncoderReference(command_encoder);
+    }
 
-    // TODO
-    // pub inline fn commandEncoderRelease(command_encoder: gpu.CommandEncoder) void {
+    pub inline fn release(command_encoder: CommandEncoder) void {
+        impl.commandEncoderRelease(command_encoder);
+    }
 };
 
 pub const CommandEncoderDescriptor = extern struct {
