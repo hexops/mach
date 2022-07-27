@@ -3,6 +3,8 @@ const Texture = @import("texture.zig").Texture;
 const TextureFormat = @import("texture.zig").TextureFormat;
 const TextureAspect = @import("texture.zig").TextureAspect;
 const Impl = @import("interface.zig").Impl;
+const mip_level_count_undefined = @import("main.zig").mip_level_count_undefined;
+const array_layer_count_undefined = @import("main.zig").array_layer_count_undefined;
 
 pub const TextureView = *opaque {
     pub inline fn setLabel(texture_view: TextureView, label: [*:0]const u8) void {
@@ -31,11 +33,11 @@ pub const TextureViewDimension = enum(u32) {
 pub const TextureViewDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
-    format: TextureFormat,
-    dimension: TextureViewDimension,
-    base_mip_level: u32,
-    mip_level_count: u32,
-    base_array_layer: u32,
-    array_layer_count: u32,
-    aspect: TextureAspect,
+    format: TextureFormat = .undef,
+    dimension: TextureViewDimension = .dimension_undef,
+    base_mip_level: u32 = 0,
+    mip_level_count: u32 = mip_level_count_undefined,
+    base_array_layer: u32 = 0,
+    array_layer_count: u32 = array_layer_count_undefined,
+    aspect: TextureAspect = .all,
 };
