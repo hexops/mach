@@ -36,5 +36,7 @@ pub const SwapChainDescriptor = extern struct {
     width: u32,
     height: u32,
     present_mode: PresentMode,
-    implementation: u64,
+
+    /// Deprecated
+    implementation: u64 = 0,
 };
