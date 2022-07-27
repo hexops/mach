@@ -195,8 +195,8 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "shaderModuleSetLabel", fn (shader_module: gpu.ShaderModule, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(Impl, "shaderModuleReference", fn (shader_module: gpu.ShaderModule) callconv(.Inline) void);
     assertDecl(Impl, "shaderModuleRelease", fn (shader_module: gpu.ShaderModule) callconv(.Inline) void);
-    // assertDecl(Impl, "surfaceReference", fn (surface: gpu.Surface) callconv(.Inline) void);
-    // assertDecl(Impl, "surfaceRelease", fn (surface: gpu.Surface) callconv(.Inline) void);
+    assertDecl(Impl, "surfaceReference", fn (surface: gpu.Surface) callconv(.Inline) void);
+    assertDecl(Impl, "surfaceRelease", fn (surface: gpu.Surface) callconv(.Inline) void);
     // assertDecl(Impl, "swapChainConfigure", fn (swap_chain: gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: gpu.TextureUsageFlags, width: u32, height: u32) callconv(.Inline) void);
     // assertDecl(Impl, "swapChainGetCurrentTextureView", fn (swap_chain: gpu.SwapChain) callconv(.Inline) gpu.TextureView);
     // assertDecl(Impl, "swapChainPresent", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
