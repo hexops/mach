@@ -2,19 +2,19 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const Texture = @import("texture.zig").Texture;
 const TextureFormat = @import("texture.zig").TextureFormat;
 const TextureAspect = @import("texture.zig").TextureAspect;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const TextureView = *opaque {
     pub inline fn setLabel(texture_view: TextureView, label: [*:0]const u8) void {
-        impl.textureViewSetLabel(texture_view, label);
+        Impl.textureViewSetLabel(texture_view, label);
     }
 
     pub inline fn reference(texture_view: TextureView) void {
-        impl.textureViewReference(texture_view);
+        Impl.textureViewReference(texture_view);
     }
 
     pub inline fn release(texture_view: TextureView) void {
-        impl.textureViewRelease(texture_view);
+        Impl.textureViewRelease(texture_view);
     }
 };
 

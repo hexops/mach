@@ -39,143 +39,143 @@ const ErrorCallback = @import("types.zig").ErrorCallback;
 const LoggingCallback = @import("types.zig").LoggingCallback;
 const CreateComputePipelineAsyncCallback = @import("types.zig").CreateComputePipelineAsyncCallback;
 const CreateRenderPipelineAsyncCallback = @import("types.zig").CreateRenderPipelineAsyncCallback;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const Device = *opaque {
     pub inline fn createBindGroup(device: Device, descriptor: *const BindGroupDescriptor) BindGroup {
-        return impl.deviceCreateBindGroup(device, descriptor);
+        return Impl.deviceCreateBindGroup(device, descriptor);
     }
 
     pub inline fn createBindGroupLayout(device: Device, descriptor: *const BindGroupLayoutDescriptor) BindGroupLayout {
-        return impl.deviceCreateBindGroupLayout(device, descriptor);
+        return Impl.deviceCreateBindGroupLayout(device, descriptor);
     }
 
     pub inline fn createBuffer(device: Device, descriptor: *const BufferDescriptor) Buffer {
-        return impl.deviceCreateBuffer(device, descriptor);
+        return Impl.deviceCreateBuffer(device, descriptor);
     }
 
     pub inline fn createCommandEncoder(device: Device, descriptor: ?*const CommandEncoderDescriptor) CommandEncoder {
-        return impl.deviceCreateCommandEncoder(device, descriptor);
+        return Impl.deviceCreateCommandEncoder(device, descriptor);
     }
 
     pub inline fn createComputePipeline(device: Device, descriptor: *const ComputePipelineDescriptor) ComputePipeline {
-        return impl.deviceCreateComputePipeline(device, descriptor);
+        return Impl.deviceCreateComputePipeline(device, descriptor);
     }
 
     pub inline fn createComputePipelineAsync(device: Device, descriptor: *const ComputePipelineDescriptor, callback: CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
-        impl.deviceCreateComputePipelineAsync(device, descriptor, callback, userdata);
+        Impl.deviceCreateComputePipelineAsync(device, descriptor, callback, userdata);
     }
 
     pub inline fn createErrorBuffer(device: Device) Buffer {
-        return impl.deviceCreateErrorBuffer(device);
+        return Impl.deviceCreateErrorBuffer(device);
     }
 
     pub inline fn createErrorExternalTexture(device: Device) ExternalTexture {
-        return impl.deviceCreateErrorExternalTexture(device);
+        return Impl.deviceCreateErrorExternalTexture(device);
     }
 
     pub inline fn createExternalTexture(device: Device, external_texture_descriptor: *const ExternalTextureDescriptor) ExternalTexture {
-        return impl.deviceCreateExternalTexture(device, external_texture_descriptor);
+        return Impl.deviceCreateExternalTexture(device, external_texture_descriptor);
     }
 
     pub inline fn createPipelineLayout(device: Device, pipeline_layout_descriptor: *const PipelineLayoutDescriptor) PipelineLayout {
-        return impl.deviceCreatePipelineLayout(device, pipeline_layout_descriptor);
+        return Impl.deviceCreatePipelineLayout(device, pipeline_layout_descriptor);
     }
 
     pub inline fn createQuerySet(device: Device, descriptor: *const QuerySetDescriptor) QuerySet {
-        return impl.deviceCreateQuerySet(device, descriptor);
+        return Impl.deviceCreateQuerySet(device, descriptor);
     }
 
     pub inline fn createRenderBundleEncoder(device: Device, descriptor: *const RenderBundleEncoderDescriptor) RenderBundleEncoder {
-        return impl.deviceCreateRenderBundleEncoder(device, descriptor);
+        return Impl.deviceCreateRenderBundleEncoder(device, descriptor);
     }
 
     pub inline fn createRenderPipeline(device: Device, descriptor: *const RenderPipelineDescriptor) RenderPipeline {
-        return impl.deviceCreateRenderPipeline(device, descriptor);
+        return Impl.deviceCreateRenderPipeline(device, descriptor);
     }
 
     pub inline fn createRenderPipelineAsync(device: Device, descriptor: *const RenderPipelineDescriptor, callback: CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
-        impl.deviceCreateRenderPipelineAsync(device, descriptor, callback, userdata);
+        Impl.deviceCreateRenderPipelineAsync(device, descriptor, callback, userdata);
     }
 
     pub inline fn createSampler(device: Device, descriptor: ?*const SamplerDescriptor) Sampler {
-        return impl.deviceCreateSampler(device, descriptor);
+        return Impl.deviceCreateSampler(device, descriptor);
     }
 
     pub inline fn createShaderModule(device: Device, descriptor: *const ShaderModuleDescriptor) ShaderModule {
-        return impl.deviceCreateShaderModule(device, descriptor);
+        return Impl.deviceCreateShaderModule(device, descriptor);
     }
 
     pub inline fn createSwapChain(device: Device, surface: ?Surface, descriptor: *const SwapChainDescriptor) SwapChain {
-        return impl.deviceCreateSwapChain(device, surface, descriptor);
+        return Impl.deviceCreateSwapChain(device, surface, descriptor);
     }
 
     pub inline fn createTexture(device: Device, descriptor: *const TextureDescriptor) Texture {
-        return impl.deviceCreateTexture(device, descriptor);
+        return Impl.deviceCreateTexture(device, descriptor);
     }
 
     pub inline fn destroy(device: Device) void {
-        impl.deviceDestroy(device);
+        Impl.deviceDestroy(device);
     }
 
     pub inline fn enumerateFeatures(device: Device, features: [*]FeatureName) usize {
-        return impl.deviceEnumerateFeatures(device, features);
+        return Impl.deviceEnumerateFeatures(device, features);
     }
 
     pub inline fn getLimits(device: Device, limits: *SupportedLimits) bool {
-        return impl.deviceGetLimits(device, limits);
+        return Impl.deviceGetLimits(device, limits);
     }
 
     pub inline fn getQueue(device: Device) Queue {
-        return impl.deviceGetQueue(device);
+        return Impl.deviceGetQueue(device);
     }
 
     pub inline fn hasFeature(device: Device, feature: FeatureName) bool {
-        return impl.deviceHasFeature(device, feature);
+        return Impl.deviceHasFeature(device, feature);
     }
 
     pub inline fn injectError(device: Device, typ: ErrorType, message: [*:0]const u8) void {
-        impl.deviceInjectError(device, typ, message);
+        Impl.deviceInjectError(device, typ, message);
     }
 
     pub inline fn loseForTesting(device: Device) void {
-        impl.deviceLoseForTesting(device);
+        Impl.deviceLoseForTesting(device);
     }
 
     pub inline fn popErrorScope(device: Device, callback: ErrorCallback, userdata: *anyopaque) bool {
-        return impl.devicePopErrorScope(device, callback, userdata);
+        return Impl.devicePopErrorScope(device, callback, userdata);
     }
 
     pub inline fn pushErrorScope(device: Device, filter: ErrorFilter) void {
-        impl.devicePushErrorScope(device, filter);
+        Impl.devicePushErrorScope(device, filter);
     }
 
     pub inline fn setDeviceLostCallback(device: Device, callback: DeviceLostCallback, userdata: *anyopaque) void {
-        impl.deviceSetDeviceLostCallback(device, callback, userdata);
+        Impl.deviceSetDeviceLostCallback(device, callback, userdata);
     }
 
     pub inline fn setLabel(device: Device, label: [*:0]const u8) void {
-        impl.deviceSetLabel(device, label);
+        Impl.deviceSetLabel(device, label);
     }
 
     pub inline fn setLoggingCallback(device: Device, callback: LoggingCallback, userdata: *anyopaque) void {
-        impl.deviceSetLoggingCallback(device, callback, userdata);
+        Impl.deviceSetLoggingCallback(device, callback, userdata);
     }
 
     pub inline fn setUncapturedErrorCallback(device: Device, callback: ErrorCallback, userdata: *anyopaque) void {
-        impl.deviceSetUncapturedErrorCallback(device, callback, userdata);
+        Impl.deviceSetUncapturedErrorCallback(device, callback, userdata);
     }
 
     pub inline fn tick(device: Device) void {
-        impl.deviceTick(device);
+        Impl.deviceTick(device);
     }
 
     pub inline fn reference(device: Device) void {
-        impl.deviceReference(device);
+        Impl.deviceReference(device);
     }
 
     pub inline fn release(device: Device) void {
-        impl.deviceRelease(device);
+        Impl.deviceRelease(device);
     }
 };
 

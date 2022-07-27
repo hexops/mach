@@ -5,40 +5,40 @@ const DeviceDescriptor = @import("device.zig").DeviceDescriptor;
 const FeatureName = @import("types.zig").FeatureName;
 const SupportedLimits = @import("types.zig").SupportedLimits;
 const RequestDeviceStatus = @import("types.zig").RequestDeviceStatus;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const Adapter = *opaque {
     pub inline fn createDevice(adapter: Adapter, descriptor: ?*const DeviceDescriptor) ?Device {
-        return impl.createDevice(adapter, descriptor);
+        return Impl.createDevice(adapter, descriptor);
     }
 
     /// Call once with null to determine the array length, and again to fetch the feature list.
     pub inline fn enumerateFeatures(adapter: Adapter, features: ?[*]FeatureName) usize {
-        return impl.adapterEnumerateFeatures(adapter, features);
+        return Impl.adapterEnumerateFeatures(adapter, features);
     }
 
     pub inline fn getLimits(adapter: Adapter, limits: *SupportedLimits) bool {
-        return impl.adapterGetLimits(adapter, limits);
+        return Impl.adapterGetLimits(adapter, limits);
     }
 
     pub inline fn getProperties(adapter: Adapter, properties: *AdapterProperties) void {
-        impl.adapterGetProperties(adapter, properties);
+        Impl.adapterGetProperties(adapter, properties);
     }
 
     pub inline fn hasFeature(adapter: Adapter, feature: FeatureName) bool {
-        return impl.adapterHasFeature(adapter, feature);
+        return Impl.adapterHasFeature(adapter, feature);
     }
 
     pub inline fn requestDevice(adapter: Adapter, descriptor: ?*const DeviceDescriptor, callback: RequestDeviceCallback, userdata: *anyopaque) void {
-        impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
+        Impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
     }
 
     pub inline fn reference(adapter: Adapter) void {
-        impl.adapterReference(adapter);
+        Impl.adapterReference(adapter);
     }
 
     pub inline fn release(adapter: Adapter) void {
-        impl.adapterRelease(adapter);
+        Impl.adapterRelease(adapter);
     }
 };
 
