@@ -65,8 +65,6 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "commandEncoderWriteTimestamp", fn (command_encoder: gpu.CommandEncoder, query_set: gpu.QuerySet, query_index: u32) callconv(.Inline) void);
     assertDecl(T, "commandEncoderReference", fn (command_encoder: gpu.CommandEncoder) callconv(.Inline) void);
     assertDecl(T, "commandEncoderRelease", fn (command_encoder: gpu.CommandEncoder) callconv(.Inline) void);
-    assertDecl(T, "computePassEncoderDispatch", fn (compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) callconv(.Inline) void);
-    assertDecl(T, "computePassEncoderDispatchIndirect", fn (compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderDispatchWorkgroups", fn (compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderDispatchWorkgroupsIndirect", fn (compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderEnd", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
@@ -472,16 +470,6 @@ pub fn Export(comptime T: type) type {
         // WGPU_EXPORT void wgpuCommandEncoderRelease(WGPUCommandEncoder commandEncoder);
         export fn wgpuCommandEncoderRelease(command_encoder: gpu.CommandEncoder) void {
             T.commandEncoderRelease(command_encoder);
-        }
-
-        // WGPU_EXPORT void wgpuComputePassEncoderDispatch(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX, uint32_t workgroupCountY, uint32_t workgroupCountZ);
-        export fn wgpuComputePassEncoderDispatch(compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
-            T.computePassEncoderDispatch(compute_pass_encoder, workgroup_count_x, workgroup_count_y, workgroup_count_z);
-        }
-
-        // WGPU_EXPORT void wgpuComputePassEncoderDispatchIndirect(WGPUComputePassEncoder computePassEncoder, WGPUBuffer indirectBuffer, uint64_t indirectOffset);
-        export fn wgpuComputePassEncoderDispatchIndirect(compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
-            T.computePassEncoderDispatchIndirect(compute_pass_encoder, indirect_buffer, indirect_offset);
         }
 
         // WGPU_EXPORT void wgpuComputePassEncoderDispatchWorkgroups(WGPUComputePassEncoder computePassEncoder, uint32_t workgroupCountX, uint32_t workgroupCountY, uint32_t workgroupCountZ);
@@ -1544,21 +1532,6 @@ pub const StubInterface = Interface(struct {
 
     pub inline fn commandEncoderRelease(command_encoder: gpu.CommandEncoder) void {
         _ = command_encoder;
-        unreachable;
-    }
-
-    pub inline fn computePassEncoderDispatch(compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
-        _ = compute_pass_encoder;
-        _ = workgroup_count_x;
-        _ = workgroup_count_y;
-        _ = workgroup_count_z;
-        unreachable;
-    }
-
-    pub inline fn computePassEncoderDispatchIndirect(compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
-        _ = compute_pass_encoder;
-        _ = indirect_buffer;
-        _ = indirect_offset;
         unreachable;
     }
 
