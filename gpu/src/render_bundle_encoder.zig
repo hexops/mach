@@ -16,6 +16,10 @@ pub const RenderBundleEncoder = *opaque {
         Impl.renderBundleEncoderDraw(render_bundle_encoder, vertex_count, instance_count, first_vertex, first_instance);
     }
 
+    /// Default `instance_count`: 1
+    /// Default `first_index`: 0
+    /// Default `base_vertex`: 0
+    /// Default `first_instance`: 0
     pub inline fn drawIndexed(render_bundle_encoder: RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
         Impl.renderBundleEncoderDrawIndexed(render_bundle_encoder, index_count, instance_count, first_index, base_vertex, first_instance);
     }
