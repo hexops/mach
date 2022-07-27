@@ -66,6 +66,8 @@ pub const RenderBundleEncoder = *opaque {
         Impl.renderBundleEncoderSetPipeline(render_bundle_encoder, pipeline);
     }
 
+    /// Default `offset`: 0
+    /// Default `size`: gpu.whole_size
     pub inline fn setVertexBuffer(render_bundle_encoder: RenderBundleEncoder, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
         Impl.renderBundleEncoderSetVertexBuffer(render_bundle_encoder, slot, buffer, offset, size);
     }
