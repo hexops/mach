@@ -12,8 +12,8 @@ pub const ComputePassEncoder = *opaque {
         Impl.computePassEncoderDispatchIndirect(compute_pass_encoder, indirect_buffer, indirect_offset);
     }
 
-    // Default `workgroup_count_y`: 1
-    // Default `workgroup_count_z`: 1
+    /// Default `workgroup_count_y`: 1
+    /// Default `workgroup_count_z`: 1
     pub inline fn dispatchWorkgroups(compute_pass_encoder: ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
         Impl.computePassEncoderDispatchWorkgroups(compute_pass_encoder, workgroup_count_x, workgroup_count_y, workgroup_count_z);
     }
@@ -42,8 +42,8 @@ pub const ComputePassEncoder = *opaque {
         Impl.computePassEncoderPushDebugGroup(compute_pass_encoder, group_label);
     }
 
-    // Default `dynamic_offset_count`: 0
-    // Default `dynamic_offsets`: null
+    /// Default `dynamic_offset_count`: 0
+    /// Default `dynamic_offsets`: null
     pub inline fn setBindGroup(compute_pass_encoder: ComputePassEncoder, group_index: u32, group: BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
         Impl.computePassEncoderSetBindGroup(compute_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
     }
