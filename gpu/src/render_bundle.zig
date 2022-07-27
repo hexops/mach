@@ -1,11 +1,14 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
+const impl = @import("interface.zig").impl;
 
 pub const RenderBundle = *opaque {
-    // TODO
-    // pub inline fn renderBundleReference(render_bundle: gpu.RenderBundle) void {
+    pub inline fn reference(render_bundle: RenderBundle) void {
+        impl.renderBundleReference(render_bundle);
+    }
 
-    // TODO
-    // pub inline fn renderBundleRelease(render_bundle: gpu.RenderBundle) void {
+    pub inline fn release(render_bundle: RenderBundle) void {
+        impl.renderBundleRelease(render_bundle);
+    }
 };
 
 pub const RenderBundleDescriptor = extern struct {
