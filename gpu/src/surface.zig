@@ -1,11 +1,14 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
+const impl = @import("interface.zig").impl;
 
 pub const Surface = *opaque {
-    // TODO
-    // pub inline fn surfaceReference(surface: gpu.Surface) void {
+    pub inline fn reference(surface: Surface) void {
+        impl.surfaceReference(surface);
+    }
 
-    // TODO
-    // pub inline fn surfaceRelease(surface: gpu.Surface) void {
+    pub inline fn release(surface: Surface) void {
+        impl.surfaceRelease(surface);
+    }
 };
 
 pub const SurfaceDescriptor = extern struct {
