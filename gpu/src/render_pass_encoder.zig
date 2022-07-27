@@ -73,6 +73,8 @@ pub const RenderPassEncoder = *opaque {
         Impl.renderPassEncoderSetBlendConstant(render_pass_encoder, color);
     }
 
+    /// Default `offset`: 0
+    /// Default `size`: `gpu.whole_size`
     pub inline fn setIndexBuffer(render_pass_encoder: RenderPassEncoder, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void {
         Impl.renderPassEncoderSetIndexBuffer(render_pass_encoder, buffer, format, offset, size);
     }
