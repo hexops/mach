@@ -68,7 +68,6 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "computePassEncoderDispatchWorkgroups", fn (compute_pass_encoder: gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderDispatchWorkgroupsIndirect", fn (compute_pass_encoder: gpu.ComputePassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderEnd", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
-    assertDecl(T, "computePassEncoderEndPass", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderInsertDebugMarker", fn (compute_pass_encoder: gpu.ComputePassEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderPopDebugGroup", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderPushDebugGroup", fn (compute_pass_encoder: gpu.ComputePassEncoder, group_label: [*:0]const u8) callconv(.Inline) void);
@@ -485,11 +484,6 @@ pub fn Export(comptime T: type) type {
         // WGPU_EXPORT void wgpuComputePassEncoderEnd(WGPUComputePassEncoder computePassEncoder);
         export fn wgpuComputePassEncoderEnd(compute_pass_encoder: gpu.ComputePassEncoder) void {
             T.computePassEncoderEnd(compute_pass_encoder);
-        }
-
-        // WGPU_EXPORT void wgpuComputePassEncoderEndPass(WGPUComputePassEncoder computePassEncoder);
-        export fn wgpuComputePassEncoderEndPass(compute_pass_encoder: gpu.ComputePassEncoder) void {
-            T.computePassEncoderEndPass(compute_pass_encoder);
         }
 
         // WGPU_EXPORT void wgpuComputePassEncoderInsertDebugMarker(WGPUComputePassEncoder computePassEncoder, char const * markerLabel);
@@ -1551,11 +1545,6 @@ pub const StubInterface = Interface(struct {
     }
 
     pub inline fn computePassEncoderEnd(compute_pass_encoder: gpu.ComputePassEncoder) void {
-        _ = compute_pass_encoder;
-        unreachable;
-    }
-
-    pub inline fn computePassEncoderEndPass(compute_pass_encoder: gpu.ComputePassEncoder) void {
         _ = compute_pass_encoder;
         unreachable;
     }

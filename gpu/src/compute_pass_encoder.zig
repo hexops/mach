@@ -18,10 +18,6 @@ pub const ComputePassEncoder = *opaque {
         Impl.computePassEncoderEnd(compute_pass_encoder);
     }
 
-    pub inline fn endPass(compute_pass_encoder: ComputePassEncoder) void {
-        Impl.computePassEncoderEndPass(compute_pass_encoder);
-    }
-
     pub inline fn insertDebugMarker(compute_pass_encoder: ComputePassEncoder, marker_label: [*:0]const u8) void {
         Impl.computePassEncoderInsertDebugMarker(compute_pass_encoder, marker_label);
     }
