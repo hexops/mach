@@ -15,7 +15,8 @@ pub const EncoderInternalUsageDescriptor = extern struct {
 pub const InstanceDescriptor = extern struct {
     chain: ChainedStruct,
     additional_runtime_search_paths_count: u32,
-    additional_runtime_search_paths: [*]const u8,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    additional_runtime_search_paths: ?[*]const u8,
 };
 
 pub const TextureInternalUsageDescriptor = extern struct {

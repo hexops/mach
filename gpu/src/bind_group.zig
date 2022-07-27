@@ -34,5 +34,6 @@ pub const BindGroupDescriptor = extern struct {
     label: ?[*:0]const u8 = null,
     layout: BindGroupLayout,
     entry_count: u32,
-    entries: [*]const BindGroupEntry,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    entries: ?[*]const BindGroupEntry,
 };

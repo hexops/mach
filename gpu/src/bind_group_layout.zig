@@ -37,5 +37,6 @@ pub const BindGroupLayoutDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
     entry_count: u32,
-    entries: [*]const BindGroupLayoutEntry,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    entries: ?[*]const BindGroupLayoutEntry,
 };
