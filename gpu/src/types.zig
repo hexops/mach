@@ -511,7 +511,7 @@ pub const PrimitiveState = extern struct {
 
 pub const RenderPassDescriptorMaxDrawCount = extern struct {
     chain: ChainedStruct,
-    max_draw_count: u64,
+    max_draw_count: u64 = 50000000,
 };
 
 pub const StencilFaceState = extern struct {
