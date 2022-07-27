@@ -164,7 +164,6 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "renderPassEncoderDrawIndirect", fn (render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderEnd", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderEndOcclusionQuery", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
-    assertDecl(T, "renderPassEncoderEndPass", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderExecuteBundles", fn (render_pass_encoder: gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const gpu.RenderBundle) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderInsertDebugMarker", fn (render_pass_encoder: gpu.RenderPassEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderPopDebugGroup", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
@@ -964,11 +963,6 @@ pub fn Export(comptime T: type) type {
         // WGPU_EXPORT void wgpuRenderPassEncoderEndOcclusionQuery(WGPURenderPassEncoder renderPassEncoder);
         export fn wgpuRenderPassEncoderEndOcclusionQuery(render_pass_encoder: gpu.RenderPassEncoder) void {
             T.renderPassEncoderEndOcclusionQuery(render_pass_encoder);
-        }
-
-        // WGPU_EXPORT void wgpuRenderPassEncoderEndPass(WGPURenderPassEncoder renderPassEncoder);
-        export fn wgpuRenderPassEncoderEndPass(render_pass_encoder: gpu.RenderPassEncoder) void {
-            T.renderPassEncoderEndPass(render_pass_encoder);
         }
 
         // WGPU_EXPORT void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder renderPassEncoder, uint32_t bundlesCount, WGPURenderBundle const * bundles);
@@ -2141,11 +2135,6 @@ pub const StubInterface = Interface(struct {
     }
 
     pub inline fn renderPassEncoderEndOcclusionQuery(render_pass_encoder: gpu.RenderPassEncoder) void {
-        _ = render_pass_encoder;
-        unreachable;
-    }
-
-    pub inline fn renderPassEncoderEndPass(render_pass_encoder: gpu.RenderPassEncoder) void {
         _ = render_pass_encoder;
         unreachable;
     }
