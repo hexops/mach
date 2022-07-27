@@ -1,73 +1,106 @@
+const Buffer = @import("buffer.zig").Buffer;
+const RenderBundle = @import("render_bundle.zig").RenderBundle;
+const BindGroup = @import("bind_group.zig").BindGroup;
+const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
+const QuerySet = @import("query_set.zig").QuerySet;
+const Color = @import("types.zig").Color;
+const IndexFormat = @import("types.zig").IndexFormat;
+const impl = @import("interface.zig").impl;
+
 pub const RenderPassEncoder = *opaque {
-    // TODO
-    // pub inline fn renderPassEncoderBeginOcclusionQuery(render_pass_encoder: gpu.RenderPassEncoder, query_index: u32) void {
+    pub inline fn beginOcclusionQuery(render_pass_encoder: RenderPassEncoder, query_index: u32) void {
+        impl.renderPassEncoderBeginOcclusionQuery(render_pass_encoder, query_index);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderDraw(render_pass_encoder: gpu.RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
+    pub inline fn draw(render_pass_encoder: RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
+        impl.renderPassEncoderDraw(render_pass_encoder, vertex_count, instance_count, first_vertex, first_instance);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderDrawIndexed(render_pass_encoder: gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+    pub inline fn drawIndexed(render_pass_encoder: RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+        impl.renderPassEncoderDrawIndexed(render_pass_encoder, index_count, instance_count, first_index, base_vertex, first_instance);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderDrawIndexedIndirect(render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+    pub inline fn drawIndexedIndirect(render_pass_encoder: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+        impl.renderPassEncoderDrawIndexedIndirect(render_pass_encoder, indirect_buffer, indirect_offset);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderDrawIndirect(render_pass_encoder: gpu.RenderPassEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) void {
+    pub inline fn drawIndirect(render_pass_encoder: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+        impl.renderPassEncoderDrawIndirect(render_pass_encoder, indirect_buffer, indirect_offset);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderEnd(render_pass_encoder: gpu.RenderPassEncoder) void {
+    pub inline fn end(render_pass_encoder: RenderPassEncoder) void {
+        impl.renderPassEncoderEnd(render_pass_encoder);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderEndOcclusionQuery(render_pass_encoder: gpu.RenderPassEncoder) void {
+    pub inline fn endOcclusionQuery(render_pass_encoder: RenderPassEncoder) void {
+        impl.renderPassEncoderEndOcclusionQuery(render_pass_encoder);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderEndPass(render_pass_encoder: gpu.RenderPassEncoder) void {
+    pub inline fn endPass(render_pass_encoder: RenderPassEncoder) void {
+        impl.renderPassEncoderEndPass(render_pass_encoder);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderExecuteBundles(render_pass_encoder: gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const gpu.RenderBundle) void {
+    pub inline fn executeBundles(render_pass_encoder: RenderPassEncoder, bundles_count: u32, bundles: [*]const RenderBundle) void {
+        impl.renderPassEncoderExecuteBundles(render_pass_encoder, bundles_count, bundles);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderInsertDebugMarker(render_pass_encoder: gpu.RenderPassEncoder, marker_label: [*:0]const u8) void {
+    pub inline fn insertDebugMarker(render_pass_encoder: RenderPassEncoder, marker_label: [*:0]const u8) void {
+        impl.renderPassEncoderInsertDebugMarker(render_pass_encoder, marker_label);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderPopDebugGroup(render_pass_encoder: gpu.RenderPassEncoder) void {
+    pub inline fn popDebugGroup(render_pass_encoder: RenderPassEncoder) void {
+        impl.renderPassEncoderPopDebugGroup(render_pass_encoder);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderPushDebugGroup(render_pass_encoder: gpu.RenderPassEncoder, group_label: [*:0]const u8) void {
+    pub inline fn pushDebugGroup(render_pass_encoder: RenderPassEncoder, group_label: [*:0]const u8) void {
+        impl.renderPassEncoderPushDebugGroup(render_pass_encoder, group_label);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderSetBindGroup(render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+    pub inline fn setBindGroup(render_pass_encoder: RenderPassEncoder, group_index: u32, group: BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+        impl.renderPassEncoderSetBindGroup(render_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderSetBlendConstant(render_pass_encoder: gpu.RenderPassEncoder, color: *const gpu.Color) void {
+    pub inline fn setBlendConstant(render_pass_encoder: RenderPassEncoder, color: *const Color) void {
+        impl.renderPassEncoderSetBlendConstant(render_pass_encoder, color);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderSetIndexBuffer(render_pass_encoder: gpu.RenderPassEncoder, buffer: gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) void {
+    pub inline fn setIndexBuffer(render_pass_encoder: RenderPassEncoder, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void {
+        impl.renderPassEncoderSetIndexBuffer(render_pass_encoder, buffer, format, offset, size);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderSetLabel(render_pass_encoder: gpu.RenderPassEncoder, label: [*:0]const u8) void {
+    pub inline fn setLabel(render_pass_encoder: RenderPassEncoder, label: [*:0]const u8) void {
+        impl.renderPassEncoderSetLabel(render_pass_encoder, label);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderSetPipeline(render_pass_encoder: gpu.RenderPassEncoder, pipeline: gpu.RenderPipeline) void {
+    pub inline fn setPipeline(render_pass_encoder: RenderPassEncoder, pipeline: RenderPipeline) void {
+        impl.renderPassEncoderSetPipeline(render_pass_encoder, pipeline);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderSetScissorRect(render_pass_encoder: gpu.RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
+    pub inline fn setScissorRect(render_pass_encoder: RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
+        impl.renderPassEncoderSetScissorRect(render_pass_encoder, x, y, width, height);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderSetStencilReference(render_pass_encoder: gpu.RenderPassEncoder, reference: u32) void {
+    pub inline fn setStencilReference(render_pass_encoder: RenderPassEncoder, _reference: u32) void {
+        impl.renderPassEncoderSetStencilReference(render_pass_encoder, _reference);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderSetVertexBuffer(render_pass_encoder: gpu.RenderPassEncoder, slot: u32, buffer: gpu.Buffer, offset: u64, size: u64) void {
+    pub inline fn setVertexBuffer(render_pass_encoder: RenderPassEncoder, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
+        impl.renderPassEncoderSetVertexBuffer(render_pass_encoder, slot, buffer, offset, size);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderSetViewport(render_pass_encoder: gpu.RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
+    pub inline fn setViewport(render_pass_encoder: RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
+        impl.renderPassEncoderSetViewport(render_pass_encoder, x, y, width, height, min_depth, max_depth);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderWriteTimestamp(render_pass_encoder: gpu.RenderPassEncoder, query_set: gpu.QuerySet, query_index: u32) void {
+    pub inline fn writeTimestamp(render_pass_encoder: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
+        impl.renderPassEncoderWriteTimestamp(render_pass_encoder, query_set, query_index);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderReference(render_pass_encoder: gpu.RenderPassEncoder) void {
+    pub inline fn reference(render_pass_encoder: RenderPassEncoder) void {
+        impl.renderPassEncoderReference(render_pass_encoder);
+    }
 
-    // TODO
-    // pub inline fn renderPassEncoderRelease(render_pass_encoder: gpu.RenderPassEncoder) void {
+    pub inline fn release(render_pass_encoder: RenderPassEncoder) void {
+        impl.renderPassEncoderRelease(render_pass_encoder);
+    }
 };
