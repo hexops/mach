@@ -103,8 +103,9 @@ pub const RequestAdapterOptions = extern struct {
 pub const ComputePassDescriptor = extern struct {
     next_in_chain: *const types.ChainedStruct,
     label: ?[*:0]const u8 = null,
-    timestamp_write_count: u32,
-    timestamp_writes: [*]const ComputePassTimestampWrite,
+    timestamp_write_count: u32 = 0,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    timestamp_writes: ?[*]const ComputePassTimestampWrite = null,
 };
 
 pub const RenderPassDescriptor = extern struct {
