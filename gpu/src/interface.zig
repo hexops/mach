@@ -172,7 +172,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "renderPassEncoderInsertDebugMarker", fn (render_pass_encoder: gpu.RenderPassEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderPopDebugGroup", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderPushDebugGroup", fn (render_pass_encoder: gpu.RenderPassEncoder, group_label: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "renderPassEncoderSetBindGroup", fn (render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) callconv(.Inline) void);
+    assertDecl(T, "renderPassEncoderSetBindGroup", fn (render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderSetBlendConstant", fn (render_pass_encoder: gpu.RenderPassEncoder, color: *const gpu.Color) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderSetIndexBuffer", fn (render_pass_encoder: gpu.RenderPassEncoder, buffer: gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderSetLabel", fn (render_pass_encoder: gpu.RenderPassEncoder, label: [*:0]const u8) callconv(.Inline) void);
@@ -1010,7 +1010,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
-        export fn wgpuRenderPassEncoderSetBindGroup(render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+        export fn wgpuRenderPassEncoderSetBindGroup(render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
             T.renderPassEncoderSetBindGroup(render_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
         }
 
@@ -2212,7 +2212,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn renderPassEncoderSetBindGroup(render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+    pub inline fn renderPassEncoderSetBindGroup(render_pass_encoder: gpu.RenderPassEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
         _ = render_pass_encoder;
         _ = group_index;
         _ = group;
