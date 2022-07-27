@@ -118,10 +118,10 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "deviceTick", fn (device: gpu.Device) callconv(.Inline) void);
     assertDecl(Impl, "deviceReference", fn (device: gpu.Device) callconv(.Inline) void);
     assertDecl(Impl, "deviceRelease", fn (device: gpu.Device) callconv(.Inline) void);
-    // assertDecl(Impl, "externalTextureDestroy", fn (external_texture: gpu.ExternalTexture) callconv(.Inline) void);
-    // assertDecl(Impl, "externalTextureSetLabel", fn (external_texture: gpu.ExternalTexture, label: [*:0]const u8) callconv(.Inline) void);
-    // assertDecl(Impl, "externalTextureReference", fn (external_texture: gpu.ExternalTexture) callconv(.Inline) void);
-    // assertDecl(Impl, "externalTextureRelease", fn (external_texture: gpu.ExternalTexture) callconv(.Inline) void);
+    assertDecl(Impl, "externalTextureDestroy", fn (external_texture: gpu.ExternalTexture) callconv(.Inline) void);
+    assertDecl(Impl, "externalTextureSetLabel", fn (external_texture: gpu.ExternalTexture, label: [*:0]const u8) callconv(.Inline) void);
+    assertDecl(Impl, "externalTextureReference", fn (external_texture: gpu.ExternalTexture) callconv(.Inline) void);
+    assertDecl(Impl, "externalTextureRelease", fn (external_texture: gpu.ExternalTexture) callconv(.Inline) void);
     // assertDecl(Impl, "instanceCreateSurface", fn (instance: gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) callconv(.Inline) gpu.Surface);
     // assertDecl(Impl, "instanceRequestAdapter", fn (instance: gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) callconv(.Inline) void);
     // assertDecl(Impl, "instanceReference", fn (instance: gpu.Instance) callconv(.Inline) void);
