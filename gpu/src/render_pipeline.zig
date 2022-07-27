@@ -5,19 +5,25 @@ const VertexState = @import("types.zig").VertexState;
 const PrimitiveState = @import("types.zig").PrimitiveState;
 const FragmentState = @import("types.zig").FragmentState;
 const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
+const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
+const impl = @import("interface.zig").impl;
 
 pub const RenderPipeline = *opaque {
-    // TODO
-    // pub inline fn renderPipelineGetBindGroupLayout(render_pipeline: gpu.RenderPipeline, group_index: u32) gpu.BindGroupLayout {
+    pub inline fn getBindGroupLayout(render_pipeline: RenderPipeline, group_index: u32) BindGroupLayout {
+        return impl.renderPipelineGetBindGroupLayout(render_pipeline, group_index);
+    }
 
-    // TODO
-    // pub inline fn renderPipelineSetLabel(render_pipeline: gpu.RenderPipeline, label: [*:0]const u8) void {
+    pub inline fn setLabel(render_pipeline: RenderPipeline, label: [*:0]const u8) void {
+        impl.renderPipelineSetLabel(render_pipeline, label);
+    }
 
-    // TODO
-    // pub inline fn renderPipelineReference(render_pipeline: gpu.RenderPipeline) void {
+    pub inline fn reference(render_pipeline: RenderPipeline) void {
+        impl.renderPipelineReference(render_pipeline);
+    }
 
-    // TODO
-    // pub inline fn renderPipelineRelease(render_pipeline: gpu.RenderPipeline) void {
+    pub inline fn release(render_pipeline: RenderPipeline) void {
+        impl.renderPipelineRelease(render_pipeline);
+    }
 };
 
 pub const RenderPipelineDescriptor = extern struct {
