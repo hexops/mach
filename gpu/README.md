@@ -86,19 +86,30 @@ Issues are tracked in the [main Mach repository](https://github.com/hexops/mach/
 
 Contributions are very welcome. Pull requests must be sent to [the main repository](https://github.com/hexops/mach/tree/main/gpu) to avoid some complex merge conflicts we'd get by accepting contributions in both repositories. Once the changes are merged there, they'll get sync'd to this repository automatically.
 
+## Goals
+
+* Allow comptime-defined interception of WebGPU API requests (comptime interfaces.)
+* Expose a standard Dawn `webgpu.h`-compliant C ABI, which routes through comptime interfaces.
+* Support Dawn and Browser (via WASM/JS) implementations of WebGPU.
+
+## Non-goals
+
+* Support non-Dawn (e.g. Rust WebGPU) implementations if they don't match the same `webgpu.h` as Dawn.
+* Maintain backwards compatibility with deprecated `webgpu.h` methods.
+
 ## WebGPU version
 
-Dawn's `webgpu.h` is the authoritative source for our API. You can find [the current version we use here](https://github.com/hexops/dawn/blob/generated-2022-07-10/out/Debug/gen/webgpu-headers/webgpu.h).
+Dawn's `webgpu.h` is the authoritative source for our API. You can find [the current version we use here](https://github.com/hexops/dawn/blob/generated-2022-07-10/out/Debug/gen/include/dawn/webgpu.h).
 
 When updating, every single change is verified against [the WebGPU spec itself](https://github.com/gpuweb/gpuweb/tree/main/spec) to ensure our WebAssembly backend also functions effectively.
 
 The rules for translating `webgpu.h` are as follows:
 
 * `WGPUBuffer` -> `gpu.Buffer`:
-  * Handles like these become a `pub const Buffer = enum(usize) {_}` to ensure they are still pointers compatible with the C ABI, while still allowing us to declare methods on them.
-  * As a result, `null` is represented as `gpu.Buffer.none` which is defined as `pub const none: Buffer = @intToEnum(Buffer, 0);` iff the type can be nullable.g
-* `WGPUBufferBindingType` -> `gpu.Buffer.BindingType` (purely because it's prefix matches an opaque pointer type, it thus goes into that file.)
-* Reserved Zig keywords:
+  * Handles like these become a `pub const Buffer = *opaque {_}` to ensure they are still pointers compatible with the C ABI, while still allowing us to declare methods on them.
+  * As a result, `null`able `Buffer` is represented simply as `?Buffer`
+* `WGPUBufferBindingType` -> `gpu.BufferBindingType` (purely because it's prefix matches an opaque pointer type, it thus goes into the `buffer.zig` file.)
+* Reserved Zig keywords are translated as follows:
   * `undefined` -> `undef`
   * `null` -> `nul`
   * `error` -> `err`
@@ -112,3 +123,11 @@ The rules for translating `webgpu.h` are as follows:
   * `maxTextureDimension3D -> max_texture_dimension_3d`
 * Sometimes an enum will begin with numbers, e.g. `WGPUTextureViewDimension_2DArray`. In this case, we add a prefix so instead of the enum field being `2d_array` it is `dimension_2d_array` (an enum field name must not start with a number in Zig.)
 * Dawn extension types `WGPUDawnFoobar` are placed under `gpu.dawn.Foobar`
+
+### Quality of life improvements
+
+We make the following quality of life improvements:
+
+* `label: ?[*:0]const u8` fields have a default `null` value added to them.
+* Where a struct has a slice `_count` field, with an optional pointer, if the `_count` field defaults to zero we also enforce the optional pointer defaults to `null`. Specifically we do this for:
+* `next_in_chain: *const ChainedStruct` fields, which enable optional implementation-specific extensions to the WebGPU API, default to `null`.
