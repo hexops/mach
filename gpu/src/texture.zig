@@ -5,6 +5,7 @@ const TextureViewDimension = @import("texture_view.zig").TextureViewDimension;
 const TextureViewDescriptor = @import("texture_view.zig").TextureViewDescriptor;
 const Extent3D = @import("types.zig").Extent3D;
 const Impl = @import("interface.zig").Impl;
+const copy_stride_undefined = @import("main.zig").copy_stride_undefined;
 
 pub const Texture = *opaque {
     pub inline fn createView(texture: Texture, descriptor: ?*const TextureViewDescriptor) TextureView {
@@ -222,9 +223,9 @@ pub const TextureBindingLayout = extern struct {
 
 pub const TextureDataLayout = extern struct {
     next_in_chain: *const ChainedStruct,
-    offset: u64,
-    bytes_per_row: u32,
-    rows_per_image: u32,
+    offset: u64 = 0,
+    bytes_per_row: u32 = copy_stride_undefined,
+    rows_per_image: u32 = copy_stride_undefined,
 };
 
 pub const TextureDescriptor = extern struct {
