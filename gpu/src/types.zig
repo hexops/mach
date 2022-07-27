@@ -416,8 +416,8 @@ pub const Color = extern struct {
 
 pub const Extent3D = extern struct {
     width: u32,
-    height: u32,
-    depth_or_array_layers: u32,
+    height: u32 = 1,
+    depth_or_array_layers: u32 = 1,
 };
 
 pub const Limits = extern struct {
