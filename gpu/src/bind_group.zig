@@ -3,16 +3,20 @@ const Sampler = @import("sampler.zig").Sampler;
 const TextureView = @import("texture_view.zig").TextureView;
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
+const impl = @import("interface.zig").impl;
 
 pub const BindGroup = *opaque {
-    // TODO
-    // pub inline fn bindGroupSetLabel(bind_group: gpu.BindGroup, label: [*:0]const u8) void {
+    pub inline fn setLabel(bind_group: BindGroup, label: [*:0]const u8) void {
+        impl.bindGroupSetLabel(bind_group, label);
+    }
 
-    // TODO
-    // pub inline fn bindGroupReference(bind_group: gpu.BindGroup) void {
+    pub inline fn reference(bind_group: BindGroup) void {
+        impl.bindGroupReference(bind_group);
+    }
 
-    // TODO
-    // pub inline fn bindGroupRelease(bind_group: gpu.BindGroup) void {
+    pub inline fn release(bind_group: BindGroup) void {
+        impl.bindGroupRelease(bind_group);
+    }
 };
 
 pub const BindGroupEntry = extern struct {
