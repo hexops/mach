@@ -43,9 +43,9 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "bufferUnmap", fn (buffer: gpu.Buffer) callconv(.Inline) void);
     assertDecl(Impl, "bufferReference", fn (buffer: gpu.Buffer) callconv(.Inline) void);
     assertDecl(Impl, "bufferRelease", fn (buffer: gpu.Buffer) callconv(.Inline) void);
-    // assertDecl(Impl, "commandBufferSetLabel", fn (command_buffer: gpu.CommandBuffer, label: [*:0]const u8) callconv(.Inline) void);
-    // assertDecl(Impl, "commandBufferReference", fn (command_buffer: gpu.CommandBuffer) callconv(.Inline) void);
-    // assertDecl(Impl, "commandBufferRelease", fn (command_buffer: gpu.CommandBuffer) callconv(.Inline) void);
+    assertDecl(Impl, "commandBufferSetLabel", fn (command_buffer: gpu.CommandBuffer, label: [*:0]const u8) callconv(.Inline) void);
+    assertDecl(Impl, "commandBufferReference", fn (command_buffer: gpu.CommandBuffer) callconv(.Inline) void);
+    assertDecl(Impl, "commandBufferRelease", fn (command_buffer: gpu.CommandBuffer) callconv(.Inline) void);
     // assertDecl(Impl, "commandEncoderBeginComputePass", fn (command_encoder: gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) callconv(.Inline) gpu.ComputePassEncoder);
     // assertDecl(Impl, "commandEncoderBeginRenderPass", fn (command_encoder: gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) callconv(.Inline) gpu.RenderPassEncoder);
     // assertDecl(Impl, "commandEncoderClearBuffer", fn (command_encoder: gpu.CommandEncoder, buffer: gpu.Buffer, offset: u64, size: u64) callconv(.Inline) void);
