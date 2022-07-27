@@ -6,23 +6,23 @@ const PrimitiveState = @import("types.zig").PrimitiveState;
 const FragmentState = @import("types.zig").FragmentState;
 const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const RenderPipeline = *opaque {
     pub inline fn getBindGroupLayout(render_pipeline: RenderPipeline, group_index: u32) BindGroupLayout {
-        return impl.renderPipelineGetBindGroupLayout(render_pipeline, group_index);
+        return Impl.renderPipelineGetBindGroupLayout(render_pipeline, group_index);
     }
 
     pub inline fn setLabel(render_pipeline: RenderPipeline, label: [*:0]const u8) void {
-        impl.renderPipelineSetLabel(render_pipeline, label);
+        Impl.renderPipelineSetLabel(render_pipeline, label);
     }
 
     pub inline fn reference(render_pipeline: RenderPipeline) void {
-        impl.renderPipelineReference(render_pipeline);
+        Impl.renderPipelineReference(render_pipeline);
     }
 
     pub inline fn release(render_pipeline: RenderPipeline) void {
-        impl.renderPipelineRelease(render_pipeline);
+        Impl.renderPipelineRelease(render_pipeline);
     }
 };
 

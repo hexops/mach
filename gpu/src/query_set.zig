@@ -1,31 +1,31 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const PipelineStatisticName = @import("types.zig").PipelineStatisticName;
 const QueryType = @import("types.zig").QueryType;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const QuerySet = *opaque {
     pub inline fn destroy(query_set: QuerySet) void {
-        impl.querySetDestroy(query_set);
+        Impl.querySetDestroy(query_set);
     }
 
     pub inline fn getCount(query_set: QuerySet) u32 {
-        return impl.querySetGetCount(query_set);
+        return Impl.querySetGetCount(query_set);
     }
 
     pub inline fn getType(query_set: QuerySet) QueryType {
-        return impl.querySetGetType(query_set);
+        return Impl.querySetGetType(query_set);
     }
 
     pub inline fn setLabel(query_set: QuerySet, label: [*:0]const u8) void {
-        impl.querySetSetLabel(query_set, label);
+        Impl.querySetSetLabel(query_set, label);
     }
 
     pub inline fn reference(query_set: QuerySet) void {
-        impl.querySetReference(query_set);
+        Impl.querySetReference(query_set);
     }
 
     pub inline fn release(query_set: QuerySet) void {
-        impl.querySetRelease(query_set);
+        Impl.querySetRelease(query_set);
     }
 };
 

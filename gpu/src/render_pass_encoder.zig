@@ -5,102 +5,102 @@ const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
 const QuerySet = @import("query_set.zig").QuerySet;
 const Color = @import("types.zig").Color;
 const IndexFormat = @import("types.zig").IndexFormat;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const RenderPassEncoder = *opaque {
     pub inline fn beginOcclusionQuery(render_pass_encoder: RenderPassEncoder, query_index: u32) void {
-        impl.renderPassEncoderBeginOcclusionQuery(render_pass_encoder, query_index);
+        Impl.renderPassEncoderBeginOcclusionQuery(render_pass_encoder, query_index);
     }
 
     pub inline fn draw(render_pass_encoder: RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
-        impl.renderPassEncoderDraw(render_pass_encoder, vertex_count, instance_count, first_vertex, first_instance);
+        Impl.renderPassEncoderDraw(render_pass_encoder, vertex_count, instance_count, first_vertex, first_instance);
     }
 
     pub inline fn drawIndexed(render_pass_encoder: RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
-        impl.renderPassEncoderDrawIndexed(render_pass_encoder, index_count, instance_count, first_index, base_vertex, first_instance);
+        Impl.renderPassEncoderDrawIndexed(render_pass_encoder, index_count, instance_count, first_index, base_vertex, first_instance);
     }
 
     pub inline fn drawIndexedIndirect(render_pass_encoder: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
-        impl.renderPassEncoderDrawIndexedIndirect(render_pass_encoder, indirect_buffer, indirect_offset);
+        Impl.renderPassEncoderDrawIndexedIndirect(render_pass_encoder, indirect_buffer, indirect_offset);
     }
 
     pub inline fn drawIndirect(render_pass_encoder: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
-        impl.renderPassEncoderDrawIndirect(render_pass_encoder, indirect_buffer, indirect_offset);
+        Impl.renderPassEncoderDrawIndirect(render_pass_encoder, indirect_buffer, indirect_offset);
     }
 
     pub inline fn end(render_pass_encoder: RenderPassEncoder) void {
-        impl.renderPassEncoderEnd(render_pass_encoder);
+        Impl.renderPassEncoderEnd(render_pass_encoder);
     }
 
     pub inline fn endOcclusionQuery(render_pass_encoder: RenderPassEncoder) void {
-        impl.renderPassEncoderEndOcclusionQuery(render_pass_encoder);
+        Impl.renderPassEncoderEndOcclusionQuery(render_pass_encoder);
     }
 
     pub inline fn endPass(render_pass_encoder: RenderPassEncoder) void {
-        impl.renderPassEncoderEndPass(render_pass_encoder);
+        Impl.renderPassEncoderEndPass(render_pass_encoder);
     }
 
     pub inline fn executeBundles(render_pass_encoder: RenderPassEncoder, bundles_count: u32, bundles: [*]const RenderBundle) void {
-        impl.renderPassEncoderExecuteBundles(render_pass_encoder, bundles_count, bundles);
+        Impl.renderPassEncoderExecuteBundles(render_pass_encoder, bundles_count, bundles);
     }
 
     pub inline fn insertDebugMarker(render_pass_encoder: RenderPassEncoder, marker_label: [*:0]const u8) void {
-        impl.renderPassEncoderInsertDebugMarker(render_pass_encoder, marker_label);
+        Impl.renderPassEncoderInsertDebugMarker(render_pass_encoder, marker_label);
     }
 
     pub inline fn popDebugGroup(render_pass_encoder: RenderPassEncoder) void {
-        impl.renderPassEncoderPopDebugGroup(render_pass_encoder);
+        Impl.renderPassEncoderPopDebugGroup(render_pass_encoder);
     }
 
     pub inline fn pushDebugGroup(render_pass_encoder: RenderPassEncoder, group_label: [*:0]const u8) void {
-        impl.renderPassEncoderPushDebugGroup(render_pass_encoder, group_label);
+        Impl.renderPassEncoderPushDebugGroup(render_pass_encoder, group_label);
     }
 
     pub inline fn setBindGroup(render_pass_encoder: RenderPassEncoder, group_index: u32, group: BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
-        impl.renderPassEncoderSetBindGroup(render_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
+        Impl.renderPassEncoderSetBindGroup(render_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
     }
 
     pub inline fn setBlendConstant(render_pass_encoder: RenderPassEncoder, color: *const Color) void {
-        impl.renderPassEncoderSetBlendConstant(render_pass_encoder, color);
+        Impl.renderPassEncoderSetBlendConstant(render_pass_encoder, color);
     }
 
     pub inline fn setIndexBuffer(render_pass_encoder: RenderPassEncoder, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void {
-        impl.renderPassEncoderSetIndexBuffer(render_pass_encoder, buffer, format, offset, size);
+        Impl.renderPassEncoderSetIndexBuffer(render_pass_encoder, buffer, format, offset, size);
     }
 
     pub inline fn setLabel(render_pass_encoder: RenderPassEncoder, label: [*:0]const u8) void {
-        impl.renderPassEncoderSetLabel(render_pass_encoder, label);
+        Impl.renderPassEncoderSetLabel(render_pass_encoder, label);
     }
 
     pub inline fn setPipeline(render_pass_encoder: RenderPassEncoder, pipeline: RenderPipeline) void {
-        impl.renderPassEncoderSetPipeline(render_pass_encoder, pipeline);
+        Impl.renderPassEncoderSetPipeline(render_pass_encoder, pipeline);
     }
 
     pub inline fn setScissorRect(render_pass_encoder: RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
-        impl.renderPassEncoderSetScissorRect(render_pass_encoder, x, y, width, height);
+        Impl.renderPassEncoderSetScissorRect(render_pass_encoder, x, y, width, height);
     }
 
     pub inline fn setStencilReference(render_pass_encoder: RenderPassEncoder, _reference: u32) void {
-        impl.renderPassEncoderSetStencilReference(render_pass_encoder, _reference);
+        Impl.renderPassEncoderSetStencilReference(render_pass_encoder, _reference);
     }
 
     pub inline fn setVertexBuffer(render_pass_encoder: RenderPassEncoder, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
-        impl.renderPassEncoderSetVertexBuffer(render_pass_encoder, slot, buffer, offset, size);
+        Impl.renderPassEncoderSetVertexBuffer(render_pass_encoder, slot, buffer, offset, size);
     }
 
     pub inline fn setViewport(render_pass_encoder: RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
-        impl.renderPassEncoderSetViewport(render_pass_encoder, x, y, width, height, min_depth, max_depth);
+        Impl.renderPassEncoderSetViewport(render_pass_encoder, x, y, width, height, min_depth, max_depth);
     }
 
     pub inline fn writeTimestamp(render_pass_encoder: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
-        impl.renderPassEncoderWriteTimestamp(render_pass_encoder, query_set, query_index);
+        Impl.renderPassEncoderWriteTimestamp(render_pass_encoder, query_set, query_index);
     }
 
     pub inline fn reference(render_pass_encoder: RenderPassEncoder) void {
-        impl.renderPassEncoderReference(render_pass_encoder);
+        Impl.renderPassEncoderReference(render_pass_encoder);
     }
 
     pub inline fn release(render_pass_encoder: RenderPassEncoder) void {
-        impl.renderPassEncoderRelease(render_pass_encoder);
+        Impl.renderPassEncoderRelease(render_pass_encoder);
     }
 };

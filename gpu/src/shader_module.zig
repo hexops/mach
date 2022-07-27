@@ -1,22 +1,22 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const CompilationInfoCallback = @import("types.zig").CompilationInfoCallback;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const ShaderModule = *opaque {
     pub inline fn getCompilationInfo(shader_module: ShaderModule, callback: CompilationInfoCallback, userdata: *anyopaque) void {
-        impl.shaderModuleGetCompilationInfo(shader_module, callback, userdata);
+        Impl.shaderModuleGetCompilationInfo(shader_module, callback, userdata);
     }
 
     pub inline fn setLabel(shader_module: ShaderModule, label: [*:0]const u8) void {
-        impl.shaderModuleSetLabel(shader_module, label);
+        Impl.shaderModuleSetLabel(shader_module, label);
     }
 
     pub inline fn reference(shader_module: ShaderModule) void {
-        impl.shaderModuleReference(shader_module);
+        Impl.shaderModuleReference(shader_module);
     }
 
     pub inline fn release(shader_module: ShaderModule) void {
-        impl.shaderModuleRelease(shader_module);
+        Impl.shaderModuleRelease(shader_module);
     }
 };
 

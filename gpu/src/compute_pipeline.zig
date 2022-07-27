@@ -2,23 +2,23 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const ProgrammableStageDescriptor = @import("types.zig").ProgrammableStageDescriptor;
 const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const ComputePipeline = *opaque {
     pub inline fn getBindGroupLayout(compute_pipeline: ComputePipeline, group_index: u32) BindGroupLayout {
-        return impl.computePipelineGetBindGroupLayout(compute_pipeline, group_index);
+        return Impl.computePipelineGetBindGroupLayout(compute_pipeline, group_index);
     }
 
     pub inline fn setLabel(compute_pipeline: ComputePipeline, label: [*:0]const u8) void {
-        impl.computePipelineSetLabel(compute_pipeline, label);
+        Impl.computePipelineSetLabel(compute_pipeline, label);
     }
 
     pub inline fn reference(compute_pipeline: ComputePipeline) void {
-        impl.computePipelineReference(compute_pipeline);
+        Impl.computePipelineReference(compute_pipeline);
     }
 
     pub inline fn release(compute_pipeline: ComputePipeline) void {
-        impl.computePipelineRelease(compute_pipeline);
+        Impl.computePipelineRelease(compute_pipeline);
     }
 };
 

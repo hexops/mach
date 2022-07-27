@@ -1,47 +1,47 @@
 const std = @import("std");
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const MapModeFlags = @import("types.zig").MapModeFlags;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const Buffer = *opaque {
     pub inline fn destroy(buffer: Buffer) void {
-        impl.bufferDestroy(buffer);
+        Impl.bufferDestroy(buffer);
     }
 
     pub inline fn bufferGetConstMappedRange(buffer: Buffer, offset: usize, size: usize) ?*const anyopaque {
-        return impl.bufferGetConstMappedRange(buffer, offset, size);
+        return Impl.bufferGetConstMappedRange(buffer, offset, size);
     }
 
     pub inline fn bufferGetMappedRange(buffer: Buffer, offset: usize, size: usize) ?*anyopaque {
-        return impl.bufferGetMappedRange(buffer, offset, size);
+        return Impl.bufferGetMappedRange(buffer, offset, size);
     }
 
     pub inline fn bufferGetSize(buffer: Buffer) u64 {
-        return impl.bufferGetSize(buffer);
+        return Impl.bufferGetSize(buffer);
     }
 
     pub inline fn bufferGetUsage(buffer: Buffer) BufferUsage {
-        return impl.bufferGetUsage(buffer);
+        return Impl.bufferGetUsage(buffer);
     }
 
     pub inline fn bufferMapAsync(buffer: Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) void {
-        impl.bufferMapAsync(buffer, mode, offset, size, callback, userdata);
+        Impl.bufferMapAsync(buffer, mode, offset, size, callback, userdata);
     }
 
     pub inline fn bufferSetLabel(buffer: Buffer, label: [*:0]const u8) void {
-        impl.bufferSetLabel(buffer, label);
+        Impl.bufferSetLabel(buffer, label);
     }
 
     pub inline fn bufferUnmap(buffer: Buffer) void {
-        impl.bufferUnmap(buffer);
+        Impl.bufferUnmap(buffer);
     }
 
     pub inline fn bufferReference(buffer: Buffer) void {
-        impl.bufferReference(buffer);
+        Impl.bufferReference(buffer);
     }
 
     pub inline fn bufferRelease(buffer: Buffer) void {
-        impl.bufferRelease(buffer);
+        Impl.bufferRelease(buffer);
     }
 };
 

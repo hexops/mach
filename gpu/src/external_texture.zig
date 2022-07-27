@@ -1,22 +1,22 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const TextureView = @import("texture_view.zig").TextureView;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const ExternalTexture = *opaque {
     pub inline fn destroy(external_texture: ExternalTexture) void {
-        impl.externalTextureDestroy(external_texture);
+        Impl.externalTextureDestroy(external_texture);
     }
 
     pub inline fn setLabel(external_texture: ExternalTexture, label: [*:0]const u8) void {
-        impl.externalTextureSetLabel(external_texture, label);
+        Impl.externalTextureSetLabel(external_texture, label);
     }
 
     pub inline fn reference(external_texture: ExternalTexture) void {
-        impl.externalTextureReference(external_texture);
+        Impl.externalTextureReference(external_texture);
     }
 
     pub inline fn release(external_texture: ExternalTexture) void {
-        impl.externalTextureRelease(external_texture);
+        Impl.externalTextureRelease(external_texture);
     }
 };
 

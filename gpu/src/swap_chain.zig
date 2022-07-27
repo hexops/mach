@@ -4,27 +4,27 @@ const Texture = @import("texture.zig").Texture;
 const TextureUsageFlags = @import("texture.zig").TextureUsageFlags;
 const TextureFormat = @import("texture.zig").TextureFormat;
 const TextureView = @import("texture_view.zig").TextureView;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const SwapChain = *opaque {
     pub inline fn configure(swap_chain: SwapChain, format: TextureFormat, allowed_usage: TextureUsageFlags, width: u32, height: u32) void {
-        impl.swapChainConfigure(swap_chain, format, allowed_usage, width, height);
+        Impl.swapChainConfigure(swap_chain, format, allowed_usage, width, height);
     }
 
     pub inline fn getCurrentTextureView(swap_chain: SwapChain) TextureView {
-        return impl.swapChainGetCurrentTextureView(swap_chain);
+        return Impl.swapChainGetCurrentTextureView(swap_chain);
     }
 
     pub inline fn present(swap_chain: SwapChain) void {
-        impl.swapChainPresent(swap_chain);
+        Impl.swapChainPresent(swap_chain);
     }
 
     pub inline fn reference(swap_chain: SwapChain) void {
-        impl.swapChainReference(swap_chain);
+        Impl.swapChainReference(swap_chain);
     }
 
     pub inline fn release(swap_chain: SwapChain) void {
-        impl.swapChainRelease(swap_chain);
+        Impl.swapChainRelease(swap_chain);
     }
 };
 

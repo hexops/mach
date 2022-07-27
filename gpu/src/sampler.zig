@@ -1,19 +1,19 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const FilterMode = @import("types.zig").FilterMode;
 const CompareFunction = @import("types.zig").CompareFunction;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const Sampler = *opaque {
     pub inline fn setLabel(sampler: Sampler, label: [*:0]const u8) void {
-        impl.samplerSetLabel(sampler, label);
+        Impl.samplerSetLabel(sampler, label);
     }
 
     pub inline fn reference(sampler: Sampler) void {
-        impl.samplerReference(sampler);
+        Impl.samplerReference(sampler);
     }
 
     pub inline fn release(sampler: Sampler) void {
-        impl.samplerRelease(sampler);
+        Impl.samplerRelease(sampler);
     }
 };
 

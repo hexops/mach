@@ -3,19 +3,19 @@ const Sampler = @import("sampler.zig").Sampler;
 const TextureView = @import("texture_view.zig").TextureView;
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const BindGroup = *opaque {
     pub inline fn setLabel(bind_group: BindGroup, label: [*:0]const u8) void {
-        impl.bindGroupSetLabel(bind_group, label);
+        Impl.bindGroupSetLabel(bind_group, label);
     }
 
     pub inline fn reference(bind_group: BindGroup) void {
-        impl.bindGroupReference(bind_group);
+        Impl.bindGroupReference(bind_group);
     }
 
     pub inline fn release(bind_group: BindGroup) void {
-        impl.bindGroupRelease(bind_group);
+        Impl.bindGroupRelease(bind_group);
     }
 };
 

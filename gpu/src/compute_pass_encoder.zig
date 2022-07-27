@@ -1,66 +1,66 @@
 const Buffer = @import("buffer.zig").Buffer;
 const BindGroup = @import("bind_group.zig").BindGroup;
 const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
-const impl = @import("interface.zig").impl;
+const Impl = @import("interface.zig").Impl;
 
 pub const ComputePassEncoder = *opaque {
     pub inline fn dispatch(compute_pass_encoder: ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
-        impl.computePassEncoderDispatch(compute_pass_encoder, workgroup_count_x, workgroup_count_y, workgroup_count_z);
+        Impl.computePassEncoderDispatch(compute_pass_encoder, workgroup_count_x, workgroup_count_y, workgroup_count_z);
     }
 
     pub inline fn dispatchIndirect(compute_pass_encoder: ComputePassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
-        impl.computePassEncoderDispatchIndirect(compute_pass_encoder, indirect_buffer, indirect_offset);
+        Impl.computePassEncoderDispatchIndirect(compute_pass_encoder, indirect_buffer, indirect_offset);
     }
 
     pub inline fn dispatchWorkgroups(compute_pass_encoder: ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
-        impl.computePassEncoderDispatchWorkgroups(compute_pass_encoder, workgroup_count_x, workgroup_count_y, workgroup_count_z);
+        Impl.computePassEncoderDispatchWorkgroups(compute_pass_encoder, workgroup_count_x, workgroup_count_y, workgroup_count_z);
     }
 
     pub inline fn dispatchWorkgroupsIndirect(compute_pass_encoder: ComputePassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
-        impl.computePassEncoderDispatchWorkgroupsIndirect(compute_pass_encoder, indirect_buffer, indirect_offset);
+        Impl.computePassEncoderDispatchWorkgroupsIndirect(compute_pass_encoder, indirect_buffer, indirect_offset);
     }
 
     pub inline fn end(compute_pass_encoder: ComputePassEncoder) void {
-        impl.computePassEncoderEnd(compute_pass_encoder);
+        Impl.computePassEncoderEnd(compute_pass_encoder);
     }
 
     pub inline fn endPass(compute_pass_encoder: ComputePassEncoder) void {
-        impl.computePassEncoderEndPass(compute_pass_encoder);
+        Impl.computePassEncoderEndPass(compute_pass_encoder);
     }
 
     pub inline fn insertDebugMarker(compute_pass_encoder: ComputePassEncoder, marker_label: [*:0]const u8) void {
-        impl.computePassEncoderInsertDebugMarker(compute_pass_encoder, marker_label);
+        Impl.computePassEncoderInsertDebugMarker(compute_pass_encoder, marker_label);
     }
 
     pub inline fn popDebugGroup(compute_pass_encoder: ComputePassEncoder) void {
-        impl.computePassEncoderPopDebugGroup(compute_pass_encoder);
+        Impl.computePassEncoderPopDebugGroup(compute_pass_encoder);
     }
 
     pub inline fn pushDebugGroup(compute_pass_encoder: ComputePassEncoder, group_label: [*:0]const u8) void {
-        impl.computePassEncoderPushDebugGroup(compute_pass_encoder, group_label);
+        Impl.computePassEncoderPushDebugGroup(compute_pass_encoder, group_label);
     }
 
     pub inline fn setBindGroup(compute_pass_encoder: ComputePassEncoder, group_index: u32, group: BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
-        impl.computePassEncoderSetBindGroup(compute_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
+        Impl.computePassEncoderSetBindGroup(compute_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
     }
 
     pub inline fn setLabel(compute_pass_encoder: ComputePassEncoder, label: [*:0]const u8) void {
-        impl.computePassEncoderSetLabel(compute_pass_encoder, label);
+        Impl.computePassEncoderSetLabel(compute_pass_encoder, label);
     }
 
     pub inline fn setPipeline(compute_pass_encoder: ComputePassEncoder, pipeline: ComputePipeline) void {
-        impl.computePassEncoderSetPipeline(compute_pass_encoder, pipeline);
+        Impl.computePassEncoderSetPipeline(compute_pass_encoder, pipeline);
     }
 
     pub inline fn writeTimestamp(compute_pass_encoder: ComputePassEncoder, pipeline: ComputePipeline) void {
-        impl.computePassEncoderWriteTimestamp(compute_pass_encoder, pipeline);
+        Impl.computePassEncoderWriteTimestamp(compute_pass_encoder, pipeline);
     }
 
     pub inline fn reference(compute_pass_encoder: ComputePassEncoder) void {
-        impl.computePassEncoderReference(compute_pass_encoder);
+        Impl.computePassEncoderReference(compute_pass_encoder);
     }
 
     pub inline fn release(compute_pass_encoder: ComputePassEncoder) void {
-        impl.computePassEncoderRelease(compute_pass_encoder);
+        Impl.computePassEncoderRelease(compute_pass_encoder);
     }
 };
