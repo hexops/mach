@@ -107,5 +107,5 @@ pub const BufferDescriptor = extern struct {
     label: ?[*:0]const u8 = null,
     usage: BufferUsage,
     size: u64,
-    mapped_at_creation: bool,
+    mapped_at_creation: bool = true,
 };
