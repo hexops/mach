@@ -80,10 +80,10 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "computePassEncoderWriteTimestamp", fn (compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) callconv(.Inline) void);
     assertDecl(Impl, "computePassEncoderReference", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
     assertDecl(Impl, "computePassEncoderRelease", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
-    // assertDecl(Impl, "computePipelineGetBindGroupLayout", fn (compute_pipeline: gpu.ComputePipeline, group_index: u32) callconv(.Inline) gpu.BindGroupLayout);
-    // assertDecl(Impl, "computePipelineSetLabel", fn (compute_pipeline: gpu.ComputePipeline, label: [*:0]const u8) callconv(.Inline) void);
-    // assertDecl(Impl, "computePipelineReference", fn (compute_pipeline: gpu.ComputePipeline) callconv(.Inline) void);
-    // assertDecl(Impl, "computePipelineRelease", fn (compute_pipeline: gpu.ComputePipeline) callconv(.Inline) void);
+    assertDecl(Impl, "computePipelineGetBindGroupLayout", fn (compute_pipeline: gpu.ComputePipeline, group_index: u32) callconv(.Inline) gpu.BindGroupLayout);
+    assertDecl(Impl, "computePipelineSetLabel", fn (compute_pipeline: gpu.ComputePipeline, label: [*:0]const u8) callconv(.Inline) void);
+    assertDecl(Impl, "computePipelineReference", fn (compute_pipeline: gpu.ComputePipeline) callconv(.Inline) void);
+    assertDecl(Impl, "computePipelineRelease", fn (compute_pipeline: gpu.ComputePipeline) callconv(.Inline) void);
     // assertDecl(Impl, "deviceCreateBindGroup", fn (device: gpu.Device, descriptor: *const gpu.BindGroupDescriptor) callconv(.Inline) gpu.BindGroup);
     // assertDecl(Impl, "deviceCreateBindGroupLayout", fn (device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) callconv(.Inline) gpu.BindGroupLayout);
     // assertDecl(Impl, "deviceCreateBuffer", fn (device: gpu.Device, descriptor: *const gpu.BufferDescriptor) callconv(.Inline) gpu.Buffer);
