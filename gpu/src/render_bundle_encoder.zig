@@ -54,6 +54,8 @@ pub const RenderBundleEncoder = *opaque {
         Impl.renderBundleEncoderSetBindGroup(render_bundle_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
     }
 
+    /// Default `offset`: 0
+    /// Default `size`: `gpu.whole_size`
     pub inline fn setIndexBuffer(render_bundle_encoder: RenderBundleEncoder, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void {
         Impl.renderBundleEncoderSetIndexBuffer(render_bundle_encoder, buffer, format, offset, size);
     }
