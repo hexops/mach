@@ -21,8 +21,8 @@ pub const CommandEncoder = *opaque {
         return Impl.commandEncoderBeginRenderPass(command_encoder, descriptor);
     }
 
-    // Default `offset`: 0
-    // Default `size`: `gpu.whole_size`
+    /// Default `offset`: 0
+    /// Default `size`: `gpu.whole_size`
     pub inline fn clearBuffer(command_encoder: CommandEncoder, buffer: Buffer, offset: u64, size: u64) void {
         Impl.commandEncoderClearBuffer(command_encoder, buffer, offset, size);
     }
