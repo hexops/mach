@@ -569,9 +569,9 @@ pub const ImageCopyBuffer = extern struct {
 pub const ImageCopyTexture = extern struct {
     next_in_chain: *const ChainedStruct,
     texture: Texture,
-    mip_level: u32,
+    mip_level: u32 = 0,
     origin: Origin3D,
-    aspect: TextureAspect,
+    aspect: TextureAspect = .all,
 };
 
 pub const ProgrammableStageDescriptor = extern struct {
