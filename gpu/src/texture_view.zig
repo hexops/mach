@@ -2,16 +2,20 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const Texture = @import("texture.zig").Texture;
 const TextureFormat = @import("texture.zig").TextureFormat;
 const TextureAspect = @import("texture.zig").TextureAspect;
+const impl = @import("interface.zig").impl;
 
 pub const TextureView = *opaque {
-    // TODO
-    // pub inline fn textureViewSetLabel(texture_view: gpu.TextureView, label: [*:0]const u8) void {
+    pub inline fn setLabel(texture_view: TextureView, label: [*:0]const u8) void {
+        impl.textureViewSetLabel(texture_view, label);
+    }
 
-    // TODO
-    // pub inline fn textureViewReference(texture_view: gpu.TextureView) void {
+    pub inline fn reference(texture_view: TextureView) void {
+        impl.textureViewReference(texture_view);
+    }
 
-    // TODO
-    // pub inline fn textureViewRelease(texture_view: gpu.TextureView) void {
+    pub inline fn release(texture_view: TextureView) void {
+        impl.textureViewRelease(texture_view);
+    }
 };
 
 pub const TextureViewDimension = enum(u32) {
