@@ -35,6 +35,6 @@ pub const QuerySetDescriptor = extern struct {
     type: QueryType,
     count: u32,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    pipeline_statistics: ?[*]const PipelineStatisticName,
-    pipeline_statistics_count: u32,
+    pipeline_statistics: ?[*]const PipelineStatisticName = null,
+    pipeline_statistics_count: u32 = 0,
 };
