@@ -119,7 +119,7 @@ pub const CreatePipelineAsyncStatus = enum(u32) {
 };
 
 pub const CullMode = enum(u32) {
-    undef = 0x00000000,
+    none = 0x00000000,
     front = 0x00000001,
     back = 0x00000002,
 };
@@ -503,10 +503,10 @@ pub const PrimitiveDepthClipControl = extern struct {
 
 pub const PrimitiveState = extern struct {
     next_in_chain: *const ChainedStruct,
-    topology: PrimitiveTopology,
-    strip_index_format: IndexFormat,
-    front_face: FrontFace,
-    cull_mode: CullMode,
+    topology: PrimitiveTopology = .triangle_list,
+    strip_index_format: IndexFormat = .undef,
+    front_face: FrontFace = .ccw,
+    cull_mode: CullMode = .none,
 };
 
 pub const RenderPassDescriptorMaxDrawCount = extern struct {
