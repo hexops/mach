@@ -215,9 +215,9 @@ pub const TextureUsageFlags = packed struct {
 
 pub const TextureBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
-    sample_type: TextureSampleType,
-    view_dimension: TextureViewDimension,
-    multisampled: bool,
+    sample_type: TextureSampleType = .undef,
+    view_dimension: TextureViewDimension = .dimension_undef,
+    multisampled: bool = false,
 };
 
 pub const TextureDataLayout = extern struct {
