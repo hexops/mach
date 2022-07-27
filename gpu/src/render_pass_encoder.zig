@@ -93,6 +93,8 @@ pub const RenderPassEncoder = *opaque {
         Impl.renderPassEncoderSetStencilReference(render_pass_encoder, _reference);
     }
 
+    /// Default `offset`: 0
+    /// Default `size`: `gpu.whole_size`
     pub inline fn setVertexBuffer(render_pass_encoder: RenderPassEncoder, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
         Impl.renderPassEncoderSetVertexBuffer(render_pass_encoder, slot, buffer, offset, size);
     }
