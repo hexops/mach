@@ -8,6 +8,8 @@ const TextureView = @import("texture_view.zig").TextureView;
 const TextureViewDimension = @import("texture_view.zig").TextureViewDimension;
 const Buffer = @import("buffer.zig").Buffer;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
+const limit_u32_undefined = @import("main.zig").limit_u32_undefined;
+const limit_u64_undefined = @import("main.zig").limit_u64_undefined;
 
 pub const CompilationInfoCallback = fn (
     status: CompilationInfoRequestStatus,
@@ -421,34 +423,34 @@ pub const Extent3D = extern struct {
 };
 
 pub const Limits = extern struct {
-    max_texture_dimension_1d: u32,
-    max_texture_dimension_2d: u32,
-    max_texture_dimension_3d: u32,
-    max_texture_array_layers: u32,
-    max_bind_groups: u32,
-    max_dynamic_uniform_buffers_per_pipeline_layout: u32,
-    max_dynamic_storage_buffers_per_pipeline_layout: u32,
-    max_sampled_textures_per_shader_stage: u32,
-    max_samplers_per_shader_stage: u32,
-    max_storage_buffers_per_shader_stage: u32,
-    max_storage_textures_per_shader_stage: u32,
-    max_uniform_buffers_per_shader_stage: u32,
-    max_uniform_buffer_binding_size: u64,
-    max_storage_buffer_binding_size: u64,
-    min_uniform_buffer_offset_alignment: u32,
-    min_storage_buffer_offset_alignment: u32,
-    max_vertex_buffers: u32,
-    max_vertex_attributes: u32,
-    max_vertex_buffer_array_stride: u32,
-    max_inter_stage_shader_components: u32,
-    max_inter_stage_shader_variables: u32,
-    max_color_attachments: u32,
-    max_compute_workgroup_storage_size: u32,
-    max_compute_invocations_per_workgroup: u32,
-    max_compute_workgroup_size_x: u32,
-    max_compute_workgroup_size_y: u32,
-    max_compute_workgroup_size_z: u32,
-    max_compute_workgroups_per_dimension: u32,
+    max_texture_dimension_1d: u32 = limit_u32_undefined,
+    max_texture_dimension_2d: u32 = limit_u32_undefined,
+    max_texture_dimension_3d: u32 = limit_u32_undefined,
+    max_texture_array_layers: u32 = limit_u32_undefined,
+    max_bind_groups: u32 = limit_u32_undefined,
+    max_dynamic_uniform_buffers_per_pipeline_layout: u32 = limit_u32_undefined,
+    max_dynamic_storage_buffers_per_pipeline_layout: u32 = limit_u32_undefined,
+    max_sampled_textures_per_shader_stage: u32 = limit_u32_undefined,
+    max_samplers_per_shader_stage: u32 = limit_u32_undefined,
+    max_storage_buffers_per_shader_stage: u32 = limit_u32_undefined,
+    max_storage_textures_per_shader_stage: u32 = limit_u32_undefined,
+    max_uniform_buffers_per_shader_stage: u32 = limit_u32_undefined,
+    max_uniform_buffer_binding_size: u64 = limit_u64_undefined,
+    max_storage_buffer_binding_size: u64 = limit_u64_undefined,
+    min_uniform_buffer_offset_alignment: u32 = limit_u32_undefined,
+    min_storage_buffer_offset_alignment: u32 = limit_u32_undefined,
+    max_vertex_buffers: u32 = limit_u32_undefined,
+    max_vertex_attributes: u32 = limit_u32_undefined,
+    max_vertex_buffer_array_stride: u32 = limit_u32_undefined,
+    max_inter_stage_shader_components: u32 = limit_u32_undefined,
+    max_inter_stage_shader_variables: u32 = limit_u32_undefined,
+    max_color_attachments: u32 = limit_u32_undefined,
+    max_compute_workgroup_storage_size: u32 = limit_u32_undefined,
+    max_compute_invocations_per_workgroup: u32 = limit_u32_undefined,
+    max_compute_workgroup_size_x: u32 = limit_u32_undefined,
+    max_compute_workgroup_size_y: u32 = limit_u32_undefined,
+    max_compute_workgroup_size_z: u32 = limit_u32_undefined,
+    max_compute_workgroups_per_dimension: u32 = limit_u32_undefined,
 };
 
 pub const Origin3D = extern struct {
