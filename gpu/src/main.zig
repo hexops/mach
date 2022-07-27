@@ -45,6 +45,9 @@ const texture_view = @import("texture_view.zig");
 const surface = @import("surface.zig");
 const compute_pipeline = @import("compute_pipeline.zig");
 const render_pipeline = @import("render_pipeline.zig");
+const instance = @import("instance.zig");
+const device = @import("device.zig");
+const interface = @import("interface.zig");
 
 /// Generic function pointer type, used for returning API function pointers. Must be
 /// cast to a `fn (...) callconv(.C) T` before use.
@@ -114,6 +117,14 @@ pub const RenderPassDescriptor = extern struct {
     timestamp_write_count: u32,
     timestamp_writes: [*]const RenderPassTimestampWrite,
 };
+
+pub inline fn createInstance(descriptor: ?*const instance.InstanceDescriptor) ?instance.Instance {
+    return interface.Impl.createInstance(descriptor);
+}
+
+pub inline fn getProcAddress(_device: device.Device, proc_name: [*:0]const u8) ?Proc {
+    return interface.Impl.getProcAddress(_device, proc_name);
+}
 
 test {
     std.testing.refAllDeclsRecursive(@This());
