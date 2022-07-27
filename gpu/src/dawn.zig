@@ -25,8 +25,8 @@ pub const TextureInternalUsageDescriptor = extern struct {
 
 pub const TogglesDeviceDescriptor = extern struct {
     chain: ChainedStruct,
-    force_enabled_toggles_count: u32,
-    force_enabled_toggles: [*]const u8,
-    force_disabled_toggles_count: u32,
-    force_disabled_toggles: [*]const u8,
+    force_enabled_toggles_count: u32 = 0,
+    force_enabled_toggles: ?[*]const u8 = null,
+    force_disabled_toggles_count: u32 = 0,
+    force_disabled_toggles: ?[*]const u8 = null,
 };
