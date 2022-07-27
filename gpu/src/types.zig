@@ -459,7 +459,7 @@ pub const Origin3D = extern struct {
 
 pub const CompilationMessage = extern struct {
     next_in_chain: *const ChainedStruct,
-    message: ?[*:0]const u8 = null,
+    message: ?[*:0]const u8,
     type: CompilationMessageType,
     line_num: u64,
     line_pos: u64,
