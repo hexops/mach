@@ -38,7 +38,7 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "bufferGetMappedRange", fn (buffer: gpu.Buffer, offset: usize, size: usize) callconv(.Inline) *anyopaque);
     assertDecl(Impl, "bufferGetSize", fn (buffer: gpu.Buffer) callconv(.Inline) u64);
     assertDecl(Impl, "bufferGetUsage", fn (buffer: gpu.Buffer) callconv(.Inline) gpu.BufferUsage);
-    assertDecl(Impl, "bufferMapAsync", fn (buffer: gpu.Buffer, mode: gpu.MapMode, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) callconv(.Inline) u64);
+    assertDecl(Impl, "bufferMapAsync", fn (buffer: gpu.Buffer, mode: gpu.MapMode, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(Impl, "bufferSetLabel", fn (buffer: gpu.Buffer, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(Impl, "bufferUnmap", fn (buffer: gpu.Buffer) callconv(.Inline) void);
     assertDecl(Impl, "bufferReference", fn (buffer: gpu.Buffer) callconv(.Inline) void);
@@ -340,8 +340,8 @@ pub fn Export(comptime Impl: type) type {
         // TODO: Zig cannot currently export a packed struct gpu.MapModeFlags, so we use a u32 for
         // now.
         // WGPU_EXPORT void wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapModeFlags mode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userdata);
-        export fn wgpuBufferMapAsync(buffer: gpu.Buffer, mode: u32, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) u64 {
-            return Impl.bufferMapAsync(buffer, @bitCast(gpu.MapMode, mode), offset, size, callback, userdata);
+        export fn wgpuBufferMapAsync(buffer: gpu.Buffer, mode: u32, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) void {
+            Impl.bufferMapAsync(buffer, @bitCast(gpu.MapMode, mode), offset, size, callback, userdata);
         }
 
         // WGPU_EXPORT void wgpuBufferSetLabel(WGPUBuffer buffer, char const * label);
@@ -1367,8 +1367,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    // TODO: should return void, I typo'd it
-    pub inline fn bufferMapAsync(buffer: gpu.Buffer, mode: gpu.MapMode, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) u64 {
+    pub inline fn bufferMapAsync(buffer: gpu.Buffer, mode: gpu.MapMode, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) void {
         _ = buffer;
         _ = mode;
         _ = offset;
@@ -1676,7 +1675,6 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    // TODO: should be deviceCreateBuffer elsewhere
     pub inline fn deviceCreateBuffer(device: gpu.Device, descriptor: *const gpu.BufferDescriptor) gpu.Buffer {
         _ = device;
         _ = descriptor;

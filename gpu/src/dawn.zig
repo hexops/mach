@@ -3,13 +3,11 @@ const Texture = @import("texture.zig").Texture;
 const TextureUsageFlags = @import("texture.zig").TextureUsageFlags;
 
 pub const CacheDeviceDescriptor = extern struct {
-    // TODO: file an issue on Dawn: why not named nextInChain?
     chain: ChainedStruct,
     isolation_key: [*:0]const u8,
 };
 
 pub const EncoderInternalUsageDescriptor = extern struct {
-    // TODO: file an issue on Dawn: why not named nextInChain?
     chain: ChainedStruct,
     use_internal_usages: bool,
 };

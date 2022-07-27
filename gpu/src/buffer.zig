@@ -24,8 +24,8 @@ pub const Buffer = *opaque {
         return impl.bufferGetUsage(buffer);
     }
 
-    pub inline fn bufferMapAsync(buffer: Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) u64 {
-        return impl.bufferMapAsync(buffer, mode, offset, size, callback, userdata);
+    pub inline fn bufferMapAsync(buffer: Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) void {
+        impl.bufferMapAsync(buffer, mode, offset, size, callback, userdata);
     }
 
     pub inline fn bufferSetLabel(buffer: Buffer, label: [*:0]const u8) void {
