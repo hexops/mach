@@ -197,12 +197,12 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "shaderModuleRelease", fn (shader_module: gpu.ShaderModule) callconv(.Inline) void);
     assertDecl(Impl, "surfaceReference", fn (surface: gpu.Surface) callconv(.Inline) void);
     assertDecl(Impl, "surfaceRelease", fn (surface: gpu.Surface) callconv(.Inline) void);
-    // assertDecl(Impl, "swapChainConfigure", fn (swap_chain: gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: gpu.TextureUsageFlags, width: u32, height: u32) callconv(.Inline) void);
-    // assertDecl(Impl, "swapChainGetCurrentTextureView", fn (swap_chain: gpu.SwapChain) callconv(.Inline) gpu.TextureView);
-    // assertDecl(Impl, "swapChainPresent", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
-    // assertDecl(Impl, "swapChainReference", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
-    // assertDecl(Impl, "swapChainRelease", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
-    // assertDecl(Impl, "wgpuTextureCreateView", fn (texture: gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) callconv(.Inline) gpu.TextureView);
+    assertDecl(Impl, "swapChainConfigure", fn (swap_chain: gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: gpu.TextureUsageFlags, width: u32, height: u32) callconv(.Inline) void);
+    assertDecl(Impl, "swapChainGetCurrentTextureView", fn (swap_chain: gpu.SwapChain) callconv(.Inline) gpu.TextureView);
+    assertDecl(Impl, "swapChainPresent", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
+    assertDecl(Impl, "swapChainReference", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
+    assertDecl(Impl, "swapChainRelease", fn (swap_chain: gpu.SwapChain) callconv(.Inline) void);
+    // assertDecl(Impl, "textureCreateView", fn (texture: gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) callconv(.Inline) gpu.TextureView);
     // assertDecl(Impl, "textureDestroy", fn (texture: gpu.Texture) callconv(.Inline) void);
     // assertDecl(Impl, "textureGetDepthOrArrayLayers", fn (texture: gpu.Texture) callconv(.Inline) u32);
     // assertDecl(Impl, "textureGetDimension", fn (texture: gpu.Texture) callconv(.Inline) gpu.TextureDimension);
