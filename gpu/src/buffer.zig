@@ -8,10 +8,14 @@ pub const Buffer = *opaque {
         Impl.bufferDestroy(buffer);
     }
 
+    /// Default `offset`: 0
+    /// Default `size`: `gpu.whole_map_size`
     pub inline fn bufferGetConstMappedRange(buffer: Buffer, offset: usize, size: usize) ?*const anyopaque {
         return Impl.bufferGetConstMappedRange(buffer, offset, size);
     }
 
+    /// Default `offset`: 0
+    /// Default `size`: `gpu.whole_map_size`
     pub inline fn bufferGetMappedRange(buffer: Buffer, offset: usize, size: usize) ?*anyopaque {
         return Impl.bufferGetMappedRange(buffer, offset, size);
     }
