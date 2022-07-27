@@ -31,12 +31,12 @@ pub const SamplerBindingType = enum(u32) {
 };
 
 pub const SamplerBindingLayout = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     type: SamplerBindingType = .undef,
 };
 
 pub const SamplerDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     address_mode_u: SamplerAddressMode = .clamp_to_edge,
     address_mode_v: SamplerAddressMode = .clamp_to_edge,

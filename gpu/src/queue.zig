@@ -54,6 +54,6 @@ pub const QueueWorkDoneStatus = enum(u32) {
 };
 
 pub const QueueDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
 };

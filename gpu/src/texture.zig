@@ -215,21 +215,21 @@ pub const TextureUsageFlags = packed struct {
 };
 
 pub const TextureBindingLayout = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     sample_type: TextureSampleType = .undef,
     view_dimension: TextureViewDimension = .dimension_undef,
     multisampled: bool = false,
 };
 
 pub const TextureDataLayout = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     offset: u64 = 0,
     bytes_per_row: u32 = copy_stride_undefined,
     rows_per_image: u32 = copy_stride_undefined,
 };
 
 pub const TextureDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     usage: TextureUsageFlags,
     dimension: TextureDimension = .dimension_2d,

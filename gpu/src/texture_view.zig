@@ -31,7 +31,7 @@ pub const TextureViewDimension = enum(u32) {
 };
 
 pub const TextureViewDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     format: TextureFormat = .undef,
     dimension: TextureViewDimension = .dimension_undef,
