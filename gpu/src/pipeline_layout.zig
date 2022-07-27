@@ -1,15 +1,19 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
+const impl = @import("interface.zig").impl;
 
 pub const PipelineLayout = *opaque {
-    // TODO
-    // pub inline fn pipelineLayoutSetLabel(pipeline_layout: gpu.PipelineLayout, label: [*:0]const u8) void {
+    pub inline fn setLabel(pipeline_layout: PipelineLayout, label: [*:0]const u8) void {
+        impl.pipelineLayoutSetLabel(pipeline_layout, label);
+    }
 
-    // TODO
-    // pub inline fn pipelineLayoutReference(pipeline_layout: gpu.PipelineLayout) void {
+    pub inline fn reference(pipeline_layout: PipelineLayout) void {
+        impl.pipelineLayoutReference(pipeline_layout);
+    }
 
-    // TODO
-    // pub inline fn pipelineLayoutRelease(pipeline_layout: gpu.PipelineLayout) void {
+    pub inline fn release(pipeline_layout: PipelineLayout) void {
+        impl.pipelineLayoutRelease(pipeline_layout);
+    }
 };
 
 pub const PipelineLayoutDescriptor = extern struct {
