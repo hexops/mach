@@ -32,7 +32,7 @@ pub const RenderPipelineDescriptor = extern struct {
     layout: ?PipelineLayout,
     vertex: VertexState,
     primitive: PrimitiveState,
-    depth_stencil: ?*const DepthStencilState = null, // nullable
+    depth_stencil: ?*const DepthStencilState,
     multisample: MultisampleState,
-    fragment: ?*const FragmentState = null, // nullable
+    fragment: ?*const FragmentState,
 };
