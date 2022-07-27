@@ -191,10 +191,10 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "samplerSetLabel", fn (sampler: gpu.Sampler, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(Impl, "samplerReference", fn (sampler: gpu.Sampler) callconv(.Inline) void);
     assertDecl(Impl, "samplerRelease", fn (sampler: gpu.Sampler) callconv(.Inline) void);
-    // assertDecl(Impl, "shaderModuleGetCompilationInfo", fn (shader_module: gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) callconv(.Inline) void);
-    // assertDecl(Impl, "shaderModuleSetLabel", fn (shader_module: gpu.ShaderModule, label: [*:0]const u8) callconv(.Inline) void);
-    // assertDecl(Impl, "shaderModuleReference", fn (shader_module: gpu.ShaderModule) callconv(.Inline) void);
-    // assertDecl(Impl, "shaderModuleRelease", fn (shader_module: gpu.ShaderModule) callconv(.Inline) void);
+    assertDecl(Impl, "shaderModuleGetCompilationInfo", fn (shader_module: gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(Impl, "shaderModuleSetLabel", fn (shader_module: gpu.ShaderModule, label: [*:0]const u8) callconv(.Inline) void);
+    assertDecl(Impl, "shaderModuleReference", fn (shader_module: gpu.ShaderModule) callconv(.Inline) void);
+    assertDecl(Impl, "shaderModuleRelease", fn (shader_module: gpu.ShaderModule) callconv(.Inline) void);
     // assertDecl(Impl, "surfaceReference", fn (surface: gpu.Surface) callconv(.Inline) void);
     // assertDecl(Impl, "surfaceRelease", fn (surface: gpu.Surface) callconv(.Inline) void);
     // assertDecl(Impl, "swapChainConfigure", fn (swap_chain: gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: gpu.TextureUsageFlags, width: u32, height: u32) callconv(.Inline) void);
