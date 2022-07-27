@@ -20,7 +20,7 @@ pub const InstanceDescriptor = extern struct {
 
 pub const TextureInternalUsageDescriptor = extern struct {
     chain: ChainedStruct,
-    internal_usage: TextureUsageFlags,
+    internal_usage: TextureUsageFlags = TextureUsageFlags.none,
 };
 
 pub const TogglesDeviceDescriptor = extern struct {
