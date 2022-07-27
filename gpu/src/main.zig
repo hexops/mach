@@ -96,8 +96,8 @@ pub const RenderPassTimestampWrite = extern struct {
 pub const RequestAdapterOptions = extern struct {
     next_in_chain: *const types.ChainedStruct,
     compatible_surface: ?surface.Surface,
-    power_preference: types.PowerPreference,
-    force_fallback_adapter: bool,
+    power_preference: types.PowerPreference = .undef,
+    force_fallback_adapter: bool = false,
 };
 
 pub const ComputePassDescriptor = extern struct {
