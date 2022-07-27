@@ -523,9 +523,9 @@ pub const StencilFaceState = extern struct {
 
 pub const StorageTextureBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
-    access: StorageTextureAccess,
-    format: TextureFormat,
-    view_dimension: TextureViewDimension,
+    access: StorageTextureAccess = .undef,
+    format: TextureFormat = .undef,
+    view_dimension: TextureViewDimension = .dimension_undef,
 };
 
 pub const VertexAttribute = extern struct {
