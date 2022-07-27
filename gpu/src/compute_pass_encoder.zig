@@ -12,6 +12,8 @@ pub const ComputePassEncoder = *opaque {
         Impl.computePassEncoderDispatchIndirect(compute_pass_encoder, indirect_buffer, indirect_offset);
     }
 
+    // Default `workgroup_count_y`: 1
+    // Default `workgroup_count_z`: 1
     pub inline fn dispatchWorkgroups(compute_pass_encoder: ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
         Impl.computePassEncoderDispatchWorkgroups(compute_pass_encoder, workgroup_count_x, workgroup_count_y, workgroup_count_z);
     }
