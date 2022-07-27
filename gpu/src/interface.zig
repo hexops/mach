@@ -143,8 +143,8 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "queueWriteTexture", fn (queue: gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.TextureDataLayout, write_size: *const gpu.Extent3D) callconv(.Inline) void);
     assertDecl(Impl, "queueReference", fn (queue: gpu.Queue) callconv(.Inline) void);
     assertDecl(Impl, "queueRelease", fn (queue: gpu.Queue) callconv(.Inline) void);
-    // assertDecl(Impl, "renderBundleReference", fn (render_bundle: gpu.RenderBundle) callconv(.Inline) void);
-    // assertDecl(Impl, "renderBundleRelease", fn (render_bundle: gpu.RenderBundle) callconv(.Inline) void);
+    assertDecl(Impl, "renderBundleReference", fn (render_bundle: gpu.RenderBundle) callconv(.Inline) void);
+    assertDecl(Impl, "renderBundleRelease", fn (render_bundle: gpu.RenderBundle) callconv(.Inline) void);
     // assertDecl(Impl, "renderBundleEncoderDraw", fn (render_bundle_encoder: gpu.RenderBundleEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) callconv(.Inline) void);
     // assertDecl(Impl, "renderBundleEncoderDrawIndexed", fn (render_bundle_encoder: gpu.RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) callconv(.Inline) void);
     // assertDecl(Impl, "renderBundleEncoderDrawIndexedIndirect", fn (render_bundle_encoder: gpu.RenderBundleEncoder, indirect_buffer: gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
