@@ -32,7 +32,7 @@ pub const SamplerBindingType = enum(u32) {
 
 pub const SamplerBindingLayout = extern struct {
     next_in_chain: *const ChainedStruct,
-    type: SamplerBindingType,
+    type: SamplerBindingType = .undef,
 };
 
 pub const SamplerDescriptor = extern struct {
