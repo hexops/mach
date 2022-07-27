@@ -475,13 +475,16 @@ pub const ConstantEntry = extern struct {
 
 pub const CopyTextureForBrowserOptions = extern struct {
     next_in_chain: *const ChainedStruct,
-    flip_y: bool,
-    needs_color_space_conversion: bool,
-    src_alpha_mode: AlphaMode,
-    src_transfer_function_parameters: ?*const f32 = null,
-    conversion_matrix: ?*const f32 = null,
-    dst_transfer_function_parameters: ?*const f32 = null,
-    dst_alpha_mode: AlphaMode,
+    flip_y: bool = false,
+    needs_color_space_conversion: bool = false,
+    src_alpha_mode: AlphaMode = .unpremultiplied,
+    // TODO: dawn.json says length 7, does it mean array length?
+    src_transfer_function_parameters: ?*const f32,
+    // TODO: dawn.json says length 9, does it mean array length?
+    conversion_matrix: ?*const f32,
+    // TODO: dawn.json says length 7, does it mean array length?
+    dst_transfer_function_parameters: ?*const f32,
+    dst_alpha_mode: AlphaMode = .unpremultiplied,
 };
 
 pub const MultisampleState = extern struct {
