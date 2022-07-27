@@ -9,6 +9,9 @@ const IndexFormat = @import("types.zig").IndexFormat;
 const Impl = @import("interface.zig").Impl;
 
 pub const RenderBundleEncoder = *opaque {
+    /// Default `instance_count`: 1
+    /// Default `first_vertex`: 0
+    /// Default `first_instance`: 0
     pub inline fn draw(render_bundle_encoder: RenderBundleEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
         Impl.renderBundleEncoderDraw(render_bundle_encoder, vertex_count, instance_count, first_vertex, first_instance);
     }
