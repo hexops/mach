@@ -122,10 +122,10 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "externalTextureSetLabel", fn (external_texture: gpu.ExternalTexture, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(Impl, "externalTextureReference", fn (external_texture: gpu.ExternalTexture) callconv(.Inline) void);
     assertDecl(Impl, "externalTextureRelease", fn (external_texture: gpu.ExternalTexture) callconv(.Inline) void);
-    // assertDecl(Impl, "instanceCreateSurface", fn (instance: gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) callconv(.Inline) gpu.Surface);
-    // assertDecl(Impl, "instanceRequestAdapter", fn (instance: gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) callconv(.Inline) void);
-    // assertDecl(Impl, "instanceReference", fn (instance: gpu.Instance) callconv(.Inline) void);
-    // assertDecl(Impl, "instanceRelease", fn (instance: gpu.Instance) callconv(.Inline) void);
+    assertDecl(Impl, "instanceCreateSurface", fn (instance: gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) callconv(.Inline) gpu.Surface);
+    assertDecl(Impl, "instanceRequestAdapter", fn (instance: gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(Impl, "instanceReference", fn (instance: gpu.Instance) callconv(.Inline) void);
+    assertDecl(Impl, "instanceRelease", fn (instance: gpu.Instance) callconv(.Inline) void);
     // assertDecl(Impl, "pipelineLayoutSetLabel", fn (pipeline_layout: gpu.PipelineLayout, label: [*:0]const u8) callconv(.Inline) void);
     // assertDecl(Impl, "pipelineLayoutReference", fn (pipeline_layout: gpu.PipelineLayout) callconv(.Inline) void);
     // assertDecl(Impl, "pipelineLayoutRelease", fn (pipeline_layout: gpu.PipelineLayout) callconv(.Inline) void);
