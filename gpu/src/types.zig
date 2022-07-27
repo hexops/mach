@@ -610,7 +610,7 @@ pub const SupportedLimits = extern struct {
 
 pub const VertexBufferLayout = extern struct {
     array_stride: u64,
-    step_mode: VertexStepMode,
+    step_mode: VertexStepMode = .vertex,
     attribute_count: u32,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     attributes: ?[*]const VertexAttribute,
