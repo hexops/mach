@@ -2,47 +2,62 @@ const std = @import("std");
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const TextureView = @import("texture_view.zig").TextureView;
 const TextureViewDimension = @import("texture_view.zig").TextureViewDimension;
+const TextureViewDescriptor = @import("texture_view.zig").TextureViewDescriptor;
 const Extent3D = @import("types.zig").Extent3D;
+const impl = @import("interface.zig").impl;
 
 pub const Texture = *opaque {
-    // TODO
-    // pub inline fn textureCreateView(texture: gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) gpu.TextureView {
+    pub inline fn createView(texture: Texture, descriptor: ?*const TextureViewDescriptor) TextureView {
+        return impl.textureCreateView(texture, descriptor);
+    }
 
-    // TODO
-    // pub inline fn textureDestroy(texture: gpu.Texture) void {
+    pub inline fn destroy(texture: Texture) void {
+        impl.textureDestroy(texture);
+    }
 
-    // TODO
-    // pub inline fn textureGetDepthOrArrayLayers(texture: gpu.Texture) u32 {
+    pub inline fn getDepthOrArrayLayers(texture: Texture) u32 {
+        return impl.textureGetDepthOrArrayLayers(texture);
+    }
 
-    // TODO
-    // pub inline fn textureGetDimension(texture: gpu.Texture) gpu.TextureDimension {
+    pub inline fn getDimension(texture: Texture) TextureDimension {
+        return impl.textureGetDimension(texture);
+    }
 
-    // TODO
-    // pub inline fn textureGetFormat(texture: gpu.Texture) gpu.TextureFormat {
+    pub inline fn getFormat(texture: Texture) TextureFormat {
+        return impl.textureGetFormat(texture);
+    }
 
-    // TODO
-    // pub inline fn textureGetHeight(texture: gpu.Texture) u32 {
+    pub inline fn getHeight(texture: Texture) u32 {
+        return impl.textureGetHeight(texture);
+    }
 
-    // TODO
-    // pub inline fn textureGetMipLevelCount(texture: gpu.Texture) u32 {
+    pub inline fn getMipLevelCount(texture: Texture) u32 {
+        return impl.textureGetMipLevelCount(texture);
+    }
 
-    // TODO
-    // pub inline fn textureGetSampleCount(texture: gpu.Texture) u32 {
+    pub inline fn getSampleCount(texture: Texture) u32 {
+        return impl.textureGetSampleCount(texture);
+    }
 
-    // TODO
-    // pub inline fn textureGetUsage(texture: gpu.Texture) gpu.TextureUsage {
+    pub inline fn getUsage(texture: Texture) TextureUsageFlags {
+        return impl.textureGetUsage(texture);
+    }
 
-    // TODO
-    // pub inline fn textureGetWidth(texture: gpu.Texture) u32 {
+    pub inline fn getWidth(texture: Texture) u32 {
+        return impl.textureGetWidth(texture);
+    }
 
-    // TODO
-    // pub inline fn textureSetLabel(texture: gpu.Texture, label: [*:0]const u8) void {
+    pub inline fn setLabel(texture: Texture, label: [*:0]const u8) void {
+        impl.textureSetLabel(texture, label);
+    }
 
-    // TODO
-    // pub inline fn textureReference(texture: gpu.Texture) void {
+    pub inline fn reference(texture: Texture) void {
+        impl.textureReference(texture);
+    }
 
-    // TODO
-    // pub inline fn textureRelease(texture: gpu.Texture) void {
+    pub inline fn release(texture: Texture) void {
+        impl.textureRelease(texture);
+    }
 };
 
 pub const TextureAspect = enum(u32) {
