@@ -230,8 +230,9 @@ pub const App = struct {
                 if (target.os.tag == .linux) {
                     exe.addPackage(gamemode.pkg);
                     // TODO: choose between system lib vs buildlib?
-                    gamemode.link(exe);
-                    // gamemode.buildAndLink(b, exe);
+                    gamemode.linkFromSystem(exe);
+                    // gamemode.linkFromSource(b, exe, .{});
+                    // gamemode.linkFromBinary(exe);
                 }
 
                 break :blk exe;
