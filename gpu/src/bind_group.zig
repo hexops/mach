@@ -23,7 +23,7 @@ pub const BindGroupEntry = extern struct {
     next_in_chain: *const ChainedStruct,
     binding: u32,
     buffer: ?Buffer,
-    offset: u64,
+    offset: u64 = 0,
     size: u64,
     sampler: ?Sampler,
     texture_view: ?TextureView,
