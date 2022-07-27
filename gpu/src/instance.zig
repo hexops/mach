@@ -27,7 +27,7 @@ pub const Instance = *opaque {
 pub const RequestAdapterCallback = fn (
     status: RequestAdapterStatus,
     adapter: Adapter,
-    message: [*:0]const u8,
+    message: ?[*:0]const u8,
     userdata: *anyopaque,
 ) callconv(.C) void;
 
