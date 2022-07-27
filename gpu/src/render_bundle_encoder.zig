@@ -87,7 +87,8 @@ pub const RenderBundleEncoderDescriptor = extern struct {
     next_in_chain: *const ChainedStruct,
     label: ?[*:0]const u8 = null,
     color_formats_count: u32,
-    color_formats: [*]const TextureFormat,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    color_formats: ?[*]const TextureFormat,
     depth_stencil_format: TextureFormat = .undef,
     sample_count: u32 = 1,
     depth_read_only: bool = false,
