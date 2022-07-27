@@ -1,14 +1,18 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
+const impl = @import("interface.zig").impl;
 
 pub const CommandBuffer = *opaque {
-    // TODO
-    // pub inline fn commandBufferSetLabel(command_buffer: gpu.CommandBuffer, label: [*:0]const u8) void {
+    pub inline fn setLabel(command_buffer: CommandBuffer, label: [*:0]const u8) void {
+        impl.commandBufferSetLabel(command_buffer, label);
+    }
 
-    // TODO
-    // pub inline fn commandBufferReference(command_buffer: gpu.CommandBuffer) void {
+    pub inline fn reference(command_buffer: CommandBuffer) void {
+        impl.commandBufferReference(command_buffer);
+    }
 
-    // TODO
-    // pub inline fn commandBufferRelease(command_buffer: gpu.CommandBuffer) void {
+    pub inline fn release(command_buffer: CommandBuffer) void {
+        impl.commandBufferRelease(command_buffer);
+    }
 };
 
 pub const CommandBufferDescriptor = extern struct {
