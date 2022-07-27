@@ -34,8 +34,8 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "bindGroupLayoutReference", fn (bind_group_layout: gpu.BindGroupLayout) callconv(.Inline) void);
     assertDecl(Impl, "bindGroupLayoutRelease", fn (bind_group_layout: gpu.BindGroupLayout) callconv(.Inline) void);
     assertDecl(Impl, "bufferDestroy", fn (buffer: gpu.Buffer) callconv(.Inline) void);
-    assertDecl(Impl, "bufferGetConstMappedRange", fn (buffer: gpu.Buffer, offset: usize, size: usize) callconv(.Inline) *const anyopaque);
-    assertDecl(Impl, "bufferGetMappedRange", fn (buffer: gpu.Buffer, offset: usize, size: usize) callconv(.Inline) *anyopaque);
+    assertDecl(Impl, "bufferGetConstMappedRange", fn (buffer: gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*const anyopaque);
+    assertDecl(Impl, "bufferGetMappedRange", fn (buffer: gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*anyopaque);
     assertDecl(Impl, "bufferGetSize", fn (buffer: gpu.Buffer) callconv(.Inline) u64);
     assertDecl(Impl, "bufferGetUsage", fn (buffer: gpu.Buffer) callconv(.Inline) gpu.BufferUsage);
     assertDecl(Impl, "bufferMapAsync", fn (buffer: gpu.Buffer, mode: gpu.MapMode, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) callconv(.Inline) void);
@@ -318,12 +318,12 @@ pub fn Export(comptime Impl: type) type {
         }
 
         // WGPU_EXPORT void const * wgpuBufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
-        export fn wgpuBufferGetConstMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *const anyopaque {
+        export fn wgpuBufferGetConstMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) ?*const anyopaque {
             return Impl.bufferGetConstMappedRange(buffer, offset, size);
         }
 
         // WGPU_EXPORT void * wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size);
-        export fn wgpuBufferGetMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *anyopaque {
+        export fn wgpuBufferGetMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) ?*anyopaque {
             return Impl.bufferGetMappedRange(buffer, offset, size);
         }
 
@@ -1341,16 +1341,16 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    // TODO: should return nullable; bug in Dawn docstrings!
-    pub inline fn bufferGetConstMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *const anyopaque {
+    // TODO: should return nullable; file bug in Dawn docstrings!
+    pub inline fn bufferGetConstMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) ?*const anyopaque {
         _ = buffer;
         _ = offset;
         _ = size;
         unreachable;
     }
 
-    // TODO: should return nullable; bug in Dawn docstrings!
-    pub inline fn bufferGetMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) *anyopaque {
+    // TODO: should return nullable; file bug in Dawn docstrings!
+    pub inline fn bufferGetMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) ?*anyopaque {
         _ = buffer;
         _ = offset;
         _ = size;
