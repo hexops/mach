@@ -4,14 +4,6 @@ const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
 const Impl = @import("interface.zig").Impl;
 
 pub const ComputePassEncoder = *opaque {
-    pub inline fn dispatch(compute_pass_encoder: ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
-        Impl.computePassEncoderDispatch(compute_pass_encoder, workgroup_count_x, workgroup_count_y, workgroup_count_z);
-    }
-
-    pub inline fn dispatchIndirect(compute_pass_encoder: ComputePassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
-        Impl.computePassEncoderDispatchIndirect(compute_pass_encoder, indirect_buffer, indirect_offset);
-    }
-
     /// Default `workgroup_count_y`: 1
     /// Default `workgroup_count_z`: 1
     pub inline fn dispatchWorkgroups(compute_pass_encoder: ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
