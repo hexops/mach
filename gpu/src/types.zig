@@ -515,10 +515,10 @@ pub const RenderPassDescriptorMaxDrawCount = extern struct {
 };
 
 pub const StencilFaceState = extern struct {
-    compare: CompareFunction,
-    fail_op: StencilOperation,
-    depth_fail_op: StencilOperation,
-    pass_op: StencilOperation,
+    compare: CompareFunction = .always,
+    fail_op: StencilOperation = .keep,
+    depth_fail_op: StencilOperation = .keep,
+    pass_op: StencilOperation = .keep,
 };
 
 pub const StorageTextureBindingLayout = extern struct {
