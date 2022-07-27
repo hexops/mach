@@ -153,7 +153,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "renderBundleEncoderInsertDebugMarker", fn (render_bundle_encoder: gpu.RenderBundleEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderPopDebugGroup", fn (render_bundle_encoder: gpu.RenderBundleEncoder) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderPushDebugGroup", fn (render_bundle_encoder: gpu.RenderBundleEncoder, group_label: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "renderBundleEncoderSetBindGroup", fn (render_bundle_encoder: gpu.RenderBundleEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) callconv(.Inline) void);
+    assertDecl(T, "renderBundleEncoderSetBindGroup", fn (render_bundle_encoder: gpu.RenderBundleEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderSetIndexBuffer", fn (render_bundle_encoder: gpu.RenderBundleEncoder, buffer: gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderSetLabel", fn (render_bundle_encoder: gpu.RenderBundleEncoder, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderSetPipeline", fn (render_bundle_encoder: gpu.RenderBundleEncoder, pipeline: gpu.RenderPipeline) callconv(.Inline) void);
@@ -915,7 +915,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuRenderBundleEncoderSetBindGroup(WGPURenderBundleEncoder renderBundleEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
-        export fn wgpuRenderBundleEncoderSetBindGroup(render_bundle_encoder: gpu.RenderBundleEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+        export fn wgpuRenderBundleEncoderSetBindGroup(render_bundle_encoder: gpu.RenderBundleEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
             T.renderBundleEncoderSetBindGroup(render_bundle_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
         }
 
@@ -2085,7 +2085,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn renderBundleEncoderSetBindGroup(render_bundle_encoder: gpu.RenderBundleEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: [*]const u32) void {
+    pub inline fn renderBundleEncoderSetBindGroup(render_bundle_encoder: gpu.RenderBundleEncoder, group_index: u32, group: gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
         _ = render_bundle_encoder;
         _ = group_index;
         _ = group;
