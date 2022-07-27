@@ -17,7 +17,7 @@ pub const impl = blk: {
 
 /// Verifies that a gpu.Interface implementation exposes the expected function declarations.
 pub fn Interface(comptime Impl: type) type {
-    assertDecl(Impl, "createInstance", fn (descriptor: *const InstanceDescriptor) callconv(.Inline) ?Instance);
+    assertDecl(Impl, "createInstance", fn (descriptor: ?*const InstanceDescriptor) callconv(.Inline) ?Instance);
     assertDecl(Impl, "getProcAddress", fn (device: gpu.Device, proc_name: [*:0]const u8) callconv(.Inline) ?gpu.Proc);
     assertDecl(Impl, "adapterCreateDevice", fn (adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) callconv(.Inline) ?gpu.Device);
     assertDecl(Impl, "adapterEnumerateFeatures", fn (adapter: gpu.Adapter, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
@@ -232,7 +232,7 @@ pub fn Export(comptime Impl: type) type {
     _ = Interface(Impl); // verify implementation is a valid interface
     return struct {
         // WGPU_EXPORT WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const * descriptor);
-        export fn wgpuCreateInstance(descriptor: *const InstanceDescriptor) ?Instance {
+        export fn wgpuCreateInstance(descriptor: ?*const InstanceDescriptor) ?Instance {
             return Impl.createInstance(descriptor);
         }
 
@@ -1245,7 +1245,7 @@ pub fn Export(comptime Impl: type) type {
 
 /// A stub gpu.Interface in which every function is implemented by `unreachable;`
 pub const StubInterface = Interface(struct {
-    pub inline fn createInstance(descriptor: *const InstanceDescriptor) ?Instance {
+    pub inline fn createInstance(descriptor: ?*const InstanceDescriptor) ?Instance {
         _ = descriptor;
         unreachable;
     }
