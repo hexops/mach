@@ -9,7 +9,7 @@ pub const CacheDeviceDescriptor = extern struct {
 
 pub const EncoderInternalUsageDescriptor = extern struct {
     chain: ChainedStruct,
-    use_internal_usages: bool,
+    use_internal_usages: bool = false,
 };
 
 pub const InstanceDescriptor = extern struct {
