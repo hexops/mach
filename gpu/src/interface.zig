@@ -1341,7 +1341,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    // TODO: should return nullable; file bug in Dawn docstrings!
+    // TODO: file a bug on Dawn docstrings, this returns null but is not documented as such.
     pub inline fn bufferGetConstMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) ?*const anyopaque {
         _ = buffer;
         _ = offset;
@@ -1349,7 +1349,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    // TODO: should return nullable; file bug in Dawn docstrings!
+    // TODO: file a bug on Dawn docstrings, this returns null but is not documented as such.
     pub inline fn bufferGetMappedRange(buffer: gpu.Buffer, offset: usize, size: usize) ?*anyopaque {
         _ = buffer;
         _ = offset;
