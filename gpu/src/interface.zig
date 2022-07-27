@@ -129,12 +129,12 @@ pub fn Interface(comptime Impl: type) type {
     assertDecl(Impl, "pipelineLayoutSetLabel", fn (pipeline_layout: gpu.PipelineLayout, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(Impl, "pipelineLayoutReference", fn (pipeline_layout: gpu.PipelineLayout) callconv(.Inline) void);
     assertDecl(Impl, "pipelineLayoutRelease", fn (pipeline_layout: gpu.PipelineLayout) callconv(.Inline) void);
-    // assertDecl(Impl, "querySetDestroy", fn (query_set: gpu.QuerySet) callconv(.Inline) void);
-    // assertDecl(Impl, "querySetGetCount", fn (query_set: gpu.QuerySet) callconv(.Inline) u32);
-    // assertDecl(Impl, "querySetGetType", fn (query_set: gpu.QuerySet) callconv(.Inline) gpu.QueryType);
-    // assertDecl(Impl, "querySetSetLabel", fn (query_set: gpu.QuerySet, label: [*:0]const u8) callconv(.Inline) void);
-    // assertDecl(Impl, "querySetReference", fn (query_set: gpu.QuerySet) callconv(.Inline) void);
-    // assertDecl(Impl, "querySetRelease", fn (query_set: gpu.QuerySet) callconv(.Inline) void);
+    assertDecl(Impl, "querySetDestroy", fn (query_set: gpu.QuerySet) callconv(.Inline) void);
+    assertDecl(Impl, "querySetGetCount", fn (query_set: gpu.QuerySet) callconv(.Inline) u32);
+    assertDecl(Impl, "querySetGetType", fn (query_set: gpu.QuerySet) callconv(.Inline) gpu.QueryType);
+    assertDecl(Impl, "querySetSetLabel", fn (query_set: gpu.QuerySet, label: [*:0]const u8) callconv(.Inline) void);
+    assertDecl(Impl, "querySetReference", fn (query_set: gpu.QuerySet) callconv(.Inline) void);
+    assertDecl(Impl, "querySetRelease", fn (query_set: gpu.QuerySet) callconv(.Inline) void);
     // assertDecl(Impl, "queueCopyTextureForBrowser", fn (queue: gpu.Queue, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D, options: *const gpu.CopyTextureForBrowserOptions) callconv(.Inline) void);
     // assertDecl(Impl, "queueOnSubmittedWorkDone", fn (queue: gpu.Queue, signal_value: u64, callback: gpu.QueueWorkDoneCallback, userdata: *anyopaque) callconv(.Inline) void);
     // assertDecl(Impl, "queueSetLabel", fn (queue: gpu.Queue, label: [*:0]const u8) callconv(.Inline) void);
