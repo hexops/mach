@@ -1,17 +1,23 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
+const CompilationInfoCallback = @import("types.zig").CompilationInfoCallback;
+const impl = @import("interface.zig").impl;
 
 pub const ShaderModule = *opaque {
-    // TODO
-    // pub inline fn shaderModuleGetCompilationInfo(shader_module: gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) void {
+    pub inline fn getCompilationInfo(shader_module: ShaderModule, callback: CompilationInfoCallback, userdata: *anyopaque) void {
+        impl.shaderModuleGetCompilationInfo(shader_module, callback, userdata);
+    }
 
-    // TODO
-    // pub inline fn shaderModuleSetLabel(shader_module: gpu.ShaderModule, label: [*:0]const u8) void {
+    pub inline fn setLabel(shader_module: ShaderModule, label: [*:0]const u8) void {
+        impl.shaderModuleSetLabel(shader_module, label);
+    }
 
-    // TODO
-    // pub inline fn shaderModuleReference(shader_module: gpu.ShaderModule) void {
+    pub inline fn reference(shader_module: ShaderModule) void {
+        impl.shaderModuleReference(shader_module);
+    }
 
-    // TODO
-    // pub inline fn shaderModuleRelease(shader_module: gpu.ShaderModule) void {
+    pub inline fn release(shader_module: ShaderModule) void {
+        impl.shaderModuleRelease(shader_module);
+    }
 };
 
 pub const ShaderModuleDescriptor = extern struct {
