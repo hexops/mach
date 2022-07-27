@@ -34,9 +34,13 @@ pub const ExternalTextureDescriptor = extern struct {
     label: ?[*:0]const u8 = null,
     plane0: TextureView,
     plane1: ?TextureView,
-    do_yuv_to_rgb_conversion_only: bool,
-    yuv_to_rgb_conversion_matrix: ?[*]const f32 = null,
+    do_yuv_to_rgb_conversion_only: bool = false,
+    // TODO: dawn.json says length 12, does it mean array length?
+    yuv_to_rgb_conversion_matrix: ?[*]const f32,
+    // TODO: dawn.json says length 7, does it mean array length?
     src_transform_function_parameters: [*]const f32,
+    // TODO: dawn.json says length 7, does it mean array length?
     dst_transform_function_parameters: [*]const f32,
+    // TODO: dawn.json says length 9, does it mean array length?
     gamut_conversion_matrix: [*]const f32,
 };
