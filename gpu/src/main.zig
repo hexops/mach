@@ -75,16 +75,16 @@ pub const ComputePassTimestampWrite = extern struct {
 
 pub const RenderPassDepthStencilAttachment = extern struct {
     view: texture_view.TextureView,
-    depth_load_op: types.LoadOp,
-    depth_store_op: types.StoreOp,
-    clear_depth: f32,
-    depth_clear_value: f32,
-    depth_read_only: bool,
-    stencil_load_op: types.LoadOp,
-    stencil_store_op: types.StoreOp,
-    clear_stencil: u32,
-    stencil_clear_value: u32,
-    stencil_read_only: bool,
+    depth_load_op: types.LoadOp = .undef,
+    depth_store_op: types.StoreOp = .undef,
+    clear_depth: f32 = std.math.nan(f32), // deprecated
+    depth_clear_value: f32 = 0,
+    depth_read_only: bool = false,
+    stencil_load_op: types.LoadOp = .undef,
+    stencil_store_op: types.StoreOp = .undef,
+    clear_stencil: u32 = 0, // deprecated
+    stencil_clear_value: u32 = 0,
+    stencil_read_only: bool = false,
 };
 
 pub const RenderPassTimestampWrite = extern struct {
