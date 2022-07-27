@@ -7,16 +7,20 @@ const SamplerBindingLayout = @import("sampler.zig").SamplerBindingLayout;
 const Texture = @import("texture.zig").Texture;
 const TextureBindingLayout = @import("texture.zig").TextureBindingLayout;
 const StorageTextureBindingLayout = @import("types.zig").StorageTextureBindingLayout;
+const impl = @import("interface.zig").impl;
 
 pub const BindGroupLayout = *opaque {
-    // TODO
-    // pub inline fn bindGroupLayoutSetLabel(bind_group_layout: gpu.BindGroupLayout, label: [*:0]const u8) void {
+    pub inline fn setLabel(bind_group_layout: BindGroupLayout, label: [*:0]const u8) void {
+        impl.bindGroupLayoutSetLabel(bind_group_layout, label);
+    }
 
-    // TODO
-    // pub inline fn bindGroupLayoutReference(bind_group_layout: gpu.BindGroupLayout) void {
+    pub inline fn reference(bind_group_layout: BindGroupLayout) void {
+        impl.bindGroupLayoutReference(bind_group_layout);
+    }
 
-    // TODO
-    // pub inline fn bindGroupLayoutRelease(bind_group_layout: gpu.BindGroupLayout) void {
+    pub inline fn release(bind_group_layout: BindGroupLayout) void {
+        impl.bindGroupLayoutRelease(bind_group_layout);
+    }
 };
 
 pub const BindGroupLayoutEntry = extern struct {
