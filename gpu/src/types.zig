@@ -493,7 +493,7 @@ pub const MultisampleState = extern struct {
 
 pub const PrimitiveDepthClampingState = extern struct {
     chain: ChainedStruct,
-    clamp_depth: bool,
+    clamp_depth: bool = false,
 };
 
 pub const PrimitiveDepthClipControl = extern struct {
