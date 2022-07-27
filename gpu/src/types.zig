@@ -486,9 +486,9 @@ pub const CopyTextureForBrowserOptions = extern struct {
 
 pub const MultisampleState = extern struct {
     next_in_chain: *const ChainedStruct,
-    count: u32,
-    mask: u32,
-    alpha_to_coverage_enabled: bool,
+    count: u32 = 1,
+    mask: u32 = 0xFFFFFFFF,
+    alpha_to_coverage_enabled: bool = false,
 };
 
 pub const PrimitiveDepthClampingState = extern struct {
