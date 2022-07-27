@@ -621,12 +621,12 @@ pub const VertexState = extern struct {
     next_in_chain: *const ChainedStruct,
     module: ShaderModule,
     entry_point: [*:0]const u8,
-    constant_count: u32,
+    constant_count: u32 = 0,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    constants: ?[*]const ConstantEntry,
-    buffer_count: u32,
+    constants: ?[*]const ConstantEntry = null,
+    buffer_count: u32 = 0,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    buffers: ?[*]const VertexBufferLayout,
+    buffers: ?[*]const VertexBufferLayout = null,
 };
 
 pub const FragmentState = extern struct {
