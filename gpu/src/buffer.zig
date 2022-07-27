@@ -8,11 +8,11 @@ pub const Buffer = *opaque {
         impl.bufferDestroy(buffer);
     }
 
-    pub inline fn bufferGetConstMappedRange(buffer: Buffer, offset: usize, size: usize) *const anyopaque {
+    pub inline fn bufferGetConstMappedRange(buffer: Buffer, offset: usize, size: usize) ?*const anyopaque {
         return impl.bufferGetConstMappedRange(buffer, offset, size);
     }
 
-    pub inline fn bufferGetMappedRange(buffer: Buffer, offset: usize, size: usize) *anyopaque {
+    pub inline fn bufferGetMappedRange(buffer: Buffer, offset: usize, size: usize) ?*anyopaque {
         return impl.bufferGetMappedRange(buffer, offset, size);
     }
 
