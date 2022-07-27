@@ -1,16 +1,20 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const FilterMode = @import("types.zig").FilterMode;
 const CompareFunction = @import("types.zig").CompareFunction;
+const impl = @import("interface.zig").impl;
 
 pub const Sampler = *opaque {
-    // TODO
-    // pub inline fn samplerSetLabel(sampler: gpu.Sampler, label: [*:0]const u8) void {
+    pub inline fn setLabel(sampler: Sampler, label: [*:0]const u8) void {
+        impl.samplerSetLabel(sampler, label);
+    }
 
-    // TODO
-    // pub inline fn samplerReference(sampler: gpu.Sampler) void {
+    pub inline fn reference(sampler: Sampler) void {
+        impl.samplerReference(sampler);
+    }
 
-    // TODO
-    // pub inline fn samplerRelease(sampler: gpu.Sampler) void {
+    pub inline fn release(sampler: Sampler) void {
+        impl.samplerRelease(sampler);
+    }
 };
 
 pub const SamplerAddressMode = enum(u32) {
