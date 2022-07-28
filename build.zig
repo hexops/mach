@@ -218,7 +218,7 @@ pub const App = struct {
                 exe.addPackage(glfw.pkg);
 
                 if (target.os.tag == .linux) {
-                    exe.addPackagePath("gamemode", "gamemode-zig/gamemode.zig");
+                    exe.addPackagePath("gamemode", "gamemode/gamemode.zig");
                 }
 
                 break :blk exe;

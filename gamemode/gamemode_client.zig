@@ -644,7 +644,7 @@ pub inline fn gamemode_error_string() [*c]const u8 {
         _ = @sizeOf(c_int);
         break :blk blk_1: {
             break :blk_1 if (REAL_internal_gamemode_error_string != @ptrCast(api_call_return_cstring, @alignCast(@import("std").meta.alignment(fn () callconv(.C) [*c]const u8), @intToPtr(?*anyopaque, @as(c_int, 0))))) {} else {
-                __assert_fail("REAL_internal_gamemode_error_string != NULL", "gamemode_client.h", @bitCast(c_uint, @as(c_int, 237)), "const char *gamemode_error_string(void)");
+                __assert_fail("REAL_internal_gamemode_error_string != NULL", "./gamemode/gamemode_client.h", @bitCast(c_uint, @as(c_int, 237)), "const char *gamemode_error_string(void)");
             };
         };
     };
@@ -658,7 +658,7 @@ pub inline fn gamemode_request_start() c_int {
         _ = @sizeOf(c_int);
         break :blk blk_1: {
             break :blk_1 if (REAL_internal_gamemode_request_start != @ptrCast(api_call_return_int, @alignCast(@import("std").meta.alignment(fn () callconv(.C) c_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {} else {
-                __assert_fail("REAL_internal_gamemode_request_start != NULL", "gamemode_client.h", @bitCast(c_uint, @as(c_int, 263)), "int gamemode_request_start(void)");
+                __assert_fail("REAL_internal_gamemode_request_start != NULL", "./gamemode/gamemode_client.h", @bitCast(c_uint, @as(c_int, 263)), "int gamemode_request_start(void)");
             };
         };
     };
@@ -675,7 +675,7 @@ pub inline fn gamemode_request_end() c_int {
         _ = @sizeOf(c_int);
         break :blk blk_1: {
             break :blk_1 if (REAL_internal_gamemode_request_end != @ptrCast(api_call_return_int, @alignCast(@import("std").meta.alignment(fn () callconv(.C) c_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {} else {
-                __assert_fail("REAL_internal_gamemode_request_end != NULL", "gamemode_client.h", @bitCast(c_uint, @as(c_int, 292)), "int gamemode_request_end(void)");
+                __assert_fail("REAL_internal_gamemode_request_end != NULL", "./gamemode/gamemode_client.h", @bitCast(c_uint, @as(c_int, 292)), "int gamemode_request_end(void)");
             };
         };
     };
