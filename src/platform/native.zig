@@ -52,22 +52,7 @@ pub const Platform = struct {
         };
     }
     pub fn init(allocator: std.mem.Allocator, core: *Core) !Platform {
-        if (builtin.os.tag == .linux) {
-            const gamemode = @import("gamemode");
-            const GAMEMODE_ENV = try getEnvVarOwned(allocator, "GAMEMODE");
-            if (GAMEMODE_ENV == null) {
-                gamemode.requestStart() catch |err| {
-                    std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
-                };
-            } else {
-                if (!std.ascii.eqlIgnoreCase(GAMEMODE_ENV.?, "off")) {
-                    gamemode.requestStart() catch |err| {
-                        std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
-                    };
-                }
-                allocator.free(GAMEMODE_ENV.?);
-            }
-        }
+        initLinuxGamemode(allocator);
 
         const options = core.options;
         const backend_type = try util.detectBackendType(allocator);
@@ -239,6 +224,28 @@ pub const Platform = struct {
             platform.allocator.destroy(ev);
         }
 
+        platform.deinitLinuxGamemode();
+    }
+
+    fn initLinuxGamemode(allocator: *std.mem.Allocator) void {
+        if (builtin.os.tag == .linux) {
+            const gamemode = @import("gamemode");
+            const GAMEMODE_ENV = try getEnvVarOwned(allocator, "GAMEMODE");
+            if (GAMEMODE_ENV == null) {
+                gamemode.requestStart() catch |err| {
+                    std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+                };
+            } else {
+                if (!std.ascii.eqlIgnoreCase(GAMEMODE_ENV.?, "off")) {
+                    gamemode.requestStart() catch |err| {
+                        std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+                    };
+                }
+                allocator.free(GAMEMODE_ENV.?);
+            }
+        }
+    }
+    fn deinitLinuxGamemode(platform: *Platform) void {
         if (builtin.os.tag == .linux) {
             const gamemode = @import("gamemode");
             const GAMEMODE_ENV = getEnvVarOwned(platform.allocator, "GAMEMODE") catch unreachable;
