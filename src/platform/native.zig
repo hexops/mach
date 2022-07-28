@@ -227,39 +227,32 @@ pub const Platform = struct {
         platform.deinitLinuxGamemode();
     }
 
+    /// Check if gamemode should be activated
+    fn activateGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!bool {
+        const GAMEMODE_ENV = try getEnvVarOwned(allocator, "GAMEMODE");
+        if (GAMEMODE_ENV) |env| {
+            defer allocator.free(env);
+            return !(std.ascii.eqlIgnoreCase(env, "off") or std.ascii.eqlIgnoreCase(env, "false"));
+        }
+        return true;
+    }
     fn initLinuxGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!void {
         if (builtin.os.tag == .linux) {
             const gamemode = @import("gamemode");
-            const GAMEMODE_ENV = try getEnvVarOwned(allocator, "GAMEMODE");
-            if (GAMEMODE_ENV == null) {
+            if (try activateGamemode(allocator)) {
                 gamemode.requestStart() catch |err| {
                     std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
                 };
-            } else {
-                if (!std.ascii.eqlIgnoreCase(GAMEMODE_ENV.?, "off")) {
-                    gamemode.requestStart() catch |err| {
-                        std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
-                    };
-                }
-                allocator.free(GAMEMODE_ENV.?);
             }
         }
     }
     fn deinitLinuxGamemode(platform: *Platform) void {
         if (builtin.os.tag == .linux) {
             const gamemode = @import("gamemode");
-            const GAMEMODE_ENV = getEnvVarOwned(platform.allocator, "GAMEMODE") catch unreachable;
-            if (GAMEMODE_ENV == null) {
+            if (activateGamemode(platform.allocator) catch unreachable) {
                 gamemode.requestEnd() catch |err| {
                     std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
                 };
-            } else {
-                if (!std.ascii.eqlIgnoreCase(GAMEMODE_ENV.?, "off")) {
-                    gamemode.requestEnd() catch |err| {
-                        std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
-                    };
-                }
-                platform.allocator.free(GAMEMODE_ENV.?);
             }
         }
     }
