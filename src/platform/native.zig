@@ -38,6 +38,8 @@ pub const Platform = struct {
 
     last_cursor_position: structs.WindowPos,
 
+    linux_gamemode_is_active: bool,
+
     const EventQueue = std.TailQueue(structs.Event);
     const EventNode = EventQueue.Node;
 
@@ -52,7 +54,7 @@ pub const Platform = struct {
         };
     }
     pub fn init(allocator: std.mem.Allocator, core: *Core) !Platform {
-        try initLinuxGamemode(allocator);
+        const linux_gamemode_is_active = try initLinuxGamemode(allocator);
 
         const options = core.options;
         const backend_type = try util.detectBackendType(allocator);
@@ -211,6 +213,7 @@ pub const Platform = struct {
                 .y = cursor_pos.ypos,
             },
             .native_instance = native_instance,
+            .linux_gamemode_is_active = linux_gamemode_is_active,
         };
     }
 
@@ -236,24 +239,25 @@ pub const Platform = struct {
         }
         return true;
     }
-    fn initLinuxGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!void {
+    fn initLinuxGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!bool {
         if (builtin.os.tag == .linux) {
             const gamemode = @import("gamemode");
             if (try activateGamemode(allocator)) {
-                gamemode.requestStart() catch |err| {
+                if (gamemode.requestStart()) {
+                    return true;
+                } else |err| {
                     std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
-                };
+                }
             }
         }
+        return false;
     }
     fn deinitLinuxGamemode(platform: *Platform) void {
-        if (builtin.os.tag == .linux) {
+        if (builtin.os.tag == .linux and platform.linux_gamemode_is_active) {
             const gamemode = @import("gamemode");
-            if (activateGamemode(platform.allocator) catch unreachable) {
-                gamemode.requestEnd() catch |err| {
-                    std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
-                };
-            }
+            gamemode.requestEnd() catch |err| {
+                std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+            };
         }
     }
 
