@@ -2,8 +2,9 @@ const std = @import("std");
 
 pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
+    const target = b.standardTargetOptions(.{});
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode).step);
+    test_step.dependOn(&testStep(b, mode, target).step);
 }
 
 pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
