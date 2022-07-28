@@ -52,7 +52,7 @@ pub const Platform = struct {
         };
     }
     pub fn init(allocator: std.mem.Allocator, core: *Core) !Platform {
-        initLinuxGamemode(allocator);
+        try initLinuxGamemode(allocator);
 
         const options = core.options;
         const backend_type = try util.detectBackendType(allocator);
@@ -227,7 +227,7 @@ pub const Platform = struct {
         platform.deinitLinuxGamemode();
     }
 
-    fn initLinuxGamemode(allocator: *std.mem.Allocator) void {
+    fn initLinuxGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!void {
         if (builtin.os.tag == .linux) {
             const gamemode = @import("gamemode");
             const GAMEMODE_ENV = try getEnvVarOwned(allocator, "GAMEMODE");
