@@ -1,13 +1,12 @@
 const std = @import("std");
 const builtin = @import("builtin");
 pub const gpu = @import("gpu/build.zig");
-const gpu_dawn = @import("gpu-dawn/build.zig");
-pub const glfw = @import("glfw/build.zig");
+const gpu_dawn = @import("gpu/libs/mach-gpu-dawn/build.zig");
+pub const glfw = @import("gpu/libs/mach-glfw/build.zig");
 pub const ecs = @import("ecs/build.zig");
 const freetype = @import("freetype/build.zig");
 const sysaudio = @import("sysaudio/build.zig");
 const sysjs = @import("sysjs/build.zig");
-const gamemode = @import("gamemode-zig/build.zig");
 const Pkg = std.build.Pkg;
 
 pub fn build(b: *std.build.Builder) void {
@@ -17,7 +16,7 @@ pub fn build(b: *std.build.Builder) void {
     const gpu_dawn_options = gpu_dawn.Options{
         .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
     };
-    const options = Options{ .gpu_dawn_options = gpu_dawn_options };
+    const options = gpu.Options{ .gpu_dawn_options = gpu_dawn_options };
 
     const main_tests = b.addTestExe("mach-tests", "src/main.zig");
     main_tests.setBuildMode(mode);
@@ -29,7 +28,7 @@ pub fn build(b: *std.build.Builder) void {
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.run().step);
-    test_step.dependOn(&gpu.testStep(b, mode, target, @bitCast(gpu.Options, options)).step);
+    test_step.dependOn(&gpu.testStep(b, mode, target, options).step);
     test_step.dependOn(&gpu_dawn.testStep(b, mode, target).step);
     test_step.dependOn(&glfw.testStep(b, mode, target).step);
     test_step.dependOn(&ecs.testStep(b, mode, target).step);
@@ -138,20 +137,11 @@ pub fn build(b: *std.build.Builder) void {
     lib.addPackage(app_pkg);
     lib.addPackage(gpu.pkg);
     lib.addPackage(glfw.pkg);
-    const gpu_options = gpu.Options{
-        .glfw_options = @bitCast(@import("gpu/libs/mach-glfw/build.zig").Options, options.glfw_options),
-        .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
-    };
     glfw.link(b, lib, options.glfw_options);
-    gpu.link(b, lib, gpu_options);
+    gpu.link(b, lib, options);
     lib.setOutputDir("./libmach/build");
     lib.install();
 }
-
-pub const Options = struct {
-    glfw_options: glfw.Options = .{},
-    gpu_dawn_options: gpu_dawn.Options = .{},
-};
 
 const ExampleDefinition = struct {
     name: []const u8,
@@ -228,11 +218,7 @@ pub const App = struct {
                 exe.addPackage(glfw.pkg);
 
                 if (target.os.tag == .linux) {
-                    exe.addPackage(gamemode.pkg);
-                    // TODO: choose between system lib vs buildlib?
-                    gamemode.linkFromSystem(exe);
-                    // gamemode.linkFromSource(b, exe, .{});
-                    // gamemode.linkFromBinary(exe);
+                    exe.addPackagePath("gamemode", "gamemode-zig/gamemode.zig");
                 }
 
                 break :blk exe;
@@ -297,15 +283,10 @@ pub const App = struct {
         }
     }
 
-    pub fn link(app: *const App, options: Options) void {
-        const gpu_options = gpu.Options{
-            .glfw_options = @bitCast(@import("gpu/libs/mach-glfw/build.zig").Options, options.glfw_options),
-            .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
-        };
-
+    pub fn link(app: *const App, options: gpu.Options) void {
         if (app.platform != .web) {
             glfw.link(app.b, app.step, options.glfw_options);
-            gpu.link(app.b, app.step, gpu_options);
+            gpu.link(app.b, app.step, options);
         }
     }
 
