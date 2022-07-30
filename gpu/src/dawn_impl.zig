@@ -1105,8 +1105,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn swapChainRelease(swap_chain: *gpu.SwapChain) void {
-        _ = swap_chain;
-        unreachable;
+        procs.swapChainRelease.?(@ptrCast(c.WGPUSwapChain, swap_chain));
     }
 
     pub inline fn textureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureView.Descriptor) *gpu.TextureView {
