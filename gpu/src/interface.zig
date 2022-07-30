@@ -596,7 +596,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor);
-        export fn wgpuDeviceCreatePipelineLayout(device: *gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayoutDescriptor) gpu.PipelineLayout {
+        export fn wgpuDeviceCreatePipelineLayout(device: *gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayoutDescriptor) *gpu.PipelineLayout {
             return T.deviceCreatePipelineLayout(device, pipeline_layout_descriptor);
         }
 
@@ -1673,7 +1673,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreatePipelineLayout(device: *gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayoutDescriptor) gpu.PipelineLayout {
+    pub inline fn deviceCreatePipelineLayout(device: *gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayoutDescriptor) *gpu.PipelineLayout {
         _ = device;
         _ = pipeline_layout_descriptor;
         unreachable;

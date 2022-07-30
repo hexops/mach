@@ -77,7 +77,7 @@ pub const Device = opaque {
         return Impl.deviceCreateExternalTexture(device, external_texture_descriptor);
     }
 
-    pub inline fn createPipelineLayout(device: *Device, pipeline_layout_descriptor: *const PipelineLayoutDescriptor) PipelineLayout {
+    pub inline fn createPipelineLayout(device: *Device, pipeline_layout_descriptor: *const PipelineLayoutDescriptor) *PipelineLayout {
         return Impl.deviceCreatePipelineLayout(device, pipeline_layout_descriptor);
     }
 
