@@ -122,7 +122,7 @@ pub const RenderPassDescriptor = extern struct {
     timestamp_writes: ?[*]const RenderPassTimestampWrite = null,
 };
 
-pub inline fn createInstance(descriptor: ?*const instance.InstanceDescriptor) ?instance.Instance {
+pub inline fn createInstance(descriptor: ?*const instance.InstanceDescriptor) ?*instance.Instance {
     return interface.Impl.createInstance(descriptor);
 }
 
