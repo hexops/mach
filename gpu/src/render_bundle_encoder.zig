@@ -9,6 +9,18 @@ const IndexFormat = @import("types.zig").IndexFormat;
 const Impl = @import("interface.zig").Impl;
 
 pub const RenderBundleEncoder = opaque {
+    pub const Descriptor = extern struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+        color_formats_count: u32,
+        // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+        color_formats: ?[*]const TextureFormat,
+        depth_stencil_format: TextureFormat = .undef,
+        sample_count: u32 = 1,
+        depth_read_only: bool = false,
+        stencil_read_only: bool = false,
+    };
+
     /// Default `instance_count`: 1
     /// Default `first_vertex`: 0
     /// Default `first_instance`: 0
@@ -81,16 +93,4 @@ pub const RenderBundleEncoder = opaque {
     pub inline fn release(render_bundle_encoder: *RenderBundleEncoder) void {
         Impl.renderBundleEncoderRelease(render_bundle_encoder);
     }
-};
-
-pub const RenderBundleEncoderDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    color_formats_count: u32,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    color_formats: ?[*]const TextureFormat,
-    depth_stencil_format: TextureFormat = .undef,
-    sample_count: u32 = 1,
-    depth_read_only: bool = false,
-    stencil_read_only: bool = false,
 };
