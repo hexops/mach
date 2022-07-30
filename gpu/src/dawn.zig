@@ -1,5 +1,6 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const Texture = @import("texture.zig").Texture;
+pub const Interface = @import("dawn_impl.zig").Interface;
 
 pub const CacheDeviceDescriptor = extern struct {
     chain: ChainedStruct,
