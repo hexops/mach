@@ -7,6 +7,10 @@ const RequestAdapterOptions = @import("main.zig").RequestAdapterOptions;
 const Impl = @import("interface.zig").Impl;
 
 pub const Instance = opaque {
+    pub const Descriptor = extern struct {
+        next_in_chain: ?*const ChainedStruct = null,
+    };
+
     pub inline fn createSurface(instance: *Instance, descriptor: *const SurfaceDescriptor) Surface {
         return Impl.instanceCreateSurface(instance, descriptor);
     }
@@ -30,7 +34,3 @@ pub const RequestAdapterCallback = fn (
     message: ?[*:0]const u8,
     userdata: *anyopaque,
 ) callconv(.C) void;
-
-pub const InstanceDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-};

@@ -1221,7 +1221,7 @@ pub fn Export(comptime T: type) type {
 
 /// A stub gpu.Interface in which every function is implemented by `unreachable;`
 pub const StubInterface = Interface(struct {
-    pub inline fn createInstance(descriptor: ?*const Instance.Descriptor) ?Instance {
+    pub inline fn createInstance(descriptor: ?*const Instance.Descriptor) ?*Instance {
         _ = descriptor;
         unreachable;
     }
