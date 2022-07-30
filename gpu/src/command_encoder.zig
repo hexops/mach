@@ -13,7 +13,7 @@ const Extent3D = @import("types.zig").Extent3D;
 const Impl = @import("interface.zig").Impl;
 
 pub const CommandEncoder = opaque {
-    pub inline fn beginComputePass(command_encoder: *CommandEncoder, descriptor: ?*const ComputePassDescriptor) ComputePassEncoder {
+    pub inline fn beginComputePass(command_encoder: *CommandEncoder, descriptor: ?*const ComputePassDescriptor) *ComputePassEncoder {
         return Impl.commandEncoderBeginComputePass(command_encoder, descriptor);
     }
 
