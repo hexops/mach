@@ -79,7 +79,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "computePipelineSetLabel", fn (compute_pipeline: *gpu.ComputePipeline, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "computePipelineReference", fn (compute_pipeline: *gpu.ComputePipeline) callconv(.Inline) void);
     assertDecl(T, "computePipelineRelease", fn (compute_pipeline: *gpu.ComputePipeline) callconv(.Inline) void);
-    assertDecl(T, "deviceCreateBindGroup", fn (device: *gpu.Device, descriptor: *const gpu.BindGroupDescriptor) callconv(.Inline) *gpu.BindGroup);
+    assertDecl(T, "deviceCreateBindGroup", fn (device: *gpu.Device, descriptor: *const gpu.BindGroup.Descriptor) callconv(.Inline) *gpu.BindGroup);
     assertDecl(T, "deviceCreateBindGroupLayout", fn (device: *gpu.Device, descriptor: *const gpu.BindGroupLayout.Descriptor) callconv(.Inline) *gpu.BindGroupLayout);
     assertDecl(T, "deviceCreateBuffer", fn (device: *gpu.Device, descriptor: *const gpu.BufferDescriptor) callconv(.Inline) *gpu.Buffer);
     assertDecl(T, "deviceCreateCommandEncoder", fn (device: *gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) callconv(.Inline) *gpu.CommandEncoder);
@@ -549,7 +549,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const * descriptor);
-        export fn wgpuDeviceCreateBindGroup(device: *gpu.Device, descriptor: *const gpu.BindGroupDescriptor) *gpu.BindGroup {
+        export fn wgpuDeviceCreateBindGroup(device: *gpu.Device, descriptor: *const gpu.BindGroup.Descriptor) *gpu.BindGroup {
             return T.deviceCreateBindGroup(device, descriptor);
         }
 
@@ -1617,7 +1617,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateBindGroup(device: *gpu.Device, descriptor: *const gpu.BindGroupDescriptor) *gpu.BindGroup {
+    pub inline fn deviceCreateBindGroup(device: *gpu.Device, descriptor: *const gpu.BindGroup.Descriptor) *gpu.BindGroup {
         _ = device;
         _ = descriptor;
         unreachable;
