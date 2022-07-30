@@ -8,7 +8,7 @@ const Impl = @import("interface.zig").Impl;
 const copy_stride_undefined = @import("main.zig").copy_stride_undefined;
 
 pub const Texture = *opaque {
-    pub inline fn createView(texture: Texture, descriptor: ?*const TextureViewDescriptor) TextureView {
+    pub inline fn createView(texture: Texture, descriptor: ?*const TextureViewDescriptor) *TextureView {
         return Impl.textureCreateView(texture, descriptor);
     }
 
