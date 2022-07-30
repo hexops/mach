@@ -504,10 +504,6 @@ fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: 
             "-D_DLL",
         }) catch unreachable;
     }
-
-    lib.addCSourceFile(std.fs.path.join(b.allocator, &.{
-        (comptime thisDir()), "src/dawn/dawn_native_mach.cpp",
-    }) catch unreachable, cpp_flags.items);
     return lib;
 }
 
@@ -530,7 +526,10 @@ fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
         include("libs/dawn/out/Debug/gen/src"),
     }) catch unreachable;
     appendLangScannedSources(b, lib, options, .{
-        .rel_dirs = &.{"libs/dawn/src/dawn/common/"},
+        .rel_dirs = &.{
+            "libs/dawn/src/dawn/common/",
+            "libs/dawn/out/Debug/gen/src/dawn/common/",
+        },
         .flags = flags.items,
         .excluding_contains = &.{
             "test",

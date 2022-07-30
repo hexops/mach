@@ -66,11 +66,6 @@ You should be aware:
 * The `webgpu.h` API is still changing
 * Dawn and gfx-rs/wgpu, although both try to implement `webgpu.h`, do not exactly implement the same interface. There are subtle differences in device discovery & creation for example.
 
-Some of Dawn's API is not available as a C API today. For example, OpenGL device discovery. You may find the following C shims we build for Mach engine useful for interfacing with Dawn from other languages (copy these into your own project, they are not built into the static dawn library):
-
-* [dawn_native_mach.h](https://github.com/hexops/mach/blob/main/gpu-dawn/src/dawn/dawn_native_mach.h)
-* [dawn_native-mach.cpp](https://github.com/hexops/mach/blob/main/gpu-dawn/src/dawn/dawn_native_mach.cpp)
-
 ## Generated code
 
 Dawn itself relies on a fairly large amount of dependencies, generated code, etc. To avoid having any dependency on Google build tools, code generation, etc. we maintain [a minor fork of Dawn which has generated code and third-party dependencies comitted in "generated" branches.](https://github.com/hexops/dawn/tree/main/mach) We are usually up-to-date with the upstream within a few weeks on average.
