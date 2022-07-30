@@ -125,8 +125,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn bufferGetSize(buffer: *gpu.Buffer) u64 {
-        _ = buffer;
-        unreachable;
+        return procs.bufferGetSize.?(@ptrCast(c.WGPUBuffer, buffer));
     }
 
     pub inline fn bufferGetUsage(buffer: *gpu.Buffer) gpu.Buffer.UsageFlags {
