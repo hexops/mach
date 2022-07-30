@@ -378,9 +378,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePipelineSetLabel(compute_pipeline: *gpu.ComputePipeline, label: [*:0]const u8) void {
-        _ = compute_pipeline;
-        _ = label;
-        unreachable;
+        procs.computePipelineSetLabel.?(@ptrCast(c.WGPUComputePipeline, compute_pipeline), label);
     }
 
     pub inline fn computePipelineReference(compute_pipeline: *gpu.ComputePipeline) void {
