@@ -656,7 +656,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUQueue wgpuDeviceGetQueue(WGPUDevice device);
-        export fn wgpuDeviceGetQueue(device: *gpu.Device) gpu.Queue {
+        export fn wgpuDeviceGetQueue(device: *gpu.Device) *gpu.Queue {
             return T.deviceGetQueue(device);
         }
 
@@ -1747,7 +1747,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceGetQueue(device: *gpu.Device) gpu.Queue {
+    pub inline fn deviceGetQueue(device: *gpu.Device) *gpu.Queue {
         _ = device;
         unreachable;
     }
