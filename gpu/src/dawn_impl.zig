@@ -28,9 +28,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn adapterCreateDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor) ?*gpu.Device {
-        _ = adapter;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(?*gpu.Device, procs.adapterCreateDevice.?(
+            @ptrCast(c.WGPUAdapter, adapter),
+            @ptrCast(?*const c.WGPUDeviceDescriptor, descriptor),
+        ));
     }
 
     pub inline fn adapterEnumerateFeatures(adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
