@@ -8,11 +8,28 @@ const CopyTextureForBrowserOptions = @import("types.zig").CopyTextureForBrowserO
 const Impl = @import("interface.zig").Impl;
 
 pub const Queue = opaque {
+    pub const WorkDoneCallback = fn (
+        status: WorkDoneStatus,
+        userdata: *anyopaque,
+    ) callconv(.C) void;
+
+    pub const WorkDoneStatus = enum(u32) {
+        success = 0x00000000,
+        err = 0x00000001,
+        unknown = 0x00000002,
+        device_lost = 0x00000003,
+    };
+
+    pub const Descriptor = extern struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+    };
+
     pub inline fn copyTextureForBrowser(queue: *Queue, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D, options: *const CopyTextureForBrowserOptions) void {
         Impl.queueCopyTextureForBrowser(queue, source, destination, copy_size, options);
     }
 
-    pub inline fn onSubmittedWorkDone(queue: *Queue, signal_value: u64, callback: QueueWorkDoneCallback, userdata: *anyopaque) void {
+    pub inline fn onSubmittedWorkDone(queue: *Queue, signal_value: u64, callback: Queue.WorkDoneCallback, userdata: *anyopaque) void {
         Impl.queueOnSubmittedWorkDone(queue, signal_value, callback, userdata);
     }
 
@@ -39,21 +56,4 @@ pub const Queue = opaque {
     pub inline fn release(queue: *Queue) void {
         Impl.queueRelease(queue);
     }
-};
-
-pub const QueueWorkDoneCallback = fn (
-    status: QueueWorkDoneStatus,
-    userdata: *anyopaque,
-) callconv(.C) void;
-
-pub const QueueWorkDoneStatus = enum(u32) {
-    success = 0x00000000,
-    err = 0x00000001,
-    unknown = 0x00000002,
-    device_lost = 0x00000003,
-};
-
-pub const QueueDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
 };
