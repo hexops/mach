@@ -9,7 +9,6 @@ const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
 const QuerySet = @import("query_set.zig").QuerySet;
 const RenderBundleEncoder = @import("render_bundle_encoder.zig").RenderBundleEncoder;
 const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
-const RenderPipelineDescriptor = @import("render_pipeline.zig").RenderPipelineDescriptor;
 const Sampler = @import("sampler.zig").Sampler;
 const SamplerDescriptor = @import("sampler.zig").SamplerDescriptor;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
@@ -100,11 +99,11 @@ pub const Device = opaque {
         return Impl.deviceCreateRenderBundleEncoder(device, descriptor);
     }
 
-    pub inline fn createRenderPipeline(device: *Device, descriptor: *const RenderPipelineDescriptor) *RenderPipeline {
+    pub inline fn createRenderPipeline(device: *Device, descriptor: *const RenderPipeline.Descriptor) *RenderPipeline {
         return Impl.deviceCreateRenderPipeline(device, descriptor);
     }
 
-    pub inline fn createRenderPipelineAsync(device: *Device, descriptor: *const RenderPipelineDescriptor, callback: CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
+    pub inline fn createRenderPipelineAsync(device: *Device, descriptor: *const RenderPipeline.Descriptor, callback: CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
         Impl.deviceCreateRenderPipelineAsync(device, descriptor, callback, userdata);
     }
 
