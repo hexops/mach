@@ -995,9 +995,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPipelineSetLabel(render_pipeline: *gpu.RenderPipeline, label: [*:0]const u8) void {
-        _ = render_pipeline;
-        _ = label;
-        unreachable;
+        procs.renderPipelineSetLabel.?(@ptrCast(c.WGPURenderPipeline, render_pipeline), label);
     }
 
     pub inline fn renderPipelineReference(render_pipeline: *gpu.RenderPipeline) void {
