@@ -1,5 +1,5 @@
 #include <dawn/native/DawnNative.h>
-#include "dawn_native_mach.h"
+#include "mach_dawn.h"
 
 #ifdef __cplusplus
 extern "C" {
