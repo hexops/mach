@@ -749,8 +749,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleReference(render_bundle: *gpu.RenderBundle) void {
-        _ = render_bundle;
-        unreachable;
+        procs.renderBundleReference.?(@ptrCast(c.WGPURenderBundle, render_bundle));
     }
 
     pub inline fn renderBundleRelease(render_bundle: *gpu.RenderBundle) void {
