@@ -1,5 +1,4 @@
 const Queue = @import("queue.zig").Queue;
-const QueueDescriptor = @import("queue.zig").QueueDescriptor;
 const BindGroup = @import("bind_group.zig").BindGroup;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Buffer = @import("buffer.zig").Buffer;
@@ -51,7 +50,7 @@ pub const Device = opaque {
         required_features_count: u32 = 0,
         required_features: ?[*]const FeatureName = null,
         required_limits: ?*const RequiredLimits,
-        default_queue: QueueDescriptor,
+        default_queue: Queue.Descriptor,
     };
 
     pub inline fn createBindGroup(device: *Device, descriptor: *const BindGroup.Descriptor) *BindGroup {
