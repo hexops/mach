@@ -852,8 +852,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderReference(render_bundle_encoder: *gpu.RenderBundleEncoder) void {
-        _ = render_bundle_encoder;
-        unreachable;
+        procs.renderBundleEncoderReference.?(@ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder));
     }
 
     pub inline fn renderBundleEncoderRelease(render_bundle_encoder: *gpu.RenderBundleEncoder) void {
