@@ -4,6 +4,7 @@ const Surface = @import("surface.zig").Surface;
 const SurfaceDescriptor = @import("surface.zig").SurfaceDescriptor;
 const Adapter = @import("adapter.zig").Adapter;
 const RequestAdapterOptions = @import("main.zig").RequestAdapterOptions;
+const RequestAdapterCallback = @import("callbacks.zig").RequestAdapterCallback;
 const Impl = @import("interface.zig").Impl;
 
 pub const Instance = opaque {
@@ -27,10 +28,3 @@ pub const Instance = opaque {
         Impl.instanceRelease(instance);
     }
 };
-
-pub const RequestAdapterCallback = fn (
-    status: RequestAdapterStatus,
-    adapter: *Adapter,
-    message: ?[*:0]const u8,
-    userdata: *anyopaque,
-) callconv(.C) void;

@@ -5,6 +5,7 @@ const DeviceDescriptor = @import("device.zig").DeviceDescriptor;
 const FeatureName = @import("types.zig").FeatureName;
 const SupportedLimits = @import("types.zig").SupportedLimits;
 const RequestDeviceStatus = @import("types.zig").RequestDeviceStatus;
+const RequestDeviceCallback = @import("callbacks.zig").RequestDeviceCallback;
 const Impl = @import("interface.zig").Impl;
 
 pub const Adapter = opaque {
@@ -69,13 +70,6 @@ pub const Adapter = opaque {
         Impl.adapterRelease(adapter);
     }
 };
-
-pub const RequestDeviceCallback = fn (
-    status: RequestDeviceStatus,
-    device: *Device,
-    message: ?[*:0]const u8,
-    userdata: *anyopaque,
-) callconv(.C) void;
 
 test "Adapter.Type name" {
     try testing.expectEqualStrings("Discrete GPU", Adapter.Type.discrete_gpu.name());
