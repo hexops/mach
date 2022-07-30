@@ -76,8 +76,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn adapterRelease(adapter: *gpu.Adapter) void {
-        _ = adapter;
-        unreachable;
+        procs.adapterRelease.?(@ptrCast(c.WGPUAdapter, adapter));
     }
 
     pub inline fn bindGroupSetLabel(bind_group: *gpu.BindGroup, label: [*:0]const u8) void {
