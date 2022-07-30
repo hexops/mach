@@ -2,7 +2,6 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const ShaderStageFlags = @import("types.zig").ShaderStageFlags;
 const Buffer = @import("buffer.zig").Buffer;
 const Sampler = @import("sampler.zig").Sampler;
-const SamplerBindingLayout = @import("sampler.zig").SamplerBindingLayout;
 const Texture = @import("texture.zig").Texture;
 const TextureBindingLayout = @import("texture.zig").TextureBindingLayout;
 const StorageTextureBindingLayout = @import("types.zig").StorageTextureBindingLayout;
@@ -14,7 +13,7 @@ pub const BindGroupLayout = opaque {
         binding: u32,
         visibility: ShaderStageFlags,
         buffer: Buffer.BindingLayout,
-        sampler: SamplerBindingLayout,
+        sampler: Sampler.BindingLayout,
         texture: TextureBindingLayout,
         storage_texture: StorageTextureBindingLayout,
     };

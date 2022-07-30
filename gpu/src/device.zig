@@ -10,7 +10,6 @@ const QuerySet = @import("query_set.zig").QuerySet;
 const RenderBundleEncoder = @import("render_bundle_encoder.zig").RenderBundleEncoder;
 const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
 const Sampler = @import("sampler.zig").Sampler;
-const SamplerDescriptor = @import("sampler.zig").SamplerDescriptor;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
 const ShaderModuleDescriptor = @import("shader_module.zig").ShaderModuleDescriptor;
 const Surface = @import("surface.zig").Surface;
@@ -107,7 +106,7 @@ pub const Device = opaque {
         Impl.deviceCreateRenderPipelineAsync(device, descriptor, callback, userdata);
     }
 
-    pub inline fn createSampler(device: *Device, descriptor: ?*const SamplerDescriptor) *Sampler {
+    pub inline fn createSampler(device: *Device, descriptor: ?*const Sampler.Descriptor) *Sampler {
         return Impl.deviceCreateSampler(device, descriptor);
     }
 
