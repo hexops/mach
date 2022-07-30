@@ -77,7 +77,7 @@ pub const Options = struct {
     from_source: bool = false,
 
     /// The binary release version to use from https://github.com/hexops/mach-gpu-dawn/releases
-    binary_version: []const u8 = "release-f90302f",
+    binary_version: []const u8 = "release-fbb4741",
 
     /// Detects the default options to use for the given target.
     pub fn detectDefaults(self: Options, target: std.Target) Options {
