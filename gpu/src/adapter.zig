@@ -8,6 +8,34 @@ const RequestDeviceStatus = @import("types.zig").RequestDeviceStatus;
 const Impl = @import("interface.zig").Impl;
 
 pub const Adapter = opaque {
+    pub const Type = enum(u32) {
+        discrete_gpu,
+        integrated_gpu,
+        cpu,
+        unknown,
+
+        pub fn name(t: Type) []const u8 {
+            return switch (t) {
+                .discrete_gpu => "Discrete GPU",
+                .integrated_gpu => "Integrated GPU",
+                .cpu => "CPU",
+                .unknown => "Unknown",
+            };
+        }
+    };
+
+    pub const Properties = extern struct {
+        next_in_chain: ?*ChainedStructOut = null,
+        vendor_id: u32,
+        vendor_name: [*:0]const u8,
+        architecture: [*:0]const u8,
+        device_id: u32,
+        name: [*:0]const u8,
+        driver_description: [*:0]const u8,
+        adapter_type: Type,
+        backend_type: Type,
+    };
+
     pub inline fn createDevice(adapter: *Adapter, descriptor: ?*const DeviceDescriptor) ?Device {
         return Impl.adapterCreateDevice(adapter, descriptor);
     }
@@ -21,7 +49,7 @@ pub const Adapter = opaque {
         return Impl.adapterGetLimits(adapter, limits);
     }
 
-    pub inline fn getProperties(adapter: *Adapter, properties: *AdapterProperties) void {
+    pub inline fn getProperties(adapter: *Adapter, properties: *Adapter.Properties) void {
         Impl.adapterGetProperties(adapter, properties);
     }
 
@@ -49,34 +77,6 @@ pub const RequestDeviceCallback = fn (
     userdata: *anyopaque,
 ) callconv(.C) void;
 
-pub const AdapterType = enum(u32) {
-    discrete_gpu,
-    integrated_gpu,
-    cpu,
-    unknown,
-
-    pub fn name(t: AdapterType) []const u8 {
-        return switch (t) {
-            .discrete_gpu => "Discrete GPU",
-            .integrated_gpu => "Integrated GPU",
-            .cpu => "CPU",
-            .unknown => "Unknown",
-        };
-    }
-};
-
-pub const AdapterProperties = extern struct {
-    next_in_chain: ?*ChainedStructOut = null,
-    vendor_id: u32,
-    vendor_name: [*:0]const u8,
-    architecture: [*:0]const u8,
-    device_id: u32,
-    name: [*:0]const u8,
-    driver_description: [*:0]const u8,
-    adapter_type: AdapterType,
-    backend_type: AdapterType,
-};
-
-test "AdapterType name" {
-    try testing.expectEqualStrings("Discrete GPU", AdapterType.discrete_gpu.name());
+test "Adapter.Type name" {
+    try testing.expectEqualStrings("Discrete GPU", Adapter.Type.discrete_gpu.name());
 }

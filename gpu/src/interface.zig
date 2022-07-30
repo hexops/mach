@@ -22,7 +22,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "adapterCreateDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) callconv(.Inline) ?gpu.Device);
     assertDecl(T, "adapterEnumerateFeatures", fn (adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
     assertDecl(T, "adapterGetLimits", fn (adapter: *gpu.Adapter, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
-    assertDecl(T, "adapterGetProperties", fn (adapter: *gpu.Adapter, properties: *gpu.AdapterProperties) callconv(.Inline) void);
+    assertDecl(T, "adapterGetProperties", fn (adapter: *gpu.Adapter, properties: *gpu.Adapter.Properties) callconv(.Inline) void);
     assertDecl(T, "adapterHasFeature", fn (adapter: *gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
     assertDecl(T, "adapterRequestDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "adapterReference", fn (adapter: *gpu.Adapter) callconv(.Inline) void);
@@ -253,7 +253,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuAdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties * properties);
-        export fn wgpuAdapterGetProperties(adapter: *gpu.Adapter, properties: *gpu.AdapterProperties) void {
+        export fn wgpuAdapterGetProperties(adapter: *gpu.Adapter, properties: *gpu.Adapter.Properties) void {
             return T.adapterGetProperties(adapter, properties);
         }
 
@@ -1250,7 +1250,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn adapterGetProperties(adapter: *gpu.Adapter, properties: *gpu.AdapterProperties) void {
+    pub inline fn adapterGetProperties(adapter: *gpu.Adapter, properties: *gpu.Adapter.Properties) void {
         _ = adapter;
         _ = properties;
         unreachable;
