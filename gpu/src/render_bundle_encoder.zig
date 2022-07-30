@@ -24,11 +24,11 @@ pub const RenderBundleEncoder = *opaque {
         Impl.renderBundleEncoderDrawIndexed(render_bundle_encoder, index_count, instance_count, first_index, base_vertex, first_instance);
     }
 
-    pub inline fn drawIndexedIndirect(render_bundle_encoder: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+    pub inline fn drawIndexedIndirect(render_bundle_encoder: RenderBundleEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void {
         Impl.renderBundleEncoderDrawIndexedIndirect(render_bundle_encoder, indirect_buffer, indirect_offset);
     }
 
-    pub inline fn drawIndirect(render_bundle_encoder: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+    pub inline fn drawIndirect(render_bundle_encoder: RenderBundleEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void {
         Impl.renderBundleEncoderDrawIndirect(render_bundle_encoder, indirect_buffer, indirect_offset);
     }
 
@@ -56,7 +56,7 @@ pub const RenderBundleEncoder = *opaque {
 
     /// Default `offset`: 0
     /// Default `size`: `gpu.whole_size`
-    pub inline fn setIndexBuffer(render_bundle_encoder: RenderBundleEncoder, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void {
+    pub inline fn setIndexBuffer(render_bundle_encoder: RenderBundleEncoder, buffer: *Buffer, format: IndexFormat, offset: u64, size: u64) void {
         Impl.renderBundleEncoderSetIndexBuffer(render_bundle_encoder, buffer, format, offset, size);
     }
 
@@ -70,7 +70,7 @@ pub const RenderBundleEncoder = *opaque {
 
     /// Default `offset`: 0
     /// Default `size`: `gpu.whole_size`
-    pub inline fn setVertexBuffer(render_bundle_encoder: RenderBundleEncoder, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
+    pub inline fn setVertexBuffer(render_bundle_encoder: RenderBundleEncoder, slot: u32, buffer: *Buffer, offset: u64, size: u64) void {
         Impl.renderBundleEncoderSetVertexBuffer(render_bundle_encoder, slot, buffer, offset, size);
     }
 

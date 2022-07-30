@@ -27,11 +27,11 @@ pub const RenderPassEncoder = *opaque {
         Impl.renderPassEncoderDrawIndexed(render_pass_encoder, index_count, instance_count, first_index, base_vertex, first_instance);
     }
 
-    pub inline fn drawIndexedIndirect(render_pass_encoder: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+    pub inline fn drawIndexedIndirect(render_pass_encoder: RenderPassEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void {
         Impl.renderPassEncoderDrawIndexedIndirect(render_pass_encoder, indirect_buffer, indirect_offset);
     }
 
-    pub inline fn drawIndirect(render_pass_encoder: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void {
+    pub inline fn drawIndirect(render_pass_encoder: RenderPassEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void {
         Impl.renderPassEncoderDrawIndirect(render_pass_encoder, indirect_buffer, indirect_offset);
     }
 
@@ -71,7 +71,7 @@ pub const RenderPassEncoder = *opaque {
 
     /// Default `offset`: 0
     /// Default `size`: `gpu.whole_size`
-    pub inline fn setIndexBuffer(render_pass_encoder: RenderPassEncoder, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void {
+    pub inline fn setIndexBuffer(render_pass_encoder: RenderPassEncoder, buffer: *Buffer, format: IndexFormat, offset: u64, size: u64) void {
         Impl.renderPassEncoderSetIndexBuffer(render_pass_encoder, buffer, format, offset, size);
     }
 
@@ -93,7 +93,7 @@ pub const RenderPassEncoder = *opaque {
 
     /// Default `offset`: 0
     /// Default `size`: `gpu.whole_size`
-    pub inline fn setVertexBuffer(render_pass_encoder: RenderPassEncoder, slot: u32, buffer: Buffer, offset: u64, size: u64) void {
+    pub inline fn setVertexBuffer(render_pass_encoder: RenderPassEncoder, slot: u32, buffer: *Buffer, offset: u64, size: u64) void {
         Impl.renderPassEncoderSetVertexBuffer(render_pass_encoder, slot, buffer, offset, size);
     }
 
