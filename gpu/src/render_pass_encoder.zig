@@ -61,7 +61,7 @@ pub const RenderPassEncoder = *opaque {
 
     /// Default `dynamic_offsets_count`: 0
     /// Default `dynamic_offsets`: `null`
-    pub inline fn setBindGroup(render_pass_encoder: RenderPassEncoder, group_index: u32, group: BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
+    pub inline fn setBindGroup(render_pass_encoder: RenderPassEncoder, group_index: u32, group: *BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
         Impl.renderPassEncoderSetBindGroup(render_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
     }
 
