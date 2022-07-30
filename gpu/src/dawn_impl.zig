@@ -1007,9 +1007,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn samplerSetLabel(sampler: *gpu.Sampler, label: [*:0]const u8) void {
-        _ = sampler;
-        _ = label;
-        unreachable;
+        procs.samplerSetLabel.?(@ptrCast(c.WGPUSampler, sampler), label);
     }
 
     pub inline fn samplerReference(sampler: *gpu.Sampler) void {
