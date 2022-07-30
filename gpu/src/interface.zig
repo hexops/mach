@@ -606,7 +606,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
-        export fn wgpuDeviceCreateRenderBundleEncoder(device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) gpu.RenderBundleEncoder {
+        export fn wgpuDeviceCreateRenderBundleEncoder(device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) *gpu.RenderBundleEncoder {
             return T.deviceCreateRenderBundleEncoder(device, descriptor);
         }
 
@@ -1685,7 +1685,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateRenderBundleEncoder(device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) gpu.RenderBundleEncoder {
+    pub inline fn deviceCreateRenderBundleEncoder(device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) *gpu.RenderBundleEncoder {
         _ = device;
         _ = descriptor;
         unreachable;
