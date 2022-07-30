@@ -13,7 +13,6 @@ const Sampler = @import("sampler.zig").Sampler;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
 const Surface = @import("surface.zig").Surface;
 const SwapChain = @import("swap_chain.zig").SwapChain;
-const SwapChainDescriptor = @import("swap_chain.zig").SwapChainDescriptor;
 const Texture = @import("texture.zig").Texture;
 const TextureDescriptor = @import("texture.zig").TextureDescriptor;
 const ChainedStruct = @import("types.zig").ChainedStruct;
@@ -113,7 +112,7 @@ pub const Device = opaque {
         return Impl.deviceCreateShaderModule(device, descriptor);
     }
 
-    pub inline fn createSwapChain(device: *Device, surface: ?*Surface, descriptor: *const SwapChainDescriptor) *SwapChain {
+    pub inline fn createSwapChain(device: *Device, surface: ?*Surface, descriptor: *const SwapChain.Descriptor) *SwapChain {
         return Impl.deviceCreateSwapChain(device, surface, descriptor);
     }
 
