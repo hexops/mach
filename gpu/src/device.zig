@@ -7,7 +7,6 @@ const CommandEncoder = @import("command_encoder.zig").CommandEncoder;
 const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
 const ExternalTexture = @import("external_texture.zig").ExternalTexture;
 const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
-const PipelineLayoutDescriptor = @import("pipeline_layout.zig").PipelineLayoutDescriptor;
 const QuerySet = @import("query_set.zig").QuerySet;
 const QuerySetDescriptor = @import("query_set.zig").QuerySetDescriptor;
 const RenderBundleEncoder = @import("render_bundle_encoder.zig").RenderBundleEncoder;
@@ -92,7 +91,7 @@ pub const Device = opaque {
         return Impl.deviceCreateExternalTexture(device, external_texture_descriptor);
     }
 
-    pub inline fn createPipelineLayout(device: *Device, pipeline_layout_descriptor: *const PipelineLayoutDescriptor) *PipelineLayout {
+    pub inline fn createPipelineLayout(device: *Device, pipeline_layout_descriptor: *const PipelineLayout.Descriptor) *PipelineLayout {
         return Impl.deviceCreatePipelineLayout(device, pipeline_layout_descriptor);
     }
 
