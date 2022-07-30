@@ -1049,8 +1049,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn samplerRelease(sampler: *gpu.Sampler) void {
-        _ = sampler;
-        unreachable;
+        procs.samplerRelease.?(@ptrCast(c.WGPUSampler, sampler));
     }
 
     pub inline fn shaderModuleGetCompilationInfo(shader_module: *gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) void {
