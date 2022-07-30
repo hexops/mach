@@ -90,7 +90,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateExternalTexture", fn (device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTexture.Descriptor) callconv(.Inline) *gpu.ExternalTexture);
     assertDecl(T, "deviceCreatePipelineLayout", fn (device: *gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayout.Descriptor) callconv(.Inline) *gpu.PipelineLayout);
     assertDecl(T, "deviceCreateQuerySet", fn (device: *gpu.Device, descriptor: *const gpu.QuerySet.Descriptor) callconv(.Inline) *gpu.QuerySet);
-    assertDecl(T, "deviceCreateRenderBundleEncoder", fn (device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) callconv(.Inline) *gpu.RenderBundleEncoder);
+    assertDecl(T, "deviceCreateRenderBundleEncoder", fn (device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoder.Descriptor) callconv(.Inline) *gpu.RenderBundleEncoder);
     assertDecl(T, "deviceCreateRenderPipeline", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) callconv(.Inline) *gpu.RenderPipeline);
     assertDecl(T, "deviceCreateRenderPipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceCreateSampler", fn (device: *gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) callconv(.Inline) *gpu.Sampler);
@@ -604,7 +604,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice device, WGPURenderBundleEncoderDescriptor const * descriptor);
-        export fn wgpuDeviceCreateRenderBundleEncoder(device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) *gpu.RenderBundleEncoder {
+        export fn wgpuDeviceCreateRenderBundleEncoder(device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoder.Descriptor) *gpu.RenderBundleEncoder {
             return T.deviceCreateRenderBundleEncoder(device, descriptor);
         }
 
@@ -1683,7 +1683,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateRenderBundleEncoder(device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) *gpu.RenderBundleEncoder {
+    pub inline fn deviceCreateRenderBundleEncoder(device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoder.Descriptor) *gpu.RenderBundleEncoder {
         _ = device;
         _ = descriptor;
         unreachable;
