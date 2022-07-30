@@ -106,9 +106,9 @@ When updating, every single change is verified against [the WebGPU spec itself](
 The rules for translating `webgpu.h` are as follows:
 
 * `WGPUBuffer` -> `gpu.Buffer`:
-  * Handles like these become a `pub const Buffer = *opaque {_}` to ensure they are still pointers compatible with the C ABI, while still allowing us to declare methods on them.
-  * As a result, `null`able `Buffer` is represented simply as `?Buffer`
-* `WGPUBufferBindingType` -> `gpu.BufferBindingType` (purely because it's prefix matches an opaque pointer type, it thus goes into the `buffer.zig` file.)
+  * Opaque pointers like these become a `pub const Buffer = opaque {_}` to ensure they are still pointers compatible with the C ABI, while still allowing us to declare methods on them.
+  * As a result, a `null`able `Buffer` is represented simply as `?*Buffer`, and any function that would normally take `WGPUBuffer` now takes `*Buffer` as a parameter.
+* `WGPUBufferBindingType` -> `gpu.Buffer.BindingType` (purely because it's prefix matches an opaque pointer type, it thus goes into the `Buffer` opaque type.)
 * Reserved Zig keywords are translated as follows:
   * `undefined` -> `undef`
   * `null` -> `nul`
