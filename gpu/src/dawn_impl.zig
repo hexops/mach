@@ -397,13 +397,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePipelineReference(compute_pipeline: *gpu.ComputePipeline) void {
-        _ = compute_pipeline;
-        unreachable;
+        procs.computePipelineReference.?(@ptrCast(c.WGPUComputePipeline, compute_pipeline));
     }
 
     pub inline fn computePipelineRelease(compute_pipeline: *gpu.ComputePipeline) void {
-        _ = compute_pipeline;
-        unreachable;
+        procs.computePipelineRelease.?(@ptrCast(c.WGPUComputePipeline, compute_pipeline));
     }
 
     pub inline fn deviceCreateBindGroup(device: *gpu.Device, descriptor: *const gpu.BindGroup.Descriptor) *gpu.BindGroup {
