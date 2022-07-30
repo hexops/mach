@@ -82,7 +82,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "computePipelineReference", fn (compute_pipeline: gpu.ComputePipeline) callconv(.Inline) void);
     assertDecl(T, "computePipelineRelease", fn (compute_pipeline: gpu.ComputePipeline) callconv(.Inline) void);
     assertDecl(T, "deviceCreateBindGroup", fn (device: gpu.Device, descriptor: *const gpu.BindGroupDescriptor) callconv(.Inline) gpu.BindGroup);
-    assertDecl(T, "deviceCreateBindGroupLayout", fn (device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) callconv(.Inline) *gpu.BindGroupLayout);
+    assertDecl(T, "deviceCreateBindGroupLayout", fn (device: gpu.Device, descriptor: *const gpu.BindGroupLayout.Descriptor) callconv(.Inline) *gpu.BindGroupLayout);
     assertDecl(T, "deviceCreateBuffer", fn (device: gpu.Device, descriptor: *const gpu.BufferDescriptor) callconv(.Inline) gpu.Buffer);
     assertDecl(T, "deviceCreateCommandEncoder", fn (device: gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) callconv(.Inline) gpu.CommandEncoder);
     assertDecl(T, "deviceCreateComputePipeline", fn (device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) callconv(.Inline) gpu.ComputePipeline);
@@ -555,8 +555,8 @@ pub fn Export(comptime T: type) type {
             return T.deviceCreateBindGroup(device, descriptor);
         }
 
-        // WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor);
-        export fn wgpuDeviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) *gpu.BindGroupLayout {
+        // WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayout.Descriptor const * descriptor);
+        export fn wgpuDeviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayout.Descriptor) *gpu.BindGroupLayout {
             return T.deviceCreateBindGroupLayout(device, descriptor);
         }
 
@@ -1625,7 +1625,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) *gpu.BindGroupLayout {
+    pub inline fn deviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayout.Descriptor) *gpu.BindGroupLayout {
         _ = device;
         _ = descriptor;
         unreachable;
