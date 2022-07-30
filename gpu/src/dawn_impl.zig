@@ -741,13 +741,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn queueReference(queue: *gpu.Queue) void {
-        _ = queue;
-        unreachable;
+        procs.queueReference.?(@ptrCast(c.WGPUQueue, queue));
     }
 
     pub inline fn queueRelease(queue: *gpu.Queue) void {
-        _ = queue;
-        unreachable;
+        procs.queueRelease.?(@ptrCast(c.WGPUQueue, queue));
     }
 
     pub inline fn renderBundleReference(render_bundle: *gpu.RenderBundle) void {
