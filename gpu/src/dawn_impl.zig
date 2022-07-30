@@ -1066,8 +1066,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn shaderModuleReference(shader_module: *gpu.ShaderModule) void {
-        _ = shader_module;
-        unreachable;
+        procs.shaderModuleReference.?(@ptrCast(c.WGPUShaderModule, shader_module));
     }
 
     pub inline fn shaderModuleRelease(shader_module: *gpu.ShaderModule) void {
