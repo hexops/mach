@@ -1180,8 +1180,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn textureViewReference(texture_view: *gpu.TextureView) void {
-        _ = texture_view;
-        unreachable;
+        procs.textureViewReference.?(@ptrCast(c.WGPUTextureView, texture_view));
     }
 
     pub inline fn textureViewRelease(texture_view: *gpu.TextureView) void {
