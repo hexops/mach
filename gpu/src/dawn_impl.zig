@@ -1031,8 +1031,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPipelineReference(render_pipeline: *gpu.RenderPipeline) void {
-        _ = render_pipeline;
-        unreachable;
+        procs.renderPipelineReference.?(@ptrCast(c.WGPURenderPipeline, render_pipeline));
     }
 
     pub inline fn renderPipelineRelease(render_pipeline: *gpu.RenderPipeline) void {
