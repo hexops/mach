@@ -253,8 +253,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderPopDebugGroup(command_encoder: *gpu.CommandEncoder) void {
-        _ = command_encoder;
-        unreachable;
+        procs.commandEncoderPopDebugGroup.?(@ptrCast(c.WGPUCommandEncoder, command_encoder));
     }
 
     pub inline fn commandEncoderPushDebugGroup(command_encoder: *gpu.CommandEncoder, group_label: [*:0]const u8) void {
