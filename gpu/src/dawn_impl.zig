@@ -686,9 +686,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn queueSetLabel(queue: *gpu.Queue, label: [*:0]const u8) void {
-        _ = queue;
-        _ = label;
-        unreachable;
+        procs.queueSetLabel.?(@ptrCast(c.WGPUQueue, queue), label);
     }
 
     pub inline fn queueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]*gpu.CommandBuffer) void {
