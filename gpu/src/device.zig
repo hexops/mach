@@ -125,7 +125,7 @@ pub const Device = opaque {
         return Impl.deviceGetLimits(device, limits);
     }
 
-    pub inline fn getQueue(device: *Device) Queue {
+    pub inline fn getQueue(device: *Device) *Queue {
         return Impl.deviceGetQueue(device);
     }
 
