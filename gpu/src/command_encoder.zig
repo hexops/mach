@@ -49,7 +49,7 @@ pub const CommandEncoder = *opaque {
         Impl.commandEncoderCopyTextureToTextureInternal(command_encoder, source, destination, copy_size);
     }
 
-    pub inline fn finish(command_encoder: CommandEncoder, descriptor: ?*const CommandBufferDescriptor) CommandBuffer {
+    pub inline fn finish(command_encoder: CommandEncoder, descriptor: ?*const CommandBufferDescriptor) *CommandBuffer {
         return Impl.commandEncoderFinish(command_encoder, descriptor);
     }
 
