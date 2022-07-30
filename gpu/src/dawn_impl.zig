@@ -104,8 +104,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn bindGroupLayoutRelease(bind_group_layout: *gpu.BindGroupLayout) void {
-        _ = bind_group_layout;
-        unreachable;
+        procs.bindGroupLayoutRelease.?(@ptrCast(c.WGPUBindGroupLayout, bind_group_layout));
     }
 
     pub inline fn bufferDestroy(buffer: *gpu.Buffer) void {
