@@ -97,11 +97,11 @@ pub const Device = opaque {
         Impl.deviceCreateRenderPipelineAsync(device, descriptor, callback, userdata);
     }
 
-    pub inline fn createSampler(device: *Device, descriptor: ?*const SamplerDescriptor) Sampler {
+    pub inline fn createSampler(device: *Device, descriptor: ?*const SamplerDescriptor) *Sampler {
         return Impl.deviceCreateSampler(device, descriptor);
     }
 
-    pub inline fn createShaderModule(device: *Device, descriptor: *const ShaderModuleDescriptor) ShaderModule {
+    pub inline fn createShaderModule(device: *Device, descriptor: *const ShaderModuleDescriptor) *ShaderModule {
         return Impl.deviceCreateShaderModule(device, descriptor);
     }
 

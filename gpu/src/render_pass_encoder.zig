@@ -7,7 +7,7 @@ const Color = @import("types.zig").Color;
 const IndexFormat = @import("types.zig").IndexFormat;
 const Impl = @import("interface.zig").Impl;
 
-pub const RenderPassEncoder = *opaque {
+pub const RenderPassEncoder = opaque {
     pub inline fn beginOcclusionQuery(render_pass_encoder: *RenderPassEncoder, query_index: u32) void {
         Impl.renderPassEncoderBeginOcclusionQuery(render_pass_encoder, query_index);
     }

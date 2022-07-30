@@ -8,7 +8,7 @@ const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Impl = @import("interface.zig").Impl;
 
-pub const RenderPipeline = *opaque {
+pub const RenderPipeline = opaque {
     pub inline fn getBindGroupLayout(render_pipeline: *RenderPipeline, group_index: u32) *BindGroupLayout {
         return Impl.renderPipelineGetBindGroupLayout(render_pipeline, group_index);
     }

@@ -581,7 +581,7 @@ pub const ImageCopyTexture = extern struct {
 
 pub const ProgrammableStageDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    module: ShaderModule,
+    module: *ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32 = 0,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
@@ -630,7 +630,7 @@ pub const ColorTargetState = extern struct {
 
 pub const VertexState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    module: ShaderModule,
+    module: *ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32 = 0,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
@@ -642,7 +642,7 @@ pub const VertexState = extern struct {
 
 pub const FragmentState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    module: ShaderModule,
+    module: *ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32 = 0,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
