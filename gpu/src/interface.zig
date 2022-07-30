@@ -1,5 +1,3 @@
-// TODO: use via gpu.Instance instead
-const Instance = @import("instance.zig").Instance;
 const gpu = @import("main.zig");
 
 /// The gpu.Interface implementation that is used by the entire program. Only one may exist, since
@@ -17,7 +15,7 @@ pub const Impl = blk: {
 
 /// Verifies that a gpu.Interface implementation exposes the expected function declarations.
 pub fn Interface(comptime T: type) type {
-    assertDecl(T, "createInstance", fn (descriptor: ?*const Instance.Descriptor) callconv(.Inline) ?*Instance);
+    assertDecl(T, "createInstance", fn (descriptor: ?*const gpu.Instance.Descriptor) callconv(.Inline) ?*gpu.Instance);
     assertDecl(T, "getProcAddress", fn (device: *gpu.Device, proc_name: [*:0]const u8) callconv(.Inline) ?gpu.Proc);
     assertDecl(T, "adapterCreateDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) callconv(.Inline) ?*gpu.Device);
     assertDecl(T, "adapterEnumerateFeatures", fn (adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
@@ -228,7 +226,7 @@ pub fn Export(comptime T: type) type {
     _ = Interface(T); // verify implementation is a valid interface
     return struct {
         // WGPU_EXPORT WGPUInstance wgpuCreateInstance(WGPUInstanceDescriptor const * descriptor);
-        export fn wgpuCreateInstance(descriptor: ?*const Instance.Descriptor) ?*Instance {
+        export fn wgpuCreateInstance(descriptor: ?*const gpu.Instance.Descriptor) ?*gpu.Instance {
             return T.createInstance(descriptor);
         }
 
@@ -1221,7 +1219,7 @@ pub fn Export(comptime T: type) type {
 
 /// A stub gpu.Interface in which every function is implemented by `unreachable;`
 pub const StubInterface = Interface(struct {
-    pub inline fn createInstance(descriptor: ?*const Instance.Descriptor) ?*Instance {
+    pub inline fn createInstance(descriptor: ?*const gpu.Instance.Descriptor) ?*gpu.Instance {
         _ = descriptor;
         unreachable;
     }
