@@ -161,9 +161,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandBufferSetLabel(command_buffer: *gpu.CommandBuffer, label: [*:0]const u8) void {
-        _ = command_buffer;
-        _ = label;
-        unreachable;
+        procs.commandBufferSetLabel.?(@ptrCast(c.WGPUCommandBuffer, command_buffer), label);
     }
 
     pub inline fn commandBufferReference(command_buffer: *gpu.CommandBuffer) void {
