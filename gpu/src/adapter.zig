@@ -72,7 +72,7 @@ pub const Adapter = opaque {
 
 pub const RequestDeviceCallback = fn (
     status: RequestDeviceStatus,
-    device: Device,
+    device: *Device,
     message: ?[*:0]const u8,
     userdata: *anyopaque,
 ) callconv(.C) void;
