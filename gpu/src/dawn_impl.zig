@@ -1160,9 +1160,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn textureSetLabel(texture: *gpu.Texture, label: [*:0]const u8) void {
-        _ = texture;
-        _ = label;
-        unreachable;
+        procs.textureSetLabel.?(@ptrCast(c.WGPUTexture, texture), label);
     }
 
     pub inline fn textureReference(texture: *gpu.Texture) void {
