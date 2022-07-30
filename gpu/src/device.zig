@@ -11,7 +11,6 @@ const RenderBundleEncoder = @import("render_bundle_encoder.zig").RenderBundleEnc
 const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
 const Sampler = @import("sampler.zig").Sampler;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
-const ShaderModuleDescriptor = @import("shader_module.zig").ShaderModuleDescriptor;
 const Surface = @import("surface.zig").Surface;
 const SwapChain = @import("swap_chain.zig").SwapChain;
 const SwapChainDescriptor = @import("swap_chain.zig").SwapChainDescriptor;
@@ -110,7 +109,7 @@ pub const Device = opaque {
         return Impl.deviceCreateSampler(device, descriptor);
     }
 
-    pub inline fn createShaderModule(device: *Device, descriptor: *const ShaderModuleDescriptor) *ShaderModule {
+    pub inline fn createShaderModule(device: *Device, descriptor: *const ShaderModule.Descriptor) *ShaderModule {
         return Impl.deviceCreateShaderModule(device, descriptor);
     }
 
