@@ -501,8 +501,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceDestroy(device: *gpu.Device) void {
-        _ = device;
-        unreachable;
+        procs.deviceDestroy.?(@ptrCast(c.WGPUDevice, device));
     }
 
     pub inline fn deviceEnumerateFeatures(device: *gpu.Device, features: [*]gpu.FeatureName) usize {
