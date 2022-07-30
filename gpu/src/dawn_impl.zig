@@ -929,9 +929,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderSetLabel(render_pass_encoder: *gpu.RenderPassEncoder, label: [*:0]const u8) void {
-        _ = render_pass_encoder;
-        _ = label;
-        unreachable;
+        procs.renderPassEncoderSetLabel.?(@ptrCast(c.WGPURenderPassEncoder, render_pass_encoder), label);
     }
 
     pub inline fn renderPassEncoderSetPipeline(render_pass_encoder: *gpu.RenderPassEncoder, pipeline: *gpu.RenderPipeline) void {
