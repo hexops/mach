@@ -178,8 +178,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandBufferRelease(command_buffer: *gpu.CommandBuffer) void {
-        _ = command_buffer;
-        unreachable;
+        procs.commandBufferRelease.?(@ptrCast(c.WGPUCommandBuffer, command_buffer));
     }
 
     pub inline fn commandEncoderBeginComputePass(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) *gpu.ComputePassEncoder {
