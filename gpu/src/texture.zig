@@ -1,14 +1,12 @@
 const std = @import("std");
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const TextureView = @import("texture_view.zig").TextureView;
-const TextureViewDimension = @import("texture_view.zig").TextureViewDimension;
-const TextureViewDescriptor = @import("texture_view.zig").TextureViewDescriptor;
 const Extent3D = @import("types.zig").Extent3D;
 const Impl = @import("interface.zig").Impl;
 const copy_stride_undefined = @import("main.zig").copy_stride_undefined;
 
 pub const Texture = opaque {
-    pub inline fn createView(texture: *Texture, descriptor: ?*const TextureViewDescriptor) *TextureView {
+    pub inline fn createView(texture: *Texture, descriptor: ?*const TextureView.Descriptor) *TextureView {
         return Impl.textureCreateView(texture, descriptor);
     }
 
@@ -217,7 +215,7 @@ pub const TextureUsageFlags = packed struct {
 pub const TextureBindingLayout = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     sample_type: TextureSampleType = .undef,
-    view_dimension: TextureViewDimension = .dimension_undef,
+    view_dimension: TextureView.Dimension = .dimension_undef,
     multisampled: bool = false,
 };
 
