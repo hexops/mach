@@ -5,7 +5,6 @@ const TextureFormat = @import("texture.zig").TextureFormat;
 const TextureAspect = @import("texture.zig").TextureAspect;
 const TextureDataLayout = @import("texture.zig").TextureDataLayout;
 const TextureView = @import("texture_view.zig").TextureView;
-const TextureViewDimension = @import("texture_view.zig").TextureViewDimension;
 const Buffer = @import("buffer.zig").Buffer;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
 const limit_u32_undefined = @import("main.zig").limit_u32_undefined;
@@ -511,7 +510,7 @@ pub const StorageTextureBindingLayout = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     access: StorageTextureAccess = .undef,
     format: TextureFormat = .undef,
-    view_dimension: TextureViewDimension = .dimension_undef,
+    view_dimension: TextureView.Dimension = .dimension_undef,
 };
 
 pub const VertexAttribute = extern struct {

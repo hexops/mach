@@ -196,7 +196,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "swapChainPresent", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) void);
     assertDecl(T, "swapChainReference", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) void);
     assertDecl(T, "swapChainRelease", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) void);
-    assertDecl(T, "textureCreateView", fn (texture: *gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) callconv(.Inline) *gpu.TextureView);
+    assertDecl(T, "textureCreateView", fn (texture: *gpu.Texture, descriptor: ?*const gpu.TextureView.Descriptor) callconv(.Inline) *gpu.TextureView);
     assertDecl(T, "textureDestroy", fn (texture: *gpu.Texture) callconv(.Inline) void);
     assertDecl(T, "textureGetDepthOrArrayLayers", fn (texture: *gpu.Texture) callconv(.Inline) u32);
     assertDecl(T, "textureGetDimension", fn (texture: *gpu.Texture) callconv(.Inline) gpu.TextureDimension);
@@ -1136,7 +1136,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUTextureView wgpuTextureCreateView(WGPUTexture texture, WGPUTextureViewDescriptor const * descriptor /* nullable */);
-        export fn wgpuTextureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) *gpu.TextureView {
+        export fn wgpuTextureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureView.Descriptor) *gpu.TextureView {
             return T.textureCreateView(texture, descriptor);
         }
 
@@ -2349,7 +2349,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn textureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) *gpu.TextureView {
+    pub inline fn textureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureView.Descriptor) *gpu.TextureView {
         _ = texture;
         _ = descriptor;
         unreachable;
