@@ -428,8 +428,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateErrorBuffer(device: *gpu.Device) *gpu.Buffer {
-        _ = device;
-        unreachable;
+        return @ptrCast(*gpu.Buffer, procs.deviceCreateErrorBuffer.?(@ptrCast(c.WGPUDevice, device)));
     }
 
     pub inline fn deviceCreateErrorExternalTexture(device: *gpu.Device) *gpu.ExternalTexture {
