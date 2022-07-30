@@ -234,15 +234,17 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderFinish(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.CommandBuffer.Descriptor) *gpu.CommandBuffer {
-        _ = command_encoder;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.CommandBuffer, procs.commandEncoderFinish.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            @ptrCast(?*const c.WGPUCommandBufferDescriptor, descriptor),
+        ));
     }
 
     pub inline fn commandEncoderInjectValidationError(command_encoder: *gpu.CommandEncoder, message: [*:0]const u8) void {
-        _ = command_encoder;
-        _ = message;
-        unreachable;
+        procs.commandEncoderInjectValidationError.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            message,
+        );
     }
 
     pub inline fn commandEncoderInsertDebugMarker(command_encoder: *gpu.CommandEncoder, marker_label: [*:0]const u8) void {
