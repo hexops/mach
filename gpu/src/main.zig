@@ -50,8 +50,8 @@ const device = @import("device.zig");
 const interface = @import("interface.zig");
 
 /// Generic function pointer type, used for returning API function pointers. Must be
-/// cast to a `fn (...) callconv(.C) T` before use.
-pub const Proc = *anyopaque;
+/// cast to the right `fn (...) callconv(.C) T` type before use.
+pub const Proc = fn () callconv(.C) void;
 
 pub const ComputePassTimestampWrite = extern struct {
     query_set: *query_set.QuerySet,
