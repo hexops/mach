@@ -348,9 +348,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePassEncoderSetLabel(compute_pass_encoder: *gpu.ComputePassEncoder, label: [*:0]const u8) void {
-        _ = compute_pass_encoder;
-        _ = label;
-        unreachable;
+        procs.computePassEncoderSetLabel.?(@ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder), label);
     }
 
     pub inline fn computePassEncoderSetPipeline(compute_pass_encoder: *gpu.ComputePassEncoder, pipeline: *gpu.ComputePipeline) void {
