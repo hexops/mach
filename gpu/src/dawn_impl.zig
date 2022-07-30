@@ -177,9 +177,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderBeginRenderPass(command_encoder: *gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) *gpu.RenderPassEncoder {
-        _ = command_encoder;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.RenderPassEncoder, procs.commandEncoderBeginRenderPass.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            @ptrCast(?*const c.WGPURenderPassDescriptor, descriptor),
+        ));
     }
 
     pub inline fn commandEncoderClearBuffer(command_encoder: *gpu.CommandEncoder, buffer: *gpu.Buffer, offset: u64, size: u64) void {
