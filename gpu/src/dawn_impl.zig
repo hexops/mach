@@ -274,9 +274,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderSetLabel(command_encoder: *gpu.CommandEncoder, label: [*:0]const u8) void {
-        _ = command_encoder;
-        _ = label;
-        unreachable;
+        procs.commandEncoderSetLabel.?(@ptrCast(c.WGPUCommandEncoder, command_encoder), label);
     }
 
     pub inline fn commandEncoderWriteBuffer(command_encoder: *gpu.CommandEncoder, buffer: *gpu.Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
