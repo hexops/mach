@@ -1,12 +1,12 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const Impl = @import("interface.zig").Impl;
 
-pub const Surface = *opaque {
-    pub inline fn reference(surface: Surface) void {
+pub const Surface = opaque {
+    pub inline fn reference(surface: *Surface) void {
         Impl.surfaceReference(surface);
     }
 
-    pub inline fn release(surface: Surface) void {
+    pub inline fn release(surface: *Surface) void {
         Impl.surfaceRelease(surface);
     }
 };

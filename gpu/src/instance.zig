@@ -11,7 +11,7 @@ pub const Instance = opaque {
         next_in_chain: ?*const ChainedStruct = null,
     };
 
-    pub inline fn createSurface(instance: *Instance, descriptor: *const SurfaceDescriptor) Surface {
+    pub inline fn createSurface(instance: *Instance, descriptor: *const SurfaceDescriptor) *Surface {
         return Impl.instanceCreateSurface(instance, descriptor);
     }
 
