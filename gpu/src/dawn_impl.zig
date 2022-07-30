@@ -657,9 +657,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn querySetSetLabel(query_set: *gpu.QuerySet, label: [*:0]const u8) void {
-        _ = query_set;
-        _ = label;
-        unreachable;
+        procs.querySetSetLabel.?(@ptrCast(c.WGPUQuerySet, query_set), label);
     }
 
     pub inline fn querySetReference(query_set: *gpu.QuerySet) void {
