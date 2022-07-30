@@ -2,7 +2,7 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const TextureView = @import("texture_view.zig").TextureView;
 const Impl = @import("interface.zig").Impl;
 
-pub const ExternalTexture = *opaque {
+pub const ExternalTexture = opaque {
     pub inline fn destroy(external_texture: *ExternalTexture) void {
         Impl.externalTextureDestroy(external_texture);
     }
@@ -33,7 +33,7 @@ pub const ExternalTextureDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     plane0: *TextureView,
-    plane1: ?TextureView,
+    plane1: ?*TextureView,
     do_yuv_to_rgb_conversion_only: bool = false,
     // TODO: dawn.json says length 12, does it mean array length?
     yuv_to_rgb_conversion_matrix: ?[*]const f32,

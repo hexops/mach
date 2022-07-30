@@ -25,8 +25,8 @@ pub const BindGroupEntry = extern struct {
     buffer: ?*Buffer,
     offset: u64 = 0,
     size: u64,
-    sampler: ?Sampler,
-    texture_view: ?TextureView,
+    sampler: ?*Sampler,
+    texture_view: ?*TextureView,
 };
 
 pub const BindGroupDescriptor = extern struct {

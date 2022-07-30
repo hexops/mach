@@ -37,7 +37,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "bufferGetConstMappedRange", fn (buffer: *gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*const anyopaque);
     assertDecl(T, "bufferGetMappedRange", fn (buffer: *gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*anyopaque);
     assertDecl(T, "bufferGetSize", fn (buffer: *gpu.Buffer) callconv(.Inline) u64);
-    assertDecl(T, "bufferGetUsage", fn (buffer: *gpu.Buffer) callconv(.Inline) *gpu.BufferUsage);
+    assertDecl(T, "bufferGetUsage", fn (buffer: *gpu.Buffer) callconv(.Inline) gpu.BufferUsage);
     assertDecl(T, "bufferMapAsync", fn (buffer: *gpu.Buffer, mode: gpu.MapMode, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "bufferSetLabel", fn (buffer: *gpu.Buffer, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "bufferUnmap", fn (buffer: *gpu.Buffer) callconv(.Inline) void);
@@ -97,7 +97,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateRenderPipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceCreateSampler", fn (device: *gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) callconv(.Inline) *gpu.Sampler);
     assertDecl(T, "deviceCreateShaderModule", fn (device: *gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) callconv(.Inline) *gpu.ShaderModule);
-    assertDecl(T, "deviceCreateSwapChain", fn (device: *gpu.Device, surface: ?gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) callconv(.Inline) *gpu.SwapChain);
+    assertDecl(T, "deviceCreateSwapChain", fn (device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) callconv(.Inline) *gpu.SwapChain);
     assertDecl(T, "deviceCreateTexture", fn (device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) callconv(.Inline) *gpu.Texture);
     assertDecl(T, "deviceDestroy", fn (device: *gpu.Device) callconv(.Inline) void);
     assertDecl(T, "deviceEnumerateFeatures", fn (device: *gpu.Device, features: [*]gpu.FeatureName) callconv(.Inline) usize);
@@ -164,7 +164,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "renderPassEncoderDrawIndirect", fn (render_pass_encoder: *gpu.RenderPassEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderEnd", fn (render_pass_encoder: *gpu.RenderPassEncoder) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderEndOcclusionQuery", fn (render_pass_encoder: *gpu.RenderPassEncoder) callconv(.Inline) void);
-    assertDecl(T, "renderPassEncoderExecuteBundles", fn (render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const gpu.RenderBundle) callconv(.Inline) void);
+    assertDecl(T, "renderPassEncoderExecuteBundles", fn (render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const *const gpu.RenderBundle) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderInsertDebugMarker", fn (render_pass_encoder: *gpu.RenderPassEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderPopDebugGroup", fn (render_pass_encoder: *gpu.RenderPassEncoder) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderPushDebugGroup", fn (render_pass_encoder: *gpu.RenderPassEncoder, group_label: [*:0]const u8) callconv(.Inline) void);
@@ -376,12 +376,12 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUComputePassEncoder wgpuCommandEncoderBeginComputePass(WGPUCommandEncoder commandEncoder, WGPUComputePassDescriptor const * descriptor /* nullable */);
-        export fn wgpuCommandEncoderBeginComputePass(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) gpu.ComputePassEncoder {
+        export fn wgpuCommandEncoderBeginComputePass(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) *gpu.ComputePassEncoder {
             return T.commandEncoderBeginComputePass(command_encoder, descriptor);
         }
 
         // WGPU_EXPORT WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder commandEncoder, WGPURenderPassDescriptor const * descriptor);
-        export fn wgpuCommandEncoderBeginRenderPass(command_encoder: *gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) gpu.RenderPassEncoder {
+        export fn wgpuCommandEncoderBeginRenderPass(command_encoder: *gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) *gpu.RenderPassEncoder {
             return T.commandEncoderBeginRenderPass(command_encoder, descriptor);
         }
 
@@ -551,7 +551,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor const * descriptor);
-        export fn wgpuDeviceCreateBindGroup(device: *gpu.Device, descriptor: *const gpu.BindGroupDescriptor) gpu.BindGroup {
+        export fn wgpuDeviceCreateBindGroup(device: *gpu.Device, descriptor: *const gpu.BindGroupDescriptor) *gpu.BindGroup {
             return T.deviceCreateBindGroup(device, descriptor);
         }
 
@@ -561,7 +561,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
-        export fn wgpuDeviceCreateBuffer(device: *gpu.Device, descriptor: *const gpu.BufferDescriptor) gpu.Buffer {
+        export fn wgpuDeviceCreateBuffer(device: *gpu.Device, descriptor: *const gpu.BufferDescriptor) *gpu.Buffer {
             return T.deviceCreateBuffer(device, descriptor);
         }
 
@@ -571,7 +571,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor);
-        export fn wgpuDeviceCreateComputePipeline(device: *gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) gpu.ComputePipeline {
+        export fn wgpuDeviceCreateComputePipeline(device: *gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) *gpu.ComputePipeline {
             return T.deviceCreateComputePipeline(device, descriptor);
         }
 
@@ -581,17 +581,17 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device);
-        export fn wgpuDeviceCreateErrorBuffer(device: *gpu.Device) gpu.Buffer {
+        export fn wgpuDeviceCreateErrorBuffer(device: *gpu.Device) *gpu.Buffer {
             return T.deviceCreateErrorBuffer(device);
         }
 
         // WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateErrorExternalTexture(WGPUDevice device);
-        export fn wgpuDeviceCreateErrorExternalTexture(device: *gpu.Device) gpu.ExternalTexture {
+        export fn wgpuDeviceCreateErrorExternalTexture(device: *gpu.Device) *gpu.ExternalTexture {
             return T.deviceCreateErrorExternalTexture(device);
         }
 
         // WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, WGPUExternalTextureDescriptor const * externalTextureDescriptor);
-        export fn wgpuDeviceCreateExternalTexture(device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTextureDescriptor) gpu.ExternalTexture {
+        export fn wgpuDeviceCreateExternalTexture(device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTextureDescriptor) *gpu.ExternalTexture {
             return T.deviceCreateExternalTexture(device, external_texture_descriptor);
         }
 
@@ -611,7 +611,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPURenderPipeline wgpuDeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor);
-        export fn wgpuDeviceCreateRenderPipeline(device: *gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) gpu.RenderPipeline {
+        export fn wgpuDeviceCreateRenderPipeline(device: *gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) *gpu.RenderPipeline {
             return T.deviceCreateRenderPipeline(device, descriptor);
         }
 
@@ -621,22 +621,22 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor /* nullable */);
-        export fn wgpuDeviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) gpu.Sampler {
+        export fn wgpuDeviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) *gpu.Sampler {
             return T.deviceCreateSampler(device, descriptor);
         }
 
         // WGPU_EXPORT WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor const * descriptor);
-        export fn wgpuDeviceCreateShaderModule(device: *gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) gpu.ShaderModule {
+        export fn wgpuDeviceCreateShaderModule(device: *gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) *gpu.ShaderModule {
             return T.deviceCreateShaderModule(device, descriptor);
         }
 
         // WGPU_EXPORT WGPUSwapChain wgpuDeviceCreateSwapChain(WGPUDevice device, WGPUSurface surface /* nullable */, WGPUSwapChainDescriptor const * descriptor);
-        export fn wgpuDeviceCreateSwapChain(device: *gpu.Device, surface: ?gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) gpu.SwapChain {
+        export fn wgpuDeviceCreateSwapChain(device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) *gpu.SwapChain {
             return T.deviceCreateSwapChain(device, surface, descriptor);
         }
 
         // WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
-        export fn wgpuDeviceCreateTexture(device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) gpu.Texture {
+        export fn wgpuDeviceCreateTexture(device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) *gpu.Texture {
             return T.deviceCreateTexture(device, descriptor);
         }
 
@@ -741,7 +741,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUSurface wgpuInstanceCreateSurface(WGPUInstance instance, WGPUSurfaceDescriptor const * descriptor);
-        export fn wgpuInstanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) gpu.Surface {
+        export fn wgpuInstanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) *gpu.Surface {
             return T.instanceCreateSurface(instance, descriptor);
         }
 
@@ -966,7 +966,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder renderPassEncoder, uint32_t bundlesCount, WGPURenderBundle const * bundles);
-        export fn wgpuRenderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const gpu.RenderBundle) void {
+        export fn wgpuRenderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const *const gpu.RenderBundle) void {
             T.renderPassEncoderExecuteBundles(render_pass_encoder, bundles_count, bundles);
         }
 
@@ -1118,7 +1118,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUTextureView wgpuSwapChainGetCurrentTextureView(WGPUSwapChain swapChain);
-        export fn wgpuSwapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) gpu.TextureView {
+        export fn wgpuSwapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) *gpu.TextureView {
             return T.swapChainGetCurrentTextureView(swap_chain);
         }
 
@@ -1138,7 +1138,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUTextureView wgpuTextureCreateView(WGPUTexture texture, WGPUTextureViewDescriptor const * descriptor /* nullable */);
-        export fn wgpuTextureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) gpu.TextureView {
+        export fn wgpuTextureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) *gpu.TextureView {
             return T.textureCreateView(texture, descriptor);
         }
 
@@ -1232,7 +1232,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn adapterCreateDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?gpu.Device {
+    pub inline fn adapterCreateDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?*gpu.Device {
         _ = adapter;
         _ = descriptor;
         unreachable;
@@ -1390,13 +1390,13 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn commandEncoderBeginComputePass(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) gpu.ComputePassEncoder {
+    pub inline fn commandEncoderBeginComputePass(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.ComputePassDescriptor) *gpu.ComputePassEncoder {
         _ = command_encoder;
         _ = descriptor;
         unreachable;
     }
 
-    pub inline fn commandEncoderBeginRenderPass(command_encoder: *gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) gpu.RenderPassEncoder {
+    pub inline fn commandEncoderBeginRenderPass(command_encoder: *gpu.CommandEncoder, descriptor: *const gpu.RenderPassDescriptor) *gpu.RenderPassEncoder {
         _ = command_encoder;
         _ = descriptor;
         unreachable;
@@ -1619,7 +1619,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateBindGroup(device: *gpu.Device, descriptor: *const gpu.BindGroupDescriptor) gpu.BindGroup {
+    pub inline fn deviceCreateBindGroup(device: *gpu.Device, descriptor: *const gpu.BindGroupDescriptor) *gpu.BindGroup {
         _ = device;
         _ = descriptor;
         unreachable;
@@ -1631,7 +1631,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateBuffer(device: *gpu.Device, descriptor: *const gpu.BufferDescriptor) gpu.Buffer {
+    pub inline fn deviceCreateBuffer(device: *gpu.Device, descriptor: *const gpu.BufferDescriptor) *gpu.Buffer {
         _ = device;
         _ = descriptor;
         unreachable;
@@ -1643,7 +1643,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateComputePipeline(device: *gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) gpu.ComputePipeline {
+    pub inline fn deviceCreateComputePipeline(device: *gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) *gpu.ComputePipeline {
         _ = device;
         _ = descriptor;
         unreachable;
@@ -1657,17 +1657,17 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateErrorBuffer(device: *gpu.Device) gpu.Buffer {
+    pub inline fn deviceCreateErrorBuffer(device: *gpu.Device) *gpu.Buffer {
         _ = device;
         unreachable;
     }
 
-    pub inline fn deviceCreateErrorExternalTexture(device: *gpu.Device) gpu.ExternalTexture {
+    pub inline fn deviceCreateErrorExternalTexture(device: *gpu.Device) *gpu.ExternalTexture {
         _ = device;
         unreachable;
     }
 
-    pub inline fn deviceCreateExternalTexture(device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTextureDescriptor) gpu.ExternalTexture {
+    pub inline fn deviceCreateExternalTexture(device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTextureDescriptor) *gpu.ExternalTexture {
         _ = device;
         _ = external_texture_descriptor;
         unreachable;
@@ -1691,7 +1691,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateRenderPipeline(device: *gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) gpu.RenderPipeline {
+    pub inline fn deviceCreateRenderPipeline(device: *gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) *gpu.RenderPipeline {
         _ = device;
         _ = descriptor;
         unreachable;
@@ -1705,26 +1705,26 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) gpu.Sampler {
+    pub inline fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) *gpu.Sampler {
         _ = device;
         _ = descriptor;
         unreachable;
     }
 
-    pub inline fn deviceCreateShaderModule(device: *gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) gpu.ShaderModule {
+    pub inline fn deviceCreateShaderModule(device: *gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) *gpu.ShaderModule {
         _ = device;
         _ = descriptor;
         unreachable;
     }
 
-    pub inline fn deviceCreateSwapChain(device: *gpu.Device, surface: ?gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) gpu.SwapChain {
+    pub inline fn deviceCreateSwapChain(device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) *gpu.SwapChain {
         _ = device;
         _ = surface;
         _ = descriptor;
         unreachable;
     }
 
-    pub inline fn deviceCreateTexture(device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) gpu.Texture {
+    pub inline fn deviceCreateTexture(device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) *gpu.Texture {
         _ = device;
         _ = descriptor;
         unreachable;
@@ -1846,7 +1846,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn instanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) gpu.Surface {
+    pub inline fn instanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) *gpu.Surface {
         _ = instance;
         _ = descriptor;
         unreachable;
@@ -2139,7 +2139,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn renderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const gpu.RenderBundle) void {
+    pub inline fn renderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const *const gpu.RenderBundle) void {
         _ = render_pass_encoder;
         _ = bundles_count;
         _ = bundles;
@@ -2331,7 +2331,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn swapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) gpu.TextureView {
+    pub inline fn swapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) *gpu.TextureView {
         _ = swap_chain;
         unreachable;
     }
@@ -2351,7 +2351,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn textureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) gpu.TextureView {
+    pub inline fn textureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureViewDescriptor) *gpu.TextureView {
         _ = texture;
         _ = descriptor;
         unreachable;

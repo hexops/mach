@@ -36,12 +36,12 @@ const ErrorType = @import("types.zig").ErrorType;
 const ErrorFilter = @import("types.zig").ErrorFilter;
 const ErrorCallback = @import("types.zig").ErrorCallback;
 const LoggingCallback = @import("types.zig").LoggingCallback;
-const CreateComputePipelineAsyncCallback = @import("types.zig").CreateComputePipelineAsyncCallback;
-const CreateRenderPipelineAsyncCallback = @import("types.zig").CreateRenderPipelineAsyncCallback;
+const CreateComputePipelineAsyncCallback = @import("main.zig").CreateComputePipelineAsyncCallback;
+const CreateRenderPipelineAsyncCallback = @import("main.zig").CreateRenderPipelineAsyncCallback;
 const Impl = @import("interface.zig").Impl;
 
 pub const Device = opaque {
-    pub inline fn createBindGroup(device: *Device, descriptor: *const BindGroupDescriptor) BindGroup {
+    pub inline fn createBindGroup(device: *Device, descriptor: *const BindGroupDescriptor) *BindGroup {
         return Impl.deviceCreateBindGroup(device, descriptor);
     }
 
@@ -105,11 +105,11 @@ pub const Device = opaque {
         return Impl.deviceCreateShaderModule(device, descriptor);
     }
 
-    pub inline fn createSwapChain(device: *Device, surface: ?Surface, descriptor: *const SwapChainDescriptor) *SwapChain {
+    pub inline fn createSwapChain(device: *Device, surface: ?*Surface, descriptor: *const SwapChainDescriptor) *SwapChain {
         return Impl.deviceCreateSwapChain(device, surface, descriptor);
     }
 
-    pub inline fn createTexture(device: *Device, descriptor: *const TextureDescriptor) Texture {
+    pub inline fn createTexture(device: *Device, descriptor: *const TextureDescriptor) *Texture {
         return Impl.deviceCreateTexture(device, descriptor);
     }
 

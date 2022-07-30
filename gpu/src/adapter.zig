@@ -36,7 +36,7 @@ pub const Adapter = opaque {
         backend_type: Type,
     };
 
-    pub inline fn createDevice(adapter: *Adapter, descriptor: ?*const DeviceDescriptor) ?Device {
+    pub inline fn createDevice(adapter: *Adapter, descriptor: ?*const DeviceDescriptor) ?*Device {
         return Impl.adapterCreateDevice(adapter, descriptor);
     }
 

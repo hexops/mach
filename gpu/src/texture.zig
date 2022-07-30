@@ -7,56 +7,56 @@ const Extent3D = @import("types.zig").Extent3D;
 const Impl = @import("interface.zig").Impl;
 const copy_stride_undefined = @import("main.zig").copy_stride_undefined;
 
-pub const Texture = *opaque {
-    pub inline fn createView(texture: Texture, descriptor: ?*const TextureViewDescriptor) *TextureView {
+pub const Texture = opaque {
+    pub inline fn createView(texture: *Texture, descriptor: ?*const TextureViewDescriptor) *TextureView {
         return Impl.textureCreateView(texture, descriptor);
     }
 
-    pub inline fn destroy(texture: Texture) void {
+    pub inline fn destroy(texture: *Texture) void {
         Impl.textureDestroy(texture);
     }
 
-    pub inline fn getDepthOrArrayLayers(texture: Texture) u32 {
+    pub inline fn getDepthOrArrayLayers(texture: *Texture) u32 {
         return Impl.textureGetDepthOrArrayLayers(texture);
     }
 
-    pub inline fn getDimension(texture: Texture) TextureDimension {
+    pub inline fn getDimension(texture: *Texture) TextureDimension {
         return Impl.textureGetDimension(texture);
     }
 
-    pub inline fn getFormat(texture: Texture) TextureFormat {
+    pub inline fn getFormat(texture: *Texture) TextureFormat {
         return Impl.textureGetFormat(texture);
     }
 
-    pub inline fn getHeight(texture: Texture) u32 {
+    pub inline fn getHeight(texture: *Texture) u32 {
         return Impl.textureGetHeight(texture);
     }
 
-    pub inline fn getMipLevelCount(texture: Texture) u32 {
+    pub inline fn getMipLevelCount(texture: *Texture) u32 {
         return Impl.textureGetMipLevelCount(texture);
     }
 
-    pub inline fn getSampleCount(texture: Texture) u32 {
+    pub inline fn getSampleCount(texture: *Texture) u32 {
         return Impl.textureGetSampleCount(texture);
     }
 
-    pub inline fn getUsage(texture: Texture) TextureUsageFlags {
+    pub inline fn getUsage(texture: *Texture) TextureUsageFlags {
         return Impl.textureGetUsage(texture);
     }
 
-    pub inline fn getWidth(texture: Texture) u32 {
+    pub inline fn getWidth(texture: *Texture) u32 {
         return Impl.textureGetWidth(texture);
     }
 
-    pub inline fn setLabel(texture: Texture, label: [*:0]const u8) void {
+    pub inline fn setLabel(texture: *Texture, label: [*:0]const u8) void {
         Impl.textureSetLabel(texture, label);
     }
 
-    pub inline fn reference(texture: Texture) void {
+    pub inline fn reference(texture: *Texture) void {
         Impl.textureReference(texture);
     }
 
-    pub inline fn release(texture: Texture) void {
+    pub inline fn release(texture: *Texture) void {
         Impl.textureRelease(texture);
     }
 };

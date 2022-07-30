@@ -573,7 +573,7 @@ pub const ImageCopyBuffer = extern struct {
 
 pub const ImageCopyTexture = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    texture: Texture,
+    texture: *Texture,
     mip_level: u32 = 0,
     origin: Origin3D,
     aspect: TextureAspect = .all,
@@ -589,8 +589,8 @@ pub const ProgrammableStageDescriptor = extern struct {
 };
 
 pub const RenderPassColorAttachment = extern struct {
-    view: ?TextureView,
-    resolve_target: ?TextureView,
+    view: ?*TextureView,
+    resolve_target: ?*TextureView,
     load_op: LoadOp,
     store_op: StoreOp,
     /// deprecated
