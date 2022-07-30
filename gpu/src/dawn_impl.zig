@@ -160,8 +160,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn bufferReference(buffer: *gpu.Buffer) void {
-        _ = buffer;
-        unreachable;
+        procs.bufferReference.?(@ptrCast(c.WGPUBuffer, buffer));
     }
 
     pub inline fn bufferRelease(buffer: *gpu.Buffer) void {
