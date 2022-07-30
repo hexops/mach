@@ -1015,8 +1015,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderRelease(render_pass_encoder: *gpu.RenderPassEncoder) void {
-        _ = render_pass_encoder;
-        unreachable;
+        procs.renderPassEncoderRelease.?(@ptrCast(c.WGPURenderPassEncoder, render_pass_encoder));
     }
 
     pub inline fn renderPipelineGetBindGroupLayout(render_pipeline: *gpu.RenderPipeline, group_index: u32) *gpu.BindGroupLayout {
