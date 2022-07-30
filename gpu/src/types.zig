@@ -11,24 +11,6 @@ const ShaderModule = @import("shader_module.zig").ShaderModule;
 const limit_u32_undefined = @import("main.zig").limit_u32_undefined;
 const limit_u64_undefined = @import("main.zig").limit_u64_undefined;
 
-pub const CompilationInfoCallback = fn (
-    status: CompilationInfoRequestStatus,
-    compilation_info: *const CompilationInfo,
-    userdata: *anyopaque,
-) callconv(.C) void;
-
-pub const ErrorCallback = fn (
-    typ: ErrorType,
-    message: [*:0]const u8,
-    userdata: *anyopaque,
-) callconv(.C) void;
-
-pub const LoggingCallback = fn (
-    typ: LoggingType,
-    message: [*:0]const u8,
-    userdata: *anyopaque,
-) callconv(.C) void;
-
 pub const AlphaMode = enum(u32) {
     premultiplied = 0x00000000,
     unpremultiplied = 0x00000001,

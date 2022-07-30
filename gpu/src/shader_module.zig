@@ -1,5 +1,5 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
-const CompilationInfoCallback = @import("types.zig").CompilationInfoCallback;
+const CompilationInfoCallback = @import("callbacks.zig").CompilationInfoCallback;
 const Impl = @import("interface.zig").Impl;
 
 pub const ShaderModule = opaque {

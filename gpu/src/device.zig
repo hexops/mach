@@ -34,10 +34,10 @@ const RequiredLimits = @import("types.zig").RequiredLimits;
 const SupportedLimits = @import("types.zig").SupportedLimits;
 const ErrorType = @import("types.zig").ErrorType;
 const ErrorFilter = @import("types.zig").ErrorFilter;
-const ErrorCallback = @import("types.zig").ErrorCallback;
-const LoggingCallback = @import("types.zig").LoggingCallback;
-const CreateComputePipelineAsyncCallback = @import("main.zig").CreateComputePipelineAsyncCallback;
-const CreateRenderPipelineAsyncCallback = @import("main.zig").CreateRenderPipelineAsyncCallback;
+const LoggingCallback = @import("callbacks.zig").LoggingCallback;
+const ErrorCallback = @import("callbacks.zig").ErrorCallback;
+const CreateComputePipelineAsyncCallback = @import("callbacks.zig").CreateComputePipelineAsyncCallback;
+const CreateRenderPipelineAsyncCallback = @import("callbacks.zig").CreateRenderPipelineAsyncCallback;
 const Impl = @import("interface.zig").Impl;
 
 pub const Device = opaque {

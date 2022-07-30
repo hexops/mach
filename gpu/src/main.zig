@@ -12,6 +12,7 @@ pub usingnamespace @import("adapter.zig");
 pub usingnamespace @import("bind_group.zig");
 pub usingnamespace @import("bind_group_layout.zig");
 pub usingnamespace @import("buffer.zig");
+pub usingnamespace @import("callbacks.zig");
 pub usingnamespace @import("command_buffer.zig");
 pub usingnamespace @import("command_encoder.zig");
 pub usingnamespace @import("compute_pass_encoder.zig");
@@ -51,20 +52,6 @@ const interface = @import("interface.zig");
 /// Generic function pointer type, used for returning API function pointers. Must be
 /// cast to a `fn (...) callconv(.C) T` before use.
 pub const Proc = *anyopaque;
-
-pub const CreateComputePipelineAsyncCallback = fn (
-    status: types.CreatePipelineAsyncStatus,
-    compute_pipeline: *compute_pipeline.ComputePipeline,
-    message: [*:0]const u8,
-    userdata: *anyopaque,
-) callconv(.C) void;
-
-pub const CreateRenderPipelineAsyncCallback = fn (
-    status: types.CreatePipelineAsyncStatus,
-    pipeline: *render_pipeline.RenderPipeline,
-    message: [*:0]const u8,
-    userdata: *anyopaque,
-) callconv(.C) void;
 
 pub const ComputePassTimestampWrite = extern struct {
     query_set: *query_set.QuerySet,
