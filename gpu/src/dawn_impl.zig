@@ -601,13 +601,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceReference(device: *gpu.Device) void {
-        _ = device;
-        unreachable;
+        procs.deviceReference.?(@ptrCast(c.WGPUDevice, device));
     }
 
     pub inline fn deviceRelease(device: *gpu.Device) void {
-        _ = device;
-        unreachable;
+        procs.deviceRelease.?(@ptrCast(c.WGPUDevice, device));
     }
 
     pub inline fn externalTextureDestroy(external_texture: *gpu.ExternalTexture) void {
