@@ -92,9 +92,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn bindGroupLayoutSetLabel(bind_group_layout: *gpu.BindGroupLayout, label: [*:0]const u8) void {
-        _ = bind_group_layout;
-        _ = label;
-        unreachable;
+        procs.bindGroupLayoutSetLabel.?(@ptrCast(c.WGPUBindGroupLayout, bind_group_layout), label);
     }
 
     pub inline fn bindGroupLayoutReference(bind_group_layout: *gpu.BindGroupLayout) void {
