@@ -1,9 +1,9 @@
 const Texture = @import("texture.zig").Texture;
 const TextureFormat = @import("texture.zig").TextureFormat;
 const Buffer = @import("buffer.zig").Buffer;
-const RenderBundleDescriptor = @import("render_bundle.zig").RenderBundleDescriptor;
 const BindGroup = @import("bind_group.zig").BindGroup;
 const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
+const RenderBundle = @import("render_bundle.zig").RenderBundle;
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const IndexFormat = @import("types.zig").IndexFormat;
 const Impl = @import("interface.zig").Impl;
@@ -44,7 +44,7 @@ pub const RenderBundleEncoder = opaque {
         Impl.renderBundleEncoderDrawIndirect(render_bundle_encoder, indirect_buffer, indirect_offset);
     }
 
-    pub inline fn finish(render_bundle_encoder: *RenderBundleEncoder, descriptor: ?*const RenderBundleDescriptor) void {
+    pub inline fn finish(render_bundle_encoder: *RenderBundleEncoder, descriptor: ?*const RenderBundle.Descriptor) void {
         Impl.renderBundleEncoderFinish(render_bundle_encoder, descriptor);
     }
 
