@@ -536,8 +536,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceLoseForTesting(device: *gpu.Device) void {
-        _ = device;
-        unreachable;
+        procs.deviceLoseForTesting.?(@ptrCast(c.WGPUDevice, device));
     }
 
     pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) bool {
