@@ -80,9 +80,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn bindGroupSetLabel(bind_group: *gpu.BindGroup, label: [*:0]const u8) void {
-        _ = bind_group;
-        _ = label;
-        unreachable;
+        procs.bindGroupSetLabel.?(@ptrCast(c.WGPUBindGroup, bind_group), label);
     }
 
     pub inline fn bindGroupReference(bind_group: *gpu.BindGroup) void {
