@@ -85,7 +85,7 @@ pub const Device = opaque {
         return Impl.deviceCreateQuerySet(device, descriptor);
     }
 
-    pub inline fn createRenderBundleEncoder(device: *Device, descriptor: *const RenderBundleEncoderDescriptor) RenderBundleEncoder {
+    pub inline fn createRenderBundleEncoder(device: *Device, descriptor: *const RenderBundleEncoderDescriptor) *RenderBundleEncoder {
         return Impl.deviceCreateRenderBundleEncoder(device, descriptor);
     }
 
