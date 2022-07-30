@@ -42,9 +42,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn adapterGetLimits(adapter: *gpu.Adapter, limits: *gpu.SupportedLimits) bool {
-        _ = adapter;
-        _ = limits;
-        unreachable;
+        return procs.adapterGetLimits.?(
+            @ptrCast(c.WGPUAdapter, adapter),
+            @ptrCast(*c.WGPUSupportedLimits, limits),
+        );
     }
 
     pub inline fn adapterGetProperties(adapter: *gpu.Adapter, properties: *gpu.Adapter.Properties) void {
