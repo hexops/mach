@@ -4,6 +4,16 @@ const QueryType = @import("types.zig").QueryType;
 const Impl = @import("interface.zig").Impl;
 
 pub const QuerySet = opaque {
+    pub const Descriptor = extern struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+        type: QueryType,
+        count: u32,
+        // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+        pipeline_statistics: ?[*]const PipelineStatisticName = null,
+        pipeline_statistics_count: u32 = 0,
+    };
+
     pub inline fn destroy(query_set: *QuerySet) void {
         Impl.querySetDestroy(query_set);
     }
@@ -27,14 +37,4 @@ pub const QuerySet = opaque {
     pub inline fn release(query_set: *QuerySet) void {
         Impl.querySetRelease(query_set);
     }
-};
-
-pub const QuerySetDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    type: QueryType,
-    count: u32,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    pipeline_statistics: ?[*]const PipelineStatisticName = null,
-    pipeline_statistics_count: u32 = 0,
 };
