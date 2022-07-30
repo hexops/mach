@@ -685,13 +685,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn querySetReference(query_set: *gpu.QuerySet) void {
-        _ = query_set;
-        unreachable;
+        procs.querySetReference.?(@ptrCast(c.WGPUQuerySet, query_set));
     }
 
     pub inline fn querySetRelease(query_set: *gpu.QuerySet) void {
-        _ = query_set;
-        unreachable;
+        procs.querySetRelease.?(@ptrCast(c.WGPUQuerySet, query_set));
     }
 
     pub inline fn queueCopyTextureForBrowser(queue: *gpu.Queue, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D, options: *const gpu.CopyTextureForBrowserOptions) void {
