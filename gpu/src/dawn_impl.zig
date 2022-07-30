@@ -377,13 +377,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePassEncoderReference(compute_pass_encoder: *gpu.ComputePassEncoder) void {
-        _ = compute_pass_encoder;
-        unreachable;
+        procs.computePassEncoderReference.?(@ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder));
     }
 
     pub inline fn computePassEncoderRelease(compute_pass_encoder: *gpu.ComputePassEncoder) void {
-        _ = compute_pass_encoder;
-        unreachable;
+        procs.computePassEncoderRelease.?(@ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder));
     }
 
     pub inline fn computePipelineGetBindGroupLayout(compute_pipeline: *gpu.ComputePipeline, group_index: u32) *gpu.BindGroupLayout {
