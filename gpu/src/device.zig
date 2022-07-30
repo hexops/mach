@@ -14,7 +14,6 @@ const ShaderModule = @import("shader_module.zig").ShaderModule;
 const Surface = @import("surface.zig").Surface;
 const SwapChain = @import("swap_chain.zig").SwapChain;
 const Texture = @import("texture.zig").Texture;
-const TextureDescriptor = @import("texture.zig").TextureDescriptor;
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const FeatureName = @import("types.zig").FeatureName;
 const RequiredLimits = @import("types.zig").RequiredLimits;
@@ -116,7 +115,7 @@ pub const Device = opaque {
         return Impl.deviceCreateSwapChain(device, surface, descriptor);
     }
 
-    pub inline fn createTexture(device: *Device, descriptor: *const TextureDescriptor) *Texture {
+    pub inline fn createTexture(device: *Device, descriptor: *const Texture.Descriptor) *Texture {
         return Impl.deviceCreateTexture(device, descriptor);
     }
 

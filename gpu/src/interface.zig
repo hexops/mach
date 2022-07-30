@@ -96,7 +96,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateSampler", fn (device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) callconv(.Inline) *gpu.Sampler);
     assertDecl(T, "deviceCreateShaderModule", fn (device: *gpu.Device, descriptor: *const gpu.ShaderModule.Descriptor) callconv(.Inline) *gpu.ShaderModule);
     assertDecl(T, "deviceCreateSwapChain", fn (device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChain.Descriptor) callconv(.Inline) *gpu.SwapChain);
-    assertDecl(T, "deviceCreateTexture", fn (device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) callconv(.Inline) *gpu.Texture);
+    assertDecl(T, "deviceCreateTexture", fn (device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) callconv(.Inline) *gpu.Texture);
     assertDecl(T, "deviceDestroy", fn (device: *gpu.Device) callconv(.Inline) void);
     assertDecl(T, "deviceEnumerateFeatures", fn (device: *gpu.Device, features: [*]gpu.FeatureName) callconv(.Inline) usize);
     assertDecl(T, "deviceGetLimits", fn (device: *gpu.Device, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
@@ -135,7 +135,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "queueSetLabel", fn (queue: *gpu.Queue, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "queueSubmit", fn (queue: *gpu.Queue, command_count: u32, commands: [*]*gpu.CommandBuffer) callconv(.Inline) void);
     assertDecl(T, "queueWriteBuffer", fn (queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) callconv(.Inline) void);
-    assertDecl(T, "queueWriteTexture", fn (queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.TextureDataLayout, write_size: *const gpu.Extent3D) callconv(.Inline) void);
+    assertDecl(T, "queueWriteTexture", fn (queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) callconv(.Inline) void);
     assertDecl(T, "queueReference", fn (queue: *gpu.Queue) callconv(.Inline) void);
     assertDecl(T, "queueRelease", fn (queue: *gpu.Queue) callconv(.Inline) void);
     assertDecl(T, "renderBundleReference", fn (render_bundle: *gpu.RenderBundle) callconv(.Inline) void);
@@ -191,7 +191,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "shaderModuleRelease", fn (shader_module: *gpu.ShaderModule) callconv(.Inline) void);
     assertDecl(T, "surfaceReference", fn (surface: *gpu.Surface) callconv(.Inline) void);
     assertDecl(T, "surfaceRelease", fn (surface: *gpu.Surface) callconv(.Inline) void);
-    assertDecl(T, "swapChainConfigure", fn (swap_chain: *gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: gpu.TextureUsageFlags, width: u32, height: u32) callconv(.Inline) void);
+    assertDecl(T, "swapChainConfigure", fn (swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: gpu.Texture.UsageFlags, width: u32, height: u32) callconv(.Inline) void);
     assertDecl(T, "swapChainGetCurrentTextureView", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) *gpu.TextureView);
     assertDecl(T, "swapChainPresent", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) void);
     assertDecl(T, "swapChainReference", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) void);
@@ -199,12 +199,12 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "textureCreateView", fn (texture: *gpu.Texture, descriptor: ?*const gpu.TextureView.Descriptor) callconv(.Inline) *gpu.TextureView);
     assertDecl(T, "textureDestroy", fn (texture: *gpu.Texture) callconv(.Inline) void);
     assertDecl(T, "textureGetDepthOrArrayLayers", fn (texture: *gpu.Texture) callconv(.Inline) u32);
-    assertDecl(T, "textureGetDimension", fn (texture: *gpu.Texture) callconv(.Inline) gpu.TextureDimension);
-    assertDecl(T, "textureGetFormat", fn (texture: *gpu.Texture) callconv(.Inline) gpu.TextureFormat);
+    assertDecl(T, "textureGetDimension", fn (texture: *gpu.Texture) callconv(.Inline) gpu.Texture.Dimension);
+    assertDecl(T, "textureGetFormat", fn (texture: *gpu.Texture) callconv(.Inline) gpu.Texture.Format);
     assertDecl(T, "textureGetHeight", fn (texture: *gpu.Texture) callconv(.Inline) u32);
     assertDecl(T, "textureGetMipLevelCount", fn (texture: *gpu.Texture) callconv(.Inline) u32);
     assertDecl(T, "textureGetSampleCount", fn (texture: *gpu.Texture) callconv(.Inline) u32);
-    assertDecl(T, "textureGetUsage", fn (texture: *gpu.Texture) callconv(.Inline) gpu.TextureUsageFlags);
+    assertDecl(T, "textureGetUsage", fn (texture: *gpu.Texture) callconv(.Inline) gpu.Texture.UsageFlags);
     assertDecl(T, "textureGetWidth", fn (texture: *gpu.Texture) callconv(.Inline) u32);
     assertDecl(T, "textureSetLabel", fn (texture: *gpu.Texture, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "textureReference", fn (texture: *gpu.Texture) callconv(.Inline) void);
@@ -634,7 +634,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUTexture wgpuDeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
-        export fn wgpuDeviceCreateTexture(device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) *gpu.Texture {
+        export fn wgpuDeviceCreateTexture(device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) *gpu.Texture {
             return T.deviceCreateTexture(device, descriptor);
         }
 
@@ -829,7 +829,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuQueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize);
-        export fn wgpuQueueWriteTexture(queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.TextureDataLayout, write_size: *const gpu.Extent3D) void {
+        export fn wgpuQueueWriteTexture(queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) void {
             T.queueWriteTexture(queue, data, data_size, data_layout, write_size);
         }
 
@@ -1108,11 +1108,11 @@ pub fn Export(comptime T: type) type {
             T.surfaceRelease(surface);
         }
 
-        // TODO: Zig cannot currently export a packed struct gpu.TextureUsageFlags, so we use a u32
+        // TODO: Zig cannot currently export a packed struct gpu.Texture.UsageFlags, so we use a u32
         // for now.
         // WGPU_EXPORT void wgpuSwapChainConfigure(WGPUSwapChain swapChain, WGPUTextureFormat format, WGPUTextureUsageFlags allowedUsage, uint32_t width, uint32_t height);
-        export fn wgpuSwapChainConfigure(swap_chain: *gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: u32, width: u32, height: u32) void {
-            T.swapChainConfigure(swap_chain, format, @bitCast(gpu.TextureUsageFlags, allowed_usage), width, height);
+        export fn wgpuSwapChainConfigure(swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: u32, width: u32, height: u32) void {
+            T.swapChainConfigure(swap_chain, format, @bitCast(gpu.Texture.UsageFlags, allowed_usage), width, height);
         }
 
         // WGPU_EXPORT WGPUTextureView wgpuSwapChainGetCurrentTextureView(WGPUSwapChain swapChain);
@@ -1151,12 +1151,12 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUTextureDimension wgpuTextureGetDimension(WGPUTexture texture);
-        export fn wgpuTextureGetDimension(texture: *gpu.Texture) gpu.TextureDimension {
+        export fn wgpuTextureGetDimension(texture: *gpu.Texture) gpu.Texture.Dimension {
             return T.textureGetDimension(texture);
         }
 
         // WGPU_EXPORT WGPUTextureFormat wgpuTextureGetFormat(WGPUTexture texture);
-        export fn wgpuTextureGetFormat(texture: *gpu.Texture) gpu.TextureFormat {
+        export fn wgpuTextureGetFormat(texture: *gpu.Texture) gpu.Texture.Format {
             return T.textureGetFormat(texture);
         }
 
@@ -1176,7 +1176,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUTextureUsage wgpuTextureGetUsage(WGPUTexture texture);
-        export fn wgpuTextureGetUsage(texture: *gpu.Texture) gpu.TextureUsageFlags {
+        export fn wgpuTextureGetUsage(texture: *gpu.Texture) gpu.Texture.UsageFlags {
             return T.textureGetUsage(texture);
         }
 
@@ -1722,7 +1722,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateTexture(device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) *gpu.Texture {
+    pub inline fn deviceCreateTexture(device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) *gpu.Texture {
         _ = device;
         _ = descriptor;
         unreachable;
@@ -1954,7 +1954,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn queueWriteTexture(queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.TextureDataLayout, write_size: *const gpu.Extent3D) void {
+    pub inline fn queueWriteTexture(queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) void {
         _ = queue;
         _ = data;
         _ = data_size;
@@ -2320,7 +2320,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn swapChainConfigure(swap_chain: *gpu.SwapChain, format: gpu.TextureFormat, allowed_usage: gpu.TextureUsageFlags, width: u32, height: u32) void {
+    pub inline fn swapChainConfigure(swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: gpu.Texture.UsageFlags, width: u32, height: u32) void {
         _ = swap_chain;
         _ = format;
         _ = allowed_usage;
@@ -2365,12 +2365,12 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn textureGetDimension(texture: *gpu.Texture) gpu.TextureDimension {
+    pub inline fn textureGetDimension(texture: *gpu.Texture) gpu.Texture.Dimension {
         _ = texture;
         unreachable;
     }
 
-    pub inline fn textureGetFormat(texture: *gpu.Texture) gpu.TextureFormat {
+    pub inline fn textureGetFormat(texture: *gpu.Texture) gpu.Texture.Format {
         _ = texture;
         unreachable;
     }
@@ -2390,7 +2390,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn textureGetUsage(texture: *gpu.Texture) gpu.TextureUsageFlags {
+    pub inline fn textureGetUsage(texture: *gpu.Texture) gpu.Texture.UsageFlags {
         _ = texture;
         unreachable;
     }
