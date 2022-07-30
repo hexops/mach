@@ -89,7 +89,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateErrorExternalTexture", fn (device: *gpu.Device) callconv(.Inline) *gpu.ExternalTexture);
     assertDecl(T, "deviceCreateExternalTexture", fn (device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTexture.Descriptor) callconv(.Inline) *gpu.ExternalTexture);
     assertDecl(T, "deviceCreatePipelineLayout", fn (device: *gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayout.Descriptor) callconv(.Inline) *gpu.PipelineLayout);
-    assertDecl(T, "deviceCreateQuerySet", fn (device: *gpu.Device, descriptor: *const gpu.QuerySetDescriptor) callconv(.Inline) *gpu.QuerySet);
+    assertDecl(T, "deviceCreateQuerySet", fn (device: *gpu.Device, descriptor: *const gpu.QuerySet.Descriptor) callconv(.Inline) *gpu.QuerySet);
     assertDecl(T, "deviceCreateRenderBundleEncoder", fn (device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoderDescriptor) callconv(.Inline) *gpu.RenderBundleEncoder);
     assertDecl(T, "deviceCreateRenderPipeline", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor) callconv(.Inline) *gpu.RenderPipeline);
     assertDecl(T, "deviceCreateRenderPipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipelineDescriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
@@ -599,7 +599,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
-        export fn wgpuDeviceCreateQuerySet(device: *gpu.Device, descriptor: *const gpu.QuerySetDescriptor) *gpu.QuerySet {
+        export fn wgpuDeviceCreateQuerySet(device: *gpu.Device, descriptor: *const gpu.QuerySet.Descriptor) *gpu.QuerySet {
             return T.deviceCreateQuerySet(device, descriptor);
         }
 
@@ -1677,7 +1677,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateQuerySet(device: *gpu.Device, descriptor: *const gpu.QuerySetDescriptor) *gpu.QuerySet {
+    pub inline fn deviceCreateQuerySet(device: *gpu.Device, descriptor: *const gpu.QuerySet.Descriptor) *gpu.QuerySet {
         _ = device;
         _ = descriptor;
         unreachable;
