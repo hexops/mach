@@ -1011,8 +1011,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderReference(render_pass_encoder: *gpu.RenderPassEncoder) void {
-        _ = render_pass_encoder;
-        unreachable;
+        procs.renderPassEncoderReference.?(@ptrCast(c.WGPURenderPassEncoder, render_pass_encoder));
     }
 
     pub inline fn renderPassEncoderRelease(render_pass_encoder: *gpu.RenderPassEncoder) void {
