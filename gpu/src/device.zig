@@ -105,7 +105,7 @@ pub const Device = opaque {
         return Impl.deviceCreateShaderModule(device, descriptor);
     }
 
-    pub inline fn createSwapChain(device: *Device, surface: ?Surface, descriptor: *const SwapChainDescriptor) SwapChain {
+    pub inline fn createSwapChain(device: *Device, surface: ?Surface, descriptor: *const SwapChainDescriptor) *SwapChain {
         return Impl.deviceCreateSwapChain(device, surface, descriptor);
     }
 
