@@ -1184,8 +1184,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn textureViewRelease(texture_view: *gpu.TextureView) void {
-        _ = texture_view;
-        unreachable;
+        procs.textureViewRelease.?(@ptrCast(c.WGPUTextureView, texture_view));
     }
 });
 
