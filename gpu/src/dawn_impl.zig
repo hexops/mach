@@ -1026,9 +1026,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn shaderModuleSetLabel(shader_module: *gpu.ShaderModule, label: [*:0]const u8) void {
-        _ = shader_module;
-        _ = label;
-        unreachable;
+        procs.shaderModuleSetLabel.?(@ptrCast(c.WGPUShaderModule, shader_module), label);
     }
 
     pub inline fn shaderModuleReference(shader_module: *gpu.ShaderModule) void {
