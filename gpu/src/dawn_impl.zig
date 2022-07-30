@@ -35,9 +35,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn adapterEnumerateFeatures(adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
-        _ = adapter;
-        _ = features;
-        unreachable;
+        return procs.adapterEnumerateFeatures.?(
+            @ptrCast(c.WGPUAdapter, adapter),
+            @ptrCast([*]c.WGPUFeatureName, features),
+        );
     }
 
     pub inline fn adapterGetLimits(adapter: *gpu.Adapter, limits: *gpu.SupportedLimits) bool {
