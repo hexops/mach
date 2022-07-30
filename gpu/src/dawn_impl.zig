@@ -1174,9 +1174,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn textureViewSetLabel(texture_view: *gpu.TextureView, label: [*:0]const u8) void {
-        _ = texture_view;
-        _ = label;
-        unreachable;
+        procs.textureViewSetLabel.?(@ptrCast(c.WGPUTextureView, texture_view), label);
     }
 
     pub inline fn textureViewReference(texture_view: *gpu.TextureView) void {
