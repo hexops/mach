@@ -20,7 +20,7 @@ pub const Queue = *opaque {
         Impl.queueSetLabel(queue, label);
     }
 
-    pub inline fn submit(queue: Queue, command_count: u32, commands: [*]CommandBuffer) void {
+    pub inline fn submit(queue: Queue, command_count: u32, commands: [*]*CommandBuffer) void {
         Impl.queueSubmit(queue, command_count, commands);
     }
 
