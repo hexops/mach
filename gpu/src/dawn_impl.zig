@@ -620,13 +620,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn externalTextureReference(external_texture: *gpu.ExternalTexture) void {
-        _ = external_texture;
-        unreachable;
+        procs.externalTextureReference.?(@ptrCast(c.WGPUExternalTexture, external_texture));
     }
 
     pub inline fn externalTextureRelease(external_texture: *gpu.ExternalTexture) void {
-        _ = external_texture;
-        unreachable;
+        procs.externalTextureRelease.?(@ptrCast(c.WGPUExternalTexture, external_texture));
     }
 
     pub inline fn instanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.Surface.Descriptor) *gpu.Surface {
