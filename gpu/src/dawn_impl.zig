@@ -49,9 +49,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn adapterGetProperties(adapter: *gpu.Adapter, properties: *gpu.Adapter.Properties) void {
-        _ = adapter;
-        _ = properties;
-        unreachable;
+        return procs.adapterGetProperties.?(
+            @ptrCast(c.WGPUAdapter, adapter),
+            @ptrCast(*c.WGPUAdapterProperties, properties),
+        );
     }
 
     pub inline fn adapterHasFeature(adapter: *gpu.Adapter, feature: gpu.FeatureName) bool {
