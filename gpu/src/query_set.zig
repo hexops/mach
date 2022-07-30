@@ -3,28 +3,28 @@ const PipelineStatisticName = @import("types.zig").PipelineStatisticName;
 const QueryType = @import("types.zig").QueryType;
 const Impl = @import("interface.zig").Impl;
 
-pub const QuerySet = *opaque {
-    pub inline fn destroy(query_set: QuerySet) void {
+pub const QuerySet = opaque {
+    pub inline fn destroy(query_set: *QuerySet) void {
         Impl.querySetDestroy(query_set);
     }
 
-    pub inline fn getCount(query_set: QuerySet) u32 {
+    pub inline fn getCount(query_set: *QuerySet) u32 {
         return Impl.querySetGetCount(query_set);
     }
 
-    pub inline fn getType(query_set: QuerySet) QueryType {
+    pub inline fn getType(query_set: *QuerySet) QueryType {
         return Impl.querySetGetType(query_set);
     }
 
-    pub inline fn setLabel(query_set: QuerySet, label: [*:0]const u8) void {
+    pub inline fn setLabel(query_set: *QuerySet, label: [*:0]const u8) void {
         Impl.querySetSetLabel(query_set, label);
     }
 
-    pub inline fn reference(query_set: QuerySet) void {
+    pub inline fn reference(query_set: *QuerySet) void {
         Impl.querySetReference(query_set);
     }
 
-    pub inline fn release(query_set: QuerySet) void {
+    pub inline fn release(query_set: *QuerySet) void {
         Impl.querySetRelease(query_set);
     }
 };

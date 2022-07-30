@@ -601,7 +601,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor);
-        export fn wgpuDeviceCreateQuerySet(device: *gpu.Device, descriptor: *const gpu.QuerySetDescriptor) gpu.QuerySet {
+        export fn wgpuDeviceCreateQuerySet(device: *gpu.Device, descriptor: *const gpu.QuerySetDescriptor) *gpu.QuerySet {
             return T.deviceCreateQuerySet(device, descriptor);
         }
 
@@ -1679,7 +1679,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateQuerySet(device: *gpu.Device, descriptor: *const gpu.QuerySetDescriptor) gpu.QuerySet {
+    pub inline fn deviceCreateQuerySet(device: *gpu.Device, descriptor: *const gpu.QuerySetDescriptor) *gpu.QuerySet {
         _ = device;
         _ = descriptor;
         unreachable;

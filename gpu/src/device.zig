@@ -81,7 +81,7 @@ pub const Device = opaque {
         return Impl.deviceCreatePipelineLayout(device, pipeline_layout_descriptor);
     }
 
-    pub inline fn createQuerySet(device: *Device, descriptor: *const QuerySetDescriptor) QuerySet {
+    pub inline fn createQuerySet(device: *Device, descriptor: *const QuerySetDescriptor) *QuerySet {
         return Impl.deviceCreateQuerySet(device, descriptor);
     }
 

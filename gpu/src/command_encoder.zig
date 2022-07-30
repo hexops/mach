@@ -69,7 +69,7 @@ pub const CommandEncoder = opaque {
         Impl.commandEncoderPushDebugGroup(command_encoder, group_label);
     }
 
-    pub inline fn resolveQuerySet(command_encoder: *CommandEncoder, query_set: QuerySet, first_query: u32, query_count: u32, destination: *Buffer, destination_offset: u64) void {
+    pub inline fn resolveQuerySet(command_encoder: *CommandEncoder, query_set: *QuerySet, first_query: u32, query_count: u32, destination: *Buffer, destination_offset: u64) void {
         Impl.commandEncoderResolveQuerySet(command_encoder, query_set, first_query, query_count, destination, destination_offset);
     }
 
@@ -81,7 +81,7 @@ pub const CommandEncoder = opaque {
         Impl.commandEncoderWriteBuffer(command_encoder, buffer, buffer_offset, data, size);
     }
 
-    pub inline fn writeTimestamp(command_encoder: *CommandEncoder, query_set: QuerySet, query_index: u32) void {
+    pub inline fn writeTimestamp(command_encoder: *CommandEncoder, query_set: *QuerySet, query_index: u32) void {
         Impl.commandEncoderWriteTimestamp(command_encoder, query_set, query_index);
     }
 
