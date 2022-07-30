@@ -1035,8 +1035,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPipelineRelease(render_pipeline: *gpu.RenderPipeline) void {
-        _ = render_pipeline;
-        unreachable;
+        procs.renderPipelineRelease.?(@ptrCast(c.WGPURenderPipeline, render_pipeline));
     }
 
     pub inline fn samplerSetLabel(sampler: *gpu.Sampler, label: [*:0]const u8) void {
