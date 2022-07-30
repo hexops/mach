@@ -95,7 +95,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateRenderPipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceCreateSampler", fn (device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) callconv(.Inline) *gpu.Sampler);
     assertDecl(T, "deviceCreateShaderModule", fn (device: *gpu.Device, descriptor: *const gpu.ShaderModule.Descriptor) callconv(.Inline) *gpu.ShaderModule);
-    assertDecl(T, "deviceCreateSwapChain", fn (device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) callconv(.Inline) *gpu.SwapChain);
+    assertDecl(T, "deviceCreateSwapChain", fn (device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChain.Descriptor) callconv(.Inline) *gpu.SwapChain);
     assertDecl(T, "deviceCreateTexture", fn (device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) callconv(.Inline) *gpu.Texture);
     assertDecl(T, "deviceDestroy", fn (device: *gpu.Device) callconv(.Inline) void);
     assertDecl(T, "deviceEnumerateFeatures", fn (device: *gpu.Device, features: [*]gpu.FeatureName) callconv(.Inline) usize);
@@ -629,7 +629,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUSwapChain wgpuDeviceCreateSwapChain(WGPUDevice device, WGPUSurface surface /* nullable */, WGPUSwapChainDescriptor const * descriptor);
-        export fn wgpuDeviceCreateSwapChain(device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) *gpu.SwapChain {
+        export fn wgpuDeviceCreateSwapChain(device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChain.Descriptor) *gpu.SwapChain {
             return T.deviceCreateSwapChain(device, surface, descriptor);
         }
 
@@ -1715,7 +1715,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateSwapChain(device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) *gpu.SwapChain {
+    pub inline fn deviceCreateSwapChain(device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChain.Descriptor) *gpu.SwapChain {
         _ = device;
         _ = surface;
         _ = descriptor;

@@ -7,6 +7,18 @@ const TextureView = @import("texture_view.zig").TextureView;
 const Impl = @import("interface.zig").Impl;
 
 pub const SwapChain = opaque {
+    pub const Descriptor = extern struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+        usage: TextureUsageFlags,
+        format: TextureFormat,
+        width: u32,
+        height: u32,
+        present_mode: PresentMode,
+        /// deprecated
+        implementation: u64 = 0,
+    };
+
     pub inline fn configure(swap_chain: *SwapChain, format: TextureFormat, allowed_usage: TextureUsageFlags, width: u32, height: u32) void {
         Impl.swapChainConfigure(swap_chain, format, allowed_usage, width, height);
     }
@@ -26,16 +38,4 @@ pub const SwapChain = opaque {
     pub inline fn release(swap_chain: *SwapChain) void {
         Impl.swapChainRelease(swap_chain);
     }
-};
-
-pub const SwapChainDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    usage: TextureUsageFlags,
-    format: TextureFormat,
-    width: u32,
-    height: u32,
-    present_mode: PresentMode,
-    /// deprecated
-    implementation: u64 = 0,
 };
