@@ -94,7 +94,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateRenderPipeline", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor) callconv(.Inline) *gpu.RenderPipeline);
     assertDecl(T, "deviceCreateRenderPipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceCreateSampler", fn (device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) callconv(.Inline) *gpu.Sampler);
-    assertDecl(T, "deviceCreateShaderModule", fn (device: *gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) callconv(.Inline) *gpu.ShaderModule);
+    assertDecl(T, "deviceCreateShaderModule", fn (device: *gpu.Device, descriptor: *const gpu.ShaderModule.Descriptor) callconv(.Inline) *gpu.ShaderModule);
     assertDecl(T, "deviceCreateSwapChain", fn (device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) callconv(.Inline) *gpu.SwapChain);
     assertDecl(T, "deviceCreateTexture", fn (device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) callconv(.Inline) *gpu.Texture);
     assertDecl(T, "deviceDestroy", fn (device: *gpu.Device) callconv(.Inline) void);
@@ -624,7 +624,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor const * descriptor);
-        export fn wgpuDeviceCreateShaderModule(device: *gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) *gpu.ShaderModule {
+        export fn wgpuDeviceCreateShaderModule(device: *gpu.Device, descriptor: *const gpu.ShaderModule.Descriptor) *gpu.ShaderModule {
             return T.deviceCreateShaderModule(device, descriptor);
         }
 
@@ -1709,7 +1709,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateShaderModule(device: *gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) *gpu.ShaderModule {
+    pub inline fn deviceCreateShaderModule(device: *gpu.Device, descriptor: *const gpu.ShaderModule.Descriptor) *gpu.ShaderModule {
         _ = device;
         _ = descriptor;
         unreachable;
