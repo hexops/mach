@@ -35,7 +35,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "bufferGetConstMappedRange", fn (buffer: *gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*const anyopaque);
     assertDecl(T, "bufferGetMappedRange", fn (buffer: *gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*anyopaque);
     assertDecl(T, "bufferGetSize", fn (buffer: *gpu.Buffer) callconv(.Inline) u64);
-    assertDecl(T, "bufferGetUsage", fn (buffer: *gpu.Buffer) callconv(.Inline) gpu.Buffer.Usage);
+    assertDecl(T, "bufferGetUsage", fn (buffer: *gpu.Buffer) callconv(.Inline) gpu.Buffer.UsageFlags);
     assertDecl(T, "bufferMapAsync", fn (buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "bufferSetLabel", fn (buffer: *gpu.Buffer, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "bufferUnmap", fn (buffer: *gpu.Buffer) callconv(.Inline) void);
@@ -327,7 +327,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUBufferUsage wgpuBufferGetUsage(WGPUBuffer buffer);
-        export fn wgpuBufferGetUsage(buffer: *gpu.Buffer) gpu.Buffer.Usage {
+        export fn wgpuBufferGetUsage(buffer: *gpu.Buffer) gpu.Buffer.UsageFlags {
             return T.bufferGetUsage(buffer);
         }
 
@@ -1336,7 +1336,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn bufferGetUsage(buffer: *gpu.Buffer) gpu.Buffer.Usage {
+    pub inline fn bufferGetUsage(buffer: *gpu.Buffer) gpu.Buffer.UsageFlags {
         _ = buffer;
         unreachable;
     }

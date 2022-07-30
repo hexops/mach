@@ -22,8 +22,7 @@ pub const Buffer = opaque {
         unmapped_before_callback = 0x00000005,
     };
 
-    // TODO: should be UsageFlags
-    pub const Usage = packed struct {
+    pub const UsageFlags = packed struct {
         map_read: bool = false,
         map_write: bool = false,
         copy_src: bool = false,
@@ -44,9 +43,9 @@ pub const Buffer = opaque {
             );
         }
 
-        pub const none = Usage{};
+        pub const none = UsageFlags{};
 
-        pub fn equal(a: Usage, b: Usage) bool {
+        pub fn equal(a: UsageFlags, b: UsageFlags) bool {
             return @truncate(u10, @bitCast(u32, a)) == @truncate(u10, @bitCast(u32, b));
         }
     };
@@ -61,7 +60,7 @@ pub const Buffer = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
-        usage: Usage,
+        usage: UsageFlags,
         size: u64,
         mapped_at_creation: bool = true,
     };
@@ -86,7 +85,7 @@ pub const Buffer = opaque {
         return Impl.bufferGetSize(buffer);
     }
 
-    pub inline fn bufferGetUsage(buffer: *Buffer) Buffer.Usage {
+    pub inline fn bufferGetUsage(buffer: *Buffer) Buffer.UsageFlags {
         return Impl.bufferGetUsage(buffer);
     }
 
