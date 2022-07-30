@@ -89,7 +89,7 @@ pub const Device = opaque {
         return Impl.deviceCreateRenderBundleEncoder(device, descriptor);
     }
 
-    pub inline fn createRenderPipeline(device: *Device, descriptor: *const RenderPipelineDescriptor) RenderPipeline {
+    pub inline fn createRenderPipeline(device: *Device, descriptor: *const RenderPipelineDescriptor) *RenderPipeline {
         return Impl.deviceCreateRenderPipeline(device, descriptor);
     }
 

@@ -64,7 +64,7 @@ pub const RenderBundleEncoder = opaque {
         Impl.renderBundleEncoderSetLabel(render_bundle_encoder, label);
     }
 
-    pub inline fn setPipeline(render_bundle_encoder: *RenderBundleEncoder, pipeline: RenderPipeline) void {
+    pub inline fn setPipeline(render_bundle_encoder: *RenderBundleEncoder, pipeline: *RenderPipeline) void {
         Impl.renderBundleEncoderSetPipeline(render_bundle_encoder, pipeline);
     }
 
