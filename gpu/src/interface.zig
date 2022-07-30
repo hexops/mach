@@ -17,12 +17,12 @@ pub const Impl = blk: {
 pub fn Interface(comptime T: type) type {
     assertDecl(T, "createInstance", fn (descriptor: ?*const gpu.Instance.Descriptor) callconv(.Inline) ?*gpu.Instance);
     assertDecl(T, "getProcAddress", fn (device: *gpu.Device, proc_name: [*:0]const u8) callconv(.Inline) ?gpu.Proc);
-    assertDecl(T, "adapterCreateDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) callconv(.Inline) ?*gpu.Device);
+    assertDecl(T, "adapterCreateDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor) callconv(.Inline) ?*gpu.Device);
     assertDecl(T, "adapterEnumerateFeatures", fn (adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
     assertDecl(T, "adapterGetLimits", fn (adapter: *gpu.Adapter, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
     assertDecl(T, "adapterGetProperties", fn (adapter: *gpu.Adapter, properties: *gpu.Adapter.Properties) callconv(.Inline) void);
     assertDecl(T, "adapterHasFeature", fn (adapter: *gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
-    assertDecl(T, "adapterRequestDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "adapterRequestDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "adapterReference", fn (adapter: *gpu.Adapter) callconv(.Inline) void);
     assertDecl(T, "adapterRelease", fn (adapter: *gpu.Adapter) callconv(.Inline) void);
     assertDecl(T, "bindGroupSetLabel", fn (bind_group: *gpu.BindGroup, label: [*:0]const u8) callconv(.Inline) void);
@@ -106,7 +106,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceLoseForTesting", fn (device: *gpu.Device) callconv(.Inline) void);
     assertDecl(T, "devicePopErrorScope", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) callconv(.Inline) bool);
     assertDecl(T, "devicePushErrorScope", fn (device: *gpu.Device, filter: gpu.ErrorFilter) callconv(.Inline) void);
-    assertDecl(T, "deviceSetDeviceLostCallback", fn (device: *gpu.Device, callback: gpu.DeviceLostCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "deviceSetDeviceLostCallback", fn (device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceSetLabel", fn (device: *gpu.Device, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "deviceSetLoggingCallback", fn (device: *gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceSetUncapturedErrorCallback", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) callconv(.Inline) void);
@@ -236,7 +236,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUDevice wgpuAdapterCreateDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor /* nullable */);
-        export fn wgpuAdapterCreateDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?*gpu.Device {
+        export fn wgpuAdapterCreateDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor) ?*gpu.Device {
             return T.adapterCreateDevice(adapter, descriptor);
         }
 
@@ -262,7 +262,7 @@ pub fn Export(comptime T: type) type {
 
         // NOTE: descriptor is nullable, see https://bugs.chromium.org/p/dawn/issues/detail?id=1502
         // WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor, WGPURequestDeviceCallback callback, void * userdata);
-        export fn wgpuAdapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
+        export fn wgpuAdapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
             T.adapterRequestDevice(adapter, descriptor, callback, userdata);
         }
 
@@ -684,7 +684,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDeviceLostCallback callback, void * userdata);
-        export fn wgpuDeviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.DeviceLostCallback, userdata: *anyopaque) void {
+        export fn wgpuDeviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: *anyopaque) void {
             T.deviceSetDeviceLostCallback(device, callback, userdata);
         }
 
@@ -1230,7 +1230,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn adapterCreateDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?*gpu.Device {
+    pub inline fn adapterCreateDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor) ?*gpu.Device {
         _ = adapter;
         _ = descriptor;
         unreachable;
@@ -1260,7 +1260,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn adapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
+    pub inline fn adapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
         _ = adapter;
         _ = descriptor;
         _ = callback;
@@ -1781,7 +1781,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.DeviceLostCallback, userdata: *anyopaque) void {
+    pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: *anyopaque) void {
         _ = device;
         _ = callback;
         _ = userdata;

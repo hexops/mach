@@ -1,7 +1,6 @@
 const testing = @import("std").testing;
 const ChainedStructOut = @import("types.zig").ChainedStructOut;
 const Device = @import("device.zig").Device;
-const DeviceDescriptor = @import("device.zig").DeviceDescriptor;
 const FeatureName = @import("types.zig").FeatureName;
 const SupportedLimits = @import("types.zig").SupportedLimits;
 const RequestDeviceStatus = @import("types.zig").RequestDeviceStatus;
@@ -37,7 +36,7 @@ pub const Adapter = opaque {
         backend_type: Type,
     };
 
-    pub inline fn createDevice(adapter: *Adapter, descriptor: ?*const DeviceDescriptor) ?*Device {
+    pub inline fn createDevice(adapter: *Adapter, descriptor: ?*const Device.Descriptor) ?*Device {
         return Impl.adapterCreateDevice(adapter, descriptor);
     }
 
@@ -58,7 +57,7 @@ pub const Adapter = opaque {
         return Impl.adapterHasFeature(adapter, feature);
     }
 
-    pub inline fn requestDevice(adapter: *Adapter, descriptor: ?*const DeviceDescriptor, callback: RequestDeviceCallback, userdata: *anyopaque) void {
+    pub inline fn requestDevice(adapter: *Adapter, descriptor: ?*const Device.Descriptor, callback: RequestDeviceCallback, userdata: *anyopaque) void {
         Impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
     }
 

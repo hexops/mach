@@ -37,6 +37,26 @@ const CreateRenderPipelineAsyncCallback = @import("callbacks.zig").CreateRenderP
 const Impl = @import("interface.zig").Impl;
 
 pub const Device = opaque {
+    pub const LostCallback = fn (
+        reason: LostReason,
+        message: [*:0]const u8,
+        userdata: *anyopaque,
+    ) callconv(.C) void;
+
+    pub const LostReason = enum(u32) {
+        undef = 0x00000000,
+        destroyed = 0x00000001,
+    };
+
+    pub const Descriptor = extern struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+        required_features_count: u32 = 0,
+        required_features: ?[*]const FeatureName = null,
+        required_limits: ?*const RequiredLimits,
+        default_queue: QueueDescriptor,
+    };
+
     pub inline fn createBindGroup(device: *Device, descriptor: *const BindGroup.Descriptor) *BindGroup {
         return Impl.deviceCreateBindGroup(device, descriptor);
     }
@@ -145,7 +165,7 @@ pub const Device = opaque {
         Impl.devicePushErrorScope(device, filter);
     }
 
-    pub inline fn setDeviceLostCallback(device: *Device, callback: DeviceLostCallback, userdata: *anyopaque) void {
+    pub inline fn setDeviceLostCallback(device: *Device, callback: Device.LostCallback, userdata: *anyopaque) void {
         Impl.deviceSetDeviceLostCallback(device, callback, userdata);
     }
 
@@ -172,24 +192,4 @@ pub const Device = opaque {
     pub inline fn release(device: *Device) void {
         Impl.deviceRelease(device);
     }
-};
-
-pub const DeviceLostCallback = fn (
-    reason: DeviceLostReason,
-    message: [*:0]const u8,
-    userdata: *anyopaque,
-) callconv(.C) void;
-
-pub const DeviceLostReason = enum(u32) {
-    undef = 0x00000000,
-    destroyed = 0x00000001,
-};
-
-pub const DeviceDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    required_features_count: u32 = 0,
-    required_features: ?[*]const FeatureName = null,
-    required_limits: ?*const RequiredLimits,
-    default_queue: QueueDescriptor,
 };
