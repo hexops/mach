@@ -117,7 +117,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "externalTextureSetLabel", fn (external_texture: *gpu.ExternalTexture, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "externalTextureReference", fn (external_texture: *gpu.ExternalTexture) callconv(.Inline) void);
     assertDecl(T, "externalTextureRelease", fn (external_texture: *gpu.ExternalTexture) callconv(.Inline) void);
-    assertDecl(T, "instanceCreateSurface", fn (instance: *gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) callconv(.Inline) *gpu.Surface);
+    assertDecl(T, "instanceCreateSurface", fn (instance: *gpu.Instance, descriptor: *const gpu.Surface.Descriptor) callconv(.Inline) *gpu.Surface);
     assertDecl(T, "instanceRequestAdapter", fn (instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "instanceReference", fn (instance: *gpu.Instance) callconv(.Inline) void);
     assertDecl(T, "instanceRelease", fn (instance: *gpu.Instance) callconv(.Inline) void);
@@ -739,7 +739,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUSurface wgpuInstanceCreateSurface(WGPUInstance instance, WGPUSurfaceDescriptor const * descriptor);
-        export fn wgpuInstanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) *gpu.Surface {
+        export fn wgpuInstanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.Surface.Descriptor) *gpu.Surface {
             return T.instanceCreateSurface(instance, descriptor);
         }
 
@@ -1844,7 +1844,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn instanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.SurfaceDescriptor) *gpu.Surface {
+    pub inline fn instanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.Surface.Descriptor) *gpu.Surface {
         _ = instance;
         _ = descriptor;
         unreachable;

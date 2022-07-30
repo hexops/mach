@@ -1,7 +1,6 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const RequestAdapterStatus = @import("types.zig").RequestAdapterStatus;
 const Surface = @import("surface.zig").Surface;
-const SurfaceDescriptor = @import("surface.zig").SurfaceDescriptor;
 const Adapter = @import("adapter.zig").Adapter;
 const RequestAdapterOptions = @import("main.zig").RequestAdapterOptions;
 const RequestAdapterCallback = @import("callbacks.zig").RequestAdapterCallback;
@@ -12,7 +11,7 @@ pub const Instance = opaque {
         next_in_chain: ?*const ChainedStruct = null,
     };
 
-    pub inline fn createSurface(instance: *Instance, descriptor: *const SurfaceDescriptor) *Surface {
+    pub inline fn createSurface(instance: *Instance, descriptor: *const Surface.Descriptor) *Surface {
         return Impl.instanceCreateSurface(instance, descriptor);
     }
 
