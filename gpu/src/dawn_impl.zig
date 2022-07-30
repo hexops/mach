@@ -656,13 +656,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn pipelineLayoutReference(pipeline_layout: *gpu.PipelineLayout) void {
-        _ = pipeline_layout;
-        unreachable;
+        procs.pipelineLayoutReference.?(@ptrCast(c.WGPUPipelineLayout, pipeline_layout));
     }
 
     pub inline fn pipelineLayoutRelease(pipeline_layout: *gpu.PipelineLayout) void {
-        _ = pipeline_layout;
-        unreachable;
+        procs.pipelineLayoutRelease.?(@ptrCast(c.WGPUPipelineLayout, pipeline_layout));
     }
 
     pub inline fn querySetDestroy(query_set: *gpu.QuerySet) void {
