@@ -1,8 +1,8 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const Texture = @import("texture.zig").Texture;
 const Impl = @import("interface.zig").Impl;
-const mip_level_count_undefined = @import("main.zig").mip_level_count_undefined;
-const array_layer_count_undefined = @import("main.zig").array_layer_count_undefined;
+const mip_level_count_undef = @import("main.zig").mip_level_count_undef;
+const array_layer_count_undef = @import("main.zig").array_layer_count_undef;
 
 pub const TextureView = opaque {
     pub const Dimension = enum(u32) {
@@ -21,9 +21,9 @@ pub const TextureView = opaque {
         format: Texture.Format = .undef,
         dimension: Dimension = .dimension_undef,
         base_mip_level: u32 = 0,
-        mip_level_count: u32 = mip_level_count_undefined,
+        mip_level_count: u32 = mip_level_count_undef,
         base_array_layer: u32 = 0,
-        array_layer_count: u32 = array_layer_count_undefined,
+        array_layer_count: u32 = array_layer_count_undef,
         aspect: Texture.Aspect = .all,
     };
 
