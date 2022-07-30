@@ -104,8 +104,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn bufferDestroy(buffer: *gpu.Buffer) void {
-        _ = buffer;
-        unreachable;
+        procs.bufferDestroy.?(@ptrCast(c.WGPUBuffer, buffer));
     }
 
     // TODO: file a bug on Dawn docstrings, this returns null but is not documented as such.
