@@ -53,7 +53,7 @@ pub const Device = *opaque {
         return Impl.deviceCreateBuffer(device, descriptor);
     }
 
-    pub inline fn createCommandEncoder(device: Device, descriptor: ?*const CommandEncoderDescriptor) CommandEncoder {
+    pub inline fn createCommandEncoder(device: Device, descriptor: ?*const CommandEncoderDescriptor) *CommandEncoder {
         return Impl.deviceCreateCommandEncoder(device, descriptor);
     }
 
