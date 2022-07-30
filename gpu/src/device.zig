@@ -57,7 +57,7 @@ pub const Device = *opaque {
         return Impl.deviceCreateCommandEncoder(device, descriptor);
     }
 
-    pub inline fn createComputePipeline(device: Device, descriptor: *const ComputePipelineDescriptor) ComputePipeline {
+    pub inline fn createComputePipeline(device: Device, descriptor: *const ComputePipelineDescriptor) *ComputePipeline {
         return Impl.deviceCreateComputePipeline(device, descriptor);
     }
 
