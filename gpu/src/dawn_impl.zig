@@ -518,8 +518,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceGetQueue(device: *gpu.Device) *gpu.Queue {
-        _ = device;
-        unreachable;
+        return @ptrCast(*gpu.Queue, procs.deviceGetQueue.?(@ptrCast(c.WGPUDevice, device)));
     }
 
     pub inline fn deviceHasFeature(device: *gpu.Device, feature: gpu.FeatureName) bool {
