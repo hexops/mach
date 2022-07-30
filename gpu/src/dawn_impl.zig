@@ -317,8 +317,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePassEncoderEnd(compute_pass_encoder: *gpu.ComputePassEncoder) void {
-        _ = compute_pass_encoder;
-        unreachable;
+        procs.computePassEncoderEnd.?(@ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder));
     }
 
     pub inline fn computePassEncoderInsertDebugMarker(compute_pass_encoder: *gpu.ComputePassEncoder, marker_label: [*:0]const u8) void {
