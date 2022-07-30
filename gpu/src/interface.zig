@@ -93,7 +93,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateRenderBundleEncoder", fn (device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoder.Descriptor) callconv(.Inline) *gpu.RenderBundleEncoder);
     assertDecl(T, "deviceCreateRenderPipeline", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor) callconv(.Inline) *gpu.RenderPipeline);
     assertDecl(T, "deviceCreateRenderPipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
-    assertDecl(T, "deviceCreateSampler", fn (device: *gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) callconv(.Inline) *gpu.Sampler);
+    assertDecl(T, "deviceCreateSampler", fn (device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) callconv(.Inline) *gpu.Sampler);
     assertDecl(T, "deviceCreateShaderModule", fn (device: *gpu.Device, descriptor: *const gpu.ShaderModuleDescriptor) callconv(.Inline) *gpu.ShaderModule);
     assertDecl(T, "deviceCreateSwapChain", fn (device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChainDescriptor) callconv(.Inline) *gpu.SwapChain);
     assertDecl(T, "deviceCreateTexture", fn (device: *gpu.Device, descriptor: *const gpu.TextureDescriptor) callconv(.Inline) *gpu.Texture);
@@ -619,7 +619,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUSampler wgpuDeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor /* nullable */);
-        export fn wgpuDeviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) *gpu.Sampler {
+        export fn wgpuDeviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) *gpu.Sampler {
             return T.deviceCreateSampler(device, descriptor);
         }
 
@@ -1703,7 +1703,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.SamplerDescriptor) *gpu.Sampler {
+    pub inline fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) *gpu.Sampler {
         _ = device;
         _ = descriptor;
         unreachable;
