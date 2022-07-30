@@ -30,7 +30,7 @@ pub fn build(b: *std.build.Builder) void {
 }
 
 pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.RunStep {
-    const main_tests = b.addTestExe("gpu-tests", thisDir() ++ "/src/main.zig");
+    const main_tests = b.addTestExe("gpu-tests", (comptime thisDir()) ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     link(b, main_tests, options);
@@ -53,6 +53,8 @@ pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Opti
     if (step.target.toTarget().cpu.arch != .wasm32) {
         glfw.link(b, step, options.glfw_options);
         gpu_dawn.link(b, step, options.gpu_dawn_options);
+        step.addCSourceFile((comptime thisDir()) ++ "/src/mach_dawn.cpp", &.{"-std=c++17"});
+        step.addIncludeDir((comptime thisDir()) ++ "/src");
     }
 }
 
