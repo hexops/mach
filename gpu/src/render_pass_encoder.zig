@@ -101,7 +101,7 @@ pub const RenderPassEncoder = *opaque {
         Impl.renderPassEncoderSetViewport(render_pass_encoder, x, y, width, height, min_depth, max_depth);
     }
 
-    pub inline fn writeTimestamp(render_pass_encoder: RenderPassEncoder, query_set: QuerySet, query_index: u32) void {
+    pub inline fn writeTimestamp(render_pass_encoder: RenderPassEncoder, query_set: *QuerySet, query_index: u32) void {
         Impl.renderPassEncoderWriteTimestamp(render_pass_encoder, query_set, query_index);
     }
 
