@@ -9,16 +9,16 @@ const TextureBindingLayout = @import("texture.zig").TextureBindingLayout;
 const StorageTextureBindingLayout = @import("types.zig").StorageTextureBindingLayout;
 const Impl = @import("interface.zig").Impl;
 
-pub const BindGroupLayout = *opaque {
-    pub inline fn setLabel(bind_group_layout: BindGroupLayout, label: [*:0]const u8) void {
+pub const BindGroupLayout = opaque {
+    pub inline fn setLabel(bind_group_layout: *BindGroupLayout, label: [*:0]const u8) void {
         Impl.bindGroupLayoutSetLabel(bind_group_layout, label);
     }
 
-    pub inline fn reference(bind_group_layout: BindGroupLayout) void {
+    pub inline fn reference(bind_group_layout: *BindGroupLayout) void {
         Impl.bindGroupLayoutReference(bind_group_layout);
     }
 
-    pub inline fn release(bind_group_layout: BindGroupLayout) void {
+    pub inline fn release(bind_group_layout: *BindGroupLayout) void {
         Impl.bindGroupLayoutRelease(bind_group_layout);
     }
 };

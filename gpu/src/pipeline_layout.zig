@@ -21,5 +21,5 @@ pub const PipelineLayoutDescriptor = extern struct {
     label: ?[*:0]const u8 = null,
     bind_group_layout_count: u32,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    bind_group_layouts: ?[*]const BindGroupLayout,
+    bind_group_layouts: ?[*]const *BindGroupLayout,
 };

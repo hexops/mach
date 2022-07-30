@@ -46,7 +46,7 @@ pub const Device = *opaque {
         return Impl.deviceCreateBindGroup(device, descriptor);
     }
 
-    pub inline fn createBindGroupLayout(device: Device, descriptor: *const BindGroupLayoutDescriptor) BindGroupLayout {
+    pub inline fn createBindGroupLayout(device: Device, descriptor: *const BindGroupLayoutDescriptor) *BindGroupLayout {
         return Impl.deviceCreateBindGroupLayout(device, descriptor);
     }
 
