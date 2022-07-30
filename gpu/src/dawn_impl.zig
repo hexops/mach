@@ -149,8 +149,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn bufferUnmap(buffer: *gpu.Buffer) void {
-        _ = buffer;
-        unreachable;
+        procs.bufferUnmap.?(@ptrCast(c.WGPUBuffer, buffer));
     }
 
     pub inline fn bufferReference(buffer: *gpu.Buffer) void {
