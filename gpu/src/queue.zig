@@ -32,11 +32,11 @@ pub const Queue = opaque {
         Impl.queueWriteTexture(queue, data, data_size, data_layout, write_size);
     }
 
-    pub inline fn reference(queue: Queue) void {
+    pub inline fn reference(queue: *Queue) void {
         Impl.queueReference(queue);
     }
 
-    pub inline fn release(queue: Queue) void {
+    pub inline fn release(queue: *Queue) void {
         Impl.queueRelease(queue);
     }
 };

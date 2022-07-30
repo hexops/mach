@@ -43,7 +43,7 @@ pub const RenderPassEncoder = opaque {
         Impl.renderPassEncoderEndOcclusionQuery(render_pass_encoder);
     }
 
-    pub inline fn executeBundles(render_pass_encoder: *RenderPassEncoder, bundles_count: u32, bundles: [*]const RenderBundle) void {
+    pub inline fn executeBundles(render_pass_encoder: *RenderPassEncoder, bundles_count: u32, bundles: [*]const *const RenderBundle) void {
         Impl.renderPassEncoderExecuteBundles(render_pass_encoder, bundles_count, bundles);
     }
 

@@ -1,6 +1,6 @@
 const std = @import("std");
 const ChainedStruct = @import("types.zig").ChainedStruct;
-const MapModeFlags = @import("types.zig").MapModeFlags;
+const MapMode = @import("types.zig").MapMode;
 const Impl = @import("interface.zig").Impl;
 
 pub const Buffer = opaque {
@@ -28,7 +28,7 @@ pub const Buffer = opaque {
         return Impl.bufferGetUsage(buffer);
     }
 
-    pub inline fn bufferMapAsync(buffer: *Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) void {
+    pub inline fn bufferMapAsync(buffer: *Buffer, mode: MapMode, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) void {
         Impl.bufferMapAsync(buffer, mode, offset, size, callback, userdata);
     }
 

@@ -29,7 +29,7 @@ pub const RenderPipeline = opaque {
 pub const RenderPipelineDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    layout: ?PipelineLayout,
+    layout: ?*PipelineLayout,
     vertex: VertexState,
     primitive: PrimitiveState,
     depth_stencil: ?*const DepthStencilState,

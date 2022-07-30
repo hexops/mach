@@ -32,15 +32,15 @@ pub const SamplerBindingType = enum(u32) {
 
 pub const SamplerBindingLayout = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    type: *SamplerBindingType = .undef,
+    type: SamplerBindingType = .undef,
 };
 
 pub const SamplerDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    address_mode_u: *SamplerAddressMode = .clamp_to_edge,
-    address_mode_v: *SamplerAddressMode = .clamp_to_edge,
-    address_mode_w: *SamplerAddressMode = .clamp_to_edge,
+    address_mode_u: SamplerAddressMode = .clamp_to_edge,
+    address_mode_v: SamplerAddressMode = .clamp_to_edge,
+    address_mode_w: SamplerAddressMode = .clamp_to_edge,
     mag_filter: FilterMode = .nearest,
     min_filter: FilterMode = .nearest,
     mipmap_filter: FilterMode = .nearest,

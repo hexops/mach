@@ -54,26 +54,26 @@ pub const Proc = *anyopaque;
 
 pub const CreateComputePipelineAsyncCallback = fn (
     status: types.CreatePipelineAsyncStatus,
-    compute_pipeline: compute_pipeline.ComputePipeline,
+    compute_pipeline: *compute_pipeline.ComputePipeline,
     message: [*:0]const u8,
     userdata: *anyopaque,
 ) callconv(.C) void;
 
 pub const CreateRenderPipelineAsyncCallback = fn (
     status: types.CreatePipelineAsyncStatus,
-    pipeline: render_pipeline.RenderPipeline,
+    pipeline: *render_pipeline.RenderPipeline,
     message: [*:0]const u8,
     userdata: *anyopaque,
 ) callconv(.C) void;
 
 pub const ComputePassTimestampWrite = extern struct {
-    query_set: query_set.QuerySet,
+    query_set: *query_set.QuerySet,
     query_index: u32,
     location: types.ComputePassTimestampLocation,
 };
 
 pub const RenderPassDepthStencilAttachment = extern struct {
-    view: texture_view.TextureView,
+    view: *texture_view.TextureView,
     depth_load_op: types.LoadOp = .undef,
     depth_store_op: types.StoreOp = .undef,
     /// deprecated
@@ -89,14 +89,14 @@ pub const RenderPassDepthStencilAttachment = extern struct {
 };
 
 pub const RenderPassTimestampWrite = extern struct {
-    query_set: query_set.QuerySet,
+    query_set: *query_set.QuerySet,
     query_index: u32,
     location: types.RenderPassTimestampLocation,
 };
 
 pub const RequestAdapterOptions = extern struct {
     next_in_chain: *const types.ChainedStruct,
-    compatible_surface: ?surface.Surface,
+    compatible_surface: ?*surface.Surface,
     power_preference: types.PowerPreference = .undef,
     force_fallback_adapter: bool = false,
 };
@@ -116,7 +116,7 @@ pub const RenderPassDescriptor = extern struct {
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     color_attachments: ?[*]const types.RenderPassColorAttachment,
     depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment,
-    occlusion_query_set: ?query_set.QuerySet,
+    occlusion_query_set: ?*query_set.QuerySet,
     timestamp_write_count: u32 = 0,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     timestamp_writes: ?[*]const RenderPassTimestampWrite = null,
@@ -126,7 +126,7 @@ pub inline fn createInstance(descriptor: ?*const instance.Instance.Descriptor) ?
     return interface.Impl.createInstance(descriptor);
 }
 
-pub inline fn getProcAddress(_device: device.Device, proc_name: [*:0]const u8) ?Proc {
+pub inline fn getProcAddress(_device: *device.Device, proc_name: [*:0]const u8) ?Proc {
     return interface.Impl.getProcAddress(_device, proc_name);
 }
 
