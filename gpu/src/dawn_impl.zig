@@ -630,9 +630,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn pipelineLayoutSetLabel(pipeline_layout: *gpu.PipelineLayout, label: [*:0]const u8) void {
-        _ = pipeline_layout;
-        _ = label;
-        unreachable;
+        procs.pipelineLayoutSetLabel.?(@ptrCast(c.WGPUPipelineLayout, pipeline_layout), label);
     }
 
     pub inline fn pipelineLayoutReference(pipeline_layout: *gpu.PipelineLayout) void {
