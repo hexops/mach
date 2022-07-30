@@ -38,7 +38,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "bufferGetMappedRange", fn (buffer: *gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*anyopaque);
     assertDecl(T, "bufferGetSize", fn (buffer: *gpu.Buffer) callconv(.Inline) u64);
     assertDecl(T, "bufferGetUsage", fn (buffer: *gpu.Buffer) callconv(.Inline) gpu.BufferUsage);
-    assertDecl(T, "bufferMapAsync", fn (buffer: *gpu.Buffer, mode: gpu.MapMode, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "bufferMapAsync", fn (buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "bufferSetLabel", fn (buffer: *gpu.Buffer, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "bufferUnmap", fn (buffer: *gpu.Buffer) callconv(.Inline) void);
     assertDecl(T, "bufferReference", fn (buffer: *gpu.Buffer) callconv(.Inline) void);
@@ -337,7 +337,7 @@ pub fn Export(comptime T: type) type {
         // now.
         // WGPU_EXPORT void wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapModeFlags mode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userdata);
         export fn wgpuBufferMapAsync(buffer: *gpu.Buffer, mode: u32, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) void {
-            T.bufferMapAsync(buffer, @bitCast(gpu.MapMode, mode), offset, size, callback, userdata);
+            T.bufferMapAsync(buffer, @bitCast(gpu.MapModeFlags, mode), offset, size, callback, userdata);
         }
 
         // WGPU_EXPORT void wgpuBufferSetLabel(WGPUBuffer buffer, char const * label);
@@ -1343,7 +1343,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn bufferMapAsync(buffer: *gpu.Buffer, mode: gpu.MapMode, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) void {
+    pub inline fn bufferMapAsync(buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) void {
         _ = buffer;
         _ = mode;
         _ = offset;

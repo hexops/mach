@@ -351,8 +351,7 @@ pub const ColorWriteMaskFlags = packed struct {
     }
 };
 
-// TODO: should be MapModeFlags, I typo'd it
-pub const MapMode = packed struct {
+pub const MapModeFlags = packed struct {
     read: bool = false,
     write: bool = false,
 
@@ -365,9 +364,9 @@ pub const MapMode = packed struct {
         );
     }
 
-    pub const undef = MapMode{};
+    pub const undef = MapModeFlags{};
 
-    pub fn equal(a: MapMode, b: MapMode) bool {
+    pub fn equal(a: MapModeFlags, b: MapModeFlags) bool {
         return @truncate(u2, @bitCast(u32, a)) == @truncate(u2, @bitCast(u32, b));
     }
 };
