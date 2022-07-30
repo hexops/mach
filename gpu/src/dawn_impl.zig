@@ -856,8 +856,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderRelease(render_bundle_encoder: *gpu.RenderBundleEncoder) void {
-        _ = render_bundle_encoder;
-        unreachable;
+        procs.renderBundleEncoderRelease.?(@ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder));
     }
 
     pub inline fn renderPassEncoderBeginOcclusionQuery(render_pass_encoder: *gpu.RenderPassEncoder, query_index: u32) void {
