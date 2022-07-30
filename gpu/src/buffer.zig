@@ -3,48 +3,48 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const MapModeFlags = @import("types.zig").MapModeFlags;
 const Impl = @import("interface.zig").Impl;
 
-pub const Buffer = *opaque {
-    pub inline fn destroy(buffer: Buffer) void {
+pub const Buffer = opaque {
+    pub inline fn destroy(buffer: *Buffer) void {
         Impl.bufferDestroy(buffer);
     }
 
     /// Default `offset`: 0
     /// Default `size`: `gpu.whole_map_size`
-    pub inline fn bufferGetConstMappedRange(buffer: Buffer, offset: usize, size: usize) ?*const anyopaque {
+    pub inline fn bufferGetConstMappedRange(buffer: *Buffer, offset: usize, size: usize) ?*const anyopaque {
         return Impl.bufferGetConstMappedRange(buffer, offset, size);
     }
 
     /// Default `offset`: 0
     /// Default `size`: `gpu.whole_map_size`
-    pub inline fn bufferGetMappedRange(buffer: Buffer, offset: usize, size: usize) ?*anyopaque {
+    pub inline fn bufferGetMappedRange(buffer: *Buffer, offset: usize, size: usize) ?*anyopaque {
         return Impl.bufferGetMappedRange(buffer, offset, size);
     }
 
-    pub inline fn bufferGetSize(buffer: Buffer) u64 {
+    pub inline fn bufferGetSize(buffer: *Buffer) u64 {
         return Impl.bufferGetSize(buffer);
     }
 
-    pub inline fn bufferGetUsage(buffer: Buffer) BufferUsage {
+    pub inline fn bufferGetUsage(buffer: *Buffer) BufferUsage {
         return Impl.bufferGetUsage(buffer);
     }
 
-    pub inline fn bufferMapAsync(buffer: Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) void {
+    pub inline fn bufferMapAsync(buffer: *Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: *anyopaque) void {
         Impl.bufferMapAsync(buffer, mode, offset, size, callback, userdata);
     }
 
-    pub inline fn bufferSetLabel(buffer: Buffer, label: [*:0]const u8) void {
+    pub inline fn bufferSetLabel(buffer: *Buffer, label: [*:0]const u8) void {
         Impl.bufferSetLabel(buffer, label);
     }
 
-    pub inline fn bufferUnmap(buffer: Buffer) void {
+    pub inline fn bufferUnmap(buffer: *Buffer) void {
         Impl.bufferUnmap(buffer);
     }
 
-    pub inline fn bufferReference(buffer: Buffer) void {
+    pub inline fn bufferReference(buffer: *Buffer) void {
         Impl.bufferReference(buffer);
     }
 
-    pub inline fn bufferRelease(buffer: Buffer) void {
+    pub inline fn bufferRelease(buffer: *Buffer) void {
         Impl.bufferRelease(buffer);
     }
 };

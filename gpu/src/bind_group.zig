@@ -22,7 +22,7 @@ pub const BindGroup = opaque {
 pub const BindGroupEntry = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     binding: u32,
-    buffer: ?Buffer,
+    buffer: ?*Buffer,
     offset: u64 = 0,
     size: u64,
     sampler: ?Sampler,

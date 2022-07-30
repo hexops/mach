@@ -49,7 +49,7 @@ pub const Device = *opaque {
         return Impl.deviceCreateBindGroupLayout(device, descriptor);
     }
 
-    pub inline fn createBuffer(device: Device, descriptor: *const BufferDescriptor) Buffer {
+    pub inline fn createBuffer(device: Device, descriptor: *const BufferDescriptor) *Buffer {
         return Impl.deviceCreateBuffer(device, descriptor);
     }
 
@@ -65,7 +65,7 @@ pub const Device = *opaque {
         Impl.deviceCreateComputePipelineAsync(device, descriptor, callback, userdata);
     }
 
-    pub inline fn createErrorBuffer(device: Device) Buffer {
+    pub inline fn createErrorBuffer(device: Device) *Buffer {
         return Impl.deviceCreateErrorBuffer(device);
     }
 

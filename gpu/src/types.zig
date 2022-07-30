@@ -568,7 +568,7 @@ pub const DepthStencilState = extern struct {
 pub const ImageCopyBuffer = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     layout: TextureDataLayout,
-    buffer: Buffer,
+    buffer: *Buffer,
 };
 
 pub const ImageCopyTexture = extern struct {

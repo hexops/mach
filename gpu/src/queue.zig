@@ -24,7 +24,7 @@ pub const Queue = *opaque {
         Impl.queueSubmit(queue, command_count, commands);
     }
 
-    pub inline fn writeBuffer(queue: Queue, buffer: Buffer, buffer_offset: u64, data: *anyopaque, size: usize) void {
+    pub inline fn writeBuffer(queue: Queue, buffer: *Buffer, buffer_offset: u64, data: *anyopaque, size: usize) void {
         Impl.queueWriteBuffer(queue, buffer, buffer_offset, data, size);
     }
 

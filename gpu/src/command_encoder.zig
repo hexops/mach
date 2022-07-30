@@ -23,11 +23,11 @@ pub const CommandEncoder = *opaque {
 
     /// Default `offset`: 0
     /// Default `size`: `gpu.whole_size`
-    pub inline fn clearBuffer(command_encoder: CommandEncoder, buffer: Buffer, offset: u64, size: u64) void {
+    pub inline fn clearBuffer(command_encoder: CommandEncoder, buffer: *Buffer, offset: u64, size: u64) void {
         Impl.commandEncoderClearBuffer(command_encoder, buffer, offset, size);
     }
 
-    pub inline fn copyBufferToBuffer(command_encoder: CommandEncoder, source: Buffer, source_offset: u64, destination: Buffer, destination_offset: u64, size: u64) void {
+    pub inline fn copyBufferToBuffer(command_encoder: CommandEncoder, source: *Buffer, source_offset: u64, destination: *Buffer, destination_offset: u64, size: u64) void {
         Impl.commandEncoderCopyBufferToBuffer(command_encoder, source, source_offset, destination, destination_offset, size);
     }
 
@@ -69,7 +69,7 @@ pub const CommandEncoder = *opaque {
         Impl.commandEncoderPushDebugGroup(command_encoder, group_label);
     }
 
-    pub inline fn resolveQuerySet(command_encoder: CommandEncoder, query_set: QuerySet, first_query: u32, query_count: u32, destination: Buffer, destination_offset: u64) void {
+    pub inline fn resolveQuerySet(command_encoder: CommandEncoder, query_set: QuerySet, first_query: u32, query_count: u32, destination: *Buffer, destination_offset: u64) void {
         Impl.commandEncoderResolveQuerySet(command_encoder, query_set, first_query, query_count, destination, destination_offset);
     }
 
@@ -77,7 +77,7 @@ pub const CommandEncoder = *opaque {
         Impl.commandEncoderSetLabel(command_encoder, label);
     }
 
-    pub inline fn writeBuffer(command_encoder: CommandEncoder, buffer: Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
+    pub inline fn writeBuffer(command_encoder: CommandEncoder, buffer: *Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
         Impl.commandEncoderWriteBuffer(command_encoder, buffer, buffer_offset, data, size);
     }
 
