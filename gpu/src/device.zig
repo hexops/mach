@@ -1,7 +1,6 @@
 const Queue = @import("queue.zig").Queue;
 const QueueDescriptor = @import("queue.zig").QueueDescriptor;
 const BindGroup = @import("bind_group.zig").BindGroup;
-const BindGroupDescriptor = @import("bind_group.zig").BindGroupDescriptor;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Buffer = @import("buffer.zig").Buffer;
 const BufferDescriptor = @import("buffer.zig").BufferDescriptor;
@@ -41,7 +40,7 @@ const CreateRenderPipelineAsyncCallback = @import("callbacks.zig").CreateRenderP
 const Impl = @import("interface.zig").Impl;
 
 pub const Device = opaque {
-    pub inline fn createBindGroup(device: *Device, descriptor: *const BindGroupDescriptor) *BindGroup {
+    pub inline fn createBindGroup(device: *Device, descriptor: *const BindGroup.Descriptor) *BindGroup {
         return Impl.deviceCreateBindGroup(device, descriptor);
     }
 
