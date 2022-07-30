@@ -5,7 +5,7 @@ const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Impl = @import("interface.zig").Impl;
 
 pub const ComputePipeline = *opaque {
-    pub inline fn getBindGroupLayout(compute_pipeline: ComputePipeline, group_index: u32) BindGroupLayout {
+    pub inline fn getBindGroupLayout(compute_pipeline: ComputePipeline, group_index: u32) *BindGroupLayout {
         return Impl.computePipelineGetBindGroupLayout(compute_pipeline, group_index);
     }
 

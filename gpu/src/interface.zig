@@ -30,9 +30,9 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "bindGroupSetLabel", fn (bind_group: gpu.BindGroup, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "bindGroupReference", fn (bind_group: gpu.BindGroup) callconv(.Inline) void);
     assertDecl(T, "bindGroupRelease", fn (bind_group: gpu.BindGroup) callconv(.Inline) void);
-    assertDecl(T, "bindGroupLayoutSetLabel", fn (bind_group_layout: gpu.BindGroupLayout, label: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "bindGroupLayoutReference", fn (bind_group_layout: gpu.BindGroupLayout) callconv(.Inline) void);
-    assertDecl(T, "bindGroupLayoutRelease", fn (bind_group_layout: gpu.BindGroupLayout) callconv(.Inline) void);
+    assertDecl(T, "bindGroupLayoutSetLabel", fn (bind_group_layout: *gpu.BindGroupLayout, label: [*:0]const u8) callconv(.Inline) void);
+    assertDecl(T, "bindGroupLayoutReference", fn (bind_group_layout: *gpu.BindGroupLayout) callconv(.Inline) void);
+    assertDecl(T, "bindGroupLayoutRelease", fn (bind_group_layout: *gpu.BindGroupLayout) callconv(.Inline) void);
     assertDecl(T, "bufferDestroy", fn (buffer: gpu.Buffer) callconv(.Inline) void);
     assertDecl(T, "bufferGetConstMappedRange", fn (buffer: gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*const anyopaque);
     assertDecl(T, "bufferGetMappedRange", fn (buffer: gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*anyopaque);
@@ -77,12 +77,12 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "computePassEncoderWriteTimestamp", fn (compute_pass_encoder: gpu.ComputePassEncoder, pipeline: gpu.ComputePipeline) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderReference", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderRelease", fn (compute_pass_encoder: gpu.ComputePassEncoder) callconv(.Inline) void);
-    assertDecl(T, "computePipelineGetBindGroupLayout", fn (compute_pipeline: gpu.ComputePipeline, group_index: u32) callconv(.Inline) gpu.BindGroupLayout);
+    assertDecl(T, "computePipelineGetBindGroupLayout", fn (compute_pipeline: gpu.ComputePipeline, group_index: u32) callconv(.Inline) *gpu.BindGroupLayout);
     assertDecl(T, "computePipelineSetLabel", fn (compute_pipeline: gpu.ComputePipeline, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "computePipelineReference", fn (compute_pipeline: gpu.ComputePipeline) callconv(.Inline) void);
     assertDecl(T, "computePipelineRelease", fn (compute_pipeline: gpu.ComputePipeline) callconv(.Inline) void);
     assertDecl(T, "deviceCreateBindGroup", fn (device: gpu.Device, descriptor: *const gpu.BindGroupDescriptor) callconv(.Inline) gpu.BindGroup);
-    assertDecl(T, "deviceCreateBindGroupLayout", fn (device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) callconv(.Inline) gpu.BindGroupLayout);
+    assertDecl(T, "deviceCreateBindGroupLayout", fn (device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) callconv(.Inline) *gpu.BindGroupLayout);
     assertDecl(T, "deviceCreateBuffer", fn (device: gpu.Device, descriptor: *const gpu.BufferDescriptor) callconv(.Inline) gpu.Buffer);
     assertDecl(T, "deviceCreateCommandEncoder", fn (device: gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) callconv(.Inline) gpu.CommandEncoder);
     assertDecl(T, "deviceCreateComputePipeline", fn (device: gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) callconv(.Inline) gpu.ComputePipeline);
@@ -180,7 +180,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "renderPassEncoderWriteTimestamp", fn (render_pass_encoder: gpu.RenderPassEncoder, query_set: gpu.QuerySet, query_index: u32) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderReference", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderRelease", fn (render_pass_encoder: gpu.RenderPassEncoder) callconv(.Inline) void);
-    assertDecl(T, "renderPipelineGetBindGroupLayout", fn (render_pipeline: gpu.RenderPipeline, group_index: u32) callconv(.Inline) gpu.BindGroupLayout);
+    assertDecl(T, "renderPipelineGetBindGroupLayout", fn (render_pipeline: gpu.RenderPipeline, group_index: u32) callconv(.Inline) *gpu.BindGroupLayout);
     assertDecl(T, "renderPipelineSetLabel", fn (render_pipeline: gpu.RenderPipeline, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderPipelineReference", fn (render_pipeline: gpu.RenderPipeline) callconv(.Inline) void);
     assertDecl(T, "renderPipelineRelease", fn (render_pipeline: gpu.RenderPipeline) callconv(.Inline) void);
@@ -294,17 +294,17 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuBindGroupLayoutSetLabel(WGPUBindGroupLayout bindGroupLayout, char const * label);
-        export fn wgpuBindGroupLayoutSetLabel(bind_group_layout: gpu.BindGroupLayout, label: [*:0]const u8) void {
+        export fn wgpuBindGroupLayoutSetLabel(bind_group_layout: *gpu.BindGroupLayout, label: [*:0]const u8) void {
             T.bindGroupLayoutSetLabel(bind_group_layout, label);
         }
 
         // WGPU_EXPORT void wgpuBindGroupLayoutReference(WGPUBindGroupLayout bindGroupLayout);
-        export fn wgpuBindGroupLayoutReference(bind_group_layout: gpu.BindGroupLayout) void {
+        export fn wgpuBindGroupLayoutReference(bind_group_layout: *gpu.BindGroupLayout) void {
             T.bindGroupLayoutReference(bind_group_layout);
         }
 
         // WGPU_EXPORT void wgpuBindGroupLayoutRelease(WGPUBindGroupLayout bindGroupLayout);
-        export fn wgpuBindGroupLayoutRelease(bind_group_layout: gpu.BindGroupLayout) void {
+        export fn wgpuBindGroupLayoutRelease(bind_group_layout: *gpu.BindGroupLayout) void {
             T.bindGroupLayoutRelease(bind_group_layout);
         }
 
@@ -531,7 +531,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComputePipeline computePipeline, uint32_t groupIndex);
-        export fn wgpuComputePipelineGetBindGroupLayout(compute_pipeline: gpu.ComputePipeline, group_index: u32) gpu.BindGroupLayout {
+        export fn wgpuComputePipelineGetBindGroupLayout(compute_pipeline: gpu.ComputePipeline, group_index: u32) *gpu.BindGroupLayout {
             return T.computePipelineGetBindGroupLayout(compute_pipeline, group_index);
         }
 
@@ -556,7 +556,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor);
-        export fn wgpuDeviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) gpu.BindGroupLayout {
+        export fn wgpuDeviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) *gpu.BindGroupLayout {
             return T.deviceCreateBindGroupLayout(device, descriptor);
         }
 
@@ -1046,7 +1046,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUBindGroupLayout wgpuRenderPipelineGetBindGroupLayout(WGPURenderPipeline renderPipeline, uint32_t groupIndex);
-        export fn wgpuRenderPipelineGetBindGroupLayout(render_pipeline: gpu.RenderPipeline, group_index: u32) gpu.BindGroupLayout {
+        export fn wgpuRenderPipelineGetBindGroupLayout(render_pipeline: gpu.RenderPipeline, group_index: u32) *gpu.BindGroupLayout {
             return T.renderPipelineGetBindGroupLayout(render_pipeline, group_index);
         }
 
@@ -1296,18 +1296,18 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn bindGroupLayoutSetLabel(bind_group_layout: gpu.BindGroupLayout, label: [*:0]const u8) void {
+    pub inline fn bindGroupLayoutSetLabel(bind_group_layout: *gpu.BindGroupLayout, label: [*:0]const u8) void {
         _ = bind_group_layout;
         _ = label;
         unreachable;
     }
 
-    pub inline fn bindGroupLayoutReference(bind_group_layout: gpu.BindGroupLayout) void {
+    pub inline fn bindGroupLayoutReference(bind_group_layout: *gpu.BindGroupLayout) void {
         _ = bind_group_layout;
         unreachable;
     }
 
-    pub inline fn bindGroupLayoutRelease(bind_group_layout: gpu.BindGroupLayout) void {
+    pub inline fn bindGroupLayoutRelease(bind_group_layout: *gpu.BindGroupLayout) void {
         _ = bind_group_layout;
         unreachable;
     }
@@ -1597,7 +1597,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn computePipelineGetBindGroupLayout(compute_pipeline: gpu.ComputePipeline, group_index: u32) gpu.BindGroupLayout {
+    pub inline fn computePipelineGetBindGroupLayout(compute_pipeline: gpu.ComputePipeline, group_index: u32) *gpu.BindGroupLayout {
         _ = compute_pipeline;
         _ = group_index;
         unreachable;
@@ -1625,7 +1625,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) gpu.BindGroupLayout {
+    pub inline fn deviceCreateBindGroupLayout(device: gpu.Device, descriptor: *const gpu.BindGroupLayoutDescriptor) *gpu.BindGroupLayout {
         _ = device;
         _ = descriptor;
         unreachable;
@@ -2251,7 +2251,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn renderPipelineGetBindGroupLayout(render_pipeline: gpu.RenderPipeline, group_index: u32) gpu.BindGroupLayout {
+    pub inline fn renderPipelineGetBindGroupLayout(render_pipeline: gpu.RenderPipeline, group_index: u32) *gpu.BindGroupLayout {
         _ = render_pipeline;
         _ = group_index;
         unreachable;

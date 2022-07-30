@@ -32,7 +32,7 @@ pub const BindGroupEntry = extern struct {
 pub const BindGroupDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    layout: BindGroupLayout,
+    layout: *BindGroupLayout,
     entry_count: u32,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     entries: ?[*]const BindGroupEntry,
