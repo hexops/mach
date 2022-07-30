@@ -41,6 +41,14 @@ pub usingnamespace @import("mod.zig");
 
 const internal_debug = @import("internal_debug.zig");
 
+/// If GLFW was already initialized in your program, e.g. you are embedding Zig code into an existing
+/// program that has already called glfwInit via the C API for you - then you need to tell mach/glfw
+/// that it has in fact been initialized already, otherwise when you call other methods mach/glfw
+/// would panic thinking glfw.init has not been called yet.
+pub fn assumeInitialized() void {
+    internal_debug.assumeInitialized();
+}
+
 /// Initializes the GLFW library.
 ///
 /// This function initializes the GLFW library. Before most GLFW functions can be used, GLFW must

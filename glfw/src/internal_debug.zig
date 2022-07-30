@@ -9,3 +9,6 @@ pub inline fn toggleInitialized() void {
 pub inline fn assertInitialized() void {
     if (debug_mode) std.debug.assert(glfw_initialized);
 }
+pub inline fn assumeInitialized() void {
+    glfw_initialized = true;
+}
