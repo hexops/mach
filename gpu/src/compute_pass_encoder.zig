@@ -40,11 +40,11 @@ pub const ComputePassEncoder = opaque {
         Impl.computePassEncoderSetLabel(compute_pass_encoder, label);
     }
 
-    pub inline fn setPipeline(compute_pass_encoder: *ComputePassEncoder, pipeline: ComputePipeline) void {
+    pub inline fn setPipeline(compute_pass_encoder: *ComputePassEncoder, pipeline: *ComputePipeline) void {
         Impl.computePassEncoderSetPipeline(compute_pass_encoder, pipeline);
     }
 
-    pub inline fn writeTimestamp(compute_pass_encoder: *ComputePassEncoder, pipeline: ComputePipeline) void {
+    pub inline fn writeTimestamp(compute_pass_encoder: *ComputePassEncoder, pipeline: *ComputePipeline) void {
         Impl.computePassEncoderWriteTimestamp(compute_pass_encoder, pipeline);
     }
 
