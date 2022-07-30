@@ -56,9 +56,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn adapterHasFeature(adapter: *gpu.Adapter, feature: gpu.FeatureName) bool {
-        _ = adapter;
-        _ = feature;
-        unreachable;
+        return procs.adapterHasFeature.?(
+            @ptrCast(c.WGPUAdapter, adapter),
+            @enumToInt(feature),
+        );
     }
 
     pub inline fn adapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
