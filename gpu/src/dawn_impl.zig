@@ -72,8 +72,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn adapterReference(adapter: *gpu.Adapter) void {
-        _ = adapter;
-        unreachable;
+        procs.adapterReference.?(@ptrCast(c.WGPUAdapter, adapter));
     }
 
     pub inline fn adapterRelease(adapter: *gpu.Adapter) void {
