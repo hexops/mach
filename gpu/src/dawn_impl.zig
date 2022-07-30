@@ -1045,8 +1045,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn samplerReference(sampler: *gpu.Sampler) void {
-        _ = sampler;
-        unreachable;
+        procs.samplerReference.?(@ptrCast(c.WGPUSampler, sampler));
     }
 
     pub inline fn samplerRelease(sampler: *gpu.Sampler) void {
