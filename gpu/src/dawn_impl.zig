@@ -309,8 +309,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderRelease(command_encoder: *gpu.CommandEncoder) void {
-        _ = command_encoder;
-        unreachable;
+        procs.commandEncoderRelease.?(@ptrCast(c.WGPUCommandEncoder, command_encoder));
     }
 
     pub inline fn computePassEncoderDispatchWorkgroups(compute_pass_encoder: *gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
