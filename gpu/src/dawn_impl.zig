@@ -1078,8 +1078,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn surfaceRelease(surface: *gpu.Surface) void {
-        _ = surface;
-        unreachable;
+        procs.surfaceRelease.?(@ptrCast(c.WGPUSurface, surface));
     }
 
     pub inline fn swapChainConfigure(swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: gpu.Texture.UsageFlags, width: u32, height: u32) void {
