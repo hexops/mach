@@ -3,7 +3,6 @@ const ShaderStageFlags = @import("types.zig").ShaderStageFlags;
 const Buffer = @import("buffer.zig").Buffer;
 const Sampler = @import("sampler.zig").Sampler;
 const Texture = @import("texture.zig").Texture;
-const TextureBindingLayout = @import("texture.zig").TextureBindingLayout;
 const StorageTextureBindingLayout = @import("types.zig").StorageTextureBindingLayout;
 const Impl = @import("interface.zig").Impl;
 
@@ -14,7 +13,7 @@ pub const BindGroupLayout = opaque {
         visibility: ShaderStageFlags,
         buffer: Buffer.BindingLayout,
         sampler: Sampler.BindingLayout,
-        texture: TextureBindingLayout,
+        texture: Texture.BindingLayout,
         storage_texture: StorageTextureBindingLayout,
     };
 

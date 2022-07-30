@@ -1,5 +1,4 @@
 const Texture = @import("texture.zig").Texture;
-const TextureFormat = @import("texture.zig").TextureFormat;
 const Buffer = @import("buffer.zig").Buffer;
 const BindGroup = @import("bind_group.zig").BindGroup;
 const RenderPipeline = @import("render_pipeline.zig").RenderPipeline;
@@ -14,8 +13,8 @@ pub const RenderBundleEncoder = opaque {
         label: ?[*:0]const u8 = null,
         color_formats_count: u32,
         // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-        color_formats: ?[*]const TextureFormat,
-        depth_stencil_format: TextureFormat = .undef,
+        color_formats: ?[*]const Texture.Format,
+        depth_stencil_format: Texture.Format = .undef,
         sample_count: u32 = 1,
         depth_read_only: bool = false,
         stencil_read_only: bool = false,

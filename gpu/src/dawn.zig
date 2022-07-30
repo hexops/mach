@@ -1,6 +1,5 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const Texture = @import("texture.zig").Texture;
-const TextureUsageFlags = @import("texture.zig").TextureUsageFlags;
 
 pub const CacheDeviceDescriptor = extern struct {
     chain: ChainedStruct,
@@ -21,7 +20,7 @@ pub const InstanceDescriptor = extern struct {
 
 pub const TextureInternalUsageDescriptor = extern struct {
     chain: ChainedStruct,
-    internal_usage: TextureUsageFlags = TextureUsageFlags.none,
+    internal_usage: Texture.UsageFlags = Texture.UsageFlags.none,
 };
 
 pub const TogglesDeviceDescriptor = extern struct {

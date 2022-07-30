@@ -1,6 +1,6 @@
 const CommandBuffer = @import("command_buffer.zig").CommandBuffer;
 const Buffer = @import("buffer.zig").Buffer;
-const TextureDataLayout = @import("texture.zig").TextureDataLayout;
+const Texture = @import("texture.zig").Texture;
 const ImageCopyTexture = @import("types.zig").ImageCopyTexture;
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const Extent3D = @import("types.zig").Extent3D;
@@ -45,7 +45,7 @@ pub const Queue = opaque {
         Impl.queueWriteBuffer(queue, buffer, buffer_offset, data, size);
     }
 
-    pub inline fn writeTexture(queue: *Queue, data: *anyopaque, data_size: usize, data_layout: *const TextureDataLayout, write_size: *const Extent3D) void {
+    pub inline fn writeTexture(queue: *Queue, data: *anyopaque, data_size: usize, data_layout: *const Texture.DataLayout, write_size: *const Extent3D) void {
         Impl.queueWriteTexture(queue, data, data_size, data_layout, write_size);
     }
 
