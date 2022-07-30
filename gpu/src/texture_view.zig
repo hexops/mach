@@ -6,16 +6,16 @@ const Impl = @import("interface.zig").Impl;
 const mip_level_count_undefined = @import("main.zig").mip_level_count_undefined;
 const array_layer_count_undefined = @import("main.zig").array_layer_count_undefined;
 
-pub const TextureView = *opaque {
-    pub inline fn setLabel(texture_view: TextureView, label: [*:0]const u8) void {
+pub const TextureView = opaque {
+    pub inline fn setLabel(texture_view: *TextureView, label: [*:0]const u8) void {
         Impl.textureViewSetLabel(texture_view, label);
     }
 
-    pub inline fn reference(texture_view: TextureView) void {
+    pub inline fn reference(texture_view: *TextureView) void {
         Impl.textureViewReference(texture_view);
     }
 
-    pub inline fn release(texture_view: TextureView) void {
+    pub inline fn release(texture_view: *TextureView) void {
         Impl.textureViewRelease(texture_view);
     }
 };

@@ -32,7 +32,7 @@ pub const ExternalTextureBindingLayout = extern struct {
 pub const ExternalTextureDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    plane0: TextureView,
+    plane0: *TextureView,
     plane1: ?TextureView,
     do_yuv_to_rgb_conversion_only: bool = false,
     // TODO: dawn.json says length 12, does it mean array length?
