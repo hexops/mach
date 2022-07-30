@@ -581,8 +581,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceTick(device: *gpu.Device) void {
-        _ = device;
-        unreachable;
+        procs.deviceTick.?(@ptrCast(c.WGPUDevice, device));
     }
 
     pub inline fn deviceReference(device: *gpu.Device) void {
