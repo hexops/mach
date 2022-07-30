@@ -17,7 +17,7 @@ pub const CommandEncoder = opaque {
         return Impl.commandEncoderBeginComputePass(command_encoder, descriptor);
     }
 
-    pub inline fn beginRenderPass(command_encoder: *CommandEncoder, descriptor: *const RenderPassDescriptor) RenderPassEncoder {
+    pub inline fn beginRenderPass(command_encoder: *CommandEncoder, descriptor: *const RenderPassDescriptor) *RenderPassEncoder {
         return Impl.commandEncoderBeginRenderPass(command_encoder, descriptor);
     }
 
