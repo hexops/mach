@@ -19,14 +19,14 @@ pub const Impl = blk: {
 pub fn Interface(comptime T: type) type {
     assertDecl(T, "createInstance", fn (descriptor: ?*const InstanceDescriptor) callconv(.Inline) ?Instance);
     assertDecl(T, "getProcAddress", fn (device: gpu.Device, proc_name: [*:0]const u8) callconv(.Inline) ?gpu.Proc);
-    assertDecl(T, "adapterCreateDevice", fn (adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) callconv(.Inline) ?gpu.Device);
-    assertDecl(T, "adapterEnumerateFeatures", fn (adapter: gpu.Adapter, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
-    assertDecl(T, "adapterGetLimits", fn (adapter: gpu.Adapter, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
-    assertDecl(T, "adapterGetProperties", fn (adapter: gpu.Adapter, properties: *gpu.AdapterProperties) callconv(.Inline) void);
-    assertDecl(T, "adapterHasFeature", fn (adapter: gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
-    assertDecl(T, "adapterRequestDevice", fn (adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) callconv(.Inline) void);
-    assertDecl(T, "adapterReference", fn (adapter: gpu.Adapter) callconv(.Inline) void);
-    assertDecl(T, "adapterRelease", fn (adapter: gpu.Adapter) callconv(.Inline) void);
+    assertDecl(T, "adapterCreateDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) callconv(.Inline) ?gpu.Device);
+    assertDecl(T, "adapterEnumerateFeatures", fn (adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
+    assertDecl(T, "adapterGetLimits", fn (adapter: *gpu.Adapter, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
+    assertDecl(T, "adapterGetProperties", fn (adapter: *gpu.Adapter, properties: *gpu.AdapterProperties) callconv(.Inline) void);
+    assertDecl(T, "adapterHasFeature", fn (adapter: *gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
+    assertDecl(T, "adapterRequestDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "adapterReference", fn (adapter: *gpu.Adapter) callconv(.Inline) void);
+    assertDecl(T, "adapterRelease", fn (adapter: *gpu.Adapter) callconv(.Inline) void);
     assertDecl(T, "bindGroupSetLabel", fn (bind_group: gpu.BindGroup, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "bindGroupReference", fn (bind_group: gpu.BindGroup) callconv(.Inline) void);
     assertDecl(T, "bindGroupRelease", fn (bind_group: gpu.BindGroup) callconv(.Inline) void);
@@ -238,43 +238,43 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUDevice wgpuAdapterCreateDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor /* nullable */);
-        export fn wgpuAdapterCreateDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?gpu.Device {
+        export fn wgpuAdapterCreateDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?gpu.Device {
             return T.adapterCreateDevice(adapter, descriptor);
         }
 
         // WGPU_EXPORT size_t wgpuAdapterEnumerateFeatures(WGPUAdapter adapter, WGPUFeatureName * features);
-        export fn wgpuAdapterEnumerateFeatures(adapter: gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
+        export fn wgpuAdapterEnumerateFeatures(adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
             return T.adapterEnumerateFeatures(adapter, features);
         }
 
         // WGPU_EXPORT bool wgpuAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits * limits);
-        export fn wgpuAdapterGetLimits(adapter: gpu.Adapter, limits: *gpu.SupportedLimits) bool {
+        export fn wgpuAdapterGetLimits(adapter: *gpu.Adapter, limits: *gpu.SupportedLimits) bool {
             return T.adapterGetLimits(adapter, limits);
         }
 
         // WGPU_EXPORT void wgpuAdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties * properties);
-        export fn wgpuAdapterGetProperties(adapter: gpu.Adapter, properties: *gpu.AdapterProperties) void {
+        export fn wgpuAdapterGetProperties(adapter: *gpu.Adapter, properties: *gpu.AdapterProperties) void {
             return T.adapterGetProperties(adapter, properties);
         }
 
         // WGPU_EXPORT bool wgpuAdapterHasFeature(WGPUAdapter adapter, WGPUFeatureName feature);
-        export fn wgpuAdapterHasFeature(adapter: gpu.Adapter, feature: gpu.FeatureName) bool {
+        export fn wgpuAdapterHasFeature(adapter: *gpu.Adapter, feature: gpu.FeatureName) bool {
             return T.adapterHasFeature(adapter, feature);
         }
 
         // NOTE: descriptor is nullable, see https://bugs.chromium.org/p/dawn/issues/detail?id=1502
         // WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor, WGPURequestDeviceCallback callback, void * userdata);
-        export fn wgpuAdapterRequestDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
+        export fn wgpuAdapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
             T.adapterRequestDevice(adapter, descriptor, callback, userdata);
         }
 
         // WGPU_EXPORT void wgpuAdapterReference(WGPUAdapter adapter);
-        export fn wgpuAdapterReference(adapter: gpu.Adapter) void {
+        export fn wgpuAdapterReference(adapter: *gpu.Adapter) void {
             T.adapterReference(adapter);
         }
 
         // WGPU_EXPORT void wgpuAdapterRelease(WGPUAdapter adapter);
-        export fn wgpuAdapterRelease(adapter: gpu.Adapter) void {
+        export fn wgpuAdapterRelease(adapter: *gpu.Adapter) void {
             T.adapterRelease(adapter);
         }
 
@@ -1232,37 +1232,37 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn adapterCreateDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?gpu.Device {
+    pub inline fn adapterCreateDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor) ?gpu.Device {
         _ = adapter;
         _ = descriptor;
         unreachable;
     }
 
-    pub inline fn adapterEnumerateFeatures(adapter: gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
+    pub inline fn adapterEnumerateFeatures(adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
         _ = adapter;
         _ = features;
         unreachable;
     }
 
-    pub inline fn adapterGetLimits(adapter: gpu.Adapter, limits: *gpu.SupportedLimits) bool {
+    pub inline fn adapterGetLimits(adapter: *gpu.Adapter, limits: *gpu.SupportedLimits) bool {
         _ = adapter;
         _ = limits;
         unreachable;
     }
 
-    pub inline fn adapterGetProperties(adapter: gpu.Adapter, properties: *gpu.AdapterProperties) void {
+    pub inline fn adapterGetProperties(adapter: *gpu.Adapter, properties: *gpu.AdapterProperties) void {
         _ = adapter;
         _ = properties;
         unreachable;
     }
 
-    pub inline fn adapterHasFeature(adapter: gpu.Adapter, feature: gpu.FeatureName) bool {
+    pub inline fn adapterHasFeature(adapter: *gpu.Adapter, feature: gpu.FeatureName) bool {
         _ = adapter;
         _ = feature;
         unreachable;
     }
 
-    pub inline fn adapterRequestDevice(adapter: gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
+    pub inline fn adapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.DeviceDescriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
         _ = adapter;
         _ = descriptor;
         _ = callback;
@@ -1270,12 +1270,12 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn adapterReference(adapter: gpu.Adapter) void {
+    pub inline fn adapterReference(adapter: *gpu.Adapter) void {
         _ = adapter;
         unreachable;
     }
 
-    pub inline fn adapterRelease(adapter: gpu.Adapter) void {
+    pub inline fn adapterRelease(adapter: *gpu.Adapter) void {
         _ = adapter;
         unreachable;
     }

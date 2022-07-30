@@ -7,37 +7,37 @@ const SupportedLimits = @import("types.zig").SupportedLimits;
 const RequestDeviceStatus = @import("types.zig").RequestDeviceStatus;
 const Impl = @import("interface.zig").Impl;
 
-pub const Adapter = *opaque {
-    pub inline fn createDevice(adapter: Adapter, descriptor: ?*const DeviceDescriptor) ?Device {
-        return Impl.createDevice(adapter, descriptor);
+pub const Adapter = opaque {
+    pub inline fn createDevice(adapter: *Adapter, descriptor: ?*const DeviceDescriptor) ?Device {
+        return Impl.adapterCreateDevice(adapter, descriptor);
     }
 
     /// Call once with null to determine the array length, and again to fetch the feature list.
-    pub inline fn enumerateFeatures(adapter: Adapter, features: ?[*]FeatureName) usize {
+    pub inline fn enumerateFeatures(adapter: *Adapter, features: ?[*]FeatureName) usize {
         return Impl.adapterEnumerateFeatures(adapter, features);
     }
 
-    pub inline fn getLimits(adapter: Adapter, limits: *SupportedLimits) bool {
+    pub inline fn getLimits(adapter: *Adapter, limits: *SupportedLimits) bool {
         return Impl.adapterGetLimits(adapter, limits);
     }
 
-    pub inline fn getProperties(adapter: Adapter, properties: *AdapterProperties) void {
+    pub inline fn getProperties(adapter: *Adapter, properties: *AdapterProperties) void {
         Impl.adapterGetProperties(adapter, properties);
     }
 
-    pub inline fn hasFeature(adapter: Adapter, feature: FeatureName) bool {
+    pub inline fn hasFeature(adapter: *Adapter, feature: FeatureName) bool {
         return Impl.adapterHasFeature(adapter, feature);
     }
 
-    pub inline fn requestDevice(adapter: Adapter, descriptor: ?*const DeviceDescriptor, callback: RequestDeviceCallback, userdata: *anyopaque) void {
+    pub inline fn requestDevice(adapter: *Adapter, descriptor: ?*const DeviceDescriptor, callback: RequestDeviceCallback, userdata: *anyopaque) void {
         Impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
     }
 
-    pub inline fn reference(adapter: Adapter) void {
+    pub inline fn reference(adapter: *Adapter) void {
         Impl.adapterReference(adapter);
     }
 
-    pub inline fn release(adapter: Adapter) void {
+    pub inline fn release(adapter: *Adapter) void {
         Impl.adapterRelease(adapter);
     }
 };
