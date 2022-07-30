@@ -130,8 +130,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn bufferGetUsage(buffer: *gpu.Buffer) gpu.Buffer.UsageFlags {
-        _ = buffer;
-        unreachable;
+        return @bitCast(gpu.Buffer.UsageFlags, procs.bufferGetUsage.?(@ptrCast(c.WGPUBuffer, buffer)));
     }
 
     pub inline fn bufferMapAsync(buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: *anyopaque) void {
