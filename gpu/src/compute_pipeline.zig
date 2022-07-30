@@ -5,6 +5,13 @@ const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Impl = @import("interface.zig").Impl;
 
 pub const ComputePipeline = opaque {
+    pub const Descriptor = extern struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+        layout: ?*PipelineLayout,
+        compute: ProgrammableStageDescriptor,
+    };
+
     pub inline fn getBindGroupLayout(compute_pipeline: *ComputePipeline, group_index: u32) *BindGroupLayout {
         return Impl.computePipelineGetBindGroupLayout(compute_pipeline, group_index);
     }
@@ -20,11 +27,4 @@ pub const ComputePipeline = opaque {
     pub inline fn release(compute_pipeline: *ComputePipeline) void {
         Impl.computePipelineRelease(compute_pipeline);
     }
-};
-
-pub const ComputePipelineDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    layout: ?*PipelineLayout,
-    compute: ProgrammableStageDescriptor,
 };

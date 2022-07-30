@@ -5,7 +5,6 @@ const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Buffer = @import("buffer.zig").Buffer;
 const CommandEncoder = @import("command_encoder.zig").CommandEncoder;
 const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
-const ComputePipelineDescriptor = @import("compute_pipeline.zig").ComputePipelineDescriptor;
 const ExternalTexture = @import("external_texture.zig").ExternalTexture;
 const ExternalTextureDescriptor = @import("external_texture.zig").ExternalTextureDescriptor;
 const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
@@ -54,11 +53,11 @@ pub const Device = opaque {
         return Impl.deviceCreateCommandEncoder(device, descriptor);
     }
 
-    pub inline fn createComputePipeline(device: *Device, descriptor: *const ComputePipelineDescriptor) *ComputePipeline {
+    pub inline fn createComputePipeline(device: *Device, descriptor: *const ComputePipeline.Descriptor) *ComputePipeline {
         return Impl.deviceCreateComputePipeline(device, descriptor);
     }
 
-    pub inline fn createComputePipelineAsync(device: *Device, descriptor: *const ComputePipelineDescriptor, callback: CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
+    pub inline fn createComputePipelineAsync(device: *Device, descriptor: *const ComputePipeline.Descriptor, callback: CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
         Impl.deviceCreateComputePipelineAsync(device, descriptor, callback, userdata);
     }
 
