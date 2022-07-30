@@ -1,7 +1,6 @@
 const ComputePassEncoder = @import("compute_pass_encoder.zig").ComputePassEncoder;
 const RenderPassEncoder = @import("render_pass_encoder.zig").RenderPassEncoder;
 const CommandBuffer = @import("command_buffer.zig").CommandBuffer;
-const CommandBufferDescriptor = @import("command_buffer.zig").CommandBufferDescriptor;
 const Buffer = @import("buffer.zig").Buffer;
 const QuerySet = @import("query_set.zig").QuerySet;
 const RenderPassDescriptor = @import("main.zig").RenderPassDescriptor;
@@ -49,7 +48,7 @@ pub const CommandEncoder = opaque {
         Impl.commandEncoderCopyTextureToTextureInternal(command_encoder, source, destination, copy_size);
     }
 
-    pub inline fn finish(command_encoder: *CommandEncoder, descriptor: ?*const CommandBufferDescriptor) *CommandBuffer {
+    pub inline fn finish(command_encoder: *CommandEncoder, descriptor: ?*const CommandBuffer.Descriptor) *CommandBuffer {
         return Impl.commandEncoderFinish(command_encoder, descriptor);
     }
 
