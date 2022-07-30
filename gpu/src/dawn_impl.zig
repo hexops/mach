@@ -1119,8 +1119,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn textureGetWidth(texture: *gpu.Texture) u32 {
-        _ = texture;
-        unreachable;
+        return procs.textureGetWidth.?(@ptrCast(c.WGPUTexture, texture));
     }
 
     pub inline fn textureSetLabel(texture: *gpu.Texture, label: [*:0]const u8) void {
