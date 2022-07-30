@@ -305,8 +305,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderReference(command_encoder: *gpu.CommandEncoder) void {
-        _ = command_encoder;
-        unreachable;
+        procs.commandEncoderReference.?(@ptrCast(c.WGPUCommandEncoder, command_encoder));
     }
 
     pub inline fn commandEncoderRelease(command_encoder: *gpu.CommandEncoder) void {
