@@ -52,7 +52,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "commandEncoderCopyTextureToBuffer", fn (command_encoder: *gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyBuffer, copy_size: *const gpu.Extent3D) callconv(.Inline) void);
     assertDecl(T, "commandEncoderCopyTextureToTexture", fn (command_encoder: *gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) callconv(.Inline) void);
     assertDecl(T, "commandEncoderCopyTextureToTextureInternal", fn (command_encoder: *gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) callconv(.Inline) void);
-    assertDecl(T, "commandEncoderFinish", fn (command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.CommandBufferDescriptor) callconv(.Inline) *gpu.CommandBuffer);
+    assertDecl(T, "commandEncoderFinish", fn (command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.CommandBuffer.Descriptor) callconv(.Inline) *gpu.CommandBuffer);
     assertDecl(T, "commandEncoderInjectValidationError", fn (command_encoder: *gpu.CommandEncoder, message: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "commandEncoderInsertDebugMarker", fn (command_encoder: *gpu.CommandEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "commandEncoderPopDebugGroup", fn (command_encoder: *gpu.CommandEncoder) callconv(.Inline) void);
@@ -414,7 +414,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder commandEncoder, WGPUCommandBufferDescriptor const * descriptor /* nullable */);
-        export fn wgpuCommandEncoderFinish(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.CommandBufferDescriptor) *gpu.CommandBuffer {
+        export fn wgpuCommandEncoderFinish(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.CommandBuffer.Descriptor) *gpu.CommandBuffer {
             return T.commandEncoderFinish(command_encoder, descriptor);
         }
 
@@ -1450,7 +1450,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn commandEncoderFinish(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.CommandBufferDescriptor) *gpu.CommandBuffer {
+    pub inline fn commandEncoderFinish(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.CommandBuffer.Descriptor) *gpu.CommandBuffer {
         _ = command_encoder;
         _ = descriptor;
         unreachable;
