@@ -805,9 +805,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderSetLabel(render_bundle_encoder: *gpu.RenderBundleEncoder, label: [*:0]const u8) void {
-        _ = render_bundle_encoder;
-        _ = label;
-        unreachable;
+        procs.renderBundleEncoderSetLabel.?(@ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder), label);
     }
 
     pub inline fn renderBundleEncoderSetPipeline(render_bundle_encoder: *gpu.RenderBundleEncoder, pipeline: *gpu.RenderPipeline) void {
