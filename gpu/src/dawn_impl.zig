@@ -596,9 +596,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn externalTextureSetLabel(external_texture: *gpu.ExternalTexture, label: [*:0]const u8) void {
-        _ = external_texture;
-        _ = label;
-        unreachable;
+        procs.externalTextureSetLabel.?(@ptrCast(c.WGPUExternalTexture, external_texture), label);
     }
 
     pub inline fn externalTextureReference(external_texture: *gpu.ExternalTexture) void {
