@@ -79,7 +79,7 @@ pub const RenderPassEncoder = *opaque {
         Impl.renderPassEncoderSetLabel(render_pass_encoder, label);
     }
 
-    pub inline fn setPipeline(render_pass_encoder: *RenderPassEncoder, pipeline: RenderPipeline) void {
+    pub inline fn setPipeline(render_pass_encoder: *RenderPassEncoder, pipeline: *RenderPipeline) void {
         Impl.renderPassEncoderSetPipeline(render_pass_encoder, pipeline);
     }
 
