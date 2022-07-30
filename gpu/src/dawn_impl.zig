@@ -1166,8 +1166,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn textureReference(texture: *gpu.Texture) void {
-        _ = texture;
-        unreachable;
+        procs.textureReference.?(@ptrCast(c.WGPUTexture, texture));
     }
 
     pub inline fn textureRelease(texture: *gpu.Texture) void {
