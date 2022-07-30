@@ -145,9 +145,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn bufferSetLabel(buffer: *gpu.Buffer, label: [*:0]const u8) void {
-        _ = buffer;
-        _ = label;
-        unreachable;
+        procs.bufferSetLabel.?(@ptrCast(c.WGPUBuffer, buffer), label);
     }
 
     pub inline fn bufferUnmap(buffer: *gpu.Buffer) void {
