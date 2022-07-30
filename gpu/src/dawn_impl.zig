@@ -642,13 +642,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn instanceReference(instance: *gpu.Instance) void {
-        _ = instance;
-        unreachable;
+        procs.instanceReference.?(@ptrCast(c.WGPUInstance, instance));
     }
 
     pub inline fn instanceRelease(instance: *gpu.Instance) void {
-        _ = instance;
-        unreachable;
+        procs.instanceRelease.?(@ptrCast(c.WGPUInstance, instance));
     }
 
     pub inline fn pipelineLayoutSetLabel(pipeline_layout: *gpu.PipelineLayout, label: [*:0]const u8) void {
