@@ -753,8 +753,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleRelease(render_bundle: *gpu.RenderBundle) void {
-        _ = render_bundle;
-        unreachable;
+        procs.renderBundleRelease.?(@ptrCast(c.WGPURenderBundle, render_bundle));
     }
 
     pub inline fn renderBundleEncoderDraw(render_bundle_encoder: *gpu.RenderBundleEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
