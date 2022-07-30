@@ -9,6 +9,17 @@ const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Impl = @import("interface.zig").Impl;
 
 pub const RenderPipeline = opaque {
+    pub const Descriptor = extern struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+        layout: ?*PipelineLayout,
+        vertex: VertexState,
+        primitive: PrimitiveState,
+        depth_stencil: ?*const DepthStencilState,
+        multisample: MultisampleState,
+        fragment: ?*const FragmentState,
+    };
+
     pub inline fn getBindGroupLayout(render_pipeline: *RenderPipeline, group_index: u32) *BindGroupLayout {
         return Impl.renderPipelineGetBindGroupLayout(render_pipeline, group_index);
     }
@@ -24,15 +35,4 @@ pub const RenderPipeline = opaque {
     pub inline fn release(render_pipeline: *RenderPipeline) void {
         Impl.renderPipelineRelease(render_pipeline);
     }
-};
-
-pub const RenderPipelineDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    layout: ?*PipelineLayout,
-    vertex: VertexState,
-    primitive: PrimitiveState,
-    depth_stencil: ?*const DepthStencilState,
-    multisample: MultisampleState,
-    fragment: ?*const FragmentState,
 };
