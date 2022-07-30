@@ -3,6 +3,14 @@ const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Impl = @import("interface.zig").Impl;
 
 pub const PipelineLayout = opaque {
+    pub const Descriptor = extern struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+        bind_group_layout_count: u32,
+        // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+        bind_group_layouts: ?[*]const *BindGroupLayout,
+    };
+
     pub inline fn setLabel(pipeline_layout: *PipelineLayout, label: [*:0]const u8) void {
         Impl.pipelineLayoutSetLabel(pipeline_layout, label);
     }
@@ -14,12 +22,4 @@ pub const PipelineLayout = opaque {
     pub inline fn release(pipeline_layout: *PipelineLayout) void {
         Impl.pipelineLayoutRelease(pipeline_layout);
     }
-};
-
-pub const PipelineLayoutDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    bind_group_layout_count: u32,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    bind_group_layouts: ?[*]const *BindGroupLayout,
 };
