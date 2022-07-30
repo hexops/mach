@@ -561,9 +561,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceSetLabel(device: *gpu.Device, label: [*:0]const u8) void {
-        _ = device;
-        _ = label;
-        unreachable;
+        procs.deviceSetLabel.?(@ptrCast(c.WGPUDevice, device), label);
     }
 
     pub inline fn deviceSetLoggingCallback(device: *gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) void {
