@@ -3,7 +3,6 @@ const QueueDescriptor = @import("queue.zig").QueueDescriptor;
 const BindGroup = @import("bind_group.zig").BindGroup;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Buffer = @import("buffer.zig").Buffer;
-const BufferDescriptor = @import("buffer.zig").BufferDescriptor;
 const CommandEncoder = @import("command_encoder.zig").CommandEncoder;
 const CommandEncoderDescriptor = @import("command_encoder.zig").CommandEncoderDescriptor;
 const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
@@ -48,7 +47,7 @@ pub const Device = opaque {
         return Impl.deviceCreateBindGroupLayout(device, descriptor);
     }
 
-    pub inline fn createBuffer(device: *Device, descriptor: *const BufferDescriptor) *Buffer {
+    pub inline fn createBuffer(device: *Device, descriptor: *const Buffer.Descriptor) *Buffer {
         return Impl.deviceCreateBuffer(device, descriptor);
     }
 

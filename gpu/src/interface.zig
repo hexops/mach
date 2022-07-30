@@ -35,8 +35,8 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "bufferGetConstMappedRange", fn (buffer: *gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*const anyopaque);
     assertDecl(T, "bufferGetMappedRange", fn (buffer: *gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*anyopaque);
     assertDecl(T, "bufferGetSize", fn (buffer: *gpu.Buffer) callconv(.Inline) u64);
-    assertDecl(T, "bufferGetUsage", fn (buffer: *gpu.Buffer) callconv(.Inline) gpu.BufferUsage);
-    assertDecl(T, "bufferMapAsync", fn (buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "bufferGetUsage", fn (buffer: *gpu.Buffer) callconv(.Inline) gpu.Buffer.Usage);
+    assertDecl(T, "bufferMapAsync", fn (buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "bufferSetLabel", fn (buffer: *gpu.Buffer, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "bufferUnmap", fn (buffer: *gpu.Buffer) callconv(.Inline) void);
     assertDecl(T, "bufferReference", fn (buffer: *gpu.Buffer) callconv(.Inline) void);
@@ -81,7 +81,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "computePipelineRelease", fn (compute_pipeline: *gpu.ComputePipeline) callconv(.Inline) void);
     assertDecl(T, "deviceCreateBindGroup", fn (device: *gpu.Device, descriptor: *const gpu.BindGroup.Descriptor) callconv(.Inline) *gpu.BindGroup);
     assertDecl(T, "deviceCreateBindGroupLayout", fn (device: *gpu.Device, descriptor: *const gpu.BindGroupLayout.Descriptor) callconv(.Inline) *gpu.BindGroupLayout);
-    assertDecl(T, "deviceCreateBuffer", fn (device: *gpu.Device, descriptor: *const gpu.BufferDescriptor) callconv(.Inline) *gpu.Buffer);
+    assertDecl(T, "deviceCreateBuffer", fn (device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) callconv(.Inline) *gpu.Buffer);
     assertDecl(T, "deviceCreateCommandEncoder", fn (device: *gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) callconv(.Inline) *gpu.CommandEncoder);
     assertDecl(T, "deviceCreateComputePipeline", fn (device: *gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) callconv(.Inline) *gpu.ComputePipeline);
     assertDecl(T, "deviceCreateComputePipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
@@ -327,14 +327,14 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUBufferUsage wgpuBufferGetUsage(WGPUBuffer buffer);
-        export fn wgpuBufferGetUsage(buffer: *gpu.Buffer) gpu.BufferUsage {
+        export fn wgpuBufferGetUsage(buffer: *gpu.Buffer) gpu.Buffer.Usage {
             return T.bufferGetUsage(buffer);
         }
 
         // TODO: Zig cannot currently export a packed struct gpu.MapModeFlags, so we use a u32 for
         // now.
         // WGPU_EXPORT void wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapModeFlags mode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userdata);
-        export fn wgpuBufferMapAsync(buffer: *gpu.Buffer, mode: u32, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) void {
+        export fn wgpuBufferMapAsync(buffer: *gpu.Buffer, mode: u32, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: *anyopaque) void {
             T.bufferMapAsync(buffer, @bitCast(gpu.MapModeFlags, mode), offset, size, callback, userdata);
         }
 
@@ -558,8 +558,8 @@ pub fn Export(comptime T: type) type {
             return T.deviceCreateBindGroupLayout(device, descriptor);
         }
 
-        // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
-        export fn wgpuDeviceCreateBuffer(device: *gpu.Device, descriptor: *const gpu.BufferDescriptor) *gpu.Buffer {
+        // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice device, WGPUBuffer.Descriptor const * descriptor);
+        export fn wgpuDeviceCreateBuffer(device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) *gpu.Buffer {
             return T.deviceCreateBuffer(device, descriptor);
         }
 
@@ -1336,12 +1336,12 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn bufferGetUsage(buffer: *gpu.Buffer) gpu.BufferUsage {
+    pub inline fn bufferGetUsage(buffer: *gpu.Buffer) gpu.Buffer.Usage {
         _ = buffer;
         unreachable;
     }
 
-    pub inline fn bufferMapAsync(buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.BufferMapCallback, userdata: *anyopaque) void {
+    pub inline fn bufferMapAsync(buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: *anyopaque) void {
         _ = buffer;
         _ = mode;
         _ = offset;
@@ -1629,7 +1629,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateBuffer(device: *gpu.Device, descriptor: *const gpu.BufferDescriptor) *gpu.Buffer {
+    pub inline fn deviceCreateBuffer(device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) *gpu.Buffer {
         _ = device;
         _ = descriptor;
         unreachable;
