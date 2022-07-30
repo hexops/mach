@@ -63,11 +63,12 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn adapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
-        _ = adapter;
-        _ = descriptor;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        return procs.adapterRequestDevice.?(
+            @ptrCast(c.WGPUAdapter, adapter),
+            @ptrCast(?*const c.WGPUDeviceDescriptor, descriptor),
+            @ptrCast(c.WGPURequestDeviceCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn adapterReference(adapter: *gpu.Adapter) void {
