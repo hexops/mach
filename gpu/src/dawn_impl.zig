@@ -1074,8 +1074,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn surfaceReference(surface: *gpu.Surface) void {
-        _ = surface;
-        unreachable;
+        procs.surfaceReference.?(@ptrCast(c.WGPUSurface, surface));
     }
 
     pub inline fn surfaceRelease(surface: *gpu.Surface) void {
