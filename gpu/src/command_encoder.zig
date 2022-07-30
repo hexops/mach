@@ -12,6 +12,11 @@ const Extent3D = @import("types.zig").Extent3D;
 const Impl = @import("interface.zig").Impl;
 
 pub const CommandEncoder = opaque {
+    pub const Descriptor = extern struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+    };
+
     pub inline fn beginComputePass(command_encoder: *CommandEncoder, descriptor: ?*const ComputePassDescriptor) *ComputePassEncoder {
         return Impl.commandEncoderBeginComputePass(command_encoder, descriptor);
     }
@@ -91,9 +96,4 @@ pub const CommandEncoder = opaque {
     pub inline fn release(command_encoder: *CommandEncoder) void {
         Impl.commandEncoderRelease(command_encoder);
     }
-};
-
-pub const CommandEncoderDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
 };

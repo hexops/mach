@@ -4,7 +4,6 @@ const BindGroup = @import("bind_group.zig").BindGroup;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Buffer = @import("buffer.zig").Buffer;
 const CommandEncoder = @import("command_encoder.zig").CommandEncoder;
-const CommandEncoderDescriptor = @import("command_encoder.zig").CommandEncoderDescriptor;
 const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
 const ComputePipelineDescriptor = @import("compute_pipeline.zig").ComputePipelineDescriptor;
 const ExternalTexture = @import("external_texture.zig").ExternalTexture;
@@ -51,7 +50,7 @@ pub const Device = opaque {
         return Impl.deviceCreateBuffer(device, descriptor);
     }
 
-    pub inline fn createCommandEncoder(device: *Device, descriptor: ?*const CommandEncoderDescriptor) *CommandEncoder {
+    pub inline fn createCommandEncoder(device: *Device, descriptor: ?*const CommandEncoder.Descriptor) *CommandEncoder {
         return Impl.deviceCreateCommandEncoder(device, descriptor);
     }
 

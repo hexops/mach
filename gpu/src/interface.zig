@@ -82,7 +82,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateBindGroup", fn (device: *gpu.Device, descriptor: *const gpu.BindGroup.Descriptor) callconv(.Inline) *gpu.BindGroup);
     assertDecl(T, "deviceCreateBindGroupLayout", fn (device: *gpu.Device, descriptor: *const gpu.BindGroupLayout.Descriptor) callconv(.Inline) *gpu.BindGroupLayout);
     assertDecl(T, "deviceCreateBuffer", fn (device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) callconv(.Inline) *gpu.Buffer);
-    assertDecl(T, "deviceCreateCommandEncoder", fn (device: *gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) callconv(.Inline) *gpu.CommandEncoder);
+    assertDecl(T, "deviceCreateCommandEncoder", fn (device: *gpu.Device, descriptor: ?*const gpu.CommandEncoder.Descriptor) callconv(.Inline) *gpu.CommandEncoder);
     assertDecl(T, "deviceCreateComputePipeline", fn (device: *gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor) callconv(.Inline) *gpu.ComputePipeline);
     assertDecl(T, "deviceCreateComputePipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.ComputePipelineDescriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceCreateErrorBuffer", fn (device: *gpu.Device) callconv(.Inline) *gpu.Buffer);
@@ -564,7 +564,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice device, WGPUCommandEncoderDescriptor const * descriptor /* nullable */);
-        export fn wgpuDeviceCreateCommandEncoder(device: *gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) *gpu.CommandEncoder {
+        export fn wgpuDeviceCreateCommandEncoder(device: *gpu.Device, descriptor: ?*const gpu.CommandEncoder.Descriptor) *gpu.CommandEncoder {
             return T.deviceCreateCommandEncoder(device, descriptor);
         }
 
@@ -1635,7 +1635,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateCommandEncoder(device: *gpu.Device, descriptor: ?*const gpu.CommandEncoderDescriptor) *gpu.CommandEncoder {
+    pub inline fn deviceCreateCommandEncoder(device: *gpu.Device, descriptor: ?*const gpu.CommandEncoder.Descriptor) *gpu.CommandEncoder {
         _ = device;
         _ = descriptor;
         unreachable;
