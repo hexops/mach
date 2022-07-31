@@ -937,9 +937,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderInsertDebugMarker(render_pass_encoder: *gpu.RenderPassEncoder, marker_label: [*:0]const u8) void {
-        _ = render_pass_encoder;
-        _ = marker_label;
-        unreachable;
+        procs.renderPassEncoderInsertDebugMarker.?(@ptrCast(c.WGPURenderPassEncoder, render_pass_encoder), marker_label);
     }
 
     pub inline fn renderPassEncoderPopDebugGroup(render_pass_encoder: *gpu.RenderPassEncoder) void {
