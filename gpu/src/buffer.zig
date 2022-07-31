@@ -100,10 +100,10 @@ pub const Buffer = opaque {
     ) void {
         const Helper = struct {
             pub fn callback(status: MapAsyncStatus, userdata: ?*anyopaque) callconv(.C) void {
-                callback(status, if (Context == void) {} orelse @ptrCast(Context, userdata));
+                callback(status, if (Context == void) {} else @ptrCast(Context, userdata));
             }
         };
-        Impl.bufferMapAsync(buffer, mode, offset, size, Helper.callback, if (Context == void) null orelse context);
+        Impl.bufferMapAsync(buffer, mode, offset, size, Helper.callback, if (Context == void) null else context);
     }
 
     pub inline fn setLabel(buffer: *Buffer, label: [*:0]const u8) void {

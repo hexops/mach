@@ -38,11 +38,11 @@ pub const Instance = opaque {
                     status,
                     adapter,
                     message,
-                    if (Context == void) {} orelse @ptrCast(Context, userdata),
+                    if (Context == void) {} else @ptrCast(Context, userdata),
                 );
             }
         };
-        Impl.instanceRequestAdapter(instance, options, Helper.callback, if (Context == void) null orelse context);
+        Impl.instanceRequestAdapter(instance, options, Helper.callback, if (Context == void) null else context);
     }
 
     pub inline fn reference(instance: *Instance) void {

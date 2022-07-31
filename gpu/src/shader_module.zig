@@ -40,11 +40,11 @@ pub const ShaderModule = opaque {
                 callback(
                     status,
                     compilation_info,
-                    if (Context == void) {} orelse @ptrCast(Context, userdata),
+                    if (Context == void) {} else @ptrCast(Context, userdata),
                 );
             }
         };
-        Impl.shaderModuleGetCompilationInfo(shader_module, Helper.callback, if (Context == void) null orelse context);
+        Impl.shaderModuleGetCompilationInfo(shader_module, Helper.callback, if (Context == void) null else context);
     }
 
     pub inline fn setLabel(shader_module: *ShaderModule, label: [*:0]const u8) void {

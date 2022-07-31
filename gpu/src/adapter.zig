@@ -88,11 +88,11 @@ pub const Adapter = opaque {
                     status,
                     device,
                     message,
-                    if (Context == void) {} orelse @ptrCast(Context, userdata),
+                    if (Context == void) {} else @ptrCast(Context, userdata),
                 );
             }
         };
-        Impl.adapterRequestDevice(adapter, descriptor, Helper.callback, if (Context == void) null orelse context);
+        Impl.adapterRequestDevice(adapter, descriptor, Helper.callback, if (Context == void) null else context);
     }
 
     pub inline fn reference(adapter: *Adapter) void {

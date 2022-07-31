@@ -20,6 +20,7 @@ const RequiredLimits = @import("types.zig").RequiredLimits;
 const SupportedLimits = @import("types.zig").SupportedLimits;
 const ErrorType = @import("types.zig").ErrorType;
 const ErrorFilter = @import("types.zig").ErrorFilter;
+const LoggingType = @import("types.zig").LoggingType;
 const LoggingCallback = @import("callbacks.zig").LoggingCallback;
 const ErrorCallback = @import("callbacks.zig").ErrorCallback;
 const CreateComputePipelineAsyncCallback = @import("callbacks.zig").CreateComputePipelineAsyncCallback;
@@ -185,10 +186,16 @@ pub const Device = opaque {
     // TODO: presumably callback should be nullable for unsetting
     pub inline fn setLoggingCallback(
         device: *Device,
-        callback: LoggingCallback,
-        userdata: ?*anyopaque,
+        comptime Context: type,
+        comptime callback: fn (typ: LoggingType, message: [*:0]const u8, ctx: Context) callconv(.Inline) void,
+        context: Context,
     ) void {
-        Impl.deviceSetLoggingCallback(device, callback, userdata);
+        const Helper = struct {
+            pub fn callback(typ: LoggingType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
+                callback(typ, message, if (Context == void) {} else @ptrCast(Context, userdata));
+            }
+        };
+        Impl.deviceSetLoggingCallback(device, Helper.callback, if (Context == void) null else context);
     }
 
     // TODO: presumably callback should be nullable for unsetting
@@ -200,10 +207,10 @@ pub const Device = opaque {
     ) void {
         const Helper = struct {
             pub fn callback(typ: ErrorType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                callback(typ, message, if (Context == void) {} orelse @ptrCast(Context, userdata));
+                callback(typ, message, if (Context == void) {} else @ptrCast(Context, userdata));
             }
         };
-        Impl.deviceSetUncapturedErrorCallback(device, Helper.callback, if (Context == void) null orelse context);
+        Impl.deviceSetUncapturedErrorCallback(device, Helper.callback, if (Context == void) null else context);
     }
 
     pub inline fn tick(device: *Device) void {
