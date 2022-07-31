@@ -748,13 +748,17 @@ pub const Interface = gpu.Interface(struct {
         );
     }
 
+    // TODO: signature is wrong!
+    // WGPU_EXPORT void wgpuQueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize);
     pub inline fn queueWriteTexture(queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) void {
-        _ = queue;
-        _ = data;
-        _ = data_size;
-        _ = data_layout;
-        _ = write_size;
-        unreachable;
+        procs.queueWriteTexture.?(
+            @ptrCast(c.WGPUQueue, queue),
+            null, // @ptrCast(*const c.WGPUImageCopyTexture, destination), // TODO
+            data,
+            data_size,
+            @ptrCast(*const c.WGPUTextureDataLayout, data_layout),
+            @ptrCast(*const c.WGPUExtent3D, write_size),
+        );
     }
 
     pub inline fn queueReference(queue: *gpu.Queue) void {
@@ -774,12 +778,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderDraw(render_bundle_encoder: *gpu.RenderBundleEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
-        _ = render_bundle_encoder;
-        _ = vertex_count;
-        _ = instance_count;
-        _ = first_vertex;
-        _ = first_instance;
-        unreachable;
+        procs.renderBundleEncoderDraw.?(@ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder), vertex_count, instance_count, first_vertex, first_instance);
     }
 
     pub inline fn renderBundleEncoderDrawIndexed(render_bundle_encoder: *gpu.RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
