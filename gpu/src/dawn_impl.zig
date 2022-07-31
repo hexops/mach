@@ -1003,12 +1003,13 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderSetVertexBuffer(render_pass_encoder: *gpu.RenderPassEncoder, slot: u32, buffer: *gpu.Buffer, offset: u64, size: u64) void {
-        _ = render_pass_encoder;
-        _ = slot;
-        _ = buffer;
-        _ = offset;
-        _ = size;
-        unreachable;
+        procs.renderPassEncoderSetVertexBuffer.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            slot,
+            @ptrCast(c.WGPUBuffer, buffer),
+            offset,
+            size,
+        );
     }
 
     pub inline fn renderPassEncoderSetViewport(render_pass_encoder: *gpu.RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
