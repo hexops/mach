@@ -881,35 +881,39 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderBeginOcclusionQuery(render_pass_encoder: *gpu.RenderPassEncoder, query_index: u32) void {
-        _ = render_pass_encoder;
-        _ = query_index;
-        unreachable;
+        procs.renderPassEncoderBeginOcclusionQuery.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            query_index,
+        );
     }
 
     pub inline fn renderPassEncoderDraw(render_pass_encoder: *gpu.RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
-        _ = render_pass_encoder;
-        _ = vertex_count;
-        _ = instance_count;
-        _ = first_vertex;
-        _ = first_instance;
-        unreachable;
+        procs.renderPassEncoderDraw.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            vertex_count,
+            instance_count,
+            first_vertex,
+            first_instance,
+        );
     }
 
     pub inline fn renderPassEncoderDrawIndexed(render_pass_encoder: *gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
-        _ = render_pass_encoder;
-        _ = index_count;
-        _ = instance_count;
-        _ = first_index;
-        _ = base_vertex;
-        _ = first_instance;
-        unreachable;
+        procs.renderPassEncoderDrawIndexed.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            index_count,
+            instance_count,
+            first_index,
+            @bitCast(i32, base_vertex), // TODO: wrong signature?
+            first_instance,
+        );
     }
 
     pub inline fn renderPassEncoderDrawIndexedIndirect(render_pass_encoder: *gpu.RenderPassEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) void {
-        _ = render_pass_encoder;
-        _ = indirect_buffer;
-        _ = indirect_offset;
-        unreachable;
+        procs.renderPassEncoderDrawIndexedIndirect.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            @ptrCast(c.WGPUBuffer, indirect_buffer),
+            indirect_offset,
+        );
     }
 
     pub inline fn renderPassEncoderDrawIndirect(render_pass_encoder: *gpu.RenderPassEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) void {
