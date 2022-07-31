@@ -1108,12 +1108,13 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn swapChainConfigure(swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: gpu.Texture.UsageFlags, width: u32, height: u32) void {
-        _ = swap_chain;
-        _ = format;
-        _ = allowed_usage;
-        _ = width;
-        _ = height;
-        unreachable;
+        procs.swapChainConfigure.?(
+            @ptrCast(c.WGPUSwapChain, swap_chain),
+            @enumToInt(format),
+            @bitCast(c.WGPUTextureUsageFlags, allowed_usage),
+            width,
+            height,
+        );
     }
 
     pub inline fn swapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) *gpu.TextureView {
