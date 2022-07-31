@@ -300,10 +300,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderWriteTimestamp(command_encoder: *gpu.CommandEncoder, query_set: *gpu.QuerySet, query_index: u32) void {
-        _ = command_encoder;
-        _ = query_set;
-        _ = query_index;
-        unreachable;
+        procs.commandEncoderWriteTimestamp.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            @ptrCast(c.WGPUQuerySet, query_set),
+            query_index,
+        );
     }
 
     pub inline fn commandEncoderReference(command_encoder: *gpu.CommandEncoder) void {
