@@ -187,11 +187,12 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderClearBuffer(command_encoder: *gpu.CommandEncoder, buffer: *gpu.Buffer, offset: u64, size: u64) void {
-        _ = command_encoder;
-        _ = buffer;
-        _ = offset;
-        _ = size;
-        unreachable;
+        procs.commandEncoderClearBuffer.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            @ptrCast(c.WGPUBuffer, buffer),
+            offset,
+            size,
+        );
     }
 
     pub inline fn commandEncoderCopyBufferToBuffer(command_encoder: *gpu.CommandEncoder, source: *gpu.Buffer, source_offset: u64, destination: *gpu.Buffer, destination_offset: u64, size: u64) void {
