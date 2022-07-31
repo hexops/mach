@@ -1049,9 +1049,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPipelineGetBindGroupLayout(render_pipeline: *gpu.RenderPipeline, group_index: u32) *gpu.BindGroupLayout {
-        _ = render_pipeline;
-        _ = group_index;
-        unreachable;
+        return @ptrCast(*gpu.BindGroupLayout, procs.renderPipelineGetBindGroupLayout.?(
+            @ptrCast(c.WGPURenderPipeline, render_pipeline),
+            group_index,
+        ));
     }
 
     pub inline fn renderPipelineSetLabel(render_pipeline: *gpu.RenderPipeline, label: [*:0]const u8) void {
