@@ -504,10 +504,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateSwapChain(device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChain.Descriptor) *gpu.SwapChain {
-        _ = device;
-        _ = surface;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.SwapChain, procs.deviceCreateSwapChain.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(c.WGPUSurface, surface),
+            @ptrCast(*const c.WGPUSwapChainDescriptor, descriptor),
+        ));
     }
 
     pub inline fn deviceCreateTexture(device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) *gpu.Texture {
