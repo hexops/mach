@@ -82,8 +82,8 @@ pub const Adapter = opaque {
         ) callconv(.Inline) void,
         context: Context,
     ) void {
-        const c_callback = struct {
-            pub fn callback(status: RequestDeviceStatus, device: *Device, message: ?[*:0]const u8, userdata: ?*anyopaque) void {
+        const Helper = struct {
+            pub fn callback(status: RequestDeviceStatus, device: *Device, message: ?[*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
                 callback(
                     status,
                     device,
@@ -92,7 +92,7 @@ pub const Adapter = opaque {
                 );
             }
         };
-        Impl.adapterRequestDevice(adapter, descriptor, c_callback, if (Context == void) null orelse context);
+        Impl.adapterRequestDevice(adapter, descriptor, Helper.callback, if (Context == void) null orelse context);
     }
 
     pub inline fn reference(adapter: *Adapter) void {
