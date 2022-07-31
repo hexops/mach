@@ -354,9 +354,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePassEncoderSetPipeline(compute_pass_encoder: *gpu.ComputePassEncoder, pipeline: *gpu.ComputePipeline) void {
-        _ = compute_pass_encoder;
-        _ = pipeline;
-        unreachable;
+        procs.computePassEncoderSetPipeline.?(
+            @ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder),
+            @ptrCast(c.WGPUComputePipeline, pipeline),
+        );
     }
 
     pub inline fn computePassEncoderWriteTimestamp(compute_pass_encoder: *gpu.ComputePassEncoder, pipeline: *gpu.ComputePipeline) void {
