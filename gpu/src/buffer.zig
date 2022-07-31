@@ -71,25 +71,25 @@ pub const Buffer = opaque {
 
     /// Default `offset`: 0
     /// Default `size`: `gpu.whole_map_size`
-    pub inline fn bufferGetConstMappedRange(buffer: *Buffer, offset: usize, size: usize) ?*const anyopaque {
+    pub inline fn getConstMappedRange(buffer: *Buffer, offset: usize, size: usize) ?*const anyopaque {
         return Impl.bufferGetConstMappedRange(buffer, offset, size);
     }
 
     /// Default `offset`: 0
     /// Default `size`: `gpu.whole_map_size`
-    pub inline fn bufferGetMappedRange(buffer: *Buffer, offset: usize, size: usize) ?*anyopaque {
+    pub inline fn getMappedRange(buffer: *Buffer, offset: usize, size: usize) ?*anyopaque {
         return Impl.bufferGetMappedRange(buffer, offset, size);
     }
 
-    pub inline fn bufferGetSize(buffer: *Buffer) u64 {
+    pub inline fn getSize(buffer: *Buffer) u64 {
         return Impl.bufferGetSize(buffer);
     }
 
-    pub inline fn bufferGetUsage(buffer: *Buffer) Buffer.UsageFlags {
+    pub inline fn getUsage(buffer: *Buffer) Buffer.UsageFlags {
         return Impl.bufferGetUsage(buffer);
     }
 
-    pub inline fn bufferMapAsync(
+    pub inline fn mapAsync(
         buffer: *Buffer,
         mode: MapModeFlags,
         offset: usize,
@@ -106,19 +106,19 @@ pub const Buffer = opaque {
         Impl.bufferMapAsync(buffer, mode, offset, size, Helper.callback, if (Context == void) null orelse context);
     }
 
-    pub inline fn bufferSetLabel(buffer: *Buffer, label: [*:0]const u8) void {
+    pub inline fn setLabel(buffer: *Buffer, label: [*:0]const u8) void {
         Impl.bufferSetLabel(buffer, label);
     }
 
-    pub inline fn bufferUnmap(buffer: *Buffer) void {
+    pub inline fn unmap(buffer: *Buffer) void {
         Impl.bufferUnmap(buffer);
     }
 
-    pub inline fn bufferReference(buffer: *Buffer) void {
+    pub inline fn reference(buffer: *Buffer) void {
         Impl.bufferReference(buffer);
     }
 
-    pub inline fn bufferRelease(buffer: *Buffer) void {
+    pub inline fn release(buffer: *Buffer) void {
         Impl.bufferRelease(buffer);
     }
 };
