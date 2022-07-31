@@ -70,8 +70,29 @@ pub const Adapter = opaque {
         return Impl.adapterHasFeature(adapter, feature);
     }
 
-    pub inline fn requestDevice(adapter: *Adapter, descriptor: ?*const Device.Descriptor, callback: RequestDeviceCallback, userdata: ?*anyopaque) void {
-        Impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
+    pub inline fn requestDevice(
+        adapter: *Adapter,
+        descriptor: ?*const Device.Descriptor,
+        comptime Context: type,
+        comptime callback: fn (
+            status: RequestDeviceStatus,
+            device: *Device,
+            message: ?[*:0]const u8,
+            ctx: Context,
+        ) callconv(.Inline) void,
+        context: Context,
+    ) void {
+        const c_callback = struct {
+            pub fn callback(status: RequestDeviceStatus, device: *Device, message: ?[*:0]const u8, userdata: ?*anyopaque) void {
+                callback(
+                    status,
+                    device,
+                    message,
+                    if (Context == void) {} orelse @ptrCast(Context, userdata),
+                );
+            }
+        };
+        Impl.adapterRequestDevice(adapter, descriptor, c_callback, if (Context == void) null orelse context);
     }
 
     pub inline fn reference(adapter: *Adapter) void {
