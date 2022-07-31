@@ -809,15 +809,18 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderFinish(render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) void {
-        _ = render_bundle_encoder;
-        _ = descriptor;
-        unreachable;
+        // TODO: our signature is wrong!
+        _ = procs.renderBundleEncoderFinish.?(
+            @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
+            @ptrCast(*const c.WGPURenderBundleDescriptor, descriptor),
+        );
     }
 
     pub inline fn renderBundleEncoderInsertDebugMarker(render_bundle_encoder: *gpu.RenderBundleEncoder, marker_label: [*:0]const u8) void {
-        _ = render_bundle_encoder;
-        _ = marker_label;
-        unreachable;
+        procs.renderBundleEncoderInsertDebugMarker.?(
+            @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
+            marker_label,
+        );
     }
 
     pub inline fn renderBundleEncoderPopDebugGroup(render_bundle_encoder: *gpu.RenderBundleEncoder) void {
