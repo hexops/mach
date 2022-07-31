@@ -585,9 +585,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn devicePushErrorScope(device: *gpu.Device, filter: gpu.ErrorFilter) void {
-        _ = device;
-        _ = filter;
-        unreachable;
+        procs.devicePushErrorScope.?(
+            @ptrCast(c.WGPUDevice, device),
+            @enumToInt(filter),
+        );
     }
 
     pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: *anyopaque) void {
