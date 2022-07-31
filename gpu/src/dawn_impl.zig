@@ -360,6 +360,8 @@ pub const Interface = gpu.Interface(struct {
         );
     }
 
+    // TODO: signature is wrong!
+    // WGPU_EXPORT void wgpuComputePassEncoderWriteTimestamp(WGPUComputePassEncoder computePassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
     pub inline fn computePassEncoderWriteTimestamp(compute_pass_encoder: *gpu.ComputePassEncoder, pipeline: *gpu.ComputePipeline) void {
         _ = compute_pass_encoder;
         _ = pipeline;
@@ -375,9 +377,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePipelineGetBindGroupLayout(compute_pipeline: *gpu.ComputePipeline, group_index: u32) *gpu.BindGroupLayout {
-        _ = compute_pipeline;
-        _ = group_index;
-        unreachable;
+        return @ptrCast(*gpu.BindGroupLayout, procs.computePipelineGetBindGroupLayout.?(
+            @ptrCast(c.WGPUComputePipeline, compute_pipeline),
+            group_index,
+        ));
     }
 
     pub inline fn computePipelineSetLabel(compute_pipeline: *gpu.ComputePipeline, label: [*:0]const u8) void {
