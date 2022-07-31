@@ -925,8 +925,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderEndOcclusionQuery(render_pass_encoder: *gpu.RenderPassEncoder) void {
-        _ = render_pass_encoder;
-        unreachable;
+        procs.renderPassEncoderEndOcclusionQuery.?(@ptrCast(c.WGPURenderPassEncoder, render_pass_encoder));
     }
 
     pub inline fn renderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const *const gpu.RenderBundle) void {
