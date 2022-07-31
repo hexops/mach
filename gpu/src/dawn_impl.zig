@@ -1118,13 +1118,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn swapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) *gpu.TextureView {
-        _ = swap_chain;
-        unreachable;
+        return @ptrCast(*gpu.TextureView, procs.swapChainGetCurrentTextureView.?(@ptrCast(c.WGPUSwapChain, swap_chain)));
     }
 
     pub inline fn swapChainPresent(swap_chain: *gpu.SwapChain) void {
-        _ = swap_chain;
-        unreachable;
+        procs.swapChainPresent.?(@ptrCast(c.WGPUSwapChain, swap_chain));
     }
 
     pub inline fn swapChainReference(swap_chain: *gpu.SwapChain) void {
@@ -1136,9 +1134,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn textureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureView.Descriptor) *gpu.TextureView {
-        _ = texture;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.TextureView, procs.textureCreateView.?(
+            @ptrCast(c.WGPUTexture, texture),
+            @ptrCast(*const c.WGPUTextureViewDescriptor, descriptor),
+        ));
     }
 
     pub inline fn textureDestroy(texture: *gpu.Texture) void {
