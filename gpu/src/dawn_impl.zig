@@ -355,12 +355,13 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePassEncoderSetBindGroup(compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
-        _ = compute_pass_encoder;
-        _ = group_index;
-        _ = group;
-        _ = dynamic_offset_count;
-        _ = dynamic_offsets;
-        unreachable;
+        procs.computePassEncoderSetBindGroup.?(
+            @ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder),
+            group_index,
+            @ptrCast(c.WGPUBindGroup, group),
+            dynamic_offset_count,
+            dynamic_offsets,
+        );
     }
 
     pub inline fn computePassEncoderSetLabel(compute_pass_encoder: *gpu.ComputePassEncoder, label: [*:0]const u8) void {
