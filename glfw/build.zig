@@ -9,6 +9,7 @@ pub fn build(b: *Builder) void {
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&testStep(b, mode, target).step);
+    test_step.dependOn(&testStepShared(b, mode, target).step);
 }
 
 pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
@@ -16,6 +17,15 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     link(b, main_tests, .{});
+    main_tests.install();
+    return main_tests.run();
+}
+
+fn testStepShared(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTestExe("glfw_tests_shared", thisDir() ++ "/src/main.zig");
+    main_tests.setBuildMode(mode);
+    main_tests.setTarget(target);
+    link(b, main_tests, .{ .shared = true });
     main_tests.install();
     return main_tests.run();
 }
@@ -46,6 +56,9 @@ pub const Options = struct {
 
     /// System SDK options.
     system_sdk: system_sdk.Options = .{},
+
+    /// Build and link GLFW as a shared library.
+    shared: bool = false,
 };
 
 pub const pkg = std.build.Pkg{
@@ -56,7 +69,9 @@ pub const pkg = std.build.Pkg{
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const lib = buildLibrary(b, step, options);
     step.linkLibrary(lib);
-    linkGLFWDependencies(b, step, options);
+    addGLFWIncludes(b, step);
+    if (!options.shared) linkGLFWDependencies(b, step, options);
+    if (options.shared) step.defineCMacro("GLFW_DLL", null);
 }
 
 fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
@@ -64,12 +79,31 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
     const main_abs = thisDir() ++ "/src/main.zig";
-    const lib = b.addStaticLibrary("glfw", main_abs);
+    const lib = if (options.shared) b.addSharedLibrary("glfw", main_abs, .unversioned) else b.addStaticLibrary("glfw", main_abs);
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
+    addGLFWIncludes(b, lib);
 
-    // TODO(build-system): pass system SDK options through
-    system_sdk.include(b, step, .{});
+    if (options.shared) {
+        lib.defineCMacro("_GLFW_BUILD_DLL", null);
+        lib.install();
+    }
+    addGLFWSources(b, step, lib, options);
+    linkGLFWDependencies(b, lib, options);
+    return lib;
+}
+
+fn addGLFWIncludes(b: *Builder, step: *std.build.LibExeObjStep) void {
+    const include_dir = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "upstream/glfw/include" }) catch unreachable;
+    defer b.allocator.free(include_dir);
+    step.addIncludeDir(include_dir);
+
+    const vulkan_include_dir = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "upstream/vulkan_headers/include" }) catch unreachable;
+    defer b.allocator.free(vulkan_include_dir);
+    step.addIncludeDir(vulkan_include_dir);
+}
+
+fn addGLFWSources(b: *Builder, step: *std.build.LibExeObjStep, lib: *std.build.LibExeObjStep, options: Options) void {
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const include_glfw_src = "-I" ++ (comptime thisDir()) ++ "/upstream/glfw/src";
     switch (target.os.tag) {
@@ -109,9 +143,6 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
             lib.addCSourceFiles(sources.items, flags.items);
         },
     }
-    linkGLFWDependencies(b, lib, options);
-    lib.install();
-    return lib;
 }
 
 fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
@@ -131,14 +162,6 @@ fn thisDir() []const u8 {
 }
 
 fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const include_dir = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "upstream/glfw/include" }) catch unreachable;
-    defer b.allocator.free(include_dir);
-    step.addIncludeDir(include_dir);
-
-    const vulkan_include_dir = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "upstream/vulkan_headers/include" }) catch unreachable;
-    defer b.allocator.free(vulkan_include_dir);
-    step.addIncludeDir(vulkan_include_dir);
-
     step.linkLibC();
     // TODO(build-system): pass system SDK options through
     system_sdk.include(b, step, .{});
