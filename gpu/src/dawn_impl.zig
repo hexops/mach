@@ -475,9 +475,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateRenderPipeline(device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor) *gpu.RenderPipeline {
-        _ = device;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.RenderPipeline, procs.deviceCreateRenderPipeline.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPURenderPipelineDescriptor, descriptor),
+        ));
     }
 
     pub inline fn deviceCreateRenderPipelineAsync(device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
