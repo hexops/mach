@@ -739,12 +739,13 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn queueWriteBuffer(queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) void {
-        _ = queue;
-        _ = buffer;
-        _ = buffer_offset;
-        _ = data;
-        _ = size;
-        unreachable;
+        procs.queueWriteBuffer.?(
+            @ptrCast(c.WGPUQueue, queue),
+            @ptrCast(c.WGPUBuffer, buffer),
+            buffer_offset,
+            data,
+            size,
+        );
     }
 
     pub inline fn queueWriteTexture(queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) void {
