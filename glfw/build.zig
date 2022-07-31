@@ -67,84 +67,30 @@ pub const pkg = std.build.Pkg{
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const result = buildLibrary(b, step, options);
-    step.linkLibrary(result.lib);
+    const lib = buildLibrary(b, step, options);
+    step.linkLibrary(lib);
     addGLFWIncludes(b, step);
-
-    if (result.glfw_shared) |glfw_shared| {
-        step.defineCMacro("GLFW_DLL", null);
-        step.linkLibrary(glfw_shared);
-    } else {
-        linkGLFWDependencies(b, step, options);
-    }
+    if (!options.shared) linkGLFWDependencies(b, step, options);
+    if (options.shared) step.defineCMacro("GLFW_DLL", null);
 }
 
-const Libraries = struct {
-    lib: *std.build.LibExeObjStep,
-    glfw_shared: ?*std.build.LibExeObjStep,
-};
-
-fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) Libraries {
+fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
     const main_abs = thisDir() ++ "/src/main.zig";
-    const lib = b.addStaticLibrary("glfw", main_abs);
+    const lib = if (options.shared) b.addSharedLibrary("glfw", main_abs, .unversioned) else b.addStaticLibrary("glfw", main_abs);
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
     addGLFWIncludes(b, lib);
 
-    // Each call to buildLibrary will use the same instance of the glfw shared dll build step
-    const shared = struct {
-        var instance: ?*std.build.LibExeObjStep = null;
-    };
-
     if (options.shared) {
-        if (shared.instance) |instance| {
-            // The targets must match, since the first caller created shared.instance with their step's target
-            if (!std.meta.eql(instance.target, step.target)) {
-                @panic("When building glfw in shared mode, each call to glfw.link must use the same target");
-            }
-        } else {
-            const glfw_shared = b.addSharedLibrary("glfw_shared", null, .unversioned);
-            glfw_shared.setBuildMode(step.build_mode);
-            glfw_shared.setTarget(step.target);
-            glfw_shared.defineCMacro("_GLFW_BUILD_DLL", null);
-            glfw_shared.setOutputDir("zig-out/bin");
-            addGLFWIncludes(b, glfw_shared);
-            addGLFWSources(b, step, glfw_shared, options);
-            linkGLFWDependencies(b, glfw_shared, options);
-
-            glfw_shared.install();
-            shared.instance = glfw_shared;
-        }
-    } else {
-        addGLFWSources(b, step, lib, options);
-        linkGLFWDependencies(b, lib, options);
+        lib.defineCMacro("_GLFW_BUILD_DLL", null);
+        lib.install();
     }
-
-    lib.install();
-
-    return .{
-        .lib = lib,
-        .glfw_shared = shared.instance,
-    };
-}
-
-fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
-    if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
-        if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
-    } else |_| {}
-    var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = (comptime thisDir());
-    child.stderr = std.io.getStdErr();
-    child.stdout = std.io.getStdOut();
-
-    _ = try child.spawnAndWait();
-}
-
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
+    addGLFWSources(b, step, lib, options);
+    linkGLFWDependencies(b, lib, options);
+    return lib;
 }
 
 fn addGLFWIncludes(b: *Builder, step: *std.build.LibExeObjStep) void {
@@ -197,6 +143,22 @@ fn addGLFWSources(b: *Builder, step: *std.build.LibExeObjStep, lib: *std.build.L
             lib.addCSourceFiles(sources.items, flags.items);
         },
     }
+}
+
+fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
+    if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
+        if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
+    } else |_| {}
+    var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
+    child.cwd = (comptime thisDir());
+    child.stderr = std.io.getStdErr();
+    child.stdout = std.io.getStdOut();
+
+    _ = try child.spawnAndWait();
+}
+
+fn thisDir() []const u8 {
+    return std.fs.path.dirname(@src().file) orelse ".";
 }
 
 fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
