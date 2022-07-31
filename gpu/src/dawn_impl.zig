@@ -963,18 +963,20 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderSetBlendConstant(render_pass_encoder: *gpu.RenderPassEncoder, color: *const gpu.Color) void {
-        _ = render_pass_encoder;
-        _ = color;
-        unreachable;
+        procs.renderPassEncoderSetBlendConstant.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            @ptrCast(*const c.WGPUColor, color),
+        );
     }
 
     pub inline fn renderPassEncoderSetIndexBuffer(render_pass_encoder: *gpu.RenderPassEncoder, buffer: *gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) void {
-        _ = render_pass_encoder;
-        _ = buffer;
-        _ = format;
-        _ = offset;
-        _ = size;
-        unreachable;
+        procs.renderPassEncoderSetIndexBuffer.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            @ptrCast(c.WGPUBuffer, buffer),
+            @enumToInt(format),
+            offset,
+            size,
+        );
     }
 
     pub inline fn renderPassEncoderSetLabel(render_pass_encoder: *gpu.RenderPassEncoder, label: [*:0]const u8) void {
@@ -982,18 +984,20 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderSetPipeline(render_pass_encoder: *gpu.RenderPassEncoder, pipeline: *gpu.RenderPipeline) void {
-        _ = render_pass_encoder;
-        _ = pipeline;
-        unreachable;
+        procs.renderPassEncoderSetPipeline.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            @ptrCast(c.WGPURenderPipeline, pipeline),
+        );
     }
 
     pub inline fn renderPassEncoderSetScissorRect(render_pass_encoder: *gpu.RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
-        _ = render_pass_encoder;
-        _ = x;
-        _ = y;
-        _ = width;
-        _ = height;
-        unreachable;
+        procs.renderPassEncoderSetScissorRect.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            x,
+            y,
+            width,
+            height,
+        );
     }
 
     pub inline fn renderPassEncoderSetStencilReference(render_pass_encoder: *gpu.RenderPassEncoder, reference: u32) void {
