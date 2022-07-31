@@ -731,10 +731,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn queueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]*gpu.CommandBuffer) void {
-        _ = queue;
-        _ = command_count;
-        _ = commands;
-        unreachable;
+        procs.queueSubmit.?(
+            @ptrCast(c.WGPUQueue, queue),
+            command_count,
+            @ptrCast([*]c.WGPUCommandBuffer, commands),
+        );
     }
 
     pub inline fn queueWriteBuffer(queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) void {
