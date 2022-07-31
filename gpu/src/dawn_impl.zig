@@ -490,9 +490,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) *gpu.Sampler {
-        _ = device;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.Sampler, procs.deviceCreateSampler.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUSamplerDescriptor, descriptor),
+        ));
     }
 
     pub inline fn deviceCreateShaderModule(device: *gpu.Device, descriptor: *const gpu.ShaderModule.Descriptor) *gpu.ShaderModule {
