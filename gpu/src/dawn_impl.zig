@@ -954,12 +954,13 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderSetBindGroup(render_pass_encoder: *gpu.RenderPassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
-        _ = render_pass_encoder;
-        _ = group_index;
-        _ = group;
-        _ = dynamic_offset_count;
-        _ = dynamic_offsets;
-        unreachable;
+        procs.renderPassEncoderSetBindGroup.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            group_index,
+            @ptrCast(c.WGPUBindGroup, group),
+            dynamic_offset_count,
+            dynamic_offsets,
+        );
     }
 
     pub inline fn renderPassEncoderSetBlendConstant(render_pass_encoder: *gpu.RenderPassEncoder, color: *const gpu.Color) void {
