@@ -410,9 +410,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateBuffer(device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) *gpu.Buffer {
-        _ = device;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.Buffer, procs.deviceCreateBuffer.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUBufferDescriptor, descriptor),
+        ));
     }
 
     pub inline fn deviceCreateCommandEncoder(device: *gpu.Device, descriptor: ?*const gpu.CommandEncoder.Descriptor) *gpu.CommandEncoder {
