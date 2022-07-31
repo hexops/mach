@@ -72,15 +72,15 @@ pub const Device = opaque {
     pub inline fn createComputePipelineAsync(
         device: *Device,
         descriptor: *const ComputePipeline.Descriptor,
-        comptime Context: type,
+        context: anytype,
         comptime callback: fn (
             status: CreatePipelineAsyncStatus,
             compute_pipeline: *ComputePipeline,
             message: [*:0]const u8,
-            ctx: Context,
+            ctx: @TypeOf(context),
         ) callconv(.Inline) void,
-        context: Context,
     ) void {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(
                 status: CreatePipelineAsyncStatus,
@@ -130,15 +130,15 @@ pub const Device = opaque {
     pub inline fn createRenderPipelineAsync(
         device: *Device,
         descriptor: *const RenderPipeline.Descriptor,
-        comptime Context: type,
+        context: anytype,
         comptime callback: fn (
             status: CreatePipelineAsyncStatus,
             pipeline: *RenderPipeline,
             message: [*:0]const u8,
-            ctx: Context,
+            ctx: @TypeOf(context),
         ) callconv(.Inline) void,
-        context: Context,
     ) void {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(
                 status: CreatePipelineAsyncStatus,
@@ -203,10 +203,10 @@ pub const Device = opaque {
 
     pub inline fn popErrorScope(
         device: *Device,
-        comptime Context: type,
-        comptime callback: fn (typ: ErrorType, message: [*:0]const u8, ctx: Context) callconv(.Inline) void,
-        context: Context,
+        context: anytype,
+        comptime callback: fn (typ: ErrorType, message: [*:0]const u8, ctx: @TypeOf(context)) callconv(.Inline) void,
     ) bool {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(typ: ErrorType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
                 callback(typ, message, if (Context == void) {} else @ptrCast(Context, userdata));
@@ -222,10 +222,10 @@ pub const Device = opaque {
     // TODO: presumably callback should be nullable for unsetting
     pub inline fn setDeviceLostCallback(
         device: *Device,
-        comptime Context: type,
-        comptime callback: fn (reason: LostReason, message: [*:0]const u8, ctx: Context) callconv(.Inline) void,
-        context: Context,
+        context: anytype,
+        comptime callback: fn (reason: LostReason, message: [*:0]const u8, ctx: @TypeOf(context)) callconv(.Inline) void,
     ) void {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(reason: LostReason, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
                 callback(reason, message, if (Context == void) {} else @ptrCast(Context, userdata));
@@ -241,10 +241,10 @@ pub const Device = opaque {
     // TODO: presumably callback should be nullable for unsetting
     pub inline fn setLoggingCallback(
         device: *Device,
-        comptime Context: type,
-        comptime callback: fn (typ: LoggingType, message: [*:0]const u8, ctx: Context) callconv(.Inline) void,
-        context: Context,
+        context: anytype,
+        comptime callback: fn (typ: LoggingType, message: [*:0]const u8, ctx: @TypeOf(context)) callconv(.Inline) void,
     ) void {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(typ: LoggingType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
                 callback(typ, message, if (Context == void) {} else @ptrCast(Context, userdata));
@@ -256,10 +256,10 @@ pub const Device = opaque {
     // TODO: presumably callback should be nullable for unsetting
     pub inline fn setUncapturedErrorCallback(
         device: *Device,
-        comptime Context: type,
-        comptime callback: fn (typ: ErrorType, message: [*:0]const u8, ctx: Context) callconv(.Inline) void,
-        context: Context,
+        context: anytype,
+        comptime callback: fn (typ: ErrorType, message: [*:0]const u8, ctx: @TypeOf(context)) callconv(.Inline) void,
     ) void {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(typ: ErrorType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
                 callback(typ, message, if (Context == void) {} else @ptrCast(Context, userdata));

@@ -23,14 +23,14 @@ pub const ShaderModule = opaque {
 
     pub inline fn getCompilationInfo(
         shader_module: *ShaderModule,
-        comptime Context: type,
+        context: anytype,
         comptime callback: fn (
             status: CompilationInfoRequestStatus,
             compilation_info: *const CompilationInfo,
-            ctx: Context,
+            ctx: @TypeOf(context),
         ) callconv(.Inline) void,
-        context: Context,
     ) void {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(
                 status: CompilationInfoRequestStatus,

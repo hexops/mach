@@ -33,10 +33,10 @@ pub const Queue = opaque {
     pub inline fn onSubmittedWorkDone(
         queue: *Queue,
         signal_value: u64,
-        comptime Context: type,
-        comptime callback: fn (status: WorkDoneStatus, ctx: Context) callconv(.Inline) void,
-        context: Context,
+        context: anytype,
+        comptime callback: fn (status: WorkDoneStatus, ctx: @TypeOf(context)) callconv(.Inline) void,
     ) void {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(status: WorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
                 callback(status, if (Context == void) {} else @ptrCast(Context, userdata));
