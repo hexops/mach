@@ -856,9 +856,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderSetPipeline(render_bundle_encoder: *gpu.RenderBundleEncoder, pipeline: *gpu.RenderPipeline) void {
-        _ = render_bundle_encoder;
-        _ = pipeline;
-        unreachable;
+        procs.renderBundleEncoderSetPipeline.?(
+            @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
+            @ptrCast(c.WGPURenderPipeline, pipeline),
+        );
     }
 
     pub inline fn renderBundleEncoderSetVertexBuffer(render_bundle_encoder: *gpu.RenderBundleEncoder, slot: u32, buffer: *gpu.Buffer, offset: u64, size: u64) void {
