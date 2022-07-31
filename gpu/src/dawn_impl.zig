@@ -828,18 +828,17 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderPushDebugGroup(render_bundle_encoder: *gpu.RenderBundleEncoder, group_label: [*:0]const u8) void {
-        _ = render_bundle_encoder;
-        _ = group_label;
-        unreachable;
+        procs.renderBundleEncoderPushDebugGroup.?(@ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder), group_label);
     }
 
     pub inline fn renderBundleEncoderSetBindGroup(render_bundle_encoder: *gpu.RenderBundleEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
-        _ = render_bundle_encoder;
-        _ = group_index;
-        _ = group;
-        _ = dynamic_offset_count;
-        _ = dynamic_offsets;
-        unreachable;
+        procs.renderBundleEncoderSetBindGroup.?(
+            @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
+            group_index,
+            @ptrCast(c.WGPUBindGroup, group),
+            dynamic_offset_count,
+            dynamic_offsets,
+        );
     }
 
     pub inline fn renderBundleEncoderSetIndexBuffer(render_bundle_encoder: *gpu.RenderBundleEncoder, buffer: *gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) void {
