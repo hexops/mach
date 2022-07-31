@@ -863,12 +863,13 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderSetVertexBuffer(render_bundle_encoder: *gpu.RenderBundleEncoder, slot: u32, buffer: *gpu.Buffer, offset: u64, size: u64) void {
-        _ = render_bundle_encoder;
-        _ = slot;
-        _ = buffer;
-        _ = offset;
-        _ = size;
-        unreachable;
+        procs.renderBundleEncoderSetVertexBuffer.?(
+            @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
+            slot,
+            @ptrCast(c.WGPUBuffer, buffer),
+            offset,
+            size,
+        );
     }
 
     pub inline fn renderBundleEncoderReference(render_bundle_encoder: *gpu.RenderBundleEncoder) void {
@@ -1022,10 +1023,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderWriteTimestamp(render_pass_encoder: *gpu.RenderPassEncoder, query_set: *gpu.QuerySet, query_index: u32) void {
-        _ = render_pass_encoder;
-        _ = query_set;
-        _ = query_index;
-        unreachable;
+        procs.renderPassEncoderWriteTimestamp.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            @ptrCast(c.WGPUQuerySet, query_set),
+            query_index,
+        );
     }
 
     pub inline fn renderPassEncoderReference(render_pass_encoder: *gpu.RenderPassEncoder) void {
