@@ -454,9 +454,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreatePipelineLayout(device: *gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayout.Descriptor) *gpu.PipelineLayout {
-        _ = device;
-        _ = pipeline_layout_descriptor;
-        unreachable;
+        return @ptrCast(*gpu.PipelineLayout, procs.deviceCreatePipelineLayout.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUPipelineLayoutDescriptor, pipeline_layout_descriptor),
+        ));
     }
 
     pub inline fn deviceCreateQuerySet(device: *gpu.Device, descriptor: *const gpu.QuerySet.Descriptor) *gpu.QuerySet {
