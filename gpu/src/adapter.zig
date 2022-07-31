@@ -1,4 +1,5 @@
-const testing = @import("std").testing;
+const std = @import("std");
+const testing = std.testing;
 const ChainedStructOut = @import("types.zig").ChainedStructOut;
 const Device = @import("device.zig").Device;
 const FeatureName = @import("types.zig").FeatureName;
@@ -42,8 +43,19 @@ pub const Adapter = opaque {
     }
 
     /// Call once with null to determine the array length, and again to fetch the feature list.
+    ///
+    /// Consider using the enumerateFeaturesOwned helper.
     pub inline fn enumerateFeatures(adapter: *Adapter, features: ?[*]FeatureName) usize {
         return Impl.adapterEnumerateFeatures(adapter, features);
+    }
+
+    /// Enumerates the adapter features, storing the result in an allocated slice which is owned by
+    /// the caller.
+    pub inline fn enumerateFeaturesOwned(adapter: *Adapter, allocator: std.mem.Allocator) ![]FeatureName {
+        const count = adapter.enumerateFeatures(null);
+        var data = try allocator.alloc(FeatureName, count);
+        _ = adapter.enumerateFeatures(data.ptr);
+        return data;
     }
 
     pub inline fn getLimits(adapter: *Adapter, limits: *SupportedLimits) bool {
