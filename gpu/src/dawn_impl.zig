@@ -225,19 +225,21 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderCopyTextureToTexture(command_encoder: *gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
-        _ = command_encoder;
-        _ = source;
-        _ = destination;
-        _ = copy_size;
-        unreachable;
+        procs.commandEncoderCopyTextureToTexture.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            @ptrCast(*const c.WGPUImageCopyTexture, source),
+            @ptrCast(*const c.WGPUImageCopyTexture, destination),
+            @ptrCast(*const c.WGPUExtent3D, copy_size),
+        );
     }
 
     pub inline fn commandEncoderCopyTextureToTextureInternal(command_encoder: *gpu.CommandEncoder, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
-        _ = command_encoder;
-        _ = source;
-        _ = destination;
-        _ = copy_size;
-        unreachable;
+        procs.commandEncoderCopyTextureToTextureInternal.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            @ptrCast(*const c.WGPUImageCopyTexture, source),
+            @ptrCast(*const c.WGPUImageCopyTexture, destination),
+            @ptrCast(*const c.WGPUExtent3D, copy_size),
+        );
     }
 
     pub inline fn commandEncoderFinish(command_encoder: *gpu.CommandEncoder, descriptor: ?*const gpu.CommandBuffer.Descriptor) *gpu.CommandBuffer {
