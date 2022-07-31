@@ -75,7 +75,7 @@ pub const Device = opaque {
         comptime Context: type,
         comptime callback: fn (
             status: CreatePipelineAsyncStatus,
-            compute_pipeline: *ComputePipeline,'
+            compute_pipeline: *ComputePipeline,
             message: [*:0]const u8,
             ctx: Context,
         ) callconv(.Inline) void,
@@ -130,10 +130,31 @@ pub const Device = opaque {
     pub inline fn createRenderPipelineAsync(
         device: *Device,
         descriptor: *const RenderPipeline.Descriptor,
-        callback: CreateRenderPipelineAsyncCallback,
-        userdata: ?*anyopaque,
+        comptime Context: type,
+        comptime callback: fn (
+            status: CreatePipelineAsyncStatus,
+            pipeline: *RenderPipeline,
+            message: [*:0]const u8,
+            ctx: Context,
+        ) callconv(.Inline) void,
+        context: Context,
     ) void {
-        Impl.deviceCreateRenderPipelineAsync(device, descriptor, callback, userdata);
+        const Helper = struct {
+            pub fn callback(
+                status: CreatePipelineAsyncStatus,
+                pipeline: *RenderPipeline,
+                message: [*:0]const u8,
+                userdata: ?*anyopaque,
+            ) callconv(.C) void {
+                callback(
+                    status,
+                    pipeline,
+                    message,
+                    if (Context == void) {} else @ptrCast(Context, userdata),
+                );
+            }
+        };
+        Impl.deviceCreateRenderPipelineAsync(device, descriptor, Helper.callback, if (Context == void) null else context);
     }
 
     pub inline fn createSampler(device: *Device, descriptor: ?*const Sampler.Descriptor) *Sampler {
