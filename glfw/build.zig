@@ -8,15 +8,24 @@ pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode, target, "glfw_tests", .{}).step);
-    test_step.dependOn(&testStep(b, mode, target, "glfw_shared_tests", .{ .shared = true }).step);
+    test_step.dependOn(&testStep(b, mode, target).step);
+    test_step.dependOn(&testStepShared(b, mode, target).step);
 }
 
-pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, exe_name: []const u8, options: Options) *std.build.RunStep {
-    const main_tests = b.addTestExe(exe_name, thisDir() ++ "/src/main.zig");
+pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTestExe("glfw_tests", thisDir() ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
-    link(b, main_tests, options);
+    link(b, main_tests, .{});
+    main_tests.install();
+    return main_tests.run();
+}
+
+fn testStepShared(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTestExe("glfw_tests_shared", thisDir() ++ "/src/main.zig");
+    main_tests.setBuildMode(mode);
+    main_tests.setTarget(target);
+    link(b, main_tests, .{ .shared = true });
     main_tests.install();
     return main_tests.run();
 }
