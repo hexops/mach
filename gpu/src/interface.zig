@@ -144,7 +144,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "renderBundleEncoderDrawIndexed", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderDrawIndexedIndirect", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderDrawIndirect", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
-    assertDecl(T, "renderBundleEncoderFinish", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) callconv(.Inline) void);
+    assertDecl(T, "renderBundleEncoderFinish", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) callconv(.Inline) *gpu.RenderBundle);
     assertDecl(T, "renderBundleEncoderInsertDebugMarker", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderPopDebugGroup", fn (render_bundle_encoder: *gpu.RenderBundleEncoder) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderPushDebugGroup", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, group_label: [*:0]const u8) callconv(.Inline) void);
@@ -874,8 +874,8 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPURenderBundle wgpuRenderBundleEncoderFinish(WGPURenderBundleEncoder renderBundleEncoder, WGPURenderBundleDescriptor const * descriptor /* nullable */);
-        export fn wgpuRenderBundleEncoderFinish(render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) void {
-            T.renderBundleEncoderFinish(render_bundle_encoder, descriptor);
+        export fn wgpuRenderBundleEncoderFinish(render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) *gpu.RenderBundle {
+            return T.renderBundleEncoderFinish(render_bundle_encoder, descriptor);
         }
 
         // WGPU_EXPORT void wgpuRenderBundleEncoderInsertDebugMarker(WGPURenderBundleEncoder renderBundleEncoder, char const * markerLabel);
@@ -2018,7 +2018,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn renderBundleEncoderFinish(render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) void {
+    pub inline fn renderBundleEncoderFinish(render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) *gpu.RenderBundle {
         _ = render_bundle_encoder;
         _ = descriptor;
         unreachable;

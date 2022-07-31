@@ -806,12 +806,11 @@ pub const Interface = gpu.Interface(struct {
         );
     }
 
-    pub inline fn renderBundleEncoderFinish(render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) void {
-        // TODO: our signature is wrong!
-        _ = procs.renderBundleEncoderFinish.?(
+    pub inline fn renderBundleEncoderFinish(render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) *gpu.RenderBundle {
+        return @ptrCast(*gpu.RenderBundle, procs.renderBundleEncoderFinish.?(
             @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
             @ptrCast(*const c.WGPURenderBundleDescriptor, descriptor),
-        );
+        ));
     }
 
     pub inline fn renderBundleEncoderInsertDebugMarker(render_bundle_encoder: *gpu.RenderBundleEncoder, marker_label: [*:0]const u8) void {
