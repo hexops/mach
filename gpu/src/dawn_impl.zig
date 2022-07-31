@@ -1080,10 +1080,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn shaderModuleGetCompilationInfo(shader_module: *gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) void {
-        _ = shader_module;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        procs.shaderModuleGetCompilationInfo.?(
+            @ptrCast(c.WGPUShaderModule, shader_module),
+            @ptrCast(c.WGPUCompilationInfoCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn shaderModuleSetLabel(shader_module: *gpu.ShaderModule, label: [*:0]const u8) void {
