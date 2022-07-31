@@ -43,8 +43,8 @@ pub const RenderBundleEncoder = opaque {
         Impl.renderBundleEncoderDrawIndirect(render_bundle_encoder, indirect_buffer, indirect_offset);
     }
 
-    pub inline fn finish(render_bundle_encoder: *RenderBundleEncoder, descriptor: ?*const RenderBundle.Descriptor) void {
-        Impl.renderBundleEncoderFinish(render_bundle_encoder, descriptor);
+    pub inline fn finish(render_bundle_encoder: *RenderBundleEncoder, descriptor: ?*const RenderBundle.Descriptor) *RenderBundle {
+        return Impl.renderBundleEncoderFinish(render_bundle_encoder, descriptor);
     }
 
     pub inline fn insertDebugMarker(render_bundle_encoder: *RenderBundleEncoder, marker_label: [*:0]const u8) void {
