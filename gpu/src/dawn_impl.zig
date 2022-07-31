@@ -604,10 +604,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceSetLoggingCallback(device: *gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) void {
-        _ = device;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        procs.deviceSetLoggingCallback.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(c.WGPULoggingCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn deviceSetUncapturedErrorCallback(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) void {
