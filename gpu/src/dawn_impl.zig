@@ -38,7 +38,7 @@ pub const Interface = struct {
     pub inline fn adapterEnumerateFeatures(adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
         return procs.adapterEnumerateFeatures.?(
             @ptrCast(c.WGPUAdapter, adapter),
-            @ptrCast([*]c.WGPUFeatureName, features),
+            @ptrCast(?[*]c.WGPUFeatureName, features),
         );
     }
 
@@ -435,7 +435,7 @@ pub const Interface = struct {
     pub inline fn deviceCreateCommandEncoder(device: *gpu.Device, descriptor: ?*const gpu.CommandEncoder.Descriptor) *gpu.CommandEncoder {
         return @ptrCast(*gpu.CommandEncoder, procs.deviceCreateCommandEncoder.?(
             @ptrCast(c.WGPUDevice, device),
-            @ptrCast(*const c.WGPUCommandEncoderDescriptor, descriptor),
+            @ptrCast(?*const c.WGPUCommandEncoderDescriptor, descriptor),
         ));
     }
 
@@ -510,7 +510,7 @@ pub const Interface = struct {
     pub inline fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) *gpu.Sampler {
         return @ptrCast(*gpu.Sampler, procs.deviceCreateSampler.?(
             @ptrCast(c.WGPUDevice, device),
-            @ptrCast(*const c.WGPUSamplerDescriptor, descriptor),
+            @ptrCast(?*const c.WGPUSamplerDescriptor, descriptor),
         ));
     }
 
@@ -810,7 +810,7 @@ pub const Interface = struct {
     pub inline fn renderBundleEncoderFinish(render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) *gpu.RenderBundle {
         return @ptrCast(*gpu.RenderBundle, procs.renderBundleEncoderFinish.?(
             @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
-            @ptrCast(*const c.WGPURenderBundleDescriptor, descriptor),
+            @ptrCast(?*const c.WGPURenderBundleDescriptor, descriptor),
         ));
     }
 
@@ -1134,7 +1134,7 @@ pub const Interface = struct {
     pub inline fn textureCreateView(texture: *gpu.Texture, descriptor: ?*const gpu.TextureView.Descriptor) *gpu.TextureView {
         return @ptrCast(*gpu.TextureView, procs.textureCreateView.?(
             @ptrCast(c.WGPUTexture, texture),
-            @ptrCast(*const c.WGPUTextureViewDescriptor, descriptor),
+            @ptrCast(?*const c.WGPUTextureViewDescriptor, descriptor),
         ));
     }
 
