@@ -2,6 +2,8 @@ const gpu = @import("main.zig");
 
 /// The gpu.Interface implementation that is used by the entire program. Only one may exist, since
 /// it is resolved fully at comptime with no vtable indirection, etc.
+///
+/// Depending on the implementation, it may need to be `.init()`ialized before use.
 pub const Impl = blk: {
     if (@import("builtin").is_test) {
         break :blk StubInterface;

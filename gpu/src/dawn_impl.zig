@@ -8,6 +8,8 @@ const c = @cImport({
 var procs: c.DawnProcTable = undefined;
 
 /// A Dawn implementation of the gpu.Interface, which merely directs calls to the Dawn proc table.
+///
+/// Before use, it must be `.init()`ialized in order to set the global proc table.
 pub const Interface = gpu.Interface(struct {
     pub fn init() @This() {
         procs = c.machDawnGetProcTable();
