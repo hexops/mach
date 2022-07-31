@@ -997,9 +997,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderSetStencilReference(render_pass_encoder: *gpu.RenderPassEncoder, reference: u32) void {
-        _ = render_pass_encoder;
-        _ = reference;
-        unreachable;
+        procs.renderPassEncoderSetStencilReference.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            reference,
+        );
     }
 
     pub inline fn renderPassEncoderSetVertexBuffer(render_pass_encoder: *gpu.RenderPassEncoder, slot: u32, buffer: *gpu.Buffer, offset: u64, size: u64) void {
