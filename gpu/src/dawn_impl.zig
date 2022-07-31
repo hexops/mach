@@ -248,9 +248,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderInsertDebugMarker(command_encoder: *gpu.CommandEncoder, marker_label: [*:0]const u8) void {
-        _ = command_encoder;
-        _ = marker_label;
-        unreachable;
+        procs.commandEncoderInsertDebugMarker.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            marker_label,
+        );
     }
 
     pub inline fn commandEncoderPopDebugGroup(command_encoder: *gpu.CommandEncoder) void {
