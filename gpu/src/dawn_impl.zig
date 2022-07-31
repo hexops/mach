@@ -782,20 +782,22 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderDrawIndexed(render_bundle_encoder: *gpu.RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
-        _ = render_bundle_encoder;
-        _ = index_count;
-        _ = instance_count;
-        _ = first_index;
-        _ = base_vertex;
-        _ = first_instance;
-        unreachable;
+        procs.renderBundleEncoderDrawIndexed.?(
+            @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
+            index_count,
+            instance_count,
+            first_index,
+            @bitCast(i32, base_vertex), // TODO: our signature is wrong here!
+            first_instance,
+        );
     }
 
     pub inline fn renderBundleEncoderDrawIndexedIndirect(render_bundle_encoder: *gpu.RenderBundleEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) void {
-        _ = render_bundle_encoder;
-        _ = indirect_buffer;
-        _ = indirect_offset;
-        unreachable;
+        procs.renderBundleEncoderDrawIndexedIndirect.?(
+            @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
+            @ptrCast(c.WGPUBuffer, indirect_buffer),
+            indirect_offset,
+        );
     }
 
     pub inline fn renderBundleEncoderDrawIndirect(render_bundle_encoder: *gpu.RenderBundleEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) void {
