@@ -558,16 +558,18 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceHasFeature(device: *gpu.Device, feature: gpu.FeatureName) bool {
-        _ = device;
-        _ = feature;
-        unreachable;
+        return procs.deviceHasFeature.?(
+            @ptrCast(c.WGPUDevice, device),
+            @enumToInt(feature),
+        );
     }
 
     pub inline fn deviceInjectError(device: *gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) void {
-        _ = device;
-        _ = typ;
-        _ = message;
-        unreachable;
+        procs.deviceInjectError.?(
+            @ptrCast(c.WGPUDevice, device),
+            @enumToInt(typ),
+            message,
+        );
     }
 
     pub inline fn deviceLoseForTesting(device: *gpu.Device) void {
