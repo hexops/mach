@@ -577,10 +577,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) bool {
-        _ = device;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        return procs.devicePopErrorScope.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(c.WGPUErrorCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn devicePushErrorScope(device: *gpu.Device, filter: gpu.ErrorFilter) void {
