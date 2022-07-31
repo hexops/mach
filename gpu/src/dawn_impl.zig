@@ -259,9 +259,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderPushDebugGroup(command_encoder: *gpu.CommandEncoder, group_label: [*:0]const u8) void {
-        _ = command_encoder;
-        _ = group_label;
-        unreachable;
+        procs.commandEncoderPushDebugGroup.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            group_label,
+        );
     }
 
     pub inline fn commandEncoderResolveQuerySet(command_encoder: *gpu.CommandEncoder, query_set: *gpu.QuerySet, first_query: u32, query_count: u32, destination: *gpu.Buffer, destination_offset: u64) void {
