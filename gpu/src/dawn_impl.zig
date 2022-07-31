@@ -446,11 +446,12 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateComputePipelineAsync(device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
-        _ = device;
-        _ = descriptor;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        procs.deviceCreateComputePipelineAsync.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUComputePipelineDescriptor, descriptor),
+            @ptrCast(c.WGPUCreateComputePipelineAsyncCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn deviceCreateErrorBuffer(device: *gpu.Device) *gpu.Buffer {
