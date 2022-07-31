@@ -157,7 +157,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "renderBundleEncoderRelease", fn (render_bundle_encoder: *gpu.RenderBundleEncoder) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderBeginOcclusionQuery", fn (render_pass_encoder: *gpu.RenderPassEncoder, query_index: u32) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderDraw", fn (render_pass_encoder: *gpu.RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) callconv(.Inline) void);
-    assertDecl(T, "renderPassEncoderDrawIndexed", fn (render_pass_encoder: *gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) callconv(.Inline) void);
+    assertDecl(T, "renderPassEncoderDrawIndexed", fn (render_pass_encoder: *gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderDrawIndexedIndirect", fn (render_pass_encoder: *gpu.RenderPassEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderDrawIndirect", fn (render_pass_encoder: *gpu.RenderPassEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderEnd", fn (render_pass_encoder: *gpu.RenderPassEncoder) callconv(.Inline) void);
@@ -939,7 +939,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder renderPassEncoder, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance);
-        export fn wgpuRenderPassEncoderDrawIndexed(render_pass_encoder: *gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+        export fn wgpuRenderPassEncoderDrawIndexed(render_pass_encoder: *gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void {
             T.renderPassEncoderDrawIndexed(render_pass_encoder, index_count, instance_count, first_index, base_vertex, first_instance);
         }
 
@@ -2105,7 +2105,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn renderPassEncoderDrawIndexed(render_pass_encoder: *gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+    pub inline fn renderPassEncoderDrawIndexed(render_pass_encoder: *gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void {
         _ = render_pass_encoder;
         _ = index_count;
         _ = instance_count;

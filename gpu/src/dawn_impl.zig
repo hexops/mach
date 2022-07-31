@@ -894,13 +894,13 @@ pub const Interface = gpu.Interface(struct {
         );
     }
 
-    pub inline fn renderPassEncoderDrawIndexed(render_pass_encoder: *gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+    pub inline fn renderPassEncoderDrawIndexed(render_pass_encoder: *gpu.RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void {
         procs.renderPassEncoderDrawIndexed.?(
             @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
             index_count,
             instance_count,
             first_index,
-            @bitCast(i32, base_vertex), // TODO: wrong signature?
+            base_vertex,
             first_instance,
         );
     }

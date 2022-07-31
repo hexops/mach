@@ -23,7 +23,7 @@ pub const RenderPassEncoder = opaque {
     /// Default `first_index`: 0
     /// Default `base_vertex`: 0
     /// Default `first_instance`: 0
-    pub inline fn drawIndexed(render_pass_encoder: *RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+    pub inline fn drawIndexed(render_pass_encoder: *RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void {
         Impl.renderPassEncoderDrawIndexed(render_pass_encoder, index_count, instance_count, first_index, base_vertex, first_instance);
     }
 
