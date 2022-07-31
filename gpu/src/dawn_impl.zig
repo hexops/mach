@@ -447,9 +447,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateExternalTexture(device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTexture.Descriptor) *gpu.ExternalTexture {
-        _ = device;
-        _ = external_texture_descriptor;
-        unreachable;
+        return @ptrCast(*gpu.ExternalTexture, procs.deviceCreateExternalTexture.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUExternalTextureDescriptor, external_texture_descriptor),
+        ));
     }
 
     pub inline fn deviceCreatePipelineLayout(device: *gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayout.Descriptor) *gpu.PipelineLayout {
