@@ -540,9 +540,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceEnumerateFeatures(device: *gpu.Device, features: [*]gpu.FeatureName) usize {
-        _ = device;
-        _ = features;
-        unreachable;
+        return procs.deviceEnumerateFeatures.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast([*]c.WGPUFeatureName, features),
+        );
     }
 
     pub inline fn deviceGetLimits(device: *gpu.Device, limits: *gpu.SupportedLimits) bool {
