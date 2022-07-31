@@ -10,10 +10,9 @@ var procs: c.DawnProcTable = undefined;
 /// A Dawn implementation of the gpu.Interface, which merely directs calls to the Dawn proc table.
 ///
 /// Before use, it must be `.init()`ialized in order to set the global proc table.
-pub const Interface = gpu.Interface(struct {
-    pub fn init() @This() {
+pub const Interface = struct {
+    pub fn init() void {
         procs = c.machDawnGetProcTable();
-        return @This(){};
     }
 
     pub inline fn createInstance(descriptor: ?*const gpu.Instance.Descriptor) ?*gpu.Instance {
@@ -1200,7 +1199,7 @@ pub const Interface = gpu.Interface(struct {
     pub inline fn textureViewRelease(texture_view: *gpu.TextureView) void {
         procs.textureViewRelease.?(@ptrCast(c.WGPUTextureView, texture_view));
     }
-});
+};
 
 test "dawn_impl" {
     _ = gpu.Export(Interface);

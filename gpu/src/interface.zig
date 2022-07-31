@@ -9,8 +9,8 @@ pub const Impl = blk: {
         break :blk StubInterface;
     } else {
         const root = @import("root");
-        if (!@hasField(root, "GPUInterface")) @compileError("expected to find `pub const GPUInterface = T;` in root file");
-        _ = gpu.Interface(@TypeOf(root.GPUInterface)); // verify the type
+        if (!@hasDecl(root, "GPUInterface")) @compileError("expected to find `pub const GPUInterface = T;` in root file");
+        _ = gpu.Interface(root.GPUInterface); // verify the type
         break :blk root.GPUInterface;
     }
 };
