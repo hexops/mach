@@ -592,10 +592,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: *anyopaque) void {
-        _ = device;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        procs.deviceSetDeviceLostCallback.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(c.WGPUDeviceLostCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn deviceSetLabel(device: *gpu.Device, label: [*:0]const u8) void {
