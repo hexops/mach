@@ -325,10 +325,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePassEncoderDispatchWorkgroupsIndirect(compute_pass_encoder: *gpu.ComputePassEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) void {
-        _ = compute_pass_encoder;
-        _ = indirect_buffer;
-        _ = indirect_offset;
-        unreachable;
+        procs.computePassEncoderDispatchWorkgroupsIndirect.?(
+            @ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder),
+            @ptrCast(c.WGPUBuffer, indirect_buffer),
+            indirect_offset,
+        );
     }
 
     pub inline fn computePassEncoderEnd(compute_pass_encoder: *gpu.ComputePassEncoder) void {
