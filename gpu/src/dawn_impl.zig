@@ -648,17 +648,19 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn instanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.Surface.Descriptor) *gpu.Surface {
-        _ = instance;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.Surface, procs.instanceCreateSurface.?(
+            @ptrCast(c.WGPUInstance, instance),
+            @ptrCast(*const c.WGPUSurfaceDescriptor, descriptor),
+        ));
     }
 
     pub inline fn instanceRequestAdapter(instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) void {
-        _ = instance;
-        _ = options;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        procs.instanceRequestAdapter.?(
+            @ptrCast(c.WGPUInstance, instance),
+            @ptrCast(*const c.WGPURequestAdapterOptions, options),
+            @ptrCast(c.WGPURequestAdapterCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn instanceReference(instance: *gpu.Instance) void {
@@ -706,12 +708,13 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn queueCopyTextureForBrowser(queue: *gpu.Queue, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D, options: *const gpu.CopyTextureForBrowserOptions) void {
-        _ = queue;
-        _ = source;
-        _ = destination;
-        _ = copy_size;
-        _ = options;
-        unreachable;
+        procs.queueCopyTextureForBrowser.?(
+            @ptrCast(c.WGPUQueue, queue),
+            @ptrCast(*const c.WGPUImageCopyTexture, source),
+            @ptrCast(*const c.WGPUImageCopyTexture, destination),
+            @ptrCast(*const c.WGPUExtent3D, copy_size),
+            @ptrCast(*const c.WGPUCopyTextureForBrowserOptions, options),
+        );
     }
 
     pub inline fn queueOnSubmittedWorkDone(queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: *anyopaque) void {
