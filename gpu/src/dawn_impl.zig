@@ -468,9 +468,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateRenderBundleEncoder(device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoder.Descriptor) *gpu.RenderBundleEncoder {
-        _ = device;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.RenderBundleEncoder, procs.deviceCreateRenderBundleEncoder.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPURenderBundleEncoderDescriptor, descriptor),
+        ));
     }
 
     pub inline fn deviceCreateRenderPipeline(device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor) *gpu.RenderPipeline {
