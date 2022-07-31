@@ -134,13 +134,14 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn bufferMapAsync(buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: *anyopaque) void {
-        _ = buffer;
-        _ = mode;
-        _ = offset;
-        _ = size;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        procs.bufferMapAsync.?(
+            @ptrCast(c.WGPUBuffer, buffer),
+            @bitCast(c.WGPUMapModeFlags, mode),
+            offset,
+            size,
+            @ptrCast(c.WGPUBufferMapCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn bufferSetLabel(buffer: *gpu.Buffer, label: [*:0]const u8) void {
