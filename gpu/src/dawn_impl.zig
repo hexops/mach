@@ -842,12 +842,13 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderSetIndexBuffer(render_bundle_encoder: *gpu.RenderBundleEncoder, buffer: *gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) void {
-        _ = render_bundle_encoder;
-        _ = buffer;
-        _ = format;
-        _ = offset;
-        _ = size;
-        unreachable;
+        procs.renderBundleEncoderSetIndexBuffer.?(
+            @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
+            @ptrCast(c.WGPUBuffer, buffer),
+            @enumToInt(format),
+            offset,
+            size,
+        );
     }
 
     pub inline fn renderBundleEncoderSetLabel(render_bundle_encoder: *gpu.RenderBundleEncoder, label: [*:0]const u8) void {
