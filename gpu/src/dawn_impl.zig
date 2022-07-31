@@ -824,8 +824,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderPopDebugGroup(render_bundle_encoder: *gpu.RenderBundleEncoder) void {
-        _ = render_bundle_encoder;
-        unreachable;
+        procs.renderBundleEncoderPopDebugGroup.?(@ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder));
     }
 
     pub inline fn renderBundleEncoderPushDebugGroup(render_bundle_encoder: *gpu.RenderBundleEncoder, group_label: [*:0]const u8) void {
