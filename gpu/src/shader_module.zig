@@ -1,5 +1,7 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const CompilationInfoCallback = @import("callbacks.zig").CompilationInfoCallback;
+const CompilationInfoRequestStatus = @import("types.zig").CompilationInfoRequestStatus;
+const CompilationInfo = @import("types.zig").CompilationInfo;
 const Impl = @import("interface.zig").Impl;
 
 pub const ShaderModule = opaque {
@@ -19,8 +21,30 @@ pub const ShaderModule = opaque {
         source: [*:0]const u8,
     };
 
-    pub inline fn getCompilationInfo(shader_module: *ShaderModule, callback: CompilationInfoCallback, userdata: ?*anyopaque) void {
-        Impl.shaderModuleGetCompilationInfo(shader_module, callback, userdata);
+    pub inline fn getCompilationInfo(
+        shader_module: *ShaderModule,
+        comptime Context: type,
+        comptime callback: fn (
+            status: CompilationInfoRequestStatus,
+            compilation_info: *const CompilationInfo,
+            ctx: Context,
+        ) callconv(.Inline) void,
+        context: Context,
+    ) void {
+        const Helper = struct {
+            pub fn callback(
+                status: CompilationInfoRequestStatus,
+                compilation_info: *const CompilationInfo,
+                userdata: ?*anyopaque,
+            ) callconv(.C) void {
+                callback(
+                    status,
+                    compilation_info,
+                    if (Context == void) {} orelse @ptrCast(Context, userdata),
+                );
+            }
+        };
+        Impl.shaderModuleGetCompilationInfo(shader_module, Helper.callback, if (Context == void) null orelse context);
     }
 
     pub inline fn setLabel(shader_module: *ShaderModule, label: [*:0]const u8) void {
