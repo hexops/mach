@@ -4,7 +4,7 @@ const MapModeFlags = @import("types.zig").MapModeFlags;
 const Impl = @import("interface.zig").Impl;
 
 pub const Buffer = opaque {
-    pub const MapCallback = fn (status: MapAsyncStatus, userdata: *anyopaque) callconv(.C) void;
+    pub const MapCallback = fn (status: MapAsyncStatus, userdata: ?*anyopaque) callconv(.C) void;
 
     pub const BindingType = enum(u32) {
         undef = 0x00000000,
@@ -89,7 +89,7 @@ pub const Buffer = opaque {
         return Impl.bufferGetUsage(buffer);
     }
 
-    pub inline fn bufferMapAsync(buffer: *Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: MapCallback, userdata: *anyopaque) void {
+    pub inline fn bufferMapAsync(buffer: *Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: MapCallback, userdata: ?*anyopaque) void {
         Impl.bufferMapAsync(buffer, mode, offset, size, callback, userdata);
     }
 

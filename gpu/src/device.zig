@@ -30,7 +30,7 @@ pub const Device = opaque {
     pub const LostCallback = fn (
         reason: LostReason,
         message: [*:0]const u8,
-        userdata: *anyopaque,
+        userdata: ?*anyopaque,
     ) callconv(.C) void;
 
     pub const LostReason = enum(u32) {
@@ -67,7 +67,7 @@ pub const Device = opaque {
         return Impl.deviceCreateComputePipeline(device, descriptor);
     }
 
-    pub inline fn createComputePipelineAsync(device: *Device, descriptor: *const ComputePipeline.Descriptor, callback: CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
+    pub inline fn createComputePipelineAsync(device: *Device, descriptor: *const ComputePipeline.Descriptor, callback: CreateComputePipelineAsyncCallback, userdata: ?*anyopaque) void {
         Impl.deviceCreateComputePipelineAsync(device, descriptor, callback, userdata);
     }
 
@@ -99,7 +99,7 @@ pub const Device = opaque {
         return Impl.deviceCreateRenderPipeline(device, descriptor);
     }
 
-    pub inline fn createRenderPipelineAsync(device: *Device, descriptor: *const RenderPipeline.Descriptor, callback: CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
+    pub inline fn createRenderPipelineAsync(device: *Device, descriptor: *const RenderPipeline.Descriptor, callback: CreateRenderPipelineAsyncCallback, userdata: ?*anyopaque) void {
         Impl.deviceCreateRenderPipelineAsync(device, descriptor, callback, userdata);
     }
 
@@ -147,7 +147,7 @@ pub const Device = opaque {
         Impl.deviceLoseForTesting(device);
     }
 
-    pub inline fn popErrorScope(device: *Device, callback: ErrorCallback, userdata: *anyopaque) bool {
+    pub inline fn popErrorScope(device: *Device, callback: ErrorCallback, userdata: ?*anyopaque) bool {
         return Impl.devicePopErrorScope(device, callback, userdata);
     }
 
@@ -155,7 +155,7 @@ pub const Device = opaque {
         Impl.devicePushErrorScope(device, filter);
     }
 
-    pub inline fn setDeviceLostCallback(device: *Device, callback: Device.LostCallback, userdata: *anyopaque) void {
+    pub inline fn setDeviceLostCallback(device: *Device, callback: Device.LostCallback, userdata: ?*anyopaque) void {
         Impl.deviceSetDeviceLostCallback(device, callback, userdata);
     }
 
@@ -163,11 +163,11 @@ pub const Device = opaque {
         Impl.deviceSetLabel(device, label);
     }
 
-    pub inline fn setLoggingCallback(device: *Device, callback: LoggingCallback, userdata: *anyopaque) void {
+    pub inline fn setLoggingCallback(device: *Device, callback: LoggingCallback, userdata: ?*anyopaque) void {
         Impl.deviceSetLoggingCallback(device, callback, userdata);
     }
 
-    pub inline fn setUncapturedErrorCallback(device: *Device, callback: ErrorCallback, userdata: *anyopaque) void {
+    pub inline fn setUncapturedErrorCallback(device: *Device, callback: ErrorCallback, userdata: ?*anyopaque) void {
         Impl.deviceSetUncapturedErrorCallback(device, callback, userdata);
     }
 

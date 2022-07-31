@@ -64,7 +64,7 @@ pub const Interface = gpu.Interface(struct {
         );
     }
 
-    pub inline fn adapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
+    pub inline fn adapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: ?*anyopaque) void {
         return procs.adapterRequestDevice.?(
             @ptrCast(c.WGPUAdapter, adapter),
             @ptrCast(?*const c.WGPUDeviceDescriptor, descriptor),
@@ -135,7 +135,7 @@ pub const Interface = gpu.Interface(struct {
         return @bitCast(gpu.Buffer.UsageFlags, procs.bufferGetUsage.?(@ptrCast(c.WGPUBuffer, buffer)));
     }
 
-    pub inline fn bufferMapAsync(buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: *anyopaque) void {
+    pub inline fn bufferMapAsync(buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: ?*anyopaque) void {
         procs.bufferMapAsync.?(
             @ptrCast(c.WGPUBuffer, buffer),
             @bitCast(c.WGPUMapModeFlags, mode),
@@ -447,7 +447,7 @@ pub const Interface = gpu.Interface(struct {
         ));
     }
 
-    pub inline fn deviceCreateComputePipelineAsync(device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
+    pub inline fn deviceCreateComputePipelineAsync(device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: ?*anyopaque) void {
         procs.deviceCreateComputePipelineAsync.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(*const c.WGPUComputePipelineDescriptor, descriptor),
@@ -499,7 +499,7 @@ pub const Interface = gpu.Interface(struct {
         ));
     }
 
-    pub inline fn deviceCreateRenderPipelineAsync(device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
+    pub inline fn deviceCreateRenderPipelineAsync(device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: ?*anyopaque) void {
         procs.deviceCreateRenderPipelineAsync.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(*const c.WGPURenderPipelineDescriptor, descriptor),
@@ -578,7 +578,7 @@ pub const Interface = gpu.Interface(struct {
         procs.deviceLoseForTesting.?(@ptrCast(c.WGPUDevice, device));
     }
 
-    pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) bool {
+    pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) bool {
         return procs.devicePopErrorScope.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(c.WGPUErrorCallback, callback),
@@ -593,7 +593,7 @@ pub const Interface = gpu.Interface(struct {
         );
     }
 
-    pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: *anyopaque) void {
+    pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: ?*anyopaque) void {
         procs.deviceSetDeviceLostCallback.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(c.WGPUDeviceLostCallback, callback),
@@ -605,7 +605,7 @@ pub const Interface = gpu.Interface(struct {
         procs.deviceSetLabel.?(@ptrCast(c.WGPUDevice, device), label);
     }
 
-    pub inline fn deviceSetLoggingCallback(device: *gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) void {
+    pub inline fn deviceSetLoggingCallback(device: *gpu.Device, callback: gpu.LoggingCallback, userdata: ?*anyopaque) void {
         procs.deviceSetLoggingCallback.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(c.WGPULoggingCallback, callback),
@@ -613,7 +613,7 @@ pub const Interface = gpu.Interface(struct {
         );
     }
 
-    pub inline fn deviceSetUncapturedErrorCallback(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) void {
+    pub inline fn deviceSetUncapturedErrorCallback(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) void {
         procs.deviceSetUncapturedErrorCallback.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(c.WGPUErrorCallback, callback),
@@ -656,7 +656,7 @@ pub const Interface = gpu.Interface(struct {
         ));
     }
 
-    pub inline fn instanceRequestAdapter(instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) void {
+    pub inline fn instanceRequestAdapter(instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) void {
         procs.instanceRequestAdapter.?(
             @ptrCast(c.WGPUInstance, instance),
             @ptrCast(*const c.WGPURequestAdapterOptions, options),
@@ -719,7 +719,7 @@ pub const Interface = gpu.Interface(struct {
         );
     }
 
-    pub inline fn queueOnSubmittedWorkDone(queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: *anyopaque) void {
+    pub inline fn queueOnSubmittedWorkDone(queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: ?*anyopaque) void {
         procs.queueOnSubmittedWorkDone.?(
             @ptrCast(c.WGPUQueue, queue),
             signal_value,
@@ -1078,7 +1078,7 @@ pub const Interface = gpu.Interface(struct {
         procs.samplerRelease.?(@ptrCast(c.WGPUSampler, sampler));
     }
 
-    pub inline fn shaderModuleGetCompilationInfo(shader_module: *gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) void {
+    pub inline fn shaderModuleGetCompilationInfo(shader_module: *gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: ?*anyopaque) void {
         procs.shaderModuleGetCompilationInfo.?(
             @ptrCast(c.WGPUShaderModule, shader_module),
             @ptrCast(c.WGPUCompilationInfoCallback, callback),

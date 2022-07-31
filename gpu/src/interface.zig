@@ -24,7 +24,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "adapterGetLimits", fn (adapter: *gpu.Adapter, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
     assertDecl(T, "adapterGetProperties", fn (adapter: *gpu.Adapter, properties: *gpu.Adapter.Properties) callconv(.Inline) void);
     assertDecl(T, "adapterHasFeature", fn (adapter: *gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
-    assertDecl(T, "adapterRequestDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "adapterRequestDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "adapterReference", fn (adapter: *gpu.Adapter) callconv(.Inline) void);
     assertDecl(T, "adapterRelease", fn (adapter: *gpu.Adapter) callconv(.Inline) void);
     assertDecl(T, "bindGroupSetLabel", fn (bind_group: *gpu.BindGroup, label: [*:0]const u8) callconv(.Inline) void);
@@ -38,7 +38,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "bufferGetMappedRange", fn (buffer: *gpu.Buffer, offset: usize, size: usize) callconv(.Inline) ?*anyopaque);
     assertDecl(T, "bufferGetSize", fn (buffer: *gpu.Buffer) callconv(.Inline) u64);
     assertDecl(T, "bufferGetUsage", fn (buffer: *gpu.Buffer) callconv(.Inline) gpu.Buffer.UsageFlags);
-    assertDecl(T, "bufferMapAsync", fn (buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "bufferMapAsync", fn (buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "bufferSetLabel", fn (buffer: *gpu.Buffer, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "bufferUnmap", fn (buffer: *gpu.Buffer) callconv(.Inline) void);
     assertDecl(T, "bufferReference", fn (buffer: *gpu.Buffer) callconv(.Inline) void);
@@ -86,7 +86,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateBuffer", fn (device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) callconv(.Inline) *gpu.Buffer);
     assertDecl(T, "deviceCreateCommandEncoder", fn (device: *gpu.Device, descriptor: ?*const gpu.CommandEncoder.Descriptor) callconv(.Inline) *gpu.CommandEncoder);
     assertDecl(T, "deviceCreateComputePipeline", fn (device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor) callconv(.Inline) *gpu.ComputePipeline);
-    assertDecl(T, "deviceCreateComputePipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "deviceCreateComputePipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceCreateErrorBuffer", fn (device: *gpu.Device) callconv(.Inline) *gpu.Buffer);
     assertDecl(T, "deviceCreateErrorExternalTexture", fn (device: *gpu.Device) callconv(.Inline) *gpu.ExternalTexture);
     assertDecl(T, "deviceCreateExternalTexture", fn (device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTexture.Descriptor) callconv(.Inline) *gpu.ExternalTexture);
@@ -94,7 +94,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateQuerySet", fn (device: *gpu.Device, descriptor: *const gpu.QuerySet.Descriptor) callconv(.Inline) *gpu.QuerySet);
     assertDecl(T, "deviceCreateRenderBundleEncoder", fn (device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoder.Descriptor) callconv(.Inline) *gpu.RenderBundleEncoder);
     assertDecl(T, "deviceCreateRenderPipeline", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor) callconv(.Inline) *gpu.RenderPipeline);
-    assertDecl(T, "deviceCreateRenderPipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "deviceCreateRenderPipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceCreateSampler", fn (device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) callconv(.Inline) *gpu.Sampler);
     assertDecl(T, "deviceCreateShaderModule", fn (device: *gpu.Device, descriptor: *const gpu.ShaderModule.Descriptor) callconv(.Inline) *gpu.ShaderModule);
     assertDecl(T, "deviceCreateSwapChain", fn (device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChain.Descriptor) callconv(.Inline) *gpu.SwapChain);
@@ -106,12 +106,12 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceHasFeature", fn (device: *gpu.Device, feature: gpu.FeatureName) callconv(.Inline) bool);
     assertDecl(T, "deviceInjectError", fn (device: *gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "deviceLoseForTesting", fn (device: *gpu.Device) callconv(.Inline) void);
-    assertDecl(T, "devicePopErrorScope", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) callconv(.Inline) bool);
+    assertDecl(T, "devicePopErrorScope", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) callconv(.Inline) bool);
     assertDecl(T, "devicePushErrorScope", fn (device: *gpu.Device, filter: gpu.ErrorFilter) callconv(.Inline) void);
-    assertDecl(T, "deviceSetDeviceLostCallback", fn (device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "deviceSetDeviceLostCallback", fn (device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceSetLabel", fn (device: *gpu.Device, label: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "deviceSetLoggingCallback", fn (device: *gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) callconv(.Inline) void);
-    assertDecl(T, "deviceSetUncapturedErrorCallback", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "deviceSetLoggingCallback", fn (device: *gpu.Device, callback: gpu.LoggingCallback, userdata: ?*anyopaque) callconv(.Inline) void);
+    assertDecl(T, "deviceSetUncapturedErrorCallback", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceTick", fn (device: *gpu.Device) callconv(.Inline) void);
     assertDecl(T, "deviceReference", fn (device: *gpu.Device) callconv(.Inline) void);
     assertDecl(T, "deviceRelease", fn (device: *gpu.Device) callconv(.Inline) void);
@@ -120,7 +120,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "externalTextureReference", fn (external_texture: *gpu.ExternalTexture) callconv(.Inline) void);
     assertDecl(T, "externalTextureRelease", fn (external_texture: *gpu.ExternalTexture) callconv(.Inline) void);
     assertDecl(T, "instanceCreateSurface", fn (instance: *gpu.Instance, descriptor: *const gpu.Surface.Descriptor) callconv(.Inline) *gpu.Surface);
-    assertDecl(T, "instanceRequestAdapter", fn (instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "instanceRequestAdapter", fn (instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "instanceReference", fn (instance: *gpu.Instance) callconv(.Inline) void);
     assertDecl(T, "instanceRelease", fn (instance: *gpu.Instance) callconv(.Inline) void);
     assertDecl(T, "pipelineLayoutSetLabel", fn (pipeline_layout: *gpu.PipelineLayout, label: [*:0]const u8) callconv(.Inline) void);
@@ -133,7 +133,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "querySetReference", fn (query_set: *gpu.QuerySet) callconv(.Inline) void);
     assertDecl(T, "querySetRelease", fn (query_set: *gpu.QuerySet) callconv(.Inline) void);
     assertDecl(T, "queueCopyTextureForBrowser", fn (queue: *gpu.Queue, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D, options: *const gpu.CopyTextureForBrowserOptions) callconv(.Inline) void);
-    assertDecl(T, "queueOnSubmittedWorkDone", fn (queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "queueOnSubmittedWorkDone", fn (queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "queueSetLabel", fn (queue: *gpu.Queue, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "queueSubmit", fn (queue: *gpu.Queue, command_count: u32, commands: [*]*gpu.CommandBuffer) callconv(.Inline) void);
     assertDecl(T, "queueWriteBuffer", fn (queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) callconv(.Inline) void);
@@ -187,7 +187,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "samplerSetLabel", fn (sampler: *gpu.Sampler, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "samplerReference", fn (sampler: *gpu.Sampler) callconv(.Inline) void);
     assertDecl(T, "samplerRelease", fn (sampler: *gpu.Sampler) callconv(.Inline) void);
-    assertDecl(T, "shaderModuleGetCompilationInfo", fn (shader_module: *gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) callconv(.Inline) void);
+    assertDecl(T, "shaderModuleGetCompilationInfo", fn (shader_module: *gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "shaderModuleSetLabel", fn (shader_module: *gpu.ShaderModule, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "shaderModuleReference", fn (shader_module: *gpu.ShaderModule) callconv(.Inline) void);
     assertDecl(T, "shaderModuleRelease", fn (shader_module: *gpu.ShaderModule) callconv(.Inline) void);
@@ -264,7 +264,7 @@ pub fn Export(comptime T: type) type {
 
         // NOTE: descriptor is nullable, see https://bugs.chromium.org/p/dawn/issues/detail?id=1502
         // WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor, WGPURequestDeviceCallback callback, void * userdata);
-        export fn wgpuAdapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
+        export fn wgpuAdapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: ?*anyopaque) void {
             T.adapterRequestDevice(adapter, descriptor, callback, userdata);
         }
 
@@ -336,7 +336,7 @@ pub fn Export(comptime T: type) type {
         // TODO: Zig cannot currently export a packed struct gpu.MapModeFlags, so we use a u32 for
         // now.
         // WGPU_EXPORT void wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapModeFlags mode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userdata);
-        export fn wgpuBufferMapAsync(buffer: *gpu.Buffer, mode: u32, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: *anyopaque) void {
+        export fn wgpuBufferMapAsync(buffer: *gpu.Buffer, mode: u32, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: ?*anyopaque) void {
             T.bufferMapAsync(buffer, @bitCast(gpu.MapModeFlags, mode), offset, size, callback, userdata);
         }
 
@@ -576,7 +576,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuDeviceCreateComputePipelineAsync(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor, WGPUCreateComputePipelineAsyncCallback callback, void * userdata);
-        export fn wgpuDeviceCreateComputePipelineAsync(device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
+        export fn wgpuDeviceCreateComputePipelineAsync(device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: ?*anyopaque) void {
             T.deviceCreateComputePipelineAsync(device, descriptor, callback, userdata);
         }
 
@@ -616,7 +616,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuDeviceCreateRenderPipelineAsync(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor, WGPUCreateRenderPipelineAsyncCallback callback, void * userdata);
-        export fn wgpuDeviceCreateRenderPipelineAsync(device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
+        export fn wgpuDeviceCreateRenderPipelineAsync(device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: ?*anyopaque) void {
             T.deviceCreateRenderPipelineAsync(device, descriptor, callback, userdata);
         }
 
@@ -676,7 +676,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
-        export fn wgpuDevicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) bool {
+        export fn wgpuDevicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) bool {
             return T.devicePopErrorScope(device, callback, userdata);
         }
 
@@ -686,7 +686,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDeviceLostCallback callback, void * userdata);
-        export fn wgpuDeviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: *anyopaque) void {
+        export fn wgpuDeviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: ?*anyopaque) void {
             T.deviceSetDeviceLostCallback(device, callback, userdata);
         }
 
@@ -696,12 +696,12 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
-        export fn wgpuDeviceSetLoggingCallback(device: *gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) void {
+        export fn wgpuDeviceSetLoggingCallback(device: *gpu.Device, callback: gpu.LoggingCallback, userdata: ?*anyopaque) void {
             T.deviceSetLoggingCallback(device, callback, userdata);
         }
 
         // WGPU_EXPORT void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
-        export fn wgpuDeviceSetUncapturedErrorCallback(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) void {
+        export fn wgpuDeviceSetUncapturedErrorCallback(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) void {
             T.deviceSetUncapturedErrorCallback(device, callback, userdata);
         }
 
@@ -746,7 +746,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options, WGPURequestAdapterCallback callback, void * userdata);
-        export fn wgpuInstanceRequestAdapter(instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) void {
+        export fn wgpuInstanceRequestAdapter(instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) void {
             T.instanceRequestAdapter(instance, options, callback, userdata);
         }
 
@@ -811,7 +811,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuQueueOnSubmittedWorkDone(WGPUQueue queue, uint64_t signalValue, WGPUQueueWorkDoneCallback callback, void * userdata);
-        export fn wgpuQueueOnSubmittedWorkDone(queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: *anyopaque) void {
+        export fn wgpuQueueOnSubmittedWorkDone(queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: ?*anyopaque) void {
             T.queueOnSubmittedWorkDone(queue, signal_value, callback, userdata);
         }
 
@@ -1081,7 +1081,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuShaderModuleGetCompilationInfo(WGPUShaderModule shaderModule, WGPUCompilationInfoCallback callback, void * userdata);
-        export fn wgpuShaderModuleGetCompilationInfo(shader_module: *gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) void {
+        export fn wgpuShaderModuleGetCompilationInfo(shader_module: *gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: ?*anyopaque) void {
             T.shaderModuleGetCompilationInfo(shader_module, callback, userdata);
         }
 
@@ -1262,7 +1262,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn adapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: *anyopaque) void {
+    pub inline fn adapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: ?*anyopaque) void {
         _ = adapter;
         _ = descriptor;
         _ = callback;
@@ -1343,7 +1343,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn bufferMapAsync(buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: *anyopaque) void {
+    pub inline fn bufferMapAsync(buffer: *gpu.Buffer, mode: gpu.MapModeFlags, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: ?*anyopaque) void {
         _ = buffer;
         _ = mode;
         _ = offset;
@@ -1650,7 +1650,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateComputePipelineAsync(device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: *anyopaque) void {
+    pub inline fn deviceCreateComputePipelineAsync(device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: ?*anyopaque) void {
         _ = device;
         _ = descriptor;
         _ = callback;
@@ -1698,7 +1698,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateRenderPipelineAsync(device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
+    pub inline fn deviceCreateRenderPipelineAsync(device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: ?*anyopaque) void {
         _ = device;
         _ = descriptor;
         _ = callback;
@@ -1771,7 +1771,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) bool {
+    pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) bool {
         _ = device;
         _ = callback;
         _ = userdata;
@@ -1784,7 +1784,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: *anyopaque) void {
+    pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: ?*anyopaque) void {
         _ = device;
         _ = callback;
         _ = userdata;
@@ -1797,14 +1797,14 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceSetLoggingCallback(device: *gpu.Device, callback: gpu.LoggingCallback, userdata: *anyopaque) void {
+    pub inline fn deviceSetLoggingCallback(device: *gpu.Device, callback: gpu.LoggingCallback, userdata: ?*anyopaque) void {
         _ = device;
         _ = callback;
         _ = userdata;
         unreachable;
     }
 
-    pub inline fn deviceSetUncapturedErrorCallback(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) void {
+    pub inline fn deviceSetUncapturedErrorCallback(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) void {
         _ = device;
         _ = callback;
         _ = userdata;
@@ -1853,7 +1853,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn instanceRequestAdapter(instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: *anyopaque) void {
+    pub inline fn instanceRequestAdapter(instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) void {
         _ = instance;
         _ = options;
         _ = callback;
@@ -1927,7 +1927,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn queueOnSubmittedWorkDone(queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: *anyopaque) void {
+    pub inline fn queueOnSubmittedWorkDone(queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: ?*anyopaque) void {
         _ = queue;
         _ = signal_value;
         _ = callback;
@@ -2291,7 +2291,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn shaderModuleGetCompilationInfo(shader_module: *gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: *anyopaque) void {
+    pub inline fn shaderModuleGetCompilationInfo(shader_module: *gpu.ShaderModule, callback: gpu.CompilationInfoCallback, userdata: ?*anyopaque) void {
         _ = shader_module;
         _ = callback;
         _ = userdata;
