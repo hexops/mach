@@ -930,10 +930,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const *const gpu.RenderBundle) void {
-        _ = render_pass_encoder;
-        _ = bundles_count;
-        _ = bundles;
-        unreachable;
+        procs.renderPassEncoderExecuteBundles.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            bundles_count,
+            @ptrCast([*]const c.WGPURenderBundle, bundles),
+        );
     }
 
     pub inline fn renderPassEncoderInsertDebugMarker(render_pass_encoder: *gpu.RenderPassEncoder, marker_label: [*:0]const u8) void {
