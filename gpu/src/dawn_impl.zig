@@ -779,13 +779,13 @@ pub const Interface = gpu.Interface(struct {
         procs.renderBundleEncoderDraw.?(@ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder), vertex_count, instance_count, first_vertex, first_instance);
     }
 
-    pub inline fn renderBundleEncoderDrawIndexed(render_bundle_encoder: *gpu.RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: u32, first_instance: u32) void {
+    pub inline fn renderBundleEncoderDrawIndexed(render_bundle_encoder: *gpu.RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void {
         procs.renderBundleEncoderDrawIndexed.?(
             @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
             index_count,
             instance_count,
             first_index,
-            @bitCast(i32, base_vertex), // TODO: our signature is wrong here!
+            base_vertex,
             first_instance,
         );
     }
