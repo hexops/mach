@@ -498,11 +498,12 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateRenderPipelineAsync(device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: *anyopaque) void {
-        _ = device;
-        _ = descriptor;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        procs.deviceCreateRenderPipelineAsync.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPURenderPipelineDescriptor, descriptor),
+            @ptrCast(c.WGPUCreateRenderPipelineAsyncCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) *gpu.Sampler {
