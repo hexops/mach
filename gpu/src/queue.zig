@@ -29,8 +29,20 @@ pub const Queue = opaque {
         Impl.queueCopyTextureForBrowser(queue, source, destination, copy_size, options);
     }
 
-    pub inline fn onSubmittedWorkDone(queue: *Queue, signal_value: u64, callback: Queue.WorkDoneCallback, userdata: ?*anyopaque) void {
-        Impl.queueOnSubmittedWorkDone(queue, signal_value, callback, userdata);
+    // TODO: is it not possible to *unset* this callback? Presumably it should be nullable?
+    pub inline fn onSubmittedWorkDone(
+        queue: *Queue,
+        signal_value: u64,
+        comptime Context: type,
+        comptime callback: fn (status: WorkDoneStatus, ctx: Context) callconv(.Inline) void,
+        context: Context,
+    ) void {
+        const Helper = struct {
+            pub fn callback(status: WorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
+                callback(status, if (Context == void) {} orelse @ptrCast(Context, userdata));
+            }
+        };
+        Impl.queueOnSubmittedWorkDone(queue, signal_value, Helper.callback, if (Context == void) null orelse context);
     }
 
     pub inline fn setLabel(queue: *Queue, label: [*:0]const u8) void {
