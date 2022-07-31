@@ -662,8 +662,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn querySetGetCount(query_set: *gpu.QuerySet) u32 {
-        _ = query_set;
-        unreachable;
+        return procs.querySetGetCount.?(@ptrCast(c.WGPUQuerySet, query_set));
     }
 
     pub inline fn querySetGetType(query_set: *gpu.QuerySet) gpu.QueryType {
