@@ -275,13 +275,14 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderResolveQuerySet(command_encoder: *gpu.CommandEncoder, query_set: *gpu.QuerySet, first_query: u32, query_count: u32, destination: *gpu.Buffer, destination_offset: u64) void {
-        _ = command_encoder;
-        _ = query_set;
-        _ = first_query;
-        _ = query_count;
-        _ = destination;
-        _ = destination_offset;
-        unreachable;
+        procs.commandEncoderResolveQuerySet.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            @ptrCast(c.WGPUQuerySet, query_set),
+            first_query,
+            query_count,
+            @ptrCast(c.WGPUBuffer, destination),
+            destination_offset,
+        );
     }
 
     pub inline fn commandEncoderSetLabel(command_encoder: *gpu.CommandEncoder, label: [*:0]const u8) void {
