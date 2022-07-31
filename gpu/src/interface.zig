@@ -2438,5 +2438,5 @@ pub const StubInterface = Interface(struct {
 });
 
 test "stub" {
-    _ = Export(StubInterface);
+    _ = StubInterface;
 }

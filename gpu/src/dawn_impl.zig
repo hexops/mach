@@ -1203,6 +1203,5 @@ pub const Interface = gpu.Interface(struct {
 });
 
 test "dawn_impl" {
-    _ = Interface;
-    // _ = gpu.Export(Interface);
+    _ = gpu.Export(Interface);
 }
