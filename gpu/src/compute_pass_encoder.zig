@@ -1,6 +1,7 @@
 const Buffer = @import("buffer.zig").Buffer;
 const BindGroup = @import("bind_group.zig").BindGroup;
 const ComputePipeline = @import("compute_pipeline.zig").ComputePipeline;
+const QuerySet = @import("query_set.zig").QuerySet;
 const Impl = @import("interface.zig").Impl;
 
 pub const ComputePassEncoder = opaque {
@@ -44,8 +45,8 @@ pub const ComputePassEncoder = opaque {
         Impl.computePassEncoderSetPipeline(compute_pass_encoder, pipeline);
     }
 
-    pub inline fn writeTimestamp(compute_pass_encoder: *ComputePassEncoder, pipeline: *ComputePipeline) void {
-        Impl.computePassEncoderWriteTimestamp(compute_pass_encoder, pipeline);
+    pub inline fn writeTimestamp(compute_pass_encoder: *ComputePassEncoder, query_set: *QuerySet, query_index: u32) void {
+        Impl.computePassEncoderWriteTimestamp(compute_pass_encoder, query_set, query_index);
     }
 
     pub inline fn reference(compute_pass_encoder: *ComputePassEncoder) void {

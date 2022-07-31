@@ -375,12 +375,12 @@ pub const Interface = gpu.Interface(struct {
         );
     }
 
-    // TODO: signature is wrong!
-    // WGPU_EXPORT void wgpuComputePassEncoderWriteTimestamp(WGPUComputePassEncoder computePassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
-    pub inline fn computePassEncoderWriteTimestamp(compute_pass_encoder: *gpu.ComputePassEncoder, pipeline: *gpu.ComputePipeline) void {
-        _ = compute_pass_encoder;
-        _ = pipeline;
-        unreachable;
+    pub inline fn computePassEncoderWriteTimestamp(compute_pass_encoder: *gpu.ComputePassEncoder, query_set: *gpu.QuerySet, query_index: u32) void {
+        procs.computePassEncoderWriteTimestamp.?(
+            @ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder),
+            @ptrCast(c.WGPUQuerySet, query_set),
+            query_index,
+        );
     }
 
     pub inline fn computePassEncoderReference(compute_pass_encoder: *gpu.ComputePassEncoder) void {
