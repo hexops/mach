@@ -1099,33 +1099,27 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn textureGetDepthOrArrayLayers(texture: *gpu.Texture) u32 {
-        _ = texture;
-        unreachable;
+        return procs.textureGetDepthOrArrayLayers.?(@ptrCast(c.WGPUTexture, texture));
     }
 
     pub inline fn textureGetDimension(texture: *gpu.Texture) gpu.Texture.Dimension {
-        _ = texture;
-        unreachable;
+        return @intToEnum(gpu.Texture.Dimension, procs.textureGetDimension.?(@ptrCast(c.WGPUTexture, texture)));
     }
 
     pub inline fn textureGetFormat(texture: *gpu.Texture) gpu.Texture.Format {
-        _ = texture;
-        unreachable;
+        return @intToEnum(gpu.Texture.Format, procs.textureGetFormat.?(@ptrCast(c.WGPUTexture, texture)));
     }
 
     pub inline fn textureGetHeight(texture: *gpu.Texture) u32 {
-        _ = texture;
-        unreachable;
+        return procs.textureGetHeight.?(@ptrCast(c.WGPUTexture, texture));
     }
 
     pub inline fn textureGetMipLevelCount(texture: *gpu.Texture) u32 {
-        _ = texture;
-        unreachable;
+        return procs.textureGetMipLevelCount.?(@ptrCast(c.WGPUTexture, texture));
     }
 
     pub inline fn textureGetSampleCount(texture: *gpu.Texture) u32 {
-        _ = texture;
-        unreachable;
+        return procs.textureGetSampleCount.?(@ptrCast(c.WGPUTexture, texture));
     }
 
     pub inline fn textureGetUsage(texture: *gpu.Texture) gpu.Texture.UsageFlags {
