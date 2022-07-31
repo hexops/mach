@@ -45,8 +45,8 @@ pub const Queue = opaque {
         Impl.queueWriteBuffer(queue, buffer, buffer_offset, data, size);
     }
 
-    pub inline fn writeTexture(queue: *Queue, data: *anyopaque, data_size: usize, data_layout: *const Texture.DataLayout, write_size: *const Extent3D) void {
-        Impl.queueWriteTexture(queue, data, data_size, data_layout, write_size);
+    pub inline fn writeTexture(queue: *Queue, destination: *const ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const Texture.DataLayout, write_size: *const Extent3D) void {
+        Impl.queueWriteTexture(queue, destination, data, data_size, data_layout, write_size);
     }
 
     pub inline fn reference(queue: *Queue) void {

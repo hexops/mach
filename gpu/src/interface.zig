@@ -135,7 +135,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "queueSetLabel", fn (queue: *gpu.Queue, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "queueSubmit", fn (queue: *gpu.Queue, command_count: u32, commands: [*]*gpu.CommandBuffer) callconv(.Inline) void);
     assertDecl(T, "queueWriteBuffer", fn (queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) callconv(.Inline) void);
-    assertDecl(T, "queueWriteTexture", fn (queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) callconv(.Inline) void);
+    assertDecl(T, "queueWriteTexture", fn (queue: *gpu.Queue, destination: *const gpu.ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) callconv(.Inline) void);
     assertDecl(T, "queueReference", fn (queue: *gpu.Queue) callconv(.Inline) void);
     assertDecl(T, "queueRelease", fn (queue: *gpu.Queue) callconv(.Inline) void);
     assertDecl(T, "renderBundleReference", fn (render_bundle: *gpu.RenderBundle) callconv(.Inline) void);
@@ -829,8 +829,8 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuQueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize);
-        export fn wgpuQueueWriteTexture(queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) void {
-            T.queueWriteTexture(queue, data, data_size, data_layout, write_size);
+        export fn wgpuQueueWriteTexture(queue: *gpu.Queue, destination: *const gpu.ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) void {
+            T.queueWriteTexture(queue, destination, data, data_size, data_layout, write_size);
         }
 
         // WGPU_EXPORT void wgpuQueueReference(WGPUQueue queue);
@@ -1955,8 +1955,9 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn queueWriteTexture(queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) void {
+    pub inline fn queueWriteTexture(queue: *gpu.Queue, destination: *const gpu.ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) void {
         _ = queue;
+        _ = destination;
         _ = data;
         _ = data_size;
         _ = data_layout;
