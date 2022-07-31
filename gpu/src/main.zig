@@ -39,81 +39,16 @@ pub const dawn = @import("dawn.zig");
 pub usingnamespace @import("types.zig");
 pub usingnamespace @import("interface.zig");
 
-const types = @import("types.zig");
-const query_set = @import("query_set.zig");
-const texture_view = @import("texture_view.zig");
-const surface = @import("surface.zig");
-const compute_pipeline = @import("compute_pipeline.zig");
-const render_pipeline = @import("render_pipeline.zig");
 const instance = @import("instance.zig");
 const device = @import("device.zig");
 const interface = @import("interface.zig");
-
-/// Generic function pointer type, used for returning API function pointers. Must be
-/// cast to the right `fn (...) callconv(.C) T` type before use.
-pub const Proc = fn () callconv(.C) void;
-
-pub const ComputePassTimestampWrite = extern struct {
-    query_set: *query_set.QuerySet,
-    query_index: u32,
-    location: types.ComputePassTimestampLocation,
-};
-
-pub const RenderPassDepthStencilAttachment = extern struct {
-    view: *texture_view.TextureView,
-    depth_load_op: types.LoadOp = .undef,
-    depth_store_op: types.StoreOp = .undef,
-    /// deprecated
-    clear_depth: f32 = std.math.nan(f32),
-    depth_clear_value: f32 = 0,
-    depth_read_only: bool = false,
-    stencil_load_op: types.LoadOp = .undef,
-    stencil_store_op: types.StoreOp = .undef,
-    /// deprecated
-    clear_stencil: u32 = 0,
-    stencil_clear_value: u32 = 0,
-    stencil_read_only: bool = false,
-};
-
-pub const RenderPassTimestampWrite = extern struct {
-    query_set: *query_set.QuerySet,
-    query_index: u32,
-    location: types.RenderPassTimestampLocation,
-};
-
-pub const RequestAdapterOptions = extern struct {
-    next_in_chain: *const types.ChainedStruct,
-    compatible_surface: ?*surface.Surface,
-    power_preference: types.PowerPreference = .undef,
-    force_fallback_adapter: bool = false,
-};
-
-pub const ComputePassDescriptor = extern struct {
-    next_in_chain: *const types.ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    timestamp_write_count: u32 = 0,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    timestamp_writes: ?[*]const ComputePassTimestampWrite = null,
-};
-
-pub const RenderPassDescriptor = extern struct {
-    next_in_chain: *const types.ChainedStruct,
-    label: ?[*:0]const u8 = null,
-    color_attachment_count: u32,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    color_attachments: ?[*]const types.RenderPassColorAttachment,
-    depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment,
-    occlusion_query_set: ?*query_set.QuerySet,
-    timestamp_write_count: u32 = 0,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    timestamp_writes: ?[*]const RenderPassTimestampWrite = null,
-};
+const types = @import("types.zig");
 
 pub inline fn createInstance(descriptor: ?*const instance.Instance.Descriptor) ?*instance.Instance {
     return interface.Impl.createInstance(descriptor);
 }
 
-pub inline fn getProcAddress(_device: *device.Device, proc_name: [*:0]const u8) ?Proc {
+pub inline fn getProcAddress(_device: *device.Device, proc_name: [*:0]const u8) ?types.Proc {
     return interface.Impl.getProcAddress(_device, proc_name);
 }
 

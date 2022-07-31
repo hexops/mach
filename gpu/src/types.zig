@@ -4,8 +4,70 @@ const Texture = @import("texture.zig").Texture;
 const TextureView = @import("texture_view.zig").TextureView;
 const Buffer = @import("buffer.zig").Buffer;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
+const QuerySet = @import("query_set.zig").QuerySet;
+const Surface = @import("surface.zig").Surface;
 const limit_u32_undef = @import("main.zig").limit_u32_undef;
 const limit_u64_undef = @import("main.zig").limit_u64_undef;
+
+/// Generic function pointer type, used for returning API function pointers. Must be
+/// cast to the right `fn (...) callconv(.C) T` type before use.
+pub const Proc = fn () callconv(.C) void;
+
+pub const ComputePassTimestampWrite = extern struct {
+    query_set: *QuerySet,
+    query_index: u32,
+    location: ComputePassTimestampLocation,
+};
+
+pub const RenderPassDepthStencilAttachment = extern struct {
+    view: *TextureView,
+    depth_load_op: LoadOp = .undef,
+    depth_store_op: StoreOp = .undef,
+    /// deprecated
+    clear_depth: f32 = std.math.nan(f32),
+    depth_clear_value: f32 = 0,
+    depth_read_only: bool = false,
+    stencil_load_op: LoadOp = .undef,
+    stencil_store_op: StoreOp = .undef,
+    /// deprecated
+    clear_stencil: u32 = 0,
+    stencil_clear_value: u32 = 0,
+    stencil_read_only: bool = false,
+};
+
+pub const RenderPassTimestampWrite = extern struct {
+    query_set: *QuerySet,
+    query_index: u32,
+    location: RenderPassTimestampLocation,
+};
+
+pub const RequestAdapterOptions = extern struct {
+    next_in_chain: *const ChainedStruct,
+    compatible_surface: ?*Surface,
+    power_preference: PowerPreference = .undef,
+    force_fallback_adapter: bool = false,
+};
+
+pub const ComputePassDescriptor = extern struct {
+    next_in_chain: *const ChainedStruct,
+    label: ?[*:0]const u8 = null,
+    timestamp_write_count: u32 = 0,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    timestamp_writes: ?[*]const ComputePassTimestampWrite = null,
+};
+
+pub const RenderPassDescriptor = extern struct {
+    next_in_chain: *const ChainedStruct,
+    label: ?[*:0]const u8 = null,
+    color_attachment_count: u32,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    color_attachments: ?[*]const RenderPassColorAttachment,
+    depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment,
+    occlusion_query_set: ?*QuerySet,
+    timestamp_write_count: u32 = 0,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    timestamp_writes: ?[*]const RenderPassTimestampWrite = null,
+};
 
 pub const AlphaMode = enum(u32) {
     premultiplied = 0x00000000,
