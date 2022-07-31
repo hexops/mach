@@ -21,6 +21,7 @@ const SupportedLimits = @import("types.zig").SupportedLimits;
 const ErrorType = @import("types.zig").ErrorType;
 const ErrorFilter = @import("types.zig").ErrorFilter;
 const LoggingType = @import("types.zig").LoggingType;
+const CreatePipelineAsyncStatus = @import("types.zig").CreatePipelineAsyncStatus;
 const LoggingCallback = @import("callbacks.zig").LoggingCallback;
 const ErrorCallback = @import("callbacks.zig").ErrorCallback;
 const CreateComputePipelineAsyncCallback = @import("callbacks.zig").CreateComputePipelineAsyncCallback;
@@ -71,10 +72,31 @@ pub const Device = opaque {
     pub inline fn createComputePipelineAsync(
         device: *Device,
         descriptor: *const ComputePipeline.Descriptor,
-        callback: CreateComputePipelineAsyncCallback,
-        userdata: ?*anyopaque,
+        comptime Context: type,
+        comptime callback: fn (
+            status: CreatePipelineAsyncStatus,
+            compute_pipeline: *ComputePipeline,'
+            message: [*:0]const u8,
+            ctx: Context,
+        ) callconv(.Inline) void,
+        context: Context,
     ) void {
-        Impl.deviceCreateComputePipelineAsync(device, descriptor, callback, userdata);
+        const Helper = struct {
+            pub fn callback(
+                status: CreatePipelineAsyncStatus,
+                compute_pipeline: *ComputePipeline,
+                message: [*:0]const u8,
+                userdata: ?*anyopaque,
+            ) callconv(.C) void {
+                callback(
+                    status,
+                    compute_pipeline,
+                    message,
+                    if (Context == void) {} else @ptrCast(Context, userdata),
+                );
+            }
+        };
+        Impl.deviceCreateComputePipelineAsync(device, descriptor, Helper.callback, if (Context == void) null else context);
     }
 
     pub inline fn createErrorBuffer(device: *Device) *Buffer {
