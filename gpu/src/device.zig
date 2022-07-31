@@ -222,10 +222,16 @@ pub const Device = opaque {
     // TODO: presumably callback should be nullable for unsetting
     pub inline fn setDeviceLostCallback(
         device: *Device,
-        callback: Device.LostCallback,
-        userdata: ?*anyopaque,
+        comptime Context: type,
+        comptime callback: fn (reason: LostReason, message: [*:0]const u8, ctx: Context) callconv(.Inline) void,
+        context: Context,
     ) void {
-        Impl.deviceSetDeviceLostCallback(device, callback, userdata);
+        const Helper = struct {
+            pub fn callback(reason: LostReason, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
+                callback(reason, message, if (Context == void) {} else @ptrCast(Context, userdata));
+            }
+        };
+        Impl.deviceSetDeviceLostCallback(device, Helper.callback, if (Context == void) null else context);
     }
 
     pub inline fn setLabel(device: *Device, label: [*:0]const u8) void {
