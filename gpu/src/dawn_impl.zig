@@ -316,11 +316,12 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePassEncoderDispatchWorkgroups(compute_pass_encoder: *gpu.ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
-        _ = compute_pass_encoder;
-        _ = workgroup_count_x;
-        _ = workgroup_count_y;
-        _ = workgroup_count_z;
-        unreachable;
+        procs.computePassEncoderDispatchWorkgroups.?(
+            @ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder),
+            workgroup_count_x,
+            workgroup_count_y,
+            workgroup_count_z,
+        );
     }
 
     pub inline fn computePassEncoderDispatchWorkgroupsIndirect(compute_pass_encoder: *gpu.ComputePassEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) void {
