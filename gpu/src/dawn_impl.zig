@@ -547,9 +547,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceGetLimits(device: *gpu.Device, limits: *gpu.SupportedLimits) bool {
-        _ = device;
-        _ = limits;
-        unreachable;
+        return procs.deviceGetLimits.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*c.WGPUSupportedLimits, limits),
+        );
     }
 
     pub inline fn deviceGetQueue(device: *gpu.Device) *gpu.Queue {
