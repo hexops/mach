@@ -1129,8 +1129,9 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn textureGetUsage(texture: *gpu.Texture) gpu.Texture.UsageFlags {
-        _ = texture;
-        unreachable;
+        return @bitCast(gpu.Texture.UsageFlags, procs.textureGetUsage.?(
+            @ptrCast(c.WGPUTexture, texture),
+        ));
     }
 
     pub inline fn textureGetWidth(texture: *gpu.Texture) u32 {
