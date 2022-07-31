@@ -109,18 +109,20 @@ pub const Interface = gpu.Interface(struct {
 
     // TODO: file a bug on Dawn docstrings, this returns null but is not documented as such.
     pub inline fn bufferGetConstMappedRange(buffer: *gpu.Buffer, offset: usize, size: usize) ?*const anyopaque {
-        _ = buffer;
-        _ = offset;
-        _ = size;
-        unreachable;
+        return procs.bufferGetConstMappedRange.?(
+            @ptrCast(c.WGPUBuffer, buffer),
+            offset,
+            size,
+        );
     }
 
     // TODO: file a bug on Dawn docstrings, this returns null but is not documented as such.
     pub inline fn bufferGetMappedRange(buffer: *gpu.Buffer, offset: usize, size: usize) ?*anyopaque {
-        _ = buffer;
-        _ = offset;
-        _ = size;
-        unreachable;
+        return procs.bufferGetMappedRange.?(
+            @ptrCast(c.WGPUBuffer, buffer),
+            offset,
+            size,
+        );
     }
 
     pub inline fn bufferGetSize(buffer: *gpu.Buffer) u64 {
@@ -656,8 +658,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn querySetDestroy(query_set: *gpu.QuerySet) void {
-        _ = query_set;
-        unreachable;
+        procs.querySetDestroy.?(@ptrCast(c.WGPUQuerySet, query_set));
     }
 
     pub inline fn querySetGetCount(query_set: *gpu.QuerySet) u32 {
