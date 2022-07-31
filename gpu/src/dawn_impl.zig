@@ -403,9 +403,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateBindGroupLayout(device: *gpu.Device, descriptor: *const gpu.BindGroupLayout.Descriptor) *gpu.BindGroupLayout {
-        _ = device;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.BindGroupLayout, procs.deviceCreateBindGroupLayout.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUBindGroupLayoutDescriptor, descriptor),
+        ));
     }
 
     pub inline fn deviceCreateBuffer(device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) *gpu.Buffer {
