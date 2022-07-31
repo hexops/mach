@@ -497,9 +497,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateShaderModule(device: *gpu.Device, descriptor: *const gpu.ShaderModule.Descriptor) *gpu.ShaderModule {
-        _ = device;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.ShaderModule, procs.deviceCreateShaderModule.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUShaderModuleDescriptor, descriptor),
+        ));
     }
 
     pub inline fn deviceCreateSwapChain(device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChain.Descriptor) *gpu.SwapChain {
