@@ -196,13 +196,14 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderCopyBufferToBuffer(command_encoder: *gpu.CommandEncoder, source: *gpu.Buffer, source_offset: u64, destination: *gpu.Buffer, destination_offset: u64, size: u64) void {
-        _ = command_encoder;
-        _ = source;
-        _ = source_offset;
-        _ = destination;
-        _ = destination_offset;
-        _ = size;
-        unreachable;
+        procs.commandEncoderCopyBufferToBuffer.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            @ptrCast(c.WGPUBuffer, source),
+            source_offset,
+            @ptrCast(c.WGPUBuffer, destination),
+            destination_offset,
+            size,
+        );
     }
 
     pub inline fn commandEncoderCopyBufferToTexture(command_encoder: *gpu.CommandEncoder, source: *const gpu.ImageCopyBuffer, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D) void {
