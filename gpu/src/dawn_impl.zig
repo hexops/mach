@@ -913,10 +913,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderDrawIndirect(render_pass_encoder: *gpu.RenderPassEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) void {
-        _ = render_pass_encoder;
-        _ = indirect_buffer;
-        _ = indirect_offset;
-        unreachable;
+        procs.renderPassEncoderDrawIndirect.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            @ptrCast(c.WGPUBuffer, indirect_buffer),
+            indirect_offset,
+        );
     }
 
     pub inline fn renderPassEncoderEnd(render_pass_encoder: *gpu.RenderPassEncoder) void {
