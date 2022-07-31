@@ -8,14 +8,15 @@ pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode, target).step);
+    test_step.dependOn(&testStep(b, mode, target, "glfw_tests", .{}).step);
+    test_step.dependOn(&testStep(b, mode, target, "glfw_shared_tests", .{ .shared = true }).step);
 }
 
-pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("glfw_tests", thisDir() ++ "/src/main.zig");
+pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, exe_name: []const u8, options: Options) *std.build.RunStep {
+    const main_tests = b.addTestExe(exe_name, thisDir() ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
-    link(b, main_tests, .{});
+    link(b, main_tests, options);
     main_tests.install();
     return main_tests.run();
 }
@@ -46,6 +47,9 @@ pub const Options = struct {
 
     /// System SDK options.
     system_sdk: system_sdk.Options = .{},
+
+    /// Build and link GLFW as a shared library.
+    shared: bool = false,
 };
 
 pub const pkg = std.build.Pkg{
@@ -54,12 +58,24 @@ pub const pkg = std.build.Pkg{
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const lib = buildLibrary(b, step, options);
-    step.linkLibrary(lib);
-    linkGLFWDependencies(b, step, options);
+    const result = buildLibrary(b, step, options);
+    step.linkLibrary(result.lib);
+    addGLFWIncludes(b, step);
+
+    if (result.glfw_shared) |glfw_shared| {
+        step.defineCMacro("GLFW_DLL", null);
+        step.linkLibrary(glfw_shared);
+    } else {
+        linkGLFWDependencies(b, step, options);
+    }
 }
 
-fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+const Libraries = struct {
+    lib: *std.build.LibExeObjStep,
+    glfw_shared: ?*std.build.LibExeObjStep,
+};
+
+fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) Libraries {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
@@ -67,9 +83,72 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     const lib = b.addStaticLibrary("glfw", main_abs);
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
+    addGLFWIncludes(b, lib);
 
-    // TODO(build-system): pass system SDK options through
-    system_sdk.include(b, step, .{});
+    // Each call to buildLibrary will use the same instance of the glfw shared dll build step
+    const shared = struct {
+        var instance: ?*std.build.LibExeObjStep = null;
+    };
+
+    if (options.shared) {
+        if (shared.instance) |instance| {
+            // The targets must match, since the first caller created shared.instance with their step's target
+            if (!std.meta.eql(instance.target, step.target)) {
+                @panic("When building glfw in shared mode, each call to glfw.link must use the same target");
+            }
+        } else {
+            const glfw_shared = b.addSharedLibrary("glfw_shared", null, .unversioned);
+            glfw_shared.setBuildMode(step.build_mode);
+            glfw_shared.setTarget(step.target);
+            glfw_shared.defineCMacro("_GLFW_BUILD_DLL", null);
+            glfw_shared.setOutputDir("zig-out/bin");
+            addGLFWIncludes(b, glfw_shared);
+            addGLFWSources(b, step, glfw_shared, options);
+            linkGLFWDependencies(b, glfw_shared, options);
+
+            glfw_shared.install();
+            shared.instance = glfw_shared;
+        }
+    } else {
+        addGLFWSources(b, step, lib, options);
+        linkGLFWDependencies(b, lib, options);
+    }
+
+    lib.install();
+
+    return .{
+        .lib = lib,
+        .glfw_shared = shared.instance,
+    };
+}
+
+fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
+    if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
+        if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
+    } else |_| {}
+    var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
+    child.cwd = (comptime thisDir());
+    child.stderr = std.io.getStdErr();
+    child.stdout = std.io.getStdOut();
+
+    _ = try child.spawnAndWait();
+}
+
+fn thisDir() []const u8 {
+    return std.fs.path.dirname(@src().file) orelse ".";
+}
+
+fn addGLFWIncludes(b: *Builder, step: *std.build.LibExeObjStep) void {
+    const include_dir = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "upstream/glfw/include" }) catch unreachable;
+    defer b.allocator.free(include_dir);
+    step.addIncludeDir(include_dir);
+
+    const vulkan_include_dir = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "upstream/vulkan_headers/include" }) catch unreachable;
+    defer b.allocator.free(vulkan_include_dir);
+    step.addIncludeDir(vulkan_include_dir);
+}
+
+fn addGLFWSources(b: *Builder, step: *std.build.LibExeObjStep, lib: *std.build.LibExeObjStep, options: Options) void {
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
     const include_glfw_src = "-I" ++ (comptime thisDir()) ++ "/upstream/glfw/src";
     switch (target.os.tag) {
@@ -109,36 +188,9 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
             lib.addCSourceFiles(sources.items, flags.items);
         },
     }
-    linkGLFWDependencies(b, lib, options);
-    lib.install();
-    return lib;
-}
-
-fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
-    if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
-        if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
-    } else |_| {}
-    var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = (comptime thisDir());
-    child.stderr = std.io.getStdErr();
-    child.stdout = std.io.getStdOut();
-
-    _ = try child.spawnAndWait();
-}
-
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
 }
 
 fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const include_dir = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "upstream/glfw/include" }) catch unreachable;
-    defer b.allocator.free(include_dir);
-    step.addIncludeDir(include_dir);
-
-    const vulkan_include_dir = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "upstream/vulkan_headers/include" }) catch unreachable;
-    defer b.allocator.free(vulkan_include_dir);
-    step.addIncludeDir(vulkan_include_dir);
-
     step.linkLibC();
     // TODO(build-system): pass system SDK options through
     system_sdk.include(b, step, .{});
