@@ -18,15 +18,15 @@ pub const Instance = opaque {
     pub inline fn requestAdapter(
         instance: *Instance,
         options: *const RequestAdapterOptions,
-        comptime Context: type,
+        context: anytype,
         comptime callback: fn (
             status: RequestAdapterStatus,
             adapter: *Adapter,
             message: ?[*:0]const u8,
-            ctx: Context,
+            ctx: @TypeOf(context),
         ) callconv(.Inline) void,
-        context: Context,
     ) void {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(
                 status: RequestAdapterStatus,

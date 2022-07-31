@@ -94,10 +94,10 @@ pub const Buffer = opaque {
         mode: MapModeFlags,
         offset: usize,
         size: usize,
-        comptime Context: type,
-        comptime callback: fn (status: MapAsyncStatus, ctx: Context) callconv(.Inline) void,
-        context: Context,
+        context: anytype,
+        comptime callback: fn (status: MapAsyncStatus, ctx: @TypeOf(context)) callconv(.Inline) void,
     ) void {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(status: MapAsyncStatus, userdata: ?*anyopaque) callconv(.C) void {
                 callback(status, if (Context == void) {} else @ptrCast(Context, userdata));

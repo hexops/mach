@@ -73,15 +73,15 @@ pub const Adapter = opaque {
     pub inline fn requestDevice(
         adapter: *Adapter,
         descriptor: ?*const Device.Descriptor,
-        comptime Context: type,
+        context: anytype,
         comptime callback: fn (
             status: RequestDeviceStatus,
             device: *Device,
             message: ?[*:0]const u8,
-            ctx: Context,
+            ctx: @TypeOf(context),
         ) callconv(.Inline) void,
-        context: Context,
     ) void {
+        const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(status: RequestDeviceStatus, device: *Device, message: ?[*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
                 callback(
