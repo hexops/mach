@@ -612,10 +612,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceSetUncapturedErrorCallback(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: *anyopaque) void {
-        _ = device;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        procs.deviceSetUncapturedErrorCallback.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(c.WGPUErrorCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn deviceTick(device: *gpu.Device) void {
