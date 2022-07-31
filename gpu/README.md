@@ -133,8 +133,61 @@ The rules for translating `webgpu.h` are as follows:
 
 ### Quality of life improvements
 
-We make the following quality of life improvements:
+We make the following quality of life improvements.
+
+#### Flag sets
+
+TODO: explain it
+
+#### Nullability
 
 * `label: ?[*:0]const u8` fields have a default `null` value added to them.
 * Where a struct has a slice `_count` field, with an optional pointer, if the `_count` field defaults to zero we also enforce the optional pointer defaults to `null`. Specifically we do this for:
 * `next_in_chain: *const ChainedStruct` fields, which enable optional implementation-specific extensions to the WebGPU API, default to `null`.
+
+#### Slice helpers
+
+Some WebGPU APIs expose slices as pointers and lengths, we either wrap these to provide a slice or alter the method directly to provide a slice (if little overhead.) The original C-style API can always be accessed via the `gpu.Impl` type in any case.
+
+The slice helpers are:
+
+* `Adapter.enumerateFeaturesOwned`
+
+#### Typed callbacks
+
+Most WebGPU callbacks provide a way to provide a `userdata: *anyopaque` pointer to the callback for context. We alter these APIs to expose a typed context pointer instead (again, the original API is always available via the `gpu.Impl` type should you want it):
+
+* `Instance.requestAdapter`
+* `Adapter.requestDevice`
+* `Queue.onSubmittedWorkDone`
+* `Buffer.mapAsync`
+* `ShaderModule.getCompilationInfo`
+* `Device.createComputePipelineAsync`
+* `Device.createRenderPipelineAsync`
+* `Device.popErrorScope`
+* `Device.setDeviceLostCallback`
+* `Device.setLoggingCallback`
+* `Device.setUncapturedErrorCallback`
+
+#### Others
+
+There may be other opportunities for helpers, to improve the existing APIs, or add utility APIs on top of the existing APIs. If you find one, please open an issue we'd love to hear it!
+
+The following are definitive candidates for helpers we haven't implemented yet:
+
+* `gpu.Buffer.getConstMappedRange` (slices)
+* `gpu.Buffer.getMappedRange` (slices)
+* `gpu.CommandEncoder.writeBuffer` (slices)
+* `gpu.ComputePassEncoder.setBindGroup` (slice param)
+* `gpu.Device.enumerateFeatures` (owned slice)
+* `gpu.Queue.writeBuffer` (slices)
+* `gpu.Queue.writeTexture` (slices)
+* `gpu.RenderBundleEncoder.setBindGroup` (slice param)
+* `gpu.RenderPassEncoder.executeBundles` (slice param)
+* `gpu.RenderPassEncoder.setBindGroup` (slice param)
+
+Descriptors `next_in_chain` extensions could be more type-safe, at least:
+
+* `gpu.ShaderModule.Descriptor` (WGSL/SPIRV divide simplification)
+* `gpu.Surface.Descriptor` (Xlib,windows_hwnd, etc.)
+* Others mentioned after the bug we filed on Dawn was fixed (consult dawn.json now)
