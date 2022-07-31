@@ -512,9 +512,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateTexture(device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) *gpu.Texture {
-        _ = device;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.Texture, procs.deviceCreateTexture.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUTextureDescriptor, descriptor),
+        ));
     }
 
     pub inline fn deviceDestroy(device: *gpu.Device) void {
