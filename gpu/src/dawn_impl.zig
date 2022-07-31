@@ -334,9 +334,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn computePassEncoderPushDebugGroup(compute_pass_encoder: *gpu.ComputePassEncoder, group_label: [*:0]const u8) void {
-        _ = compute_pass_encoder;
-        _ = group_label;
-        unreachable;
+        procs.computePassEncoderPushDebugGroup.?(
+            @ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder),
+            group_label,
+        );
     }
 
     pub inline fn computePassEncoderSetBindGroup(compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
