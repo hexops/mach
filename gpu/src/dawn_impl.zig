@@ -748,12 +748,10 @@ pub const Interface = gpu.Interface(struct {
         );
     }
 
-    // TODO: signature is wrong!
-    // WGPU_EXPORT void wgpuQueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize);
-    pub inline fn queueWriteTexture(queue: *gpu.Queue, data: *anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) void {
+    pub inline fn queueWriteTexture(queue: *gpu.Queue, destination: *const gpu.ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) void {
         procs.queueWriteTexture.?(
             @ptrCast(c.WGPUQueue, queue),
-            null, // @ptrCast(*const c.WGPUImageCopyTexture, destination), // TODO
+            @ptrCast(*const c.WGPUImageCopyTexture, destination),
             data,
             data_size,
             @ptrCast(*const c.WGPUTextureDataLayout, data_layout),
