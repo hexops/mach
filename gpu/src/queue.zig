@@ -10,7 +10,7 @@ const Impl = @import("interface.zig").Impl;
 pub const Queue = opaque {
     pub const WorkDoneCallback = fn (
         status: WorkDoneStatus,
-        userdata: *anyopaque,
+        userdata: ?*anyopaque,
     ) callconv(.C) void;
 
     pub const WorkDoneStatus = enum(u32) {
@@ -29,7 +29,7 @@ pub const Queue = opaque {
         Impl.queueCopyTextureForBrowser(queue, source, destination, copy_size, options);
     }
 
-    pub inline fn onSubmittedWorkDone(queue: *Queue, signal_value: u64, callback: Queue.WorkDoneCallback, userdata: *anyopaque) void {
+    pub inline fn onSubmittedWorkDone(queue: *Queue, signal_value: u64, callback: Queue.WorkDoneCallback, userdata: ?*anyopaque) void {
         Impl.queueOnSubmittedWorkDone(queue, signal_value, callback, userdata);
     }
 

@@ -19,7 +19,7 @@ pub const ShaderModule = opaque {
         source: [*:0]const u8,
     };
 
-    pub inline fn getCompilationInfo(shader_module: *ShaderModule, callback: CompilationInfoCallback, userdata: *anyopaque) void {
+    pub inline fn getCompilationInfo(shader_module: *ShaderModule, callback: CompilationInfoCallback, userdata: ?*anyopaque) void {
         Impl.shaderModuleGetCompilationInfo(shader_module, callback, userdata);
     }
 

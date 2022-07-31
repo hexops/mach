@@ -57,7 +57,7 @@ pub const Adapter = opaque {
         return Impl.adapterHasFeature(adapter, feature);
     }
 
-    pub inline fn requestDevice(adapter: *Adapter, descriptor: ?*const Device.Descriptor, callback: RequestDeviceCallback, userdata: *anyopaque) void {
+    pub inline fn requestDevice(adapter: *Adapter, descriptor: ?*const Device.Descriptor, callback: RequestDeviceCallback, userdata: ?*anyopaque) void {
         Impl.adapterRequestDevice(adapter, descriptor, callback, userdata);
     }
 
