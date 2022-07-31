@@ -1094,8 +1094,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn textureDestroy(texture: *gpu.Texture) void {
-        _ = texture;
-        unreachable;
+        procs.textureDestroy.?(@ptrCast(c.WGPUTexture, texture));
     }
 
     pub inline fn textureGetDepthOrArrayLayers(texture: *gpu.Texture) u32 {
