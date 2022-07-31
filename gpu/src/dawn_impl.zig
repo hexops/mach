@@ -801,10 +801,11 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderBundleEncoderDrawIndirect(render_bundle_encoder: *gpu.RenderBundleEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) void {
-        _ = render_bundle_encoder;
-        _ = indirect_buffer;
-        _ = indirect_offset;
-        unreachable;
+        procs.renderBundleEncoderDrawIndirect.?(
+            @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
+            @ptrCast(c.WGPUBuffer, indirect_buffer),
+            indirect_offset,
+        );
     }
 
     pub inline fn renderBundleEncoderFinish(render_bundle_encoder: *gpu.RenderBundleEncoder, descriptor: ?*const gpu.RenderBundle.Descriptor) void {
