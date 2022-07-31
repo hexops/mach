@@ -42,14 +42,16 @@ pub const RenderPassTimestampWrite = extern struct {
 };
 
 pub const RequestAdapterOptions = extern struct {
-    next_in_chain: *const ChainedStruct,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    next_in_chain: ?*const ChainedStruct = null,
     compatible_surface: ?*Surface,
     power_preference: PowerPreference = .undef,
     force_fallback_adapter: bool = false,
 };
 
 pub const ComputePassDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     timestamp_write_count: u32 = 0,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
@@ -57,7 +59,8 @@ pub const ComputePassDescriptor = extern struct {
 };
 
 pub const RenderPassDescriptor = extern struct {
-    next_in_chain: *const ChainedStruct,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     color_attachment_count: u32,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
