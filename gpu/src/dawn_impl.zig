@@ -290,12 +290,13 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn commandEncoderWriteBuffer(command_encoder: *gpu.CommandEncoder, buffer: *gpu.Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
-        _ = command_encoder;
-        _ = buffer;
-        _ = buffer_offset;
-        _ = data;
-        _ = size;
-        unreachable;
+        procs.commandEncoderWriteBuffer.?(
+            @ptrCast(c.WGPUCommandEncoder, command_encoder),
+            @ptrCast(c.WGPUBuffer, buffer),
+            buffer_offset,
+            data,
+            size,
+        );
     }
 
     pub inline fn commandEncoderWriteTimestamp(command_encoder: *gpu.CommandEncoder, query_set: *gpu.QuerySet, query_index: u32) void {
