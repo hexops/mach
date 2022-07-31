@@ -4,6 +4,7 @@ const Device = @import("device.zig").Device;
 const FeatureName = @import("types.zig").FeatureName;
 const SupportedLimits = @import("types.zig").SupportedLimits;
 const RequestDeviceStatus = @import("types.zig").RequestDeviceStatus;
+const BackendType = @import("types.zig").BackendType;
 const RequestDeviceCallback = @import("callbacks.zig").RequestDeviceCallback;
 const Impl = @import("interface.zig").Impl;
 
@@ -33,7 +34,7 @@ pub const Adapter = opaque {
         name: [*:0]const u8,
         driver_description: [*:0]const u8,
         adapter_type: Type,
-        backend_type: Type,
+        backend_type: BackendType,
     };
 
     pub inline fn createDevice(adapter: *Adapter, descriptor: ?*const Device.Descriptor) ?*Device {

@@ -66,6 +66,7 @@ pub const RenderPassDescriptor = extern struct {
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     color_attachments: ?[*]const RenderPassColorAttachment,
     depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment,
+    // TODO: file a bug on Dawn, should this be nullable? Seems very likely it should
     occlusion_query_set: ?*QuerySet,
     timestamp_write_count: u32 = 0,
     // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
