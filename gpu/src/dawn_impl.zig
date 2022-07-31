@@ -461,9 +461,10 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn deviceCreateQuerySet(device: *gpu.Device, descriptor: *const gpu.QuerySet.Descriptor) *gpu.QuerySet {
-        _ = device;
-        _ = descriptor;
-        unreachable;
+        return @ptrCast(*gpu.QuerySet, procs.deviceCreateQuerySet.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUQuerySetDescriptor, descriptor),
+        ));
     }
 
     pub inline fn deviceCreateRenderBundleEncoder(device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoder.Descriptor) *gpu.RenderBundleEncoder {
