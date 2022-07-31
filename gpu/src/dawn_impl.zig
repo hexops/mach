@@ -1012,14 +1012,15 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn renderPassEncoderSetViewport(render_pass_encoder: *gpu.RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
-        _ = render_pass_encoder;
-        _ = x;
-        _ = y;
-        _ = width;
-        _ = height;
-        _ = min_depth;
-        _ = max_depth;
-        unreachable;
+        procs.renderPassEncoderSetViewport.?(
+            @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
+            x,
+            y,
+            width,
+            height,
+            min_depth,
+            max_depth,
+        );
     }
 
     pub inline fn renderPassEncoderWriteTimestamp(render_pass_encoder: *gpu.RenderPassEncoder, query_set: *gpu.QuerySet, query_index: u32) void {
