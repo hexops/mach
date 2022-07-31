@@ -436,12 +436,14 @@ pub const ShaderStageFlags = packed struct {
 };
 
 pub const ChainedStruct = extern struct {
-    next: *const ChainedStruct,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    next: ?*const ChainedStruct = null,
     s_type: SType,
 };
 
 pub const ChainedStructOut = extern struct {
-    next: *ChainedStructOut,
+    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    next: ?*ChainedStructOut = null,
     s_type: SType,
 };
 
