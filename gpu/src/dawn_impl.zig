@@ -606,8 +606,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn externalTextureDestroy(external_texture: *gpu.ExternalTexture) void {
-        _ = external_texture;
-        unreachable;
+        procs.externalTextureDestroy.?(@ptrCast(c.WGPUExternalTexture, external_texture));
     }
 
     pub inline fn externalTextureSetLabel(external_texture: *gpu.ExternalTexture, label: [*:0]const u8) void {
