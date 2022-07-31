@@ -72,7 +72,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "computePassEncoderSetBindGroup", fn (compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderSetLabel", fn (compute_pass_encoder: *gpu.ComputePassEncoder, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderSetPipeline", fn (compute_pass_encoder: *gpu.ComputePassEncoder, pipeline: *gpu.ComputePipeline) callconv(.Inline) void);
-    assertDecl(T, "computePassEncoderWriteTimestamp", fn (compute_pass_encoder: *gpu.ComputePassEncoder, pipeline: *gpu.ComputePipeline) callconv(.Inline) void);
+    assertDecl(T, "computePassEncoderWriteTimestamp", fn (compute_pass_encoder: *gpu.ComputePassEncoder, query_set: *gpu.QuerySet, query_index: u32) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderReference", fn (compute_pass_encoder: *gpu.ComputePassEncoder) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderRelease", fn (compute_pass_encoder: *gpu.ComputePassEncoder) callconv(.Inline) void);
     assertDecl(T, "computePipelineGetBindGroupLayout", fn (compute_pipeline: *gpu.ComputePipeline, group_index: u32) callconv(.Inline) *gpu.BindGroupLayout);
@@ -514,8 +514,8 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuComputePassEncoderWriteTimestamp(WGPUComputePassEncoder computePassEncoder, WGPUQuerySet querySet, uint32_t queryIndex);
-        export fn wgpuComputePassEncoderWriteTimestamp(compute_pass_encoder: *gpu.ComputePassEncoder, pipeline: *gpu.ComputePipeline) void {
-            T.computePassEncoderWriteTimestamp(compute_pass_encoder, pipeline);
+        export fn wgpuComputePassEncoderWriteTimestamp(compute_pass_encoder: *gpu.ComputePassEncoder, query_set: *gpu.QuerySet, query_index: u32) void {
+            T.computePassEncoderWriteTimestamp(compute_pass_encoder, query_set, query_index);
         }
 
         // WGPU_EXPORT void wgpuComputePassEncoderReference(WGPUComputePassEncoder computePassEncoder);
@@ -1579,9 +1579,10 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn computePassEncoderWriteTimestamp(compute_pass_encoder: *gpu.ComputePassEncoder, pipeline: *gpu.ComputePipeline) void {
+    pub inline fn computePassEncoderWriteTimestamp(compute_pass_encoder: *gpu.ComputePassEncoder, query_set: *gpu.QuerySet, query_index: u32) void {
         _ = compute_pass_encoder;
-        _ = pipeline;
+        _ = query_set;
+        _ = query_index;
         unreachable;
     }
 
