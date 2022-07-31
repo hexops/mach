@@ -718,11 +718,12 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn queueOnSubmittedWorkDone(queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: *anyopaque) void {
-        _ = queue;
-        _ = signal_value;
-        _ = callback;
-        _ = userdata;
-        unreachable;
+        procs.queueOnSubmittedWorkDone.?(
+            @ptrCast(c.WGPUQueue, queue),
+            signal_value,
+            @ptrCast(c.WGPUQueueWorkDoneCallback, callback),
+            userdata,
+        );
     }
 
     pub inline fn queueSetLabel(queue: *gpu.Queue, label: [*:0]const u8) void {
