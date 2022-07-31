@@ -4,16 +4,19 @@ const c = @import("c.zig").c;
 const glfw = @import("glfw");
 const gpu = @import("gpu");
 
+pub const GPUInterface = gpu.dawn.Interface;
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var allocator = gpa.allocator();
 
+    gpu.Impl.init();
     const setup = try sample_utils.setup(allocator);
     const framebuffer_size = try setup.window.getFramebufferSize();
 
     const window_data = try allocator.create(WindowData);
     window_data.* = .{
-        .surface = null,
+        .surface = setup.surface,
         .swap_chain = null,
         .swap_chain_format = undefined,
         .current_desc = undefined,
@@ -21,43 +24,16 @@ pub fn main() !void {
     };
     setup.window.setUserPointer(window_data);
 
-    // If targeting OpenGL, we can't use the newer WGPUSurface API. Instead, we need to use the
-    // older Dawn-specific API. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
-    const use_legacy_api = setup.backend_type == .opengl or setup.backend_type == .opengles;
-    var descriptor: gpu.SwapChain.Descriptor = undefined;
-    if (!use_legacy_api) {
-        window_data.swap_chain_format = .bgra8_unorm;
-        descriptor = .{
-            .label = "basic swap chain",
-            .usage = .{ .render_attachment = true },
-            .format = window_data.swap_chain_format,
-            .width = framebuffer_size.width,
-            .height = framebuffer_size.height,
-            .present_mode = .fifo,
-            .implementation = 0,
-        };
-        window_data.surface = sample_utils.createSurfaceForWindow(
-            &setup.native_instance,
-            setup.window,
-            comptime sample_utils.detectGLFWOptions(),
-        );
-    } else {
-        const binding = c.machUtilsCreateBinding(@enumToInt(setup.backend_type), @ptrCast(*c.GLFWwindow, setup.window.handle), @ptrCast(c.WGPUDevice, setup.device.ptr));
-        if (binding == null) {
-            @panic("failed to create Dawn backend binding");
-        }
-        descriptor = std.mem.zeroes(gpu.SwapChain.Descriptor);
-        descriptor.implementation = c.machUtilsBackendBinding_getSwapChainImplementation(binding);
-        window_data.swap_chain = setup.device.nativeCreateSwapChain(null, &descriptor);
+    window_data.swap_chain_format = .bgra8_unorm;
+    const descriptor = gpu.SwapChain.Descriptor{
+        .label = "basic swap chain",
+        .usage = .{ .render_attachment = true },
+        .format = window_data.swap_chain_format,
+        .width = framebuffer_size.width,
+        .height = framebuffer_size.height,
+        .present_mode = .fifo,
+    };
 
-        window_data.swap_chain_format = @intToEnum(gpu.Texture.Format, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
-        window_data.swap_chain.?.configure(
-            window_data.swap_chain_format,
-            .{ .render_attachment = true },
-            framebuffer_size.width,
-            framebuffer_size.height,
-        );
-    }
     window_data.current_desc = descriptor;
     window_data.target_desc = descriptor;
 
@@ -74,8 +50,11 @@ pub fn main() !void {
         \\ }
     ;
     const vs_module = setup.device.createShaderModule(&.{
+        .next_in_chain = @ptrCast(*const gpu.ChainedStruct, &gpu.ShaderModule.WGSLDescriptor{
+            .chain = .{ .next = null, .s_type = .shader_module_wgsl_descriptor },
+            .source = vs,
+        }),
         .label = "my vertex shader",
-        .code = .{ .wgsl = vs },
     });
 
     const fs =
@@ -84,33 +63,32 @@ pub fn main() !void {
         \\ }
     ;
     const fs_module = setup.device.createShaderModule(&.{
+        .next_in_chain = @ptrCast(*const gpu.ChainedStruct, &gpu.ShaderModule.WGSLDescriptor{
+            .chain = .{ .next = null, .s_type = .shader_module_wgsl_descriptor },
+            .source = fs,
+        }),
         .label = "my fragment shader",
-        .code = .{ .wgsl = fs },
     });
 
     // Fragment state
     const blend = gpu.BlendState{
         .color = .{
-            .operation = .add,
-            .src_factor = .one,
             .dst_factor = .one,
         },
         .alpha = .{
-            .operation = .add,
-            .src_factor = .one,
             .dst_factor = .one,
         },
     };
     const color_target = gpu.ColorTargetState{
         .format = window_data.swap_chain_format,
         .blend = &blend,
-        .write_mask = gpu.ColorWriteMask.all,
+        .write_mask = gpu.ColorWriteMaskFlags.all,
     };
     const fragment = gpu.FragmentState{
         .module = fs_module,
         .entry_point = "main",
-        .targets = &.{color_target},
-        .constants = null,
+        .target_count = 1,
+        .targets = &[_]gpu.ColorTargetState{color_target},
     };
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
         .fragment = &fragment,
@@ -119,19 +97,9 @@ pub fn main() !void {
         .vertex = .{
             .module = vs_module,
             .entry_point = "main",
-            .buffers = null,
         },
-        .multisample = .{
-            .count = 1,
-            .mask = 0xFFFFFFFF,
-            .alpha_to_coverage_enabled = false,
-        },
-        .primitive = .{
-            .front_face = .ccw,
-            .cull_mode = .none,
-            .topology = .triangle_list,
-            .strip_index_format = .none,
-        },
+        .multisample = .{},
+        .primitive = .{},
     };
     const pipeline = setup.device.createRenderPipeline(&pipeline_descriptor);
 
@@ -161,8 +129,8 @@ pub fn main() !void {
 }
 
 const WindowData = struct {
-    surface: ?gpu.Surface,
-    swap_chain: ?gpu.SwapChain,
+    surface: ?*gpu.Surface,
+    swap_chain: ?*gpu.SwapChain,
     swap_chain_format: gpu.Texture.Format,
     current_desc: gpu.SwapChain.Descriptor,
     target_desc: gpu.SwapChain.Descriptor,
@@ -170,24 +138,16 @@ const WindowData = struct {
 
 const FrameParams = struct {
     window: glfw.Window,
-    device: gpu.Device,
-    pipeline: gpu.RenderPipeline,
-    queue: gpu.Queue,
+    device: *gpu.Device,
+    pipeline: *gpu.RenderPipeline,
+    queue: *gpu.Queue,
 };
 
 fn frame(params: FrameParams) !void {
     try glfw.pollEvents();
     const pl = params.window.getUserPointer(WindowData).?;
-    if (pl.swap_chain == null or !pl.current_desc.equal(&pl.target_desc)) {
-        const use_legacy_api = pl.surface == null;
-        if (!use_legacy_api) {
-            pl.swap_chain = params.device.nativeCreateSwapChain(pl.surface, &pl.target_desc);
-        } else pl.swap_chain.?.configure(
-            pl.swap_chain_format,
-            .{ .render_attachment = true },
-            pl.target_desc.width,
-            pl.target_desc.height,
-        );
+    if (pl.swap_chain == null or !std.meta.eql(pl.current_desc, pl.target_desc)) {
+        pl.swap_chain = params.device.createSwapChain(pl.surface, &pl.target_desc);
         pl.current_desc = pl.target_desc;
     }
 
@@ -201,9 +161,11 @@ fn frame(params: FrameParams) !void {
     };
 
     const encoder = params.device.createCommandEncoder(null);
-    const render_pass_info = gpu.RenderPassEncoder.Descriptor{
-        .color_attachments = &.{color_attachment},
+    const render_pass_info = gpu.RenderPassDescriptor{
+        .color_attachment_count = 1,
+        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
         .depth_stencil_attachment = null,
+        .occlusion_query_set = null,
     };
     const pass = encoder.beginRenderPass(&render_pass_info);
     pass.setPipeline(params.pipeline);
@@ -214,7 +176,7 @@ fn frame(params: FrameParams) !void {
     var command = encoder.finish(null);
     encoder.release();
 
-    params.queue.submit(&.{command});
+    params.queue.submit(1, &[_]*gpu.CommandBuffer{command});
     command.release();
     pl.swap_chain.?.present();
     back_buffer_view.release();

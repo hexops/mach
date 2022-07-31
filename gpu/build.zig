@@ -13,20 +13,18 @@ pub fn build(b: *std.build.Builder) void {
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&testStep(b, mode, target, .{ .gpu_dawn_options = gpu_dawn_options }).step);
 
-    //  const example = b.addExecutable("gpu-hello-triangle", "examples/main.zig");
-    // example.setBuildMode(mode);
-    //example.setTarget(target);
-    //  example.linkLibC();
-    // example.addPackagePath("gpu", "src/main.zig");
-    //   example.addPackagePath("glfw", "libs/mach-glfw/src/main.zig");
-    // link(b, example, .{ .gpu_dawn_options = gpu_dawn_options });
+    const example = b.addExecutable("gpu-hello-triangle", "examples/main.zig");
+    example.setBuildMode(mode);
+    example.setTarget(target);
+    example.addPackage(pkg);
+    example.addPackage(glfw.pkg);
+    link(b, example, .{ .gpu_dawn_options = gpu_dawn_options });
+    example.install();
 
-    // example.install();
-
-    // const example_run_cmd = example.run();
-    // example_run_cmd.step.dependOn(b.getInstallStep());
-    // const example_run_step = b.step("run-example", "Run the example");
-    // example_run_step.dependOn(&example_run_cmd.step);
+    const example_run_cmd = example.run();
+    example_run_cmd.step.dependOn(b.getInstallStep());
+    const example_run_step = b.step("run-example", "Run the example");
+    example_run_step.dependOn(&example_run_cmd.step);
 }
 
 pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.RunStep {
