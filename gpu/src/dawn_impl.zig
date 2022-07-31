@@ -667,8 +667,7 @@ pub const Interface = gpu.Interface(struct {
     }
 
     pub inline fn querySetGetType(query_set: *gpu.QuerySet) gpu.QueryType {
-        _ = query_set;
-        unreachable;
+        return @intToEnum(gpu.QueryType, procs.querySetGetType.?(@ptrCast(c.WGPUQuerySet, query_set)));
     }
 
     pub inline fn querySetSetLabel(query_set: *gpu.QuerySet, label: [*:0]const u8) void {
