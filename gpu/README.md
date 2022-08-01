@@ -131,21 +131,21 @@ The rules for translating `webgpu.h` are as follows:
   * We could use "_none_", but "BindingType none" and "BindingType not specified" clearly have non-equal meanings.
   * As a result of all this, we translate _"undefined"_ in WebGPU to "undef" in Zig: it has no overlap with the reserved _undefined_ keyword, and distinguishes its meaning.
 
-### Quality of life improvements
+## Quality of life improvements
 
 We make the following quality of life improvements.
 
-#### Flag sets
+### Flag sets
 
 TODO: explain it
 
-#### Nullability
+### Nullability
 
 * `label: ?[*:0]const u8` fields have a default `null` value added to them.
 * Where a struct has a slice `_count` field, with an optional pointer, if the `_count` field defaults to zero we also enforce the optional pointer defaults to `null`. Specifically we do this for:
 * `next_in_chain: *const ChainedStruct` fields, which enable optional implementation-specific extensions to the WebGPU API, default to `null`.
 
-#### Slice helpers
+### Slice helpers
 
 Some WebGPU APIs expose slices as pointers and lengths, we either wrap these to provide a slice or alter the method directly to provide a slice (if little overhead.) The original C-style API can always be accessed via the `gpu.Impl` type in any case.
 
@@ -153,7 +153,7 @@ The slice helpers are:
 
 * `Adapter.enumerateFeaturesOwned`
 
-#### Typed callbacks
+### Typed callbacks
 
 Most WebGPU callbacks provide a way to provide a `userdata: *anyopaque` pointer to the callback for context. We alter these APIs to expose a typed context pointer instead (again, the original API is always available via the `gpu.Impl` type should you want it):
 
@@ -169,7 +169,45 @@ Most WebGPU callbacks provide a way to provide a `userdata: *anyopaque` pointer 
 * `Device.setLoggingCallback`
 * `Device.setUncapturedErrorCallback`
 
-#### Others
+### next_in_chain extension type safety
+
+WebGPU exposes struct types which are extendable arbitrarily, often by implementation-specific extensions. For example:
+
+```zig
+const extension = gpu.Surface.DescriptorFromWindowsHWND{
+  .chain = gpu.ChainedStruct{.next = null, .s_type = .surface_descriptor_from_windows_hwnd},
+  .hinstance = foo,
+  .hwnd = bar,
+}
+const descriptor = gpu.Surface.Descriptor{
+  .next_in_chain = @ptrCast(?*const ChainedStruct, &extension),
+};
+```
+
+Here `gpu.Surface.Descriptor` is a concrete type. The `next_in_chain` field is set to an arbitrary pointer which follows the `gpu.ChainedStruct` pattern: it must begin with a `gpu.ChainedStruct` where the `s_type` identifies which fields may follow after, and `.next` could theoretically chain more extensions on too.
+
+Complexity aside, `next_in_chain` is not type safe! It cannot be, because such an extension could be implementation-specific. To make this safer, we instead change the `next_in_chain` field type to be a union, where one option is the type-unsafe `generic` pointer, and the other options are known extensions:
+
+```zig
+pub const Extension = extern union {
+    generic: ?*const ChainedStruct,
+    from_windows_hwnd: *const DescriptorFromWindowsHWND,
+    // ...
+};
+```
+
+Additionally we initialize `.chain` with a default value, making our earlier snippet look like this in most cases:
+
+```zig
+const descriptor = gpu.Surface.Descriptor{
+  .next_in_chain = .{.from_windows_hwnd = &.{
+    .hinstance = foo,
+    .hwnd = bar,
+  }},
+}
+```
+
+### Others
 
 There may be other opportunities for helpers, to improve the existing APIs, or add utility APIs on top of the existing APIs. If you find one, please open an issue we'd love to hear it!
 
@@ -189,5 +227,4 @@ The following are definitive candidates for helpers we haven't implemented yet:
 Descriptors `next_in_chain` extensions could be more type-safe, at least:
 
 * `gpu.ShaderModule.Descriptor` (WGSL/SPIRV divide simplification)
-* `gpu.Surface.Descriptor` (Xlib,windows_hwnd, etc.)
 * Others mentioned after the bug we filed on Dawn was fixed (consult dawn.json now)
