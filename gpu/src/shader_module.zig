@@ -5,19 +5,25 @@ const CompilationInfo = @import("types.zig").CompilationInfo;
 const Impl = @import("interface.zig").Impl;
 
 pub const ShaderModule = opaque {
+    pub const Extension = extern union {
+        generic: ?*const ChainedStruct,
+        spirv_descriptor: ?*const SPIRVDescriptor,
+        wgsl_descriptor: ?*const WGSLDescriptor,
+    };
+
     pub const Descriptor = extern struct {
-        next_in_chain: ?*const ChainedStruct = null,
+        next_in_chain: Extension = .{ .generic = null },
         label: ?[*:0]const u8 = null,
     };
 
     pub const SPIRVDescriptor = extern struct {
-        chain: ChainedStruct,
+        chain: ChainedStruct = .{ .next = null, .s_type = .shader_module_spirv_descriptor },
         code_size: u32,
         code: [*]const u32,
     };
 
     pub const WGSLDescriptor = extern struct {
-        chain: ChainedStruct,
+        chain: ChainedStruct = .{ .next = null, .s_type = .shader_module_wgsl_descriptor },
         source: [*:0]const u8,
     };
 

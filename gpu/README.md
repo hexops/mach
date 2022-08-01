@@ -223,8 +223,4 @@ The following are definitive candidates for helpers we haven't implemented yet:
 * `gpu.RenderBundleEncoder.setBindGroup` (slice param)
 * `gpu.RenderPassEncoder.executeBundles` (slice param)
 * `gpu.RenderPassEncoder.setBindGroup` (slice param)
-
-Descriptors `next_in_chain` extensions could be more type-safe, at least:
-
-* `gpu.ShaderModule.Descriptor` (WGSL/SPIRV divide simplification)
-* Others mentioned after the bug we filed on Dawn was fixed (consult dawn.json now)
+* Other `next_in_chain` extensions (look at dawn.json after the bug to get this documented was fixed)
