@@ -92,7 +92,7 @@ pub const Device = opaque {
                     status,
                     compute_pipeline,
                     message,
-                    if (Context == void) {} else @ptrCast(Context, userdata),
+                    if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
                 );
             }
         };
@@ -150,7 +150,7 @@ pub const Device = opaque {
                     status,
                     pipeline,
                     message,
-                    if (Context == void) {} else @ptrCast(Context, userdata),
+                    if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
                 );
             }
         };
@@ -209,7 +209,7 @@ pub const Device = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(typ: ErrorType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                callback(typ, message, if (Context == void) {} else @ptrCast(Context, userdata));
+                callback(typ, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)));
             }
         };
         return Impl.devicePopErrorScope(device, Helper.callback, if (Context == void) null else context);
@@ -228,7 +228,7 @@ pub const Device = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(reason: LostReason, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                callback(reason, message, if (Context == void) {} else @ptrCast(Context, userdata));
+                callback(reason, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)));
             }
         };
         Impl.deviceSetDeviceLostCallback(device, Helper.callback, if (Context == void) null else context);
@@ -247,7 +247,7 @@ pub const Device = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(typ: LoggingType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                callback(typ, message, if (Context == void) {} else @ptrCast(Context, userdata));
+                callback(typ, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)));
             }
         };
         Impl.deviceSetLoggingCallback(device, Helper.callback, if (Context == void) null else context);
@@ -262,7 +262,7 @@ pub const Device = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(typ: ErrorType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                callback(typ, message, if (Context == void) {} else @ptrCast(Context, userdata));
+                callback(typ, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)));
             }
         };
         Impl.deviceSetUncapturedErrorCallback(device, Helper.callback, if (Context == void) null else context);
