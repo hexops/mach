@@ -38,7 +38,7 @@ pub const Instance = opaque {
                     status,
                     adapter,
                     message,
-                    if (Context == void) {} else @ptrCast(Context, userdata),
+                    if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
                 );
             }
         };

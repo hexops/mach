@@ -100,7 +100,7 @@ pub const Buffer = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(status: MapAsyncStatus, userdata: ?*anyopaque) callconv(.C) void {
-                callback(status, if (Context == void) {} else @ptrCast(Context, userdata));
+                callback(status, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)));
             }
         };
         Impl.bufferMapAsync(buffer, mode, offset, size, Helper.callback, if (Context == void) null else context);

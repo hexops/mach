@@ -88,7 +88,7 @@ pub const Adapter = opaque {
                     status,
                     device,
                     message,
-                    if (Context == void) {} else @ptrCast(Context, userdata),
+                    if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
                 );
             }
         };
