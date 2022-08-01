@@ -7,7 +7,7 @@ const objc = @cImport({
     @cInclude("objc/message.h");
 });
 
-fn printUnhandledErrorCallback(typ: gpu.ErrorType, message: [*:0]const u8, _: ?*anyopaque) callconv(.C) void {
+inline fn printUnhandledErrorCallback(typ: gpu.ErrorType, message: [*:0]const u8, _: void) void {
     switch (typ) {
         .validation => std.debug.print("gpu: validation error: {s}\n", .{message}),
         .out_of_memory => std.debug.print("gpu: out of memory: {s}\n", .{message}),
@@ -60,14 +60,13 @@ const RequestAdapterResponse = struct {
     message: ?[*:0]const u8,
 };
 
-fn requestAdapterCallback(
+inline fn requestAdapterCallback(
     status: gpu.RequestAdapterStatus,
     adapter: *gpu.Adapter,
     message: ?[*:0]const u8,
-    userdata: ?*anyopaque,
-) callconv(.C) void {
-    const response = @ptrCast(*?RequestAdapterResponse, @alignCast(@alignOf(*?RequestAdapterResponse), userdata));
-    response.* = RequestAdapterResponse{
+    context: *?RequestAdapterResponse,
+) void {
+    context.* = RequestAdapterResponse{
         .status = status,
         .adapter = adapter,
         .message = message,
@@ -98,7 +97,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
         .compatible_surface = surface,
         .power_preference = .undef,
         .force_fallback_adapter = false,
-    }, requestAdapterCallback, &response);
+    }, &response, requestAdapterCallback);
     if (response.?.status != .success) {
         std.debug.print("failed to create GPU adapter: {s}\n", .{response.?.message});
         std.process.exit(1);
@@ -121,7 +120,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
         std.process.exit(1);
     }
 
-    device.?.setUncapturedErrorCallback(printUnhandledErrorCallback, null);
+    device.?.setUncapturedErrorCallback({}, printUnhandledErrorCallback);
     return Setup{
         .instance = instance.?,
         .adapter = response.?.adapter,
@@ -171,14 +170,16 @@ pub fn createSurfaceForWindow(
     comptime glfw_options: glfw.BackendOptions,
 ) *gpu.Surface {
     const glfw_native = glfw.Native(glfw_options);
-    const descriptor = if (glfw_options.win32) gpu.Surface.DescriptorFromWindowsHWND{
-        .chain = .{ .s_type = .surface_descriptor_from_windows_hwnd },
-        .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
-        .hwnd = glfw_native.getWin32Window(window),
-    } else if (glfw_options.x11) gpu.Surface.DescriptorFromXlibWindow{
-        .chain = .{ .s_type = .surface_descriptor_from_xlib_window },
-        .display = glfw_native.getX11Display(),
-        .window = glfw_native.getX11Window(window),
+    const extension = if (glfw_options.win32) gpu.Surface.Extension{
+        .from_windows_hwnd = &.{
+            .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
+            .hwnd = glfw_native.getWin32Window(window),
+        },
+    } else if (glfw_options.x11) gpu.Surface.Extension{
+        .from_xlib_window = &.{
+            .display = glfw_native.getX11Display(),
+            .window = glfw_native.getX11Window(window),
+        },
     } else if (glfw_options.cocoa) blk: {
         const ns_window = glfw_native.getCocoaWindow(window);
         const ns_view = msgSend(ns_window, "contentView", .{}, *anyopaque); // [nsWindow contentView]
@@ -193,16 +194,13 @@ pub fn createSurfaceForWindow(
         const scale_factor = msgSend(ns_window, "backingScaleFactor", .{}, f64); // [ns_window backingScaleFactor]
         msgSend(layer.?, "setContentsScale:", .{scale_factor}, void); // [layer setContentsScale:scale_factor]
 
-        break :blk gpu.Surface.DescriptorFromMetalLayer{
-            .chain = .{ .s_type = .surface_descriptor_from_metal_layer },
-            .layer = layer.?,
-        };
+        break :blk gpu.Surface.Extension{ .from_metal_layer = &.{ .layer = layer.? } };
     } else if (glfw_options.wayland) {
         @panic("TODO: this example does not support Wayland");
     } else unreachable;
 
     return instance.createSurface(&gpu.Surface.Descriptor{
-        .next_in_chain = @ptrCast(*const gpu.ChainedStruct, &descriptor),
+        .next_in_chain = extension,
     });
 }
 

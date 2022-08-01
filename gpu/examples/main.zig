@@ -50,10 +50,9 @@ pub fn main() !void {
         \\ }
     ;
     const vs_module = setup.device.createShaderModule(&.{
-        .next_in_chain = @ptrCast(*const gpu.ChainedStruct, &gpu.ShaderModule.WGSLDescriptor{
-            .chain = .{ .next = null, .s_type = .shader_module_wgsl_descriptor },
+        .next_in_chain = .{ .wgsl_descriptor = &.{
             .source = vs,
-        }),
+        } },
         .label = "my vertex shader",
     });
 
@@ -63,10 +62,9 @@ pub fn main() !void {
         \\ }
     ;
     const fs_module = setup.device.createShaderModule(&.{
-        .next_in_chain = @ptrCast(*const gpu.ChainedStruct, &gpu.ShaderModule.WGSLDescriptor{
-            .chain = .{ .next = null, .s_type = .shader_module_wgsl_descriptor },
+        .next_in_chain = .{ .wgsl_descriptor = &.{
             .source = fs,
-        }),
+        } },
         .label = "my fragment shader",
     });
 
