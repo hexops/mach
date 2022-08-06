@@ -29,7 +29,6 @@ pub fn build(b: *std.build.Builder) void {
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.run().step);
     test_step.dependOn(&gpu.testStep(b, mode, target, @bitCast(gpu.Options, options)).step);
-    test_step.dependOn(&gpu_dawn.testStep(b, mode, target).step);
     test_step.dependOn(&glfw.testStep(b, mode, target).step);
     test_step.dependOn(&ecs.testStep(b, mode, target).step);
     test_step.dependOn(&freetype.testStep(b, mode, target).step);
