@@ -34,6 +34,12 @@ pub const Options = struct {
     /// Fullscreen window.
     fullscreen: bool = false,
 
+    /// Headless mode.
+    ///
+    /// Caveats:
+    /// - Wayland does not support showing a window after hiding it.
+    headless: bool = false,
+
     /// Monitor synchronization modes.
     vsync: enums.VSyncMode = .double,
 
