@@ -13,7 +13,7 @@ pub fn build(b: *Builder) void {
 }
 
 pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("glfw_tests", thisDir() ++ "/src/main.zig");
+    const main_tests = b.addTestExe("glfw_tests", (comptime thisDir()) ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     link(b, main_tests, .{});
@@ -22,7 +22,7 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
 }
 
 fn testStepShared(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("glfw_tests_shared", thisDir() ++ "/src/main.zig");
+    const main_tests = b.addTestExe("glfw_tests_shared", (comptime thisDir()) ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     link(b, main_tests, .{ .shared = true });
@@ -78,7 +78,7 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
-    const main_abs = thisDir() ++ "/src/main.zig";
+    const main_abs = (comptime thisDir()) ++ "/src/main.zig";
     const lib = if (options.shared) b.addSharedLibrary("glfw", main_abs, .unversioned) else b.addStaticLibrary("glfw", main_abs);
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
