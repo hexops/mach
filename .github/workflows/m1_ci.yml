@@ -11,12 +11,9 @@ jobs:
   aarch64-macos:
     if: ${{ github.repository == 'hexops/mach' }}
     runs-on: [self-hosted, macOS, ARM64]
-    strategy:
-      matrix:
-        project: [".", "glfw", "freetype"]
     defaults:
       run:
-        shell: "/usr/bin/arch -arch arm64e /bin/bash --noprofile --norc -eo pipefail {0}"
+        shell: '/usr/bin/arch -arch arm64e /bin/bash --noprofile --norc -eo pipefail {0}'
     steps:
       - name: Clean repository submodules
         # See https://github.com/actions/checkout/issues/385
@@ -33,10 +30,8 @@ jobs:
         env:
           AGREE: true
       - name: compile all examples
-        if: matrix.project == '.'
-        run: cd ${{ matrix.project }} && zig build compile-all
+        run: zig build compile-all
         env:
           AGREE: true
       - name: compile all examples (WASM)
-        if: matrix.project == '.'
-        run: cd ${{ matrix.project }} && zig build compile-all -Dtarget=wasm32-freestanding-none
+        run: zig build compile-all -Dtarget=wasm32-freestanding-none
