@@ -663,6 +663,7 @@ fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Opti
             "libs/dawn/out/Debug/gen/src/dawn/",
             "libs/dawn/src/dawn/native/",
             "libs/dawn/src/dawn/native/utils/",
+            "libs/dawn/src/dawn/native/stream/",
         },
         .flags = flags.items,
         .excluding_contains = &.{
@@ -920,12 +921,12 @@ fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
         include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include"),
         include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
         include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
+        include("libs/dawn/include"),
     }) catch unreachable;
 
     // libtint_core_all_src
     appendLangScannedSources(b, lib, options, .{
         .rel_dirs = &.{
-            "libs/dawn/src/tint/ast/",
             "libs/dawn/src/tint",
             "libs/dawn/src/tint/diagnostic/",
             "libs/dawn/src/tint/inspector/",
