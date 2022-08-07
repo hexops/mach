@@ -89,6 +89,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateComputePipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceCreateErrorBuffer", fn (device: *gpu.Device) callconv(.Inline) *gpu.Buffer);
     assertDecl(T, "deviceCreateErrorExternalTexture", fn (device: *gpu.Device) callconv(.Inline) *gpu.ExternalTexture);
+    assertDecl(T, "deviceCreateErrorTexture", fn (device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) callconv(.Inline) *gpu.Texture);
     assertDecl(T, "deviceCreateExternalTexture", fn (device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTexture.Descriptor) callconv(.Inline) *gpu.ExternalTexture);
     assertDecl(T, "deviceCreatePipelineLayout", fn (device: *gpu.Device, pipeline_layout_descriptor: *const gpu.PipelineLayout.Descriptor) callconv(.Inline) *gpu.PipelineLayout);
     assertDecl(T, "deviceCreateQuerySet", fn (device: *gpu.Device, descriptor: *const gpu.QuerySet.Descriptor) callconv(.Inline) *gpu.QuerySet);
@@ -120,7 +121,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "externalTextureReference", fn (external_texture: *gpu.ExternalTexture) callconv(.Inline) void);
     assertDecl(T, "externalTextureRelease", fn (external_texture: *gpu.ExternalTexture) callconv(.Inline) void);
     assertDecl(T, "instanceCreateSurface", fn (instance: *gpu.Instance, descriptor: *const gpu.Surface.Descriptor) callconv(.Inline) *gpu.Surface);
-    assertDecl(T, "instanceRequestAdapter", fn (instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) callconv(.Inline) void);
+    assertDecl(T, "instanceRequestAdapter", fn (instance: *gpu.Instance, options: ?*const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "instanceReference", fn (instance: *gpu.Instance) callconv(.Inline) void);
     assertDecl(T, "instanceRelease", fn (instance: *gpu.Instance) callconv(.Inline) void);
     assertDecl(T, "pipelineLayoutSetLabel", fn (pipeline_layout: *gpu.PipelineLayout, label: [*:0]const u8) callconv(.Inline) void);
@@ -262,8 +263,7 @@ pub fn Export(comptime T: type) type {
             return T.adapterHasFeature(adapter, feature);
         }
 
-        // NOTE: descriptor is nullable, see https://bugs.chromium.org/p/dawn/issues/detail?id=1502
-        // WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor, WGPURequestDeviceCallback callback, void * userdata);
+        // WGPU_EXPORT void wgpuAdapterRequestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor /* nullable */, WGPURequestDeviceCallback callback, void * userdata);
         export fn wgpuAdapterRequestDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor, callback: gpu.RequestDeviceCallback, userdata: ?*anyopaque) void {
             T.adapterRequestDevice(adapter, descriptor, callback, userdata);
         }
@@ -590,6 +590,11 @@ pub fn Export(comptime T: type) type {
             return T.deviceCreateErrorExternalTexture(device);
         }
 
+        // WGPU_EXPORT WGPUTexture wgpuDeviceCreateErrorTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor);
+        export fn wgpuDeviceCreateErrorTexture(device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) *gpu.Texture {
+            return T.deviceCreateErrorTexture(device, descriptor);
+        }
+
         // WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, WGPUExternalTextureDescriptor const * externalTextureDescriptor);
         export fn wgpuDeviceCreateExternalTexture(device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTexture.Descriptor) *gpu.ExternalTexture {
             return T.deviceCreateExternalTexture(device, external_texture_descriptor);
@@ -745,8 +750,8 @@ pub fn Export(comptime T: type) type {
             return T.instanceCreateSurface(instance, descriptor);
         }
 
-        // WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options, WGPURequestAdapterCallback callback, void * userdata);
-        export fn wgpuInstanceRequestAdapter(instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) void {
+        // WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options /* nullable */, WGPURequestAdapterCallback callback, void * userdata);
+        export fn wgpuInstanceRequestAdapter(instance: *gpu.Instance, options: ?*const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) void {
             T.instanceRequestAdapter(instance, options, callback, userdata);
         }
 
@@ -1668,6 +1673,12 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
+    pub inline fn deviceCreateErrorTexture(device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) *gpu.Texture {
+        _ = device;
+        _ = descriptor;
+        unreachable;
+    }
+
     pub inline fn deviceCreateExternalTexture(device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTexture.Descriptor) *gpu.ExternalTexture {
         _ = device;
         _ = external_texture_descriptor;
@@ -1853,7 +1864,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn instanceRequestAdapter(instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) void {
+    pub inline fn instanceRequestAdapter(instance: *gpu.Instance, options: ?*const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) void {
         _ = instance;
         _ = options;
         _ = callback;

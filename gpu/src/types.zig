@@ -73,10 +73,7 @@ pub const RenderPassDescriptor = extern struct {
     timestamp_writes: ?[*]const RenderPassTimestampWrite = null,
 };
 
-pub const AlphaMode = enum(u32) {
-    premultiplied = 0x00000000,
-    unpremultiplied = 0x00000001,
-};
+pub const AlphaMode = enum(u32) { premultiplied = 0x00000000, unpremultiplied = 0x00000001, opaq = 0x00000002 };
 
 pub const BackendType = enum(u32) {
     nul,
@@ -193,7 +190,6 @@ pub const FeatureName = enum(u32) {
     texture_compression_etc2 = 0x00000006,
     texture_compression_astc = 0x00000007,
     indirect_first_instance = 0x00000008,
-    depth_clamping = 0x000003e8,
     dawn_shader_float16 = 0x000003e9,
     dawn_internal_usages = 0x000003ea,
     dawn_multi_planar_formats = 0x000003eb,
@@ -299,7 +295,6 @@ pub const SType = enum(u32) {
     surface_descriptor_from_windows_swap_chain_panel = 0x0000000E,
     render_pass_descriptor_max_draw_count = 0x0000000F,
     dawn_texture_internal_usage_descriptor = 0x000003E8,
-    primitive_depth_clamping_state = 0x000003E9,
     dawn_toggles_device_descriptor = 0x000003EA,
     dawn_encoder_internal_usage_descriptor = 0x000003EB,
     dawn_instance_descriptor = 0x000003EC,
@@ -532,6 +527,7 @@ pub const CopyTextureForBrowserOptions = extern struct {
     // TODO: dawn.json says length 7, does it mean array length?
     dst_transfer_function_parameters: ?*const f32,
     dst_alpha_mode: AlphaMode = .unpremultiplied,
+    internal_usage: bool = false,
 };
 
 pub const MultisampleState = extern struct {
@@ -541,11 +537,7 @@ pub const MultisampleState = extern struct {
     alpha_to_coverage_enabled: bool = false,
 };
 
-pub const PrimitiveDepthClampingState = extern struct {
-    chain: ChainedStruct,
-    clamp_depth: bool = false,
-};
-
+/// TODO: Can be chained in gpu.PrimitiveState
 pub const PrimitiveDepthClipControl = extern struct {
     chain: ChainedStruct,
     unclipped_depth: bool = false,
@@ -559,6 +551,7 @@ pub const PrimitiveState = extern struct {
     cull_mode: CullMode = .none,
 };
 
+/// TODO: Can be chained in gpu.RenderPassDescriptor
 pub const RenderPassDescriptorMaxDrawCount = extern struct {
     chain: ChainedStruct,
     max_draw_count: u64 = 50000000,

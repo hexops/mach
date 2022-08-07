@@ -107,6 +107,10 @@ pub const Device = opaque {
         return Impl.deviceCreateErrorExternalTexture(device);
     }
 
+    pub inline fn createErrorTexture(device: *Device, descriptor: *const Texture.Descriptor) *Texture {
+        return Impl.deviceCreateErrorTexture(device, descriptor);
+    }
+
     pub inline fn createExternalTexture(device: *Device, external_texture_descriptor: *const ExternalTexture.Descriptor) *ExternalTexture {
         return Impl.deviceCreateExternalTexture(device, external_texture_descriptor);
     }
