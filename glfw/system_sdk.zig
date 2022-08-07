@@ -54,7 +54,7 @@ pub const Options = struct {
 
     /// The Windows x86-64 SDK repository name.
     windows_x86_64: []const u8 = "sdk-windows-x86_64",
-    windows_x86_64_revision: []const u8 = "5acba990efd112ea0ced364f0428e6ef6e7a5541",
+    windows_x86_64_revision: []const u8 = "13dcda7fe3f1aec0fc6130527226ad7ae0f4b792",
 
     /// If true, the Builder.sysroot will set to the SDK path. This has the drawback of preventing
     /// you from including headers, libraries, etc. from outside the SDK generally. However, it can
