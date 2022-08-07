@@ -17,7 +17,7 @@ pub const Instance = opaque {
 
     pub inline fn requestAdapter(
         instance: *Instance,
-        options: *const RequestAdapterOptions,
+        options: ?*const RequestAdapterOptions,
         context: anytype,
         comptime callback: fn (
             status: RequestAdapterStatus,

@@ -463,6 +463,13 @@ pub const Interface = struct {
         return @ptrCast(*gpu.ExternalTexture, procs.deviceCreateErrorExternalTexture.?(@ptrCast(c.WGPUDevice, device)));
     }
 
+    pub inline fn deviceCreateErrorTexture(device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) *gpu.Texture {
+        return @ptrCast(*gpu.Texture, procs.deviceCreateErrorTexture.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUTextureDescriptor, descriptor),
+        ));
+    }
+
     pub inline fn deviceCreateExternalTexture(device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTexture.Descriptor) *gpu.ExternalTexture {
         return @ptrCast(*gpu.ExternalTexture, procs.deviceCreateExternalTexture.?(
             @ptrCast(c.WGPUDevice, device),
@@ -655,10 +662,10 @@ pub const Interface = struct {
         ));
     }
 
-    pub inline fn instanceRequestAdapter(instance: *gpu.Instance, options: *const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) void {
+    pub inline fn instanceRequestAdapter(instance: *gpu.Instance, options: ?*const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) void {
         procs.instanceRequestAdapter.?(
             @ptrCast(c.WGPUInstance, instance),
-            @ptrCast(*const c.WGPURequestAdapterOptions, options),
+            @ptrCast(?*const c.WGPURequestAdapterOptions, options),
             @ptrCast(c.WGPURequestAdapterCallback, callback),
             userdata,
         );
