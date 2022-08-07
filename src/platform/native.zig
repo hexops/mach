@@ -406,6 +406,7 @@ pub const Platform = struct {
             const position = platform.last_position;
             try platform.window.setMonitor(null, @intCast(i32, position.x), @intCast(i32, position.y), options.width, options.height, null);
         }
+        if (options.headless) platform.window.hide() catch {};
     }
 
     pub fn setShouldClose(platform: *Platform, value: bool) void {
