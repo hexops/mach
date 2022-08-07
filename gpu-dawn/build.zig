@@ -1130,6 +1130,7 @@ fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Optio
         "-DD3D10_ARBITRARY_HEADER_ORDERING",
         "-D_CRT_SECURE_NO_WARNINGS",
         "-DNOMINMAX",
+        include("src/dawn/zig_mingw_pthread"),
     }) catch unreachable;
 
     // absl
