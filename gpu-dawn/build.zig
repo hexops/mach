@@ -13,7 +13,7 @@ pub fn build(b: *Builder) void {
 
     // Just to demonstrate/test linking. This is not a functional example, see the mach/gpu examples
     // or Dawn C++ examples for functional example code.
-    const example = b.addExecutable("dawn-example", "src/dawn/dummy.zig");
+    const example = b.addExecutable("dawn-example", "src/main.zig");
     example.setBuildMode(mode);
     example.setTarget(target);
     link(b, example, options);
