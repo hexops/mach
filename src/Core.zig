@@ -23,12 +23,12 @@ delta_time: f32 = 0,
 delta_time_ns: u64 = 0,
 timer: Timer,
 
-device: gpu.Device,
-backend_type: gpu.Adapter.BackendType,
-swap_chain: ?gpu.SwapChain,
+device: *gpu.Device,
+backend_type: gpu.BackendType,
+swap_chain: ?*gpu.SwapChain,
 swap_chain_format: gpu.Texture.Format,
 
-surface: ?gpu.Surface,
+surface: ?*gpu.Surface,
 current_desc: gpu.SwapChain.Descriptor,
 target_desc: gpu.SwapChain.Descriptor,
 

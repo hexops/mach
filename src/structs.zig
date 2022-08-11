@@ -42,13 +42,13 @@ pub const Options = struct {
     vsync: enums.VSyncMode = .double,
 
     /// GPU features required by the application.
-    required_features: ?[]gpu.Feature = null,
+    required_features: ?[]gpu.FeatureName = null,
 
     /// GPU limits required by the application.
     required_limits: ?gpu.Limits = null,
 
     /// Whether the application has a preference for low power or high performance GPU.
-    power_preference: gpu.PowerPreference = .none,
+    power_preference: gpu.PowerPreference = .undef,
 };
 
 pub const Event = union(enum) {
