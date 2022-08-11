@@ -140,11 +140,10 @@ We make the following quality of life improvements.
 
 TODO: explain it
 
-### Nullability
+### Optionality & nullability
 
-* `label: ?[*:0]const u8` fields have a default `null` value added to them.
-* Where a struct has a slice `_count` field, with an optional pointer, if the `_count` field defaults to zero we also enforce the optional pointer defaults to `null`. Specifically we do this for:
-* `next_in_chain: *const ChainedStruct` fields, which enable optional implementation-specific extensions to the WebGPU API, default to `null`.
+* Optional values default to their zero value (either `null` or a struct constructor `.{}`) when specified as `optional` in `dawn.json`. This means things like `label`, `next_in_chain`, etc. do not need to be specified.
+* Fields representing a slice with a `_count` field are nullable pointers defaulting to null and 0 by default.
 
 ### Slice helpers
 

@@ -9,20 +9,19 @@ pub const BindGroup = opaque {
     pub const Entry = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         binding: u32,
-        buffer: ?*Buffer,
+        buffer: ?*Buffer = null,
         offset: u64 = 0,
         size: u64,
-        sampler: ?*Sampler,
-        texture_view: ?*TextureView,
+        sampler: ?*Sampler = null,
+        texture_view: ?*TextureView = null,
     };
 
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
         layout: *BindGroupLayout,
-        entry_count: u32,
-        // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-        entries: ?[*]const Entry,
+        entry_count: u32 = 0,
+        entries: ?[*]const Entry = null,
     };
 
     pub inline fn setLabel(bind_group: *BindGroup, label: [*:0]const u8) void {

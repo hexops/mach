@@ -42,33 +42,27 @@ pub const RenderPassTimestampWrite = extern struct {
 };
 
 pub const RequestAdapterOptions = extern struct {
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     next_in_chain: ?*const ChainedStruct = null,
-    compatible_surface: ?*Surface,
+    compatible_surface: ?*Surface = null,
     power_preference: PowerPreference = .undef,
     force_fallback_adapter: bool = false,
 };
 
 pub const ComputePassDescriptor = extern struct {
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     timestamp_write_count: u32 = 0,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     timestamp_writes: ?[*]const ComputePassTimestampWrite = null,
 };
 
 pub const RenderPassDescriptor = extern struct {
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    color_attachment_count: u32,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    color_attachments: ?[*]const RenderPassColorAttachment,
-    depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment,
+    color_attachment_count: u32 = 0,
+    color_attachments: ?[*]const RenderPassColorAttachment = null,
+    depth_stencil_attachment: ?[*]const RenderPassDepthStencilAttachment = null,
     occlusion_query_set: ?*QuerySet = null,
     timestamp_write_count: u32 = 0,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     timestamp_writes: ?[*]const RenderPassTimestampWrite = null,
 };
 
@@ -500,7 +494,7 @@ pub const Origin3D = extern struct {
 
 pub const CompilationMessage = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    message: ?[*:0]const u8,
+    message: ?[*:0]const u8 = null,
     type: CompilationMessageType,
     line_num: u64,
     line_pos: u64,
@@ -520,11 +514,11 @@ pub const CopyTextureForBrowserOptions = extern struct {
     needs_color_space_conversion: bool = false,
     src_alpha_mode: AlphaMode = .unpremultiplied,
     // TODO: dawn.json says length 7, does it mean array length?
-    src_transfer_function_parameters: ?*const f32,
+    src_transfer_function_parameters: ?*const f32 = null,
     // TODO: dawn.json says length 9, does it mean array length?
-    conversion_matrix: ?*const f32,
+    conversion_matrix: ?*const f32 = null,
     // TODO: dawn.json says length 7, does it mean array length?
-    dst_transfer_function_parameters: ?*const f32,
+    dst_transfer_function_parameters: ?*const f32 = null,
     dst_alpha_mode: AlphaMode = .unpremultiplied,
     internal_usage: bool = false,
 };
@@ -584,8 +578,7 @@ pub const BlendState = extern struct {
 pub const CompilationInfo = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     message_count: u32,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    messages: ?[*]const CompilationMessage,
+    messages: ?[*]const CompilationMessage = null,
 };
 
 pub const DepthStencilState = extern struct {
@@ -621,13 +614,12 @@ pub const ProgrammableStageDescriptor = extern struct {
     module: *ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32 = 0,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     constants: ?[*]const ConstantEntry = null,
 };
 
 pub const RenderPassColorAttachment = extern struct {
-    view: ?*TextureView,
-    resolve_target: ?*TextureView,
+    view: ?*TextureView = null,
+    resolve_target: ?*TextureView = null,
     load_op: LoadOp,
     store_op: StoreOp,
     /// deprecated
@@ -654,14 +646,13 @@ pub const VertexBufferLayout = extern struct {
     array_stride: u64,
     step_mode: VertexStepMode = .vertex,
     attribute_count: u32,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    attributes: ?[*]const VertexAttribute,
+    attributes: ?[*]const VertexAttribute = null,
 };
 
 pub const ColorTargetState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     format: Texture.Format,
-    blend: ?*const BlendState,
+    blend: ?*const BlendState = null,
     write_mask: ColorWriteMaskFlags = ColorWriteMaskFlags.all,
 };
 
@@ -670,10 +661,8 @@ pub const VertexState = extern struct {
     module: *ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32 = 0,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     constants: ?[*]const ConstantEntry = null,
     buffer_count: u32 = 0,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     buffers: ?[*]const VertexBufferLayout = null,
 };
 
@@ -682,11 +671,9 @@ pub const FragmentState = extern struct {
     module: *ShaderModule,
     entry_point: [*:0]const u8,
     constant_count: u32 = 0,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
     constants: ?[*]const ConstantEntry = null,
     target_count: u32,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    targets: ?[*]const ColorTargetState,
+    targets: ?[*]const ColorTargetState = null,
 };
 
 test "BackendType name" {

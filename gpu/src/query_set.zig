@@ -9,7 +9,6 @@ pub const QuerySet = opaque {
         label: ?[*:0]const u8 = null,
         type: QueryType,
         count: u32,
-        // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
         pipeline_statistics: ?[*]const PipelineStatisticName = null,
         pipeline_statistics_count: u32 = 0,
     };
