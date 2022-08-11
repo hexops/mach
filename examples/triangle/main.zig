@@ -4,18 +4,22 @@ const gpu = @import("gpu");
 
 pub const App = @This();
 
-pipeline: gpu.RenderPipeline,
-queue: gpu.Queue,
+pipeline: *gpu.RenderPipeline,
+queue: *gpu.Queue,
 
 pub fn init(app: *App, core: *mach.Core) !void {
     const vs_module = core.device.createShaderModule(&.{
+        .next_in_chain = .{ .wgsl_descriptor = &.{
+            .source = @embedFile("vert.wgsl"),
+        } },
         .label = "my vertex shader",
-        .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
 
     const fs_module = core.device.createShaderModule(&.{
+        .next_in_chain = .{ .wgsl_descriptor = &.{
+            .source = @embedFile("frag.wgsl"),
+        } },
         .label = "my fragment shader",
-        .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
 
     // Fragment state
@@ -34,12 +38,13 @@ pub fn init(app: *App, core: *mach.Core) !void {
     const color_target = gpu.ColorTargetState{
         .format = core.swap_chain_format,
         .blend = &blend,
-        .write_mask = gpu.ColorWriteMask.all,
+        .write_mask = gpu.ColorWriteMaskFlags.all,
     };
     const fragment = gpu.FragmentState{
         .module = fs_module,
         .entry_point = "main",
-        .targets = &.{color_target},
+        .target_count = 1,
+        .targets = &[_]gpu.ColorTargetState{color_target},
         .constants = null,
     };
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
@@ -60,7 +65,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
             .front_face = .ccw,
             .cull_mode = .none,
             .topology = .triangle_list,
-            .strip_index_format = .none,
+            .strip_index_format = .undef,
         },
     };
 
@@ -84,8 +89,9 @@ pub fn update(app: *App, core: *mach.Core) !void {
     };
 
     const encoder = core.device.createCommandEncoder(null);
-    const render_pass_info = gpu.RenderPassEncoder.Descriptor{
-        .color_attachments = &.{color_attachment},
+    const render_pass_info = gpu.RenderPassDescriptor{
+        .color_attachment_count = 1,
+        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
         .depth_stencil_attachment = null,
     };
     const pass = encoder.beginRenderPass(&render_pass_info);

@@ -3,17 +3,17 @@ const mach = @import("mach");
 const gpu = @import("gpu");
 const zigimg = @import("zigimg");
 
-queue: gpu.Queue,
-blur_pipeline: gpu.ComputePipeline,
-fullscreen_quad_pipeline: gpu.RenderPipeline,
-cube_texture: gpu.Texture,
-textures: [2]gpu.Texture,
-blur_params_buffer: gpu.Buffer,
-compute_constants: gpu.BindGroup,
-compute_bind_group_0: gpu.BindGroup,
-compute_bind_group_1: gpu.BindGroup,
-compute_bind_group_2: gpu.BindGroup,
-show_result_bind_group: gpu.BindGroup,
+queue: *gpu.Queue,
+blur_pipeline: *gpu.ComputePipeline,
+fullscreen_quad_pipeline: *gpu.RenderPipeline,
+cube_texture: *gpu.Texture,
+textures: [2]*gpu.Texture,
+blur_params_buffer: *gpu.Buffer,
+compute_constants: *gpu.BindGroup,
+compute_bind_group_0: *gpu.BindGroup,
+compute_bind_group_1: *gpu.BindGroup,
+compute_bind_group_2: *gpu.BindGroup,
+show_result_bind_group: *gpu.BindGroup,
 img_size: gpu.Extent3D,
 
 pub const App = @This();
@@ -35,8 +35,10 @@ pub fn init(app: *App, core: *mach.Core) !void {
     });
 
     const blur_shader_module = core.device.createShaderModule(&.{
+        .next_in_chain = .{ .wgsl_descriptor = &.{
+            .source = @embedFile("blur.wgsl"),
+        } },
         .label = "blur shader module",
-        .code = .{ .wgsl = @embedFile("blur.wgsl") },
     });
 
     const blur_pipeline_descriptor = gpu.ComputePipeline.Descriptor{
@@ -49,13 +51,17 @@ pub fn init(app: *App, core: *mach.Core) !void {
     const blur_pipeline = core.device.createComputePipeline(&blur_pipeline_descriptor);
 
     const fullscreen_quad_vs_module = core.device.createShaderModule(&.{
+        .next_in_chain = .{ .wgsl_descriptor = &.{
+            .source = @embedFile("fullscreen_textured_quad.wgsl"),
+        } },
         .label = "fullscreen quad vertex shader",
-        .code = .{ .wgsl = @embedFile("fullscreen_textured_quad.wgsl") },
     });
 
     const fullscreen_quad_fs_module = core.device.createShaderModule(&.{
+        .next_in_chain = .{ .wgsl_descriptor = &.{
+            .source = @embedFile("fullscreen_textured_quad.wgsl"),
+        } },
         .label = "fullscreen quad fragment shader",
-        .code = .{ .wgsl = @embedFile("fullscreen_textured_quad.wgsl") },
     });
 
     const blend = gpu.BlendState{
@@ -74,13 +80,14 @@ pub fn init(app: *App, core: *mach.Core) !void {
     const color_target = gpu.ColorTargetState{
         .format = core.swap_chain_format,
         .blend = &blend,
-        .write_mask = gpu.ColorWriteMask.all,
+        .write_mask = gpu.ColorWriteMaskFlags.all,
     };
 
     const fragment_state = gpu.FragmentState{
         .module = fullscreen_quad_fs_module,
         .entry_point = "frag_main",
-        .targets = &.{color_target},
+        .target_count = 1,
+        .targets = &[_]gpu.ColorTargetState{color_target},
         .constants = null,
     };
 
@@ -122,16 +129,16 @@ pub fn init(app: *App, core: *mach.Core) !void {
     };
 
     switch (img.pixels.?) {
-        .Rgba32 => |pixels| queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, zigimg.color.Rgba32, pixels),
+        .Rgba32 => |pixels| queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, pixels),
         .Rgb24 => |pixels| {
             const data = try rgb24ToRgba32(core.allocator, pixels);
             defer data.deinit(core.allocator);
-            queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, zigimg.color.Rgba32, data.Rgba32);
+            queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, data.Rgba32);
         },
         else => @panic("unsupported image color format"),
     }
 
-    var textures: [2]gpu.Texture = undefined;
+    var textures: [2]*gpu.Texture = undefined;
     for (textures) |_, i| {
         textures[i] = core.device.createTexture(&.{
             .size = img_size,
@@ -146,7 +153,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     // the shader blurs the input texture in one direction,
     // depending on whether flip value is 0 or 1
-    var flip: [2]gpu.Buffer = undefined;
+    var flip: [2]*gpu.Buffer = undefined;
     for (flip) |_, i| {
         const buffer = core.device.createBuffer(&.{
             .usage = .{ .uniform = true },
@@ -155,7 +162,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
         });
 
         const buffer_mapped = buffer.getMappedRange(u32, 0, 1);
-        buffer_mapped[0] = @intCast(u32, i);
+        buffer_mapped.?[0] = @intCast(u32, i);
         buffer.unmap();
 
         flip[i] = buffer;
@@ -168,6 +175,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     const compute_constants = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
         .layout = blur_pipeline.getBindGroupLayout(0),
+        .entry_count = 2,
         .entries = &[_]gpu.BindGroup.Entry{
             gpu.BindGroup.Entry.sampler(0, sampler),
             gpu.BindGroup.Entry.buffer(1, blur_params_buffer, 0, 8),
@@ -176,6 +184,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     const compute_bind_group_0 = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
         .layout = blur_pipeline.getBindGroupLayout(1),
+        .entry_count = 3,
         .entries = &[_]gpu.BindGroup.Entry{
             gpu.BindGroup.Entry.textureView(1, cube_texture.createView(&gpu.TextureView.Descriptor{})),
             gpu.BindGroup.Entry.textureView(2, textures[0].createView(&gpu.TextureView.Descriptor{})),
@@ -185,6 +194,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     const compute_bind_group_1 = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
         .layout = blur_pipeline.getBindGroupLayout(1),
+        .entry_count = 3,
         .entries = &[_]gpu.BindGroup.Entry{
             gpu.BindGroup.Entry.textureView(1, textures[0].createView(&gpu.TextureView.Descriptor{})),
             gpu.BindGroup.Entry.textureView(2, textures[1].createView(&gpu.TextureView.Descriptor{})),
@@ -194,6 +204,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     const compute_bind_group_2 = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
         .layout = blur_pipeline.getBindGroupLayout(1),
+        .entry_count = 3,
         .entries = &[_]gpu.BindGroup.Entry{
             gpu.BindGroup.Entry.textureView(1, textures[1].createView(&gpu.TextureView.Descriptor{})),
             gpu.BindGroup.Entry.textureView(2, textures[0].createView(&gpu.TextureView.Descriptor{})),
@@ -203,6 +214,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     const show_result_bind_group = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
         .layout = fullscreen_quad_pipeline.getBindGroupLayout(0),
+        .entry_count = 2,
         .entries = &[_]gpu.BindGroup.Entry{
             gpu.BindGroup.Entry.sampler(0, sampler),
             gpu.BindGroup.Entry.textureView(1, textures[1].createView(&gpu.TextureView.Descriptor{})),
@@ -210,7 +222,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
     });
 
     const blur_params_buffer_data = [_]u32{ filter_size, block_dimension };
-    queue.writeBuffer(blur_params_buffer, 0, u32, &blur_params_buffer_data);
+    queue.writeBuffer(blur_params_buffer, 0, &blur_params_buffer_data);
 
     app.queue = queue;
     app.blur_pipeline = blur_pipeline;
@@ -239,18 +251,18 @@ pub fn update(app: *App, core: *mach.Core) !void {
     const width: u32 = @intCast(u32, app.img_size.width);
     const height: u32 = @intCast(u32, app.img_size.height);
     compute_pass.setBindGroup(1, app.compute_bind_group_0, &.{});
-    compute_pass.dispatch(try std.math.divCeil(u32, width, block_dimension), try std.math.divCeil(u32, height, batch[1]), 1);
+    compute_pass.dispatchWorkgroups(try std.math.divCeil(u32, width, block_dimension), try std.math.divCeil(u32, height, batch[1]), 1);
 
     compute_pass.setBindGroup(1, app.compute_bind_group_1, &.{});
-    compute_pass.dispatch(try std.math.divCeil(u32, height, block_dimension), try std.math.divCeil(u32, width, batch[1]), 1);
+    compute_pass.dispatchWorkgroups(try std.math.divCeil(u32, height, block_dimension), try std.math.divCeil(u32, width, batch[1]), 1);
 
     var i: u32 = 0;
     while (i < iterations - 1) : (i += 1) {
         compute_pass.setBindGroup(1, app.compute_bind_group_2, &.{});
-        compute_pass.dispatch(try std.math.divCeil(u32, width, block_dimension), try std.math.divCeil(u32, height, batch[1]), 1);
+        compute_pass.dispatchWorkgroups(try std.math.divCeil(u32, width, block_dimension), try std.math.divCeil(u32, height, batch[1]), 1);
 
         compute_pass.setBindGroup(1, app.compute_bind_group_1, &.{});
-        compute_pass.dispatch(try std.math.divCeil(u32, height, block_dimension), try std.math.divCeil(u32, width, batch[1]), 1);
+        compute_pass.dispatchWorkgroups(try std.math.divCeil(u32, height, block_dimension), try std.math.divCeil(u32, width, batch[1]), 1);
     }
     compute_pass.end();
 
@@ -262,9 +274,12 @@ pub fn update(app: *App, core: *mach.Core) !void {
         .store_op = .store,
     };
 
-    const render_pass_descriptor = gpu.RenderPassEncoder.Descriptor{ .color_attachments = &[_]gpu.RenderPassColorAttachment{
-        color_attachment,
-    } };
+    const render_pass_descriptor = gpu.RenderPassDescriptor{
+        .color_attachment_count = 1,
+        .color_attachments = &[_]gpu.RenderPassColorAttachment{
+            color_attachment,
+        },
+    };
 
     const render_pass = encoder.beginRenderPass(&render_pass_descriptor);
     render_pass.setPipeline(app.fullscreen_quad_pipeline);

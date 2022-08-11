@@ -7,7 +7,7 @@ struct FragUniform {
 @binding(2) @group(0) var mySampler: sampler;
 @binding(3) @group(0) var myTexture: texture_2d<f32>;
 
-@stage(fragment) fn main( 
+@fragment fn main( 
     @location(0) uv: vec2<f32>,
     @interpolate(linear) @location(1) bary: vec2<f32>,
     @interpolate(flat) @location(2) triangle_index: u32,

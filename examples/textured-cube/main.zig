@@ -13,13 +13,13 @@ const UniformBufferObject = struct {
 
 var timer: mach.Timer = undefined;
 
-pipeline: gpu.RenderPipeline,
-queue: gpu.Queue,
-vertex_buffer: gpu.Buffer,
-uniform_buffer: gpu.Buffer,
-bind_group: gpu.BindGroup,
-depth_texture: ?gpu.Texture,
-depth_texture_view: gpu.TextureView,
+pipeline: *gpu.RenderPipeline,
+queue: *gpu.Queue,
+vertex_buffer: *gpu.Buffer,
+uniform_buffer: *gpu.Buffer,
+bind_group: *gpu.BindGroup,
+depth_texture: ?*gpu.Texture,
+depth_texture_view: *gpu.TextureView,
 
 pub const App = @This();
 
@@ -31,8 +31,10 @@ pub fn init(app: *App, core: *mach.Core) !void {
     });
 
     const vs_module = core.device.createShaderModule(&.{
+        .next_in_chain = .{ .wgsl_descriptor = &.{
+            .source = @embedFile("vert.wgsl"),
+        } },
         .label = "my vertex shader",
-        .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
 
     const vertex_attributes = [_]gpu.VertexAttribute{
@@ -47,8 +49,10 @@ pub fn init(app: *App, core: *mach.Core) !void {
     };
 
     const fs_module = core.device.createShaderModule(&.{
+        .next_in_chain = .{ .wgsl_descriptor = &.{
+            .source = @embedFile("frag.wgsl"),
+        } },
         .label = "my fragment shader",
-        .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
 
     const blend = gpu.BlendState{
@@ -66,12 +70,13 @@ pub fn init(app: *App, core: *mach.Core) !void {
     const color_target = gpu.ColorTargetState{
         .format = core.swap_chain_format,
         .blend = &blend,
-        .write_mask = gpu.ColorWriteMask.all,
+        .write_mask = gpu.ColorWriteMaskFlags.all,
     };
     const fragment = gpu.FragmentState{
         .module = fs_module,
         .entry_point = "main",
-        .targets = &.{color_target},
+        .target_count = 1,
+        .targets = &[_]gpu.ColorTargetState{color_target},
         .constants = null,
     };
 
@@ -87,7 +92,8 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .vertex = .{
             .module = vs_module,
             .entry_point = "main",
-            .buffers = &.{vertex_buffer_layout},
+            .buffer_count = 1,
+            .buffers = &[_]gpu.VertexBufferLayout{vertex_buffer_layout},
         },
         .primitive = .{
             .topology = .triangle_list,
@@ -106,7 +112,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .mapped_at_creation = true,
     });
     var vertex_mapped = vertex_buffer.getMappedRange(Vertex, 0, vertices.len);
-    std.mem.copy(Vertex, vertex_mapped, vertices[0..]);
+    std.mem.copy(Vertex, vertex_mapped.?, vertices[0..]);
     vertex_buffer.unmap();
 
     // Create a sampler with linear filtering for smooth interpolation.
@@ -132,11 +138,11 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .rows_per_image = @intCast(u32, img.height),
     };
     switch (img.pixels.?) {
-        .Rgba32 => |pixels| queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, zigimg.color.Rgba32, pixels),
+        .Rgba32 => |pixels| queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, pixels),
         .Rgb24 => |pixels| {
             const data = try rgb24ToRgba32(core.allocator, pixels);
             defer data.deinit(core.allocator);
-            queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, zigimg.color.Rgba32, data.Rgba32);
+            queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, data.Rgba32);
         },
         else => @panic("unsupported image color format"),
     }
@@ -150,7 +156,8 @@ pub fn init(app: *App, core: *mach.Core) !void {
     const bind_group = core.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = pipeline.getBindGroupLayout(0),
-            .entries = &.{
+            .entry_count = 3,
+            .entries = &[_]gpu.BindGroup.Entry{
                 gpu.BindGroup.Entry.buffer(0, uniform_buffer, 0, @sizeOf(UniformBufferObject)),
                 gpu.BindGroup.Entry.sampler(1, sampler),
                 gpu.BindGroup.Entry.textureView(2, cube_texture.createView(&gpu.TextureView.Descriptor{})),
@@ -198,8 +205,9 @@ pub fn update(app: *App, core: *mach.Core) !void {
     };
 
     const encoder = core.device.createCommandEncoder(null);
-    const render_pass_info = gpu.RenderPassEncoder.Descriptor{
-        .color_attachments = &.{color_attachment},
+    const render_pass_info = gpu.RenderPassDescriptor{
+        .color_attachment_count = 1,
+        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
         .depth_stencil_attachment = &.{
             .view = app.depth_texture_view,
             .depth_clear_value = 1.0,
@@ -226,7 +234,7 @@ pub fn update(app: *App, core: *mach.Core) !void {
         const ubo = UniformBufferObject{
             .mat = zm.transpose(mvp),
         };
-        encoder.writeBuffer(app.uniform_buffer, 0, UniformBufferObject, &.{ubo});
+        encoder.writeBuffer(app.uniform_buffer, 0, &[_]UniformBufferObject{ubo});
     }
 
     const pass = encoder.beginRenderPass(&render_pass_info);

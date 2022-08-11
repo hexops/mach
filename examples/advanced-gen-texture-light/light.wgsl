@@ -21,7 +21,7 @@ struct Light {
 @group(0) @binding(0) var<uniform> camera: CameraUniform;
 @group(1) @binding(0) var<uniform> light: Light;
 
-@stage(vertex)
+@vertex
 fn vs_main(model: VertexInput) -> VertexOutput {
     var out: VertexOutput;
     let world_pos = vec4<f32>(model.position + light.position.xyz, 1.0);
@@ -29,7 +29,7 @@ fn vs_main(model: VertexInput) -> VertexOutput {
     return out;
 }
 
-@stage(fragment)
+@fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 	return vec4<f32>(1.0, 1.0, 1.0, 0.5);
 }

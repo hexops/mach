@@ -18,17 +18,17 @@ pub const App = @This();
 
 const AtlasRGB8 = Atlas(zigimg.color.Rgba32);
 
-pipeline: gpu.RenderPipeline,
-queue: gpu.Queue,
-vertex_buffer: gpu.Buffer,
+pipeline: *gpu.RenderPipeline,
+queue: *gpu.Queue,
+vertex_buffer: *gpu.Buffer,
 vertices: std.ArrayList(draw.Vertex),
 update_vertex_buffer: bool,
-vertex_uniform_buffer: gpu.Buffer,
+vertex_uniform_buffer: *gpu.Buffer,
 update_vertex_uniform_buffer: bool,
-frag_uniform_buffer: gpu.Buffer,
+frag_uniform_buffer: *gpu.Buffer,
 fragment_uniform_list: std.ArrayList(draw.FragUniform),
 update_frag_uniform_buffer: bool,
-bind_group: gpu.BindGroup,
+bind_group: *gpu.BindGroup,
 texture_atlas_data: AtlasRGB8,
 
 pub fn init(app: *App, core: *mach.Core) !void {
@@ -110,7 +110,6 @@ pub fn init(app: *App, core: *mach.Core) !void {
         &.{ .texture = texture },
         &data_layout,
         &.{ .width = app.texture_atlas_data.size, .height = app.texture_atlas_data.size },
-        zigimg.color.Rgba32,
         app.texture_atlas_data.data,
     );
 
@@ -130,13 +129,17 @@ pub fn init(app: *App, core: *mach.Core) !void {
     // try draw.circle(app, .{ window_width / 2, window_height / 2 }, window_height / 2 - 10, .{ 0, 0.5, 0.75, 1.0 }, white_texture_uv_data);
 
     const vs_module = core.device.createShaderModule(&.{
+        .next_in_chain = .{ .wgsl_descriptor = &.{
+            .source = @embedFile("vert.wgsl"),
+        } },
         .label = "my vertex shader",
-        .code = .{ .wgsl = @embedFile("vert.wgsl") },
     });
 
     const fs_module = core.device.createShaderModule(&.{
+        .next_in_chain = .{ .wgsl_descriptor = &.{
+            .source = @embedFile("frag.wgsl"),
+        } },
         .label = "my fragment shader",
-        .code = .{ .wgsl = @embedFile("frag.wgsl") },
     });
 
     const blend = gpu.BlendState{
@@ -155,12 +158,13 @@ pub fn init(app: *App, core: *mach.Core) !void {
     const color_target = gpu.ColorTargetState{
         .format = core.swap_chain_format,
         .blend = &blend,
-        .write_mask = gpu.ColorWriteMask.all,
+        .write_mask = gpu.ColorWriteMaskFlags.all,
     };
     const fragment = gpu.FragmentState{
         .module = fs_module,
         .entry_point = "main",
-        .targets = &.{color_target},
+        .target_count = 1,
+        .targets = &[_]gpu.ColorTargetState{color_target},
         .constants = null,
     };
 
@@ -170,11 +174,13 @@ pub fn init(app: *App, core: *mach.Core) !void {
     const tbgle = gpu.BindGroupLayout.Entry.texture(3, .{ .fragment = true }, .float, .dimension_2d, false);
     const bgl = core.device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor{
-            .entries = &.{ vbgle, fbgle, sbgle, tbgle },
+            .entry_count = 4,
+            .entries = &[_]gpu.BindGroupLayout.Entry{ vbgle, fbgle, sbgle, tbgle },
         },
     );
-    const bind_group_layouts = [_]gpu.BindGroupLayout{bgl};
+    const bind_group_layouts = [_]*gpu.BindGroupLayout{bgl};
     const pipeline_layout = core.device.createPipelineLayout(&.{
+        .bind_group_layout_count = 1,
         .bind_group_layouts = &bind_group_layouts,
     });
 
@@ -185,7 +191,8 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .vertex = .{
             .module = vs_module,
             .entry_point = "main",
-            .buffers = &.{draw.VERTEX_BUFFER_LAYOUT},
+            .buffer_count = 1,
+            .buffers = &[_]gpu.VertexBufferLayout{draw.VERTEX_BUFFER_LAYOUT},
         },
         .multisample = .{
             .count = 1,
@@ -196,7 +203,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
             .front_face = .ccw,
             .cull_mode = .none,
             .topology = .triangle_list,
-            .strip_index_format = .none,
+            .strip_index_format = .undef,
         },
     };
 
@@ -226,7 +233,8 @@ pub fn init(app: *App, core: *mach.Core) !void {
     const bind_group = core.device.createBindGroup(
         &gpu.BindGroup.Descriptor{
             .layout = bgl,
-            .entries = &.{
+            .entry_count = 4,
+            .entries = &[_]gpu.BindGroup.Entry{
                 gpu.BindGroup.Entry.buffer(0, vertex_uniform_buffer, 0, @sizeOf(draw.VertexUniform)),
                 gpu.BindGroup.Entry.buffer(1, frag_uniform_buffer, 0, @sizeOf(draw.FragUniform) * app.vertices.items.len / 3),
                 gpu.BindGroup.Entry.sampler(2, sampler),
@@ -282,21 +290,22 @@ pub fn update(app: *App, core: *mach.Core) !void {
     };
 
     const encoder = core.device.createCommandEncoder(null);
-    const render_pass_info = gpu.RenderPassEncoder.Descriptor{
-        .color_attachments = &.{color_attachment},
+    const render_pass_info = gpu.RenderPassDescriptor{
+        .color_attachment_count = 1,
+        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
     };
 
     {
         if (app.update_vertex_buffer) {
-            encoder.writeBuffer(app.vertex_buffer, 0, draw.Vertex, app.vertices.items);
+            encoder.writeBuffer(app.vertex_buffer, 0, app.vertices.items);
             app.update_vertex_buffer = false;
         }
         if (app.update_frag_uniform_buffer) {
-            encoder.writeBuffer(app.frag_uniform_buffer, 0, draw.FragUniform, app.fragment_uniform_list.items);
+            encoder.writeBuffer(app.frag_uniform_buffer, 0, app.fragment_uniform_list.items);
             app.update_frag_uniform_buffer = false;
         }
         if (app.update_vertex_uniform_buffer) {
-            encoder.writeBuffer(app.vertex_uniform_buffer, 0, draw.VertexUniform, &.{try getVertexUniformBufferObject(core)});
+            encoder.writeBuffer(app.vertex_uniform_buffer, 0, &[_]draw.VertexUniform{try getVertexUniformBufferObject(core)});
             app.update_vertex_uniform_buffer = false;
         }
     }

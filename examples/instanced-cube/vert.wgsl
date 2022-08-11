@@ -1,12 +1,12 @@
 @binding(0) @group(0) var<uniform> ubos : array<mat4x4<f32>, 16>;
 
 struct VertexOutput {
-  @builtin(position) position_clip : vec4<f32>;
-  @location(0) fragUV : vec2<f32>;
-  @location(1) fragPosition: vec4<f32>;
+  @builtin(position) position_clip : vec4<f32>,
+  @location(0) fragUV : vec2<f32>,
+  @location(1) fragPosition: vec4<f32>,
 };
 
-@stage(vertex)
+@vertex
 fn main(@builtin(instance_index) instanceIdx : u32,
         @location(0) position : vec4<f32>,
         @location(1) uv : vec2<f32>) -> VertexOutput {
