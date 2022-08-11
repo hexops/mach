@@ -137,7 +137,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "queueOnSubmittedWorkDone", fn (queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "queueSetLabel", fn (queue: *gpu.Queue, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "queueSubmit", fn (queue: *gpu.Queue, command_count: u32, commands: [*]*const gpu.CommandBuffer) callconv(.Inline) void);
-    assertDecl(T, "queueWriteBuffer", fn (queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) callconv(.Inline) void);
+    assertDecl(T, "queueWriteBuffer", fn (queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *const anyopaque, size: usize) callconv(.Inline) void);
     assertDecl(T, "queueWriteTexture", fn (queue: *gpu.Queue, destination: *const gpu.ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) callconv(.Inline) void);
     assertDecl(T, "queueReference", fn (queue: *gpu.Queue) callconv(.Inline) void);
     assertDecl(T, "queueRelease", fn (queue: *gpu.Queue) callconv(.Inline) void);
@@ -831,7 +831,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuQueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const * data, size_t size);
-        export fn wgpuQueueWriteBuffer(queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) void {
+        export fn wgpuQueueWriteBuffer(queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *const anyopaque, size: usize) void {
             T.queueWriteBuffer(queue, buffer, buffer_offset, data, size);
         }
 
@@ -1959,7 +1959,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn queueWriteBuffer(queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) void {
+    pub inline fn queueWriteBuffer(queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *const anyopaque, size: usize) void {
         _ = queue;
         _ = buffer;
         _ = buffer_offset;

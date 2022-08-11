@@ -746,7 +746,7 @@ pub const Interface = struct {
         );
     }
 
-    pub inline fn queueWriteBuffer(queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) void {
+    pub inline fn queueWriteBuffer(queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *const anyopaque, size: usize) void {
         procs.queueWriteBuffer.?(
             @ptrCast(c.WGPUQueue, queue),
             @ptrCast(c.WGPUBuffer, buffer),
