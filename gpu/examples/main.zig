@@ -174,7 +174,7 @@ fn frame(params: FrameParams) !void {
     var command = encoder.finish(null);
     encoder.release();
 
-    params.queue.submit(1, &[_]*gpu.CommandBuffer{command});
+    params.queue.submit(&.{command});
     command.release();
     pl.swap_chain.?.present();
     back_buffer_view.release();
