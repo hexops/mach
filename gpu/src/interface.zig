@@ -101,7 +101,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateSwapChain", fn (device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChain.Descriptor) callconv(.Inline) *gpu.SwapChain);
     assertDecl(T, "deviceCreateTexture", fn (device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) callconv(.Inline) *gpu.Texture);
     assertDecl(T, "deviceDestroy", fn (device: *gpu.Device) callconv(.Inline) void);
-    assertDecl(T, "deviceEnumerateFeatures", fn (device: *gpu.Device, features: [*]gpu.FeatureName) callconv(.Inline) usize);
+    assertDecl(T, "deviceEnumerateFeatures", fn (device: *gpu.Device, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
     assertDecl(T, "deviceGetLimits", fn (device: *gpu.Device, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
     assertDecl(T, "deviceGetQueue", fn (device: *gpu.Device) callconv(.Inline) *gpu.Queue);
     assertDecl(T, "deviceHasFeature", fn (device: *gpu.Device, feature: gpu.FeatureName) callconv(.Inline) bool);
@@ -651,7 +651,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT size_t wgpuDeviceEnumerateFeatures(WGPUDevice device, WGPUFeatureName * features);
-        export fn wgpuDeviceEnumerateFeatures(device: *gpu.Device, features: [*]gpu.FeatureName) usize {
+        export fn wgpuDeviceEnumerateFeatures(device: *gpu.Device, features: ?[*]gpu.FeatureName) usize {
             return T.deviceEnumerateFeatures(device, features);
         }
 
@@ -1747,7 +1747,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceEnumerateFeatures(device: *gpu.Device, features: [*]gpu.FeatureName) usize {
+    pub inline fn deviceEnumerateFeatures(device: *gpu.Device, features: ?[*]gpu.FeatureName) usize {
         _ = device;
         _ = features;
         unreachable;
