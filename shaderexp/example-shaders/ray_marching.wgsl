@@ -79,7 +79,7 @@ fn getLight(p:vec3<f32>) -> f32{
     return dif;
 }
 
-@stage(fragment) fn main(
+@fragment fn main(
     @location(0) uv : vec2<f32>
 ) -> @location(0) vec4<f32> {
     let aspect = ubo.resolution / min(ubo.resolution.x,ubo.resolution.y);

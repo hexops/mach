@@ -18,7 +18,7 @@ const Quat = zm.Quat;
 
 pub const App = @This();
 
-queue: gpu.Queue,
+queue: *gpu.Queue,
 cube: Cube,
 camera: Camera,
 light: Light,
@@ -124,14 +124,15 @@ pub fn update(app: *App, core: *mach.Core) !void {
         .store_op = .store,
     };
 
-    const render_pass_descriptor = gpu.RenderPassEncoder.Descriptor{
-        .color_attachments = &.{color_attachment},
+    const render_pass_descriptor = gpu.RenderPassDescriptor{
+        .color_attachment_count = 1,
+        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
         .depth_stencil_attachment = &.{
             .view = app.depth.?.view,
             .depth_load_op = .clear,
             .depth_store_op = .store,
-            .stencil_load_op = .none,
-            .stencil_store_op = .none,
+            .stencil_load_op = .undef,
+            .stencil_store_op = .undef,
             .depth_clear_value = 1.0,
         },
     };
@@ -193,7 +194,7 @@ const Camera = struct {
     fovy: f32,
     near: f32,
     far: f32,
-    bind_group: gpu.BindGroup,
+    bind_group: *gpu.BindGroup,
     buffer: Buffer,
 
     const Uniform = struct {
@@ -201,7 +202,7 @@ const Camera = struct {
         mat: Mat,
     };
 
-    fn init(device: gpu.Device, eye: Vec, target: Vec, up: Vec, aspect: f32, fovy: f32, near: f32, far: f32) Self {
+    fn init(device: *gpu.Device, eye: Vec, target: Vec, up: Vec, aspect: f32, fovy: f32, near: f32, far: f32) Self {
         var self: Self = .{
             .eye = eye,
             .target = target,
@@ -228,6 +229,7 @@ const Camera = struct {
 
         const bind_group = device.createBindGroup(&gpu.BindGroup.Descriptor{
             .layout = Self.bindGroupLayout(device),
+            .entry_count = 1,
             .entries = &[_]gpu.BindGroup.Entry{
                 gpu.BindGroup.Entry.buffer(0, buffer.buffer, 0, buffer.size),
             },
@@ -239,14 +241,14 @@ const Camera = struct {
         return self;
     }
 
-    fn update(self: *Self, queue: gpu.Queue) void {
+    fn update(self: *Self, queue: *gpu.Queue) void {
         const mat = self.buildViewProjMatrix();
         const uniform = .{
             .pos = self.eye,
             .mat = mat,
         };
 
-        queue.writeBuffer(self.buffer.buffer, 0, Uniform, &.{uniform});
+        queue.writeBuffer(self.buffer.buffer, 0, &[_]Uniform{uniform});
     }
 
     inline fn buildViewProjMatrix(s: *const Camera) Mat {
@@ -255,9 +257,10 @@ const Camera = struct {
         return zm.mul(view, proj);
     }
 
-    inline fn bindGroupLayout(device: gpu.Device) gpu.BindGroupLayout {
+    inline fn bindGroupLayout(device: *gpu.Device) *gpu.BindGroupLayout {
         const visibility = .{ .vertex = true, .fragment = true };
         return device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor{
+            .entry_count = 1,
             .entries = &[_]gpu.BindGroupLayout.Entry{
                 gpu.BindGroupLayout.Entry.buffer(0, visibility, .uniform, false, 0),
             },
@@ -266,7 +269,7 @@ const Camera = struct {
 };
 
 const Buffer = struct {
-    buffer: gpu.Buffer,
+    buffer: *gpu.Buffer,
     size: usize,
     len: u32 = 0,
 };
@@ -274,7 +277,7 @@ const Buffer = struct {
 const Cube = struct {
     const Self = @This();
 
-    pipeline: gpu.RenderPipeline,
+    pipeline: *gpu.RenderPipeline,
     mesh: Buffer,
     instance: Buffer,
     texture: Texture,
@@ -326,11 +329,12 @@ const Cube = struct {
         };
     }
 
-    fn pipeline(core: *mach.Core) gpu.RenderPipeline {
+    fn pipeline(core: *mach.Core) *gpu.RenderPipeline {
         const device = core.device;
 
         const layout_descriptor = gpu.PipelineLayout.Descriptor{
-            .bind_group_layouts = &.{
+            .bind_group_layout_count = 3,
+            .bind_group_layouts = &[_]*gpu.BindGroupLayout{
                 Camera.bindGroupLayout(device),
                 Texture.bindGroupLayout(device),
                 Light.bindGroupLayout(device),
@@ -341,7 +345,9 @@ const Cube = struct {
         defer layout.release();
 
         const shader = device.createShaderModule(&.{
-            .code = .{ .wgsl = @embedFile("cube.wgsl") },
+            .next_in_chain = .{ .wgsl_descriptor = &.{
+                .source = @embedFile("cube.wgsl"),
+            } },
         });
         defer shader.release();
 
@@ -360,14 +366,15 @@ const Cube = struct {
 
         const color_target = gpu.ColorTargetState{
             .format = core.swap_chain_format,
-            .write_mask = gpu.ColorWriteMask.all,
+            .write_mask = gpu.ColorWriteMaskFlags.all,
             .blend = &blend,
         };
 
         const fragment = gpu.FragmentState{
             .module = shader,
             .entry_point = "fs_main",
-            .targets = &.{color_target},
+            .target_count = 1,
+            .targets = &[_]gpu.ColorTargetState{color_target},
             .constants = null,
         };
 
@@ -377,7 +384,8 @@ const Cube = struct {
             .vertex = .{
                 .module = shader,
                 .entry_point = "vs_main",
-                .buffers = &.{
+                .buffer_count = 2,
+                .buffers = &[_]gpu.VertexBufferLayout{
                     Self.vertexBufferLayout(),
                     Self.instanceLayout(),
                 },
@@ -392,14 +400,14 @@ const Cube = struct {
                 .cull_mode = .back,
                 // .cull_mode = .none,
                 .topology = .triangle_strip,
-                .strip_index_format = .none,
+                .strip_index_format = .undef,
             },
         };
 
         return device.createRenderPipeline(&descriptor);
     }
 
-    fn mesh(device: gpu.Device) Buffer {
+    fn mesh(device: *gpu.Device) Buffer {
         // generated texture has aspect ratio of 1:2
         // `h` reflects that ratio
         // `v` sets how many times texture repeats across surface
@@ -517,7 +525,7 @@ const Brick = struct {
     const W = 12;
     const H = 6;
 
-    fn texture(device: gpu.Device) Texture {
+    fn texture(device: *gpu.Device) Texture {
         const slice: []const u8 = &data();
         return Texture.fromData(device, W, H, u8, slice);
     }
@@ -576,10 +584,10 @@ const Brick = struct {
 const Texture = struct {
     const Self = @This();
 
-    texture: gpu.Texture,
-    view: gpu.TextureView,
-    sampler: gpu.Sampler,
-    bind_group: gpu.BindGroup,
+    texture: *gpu.Texture,
+    view: *gpu.TextureView,
+    sampler: *gpu.Sampler,
+    bind_group: *gpu.BindGroup,
 
     const DEPTH_FORMAT = .depth32_float;
     const FORMAT = .rgba8_unorm;
@@ -590,7 +598,7 @@ const Texture = struct {
         self.sampler.release();
     }
 
-    fn fromData(device: gpu.Device, width: u32, height: u32, comptime T: type, data: []const T) Self {
+    fn fromData(device: *gpu.Device, width: u32, height: u32, comptime T: type, data: []const T) Self {
         const extent = gpu.Extent3D{
             .width = width,
             .height = height,
@@ -622,7 +630,7 @@ const Texture = struct {
             .mag_filter = .linear,
             .min_filter = .linear,
             .mipmap_filter = .linear,
-            .compare = .none,
+            .compare = .undef,
             .lod_min_clamp = 0.0,
             .lod_max_clamp = std.math.f32_max,
             .max_anisotropy = 1, // 1,2,4,8,16
@@ -637,13 +645,13 @@ const Texture = struct {
                 .rows_per_image = height,
             },
             &extent,
-            T,
             data,
         );
 
         const bind_group_layout = Self.bindGroupLayout(device);
         const bind_group = device.createBindGroup(&gpu.BindGroup.Descriptor{
             .layout = bind_group_layout,
+            .entry_count = 2,
             .entries = &[_]gpu.BindGroup.Entry{
                 gpu.BindGroup.Entry.textureView(0, view),
                 gpu.BindGroup.Entry.sampler(1, sampler),
@@ -658,7 +666,7 @@ const Texture = struct {
         };
     }
 
-    fn depth(device: gpu.Device, width: u32, height: u32) Self {
+    fn depth(device: *gpu.Device, width: u32, height: u32) Self {
         const extent = gpu.Extent3D{
             .width = width,
             .height = height,
@@ -678,7 +686,7 @@ const Texture = struct {
 
         const view = texture.createView(&gpu.TextureView.Descriptor{
             .aspect = .all,
-            .format = .none,
+            .format = .undef,
             .dimension = .dimension_2d,
             .base_array_layer = 0,
             .array_layer_count = 1,
@@ -707,10 +715,11 @@ const Texture = struct {
         };
     }
 
-    inline fn bindGroupLayout(device: gpu.Device) gpu.BindGroupLayout {
+    inline fn bindGroupLayout(device: *gpu.Device) *gpu.BindGroupLayout {
         const visibility = .{ .fragment = true };
         const Entry = gpu.BindGroupLayout.Entry;
         return device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor{
+            .entry_count = 2,
             .entries = &[_]Entry{
                 Entry.texture(0, visibility, .float, .dimension_2d, false),
                 Entry.sampler(1, visibility, .filtering),
@@ -724,8 +733,8 @@ const Light = struct {
 
     uniform: Uniform,
     buffer: Buffer,
-    bind_group: gpu.BindGroup,
-    pipeline: gpu.RenderPipeline,
+    bind_group: *gpu.BindGroup,
+    pipeline: *gpu.RenderPipeline,
 
     const Uniform = struct {
         position: Vec,
@@ -746,6 +755,7 @@ const Light = struct {
 
         const bind_group = device.createBindGroup(&gpu.BindGroup.Descriptor{
             .layout = Self.bindGroupLayout(device),
+            .entry_count = 1,
             .entries = &[_]gpu.BindGroup.Entry{
                 gpu.BindGroup.Entry.buffer(0, buffer.buffer, 0, buffer.size),
             },
@@ -759,31 +769,33 @@ const Light = struct {
         };
     }
 
-    fn update(self: *Self, queue: gpu.Queue, delta: f32) void {
+    fn update(self: *Self, queue: *gpu.Queue, delta: f32) void {
         const old = self.uniform;
         const new = Light.Uniform{
             .position = zm.qmul(zm.quatFromAxisAngle(vec3u(0, 1, 0), delta), old.position),
             .color = old.color,
         };
-        queue.writeBuffer(self.buffer.buffer, 0, Light.Uniform, &.{new});
+        queue.writeBuffer(self.buffer.buffer, 0, &[_]Light.Uniform{new});
         self.uniform = new;
     }
 
-    inline fn bindGroupLayout(device: gpu.Device) gpu.BindGroupLayout {
+    inline fn bindGroupLayout(device: *gpu.Device) *gpu.BindGroupLayout {
         const visibility = .{ .vertex = true, .fragment = true };
         const Entry = gpu.BindGroupLayout.Entry;
         return device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor{
+            .entry_count = 1,
             .entries = &[_]Entry{
                 Entry.buffer(0, visibility, .uniform, false, 0),
             },
         });
     }
 
-    fn pipeline(core: *mach.Core) gpu.RenderPipeline {
+    fn pipeline(core: *mach.Core) *gpu.RenderPipeline {
         const device = core.device;
 
         const layout_descriptor = gpu.PipelineLayout.Descriptor{
-            .bind_group_layouts = &.{
+            .bind_group_layout_count = 2,
+            .bind_group_layouts = &[_]*gpu.BindGroupLayout{
                 Camera.bindGroupLayout(device),
                 Light.bindGroupLayout(device),
             },
@@ -792,8 +804,10 @@ const Light = struct {
         const layout = device.createPipelineLayout(&layout_descriptor);
         defer layout.release();
 
-        const shader = device.createShaderModule(&.{
-            .code = .{ .wgsl = @embedFile("light.wgsl") },
+        const shader = core.device.createShaderModule(&.{
+            .next_in_chain = .{ .wgsl_descriptor = &.{
+                .source = @embedFile("light.wgsl"),
+            } },
         });
         defer shader.release();
 
@@ -812,14 +826,15 @@ const Light = struct {
 
         const color_target = gpu.ColorTargetState{
             .format = core.swap_chain_format,
-            .write_mask = gpu.ColorWriteMask.all,
+            .write_mask = gpu.ColorWriteMaskFlags.all,
             .blend = &blend,
         };
 
         const fragment = gpu.FragmentState{
             .module = shader,
             .entry_point = "fs_main",
-            .targets = &.{color_target},
+            .target_count = 1,
+            .targets = &[_]gpu.ColorTargetState{color_target},
             .constants = null,
         };
 
@@ -829,7 +844,8 @@ const Light = struct {
             .vertex = .{
                 .module = shader,
                 .entry_point = "vs_main",
-                .buffers = &.{
+                .buffer_count = 1,
+                .buffers = &[_]gpu.VertexBufferLayout{
                     Cube.vertexBufferLayout(),
                 },
             },
@@ -843,7 +859,7 @@ const Light = struct {
                 .cull_mode = .back,
                 // .cull_mode = .none,
                 .topology = .triangle_strip,
-                .strip_index_format = .none,
+                .strip_index_format = .undef,
             },
         };
 
@@ -851,7 +867,7 @@ const Light = struct {
     }
 };
 
-inline fn initBuffer(device: gpu.Device, usage: gpu.BufferUsage, data: anytype) gpu.Buffer {
+inline fn initBuffer(device: *gpu.Device, usage: gpu.Buffer.UsageFlags, data: anytype) *gpu.Buffer {
     std.debug.assert(@typeInfo(@TypeOf(data)) == .Pointer);
     const T = std.meta.Elem(@TypeOf(data));
 
@@ -864,7 +880,7 @@ inline fn initBuffer(device: gpu.Device, usage: gpu.BufferUsage, data: anytype) 
     });
 
     var mapped = buffer.getMappedRange(T, 0, data.len);
-    std.mem.copy(T, mapped, data);
+    std.mem.copy(T, mapped.?, data);
     buffer.unmap();
     return buffer;
 }

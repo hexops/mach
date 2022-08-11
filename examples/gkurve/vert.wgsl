@@ -10,7 +10,7 @@ struct VertexOut {
     @interpolate(flat) @location(2) triangle_index: u32,
 }
 
-@stage(vertex) fn main(
+@vertex fn main(
     @builtin(vertex_index) vertex_index: u32,
     @location(0) position: vec4<f32>,
     @location(1) uv: vec2<f32>,

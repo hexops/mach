@@ -1,4 +1,4 @@
-@stage(vertex)
+@vertex
 fn vert_main(@location(0) a_particlePos : vec2<f32>,
              @location(1) a_particleVel : vec2<f32>,
              @location(2) a_pos : vec2<f32>) -> @builtin(position) vec4<f32> {
@@ -9,7 +9,7 @@ fn vert_main(@location(0) a_particlePos : vec2<f32>,
   return vec4<f32>(pos + a_particlePos, 0.0, 1.0);
 }
 
-@stage(fragment)
+@fragment
 fn frag_main() -> @location(0) vec4<f32> {
   return vec4<f32>(1.0, 1.0, 1.0, 1.0);
 }

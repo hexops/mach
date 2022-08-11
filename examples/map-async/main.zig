@@ -21,8 +21,10 @@ pub fn init(_: *App, core: *mach.Core) !void {
     });
 
     const compute_module = core.device.createShaderModule(&.{
+        .next_in_chain = .{ .wgsl_descriptor = &.{
+            .source = @embedFile("main.wgsl"),
+        } },
         .label = "shader module",
-        .code = .{ .wgsl = @embedFile("main.wgsl") },
     });
 
     const compute_pipeline = core.device.createComputePipeline(&gpu.ComputePipeline.Descriptor{ .compute = gpu.ProgrammableStageDescriptor{
@@ -32,6 +34,7 @@ pub fn init(_: *App, core: *mach.Core) !void {
 
     const compute_bind_group = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
         .layout = compute_pipeline.getBindGroupLayout(0),
+        .entry_count = 1,
         .entries = &[_]gpu.BindGroup.Entry{
             gpu.BindGroup.Entry.buffer(0, output, 0, buffer_size),
         },
@@ -44,7 +47,7 @@ pub fn init(_: *App, core: *mach.Core) !void {
     const compute_pass = encoder.beginComputePass(null);
     compute_pass.setPipeline(compute_pipeline);
     compute_pass.setBindGroup(0, compute_bind_group, &.{});
-    compute_pass.dispatch(try std.math.divCeil(u32, buffer_size, workgroup_size), 1, 1);
+    compute_pass.dispatchWorkgroups(try std.math.divCeil(u32, buffer_size, workgroup_size), 1, 1);
     compute_pass.end();
 
     encoder.copyBufferToBuffer(output, 0, staging, 0, buffer_size);
@@ -53,16 +56,16 @@ pub fn init(_: *App, core: *mach.Core) !void {
     encoder.release();
 
     var response: gpu.Buffer.MapAsyncStatus = undefined;
-    var callback = gpu.Buffer.MapCallback.init(*gpu.Buffer.MapAsyncStatus, &response, (struct {
-        pub fn callback(ctx: *gpu.Buffer.MapAsyncStatus, callback_response: gpu.Buffer.MapAsyncStatus) void {
-            ctx.* = callback_response;
+    const callback = (struct {
+        pub inline fn callback(ctx: *gpu.Buffer.MapAsyncStatus, status: gpu.Buffer.MapAsyncStatus) void {
+            ctx.* = status;
         }
-    }).callback);
+    }).callback;
 
     var queue = core.device.getQueue();
     queue.submit(&.{command});
 
-    staging.mapAsync(gpu.Buffer.MapMode.read, 0, buffer_size, &callback);
+    staging.mapAsync(.{ .read = true }, 0, buffer_size, &response, callback);
     while (true) {
         if (response == gpu.Buffer.MapAsyncStatus.success) {
             break;
@@ -72,7 +75,7 @@ pub fn init(_: *App, core: *mach.Core) !void {
     }
 
     const staging_mapped = staging.getConstMappedRange(f32, 0, buffer_size / @sizeOf(f32));
-    for (staging_mapped) |v| {
+    for (staging_mapped.?) |v| {
         std.debug.print("{d} ", .{v});
     }
     std.debug.print("\n", .{});

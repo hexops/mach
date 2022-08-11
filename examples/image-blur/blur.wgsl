@@ -29,7 +29,7 @@ struct Flip {
 
 var<workgroup> tile : array<array<vec3<f32>, 128>, 4>;
 
-@stage(compute) @workgroup_size(32, 1, 1)
+@compute @workgroup_size(32, 1, 1)
 fn main(
   @builtin(workgroup_id) WorkGroupID : vec3<u32>,
   @builtin(local_invocation_id) LocalInvocationID : vec3<u32>
