@@ -14,6 +14,34 @@ pub const BindGroup = opaque {
         size: u64,
         sampler: ?*Sampler = null,
         texture_view: ?*TextureView = null,
+
+        /// Helper to create a buffer BindGroup.Entry.
+        pub fn buffer(binding: u32, buf: *Buffer, offset: u64, size: u64) Entry {
+            return .{
+                .binding = binding,
+                .buffer = buf,
+                .offset = offset,
+                .size = size,
+            };
+        }
+
+        /// Helper to create a sampler BindGroup.Entry.
+        pub fn sampler(binding: u32, _sampler: *Sampler) Entry {
+            return .{
+                .binding = binding,
+                .sampler = _sampler,
+                .size = 0,
+            };
+        }
+
+        /// Helper to create a texture view BindGroup.Entry.
+        pub fn textureView(binding: u32, texture_view: *TextureView) Entry {
+            return .{
+                .binding = binding,
+                .texture_view = texture_view,
+                .size = 0,
+            };
+        }
     };
 
     pub const Descriptor = extern struct {
