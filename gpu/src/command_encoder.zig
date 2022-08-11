@@ -1,3 +1,4 @@
+const std = @import("std");
 const ComputePassEncoder = @import("compute_pass_encoder.zig").ComputePassEncoder;
 const RenderPassEncoder = @import("render_pass_encoder.zig").RenderPassEncoder;
 const CommandBuffer = @import("command_buffer.zig").CommandBuffer;
@@ -91,8 +92,6 @@ pub const CommandEncoder = opaque {
             command_encoder,
             buffer,
             buffer_offset_bytes,
-            data,
-            size,
             @ptrCast([*]const u8, data_slice.ptr),
             @intCast(u64, data_slice.len) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
         );
