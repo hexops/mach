@@ -1,3 +1,4 @@
+const std = @import("std");
 const CommandBuffer = @import("command_buffer.zig").CommandBuffer;
 const Buffer = @import("buffer.zig").Buffer;
 const Texture = @import("texture.zig").Texture;

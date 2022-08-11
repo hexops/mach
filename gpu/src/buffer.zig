@@ -69,16 +69,38 @@ pub const Buffer = opaque {
         Impl.bufferDestroy(buffer);
     }
 
-    /// Default `offset`: 0
-    /// Default `size`: `gpu.whole_map_size`
-    pub inline fn getConstMappedRange(buffer: *Buffer, offset: usize, size: usize) ?*const anyopaque {
-        return Impl.bufferGetConstMappedRange(buffer, offset, size);
+    /// Default `offset_bytes`: 0
+    /// Default `len`: `gpu.whole_map_size` / `std.math.maxint(usize)` (whole range)
+    pub inline fn getConstMappedRange(
+        buffer: *Buffer,
+        comptime T: type,
+        offset_bytes: usize,
+        len: usize,
+    ) ?[]const T {
+        const size = @sizeOf(T) * len;
+        const data = Impl.bufferGetConstMappedRange(
+            buffer,
+            offset_bytes,
+            size + size % 4,
+        );
+        return if (data) |d| @ptrCast([*]const T, @alignCast(@alignOf(T), d.ptr))[0..len] else null;
     }
 
-    /// Default `offset`: 0
-    /// Default `size`: `gpu.whole_map_size`
-    pub inline fn getMappedRange(buffer: *Buffer, offset: usize, size: usize) ?*anyopaque {
-        return Impl.bufferGetMappedRange(buffer, offset, size);
+    /// Default `offset_bytes`: 0
+    /// Default `len`: `gpu.whole_map_size` / `std.math.maxint(usize)` (whole range)
+    pub inline fn getMappedRange(
+        buffer: *Buffer,
+        comptime T: type,
+        offset_bytes: usize,
+        len: usize,
+    ) ?[]T {
+        const size = @sizeOf(T) * len;
+        const data = Impl.bufferGetMappedRange(
+            buffer,
+            offset_bytes,
+            size + size % 4,
+        );
+        return if (data) |d| @ptrCast([*]T, @alignCast(@alignOf(T), d.ptr))[0..len] else null;
     }
 
     pub inline fn getSize(buffer: *Buffer) u64 {
