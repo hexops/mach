@@ -83,7 +83,7 @@ pub const Buffer = opaque {
             offset_bytes,
             size + size % 4,
         );
-        return if (data) |d| @ptrCast([*]const T, @alignCast(@alignOf(T), d.ptr))[0..len] else null;
+        return if (data) |d| @ptrCast([*]const T, @alignCast(@alignOf(T), d))[0..len] else null;
     }
 
     /// Default `offset_bytes`: 0
@@ -100,7 +100,7 @@ pub const Buffer = opaque {
             offset_bytes,
             size + size % 4,
         );
-        return if (data) |d| @ptrCast([*]T, @alignCast(@alignOf(T), d.ptr))[0..len] else null;
+        return if (data) |d| @ptrCast([*]T, @alignCast(@alignOf(T), d))[0..len] else null;
     }
 
     pub inline fn getSize(buffer: *Buffer) u64 {
