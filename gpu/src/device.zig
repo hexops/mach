@@ -1,3 +1,4 @@
+const std = @import("std");
 const Queue = @import("queue.zig").Queue;
 const BindGroup = @import("bind_group.zig").BindGroup;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
@@ -184,7 +185,7 @@ pub const Device = opaque {
     /// Call once with null to determine the array length, and again to fetch the feature list.
     ///
     /// Consider using the enumerateFeaturesOwned helper.
-    pub inline fn enumerateFeatures(device: *Device, features: [*]FeatureName) usize {
+    pub inline fn enumerateFeatures(device: *Device, features: ?[*]FeatureName) usize {
         return Impl.deviceEnumerateFeatures(device, features);
     }
 

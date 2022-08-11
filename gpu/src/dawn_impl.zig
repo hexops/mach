@@ -547,10 +547,10 @@ pub const Interface = struct {
         procs.deviceDestroy.?(@ptrCast(c.WGPUDevice, device));
     }
 
-    pub inline fn deviceEnumerateFeatures(device: *gpu.Device, features: [*]gpu.FeatureName) usize {
+    pub inline fn deviceEnumerateFeatures(device: *gpu.Device, features: ?[*]gpu.FeatureName) usize {
         return procs.deviceEnumerateFeatures.?(
             @ptrCast(c.WGPUDevice, device),
-            @ptrCast([*]c.WGPUFeatureName, features),
+            @ptrCast(?[*]c.WGPUFeatureName, features),
         );
     }
 

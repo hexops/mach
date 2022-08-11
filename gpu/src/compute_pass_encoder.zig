@@ -33,8 +33,14 @@ pub const ComputePassEncoder = opaque {
 
     /// Default `dynamic_offset_count`: 0
     /// Default `dynamic_offsets`: null
-    pub inline fn setBindGroup(compute_pass_encoder: *ComputePassEncoder, group_index: u32, group: *BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
-        Impl.computePassEncoderSetBindGroup(compute_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
+    pub inline fn setBindGroup(compute_pass_encoder: *ComputePassEncoder, group_index: u32, group: *BindGroup, dynamic_offsets: ?[]const u32) void {
+        Impl.computePassEncoderSetBindGroup(
+            compute_pass_encoder,
+            group_index,
+            group,
+            if (dynamic_offsets) |v| @intCast(u32, v.len) else 0,
+            if (dynamic_offsets) |v| v.ptr else null,
+        );
     }
 
     pub inline fn setLabel(compute_pass_encoder: *ComputePassEncoder, label: [*:0]const u8) void {
