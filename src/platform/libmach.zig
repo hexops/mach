@@ -7,6 +7,8 @@ const native = @import("native.zig");
 
 pub const App = @This();
 
+pub const GPUInterface = gpu.dawn.Interface;
+
 // Dummy init, deinit, and update functions
 pub fn init(_: *App, _: *Core) !void {}
 
@@ -38,6 +40,7 @@ const allocator = gpa.allocator();
 // Returns a pointer to a newly allocated Core
 // Will return a null pointer if an error occurred while initializing Core
 pub export fn mach_core_init() ?*Core {
+    gpu.Impl.init();
     const core = native.coreInit(allocator) catch {
         return @intToPtr(?*Core, 0);
     };
