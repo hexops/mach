@@ -45,9 +45,7 @@ pub const Device = opaque {
         label: ?[*:0]const u8 = null,
         required_features_count: u32 = 0,
         required_features: ?[*]const FeatureName = null,
-        required_limits: ?*const RequiredLimits,
-        // TODO: file issue on Dawn, dawn.json doesn't communicate that a zero value here is the
-        // acceptable default value due to internal nullability of Queue.Descriptor.
+        required_limits: ?*const RequiredLimits = null,
         default_queue: Queue.Descriptor = Queue.Descriptor{},
     };
 

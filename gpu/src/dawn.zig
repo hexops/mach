@@ -17,9 +17,8 @@ pub const EncoderInternalUsageDescriptor = extern struct {
 /// TODO: Can be chained in gpu.Instance.Descriptor
 pub const InstanceDescriptor = extern struct {
     chain: ChainedStruct,
-    additional_runtime_search_paths_count: u32,
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-    additional_runtime_search_paths: ?[*]const u8,
+    additional_runtime_search_paths_count: u32 = 0,
+    additional_runtime_search_paths: ?[*]const u8 = null,
 };
 
 /// TODO: Can be chained in gpu.Texture.Descriptor

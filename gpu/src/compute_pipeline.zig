@@ -8,7 +8,7 @@ pub const ComputePipeline = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
-        layout: ?*PipelineLayout,
+        layout: ?*PipelineLayout = null,
         compute: ProgrammableStageDescriptor,
     };
 

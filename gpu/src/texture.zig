@@ -183,8 +183,7 @@ pub const Texture = opaque {
         mip_level_count: u32 = 1,
         sample_count: u32 = 1,
         view_format_count: u32 = 0,
-        // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-        view_formats: ?[*]const Format,
+        view_formats: ?[*]const Format = null,
     };
 
     pub inline fn createView(texture: *Texture, descriptor: ?*const TextureView.Descriptor) *TextureView {

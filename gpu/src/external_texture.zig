@@ -18,10 +18,10 @@ pub const ExternalTexture = opaque {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
         plane0: *TextureView,
-        plane1: ?*TextureView,
+        plane1: ?*TextureView = null,
         do_yuv_to_rgb_conversion_only: bool = false,
         // TODO: dawn.json says length 12, does it mean array length?
-        yuv_to_rgb_conversion_matrix: ?[*]const f32,
+        yuv_to_rgb_conversion_matrix: ?[*]const f32 = null,
         // TODO: dawn.json says length 7, does it mean array length?
         src_transform_function_parameters: [*]const f32,
         // TODO: dawn.json says length 7, does it mean array length?

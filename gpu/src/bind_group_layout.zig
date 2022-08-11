@@ -20,9 +20,8 @@ pub const BindGroupLayout = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
-        entry_count: u32,
-        // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-        entries: ?[*]const Entry,
+        entry_count: u32 = 0,
+        entries: ?[*]const Entry = null,
     };
 
     pub inline fn setLabel(bind_group_layout: *BindGroupLayout, label: [*:0]const u8) void {

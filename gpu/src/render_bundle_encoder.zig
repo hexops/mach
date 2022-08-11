@@ -11,9 +11,8 @@ pub const RenderBundleEncoder = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
-        color_formats_count: u32,
-        // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
-        color_formats: ?[*]const Texture.Format,
+        color_formats_count: u32 = 0,
+        color_formats: ?[*]const Texture.Format = null,
         depth_stencil_format: Texture.Format = .undef,
         sample_count: u32 = 1,
         depth_read_only: bool = false,
