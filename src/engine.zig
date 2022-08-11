@@ -8,7 +8,7 @@ pub const ecs = @import("ecs");
 pub const module = ecs.Module(.{
     .globals = struct {
         core: *Core,
-        device: gpu.Device,
+        device: *gpu.Device,
     },
 });
 

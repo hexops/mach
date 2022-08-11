@@ -7,7 +7,6 @@ const Core = @import("../Core.zig");
 const structs = @import("../structs.zig");
 const enums = @import("../enums.zig");
 const util = @import("util.zig");
-const c = @import("c.zig").c;
 
 const common = @import("common.zig");
 comptime {
@@ -20,7 +19,7 @@ pub const log_level = if (@hasDecl(App, "log_level")) App.log_level else std.log
 
 pub const Platform = struct {
     window: glfw.Window,
-    backend_type: gpu.Adapter.BackendType,
+    backend_type: gpu.BackendType,
     allocator: std.mem.Allocator,
     events: EventQueue = .{},
     user_ptr: UserPtr = undefined,
@@ -34,7 +33,9 @@ pub const Platform = struct {
     cursors_tried: [@typeInfo(enums.MouseCursor).Enum.fields.len]bool =
         [_]bool{false} ** @typeInfo(enums.MouseCursor).Enum.fields.len,
 
-    native_instance: gpu.NativeInstance,
+    // TODO: these can be moved to Core
+    instance: *gpu.Instance,
+    adapter: *gpu.Adapter,
 
     last_cursor_position: structs.WindowPos,
 
@@ -73,131 +74,73 @@ pub const Platform = struct {
             null,
             hints,
         );
+        if (backend_type == .opengl) try glfw.makeContextCurrent(window);
+        if (backend_type == .opengles) try glfw.makeContextCurrent(window);
 
         const window_size = try window.getSize();
         const framebuffer_size = try window.getFramebufferSize();
 
-        const backend_procs = c.machDawnNativeGetProcs();
-        c.dawnProcSetProcs(backend_procs);
-
-        const instance = c.machDawnNativeInstance_init();
-        var native_instance = gpu.NativeInstance.wrap(c.machDawnNativeInstance_get(instance).?);
-
-        // Discover e.g. OpenGL adapters.
-        try util.discoverAdapters(instance, window, backend_type);
-
-        // Request an adapter.
-        //
-        // TODO: It would be nice if we could use gpu_interface.waitForAdapter here, however the webgpu.h
-        // API does not yet have a way to specify what type of backend you want (vulkan, opengl, etc.)
-        // In theory, I suppose we shouldn't need to and Dawn should just pick the best adapter - but in
-        // practice if Vulkan is not supported today waitForAdapter/requestAdapter merely generates an error.
-        //
-        // const gpu_interface = native_instance.interface();
-        // const backend_adapter = switch (gpu_interface.waitForAdapter(&.{
-        //     .power_preference = .high_performance,
-        // })) {
-        //     .adapter => |v| v,
-        //     .err => |err| {
-        //         std.debug.print("mach: failed to get adapter: error={} {s}\n", .{ err.code, err.message });
-        //         std.process.exit(1);
-        //     },
-        // };
-        const adapters = c.machDawnNativeInstance_getAdapters(instance);
-        var dawn_adapter: ?c.MachDawnNativeAdapter = null;
-        var i: usize = 0;
-        while (i < c.machDawnNativeAdapters_length(adapters)) : (i += 1) {
-            const adapter = c.machDawnNativeAdapters_index(adapters, i);
-            const properties = c.machDawnNativeAdapter_getProperties(adapter);
-            const found_backend_type = @intToEnum(gpu.Adapter.BackendType, c.machDawnNativeAdapterProperties_getBackendType(properties));
-            if (found_backend_type == backend_type) {
-                dawn_adapter = adapter;
-                break;
-            }
+        const instance = gpu.createInstance(null);
+        if (instance == null) {
+            std.debug.print("mach: failed to create GPU instance\n", .{});
+            std.process.exit(1);
         }
-        if (dawn_adapter == null) {
-            std.debug.print("mach: no matching adapter found for {s}", .{@tagName(backend_type)});
+        const surface = util.createSurfaceForWindow(instance.?, window, comptime util.detectGLFWOptions());
+
+        var response: ?util.RequestAdapterResponse = null;
+        instance.?.requestAdapter(&gpu.RequestAdapterOptions{
+            .compatible_surface = surface,
+            .power_preference = options.power_preference,
+            .force_fallback_adapter = false,
+        }, &response, util.requestAdapterCallback);
+        if (response.?.status != .success) {
+            std.debug.print("mach: failed to create GPU adapter: {s}\n", .{response.?.message});
             std.debug.print("-> maybe try GPU_BACKEND=opengl ?\n", .{});
             std.process.exit(1);
         }
-        std.debug.assert(dawn_adapter != null);
-        const backend_adapter = gpu.NativeInstance.fromWGPUAdapter(c.machDawnNativeAdapter_get(dawn_adapter.?).?);
 
         // Print which adapter we are going to use.
-        const props = backend_adapter.properties;
+        var props: gpu.Adapter.Properties = undefined;
+        response.?.adapter.getProperties(&props);
         std.debug.print("mach: found {s} backend on {s} adapter: {s}, {s}\n", .{
-            gpu.Adapter.backendTypeName(props.backend_type),
-            gpu.Adapter.typeName(props.adapter_type),
+            props.backend_type.name(),
+            props.adapter_type.name(),
             props.name,
             props.driver_description,
         });
 
-        const device = switch (backend_adapter.waitForDevice(&.{
-            .required_features = options.required_features,
-            .required_limits = options.required_limits,
-        })) {
-            .device => |v| v,
-            .err => |err| {
-                // TODO: return a proper error type
-                std.debug.print("mach: failed to get device: error={} {s}\n", .{ err.code, err.message });
-                std.process.exit(1);
-            },
-        };
-
-        // If targeting OpenGL, we can't use the newer WGPUSurface API. Instead, we need to use the
-        // older Dawn-specific API. https://bugs.chromium.org/p/dawn/issues/detail?id=269&q=surface&can=2
-        const use_legacy_api = backend_type == .opengl or backend_type == .opengles;
-        var descriptor: gpu.SwapChain.Descriptor = undefined;
-        var swap_chain: ?gpu.SwapChain = null;
-        var swap_chain_format: gpu.Texture.Format = undefined;
-        var surface: ?gpu.Surface = null;
-        if (!use_legacy_api) {
-            swap_chain_format = .bgra8_unorm;
-            descriptor = .{
-                .label = "basic swap chain",
-                .usage = .{ .render_attachment = true },
-                .format = swap_chain_format,
-                .width = framebuffer_size.width,
-                .height = framebuffer_size.height,
-                .present_mode = switch (options.vsync) {
-                    .none => .immediate,
-                    .double => .fifo,
-                    .triple => .mailbox,
-                },
-                .implementation = 0,
-            };
-            surface = util.createSurfaceForWindow(
-                &native_instance,
-                window,
-                comptime util.detectGLFWOptions(),
-            );
-        } else {
-            const binding = c.machUtilsCreateBinding(@enumToInt(backend_type), @ptrCast(*c.GLFWwindow, window.handle), @ptrCast(c.WGPUDevice, device.ptr));
-            if (binding == null) {
-                @panic("failed to create Dawn backend binding");
-            }
-            descriptor = std.mem.zeroes(gpu.SwapChain.Descriptor);
-            descriptor.implementation = c.machUtilsBackendBinding_getSwapChainImplementation(binding);
-            swap_chain = device.nativeCreateSwapChain(null, &descriptor);
-
-            swap_chain_format = @intToEnum(gpu.Texture.Format, @intCast(u32, c.machUtilsBackendBinding_getPreferredSwapChainTextureFormat(binding)));
-            swap_chain.?.configure(
-                swap_chain_format,
-                .{ .render_attachment = true },
-                framebuffer_size.width,
-                framebuffer_size.height,
-            );
+        // Create a device with default limits/features.
+        const device = response.?.adapter.createDevice(&.{
+            .required_features_count = if (options.required_features) |v| @intCast(u32, v.len) else 0,
+            .required_features = if (options.required_features) |v| @as(?[*]gpu.FeatureName, v.ptr) else null,
+            .required_limits = if (options.required_limits) |limits| @as(?*gpu.RequiredLimits, &gpu.RequiredLimits{
+                .limits = limits,
+            }) else null,
+        });
+        if (device == null) {
+            std.debug.print("mach: failed to create GPU device\n", .{});
+            std.process.exit(1);
         }
 
-        device.setUncapturedErrorCallback(&util.printUnhandledErrorCallback);
+        core.swap_chain_format = .bgra8_unorm;
+        const descriptor = gpu.SwapChain.Descriptor{
+            .label = "main swap chain",
+            .usage = .{ .render_attachment = true },
+            .format = core.swap_chain_format,
+            .width = framebuffer_size.width,
+            .height = framebuffer_size.height,
+            .present_mode = .fifo,
+        };
 
-        core.device = device;
+        device.?.setUncapturedErrorCallback({}, util.printUnhandledErrorCallback);
+
+        core.device = device.?;
         core.backend_type = backend_type;
         core.surface = surface;
-        core.swap_chain = swap_chain;
-        core.swap_chain_format = swap_chain_format;
         core.current_desc = descriptor;
         core.target_desc = descriptor;
+        core.swap_chain = core.device.createSwapChain(core.surface, &core.target_desc);
+        // TODO: should resize fire on startup here? Might be nice for consistency
 
         const cursor_pos = try window.getCursorPos();
 
@@ -212,7 +155,8 @@ pub const Platform = struct {
                 .x = cursor_pos.xpos,
                 .y = cursor_pos.ypos,
             },
-            .native_instance = native_instance,
+            .instance = instance.?,
+            .adapter = response.?.adapter,
             .linux_gamemode_is_active = linux_gamemode_is_active,
         };
     }
@@ -635,10 +579,14 @@ pub const BackingTimer = std.time.Timer;
 
 var app: App = undefined;
 
+pub const GPUInterface = gpu.dawn.Interface;
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+
+    gpu.Impl.init();
 
     var core = try coreInit(allocator);
     defer coreDeinit(core, allocator);
@@ -691,16 +639,8 @@ pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
     core.target_desc.width = framebuffer_size.width;
     core.target_desc.height = framebuffer_size.height;
 
-    if (core.swap_chain == null or !core.current_desc.equal(&core.target_desc)) {
-        const use_legacy_api = core.surface == null;
-        if (!use_legacy_api) {
-            core.swap_chain = core.device.nativeCreateSwapChain(core.surface, &core.target_desc);
-        } else core.swap_chain.?.configure(
-            core.swap_chain_format,
-            .{ .render_attachment = true },
-            core.target_desc.width,
-            core.target_desc.height,
-        );
+    if (core.swap_chain == null or !std.meta.eql(core.current_desc, core.target_desc)) {
+        core.swap_chain = core.device.createSwapChain(core.surface, &core.target_desc);
 
         if (@hasDecl(App, "resize")) {
             try app.resize(core, core.target_desc.width, core.target_desc.height);
