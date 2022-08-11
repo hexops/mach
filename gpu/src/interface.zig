@@ -136,7 +136,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "queueCopyTextureForBrowser", fn (queue: *gpu.Queue, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D, options: *const gpu.CopyTextureForBrowserOptions) callconv(.Inline) void);
     assertDecl(T, "queueOnSubmittedWorkDone", fn (queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "queueSetLabel", fn (queue: *gpu.Queue, label: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "queueSubmit", fn (queue: *gpu.Queue, command_count: u32, commands: [*]*gpu.CommandBuffer) callconv(.Inline) void);
+    assertDecl(T, "queueSubmit", fn (queue: *gpu.Queue, command_count: u32, commands: [*]*const gpu.CommandBuffer) callconv(.Inline) void);
     assertDecl(T, "queueWriteBuffer", fn (queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *anyopaque, size: usize) callconv(.Inline) void);
     assertDecl(T, "queueWriteTexture", fn (queue: *gpu.Queue, destination: *const gpu.ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) callconv(.Inline) void);
     assertDecl(T, "queueReference", fn (queue: *gpu.Queue) callconv(.Inline) void);
@@ -826,7 +826,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT void wgpuQueueSubmit(WGPUQueue queue, uint32_t commandCount, WGPUCommandBuffer const * commands);
-        export fn wgpuQueueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]*gpu.CommandBuffer) void {
+        export fn wgpuQueueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]*const gpu.CommandBuffer) void {
             T.queueSubmit(queue, command_count, commands);
         }
 
@@ -1952,7 +1952,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn queueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]*gpu.CommandBuffer) void {
+    pub inline fn queueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]*const gpu.CommandBuffer) void {
         _ = queue;
         _ = command_count;
         _ = commands;

@@ -738,11 +738,11 @@ pub const Interface = struct {
         procs.queueSetLabel.?(@ptrCast(c.WGPUQueue, queue), label);
     }
 
-    pub inline fn queueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]*gpu.CommandBuffer) void {
+    pub inline fn queueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]*const gpu.CommandBuffer) void {
         procs.queueSubmit.?(
             @ptrCast(c.WGPUQueue, queue),
             command_count,
-            @ptrCast([*]c.WGPUCommandBuffer, commands),
+            @ptrCast([*]const c.WGPUCommandBuffer, commands),
         );
     }
 
