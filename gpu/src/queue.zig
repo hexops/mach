@@ -58,8 +58,9 @@ pub const Queue = opaque {
         queue: *Queue,
         buffer: *Buffer,
         buffer_offset_bytes: u64,
-        data_slice: anytype,
+        data_span: anytype,
     ) void {
+        const data_slice = std.mem.span(data_span);
         Impl.queueWriteBuffer(
             queue,
             buffer,
@@ -74,8 +75,9 @@ pub const Queue = opaque {
         destination: *const ImageCopyTexture,
         data_layout: *const Texture.DataLayout,
         write_size: *const Extent3D,
-        data_slice: anytype,
+        data_span: anytype,
     ) void {
+        const data_slice = std.mem.span(data_span);
         Impl.queueWriteTexture(
             queue,
             destination,

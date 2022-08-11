@@ -86,8 +86,9 @@ pub const CommandEncoder = opaque {
         command_encoder: *CommandEncoder,
         buffer: *Buffer,
         buffer_offset_bytes: u64,
-        data_slice: anytype,
+        data_span: anytype,
     ) void {
+        const data_slice = std.mem.span(data_span);
         Impl.commandEncoderWriteBuffer(
             command_encoder,
             buffer,
