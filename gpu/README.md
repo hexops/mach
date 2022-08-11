@@ -157,6 +157,7 @@ The slice helpers are:
 * `CommandEncoder.writeBuffer`
 * `Queue.writeTexture`
 * `Queue.writeBuffer`
+* `RenderPassEncoder.executeBundles`
 
 ### Typed callbacks
 
@@ -221,6 +222,5 @@ The following are definitive candidates for helpers we haven't implemented yet:
 * `gpu.ComputePassEncoder.setBindGroup` (slice param)
 * `gpu.Device.enumerateFeatures` (owned slice)
 * `gpu.RenderBundleEncoder.setBindGroup` (slice param)
-* `gpu.RenderPassEncoder.executeBundles` (slice param)
 * `gpu.RenderPassEncoder.setBindGroup` (slice param)
 * Other `next_in_chain` extensions (look at dawn.json after the bug to get this documented was fixed)
