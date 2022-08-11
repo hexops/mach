@@ -221,6 +221,7 @@ The following are definitive candidates for helpers we haven't implemented yet:
 * `gpu.Device.enumerateFeatures` (owned slice)
 * `gpu.Queue.writeBuffer` (slices)
 * `gpu.Queue.writeTexture` (slices)
+* `gpu.Queue.submit` (slice param)
 * `gpu.RenderBundleEncoder.setBindGroup` (slice param)
 * `gpu.RenderPassEncoder.executeBundles` (slice param)
 * `gpu.RenderPassEncoder.setBindGroup` (slice param)
