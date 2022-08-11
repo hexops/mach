@@ -152,6 +152,7 @@ Some WebGPU APIs expose slices as pointers and lengths, we either wrap these to 
 The slice helpers are:
 
 * `Adapter.enumerateFeaturesOwned`
+* `Queue.writeTexture`
 
 ### Typed callbacks
 
@@ -219,7 +220,6 @@ The following are definitive candidates for helpers we haven't implemented yet:
 * `gpu.ComputePassEncoder.setBindGroup` (slice param)
 * `gpu.Device.enumerateFeatures` (owned slice)
 * `gpu.Queue.writeBuffer` (slices)
-* `gpu.Queue.writeTexture` (slices)
 * `gpu.RenderBundleEncoder.setBindGroup` (slice param)
 * `gpu.RenderPassEncoder.executeBundles` (slice param)
 * `gpu.RenderPassEncoder.setBindGroup` (slice param)
