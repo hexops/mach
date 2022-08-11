@@ -181,8 +181,20 @@ pub const Device = opaque {
         Impl.deviceDestroy(device);
     }
 
+    /// Call once with null to determine the array length, and again to fetch the feature list.
+    ///
+    /// Consider using the enumerateFeaturesOwned helper.
     pub inline fn enumerateFeatures(device: *Device, features: [*]FeatureName) usize {
         return Impl.deviceEnumerateFeatures(device, features);
+    }
+
+    /// Enumerates the adapter features, storing the result in an allocated slice which is owned by
+    /// the caller.
+    pub inline fn enumerateFeaturesOwned(device: *Device, allocator: std.mem.Allocator) ![]FeatureName {
+        const count = device.enumerateFeatures(null);
+        var data = try allocator.alloc(FeatureName, count);
+        _ = device.enumerateFeatures(data.ptr);
+        return data;
     }
 
     pub inline fn getLimits(device: *Device, limits: *SupportedLimits) bool {
