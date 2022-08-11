@@ -81,8 +81,21 @@ pub const CommandEncoder = opaque {
         Impl.commandEncoderSetLabel(command_encoder, label);
     }
 
-    pub inline fn writeBuffer(command_encoder: *CommandEncoder, buffer: *Buffer, buffer_offset: u64, data: [*]const u8, size: u64) void {
-        Impl.commandEncoderWriteBuffer(command_encoder, buffer, buffer_offset, data, size);
+    pub inline fn writeBuffer(
+        command_encoder: *CommandEncoder,
+        buffer: *Buffer,
+        buffer_offset_bytes: u64,
+        data_slice: anytype,
+    ) void {
+        Impl.commandEncoderWriteBuffer(
+            command_encoder,
+            buffer,
+            buffer_offset_bytes,
+            data,
+            size,
+            @ptrCast([*]const u8, data_slice.ptr),
+            @intCast(u64, data_slice.len) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
+        );
     }
 
     pub inline fn writeTimestamp(command_encoder: *CommandEncoder, query_set: *QuerySet, query_index: u32) void {
