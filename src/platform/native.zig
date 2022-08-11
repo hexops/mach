@@ -603,6 +603,7 @@ pub fn main() !void {
 
 pub fn coreInit(allocator: std.mem.Allocator) !*Core {
     const core: *Core = try allocator.create(Core);
+    errdefer allocator.destroy(core);
     core.* = try Core.init(allocator);
 
     // Glfw specific: initialize the user pointer used in callbacks
