@@ -586,8 +586,8 @@ pub const DepthStencilState = extern struct {
     format: Texture.Format,
     depth_write_enabled: bool = false,
     depth_compare: CompareFunction = .always,
-    stencil_front: StencilFaceState,
-    stencil_back: StencilFaceState,
+    stencil_front: StencilFaceState = .{},
+    stencil_back: StencilFaceState = .{},
     stencil_read_mask: u32 = 0xFFFFFFFF,
     stencil_write_mask: u32 = 0xFFFFFFFF,
     depth_bias: i32 = 0,
@@ -605,7 +605,7 @@ pub const ImageCopyTexture = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     texture: *Texture,
     mip_level: u32 = 0,
-    origin: Origin3D,
+    origin: Origin3D = .{},
     aspect: Texture.Aspect = .all,
 };
 
