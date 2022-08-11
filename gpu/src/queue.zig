@@ -53,8 +53,19 @@ pub const Queue = opaque {
         Impl.queueSubmit(queue, @intCast(u32, commands.len), commands.ptr);
     }
 
-    pub inline fn writeBuffer(queue: *Queue, buffer: *Buffer, buffer_offset: u64, data: *anyopaque, size: usize) void {
-        Impl.queueWriteBuffer(queue, buffer, buffer_offset, data, size);
+    pub inline fn writeBuffer(
+        queue: *Queue,
+        buffer: *Buffer,
+        buffer_offset_bytes: u64,
+        data_slice: anytype,
+    ) void {
+        Impl.queueWriteBuffer(
+            queue,
+            buffer,
+            buffer_offset_bytes,
+            @ptrCast(*const anyopaque, data_slice.ptr),
+            @intCast(u64, data_slice.len) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
+        );
     }
 
     pub inline fn writeTexture(
@@ -62,14 +73,13 @@ pub const Queue = opaque {
         destination: *const ImageCopyTexture,
         data_layout: *const Texture.DataLayout,
         write_size: *const Extent3D,
-        comptime T: type,
-        data: []const T,
+        data_slice: anytype,
     ) void {
         Impl.queueWriteTexture(
             queue,
             destination,
-            @ptrCast(*const anyopaque, data.ptr),
-            @intCast(usize, data.len) * @sizeOf(std.meta.Elem(@TypeOf(data))),
+            @ptrCast(*const anyopaque, data_slice.ptr),
+            @intCast(usize, data_slice.len) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
             data_layout,
             write_size,
         );

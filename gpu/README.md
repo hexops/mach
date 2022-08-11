@@ -153,6 +153,7 @@ The slice helpers are:
 
 * `Adapter.enumerateFeaturesOwned`
 * `Queue.writeTexture`
+* `Queue.writeBuffer`
 
 ### Typed callbacks
 
@@ -219,7 +220,6 @@ The following are definitive candidates for helpers we haven't implemented yet:
 * `gpu.CommandEncoder.writeBuffer` (slices)
 * `gpu.ComputePassEncoder.setBindGroup` (slice param)
 * `gpu.Device.enumerateFeatures` (owned slice)
-* `gpu.Queue.writeBuffer` (slices)
 * `gpu.RenderBundleEncoder.setBindGroup` (slice param)
 * `gpu.RenderPassEncoder.executeBundles` (slice param)
 * `gpu.RenderPassEncoder.setBindGroup` (slice param)
