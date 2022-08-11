@@ -64,7 +64,12 @@ pub fn build(b: *Builder) void {
 }
 ```
 
-### Adding dependency (using Gyro)
+<details>
+<summary>
+
+### (optional) Adding dependency using Gyro
+
+</summary>
 
 ```sh
 gyro add --src github hexops/mach-glfw --root src/main.zig --alias glfw
@@ -86,8 +91,9 @@ pub fn build(b: *Builder) void {
 }
 ```
 
-**WARNING: You should use `gyro build` instead of `zig build` now!**
+**Note: You should use `gyro build` instead of `zig build` to use gyro**
 
+</details>
 
 # Next steps
 
