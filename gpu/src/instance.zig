@@ -20,10 +20,10 @@ pub const Instance = opaque {
         options: ?*const RequestAdapterOptions,
         context: anytype,
         comptime callback: fn (
+            ctx: @TypeOf(context),
             status: RequestAdapterStatus,
             adapter: *Adapter,
             message: ?[*:0]const u8,
-            ctx: @TypeOf(context),
         ) callconv(.Inline) void,
     ) void {
         const Context = @TypeOf(context);
@@ -35,10 +35,10 @@ pub const Instance = opaque {
                 userdata: ?*anyopaque,
             ) callconv(.C) void {
                 callback(
+                    if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
                     status,
                     adapter,
                     message,
-                    if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
                 );
             }
         };

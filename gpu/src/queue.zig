@@ -35,12 +35,12 @@ pub const Queue = opaque {
         queue: *Queue,
         signal_value: u64,
         context: anytype,
-        comptime callback: fn (status: WorkDoneStatus, ctx: @TypeOf(context)) callconv(.Inline) void,
+        comptime callback: fn (ctx: @TypeOf(context), status: WorkDoneStatus) callconv(.Inline) void,
     ) void {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(status: WorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
-                callback(status, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)));
+                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)), status);
             }
         };
         Impl.queueOnSubmittedWorkDone(queue, signal_value, Helper.callback, if (Context == void) null else context);
