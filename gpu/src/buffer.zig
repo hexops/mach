@@ -62,7 +62,7 @@ pub const Buffer = opaque {
         label: ?[*:0]const u8 = null,
         usage: UsageFlags,
         size: u64,
-        mapped_at_creation: bool = true,
+        mapped_at_creation: bool = false,
     };
 
     pub inline fn destroy(buffer: *Buffer) void {
