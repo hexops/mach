@@ -95,7 +95,7 @@ pub const Platform = struct {
         }, &response, util.requestAdapterCallback);
         if (response.?.status != .success) {
             std.debug.print("mach: failed to create GPU adapter: {?s}\n", .{response.?.message});
-            std.debug.print("-> maybe try GPU_BACKEND=opengl ?\n", .{});
+            std.debug.print("-> maybe try MACH_GPU_BACKEND=opengl ?\n", .{});
             std.process.exit(1);
         }
 

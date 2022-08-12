@@ -25,8 +25,8 @@ fn getEnvVarOwned(allocator: std.mem.Allocator, key: []const u8) error{ OutOfMem
 }
 
 pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
-    const GPU_BACKEND = try getEnvVarOwned(allocator, "GPU_BACKEND");
-    if (GPU_BACKEND) |backend| {
+    const MACH_GPU_BACKEND = try getEnvVarOwned(allocator, "MACH_GPU_BACKEND");
+    if (MACH_GPU_BACKEND) |backend| {
         defer allocator.free(backend);
         if (std.ascii.eqlIgnoreCase(backend, "null")) return .nul;
         if (std.ascii.eqlIgnoreCase(backend, "d3d11")) return .d3d11;
@@ -35,7 +35,7 @@ pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
         if (std.ascii.eqlIgnoreCase(backend, "vulkan")) return .vulkan;
         if (std.ascii.eqlIgnoreCase(backend, "opengl")) return .opengl;
         if (std.ascii.eqlIgnoreCase(backend, "opengles")) return .opengles;
-        @panic("unknown GPU_BACKEND type");
+        @panic("unknown MACH_GPU_BACKEND type");
     }
 
     const target = @import("builtin").target;
