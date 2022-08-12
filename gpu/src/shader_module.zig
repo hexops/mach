@@ -31,9 +31,9 @@ pub const ShaderModule = opaque {
         shader_module: *ShaderModule,
         context: anytype,
         comptime callback: fn (
+            ctx: @TypeOf(context),
             status: CompilationInfoRequestStatus,
             compilation_info: *const CompilationInfo,
-            ctx: @TypeOf(context),
         ) callconv(.Inline) void,
     ) void {
         const Context = @TypeOf(context);
@@ -44,9 +44,9 @@ pub const ShaderModule = opaque {
                 userdata: ?*anyopaque,
             ) callconv(.C) void {
                 callback(
+                    if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
                     status,
                     compilation_info,
-                    if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
                 );
             }
         };

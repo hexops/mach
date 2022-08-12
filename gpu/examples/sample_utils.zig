@@ -7,7 +7,7 @@ const objc = @cImport({
     @cInclude("objc/message.h");
 });
 
-inline fn printUnhandledErrorCallback(typ: gpu.ErrorType, message: [*:0]const u8, _: void) void {
+inline fn printUnhandledErrorCallback(_: void, typ: gpu.ErrorType, message: [*:0]const u8) void {
     switch (typ) {
         .validation => std.debug.print("gpu: validation error: {s}\n", .{message}),
         .out_of_memory => std.debug.print("gpu: out of memory: {s}\n", .{message}),
@@ -61,10 +61,10 @@ const RequestAdapterResponse = struct {
 };
 
 inline fn requestAdapterCallback(
+    context: *?RequestAdapterResponse,
     status: gpu.RequestAdapterStatus,
     adapter: *gpu.Adapter,
     message: ?[*:0]const u8,
-    context: *?RequestAdapterResponse,
 ) void {
     context.* = RequestAdapterResponse{
         .status = status,
