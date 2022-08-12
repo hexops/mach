@@ -3,7 +3,7 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const TextureView = @import("texture_view.zig").TextureView;
 const Extent3D = @import("types.zig").Extent3D;
 const Impl = @import("interface.zig").Impl;
-const copy_stride_undef = @import("main.zig").copy_stride_undef;
+const types = @import("types.zig");
 
 pub const Texture = opaque {
     pub const Aspect = enum(u32) {
@@ -169,8 +169,8 @@ pub const Texture = opaque {
     pub const DataLayout = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         offset: u64 = 0,
-        bytes_per_row: u32 = copy_stride_undef,
-        rows_per_image: u32 = copy_stride_undef,
+        bytes_per_row: u32 = types.copy_stride_undef,
+        rows_per_image: u32 = types.copy_stride_undef,
     };
 
     pub const Descriptor = extern struct {

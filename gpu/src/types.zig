@@ -6,8 +6,14 @@ const Buffer = @import("buffer.zig").Buffer;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
 const QuerySet = @import("query_set.zig").QuerySet;
 const Surface = @import("surface.zig").Surface;
-const limit_u32_undef = @import("main.zig").limit_u32_undef;
-const limit_u64_undef = @import("main.zig").limit_u64_undef;
+
+pub const array_layer_count_undef = 0xffffffff;
+pub const copy_stride_undef = 0xffffffff;
+pub const limit_u32_undef = 0xffffffff;
+pub const limit_u64_undef = 0xffffffffffffffff;
+pub const mip_level_count_undef = 0xffffffff;
+pub const whole_map_size = std.math.maxInt(usize);
+pub const whole_size = 0xffffffffffffffff;
 
 /// Generic function pointer type, used for returning API function pointers. Must be
 /// cast to the right `fn (...) callconv(.C) T` type before use.
