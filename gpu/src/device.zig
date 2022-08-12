@@ -226,7 +226,7 @@ pub const Device = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(typ: ErrorType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                callback(typ, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)));
+                callback(typ, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)));
             }
         };
         return Impl.devicePopErrorScope(device, Helper.callback, if (Context == void) null else context);
@@ -245,7 +245,7 @@ pub const Device = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(reason: LostReason, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                callback(reason, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)));
+                callback(reason, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)));
             }
         };
         Impl.deviceSetDeviceLostCallback(device, Helper.callback, if (Context == void) null else context);
@@ -264,7 +264,7 @@ pub const Device = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(typ: LoggingType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                callback(typ, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)));
+                callback(typ, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)));
             }
         };
         Impl.deviceSetLoggingCallback(device, Helper.callback, if (Context == void) null else context);
@@ -279,7 +279,7 @@ pub const Device = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn callback(typ: ErrorType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                callback(typ, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)));
+                callback(typ, message, if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)));
             }
         };
         Impl.deviceSetUncapturedErrorCallback(device, Helper.callback, if (Context == void) null else context);
