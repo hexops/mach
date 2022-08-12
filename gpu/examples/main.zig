@@ -38,7 +38,7 @@ pub fn main() !void {
     window_data.target_desc = descriptor;
 
     const vs =
-        \\ @stage(vertex) fn main(
+        \\ @vertex fn main(
         \\     @builtin(vertex_index) VertexIndex : u32
         \\ ) -> @builtin(position) vec4<f32> {
         \\     var pos = array<vec2<f32>, 3>(
@@ -57,7 +57,7 @@ pub fn main() !void {
     });
 
     const fs =
-        \\ @stage(fragment) fn main() -> @location(0) vec4<f32> {
+        \\ @fragment fn main() -> @location(0) vec4<f32> {
         \\     return vec4<f32>(1.0, 0.0, 0.0, 1.0);
         \\ }
     ;
