@@ -139,9 +139,7 @@ pub const Platform = struct {
         core.surface = surface;
         core.current_desc = descriptor;
         core.target_desc = descriptor;
-        core.swap_chain = core.device.createSwapChain(core.surface, &core.target_desc);
-        // TODO: should resize fire on startup here? Might be nice for consistency
-
+        core.swap_chain = null;
         const cursor_pos = try window.getCursorPos();
 
         return Platform{
