@@ -49,13 +49,13 @@ pub fn build(b: *Builder) void {
 }
 
 pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.RunStep {
-    const soundio_tests = b.addTestExe("soundio-tests", thisDir() ++ "/soundio/main.zig");
+    const soundio_tests = b.addTestExe("soundio-tests", (comptime thisDir()) ++ "/soundio/main.zig");
     soundio_tests.setBuildMode(mode);
     soundio_tests.setTarget(target);
     link(b, soundio_tests, options);
     soundio_tests.install();
 
-    const main_tests = b.addTestExe("sysaudio-tests", thisDir() ++ "/src/main.zig");
+    const main_tests = b.addTestExe("sysaudio-tests", (comptime thisDir()) ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     main_tests.addPackage(soundio_pkg);
@@ -128,7 +128,7 @@ fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !vo
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = thisDir();
+    child.cwd = (comptime thisDir());
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
 
