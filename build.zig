@@ -47,19 +47,19 @@ pub fn build(b: *std.build.Builder) void {
 
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },
-        .{ .name = "boids" },
+        // .{ .name = "boids" },
         .{ .name = "audio", .packages = &[_]Pkg{sysaudio.pkg} },
-        .{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
-        .{ .name = "ecs-app", .packages = &[_]Pkg{} },
-        .{ .name = "image-blur", .packages = &[_]Pkg{Packages.zigimg} },
-        .{ .name = "map-async", .packages = &[_]Pkg{} },
-        // NOTE: examples with std_platform_only should be placed at last
-        .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg, freetype.pkg }, .std_platform_only = true },
+        // .{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
+        // .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
+        // .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
+        // .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
+        // .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
+        // .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
+        // .{ .name = "ecs-app", .packages = &[_]Pkg{} },
+        // .{ .name = "image-blur", .packages = &[_]Pkg{Packages.zigimg} },
+        // .{ .name = "map-async", .packages = &[_]Pkg{} },
+        // // NOTE: examples with std_platform_only should be placed at last
+        // .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg, freetype.pkg }, .std_platform_only = true },
     }) |example| {
         // FIXME: this is workaround for a problem that some examples (having the std_platform_only=true field) as
         // well as zigimg uses IO which is not supported in freestanding environments. So break out of this loop
@@ -125,26 +125,26 @@ pub fn build(b: *std.build.Builder) void {
     const compile_all = b.step("compile-all", "Compile all examples and applications");
     compile_all.dependOn(b.getInstallStep());
 
-    // compiles the `libmach` shared library
-    const lib = b.addSharedLibrary("mach", "src/platform/libmach.zig", .unversioned);
-    lib.setTarget(target);
-    lib.setBuildMode(mode);
-    lib.main_pkg_path = "src/";
-    const app_pkg = std.build.Pkg{
-        .name = "app",
-        .source = .{ .path = "src/platform/libmach.zig" },
-    };
-    lib.addPackage(app_pkg);
-    lib.addPackage(gpu.pkg);
-    lib.addPackage(glfw.pkg);
-    const gpu_options = gpu.Options{
-        .glfw_options = @bitCast(@import("gpu/libs/mach-glfw/build.zig").Options, options.glfw_options),
-        .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
-    };
-    glfw.link(b, lib, options.glfw_options);
-    gpu.link(b, lib, gpu_options);
-    lib.setOutputDir("./libmach/build");
-    lib.install();
+    // // compiles the `libmach` shared library
+    // const lib = b.addSharedLibrary("mach", "src/platform/libmach.zig", .unversioned);
+    // lib.setTarget(target);
+    // lib.setBuildMode(mode);
+    // lib.main_pkg_path = "src/";
+    // const app_pkg = std.build.Pkg{
+    //     .name = "app",
+    //     .source = .{ .path = "src/platform/libmach.zig" },
+    // };
+    // lib.addPackage(app_pkg);
+    // lib.addPackage(gpu.pkg);
+    // lib.addPackage(glfw.pkg);
+    // const gpu_options = gpu.Options{
+    //     .glfw_options = @bitCast(@import("gpu/libs/mach-glfw/build.zig").Options, options.glfw_options),
+    //     .gpu_dawn_options = @bitCast(@import("gpu/libs/mach-gpu-dawn/build.zig").Options, options.gpu_dawn_options),
+    // };
+    // glfw.link(b, lib, options.glfw_options);
+    // gpu.link(b, lib, gpu_options);
+    // lib.setOutputDir("./libmach/build");
+    // lib.install();
 }
 
 pub const Options = struct {

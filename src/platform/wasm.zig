@@ -142,6 +142,7 @@ pub const Platform = struct {
 
     pub fn pollEvent(platform: *Platform) ?structs.Event {
         const event_type = js.machEventShift();
+        _ = platform;
 
         return switch (event_type) {
             1, 2 => key_down: {
@@ -232,10 +233,7 @@ pub const Platform = struct {
     }
 
     inline fn sign(val: f64) f64 {
-        return switch (val) {
-            0.0 => 0.0,
-            else => -val,
-        };
+        return if (val == 0.0) 0.0 else -val;
     }
 
     fn toMachButton(button: i32) enums.MouseButton {

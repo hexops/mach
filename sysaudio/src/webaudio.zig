@@ -104,7 +104,8 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
 fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
     std.log.info("LEN {}", .{captures[0].val.ref}); // Doesnt works when removed
     const device_context = captures[0].view(.object);
-    std.log.info("REF: {} {}", .{ captures[0].val.ref, device_context.ref }); // Same ^
+    // std.log.info("REF: {} {}", .{ captures[0].val.ref, device_context.ref }); // Same ^
+    std.log.info("here: {}\n", .{captures.len});
 
     const audio_event = args.getIndex(0).view(.object);
     defer audio_event.deinit();
@@ -128,14 +129,15 @@ fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
             const source = js.constructType("Uint8Array", &.{js.createNumber(buffer_length)});
             defer source.deinit();
 
-            //var buffer: [buffer_length]u8 = undefined; // This should work
-            var buffer = std.heap.page_allocator.alloc(u8, buffer_length) catch unreachable;
-            defer std.heap.page_allocator.free(buffer);
+            var buffer: [buffer_length]u8 = undefined; // This should work
+            // var buffer = std.heap.page_allocator.alloc(u8, buffer_length) catch unreachable;
+            // defer std.heap.page_allocator.free(buffer);
 
-            std.log.info("before cb", .{});
-            cb.*(&dev, ud, buffer);
-            std.log.info("after cb", .{});
-            source.copyBytes(buffer);
+            std.log.info("before cb {}", .{buffer_length});
+            std.log.info("entering with {}", .{(buffer[0..]).len});
+            cb.*(&dev, ud, buffer[0..]);
+            std.log.info("after cb\n\n", .{});
+            source.copyBytes(buffer[0..]);
             //source.copyBytes((&[_]u8{ 0, 0, 20, 66 } ** 511) ++ (&[_]u8{ 0, 0, 0, 0 } ** (1)));
 
             const float_source = js.constructType("Float32Array", &.{

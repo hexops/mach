@@ -25,13 +25,16 @@ pub fn init(app: *App, _: *mach.Core) !void {
 }
 
 fn callback(_: *sysaudio.Device, _: ?*anyopaque, buffer: []u8) void {
+    std.log.info("enter callback here??\n", .{});
+    std.log.info("inside callback got {}", .{buffer.len});
+
     // This is ok
     // var i: usize = 0;
     // while (i < buffer.len) : (i += 1) {
     //     buffer[i] = 0;
     // }
 
-    // This is ok
+    // // This is ok
     // var i: usize = 0;
     // while (i < buffer.len - 4) : (i += 4) {
     //     buffer[i] = 0;
@@ -40,20 +43,22 @@ fn callback(_: *sysaudio.Device, _: ?*anyopaque, buffer: []u8) void {
     //     buffer[i + 3] = 66;
     // }
 
-    var i: usize = 0;
-    while (i < buffer.len) : (i += 4) {
-        // This below doesnt works why?
-        //const val = random_engine.random().float(f32);
-        //const val_buf = @bitCast([4]u8, val);
+    // var i: usize = 0;
+    // while (i < buffer.len) : (i += 4) {
+    //     // This below doesnt works why?
+    //     //const val = random_engine.random().float(f32);
+    //     //const val_buf = @bitCast([4]u8, val);
 
-        var j: usize = 0;
-        while (j < 4) : (j += 1) {
-            buffer[i + j] = random_engine.random().int(u8);
-        }
-    }
+    //     var j: usize = 0;
+    //     while (j < 4) : (j += 1) {
+    //         buffer[i + j] = random_engine.random().int(u8);
+    //     }
+    // }
+
+    // std.log.info("here {any}\n", .{buffer});
 
     // This below doesnt works, why?
-    //random_engine.random().bytes(buffer);
+    random_engine.random().bytes(buffer);
 }
 
 pub fn deinit(app: *App, _: *mach.Core) void {
@@ -65,12 +70,17 @@ pub fn update(app: *App, engine: *mach.Core) !void {
     while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
+                _ = ev;
+                app.device.start();
+            },
+            .key_release => |ev| {
+                _ = ev;
                 app.device.pause();
-                std.log.info("key is {s}", .{@tagName(ev.key)});
             },
             else => {},
         }
     }
+    _ = engine;
     app.audio.waitEvents();
     //std.log.info("update", .{});
 }
