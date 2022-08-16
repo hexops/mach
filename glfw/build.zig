@@ -13,7 +13,7 @@ pub fn build(b: *Builder) void {
 }
 
 pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("glfw_tests", (comptime thisDir()) ++ "/src/main.zig");
+    const main_tests = b.addTestExe("glfw_tests", thisDir() ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     link(b, main_tests, .{});
@@ -22,7 +22,7 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
 }
 
 fn testStepShared(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("glfw_tests_shared", (comptime thisDir()) ++ "/src/main.zig");
+    const main_tests = b.addTestExe("glfw_tests_shared", thisDir() ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     link(b, main_tests, .{ .shared = true });
@@ -69,7 +69,7 @@ pub const pkg = std.build.Pkg{
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     const lib = buildLibrary(b, step, options);
     step.linkLibrary(lib);
-    addGLFWIncludes(b, step);
+    addGLFWIncludes(step);
     if (!options.shared) linkGLFWDependencies(b, step, options);
     if (options.shared) step.defineCMacro("GLFW_DLL", null);
 }
@@ -78,11 +78,11 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
-    const main_abs = (comptime thisDir()) ++ "/src/main.zig";
+    const main_abs = thisDir() ++ "/src/main.zig";
     const lib = if (options.shared) b.addSharedLibrary("glfw", main_abs, .unversioned) else b.addStaticLibrary("glfw", main_abs);
     lib.setBuildMode(step.build_mode);
     lib.setTarget(step.target);
-    addGLFWIncludes(b, lib);
+    addGLFWIncludes(lib);
 
     if (options.shared) {
         lib.defineCMacro("_GLFW_BUILD_DLL", null);
@@ -93,28 +93,23 @@ fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *
     return lib;
 }
 
-fn addGLFWIncludes(b: *Builder, step: *std.build.LibExeObjStep) void {
-    const include_dir = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "upstream/glfw/include" }) catch unreachable;
-    defer b.allocator.free(include_dir);
-    step.addIncludeDir(include_dir);
-
-    const vulkan_include_dir = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "upstream/vulkan_headers/include" }) catch unreachable;
-    defer b.allocator.free(vulkan_include_dir);
-    step.addIncludeDir(vulkan_include_dir);
+fn addGLFWIncludes(step: *std.build.LibExeObjStep) void {
+    step.addIncludeDir(thisDir() ++ "/upstream/glfw/include");
+    step.addIncludeDir(thisDir() ++ "/upstream/vulkan_headers/include");
 }
 
 fn addGLFWSources(b: *Builder, step: *std.build.LibExeObjStep, lib: *std.build.LibExeObjStep, options: Options) void {
     const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    const include_glfw_src = "-I" ++ (comptime thisDir()) ++ "/upstream/glfw/src";
+    const include_glfw_src = "-I" ++ thisDir() ++ "/upstream/glfw/src";
     switch (target.os.tag) {
         .windows => lib.addCSourceFiles(&.{
-            (comptime thisDir()) ++ "/src/sources_all.c",
-            (comptime thisDir()) ++ "/src/sources_windows.c",
+            thisDir() ++ "/src/sources_all.c",
+            thisDir() ++ "/src/sources_windows.c",
         }, &.{ "-D_GLFW_WIN32", include_glfw_src }),
         .macos => lib.addCSourceFiles(&.{
-            (comptime thisDir()) ++ "/src/sources_all.c",
-            (comptime thisDir()) ++ "/src/sources_macos.m",
-            (comptime thisDir()) ++ "/src/sources_macos.c",
+            thisDir() ++ "/src/sources_all.c",
+            thisDir() ++ "/src/sources_macos.m",
+            thisDir() ++ "/src/sources_macos.c",
         }, &.{ "-D_GLFW_COCOA", include_glfw_src }),
         else => {
             // TODO(future): for now, Linux must be built with glibc, not musl:
@@ -128,17 +123,17 @@ fn addGLFWSources(b: *Builder, step: *std.build.LibExeObjStep, lib: *std.build.L
 
             var sources = std.ArrayList([]const u8).init(b.allocator);
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            sources.append((comptime thisDir()) ++ "/src/sources_all.c") catch unreachable;
-            sources.append((comptime thisDir()) ++ "/src/sources_linux.c") catch unreachable;
+            sources.append(thisDir() ++ "/src/sources_all.c") catch unreachable;
+            sources.append(thisDir() ++ "/src/sources_linux.c") catch unreachable;
             if (options.x11) {
-                sources.append((comptime thisDir()) ++ "/src/sources_linux_x11.c") catch unreachable;
+                sources.append(thisDir() ++ "/src/sources_linux_x11.c") catch unreachable;
                 flags.append("-D_GLFW_X11") catch unreachable;
             }
             if (options.wayland) {
-                sources.append((comptime thisDir()) ++ "/src/sources_linux_wayland.c") catch unreachable;
+                sources.append(thisDir() ++ "/src/sources_linux_wayland.c") catch unreachable;
                 flags.append("-D_GLFW_WAYLAND") catch unreachable;
             }
-            flags.append("-I" ++ (comptime thisDir()) ++ "/upstream/glfw/src") catch unreachable;
+            flags.append("-I" ++ thisDir() ++ "/upstream/glfw/src") catch unreachable;
 
             lib.addCSourceFiles(sources.items, flags.items);
         },
@@ -150,15 +145,15 @@ fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !vo
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = (comptime thisDir());
+    child.cwd = thisDir();
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
 
     _ = try child.spawnAndWait();
 }
 
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
+inline fn thisDir() []const u8 {
+    return comptime std.fs.path.dirname(@src().file) orelse ".";
 }
 
 fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
