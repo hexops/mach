@@ -86,7 +86,7 @@ pub fn build(b: *std.build.Builder) !void {
 }
 
 pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("freetype-tests", thisDir() ++ "/src/main.zig");
+    const main_tests = b.addTestExe("freetype-tests", (comptime thisDir()) ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     main_tests.addPackage(c_pkg);
@@ -101,7 +101,7 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         },
         .harfbuzz = .{},
     });
-    main_tests.main_pkg_path = thisDir();
+    main_tests.main_pkg_path = (comptime thisDir());
     main_tests.install();
     return main_tests.run();
 }
@@ -197,7 +197,7 @@ fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !vo
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = thisDir();
+    child.cwd = (comptime thisDir());
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
 
