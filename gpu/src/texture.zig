@@ -182,6 +182,7 @@ pub const Texture = opaque {
         format: Format,
         mip_level_count: u32 = 1,
         sample_count: u32 = 1,
+        // TODO: slice helper
         view_format_count: u32 = 0,
         view_formats: ?[*]const Format = null,
     };

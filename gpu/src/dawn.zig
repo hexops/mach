@@ -17,6 +17,7 @@ pub const EncoderInternalUsageDescriptor = extern struct {
 /// TODO: Can be chained in gpu.Instance.Descriptor
 pub const InstanceDescriptor = extern struct {
     chain: ChainedStruct,
+    // TODO: slice helper
     additional_runtime_search_paths_count: u32 = 0,
     additional_runtime_search_paths: ?[*]const u8 = null,
 };
@@ -30,8 +31,10 @@ pub const TextureInternalUsageDescriptor = extern struct {
 /// TODO: Can be chained in gpu.Device.Descriptor
 pub const TogglesDeviceDescriptor = extern struct {
     chain: ChainedStruct,
+    // TODO: slice helper
     force_enabled_toggles_count: u32 = 0,
     force_enabled_toggles: ?[*]const u8 = null,
+    // TODO: slice helper
     force_disabled_toggles_count: u32 = 0,
     force_disabled_toggles: ?[*]const u8 = null,
 };

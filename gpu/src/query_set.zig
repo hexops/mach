@@ -9,6 +9,7 @@ pub const QuerySet = opaque {
         label: ?[*:0]const u8 = null,
         type: QueryType,
         count: u32,
+        // TODO: slice helper
         pipeline_statistics: ?[*]const PipelineStatisticName = null,
         pipeline_statistics_count: u32 = 0,
     };

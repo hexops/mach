@@ -92,6 +92,7 @@ pub const BindGroupLayout = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
+        // TODO: slice helper
         entry_count: u32 = 0,
         entries: ?[*]const Entry = null,
     };

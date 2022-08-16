@@ -11,6 +11,7 @@ pub const RenderBundleEncoder = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
+        // TODO: slice helper
         color_formats_count: u32 = 0,
         color_formats: ?[*]const Texture.Format = null,
         depth_stencil_format: Texture.Format = .undef,
@@ -58,7 +59,6 @@ pub const RenderBundleEncoder = opaque {
         Impl.renderBundleEncoderPushDebugGroup(render_bundle_encoder, group_label);
     }
 
-    /// Default `dynamic_offsets_count`: 0
     /// Default `dynamic_offsets`: `null`
     pub inline fn setBindGroup(render_bundle_encoder: *RenderBundleEncoder, group_index: u32, group: *BindGroup, dynamic_offsets: ?[]const u32) void {
         Impl.renderBundleEncoderSetBindGroup(

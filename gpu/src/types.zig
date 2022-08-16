@@ -57,6 +57,7 @@ pub const RequestAdapterOptions = extern struct {
 pub const ComputePassDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
+    // TODO: slice helper
     timestamp_write_count: u32 = 0,
     timestamp_writes: ?[*]const ComputePassTimestampWrite = null,
 };
@@ -64,10 +65,12 @@ pub const ComputePassDescriptor = extern struct {
 pub const RenderPassDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
+    // TODO: slice helper
     color_attachment_count: u32 = 0,
     color_attachments: ?[*]const RenderPassColorAttachment = null,
     depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment = null,
     occlusion_query_set: ?*QuerySet = null,
+    // TODO: slice helper
     timestamp_write_count: u32 = 0,
     timestamp_writes: ?[*]const RenderPassTimestampWrite = null,
 };
@@ -583,6 +586,7 @@ pub const BlendState = extern struct {
 
 pub const CompilationInfo = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
+    // TODO: slice helper
     message_count: u32,
     messages: ?[*]const CompilationMessage = null,
 };
@@ -619,6 +623,7 @@ pub const ProgrammableStageDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     module: *ShaderModule,
     entry_point: [*:0]const u8,
+    // TODO: slice helper
     constant_count: u32 = 0,
     constants: ?[*]const ConstantEntry = null,
 };
@@ -651,6 +656,7 @@ pub const SupportedLimits = extern struct {
 pub const VertexBufferLayout = extern struct {
     array_stride: u64,
     step_mode: VertexStepMode = .vertex,
+    // TODO: slice helper
     attribute_count: u32,
     attributes: ?[*]const VertexAttribute = null,
 };
@@ -666,8 +672,10 @@ pub const VertexState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     module: *ShaderModule,
     entry_point: [*:0]const u8,
+    // TODO: slice helper
     constant_count: u32 = 0,
     constants: ?[*]const ConstantEntry = null,
+    // TODO: slice helper
     buffer_count: u32 = 0,
     buffers: ?[*]const VertexBufferLayout = null,
 };
@@ -676,8 +684,10 @@ pub const FragmentState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     module: *ShaderModule,
     entry_point: [*:0]const u8,
+    // TODO: slice helper
     constant_count: u32 = 0,
     constants: ?[*]const ConstantEntry = null,
+    // TODO: slice helper
     target_count: u32,
     targets: ?[*]const ColorTargetState = null,
 };

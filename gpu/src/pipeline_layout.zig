@@ -6,6 +6,7 @@ pub const PipelineLayout = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
+        // TODO: slice helper
         bind_group_layout_count: u32 = 0,
         bind_group_layouts: ?[*]const *BindGroupLayout = null,
     };
