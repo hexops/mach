@@ -28,6 +28,7 @@ const ErrorCallback = @import("callbacks.zig").ErrorCallback;
 const CreateComputePipelineAsyncCallback = @import("callbacks.zig").CreateComputePipelineAsyncCallback;
 const CreateRenderPipelineAsyncCallback = @import("callbacks.zig").CreateRenderPipelineAsyncCallback;
 const Impl = @import("interface.zig").Impl;
+const dawn = @import("dawn.zig");
 
 pub const Device = opaque {
     pub const LostCallback = fn (
@@ -42,7 +43,12 @@ pub const Device = opaque {
     };
 
     pub const Descriptor = extern struct {
-        next_in_chain: ?*const ChainedStruct = null,
+        pub const NextInChain = extern union {
+            generic: ?*const ChainedStruct,
+            dawn_toggles_device_descriptor: *const dawn.TogglesDeviceDescriptor,
+        };
+
+        next_in_chain: NextInChain = .{ .generic = null },
         label: ?[*:0]const u8 = null,
         required_features_count: u32 = 0,
         required_features: ?[*]const FeatureName = null,
@@ -51,7 +57,7 @@ pub const Device = opaque {
 
         /// Provides a slightly friendlier Zig API to initialize this structure.
         pub inline fn init(v: struct {
-            next_in_chain: ?*const ChainedStruct = null,
+            next_in_chain: NextInChain = .{ .generic = null },
             label: ?[*:0]const u8 = null,
             required_features: ?[]const FeatureName = null,
             required_limits: ?*const RequiredLimits = null,
