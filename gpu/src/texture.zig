@@ -182,9 +182,34 @@ pub const Texture = opaque {
         format: Format,
         mip_level_count: u32 = 1,
         sample_count: u32 = 1,
-        // TODO: slice helper
         view_format_count: u32 = 0,
         view_formats: ?[*]const Format = null,
+
+        /// Provides a slightly friendlier Zig API to initialize this structure.
+        pub inline fn init(v: struct {
+            next_in_chain: ?*const ChainedStruct = null,
+            label: ?[*:0]const u8 = null,
+            usage: UsageFlags,
+            dimension: Dimension = .dimension_2d,
+            size: Extent3D,
+            format: Format,
+            mip_level_count: u32 = 1,
+            sample_count: u32 = 1,
+            view_formats: ?[]const Format = null,
+        }) Descriptor {
+            return .{
+                .next_in_chain = v.next_in_chain,
+                .label = v.label,
+                .usage = v.usage,
+                .dimension = v.dimension,
+                .size = v.size,
+                .format = v.format,
+                .mip_level_count = v.mip_level_count,
+                .sample_count = v.sample_count,
+                .view_format_count = if (v.view_formats) |e| @intCast(u32, e.len) else 0,
+                .view_formats = if (v.view_formats) |e| e.ptr else null,
+            };
+        }
     };
 
     pub inline fn createView(texture: *Texture, descriptor: ?*const TextureView.Descriptor) *TextureView {
