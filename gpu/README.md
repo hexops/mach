@@ -169,6 +169,7 @@ And, to initialize data structures with slices in them, the following helpers ar
 * `BindGroup.Descriptor.init`
 * `InstanceDescriptor.init`
 * `TogglesDeviceDescriptor.init`
+* `Device.Descriptor.init`
 
 ### Typed callbacks
 

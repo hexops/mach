@@ -44,11 +44,27 @@ pub const Device = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
-        // TODO: slice helper
         required_features_count: u32 = 0,
         required_features: ?[*]const FeatureName = null,
         required_limits: ?*const RequiredLimits = null,
         default_queue: Queue.Descriptor = Queue.Descriptor{},
+
+        /// Provides a slightly friendlier Zig API to initialize this structure.
+        pub inline fn init(v: struct {
+            next_in_chain: ?*const ChainedStruct = null,
+            label: ?[*:0]const u8 = null,
+            required_features: ?[]const FeatureName = null,
+            required_limits: ?*const RequiredLimits = null,
+            default_queue: Queue.Descriptor = Queue.Descriptor{},
+        }) Descriptor {
+            return .{
+                .next_in_chain = v.next_in_chain,
+                .label = v.label,
+                .required_features_count = if (v.required_features) |e| @intCast(u32, e.len) else 0,
+                .required_features = if (v.required_features) |e| e.ptr else null,
+                .default_queue = v.default_queue,
+            };
+        }
     };
 
     pub inline fn createBindGroup(device: *Device, descriptor: *const BindGroup.Descriptor) *BindGroup {
