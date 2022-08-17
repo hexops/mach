@@ -593,6 +593,11 @@ pub fn main() !void {
     defer app.deinit(core);
 
     while (!core.internal.window.shouldClose()) {
+        // On Darwin targets, Dawn requires an NSAutoreleasePool per frame to release
+        // some resources. See Dawn's CHelloWorld example.
+        const pool = try util.AutoReleasePool.init();
+        defer util.AutoReleasePool.release(pool);
+
         try coreUpdate(core, null);
 
         try app.update(core);

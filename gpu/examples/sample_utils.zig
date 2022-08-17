@@ -99,7 +99,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
         .force_fallback_adapter = false,
     }, &response, requestAdapterCallback);
     if (response.?.status != .success) {
-        std.debug.print("failed to create GPU adapter: {s}\n", .{response.?.message});
+        std.debug.print("failed to create GPU adapter: {s}\n", .{response.?.message.?});
         std.process.exit(1);
     }
 
@@ -203,6 +203,29 @@ pub fn createSurfaceForWindow(
         .next_in_chain = extension,
     });
 }
+
+pub const AutoReleasePool = opaque {
+    pub fn init() error{OutOfMemory}!?*AutoReleasePool {
+        if (!@import("builtin").target.isDarwin()) return null;
+
+        // pool = [NSAutoreleasePool alloc];
+        var pool = msgSend(objc.objc_getClass("NSAutoreleasePool"), "alloc", .{}, ?*AutoReleasePool);
+        if (pool == null) return error.OutOfMemory;
+
+        // pool = [pool init];
+        pool = msgSend(pool, "init", .{}, ?*AutoReleasePool);
+        if (pool == null) unreachable;
+
+        return pool;
+    }
+
+    pub fn release(pool: ?*AutoReleasePool) void {
+        if (!@import("builtin").target.isDarwin()) return;
+
+        // [pool release];
+        msgSend(pool, "release", .{}, void);
+    }
+};
 
 // Borrowed from https://github.com/hazeycode/zig-objcrt
 pub fn msgSend(obj: anytype, sel_name: [:0]const u8, args: anytype, comptime ReturnType: type) ReturnType {

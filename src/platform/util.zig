@@ -137,6 +137,29 @@ pub fn createSurfaceForWindow(
     });
 }
 
+pub const AutoReleasePool = opaque {
+    pub fn init() error{OutOfMemory}!?*AutoReleasePool {
+        if (!@import("builtin").target.isDarwin()) return null;
+
+        // pool = [NSAutoreleasePool alloc];
+        var pool = msgSend(objc.objc_getClass("NSAutoreleasePool"), "alloc", .{}, ?*AutoReleasePool);
+        if (pool == null) return error.OutOfMemory;
+
+        // pool = [pool init];
+        pool = msgSend(pool, "init", .{}, ?*AutoReleasePool);
+        if (pool == null) unreachable;
+
+        return pool;
+    }
+
+    pub fn release(pool: ?*AutoReleasePool) void {
+        if (!@import("builtin").target.isDarwin()) return;
+
+        // [pool release];
+        msgSend(pool, "release", .{}, void);
+    }
+};
+
 // Borrowed from https://github.com/hazeycode/zig-objcrt
 fn msgSend(obj: anytype, sel_name: [:0]const u8, args: anytype, comptime ReturnType: type) ReturnType {
     const args_meta = @typeInfo(@TypeOf(args)).Struct.fields;

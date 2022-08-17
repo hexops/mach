@@ -142,6 +142,9 @@ const FrameParams = struct {
 };
 
 fn frame(params: FrameParams) !void {
+    const pool = try sample_utils.AutoReleasePool.init();
+    defer sample_utils.AutoReleasePool.release(pool);
+
     try glfw.pollEvents();
     const pl = params.window.getUserPointer(WindowData).?;
     if (pl.swap_chain == null or !std.meta.eql(pl.current_desc, pl.target_desc)) {
