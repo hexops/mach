@@ -124,18 +124,15 @@ pub fn update(app: *App, core: *mach.Core) !void {
         .store_op = .store,
     };
 
-    const render_pass_descriptor = gpu.RenderPassDescriptor{
-        .color_attachment_count = 1,
-        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
+    const render_pass_descriptor = gpu.RenderPassDescriptor.init(.{
+        .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = &.{
             .view = app.depth.?.view,
             .depth_load_op = .clear,
             .depth_store_op = .store,
-            .stencil_load_op = .undef,
-            .stencil_store_op = .undef,
             .depth_clear_value = 1.0,
         },
-    };
+    });
 
     const pass = encoder.beginRenderPass(&render_pass_descriptor);
     defer pass.release();
@@ -227,13 +224,12 @@ const Camera = struct {
             .size = @sizeOf(@TypeOf(uniform)),
         };
 
-        const bind_group = device.createBindGroup(&gpu.BindGroup.Descriptor{
+        const bind_group = device.createBindGroup(&gpu.BindGroup.Descriptor.init(.{
             .layout = Self.bindGroupLayout(device),
-            .entry_count = 1,
-            .entries = &[_]gpu.BindGroup.Entry{
+            .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, buffer.buffer, 0, buffer.size),
             },
-        });
+        }));
 
         self.buffer = buffer;
         self.bind_group = bind_group;
@@ -259,12 +255,11 @@ const Camera = struct {
 
     inline fn bindGroupLayout(device: *gpu.Device) *gpu.BindGroupLayout {
         const visibility = .{ .vertex = true, .fragment = true };
-        return device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor{
-            .entry_count = 1,
-            .entries = &[_]gpu.BindGroupLayout.Entry{
+        return device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor.init(.{
+            .entries = &.{
                 gpu.BindGroupLayout.Entry.buffer(0, visibility, .uniform, false, 0),
             },
-        });
+        }));
     }
 };
 
@@ -332,75 +327,51 @@ const Cube = struct {
     fn pipeline(core: *mach.Core) *gpu.RenderPipeline {
         const device = core.device;
 
-        const layout_descriptor = gpu.PipelineLayout.Descriptor{
-            .bind_group_layout_count = 3,
-            .bind_group_layouts = &[_]*gpu.BindGroupLayout{
+        const layout_descriptor = gpu.PipelineLayout.Descriptor.init(.{
+            .bind_group_layouts = &.{
                 Camera.bindGroupLayout(device),
                 Texture.bindGroupLayout(device),
                 Light.bindGroupLayout(device),
             },
-        };
+        });
 
         const layout = device.createPipelineLayout(&layout_descriptor);
         defer layout.release();
 
-        const shader = device.createShaderModule(&.{
-            .next_in_chain = .{ .wgsl_descriptor = &.{
-                .source = @embedFile("cube.wgsl"),
-            } },
-        });
+        const shader = device.createShaderModuleWGSL("cube.wgsl", @embedFile("cube.wgsl"));
         defer shader.release();
 
-        const blend = gpu.BlendState{
-            .color = .{
-                .operation = .add,
-                .src_factor = .one,
-                .dst_factor = .zero,
-            },
-            .alpha = .{
-                .operation = .add,
-                .src_factor = .one,
-                .dst_factor = .zero,
-            },
-        };
-
+        const blend = gpu.BlendState{};
         const color_target = gpu.ColorTargetState{
             .format = core.swap_chain_format,
-            .write_mask = gpu.ColorWriteMaskFlags.all,
             .blend = &blend,
         };
 
-        const fragment = gpu.FragmentState{
+        const fragment = gpu.FragmentState.init(.{
             .module = shader,
             .entry_point = "fs_main",
-            .target_count = 1,
-            .targets = &[_]gpu.ColorTargetState{color_target},
-            .constants = null,
-        };
+            .targets = &.{color_target},
+        });
 
         const descriptor = gpu.RenderPipeline.Descriptor{
             .layout = layout,
             .fragment = &fragment,
-            .vertex = .{
+            .vertex = gpu.VertexState.init(.{
                 .module = shader,
                 .entry_point = "vs_main",
-                .buffer_count = 2,
-                .buffers = &[_]gpu.VertexBufferLayout{
+                .buffers = &.{
                     Self.vertexBufferLayout(),
                     Self.instanceLayout(),
                 },
-            },
+            }),
             .depth_stencil = &.{
                 .format = Texture.DEPTH_FORMAT,
                 .depth_write_enabled = true,
                 .depth_compare = .less,
             },
             .primitive = .{
-                .front_face = .ccw,
                 .cull_mode = .back,
-                // .cull_mode = .none,
                 .topology = .triangle_strip,
-                .strip_index_format = .undef,
             },
         };
 
@@ -470,12 +441,10 @@ const Cube = struct {
                 .shader_location = 2,
             },
         };
-        return gpu.VertexBufferLayout{
+        return gpu.VertexBufferLayout.init(.{
             .array_stride = @sizeOf([8]f32),
-            .step_mode = .vertex,
-            .attribute_count = attributes.len,
             .attributes = &attributes,
-        };
+        });
     }
 
     fn instanceLayout() gpu.VertexBufferLayout {
@@ -502,12 +471,11 @@ const Cube = struct {
             },
         };
 
-        return gpu.VertexBufferLayout{
+        return gpu.VertexBufferLayout.init(.{
             .array_stride = @sizeOf([16]f32),
             .step_mode = .instance,
-            .attribute_count = attributes.len,
             .attributes = &attributes,
-        };
+        });
     }
 };
 
@@ -606,21 +574,15 @@ const Texture = struct {
 
         const texture = device.createTexture(&gpu.Texture.Descriptor{
             .size = extent,
-            .mip_level_count = 1,
-            .sample_count = 1,
-            .dimension = .dimension_2d,
             .format = FORMAT,
             .usage = .{ .copy_dst = true, .texture_binding = true },
         });
 
         const view = texture.createView(&gpu.TextureView.Descriptor{
-            .aspect = .all,
             .format = FORMAT,
             .dimension = .dimension_2d,
-            .base_array_layer = 0,
             .array_layer_count = 1,
             .mip_level_count = 1,
-            .base_mip_level = 0,
         });
 
         const sampler = device.createSampler(&gpu.Sampler.Descriptor{
@@ -630,9 +592,6 @@ const Texture = struct {
             .mag_filter = .linear,
             .min_filter = .linear,
             .mipmap_filter = .linear,
-            .compare = .undef,
-            .lod_min_clamp = 0.0,
-            .lod_max_clamp = std.math.f32_max,
             .max_anisotropy = 1, // 1,2,4,8,16
         });
 
@@ -649,14 +608,13 @@ const Texture = struct {
         );
 
         const bind_group_layout = Self.bindGroupLayout(device);
-        const bind_group = device.createBindGroup(&gpu.BindGroup.Descriptor{
+        const bind_group = device.createBindGroup(&gpu.BindGroup.Descriptor.init(.{
             .layout = bind_group_layout,
-            .entry_count = 2,
-            .entries = &[_]gpu.BindGroup.Entry{
+            .entries = &.{
                 gpu.BindGroup.Entry.textureView(0, view),
                 gpu.BindGroup.Entry.sampler(1, sampler),
             },
-        });
+        }));
 
         return Self{
             .view = view,
@@ -674,9 +632,6 @@ const Texture = struct {
 
         const texture = device.createTexture(&gpu.Texture.Descriptor{
             .size = extent,
-            .mip_level_count = 1,
-            .sample_count = 1,
-            .dimension = .dimension_2d,
             .format = DEPTH_FORMAT,
             .usage = .{
                 .render_attachment = true,
@@ -685,26 +640,14 @@ const Texture = struct {
         });
 
         const view = texture.createView(&gpu.TextureView.Descriptor{
-            .aspect = .all,
-            .format = .undef,
             .dimension = .dimension_2d,
-            .base_array_layer = 0,
             .array_layer_count = 1,
             .mip_level_count = 1,
-            .base_mip_level = 0,
         });
 
         const sampler = device.createSampler(&gpu.Sampler.Descriptor{
-            .address_mode_u = .clamp_to_edge,
-            .address_mode_v = .clamp_to_edge,
-            .address_mode_w = .clamp_to_edge,
             .mag_filter = .linear,
-            .min_filter = .nearest,
-            .mipmap_filter = .nearest,
             .compare = .less_equal,
-            .lod_min_clamp = 0.0,
-            .lod_max_clamp = std.math.f32_max,
-            .max_anisotropy = 1,
         });
 
         return Self{
@@ -718,13 +661,12 @@ const Texture = struct {
     inline fn bindGroupLayout(device: *gpu.Device) *gpu.BindGroupLayout {
         const visibility = .{ .fragment = true };
         const Entry = gpu.BindGroupLayout.Entry;
-        return device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor{
-            .entry_count = 2,
-            .entries = &[_]Entry{
+        return device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor.init(.{
+            .entries = &.{
                 Entry.texture(0, visibility, .float, .dimension_2d, false),
                 Entry.sampler(1, visibility, .filtering),
             },
-        });
+        }));
     }
 };
 
@@ -753,13 +695,12 @@ const Light = struct {
             .size = @sizeOf(@TypeOf(uniform)),
         };
 
-        const bind_group = device.createBindGroup(&gpu.BindGroup.Descriptor{
+        const bind_group = device.createBindGroup(&gpu.BindGroup.Descriptor.init(.{
             .layout = Self.bindGroupLayout(device),
-            .entry_count = 1,
-            .entries = &[_]gpu.BindGroup.Entry{
+            .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, buffer.buffer, 0, buffer.size),
             },
-        });
+        }));
 
         return Self{
             .buffer = buffer,
@@ -782,84 +723,59 @@ const Light = struct {
     inline fn bindGroupLayout(device: *gpu.Device) *gpu.BindGroupLayout {
         const visibility = .{ .vertex = true, .fragment = true };
         const Entry = gpu.BindGroupLayout.Entry;
-        return device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor{
-            .entry_count = 1,
-            .entries = &[_]Entry{
+        return device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor.init(.{
+            .entries = &.{
                 Entry.buffer(0, visibility, .uniform, false, 0),
             },
-        });
+        }));
     }
 
     fn pipeline(core: *mach.Core) *gpu.RenderPipeline {
         const device = core.device;
 
-        const layout_descriptor = gpu.PipelineLayout.Descriptor{
-            .bind_group_layout_count = 2,
-            .bind_group_layouts = &[_]*gpu.BindGroupLayout{
+        const layout_descriptor = gpu.PipelineLayout.Descriptor.init(.{
+            .bind_group_layouts = &.{
                 Camera.bindGroupLayout(device),
                 Light.bindGroupLayout(device),
             },
-        };
+        });
 
         const layout = device.createPipelineLayout(&layout_descriptor);
         defer layout.release();
 
-        const shader = core.device.createShaderModule(&.{
-            .next_in_chain = .{ .wgsl_descriptor = &.{
-                .source = @embedFile("light.wgsl"),
-            } },
-        });
+        const shader = core.device.createShaderModuleWGSL("light.wgsl", @embedFile("light.wgsl"));
         defer shader.release();
 
-        const blend = gpu.BlendState{
-            .color = .{
-                .operation = .add,
-                .src_factor = .one,
-                .dst_factor = .zero,
-            },
-            .alpha = .{
-                .operation = .add,
-                .src_factor = .one,
-                .dst_factor = .zero,
-            },
-        };
-
+        const blend = gpu.BlendState{};
         const color_target = gpu.ColorTargetState{
             .format = core.swap_chain_format,
-            .write_mask = gpu.ColorWriteMaskFlags.all,
             .blend = &blend,
         };
 
-        const fragment = gpu.FragmentState{
+        const fragment = gpu.FragmentState.init(.{
             .module = shader,
             .entry_point = "fs_main",
-            .target_count = 1,
-            .targets = &[_]gpu.ColorTargetState{color_target},
-            .constants = null,
-        };
+            .targets = &.{color_target},
+        });
 
         const descriptor = gpu.RenderPipeline.Descriptor{
             .layout = layout,
             .fragment = &fragment,
-            .vertex = .{
+            .vertex = gpu.VertexState.init(.{
                 .module = shader,
                 .entry_point = "vs_main",
-                .buffer_count = 1,
-                .buffers = &[_]gpu.VertexBufferLayout{
+                .buffers = &.{
                     Cube.vertexBufferLayout(),
                 },
-            },
+            }),
             .depth_stencil = &.{
                 .format = Texture.DEPTH_FORMAT,
                 .depth_write_enabled = true,
                 .depth_compare = .less,
             },
             .primitive = .{
-                .front_face = .ccw,
                 .cull_mode = .back,
-                // .cull_mode = .none,
                 .topology = .triangle_strip,
-                .strip_index_format = .undef,
             },
         };
 

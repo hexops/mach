@@ -1,9 +1,9 @@
-//! To get the effect we want, we need a texture on which to render
-//! (we can't use the swapchain texture directly, but we can get the effect
+//! To get the effect we want, we need a texture on which to render;
+//! we can't use the swapchain texture directly, but we can get the effect
 //! by doing the same render pass twice, on the texture and the swapchain.
-//! We also need a second texture to use on the cube, that after the render pass
-//! needs to copy the other texture. We can't use the same texture since
-//! it would interfere with the sincronization on the gpu during the render pass.
+//! We also need a second texture to use on the cube (after the render pass
+//! it needs to copy the other texture.) We can't use the same texture since
+//! it would interfere with the synchronization on the gpu during the render pass.
 //! This demo currently does not work on opengl, because core.current_desc.width/height,
 //! are set to 0 after core.init() and because webgpu does not implement copyTextureToTexture,
 //! for opengl
@@ -45,71 +45,44 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .size_min = .{ .width = 20, .height = 20 },
     });
 
-    const vs_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("vert.wgsl"),
-        } },
-        .label = "my vertex shader",
-    });
+    const vs_module = core.device.createShaderModuleWGSL("vert.wgsl", @embedFile("vert.wgsl"));
 
     const vertex_attributes = [_]gpu.VertexAttribute{
         .{ .format = .float32x4, .offset = @offsetOf(Vertex, "pos"), .shader_location = 0 },
         .{ .format = .float32x2, .offset = @offsetOf(Vertex, "uv"), .shader_location = 1 },
     };
-    const vertex_buffer_layout = gpu.VertexBufferLayout{
+    const vertex_buffer_layout = gpu.VertexBufferLayout.init(.{
         .array_stride = @sizeOf(Vertex),
-        .step_mode = .vertex,
-        .attribute_count = vertex_attributes.len,
         .attributes = &vertex_attributes,
-    };
-
-    const fs_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("frag.wgsl"),
-        } },
-        .label = "my fragment shader",
     });
 
-    const blend = gpu.BlendState{
-        .color = .{
-            .operation = .add,
-            .src_factor = .one,
-            .dst_factor = .zero,
-        },
-        .alpha = .{
-            .operation = .add,
-            .src_factor = .one,
-            .dst_factor = .zero,
-        },
-    };
+    const fs_module = core.device.createShaderModuleWGSL("frag.wgsl", @embedFile("frag.wgsl"));
+
+    const blend = gpu.BlendState{};
     const color_target = gpu.ColorTargetState{
         .format = core.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
-    const fragment = gpu.FragmentState{
+    const fragment = gpu.FragmentState.init(.{
         .module = fs_module,
         .entry_point = "main",
-        .target_count = 1,
-        .targets = &[_]gpu.ColorTargetState{color_target},
-        .constants = null,
-    };
+        .targets = &.{color_target},
+    });
 
     const bgle_buffer = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
     const bgle_sampler = gpu.BindGroupLayout.Entry.sampler(1, .{ .fragment = true }, .filtering);
     const bgle_textureview = gpu.BindGroupLayout.Entry.texture(2, .{ .fragment = true }, .float, .dimension_2d, false);
     const bgl = core.device.createBindGroupLayout(
-        &gpu.BindGroupLayout.Descriptor{
-            .entry_count = 3,
-            .entries = &[_]gpu.BindGroupLayout.Entry{ bgle_buffer, bgle_sampler, bgle_textureview },
-        },
+        &gpu.BindGroupLayout.Descriptor.init(.{
+            .entries = &.{ bgle_buffer, bgle_sampler, bgle_textureview },
+        }),
     );
 
     const bind_group_layouts = [_]*gpu.BindGroupLayout{bgl};
-    const pipeline_layout = core.device.createPipelineLayout(&.{
-        .bind_group_layout_count = 1,
+    const pipeline_layout = core.device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
         .bind_group_layouts = &bind_group_layouts,
-    });
+    }));
 
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
         .fragment = &fragment,
@@ -119,22 +92,13 @@ pub fn init(app: *App, core: *mach.Core) !void {
             .depth_write_enabled = true,
             .depth_compare = .less,
         },
-        .vertex = .{
+        .vertex = gpu.VertexState.init(.{
             .module = vs_module,
             .entry_point = "main",
-            .buffer_count = 1,
-            .buffers = &[_]gpu.VertexBufferLayout{vertex_buffer_layout},
-        },
-        .multisample = .{
-            .count = 1,
-            .mask = 0xFFFFFFFF,
-            .alpha_to_coverage_enabled = false,
-        },
+            .buffers = &.{vertex_buffer_layout},
+        }),
         .primitive = .{
-            .front_face = .ccw,
             .cull_mode = .back,
-            .topology = .triangle_list,
-            .strip_index_format = .undef,
         },
     };
 
@@ -185,15 +149,14 @@ pub fn init(app: *App, core: *mach.Core) !void {
     });
 
     const bind_group = core.device.createBindGroup(
-        &gpu.BindGroup.Descriptor{
+        &gpu.BindGroup.Descriptor.init(.{
             .layout = bgl,
-            .entry_count = 3,
-            .entries = &[_]gpu.BindGroup.Entry{
+            .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, uniform_buffer, 0, @sizeOf(UniformBufferObject)),
                 gpu.BindGroup.Entry.sampler(1, sampler),
                 gpu.BindGroup.Entry.textureView(2, cube_texture_view),
             },
-        },
+        }),
     );
 
     app.pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
@@ -245,14 +208,12 @@ pub fn update(app: *App, core: *mach.Core) !void {
 
     const cube_color_attachment = gpu.RenderPassColorAttachment{
         .view = cube_view,
-        .resolve_target = null,
         .clear_value = gpu.Color{ .r = 0.5, .g = 0.5, .b = 0.5, .a = 1 },
         .load_op = .clear,
         .store_op = .store,
     };
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
-        .resolve_target = null,
         .clear_value = gpu.Color{ .r = 0.5, .g = 0.5, .b = 0.5, .a = 1 },
         .load_op = .clear,
         .store_op = .store,
@@ -263,21 +224,17 @@ pub fn update(app: *App, core: *mach.Core) !void {
         .depth_load_op = .clear,
         .depth_store_op = .store,
         .depth_clear_value = 1.0,
-        .stencil_load_op = .undef,
-        .stencil_store_op = .undef,
     };
 
     const encoder = core.device.createCommandEncoder(null);
-    const cube_render_pass_info = gpu.RenderPassDescriptor{
-        .color_attachment_count = 1,
-        .color_attachments = &[_]gpu.RenderPassColorAttachment{cube_color_attachment},
+    const cube_render_pass_info = gpu.RenderPassDescriptor.init(.{
+        .color_attachments = &.{cube_color_attachment},
         .depth_stencil_attachment = &depth_stencil_attachment,
-    };
-    const render_pass_info = gpu.RenderPassDescriptor{
-        .color_attachment_count = 1,
-        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
+    });
+    const render_pass_info = gpu.RenderPassDescriptor.init(.{
+        .color_attachments = &.{color_attachment},
         .depth_stencil_attachment = &depth_stencil_attachment,
-    };
+    });
 
     {
         const time = timer.read();
@@ -381,15 +338,14 @@ pub fn resize(app: *App, core: *mach.Core, width: u32, height: u32) !void {
 
         app.bind_group.release();
         app.bind_group = core.device.createBindGroup(
-            &gpu.BindGroup.Descriptor{
+            &gpu.BindGroup.Descriptor.init(.{
                 .layout = app.bgl,
-                .entry_count = 3,
-                .entries = &[_]gpu.BindGroup.Entry{
+                .entries = &.{
                     gpu.BindGroup.Entry.buffer(0, app.uniform_buffer, 0, @sizeOf(UniformBufferObject)),
                     gpu.BindGroup.Entry.sampler(1, app.sampler),
                     gpu.BindGroup.Entry.textureView(2, app.cube_texture_view),
                 },
-            },
+            }),
         );
     } else {
         app.depth_texture = core.device.createTexture(&gpu.Texture.Descriptor{

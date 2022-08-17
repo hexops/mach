@@ -20,25 +20,19 @@ pub fn init(_: *App, core: *mach.Core) !void {
         .mapped_at_creation = false,
     });
 
-    const compute_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("main.wgsl"),
-        } },
-        .label = "shader module",
-    });
+    const compute_module = core.device.createShaderModuleWGSL("main.wgsl", @embedFile("main.wgsl"));
 
     const compute_pipeline = core.device.createComputePipeline(&gpu.ComputePipeline.Descriptor{ .compute = gpu.ProgrammableStageDescriptor{
         .module = compute_module,
         .entry_point = "main",
     } });
 
-    const compute_bind_group = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
+    const compute_bind_group = core.device.createBindGroup(&gpu.BindGroup.Descriptor.init(.{
         .layout = compute_pipeline.getBindGroupLayout(0),
-        .entry_count = 1,
-        .entries = &[_]gpu.BindGroup.Entry{
+        .entries = &.{
             gpu.BindGroup.Entry.buffer(0, output, 0, buffer_size),
         },
-    });
+    }));
 
     compute_module.release();
 

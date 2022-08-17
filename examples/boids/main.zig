@@ -27,19 +27,15 @@ var sim_params = [_]f32{
 };
 
 pub fn init(app: *App, core: *mach.Core) !void {
-    const sprite_shader_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("sprite.wgsl"),
-        } },
-        .label = "sprite shader module",
-    });
+    const sprite_shader_module = core.device.createShaderModuleWGSL(
+        "sprite.wgsl",
+        @embedFile("sprite.wgsl"),
+    );
 
-    const update_sprite_shader_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("updateSprites.wgsl"),
-        } },
-        .label = "update sprite shader module",
-    });
+    const update_sprite_shader_module = core.device.createShaderModuleWGSL(
+        "updateSprites.wgsl",
+        @embedFile("updateSprites.wgsl"),
+    );
 
     const instanced_particles_attributes = [_]gpu.VertexAttribute{
         .{
@@ -66,35 +62,31 @@ pub fn init(app: *App, core: *mach.Core) !void {
     };
 
     const render_pipeline = core.device.createRenderPipeline(&gpu.RenderPipeline.Descriptor{
-        .vertex = .{
+        .vertex = gpu.VertexState.init(.{
             .module = sprite_shader_module,
             .entry_point = "vert_main",
-            .buffer_count = 2,
-            .buffers = &[_]gpu.VertexBufferLayout{
-                .{
+            .buffers = &.{
+                gpu.VertexBufferLayout.init(.{
                     // instanced particles buffer
                     .array_stride = 4 * 4,
                     .step_mode = .instance,
-                    .attribute_count = instanced_particles_attributes.len,
                     .attributes = &instanced_particles_attributes,
-                },
-                .{
+                }),
+                gpu.VertexBufferLayout.init(.{
                     // vertex buffer
                     .array_stride = 2 * 4,
                     .step_mode = .vertex,
-                    .attribute_count = vertex_buffer_attributes.len,
                     .attributes = &vertex_buffer_attributes,
-                },
+                }),
             },
-        },
-        .fragment = &gpu.FragmentState{
+        }),
+        .fragment = &gpu.FragmentState.init(.{
             .module = sprite_shader_module,
             .entry_point = "frag_main",
-            .target_count = 1,
             .targets = &[_]gpu.ColorTargetState{.{
                 .format = core.swap_chain_format,
             }},
-        },
+        }),
     });
 
     const compute_pipeline = core.device.createComputePipeline(&gpu.ComputePipeline.Descriptor{ .compute = gpu.ProgrammableStageDescriptor{
@@ -155,15 +147,14 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     i = 0;
     while (i < 2) : (i += 1) {
-        particle_bind_groups[i] = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
+        particle_bind_groups[i] = core.device.createBindGroup(&gpu.BindGroup.Descriptor.init(.{
             .layout = compute_pipeline.getBindGroupLayout(0),
-            .entry_count = 3,
-            .entries = &[_]gpu.BindGroup.Entry{
+            .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, sim_param_buffer, 0, sim_params.len * @sizeOf(f32)),
                 gpu.BindGroup.Entry.buffer(1, particle_buffers[i], 0, initial_particle_data.len * @sizeOf(f32)),
                 gpu.BindGroup.Entry.buffer(2, particle_buffers[(i + 1) % 2], 0, initial_particle_data.len * @sizeOf(f32)),
             },
-        });
+        }));
     }
 
     app.compute_pipeline = compute_pipeline;
@@ -181,18 +172,16 @@ pub fn update(app: *App, core: *mach.Core) !void {
     const back_buffer_view = core.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
-        .resolve_target = null,
         .clear_value = std.mem.zeroes(gpu.Color),
         .load_op = .clear,
         .store_op = .store,
     };
 
-    const render_pass_descriptor = gpu.RenderPassDescriptor{
-        .color_attachment_count = 1,
-        .color_attachments = &[_]gpu.RenderPassColorAttachment{
+    const render_pass_descriptor = gpu.RenderPassDescriptor.init(.{
+        .color_attachments = &.{
             color_attachment,
         },
-    };
+    });
 
     sim_params[0] = @floatCast(f32, core.delta_time);
     core.device.getQueue().writeBuffer(app.sim_param_buffer, 0, sim_params[0..]);

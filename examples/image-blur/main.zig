@@ -34,12 +34,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .size_min = .{ .width = 20, .height = 20 },
     });
 
-    const blur_shader_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("blur.wgsl"),
-        } },
-        .label = "blur shader module",
-    });
+    const blur_shader_module = core.device.createShaderModuleWGSL("blur.wgsl", @embedFile("blur.wgsl"));
 
     const blur_pipeline_descriptor = gpu.ComputePipeline.Descriptor{
         .compute = gpu.ProgrammableStageDescriptor{
@@ -50,54 +45,34 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     const blur_pipeline = core.device.createComputePipeline(&blur_pipeline_descriptor);
 
-    const fullscreen_quad_vs_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("fullscreen_textured_quad.wgsl"),
-        } },
-        .label = "fullscreen quad vertex shader",
-    });
+    const fullscreen_quad_vs_module = core.device.createShaderModuleWGSL(
+        "fullscreen_textured_quad.wgsl",
+        @embedFile("fullscreen_textured_quad.wgsl"),
+    );
 
-    const fullscreen_quad_fs_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("fullscreen_textured_quad.wgsl"),
-        } },
-        .label = "fullscreen quad fragment shader",
-    });
+    const fullscreen_quad_fs_module = core.device.createShaderModuleWGSL(
+        "fullscreen_textured_quad.wgsl",
+        @embedFile("fullscreen_textured_quad.wgsl"),
+    );
 
-    const blend = gpu.BlendState{
-        .color = .{
-            .operation = .add,
-            .src_factor = .one,
-            .dst_factor = .zero,
-        },
-        .alpha = .{
-            .operation = .add,
-            .src_factor = .one,
-            .dst_factor = .zero,
-        },
-    };
-
+    const blend = gpu.BlendState{};
     const color_target = gpu.ColorTargetState{
         .format = core.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
 
-    const fragment_state = gpu.FragmentState{
+    const fragment_state = gpu.FragmentState.init(.{
         .module = fullscreen_quad_fs_module,
         .entry_point = "frag_main",
-        .target_count = 1,
-        .targets = &[_]gpu.ColorTargetState{color_target},
-        .constants = null,
-    };
+        .targets = &.{color_target},
+    });
 
     const fullscreen_quad_pipeline_descriptor = gpu.RenderPipeline.Descriptor{
-        .layout = null,
         .fragment = &fragment_state,
         .vertex = .{
             .module = fullscreen_quad_vs_module,
             .entry_point = "vert_main",
-            .buffers = null,
         },
     };
 
@@ -173,53 +148,48 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .usage = .{ .copy_dst = true, .uniform = true },
     });
 
-    const compute_constants = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
+    const compute_constants = core.device.createBindGroup(&gpu.BindGroup.Descriptor.init(.{
         .layout = blur_pipeline.getBindGroupLayout(0),
-        .entry_count = 2,
-        .entries = &[_]gpu.BindGroup.Entry{
+        .entries = &.{
             gpu.BindGroup.Entry.sampler(0, sampler),
             gpu.BindGroup.Entry.buffer(1, blur_params_buffer, 0, 8),
         },
-    });
+    }));
 
-    const compute_bind_group_0 = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
+    const compute_bind_group_0 = core.device.createBindGroup(&gpu.BindGroup.Descriptor.init(.{
         .layout = blur_pipeline.getBindGroupLayout(1),
-        .entry_count = 3,
-        .entries = &[_]gpu.BindGroup.Entry{
+        .entries = &.{
             gpu.BindGroup.Entry.textureView(1, cube_texture.createView(&gpu.TextureView.Descriptor{})),
             gpu.BindGroup.Entry.textureView(2, textures[0].createView(&gpu.TextureView.Descriptor{})),
             gpu.BindGroup.Entry.buffer(3, flip[0], 0, 4),
         },
-    });
+    }));
 
-    const compute_bind_group_1 = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
+    const compute_bind_group_1 = core.device.createBindGroup(&gpu.BindGroup.Descriptor.init(.{
         .layout = blur_pipeline.getBindGroupLayout(1),
-        .entry_count = 3,
-        .entries = &[_]gpu.BindGroup.Entry{
+        .entries = &.{
             gpu.BindGroup.Entry.textureView(1, textures[0].createView(&gpu.TextureView.Descriptor{})),
             gpu.BindGroup.Entry.textureView(2, textures[1].createView(&gpu.TextureView.Descriptor{})),
             gpu.BindGroup.Entry.buffer(3, flip[1], 0, 4),
         },
-    });
+    }));
 
-    const compute_bind_group_2 = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
+    const compute_bind_group_2 = core.device.createBindGroup(&gpu.BindGroup.Descriptor.init(.{
         .layout = blur_pipeline.getBindGroupLayout(1),
-        .entry_count = 3,
-        .entries = &[_]gpu.BindGroup.Entry{
+        .entries = &.{
             gpu.BindGroup.Entry.textureView(1, textures[1].createView(&gpu.TextureView.Descriptor{})),
             gpu.BindGroup.Entry.textureView(2, textures[0].createView(&gpu.TextureView.Descriptor{})),
             gpu.BindGroup.Entry.buffer(3, flip[0], 0, 4),
         },
-    });
+    }));
 
-    const show_result_bind_group = core.device.createBindGroup(&gpu.BindGroup.Descriptor{
+    const show_result_bind_group = core.device.createBindGroup(&gpu.BindGroup.Descriptor.init(.{
         .layout = fullscreen_quad_pipeline.getBindGroupLayout(0),
-        .entry_count = 2,
-        .entries = &[_]gpu.BindGroup.Entry{
+        .entries = &.{
             gpu.BindGroup.Entry.sampler(0, sampler),
             gpu.BindGroup.Entry.textureView(1, textures[1].createView(&gpu.TextureView.Descriptor{})),
         },
-    });
+    }));
 
     const blur_params_buffer_data = [_]u32{ filter_size, block_dimension };
     queue.writeBuffer(blur_params_buffer, 0, &blur_params_buffer_data);
@@ -268,18 +238,14 @@ pub fn update(app: *App, core: *mach.Core) !void {
 
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
-        .resolve_target = null,
         .clear_value = std.mem.zeroes(gpu.Color),
         .load_op = .clear,
         .store_op = .store,
     };
 
-    const render_pass_descriptor = gpu.RenderPassDescriptor{
-        .color_attachment_count = 1,
-        .color_attachments = &[_]gpu.RenderPassColorAttachment{
-            color_attachment,
-        },
-    };
+    const render_pass_descriptor = gpu.RenderPassDescriptor.init(.{
+        .color_attachments = &.{color_attachment},
+    });
 
     const render_pass = encoder.beginRenderPass(&render_pass_descriptor);
     render_pass.setPipeline(app.fullscreen_quad_pipeline);

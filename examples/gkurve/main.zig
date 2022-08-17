@@ -128,19 +128,8 @@ pub fn init(app: *App, core: *mach.Core) !void {
     // try draw.quad(app, .{ 0, 0 }, .{ 480, 480 }, .{}, .{ .bottom_left = .{ 0, 0 }, .width_and_height = .{ 1, 1 } });
     // try draw.circle(app, .{ window_width / 2, window_height / 2 }, window_height / 2 - 10, .{ 0, 0.5, 0.75, 1.0 }, white_texture_uv_data);
 
-    const vs_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("vert.wgsl"),
-        } },
-        .label = "my vertex shader",
-    });
-
-    const fs_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("frag.wgsl"),
-        } },
-        .label = "my fragment shader",
-    });
+    const vs_module = core.device.createShaderModuleWGSL("vert.wgsl", @embedFile("vert.wgsl"));
+    const fs_module = core.device.createShaderModuleWGSL("frag.wgsl", @embedFile("frag.wgsl"));
 
     const blend = gpu.BlendState{
         .color = .{
@@ -160,51 +149,34 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
-    const fragment = gpu.FragmentState{
+    const fragment = gpu.FragmentState.init(.{
         .module = fs_module,
         .entry_point = "main",
-        .target_count = 1,
-        .targets = &[_]gpu.ColorTargetState{color_target},
-        .constants = null,
-    };
+        .targets = &.{color_target},
+    });
 
     const vbgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
     const fbgle = gpu.BindGroupLayout.Entry.buffer(1, .{ .fragment = true }, .read_only_storage, true, 0);
     const sbgle = gpu.BindGroupLayout.Entry.sampler(2, .{ .fragment = true }, .filtering);
     const tbgle = gpu.BindGroupLayout.Entry.texture(3, .{ .fragment = true }, .float, .dimension_2d, false);
     const bgl = core.device.createBindGroupLayout(
-        &gpu.BindGroupLayout.Descriptor{
-            .entry_count = 4,
-            .entries = &[_]gpu.BindGroupLayout.Entry{ vbgle, fbgle, sbgle, tbgle },
-        },
+        &gpu.BindGroupLayout.Descriptor.init(.{
+            .entries = &.{ vbgle, fbgle, sbgle, tbgle },
+        }),
     );
     const bind_group_layouts = [_]*gpu.BindGroupLayout{bgl};
-    const pipeline_layout = core.device.createPipelineLayout(&.{
-        .bind_group_layout_count = 1,
+    const pipeline_layout = core.device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
         .bind_group_layouts = &bind_group_layouts,
-    });
+    }));
 
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
         .fragment = &fragment,
         .layout = pipeline_layout,
-        .depth_stencil = null,
-        .vertex = .{
+        .vertex = gpu.VertexState.init(.{
             .module = vs_module,
             .entry_point = "main",
-            .buffer_count = 1,
-            .buffers = &[_]gpu.VertexBufferLayout{draw.VERTEX_BUFFER_LAYOUT},
-        },
-        .multisample = .{
-            .count = 1,
-            .mask = 0xFFFFFFFF,
-            .alpha_to_coverage_enabled = false,
-        },
-        .primitive = .{
-            .front_face = .ccw,
-            .cull_mode = .none,
-            .topology = .triangle_list,
-            .strip_index_format = .undef,
-        },
+            .buffers = &.{draw.VERTEX_BUFFER_LAYOUT},
+        }),
     };
 
     const vertex_buffer = core.device.createBuffer(&.{
@@ -231,16 +203,15 @@ pub fn init(app: *App, core: *mach.Core) !void {
     });
 
     const bind_group = core.device.createBindGroup(
-        &gpu.BindGroup.Descriptor{
+        &gpu.BindGroup.Descriptor.init(.{
             .layout = bgl,
-            .entry_count = 4,
-            .entries = &[_]gpu.BindGroup.Entry{
+            .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, vertex_uniform_buffer, 0, @sizeOf(draw.VertexUniform)),
                 gpu.BindGroup.Entry.buffer(1, frag_uniform_buffer, 0, @sizeOf(draw.FragUniform) * app.vertices.items.len / 3),
                 gpu.BindGroup.Entry.sampler(2, sampler),
                 gpu.BindGroup.Entry.textureView(3, texture.createView(&gpu.TextureView.Descriptor{ .dimension = .dimension_2d })),
             },
-        },
+        }),
     );
 
     app.pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
@@ -283,17 +254,15 @@ pub fn update(app: *App, core: *mach.Core) !void {
     const back_buffer_view = core.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
-        .resolve_target = null,
         .clear_value = std.mem.zeroes(gpu.Color),
         .load_op = .clear,
         .store_op = .store,
     };
 
     const encoder = core.device.createCommandEncoder(null);
-    const render_pass_info = gpu.RenderPassDescriptor{
-        .color_attachment_count = 1,
-        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
-    };
+    const render_pass_info = gpu.RenderPassDescriptor.init(.{
+        .color_attachments = &.{color_attachment},
+    });
 
     {
         if (app.update_vertex_buffer) {

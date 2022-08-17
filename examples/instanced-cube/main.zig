@@ -27,78 +27,52 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .size_min = .{ .width = 20, .height = 20 },
     });
 
-    const vs_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("vert.wgsl"),
-        } },
-        .label = "my vertex shader",
-    });
+    const vs_module = core.device.createShaderModuleWGSL("vert.wgsl", @embedFile("vert.wgsl"));
 
     const vertex_attributes = [_]gpu.VertexAttribute{
         .{ .format = .float32x4, .offset = @offsetOf(Vertex, "pos"), .shader_location = 0 },
         .{ .format = .float32x2, .offset = @offsetOf(Vertex, "uv"), .shader_location = 1 },
     };
-    const vertex_buffer_layout = gpu.VertexBufferLayout{
+    const vertex_buffer_layout = gpu.VertexBufferLayout.init(.{
         .array_stride = @sizeOf(Vertex),
         .step_mode = .vertex,
-        .attribute_count = vertex_attributes.len,
         .attributes = &vertex_attributes,
-    };
-
-    const fs_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("frag.wgsl"),
-        } },
-        .label = "my fragment shader",
     });
+
+    const fs_module = core.device.createShaderModuleWGSL("frag.wgsl", @embedFile("frag.wgsl"));
 
     const color_target = gpu.ColorTargetState{
         .format = core.swap_chain_format,
-        .blend = null,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
-    const fragment = gpu.FragmentState{
+    const fragment = gpu.FragmentState.init(.{
         .module = fs_module,
         .entry_point = "main",
-        .target_count = 1,
-        .targets = &[_]gpu.ColorTargetState{color_target},
-        .constants = null,
-    };
+        .targets = &.{color_target},
+    });
 
     const bgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
     const bgl = core.device.createBindGroupLayout(
-        &gpu.BindGroupLayout.Descriptor{
-            .entry_count = 1,
-            .entries = &[_]gpu.BindGroupLayout.Entry{bgle},
-        },
+        &gpu.BindGroupLayout.Descriptor.init(.{
+            .entries = &.{bgle},
+        }),
     );
 
     const bind_group_layouts = [_]*gpu.BindGroupLayout{bgl};
-    const pipeline_layout = core.device.createPipelineLayout(&.{
-        .bind_group_layout_count = 1,
+    const pipeline_layout = core.device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
         .bind_group_layouts = &bind_group_layouts,
-    });
+    }));
 
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
         .fragment = &fragment,
         .layout = pipeline_layout,
-        .depth_stencil = null,
-        .vertex = .{
+        .vertex = gpu.VertexState.init(.{
             .module = vs_module,
             .entry_point = "main",
-            .buffer_count = 1,
-            .buffers = &[_]gpu.VertexBufferLayout{vertex_buffer_layout},
-        },
-        .multisample = .{
-            .count = 1,
-            .mask = 0xFFFFFFFF,
-            .alpha_to_coverage_enabled = false,
-        },
+            .buffers = &.{vertex_buffer_layout},
+        }),
         .primitive = .{
-            .front_face = .ccw,
             .cull_mode = .back,
-            .topology = .triangle_list,
-            .strip_index_format = .undef,
         },
     };
 
@@ -121,13 +95,12 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .mapped_at_creation = false,
     });
     const bind_group = core.device.createBindGroup(
-        &gpu.BindGroup.Descriptor{
+        &gpu.BindGroup.Descriptor.init(.{
             .layout = bgl,
-            .entry_count = 1,
-            .entries = &[_]gpu.BindGroup.Entry{
+            .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, uniform_buffer, 0, @sizeOf(UniformBufferObject) * num_instances),
             },
-        },
+        }),
     );
 
     app.pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
@@ -162,17 +135,15 @@ pub fn update(app: *App, core: *mach.Core) !void {
     const back_buffer_view = core.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
-        .resolve_target = null,
         .clear_value = std.mem.zeroes(gpu.Color),
         .load_op = .clear,
         .store_op = .store,
     };
 
     const encoder = core.device.createCommandEncoder(null);
-    const render_pass_info = gpu.RenderPassDescriptor{
-        .color_attachment_count = 1,
-        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
-    };
+    const render_pass_info = gpu.RenderPassDescriptor.init(.{
+        .color_attachments = &.{color_attachment},
+    });
 
     {
         const proj = zm.perspectiveFovRh(
