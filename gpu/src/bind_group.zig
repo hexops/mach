@@ -3,11 +3,17 @@ const Sampler = @import("sampler.zig").Sampler;
 const TextureView = @import("texture_view.zig").TextureView;
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
+const ExternalTexture = @import("external_texture.zig").ExternalTexture;
 const Impl = @import("interface.zig").Impl;
 
 pub const BindGroup = opaque {
     pub const Entry = extern struct {
-        next_in_chain: ?*const ChainedStruct = null,
+        pub const NextInChain = extern union {
+            generic: ?*const ChainedStruct,
+            external_texture_binding_entry: *const ExternalTexture.BindingEntry,
+        };
+
+        next_in_chain: NextInChain = .{ .generic = null },
         binding: u32,
         buffer: ?*Buffer = null,
         offset: u64 = 0,

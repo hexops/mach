@@ -92,7 +92,7 @@ pub const RenderPassDescriptor = extern struct {
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
     pub inline fn init(v: struct {
-        next_in_chain: ?*const ChainedStruct = null,
+        next_in_chain: NextInChain = .{ .generic = null },
         label: ?[*:0]const u8 = null,
         color_attachments: ?[]const RenderPassColorAttachment = null,
         depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment = null,

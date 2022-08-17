@@ -3,7 +3,6 @@ const TextureView = @import("texture_view.zig").TextureView;
 const Impl = @import("interface.zig").Impl;
 
 pub const ExternalTexture = opaque {
-    /// TODO: Can be chained in gpu.BindGroup.Entry
     pub const BindingEntry = extern struct {
         chain: ChainedStruct = .{ .next = null, .s_type = .external_texture_binding_entry },
         external_texture: *ExternalTexture,
