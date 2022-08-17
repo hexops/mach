@@ -238,8 +238,4 @@ const descriptor = gpu.Surface.Descriptor{
 
 ### Others
 
-There may be other opportunities for helpers, to improve the existing APIs, or add utility APIs on top of the existing APIs. If you find one, please open an issue we'd love to hear it!
-
-The following are definitive candidates for helpers we haven't implemented yet:
-
-* Other `next_in_chain` extensions (marked with a `// TODO` already)
+There may be other opportunities for helpers, to improve the existing APIs, or add utility APIs on top of the existing APIs. If you find one, please open an issue we'd love to consider it.
