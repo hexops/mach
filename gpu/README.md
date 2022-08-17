@@ -176,6 +176,7 @@ And, to initialize data structures with slices in them, the following helpers ar
 * `Texture.Descriptor.init`
 * `ComputePassDescriptor.init`
 * `RenderPassDescriptor.init`
+* `ProgrammableStageDescriptor.init`
 
 ### Typed callbacks
 

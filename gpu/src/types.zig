@@ -655,9 +655,24 @@ pub const ProgrammableStageDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     module: *ShaderModule,
     entry_point: [*:0]const u8,
-    // TODO: slice helper
     constant_count: u32 = 0,
     constants: ?[*]const ConstantEntry = null,
+
+    /// Provides a slightly friendlier Zig API to initialize this structure.
+    pub inline fn init(v: struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        module: *ShaderModule,
+        entry_point: [*:0]const u8,
+        constants: ?[]const ConstantEntry = null,
+    }) ComputePassDescriptor {
+        return .{
+            .next_in_chain = v.next_in_chain,
+            .module = v.module,
+            .entry_point = v.entry_point,
+            .constant_count = if (v.timestamp_writes) |e| @intCast(u32, e.len) else 0,
+            .constants = if (v.constants) |e| e.ptr else null,
+        };
+    }
 };
 
 pub const RenderPassColorAttachment = extern struct {
