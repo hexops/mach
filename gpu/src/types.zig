@@ -57,9 +57,22 @@ pub const RequestAdapterOptions = extern struct {
 pub const ComputePassDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    // TODO: slice helper
     timestamp_write_count: u32 = 0,
     timestamp_writes: ?[*]const ComputePassTimestampWrite = null,
+
+    /// Provides a slightly friendlier Zig API to initialize this structure.
+    pub inline fn init(v: struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+        timestamp_writes: ?[]const ComputePassTimestampWrite = null,
+    }) ComputePassDescriptor {
+        return .{
+            .next_in_chain = v.next_in_chain,
+            .label = v.label,
+            .timestamp_write_count = if (v.timestamp_writes) |e| @intCast(u32, e.len) else 0,
+            .timestamp_writes = if (v.timestamp_writes) |e| e.ptr else null,
+        };
+    }
 };
 
 pub const RenderPassDescriptor = extern struct {

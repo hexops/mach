@@ -174,6 +174,7 @@ And, to initialize data structures with slices in them, the following helpers ar
 * `QuerySet.Descriptor.init`
 * `RenderBundleEncoder.Descriptor.init`
 * `Texture.Descriptor.init`
+* `ComputePassDescriptor.init`
 
 ### Typed callbacks
 
