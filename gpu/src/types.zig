@@ -761,12 +761,29 @@ pub const FragmentState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     module: *ShaderModule,
     entry_point: [*:0]const u8,
-    // TODO: slice helper
     constant_count: u32 = 0,
     constants: ?[*]const ConstantEntry = null,
-    // TODO: slice helper
     target_count: u32,
     targets: ?[*]const ColorTargetState = null,
+
+    /// Provides a slightly friendlier Zig API to initialize this structure.
+    pub inline fn init(v: struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        module: *ShaderModule,
+        entry_point: [*:0]const u8,
+        constants: ?[]const ConstantEntry = null,
+        targets: ?[]const ColorTargetState = null,
+    }) FragmentState {
+        return .{
+            .next_in_chain = v.next_in_chain,
+            .module = v.module,
+            .entry_point = v.entry_point,
+            .constant_count = if (v.constants) |e| @intCast(u32, e.len) else 0,
+            .constants = if (v.constants) |e| e.ptr else null,
+            .target_count = if (v.targets) |e| @intCast(u32, e.len) else 0,
+            .targets = if (v.targets) |e| e.ptr else null,
+        };
+    }
 };
 
 test "BackendType name" {
