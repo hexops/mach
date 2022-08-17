@@ -32,7 +32,6 @@ pub const InstanceDescriptor = extern struct {
     }
 };
 
-/// TODO: Can be chained in gpu.Texture.Descriptor
 pub const TextureInternalUsageDescriptor = extern struct {
     chain: ChainedStruct = .{ .next = null, .s_type = .dawn_texture_internal_usage_descriptor },
     internal_usage: Texture.UsageFlags = Texture.UsageFlags.none,

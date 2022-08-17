@@ -4,6 +4,7 @@ const TextureView = @import("texture_view.zig").TextureView;
 const Extent3D = @import("types.zig").Extent3D;
 const Impl = @import("interface.zig").Impl;
 const types = @import("types.zig");
+const dawn = @import("dawn.zig");
 
 pub const Texture = opaque {
     pub const Aspect = enum(u32) {
@@ -174,7 +175,12 @@ pub const Texture = opaque {
     };
 
     pub const Descriptor = extern struct {
-        next_in_chain: ?*const ChainedStruct = null,
+        pub const NextInChain = extern union {
+            generic: ?*const ChainedStruct,
+            dawn_texture_internal_usage_descriptor: *const dawn.TextureInternalUsageDescriptor,
+        };
+
+        next_in_chain: NextInChain = .{ .generic = null },
         label: ?[*:0]const u8 = null,
         usage: UsageFlags,
         dimension: Dimension = .dimension_2d,
@@ -187,7 +193,7 @@ pub const Texture = opaque {
 
         /// Provides a slightly friendlier Zig API to initialize this structure.
         pub inline fn init(v: struct {
-            next_in_chain: ?*const ChainedStruct = null,
+            next_in_chain: NextInChain = .{ .generic = null },
             label: ?[*:0]const u8 = null,
             usage: UsageFlags,
             dimension: Dimension = .dimension_2d,
