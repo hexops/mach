@@ -617,8 +617,8 @@ pub const VertexAttribute = extern struct {
 };
 
 pub const BlendState = extern struct {
-    color: BlendComponent,
-    alpha: BlendComponent,
+    color: BlendComponent = .{},
+    alpha: BlendComponent = .{},
 };
 
 pub const CompilationInfo = extern struct {
