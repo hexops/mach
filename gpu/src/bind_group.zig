@@ -52,7 +52,7 @@ pub const BindGroup = opaque {
         entries: ?[*]const Entry = null,
 
         /// Provides a slightly friendlier Zig API to initialize this structure.
-        pub fn init(v: struct {
+        pub inline fn init(v: struct {
             next_in_chain: ?*const ChainedStruct = null,
             label: ?[*:0]const u8 = null,
             layout: *BindGroupLayout,

@@ -21,7 +21,7 @@ pub const InstanceDescriptor = extern struct {
     additional_runtime_search_paths: ?[*]const u8 = null,
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
-    pub fn init(v: struct {
+    pub inline fn init(v: struct {
         chain: ChainedStruct,
         additional_runtime_search_paths: ?[]const u8 = null,
     }) InstanceDescriptor {
@@ -42,10 +42,23 @@ pub const TextureInternalUsageDescriptor = extern struct {
 /// TODO: Can be chained in gpu.Device.Descriptor
 pub const TogglesDeviceDescriptor = extern struct {
     chain: ChainedStruct,
-    // TODO: slice helper
     force_enabled_toggles_count: u32 = 0,
     force_enabled_toggles: ?[*]const u8 = null,
-    // TODO: slice helper
     force_disabled_toggles_count: u32 = 0,
     force_disabled_toggles: ?[*]const u8 = null,
+
+    /// Provides a slightly friendlier Zig API to initialize this structure.
+    pub inline fn init(v: struct {
+        chain: ChainedStruct,
+        force_enabled_toggles: ?[]const u8 = null,
+        force_disabled_toggles: ?[]const u8 = null,
+    }) TogglesDeviceDescriptor {
+        return .{
+            .chain = v.chain,
+            .force_enabled_toggles_count = if (v.force_enabled_toggles) |e| @intCast(u32, e.len) else 0,
+            .force_enabled_toggles = if (v.force_enabled_toggles) |e| e.ptr else null,
+            .force_disabled_toggles_count = if (v.force_disabled_toggles) |e| @intCast(u32, e.len) else 0,
+            .force_disabled_toggles = if (v.force_disabled_toggles) |e| e.ptr else null,
+        };
+    }
 };
