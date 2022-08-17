@@ -238,4 +238,6 @@ const descriptor = gpu.Surface.Descriptor{
 
 ### Others
 
+* `Device.createShaderModuleWGSL` (helper to create WGSL shader modules more nicely)
+
 There may be other opportunities for helpers, to improve the existing APIs, or add utility APIs on top of the existing APIs. If you find one, please open an issue we'd love to consider it.

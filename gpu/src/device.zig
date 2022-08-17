@@ -194,6 +194,20 @@ pub const Device = opaque {
         return Impl.deviceCreateShaderModule(device, descriptor);
     }
 
+    /// Helper to make createShaderModule invocations slightly nicer.
+    pub inline fn createShaderModuleWGSL(
+        device: *Device,
+        label: ?[*:0]const u8,
+        wgsl_source: [*:0]const u8,
+    ) *ShaderModule {
+        return device.createShaderModule(&ShaderModule.Descriptor{
+            .next_in_chain = .{ .wgsl_descriptor = &.{
+                .source = wgsl_source,
+            } },
+            .label = label,
+        });
+    }
+
     pub inline fn createSwapChain(device: *Device, surface: ?*Surface, descriptor: *const SwapChain.Descriptor) *SwapChain {
         return Impl.deviceCreateSwapChain(device, surface, descriptor);
     }

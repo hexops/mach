@@ -49,24 +49,14 @@ pub fn main() !void {
         \\     return vec4<f32>(pos[VertexIndex], 0.0, 1.0);
         \\ }
     ;
-    const vs_module = setup.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = vs,
-        } },
-        .label = "my vertex shader",
-    });
+    const vs_module = setup.device.createShaderModuleWGSL("my vertex shader", vs);
 
     const fs =
         \\ @fragment fn main() -> @location(0) vec4<f32> {
         \\     return vec4<f32>(1.0, 0.0, 0.0, 1.0);
         \\ }
     ;
-    const fs_module = setup.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = fs,
-        } },
-        .label = "my fragment shader",
-    });
+    const fs_module = setup.device.createShaderModuleWGSL("my fragment shader", fs);
 
     // Fragment state
     const blend = gpu.BlendState{
