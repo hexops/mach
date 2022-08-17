@@ -72,17 +72,16 @@ pub fn main() !void {
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
-    const fragment = gpu.FragmentState{
+    const fragment = gpu.FragmentState.init(.{
         .module = fs_module,
         .entry_point = "main",
-        .target_count = 1,
-        .targets = &[_]gpu.ColorTargetState{color_target},
-    };
+        .targets = &.{color_target},
+    });
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
         .fragment = &fragment,
         .layout = null,
         .depth_stencil = null,
-        .vertex = .{
+        .vertex = gpu.VertexState{
             .module = vs_module,
             .entry_point = "main",
         },
@@ -152,12 +151,9 @@ fn frame(params: FrameParams) !void {
     };
 
     const encoder = params.device.createCommandEncoder(null);
-    const render_pass_info = gpu.RenderPassDescriptor{
-        .color_attachment_count = 1,
-        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
-        .depth_stencil_attachment = null,
-        .occlusion_query_set = null,
-    };
+    const render_pass_info = gpu.RenderPassDescriptor.init(.{
+        .color_attachments = &.{color_attachment},
+    });
     const pass = encoder.beginRenderPass(&render_pass_info);
     pass.setPipeline(params.pipeline);
     pass.draw(3, 1, 0, 0);
