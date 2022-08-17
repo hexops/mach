@@ -172,6 +172,7 @@ And, to initialize data structures with slices in them, the following helpers ar
 * `Device.Descriptor.init`
 * `PipelineLayout.Descriptor.init`
 * `QuerySet.Descriptor.init`
+* `RenderBundleEncoder.Descriptor.init`
 
 ### Typed callbacks
 
