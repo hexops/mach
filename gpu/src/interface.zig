@@ -111,7 +111,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "devicePushErrorScope", fn (device: *gpu.Device, filter: gpu.ErrorFilter) callconv(.Inline) void);
     assertDecl(T, "deviceSetDeviceLostCallback", fn (device: *gpu.Device, callback: ?gpu.Device.LostCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceSetLabel", fn (device: *gpu.Device, label: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "deviceSetLoggingCallback", fn (device: *gpu.Device, callback: gpu.LoggingCallback, userdata: ?*anyopaque) callconv(.Inline) void);
+    assertDecl(T, "deviceSetLoggingCallback", fn (device: *gpu.Device, callback: ?gpu.LoggingCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceSetUncapturedErrorCallback", fn (device: *gpu.Device, callback: ?gpu.ErrorCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceTick", fn (device: *gpu.Device) callconv(.Inline) void);
     assertDecl(T, "deviceReference", fn (device: *gpu.Device) callconv(.Inline) void);
@@ -699,8 +699,9 @@ pub fn Export(comptime T: type) type {
             T.deviceSetLabel(device, label);
         }
 
+        // TODO: dawn: callback not marked as nullable in dawn.json but in fact is.
         // WGPU_EXPORT void wgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
-        export fn wgpuDeviceSetLoggingCallback(device: *gpu.Device, callback: gpu.LoggingCallback, userdata: ?*anyopaque) void {
+        export fn wgpuDeviceSetLoggingCallback(device: *gpu.Device, callback: ?gpu.LoggingCallback, userdata: ?*anyopaque) void {
             T.deviceSetLoggingCallback(device, callback, userdata);
         }
 

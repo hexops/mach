@@ -611,7 +611,7 @@ pub const Interface = struct {
         procs.deviceSetLabel.?(@ptrCast(c.WGPUDevice, device), label);
     }
 
-    pub inline fn deviceSetLoggingCallback(device: *gpu.Device, callback: gpu.LoggingCallback, userdata: ?*anyopaque) void {
+    pub inline fn deviceSetLoggingCallback(device: *gpu.Device, callback: ?gpu.LoggingCallback, userdata: ?*anyopaque) void {
         procs.deviceSetLoggingCallback.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(c.WGPULoggingCallback, callback),
