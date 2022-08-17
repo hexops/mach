@@ -180,6 +180,7 @@ And, to initialize data structures with slices in them, the following helpers ar
 * `VertexBufferLayout.init`
 * `VertexState.init`
 * `FragmentState.init`
+* `CompilationInfo.getMessages`
 
 ### Typed callbacks
 

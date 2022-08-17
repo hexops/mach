@@ -618,9 +618,16 @@ pub const BlendState = extern struct {
 
 pub const CompilationInfo = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    // TODO: slice helper
     message_count: u32,
     messages: ?[*]const CompilationMessage = null,
+
+    /// Helper to get messages as a slice.
+    pub fn getMessages(info: CompilationInfo) ?[]const CompilationMessage {
+        if (info.messages) |messages| {
+            return messages[0..info.message_count];
+        }
+        return null;
+    }
 };
 
 pub const DepthStencilState = extern struct {
