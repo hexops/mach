@@ -30,7 +30,7 @@ pub const Queue = opaque {
         Impl.queueCopyTextureForBrowser(queue, source, destination, copy_size, options);
     }
 
-    // TODO: is it not possible to *unset* this callback? Presumably it should be nullable?
+    // TODO: presumably callback should be nullable for unsetting
     pub inline fn onSubmittedWorkDone(
         queue: *Queue,
         signal_value: u64,

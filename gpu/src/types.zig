@@ -466,13 +466,13 @@ pub const ShaderStageFlags = packed struct {
 };
 
 pub const ChainedStruct = extern struct {
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    // TODO: dawn: not marked as nullable in dawn.json but in fact is.
     next: ?*const ChainedStruct = null,
     s_type: SType,
 };
 
 pub const ChainedStructOut = extern struct {
-    // TODO: file a bug on Dawn, this is not marked as nullable but in fact is.
+    // TODO: dawn: not marked as nullable in dawn.json but in fact is.
     next: ?*ChainedStructOut = null,
     s_type: SType,
 };
@@ -573,7 +573,7 @@ pub const MultisampleState = extern struct {
 
 /// TODO: Can be chained in gpu.PrimitiveState
 pub const PrimitiveDepthClipControl = extern struct {
-    chain: ChainedStruct,
+    chain: ChainedStruct = .{ .next = null, .s_type = .primitive_depth_clip_control },
     unclipped_depth: bool = false,
 };
 
@@ -587,7 +587,7 @@ pub const PrimitiveState = extern struct {
 
 /// TODO: Can be chained in gpu.RenderPassDescriptor
 pub const RenderPassDescriptorMaxDrawCount = extern struct {
-    chain: ChainedStruct,
+    chain: ChainedStruct = .{ .next = null, .s_type = .render_pass_descriptor_max_draw_count },
     max_draw_count: u64 = 50000000,
 };
 

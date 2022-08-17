@@ -108,7 +108,7 @@ pub const Interface = struct {
         procs.bufferDestroy.?(@ptrCast(c.WGPUBuffer, buffer));
     }
 
-    // TODO: file a bug on Dawn docstrings, this returns null but is not documented as such.
+    // TODO: dawn: return value not marked as nullable in dawn.json but in fact is.
     pub inline fn bufferGetConstMappedRange(buffer: *gpu.Buffer, offset: usize, size: usize) ?*const anyopaque {
         return procs.bufferGetConstMappedRange.?(
             @ptrCast(c.WGPUBuffer, buffer),
@@ -117,7 +117,7 @@ pub const Interface = struct {
         );
     }
 
-    // TODO: file a bug on Dawn docstrings, this returns null but is not documented as such.
+    // TODO: dawn: return value not marked as nullable in dawn.json but in fact is.
     pub inline fn bufferGetMappedRange(buffer: *gpu.Buffer, offset: usize, size: usize) ?*anyopaque {
         return procs.bufferGetMappedRange.?(
             @ptrCast(c.WGPUBuffer, buffer),

@@ -4,25 +4,25 @@ pub const Interface = @import("dawn_impl.zig").Interface;
 
 /// TODO: Can be chained in gpu.Device.Descriptor
 pub const CacheDeviceDescriptor = extern struct {
-    chain: ChainedStruct,
+    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_cache_device_descriptor },
     isolation_key: [*:0]const u8 = "",
 };
 
 /// TODO: Can be chained in gpu.CommandEncoder.Descriptor
 pub const EncoderInternalUsageDescriptor = extern struct {
-    chain: ChainedStruct,
+    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_encoder_internal_usage_descriptor },
     use_internal_usages: bool = false,
 };
 
 /// TODO: Can be chained in gpu.Instance.Descriptor
 pub const InstanceDescriptor = extern struct {
-    chain: ChainedStruct,
+    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_instance_descriptor },
     additional_runtime_search_paths_count: u32 = 0,
     additional_runtime_search_paths: ?[*]const u8 = null,
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
     pub inline fn init(v: struct {
-        chain: ChainedStruct,
+        chain: ChainedStruct = .{ .next = null, .s_type = .dawn_instance_descriptor },
         additional_runtime_search_paths: ?[]const u8 = null,
     }) InstanceDescriptor {
         return .{
@@ -35,13 +35,13 @@ pub const InstanceDescriptor = extern struct {
 
 /// TODO: Can be chained in gpu.Texture.Descriptor
 pub const TextureInternalUsageDescriptor = extern struct {
-    chain: ChainedStruct,
+    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_texture_internal_usage_descriptor },
     internal_usage: Texture.UsageFlags = Texture.UsageFlags.none,
 };
 
 /// TODO: Can be chained in gpu.Device.Descriptor
 pub const TogglesDeviceDescriptor = extern struct {
-    chain: ChainedStruct,
+    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_toggles_device_descriptor },
     force_enabled_toggles_count: u32 = 0,
     force_enabled_toggles: ?[*]const u8 = null,
     force_disabled_toggles_count: u32 = 0,
@@ -49,7 +49,7 @@ pub const TogglesDeviceDescriptor = extern struct {
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
     pub inline fn init(v: struct {
-        chain: ChainedStruct,
+        chain: ChainedStruct = .{ .next = null, .s_type = .dawn_toggles_device_descriptor },
         force_enabled_toggles: ?[]const u8 = null,
         force_disabled_toggles: ?[]const u8 = null,
     }) TogglesDeviceDescriptor {

@@ -333,8 +333,6 @@ pub fn Export(comptime T: type) type {
             return T.bufferGetUsage(buffer);
         }
 
-        // TODO: Zig cannot currently export a packed struct gpu.MapModeFlags, so we use a u32 for
-        // now.
         // WGPU_EXPORT void wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapModeFlags mode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userdata);
         export fn wgpuBufferMapAsync(buffer: *gpu.Buffer, mode: u32, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: ?*anyopaque) void {
             T.bufferMapAsync(buffer, @bitCast(gpu.MapModeFlags, mode), offset, size, callback, userdata);
@@ -1115,8 +1113,6 @@ pub fn Export(comptime T: type) type {
             T.surfaceRelease(surface);
         }
 
-        // TODO: Zig cannot currently export a packed struct gpu.Texture.UsageFlags, so we use a u32
-        // for now.
         // WGPU_EXPORT void wgpuSwapChainConfigure(WGPUSwapChain swapChain, WGPUTextureFormat format, WGPUTextureUsageFlags allowedUsage, uint32_t width, uint32_t height);
         export fn wgpuSwapChainConfigure(swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: u32, width: u32, height: u32) void {
             T.swapChainConfigure(swap_chain, format, @bitCast(gpu.Texture.UsageFlags, allowed_usage), width, height);
@@ -1322,7 +1318,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    // TODO: file a bug on Dawn docstrings, this returns null but is not documented as such.
+    // TODO: dawn: return value not marked as nullable in dawn.json but in fact is.
     pub inline fn bufferGetConstMappedRange(buffer: *gpu.Buffer, offset: usize, size: usize) ?*const anyopaque {
         _ = buffer;
         _ = offset;
@@ -1330,7 +1326,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    // TODO: file a bug on Dawn docstrings, this returns null but is not documented as such.
+    // TODO: dawn: return value not marked as nullable in dawn.json but in fact is.
     pub inline fn bufferGetMappedRange(buffer: *gpu.Buffer, offset: usize, size: usize) ?*anyopaque {
         _ = buffer;
         _ = offset;

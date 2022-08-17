@@ -5,13 +5,13 @@ const Impl = @import("interface.zig").Impl;
 pub const ExternalTexture = opaque {
     /// TODO: Can be chained in gpu.BindGroup.Entry
     pub const BindingEntry = extern struct {
-        chain: ChainedStruct,
+        chain: ChainedStruct = .{ .next = null, .s_type = .external_texture_binding_entry },
         external_texture: *ExternalTexture,
     };
 
     /// TODO: Can be chained in gpu.BindGroupLayout.Entry
     pub const BindingLayout = extern struct {
-        chain: ChainedStruct,
+        chain: ChainedStruct = .{ .next = null, .s_type = .external_texture_binding_layout },
     };
 
     pub const Descriptor = extern struct {
