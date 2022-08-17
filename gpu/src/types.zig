@@ -78,14 +78,33 @@ pub const ComputePassDescriptor = extern struct {
 pub const RenderPassDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    // TODO: slice helper
     color_attachment_count: u32 = 0,
     color_attachments: ?[*]const RenderPassColorAttachment = null,
     depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment = null,
     occlusion_query_set: ?*QuerySet = null,
-    // TODO: slice helper
     timestamp_write_count: u32 = 0,
     timestamp_writes: ?[*]const RenderPassTimestampWrite = null,
+
+    /// Provides a slightly friendlier Zig API to initialize this structure.
+    pub inline fn init(v: struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        label: ?[*:0]const u8 = null,
+        color_attachments: ?[]const RenderPassColorAttachment = null,
+        depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment = null,
+        occlusion_query_set: ?*QuerySet = null,
+        timestamp_writes: ?[]const RenderPassTimestampWrite = null,
+    }) ComputePassDescriptor {
+        return .{
+            .next_in_chain = v.next_in_chain,
+            .label = v.label,
+            .color_attachment_count = if (v.color_attachments) |e| @intCast(u32, e.len) else 0,
+            .color_attachments = if (v.color_attachments) |e| e.ptr else null,
+            .depth_stencil_attachment = v.depth_stencil_attachment,
+            .occlusion_query_set = v.occlusion_query_set,
+            .timestamp_write_count = if (v.timestamp_writes) |e| @intCast(u32, e.len) else 0,
+            .timestamp_writes = if (v.timestamp_writes) |e| e.ptr else null,
+        };
+    }
 };
 
 pub const AlphaMode = enum(u32) { premultiplied = 0x00000000, unpremultiplied = 0x00000001, opaq = 0x00000002 };
