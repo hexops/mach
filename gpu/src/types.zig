@@ -571,14 +571,18 @@ pub const MultisampleState = extern struct {
     alpha_to_coverage_enabled: bool = false,
 };
 
-/// TODO: Can be chained in gpu.PrimitiveState
 pub const PrimitiveDepthClipControl = extern struct {
     chain: ChainedStruct = .{ .next = null, .s_type = .primitive_depth_clip_control },
     unclipped_depth: bool = false,
 };
 
 pub const PrimitiveState = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
+    pub const NextInChain = extern union {
+        generic: ?*const ChainedStruct,
+        primitive_depth_clip_control: *const PrimitiveDepthClipControl,
+    };
+
+    next_in_chain: NextInChain = .{ .generic = null },
     topology: PrimitiveTopology = .triangle_list,
     strip_index_format: IndexFormat = .undef,
     front_face: FrontFace = .ccw,
