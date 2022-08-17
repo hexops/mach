@@ -619,7 +619,7 @@ pub const Interface = struct {
         );
     }
 
-    pub inline fn deviceSetUncapturedErrorCallback(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) void {
+    pub inline fn deviceSetUncapturedErrorCallback(device: *gpu.Device, callback: ?gpu.ErrorCallback, userdata: ?*anyopaque) void {
         procs.deviceSetUncapturedErrorCallback.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(c.WGPUErrorCallback, callback),

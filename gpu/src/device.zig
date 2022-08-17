@@ -297,19 +297,22 @@ pub const Device = opaque {
         Impl.deviceSetLoggingCallback(device, Helper.callback, if (Context == void) null else context);
     }
 
-    // TODO: presumably callback should be nullable for unsetting
     pub inline fn setUncapturedErrorCallback(
         device: *Device,
         context: anytype,
-        comptime callback: fn (ctx: @TypeOf(context), typ: ErrorType, message: [*:0]const u8) callconv(.Inline) void,
+        comptime callback: ?fn (ctx: @TypeOf(context), typ: ErrorType, message: [*:0]const u8) callconv(.Inline) void,
     ) void {
-        const Context = @TypeOf(context);
-        const Helper = struct {
-            pub fn callback(typ: ErrorType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)), typ, message);
-            }
-        };
-        Impl.deviceSetUncapturedErrorCallback(device, Helper.callback, if (Context == void) null else context);
+        if (callback) |cb| {
+            const Context = @TypeOf(context);
+            const Helper = struct {
+                pub fn callback(typ: ErrorType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
+                    cb(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)), typ, message);
+                }
+            };
+            Impl.deviceSetUncapturedErrorCallback(device, Helper.callback, if (Context == void) null else context);
+        } else {
+            Impl.deviceSetUncapturedErrorCallback(device, null, null);
+        }
     }
 
     pub inline fn tick(device: *Device) void {
