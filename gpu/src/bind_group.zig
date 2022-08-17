@@ -51,6 +51,22 @@ pub const BindGroup = opaque {
         // TODO: slice helper
         entry_count: u32 = 0,
         entries: ?[*]const Entry = null,
+
+        /// Provides a slightly friendlier Zig API to initialize this structure.
+        pub fn init(v: struct {
+            next_in_chain: ?*const ChainedStruct = null,
+            label: ?[*:0]const u8 = null,
+            layout: *BindGroupLayout,
+            entries: ?[]const Entry = null,
+        }) Descriptor {
+            return .{
+                .next_in_chain = v.next_in_chain,
+                .label = v.label,
+                .layout = v.layout,
+                .entry_count = if (v.entries) |e| @intCast(u32, e.len) else 0,
+                .entries = if (v.entries) |e| e.ptr else null,
+            };
+        }
     };
 
     pub inline fn setLabel(bind_group: *BindGroup, label: [*:0]const u8) void {

@@ -163,6 +163,11 @@ The slice helpers are:
 * `RenderBundleEncoder.setBindGroup`
 * `RenderPassEncoder.setBindGroup`
 
+And, to initialize data structures with slices in them, the following helpers are provided:
+
+* `BindGroupLayout.Descriptor.init`
+* `BindGroup.Descriptor.init`
+
 ### Typed callbacks
 
 Most WebGPU callbacks provide a way to provide a `userdata: *anyopaque` pointer to the callback for context. We alter these APIs to expose a typed context pointer instead (again, the original API is always available via the `gpu.Impl` type should you want it):
