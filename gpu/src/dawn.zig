@@ -17,9 +17,20 @@ pub const EncoderInternalUsageDescriptor = extern struct {
 /// TODO: Can be chained in gpu.Instance.Descriptor
 pub const InstanceDescriptor = extern struct {
     chain: ChainedStruct,
-    // TODO: slice helper
     additional_runtime_search_paths_count: u32 = 0,
     additional_runtime_search_paths: ?[*]const u8 = null,
+
+    /// Provides a slightly friendlier Zig API to initialize this structure.
+    pub fn init(v: struct {
+        chain: ChainedStruct,
+        additional_runtime_search_paths: ?[]const u8 = null,
+    }) InstanceDescriptor {
+        return .{
+            .chain = v.chain,
+            .additional_runtime_search_paths_count = if (v.additional_runtime_search_paths) |e| @intCast(u32, e.len) else 0,
+            .additional_runtime_search_paths = if (v.additional_runtime_search_paths) |e| e.ptr else null,
+        };
+    }
 };
 
 /// TODO: Can be chained in gpu.Texture.Descriptor

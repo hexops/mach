@@ -167,6 +167,7 @@ And, to initialize data structures with slices in them, the following helpers ar
 
 * `BindGroupLayout.Descriptor.init`
 * `BindGroup.Descriptor.init`
+* `InstanceDescriptor.init`
 
 ### Typed callbacks
 
