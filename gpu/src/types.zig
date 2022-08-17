@@ -93,7 +93,7 @@ pub const RenderPassDescriptor = extern struct {
         depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment = null,
         occlusion_query_set: ?*QuerySet = null,
         timestamp_writes: ?[]const RenderPassTimestampWrite = null,
-    }) ComputePassDescriptor {
+    }) RenderPassDescriptor {
         return .{
             .next_in_chain = v.next_in_chain,
             .label = v.label,
@@ -664,7 +664,7 @@ pub const ProgrammableStageDescriptor = extern struct {
         module: *ShaderModule,
         entry_point: [*:0]const u8,
         constants: ?[]const ConstantEntry = null,
-    }) ComputePassDescriptor {
+    }) ProgrammableStageDescriptor {
         return .{
             .next_in_chain = v.next_in_chain,
             .module = v.module,
@@ -703,9 +703,22 @@ pub const SupportedLimits = extern struct {
 pub const VertexBufferLayout = extern struct {
     array_stride: u64,
     step_mode: VertexStepMode = .vertex,
-    // TODO: slice helper
     attribute_count: u32,
     attributes: ?[*]const VertexAttribute = null,
+
+    /// Provides a slightly friendlier Zig API to initialize this structure.
+    pub inline fn init(v: struct {
+        array_stride: u64,
+        step_mode: VertexStepMode = .vertex,
+        attributes: ?[]const VertexAttribute = null,
+    }) ProgrammableStageDescriptor {
+        return .{
+            .array_stride = v.array_stride,
+            .step_mode = v.step_mode,
+            .attribute_count = if (v.attributes) |e| @intCast(u32, e.len) else 0,
+            .attributes = if (v.attributes) |e| e.ptr else null,
+        };
+    }
 };
 
 pub const ColorTargetState = extern struct {
