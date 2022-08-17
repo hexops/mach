@@ -669,7 +669,7 @@ pub const ProgrammableStageDescriptor = extern struct {
             .next_in_chain = v.next_in_chain,
             .module = v.module,
             .entry_point = v.entry_point,
-            .constant_count = if (v.timestamp_writes) |e| @intCast(u32, e.len) else 0,
+            .constant_count = if (v.constants) |e| @intCast(u32, e.len) else 0,
             .constants = if (v.constants) |e| e.ptr else null,
         };
     }
@@ -711,7 +711,7 @@ pub const VertexBufferLayout = extern struct {
         array_stride: u64,
         step_mode: VertexStepMode = .vertex,
         attributes: ?[]const VertexAttribute = null,
-    }) ProgrammableStageDescriptor {
+    }) VertexBufferLayout {
         return .{
             .array_stride = v.array_stride,
             .step_mode = v.step_mode,
@@ -732,12 +732,29 @@ pub const VertexState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     module: *ShaderModule,
     entry_point: [*:0]const u8,
-    // TODO: slice helper
     constant_count: u32 = 0,
     constants: ?[*]const ConstantEntry = null,
-    // TODO: slice helper
     buffer_count: u32 = 0,
     buffers: ?[*]const VertexBufferLayout = null,
+
+    /// Provides a slightly friendlier Zig API to initialize this structure.
+    pub inline fn init(v: struct {
+        next_in_chain: ?*const ChainedStruct = null,
+        module: *ShaderModule,
+        entry_point: [*:0]const u8,
+        constants: ?[]const ConstantEntry = null,
+        buffers: ?[]const VertexBufferLayout = null,
+    }) VertexState {
+        return .{
+            .next_in_chain = v.next_in_chain,
+            .module = v.module,
+            .entry_point = v.entry_point,
+            .constant_count = if (v.constants) |e| @intCast(u32, e.len) else 0,
+            .constants = if (v.constants) |e| e.ptr else null,
+            .buffer_count = if (v.buffers) |e| @intCast(u32, e.len) else 0,
+            .buffers = if (v.buffers) |e| e.ptr else null,
+        };
+    }
 };
 
 pub const FragmentState = extern struct {

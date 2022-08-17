@@ -178,6 +178,7 @@ And, to initialize data structures with slices in them, the following helpers ar
 * `RenderPassDescriptor.init`
 * `ProgrammableStageDescriptor.init`
 * `VertexBufferLayout.init`
+* `VertexState.init`
 
 ### Typed callbacks
 
