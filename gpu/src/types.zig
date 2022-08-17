@@ -559,12 +559,9 @@ pub const CopyTextureForBrowserOptions = extern struct {
     flip_y: bool = false,
     needs_color_space_conversion: bool = false,
     src_alpha_mode: AlphaMode = .unpremultiplied,
-    // TODO: dawn.json says length 7, does it mean array length?
-    src_transfer_function_parameters: ?*const f32 = null,
-    // TODO: dawn.json says length 9, does it mean array length?
-    conversion_matrix: ?*const f32 = null,
-    // TODO: dawn.json says length 7, does it mean array length?
-    dst_transfer_function_parameters: ?*const f32 = null,
+    src_transfer_function_parameters: ?*const [7]f32 = null,
+    conversion_matrix: ?*const [9]f32 = null,
+    dst_transfer_function_parameters: ?*const [7]f32 = null,
     dst_alpha_mode: AlphaMode = .unpremultiplied,
     internal_usage: bool = false,
 };
