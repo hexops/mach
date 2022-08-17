@@ -2,20 +2,20 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const Impl = @import("interface.zig").Impl;
 
 pub const Surface = opaque {
-    pub const Extension = extern union {
-        generic: ?*const ChainedStruct,
-        from_android_native_window: *const DescriptorFromAndroidNativeWindow,
-        from_canvas_html_selector: *const DescriptorFromCanvasHTMLSelector,
-        from_metal_layer: *const DescriptorFromMetalLayer,
-        from_wayland_surface: *const DescriptorFromWaylandSurface,
-        from_windows_core_window: *const DescriptorFromWindowsCoreWindow,
-        from_windows_hwnd: *const DescriptorFromWindowsHWND,
-        from_windows_swap_chain_panel: *const DescriptorFromWindowsSwapChainPanel,
-        from_xlib_window: *const DescriptorFromXlibWindow,
-    };
-
     pub const Descriptor = extern struct {
-        next_in_chain: Extension = .{ .generic = null },
+        pub const NextInChain = extern union {
+            generic: ?*const ChainedStruct,
+            from_android_native_window: *const DescriptorFromAndroidNativeWindow,
+            from_canvas_html_selector: *const DescriptorFromCanvasHTMLSelector,
+            from_metal_layer: *const DescriptorFromMetalLayer,
+            from_wayland_surface: *const DescriptorFromWaylandSurface,
+            from_windows_core_window: *const DescriptorFromWindowsCoreWindow,
+            from_windows_hwnd: *const DescriptorFromWindowsHWND,
+            from_windows_swap_chain_panel: *const DescriptorFromWindowsSwapChainPanel,
+            from_xlib_window: *const DescriptorFromXlibWindow,
+        };
+
+        next_in_chain: NextInChain = .{ .generic = null },
         label: ?[*:0]const u8 = null,
     };
 

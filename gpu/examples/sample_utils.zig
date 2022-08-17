@@ -170,12 +170,12 @@ pub fn createSurfaceForWindow(
     comptime glfw_options: glfw.BackendOptions,
 ) *gpu.Surface {
     const glfw_native = glfw.Native(glfw_options);
-    const extension = if (glfw_options.win32) gpu.Surface.Extension{
+    const extension = if (glfw_options.win32) gpu.Surface.Descriptor.NextInChain{
         .from_windows_hwnd = &.{
             .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
             .hwnd = glfw_native.getWin32Window(window),
         },
-    } else if (glfw_options.x11) gpu.Surface.Extension{
+    } else if (glfw_options.x11) gpu.Surface.Descriptor.NextInChain{
         .from_xlib_window = &.{
             .display = glfw_native.getX11Display(),
             .window = glfw_native.getX11Window(window),
@@ -194,7 +194,7 @@ pub fn createSurfaceForWindow(
         const scale_factor = msgSend(ns_window, "backingScaleFactor", .{}, f64); // [ns_window backingScaleFactor]
         msgSend(layer.?, "setContentsScale:", .{scale_factor}, void); // [layer setContentsScale:scale_factor]
 
-        break :blk gpu.Surface.Extension{ .from_metal_layer = &.{ .layer = layer.? } };
+        break :blk gpu.Surface.Descriptor.NextInChain{ .from_metal_layer = &.{ .layer = layer.? } };
     } else if (glfw_options.wayland) {
         @panic("TODO: this example does not support Wayland");
     } else unreachable;

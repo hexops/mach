@@ -218,7 +218,7 @@ Here `gpu.Surface.Descriptor` is a concrete type. The `next_in_chain` field is s
 Complexity aside, `next_in_chain` is not type safe! It cannot be, because such an extension could be implementation-specific. To make this safer, we instead change the `next_in_chain` field type to be a union, where one option is the type-unsafe `generic` pointer, and the other options are known extensions:
 
 ```zig
-pub const Extension = extern union {
+pub const NextInChain = extern union {
     generic: ?*const ChainedStruct,
     from_windows_hwnd: *const DescriptorFromWindowsHWND,
     // ...
