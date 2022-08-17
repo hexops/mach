@@ -109,7 +109,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceLoseForTesting", fn (device: *gpu.Device) callconv(.Inline) void);
     assertDecl(T, "devicePopErrorScope", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) callconv(.Inline) bool);
     assertDecl(T, "devicePushErrorScope", fn (device: *gpu.Device, filter: gpu.ErrorFilter) callconv(.Inline) void);
-    assertDecl(T, "deviceSetDeviceLostCallback", fn (device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: ?*anyopaque) callconv(.Inline) void);
+    assertDecl(T, "deviceSetDeviceLostCallback", fn (device: *gpu.Device, callback: ?gpu.Device.LostCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceSetLabel", fn (device: *gpu.Device, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "deviceSetLoggingCallback", fn (device: *gpu.Device, callback: gpu.LoggingCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceSetUncapturedErrorCallback", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) callconv(.Inline) void);
@@ -688,8 +688,9 @@ pub fn Export(comptime T: type) type {
             T.devicePushErrorScope(device, filter);
         }
 
+        // TODO: dawn: callback not marked as nullable in dawn.json but in fact is.
         // WGPU_EXPORT void wgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDeviceLostCallback callback, void * userdata);
-        export fn wgpuDeviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: ?*anyopaque) void {
+        export fn wgpuDeviceSetDeviceLostCallback(device: *gpu.Device, callback: ?gpu.Device.LostCallback, userdata: ?*anyopaque) void {
             T.deviceSetDeviceLostCallback(device, callback, userdata);
         }
 
@@ -1791,7 +1792,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: ?*anyopaque) void {
+    pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: ?gpu.Device.LostCallback, userdata: ?*anyopaque) void {
         _ = device;
         _ = callback;
         _ = userdata;

@@ -599,7 +599,7 @@ pub const Interface = struct {
         );
     }
 
-    pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: gpu.Device.LostCallback, userdata: ?*anyopaque) void {
+    pub inline fn deviceSetDeviceLostCallback(device: *gpu.Device, callback: ?gpu.Device.LostCallback, userdata: ?*anyopaque) void {
         procs.deviceSetDeviceLostCallback.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(c.WGPUDeviceLostCallback, callback),
