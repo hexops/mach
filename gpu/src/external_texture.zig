@@ -8,7 +8,6 @@ pub const ExternalTexture = opaque {
         external_texture: *ExternalTexture,
     };
 
-    /// TODO: Can be chained in gpu.BindGroupLayout.Entry
     pub const BindingLayout = extern struct {
         chain: ChainedStruct = .{ .next = null, .s_type = .external_texture_binding_layout },
     };

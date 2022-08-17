@@ -6,11 +6,17 @@ const Texture = @import("texture.zig").Texture;
 const TextureView = @import("texture_view.zig").TextureView;
 const StorageTextureBindingLayout = @import("types.zig").StorageTextureBindingLayout;
 const StorageTextureAccess = @import("types.zig").StorageTextureAccess;
+const ExternalTexture = @import("external_texture.zig").ExternalTexture;
 const Impl = @import("interface.zig").Impl;
 
 pub const BindGroupLayout = opaque {
     pub const Entry = extern struct {
-        next_in_chain: ?*const ChainedStruct = null,
+        pub const NextInChain = extern union {
+            generic: ?*const ChainedStruct,
+            external_texture_binding_layout: *const ExternalTexture.BindingLayout,
+        };
+
+        next_in_chain: NextInChain = .{ .generic = null },
         binding: u32,
         visibility: ShaderStageFlags,
         buffer: Buffer.BindingLayout = .{},
