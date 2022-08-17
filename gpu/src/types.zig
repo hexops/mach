@@ -76,7 +76,12 @@ pub const ComputePassDescriptor = extern struct {
 };
 
 pub const RenderPassDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
+    pub const NextInChain = extern union {
+        generic: ?*const ChainedStruct,
+        max_draw_count: *const RenderPassDescriptorMaxDrawCount,
+    };
+
+    next_in_chain: NextInChain = .{ .generic = null },
     label: ?[*:0]const u8 = null,
     color_attachment_count: u32 = 0,
     color_attachments: ?[*]const RenderPassColorAttachment = null,
@@ -589,7 +594,6 @@ pub const PrimitiveState = extern struct {
     cull_mode: CullMode = .none,
 };
 
-/// TODO: Can be chained in gpu.RenderPassDescriptor
 pub const RenderPassDescriptorMaxDrawCount = extern struct {
     chain: ChainedStruct = .{ .next = null, .s_type = .render_pass_descriptor_max_draw_count },
     max_draw_count: u64 = 50000000,
