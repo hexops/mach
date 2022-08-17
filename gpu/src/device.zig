@@ -46,6 +46,7 @@ pub const Device = opaque {
         pub const NextInChain = extern union {
             generic: ?*const ChainedStruct,
             dawn_toggles_device_descriptor: *const dawn.TogglesDeviceDescriptor,
+            dawn_cache_device_descriptor: *const dawn.CacheDeviceDescriptor,
         };
 
         next_in_chain: NextInChain = .{ .generic = null },

@@ -2,7 +2,6 @@ const ChainedStruct = @import("types.zig").ChainedStruct;
 const Texture = @import("texture.zig").Texture;
 pub const Interface = @import("dawn_impl.zig").Interface;
 
-/// TODO: Can be chained in gpu.Device.Descriptor
 pub const CacheDeviceDescriptor = extern struct {
     chain: ChainedStruct = .{ .next = null, .s_type = .dawn_cache_device_descriptor },
     isolation_key: [*:0]const u8 = "",
@@ -39,7 +38,6 @@ pub const TextureInternalUsageDescriptor = extern struct {
     internal_usage: Texture.UsageFlags = Texture.UsageFlags.none,
 };
 
-/// TODO: Can be chained in gpu.Device.Descriptor
 pub const TogglesDeviceDescriptor = extern struct {
     chain: ChainedStruct = .{ .next = null, .s_type = .dawn_toggles_device_descriptor },
     force_enabled_toggles_count: u32 = 0,
