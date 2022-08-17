@@ -13,7 +13,6 @@ pub const EncoderInternalUsageDescriptor = extern struct {
     use_internal_usages: bool = false,
 };
 
-/// TODO: Can be chained in gpu.Instance.Descriptor
 pub const InstanceDescriptor = extern struct {
     chain: ChainedStruct = .{ .next = null, .s_type = .dawn_instance_descriptor },
     additional_runtime_search_paths_count: u32 = 0,

@@ -5,10 +5,16 @@ const Adapter = @import("adapter.zig").Adapter;
 const RequestAdapterOptions = @import("types.zig").RequestAdapterOptions;
 const RequestAdapterCallback = @import("callbacks.zig").RequestAdapterCallback;
 const Impl = @import("interface.zig").Impl;
+const dawn = @import("dawn.zig");
 
 pub const Instance = opaque {
     pub const Descriptor = extern struct {
-        next_in_chain: ?*const ChainedStruct = null,
+        pub const NextInChain = extern union {
+            generic: ?*const ChainedStruct,
+            dawn_instance_descriptor: *const dawn.InstanceDescriptor,
+        };
+
+        next_in_chain: NextInChain = .{ .generic = null },
     };
 
     pub inline fn createSurface(instance: *Instance, descriptor: *const Surface.Descriptor) *Surface {
