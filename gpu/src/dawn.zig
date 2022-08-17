@@ -7,7 +7,6 @@ pub const CacheDeviceDescriptor = extern struct {
     isolation_key: [*:0]const u8 = "",
 };
 
-/// TODO: Can be chained in gpu.CommandEncoder.Descriptor
 pub const EncoderInternalUsageDescriptor = extern struct {
     chain: ChainedStruct = .{ .next = null, .s_type = .dawn_encoder_internal_usage_descriptor },
     use_internal_usages: bool = false,

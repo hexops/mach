@@ -11,10 +11,16 @@ const ImageCopyBuffer = @import("types.zig").ImageCopyBuffer;
 const ImageCopyTexture = @import("types.zig").ImageCopyTexture;
 const Extent3D = @import("types.zig").Extent3D;
 const Impl = @import("interface.zig").Impl;
+const dawn = @import("dawn.zig");
 
 pub const CommandEncoder = opaque {
     pub const Descriptor = extern struct {
-        next_in_chain: ?*const ChainedStruct = null,
+        pub const NextInChain = extern union {
+            generic: ?*const ChainedStruct,
+            dawn_encoder_internal_usage_descriptor: *const dawn.EncoderInternalUsageDescriptor,
+        };
+
+        next_in_chain: NextInChain = .{ .generic = null },
         label: ?[*:0]const u8 = null,
     };
 
