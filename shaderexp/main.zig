@@ -93,13 +93,12 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .mapped_at_creation = false,
     });
     const bind_group = core.device.createBindGroup(
-        &gpu.BindGroup.Descriptor{
+        &gpu.BindGroup.Descriptor.init(.{
             .layout = bgl,
-            .entry_count = 1,
-            .entries = &[_]gpu.BindGroup.Entry{
+            .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, uniform_buffer, 0, @sizeOf(UniformBufferObject)),
             },
-        },
+        }),
     );
 
     app.pipeline = pipeline;
@@ -155,18 +154,15 @@ pub fn update(app: *App, core: *mach.Core) !void {
     const back_buffer_view = core.swap_chain.?.getCurrentTextureView();
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
-        .resolve_target = null,
         .clear_value = std.mem.zeroes(gpu.Color),
         .load_op = .clear,
         .store_op = .store,
     };
 
     const encoder = core.device.createCommandEncoder(null);
-    const render_pass_info = gpu.RenderPassDescriptor{
-        .color_attachment_count = 1,
-        .color_attachments = &[_]gpu.RenderPassColorAttachment{color_attachment},
-        .depth_stencil_attachment = null,
-    };
+    const render_pass_info = gpu.RenderPassDescriptor.init(.{
+        .color_attachments = &.{color_attachment},
+    });
 
     const time = @intToFloat(f32, timer.read()) / @as(f32, std.time.ns_per_s);
     const ubo = UniformBufferObject{
@@ -194,33 +190,22 @@ pub fn update(app: *App, core: *mach.Core) !void {
 }
 
 fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?**gpu.BindGroupLayout) *gpu.RenderPipeline {
-    const vs_module = core.device.createShaderModule(&.{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = @embedFile("vert.wgsl"),
-        } },
-        .label = "my vertex shader",
-    });
+    const vs_module = core.device.createShaderModuleWGSL("vert.wgsl", @embedFile("vert.wgsl"));
     defer vs_module.release();
     const vertex_attributes = [_]gpu.VertexAttribute{
         .{ .format = .float32x4, .offset = @offsetOf(Vertex, "pos"), .shader_location = 0 },
         .{ .format = .float32x2, .offset = @offsetOf(Vertex, "uv"), .shader_location = 1 },
     };
-    const vertex_buffer_layout = gpu.VertexBufferLayout{
+    const vertex_buffer_layout = gpu.VertexBufferLayout.init(.{
         .array_stride = @sizeOf(Vertex),
         .step_mode = .vertex,
-        .attribute_count = vertex_attributes.len,
         .attributes = &vertex_attributes,
-    };
+    });
 
     // Check wether the fragment shader code compiled successfully, if not
     // print the validation layer error and show a black screen
     core.device.pushErrorScope(.validation);
-    var fs_module = core.device.createShaderModule(&gpu.ShaderModule.Descriptor{
-        .next_in_chain = .{ .wgsl_descriptor = &.{
-            .source = fragment_shader_code,
-        } },
-        .label = "my fragment shader",
-    });
+    var fs_module = core.device.createShaderModuleWGSL("fragment shader", fragment_shader_code);
     var error_occurred: bool = false;
     // popErrorScope() returns always true, (unless maybe it fails to capture the error scope?)
     _ = core.device.popErrorScope(&error_occurred, struct {
@@ -232,48 +217,30 @@ fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?
         }
     }.callback);
     if (error_occurred) {
-        fs_module = core.device.createShaderModule(&gpu.ShaderModule.Descriptor{
-            .next_in_chain = .{ .wgsl_descriptor = &.{
-                .source = @embedFile("black_screen_frag.wgsl"),
-            } },
-            .label = "black screen fragment shader",
-        });
+        fs_module = core.device.createShaderModuleWGSL(
+            "black_screen_frag.wgsl",
+            @embedFile("black_screen_frag.wgsl"),
+        );
     }
     defer fs_module.release();
 
-    const blend = gpu.BlendState{
-        .color = .{
-            .operation = .add,
-            .src_factor = .one,
-            .dst_factor = .zero,
-        },
-        .alpha = .{
-            .operation = .add,
-            .src_factor = .one,
-            .dst_factor = .zero,
-        },
-    };
+    const blend = gpu.BlendState{};
     const color_target = gpu.ColorTargetState{
         .format = core.swap_chain_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
-    const fragment = gpu.FragmentState{
+    const fragment = gpu.FragmentState.init(.{
         .module = fs_module,
         .entry_point = "main",
-        .target_count = 1,
-        .targets = &[_]gpu.ColorTargetState{color_target},
-        .constants = null,
-    };
+        .targets = &.{color_target},
+    });
 
     const bgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .fragment = true }, .uniform, true, 0);
     // bgl is needed outside, for the creation of the uniform_buffer in main
-    const bgl_tmp = core.device.createBindGroupLayout(
-        &gpu.BindGroupLayout.Descriptor{
-            .entry_count = 1,
-            .entries = &[_]gpu.BindGroupLayout.Entry{bgle},
-        },
-    );
+    const bgl_tmp = core.device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor.init(.{
+        .entries = &.{bgle},
+    }));
     defer {
         // In frame we don't need to use bgl, so we can release it inside this function, else we pass bgl
         if (bgl == null) {
@@ -284,33 +251,19 @@ fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?
     }
 
     const bind_group_layouts = [_]*gpu.BindGroupLayout{bgl_tmp};
-    const pipeline_layout = core.device.createPipelineLayout(&.{
-        .bind_group_layout_count = 1,
+    const pipeline_layout = core.device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
         .bind_group_layouts = &bind_group_layouts,
-    });
+    }));
     defer pipeline_layout.release();
 
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
         .fragment = &fragment,
         .layout = pipeline_layout,
-        .depth_stencil = null,
-        .vertex = .{
+        .vertex = gpu.VertexState.init(.{
             .module = vs_module,
             .entry_point = "main",
-            .buffer_count = 1,
-            .buffers = &[_]gpu.VertexBufferLayout{vertex_buffer_layout},
-        },
-        .multisample = .{
-            .count = 1,
-            .mask = 0xFFFFFFFF,
-            .alpha_to_coverage_enabled = false,
-        },
-        .primitive = .{
-            .front_face = .ccw,
-            .cull_mode = .none,
-            .topology = .triangle_list,
-            .strip_index_format = .undef,
-        },
+            .buffers = &.{vertex_buffer_layout},
+        }),
     };
 
     // Create the render pipeline. Even if the shader compilation succeeded, this could fail if the
