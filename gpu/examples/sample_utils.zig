@@ -204,10 +204,16 @@ pub fn createSurfaceForWindow(
     });
 }
 
-pub const AutoReleasePool = opaque {
+pub const AutoReleasePool = if (!@import("builtin").target.isDarwin()) opaque {
     pub fn init() error{OutOfMemory}!?*AutoReleasePool {
-        if (!@import("builtin").target.isDarwin()) return null;
+        return null;
+    }
 
+    pub fn release(pool: ?*AutoReleasePool) void {
+        return;
+    }
+} else opaque {
+    pub fn init() error{OutOfMemory}!?*AutoReleasePool {
         // pool = [NSAutoreleasePool alloc];
         var pool = msgSend(objc.objc_getClass("NSAutoreleasePool"), "alloc", .{}, ?*AutoReleasePool);
         if (pool == null) return error.OutOfMemory;
@@ -220,8 +226,6 @@ pub const AutoReleasePool = opaque {
     }
 
     pub fn release(pool: ?*AutoReleasePool) void {
-        if (!@import("builtin").target.isDarwin()) return;
-
         // [pool release];
         msgSend(pool, "release", .{}, void);
     }
