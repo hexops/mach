@@ -19,6 +19,7 @@ pub const log_level = if (@hasDecl(App, "log_level")) App.log_level else std.log
 
 pub const Platform = struct {
     window: glfw.Window,
+    core: *Core,
     backend_type: gpu.BackendType,
     allocator: std.mem.Allocator,
     events: EventQueue = .{},
@@ -129,7 +130,11 @@ pub const Platform = struct {
             .format = core.swap_chain_format,
             .width = framebuffer_size.width,
             .height = framebuffer_size.height,
-            .present_mode = .fifo,
+            .present_mode = switch (options.vsync) {
+                .none => .immediate,
+                .double => .fifo,
+                .triple => .mailbox,
+            },
         };
 
         device.?.setUncapturedErrorCallback({}, util.printUnhandledErrorCallback);
@@ -144,6 +149,7 @@ pub const Platform = struct {
 
         return Platform{
             .window = window,
+            .core = core,
             .backend_type = backend_type,
             .allocator = core.allocator,
             .last_window_size = .{ .width = window_size.width, .height = window_size.height },
@@ -338,6 +344,11 @@ pub const Platform = struct {
             @bitCast(glfw.Window.SizeOptional, options.size_min),
             @bitCast(glfw.Window.SizeOptional, options.size_max),
         );
+        platform.core.target_desc.present_mode = switch (options.vsync) {
+            .none => .immediate,
+            .double => .fifo,
+            .triple => .mailbox,
+        };
         if (options.fullscreen) {
             platform.last_position = try platform.window.getPos();
 
@@ -406,8 +417,9 @@ pub const Platform = struct {
 
     pub fn pollEvent(platform: *Platform) ?structs.Event {
         if (platform.events.popFirst()) |n| {
-            defer platform.allocator.destroy(n);
-            return n.data;
+            const data = n.data;
+            platform.allocator.destroy(n);
+            return data;
         }
         return null;
     }
@@ -607,7 +619,7 @@ pub fn main() !void {
 pub fn coreInit(allocator: std.mem.Allocator) !*Core {
     const core: *Core = try allocator.create(Core);
     errdefer allocator.destroy(core);
-    core.* = try Core.init(allocator);
+    try Core.init(allocator, core);
 
     // Glfw specific: initialize the user pointer used in callbacks
     core.*.internal.initCallback();

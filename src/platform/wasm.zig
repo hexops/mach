@@ -286,7 +286,7 @@ export fn wasmInit() void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    core = Core.init(allocator) catch unreachable;
+    Core.init(allocator, &core) catch unreachable;
     app.init(&core) catch {};
 }
 

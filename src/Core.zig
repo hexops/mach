@@ -34,15 +34,11 @@ target_desc: gpu.SwapChain.Descriptor,
 
 internal: platform.Type,
 
-pub fn init(allocator: std.mem.Allocator) !Core {
-    var core: Core = undefined;
+pub fn init(allocator: std.mem.Allocator, core: *Core) !void {
     core.allocator = allocator;
     core.options = structs.Options{};
     core.timer = try Timer.start();
-
-    core.internal = try platform.Type.init(allocator, &core);
-
-    return core;
+    core.internal = try platform.Type.init(allocator, core);
 }
 
 /// Set runtime options for application, like title, window size etc.
