@@ -210,6 +210,7 @@ pub const AutoReleasePool = if (!@import("builtin").target.isDarwin()) opaque {
     }
 
     pub fn release(pool: ?*AutoReleasePool) void {
+        _ = pool;
         return;
     }
 } else opaque {
