@@ -114,9 +114,14 @@ const zig = {
 
   zigCreateFunction(id, captures, len) {
     return zig.addValue(function () {
+      console.log("zigCreateFunction->here?1");
+      console.log(captures, len);
       const args = zig.addValue(arguments);
+      console.log("zigCreateFunction->here?2");
       zig.wasm.exports.wasmCallFunction(id, args, arguments.length, captures, len);
+      console.log("zigCreateFunction->here?3");
       const return_value = values[args]["return_value"];
+      console.log("zigCreateFunction->here?4");
       zig.zigCleanupObject(args);
       return return_value;
     });
@@ -224,8 +229,13 @@ const zig = {
   },
 
   zigGetProperty(id, name, len, ret_ptr) {
+    console.log("zigGetProperty->0");
     let memory = new MemoryBlock(zig.wasm.exports.memory.buffer);
+    console.log("zigGetProperty->1");
+    console.log(values);
+    console.log(id);
     let prop = values[id][memory.getString(name, len)];
+    console.log("zigGetProperty->2");
     zig.getProperty(prop, ret_ptr);
   },
 
@@ -256,9 +266,14 @@ const zig = {
     delete values[id][index];
   },
 
-  zigCopyBytes(id, bytes) {
+  zigCopyBytes(id, bytes, expected_length) {
     let memory = new MemoryBlock(zig.wasm.exports.memory.buffer);
     const array = values[id];
+    console.log("got array");
+    console.log(array);
+    if (array.length != expected_length) {
+      throw Error("copyBytes given array of length " + expected_length + " but destination has length " + array.length);
+    }
     const slice = memory.getSlice(bytes, array.length);
     array.set(slice);
   },

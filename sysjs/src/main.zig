@@ -18,7 +18,7 @@ const js = struct {
     extern fn zigValueEqual(val: *const anyopaque, other: *const anyopaque) bool;
     extern fn zigValueInstanceOf(val: *const anyopaque, other: *const anyopaque) bool;
     extern fn zigDeleteIndex(id: u64, index: u32) void;
-    extern fn zigCopyBytes(id: u64, bytes: [*]u8) void;
+    extern fn zigCopyBytes(id: u64, bytes: [*]u8, expected_len: u32) void;
     extern fn zigFunctionCall(id: u64, name: [*]const u8, len: u32, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigFunctionInvoke(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigGetParamCount(id: u64) u32;
@@ -115,6 +115,7 @@ pub const Object = struct {
 
     pub fn get(obj: *const Object, prop: []const u8) Value {
         var ret: Value = undefined;
+        std.log.info("Object.get id={}", .{obj.ref});
         js.zigGetProperty(obj.ref, prop.ptr, @intCast(u32, prop.len), &ret);
         return ret;
     }
@@ -142,7 +143,7 @@ pub const Object = struct {
     }
 
     pub fn copyBytes(obj: *const Object, bytes: []u8) void {
-        js.zigCopyBytes(obj.ref, bytes.ptr);
+        js.zigCopyBytes(obj.ref, bytes.ptr, bytes.len);
     }
 
     pub fn call(obj: *const Object, fun: []const u8, args: []const Value) Value {
@@ -203,13 +204,20 @@ pub const String = struct {
 };
 
 export fn wasmCallFunction(id: *anyopaque, args: u32, len: u32, captures: [*]Value, captures_len: u32) void {
+    std.log.info("wasmCallFunction->0", .{});
     var captures_slice: []Value = undefined;
     captures_slice.ptr = captures;
     captures_slice.len = captures_len;
+    std.log.info("wasmCallFunction->1", .{});
 
     const obj = Object{ .ref = args };
+    std.log.info("wasmCallFunction->2", .{});
     if (builtin.zig_backend == .stage1) {
-        obj.set("return_value", functions.items[@ptrToInt(id) - 1](obj, len, captures_slice));
+        std.log.info("wasmCallFunction->3", .{});
+        std.log.info("wasmCallFunction->4 {} {}", .{functions.items.len, @ptrToInt(id) - 1});
+        const value = functions.items[@ptrToInt(id) - 1](obj, len, captures_slice);
+        std.log.info("wasmCallFunction->5", .{});
+        obj.set("return_value", value);
     } else {
         var func = @ptrCast(*FunType, @alignCast(std.meta.alignment(*FunType), id));
         obj.set("return_value", func(obj, len, captures_slice));

@@ -87,8 +87,13 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
     context.set("node", node.toValue());
 
     {
-        const audio_process_event = js.createFunction(audioProcessEvent, &.{context.toValue()});
-        defer audio_process_event.deinit();
+        std.log.info("js.createFunction(audioProcessEvent {}\n", .{context.toValue().val.ref});
+
+        // TODO: leaks!
+        const captures = std.heap.page_allocator.alloc(js.Value, 1) catch unreachable;
+        captures[0] = context.toValue();
+        const audio_process_event = js.createFunction(audioProcessEvent, captures);
+        // defer audio_process_event.deinit();
         node.set("onaudioprocess", audio_process_event.toValue());
     }
 
@@ -102,21 +107,24 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
 }
 
 fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
-    std.log.info("LEN {}", .{captures[0].val.ref}); // Doesnt works when removed
+    std.log.info("audioProcessEvent LEN {}", .{captures[0].val.ref}); // Doesnt works when removed
     const device_context = captures[0].view(.object);
     // std.log.info("REF: {} {}", .{ captures[0].val.ref, device_context.ref }); // Same ^
-    std.log.info("here: {}\n", .{captures.len});
+    std.log.info("audioProcessEvent->0 captures.len={}\n", .{captures.len});
 
     const audio_event = args.getIndex(0).view(.object);
     defer audio_event.deinit();
     const output_buffer = audio_event.get("outputBuffer").view(.object);
     defer output_buffer.deinit();
+    std.log.info("audioProcessEvent->1", .{});
 
     const callback = device_context.get("callback");
+    std.log.info("audioProcessEvent->2", .{});
     if (!callback.is(.undef)) {
         // Do not deinit, we are not making a new device, just creating a view to the current one.
         var dev = Device{ .context = device_context };
         const cb = @intToPtr(*DataCallback, @floatToInt(usize, callback.view(.num)));
+        std.log.info("cb ptr: {}\n", .{@floatToInt(usize, callback.view(.num))});
         //const user_data = device_context.get("user_data");
         //const ud = if (user_data.is(.undef)) null else @intToPtr(*anyopaque, @floatToInt(usize, user_data.view(.num)));
         // The above used to work with the old code
@@ -129,12 +137,15 @@ fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
             const source = js.constructType("Uint8Array", &.{js.createNumber(buffer_length)});
             defer source.deinit();
 
-            var buffer: [buffer_length]u8 = undefined; // This should work
-            // var buffer = std.heap.page_allocator.alloc(u8, buffer_length) catch unreachable;
-            // defer std.heap.page_allocator.free(buffer);
+            // var buffer: [buffer_length]u8 = undefined; // This should work
+            var buffer = std.heap.page_allocator.alloc(u8, buffer_length) catch unreachable;
+            defer std.heap.page_allocator.free(buffer);
 
             std.log.info("before cb {}", .{buffer_length});
             std.log.info("entering with {}", .{(buffer[0..]).len});
+            _ = cb;
+            _ = ud;
+            _ = dev;
             cb.*(&dev, ud, buffer[0..]);
             std.log.info("after cb\n\n", .{});
             source.copyBytes(buffer[0..]);
