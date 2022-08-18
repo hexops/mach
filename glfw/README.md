@@ -73,7 +73,7 @@ pub fn build(b: *Builder) void {
 
 ```sh
 gyro add --src github hexops/mach-glfw --root src/main.zig --alias glfw
-gyro add --build-dep --src github hexops/mach-glfw --root build.zig --alias build-glfw
+gyro add --build_dep --src github hexops/mach-glfw --root build.zig --alias build-glfw
 ```
 
 Then in your `build.zig` add:
