@@ -86,7 +86,7 @@ pub fn build(b: *std.build.Builder) void {
                 .src = "examples/" ++ example.name ++ "/main.zig",
                 .target = target,
                 .deps = example.packages,
-                .res_dirs = &.{thisDir() ++ "/examples/assets"},
+                .res_dirs = &.{(comptime thisDir()) ++ "/examples/assets"},
             },
         );
         example_app.setBuildMode(mode);
@@ -229,25 +229,25 @@ pub const App = struct {
 
         const step = blk: {
             if (platform == .web) {
-                const lib = b.addSharedLibrary(options.name, thisDir() ++ "/src/platform/wasm.zig", .unversioned);
+                const lib = b.addSharedLibrary(options.name, (comptime thisDir()) ++ "/src/platform/wasm.zig", .unversioned);
                 lib.addPackage(gpu.pkg);
                 lib.addPackage(sysjs.pkg);
 
                 break :blk lib;
             } else {
-                const exe = b.addExecutable(options.name, thisDir() ++ "/src/platform/native.zig");
+                const exe = b.addExecutable(options.name, (comptime thisDir()) ++ "/src/platform/native.zig");
                 exe.addPackage(gpu.pkg);
                 exe.addPackage(glfw.pkg);
 
                 if (target.os.tag == .linux) {
-                    exe.addPackagePath("gamemode", thisDir() ++ "/gamemode/gamemode.zig");
+                    exe.addPackagePath("gamemode", (comptime thisDir()) ++ "/gamemode/gamemode.zig");
                 }
 
                 break :blk exe;
             }
         };
 
-        step.main_pkg_path = thisDir() ++ "/src";
+        step.main_pkg_path = (comptime thisDir()) ++ "/src";
         step.addPackage(app_pkg);
         step.setTarget(options.target);
 
@@ -271,15 +271,15 @@ pub const App = struct {
 
             inline for (.{ "/src/platform/mach.js", "/sysjs/src/mach-sysjs.js" }) |js| {
                 const install_js = app.b.addInstallFileWithDir(
-                    .{ .path = thisDir() ++ js },
+                    .{ .path = (comptime thisDir()) ++ js },
                     web_install_dir,
                     std.fs.path.basename(js),
                 );
                 app.getInstallStep().?.step.dependOn(&install_js.step);
             }
 
-            const html_generator = app.b.addExecutable("html-generator", thisDir() ++ "/tools/html-generator.zig");
-            html_generator.main_pkg_path = thisDir();
+            const html_generator = app.b.addExecutable("html-generator", (comptime thisDir()) ++ "/tools/html-generator.zig");
+            html_generator.main_pkg_path = (comptime thisDir());
             const run_html_generator = html_generator.run();
             run_html_generator.addArgs(&.{ std.mem.concat(
                 app.b.allocator,
@@ -324,7 +324,7 @@ pub const App = struct {
         if (app.platform == .web) {
             ensureDependencySubmodule(app.b.allocator, "tools/libs/apple_pie") catch unreachable;
 
-            const http_server = app.b.addExecutable("http-server", thisDir() ++ "/tools/http-server.zig");
+            const http_server = app.b.addExecutable("http-server", (comptime thisDir()) ++ "/tools/http-server.zig");
             http_server.addPackage(.{
                 .name = "apple_pie",
                 .source = .{ .path = "tools/libs/apple_pie/src/apple_pie.zig" },
@@ -374,7 +374,7 @@ fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !vo
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = thisDir();
+    child.cwd = (comptime thisDir());
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
 
