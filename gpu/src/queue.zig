@@ -39,11 +39,11 @@ pub const Queue = opaque {
     ) void {
         const Context = @TypeOf(context);
         const Helper = struct {
-            pub fn callback(status: WorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
+            pub fn cCallback(status: WorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
                 callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)), status);
             }
         };
-        Impl.queueOnSubmittedWorkDone(queue, signal_value, Helper.callback, if (Context == void) null else context);
+        Impl.queueOnSubmittedWorkDone(queue, signal_value, Helper.cCallback, if (Context == void) null else context);
     }
 
     pub inline fn setLabel(queue: *Queue, label: [*:0]const u8) void {

@@ -38,7 +38,7 @@ pub const ShaderModule = opaque {
     ) void {
         const Context = @TypeOf(context);
         const Helper = struct {
-            pub fn callback(
+            pub fn cCallback(
                 status: CompilationInfoRequestStatus,
                 compilation_info: *const CompilationInfo,
                 userdata: ?*anyopaque,
@@ -50,7 +50,7 @@ pub const ShaderModule = opaque {
                 );
             }
         };
-        Impl.shaderModuleGetCompilationInfo(shader_module, Helper.callback, if (Context == void) null else context);
+        Impl.shaderModuleGetCompilationInfo(shader_module, Helper.cCallback, if (Context == void) null else context);
     }
 
     pub inline fn setLabel(shader_module: *ShaderModule, label: [*:0]const u8) void {

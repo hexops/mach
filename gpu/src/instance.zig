@@ -34,7 +34,7 @@ pub const Instance = opaque {
     ) void {
         const Context = @TypeOf(context);
         const Helper = struct {
-            pub fn callback(
+            pub fn cCallback(
                 status: RequestAdapterStatus,
                 adapter: *Adapter,
                 message: ?[*:0]const u8,
@@ -48,7 +48,7 @@ pub const Instance = opaque {
                 );
             }
         };
-        Impl.instanceRequestAdapter(instance, options, Helper.callback, if (Context == void) null else context);
+        Impl.instanceRequestAdapter(instance, options, Helper.cCallback, if (Context == void) null else context);
     }
 
     pub inline fn reference(instance: *Instance) void {

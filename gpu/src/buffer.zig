@@ -121,11 +121,11 @@ pub const Buffer = opaque {
     ) void {
         const Context = @TypeOf(context);
         const Helper = struct {
-            pub fn callback(status: MapAsyncStatus, userdata: ?*anyopaque) callconv(.C) void {
+            pub fn cCallback(status: MapAsyncStatus, userdata: ?*anyopaque) callconv(.C) void {
                 callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)), status);
             }
         };
-        Impl.bufferMapAsync(buffer, mode, offset, size, Helper.callback, if (Context == void) null else context);
+        Impl.bufferMapAsync(buffer, mode, offset, size, Helper.cCallback, if (Context == void) null else context);
     }
 
     pub inline fn setLabel(buffer: *Buffer, label: [*:0]const u8) void {

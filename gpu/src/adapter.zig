@@ -83,7 +83,7 @@ pub const Adapter = opaque {
     ) void {
         const Context = @TypeOf(context);
         const Helper = struct {
-            pub fn callback(status: RequestDeviceStatus, device: *Device, message: ?[*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
+            pub fn cCallback(status: RequestDeviceStatus, device: *Device, message: ?[*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
                 callback(
                     if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
                     status,
@@ -92,7 +92,7 @@ pub const Adapter = opaque {
                 );
             }
         };
-        Impl.adapterRequestDevice(adapter, descriptor, Helper.callback, if (Context == void) null else context);
+        Impl.adapterRequestDevice(adapter, descriptor, Helper.cCallback, if (Context == void) null else context);
     }
 
     pub inline fn reference(adapter: *Adapter) void {
