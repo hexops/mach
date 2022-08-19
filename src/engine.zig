@@ -14,7 +14,7 @@ pub const module = ecs.Module(.{
 
 pub fn App(
     modules: anytype,
-    init: anytype, // fn (engine: *ecs.World(modules)) !void
+    app_init: anytype, // fn (engine: *ecs.World(modules)) !void
 ) type {
     // TODO: validate modules.mach is the expected type.
     // TODO: validate init has the right function signature
@@ -28,7 +28,7 @@ pub fn App(
             };
             app.*.engine.set(.mach, .core, core);
             app.*.engine.set(.mach, .device, core.device);
-            try init(&app.engine);
+            try app_init(&app.engine);
         }
 
         pub fn deinit(app: *@This(), _: *Core) void {
