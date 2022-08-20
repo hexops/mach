@@ -8,39 +8,24 @@ pub fn checkApplication(comptime app_pkg: type) void {
 
     if (@hasDecl(App, "init")) {
         const InitFn = @TypeOf(@field(App, "init"));
-        if (@import("builtin").zig_backend == .stage1) {
-            if (InitFn != fn (app: *App, core: *Core) @typeInfo(@typeInfo(InitFn).Fn.return_type.?).ErrorUnion.error_set!void)
-                @compileError("expected 'pub fn init(app: *App, core: *mach.Core) !void' found '" ++ @typeName(InitFn) ++ "'");
-        } else {
-            if (InitFn != *const fn (app: *App, core: *Core) @typeInfo(@typeInfo(InitFn).Fn.return_type.?).ErrorUnion.error_set!void)
-                @compileError("expected 'pub fn init(app: *App, core: *mach.Core) !void' found '" ++ @typeName(InitFn) ++ "'");
-        }
+        if (InitFn != fn (app: *App, core: *Core) @typeInfo(@typeInfo(InitFn).Fn.return_type.?).ErrorUnion.error_set!void)
+            @compileError("expected 'pub fn init(app: *App, core: *mach.Core) !void' found '" ++ @typeName(InitFn) ++ "'");
     } else {
         @compileError("App must export 'pub fn init(app: *App, core: *mach.Core) !void'");
     }
 
     if (@hasDecl(App, "update")) {
         const UpdateFn = @TypeOf(@field(App, "update"));
-        if (@import("builtin").zig_backend == .stage1) {
-            if (UpdateFn != fn (app: *App, core: *Core) @typeInfo(@typeInfo(UpdateFn).Fn.return_type.?).ErrorUnion.error_set!void)
-                @compileError("expected 'pub fn update(app: *App, core: *mach.Core) !void' found '" ++ @typeName(UpdateFn) ++ "'");
-        } else {
-            if (UpdateFn != *const fn (app: *App, core: *Core) @typeInfo(@typeInfo(UpdateFn).Fn.return_type.?).ErrorUnion.error_set!void)
-                @compileError("expected 'pub fn update(app: *App, core: *mach.Core) !void' found '" ++ @typeName(UpdateFn) ++ "'");
-        }
+        if (UpdateFn != fn (app: *App, core: *Core) @typeInfo(@typeInfo(UpdateFn).Fn.return_type.?).ErrorUnion.error_set!void)
+            @compileError("expected 'pub fn update(app: *App, core: *mach.Core) !void' found '" ++ @typeName(UpdateFn) ++ "'");
     } else {
         @compileError("App must export 'pub fn update(app: *App, core: *mach.Core) !void'");
     }
 
     if (@hasDecl(App, "deinit")) {
         const DeinitFn = @TypeOf(@field(App, "deinit"));
-        if (@import("builtin").zig_backend == .stage1) {
-            if (DeinitFn != fn (app: *App, core: *Core) void)
-                @compileError("expected 'pub fn deinit(app: *App, core: *mach.Core) void' found '" ++ @typeName(DeinitFn) ++ "'");
-        } else {
-            if (DeinitFn != *const fn (app: *App, core: *Core) void)
-                @compileError("expected 'pub fn deinit(app: *App, core: *mach.Core) void' found '" ++ @typeName(DeinitFn) ++ "'");
-        }
+        if (DeinitFn != fn (app: *App, core: *Core) void)
+            @compileError("expected 'pub fn deinit(app: *App, core: *mach.Core) void' found '" ++ @typeName(DeinitFn) ++ "'");
     } else {
         @compileError("App must export 'pub fn deinit(app: *App, core: *mach.Core) void'");
     }

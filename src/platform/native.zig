@@ -341,8 +341,8 @@ pub const Platform = struct {
         try platform.window.setSize(.{ .width = options.width, .height = options.height });
         try platform.window.setTitle(options.title);
         try platform.window.setSizeLimits(
-            @bitCast(glfw.Window.SizeOptional, options.size_min),
-            @bitCast(glfw.Window.SizeOptional, options.size_max),
+            glfwSizeOptional(options.size_min),
+            glfwSizeOptional(options.size_max),
         );
         platform.core.target_desc.present_mode = switch (options.vsync) {
             .none => .immediate,
@@ -668,4 +668,11 @@ pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
         }
         core.current_desc = core.target_desc;
     }
+}
+
+fn glfwSizeOptional(size: structs.SizeOptional) glfw.Window.SizeOptional {
+    return .{
+        .width = size.width,
+        .height = size.height,
+    };
 }
