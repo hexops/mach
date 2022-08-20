@@ -243,7 +243,10 @@ pub fn createUndefined() Value {
     return .{ .tag = .undef, .val = undefined };
 }
 
-const FunType = fn (args: Object, args_len: u32, captures: []Value) Value;
+const FunType = if (@import("builtin").zig_backend == .stage1)
+    fn (args: Object, args_len: u32, captures: []Value) Value
+else
+    *const fn (args: Object, args_len: u32, captures: []Value) Value;
 
 var functions: std.ArrayListUnmanaged(FunType) = .{};
 
