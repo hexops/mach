@@ -9,10 +9,16 @@ const CopyTextureForBrowserOptions = @import("types.zig").CopyTextureForBrowserO
 const Impl = @import("interface.zig").Impl;
 
 pub const Queue = opaque {
-    pub const WorkDoneCallback = fn (
-        status: WorkDoneStatus,
-        userdata: ?*anyopaque,
-    ) callconv(.C) void;
+    pub const WorkDoneCallback = if (@import("builtin").zig_backend == .stage1)
+        fn (
+            status: WorkDoneStatus,
+            userdata: ?*anyopaque,
+        ) callconv(.C) void
+    else
+        *const fn (
+            status: WorkDoneStatus,
+            userdata: ?*anyopaque,
+        ) callconv(.C) void;
 
     pub const WorkDoneStatus = enum(u32) {
         success = 0x00000000,

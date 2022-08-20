@@ -17,7 +17,10 @@ pub const whole_size = 0xffffffffffffffff;
 
 /// Generic function pointer type, used for returning API function pointers. Must be
 /// cast to the right `fn (...) callconv(.C) T` type before use.
-pub const Proc = fn () callconv(.C) void;
+pub const Proc = if (@import("builtin").zig_backend == .stage1)
+    fn () callconv(.C) void
+else
+    *const fn () callconv(.C) void;
 
 pub const ComputePassTimestampWrite = extern struct {
     query_set: *QuerySet,

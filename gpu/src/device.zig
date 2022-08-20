@@ -31,11 +31,18 @@ const Impl = @import("interface.zig").Impl;
 const dawn = @import("dawn.zig");
 
 pub const Device = opaque {
-    pub const LostCallback = fn (
-        reason: LostReason,
-        message: [*:0]const u8,
-        userdata: ?*anyopaque,
-    ) callconv(.C) void;
+    pub const LostCallback = if (@import("builtin").zig_backend == .stage1)
+        fn (
+            reason: LostReason,
+            message: [*:0]const u8,
+            userdata: ?*anyopaque,
+        ) callconv(.C) void
+    else
+        *const fn (
+            reason: LostReason,
+            message: [*:0]const u8,
+            userdata: ?*anyopaque,
+        ) callconv(.C) void;
 
     pub const LostReason = enum(u32) {
         undef = 0x00000000,
