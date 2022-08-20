@@ -194,7 +194,7 @@ const Camera = struct {
     bind_group: *gpu.BindGroup,
     buffer: Buffer,
 
-    const Uniform = struct {
+    const Uniform = extern struct {
         pos: Vec,
         mat: Mat,
     };
@@ -214,7 +214,7 @@ const Camera = struct {
 
         const view = self.buildViewProjMatrix();
 
-        const uniform = .{
+        const uniform = Uniform{
             .pos = self.eye,
             .mat = view,
         };
@@ -678,14 +678,14 @@ const Light = struct {
     bind_group: *gpu.BindGroup,
     pipeline: *gpu.RenderPipeline,
 
-    const Uniform = struct {
+    const Uniform = extern struct {
         position: Vec,
         color: Vec,
     };
 
     fn init(core: *mach.Core) Self {
         const device = core.device;
-        const uniform = .{
+        const uniform = Uniform{
             .color = vec3u(1, 1, 1),
             .position = vec3u(3, 7, 2),
         };
