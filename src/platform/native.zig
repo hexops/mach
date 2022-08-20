@@ -632,7 +632,10 @@ pub fn coreDeinit(core: *Core, allocator: std.mem.Allocator) void {
     allocator.destroy(core);
 }
 
-pub const CoreResizeCallback = fn (*Core, u32, u32) callconv(.C) void;
+pub const CoreResizeCallback = if (@import("builtin").zig_backend == .stage1)
+    fn (*Core, u32, u32) callconv(.C) void
+else
+    *const fn (*Core, u32, u32) callconv(.C) void;
 
 pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
     if (core.internal.wait_event_timeout > 0.0) {

@@ -2,9 +2,7 @@ const std = @import("std");
 
 const glfw = @import("glfw");
 const gpu = @import("gpu");
-const objc = @cImport({
-    @cInclude("objc/message.h");
-});
+const objc = @import("objc_message.zig");
 
 pub inline fn printUnhandledErrorCallback(_: void, typ: gpu.ErrorType, message: [*:0]const u8) void {
     switch (typ) {
@@ -166,21 +164,33 @@ pub const AutoReleasePool = if (!@import("builtin").target.isDarwin()) opaque {
 };
 
 // Borrowed from https://github.com/hazeycode/zig-objcrt
-fn msgSend(obj: anytype, sel_name: [:0]const u8, args: anytype, comptime ReturnType: type) ReturnType {
+pub fn msgSend(obj: anytype, sel_name: [:0]const u8, args: anytype, comptime ReturnType: type) ReturnType {
     const args_meta = @typeInfo(@TypeOf(args)).Struct.fields;
 
-    const FnType = switch (args_meta.len) {
-        0 => fn (@TypeOf(obj), objc.SEL) callconv(.C) ReturnType,
-        1 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type) callconv(.C) ReturnType,
-        2 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type) callconv(.C) ReturnType,
-        3 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type) callconv(.C) ReturnType,
-        4 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type, args_meta[3].field_type) callconv(.C) ReturnType,
+    const FnType = if (@import("builtin").zig_backend == .stage1)
+        switch (args_meta.len) {
+            0 => fn (@TypeOf(obj), objc.SEL) callconv(.C) ReturnType,
+            1 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type) callconv(.C) ReturnType,
+            2 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type) callconv(.C) ReturnType,
+            3 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type) callconv(.C) ReturnType,
+            4 => fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type, args_meta[3].field_type) callconv(.C) ReturnType,
+            else => @compileError("Unsupported number of args"),
+        }
+    else switch (args_meta.len) {
+        0 => *const fn (@TypeOf(obj), objc.SEL) callconv(.C) ReturnType,
+        1 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type) callconv(.C) ReturnType,
+        2 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type) callconv(.C) ReturnType,
+        3 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type) callconv(.C) ReturnType,
+        4 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type, args_meta[3].field_type) callconv(.C) ReturnType,
         else => @compileError("Unsupported number of args"),
     };
 
     // NOTE: func is a var because making it const causes a compile error which I believe is a compiler bug
-    var func = @ptrCast(FnType, objc.objc_msgSend);
-    const sel = objc.sel_getUid(sel_name);
+    var func = if (@import("builtin").zig_backend == .stage1)
+        @ptrCast(FnType, objc.objc_msgSend)
+    else
+        @ptrCast(FnType, &objc.objc_msgSend);
+    const sel = objc.sel_getUid(@ptrCast([*c]const u8, sel_name));
 
     return @call(.{}, func, .{ obj, sel } ++ args);
 }
