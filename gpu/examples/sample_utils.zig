@@ -2,9 +2,7 @@ const std = @import("std");
 const assert = std.debug.assert;
 const glfw = @import("glfw");
 const gpu = @import("gpu");
-const objc = @cImport({
-    @cInclude("objc/message.h");
-});
+const objc = @import("objc_message.zig");
 
 inline fn printUnhandledErrorCallback(_: void, typ: gpu.ErrorType, message: [*:0]const u8) void {
     switch (typ) {
