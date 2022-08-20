@@ -2,7 +2,6 @@ const std = @import("std");
 const assert = std.debug.assert;
 const glfw = @import("glfw");
 const gpu = @import("gpu");
-const c = @import("c.zig").c;
 const objc = @cImport({
     @cInclude("objc/message.h");
 });

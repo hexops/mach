@@ -1,6 +1,5 @@
 const std = @import("std");
 const sample_utils = @import("sample_utils.zig");
-const c = @import("c.zig").c;
 const glfw = @import("glfw");
 const gpu = @import("gpu");
 
