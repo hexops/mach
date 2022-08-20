@@ -1,9 +1,18 @@
 const gpu = @import("main.zig");
 
-const c = @cImport({
-    @cInclude("dawn/webgpu.h");
-    @cInclude("mach_dawn.h");
-});
+const c = if (@import("builtin").zig_backend == .stage1)
+    @cImport({
+        @cInclude("dawn/webgpu.h");
+        @cInclude("mach_dawn.h");
+    })
+else
+    // HACK: workaround https://github.com/ziglang/zig/issues/12483
+    //
+    // cd gpu/src/
+    // echo '#include <dawn/webgpu.h>' > tmp.c
+    // echo '#include "mach_dawn.h"' >> tmp.c
+    // zig translate-c tmp.c -I ../zig-cache/mach/gpu-dawn/release-777728f/include/ > dawn_webgpu_h.zig
+    @import("dawn_webgpu_h.zig");
 
 var procs: c.DawnProcTable = undefined;
 
