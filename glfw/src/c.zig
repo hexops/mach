@@ -1,21 +1,11 @@
-//! The GLFW C import
-//!
-//! This is declared centrally in this module and imported in all usage locations, as otherwise
-//! the underlying C import would be generated multiple times and e.g. struct types would be
-//! incompatible, e.g.:
-//!
-//! ```
-//! ./src/Monitor.zig:207:46: error: expected type '.cimport:8:11.struct_GLFWvidmode', found '.cimport:6:11.struct_GLFWvidmode'
-//!         slice[i] = VideoMode{ .handle = modes[i] };
-//!                                              ^
-//! ./zig-cache/o/07cfe6253b7dceb60e4bf24e3426d444/cimport.zig:783:32: note: .cimport:8:11.struct_GLFWvidmode declared here
-//! pub const struct_GLFWvidmode = extern struct {
-//!                                ^
-//! ./zig-cache/o/07cfe6253b7dceb60e4bf24e3426d444/cimport.zig:783:32: note: .cimport:6:11.struct_GLFWvidmode declared here
-//! pub const struct_GLFWvidmode = extern struct {
-//!                                ^
-//! ```
-pub const c = @cImport({
-    @cDefine("GLFW_INCLUDE_VULKAN", "1");
-    @cInclude("GLFW/glfw3.h");
-});
+pub const c = if (@import("builtin").zig_backend == .stage1)
+    @cImport({
+        @cDefine("GLFW_INCLUDE_VULKAN", "1");
+        @cInclude("GLFW/glfw3.h");
+    })
+else
+    // HACK: workaround https://github.com/ziglang/zig/issues/12483
+    //
+    // Extracted from a build using stage1 from zig-cache/ (`cimport.zig`)
+    // Then find+replace `= ?fn` -> `= ?*const fn`
+    @import("cimport2.zig");
