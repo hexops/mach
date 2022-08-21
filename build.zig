@@ -54,7 +54,9 @@ pub fn build(b: *std.build.Builder) void {
     ensureGit(b.allocator);
     ensureDependencySubmodule(b.allocator, "examples/libs/zmath") catch unreachable;
     ensureDependencySubmodule(b.allocator, "examples/libs/zigimg") catch unreachable;
-    ensureDependencySubmodule(b.allocator, "examples/assets") catch unreachable;
+    ensureDependencySubmodule(b.allocator, "examples/gkurve/assets") catch unreachable;
+    ensureDependencySubmodule(b.allocator, "examples/image-blur/assets") catch unreachable;
+    ensureDependencySubmodule(b.allocator, "examples/textured-cube/assets") catch unreachable;
 
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },

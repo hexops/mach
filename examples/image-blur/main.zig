@@ -83,7 +83,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .min_filter = .linear,
     });
 
-    const img = try zigimg.Image.fromMemory(core.allocator, @embedFile("../assets/gotta-go-fast.png"));
+    const img = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/gotta-go-fast.png"));
     defer img.deinit();
 
     const img_size = gpu.Extent3D{ .width = @intCast(u32, img.width), .height = @intCast(u32, img.height) };

@@ -16,9 +16,6 @@
 	path = examples/libs/zigimg
 	url = https://github.com/slimsag/zigimg
 	branch = zig-master
-[submodule "examples/assets"]
-	path = examples/assets
-	url = https://github.com/hexops/mach-example-assets
 [submodule "freetype/upstream"]
 	path = freetype/upstream
 	url = https://github.com/hexops/freetype
@@ -31,3 +28,12 @@
 [submodule "sysaudio/upstream"]
 	path = sysaudio/upstream
 	url = https://github.com/hexops/soundio
+[submodule "examples/image-blur/assets"]
+	path = examples/image-blur/assets
+	url = https://github.com/hexops/mach-example-assets
+[submodule "examples/textured-cube/assets"]
+	path = examples/textured-cube/assets
+	url = https://github.com/hexops/mach-example-assets
+[submodule "examples/gkurve/assets"]
+	path = examples/gkurve/assets
+	url = https://github.com/hexops/mach-example-assets
