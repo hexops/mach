@@ -59,7 +59,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .rows_per_image = @intCast(u32, atlas_size.height),
     };
 
-    const img = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/gotta-go-fast.png"));
+    var img = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/gotta-go-fast.png"));
     defer img.deinit();
 
     const atlas_img_region = try app.texture_atlas_data.reserve(core.allocator, @truncate(u32, img.width), @truncate(u32, img.height));
@@ -84,7 +84,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
     const white_texture_uv_data = atlas_white_region.getUVData(atlas_float_size);
     var white_tex_data = try core.allocator.alloc(zigimg.color.Rgba32, white_tex_scale * white_tex_scale);
     defer core.allocator.free(white_tex_data);
-    std.mem.set(zigimg.color.Rgba32, white_tex_data, zigimg.color.Rgba32.initRGB(0xff, 0xff, 0xff));
+    std.mem.set(zigimg.color.Rgba32, white_tex_data, zigimg.color.Rgba32.initRgb(0xff, 0xff, 0xff));
     app.texture_atlas_data.set(atlas_white_region, white_tex_data);
 
     app.vertices = try std.ArrayList(draw.Vertex).initCapacity(core.allocator, 9);

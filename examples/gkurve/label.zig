@@ -109,7 +109,7 @@ fn write(ctx: WriterContext, bytes: []const u8) WriterError!usize {
                                 glyph_buffer[(y - 1) * glyph_width + (x - 1)];
                         // zig fmt: on
 
-                        data.* = zigimg.color.Rgba32.initRGB(glyph_col, glyph_col, glyph_col);
+                        data.* = zigimg.color.Rgba32.initRgb(glyph_col, glyph_col, glyph_col);
                     }
                     var glyph_atlas_region = try ctx.app.texture_atlas_data.reserve(ctx.label.allocator, glyph_width + 2, glyph_height + 2);
                     ctx.app.texture_atlas_data.set(glyph_atlas_region, glyph_data);
