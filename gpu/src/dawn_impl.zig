@@ -523,7 +523,9 @@ pub const Interface = struct {
         );
     }
 
-    pub inline fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) *gpu.Sampler {
+    // TODO(self-hosted): this cannot be marked as inline for some reason.
+    // https://github.com/ziglang/zig/issues/12545
+    pub fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) *gpu.Sampler {
         return @ptrCast(*gpu.Sampler, procs.deviceCreateSampler.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(?*const c.WGPUSamplerDescriptor, descriptor),

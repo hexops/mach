@@ -96,7 +96,9 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateRenderBundleEncoder", fn (device: *gpu.Device, descriptor: *const gpu.RenderBundleEncoder.Descriptor) callconv(.Inline) *gpu.RenderBundleEncoder);
     assertDecl(T, "deviceCreateRenderPipeline", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor) callconv(.Inline) *gpu.RenderPipeline);
     assertDecl(T, "deviceCreateRenderPipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.RenderPipeline.Descriptor, callback: gpu.CreateRenderPipelineAsyncCallback, userdata: ?*anyopaque) callconv(.Inline) void);
-    assertDecl(T, "deviceCreateSampler", fn (device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) callconv(.Inline) *gpu.Sampler);
+    // TODO(self-hosted): this cannot be marked as inline for some reason.
+    // https://github.com/ziglang/zig/issues/12545
+    assertDecl(T, "deviceCreateSampler", fn (device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) *gpu.Sampler);
     assertDecl(T, "deviceCreateShaderModule", fn (device: *gpu.Device, descriptor: *const gpu.ShaderModule.Descriptor) callconv(.Inline) *gpu.ShaderModule);
     assertDecl(T, "deviceCreateSwapChain", fn (device: *gpu.Device, surface: ?*gpu.Surface, descriptor: *const gpu.SwapChain.Descriptor) callconv(.Inline) *gpu.SwapChain);
     assertDecl(T, "deviceCreateTexture", fn (device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) callconv(.Inline) *gpu.Texture);
@@ -1716,7 +1718,9 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) *gpu.Sampler {
+    // TODO(self-hosted): this cannot be marked as inline for some reason.
+    // https://github.com/ziglang/zig/issues/12545
+    pub fn deviceCreateSampler(device: *gpu.Device, descriptor: ?*const gpu.Sampler.Descriptor) *gpu.Sampler {
         _ = device;
         _ = descriptor;
         unreachable;
