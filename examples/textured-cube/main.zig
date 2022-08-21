@@ -105,7 +105,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .min_filter = .linear,
     });
     const queue = core.device.getQueue();
-    const img = try zigimg.Image.fromMemory(core.allocator, @embedFile("../assets/gotta-go-fast.png"));
+    var img = try zigimg.Image.fromMemory(core.allocator, @embedFile("assets/gotta-go-fast.png"));
     defer img.deinit();
     const img_size = gpu.Extent3D{ .width = @intCast(u32, img.width), .height = @intCast(u32, img.height) };
     const cube_texture = core.device.createTexture(&.{
@@ -121,12 +121,12 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .bytes_per_row = @intCast(u32, img.width * 4),
         .rows_per_image = @intCast(u32, img.height),
     };
-    switch (img.pixels.?) {
-        .Rgba32 => |pixels| queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, pixels),
-        .Rgb24 => |pixels| {
+    switch (img.pixels) {
+        .rgba32 => |pixels| queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, pixels),
+        .rgb24 => |pixels| {
             const data = try rgb24ToRgba32(core.allocator, pixels);
             defer data.deinit(core.allocator);
-            queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, data.Rgba32);
+            queue.writeTexture(&.{ .texture = cube_texture }, &data_layout, &img_size, data.rgba32);
         },
         else => @panic("unsupported image color format"),
     }
@@ -262,11 +262,11 @@ pub fn resize(app: *App, core: *mach.Core, width: u32, height: u32) !void {
     });
 }
 
-fn rgb24ToRgba32(allocator: std.mem.Allocator, in: []zigimg.color.Rgb24) !zigimg.color.ColorStorage {
-    const out = try zigimg.color.ColorStorage.init(allocator, .Rgba32, in.len);
+fn rgb24ToRgba32(allocator: std.mem.Allocator, in: []zigimg.color.Rgb24) !zigimg.color.PixelStorage {
+    const out = try zigimg.color.PixelStorage.init(allocator, .rgba32, in.len);
     var i: usize = 0;
     while (i < in.len) : (i += 1) {
-        out.Rgba32[i] = zigimg.color.Rgba32{ .R = in[i].R, .G = in[i].G, .B = in[i].B, .A = 255 };
+        out.rgba32[i] = zigimg.color.Rgba32{ .r = in[i].r, .g = in[i].g, .b = in[i].b, .a = 255 };
     }
     return out;
 }
