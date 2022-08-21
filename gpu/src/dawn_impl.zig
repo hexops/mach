@@ -6,7 +6,7 @@ const c = if (@import("builtin").zig_backend == .stage1)
         @cInclude("mach_dawn.h");
     })
 else
-    // HACK: workaround https://github.com/ziglang/zig/issues/12483
+    // TODO(self-hosted): HACK: workaround https://github.com/ziglang/zig/issues/12483
     //
     // cd gpu/src/
     // echo '#include <dawn/webgpu.h>' > tmp.c

@@ -4,7 +4,7 @@ const gpu = @import("gpu");
 
 pub const App = @This();
 
-// TODO: without a field in this struct, stage3 seems to think `*App` is a `*const App`
+// TODO(self-hosted): without a field in this struct, stage3 seems to think `*App` is a `*const App`
 unused: f32,
 
 const workgroup_size = 64;
