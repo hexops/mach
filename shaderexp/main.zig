@@ -139,7 +139,7 @@ pub fn update(app: *App, core: *mach.Core) !void {
     const pass = encoder.beginRenderPass(&render_pass_info);
     pass.setPipeline(app.pipeline);
     pass.setBindGroup(0, app.bind_group, &.{0});
-    pass.draw(6, 1, 0, 0);
+    pass.draw(3, 1, 0, 0);
     pass.end();
     pass.release();
 
