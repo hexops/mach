@@ -66,12 +66,12 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
-        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg } },
+        .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg }, .has_assets = true },
         .{ .name = "ecs-app", .packages = &[_]Pkg{} },
-        .{ .name = "image-blur", .packages = &[_]Pkg{Packages.zigimg} },
+        .{ .name = "image-blur", .packages = &[_]Pkg{Packages.zigimg}, .has_assets = true },
         .{ .name = "map-async", .packages = &[_]Pkg{} },
         // NOTE: examples with std_platform_only should be placed at last
-        .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg, freetype.pkg }, .std_platform_only = true },
+        .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg, freetype.pkg }, .std_platform_only = true, .has_assets = true },
     }) |example| {
         // FIXME: this is workaround for a problem that some examples (having the std_platform_only=true field) as
         // well as zigimg uses IO which is not supported in freestanding environments. So break out of this loop
@@ -88,7 +88,7 @@ pub fn build(b: *std.build.Builder) void {
                 .src = "examples/" ++ example.name ++ "/main.zig",
                 .target = target,
                 .deps = example.packages,
-                .res_dirs = &.{(comptime thisDir()) ++ "/examples/assets"},
+                .res_dirs = if (example.has_assets) &.{"examples/" ++ example.name ++ "/assets"} else null,
             },
         );
         example_app.setBuildMode(mode);
@@ -171,6 +171,7 @@ const ExampleDefinition = struct {
     name: []const u8,
     packages: []const Pkg = &[_]Pkg{},
     std_platform_only: bool = false,
+    has_assets: bool = false,
 };
 
 const Packages = struct {
