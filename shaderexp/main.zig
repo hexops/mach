@@ -5,19 +5,6 @@ const glfw = @import("glfw");
 
 pub const App = @This();
 
-const Vertex = struct {
-    pos: @Vector(4, f32),
-    uv: @Vector(2, f32),
-};
-
-const vertices = [_]Vertex{
-    .{ .pos = .{ -1, -1, 0, 1 }, .uv = .{ 0, 0 } },
-    .{ .pos = .{ 1, -1, 0, 1 }, .uv = .{ 1, 0 } },
-    .{ .pos = .{ 1, 1, 0, 1 }, .uv = .{ 1, 1 } },
-    .{ .pos = .{ -1, 1, 0, 1 }, .uv = .{ 0, 1 } },
-};
-const indices = [_]u16{ 0, 1, 2, 2, 3, 0 };
-
 const UniformBufferObject = struct {
     resolution: @Vector(2, f32),
     time: f32,
@@ -27,8 +14,6 @@ var timer: std.time.Timer = undefined;
 
 pipeline: *gpu.RenderPipeline,
 queue: *gpu.Queue,
-vertex_buffer: *gpu.Buffer,
-index_buffer: *gpu.Buffer,
 uniform_buffer: *gpu.Buffer,
 bind_group: *gpu.BindGroup,
 
@@ -48,6 +33,8 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     var fragment_file: std.fs.File = undefined;
     var last_mtime: i128 = undefined;
+
+    // TODO: there is no guarantee we are in the mach project root
     if (std.fs.cwd().openFile("shaderexp/frag.wgsl", .{ .mode = .read_only })) |file| {
         fragment_file = file;
         if (file.stat()) |stat| {
@@ -63,24 +50,6 @@ pub fn init(app: *App, core: *mach.Core) !void {
     var code = try fragment_file.readToEndAllocOptions(core.allocator, std.math.maxInt(u16), null, 1, 0);
 
     const queue = core.device.getQueue();
-
-    const vertex_buffer = core.device.createBuffer(&.{
-        .usage = .{ .vertex = true },
-        .size = @sizeOf(Vertex) * vertices.len,
-        .mapped_at_creation = true,
-    });
-    var vertex_mapped = vertex_buffer.getMappedRange(Vertex, 0, vertices.len);
-    std.mem.copy(Vertex, vertex_mapped.?, vertices[0..]);
-    vertex_buffer.unmap();
-
-    const index_buffer = core.device.createBuffer(&.{
-        .usage = .{ .index = true },
-        .size = @sizeOf(u16) * indices.len,
-        .mapped_at_creation = true,
-    });
-    var index_mapped = index_buffer.getMappedRange(@TypeOf(indices[0]), 0, indices.len);
-    std.mem.copy(u16, index_mapped.?, indices[0..]);
-    index_buffer.unmap();
 
     // We need a bgl to bind the UniformBufferObject, but it is also needed for creating
     // the RenderPipeline, so we pass it to recreatePipeline as a pointer
@@ -103,8 +72,6 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     app.pipeline = pipeline;
     app.queue = queue;
-    app.vertex_buffer = vertex_buffer;
-    app.index_buffer = index_buffer;
     app.uniform_buffer = uniform_buffer;
     app.bind_group = bind_group;
 
@@ -119,8 +86,6 @@ pub fn deinit(app: *App, core: *mach.Core) void {
     app.fragment_shader_file.close();
     core.allocator.free(app.fragment_shader_code);
 
-    app.vertex_buffer.release();
-    app.index_buffer.release();
     app.uniform_buffer.release();
     app.bind_group.release();
 }
@@ -172,11 +137,9 @@ pub fn update(app: *App, core: *mach.Core) !void {
     encoder.writeBuffer(app.uniform_buffer, 0, &[_]UniformBufferObject{ubo});
 
     const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setVertexBuffer(0, app.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
-    pass.setIndexBuffer(app.index_buffer, .uint16, 0, @sizeOf(u16) * indices.len);
     pass.setPipeline(app.pipeline);
     pass.setBindGroup(0, app.bind_group, &.{0});
-    pass.drawIndexed(indices.len, 1, 0, 0, 0);
+    pass.draw(6, 1, 0, 0);
     pass.end();
     pass.release();
 
@@ -192,15 +155,6 @@ pub fn update(app: *App, core: *mach.Core) !void {
 fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?**gpu.BindGroupLayout) *gpu.RenderPipeline {
     const vs_module = core.device.createShaderModuleWGSL("vert.wgsl", @embedFile("vert.wgsl"));
     defer vs_module.release();
-    const vertex_attributes = [_]gpu.VertexAttribute{
-        .{ .format = .float32x4, .offset = @offsetOf(Vertex, "pos"), .shader_location = 0 },
-        .{ .format = .float32x2, .offset = @offsetOf(Vertex, "uv"), .shader_location = 1 },
-    };
-    const vertex_buffer_layout = gpu.VertexBufferLayout.init(.{
-        .array_stride = @sizeOf(Vertex),
-        .step_mode = .vertex,
-        .attributes = &vertex_attributes,
-    });
 
     // Check wether the fragment shader code compiled successfully, if not
     // print the validation layer error and show a black screen
@@ -262,7 +216,6 @@ fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?
         .vertex = gpu.VertexState.init(.{
             .module = vs_module,
             .entry_point = "main",
-            .buffers = &.{vertex_buffer_layout},
         }),
     };
 
