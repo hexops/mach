@@ -16,5 +16,3 @@ zig-out/
 /build/
 /build-*/
 /docgen_tmp/
-
-upstream/soundio/src/config.h
