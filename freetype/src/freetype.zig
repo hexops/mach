@@ -125,12 +125,12 @@ pub const LoadFlags = packed struct {
         color = c.FT_LOAD_COLOR,
     };
 
-    pub fn from(bits: u24) LoadFlags {
+    pub fn from(bits: c_int) LoadFlags {
         return utils.bitFieldsToStruct(LoadFlags, Flag, bits);
     }
 
-    pub fn cast(self: LoadFlags) u24 {
-        return utils.structToBitFields(u24, Flag, self);
+    pub fn cast(self: LoadFlags) c_int {
+        return utils.structToBitFields(c_int, Flag, self);
     }
 };
 
@@ -177,12 +177,12 @@ pub const FaceFlags = packed struct {
         sbix_overlay = c.FT_FACE_FLAG_SBIX_OVERLAY,
     };
 
-    pub fn from(bits: u19) FaceFlags {
+    pub fn from(bits: c_long) FaceFlags {
         return utils.bitFieldsToStruct(FaceFlags, Flag, bits);
     }
 
-    pub fn cast(self: FaceFlags) u19 {
-        return utils.structToBitFields(u19, Flag, self);
+    pub fn cast(self: FaceFlags) c_long {
+        return utils.structToBitFields(c_long, Flag, self);
     }
 };
 
@@ -203,12 +203,12 @@ pub const FSType = packed struct {
         bitmap_embedding_only = c.FT_FSTYPE_BITMAP_EMBEDDING_ONLY,
     };
 
-    pub fn from(bits: u10) FSType {
+    pub fn from(bits: c_int) FSType {
         return utils.bitFieldsToStruct(FSType, Flag, bits);
     }
 
-    pub fn cast(self: FSType) u10 {
-        return utils.structToBitFields(u10, Flag, self);
+    pub fn cast(self: FSType) c_int {
+        return utils.structToBitFields(c_int, Flag, self);
     }
 };
 
@@ -221,12 +221,12 @@ pub const StyleFlags = packed struct {
         bold = c.FT_STYLE_FLAG_BOLD,
     };
 
-    pub fn from(bits: u2) StyleFlags {
+    pub fn from(bits: c_long) StyleFlags {
         return utils.bitFieldsToStruct(StyleFlags, Flag, bits);
     }
 
-    pub fn cast(self: StyleFlags) u2 {
-        return utils.structToBitFields(u2, Flag, self);
+    pub fn cast(self: StyleFlags) c_long {
+        return utils.structToBitFields(c_long, Flag, self);
     }
 };
 
@@ -245,12 +245,12 @@ pub const OpenFlags = packed struct {
         params = c.FT_OPEN_PARAMS,
     };
 
-    pub fn from(bits: u5) OpenFlags {
+    pub fn from(bits: c_uint) OpenFlags {
         return utils.bitFieldsToStruct(OpenFlags, Flag, bits);
     }
 
-    pub fn cast(flags: OpenFlags) u5 {
-        return utils.structToBitFields(u5, Flag, flags);
+    pub fn cast(flags: OpenFlags) c_uint {
+        return utils.structToBitFields(c_uint, Flag, flags);
     }
 };
 pub const OpenArgs = struct {

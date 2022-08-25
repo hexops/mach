@@ -16,7 +16,7 @@ const GlyphSlot = @This();
 
 pub const SubGlyphInfo = struct {
     index: i32,
-    flags: u32,
+    flags: c_uint,
     arg1: i32,
     arg2: i32,
     transform: Matrix,

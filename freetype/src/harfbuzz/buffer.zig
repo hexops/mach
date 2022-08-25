@@ -32,7 +32,7 @@ pub const GlyphInfo = extern struct {
     var2: u32,
 
     pub fn getFlags(self: GlyphInfo) GlyphFlags {
-        return GlyphFlags.from(@intCast(u2, hb_glyph_info_get_glyph_flags(&self)));
+        return GlyphFlags.from(hb_glyph_info_get_glyph_flags(&self));
     }
 };
 
@@ -52,12 +52,12 @@ pub const GlyphFlags = packed struct {
         unsafe_to_concat = c.HB_GLYPH_FLAG_UNSAFE_TO_CONCAT,
     };
 
-    pub fn from(bits: u2) GlyphFlags {
+    pub fn from(bits: c_uint) GlyphFlags {
         return utils.bitFieldsToStruct(GlyphFlags, Flag, bits);
     }
 
-    pub fn cast(self: GlyphFlags) u2 {
-        return utils.structToBitFields(u2, Flag, self);
+    pub fn cast(self: GlyphFlags) c_uint {
+        return utils.structToBitFields(c_uint, Flag, self);
     }
 };
 
@@ -146,12 +146,12 @@ pub const DiffFlags = packed struct {
         position_mismatch = c.HB_BUFFER_DIFF_FLAG_POSITION_MISMATCH,
     };
 
-    pub fn from(bits: u8) DiffFlags {
+    pub fn from(bits: c_uint) DiffFlags {
         return utils.bitFieldsToStruct(DiffFlags, Flag, bits);
     }
 
-    pub fn cast(self: DiffFlags) u8 {
-        return utils.structToBitFields(u8, Flag, self);
+    pub fn cast(self: DiffFlags) c_uint {
+        return utils.structToBitFields(c_uint, Flag, self);
     }
 };
 
@@ -175,12 +175,12 @@ pub const Buffer = struct {
             produce_unsafe_to_concat = c.HB_BUFFER_FLAG_PRODUCE_UNSAFE_TO_CONCAT,
         };
 
-        pub fn from(bits: u7) Flags {
+        pub fn from(bits: c_uint) Flags {
             return utils.bitFieldsToStruct(Flags, Flag, bits);
         }
 
-        pub fn cast(self: Flags) u7 {
-            return utils.structToBitFields(u7, Flag, self);
+        pub fn cast(self: Flags) c_uint {
+            return utils.structToBitFields(c_uint, Flag, self);
         }
     };
 
@@ -292,7 +292,7 @@ pub const Buffer = struct {
     }
 
     pub fn getFlags(self: Buffer) Flags {
-        return Flags.from(@intCast(u7, c.hb_buffer_get_flags(self.handle)));
+        return Flags.from(c.hb_buffer_get_flags(self.handle));
     }
 
     pub fn setFlags(self: Buffer, flags: Flags) void {
@@ -388,7 +388,7 @@ pub const Buffer = struct {
     }
 
     pub fn diff(self: Buffer, ref: Buffer, dottedcircle_glyph: u32, position_fuzz: u32) DiffFlags {
-        return DiffFlags.from(@intCast(u8, c.hb_buffer_diff(self.handle, ref.handle, dottedcircle_glyph, position_fuzz)));
+        return DiffFlags.from(c.hb_buffer_diff(self.handle, ref.handle, dottedcircle_glyph, position_fuzz));
     }
 };
 

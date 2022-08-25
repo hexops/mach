@@ -115,7 +115,7 @@ pub const PaletteData = struct {
     }
 
     pub fn paletteFlag(self: PaletteData, index: u32) PaletteFlags {
-        return PaletteFlags.from(@intCast(u2, self.handle.palette_flags[index]));
+        return PaletteFlags.from(self.handle.palette_flags[index]);
     }
 
     pub fn numPaletteEntries(self: PaletteData) u16 {
@@ -136,12 +136,12 @@ pub const PaletteFlags = packed struct {
         for_dark_background = c.FT_PALETTE_FOR_DARK_BACKGROUND,
     };
 
-    pub fn from(bits: u2) PaletteFlags {
+    pub fn from(bits: c_int) PaletteFlags {
         return utils.bitFieldsToStruct(PaletteFlags, Flag, bits);
     }
 
-    pub fn to(flags: PaletteFlags) u2 {
-        return utils.structToBitFields(u2, Flag, flags);
+    pub fn to(flags: PaletteFlags) c_int {
+        return utils.structToBitFields(c_int, Flag, flags);
     }
 };
 
