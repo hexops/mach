@@ -204,7 +204,9 @@ pub const Platform = struct {
         if (builtin.os.tag == .linux and platform.linux_gamemode_is_active) {
             const gamemode = @import("gamemode");
             gamemode.requestEnd() catch |err| {
-                std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+                if (!std.mem.containsAtLeast(u8, gamemode.errorString(), 1, "dlopen failed")) {
+                    std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+                }
             };
         }
     }
