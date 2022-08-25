@@ -2,9 +2,12 @@ const std = @import("std");
 const c = @import("c");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
-const Stroker = @import("stroke.zig").Stroker;
 const Face = @import("freetype.zig").Face;
+const Stroker = @import("stroke.zig").Stroker;
 const OpenArgs = @import("freetype.zig").OpenArgs;
+const Bitmap = @import("image.zig").Bitmap;
+const Outline = @import("image.zig").Outline;
+const RasterParams = @import("image.zig").RasterParams;
 const LcdFilter = @import("lcdfilter.zig").LcdFilter;
 
 const Library = @This();
@@ -62,6 +65,16 @@ pub fn createStroker(self: Library) Error!Stroker {
     var s: c.FT_Stroker = undefined;
     try intToError(c.FT_Stroker_New(self.handle, &s));
     return Stroker{ .handle = s };
+}
+
+pub fn createOutlineFromBitmap(self: Library, bitmap: Bitmap) Error!Outline {
+    var o: Outline = undefined;
+    try intToError(c.FT_Outline_Get_Bitmap(self.handle, o.handle, &bitmap.handle));
+    return o;
+}
+
+pub fn renderOutline(self: Library, outline: Outline, params: *RasterParams) Error!void {
+    try intToError(c.FT_Outline_Render(self.handle, outline.handle, params));
 }
 
 pub fn setLcdFilter(self: Library, lcd_filter: LcdFilter) Error!void {
