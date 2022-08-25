@@ -1,6 +1,7 @@
 const builtin = @import("builtin");
 const std = @import("std");
 const c = @import("c");
+const utils = @import("utils.zig");
 const intToError = @import("error.zig").intToError;
 const errorToInt = @import("error.zig").errorToInt;
 const Error = @import("error.zig").Error;
@@ -12,6 +13,7 @@ const BBox = @import("types.zig").BBox;
 
 pub const Vector = c.FT_Vector;
 pub const GlyphMetrics = c.FT_Glyph_Metrics;
+pub const RasterParams = c.FT_Raster_Params_;
 
 pub const PixelMode = enum(u3) {
     none = c.FT_PIXEL_MODE_NONE,
@@ -96,6 +98,12 @@ pub const Bitmap = struct {
 };
 
 pub const Outline = struct {
+    pub const Orientation = enum(u2) {
+        truetype = c.FT_ORIENTATION_TRUETYPE,
+        postscript = c.FT_ORIENTATION_POSTSCRIPT,
+        none = c.FT_ORIENTATION_NONE,
+    };
+
     handle: *c.FT_Outline,
 
     pub fn numPoints(self: Outline) u15 {
@@ -118,12 +126,54 @@ pub const Outline = struct {
         return self.handle.*.contours[0..self.numContours()];
     }
 
-    pub fn check(self: Outline) Error!void {
-        try intToError(c.FT_Outline_Check(self.handle));
+    pub fn flags(self: Outline) OutlineFlags {
+        return OutlineFlags.from(@intCast(u19, self.handle.*.flags));
+    }
+
+    pub fn copy(self: Outline) Error!Outline {
+        var o: c.FT_Outline = undefined;
+        try intToError(c.FT_Outline_Copy(self.handle, &o));
+        return Outline{ .handle = &o };
+    }
+
+    pub fn translate(self: Outline, x_offset: i32, y_offset: i32) void {
+        c.FT_Outline_Translate(self.handle, x_offset, y_offset);
     }
 
     pub fn transform(self: Outline, matrix: ?Matrix) void {
         c.FT_Outline_Transform(self.handle, if (matrix) |m| &m else null);
+    }
+
+    pub fn embolden(self: Outline, strength: i32) Error!void {
+        try intToError(c.FT_Outline_Embolden(self.handle, strength));
+    }
+
+    pub fn emboldenXY(self: Outline, x_strength: i32, y_strength: i32) Error!void {
+        try intToError(c.FT_Outline_EmboldenXY(self.handle, x_strength, y_strength));
+    }
+
+    pub fn reverse(self: Outline) void {
+        c.FT_Outline_Reverse(self.handle);
+    }
+
+    pub fn check(self: Outline) Error!void {
+        try intToError(c.FT_Outline_Check(self.handle));
+    }
+
+    pub fn cbox(self: Outline) BBox {
+        var b: BBox = undefined;
+        c.FT_Outline_Get_CBox(self.handle, &b);
+        return b;
+    }
+
+    pub fn bbox(self: Outline) Error!BBox {
+        var b: BBox = undefined;
+        try intToError(c.FT_Outline_Get_BBox(self.handle, &b));
+        return b;
+    }
+
+    pub fn orientation(self: Outline) Orientation {
+        return @intToEnum(Orientation, c.FT_Outline_Get_Orientation(self.handle));
     }
 
     pub fn getInsideBorder(self: Outline) Stroker.Border {
@@ -132,12 +182,6 @@ pub const Outline = struct {
 
     pub fn getOutsideBorder(self: Outline) Stroker.Border {
         return @intToEnum(Stroker.Border, c.FT_Outline_GetOutsideBorder(self.handle));
-    }
-
-    pub fn bbox(self: Outline) Error!BBox {
-        var b: BBox = undefined;
-        try intToError(c.FT_Outline_Get_BBox(self.handle, &b));
-        return b;
     }
 
     pub fn Funcs(comptime Context: type) type {
@@ -151,7 +195,7 @@ pub const Outline = struct {
         };
     }
 
-    pub fn FuncsWrapper(comptime Context: type) type {
+    fn FuncsWrapper(comptime Context: type) type {
         return struct {
             const Self = @This();
             ctx: Context,
@@ -227,5 +271,39 @@ pub const Outline = struct {
             },
             &wrapper,
         ));
+    }
+};
+
+pub const OutlineFlags = packed struct {
+    none: bool = false,
+    owner: bool = false,
+    even_odd_fill: bool = false,
+    reverse_fill: bool = false,
+    ignore_dropouts: bool = false,
+    smart_dropouts: bool = false,
+    include_stubs: bool = false,
+    overlap: bool = false,
+    high_precision: bool = false,
+    single_pass: bool = false,
+
+    pub const Flag = enum(u21) {
+        none = c.FT_OUTLINE_NONE,
+        owner = c.FT_OUTLINE_OWNER,
+        even_odd_fill = c.FT_OUTLINE_EVEN_ODD_FILL,
+        reverse_fill = c.FT_OUTLINE_REVERSE_FILL,
+        ignore_dropouts = c.FT_OUTLINE_IGNORE_DROPOUTS,
+        smart_dropouts = c.FT_OUTLINE_SMART_DROPOUTS,
+        include_stubs = c.FT_OUTLINE_INCLUDE_STUBS,
+        overlap = c.FT_OUTLINE_OVERLAP,
+        high_precision = c.FT_OUTLINE_HIGH_PRECISION,
+        single_pass = c.FT_OUTLINE_SINGLE_PASS,
+    };
+
+    pub fn from(bits: u24) OutlineFlags {
+        return utils.bitFieldsToStruct(OutlineFlags, Flag, bits);
+    }
+
+    pub fn cast(self: OutlineFlags) u24 {
+        return utils.structToBitFields(u24, Flag, self);
     }
 };
