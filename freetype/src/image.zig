@@ -127,7 +127,7 @@ pub const Outline = struct {
     }
 
     pub fn flags(self: Outline) OutlineFlags {
-        return OutlineFlags.from(@intCast(u19, self.handle.*.flags));
+        return OutlineFlags.from(self.handle.*.flags);
     }
 
     pub fn copy(self: Outline) Error!Outline {
@@ -299,11 +299,11 @@ pub const OutlineFlags = packed struct {
         single_pass = c.FT_OUTLINE_SINGLE_PASS,
     };
 
-    pub fn from(bits: u24) OutlineFlags {
+    pub fn from(bits: c_int) OutlineFlags {
         return utils.bitFieldsToStruct(OutlineFlags, Flag, bits);
     }
 
-    pub fn cast(self: OutlineFlags) u24 {
-        return utils.structToBitFields(u24, Flag, self);
+    pub fn cast(self: OutlineFlags) c_int {
+        return utils.structToBitFields(c_int, Flag, self);
     }
 };

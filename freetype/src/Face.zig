@@ -161,7 +161,7 @@ pub fn setCharmap(self: Face, char_map: *CharMap) Error!void {
 }
 
 pub fn getFSTypeFlags(self: Face) FSType {
-    return FSType.from(@intCast(u10, c.FT_Get_FSType_Flags(self.handle)));
+    return FSType.from(c.FT_Get_FSType_Flags(self.handle));
 }
 
 pub fn getCharVariantIndex(self: Face, char: u32, variant_selector: u32) ?u32 {
@@ -272,11 +272,11 @@ pub fn faceIndex(self: Face) u32 {
 }
 
 pub fn faceFlags(self: Face) FaceFlags {
-    return FaceFlags.from(@intCast(u19, self.handle.*.face_flags));
+    return FaceFlags.from(self.handle.*.face_flags);
 }
 
 pub fn styleFlags(self: Face) StyleFlags {
-    return StyleFlags.from(@intCast(u2, self.handle.*.style_flags));
+    return StyleFlags.from(self.handle.*.style_flags);
 }
 
 pub fn numGlyphs(self: Face) u32 {
