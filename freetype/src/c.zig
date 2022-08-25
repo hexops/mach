@@ -1,5 +1,6 @@
 pub usingnamespace @cImport({
     @cInclude("hb-ft.h");
+    @cInclude("freetype/ftadvanc.h");
     @cInclude("freetype/ftbbox.h");
     @cInclude("freetype/ftbitmap.h");
     @cInclude("freetype/ftcolor.h");
