@@ -3,7 +3,7 @@ const utils = @import("utils");
 const c = @import("c");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
-const GlyphSlot = @import("GlyphSlot.zig");
+const GlyphSlot = @import("freetype.zig").GlyphSlot;
 const LoadFlags = @import("freetype.zig").LoadFlags;
 const FaceFlags = @import("freetype.zig").FaceFlags;
 const StyleFlags = @import("freetype.zig").StyleFlags;
@@ -26,8 +26,6 @@ const OpaquePaint = @import("color.zig").OpaquePaint;
 const Paint = @import("color.zig").Paint;
 const PaletteData = @import("color.zig").PaletteData;
 const GlyphLayersIterator = @import("color.zig").GlyphLayersIterator;
-
-const Face = @This();
 
 pub const CharmapIterator = struct {
     face: Face,
@@ -52,6 +50,8 @@ pub const CharmapIterator = struct {
             null;
     }
 };
+
+const Face = @This();
 
 handle: c.FT_Face,
 
@@ -148,7 +148,7 @@ pub fn getPostscriptName(self: Face) ?[:0]const u8 {
         null;
 }
 
-pub fn getCharmapIterator(self: Face) CharmapIterator {
+pub fn iterateCharmap(self: Face) CharmapIterator {
     return CharmapIterator.init(self);
 }
 

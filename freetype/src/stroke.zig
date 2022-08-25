@@ -1,7 +1,7 @@
 const c = @import("c");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
-const Outline = @import("Outline.zig");
+const Outline = @import("image.zig").Outline;
 const Vector = @import("image.zig").Vector;
 
 pub const LineCap = enum(u2) {
