@@ -6,6 +6,7 @@ const system_sdk = @import("glfw/system_sdk.zig");
 const glfw = @import("glfw/build.zig");
 const ecs = @import("ecs/build.zig");
 const freetype = @import("freetype/build.zig");
+const basisu = @import("basisu/build.zig");
 const sysaudio = @import("sysaudio/build.zig");
 const sysjs = @import("sysjs/build.zig");
 const Pkg = std.build.Pkg;
@@ -43,6 +44,7 @@ pub fn build(b: *std.build.Builder) void {
     test_step.dependOn(&glfw.testStep(b, mode, target).step);
     test_step.dependOn(&ecs.testStep(b, mode, target).step);
     test_step.dependOn(&freetype.testStep(b, mode, target).step);
+    test_step.dependOn(&basisu.testStep(b, mode, target).step);
     test_step.dependOn(&sysaudio.testStep(b, mode, target, .{}).step);
     // TODO: we need a way to test wasm stuff
     // test_mach_step.dependOn(&sysjs.testStep(b, mode, target).step);

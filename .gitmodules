@@ -28,6 +28,9 @@
 [submodule "sysaudio/upstream"]
 	path = sysaudio/upstream
 	url = https://github.com/hexops/soundio
+[submodule "basisu/upstream"]
+	path = basisu/upstream
+	url = https://github.com/hexops/basisu
 [submodule "examples/image-blur/assets"]
 	path = examples/image-blur/assets
 	url = https://github.com/hexops/mach-example-assets
