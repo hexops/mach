@@ -308,6 +308,16 @@ pub fn availableSizes(self: Face) ?BitmapSize {
         null;
 }
 
+pub fn getAdvance(self: Face, glyph_index: u32, load_flags: LoadFlags) Error!i32 {
+    var a: i32 = 0;
+    try intToError(c.FT_Get_Advance(self.handle, glyph_index, load_flags.cast(), &@intCast(c_long, a)));
+    return a;
+}
+
+pub fn getAdvances(self: Face, start: u32, advances_out: []c_long, load_flags: LoadFlags) Error!void {
+    try intToError(c.FT_Get_Advances(self.handle, start, @intCast(c_uint, advances_out.len), load_flags.cast(), advances_out.ptr));
+}
+
 pub fn numCharmaps(self: Face) u32 {
     return @intCast(u32, self.handle.*.num_charmaps);
 }
