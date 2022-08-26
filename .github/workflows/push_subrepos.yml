@@ -14,9 +14,7 @@ jobs:
           # split the git subtree.
           fetch-depth: 0
       - name: Install git-filter-repo
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git-filter-repo
+        run: python3 -m pip install --user git-filter-repo
       - name: "Push recent commits to subrepositories"
         env:
           ACCESS_TOKEN: ${{ secrets.HEXOPS_MACH_PUSH_SUBREPOS }}
