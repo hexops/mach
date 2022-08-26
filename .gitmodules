@@ -1,10 +1,10 @@
 [submodule "gpu-dawn/libs/dawn"]
-	path = gpu-dawn/libs/dawn
+	path = libs/gpu-dawn/libs/dawn
 	url = https://github.com/hexops/dawn.git
 	shallow = true
 	branch = "generated-2022-08-06"
 [submodule "gpu-dawn/libs/DirectXShaderCompiler"]
-	path = gpu-dawn/libs/DirectXShaderCompiler
+	path = libs/gpu-dawn/libs/DirectXShaderCompiler
 	url = https://github.com/hexops/DirectXShaderCompiler
 	shallow = true
 	branch = "mach"
@@ -17,19 +17,19 @@
 	url = https://github.com/slimsag/zigimg
 	branch = zig-master
 [submodule "freetype/upstream"]
-	path = freetype/upstream
+	path = libs/freetype/upstream
 	url = https://github.com/hexops/freetype
 [submodule "tools/libs/apple_pie"]
 	path = tools/libs/apple_pie
 	url = https://github.com/Luukdegram/apple_pie
 [submodule "glfw/upstream"]
-	path = glfw/upstream
+	path = libs/glfw/upstream
 	url = https://github.com/hexops/glfw
 [submodule "sysaudio/upstream"]
-	path = sysaudio/upstream
+	path = libs/sysaudio/upstream
 	url = https://github.com/hexops/soundio
 [submodule "basisu/upstream"]
-	path = basisu/upstream
+	path = libs/basisu/upstream
 	url = https://github.com/hexops/basisu
 [submodule "examples/image-blur/assets"]
 	path = examples/image-blur/assets
