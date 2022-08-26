@@ -20,20 +20,21 @@ const projects = [_][]const u8{
 
 pub fn main() !void {
     inline for (projects) |project| {
-        copyFile("dev/template/LICENSE", "libs/" ++ project ++ "/LICENSE");
-        copyFile("dev/template/LICENSE-MIT", "libs/" ++ project ++ "/LICENSE-MIT");
-        copyFile("dev/template/LICENSE-APACHE", "libs/" ++ project ++ "/LICENSE-APACHE");
-        copyFile("dev/template/.gitattributes", "libs/" ++ project ++ "/.gitattributes");
-        copyFile("dev/template/.gitignore", "libs/" ++ project ++ "/.gitignore");
+        const libs = comptime if (!std.mem.eql(u8, project, ".")) "libs/" else "";
+        copyFile("dev/template/LICENSE", libs ++ project ++ "/LICENSE");
+        copyFile("dev/template/LICENSE-MIT", libs ++ project ++ "/LICENSE-MIT");
+        copyFile("dev/template/LICENSE-APACHE", libs ++ project ++ "/LICENSE-APACHE");
+        copyFile("dev/template/.gitattributes", libs ++ project ++ "/.gitattributes");
+        copyFile("dev/template/.gitignore", libs ++ project ++ "/.gitignore");
 
         if (!std.mem.eql(u8, project, ".")) {
             copyFile(
                 "dev/template/.github/pull_request_template.md",
-                "libs/" ++ project ++ "/.github/pull_request_template.md",
+                libs ++ project ++ "/.github/pull_request_template.md",
             );
-            replaceInFile(project ++ "/.github/pull_request_template.md", "foobar", project);
+            replaceInFile(libs ++ project ++ "/.github/pull_request_template.md", "foobar", project);
         }
-        copyFile("dev/template/.github/FUNDING.yml", "libs/" ++ project ++ "/.github/FUNDING.yml");
+        copyFile("dev/template/.github/FUNDING.yml", libs ++ project ++ "/.github/FUNDING.yml");
     }
 }
 
