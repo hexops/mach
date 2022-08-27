@@ -96,13 +96,13 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     const size_multiplier = 5;
     const character = "è";
-    var label = try Label.init(lib, "freetype/upstream/assets/FiraSans-Regular.ttf", 0, 110 * size_multiplier, core.allocator);
+    var label = try Label.init(lib, "libs/freetype/upstream/assets/FiraSans-Regular.ttf", 0, 110 * size_multiplier, core.allocator);
     defer label.deinit();
     // try label.print(app, "All your game's bases are belong to us èçòà", .{}, @Vector(2, f32){ 0, 420 }, @Vector(4, f32){ 1, 1, 1, 1 });
     try label.print(app, character, .{}, @Vector(2, f32){ 50 * size_multiplier, 40 }, @Vector(4, f32){ 1, 1, 1, 1 });
 
     var resizable_label: ResizableLabel = undefined;
-    try resizable_label.init(lib, "freetype/upstream/assets/FiraSans-Regular.ttf", 0, core.allocator, white_texture_uv_data);
+    try resizable_label.init(lib, "libs/freetype/upstream/assets/FiraSans-Regular.ttf", 0, core.allocator, white_texture_uv_data);
     defer resizable_label.deinit();
     try resizable_label.print(app, character, .{}, @Vector(4, f32){ 0, 40, 0, 0 }, @Vector(4, f32){ 1, 1, 1, 1 }, 80 * size_multiplier);
 
