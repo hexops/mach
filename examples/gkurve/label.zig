@@ -75,10 +75,10 @@ fn write(ctx: WriterContext, bytes: []const u8) WriterError!usize {
                 if (!v.found_existing) {
                     try ctx.label.face.setCharSize(ctx.label.size * 64, 0, 50, 0);
                     try ctx.label.face.loadChar(char, .{ .render = true });
-                    const glyph = ctx.label.face.glyph;
+                    const glyph = ctx.label.face.glyph();
                     v.value_ptr.* = GlyphInfo{
                         .uv_data = undefined,
-                        .metrics = glyph().metrics(),
+                        .metrics = glyph.metrics(),
                     };
                 }
                 offset[0] += @intToFloat(f32, v.value_ptr.metrics.horiAdvance >> 6);
