@@ -97,10 +97,8 @@ pub fn build(b: *std.build.Builder) void {
         inline for (example.packages) |p| {
             if (std.mem.eql(u8, p.name, freetype.pkg.name))
                 freetype.link(example_app.b, example_app.step, .{});
-
-            if (std.mem.eql(u8, p.name, sysaudio.pkg.name))
-                sysaudio.link(example_app.b, example_app.step, .{});
         }
+        sysaudio.link(example_app.b, example_app.step, .{});
 
         example_app.link(options);
         example_app.install();
@@ -151,6 +149,7 @@ pub fn build(b: *std.build.Builder) void {
     lib.addPackage(app_pkg);
     lib.addPackage(gpu.pkg);
     lib.addPackage(glfw.pkg);
+    lib.addPackage(sysaudio.pkg);
     glfw.link(b, lib, options.glfw_options);
     gpu.link(b, lib, options.gpuOptions());
     lib.setOutputDir("./libmach/build");
@@ -220,6 +219,7 @@ pub const App = struct {
         var deps = std.ArrayList(std.build.Pkg).init(b.allocator);
         deps.append(pkg) catch unreachable;
         deps.append(gpu.pkg) catch unreachable;
+        deps.append(sysaudio.pkg) catch unreachable;
         switch (platform) {
             .native => deps.append(glfw.pkg) catch unreachable,
             .web => deps.append(sysjs.pkg) catch unreachable,
@@ -236,15 +236,18 @@ pub const App = struct {
             if (platform == .web) {
                 const lib = b.addSharedLibrary(options.name, (comptime thisDir()) ++ "/src/platform/wasm.zig", .unversioned);
                 lib.addPackage(gpu.pkg);
+                lib.addPackage(sysaudio.pkg);
                 lib.addPackage(sysjs.pkg);
 
                 break :blk lib;
             } else {
                 const exe = b.addExecutable(options.name, (comptime thisDir()) ++ "/src/platform/native.zig");
                 exe.addPackage(gpu.pkg);
+                exe.addPackage(sysaudio.pkg);
                 exe.addPackage(glfw.pkg);
 
                 if (target.os.tag == .linux) {
+                    // TODO: add gamemode.pkg instead of using addPackagePath
                     exe.addPackagePath("gamemode", (comptime thisDir()) ++ "/libs/gamemode/gamemode.zig");
                 }
 
@@ -374,7 +377,7 @@ pub const App = struct {
 pub const pkg = std.build.Pkg{
     .name = "mach",
     .source = .{ .path = thisDir() ++ "/src/main.zig" },
-    .dependencies = &.{ gpu.pkg, ecs.pkg },
+    .dependencies = &.{ gpu.pkg, ecs.pkg, sysaudio.pkg },
 };
 
 fn thisDir() []const u8 {
