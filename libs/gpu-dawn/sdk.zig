@@ -83,9 +83,9 @@ pub fn Sdk(deps: anytype) type {
         fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
             ensureSubmodules(b.allocator) catch |err| @panic(@errorName(err));
 
-            step.addIncludeDir((comptime thisDir()) ++ "/libs/dawn/out/Debug/gen/include");
-            step.addIncludeDir((comptime thisDir()) ++ "/libs/dawn/include");
-            step.addIncludeDir((comptime thisDir()) ++ "/src/dawn");
+            step.addIncludeDir(comptime thisDir() ++ "/libs/dawn/out/Debug/gen/include");
+            step.addIncludeDir(comptime thisDir() ++ "/libs/dawn/include");
+            step.addIncludeDir(comptime thisDir() ++ "/src/dawn");
 
             if (options.separate_libs) {
                 const lib_mach_dawn_native = buildLibMachDawnNative(b, step, options);
@@ -122,7 +122,7 @@ pub fn Sdk(deps: anytype) type {
                 return;
             }
 
-            var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+            const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
             const lib_dawn = b.addStaticLibrary("dawn", main_abs);
             lib_dawn.install();
             lib_dawn.setBuildMode(step.build_mode);
@@ -144,10 +144,11 @@ pub fn Sdk(deps: anytype) type {
 
         fn ensureSubmodules(allocator: std.mem.Allocator) !void {
             if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
+                defer allocator.free(no_ensure_submodules);
                 if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
             } else |_| {}
             var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", "--recursive" }, allocator);
-            child.cwd = (comptime thisDir());
+            child.cwd = comptime thisDir();
             child.stderr = std.io.getStdErr();
             child.stdout = std.io.getStdOut();
             _ = try child.spawnAndWait();
@@ -171,6 +172,7 @@ pub fn Sdk(deps: anytype) type {
             };
             if (!binaries_available) {
                 const zig_triple = target.zigTriple(b.allocator) catch unreachable;
+                defer b.allocator.free(zig_triple);
                 std.log.err("gpu-dawn binaries for {s} not available.", .{zig_triple});
                 std.log.err("-> open an issue: https://github.com/hexops/mach/issues", .{});
                 std.log.err("-> build from source (takes 5-15 minutes):", .{});
@@ -190,6 +192,7 @@ pub fn Sdk(deps: anytype) type {
             binary_target.os_version_max = .{ .none = undefined };
             binary_target.glibc_version = null;
             const zig_triple = binary_target.zigTriple(b.allocator) catch unreachable;
+            defer b.allocator.free(zig_triple);
             ensureBinaryDownloaded(b.allocator, zig_triple, b.is_release, target.os.tag == .windows, options.binary_version);
 
             const base_cache_dir_rel = std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
@@ -199,13 +202,19 @@ pub fn Sdk(deps: anytype) type {
             const release_tag = if (b.is_release) "release-fast" else "debug";
             const target_cache_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, zig_triple, release_tag }) catch unreachable;
             const include_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, "include" }) catch unreachable;
+            defer {
+                b.allocator.free(base_cache_dir);
+                b.allocator.free(commit_cache_dir);
+                b.allocator.free(target_cache_dir);
+                b.allocator.free(include_dir);
+            }
 
             step.addLibraryPath(target_cache_dir);
             step.linkSystemLibraryName("dawn");
             step.linkLibCpp();
 
             step.addIncludeDir(include_dir);
-            step.addIncludeDir((comptime thisDir()) ++ "/src/dawn");
+            step.addIncludeDir(comptime thisDir() ++ "/src/dawn");
 
             if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
                 step.linkSystemLibraryName("X11");
@@ -245,6 +254,11 @@ pub fn Sdk(deps: anytype) type {
             std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
             const base_cache_dir = std.fs.cwd().realpathAlloc(allocator, base_cache_dir_rel) catch unreachable;
             const commit_cache_dir = std.fs.path.join(allocator, &.{ base_cache_dir, version }) catch unreachable;
+            defer {
+                allocator.free(base_cache_dir_rel);
+                allocator.free(base_cache_dir);
+                allocator.free(commit_cache_dir);
+            }
 
             if (!dirExists(commit_cache_dir)) {
                 // Commit cache dir does not exist. If the commit we're on is in the main branch, we're
@@ -257,6 +271,7 @@ pub fn Sdk(deps: anytype) type {
 
             const release_tag = if (is_release) "release-fast" else "debug";
             const target_cache_dir = std.fs.path.join(allocator, &.{ commit_cache_dir, zig_triple, release_tag }) catch unreachable;
+            defer allocator.free(target_cache_dir);
             if (dirExists(target_cache_dir)) {
                 return; // nothing to do, already have the binary
             }
@@ -281,11 +296,13 @@ pub fn Sdk(deps: anytype) type {
             ensureCanDownloadFiles(allocator);
 
             const download_dir = try std.fs.path.join(allocator, &.{ target_cache_dir, "download" });
+            defer allocator.free(download_dir);
             try std.fs.cwd().makePath(download_dir);
 
             // Replace "..." with "---" because GitHub releases has very weird restrictions on file names.
             // https://twitter.com/slimsag/status/1498025997987315713
             const github_triple = try std.mem.replaceOwned(u8, allocator, zig_triple, "...", "---");
+            defer allocator.free(github_triple);
 
             // Compose the download URL, e.g.:
             // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/libdawn_x86_64-macos-none_debug.a.gz
@@ -303,15 +320,19 @@ pub fn Sdk(deps: anytype) type {
                 lib_ext,
                 ".gz",
             });
+            defer allocator.free(download_url);
 
             // Download and decompress libdawn
             const gz_target_file = try std.fs.path.join(allocator, &.{ download_dir, "compressed.gz" });
+            defer allocator.free(gz_target_file);
             try downloadFile(allocator, gz_target_file, download_url);
             const target_file = try std.fs.path.join(allocator, &.{ target_cache_dir, lib_file_name });
+            defer allocator.free(target_file);
             try gzipDecompress(allocator, gz_target_file, target_file);
 
             // If we don't yet have the headers (these are shared across architectures), download them.
             const include_dir = try std.fs.path.join(allocator, &.{ commit_cache_dir, "include" });
+            defer allocator.free(include_dir);
             if (!dirExists(include_dir)) {
                 // Compose the headers download URL, e.g.:
                 // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/headers.json.gz
@@ -320,11 +341,14 @@ pub fn Sdk(deps: anytype) type {
                     version,
                     "/headers.json.gz",
                 });
+                defer allocator.free(headers_download_url);
 
                 // Download and decompress headers.json.gz
                 const headers_gz_target_file = try std.fs.path.join(allocator, &.{ download_dir, "headers.json.gz" });
+                defer allocator.free(headers_gz_target_file);
                 try downloadFile(allocator, headers_gz_target_file, headers_download_url);
                 const headers_target_file = try std.fs.path.join(allocator, &.{ target_cache_dir, "headers.json" });
+                defer allocator.free(headers_target_file);
                 try gzipDecompress(allocator, headers_gz_target_file, headers_target_file);
 
                 // Extract headers JSON archive.
@@ -336,6 +360,7 @@ pub fn Sdk(deps: anytype) type {
 
         fn extractHeaders(allocator: std.mem.Allocator, json_file: []const u8, out_dir: []const u8) !void {
             const contents = try std.fs.cwd().readFileAlloc(allocator, json_file, std.math.maxInt(usize));
+            defer allocator.free(contents);
 
             var parser = std.json.Parser.init(allocator, false);
             defer parser.deinit();
@@ -345,6 +370,7 @@ pub fn Sdk(deps: anytype) type {
             var iter = tree.root.Object.iterator();
             while (iter.next()) |f| {
                 const out_path = try std.fs.path.join(allocator, &.{ out_dir, f.key_ptr.* });
+                defer allocator.free(out_path);
                 try std.fs.cwd().makePath(std.fs.path.dirname(out_path).?);
 
                 var new_file = try std.fs.createFileAbsolute(out_path, .{});
@@ -381,8 +407,12 @@ pub fn Sdk(deps: anytype) type {
             const result = try std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "git", "branch", branch, "--contains", commit },
-                .cwd = (comptime thisDir()),
+                .cwd = comptime thisDir(),
             });
+            defer {
+                allocator.free(result.stdout);
+                allocator.free(result.stderr);
+            }
             return result.term.Exited == 0;
         }
 
@@ -390,8 +420,9 @@ pub fn Sdk(deps: anytype) type {
             const result = try std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "git", "rev-parse", "HEAD" },
-                .cwd = (comptime thisDir()),
+                .cwd = comptime thisDir(),
             });
+            defer allocator.free(result.stderr);
             if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
             return result.stdout;
         }
@@ -400,15 +431,19 @@ pub fn Sdk(deps: anytype) type {
             const result = try std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "git", "clone", repository, dir },
-                .cwd = (comptime thisDir()),
+                .cwd = comptime thisDir(),
             });
+            defer {
+                allocator.free(result.stdout);
+                allocator.free(result.stderr);
+            }
             return result.term.Exited == 0;
         }
 
         fn downloadFile(allocator: std.mem.Allocator, target_file: []const u8, url: []const u8) !void {
             std.debug.print("downloading {s}..\n", .{url});
             var child = std.ChildProcess.init(&.{ "curl", "-L", "-o", target_file, url }, allocator);
-            child.cwd = (comptime thisDir());
+            child.cwd = comptime thisDir();
             child.stderr = std.io.getStdErr();
             child.stdout = std.io.getStdOut();
             _ = try child.spawnAndWait();
@@ -419,7 +454,7 @@ pub fn Sdk(deps: anytype) type {
             const result = std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = argv,
-                .cwd = (comptime thisDir()),
+                .cwd = comptime thisDir(),
             }) catch { // e.g. FileNotFound
                 std.log.err("mach: error: 'curl --version' failed. Is curl not installed?", .{});
                 std.process.exit(1);
@@ -441,7 +476,7 @@ pub fn Sdk(deps: anytype) type {
 
         fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-native-mach", main_abs);
                 separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
@@ -477,7 +512,7 @@ pub fn Sdk(deps: anytype) type {
         // Builds common sources; derived from src/common/BUILD.gn
         fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-common", main_abs);
                 separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
@@ -512,11 +547,11 @@ pub fn Sdk(deps: anytype) type {
                 // TODO(build-system): pass system SDK options through
                 deps.system_sdk.include(b, lib, .{});
                 lib.linkFramework("Foundation");
-                var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn/src/dawn/common/SystemUtils_mac.mm" }) catch unreachable;
+                const abs_path = comptime thisDir() ++ "/libs/dawn/src/dawn/common/SystemUtils_mac.mm";
                 cpp_sources.append(abs_path) catch unreachable;
             }
             if (target.os.tag == .windows) {
-                var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn/src/dawn/common/WindowsUtils.cpp" }) catch unreachable;
+                const abs_path = comptime thisDir() ++ "/libs/dawn/src/dawn/common/WindowsUtils.cpp";
                 cpp_sources.append(abs_path) catch unreachable;
             }
 
@@ -530,7 +565,7 @@ pub fn Sdk(deps: anytype) type {
         // Build dawn platform sources; derived from src/dawn/platform/BUILD.gn
         fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-platform", main_abs);
                 separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
@@ -549,12 +584,12 @@ pub fn Sdk(deps: anytype) type {
             }) catch unreachable;
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
-            for ([_][]const u8{
+            inline for ([_][]const u8{
                 "src/dawn/platform/DawnPlatform.cpp",
                 "src/dawn/platform/WorkerThread.cpp",
                 "src/dawn/platform/tracing/EventTracer.cpp",
             }) |path| {
-                var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                 cpp_sources.append(abs_path) catch unreachable;
             }
 
@@ -601,7 +636,7 @@ pub fn Sdk(deps: anytype) type {
         // Builds dawn native sources; derived from src/dawn/native/BUILD.gn
         fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-native", main_abs);
                 separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
@@ -674,10 +709,10 @@ pub fn Sdk(deps: anytype) type {
                 lib.linkSystemLibraryName("dxgi");
                 lib.linkSystemLibraryName("dxguid");
 
-                for ([_][]const u8{
+                inline for ([_][]const u8{
                     "src/dawn/mingw_helpers.cpp",
                 }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), path }) catch unreachable;
+                    const abs_path = comptime thisDir() ++ "/" ++ path;
                     cpp_sources.append(abs_path) catch unreachable;
                 }
 
@@ -710,26 +745,26 @@ pub fn Sdk(deps: anytype) type {
 
             if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
                 lib.linkSystemLibraryName("X11");
-                for ([_][]const u8{
+                inline for ([_][]const u8{
                     "src/dawn/native/XlibXcbFunctions.cpp",
                 }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                     cpp_sources.append(abs_path) catch unreachable;
                 }
             }
 
-            for ([_][]const u8{
+            inline for ([_][]const u8{
                 "src/dawn/native/null/DeviceNull.cpp",
             }) |path| {
-                var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                 cpp_sources.append(abs_path) catch unreachable;
             }
 
             if (options.desktop_gl.? or options.vulkan.?) {
-                for ([_][]const u8{
+                inline for ([_][]const u8{
                     "src/dawn/native/SpirvValidation.cpp",
                 }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                     cpp_sources.append(abs_path) catch unreachable;
                 }
             }
@@ -756,27 +791,27 @@ pub fn Sdk(deps: anytype) type {
                 }) catch unreachable;
 
                 if (isLinuxDesktopLike(target)) {
-                    for ([_][]const u8{
+                    inline for ([_][]const u8{
                         "src/dawn/native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
                     }) |path| {
-                        var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                        const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                         cpp_sources.append(abs_path) catch unreachable;
                     }
                 } else if (target.os.tag == .fuchsia) {
-                    for ([_][]const u8{
+                    inline for ([_][]const u8{
                         "src/dawn/native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
                     }) |path| {
-                        var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                        const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                         cpp_sources.append(abs_path) catch unreachable;
                     }
                 } else {
-                    for ([_][]const u8{
+                    inline for ([_][]const u8{
                         "src/dawn/native/vulkan/external_memory/MemoryServiceNull.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceNull.cpp",
                     }) |path| {
-                        var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                        const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                         cpp_sources.append(abs_path) catch unreachable;
                     }
                 }
@@ -821,34 +856,34 @@ pub fn Sdk(deps: anytype) type {
                 // }
             }
 
-            for ([_][]const u8{
+            inline for ([_][]const u8{
                 "src/dawn/native/null/NullBackend.cpp",
             }) |path| {
-                var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                 cpp_sources.append(abs_path) catch unreachable;
             }
 
             if (options.d3d12.?) {
-                for ([_][]const u8{
+                inline for ([_][]const u8{
                     "src/dawn/native/d3d12/D3D12Backend.cpp",
                 }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                     cpp_sources.append(abs_path) catch unreachable;
                 }
             }
             if (options.desktop_gl.?) {
-                for ([_][]const u8{
+                inline for ([_][]const u8{
                     "src/dawn/native/opengl/OpenGLBackend.cpp",
                 }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                     cpp_sources.append(abs_path) catch unreachable;
                 }
             }
             if (options.vulkan.?) {
-                for ([_][]const u8{
+                inline for ([_][]const u8{
                     "src/dawn/native/vulkan/VulkanBackend.cpp",
                 }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                     cpp_sources.append(abs_path) catch unreachable;
                 }
                 // TODO(build-system): vulkan
@@ -872,7 +907,7 @@ pub fn Sdk(deps: anytype) type {
         // Builds tint sources; derived from src/tint/BUILD.gn
         fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("tint", main_abs);
                 separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
@@ -928,9 +963,9 @@ pub fn Sdk(deps: anytype) type {
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
             const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
             switch (target.os.tag) {
-                .windows => cpp_sources.append((comptime thisDir()) ++ "/libs/dawn/src/tint/diagnostic/printer_windows.cc") catch unreachable,
-                .linux => cpp_sources.append((comptime thisDir()) ++ "/libs/dawn/src/tint/diagnostic/printer_linux.cc") catch unreachable,
-                else => cpp_sources.append((comptime thisDir()) ++ "/libs/dawn/src/tint/diagnostic/printer_other.cc") catch unreachable,
+                .windows => cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_windows.cc") catch unreachable,
+                .linux => cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_linux.cc") catch unreachable,
+                else => cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_other.cc") catch unreachable,
             }
 
             // libtint_sem_src
@@ -1020,7 +1055,7 @@ pub fn Sdk(deps: anytype) type {
         // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
         fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("spirv-tools", main_abs);
                 separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
@@ -1087,7 +1122,7 @@ pub fn Sdk(deps: anytype) type {
         //
         fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("abseil-cpp-common", main_abs);
                 separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
@@ -1148,7 +1183,7 @@ pub fn Sdk(deps: anytype) type {
         // Buids dawn wire sources; derived from src/dawn/wire/BUILD.gn
         fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-wire", main_abs);
                 separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
@@ -1184,7 +1219,7 @@ pub fn Sdk(deps: anytype) type {
         // Builds dawn utils sources; derived from src/dawn/utils/BUILD.gn
         fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-utils", main_abs);
                 separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
@@ -1204,46 +1239,46 @@ pub fn Sdk(deps: anytype) type {
             }) catch unreachable;
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
-            for ([_][]const u8{
+            inline for ([_][]const u8{
                 "src/dawn/utils/BackendBinding.cpp",
                 "src/dawn/utils/NullBinding.cpp",
             }) |path| {
-                var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                 cpp_sources.append(abs_path) catch unreachable;
             }
 
             if (options.d3d12.?) {
-                for ([_][]const u8{
+                inline for ([_][]const u8{
                     "src/dawn/utils/D3D12Binding.cpp",
                 }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                     cpp_sources.append(abs_path) catch unreachable;
                 }
                 flags.appendSlice(dawn_d3d12_flags) catch unreachable;
             }
             if (options.metal.?) {
-                for ([_][]const u8{
+                inline for ([_][]const u8{
                     "src/dawn/utils/MetalBinding.mm",
                 }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                     cpp_sources.append(abs_path) catch unreachable;
                 }
             }
 
             if (options.desktop_gl.?) {
-                for ([_][]const u8{
+                inline for ([_][]const u8{
                     "src/dawn/utils/OpenGLBinding.cpp",
                 }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                     cpp_sources.append(abs_path) catch unreachable;
                 }
             }
 
             if (options.vulkan.?) {
-                for ([_][]const u8{
+                inline for ([_][]const u8{
                     "src/dawn/utils/VulkanBinding.cpp",
                 }) |path| {
-                    var abs_path = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "libs/dawn", path }) catch unreachable;
+                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                     cpp_sources.append(abs_path) catch unreachable;
                 }
             }
@@ -1258,7 +1293,7 @@ pub fn Sdk(deps: anytype) type {
         // Buids dxcompiler sources; derived from libs/DirectXShaderCompiler/CMakeLists.txt
         fn buildLibDxcompiler(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                var main_abs = std.fs.path.join(b.allocator, &.{ (comptime thisDir()), "src/dawn/dummy.zig" }) catch unreachable;
+                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dxcompiler", main_abs);
                 separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
@@ -1426,7 +1461,8 @@ pub fn Sdk(deps: anytype) type {
             excluding: []const []const u8,
             excluding_contains: []const []const u8,
         ) !void {
-            const abs_dir = try std.mem.concat(b.allocator, u8, &.{ (comptime thisDir()), "/", rel_dir });
+            const abs_dir = try std.fs.path.join(b.allocator, &.{ comptime thisDir(), rel_dir });
+            defer b.allocator.free(abs_dir);
             var dir = try std.fs.openIterableDirAbsolute(abs_dir, .{});
             defer dir.close();
             var dir_it = dir.iterate();

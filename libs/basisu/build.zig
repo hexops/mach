@@ -89,6 +89,7 @@ fn thisDir() []const u8 {
 
 fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
     if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
+        defer allocator.free(no_ensure_submodules);
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
