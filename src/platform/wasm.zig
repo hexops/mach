@@ -232,10 +232,7 @@ pub const Platform = struct {
     }
 
     inline fn sign(val: f64) f64 {
-        return switch (val) {
-            0.0 => 0.0,
-            else => -val,
-        };
+        return if (val == 0.0) 0.0 else -val;
     }
 
     fn toMachButton(button: i32) enums.MouseButton {
