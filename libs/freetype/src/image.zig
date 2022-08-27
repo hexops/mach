@@ -13,7 +13,11 @@ const BBox = @import("types.zig").BBox;
 
 pub const Vector = c.FT_Vector;
 pub const GlyphMetrics = c.FT_Glyph_Metrics;
-pub const RasterParams = c.FT_Raster_Params_;
+pub const Span = c.FT_Span;
+pub const SpanFunc = if (builtin.zig_backend == .stage1)
+    fn (y: c_int, count: c_int, spans: [*]const Span, user: *anyopaque) callconv(.C) void
+else
+    *const fn (y: c_int, count: c_int, spans: [*]const Span, user: *anyopaque) callconv(.C) void;
 
 pub const PixelMode = enum(u3) {
     none = c.FT_PIXEL_MODE_NONE,
@@ -104,6 +108,40 @@ pub const Outline = struct {
         none = c.FT_ORIENTATION_NONE,
     };
 
+    pub const Flags = packed struct {
+        none: bool = false,
+        owner: bool = false,
+        even_odd_fill: bool = false,
+        reverse_fill: bool = false,
+        ignore_dropouts: bool = false,
+        smart_dropouts: bool = false,
+        include_stubs: bool = false,
+        overlap: bool = false,
+        high_precision: bool = false,
+        single_pass: bool = false,
+
+        pub const Flag = enum(u21) {
+            none = c.FT_OUTLINE_NONE,
+            owner = c.FT_OUTLINE_OWNER,
+            even_odd_fill = c.FT_OUTLINE_EVEN_ODD_FILL,
+            reverse_fill = c.FT_OUTLINE_REVERSE_FILL,
+            ignore_dropouts = c.FT_OUTLINE_IGNORE_DROPOUTS,
+            smart_dropouts = c.FT_OUTLINE_SMART_DROPOUTS,
+            include_stubs = c.FT_OUTLINE_INCLUDE_STUBS,
+            overlap = c.FT_OUTLINE_OVERLAP,
+            high_precision = c.FT_OUTLINE_HIGH_PRECISION,
+            single_pass = c.FT_OUTLINE_SINGLE_PASS,
+        };
+
+        pub fn from(bits: c_int) Flags {
+            return utils.bitFieldsToStruct(Flags, Flag, bits);
+        }
+
+        pub fn cast(self: Flags) c_int {
+            return utils.structToBitFields(c_int, Flag, self);
+        }
+    };
+
     handle: *c.FT_Outline,
 
     pub fn numPoints(self: Outline) u15 {
@@ -126,8 +164,8 @@ pub const Outline = struct {
         return self.handle.*.contours[0..self.numContours()];
     }
 
-    pub fn flags(self: Outline) OutlineFlags {
-        return OutlineFlags.from(self.handle.*.flags);
+    pub fn flags(self: Outline) Flags {
+        return Flags.from(self.handle.*.flags);
     }
 
     pub fn copy(self: Outline) Error!Outline {
@@ -274,36 +312,69 @@ pub const Outline = struct {
     }
 };
 
-pub const OutlineFlags = packed struct {
-    none: bool = false,
-    owner: bool = false,
-    even_odd_fill: bool = false,
-    reverse_fill: bool = false,
-    ignore_dropouts: bool = false,
-    smart_dropouts: bool = false,
-    include_stubs: bool = false,
-    overlap: bool = false,
-    high_precision: bool = false,
-    single_pass: bool = false,
+pub const Raster = struct {
+    handle: c.FT_Raster,
 
-    pub const Flag = enum(u21) {
-        none = c.FT_OUTLINE_NONE,
-        owner = c.FT_OUTLINE_OWNER,
-        even_odd_fill = c.FT_OUTLINE_EVEN_ODD_FILL,
-        reverse_fill = c.FT_OUTLINE_REVERSE_FILL,
-        ignore_dropouts = c.FT_OUTLINE_IGNORE_DROPOUTS,
-        smart_dropouts = c.FT_OUTLINE_SMART_DROPOUTS,
-        include_stubs = c.FT_OUTLINE_INCLUDE_STUBS,
-        overlap = c.FT_OUTLINE_OVERLAP,
-        high_precision = c.FT_OUTLINE_HIGH_PRECISION,
-        single_pass = c.FT_OUTLINE_SINGLE_PASS,
+    pub const NewFunc = if (builtin.zig_backend == .stage1)
+        fn (memory: ?*anyopaque, raster: [*c]c.FT_Raster) callconv(.C) c_int
+    else
+        *const fn (memory: ?*anyopaque, raster: [*c]c.FT_Raster) callconv(.C) c_int;
+    pub const DoneFunc = if (builtin.zig_backend == .stage1)
+        fn (raster: [*c]c.FT_Raster) callconv(.C) void
+    else
+        *const fn (raster: [*c]c.FT_Raster) callconv(.C) void;
+    pub const ResetFunc = if (builtin.zig_backend == .stage1)
+        fn (raster: c.FT_Raster, pool_base: [*c]u8, pool_size: c_ulong) callconv(.C) void
+    else
+        *const fn (raster: c.FT_Raster, pool_base: [*c]u8, pool_size: c_ulong) callconv(.C) void;
+    pub const SetModeFunc = if (builtin.zig_backend == .stage1)
+        fn (raster: c.FT_Raster, mode: c_ulong, args: ?*anyopaque) callconv(.C) c_int
+    else
+        *const fn (raster: c.FT_Raster, mode: c_ulong, args: ?*anyopaque) callconv(.C) c_int;
+    pub const RenderFunc = if (builtin.zig_backend == .stage1)
+        fn (raster: c.FT_Raster, params: Params) callconv(.C) c_int
+    else
+        *const fn (raster: c.FT_Raster, params: Params) callconv(.C) c_int;
+    pub const BitTestFunc = if (builtin.zig_backend == .stage1)
+        fn (y: c_int, x: c_int, user: ?*anyopaque) callconv(.C) c_int
+    else
+        *const fn (y: c_int, x: c_int, user: ?*anyopaque) callconv(.C) c_int;
+    pub const BitSetFunc = if (builtin.zig_backend == .stage1)
+        fn (y: c_int, x: c_int, user: ?*anyopaque) callconv(.C) void
+    else
+        *const fn (y: c_int, x: c_int, user: ?*anyopaque) callconv(.C) void;
+
+    pub const Params = extern struct {
+        target: [*c]const c.FT_Bitmap,
+        source: [*]const u8,
+        flags: c_int,
+        gray_spans: SpanFunc,
+        black_spans: ?SpanFunc = null, // unused
+        bit_test: ?BitTestFunc = null, // unused
+        bit_set: ?BitSetFunc = null, // unused
+        user: ?*anyopaque = null,
+        clip_box: BBox,
     };
 
-    pub fn from(bits: c_int) OutlineFlags {
-        return utils.bitFieldsToStruct(OutlineFlags, Flag, bits);
-    }
+    pub const Flags = packed struct {
+        aa: bool = false,
+        direct: bool = false,
+        clip: bool = false,
+        sdf: bool = false,
 
-    pub fn cast(self: OutlineFlags) c_int {
-        return utils.structToBitFields(c_int, Flag, self);
-    }
+        pub const Flag = enum(u10) {
+            aa = c.FT_RASTER_FLAG_AA,
+            direct = c.FT_RASTER_FLAG_DIRECT,
+            clip = c.FT_RASTER_FLAG_CLIP,
+            sdf = c.FT_RASTER_FLAG_SDF,
+        };
+
+        pub fn from(bits: c_int) Flags {
+            return utils.bitFieldsToStruct(Flags, Flag, bits);
+        }
+
+        pub fn cast(self: Flags) c_int {
+            return utils.structToBitFields(c_int, Flag, self);
+        }
+    };
 };

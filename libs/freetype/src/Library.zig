@@ -7,7 +7,7 @@ const Stroker = @import("stroke.zig").Stroker;
 const OpenArgs = @import("freetype.zig").OpenArgs;
 const Bitmap = @import("image.zig").Bitmap;
 const Outline = @import("image.zig").Outline;
-const RasterParams = @import("image.zig").RasterParams;
+const RasterParams = @import("image.zig").Raster.Params;
 const LcdFilter = @import("lcdfilter.zig").LcdFilter;
 
 const Library = @This();
@@ -74,9 +74,11 @@ pub fn createOutlineFromBitmap(self: Library, bitmap: Bitmap) Error!Outline {
 }
 
 pub fn renderOutline(self: Library, outline: Outline, params: *RasterParams) Error!void {
-    try intToError(c.FT_Outline_Render(self.handle, outline.handle, params));
+    try intToError(FT_Outline_Render(self.handle, outline.handle, params));
 }
 
 pub fn setLcdFilter(self: Library, lcd_filter: LcdFilter) Error!void {
     return intToError(c.FT_Library_SetLcdFilter(self.handle, @enumToInt(lcd_filter)));
 }
+
+pub extern fn FT_Outline_Render(library: c.FT_Library, outline: [*c]c.FT_Outline, params: [*c]RasterParams) c_int;
