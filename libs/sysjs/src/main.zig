@@ -18,6 +18,7 @@ const js = struct {
     extern fn zigValueEqual(val: *const anyopaque, other: *const anyopaque) bool;
     extern fn zigValueInstanceOf(val: *const anyopaque, other: *const anyopaque) bool;
     extern fn zigDeleteIndex(id: u64, index: u32) void;
+    extern fn zigCopyBytes(id: u64, bytes: [*]u8, expected_len: u32) void;
     extern fn zigFunctionCall(id: u64, name: [*]const u8, len: u32, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigFunctionInvoke(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
     extern fn zigGetParamCount(id: u64) u32;
@@ -138,6 +139,10 @@ pub const Object = struct {
 
     pub fn deleteIndex(obj: *const Object, index: u32) void {
         js.zigDeleteIndex(obj.ref, index);
+    }
+
+    pub fn copyBytes(obj: *const Object, bytes: []u8) void {
+        js.zigCopyBytes(obj.ref, bytes.ptr, bytes.len);
     }
 
     pub fn call(obj: *const Object, fun: []const u8, args: []const Value) Value {

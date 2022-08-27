@@ -40,6 +40,10 @@ class MemoryBlock {
     return this.getMemory().getFloat64(offset, true);
   }
 
+  getSlice(offset, len) {
+    return new Uint8Array(this.mem, offset, len);
+  }
+
   getString(offset, len) {
     return text_decoder.decode(new Uint8Array(this.mem, offset, len));
   }
@@ -250,6 +254,16 @@ const zig = {
 
   zigDeleteIndex(id, index) {
     delete values[id][index];
+  },
+
+  zigCopyBytes(id, bytes, expected_length) {
+    let memory = new MemoryBlock(zig.wasm.exports.memory.buffer);
+    const array = values[id];
+    if (array.length != expected_length) {
+      throw Error("copyBytes given array of length " + expected_length + " but destination has length " + array.length);
+    }
+    const slice = memory.getSlice(bytes, array.length);
+    array.set(slice);
   },
 
   zigGetAttributeCount(id) {
