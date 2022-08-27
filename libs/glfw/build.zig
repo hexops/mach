@@ -194,20 +194,6 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
             if (options.wayland) {
                 step.defineCMacro("WL_MARSHAL_FLAG_DESTROY", null);
             }
-            if (options.x11) {
-                step.linkSystemLibraryName("X11");
-                step.linkSystemLibraryName("xcb");
-                step.linkSystemLibraryName("Xau");
-                step.linkSystemLibraryName("Xdmcp");
-            }
-            // Note: no need to link against vulkan, GLFW finds it dynamically at runtime.
-            // https://www.glfw.org/docs/3.3/vulkan_guide.html#vulkan_loader
-            if (options.opengl) {
-                step.linkSystemLibraryName("GL");
-            }
-            if (options.gles) {
-                step.linkSystemLibraryName("GLESv3");
-            }
         },
     }
 }
