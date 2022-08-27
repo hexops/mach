@@ -1,6 +1,6 @@
 const gpu = @import("main.zig");
 
-const c = if (@import("builtin").zig_backend == .stage1)
+const c = if (@import("builtin").zig_backend == .stage1 or !@import("builtin").target.isDarwin())
     @cImport({
         @cInclude("dawn/webgpu.h");
         @cInclude("mach_dawn.h");

@@ -1,4 +1,4 @@
-pub usingnamespace if (@import("builtin").zig_backend == .stage1)
+pub usingnamespace if (@import("builtin").zig_backend == .stage1 or !@import("builtin").target.isDarwin())
     @cImport({
         @cInclude("hb-ft.h");
         @cInclude("freetype/ftadvanc.h");

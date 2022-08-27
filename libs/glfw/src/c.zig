@@ -1,4 +1,4 @@
-pub const c = if (@import("builtin").zig_backend == .stage1)
+pub const c = if (@import("builtin").zig_backend == .stage1 or !@import("builtin").target.isDarwin())
     @cImport({
         @cDefine("GLFW_INCLUDE_VULKAN", "1");
         @cInclude("GLFW/glfw3.h");
