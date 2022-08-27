@@ -35,12 +35,12 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     if (options.encoder) {
         step.linkLibrary(buildEncoder(b));
         step.addCSourceFile(comptime thisDir() ++ "/src/encoder/wrapper.cpp", &.{});
-        step.addIncludeDir(basisu_root ++ "/encoder");
+        step.addIncludePath(basisu_root ++ "/encoder");
     }
     if (options.transcoder) {
         step.linkLibrary(buildTranscoder(b));
         step.addCSourceFile(comptime thisDir() ++ "/src/transcoder/wrapper.cpp", &.{});
-        step.addIncludeDir(basisu_root ++ "/transcoder");
+        step.addIncludePath(basisu_root ++ "/transcoder");
     }
 }
 

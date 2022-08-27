@@ -29,7 +29,7 @@ pub fn Sdk(deps: anytype) type {
                 deps.glfw.link(b, step, options.glfw_options);
                 deps.gpu_dawn.link(b, step, options.gpu_dawn_options);
                 step.addCSourceFile((comptime thisDir()) ++ "/src/mach_dawn.cpp", &.{"-std=c++17"});
-                step.addIncludeDir((comptime thisDir()) ++ "/src");
+                step.addIncludePath((comptime thisDir()) ++ "/src");
             }
         }
 
