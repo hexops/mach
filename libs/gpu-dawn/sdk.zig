@@ -83,9 +83,9 @@ pub fn Sdk(deps: anytype) type {
         fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
             ensureSubmodules(b.allocator) catch |err| @panic(@errorName(err));
 
-            step.addIncludeDir(comptime thisDir() ++ "/libs/dawn/out/Debug/gen/include");
-            step.addIncludeDir(comptime thisDir() ++ "/libs/dawn/include");
-            step.addIncludeDir(comptime thisDir() ++ "/src/dawn");
+            step.addIncludePath(comptime thisDir() ++ "/libs/dawn/out/Debug/gen/include");
+            step.addIncludePath(comptime thisDir() ++ "/libs/dawn/include");
+            step.addIncludePath(comptime thisDir() ++ "/src/dawn");
 
             if (options.separate_libs) {
                 const lib_mach_dawn_native = buildLibMachDawnNative(b, step, options);
@@ -213,8 +213,8 @@ pub fn Sdk(deps: anytype) type {
             step.linkSystemLibraryName("dawn");
             step.linkLibCpp();
 
-            step.addIncludeDir(include_dir);
-            step.addIncludeDir(comptime thisDir() ++ "/src/dawn");
+            step.addIncludePath(include_dir);
+            step.addIncludePath(comptime thisDir() ++ "/src/dawn");
 
             if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
                 step.linkSystemLibraryName("X11");
