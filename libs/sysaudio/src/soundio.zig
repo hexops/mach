@@ -17,7 +17,7 @@ const Audio = @This();
 pub const DataCallback = if (@import("builtin").zig_backend == .stage1)
     fn (device: Device, frame_count: u32) void
 else
-    fn (device: Device, frame_count: u32) void;
+    *const fn (device: Device, frame_count: u32) void;
 
 pub const Device = struct {
     handle: SoundIoStream,
