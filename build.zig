@@ -285,12 +285,15 @@ pub const App = struct {
 
             const html_generator = app.b.addExecutable("html-generator", (comptime thisDir()) ++ "/tools/html-generator.zig");
             html_generator.main_pkg_path = (comptime thisDir());
+
             const run_html_generator = html_generator.run();
-            run_html_generator.addArgs(&.{ std.mem.concat(
+            const html_file_name = std.mem.concat(
                 app.b.allocator,
                 u8,
                 &.{ app.name, ".html" },
-            ) catch unreachable, app.name });
+            ) catch unreachable;
+            defer app.b.allocator.free(html_file_name);
+            run_html_generator.addArgs(&.{ html_file_name, app.name });
 
             run_html_generator.cwd = app.b.getInstallPath(web_install_dir, "");
             app.getInstallStep().?.step.dependOn(&run_html_generator.step);
@@ -340,8 +343,12 @@ pub const App = struct {
             // This is because running the server would block the process (a limitation of current
             // RunStep). So we assume that (xdg-)open is a launcher and not a blocking process.
 
-            const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch "127.0.0.1";
-            const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch "8000";
+            const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch app.b.allocator.dupe(u8, "127.0.0.1") catch unreachable;
+            const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch app.b.allocator.dupe(u8, "8080") catch unreachable;
+            defer {
+                app.b.allocator.free(address);
+                app.b.allocator.free(port);
+            }
 
             const launch = app.b.addSystemCommand(&.{
                 switch (builtin.os.tag) {
@@ -376,6 +383,7 @@ fn thisDir() []const u8 {
 
 fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
     if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
+        defer allocator.free(no_ensure_submodules);
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
