@@ -7,7 +7,7 @@ const soundio_path = thisDir() ++ "/upstream/soundio";
 pub const pkg = std.build.Pkg{
     .name = "sysaudio",
     .source = .{ .path = thisDir() ++ "/src/main.zig" },
-    .dependencies = &.{sysjs.pkg},
+    .dependencies = &.{ sysjs.pkg, soundio_pkg },
 };
 
 const soundio_pkg = std.build.Pkg{
