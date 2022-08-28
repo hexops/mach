@@ -14,6 +14,7 @@ pub fn build(b: *Builder) void {
     });
 
     const options = gpu_dawn.Options{
+        .install_libs = true,
         .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
     };
 

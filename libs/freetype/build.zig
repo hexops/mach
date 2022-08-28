@@ -7,11 +7,6 @@ const hb_root = thisDir() ++ "/upstream/harfbuzz";
 const hb_include_path = hb_root ++ "/src";
 const brotli_root = thisDir() ++ "/upstream/brotli";
 
-const c_pkg = std.build.Pkg{
-    .name = "c",
-    .source = .{ .path = thisDir() ++ "/src/c.zig" },
-};
-
 const utils_pkg = std.build.Pkg{
     .name = "utils",
     .source = .{ .path = thisDir() ++ "/src/utils.zig" },
@@ -20,13 +15,13 @@ const utils_pkg = std.build.Pkg{
 pub const pkg = std.build.Pkg{
     .name = "freetype",
     .source = .{ .path = thisDir() ++ "/src/main.zig" },
-    .dependencies = &.{ c_pkg, utils_pkg },
+    .dependencies = &.{utils_pkg},
 };
 
 pub const harfbuzz_pkg = std.build.Pkg{
     .name = "harfbuzz",
     .source = .{ .path = thisDir() ++ "/src/harfbuzz/main.zig" },
-    .dependencies = &.{ c_pkg, utils_pkg, pkg },
+    .dependencies = &.{ utils_pkg, pkg },
 };
 
 pub const Options = struct {
@@ -37,21 +32,18 @@ pub const Options = struct {
 pub const FreetypeOptions = struct {
     /// the path you specify freetype options
     /// via `ftoptions.h` and `ftmodule.h`
-    ft_config_path: ?[]const u8 = null,
+    config_path: ?[]const u8 = null,
+    install_libs: bool = false,
     brotli: bool = false,
 };
 
-pub const HarfbuzzOptions = struct {};
+pub const HarfbuzzOptions = struct {
+    install_libs: bool = false,
+};
 
 pub fn build(b: *std.build.Builder) !void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
-
-    const test_app = b.addStaticLibrary("test_app", null);
-    test_app.setBuildMode(mode);
-    test_app.setTarget(target);
-    link(b, test_app, .{ .freetype = .{ .brotli = true } });
-    test_app.install();
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&testStep(b, mode, target).step);
@@ -64,9 +56,6 @@ pub fn build(b: *std.build.Builder) !void {
         example_exe.setBuildMode(mode);
         example_exe.setTarget(target);
         example_exe.addPackage(pkg);
-
-        // Remove once the stage2 compiler fixes pkg std not found
-        example_exe.addPackage(utils_pkg);
 
         link(b, example_exe, .{});
 
@@ -89,11 +78,6 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     const main_tests = b.addTestExe("freetype-tests", (comptime thisDir()) ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
-    main_tests.addPackage(c_pkg);
-
-    // Remove once the stage2 compiler fixes pkg std not found
-    main_tests.addPackage(utils_pkg);
-
     main_tests.addPackage(pkg);
     link(b, main_tests, .{
         .freetype = .{
@@ -103,88 +87,111 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     });
     main_tests.main_pkg_path = (comptime thisDir());
     main_tests.install();
+
+    const harfbuzz_tests = b.addTestExe("harfbuzz-tests", (comptime thisDir()) ++ "/src/harfbuzz/main.zig");
+    harfbuzz_tests.setBuildMode(mode);
+    harfbuzz_tests.setTarget(target);
+    harfbuzz_tests.addPackage(utils_pkg);
+    harfbuzz_tests.addPackage(pkg);
+    link(b, harfbuzz_tests, .{
+        .freetype = .{
+            .brotli = true,
+        },
+        .harfbuzz = .{},
+    });
+    harfbuzz_tests.main_pkg_path = (comptime thisDir());
+    harfbuzz_tests.install();
+
+    main_tests.step.dependOn(&harfbuzz_tests.run().step);
     return main_tests.run();
 }
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const ft_lib = buildFreetype(b, step, options.freetype);
+    linkFreetype(b, step, options.freetype);
+    if (options.harfbuzz) |harfbuzz_options|
+        linkHarfbuzz(b, step, harfbuzz_options);
+}
+
+pub fn linkFreetype(b: *Builder, step: *std.build.LibExeObjStep, options: FreetypeOptions) void {
+    const ft_lib = buildFreetype(b, step.build_mode, step.target, options);
     step.linkLibrary(ft_lib);
     step.addIncludePath(ft_include_path);
-    step.addIncludePath(hb_include_path);
-
-    if (options.harfbuzz) |hb_options| {
-        const hb_lib = buildHarfbuzz(b, step, hb_options);
-        step.linkLibrary(hb_lib);
+    if (options.brotli) {
+        const brotli_lib = buildBrotli(b, step.build_mode, step.target);
+        if (options.install_libs)
+            brotli_lib.install();
+        step.linkLibrary(brotli_lib);
     }
 }
 
-pub fn buildFreetype(b: *Builder, step: *std.build.LibExeObjStep, options: FreetypeOptions) *std.build.LibExeObjStep {
+pub fn linkHarfbuzz(b: *Builder, step: *std.build.LibExeObjStep, options: HarfbuzzOptions) void {
+    const hb_lib = buildHarfbuzz(b, step.build_mode, step.target, options);
+    step.linkLibrary(hb_lib);
+    step.addIncludePath(hb_include_path);
+}
+
+pub fn buildFreetype(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: FreetypeOptions) *std.build.LibExeObjStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
-    const main_abs = ft_root ++ "/src/base/ftbase.c";
-    const lib = b.addStaticLibrary("freetype", main_abs);
+    const lib = b.addStaticLibrary("freetype", null);
     lib.defineCMacro("FT2_BUILD_LIBRARY", "1");
-    lib.setBuildMode(step.build_mode);
-    lib.setTarget(step.target);
+    lib.setBuildMode(mode);
+    lib.setTarget(target);
     lib.linkLibC();
     lib.addIncludePath(ft_include_path);
 
-    if (options.ft_config_path) |path|
+    if (options.config_path) |path|
         lib.addIncludePath(path);
 
-    if (options.brotli) {
-        const brotli_lib = buildBrotli(b, step);
-        step.linkLibrary(brotli_lib);
+    if (options.brotli)
         lib.defineCMacro("FT_REQUIRE_BROTLI", "1");
-    }
 
-    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+    const target_info = (std.zig.system.NativeTargetInfo.detect(b.allocator, target) catch unreachable).target;
 
-    if (target.os.tag == .windows) {
+    if (target_info.os.tag == .windows) {
         lib.addCSourceFile(ft_root ++ "/builds/windows/ftsystem.c", &.{});
         lib.addCSourceFile(ft_root ++ "/builds/windows/ftdebug.c", &.{});
     } else {
         lib.addCSourceFile(ft_root ++ "/src/base/ftsystem.c", &.{});
         lib.addCSourceFile(ft_root ++ "/src/base/ftdebug.c", &.{});
     }
-    if (target.os.tag.isBSD() or target.os.tag == .linux) {
+    if (target_info.os.tag.isBSD() or target_info.os.tag == .linux) {
         lib.defineCMacro("HAVE_UNISTD_H", "1");
         lib.defineCMacro("HAVE_FCNTL_H", "1");
         lib.addCSourceFile(ft_root ++ "/builds/unix/ftsystem.c", &.{});
-        if (target.os.tag == .macos) {
+        if (target_info.os.tag == .macos)
             lib.addCSourceFile(ft_root ++ "/src/base/ftmac.c", &.{});
-        }
     }
-
     lib.addCSourceFiles(freetype_base_sources, &.{});
-    lib.install();
+
+    if (options.install_libs)
+        lib.install();
     return lib;
 }
 
-pub fn buildHarfbuzz(b: *Builder, step: *std.build.LibExeObjStep, options: HarfbuzzOptions) *std.build.LibExeObjStep {
-    _ = options;
+pub fn buildHarfbuzz(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: HarfbuzzOptions) *std.build.LibExeObjStep {
     const main_abs = hb_root ++ "/src/harfbuzz.cc";
     const lib = b.addStaticLibrary("harfbuzz", main_abs);
-    lib.setBuildMode(step.build_mode);
-    lib.setTarget(step.target);
+    lib.setBuildMode(mode);
+    lib.setTarget(target);
     lib.linkLibCpp();
     lib.addIncludePath(hb_include_path);
     lib.addIncludePath(ft_include_path);
     lib.defineCMacro("HAVE_FREETYPE", "1");
-    lib.install();
+
+    if (options.install_libs)
+        lib.install();
     return lib;
 }
 
-pub fn buildBrotli(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
-    const main_abs = brotli_root ++ "/common/constants.c";
-    const lib = b.addStaticLibrary("brotli", main_abs);
-    lib.setBuildMode(step.build_mode);
-    lib.setTarget(step.target);
+fn buildBrotli(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.LibExeObjStep {
+    const lib = b.addStaticLibrary("brotli", null);
+    lib.setBuildMode(mode);
+    lib.setTarget(target);
     lib.linkLibC();
     lib.addIncludePath(brotli_root ++ "/include");
     lib.addCSourceFiles(brotli_base_sources, &.{});
-    lib.install();
     return lib;
 }
 
@@ -207,6 +214,7 @@ fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !vo
 
 const freetype_base_sources = &[_][]const u8{
     ft_root ++ "/src/autofit/autofit.c",
+    ft_root ++ "/src/base/ftbase.c",
     ft_root ++ "/src/base/ftbbox.c",
     ft_root ++ "/src/base/ftbdf.c",
     ft_root ++ "/src/base/ftbitmap.c",
@@ -272,6 +280,7 @@ const brotli_base_sources = &[_][]const u8{
     brotli_root ++ "/dec/bit_reader.c",
     brotli_root ++ "/dec/huffman.c",
     brotli_root ++ "/dec/state.c",
+    brotli_root ++ "/common/constants.c",
     brotli_root ++ "/common/context.c",
     brotli_root ++ "/common/dictionary.c",
     brotli_root ++ "/common/transform.c",
