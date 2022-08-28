@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c");
+const c = @import("c.zig");
 
 pub const ListShapers = struct {
     index: usize,

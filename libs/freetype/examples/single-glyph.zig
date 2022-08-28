@@ -2,11 +2,6 @@
 const std = @import("std");
 const freetype = @import("freetype");
 
-// Remove once the stage2 compiler fixes pkg std not found
-comptime {
-    _ = @import("utils");
-}
-
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();

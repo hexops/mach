@@ -1,11 +1,6 @@
 const std = @import("std");
 const freetype = @import("freetype");
 
-// Remove once the stage2 compiler fixes pkg std not found
-comptime {
-    _ = @import("utils");
-}
-
 const OutlinePrinter = struct {
     library: freetype.Library,
     face: freetype.Face,

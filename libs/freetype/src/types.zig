@@ -1,4 +1,4 @@
-const c = @import("c");
+const c = @import("c.zig");
 
 pub const Matrix = c.FT_Matrix;
 pub const Generic = c.FT_Generic;

@@ -1,5 +1,6 @@
 const freetype = @import("freetype");
-const c = @import("c");
+const c = @import("c.zig");
+const private = @import("private.zig");
 const Face = @import("face.zig").Face;
 const Buffer = @import("buffer.zig").Buffer;
 const Feature = @import("common.zig").Feature;
@@ -12,8 +13,8 @@ pub const Font = struct {
         return .{ .handle = c.hb_font_create(face.handle).? };
     }
 
-    pub fn fromFtFace(face: freetype.Face) Font {
-        return .{ .handle = c.hb_ft_font_create_referenced(face.handle).? };
+    pub fn fromFreetypeFace(face: freetype.Face) Font {
+        return .{ .handle = private.hb_ft_font_create_referenced(face.handle).? };
     }
 
     pub fn createSubFont(self: Font) Font {
@@ -39,7 +40,7 @@ pub const Font = struct {
     }
 
     pub fn getFreetypeFace(self: Font) freetype.Face {
-        return .{ .handle = c.hb_ft_font_get_face(self.handle) };
+        return .{ .handle = private.hb_ft_font_get_face(self.handle) };
     }
 
     pub fn getGlyph(self: Font, unicode: u32, variation_selector: u32) ?u32 {
