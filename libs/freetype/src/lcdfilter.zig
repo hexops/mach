@@ -1,4 +1,4 @@
-const c = @import("c");
+const c = @import("c.zig");
 
 pub const LcdFilter = enum(u5) {
     none = c.FT_LCD_FILTER_NONE,

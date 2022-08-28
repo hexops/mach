@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c");
+const c = @import("c.zig");
 const Buffer = @import("buffer.zig").Buffer;
 const Font = @import("font.zig").Font;
 const Face = @import("face.zig").Face;

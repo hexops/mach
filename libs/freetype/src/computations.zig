@@ -1,4 +1,4 @@
-const _c = @import("c");
+const _c = @import("c.zig");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
 

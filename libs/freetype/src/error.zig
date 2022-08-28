@@ -1,4 +1,4 @@
-const c = @import("c");
+const c = @import("c.zig");
 
 pub const Error = error{
     CannotOpenResource,

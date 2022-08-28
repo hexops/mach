@@ -1,4 +1,4 @@
-const c = @import("c");
+const c = @import("c.zig");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
 const Outline = @import("image.zig").Outline;

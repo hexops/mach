@@ -1,6 +1,6 @@
 const builtin = @import("builtin");
 const std = @import("std");
-const c = @import("c");
+const c = @import("c.zig");
 const utils = @import("utils.zig");
 const intToError = @import("error.zig").intToError;
 const errorToInt = @import("error.zig").errorToInt;

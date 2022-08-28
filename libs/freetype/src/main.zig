@@ -8,15 +8,14 @@ pub usingnamespace @import("types.zig");
 pub usingnamespace @import("computations.zig");
 pub usingnamespace @import("error.zig");
 pub const harfbuzz = @import("harfbuzz/main.zig");
-pub const c = @import("c");
+pub const c = @import("c.zig");
 
 const std = @import("std");
 const testing = std.testing;
 const ft = @import("freetype.zig");
 
-// Remove once the stage2 compiler fixes pkg std not found
-comptime {
-    _ = @import("utils");
+fn thisDir() []const u8 {
+    return std.fs.path.dirname(@src().file) orelse ".";
 }
 
 test {
@@ -29,15 +28,10 @@ test {
     std.testing.refAllDeclsRecursive(@import("stroke.zig"));
     std.testing.refAllDeclsRecursive(@import("types.zig"));
     std.testing.refAllDeclsRecursive(@import("computations.zig"));
-    std.testing.refAllDeclsRecursive(harfbuzz);
 }
 
 const firasans_font_path = thisDir() ++ "/../upstream/assets/FiraSans-Regular.ttf";
 const firasans_font_data = @embedFile(thisDir() ++ "/../upstream/assets/FiraSans-Regular.ttf");
-
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
-}
 
 test "create face from file" {
     const lib = try ft.Library.init();

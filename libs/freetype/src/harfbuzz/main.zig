@@ -12,3 +12,7 @@ const std = @import("std");
 comptime {
     _ = @import("utils");
 }
+
+test {
+    std.testing.refAllDeclsRecursive(@This());
+}

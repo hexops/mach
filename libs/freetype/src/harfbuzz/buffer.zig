@@ -1,6 +1,6 @@
 const std = @import("std");
 const utils = @import("utils");
-const c = @import("c");
+const c = @import("c.zig");
 const Direction = @import("common.zig").Direction;
 const Script = @import("common.zig").Script;
 const Language = @import("common.zig").Language;
