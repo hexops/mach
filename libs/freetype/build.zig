@@ -102,8 +102,9 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     harfbuzz_tests.main_pkg_path = (comptime thisDir());
     harfbuzz_tests.install();
 
-    main_tests.step.dependOn(&harfbuzz_tests.run().step);
-    return main_tests.run();
+    const main_tests_run = main_tests.run();
+    main_tests_run.step.dependOn(&harfbuzz_tests.run().step);
+    return main_tests_run;
 }
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
