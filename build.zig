@@ -72,6 +72,7 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "ecs-app", .packages = &[_]Pkg{} },
         .{ .name = "image-blur", .packages = &[_]Pkg{Packages.zigimg}, .has_assets = true },
         .{ .name = "map-async", .packages = &[_]Pkg{} },
+        .{ .name = "sysaudio", .packages = &[_]Pkg{} },
         // NOTE: examples with std_platform_only should be placed at last
         .{ .name = "gkurve", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg, freetype.pkg }, .std_platform_only = true, .has_assets = true },
     }) |example| {
@@ -277,7 +278,7 @@ pub const App = struct {
             // Set install directory to '{prefix}/www'
             app.getInstallStep().?.dest_dir = web_install_dir;
 
-            inline for (.{ "/src/platform/mach.js", "/sysjs/src/mach-sysjs.js" }) |js| {
+            inline for (.{ "/src/platform/mach.js", "/libs/sysjs/src/mach-sysjs.js" }) |js| {
                 const install_js = app.b.addInstallFileWithDir(
                     .{ .path = (comptime thisDir()) ++ js },
                     web_install_dir,
