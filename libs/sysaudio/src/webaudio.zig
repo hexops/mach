@@ -6,9 +6,9 @@ const js = @import("sysjs");
 const Audio = @This();
 
 pub const DataCallback = if (@import("builtin").zig_backend == .stage1)
-    fn (device: *Device, user_data: ?*anyopaque, sample: *f32) void
+    fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void
 else
-    *const fn (device: *Device, user_data: ?*anyopaque, sample: *f32) void;
+    *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
 
 pub const Device = struct {
     context: js.Object,
@@ -19,13 +19,13 @@ pub const Device = struct {
 
     pub fn setCallback(device: Device, callback: DataCallback, user_data: ?*anyopaque) void {
         device.context.set("device", js.createNumber(@intToFloat(f64, @ptrToInt(&device))));
-        device.context.set("callback", js.createNumber(@intToFloat(f64, @ptrToInt(&callback))));
+        device.context.set("callback", js.createNumber(@intToFloat(f64, @ptrToInt(callback))));
         if (user_data) |ud|
             device.context.set("user_data", js.createNumber(@intToFloat(f64, @ptrToInt(ud))));
     }
 
     pub fn pause(device: Device) void {
-        device.context.call("suspend", &.{});
+        _ = device.context.call("suspend", &.{});
     }
 
     pub fn start(device: Device) void {
@@ -66,7 +66,7 @@ pub fn waitEvents(_: Audio) void {}
 
 const default_channel_count = 2;
 const default_sample_rate = 48000;
-const default_buffer_size = 512;
+const default_buffer_size = 1024; // 21.33ms
 
 pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
     // NOTE: WebAudio only supports F32 audio format, so config.format is unused
@@ -90,8 +90,14 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
     context.set("node", node.toValue());
 
     {
-        const audio_process_event = js.createFunction(audioProcessEvent, &.{context.toValue()});
-        defer audio_process_event.deinit();
+        // TODO(sysaudio): this capture leaks for now, we need a better way to pass captures via sysjs
+        // that passes by value I think.
+        const captures = std.heap.page_allocator.alloc(js.Value, 1) catch unreachable;
+        captures[0] = context.toValue();
+        const audio_process_event = js.createFunction(audioProcessEvent, captures);
+
+        // TODO(sysaudio): this leaks, we need a good place to clean this up.
+        // defer audio_process_event.deinit();
         node.set("onaudioprocess", audio_process_event.toValue());
     }
 
@@ -108,27 +114,45 @@ fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
     const device_context = captures[0].view(.object);
 
     const audio_event = args.getIndex(0).view(.object);
+    defer audio_event.deinit();
     const output_buffer = audio_event.get("outputBuffer").view(.object);
+    defer output_buffer.deinit();
+
+    const buffer_length = default_buffer_size * @sizeOf(f32);
+    var buffer: [buffer_length]u8 = undefined;
 
     const callback = device_context.get("callback");
     if (!callback.is(.undef)) {
         // Do not deinit, we are not making a new device, just creating a view to the current one.
         var dev = Device{ .context = device_context };
-        const cb = @intToPtr(*DataCallback, @floatToInt(usize, callback.view(.num)));
+        const cb = @intToPtr(DataCallback, @floatToInt(usize, callback.view(.num)));
         const user_data = device_context.get("user_data");
         const ud = if (user_data.is(.undef)) null else @intToPtr(*anyopaque, @floatToInt(usize, user_data.view(.num)));
 
         var channel: usize = 0;
         while (channel < @floatToInt(usize, output_buffer.get("numberOfChannels").view(.num))) : (channel += 1) {
+            const source = js.constructType("Uint8Array", &.{js.createNumber(buffer_length)});
+            defer source.deinit();
+
+            cb(&dev, ud, buffer[0..]);
+            source.copyBytes(buffer[0..]);
+
+            const float_source = js.constructType("Float32Array", &.{
+                source.get("buffer"),
+                source.get("byteOffset"),
+                js.createNumber(source.get("byteLength").view(.num) / 4),
+            });
+            defer float_source.deinit();
+
+            js.global().set("source", source.toValue());
+            js.global().set("float_source", float_source.toValue());
+            js.global().set("output_buffer", output_buffer.toValue());
+
+            // TODO: investigate if using copyToChannel would be better?
+            //_ = output_buffer.call("copyToChannel", &.{ float_source.toValue(), js.createNumber(@intToFloat(f64, channel)) });
             const output_data = output_buffer.call("getChannelData", &.{js.createNumber(@intToFloat(f64, channel))}).view(.object);
             defer output_data.deinit();
-
-            var sample: usize = 0;
-            while (sample < @floatToInt(usize, output_buffer.get("length").view(.num))) : (sample += 1) {
-                var ret_sample: f32 = undefined;
-                cb.*(&dev, ud, &ret_sample);
-                output_data.setIndex(sample, js.createNumber(ret_sample));
-            }
+            _ = output_data.call("set", &.{float_source.toValue()});
         }
     }
 
