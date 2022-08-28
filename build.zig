@@ -30,27 +30,32 @@ pub fn build(b: *std.build.Builder) void {
     };
     const options = Options{ .gpu_dawn_options = gpu_dawn_options };
 
-    const main_tests = b.addTestExe("mach-tests", "src/main.zig");
-    main_tests.setBuildMode(mode);
-    main_tests.setTarget(target);
-    main_tests.addPackage(pkg);
-    main_tests.addPackage(gpu.pkg);
-    main_tests.addPackage(glfw.pkg);
-    main_tests.install();
+    const all_tests_step = b.step("test", "Run library tests");
+    const gpu_test_step = b.step("test-gpu", "Run GPU library tests");
+    const ecs_test_step = b.step("test-ecs", "Run ECS library tests");
+    const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
+    const basisu_test_step = b.step("test-basisu", "Run Basis-Universal library tests");
+    const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
+    const mach_test_step = b.step("test-mach", "Run Mach Core library tests");
 
-    const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&main_tests.run().step);
-    test_step.dependOn(&gpu.testStep(b, mode, target, options.gpuOptions()).step);
-    test_step.dependOn(&glfw.testStep(b, mode, target).step);
-    test_step.dependOn(&ecs.testStep(b, mode, target).step);
-    test_step.dependOn(&freetype.testStep(b, mode, target).step);
-    test_step.dependOn(&basisu.testStep(b, mode, target).step);
-    test_step.dependOn(&sysaudio.testStep(b, mode, target, .{}).step);
+    gpu_test_step.dependOn(&gpu.testStep(b, mode, target, options.gpuOptions()).step);
+    freetype_test_step.dependOn(&freetype.testStep(b, mode, target).step);
+    ecs_test_step.dependOn(&ecs.testStep(b, mode, target).step);
+    basisu_test_step.dependOn(&basisu.testStep(b, mode, target).step);
+    sysaudio_test_step.dependOn(&sysaudio.testStep(b, mode, target).step);
+    mach_test_step.dependOn(&testStep(b, mode, target).step);
+
+    all_tests_step.dependOn(gpu_test_step);
+    all_tests_step.dependOn(ecs_test_step);
+    all_tests_step.dependOn(freetype_test_step);
+    all_tests_step.dependOn(basisu_test_step);
+    all_tests_step.dependOn(sysaudio_test_step);
+    all_tests_step.dependOn(mach_test_step);
+
     // TODO: we need a way to test wasm stuff
-    // test_mach_step.dependOn(&sysjs.testStep(b, mode, target).step);
-
-    const test_mach_step = b.step("test-mach", "Run Mach Core library tests");
-    test_mach_step.dependOn(&main_tests.run().step);
+    // const sysjs_test_step = b.step( "test-sysjs", "Run sysjs library tests");
+    // sysjs_test_step.dependOn(&sysjs.testStep(b, mode, target).step);
+    // all_tests_step.dependOn(sysjs_test_step);
 
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureGit(b.allocator);
@@ -155,6 +160,18 @@ pub fn build(b: *std.build.Builder) void {
     gpu.link(b, lib, options.gpuOptions());
     lib.setOutputDir("./libmach/build");
     lib.install();
+}
+
+fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTestExe("mach-tests", "src/main.zig");
+    main_tests.setBuildMode(mode);
+    main_tests.setTarget(target);
+    main_tests.addPackage(pkg);
+    main_tests.addPackage(gpu.pkg);
+    main_tests.addPackage(glfw.pkg);
+    main_tests.install();
+
+    return main_tests.run();
 }
 
 pub const Options = struct {
