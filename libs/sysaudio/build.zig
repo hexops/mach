@@ -50,18 +50,18 @@ pub fn build(b: *Builder) void {
     }
 }
 
-pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.RunStep {
+pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
     const soundio_tests = b.addTestExe("soundio-tests", (comptime thisDir()) ++ "/soundio/main.zig");
     soundio_tests.setBuildMode(mode);
     soundio_tests.setTarget(target);
-    link(b, soundio_tests, options);
+    link(b, soundio_tests, .{});
     soundio_tests.install();
 
     const main_tests = b.addTestExe("sysaudio-tests", (comptime thisDir()) ++ "/src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     main_tests.addPackage(soundio_pkg);
-    link(b, main_tests, options);
+    link(b, main_tests, .{});
     main_tests.install();
 
     const main_tests_run = main_tests.run();
