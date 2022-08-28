@@ -15,7 +15,7 @@ pub fn build(b: *Builder) void {
 
     const options = gpu_dawn.Options{
         .install_libs = true,
-        .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
+        .from_source = true,
     };
 
     // Just to demonstrate/test linking. This is not a functional example, see the mach/gpu examples
