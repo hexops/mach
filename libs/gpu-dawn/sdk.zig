@@ -1357,7 +1357,7 @@ pub fn Sdk(deps: anytype) type {
                     "libs/DirectXShaderCompiler/lib/IRReader",
                     "libs/DirectXShaderCompiler/lib/IR",
                     "libs/DirectXShaderCompiler/lib/Linker",
-                    "libs/DirectXShaderCompiler/lib/miniz",
+                    "libs/DirectXShaderCompiler/lib/Miniz",
                     "libs/DirectXShaderCompiler/lib/Option",
                     "libs/DirectXShaderCompiler/lib/PassPrinters",
                     "libs/DirectXShaderCompiler/lib/Passes",
