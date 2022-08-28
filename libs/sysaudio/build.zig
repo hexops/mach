@@ -15,7 +15,9 @@ const soundio_pkg = std.build.Pkg{
     .source = .{ .path = thisDir() ++ "/soundio/main.zig" },
 };
 
-pub const Options = struct {};
+pub const Options = struct {
+    install_libs: bool = false,
+};
 
 pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
@@ -68,15 +70,14 @@ pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.C
 }
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    _ = options;
     if (step.target.toTarget().cpu.arch != .wasm32) {
-        const soundio_lib = buildSoundIo(b, step);
+        const soundio_lib = buildSoundIo(b, step.build_mode, step.target, options);
         step.linkLibrary(soundio_lib);
         step.addIncludePath(soundio_path);
     }
 }
 
-fn buildSoundIo(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+fn buildSoundIo(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.LibExeObjStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
@@ -95,31 +96,32 @@ fn buildSoundIo(b: *Builder, step: *std.build.LibExeObjStep) *std.build.LibExeOb
     config_file.writeAll(config_base) catch unreachable;
 
     const lib = b.addStaticLibrary("soundio", null);
-    lib.setTarget(step.target);
-    lib.setBuildMode(step.build_mode);
+    lib.setBuildMode(mode);
+    lib.setTarget(target);
     lib.linkLibC();
     lib.addIncludePath(soundio_path);
     lib.addCSourceFiles(soundio_sources, &.{});
 
-    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    if (target.isDarwin()) {
+    const target_info = (std.zig.system.NativeTargetInfo.detect(b.allocator, target) catch unreachable).target;
+    if (target_info.isDarwin()) {
         lib.addCSourceFile(soundio_path ++ "/src/coreaudio.c", &.{});
         lib.linkFramework("AudioToolbox");
         lib.linkFramework("CoreFoundation");
         lib.linkFramework("CoreAudio");
         config_file.writeAll("#define SOUNDIO_HAVE_COREAUDIO\n") catch unreachable;
-    } else if (target.os.tag == .linux) {
+    } else if (target_info.os.tag == .linux) {
         lib.addCSourceFile(soundio_path ++ "/src/alsa.c", &.{});
         lib.linkSystemLibrary("asound");
         config_file.writeAll("#define SOUNDIO_HAVE_ALSA\n") catch unreachable;
-    } else if (target.os.tag == .windows) {
+    } else if (target_info.os.tag == .windows) {
         lib.addCSourceFile(soundio_path ++ "/src/wasapi.c", &.{});
         config_file.writeAll("#define SOUNDIO_HAVE_WASAPI\n") catch unreachable;
     }
 
     config_file.writeAll("#endif\n") catch unreachable;
 
-    lib.install();
+    if (options.install_libs)
+        lib.install();
     return lib;
 }
 

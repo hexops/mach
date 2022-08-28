@@ -24,27 +24,27 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     main_tests.setTarget(target);
     main_tests.main_pkg_path = thisDir();
     link(b, main_tests, .{
-        .encoder = true,
-        .transcoder = true,
+        .encoder = .{},
+        .transcoder = .{},
     });
     main_tests.install();
     return main_tests.run();
 }
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    if (options.encoder) {
-        step.linkLibrary(buildEncoder(b));
+    if (options.encoder) |encoder_options| {
+        step.linkLibrary(buildEncoder(b, encoder_options));
         step.addCSourceFile(comptime thisDir() ++ "/src/encoder/wrapper.cpp", &.{});
         step.addIncludePath(basisu_root ++ "/encoder");
     }
-    if (options.transcoder) {
-        step.linkLibrary(buildTranscoder(b));
+    if (options.transcoder) |transcoder_options| {
+        step.linkLibrary(buildTranscoder(b, transcoder_options));
         step.addCSourceFile(comptime thisDir() ++ "/src/transcoder/wrapper.cpp", &.{});
         step.addIncludePath(basisu_root ++ "/transcoder");
     }
 }
 
-pub fn buildEncoder(b: *Builder) *std.build.LibExeObjStep {
+pub fn buildEncoder(b: *Builder, options: EncoderOptions) *std.build.LibExeObjStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
@@ -54,14 +54,15 @@ pub fn buildEncoder(b: *Builder) *std.build.LibExeObjStep {
         encoder_sources,
         &.{},
     );
-
     encoder.defineCMacro("BASISU_FORCE_DEVEL_MESSAGES", "0");
     encoder.defineCMacro("BASISD_SUPPORT_KTX2_ZSTD", "0");
-    encoder.install();
+
+    if (options.install_libs)
+        encoder.install();
     return encoder;
 }
 
-pub fn buildTranscoder(b: *Builder) *std.build.LibExeObjStep {
+pub fn buildTranscoder(b: *Builder, options: TranscoderOptions) *std.build.LibExeObjStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
@@ -71,16 +72,25 @@ pub fn buildTranscoder(b: *Builder) *std.build.LibExeObjStep {
         transcoder_sources,
         &.{},
     );
-
     transcoder.defineCMacro("BASISU_FORCE_DEVEL_MESSAGES", "0");
     transcoder.defineCMacro("BASISD_SUPPORT_KTX2_ZSTD", "0");
-    transcoder.install();
+
+    if (options.install_libs)
+        transcoder.install();
     return transcoder;
 }
 
 pub const Options = struct {
-    encoder: bool,
-    transcoder: bool,
+    encoder: ?EncoderOptions,
+    transcoder: ?TranscoderOptions,
+};
+
+pub const EncoderOptions = struct {
+    install_libs: bool = false,
+};
+
+pub const TranscoderOptions = struct {
+    install_libs: bool = false,
 };
 
 fn thisDir() []const u8 {

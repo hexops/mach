@@ -43,6 +43,9 @@ pub fn Sdk(deps: anytype) type {
             /// Whether to build Dawn from source or not.
             from_source: bool = false,
 
+            /// Produce static libraries at zig-out/lib
+            install_libs: bool = false,
+
             /// The binary release version to use from https://github.com/hexops/mach-gpu-dawn/releases
             binary_version: []const u8 = "release-777728f",
 
@@ -74,8 +77,7 @@ pub fn Sdk(deps: anytype) type {
         };
 
         pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-            const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-            const opt = options.detectDefaults(target);
+            const opt = options.detectDefaults(step.target_info.target);
 
             if (options.from_source) linkFromSource(b, step, opt) else linkFromBinary(b, step, opt);
         }
@@ -124,10 +126,11 @@ pub fn Sdk(deps: anytype) type {
 
             const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
             const lib_dawn = b.addStaticLibrary("dawn", main_abs);
-            lib_dawn.install();
             lib_dawn.setBuildMode(step.build_mode);
             lib_dawn.setTarget(step.target);
             lib_dawn.linkLibCpp();
+            if (options.install_libs)
+                lib_dawn.install();
             step.linkLibrary(lib_dawn);
 
             _ = buildLibMachDawnNative(b, lib_dawn, options);
@@ -155,7 +158,7 @@ pub fn Sdk(deps: anytype) type {
         }
 
         pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-            const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+            const target = step.target_info.target;
             const binaries_available = switch (target.os.tag) {
                 .windows => target.abi.isGnu(),
                 .linux => target.cpu.arch.isX86() and (target.abi.isGnu() or target.abi.isMusl()),
@@ -478,10 +481,11 @@ pub fn Sdk(deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-native-mach", main_abs);
-                separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
+                if (options.install_libs)
+                    separate_lib.install();
                 break :blk separate_lib;
             };
 
@@ -498,8 +502,7 @@ pub fn Sdk(deps: anytype) type {
                 include("libs/dawn/include"),
                 include("libs/dawn/src"),
             }) catch unreachable;
-            const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-            if (target.os.tag == .windows) {
+            if (step.target_info.target.os.tag == .windows) {
                 cpp_flags.appendSlice(&.{
                     "-D_DEBUG",
                     "-D_MT",
@@ -514,10 +517,11 @@ pub fn Sdk(deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-common", main_abs);
-                separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
+                if (options.install_libs)
+                    separate_lib.install();
                 break :blk separate_lib;
             };
 
@@ -542,15 +546,14 @@ pub fn Sdk(deps: anytype) type {
             }) catch unreachable;
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
-            const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-            if (target.os.tag == .macos) {
+            if (step.target_info.target.os.tag == .macos) {
                 // TODO(build-system): pass system SDK options through
                 deps.system_sdk.include(b, lib, .{});
                 lib.linkFramework("Foundation");
                 const abs_path = comptime thisDir() ++ "/libs/dawn/src/dawn/common/SystemUtils_mac.mm";
                 cpp_sources.append(abs_path) catch unreachable;
             }
-            if (target.os.tag == .windows) {
+            if (step.target_info.target.os.tag == .windows) {
                 const abs_path = comptime thisDir() ++ "/libs/dawn/src/dawn/common/WindowsUtils.cpp";
                 cpp_sources.append(abs_path) catch unreachable;
             }
@@ -567,10 +570,11 @@ pub fn Sdk(deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-platform", main_abs);
-                separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
+                if (options.install_libs)
+                    separate_lib.install();
                 break :blk separate_lib;
             };
 
@@ -638,10 +642,11 @@ pub fn Sdk(deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-native", main_abs);
-                separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
+                if (options.install_libs)
+                    separate_lib.install();
                 break :blk separate_lib;
             };
             deps.system_sdk.include(b, lib, .{});
@@ -780,7 +785,6 @@ pub fn Sdk(deps: anytype) type {
                 }) catch unreachable;
             }
 
-            const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
             if (options.vulkan.?) {
                 appendLangScannedSources(b, lib, options, .{
                     .rel_dirs = &.{
@@ -790,7 +794,7 @@ pub fn Sdk(deps: anytype) type {
                     .excluding_contains = &.{ "test", "benchmark", "mock" },
                 }) catch unreachable;
 
-                if (isLinuxDesktopLike(target)) {
+                if (isLinuxDesktopLike(step.target_info.target)) {
                     inline for ([_][]const u8{
                         "src/dawn/native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
@@ -798,7 +802,7 @@ pub fn Sdk(deps: anytype) type {
                         const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
                         cpp_sources.append(abs_path) catch unreachable;
                     }
-                } else if (target.os.tag == .fuchsia) {
+                } else if (step.target_info.target.os.tag == .fuchsia) {
                     inline for ([_][]const u8{
                         "src/dawn/native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
@@ -909,10 +913,11 @@ pub fn Sdk(deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("tint", main_abs);
-                separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
+                if (options.install_libs)
+                    separate_lib.install();
                 break :blk separate_lib;
             };
 
@@ -961,8 +966,7 @@ pub fn Sdk(deps: anytype) type {
             }) catch unreachable;
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
-            const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-            switch (target.os.tag) {
+            switch (step.target_info.target.os.tag) {
                 .windows => cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_windows.cc") catch unreachable,
                 .linux => cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_linux.cc") catch unreachable,
                 else => cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_other.cc") catch unreachable,
@@ -1057,10 +1061,11 @@ pub fn Sdk(deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("spirv-tools", main_abs);
-                separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
+                if (options.install_libs)
+                    separate_lib.install();
                 break :blk separate_lib;
             };
 
@@ -1124,15 +1129,16 @@ pub fn Sdk(deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("abseil-cpp-common", main_abs);
-                separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
+                if (options.install_libs)
+                    separate_lib.install();
                 break :blk separate_lib;
             };
             deps.system_sdk.include(b, lib, .{});
 
-            const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+            const target = step.target_info.target;
             if (target.os.tag == .macos) lib.linkFramework("CoreFoundation");
             if (target.os.tag == .windows) lib.linkSystemLibraryName("bcrypt");
 
@@ -1185,10 +1191,11 @@ pub fn Sdk(deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-wire", main_abs);
-                separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
+                if (options.install_libs)
+                    separate_lib.install();
                 break :blk separate_lib;
             };
 
@@ -1221,10 +1228,11 @@ pub fn Sdk(deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-utils", main_abs);
-                separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
+                if (options.install_libs)
+                    separate_lib.install();
                 break :blk separate_lib;
             };
             deps.glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
@@ -1295,10 +1303,11 @@ pub fn Sdk(deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dxcompiler", main_abs);
-                separate_lib.install();
                 separate_lib.setBuildMode(step.build_mode);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
+                if (options.install_libs)
+                    separate_lib.install();
                 break :blk separate_lib;
             };
             deps.system_sdk.include(b, lib, .{});

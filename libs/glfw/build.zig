@@ -59,6 +59,8 @@ pub const Options = struct {
 
     /// Build and link GLFW as a shared library.
     shared: bool = false,
+
+    install_libs: bool = false,
 };
 
 pub const pkg = std.build.Pkg{
@@ -67,29 +69,39 @@ pub const pkg = std.build.Pkg{
 };
 
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const lib = buildLibrary(b, step, options);
+    const lib = buildLibrary(b, step.build_mode, step.target, options);
     step.linkLibrary(lib);
     addGLFWIncludes(step);
-    if (!options.shared) linkGLFWDependencies(b, step, options);
-    if (options.shared) step.defineCMacro("GLFW_DLL", null);
+    if (options.shared) {
+        step.defineCMacro("GLFW_DLL", null);
+        // TODO(build-system): pass system SDK options through
+        system_sdk.include(b, step, .{});
+    } else {
+        linkGLFWDependencies(b, step, options);
+    }
 }
 
-fn buildLibrary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+fn buildLibrary(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.LibExeObjStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
-    const main_abs = thisDir() ++ "/src/main.zig";
-    const lib = if (options.shared) b.addSharedLibrary("glfw", main_abs, .unversioned) else b.addStaticLibrary("glfw", main_abs);
-    lib.setBuildMode(step.build_mode);
-    lib.setTarget(step.target);
-    addGLFWIncludes(lib);
+    const lib = if (options.shared)
+        b.addSharedLibrary("glfw", null, .unversioned)
+    else
+        b.addStaticLibrary("glfw", null);
+    lib.setBuildMode(mode);
+    lib.setTarget(target);
 
-    if (options.shared) {
+    if (options.shared)
         lib.defineCMacro("_GLFW_BUILD_DLL", null);
-        lib.install();
-    }
-    addGLFWSources(b, step, lib, options);
+
+    addGLFWIncludes(lib);
+    addGLFWSources(b, lib, options);
     linkGLFWDependencies(b, lib, options);
+
+    if (options.install_libs)
+        lib.install();
+
     return lib;
 }
 
@@ -98,10 +110,9 @@ fn addGLFWIncludes(step: *std.build.LibExeObjStep) void {
     step.addIncludePath(thisDir() ++ "/upstream/vulkan_headers/include");
 }
 
-fn addGLFWSources(b: *Builder, step: *std.build.LibExeObjStep, lib: *std.build.LibExeObjStep, options: Options) void {
-    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+fn addGLFWSources(b: *Builder, lib: *std.build.LibExeObjStep, options: Options) void {
     const include_glfw_src = "-I" ++ thisDir() ++ "/upstream/glfw/src";
-    switch (target.os.tag) {
+    switch (lib.target_info.target.os.tag) {
         .windows => lib.addCSourceFiles(&.{
             thisDir() ++ "/src/sources_all.c",
             thisDir() ++ "/src/sources_windows.c",
@@ -112,15 +123,12 @@ fn addGLFWSources(b: *Builder, step: *std.build.LibExeObjStep, lib: *std.build.L
             thisDir() ++ "/src/sources_macos.c",
         }, &.{ "-D_GLFW_COCOA", include_glfw_src }),
         else => {
-            // TODO(future): for now, Linux must be built with glibc, not musl:
+            // TODO(future): for now, Linux can't be built with musl:
             //
             // ```
             // ld.lld: error: cannot create a copy relocation for symbol stderr
             // thread 2004762 panic: attempt to unwrap error: LLDReportedFailure
             // ```
-            step.target.abi = .gnu;
-            lib.setTarget(step.target);
-
             var sources = std.ArrayList([]const u8).init(b.allocator);
             var flags = std.ArrayList([]const u8).init(b.allocator);
             sources.append(thisDir() ++ "/src/sources_all.c") catch unreachable;
@@ -161,8 +169,7 @@ fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Op
     step.linkLibC();
     // TODO(build-system): pass system SDK options through
     system_sdk.include(b, step, .{});
-    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
-    switch (target.os.tag) {
+    switch (step.target_info.target.os.tag) {
         .windows => {
             step.linkSystemLibraryName("gdi32");
             step.linkSystemLibraryName("user32");
