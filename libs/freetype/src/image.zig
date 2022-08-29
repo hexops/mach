@@ -1,7 +1,7 @@
 const builtin = @import("builtin");
 const std = @import("std");
+const testing = std.testing;
 const c = @import("c.zig");
-const utils = @import("utils.zig");
 const intToError = @import("error.zig").intToError;
 const errorToInt = @import("error.zig").errorToInt;
 const Error = @import("error.zig").Error;
@@ -109,7 +109,6 @@ pub const Outline = struct {
     };
 
     pub const Flags = packed struct {
-        none: bool = false,
         owner: bool = false,
         even_odd_fill: bool = false,
         reverse_fill: bool = false,
@@ -117,29 +116,10 @@ pub const Outline = struct {
         smart_dropouts: bool = false,
         include_stubs: bool = false,
         overlap: bool = false,
+        _padding: u1 = 0,
         high_precision: bool = false,
         single_pass: bool = false,
-
-        pub const Flag = enum(u21) {
-            none = c.FT_OUTLINE_NONE,
-            owner = c.FT_OUTLINE_OWNER,
-            even_odd_fill = c.FT_OUTLINE_EVEN_ODD_FILL,
-            reverse_fill = c.FT_OUTLINE_REVERSE_FILL,
-            ignore_dropouts = c.FT_OUTLINE_IGNORE_DROPOUTS,
-            smart_dropouts = c.FT_OUTLINE_SMART_DROPOUTS,
-            include_stubs = c.FT_OUTLINE_INCLUDE_STUBS,
-            overlap = c.FT_OUTLINE_OVERLAP,
-            high_precision = c.FT_OUTLINE_HIGH_PRECISION,
-            single_pass = c.FT_OUTLINE_SINGLE_PASS,
-        };
-
-        pub fn from(bits: c_int) Flags {
-            return utils.bitFieldsToStruct(Flags, Flag, bits);
-        }
-
-        pub fn cast(self: Flags) c_int {
-            return utils.structToBitFields(c_int, Flag, self);
-        }
+        _padding0: u22 = 0,
     };
 
     handle: *c.FT_Outline,
@@ -165,7 +145,7 @@ pub const Outline = struct {
     }
 
     pub fn flags(self: Outline) Flags {
-        return Flags.from(self.handle.*.flags);
+        return @bitCast(Flags, self.handle.*.flags);
     }
 
     pub fn copy(self: Outline) Error!Outline {
@@ -361,20 +341,6 @@ pub const Raster = struct {
         direct: bool = false,
         clip: bool = false,
         sdf: bool = false,
-
-        pub const Flag = enum(u10) {
-            aa = c.FT_RASTER_FLAG_AA,
-            direct = c.FT_RASTER_FLAG_DIRECT,
-            clip = c.FT_RASTER_FLAG_CLIP,
-            sdf = c.FT_RASTER_FLAG_SDF,
-        };
-
-        pub fn from(bits: c_int) Flags {
-            return utils.bitFieldsToStruct(Flags, Flag, bits);
-        }
-
-        pub fn cast(self: Flags) c_int {
-            return utils.structToBitFields(c_int, Flag, self);
-        }
+        _padding: u28 = 0,
     };
 };

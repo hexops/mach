@@ -7,21 +7,16 @@ const hb_root = thisDir() ++ "/upstream/harfbuzz";
 const hb_include_path = hb_root ++ "/src";
 const brotli_root = thisDir() ++ "/upstream/brotli";
 
-const utils_pkg = std.build.Pkg{
-    .name = "utils",
-    .source = .{ .path = thisDir() ++ "/src/utils.zig" },
-};
-
 pub const pkg = std.build.Pkg{
     .name = "freetype",
     .source = .{ .path = thisDir() ++ "/src/main.zig" },
-    .dependencies = &.{utils_pkg},
+    .dependencies = &.{},
 };
 
 pub const harfbuzz_pkg = std.build.Pkg{
     .name = "harfbuzz",
     .source = .{ .path = thisDir() ++ "/src/harfbuzz/main.zig" },
-    .dependencies = &.{ utils_pkg, pkg },
+    .dependencies = &.{pkg},
 };
 
 pub const Options = struct {
@@ -91,7 +86,6 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     const harfbuzz_tests = b.addTestExe("harfbuzz-tests", (comptime thisDir()) ++ "/src/harfbuzz/main.zig");
     harfbuzz_tests.setBuildMode(mode);
     harfbuzz_tests.setTarget(target);
-    harfbuzz_tests.addPackage(utils_pkg);
     harfbuzz_tests.addPackage(pkg);
     link(b, harfbuzz_tests, .{
         .freetype = .{

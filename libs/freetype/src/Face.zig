@@ -1,5 +1,4 @@
 const std = @import("std");
-const utils = @import("utils");
 const c = @import("c.zig");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
@@ -78,11 +77,11 @@ pub fn attachStream(self: Face, args: OpenArgs) Error!void {
 }
 
 pub fn loadGlyph(self: Face, index: u32, flags: LoadFlags) Error!void {
-    return intToError(c.FT_Load_Glyph(self.handle, index, flags.cast()));
+    return intToError(c.FT_Load_Glyph(self.handle, index, @bitCast(i32, flags)));
 }
 
 pub fn loadChar(self: Face, char: u32, flags: LoadFlags) Error!void {
-    return intToError(c.FT_Load_Char(self.handle, char, flags.cast()));
+    return intToError(c.FT_Load_Char(self.handle, char, @bitCast(i32, flags)));
 }
 
 pub fn setCharSize(self: Face, pt_width: i32, pt_height: i32, horz_resolution: u16, vert_resolution: u16) Error!void {
@@ -161,7 +160,7 @@ pub fn setCharmap(self: Face, char_map: *CharMap) Error!void {
 }
 
 pub fn getFSTypeFlags(self: Face) FSType {
-    return FSType.from(c.FT_Get_FSType_Flags(self.handle));
+    return @bitCast(FSType, c.FT_Get_FSType_Flags(self.handle));
 }
 
 pub fn getCharVariantIndex(self: Face, char: u32, variant_selector: u32) ?u32 {
@@ -272,11 +271,11 @@ pub fn faceIndex(self: Face) u32 {
 }
 
 pub fn faceFlags(self: Face) FaceFlags {
-    return FaceFlags.from(self.handle.*.face_flags);
+    return @bitCast(FaceFlags, self.handle.*.face_flags);
 }
 
 pub fn styleFlags(self: Face) StyleFlags {
-    return StyleFlags.from(self.handle.*.style_flags);
+    return @bitCast(StyleFlags, self.handle.*.style_flags);
 }
 
 pub fn numGlyphs(self: Face) u32 {
@@ -310,12 +309,12 @@ pub fn availableSizes(self: Face) ?BitmapSize {
 
 pub fn getAdvance(self: Face, glyph_index: u32, load_flags: LoadFlags) Error!i32 {
     var a: i32 = 0;
-    try intToError(c.FT_Get_Advance(self.handle, glyph_index, load_flags.cast(), &@intCast(c_long, a)));
+    try intToError(c.FT_Get_Advance(self.handle, glyph_index, @bitCast(i32, load_flags), &@intCast(c_long, a)));
     return a;
 }
 
 pub fn getAdvances(self: Face, start: u32, advances_out: []c_long, load_flags: LoadFlags) Error!void {
-    try intToError(c.FT_Get_Advances(self.handle, start, @intCast(c_uint, advances_out.len), load_flags.cast(), advances_out.ptr));
+    try intToError(c.FT_Get_Advances(self.handle, start, @intCast(u32, advances_out.len), @bitCast(i32, load_flags), advances_out.ptr));
 }
 
 pub fn numCharmaps(self: Face) u32 {
