@@ -94,11 +94,11 @@ pub const CompressorParams = struct {
     }
 
     pub fn getPackUASTCFlags(self: CompressorParams) PackUASTCFlags {
-        return PackUASTCFlags.from(b.compressor_params_get_pack_uastc_flags(self.handle));
+        return @bitCast(PackUASTCFlags, b.compressor_params_get_pack_uastc_flags(self.handle));
     }
 
     pub fn setPackUASTCFlags(self: CompressorParams, flags: PackUASTCFlags) void {
-        b.compressor_params_set_pack_uastc_flags(self.handle, flags.cast());
+        b.compressor_params_set_pack_uastc_flags(self.handle, @bitCast(u32, flags));
     }
 
     pub fn setBasisFormat(self: CompressorParams, format: BasisTextureFormat) void {
@@ -209,48 +209,14 @@ pub const PackUASTCFlags = packed struct {
     default: bool = false,
     slower: bool = false,
     verySlow: bool = false,
-    mask: bool = false,
     favor_uastc_error: bool = false,
     favor_bc7_error: bool = false,
+    _padding: u1 = 0,
     etc1_faster_hints: bool = false,
     etc1_fastest_hints: bool = false,
     etc1_disable_flip_and_individual: bool = false,
     favor_simpler_modes: bool = false,
-
-    pub const Flag = enum(u32) {
-        fastest = 0,
-        faster = 1,
-        default = 2,
-        slower = 3,
-        verySlow = 4,
-        mask = 0xF,
-        favor_uastc_error = 8,
-        favor_bc7_error = 16,
-        etc1_faster_hints = 64,
-        etc1_fastest_hints = 128,
-        etc1_disable_flip_and_individual = 256,
-        favor_simpler_modes = 512,
-    };
-
-    pub fn from(bits: u32) PackUASTCFlags {
-        var value = PackUASTCFlags{};
-        inline for (comptime std.meta.fieldNames(Flag)) |field_name| {
-            if (bits & (@enumToInt(@field(Flag, field_name))) != 0) {
-                @field(value, field_name) = true;
-            }
-        }
-        return value;
-    }
-
-    pub fn cast(self: PackUASTCFlags) u32 {
-        var value: u32 = 0;
-        inline for (comptime std.meta.fieldNames(Flag)) |field_name| {
-            if (@field(self, field_name)) {
-                value |= @enumToInt(@field(Flag, field_name));
-            }
-        }
-        return value;
-    }
+    _padding0: u20 = 0,
 };
 
 pub const ColorSpace = enum {

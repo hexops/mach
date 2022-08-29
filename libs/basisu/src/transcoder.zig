@@ -68,7 +68,7 @@ pub const Transcoder = struct {
     }
 
     pub const TranscodeParams = struct {
-        decode_flags: ?DecodeFlags = null,
+        decode_flags: DecodeFlags = .{},
         /// Output row pitch in blocks or pixels.
         /// Should be at least the image level's total_blocks (num_blocks_x * num_blocks_y),
         /// or the total number of output pixels if fmt==cTFRGBA32.
@@ -104,7 +104,7 @@ pub const Transcoder = struct {
             image_index,
             level_index,
             @enumToInt(format),
-            if (params.decode_flags) |f| f.cast() else 0,
+            @bitCast(u32, params.decode_flags),
             params.output_row_pitch orelse 0,
             params.output_rows orelse 0,
         )) return error.Unknown;
@@ -117,39 +117,13 @@ pub const Transcoder = struct {
     };
 
     pub const DecodeFlags = packed struct {
+        _padding: u1 = 0,
         pvrtc_decode_to_next_pow_2: bool = false,
         transcode_alpha_data_to_opaque_formats: bool = false,
         bc1_forbid_three_color_blocks: bool = false,
         output_has_alpha_indices: bool = false,
         high_quality: bool = false,
-
-        pub const Flag = enum(u32) {
-            pvrtc_decode_to_next_pow_2 = 2,
-            transcode_alpha_data_to_opaque_formats = 4,
-            bc1_forbid_three_color_blocks = 8,
-            output_has_alpha_indices = 16,
-            high_quality = 32,
-        };
-
-        pub fn from(bits: u32) DecodeFlags {
-            var value = DecodeFlags{};
-            inline for (comptime std.meta.fieldNames(Flag)) |field_name| {
-                if (bits & (@enumToInt(@field(Flag, field_name))) != 0) {
-                    @field(value, field_name) = true;
-                }
-            }
-            return value;
-        }
-
-        pub fn cast(self: DecodeFlags) u32 {
-            var value: u32 = 0;
-            inline for (comptime std.meta.fieldNames(Flag)) |field_name| {
-                if (@field(self, field_name)) {
-                    value |= @enumToInt(@field(Flag, field_name));
-                }
-            }
-            return value;
-        }
+        _padding0: u26 = 0,
     };
 
     pub const TextureFormat = enum(u5) {
