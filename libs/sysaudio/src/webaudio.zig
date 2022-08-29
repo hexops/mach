@@ -11,24 +11,28 @@ else
     *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
 
 pub const Device = struct {
+    descriptor: DeviceDescriptor,
+
+    // Internal fields.
     context: js.Object,
 
-    pub fn deinit(device: Device) void {
+    pub fn deinit(device: *Device, allocator: std.mem.Allocator) void {
         device.context.deinit();
+        allocator.destroy(device);
     }
 
-    pub fn setCallback(device: Device, callback: DataCallback, user_data: ?*anyopaque) void {
-        device.context.set("device", js.createNumber(@intToFloat(f64, @ptrToInt(&device))));
+    pub fn setCallback(device: *Device, callback: DataCallback, user_data: ?*anyopaque) void {
+        device.context.set("device", js.createNumber(@intToFloat(f64, @ptrToInt(device))));
         device.context.set("callback", js.createNumber(@intToFloat(f64, @ptrToInt(callback))));
         if (user_data) |ud|
             device.context.set("user_data", js.createNumber(@intToFloat(f64, @ptrToInt(ud))));
     }
 
-    pub fn pause(device: Device) void {
+    pub fn pause(device: *Device) Error!void {
         _ = device.context.call("suspend", &.{});
     }
 
-    pub fn start(device: Device) void {
+    pub fn start(device: *Device) Error!void {
         _ = device.context.call("resume", &.{});
     }
 };
@@ -45,6 +49,7 @@ pub const DeviceIterator = struct {
 pub const IteratorError = error{};
 
 pub const Error = error{
+    OutOfMemory,
     AudioUnsupported,
 };
 
@@ -62,13 +67,14 @@ pub fn deinit(audio: Audio) void {
     audio.context_constructor.deinit();
 }
 
+// TODO)sysaudio): implement waitEvents for WebAudio, will a WASM process terminate without this?
 pub fn waitEvents(_: Audio) void {}
 
 const default_channel_count = 2;
 const default_sample_rate = 48000;
-const default_buffer_size = 1024; // 21.33ms
+const default_buffer_size_per_channel = 1024; // 21.33ms
 
-pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
+pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, config: DeviceDescriptor) Error!*Device {
     // NOTE: WebAudio only supports F32 audio format, so config.format is unused
     const mode = config.mode orelse .output;
     const channels = config.channels orelse default_channel_count;
@@ -84,7 +90,7 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
     const input_channels = if (mode == .input) js.createNumber(@intToFloat(f64, channels)) else js.createUndefined();
     const output_channels = if (mode == .output) js.createNumber(@intToFloat(f64, channels)) else js.createUndefined();
 
-    const node = context.call("createScriptProcessor", &.{ js.createNumber(default_buffer_size), input_channels, output_channels }).view(.object);
+    const node = context.call("createScriptProcessor", &.{ js.createNumber(default_buffer_size_per_channel), input_channels, output_channels }).view(.object);
     defer node.deinit();
 
     context.set("node", node.toValue());
@@ -107,7 +113,18 @@ pub fn requestDevice(audio: Audio, config: DeviceDescriptor) Error!Device {
         _ = node.call("connect", &.{destination.toValue()});
     }
 
-    return Device{ .context = context };
+    // TODO(sysaudio): introduce a descriptor type that has non-optional fields.
+    var descriptor = config;
+    descriptor.mode = descriptor.mode orelse .output;
+    descriptor.channels = descriptor.channels orelse default_channel_count;
+    descriptor.sample_rate = descriptor.sample_rate orelse default_sample_rate;
+
+    const device = try allocator.create(Device);
+    device.* = .{
+        .descriptor = descriptor,
+        .context = context,
+    };
+    return device;
 }
 
 fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
@@ -117,42 +134,49 @@ fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
     defer audio_event.deinit();
     const output_buffer = audio_event.get("outputBuffer").view(.object);
     defer output_buffer.deinit();
+    const num_channels = @floatToInt(usize, output_buffer.get("numberOfChannels").view(.num));
 
-    const buffer_length = default_buffer_size * @sizeOf(f32);
-    var buffer: [buffer_length]u8 = undefined;
+    const buffer_length = default_buffer_size_per_channel * num_channels * @sizeOf(f32);
+    // TODO(sysaudio): reuse buffer, do not allocate in this hot path
+    const buffer = std.heap.page_allocator.alloc(u8, buffer_length) catch unreachable;
+    defer std.heap.page_allocator.free(buffer);
 
     const callback = device_context.get("callback");
     if (!callback.is(.undef)) {
-        // Do not deinit, we are not making a new device, just creating a view to the current one.
-        var dev = Device{ .context = device_context };
+        var dev = @intToPtr(*Device, @floatToInt(usize, device_context.get("device").view(.num)));
         const cb = @intToPtr(DataCallback, @floatToInt(usize, callback.view(.num)));
         const user_data = device_context.get("user_data");
         const ud = if (user_data.is(.undef)) null else @intToPtr(*anyopaque, @floatToInt(usize, user_data.view(.num)));
 
+        // TODO(sysaudio): do not reconstruct Uint8Array (expensive)
+        const source = js.constructType("Uint8Array", &.{js.createNumber(@intToFloat(f64, buffer_length))});
+        defer source.deinit();
+
+        cb(dev, ud, buffer[0..]);
+        source.copyBytes(buffer[0..]);
+
+        const float_source = js.constructType("Float32Array", &.{
+            source.get("buffer"),
+            source.get("byteOffset"),
+            js.createNumber(source.get("byteLength").view(.num) / 4),
+        });
+        defer float_source.deinit();
+
+        js.global().set("source", source.toValue());
+        js.global().set("float_source", float_source.toValue());
+        js.global().set("output_buffer", output_buffer.toValue());
+
         var channel: usize = 0;
-        while (channel < @floatToInt(usize, output_buffer.get("numberOfChannels").view(.num))) : (channel += 1) {
-            const source = js.constructType("Uint8Array", &.{js.createNumber(buffer_length)});
-            defer source.deinit();
-
-            cb(&dev, ud, buffer[0..]);
-            source.copyBytes(buffer[0..]);
-
-            const float_source = js.constructType("Float32Array", &.{
-                source.get("buffer"),
-                source.get("byteOffset"),
-                js.createNumber(source.get("byteLength").view(.num) / 4),
-            });
-            defer float_source.deinit();
-
-            js.global().set("source", source.toValue());
-            js.global().set("float_source", float_source.toValue());
-            js.global().set("output_buffer", output_buffer.toValue());
-
-            // TODO: investigate if using copyToChannel would be better?
+        while (channel < num_channels) : (channel += 1) {
+            // TODO(sysaudio): investigate if using copyToChannel would be better?
             //_ = output_buffer.call("copyToChannel", &.{ float_source.toValue(), js.createNumber(@intToFloat(f64, channel)) });
             const output_data = output_buffer.call("getChannelData", &.{js.createNumber(@intToFloat(f64, channel))}).view(.object);
             defer output_data.deinit();
-            _ = output_data.call("set", &.{float_source.toValue()});
+            const channel_slice = float_source.call("slice", &.{
+                js.createNumber(@intToFloat(f64, channel * default_buffer_size_per_channel)),
+                js.createNumber(@intToFloat(f64, (channel + 1) * default_buffer_size_per_channel)),
+            });
+            _ = output_data.call("set", &.{channel_slice});
         }
     }
 

@@ -55,8 +55,8 @@ pub fn waitEvents(self: Audio) void {
     self.backend.waitEvents();
 }
 
-pub fn requestDevice(self: Audio, config: DeviceDescriptor) Error!Device {
-    return self.backend.requestDevice(config);
+pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceDescriptor) Error!*Device {
+    return self.backend.requestDevice(allocator, config);
 }
 
 pub fn inputDeviceIterator(self: Audio) DeviceIterator {
