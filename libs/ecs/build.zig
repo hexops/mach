@@ -9,6 +9,10 @@ pub fn build(b: *std.build.Builder) void {
 
 pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
     const main_tests = b.addTestExe("ecs-tests", (comptime thisDir()) ++ "/src/main.zig");
+
+    // TODO: remove this when tests passed with self-hosted compiler
+    main_tests.use_stage1 = true;
+
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     main_tests.install();
