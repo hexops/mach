@@ -30,7 +30,8 @@ pub const Platform = struct {
     last_position: glfw.Window.Pos,
     wait_event_timeout: f64 = 0.0,
 
-    cursors: [@typeInfo(enums.MouseCursor).Enum.fields.len]?glfw.Cursor = undefined,
+    cursors: [@typeInfo(enums.MouseCursor).Enum.fields.len]?glfw.Cursor =
+        std.mem.zeroes([@typeInfo(enums.MouseCursor).Enum.fields.len]?glfw.Cursor),
     cursors_tried: [@typeInfo(enums.MouseCursor).Enum.fields.len]bool =
         [_]bool{false} ** @typeInfo(enums.MouseCursor).Enum.fields.len,
 
