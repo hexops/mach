@@ -1,5 +1,4 @@
 const std = @import("std");
-const utils = @import("utils");
 const c = @import("c.zig");
 const Direction = @import("common.zig").Direction;
 const Script = @import("common.zig").Script;
@@ -32,7 +31,7 @@ pub const GlyphInfo = extern struct {
     var2: u32,
 
     pub fn getFlags(self: GlyphInfo) GlyphFlags {
-        return GlyphFlags.from(hb_glyph_info_get_glyph_flags(&self));
+        return @bitCast(GlyphFlags, hb_glyph_info_get_glyph_flags(&self));
     }
 };
 
@@ -46,19 +45,7 @@ pub const Position = extern struct {
 pub const GlyphFlags = packed struct {
     unsafe_to_break: bool = false,
     unsafe_to_concat: bool = false,
-
-    pub const Flag = enum(u2) {
-        unsafe_to_break = c.HB_GLYPH_FLAG_UNSAFE_TO_BREAK,
-        unsafe_to_concat = c.HB_GLYPH_FLAG_UNSAFE_TO_CONCAT,
-    };
-
-    pub fn from(bits: c_uint) GlyphFlags {
-        return utils.bitFieldsToStruct(GlyphFlags, Flag, bits);
-    }
-
-    pub fn cast(self: GlyphFlags) c_uint {
-        return utils.structToBitFields(c_uint, Flag, self);
-    }
+    _padding: u30 = 0,
 };
 
 pub const SegmentProps = struct {
@@ -104,27 +91,10 @@ pub const SerializeFlags = packed struct {
     glyph_extents: bool = false,
     glyph_flags: bool = false,
     no_advances: bool = false,
-
-    pub const Flag = enum(u6) {
-        no_clusters = c.HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS,
-        no_positions = c.HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS,
-        no_glyph_names = c.HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES,
-        glyph_extents = c.HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS,
-        glyph_flags = c.HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS,
-        no_advances = c.HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES,
-    };
-
-    pub fn from(bits: u6) SerializeFlags {
-        return utils.bitFieldsToStruct(SerializeFlags, Flag, bits);
-    }
-
-    pub fn cast(self: SerializeFlags) u6 {
-        return utils.structToBitFields(u6, Flag, self);
-    }
+    _padding: u26 = 0,
 };
 
 pub const DiffFlags = packed struct {
-    equal: bool = false,
     content_type_mismatch: bool = false,
     length_mismatch: bool = false,
     notdef_present: bool = false,
@@ -133,26 +103,7 @@ pub const DiffFlags = packed struct {
     cluster_mismatch: bool = false,
     glyph_flags_mismatch: bool = false,
     position_mismatch: bool = false,
-
-    pub const Flag = enum(u8) {
-        equal = c.HB_BUFFER_DIFF_FLAG_EQUAL,
-        content_type_mismatch = c.HB_BUFFER_DIFF_FLAG_CONTENT_TYPE_MISMATCH,
-        length_mismatch = c.HB_BUFFER_DIFF_FLAG_LENGTH_MISMATCH,
-        notdef_present = c.HB_BUFFER_DIFF_FLAG_NOTDEF_PRESENT,
-        dotted_circle_present = c.HB_BUFFER_DIFF_FLAG_DOTTED_CIRCLE_PRESENT,
-        codepoint_mismatch = c.HB_BUFFER_DIFF_FLAG_CODEPOINT_MISMATCH,
-        cluster_mismatch = c.HB_BUFFER_DIFF_FLAG_CLUSTER_MISMATCH,
-        glyph_flags_mismatch = c.HB_BUFFER_DIFF_FLAG_GLYPH_FLAGS_MISMATCH,
-        position_mismatch = c.HB_BUFFER_DIFF_FLAG_POSITION_MISMATCH,
-    };
-
-    pub fn from(bits: c_uint) DiffFlags {
-        return utils.bitFieldsToStruct(DiffFlags, Flag, bits);
-    }
-
-    pub fn cast(self: DiffFlags) c_uint {
-        return utils.structToBitFields(c_uint, Flag, self);
-    }
+    _padding: u24 = 0,
 };
 
 pub const Buffer = struct {
@@ -164,24 +115,7 @@ pub const Buffer = struct {
         do_not_insert_dotted_circle: bool = false,
         verify: bool = false,
         produce_unsafe_to_concat: bool = false,
-
-        pub const Flag = enum(u7) {
-            bot = c.HB_BUFFER_FLAG_BOT,
-            eot = c.HB_BUFFER_FLAG_EOT,
-            preserve_default_ignorables = c.HB_BUFFER_FLAG_PRESERVE_DEFAULT_IGNORABLES,
-            remove_default_ignorables = c.HB_BUFFER_FLAG_REMOVE_DEFAULT_IGNORABLES,
-            do_not_insert_dotted_circle = c.HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE,
-            verify = c.HB_BUFFER_FLAG_VERIFY,
-            produce_unsafe_to_concat = c.HB_BUFFER_FLAG_PRODUCE_UNSAFE_TO_CONCAT,
-        };
-
-        pub fn from(bits: c_uint) Flags {
-            return utils.bitFieldsToStruct(Flags, Flag, bits);
-        }
-
-        pub fn cast(self: Flags) c_uint {
-            return utils.structToBitFields(c_uint, Flag, self);
-        }
+        _padding: u25 = 0,
     };
 
     handle: *c.hb_buffer_t,
@@ -292,11 +226,11 @@ pub const Buffer = struct {
     }
 
     pub fn getFlags(self: Buffer) Flags {
-        return Flags.from(c.hb_buffer_get_flags(self.handle));
+        return @bitCast(Flags, c.hb_buffer_get_flags(self.handle));
     }
 
     pub fn setFlags(self: Buffer, flags: Flags) void {
-        c.hb_buffer_set_flags(self.handle, flags.cast());
+        c.hb_buffer_set_flags(self.handle, @bitCast(u32, flags));
     }
 
     pub fn getClusterLevel(self: Buffer) ClusterLevel {
@@ -388,7 +322,7 @@ pub const Buffer = struct {
     }
 
     pub fn diff(self: Buffer, ref: Buffer, dottedcircle_glyph: u32, position_fuzz: u32) DiffFlags {
-        return DiffFlags.from(c.hb_buffer_diff(self.handle, ref.handle, dottedcircle_glyph, position_fuzz));
+        return @bitCast(DiffFlags, c.hb_buffer_diff(self.handle, ref.handle, dottedcircle_glyph, position_fuzz));
     }
 };
 

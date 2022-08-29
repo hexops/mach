@@ -27,12 +27,12 @@ pub const Font = struct {
         c.hb_font_destroy(self.handle);
     }
 
-    pub fn ftFaceChanged(self: Font) void {
+    pub fn freetypeFaceChanged(self: Font) void {
         c.hb_ft_font_changed(self.handle);
     }
 
-    pub fn setFtLoadFlags(self: Font, flags: freetype.LoadFlags) void {
-        c.hb_ft_font_set_load_flags(self.handle, flags.cast());
+    pub fn setFreetypeLoadFlags(self: Font, flags: freetype.LoadFlags) void {
+        c.hb_ft_font_set_load_flags(self.handle, @bitCast(i32, flags));
     }
 
     pub fn getFace(self: Font) Face {

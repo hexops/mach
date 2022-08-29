@@ -7,12 +7,6 @@ pub usingnamespace @import("shape.zig");
 pub usingnamespace @import("shape_plan.zig");
 
 const std = @import("std");
-
-// Remove once the stage2 compiler fixes pkg std not found
-comptime {
-    _ = @import("utils");
-}
-
 test {
     std.testing.refAllDeclsRecursive(@This());
 }

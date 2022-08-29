@@ -1,5 +1,5 @@
 const std = @import("std");
-const utils = @import("utils.zig");
+const testing = std.testing;
 const c = @import("c.zig");
 const intToError = @import("error.zig").intToError;
 const Error = @import("error.zig").Error;
@@ -95,43 +95,16 @@ pub const LoadFlags = packed struct {
     monochrome: bool = false,
     linear_design: bool = false,
     no_autohint: bool = false,
+    _padding: u1 = 0,
     target_normal: bool = false,
     target_light: bool = false,
     target_mono: bool = false,
     target_lcd: bool = false,
     target_lcd_v: bool = false,
     color: bool = false,
-
-    pub const Flag = enum(u21) {
-        no_scale = c.FT_LOAD_NO_SCALE,
-        no_hinting = c.FT_LOAD_NO_HINTING,
-        render = c.FT_LOAD_RENDER,
-        no_bitmap = c.FT_LOAD_NO_BITMAP,
-        vertical_layout = c.FT_LOAD_VERTICAL_LAYOUT,
-        force_autohint = c.FT_LOAD_FORCE_AUTOHINT,
-        crop_bitmap = c.FT_LOAD_CROP_BITMAP,
-        pedantic = c.FT_LOAD_PEDANTIC,
-        ignore_global_advance_with = c.FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH,
-        no_recurse = c.FT_LOAD_NO_RECURSE,
-        ignore_transform = c.FT_LOAD_IGNORE_TRANSFORM,
-        monochrome = c.FT_LOAD_MONOCHROME,
-        linear_design = c.FT_LOAD_LINEAR_DESIGN,
-        no_autohint = c.FT_LOAD_NO_AUTOHINT,
-        target_normal = c.FT_LOAD_TARGET_NORMAL,
-        target_light = c.FT_LOAD_TARGET_LIGHT,
-        target_mono = c.FT_LOAD_TARGET_MONO,
-        target_lcd = c.FT_LOAD_TARGET_LCD,
-        target_lcd_v = c.FT_LOAD_TARGET_LCD_V,
-        color = c.FT_LOAD_COLOR,
-    };
-
-    pub fn from(bits: c_int) LoadFlags {
-        return utils.bitFieldsToStruct(LoadFlags, Flag, bits);
-    }
-
-    pub fn cast(self: LoadFlags) c_int {
-        return utils.structToBitFields(c_int, Flag, self);
-    }
+    compute_metrics: bool = false,
+    bitmap_metrics_only: bool = false,
+    _padding0: u9 = 0,
 };
 
 pub const FaceFlags = packed struct {
@@ -154,36 +127,7 @@ pub const FaceFlags = packed struct {
     svg: bool = false,
     sbix: bool = false,
     sbix_overlay: bool = false,
-
-    pub const Flag = enum(u19) {
-        scalable = c.FT_FACE_FLAG_SCALABLE,
-        fixed_sizes = c.FT_FACE_FLAG_FIXED_SIZES,
-        fixed_width = c.FT_FACE_FLAG_FIXED_WIDTH,
-        sfnt = c.FT_FACE_FLAG_SFNT,
-        horizontal = c.FT_FACE_FLAG_HORIZONTAL,
-        vertical = c.FT_FACE_FLAG_VERTICAL,
-        kerning = c.FT_FACE_FLAG_KERNING,
-        fast_glyphs = c.FT_FACE_FLAG_FAST_GLYPHS,
-        multiple_masters = c.FT_FACE_FLAG_MULTIPLE_MASTERS,
-        glyph_names = c.FT_FACE_FLAG_GLYPH_NAMES,
-        external_stream = c.FT_FACE_FLAG_EXTERNAL_STREAM,
-        hinter = c.FT_FACE_FLAG_HINTER,
-        cid_keyed = c.FT_FACE_FLAG_CID_KEYED,
-        tricky = c.FT_FACE_FLAG_TRICKY,
-        color = c.FT_FACE_FLAG_COLOR,
-        variation = c.FT_FACE_FLAG_VARIATION,
-        svg = c.FT_FACE_FLAG_SVG,
-        sbix = c.FT_FACE_FLAG_SBIX,
-        sbix_overlay = c.FT_FACE_FLAG_SBIX_OVERLAY,
-    };
-
-    pub fn from(bits: c_long) FaceFlags {
-        return utils.bitFieldsToStruct(FaceFlags, Flag, bits);
-    }
-
-    pub fn cast(self: FaceFlags) c_long {
-        return utils.structToBitFields(c_long, Flag, self);
-    }
+    _padding: u45 = 0,
 };
 
 pub const FSType = packed struct {
@@ -191,43 +135,16 @@ pub const FSType = packed struct {
     restriced_license_embedding: bool = false,
     preview_and_print_embedding: bool = false,
     editable_embedding: bool = false,
+    _padding: u4 = 0,
     no_subsetting: bool = false,
     bitmap_embedding_only: bool = false,
-
-    pub const Flag = enum(u10) {
-        installable_embedding = c.FT_FSTYPE_INSTALLABLE_EMBEDDING,
-        restriced_license_embedding = c.FT_FSTYPE_RESTRICTED_LICENSE_EMBEDDING,
-        preview_and_print_embedding = c.FT_FSTYPE_PREVIEW_AND_PRINT_EMBEDDING,
-        editable_embedding = c.FT_FSTYPE_EDITABLE_EMBEDDING,
-        no_subsetting = c.FT_FSTYPE_NO_SUBSETTING,
-        bitmap_embedding_only = c.FT_FSTYPE_BITMAP_EMBEDDING_ONLY,
-    };
-
-    pub fn from(bits: c_int) FSType {
-        return utils.bitFieldsToStruct(FSType, Flag, bits);
-    }
-
-    pub fn cast(self: FSType) c_int {
-        return utils.structToBitFields(c_int, Flag, self);
-    }
+    _padding0: u6 = 0,
 };
 
 pub const StyleFlags = packed struct {
     italic: bool = false,
     bold: bool = false,
-
-    pub const Flag = enum(u2) {
-        italic = c.FT_STYLE_FLAG_ITALIC,
-        bold = c.FT_STYLE_FLAG_BOLD,
-    };
-
-    pub fn from(bits: c_long) StyleFlags {
-        return utils.bitFieldsToStruct(StyleFlags, Flag, bits);
-    }
-
-    pub fn cast(self: StyleFlags) c_long {
-        return utils.structToBitFields(c_long, Flag, self);
-    }
+    _padding: u62 = 0,
 };
 
 pub const OpenFlags = packed struct {
@@ -236,22 +153,7 @@ pub const OpenFlags = packed struct {
     path: bool = false,
     driver: bool = false,
     params: bool = false,
-
-    pub const Flag = enum(u5) {
-        memory = c.FT_OPEN_MEMORY,
-        stream = c.FT_OPEN_STREAM,
-        path = c.FT_OPEN_PATHNAME,
-        driver = c.FT_OPEN_DRIVER,
-        params = c.FT_OPEN_PARAMS,
-    };
-
-    pub fn from(bits: c_uint) OpenFlags {
-        return utils.bitFieldsToStruct(OpenFlags, Flag, bits);
-    }
-
-    pub fn cast(flags: OpenFlags) c_uint {
-        return utils.structToBitFields(c_uint, Flag, flags);
-    }
+    _padding: u27 = 0,
 };
 pub const OpenArgs = struct {
     flags: OpenFlags,
@@ -265,7 +167,7 @@ pub const OpenArgs = struct {
 
     pub fn cast(self: OpenArgs) c.FT_Open_Args {
         var oa: c.FT_Open_Args = undefined;
-        oa.flags = self.flags.cast();
+        oa.flags = @bitCast(u32, self.flags);
         switch (self.data) {
             .memory => |d| {
                 oa.memory_base = d.ptr;

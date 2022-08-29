@@ -1,4 +1,5 @@
-const utils = @import("utils.zig");
+const std = @import("std");
+const testing = std.testing;
 const c = @import("c.zig");
 const Face = @import("freetype.zig").Face;
 
@@ -115,7 +116,7 @@ pub const PaletteData = struct {
     }
 
     pub fn paletteFlag(self: PaletteData, index: u32) PaletteFlags {
-        return PaletteFlags.from(self.handle.palette_flags[index]);
+        return @bitCast(PaletteFlags, self.handle.palette_flags[index]);
     }
 
     pub fn numPaletteEntries(self: PaletteData) u16 {
@@ -130,19 +131,7 @@ pub const PaletteData = struct {
 pub const PaletteFlags = packed struct {
     for_light_background: bool = false,
     for_dark_background: bool = false,
-
-    pub const Flag = enum(u2) {
-        for_light_background = c.FT_PALETTE_FOR_LIGHT_BACKGROUND,
-        for_dark_background = c.FT_PALETTE_FOR_DARK_BACKGROUND,
-    };
-
-    pub fn from(bits: c_int) PaletteFlags {
-        return utils.bitFieldsToStruct(PaletteFlags, Flag, bits);
-    }
-
-    pub fn to(flags: PaletteFlags) c_int {
-        return utils.structToBitFields(c_int, Flag, flags);
-    }
+    _padding: u14 = 0,
 };
 
 pub const GlyphLayersIterator = struct {
