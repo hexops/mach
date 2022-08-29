@@ -6,33 +6,33 @@ const js = mach.sysjs;
 pub const App = @This();
 
 audio: sysaudio,
-device: sysaudio.Device,
+device: *sysaudio.Device,
 tone_engine: ToneEngine = .{},
 
-pub fn init(app: *App, _: *mach.Core) !void {
+pub fn init(app: *App, core: *mach.Core) !void {
     const audio = try sysaudio.init();
     errdefer audio.deinit();
 
-    const device = try audio.requestDevice(.{ .mode = .output, .channels = 1 });
-    errdefer device.deinit();
+    var device = try audio.requestDevice(core.allocator, .{ .mode = .output, .channels = 2 });
+    errdefer device.deinit(core.allocator);
 
     device.setCallback(callback, app);
-    device.start();
+    try device.start();
 
     app.audio = audio;
     app.device = device;
 }
 
-fn callback(_: *sysaudio.Device, user_data: ?*anyopaque, buffer: []u8) void {
+fn callback(device: *sysaudio.Device, user_data: ?*anyopaque, buffer: []u8) void {
     // TODO(sysaudio): should make user_data pointer type-safe
     const app: *App = @ptrCast(*App, @alignCast(@alignOf(App), user_data));
 
     // Where the magic happens: fill our audio buffer with PCM dat.
-    app.tone_engine.render(buffer);
+    app.tone_engine.render(device.descriptor, buffer);
 }
 
-pub fn deinit(app: *App, _: *mach.Core) void {
-    app.device.deinit();
+pub fn deinit(app: *App, core: *mach.Core) void {
+    app.device.deinit(core.allocator);
     app.audio.deinit();
 }
 
@@ -40,13 +40,12 @@ pub fn update(app: *App, engine: *mach.Core) !void {
     while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
-                app.device.start();
+                try app.device.start();
                 app.tone_engine.play(ToneEngine.keyToFrequency(ev.key));
             },
             else => {},
         }
     }
-    app.audio.waitEvents();
 }
 
 // A simple tone engine.
@@ -70,15 +69,16 @@ pub const ToneEngine = struct {
         duration: usize,
     };
 
-    pub fn render(engine: *ToneEngine, buffer: []u8) void {
+    pub fn render(engine: *ToneEngine, descriptor: sysaudio.DeviceDescriptor, buffer: []u8) void {
         // TODO(sysaudio): demonstrate how to properly handle format of the buffer here.
         // Right now we blindly assume f32 format, which is wrong (but always right in WASM.)
-        //
-        // TODO(sysaudio): get sample rate from callback, don't hard-code it here.
-        const sample_rate = 44100.0;
+        const sample_rate = @intToFloat(f32, descriptor.sample_rate.?);
         const buf = @ptrCast([*]f32, @alignCast(@alignOf(f32), buffer.ptr))[0 .. buffer.len / @sizeOf(f32)];
+        const frames = buf.len / descriptor.channels.?;
 
-        for (buf) |_, i| {
+        var frame: usize = 0;
+        while (frame < frames) : (frame += 1) {
+            // Render the sample for this frame (e.g. for both left and right audio channels.)
             var sample: f32 = 0;
             for (engine.playing) |*tone| {
                 if (tone.sample_counter >= tone.duration) {
@@ -104,11 +104,17 @@ pub const ToneEngine = struct {
                 sample += sine_wave * fade_in * fade_out;
             }
 
-            buf[i] = sample;
+            // Emit the sample on all channels.
+            var channel: usize = 0;
+            while (channel < descriptor.channels.?) : (channel += 1) {
+                var channel_buf = buf[channel * frames .. (channel + 1) * frames];
+                channel_buf[frame] = sample;
+            }
         }
     }
 
     pub fn play(engine: *ToneEngine, frequency: f32) void {
+        // TODO(sysaudio): get from device
         const sample_rate = 44100.0;
 
         for (engine.playing) |*tone| {
