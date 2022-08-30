@@ -25,8 +25,8 @@ pub fn start(self: InStream) Error!void {
     try intToError(c.soundio_instream_start(self.handle));
 }
 
-pub fn pause(self: InStream) Error!void {
-    try intToError(c.soundio_instream_pause(self.handle));
+pub fn pause(self: InStream, pause_state: bool) Error!void {
+    try intToError(c.soundio_instream_pause(self.handle, pause_state));
 }
 
 pub fn beginWrite(self: InStream, areas: [*]?[*]c.SoundIoChannelArea, frame_count: *i32) Error!void {
