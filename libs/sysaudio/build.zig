@@ -115,6 +115,7 @@ fn buildSoundIo(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         config_file.writeAll("#define SOUNDIO_HAVE_ALSA\n") catch unreachable;
     } else if (target_info.os.tag == .windows) {
         lib.addCSourceFile(soundio_path ++ "/src/wasapi.c", &.{});
+        lib.linkSystemLibrary("ole32");
         config_file.writeAll("#define SOUNDIO_HAVE_WASAPI\n") catch unreachable;
     }
 
