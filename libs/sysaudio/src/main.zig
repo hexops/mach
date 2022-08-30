@@ -79,8 +79,8 @@ test "connect to device" {
     const a = try init();
     defer a.deinit();
 
-    const d = try a.requestDevice(.{ .mode = .output });
-    defer d.deinit();
+    const d = try a.requestDevice(std.testing.allocator,.{ .mode = .output });
+    defer d.deinit(std.testing.allocator);
 }
 
 test "connect to device from descriptor" {
@@ -90,8 +90,8 @@ test "connect to device from descriptor" {
     var iter = a.outputDeviceIterator();
     var device_desc = (try iter.next()) orelse return error.NoDeviceFound;
 
-    const d = try a.requestDevice(device_desc);
-    defer d.deinit();
+    const d = try a.requestDevice(std.testing.allocator,device_desc);
+    defer d.deinit(std.testing.allocator);
 }
 
 test "requestDevice behavior: null is_raw" {
@@ -106,7 +106,7 @@ test "requestDevice behavior: null is_raw" {
         .mode = device_desc.mode,
         .id = device_desc.id,
     };
-    try testing.expectError(error.InvalidParameter, a.requestDevice(bad_desc));
+    try testing.expectError(error.InvalidParameter, a.requestDevice(std.testing.allocator,bad_desc));
 }
 
 test "requestDevice behavior: null mode" {
@@ -121,7 +121,7 @@ test "requestDevice behavior: null mode" {
         .mode = null,
         .id = device_desc.id,
     };
-    try testing.expectError(error.InvalidParameter, a.requestDevice(bad_desc));
+    try testing.expectError(error.InvalidParameter, a.requestDevice(std.testing.allocator,bad_desc));
 }
 
 test "requestDevice behavior: invalid id" {
