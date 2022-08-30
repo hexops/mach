@@ -112,8 +112,8 @@ pub const Device = struct {
 
     pub fn pause(device: *Device) Error!void {
         return (switch (device.handle) {
-            .input => |d| d.pause(),
-            .output => |d| d.pause(),
+            .input => |d| d.pause(true),
+            .output => |d| d.pause(true),
         }) catch |err| {
             return switch (err) {
                 error.OutOfMemory => error.OutOfMemory,
@@ -123,6 +123,7 @@ pub const Device = struct {
     }
 
     pub fn start(device: *Device) Error!void {
+        // TODO(sysaudio): after pause, may need to call d.pause(false) instead of d.start()?
         return (switch (device.handle) {
             .input => |d| d.start(),
             .output => |d| d.start(),
