@@ -127,7 +127,7 @@ pub const FaceFlags = packed struct {
     svg: bool = false,
     sbix: bool = false,
     sbix_overlay: bool = false,
-    _padding: u45 = 0,
+    _padding: u13 = 0,
 };
 
 pub const FSType = packed struct {
@@ -144,7 +144,7 @@ pub const FSType = packed struct {
 pub const StyleFlags = packed struct {
     italic: bool = false,
     bold: bool = false,
-    _padding: u62 = 0,
+    _padding: u30 = 0,
 };
 
 pub const OpenFlags = packed struct {
