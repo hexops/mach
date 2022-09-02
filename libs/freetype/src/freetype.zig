@@ -127,7 +127,7 @@ pub const FaceFlags = packed struct {
     svg: bool = false,
     sbix: bool = false,
     sbix_overlay: bool = false,
-    _padding: u13 = 0,
+    _padding: if (@sizeof(c_long) == 4) u13 else u45 = 0,
 };
 
 pub const FSType = packed struct {
