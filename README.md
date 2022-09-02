@@ -74,14 +74,14 @@ Mach is still early stages, so far we have support for building from the followi
 
 Zig has switched to the self-hosted compiler recently. This is a huge milestone, but currently means that Zig nightly versions are a little bit unstable. For now, we suggest using a slightly older Zig version before the switch to the self-hosted compiler.
 
-Currently tested with: 0.10.0-dev.3551+92568a009
+Currently tested with: 0.10.0-dev.3842+36f4f32fa
 
 You can download binary releases of this version at:
 
-* **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.3551+92568a009.tar.xz)
-* **windows-x86_64**: https://ziglang.org/builds/zig-windows-x86_64-0.10.0-dev.3551+92568a009.zip
-* **macos-x86_64** (Intel): https://ziglang.org/builds/zig-macos-x86_64-0.10.0-dev.3551+92568a009.tar.xz
-* **macos-aarch64** (Apple Silicon): https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.3551+92568a009.tar.xz
+* **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.3842+36f4f32fa.tar.xz)
+* **windows-x86_64**: https://ziglang.org/builds/zig-windows-x86_64-0.10.0-dev.3842+36f4f32fa.zip
+* **macos-x86_64** (Intel): https://ziglang.org/builds/zig-macos-x86_64-0.10.0-dev.3842+36f4f32fa.tar.xz
+* **macos-aarch64** (Apple Silicon): https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.3842+36f4f32fa.tar.xz
 
 You can subscribe to [issue #180](https://github.com/hexops/mach/issues/180) for how we're tracking towards support for the latest nightly version of Zig.
 
