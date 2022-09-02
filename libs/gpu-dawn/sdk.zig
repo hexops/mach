@@ -1,7 +1,7 @@
 const std = @import("std");
 const Builder = std.build.Builder;
 
-pub fn Sdk(deps: anytype) type {
+pub fn Sdk(comptime deps: anytype) type {
     return struct {
         pub const LinuxWindowManager = enum {
             X11,
