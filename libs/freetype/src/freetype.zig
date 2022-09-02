@@ -144,7 +144,7 @@ pub const FSType = packed struct {
 pub const StyleFlags = packed struct {
     italic: bool = false,
     bold: bool = false,
-    _padding: u30 = 0,
+    _padding: if (@sizeof(c_long) == 4) u30 else u62 = 0,
 };
 
 pub const OpenFlags = packed struct {
