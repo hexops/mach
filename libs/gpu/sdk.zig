@@ -2,7 +2,7 @@ const std = @import("std");
 // const gpu_dawn = @import("libs/mach-gpu-dawn/build.zig");
 // const glfw = @import("libs/mach-glfw/build.zig");
 
-pub fn Sdk(deps: anytype) type {
+pub fn Sdk(comptime deps: anytype) type {
     return struct {
         pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.RunStep {
             const main_tests = b.addTestExe("gpu-tests", (comptime thisDir()) ++ "/src/main.zig");
