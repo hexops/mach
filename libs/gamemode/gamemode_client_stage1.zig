@@ -532,9 +532,9 @@ pub var internal_gamemode_client_error_string: [512]u8 = [1]u8{
     0,
 } ++ [1]u8{0} ** 511;
 pub var internal_libgamemode_loaded: c_int = 1;
-pub const api_call_return_int = ?*const fn () callconv(.C) c_int;
-pub const api_call_return_cstring = ?*const fn () callconv(.C) [*c]const u8;
-pub const api_call_pid_return_int = ?*const fn (pid_t) callconv(.C) c_int;
+pub const api_call_return_int = ?fn () callconv(.C) c_int;
+pub const api_call_return_cstring = ?fn () callconv(.C) [*c]const u8;
+pub const api_call_pid_return_int = ?fn (pid_t) callconv(.C) c_int;
 pub var REAL_internal_gamemode_request_start: api_call_return_int = null;
 pub var REAL_internal_gamemode_request_end: api_call_return_int = null;
 pub var REAL_internal_gamemode_query_status: api_call_return_int = null;
@@ -553,7 +553,7 @@ pub inline fn internal_bind_libgamemode_symbol(arg_handle: ?*anyopaque, arg_name
     symbol_lookup = dlsym(handle, name);
     dl_error = dlerror();
     if ((@as(c_int, @boolToInt(required)) != 0) and ((dl_error != null) or !(symbol_lookup != null))) {
-        _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "dlsym failed - %s", dl_error);
+        _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment(u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "dlsym failed - %s", dl_error);
         return -@as(c_int, 1);
     }
     _ = memcpy(@ptrCast(?*anyopaque, out_func), @ptrCast(?*const anyopaque, &symbol_lookup), func_size);
@@ -572,43 +572,43 @@ pub inline fn internal_load_libgamemode() c_int {
     var bindings: [7]struct_binding = [7]struct_binding{
         struct_binding{
             .name = "real_gamemode_request_start",
-            .functor = @ptrCast([*c]?*anyopaque,  &REAL_internal_gamemode_request_start),
+            .functor = @ptrCast([*c]?*anyopaque, &REAL_internal_gamemode_request_start),
             .func_size = @sizeOf(api_call_return_int),
             .required = @as(c_int, 1) != 0,
         },
         struct_binding{
             .name = "real_gamemode_request_end",
-            .functor = @ptrCast([*c]?*anyopaque,  &REAL_internal_gamemode_request_end),
+            .functor = @ptrCast([*c]?*anyopaque, &REAL_internal_gamemode_request_end),
             .func_size = @sizeOf(api_call_return_int),
             .required = @as(c_int, 1) != 0,
         },
         struct_binding{
             .name = "real_gamemode_query_status",
-            .functor = @ptrCast([*c]?*anyopaque,  &REAL_internal_gamemode_query_status),
+            .functor = @ptrCast([*c]?*anyopaque, &REAL_internal_gamemode_query_status),
             .func_size = @sizeOf(api_call_return_int),
             .required = @as(c_int, 0) != 0,
         },
         struct_binding{
             .name = "real_gamemode_error_string",
-            .functor = @ptrCast([*c]?*anyopaque,  &REAL_internal_gamemode_error_string),
+            .functor = @ptrCast([*c]?*anyopaque, &REAL_internal_gamemode_error_string),
             .func_size = @sizeOf(api_call_return_cstring),
             .required = @as(c_int, 1) != 0,
         },
         struct_binding{
             .name = "real_gamemode_request_start_for",
-            .functor = @ptrCast([*c]?*anyopaque,  &REAL_internal_gamemode_request_start_for),
+            .functor = @ptrCast([*c]?*anyopaque, &REAL_internal_gamemode_request_start_for),
             .func_size = @sizeOf(api_call_pid_return_int),
             .required = @as(c_int, 0) != 0,
         },
         struct_binding{
             .name = "real_gamemode_request_end_for",
-            .functor = @ptrCast([*c]?*anyopaque,  &REAL_internal_gamemode_request_end_for),
+            .functor = @ptrCast([*c]?*anyopaque, &REAL_internal_gamemode_request_end_for),
             .func_size = @sizeOf(api_call_pid_return_int),
             .required = @as(c_int, 0) != 0,
         },
         struct_binding{
             .name = "real_gamemode_query_status_for",
-            .functor = @ptrCast([*c]?*anyopaque,  &REAL_internal_gamemode_query_status_for),
+            .functor = @ptrCast([*c]?*anyopaque, &REAL_internal_gamemode_query_status_for),
             .func_size = @sizeOf(api_call_pid_return_int),
             .required = @as(c_int, 0) != 0,
         },
@@ -618,7 +618,7 @@ pub inline fn internal_load_libgamemode() c_int {
     if (!(libgamemode != null)) {
         libgamemode = dlopen("libgamemode.so", @as(c_int, 2));
         if (!(libgamemode != null)) {
-            _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "dlopen failed - %s", dlerror());
+            _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment(u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "dlopen failed - %s", dlerror());
             internal_libgamemode_loaded = -@as(c_int, 1);
             return -@as(c_int, 1);
         }
@@ -638,12 +638,12 @@ pub inline fn internal_load_libgamemode() c_int {
 }
 pub inline fn gamemode_error_string() [*c]const u8 {
     if ((internal_load_libgamemode() < @as(c_int, 0)) or (@bitCast(c_int, @as(c_uint, internal_gamemode_client_error_string[@intCast(c_uint, @as(c_int, 0))])) != @as(c_int, '\x00'))) {
-        return @ptrCast([*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), &internal_gamemode_client_error_string));
+        return @ptrCast([*c]u8, @alignCast(@import("std").meta.alignment(u8), &internal_gamemode_client_error_string));
     }
     _ = blk: {
         _ = @sizeOf(c_int);
         break :blk blk_1: {
-            break :blk_1 if (REAL_internal_gamemode_error_string != @ptrCast(api_call_return_cstring, @alignCast(@import("std").meta.alignment(api_call_return_cstring), @intToPtr(?*anyopaque, @as(c_int, 0))))) {} else {
+            break :blk_1 if (REAL_internal_gamemode_error_string != @ptrCast(api_call_return_cstring, @alignCast(@import("std").meta.alignment(fn () callconv(.C) [*c]const u8), @intToPtr(?*anyopaque, @as(c_int, 0))))) {} else {
                 __assert_fail("REAL_internal_gamemode_error_string != NULL", "./gamemode/gamemode_client.h", @bitCast(c_uint, @as(c_int, 237)), "const char *gamemode_error_string(void)");
             };
         };
@@ -657,7 +657,7 @@ pub inline fn gamemode_request_start() c_int {
     _ = blk: {
         _ = @sizeOf(c_int);
         break :blk blk_1: {
-            break :blk_1 if (REAL_internal_gamemode_request_start != @ptrCast(api_call_return_int, @alignCast(@import("std").meta.alignment(api_call_return_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {} else {
+            break :blk_1 if (REAL_internal_gamemode_request_start != @ptrCast(api_call_return_int, @alignCast(@import("std").meta.alignment(fn () callconv(.C) c_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {} else {
                 __assert_fail("REAL_internal_gamemode_request_start != NULL", "./gamemode/gamemode_client.h", @bitCast(c_uint, @as(c_int, 263)), "int gamemode_request_start(void)");
             };
         };
@@ -674,7 +674,7 @@ pub inline fn gamemode_request_end() c_int {
     _ = blk: {
         _ = @sizeOf(c_int);
         break :blk blk_1: {
-            break :blk_1 if (REAL_internal_gamemode_request_end != @ptrCast(api_call_return_int, @alignCast(@import("std").meta.alignment(api_call_return_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {} else {
+            break :blk_1 if (REAL_internal_gamemode_request_end != @ptrCast(api_call_return_int, @alignCast(@import("std").meta.alignment(fn () callconv(.C) c_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {} else {
                 __assert_fail("REAL_internal_gamemode_request_end != NULL", "./gamemode/gamemode_client.h", @bitCast(c_uint, @as(c_int, 292)), "int gamemode_request_end(void)");
             };
         };
@@ -688,8 +688,8 @@ pub inline fn gamemode_query_status() c_int {
     if (internal_load_libgamemode() < @as(c_int, 0)) {
         return -@as(c_int, 1);
     }
-    if (REAL_internal_gamemode_query_status == @ptrCast(api_call_return_int, @alignCast(@import("std").meta.alignment(api_call_return_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {
-        _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "gamemode_query_status missing (older host?)");
+    if (REAL_internal_gamemode_query_status == @ptrCast(api_call_return_int, @alignCast(@import("std").meta.alignment(fn () callconv(.C) c_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {
+        _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment(u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "gamemode_query_status missing (older host?)");
         return -@as(c_int, 1);
     }
     return REAL_internal_gamemode_query_status.?();
@@ -699,8 +699,8 @@ pub inline fn gamemode_request_start_for(arg_pid: pid_t) c_int {
     if (internal_load_libgamemode() < @as(c_int, 0)) {
         return -@as(c_int, 1);
     }
-    if (REAL_internal_gamemode_request_start_for == @ptrCast(api_call_pid_return_int, @alignCast(@import("std").meta.alignment(api_call_pid_return_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {
-        _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "gamemode_request_start_for missing (older host?)");
+    if (REAL_internal_gamemode_request_start_for == @ptrCast(api_call_pid_return_int, @alignCast(@import("std").meta.alignment(fn (pid_t) callconv(.C) c_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {
+        _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment(u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "gamemode_request_start_for missing (older host?)");
         return -@as(c_int, 1);
     }
     return REAL_internal_gamemode_request_start_for.?(pid);
@@ -710,8 +710,8 @@ pub inline fn gamemode_request_end_for(arg_pid: pid_t) c_int {
     if (internal_load_libgamemode() < @as(c_int, 0)) {
         return -@as(c_int, 1);
     }
-    if (REAL_internal_gamemode_request_end_for == @ptrCast(api_call_pid_return_int, @alignCast(@import("std").meta.alignment(api_call_pid_return_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {
-        _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "gamemode_request_end_for missing (older host?)");
+    if (REAL_internal_gamemode_request_end_for == @ptrCast(api_call_pid_return_int, @alignCast(@import("std").meta.alignment(fn (pid_t) callconv(.C) c_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {
+        _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment(u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "gamemode_request_end_for missing (older host?)");
         return -@as(c_int, 1);
     }
     return REAL_internal_gamemode_request_end_for.?(pid);
@@ -721,8 +721,8 @@ pub inline fn gamemode_query_status_for(arg_pid: pid_t) c_int {
     if (internal_load_libgamemode() < @as(c_int, 0)) {
         return -@as(c_int, 1);
     }
-    if (REAL_internal_gamemode_query_status_for == @ptrCast(api_call_pid_return_int, @alignCast(@import("std").meta.alignment(api_call_pid_return_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {
-        _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "gamemode_query_status_for missing (older host?)");
+    if (REAL_internal_gamemode_query_status_for == @ptrCast(api_call_pid_return_int, @alignCast(@import("std").meta.alignment(fn (pid_t) callconv(.C) c_int), @intToPtr(?*anyopaque, @as(c_int, 0))))) {
+        _ = snprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment(u8), &internal_gamemode_client_error_string)), @sizeOf([512]u8), "gamemode_query_status_for missing (older host?)");
         return -@as(c_int, 1);
     }
     return REAL_internal_gamemode_query_status_for.?(pid);
@@ -734,92 +734,92 @@ pub const __UINT32_C_SUFFIX__ = @compileError("unable to translate macro: undefi
 pub const __UINT64_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `UL`"); // (no file):199:9
 pub const __seg_gs = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // (no file):329:9
 pub const __seg_fs = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // (no file):330:9
-pub const __GLIBC_USE = @compileError("unable to translate macro: undefined identifier `__GLIBC_USE_`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/features.h:186:9
-pub const __glibc_has_attribute = @compileError("unable to translate macro: undefined identifier `__has_attribute`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:44:10
-pub const __glibc_has_extension = @compileError("unable to translate macro: undefined identifier `__has_extension`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:54:10
-pub const __THROW = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:78:11
-pub const __THROWNL = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:79:11
-pub const __NTH = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:80:11
-pub const __NTHNL = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:81:11
-pub const __CONCAT = @compileError("unable to translate C expr: unexpected token '##'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:123:9
-pub const __STRING = @compileError("unable to translate C expr: unexpected token '#'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:124:9
-pub const __warnattr = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:158:10
-pub const __errordecl = @compileError("unable to translate C expr: unexpected token 'extern'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:159:10
-pub const __flexarr = @compileError("unable to translate C expr: unexpected token '['"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:167:10
-pub const __REDIRECT = @compileError("unable to translate macro: undefined identifier `__asm__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:198:10
-pub const __REDIRECT_NTH = @compileError("unable to translate macro: undefined identifier `__asm__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:205:11
-pub const __REDIRECT_NTHNL = @compileError("unable to translate macro: undefined identifier `__asm__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:207:11
-pub const __ASMNAME2 = @compileError("unable to translate C expr: unexpected token 'Identifier'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:211:10
-pub const __attribute_malloc__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:232:10
-pub const __attribute_alloc_size__ = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:243:10
-pub const __attribute_pure__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:250:10
-pub const __attribute_const__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:257:10
-pub const __attribute_maybe_unused__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:263:10
-pub const __attribute_used__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:272:10
-pub const __attribute_noinline__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:273:10
-pub const __attribute_deprecated__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:281:10
-pub const __attribute_deprecated_msg__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:291:10
-pub const __attribute_format_arg__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:304:10
-pub const __attribute_format_strfmon__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:314:10
-pub const __nonnull = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:324:11
-pub const __returns_nonnull = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:337:10
-pub const __attribute_warn_unused_result__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:346:10
-pub const __always_inline = @compileError("unable to translate macro: undefined identifier `__inline`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:364:10
-pub const __attribute_artificial__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:373:10
-pub const __extern_inline = @compileError("unable to translate macro: undefined identifier `__inline`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:391:11
-pub const __extern_always_inline = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:392:11
-pub const __restrict_arr = @compileError("unable to translate macro: undefined identifier `__restrict`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:435:10
-pub const __attribute_copy__ = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:484:10
-pub const __LDBL_REDIR2_DECL = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:560:10
-pub const __LDBL_REDIR_DECL = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:561:10
-pub const __glibc_macro_warning1 = @compileError("unable to translate macro: undefined identifier `_Pragma`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:575:10
-pub const __glibc_macro_warning = @compileError("unable to translate macro: undefined identifier `GCC`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:576:10
-pub const __attr_access = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:612:11
-pub const __attr_access_none = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:613:11
-pub const __attr_dealloc = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:623:10
-pub const __attribute_returns_twice__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/sys/cdefs.h:630:10
-pub const va_start = @compileError("unable to translate macro: undefined identifier `__builtin_va_start`"); // /home/ali/clone/zig/lib/include/stdarg.h:17:9
-pub const va_end = @compileError("unable to translate macro: undefined identifier `__builtin_va_end`"); // /home/ali/clone/zig/lib/include/stdarg.h:18:9
-pub const va_arg = @compileError("unable to translate macro: undefined identifier `__builtin_va_arg`"); // /home/ali/clone/zig/lib/include/stdarg.h:19:9
-pub const __va_copy = @compileError("unable to translate macro: undefined identifier `__builtin_va_copy`"); // /home/ali/clone/zig/lib/include/stdarg.h:24:9
-pub const va_copy = @compileError("unable to translate macro: undefined identifier `__builtin_va_copy`"); // /home/ali/clone/zig/lib/include/stdarg.h:27:9
-pub const __STD_TYPE = @compileError("unable to translate C expr: unexpected token 'typedef'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/types.h:137:10
-pub const __FSID_T_TYPE = @compileError("unable to translate macro: undefined identifier `__val`"); // /home/ali/clone/zig/lib/libc/include/x86_64-linux-gnu/bits/typesizes.h:73:9
-pub const __getc_unlocked_body = @compileError("TODO postfix inc/dec expr"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/types/struct_FILE.h:102:9
-pub const __putc_unlocked_body = @compileError("TODO postfix inc/dec expr"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/types/struct_FILE.h:106:9
-pub const __CFLOAT32 = @compileError("unable to translate: TODO _Complex"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:149:12
-pub const __CFLOAT64 = @compileError("unable to translate: TODO _Complex"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:160:13
-pub const __CFLOAT32X = @compileError("unable to translate: TODO _Complex"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:169:12
-pub const __CFLOAT64X = @compileError("unable to translate: TODO _Complex"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:178:13
-pub const __builtin_nansf32 = @compileError("unable to translate macro: undefined identifier `__builtin_nansf`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:221:12
-pub const __builtin_huge_valf64 = @compileError("unable to translate macro: undefined identifier `__builtin_huge_val`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:255:13
-pub const __builtin_inff64 = @compileError("unable to translate macro: undefined identifier `__builtin_inf`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:256:13
-pub const __builtin_nanf64 = @compileError("unable to translate macro: undefined identifier `__builtin_nan`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:257:13
-pub const __builtin_nansf64 = @compileError("unable to translate macro: undefined identifier `__builtin_nans`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:258:13
-pub const __builtin_huge_valf32x = @compileError("unable to translate macro: undefined identifier `__builtin_huge_val`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:272:12
-pub const __builtin_inff32x = @compileError("unable to translate macro: undefined identifier `__builtin_inf`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:273:12
-pub const __builtin_nanf32x = @compileError("unable to translate macro: undefined identifier `__builtin_nan`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:274:12
-pub const __builtin_nansf32x = @compileError("unable to translate macro: undefined identifier `__builtin_nans`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:275:12
-pub const __builtin_huge_valf64x = @compileError("unable to translate macro: undefined identifier `__builtin_huge_vall`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:289:13
-pub const __builtin_inff64x = @compileError("unable to translate macro: undefined identifier `__builtin_infl`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:290:13
-pub const __builtin_nanf64x = @compileError("unable to translate macro: undefined identifier `__builtin_nanl`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:291:13
-pub const __builtin_nansf64x = @compileError("unable to translate macro: undefined identifier `__builtin_nansl`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/floatn-common.h:292:13
-pub const __ASSERT_VOID_CAST = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/assert.h:40:10
-pub const assert = @compileError("unable to translate macro: undefined identifier `__extension__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/assert.h:104:11
-pub const __ASSERT_FUNCTION = @compileError("unable to translate macro: undefined identifier `__extension__`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/assert.h:126:12
-pub const static_assert = @compileError("unable to translate C expr: unexpected token '_Static_assert'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/assert.h:140:10
-pub const __FD_ZERO = @compileError("unable to translate macro: undefined identifier `__i`"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/select.h:25:9
-pub const __FD_SET = @compileError("unable to translate C expr: expected ')' instead got '|='"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/select.h:32:9
-pub const __FD_CLR = @compileError("unable to translate C expr: expected ')' instead got '&='"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/select.h:34:9
-pub const __PTHREAD_MUTEX_INITIALIZER = @compileError("unable to translate C expr: unexpected token '{'"); // /home/ali/clone/zig/lib/libc/include/x86_64-linux-gnu/bits/struct_mutex.h:56:10
-pub const __PTHREAD_RWLOCK_ELISION_EXTRA = @compileError("unable to translate C expr: unexpected token '{'"); // /home/ali/clone/zig/lib/libc/include/x86_64-linux-gnu/bits/struct_rwlock.h:40:11
-pub const __ONCE_FLAG_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/ali/clone/zig/lib/libc/include/generic-glibc/bits/thread-shared-types.h:127:9
+pub const __GLIBC_USE = @compileError("unable to translate macro: undefined identifier `__GLIBC_USE_`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/features.h:186:9
+pub const __glibc_has_attribute = @compileError("unable to translate macro: undefined identifier `__has_attribute`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:44:10
+pub const __glibc_has_extension = @compileError("unable to translate macro: undefined identifier `__has_extension`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:54:10
+pub const __THROW = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:78:11
+pub const __THROWNL = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:79:11
+pub const __NTH = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:80:11
+pub const __NTHNL = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:81:11
+pub const __CONCAT = @compileError("unable to translate C expr: unexpected token '##'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:123:9
+pub const __STRING = @compileError("unable to translate C expr: unexpected token '#'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:124:9
+pub const __warnattr = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:158:10
+pub const __errordecl = @compileError("unable to translate C expr: unexpected token 'extern'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:159:10
+pub const __flexarr = @compileError("unable to translate C expr: unexpected token '['"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:167:10
+pub const __REDIRECT = @compileError("unable to translate macro: undefined identifier `__asm__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:198:10
+pub const __REDIRECT_NTH = @compileError("unable to translate macro: undefined identifier `__asm__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:205:11
+pub const __REDIRECT_NTHNL = @compileError("unable to translate macro: undefined identifier `__asm__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:207:11
+pub const __ASMNAME2 = @compileError("unable to translate C expr: unexpected token 'Identifier'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:211:10
+pub const __attribute_malloc__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:232:10
+pub const __attribute_alloc_size__ = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:243:10
+pub const __attribute_pure__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:250:10
+pub const __attribute_const__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:257:10
+pub const __attribute_maybe_unused__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:263:10
+pub const __attribute_used__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:272:10
+pub const __attribute_noinline__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:273:10
+pub const __attribute_deprecated__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:281:10
+pub const __attribute_deprecated_msg__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:291:10
+pub const __attribute_format_arg__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:304:10
+pub const __attribute_format_strfmon__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:314:10
+pub const __nonnull = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:324:11
+pub const __returns_nonnull = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:337:10
+pub const __attribute_warn_unused_result__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:346:10
+pub const __always_inline = @compileError("unable to translate macro: undefined identifier `__inline`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:364:10
+pub const __attribute_artificial__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:373:10
+pub const __extern_inline = @compileError("unable to translate macro: undefined identifier `__inline`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:391:11
+pub const __extern_always_inline = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:392:11
+pub const __restrict_arr = @compileError("unable to translate macro: undefined identifier `__restrict`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:435:10
+pub const __attribute_copy__ = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:484:10
+pub const __LDBL_REDIR2_DECL = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:560:10
+pub const __LDBL_REDIR_DECL = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:561:10
+pub const __glibc_macro_warning1 = @compileError("unable to translate macro: undefined identifier `_Pragma`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:575:10
+pub const __glibc_macro_warning = @compileError("unable to translate macro: undefined identifier `GCC`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:576:10
+pub const __attr_access = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:612:11
+pub const __attr_access_none = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:613:11
+pub const __attr_dealloc = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:623:10
+pub const __attribute_returns_twice__ = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/sys/cdefs.h:630:10
+pub const va_start = @compileError("unable to translate macro: undefined identifier `__builtin_va_start`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/include/stdarg.h:17:9
+pub const va_end = @compileError("unable to translate macro: undefined identifier `__builtin_va_end`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/include/stdarg.h:18:9
+pub const va_arg = @compileError("unable to translate macro: undefined identifier `__builtin_va_arg`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/include/stdarg.h:19:9
+pub const __va_copy = @compileError("unable to translate macro: undefined identifier `__builtin_va_copy`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/include/stdarg.h:24:9
+pub const va_copy = @compileError("unable to translate macro: undefined identifier `__builtin_va_copy`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/include/stdarg.h:27:9
+pub const __STD_TYPE = @compileError("unable to translate C expr: unexpected token 'typedef'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/types.h:137:10
+pub const __FSID_T_TYPE = @compileError("unable to translate macro: undefined identifier `__val`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/x86_64-linux-gnu/bits/typesizes.h:73:9
+pub const __getc_unlocked_body = @compileError("TODO postfix inc/dec expr"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/types/struct_FILE.h:102:9
+pub const __putc_unlocked_body = @compileError("TODO postfix inc/dec expr"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/types/struct_FILE.h:106:9
+pub const __CFLOAT32 = @compileError("unable to translate: TODO _Complex"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:149:12
+pub const __CFLOAT64 = @compileError("unable to translate: TODO _Complex"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:160:13
+pub const __CFLOAT32X = @compileError("unable to translate: TODO _Complex"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:169:12
+pub const __CFLOAT64X = @compileError("unable to translate: TODO _Complex"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:178:13
+pub const __builtin_nansf32 = @compileError("unable to translate macro: undefined identifier `__builtin_nansf`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:221:12
+pub const __builtin_huge_valf64 = @compileError("unable to translate macro: undefined identifier `__builtin_huge_val`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:255:13
+pub const __builtin_inff64 = @compileError("unable to translate macro: undefined identifier `__builtin_inf`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:256:13
+pub const __builtin_nanf64 = @compileError("unable to translate macro: undefined identifier `__builtin_nan`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:257:13
+pub const __builtin_nansf64 = @compileError("unable to translate macro: undefined identifier `__builtin_nans`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:258:13
+pub const __builtin_huge_valf32x = @compileError("unable to translate macro: undefined identifier `__builtin_huge_val`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:272:12
+pub const __builtin_inff32x = @compileError("unable to translate macro: undefined identifier `__builtin_inf`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:273:12
+pub const __builtin_nanf32x = @compileError("unable to translate macro: undefined identifier `__builtin_nan`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:274:12
+pub const __builtin_nansf32x = @compileError("unable to translate macro: undefined identifier `__builtin_nans`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:275:12
+pub const __builtin_huge_valf64x = @compileError("unable to translate macro: undefined identifier `__builtin_huge_vall`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:289:13
+pub const __builtin_inff64x = @compileError("unable to translate macro: undefined identifier `__builtin_infl`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:290:13
+pub const __builtin_nanf64x = @compileError("unable to translate macro: undefined identifier `__builtin_nanl`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:291:13
+pub const __builtin_nansf64x = @compileError("unable to translate macro: undefined identifier `__builtin_nansl`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/floatn-common.h:292:13
+pub const __ASSERT_VOID_CAST = @compileError("unable to translate C expr: unexpected token 'Eof'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/assert.h:40:10
+pub const assert = @compileError("unable to translate macro: undefined identifier `__extension__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/assert.h:104:11
+pub const __ASSERT_FUNCTION = @compileError("unable to translate macro: undefined identifier `__extension__`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/assert.h:126:12
+pub const static_assert = @compileError("unable to translate C expr: unexpected token '_Static_assert'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/assert.h:140:10
+pub const __FD_ZERO = @compileError("unable to translate macro: undefined identifier `__i`"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/select.h:25:9
+pub const __FD_SET = @compileError("unable to translate C expr: expected ')' instead got '|='"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/select.h:32:9
+pub const __FD_CLR = @compileError("unable to translate C expr: expected ')' instead got '&='"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/select.h:34:9
+pub const __PTHREAD_MUTEX_INITIALIZER = @compileError("unable to translate C expr: unexpected token '{'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/x86_64-linux-gnu/bits/struct_mutex.h:56:10
+pub const __PTHREAD_RWLOCK_ELISION_EXTRA = @compileError("unable to translate C expr: unexpected token '{'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/x86_64-linux-gnu/bits/struct_rwlock.h:40:11
+pub const __ONCE_FLAG_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/Zargio/zig/0.10.0-dev.3313+cff5d9c80/files/lib/libc/include/generic-glibc/bits/thread-shared-types.h:127:9
 pub const __llvm__ = @as(c_int, 1);
 pub const __clang__ = @as(c_int, 1);
 pub const __clang_major__ = @as(c_int, 14);
 pub const __clang_minor__ = @as(c_int, 0);
 pub const __clang_patchlevel__ = @as(c_int, 6);
-pub const __clang_version__ = "14.0.6 (https://github.com/ziglang/zig-bootstrap fd29a724c18f51e7bce66db814bcaf4f0296ae47)";
+pub const __clang_version__ = "14.0.6 (git@github.com:ziglang/zig-bootstrap.git dbc902054739800b8c1656dc1fb29571bba074b9)";
 pub const __GNUC__ = @as(c_int, 4);
 pub const __GNUC_MINOR__ = @as(c_int, 2);
 pub const __GNUC_PATCHLEVEL__ = @as(c_int, 1);
@@ -836,7 +836,7 @@ pub const __OPENCL_MEMORY_SCOPE_DEVICE = @as(c_int, 2);
 pub const __OPENCL_MEMORY_SCOPE_ALL_SVM_DEVICES = @as(c_int, 3);
 pub const __OPENCL_MEMORY_SCOPE_SUB_GROUP = @as(c_int, 4);
 pub const __PRAGMA_REDEFINE_EXTNAME = @as(c_int, 1);
-pub const __VERSION__ = "Clang 14.0.6 (https://github.com/ziglang/zig-bootstrap fd29a724c18f51e7bce66db814bcaf4f0296ae47)";
+pub const __VERSION__ = "Clang 14.0.6 (git@github.com:ziglang/zig-bootstrap.git dbc902054739800b8c1656dc1fb29571bba074b9)";
 pub const __OBJC_BOOL_IS_BOOL = @as(c_int, 0);
 pub const __CONSTANT_CFSTRINGS__ = @as(c_int, 1);
 pub const __clang_literal_encoding__ = "UTF-8";
@@ -1136,9 +1136,9 @@ pub const __x86_64 = @as(c_int, 1);
 pub const __x86_64__ = @as(c_int, 1);
 pub const __SEG_GS = @as(c_int, 1);
 pub const __SEG_FS = @as(c_int, 1);
-pub const __corei7 = @as(c_int, 1);
-pub const __corei7__ = @as(c_int, 1);
-pub const __tune_corei7__ = @as(c_int, 1);
+pub const __znver1 = @as(c_int, 1);
+pub const __znver1__ = @as(c_int, 1);
+pub const __tune_znver1__ = @as(c_int, 1);
 pub const __REGISTER_PREFIX__ = "";
 pub const __NO_MATH_INLINES = @as(c_int, 1);
 pub const __AES__ = @as(c_int, 1);
@@ -1150,13 +1150,22 @@ pub const __FSGSBASE__ = @as(c_int, 1);
 pub const __BMI__ = @as(c_int, 1);
 pub const __BMI2__ = @as(c_int, 1);
 pub const __POPCNT__ = @as(c_int, 1);
+pub const __PRFCHW__ = @as(c_int, 1);
+pub const __RDSEED__ = @as(c_int, 1);
+pub const __ADX__ = @as(c_int, 1);
+pub const __MWAITX__ = @as(c_int, 1);
 pub const __MOVBE__ = @as(c_int, 1);
+pub const __SSE4A__ = @as(c_int, 1);
 pub const __FMA__ = @as(c_int, 1);
 pub const __F16C__ = @as(c_int, 1);
+pub const __SHA__ = @as(c_int, 1);
 pub const __FXSR__ = @as(c_int, 1);
 pub const __XSAVE__ = @as(c_int, 1);
 pub const __XSAVEOPT__ = @as(c_int, 1);
-pub const __INVPCID__ = @as(c_int, 1);
+pub const __XSAVEC__ = @as(c_int, 1);
+pub const __XSAVES__ = @as(c_int, 1);
+pub const __CLFLUSHOPT__ = @as(c_int, 1);
+pub const __CLZERO__ = @as(c_int, 1);
 pub const __CRC32__ = @as(c_int, 1);
 pub const __AVX2__ = @as(c_int, 1);
 pub const __AVX__ = @as(c_int, 1);
@@ -1189,7 +1198,7 @@ pub const __STDC_HOSTED__ = @as(c_int, 1);
 pub const __STDC_VERSION__ = @as(c_long, 201710);
 pub const __STDC_UTF_16__ = @as(c_int, 1);
 pub const __STDC_UTF_32__ = @as(c_int, 1);
-pub const __GLIBC_MINOR__ = @as(c_int, 31);
+pub const __GLIBC_MINOR__ = @as(c_int, 19);
 pub const _DEBUG = @as(c_int, 1);
 pub const __GCC_HAVE_DWARF2_CFI_ASM = @as(c_int, 1);
 pub const CLIENT_GAMEMODE_H = "";
