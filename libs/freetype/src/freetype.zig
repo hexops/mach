@@ -127,7 +127,7 @@ pub const FaceFlags = packed struct {
     svg: bool = false,
     sbix: bool = false,
     sbix_overlay: bool = false,
-    _padding: u45 = 0,
+    _padding: if (@sizeof(c_long) == 4) u13 else u45 = 0,
 };
 
 pub const FSType = packed struct {
@@ -144,7 +144,7 @@ pub const FSType = packed struct {
 pub const StyleFlags = packed struct {
     italic: bool = false,
     bold: bool = false,
-    _padding: u62 = 0,
+    _padding: if (@sizeof(c_long) == 4) u30 else u62 = 0,
 };
 
 pub const OpenFlags = packed struct {
