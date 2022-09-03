@@ -84,7 +84,7 @@ pub const Platform = struct {
 
         const instance = gpu.createInstance(null);
         if (instance == null) {
-            std.debug.print("mach: failed to create GPU instance\n", .{});
+            std.log.err("mach: failed to create GPU instance\n", .{});
             std.process.exit(1);
         }
         const surface = util.createSurfaceForWindow(instance.?, window, comptime util.detectGLFWOptions());
@@ -96,8 +96,8 @@ pub const Platform = struct {
             .force_fallback_adapter = false,
         }, &response, util.requestAdapterCallback);
         if (response.?.status != .success) {
-            std.debug.print("mach: failed to create GPU adapter: {?s}\n", .{response.?.message});
-            std.debug.print("-> maybe try MACH_GPU_BACKEND=opengl ?\n", .{});
+            std.log.err("mach: failed to create GPU adapter: {?s}\n", .{response.?.message});
+            std.log.info("-> maybe try MACH_GPU_BACKEND=opengl ?\n", .{});
             std.process.exit(1);
         }
 
@@ -108,7 +108,7 @@ pub const Platform = struct {
             std.log.err("no backend found for {s} adapter", .{props.adapter_type.name()});
             std.process.exit(1);
         }
-        std.debug.print("mach: found {s} backend on {s} adapter: {s}, {s}\n", .{
+        std.log.info("mach: found {s} backend on {s} adapter: {s}, {s}\n", .{
             props.backend_type.name(),
             props.adapter_type.name(),
             props.name,
@@ -124,7 +124,7 @@ pub const Platform = struct {
             }) else null,
         });
         if (device == null) {
-            std.debug.print("mach: failed to create GPU device\n", .{});
+            std.log.err("mach: failed to create GPU device\n", .{});
             std.process.exit(1);
         }
 
@@ -410,7 +410,7 @@ pub const Platform = struct {
             // TODO: In the future we shouldn't hit this because we'll provide backup
             // custom cursors.
             // See https://github.com/hexops/mach/pull/352 for more info
-            std.debug.print("mach: setMouseCursor: {s} not yet supported\n", .{cursor});
+            std.log.warn("mach: setMouseCursor: {s} not yet supported\n", .{cursor});
         }
     }
 
@@ -588,7 +588,7 @@ pub const Platform = struct {
 
     /// Default GLFW error handling callback
     fn errorCallback(error_code: glfw.Error, description: [:0]const u8) void {
-        std.debug.print("glfw: {}: {s}\n", .{ error_code, description });
+        std.log.err("glfw: {}: {s}\n", .{ error_code, description });
     }
 };
 

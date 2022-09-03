@@ -6,10 +6,10 @@ const objc = @import("objc_message.zig");
 
 pub inline fn printUnhandledErrorCallback(_: void, typ: gpu.ErrorType, message: [*:0]const u8) void {
     switch (typ) {
-        .validation => std.debug.print("gpu: validation error: {s}\n", .{message}),
-        .out_of_memory => std.debug.print("gpu: out of memory: {s}\n", .{message}),
-        .device_lost => std.debug.print("gpu: device lost: {s}\n", .{message}),
-        .unknown => std.debug.print("gpu: unknown error: {s}\n", .{message}),
+        .validation => std.log.err("gpu: validation error: {s}\n", .{message}),
+        .out_of_memory => std.log.err("gpu: out of memory: {s}\n", .{message}),
+        .device_lost => std.log.err("gpu: device lost: {s}\n", .{message}),
+        .unknown => std.log.err("gpu: unknown error: {s}\n", .{message}),
         else => unreachable,
     }
     std.os.exit(1);
