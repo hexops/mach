@@ -104,6 +104,10 @@ pub const Platform = struct {
         // Print which adapter we are going to use.
         var props: gpu.Adapter.Properties = undefined;
         response.?.adapter.getProperties(&props);
+        if (props.backend_type == .nul) {
+            std.log.err("no backend found for {s} adapter", .{props.adapter_type.name()});
+            std.process.exit(1);
+        }
         std.debug.print("mach: found {s} backend on {s} adapter: {s}, {s}\n", .{
             props.backend_type.name(),
             props.adapter_type.name(),
