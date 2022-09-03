@@ -188,21 +188,23 @@ pub const Platform = struct {
         }
         return true;
     }
-    fn initLinuxGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!bool {
+    fn initLinuxGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, DLOpenFailed, InvalidUtf8 }!bool {
         if (builtin.os.tag == .linux) {
             const gamemode = @import("gamemode");
             if (try activateGamemode(allocator)) {
-                if (gamemode.requestStart()) {
-                    return true;
-                } else |err| {
-                    std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
-                }
+                gamemode.requestStart() catch |err| {
+                    if (!std.mem.containsAtLeast(u8, gamemode.errorString(), 1, "dlopen failed"))
+                        std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+                    return false;
+                };
+                std.log.info("Gamemode activated", .{});
+                return true;
             }
         }
         return false;
     }
     fn deinitLinuxGamemode(platform: *Platform) void {
-        if (builtin.os.tag == .linux and platform.linux_gamemode_is_active) {
+        if (platform.linux_gamemode_is_active) {
             const gamemode = @import("gamemode");
             gamemode.requestEnd() catch |err| {
                 std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
