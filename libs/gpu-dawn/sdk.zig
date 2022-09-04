@@ -29,6 +29,9 @@ pub fn Sdk(comptime deps: anytype) type {
             // TODO(build-system): not respected at all currently
             opengl_es: ?bool = null,
 
+            /// Whether or not to use Dawn in debug mode.
+            debug: bool = false,
+
             /// Whether or not minimal debug symbols should be emitted. This is -g1 in most cases, enough to
             /// produce stack traces but omitting debug symbols for locals. For spirv-tools and tint in
             /// specific, -g0 will be used (no debug symbols at all) to save an additional ~39M.
@@ -126,7 +129,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
             const lib_dawn = b.addStaticLibrary("dawn", main_abs);
-            lib_dawn.setBuildMode(step.build_mode);
+            lib_dawn.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
             lib_dawn.setTarget(step.target);
             lib_dawn.linkLibCpp();
             if (options.install_libs)
@@ -196,13 +199,13 @@ pub fn Sdk(comptime deps: anytype) type {
             binary_target.glibc_version = null;
             const zig_triple = binary_target.zigTriple(b.allocator) catch unreachable;
             defer b.allocator.free(zig_triple);
-            ensureBinaryDownloaded(b.allocator, zig_triple, b.is_release, target.os.tag == .windows, options.binary_version);
+            ensureBinaryDownloaded(b.allocator, zig_triple, options.debug, target.os.tag == .windows, options.binary_version);
 
             const base_cache_dir_rel = std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
             std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
             const base_cache_dir = std.fs.cwd().realpathAlloc(b.allocator, base_cache_dir_rel) catch unreachable;
             const commit_cache_dir = std.fs.path.join(b.allocator, &.{ base_cache_dir, options.binary_version }) catch unreachable;
-            const release_tag = if (b.is_release) "release-fast" else "debug";
+            const release_tag = if (options.debug) "debug" else "release-fast";
             const target_cache_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, zig_triple, release_tag }) catch unreachable;
             const include_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, "include" }) catch unreachable;
             defer {
@@ -239,7 +242,7 @@ pub fn Sdk(comptime deps: anytype) type {
         pub fn ensureBinaryDownloaded(
             allocator: std.mem.Allocator,
             zig_triple: []const u8,
-            is_release: bool,
+            is_debug: bool,
             is_windows: bool,
             version: []const u8,
         ) void {
@@ -272,7 +275,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 }
             }
 
-            const release_tag = if (is_release) "release-fast" else "debug";
+            const release_tag = if (is_debug) "debug" else "release-fast";
             const target_cache_dir = std.fs.path.join(allocator, &.{ commit_cache_dir, zig_triple, release_tag }) catch unreachable;
             defer allocator.free(target_cache_dir);
             if (dirExists(target_cache_dir)) {
@@ -481,7 +484,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-native-mach", main_abs);
-                separate_lib.setBuildMode(step.build_mode);
+                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
@@ -517,7 +520,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-common", main_abs);
-                separate_lib.setBuildMode(step.build_mode);
+                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
@@ -570,7 +573,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-platform", main_abs);
-                separate_lib.setBuildMode(step.build_mode);
+                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
@@ -642,7 +645,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-native", main_abs);
-                separate_lib.setBuildMode(step.build_mode);
+                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
@@ -913,7 +916,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("tint", main_abs);
-                separate_lib.setBuildMode(step.build_mode);
+                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
@@ -1061,7 +1064,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("spirv-tools", main_abs);
-                separate_lib.setBuildMode(step.build_mode);
+                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
@@ -1129,7 +1132,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("abseil-cpp-common", main_abs);
-                separate_lib.setBuildMode(step.build_mode);
+                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
@@ -1191,7 +1194,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-wire", main_abs);
-                separate_lib.setBuildMode(step.build_mode);
+                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
@@ -1228,7 +1231,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-utils", main_abs);
-                separate_lib.setBuildMode(step.build_mode);
+                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
@@ -1303,7 +1306,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dxcompiler", main_abs);
-                separate_lib.setBuildMode(step.build_mode);
+                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
