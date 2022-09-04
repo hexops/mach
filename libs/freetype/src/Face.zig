@@ -300,11 +300,11 @@ pub fn numFixedSizes(self: Face) u32 {
     return @intCast(u32, self.handle.*.num_fixed_sizes);
 }
 
-pub fn availableSizes(self: Face) ?BitmapSize {
+pub fn availableSizes(self: Face) []BitmapSize {
     return if (self.handle.*.available_sizes != null)
-        self.handle.*.available_sizes.*
+        self.handle.*.available_sizes[0..self.numFixedSizes()]
     else
-        null;
+        &.{};
 }
 
 pub fn getAdvance(self: Face, glyph_index: u32, load_flags: LoadFlags) Error!i32 {
