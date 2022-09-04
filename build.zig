@@ -71,6 +71,7 @@ pub fn build(b: *std.build.Builder) void {
 
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },
+        .{ .name = "triangle-msaa" },
         .{ .name = "boids" },
         .{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
