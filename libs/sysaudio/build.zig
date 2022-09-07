@@ -24,7 +24,7 @@ pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode, target, .{}).step);
+    test_step.dependOn(&testStep(b, mode, target).step);
 
     inline for ([_][]const u8{
         "soundio-sine-wave",
