@@ -1,4 +1,3 @@
-const builtin = @import("builtin");
 const std = @import("std");
 const Builder = std.build.Builder;
 
@@ -69,21 +68,7 @@ pub const pkg = std.build.Pkg{
     .source = .{ .path = thisDir() ++ "/src/main.zig" },
 };
 
-// TODO(self-hosted): HACK: workaround https://github.com/ziglang/zig/issues/12483
-//
-// Extracted from a build using stage1 from zig-cache/ (`cimport/c_darwin[_native].zig`)
-// Then find+replace `= ?fn` -> `= ?*const fn`
-fn cimportWorkaround() void {
-    const dest_dir = std.fs.cwd().openDir(thisDir() ++ "/src", .{}) catch unreachable;
-    const cn_path = thisDir() ++ "/src/cimport/" ++ if (builtin.os.tag == .macos) "c_darwin1.zig" else "c_normal_native.zig";
-    const c_path = thisDir() ++ "/src/cimport/" ++ if (builtin.os.tag == .macos) "c_darwin2.zig" else "c_normal.zig";
-    std.fs.cwd().copyFile(cn_path, dest_dir, thisDir() ++ "/src/c_native.zig", .{}) catch unreachable;
-    std.fs.cwd().copyFile(c_path, dest_dir, thisDir() ++ "/src/c.zig", .{}) catch unreachable;
-}
-
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    cimportWorkaround();
-
     const lib = buildLibrary(b, step.build_mode, step.target, options);
     step.linkLibrary(lib);
     addGLFWIncludes(step);
