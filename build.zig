@@ -31,6 +31,7 @@ pub fn build(b: *std.build.Builder) void {
     const options = Options{ .gpu_dawn_options = gpu_dawn_options };
 
     const all_tests_step = b.step("test", "Run library tests");
+    const glfw_test_step = b.step("test-glfw", "Run GLFW library tests");
     const gpu_test_step = b.step("test-gpu", "Run GPU library tests");
     const ecs_test_step = b.step("test-ecs", "Run ECS library tests");
     const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
@@ -38,6 +39,7 @@ pub fn build(b: *std.build.Builder) void {
     const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
     const mach_test_step = b.step("test-mach", "Run Mach Core library tests");
 
+    glfw_test_step.dependOn(&glfw.testStep(b, mode, target).step);
     gpu_test_step.dependOn(&gpu.testStep(b, mode, target, options.gpuOptions()).step);
     freetype_test_step.dependOn(&freetype.testStep(b, mode, target).step);
     ecs_test_step.dependOn(&ecs.testStep(b, mode, target).step);
@@ -45,6 +47,7 @@ pub fn build(b: *std.build.Builder) void {
     sysaudio_test_step.dependOn(&sysaudio.testStep(b, mode, target).step);
     mach_test_step.dependOn(&testStep(b, mode, target).step);
 
+    all_tests_step.dependOn(glfw_test_step);
     all_tests_step.dependOn(gpu_test_step);
     all_tests_step.dependOn(ecs_test_step);
     all_tests_step.dependOn(freetype_test_step);
