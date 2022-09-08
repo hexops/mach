@@ -35,7 +35,7 @@ pub fn Modules(modules: anytype) @TypeOf(modules) {
 ///     .foo = i32,
 /// };
 /// ```
-pub fn Messages(messages: anytype) type {
+pub fn Messages(comptime messages: anytype) type {
     var fields: []const UnionField = &[0]UnionField{};
     const message_fields = std.meta.fields(@TypeOf(messages));
     inline for (message_fields) |message_field| {
@@ -76,7 +76,7 @@ pub fn Messages(messages: anytype) type {
 /// ```
 /// enum { .tick, .foo };
 /// ```
-pub fn MessagesTag(messages: anytype) type {
+pub fn MessagesTag(comptime messages: anytype) type {
     var fields: []const EnumField = &[0]EnumField{};
     const message_fields = std.meta.fields(@TypeOf(messages));
     inline for (message_fields) |message_field, index| {
