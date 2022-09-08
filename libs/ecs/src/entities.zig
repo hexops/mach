@@ -78,7 +78,7 @@ pub const ArchetypeStorage = struct {
         gpa.free(storage.columns);
     }
 
-    fn debugValidateRow(storage: *ArchetypeStorage, gpa: Allocator, row: anytype) void {
+    fn debugValidateRow(storage: *ArchetypeStorage, gpa: Allocator, comptime row: anytype) void {
         inline for (std.meta.fields(@TypeOf(row))) |field, index| {
             const column = storage.columns[index];
             if (typeId(field.field_type) != column.typeId) {
@@ -102,7 +102,7 @@ pub const ArchetypeStorage = struct {
         return row_index;
     }
 
-    pub fn append(storage: *ArchetypeStorage, gpa: Allocator, row: anytype) !u32 {
+    pub fn append(storage: *ArchetypeStorage, gpa: Allocator, comptime row: anytype) !u32 {
         if (is_debug) storage.debugValidateRow(gpa, row);
 
         try storage.ensureUnusedCapacity(gpa, 1);
@@ -174,7 +174,7 @@ pub const ArchetypeStorage = struct {
     }
 
     /// Sets the entire row's values in the table.
-    pub fn setRow(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, row: anytype) void {
+    pub fn setRow(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, comptime row: anytype) void {
         if (is_debug) storage.debugValidateRow(gpa, row);
 
         const fields = std.meta.fields(@TypeOf(row));
@@ -188,7 +188,7 @@ pub const ArchetypeStorage = struct {
     }
 
     /// Sets the value of the named components (columns) for the given row in the table.
-    pub fn set(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, name: []const u8, component: anytype) void {
+    pub fn set(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, name: []const u8, comptime component: anytype) void {
         const ColumnType = @TypeOf(component);
         if (@sizeOf(ColumnType) == 0) return;
         for (storage.columns) |column| {
@@ -340,7 +340,7 @@ pub const void_archetype_hash = std.math.maxInt(u64);
 ///   row index, enabling entities to "move" from one archetype table to another seamlessly and
 ///   making lookup by entity ID a few cheap array indexing operations.
 /// * ComponentStorage(T) is a column of data within a table for a single type of component `T`.
-pub fn Entities(all_components: anytype) type {
+pub fn Entities(comptime all_components: anytype) type {
     // TODO: validate all_components is a namespaced component set in the form we expect
     _ = all_components;
     return struct {

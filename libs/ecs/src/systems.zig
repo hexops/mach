@@ -16,7 +16,7 @@ pub fn Module(comptime Params: anytype) @TypeOf(Params) {
 }
 
 /// Describes a set of ECS modules, each of which can provide components, systems, and more.
-pub fn Modules(modules: anytype) @TypeOf(modules) {
+pub fn Modules(comptime modules: anytype) @TypeOf(modules) {
     // TODO: validate the type
     return modules;
 }
@@ -251,7 +251,7 @@ pub fn World(comptime modules: anytype) type {
         }
 
         /// Gets a global value called `.global_tag` from the module named `.module_tag`
-        pub fn get(world: *Self, module_tag: anytype, global_tag: anytype) @TypeOf(@field(
+        pub fn get(world: *Self, comptime module_tag: anytype, comptime global_tag: anytype) @TypeOf(@field(
             @field(world.globals, @tagName(module_tag)),
             @tagName(global_tag),
         )) {
