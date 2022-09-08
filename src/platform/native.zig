@@ -208,7 +208,7 @@ pub const Platform = struct {
         return false;
     }
     fn deinitLinuxGamemode(platform: *Platform) void {
-        if (platform.linux_gamemode_is_active) {
+        if (builtin.os.tag == .linux and platform.linux_gamemode_is_active) {
             const gamemode = @import("gamemode");
             gamemode.requestEnd() catch |err| {
                 std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
