@@ -31,6 +31,7 @@ pub const Device = struct {
     data_callback: ?DataCallback = null,
     user_data: ?*anyopaque = null,
     planar_buffer: [512000]u8 = undefined,
+    started: bool = false,
 
     pub const Options = DeviceOptions;
     pub const Properties = DeviceProperties;
@@ -117,6 +118,7 @@ pub const Device = struct {
     }
 
     pub fn pause(device: *Device) Error!void {
+        if (!device.started) return;
         return (switch (device.handle) {
             .input => |d| d.pause(true),
             .output => |d| d.pause(true),
@@ -130,15 +132,28 @@ pub const Device = struct {
 
     pub fn start(device: *Device) Error!void {
         // TODO(sysaudio): after pause, may need to call d.pause(false) instead of d.start()?
-        return (switch (device.handle) {
-            .input => |d| d.start(),
-            .output => |d| d.start(),
-        }) catch |err| {
-            return switch (err) {
-                error.OutOfMemory => error.OutOfMemory,
-                else => @panic(@errorName(err)),
+        if (!device.started) {
+            device.started = true;
+            return (switch (device.handle) {
+                .input => |d| d.start(),
+                .output => |d| d.start(),
+            }) catch |err| {
+                return switch (err) {
+                    error.OutOfMemory => error.OutOfMemory,
+                    else => @panic(@errorName(err)),
+                };
             };
-        };
+        } else {
+            return (switch (device.handle) {
+                .input => |d| d.pause(false),
+                .output => |d| d.pause(false),
+            }) catch |err| {
+                return switch (err) {
+                    error.OutOfMemory => error.OutOfMemory,
+                    else => @panic(@errorName(err)),
+                };
+            };
+        }
     }
 };
 

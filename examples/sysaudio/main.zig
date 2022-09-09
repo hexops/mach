@@ -41,7 +41,7 @@ pub fn update(app: *App, engine: *mach.Core) !void {
     while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
-                if (builtin.cpu.arch == .wasm32) try app.device.start();
+                try app.device.start();
                 app.tone_engine.play(app.device.properties, ToneEngine.keyToFrequency(ev.key));
             },
             else => {},
