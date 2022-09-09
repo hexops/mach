@@ -2,6 +2,7 @@ const std = @import("std");
 const mach = @import("mach");
 const sysaudio = mach.sysaudio;
 const js = mach.sysjs;
+const builtin = @import("builtin");
 
 pub const App = @This();
 
@@ -40,12 +41,17 @@ pub fn update(app: *App, engine: *mach.Core) !void {
     while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
-                try app.device.start();
+                if (builtin.cpu.arch == .wasm32) try app.device.start();
                 app.tone_engine.play(ToneEngine.keyToFrequency(ev.key));
             },
             else => {},
         }
     }
+
+    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
+
+    engine.swap_chain.?.present();
+    back_buffer_view.release();
 }
 
 // A simple tone engine.
