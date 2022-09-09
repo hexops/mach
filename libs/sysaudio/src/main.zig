@@ -27,7 +27,7 @@ pub const Format = enum {
     F32,
 };
 
-pub const DeviceConfig = struct {
+pub const DeviceOptions = struct {
     mode: Mode = .output,
     format: ?Format = null,
     is_raw: ?bool = null,
@@ -37,7 +37,7 @@ pub const DeviceConfig = struct {
     name: ?[]const u8 = null,
 };
 
-pub const DeviceDescriptor = struct {
+pub const DeviceProperties = struct {
     mode: Mode,
     format: Format,
     is_raw: bool,
@@ -46,15 +46,15 @@ pub const DeviceDescriptor = struct {
     id: [:0]const u8,
     name: []const u8,
 
-    pub fn intoConfig(descriptor: DeviceDescriptor) DeviceConfig {
+    pub fn intoConfig(properties: DeviceProperties) DeviceOptions {
         return .{
-            .mode = descriptor.mode,
-            .format = descriptor.format,
-            .is_raw = descriptor.is_raw,
-            .channels = descriptor.channels,
-            .sample_rate = descriptor.sample_rate,
-            .id = descriptor.id,
-            .name = descriptor.name,
+            .mode = properties.mode,
+            .format = properties.format,
+            .is_raw = properties.is_raw,
+            .channels = properties.channels,
+            .sample_rate = properties.sample_rate,
+            .id = properties.id,
+            .name = properties.name,
         };
     }
 };
@@ -77,7 +77,7 @@ pub fn waitEvents(self: Audio) void {
     self.backend.waitEvents();
 }
 
-pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceConfig) Error!*Device {
+pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: Device.Options) Error!*Device {
     return self.backend.requestDevice(allocator, config);
 }
 
@@ -123,7 +123,7 @@ test "requestDevice behavior: null is_raw" {
     var iter = a.outputDeviceIterator();
     var device_conf = (try iter.next()) orelse return error.NoDeviceFound;
 
-    const bad_conf = DeviceConfig{
+    const bad_conf = Device.Options{
         .is_raw = null,
         .mode = device_conf.mode,
         .id = device_conf.id,
@@ -139,7 +139,7 @@ test "requestDevice behavior: invalid id" {
     // var iter = a.outputDeviceIterator();
     // var device_conf = (try iter.next()) orelse return error.NoDeviceFound;
 
-    // const bad_conf = DeviceConfig{
+    // const bad_conf = Device.Options{
     //     .is_raw = device_conf.is_raw,
     //     .mode = device_conf.mode,
     //     .id = "wrong-id",

@@ -1,7 +1,7 @@
 const std = @import("std");
 const Mode = @import("main.zig").Mode;
-const DeviceConfig = @import("main.zig").DeviceConfig;
-const DeviceDescriptor = @import("main.zig").DeviceDescriptor;
+const DeviceOptions = @import("main.zig").DeviceOptions;
+const DeviceProperties = @import("main.zig").DeviceProperties;
 const Format = @import("main.zig").Format;
 const c = @import("soundio").c;
 const Aim = @import("soundio").Aim;
@@ -24,13 +24,16 @@ else
     *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
 
 pub const Device = struct {
-    descriptor: DeviceDescriptor,
+    properties: Properties,
 
     // Internal fields.
     handle: SoundIoStream,
     data_callback: ?DataCallback = null,
     user_data: ?*anyopaque = null,
     planar_buffer: [512000]u8 = undefined,
+
+    pub const Options = DeviceOptions;
+    pub const Properties = DeviceProperties;
 
     pub fn deinit(self: *Device, allocator: std.mem.Allocator) void {
         switch (self.handle) {
@@ -145,14 +148,14 @@ pub const DeviceIterator = struct {
     device_len: u16,
     index: u16,
 
-    pub fn next(self: *DeviceIterator) IteratorError!?DeviceConfig {
+    pub fn next(self: *DeviceIterator) IteratorError!?DeviceOptions {
         if (self.index < self.device_len) {
             const device_desc = switch (self.mode) {
                 .input => self.ctx.handle.getInputDevice(self.index) orelse return null,
                 .output => self.ctx.handle.getOutputDevice(self.index) orelse return null,
             };
             self.index += 1;
-            return DeviceConfig{
+            return DeviceOptions{
                 .mode = switch (@intToEnum(Aim, device_desc.handle.aim)) {
                     .input => .input,
                     .output => .output,
@@ -220,18 +223,18 @@ pub fn waitEvents(self: Audio) void {
     self.handle.waitEvents();
 }
 
-pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceConfig) Error!*Device {
+pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, options: DeviceOptions) Error!*Device {
     var sio_device: SoundIoDevice = undefined;
 
-    if (config.id) |id| {
-        if (config.is_raw == null)
+    if (options.id) |id| {
+        if (options.is_raw == null)
             return error.InvalidParameter;
 
-        sio_device = switch (config.mode) {
-            .input => self.handle.getInputDeviceFromID(id, config.is_raw.?),
-            .output => self.handle.getOutputDeviceFromID(id, config.is_raw.?),
+        sio_device = switch (options.mode) {
+            .input => self.handle.getInputDeviceFromID(id, options.is_raw.?),
+            .output => self.handle.getOutputDeviceFromID(id, options.is_raw.?),
         } orelse {
-            return if (switch (config.mode) {
+            return if (switch (options.mode) {
                 .input => self.handle.inputDeviceCount().?,
                 .output => self.handle.outputDeviceCount().?,
             } == 0)
@@ -240,17 +243,17 @@ pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceCo
                 error.DeviceUnavailable;
         };
     } else {
-        const id = switch (config.mode) {
+        const id = switch (options.mode) {
             .input => self.handle.defaultInputDeviceIndex(),
             .output => self.handle.defaultOutputDeviceIndex(),
         } orelse return error.NoDeviceFound;
-        sio_device = switch (config.mode) {
+        sio_device = switch (options.mode) {
             .input => self.handle.getInputDevice(id),
             .output => self.handle.getOutputDevice(id),
         } orelse return error.DeviceUnavailable;
     }
 
-    const handle = switch (config.mode) {
+    const handle = switch (options.mode) {
         .input => SoundIoStream{ .input = try sio_device.createInStream() },
         .output => SoundIoStream{ .output = try sio_device.createOutStream() },
     };
@@ -286,18 +289,17 @@ pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceCo
         },
     };
 
-    // TODO(sysaudio): Get the device name
+    // TODO(sysaudio): Get the device name. Calling span or sliceTo on the name is causing segfaults on NixOS
     // const name_ptr = switch(handle) {
     //     .input => |d| d.handle.name,
     //     .output => |d| d.handle.name,
     // };
     // const name = std.mem.sliceTo(name_ptr, 0);
-    // std.log.info("name {s}", .{name});
 
-    var descriptor = DeviceDescriptor{
-        .is_raw = config.is_raw orelse false,
+    var properties = DeviceProperties{
+        .is_raw = options.is_raw orelse false,
         .format = format,
-        .mode = config.mode,
+        .mode = options.mode,
         .id = std.mem.span(sio_device.handle.id),
         .name = "",
         .channels = @intCast(u8, switch (handle) {
@@ -309,11 +311,9 @@ pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceCo
             .output => |d| d.sampleRate(),
         }),
     };
-    std.log.info("channels {}", .{descriptor.channels});
-    std.log.info("sample_rate {}\n", .{descriptor.sample_rate});
 
     device.* = .{
-        .descriptor = descriptor,
+        .properties = properties,
         .handle = handle,
     };
     return device;

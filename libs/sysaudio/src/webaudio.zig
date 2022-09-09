@@ -1,7 +1,7 @@
 const std = @import("std");
 const Mode = @import("main.zig").Mode;
-const DeviceConfig = @import("main.zig").DeviceConfig;
-const DeviceDescriptor = @import("main.zig").DeviceDescriptor;
+const DeviceOptions = @import("main.zig").DeviceOptions;
+const DeviceProperties  = @import("main.zig").DeviceProperties;
 const js = @import("sysjs");
 
 const Audio = @This();
@@ -12,10 +12,13 @@ else
     *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
 
 pub const Device = struct {
-    descriptor: DeviceDescriptor,
+    properties: DeviceProperties,
 
     // Internal fields.
     context: js.Object,
+
+    pub const Options = DeviceOptions;
+    pub const Properties = DeviceProperties;
 
     pub fn deinit(device: *Device, allocator: std.mem.Allocator) void {
         device.context.deinit();
@@ -42,7 +45,7 @@ pub const DeviceIterator = struct {
     ctx: *Audio,
     mode: Mode,
 
-    pub fn next(_: DeviceIterator) IteratorError!?DeviceDescriptor {
+    pub fn next(_: DeviceIterator) IteratorError!?DeviceProperties {
         return null;
     }
 };
@@ -75,11 +78,11 @@ const default_channel_count = 2;
 const default_sample_rate = 48000;
 const default_buffer_size_per_channel = 1024; // 21.33ms
 
-pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, config: DeviceConfig) Error!*Device {
-    // NOTE: WebAudio only supports F32 audio format, so config.format is unused
-    const mode = config.mode;
-    const channels = config.channels orelse default_channel_count;
-    const sample_rate = config.sample_rate orelse default_sample_rate;
+pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, options: DeviceOptions) Error!*Device {
+    // NOTE: WebAudio only supports F32 audio format, so options.format is unused
+    const mode = options.mode;
+    const channels = options.channels orelse default_channel_count;
+    const sample_rate = options.sample_rate orelse default_sample_rate;
 
     const context_options = js.createMap();
     defer context_options.deinit();
@@ -114,17 +117,16 @@ pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, config: DeviceC
         _ = node.call("connect", &.{destination.toValue()});
     }
 
-    // TODO(sysaudio): introduce a descriptor type that has non-optional fields.
-    var descriptor = DeviceDescriptor{
+    var properties = DeviceProperties {
         .format = .F32,
-        .mode = config.mode orelse .output,
-        .channels = config.channels orelse default_channel_count,
-        .sample_rate = config.sample_rate orelse default_sample_rate,
+        .mode = options.mode orelse .output,
+        .channels = options.channels orelse default_channel_count,
+        .sample_rate = options.sample_rate orelse default_sample_rate,
     };
 
     const device = try allocator.create(Device);
     device.* = .{
-        .descriptor = descriptor,
+        .properties = properties,
         .context = context,
     };
     return device;
