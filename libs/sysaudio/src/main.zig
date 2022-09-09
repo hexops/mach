@@ -27,14 +27,36 @@ pub const Format = enum {
     F32,
 };
 
-pub const DeviceDescriptor = struct {
-    mode: ?Mode = null,
+pub const DeviceConfig = struct {
+    mode: Mode = .output,
     format: ?Format = null,
     is_raw: ?bool = null,
     channels: ?u8 = null,
     sample_rate: ?u32 = null,
     id: ?[:0]const u8 = null,
     name: ?[]const u8 = null,
+};
+
+pub const DeviceDescriptor = struct {
+    mode: Mode,
+    format: Format,
+    is_raw: bool,
+    channels: u8,
+    sample_rate: u32,
+    id: [:0]const u8,
+    name: []const u8,
+
+    pub fn intoConfig(descriptor: DeviceDescriptor) DeviceConfig {
+        return .{
+            .mode = descriptor.mode,
+            .format = descriptor.format,
+            .is_raw = descriptor.is_raw,
+            .channels = descriptor.channels,
+            .sample_rate = descriptor.sample_rate,
+            .id = descriptor.id,
+            .name = descriptor.name,
+        };
+    }
 };
 
 const Audio = @This();
@@ -55,7 +77,7 @@ pub fn waitEvents(self: Audio) void {
     self.backend.waitEvents();
 }
 
-pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceDescriptor) Error!*Device {
+pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceConfig) Error!*Device {
     return self.backend.requestDevice(allocator, config);
 }
 
@@ -88,9 +110,9 @@ test "connect to device from descriptor" {
     defer a.deinit();
 
     var iter = a.outputDeviceIterator();
-    var device_desc = (try iter.next()) orelse return error.NoDeviceFound;
+    var device_conf = (try iter.next()) orelse return error.NoDeviceFound;
 
-    const d = try a.requestDevice(std.testing.allocator, device_desc);
+    const d = try a.requestDevice(std.testing.allocator, device_conf);
     defer d.deinit(std.testing.allocator);
 }
 
@@ -99,29 +121,14 @@ test "requestDevice behavior: null is_raw" {
     defer a.deinit();
 
     var iter = a.outputDeviceIterator();
-    var device_desc = (try iter.next()) orelse return error.NoDeviceFound;
+    var device_conf = (try iter.next()) orelse return error.NoDeviceFound;
 
-    const bad_desc = DeviceDescriptor{
+    const bad_conf = DeviceConfig{
         .is_raw = null,
-        .mode = device_desc.mode,
-        .id = device_desc.id,
+        .mode = device_conf.mode,
+        .id = device_conf.id,
     };
-    try testing.expectError(error.InvalidParameter, a.requestDevice(std.testing.allocator, bad_desc));
-}
-
-test "requestDevice behavior: null mode" {
-    const a = try init();
-    defer a.deinit();
-
-    var iter = a.outputDeviceIterator();
-    var device_desc = (try iter.next()) orelse return error.NoDeviceFound;
-
-    const bad_desc = DeviceDescriptor{
-        .is_raw = device_desc.is_raw,
-        .mode = null,
-        .id = device_desc.id,
-    };
-    try testing.expectError(error.InvalidParameter, a.requestDevice(std.testing.allocator, bad_desc));
+    try testing.expectError(error.InvalidParameter, a.requestDevice(std.testing.allocator, bad_conf));
 }
 
 test "requestDevice behavior: invalid id" {
@@ -130,12 +137,12 @@ test "requestDevice behavior: invalid id" {
     // defer a.deinit();
 
     // var iter = a.outputDeviceIterator();
-    // var device_desc = (try iter.next()) orelse return error.NoDeviceFound;
+    // var device_conf = (try iter.next()) orelse return error.NoDeviceFound;
 
-    // const bad_desc = DeviceDescriptor{
-    //     .is_raw = device_desc.is_raw,
-    //     .mode = device_desc.mode,
+    // const bad_conf = DeviceConfig{
+    //     .is_raw = device_conf.is_raw,
+    //     .mode = device_conf.mode,
     //     .id = "wrong-id",
     // };
-    // try testing.expectError(error.DeviceUnavailable, a.requestDevice(bad_desc));
+    // try testing.expectError(error.DeviceUnavailable, a.requestDevice(bad_conf));
 }

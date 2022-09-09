@@ -1,9 +1,12 @@
 const std = @import("std");
 const Mode = @import("main.zig").Mode;
+const DeviceConfig = @import("main.zig").DeviceConfig;
 const DeviceDescriptor = @import("main.zig").DeviceDescriptor;
+const Format = @import("main.zig").Format;
 const c = @import("soundio").c;
 const Aim = @import("soundio").Aim;
 const SoundIo = @import("soundio").SoundIo;
+const SoundIoFormat = @import("soundio").Format;
 const SoundIoDevice = @import("soundio").Device;
 const SoundIoInStream = @import("soundio").InStream;
 const SoundIoOutStream = @import("soundio").OutStream;
@@ -142,14 +145,14 @@ pub const DeviceIterator = struct {
     device_len: u16,
     index: u16,
 
-    pub fn next(self: *DeviceIterator) IteratorError!?DeviceDescriptor {
+    pub fn next(self: *DeviceIterator) IteratorError!?DeviceConfig {
         if (self.index < self.device_len) {
             const device_desc = switch (self.mode) {
                 .input => self.ctx.handle.getInputDevice(self.index) orelse return null,
                 .output => self.ctx.handle.getOutputDevice(self.index) orelse return null,
             };
             self.index += 1;
-            return DeviceDescriptor{
+            return DeviceConfig{
                 .mode = switch (@intToEnum(Aim, device_desc.handle.aim)) {
                     .input => .input,
                     .output => .output,
@@ -217,18 +220,18 @@ pub fn waitEvents(self: Audio) void {
     self.handle.waitEvents();
 }
 
-pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceDescriptor) Error!*Device {
+pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceConfig) Error!*Device {
     var sio_device: SoundIoDevice = undefined;
 
     if (config.id) |id| {
-        if (config.mode == null or config.is_raw == null)
+        if (config.is_raw == null)
             return error.InvalidParameter;
 
-        sio_device = switch (config.mode.?) {
+        sio_device = switch (config.mode) {
             .input => self.handle.getInputDeviceFromID(id, config.is_raw.?),
             .output => self.handle.getOutputDeviceFromID(id, config.is_raw.?),
         } orelse {
-            return if (switch (config.mode.?) {
+            return if (switch (config.mode) {
                 .input => self.handle.inputDeviceCount().?,
                 .output => self.handle.outputDeviceCount().?,
             } == 0)
@@ -237,19 +240,17 @@ pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceDe
                 error.DeviceUnavailable;
         };
     } else {
-        if (config.mode == null) return error.InvalidParameter;
-
-        const id = switch (config.mode.?) {
+        const id = switch (config.mode) {
             .input => self.handle.defaultInputDeviceIndex(),
             .output => self.handle.defaultOutputDeviceIndex(),
         } orelse return error.NoDeviceFound;
-        sio_device = switch (config.mode.?) {
+        sio_device = switch (config.mode) {
             .input => self.handle.getInputDevice(id),
             .output => self.handle.getOutputDevice(id),
         } orelse return error.DeviceUnavailable;
     }
 
-    const handle = switch (config.mode.?) {
+    const handle = switch (config.mode) {
         .input => SoundIoStream{ .input = try sio_device.createInStream() },
         .output => SoundIoStream{ .output = try sio_device.createOutStream() },
     };
@@ -264,18 +265,52 @@ pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, config: DeviceDe
         .input => |d| d.handle.userdata = device,
         .output => |d| d.handle.userdata = device,
     }
-    var descriptor = config;
-    descriptor.mode = descriptor.mode orelse .output;
-    descriptor.channels = @intCast(u8, switch (handle) {
-        .input => |d| d.layout().channelCount(),
-        .output => |d| d.layout().channelCount(),
-    });
-    descriptor.sample_rate = @intCast(u32, switch (handle) {
-        .input => |d| d.sampleRate(),
-        .output => |d| d.sampleRate(),
-    });
-    std.log.info("channels {}", .{descriptor.channels.?});
-    std.log.info("sample_rate {}\n", .{descriptor.sample_rate.?});
+
+    // TODO(sysaudio): handle big endian architectures
+    const format: Format = switch (handle) {
+        .input => |d| switch (@intToEnum(SoundIoFormat, d.handle.format)) {
+            .U8 => .U8,
+            .S16LE => .S16,
+            .S24LE => .S24,
+            .S32LE => .S32,
+            .float32LE => .F32,
+            else => return error.InvalidParameter,
+        },
+        .output => |d| switch (@intToEnum(SoundIoFormat, d.handle.format)) {
+            .U8 => .U8,
+            .S16LE => .S16,
+            .S24LE => .S24,
+            .S32LE => .S32,
+            .float32LE => .F32,
+            else => return error.InvalidParameter,
+        },
+    };
+
+    // TODO(sysaudio): Get the device name
+    // const name_ptr = switch(handle) {
+    //     .input => |d| d.handle.name,
+    //     .output => |d| d.handle.name,
+    // };
+    // const name = std.mem.sliceTo(name_ptr, 0);
+    // std.log.info("name {s}", .{name});
+
+    var descriptor = DeviceDescriptor{
+        .is_raw = config.is_raw orelse false,
+        .format = format,
+        .mode = config.mode,
+        .id = std.mem.span(sio_device.handle.id),
+        .name = "",
+        .channels = @intCast(u8, switch (handle) {
+            .input => |d| d.layout().channelCount(),
+            .output => |d| d.layout().channelCount(),
+        }),
+        .sample_rate = @intCast(u32, switch (handle) {
+            .input => |d| d.sampleRate(),
+            .output => |d| d.sampleRate(),
+        }),
+    };
+    std.log.info("channels {}", .{descriptor.channels});
+    std.log.info("sample_rate {}\n", .{descriptor.sample_rate});
 
     device.* = .{
         .descriptor = descriptor,

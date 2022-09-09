@@ -1,5 +1,6 @@
 const std = @import("std");
 const Mode = @import("main.zig").Mode;
+const DeviceConfig = @import("main.zig").DeviceConfig;
 const DeviceDescriptor = @import("main.zig").DeviceDescriptor;
 const js = @import("sysjs");
 
@@ -67,16 +68,16 @@ pub fn deinit(audio: Audio) void {
     audio.context_constructor.deinit();
 }
 
-// TODO)sysaudio): implement waitEvents for WebAudio, will a WASM process terminate without this?
+// TODO(sysaudio): implement waitEvents for WebAudio, will a WASM process terminate without this?
 pub fn waitEvents(_: Audio) void {}
 
 const default_channel_count = 2;
 const default_sample_rate = 48000;
 const default_buffer_size_per_channel = 1024; // 21.33ms
 
-pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, config: DeviceDescriptor) Error!*Device {
+pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, config: DeviceConfig) Error!*Device {
     // NOTE: WebAudio only supports F32 audio format, so config.format is unused
-    const mode = config.mode orelse .output;
+    const mode = config.mode;
     const channels = config.channels orelse default_channel_count;
     const sample_rate = config.sample_rate orelse default_sample_rate;
 
@@ -114,10 +115,12 @@ pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, config: DeviceD
     }
 
     // TODO(sysaudio): introduce a descriptor type that has non-optional fields.
-    var descriptor = config;
-    descriptor.mode = descriptor.mode orelse .output;
-    descriptor.channels = descriptor.channels orelse default_channel_count;
-    descriptor.sample_rate = descriptor.sample_rate orelse default_sample_rate;
+    var descriptor = DeviceDescriptor{
+        .format = .F32,
+        .mode = config.mode orelse .output,
+        .channels = config.channels orelse default_channel_count,
+        .sample_rate = config.sample_rate orelse default_sample_rate,
+    };
 
     const device = try allocator.create(Device);
     device.* = .{
