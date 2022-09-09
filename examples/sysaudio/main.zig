@@ -2,6 +2,7 @@ const std = @import("std");
 const mach = @import("mach");
 const sysaudio = mach.sysaudio;
 const js = mach.sysjs;
+const builtin = @import("builtin");
 
 pub const App = @This();
 
@@ -28,7 +29,7 @@ fn callback(device: *sysaudio.Device, user_data: ?*anyopaque, buffer: []u8) void
     const app: *App = @ptrCast(*App, @alignCast(@alignOf(App), user_data));
 
     // Where the magic happens: fill our audio buffer with PCM dat.
-    app.tone_engine.render(device.descriptor, buffer);
+    app.tone_engine.render(device.properties, buffer);
 }
 
 pub fn deinit(app: *App, core: *mach.Core) void {
@@ -41,11 +42,16 @@ pub fn update(app: *App, engine: *mach.Core) !void {
         switch (event) {
             .key_press => |ev| {
                 try app.device.start();
-                app.tone_engine.play(ToneEngine.keyToFrequency(ev.key));
+                app.tone_engine.play(app.device.properties, ToneEngine.keyToFrequency(ev.key));
             },
             else => {},
         }
     }
+
+    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
+
+    engine.swap_chain.?.present();
+    back_buffer_view.release();
 }
 
 // A simple tone engine.
@@ -69,12 +75,31 @@ pub const ToneEngine = struct {
         duration: usize,
     };
 
-    pub fn render(engine: *ToneEngine, descriptor: sysaudio.DeviceDescriptor, buffer: []u8) void {
-        // TODO(sysaudio): demonstrate how to properly handle format of the buffer here.
-        // Right now we blindly assume f32 format, which is wrong (but always right in WASM.)
-        const sample_rate = @intToFloat(f32, descriptor.sample_rate.?);
-        const buf = @ptrCast([*]f32, @alignCast(@alignOf(f32), buffer.ptr))[0 .. buffer.len / @sizeOf(f32)];
-        const frames = buf.len / descriptor.channels.?;
+    pub fn render(engine: *ToneEngine, properties: sysaudio.Device.Properties, buffer: []u8) void {
+        switch (properties.format) {
+            .U8 => renderWithType(u8, engine, properties, buffer),
+            .S16 => {
+                const buf = @ptrCast([*]i16, @alignCast(@alignOf(i16), buffer.ptr))[0 .. buffer.len / @sizeOf(i16)];
+                renderWithType(i16, engine, properties, buf);
+            },
+            .S24 => {
+                const buf = @ptrCast([*]i24, @alignCast(@alignOf(i24), buffer.ptr))[0 .. buffer.len / @sizeOf(i24)];
+                renderWithType(i24, engine, properties, buf);
+            },
+            .S32 => {
+                const buf = @ptrCast([*]i32, @alignCast(@alignOf(i32), buffer.ptr))[0 .. buffer.len / @sizeOf(i32)];
+                renderWithType(i32, engine, properties, buf);
+            },
+            .F32 => {
+                const buf = @ptrCast([*]f32, @alignCast(@alignOf(f32), buffer.ptr))[0 .. buffer.len / @sizeOf(f32)];
+                renderWithType(f32, engine, properties, buf);
+            },
+        }
+    }
+
+    pub fn renderWithType(comptime T: type, engine: *ToneEngine, properties: sysaudio.Device.Properties, buffer: []T) void {
+        const sample_rate = @intToFloat(f32, properties.sample_rate);
+        const frames = buffer.len / properties.channels;
 
         var frame: usize = 0;
         while (frame < frames) : (frame += 1) {
@@ -89,7 +114,8 @@ pub const ToneEngine = struct {
                 const duration = @intToFloat(f32, tone.duration);
 
                 // The sine wave that plays the frequency.
-                const sine_wave = std.math.sin(tone.frequency * 2.0 * std.math.pi * sample_counter / sample_rate);
+                const gain = 0.1;
+                const sine_wave = std.math.sin(tone.frequency * 2.0 * std.math.pi * sample_counter / sample_rate) * gain;
 
                 // A number ranging from 0.0 to 1.0 in the first 1/64th of the duration of the tone.
                 const fade_in = std.math.min(sample_counter / (duration / 64.0), 1.0);
@@ -104,25 +130,32 @@ pub const ToneEngine = struct {
                 sample += sine_wave * fade_in * fade_out;
             }
 
+            const sample_t: T = sample: {
+                switch (T) {
+                    f32 => break :sample sample,
+                    u8 => break :sample @floatToInt(u8, (sample + 1.0) * 255),
+                    else => break :sample @floatToInt(T, sample * std.math.maxInt(T)),
+                }
+            };
+
             // Emit the sample on all channels.
             var channel: usize = 0;
-            while (channel < descriptor.channels.?) : (channel += 1) {
-                var channel_buf = buf[channel * frames .. (channel + 1) * frames];
-                channel_buf[frame] = sample;
+            while (channel < properties.channels) : (channel += 1) {
+                var channel_buffer = buffer[channel * frames .. (channel + 1) * frames];
+                channel_buffer[frame] = sample_t;
             }
         }
     }
 
-    pub fn play(engine: *ToneEngine, frequency: f32) void {
-        // TODO(sysaudio): get from device
-        const sample_rate = 44100.0;
+    pub fn play(engine: *ToneEngine, properties: sysaudio.Device.Properties, frequency: f32) void {
+        const sample_rate = @intToFloat(f32, properties.sample_rate);
 
         for (engine.playing) |*tone| {
             if (tone.sample_counter >= tone.duration) {
                 tone.* = Tone{
                     .frequency = frequency,
                     .sample_counter = 0,
-                    .duration = 1.5 * sample_rate, // play the tone for 1.5s
+                    .duration = @floatToInt(usize, 1.5 * sample_rate), // play the tone for 1.5s
                 };
                 return;
             }
