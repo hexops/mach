@@ -1,6 +1,4 @@
 const std = @import("std");
-// const gpu_dawn = @import("libs/mach-gpu-dawn/build.zig");
-// const glfw = @import("libs/mach-glfw/build.zig");
 
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
