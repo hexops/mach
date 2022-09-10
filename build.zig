@@ -85,6 +85,7 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg }, .has_assets = true },
         .{ .name = "ecs-app", .packages = &[_]Pkg{} },
         .{ .name = "image-blur", .packages = &[_]Pkg{Packages.zigimg}, .has_assets = true },
+        .{ .name = "cubemap", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg }, .has_assets = true },
         .{ .name = "map-async", .packages = &[_]Pkg{} },
         .{ .name = "sysaudio", .packages = &[_]Pkg{} },
         // NOTE: examples with std_platform_only should be placed at last
