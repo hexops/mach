@@ -142,7 +142,7 @@ pub fn buildFreetype(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossT
     if (options.brotli)
         lib.defineCMacro("FT_REQUIRE_BROTLI", "1");
 
-    const target_info = (std.zig.system.NativeTargetInfo.detect(b.allocator, target) catch unreachable).target;
+    const target_info = (std.zig.system.NativeTargetInfo.detect(target) catch unreachable).target;
 
     if (target_info.os.tag == .windows) {
         lib.addCSourceFile(ft_root ++ "/builds/windows/ftsystem.c", &.{});

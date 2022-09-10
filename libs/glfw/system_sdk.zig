@@ -64,7 +64,7 @@ pub const Options = struct {
 };
 
 pub fn include(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+    const target = (std.zig.system.NativeTargetInfo.detect(step.target) catch unreachable).target;
     switch (target.os.tag) {
         .windows => includeSdkWindowsX8664(b, step, options),
         .macos => includeSdkMacOS(b, step, options),
@@ -76,7 +76,7 @@ pub fn include(b: *Builder, step: *std.build.LibExeObjStep, options: Options) vo
 }
 
 fn includeSdkMacOS(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-    const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, step.target) catch unreachable).target;
+    const target = (std.zig.system.NativeTargetInfo.detect(step.target) catch unreachable).target;
     const mac_12 = target.os.version_range.semver.isAtLeast(.{ .major = 12, .minor = 0 }) orelse false;
     const sdk_name = if (mac_12) options.macos_sdk_12 else options.macos_sdk_11;
     const sdk_revision = if (mac_12) options.macos_sdk_12_revision else options.macos_sdk_11_revision;

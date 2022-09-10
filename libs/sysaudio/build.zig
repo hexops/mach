@@ -102,7 +102,7 @@ fn buildSoundIo(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     lib.addIncludePath(soundio_path);
     lib.addCSourceFiles(soundio_sources, &.{});
 
-    const target_info = (std.zig.system.NativeTargetInfo.detect(b.allocator, target) catch unreachable).target;
+    const target_info = (std.zig.system.NativeTargetInfo.detect(target) catch unreachable).target;
     if (target_info.isDarwin()) {
         lib.addCSourceFile(soundio_path ++ "/src/coreaudio.c", &.{});
         lib.linkFramework("AudioToolbox");
