@@ -74,7 +74,7 @@ pub fn Sdk(comptime deps: anytype) type {
             lib.addCSourceFiles(soundio_sources, &.{});
             deps.system_sdk.include(b, lib, .{});
 
-            const target_info = (std.zig.system.NativeTargetInfo.detect(target) catch unreachable).target;
+            const target_info = (std.zig.system.NativeTargetInfo.detect(b.allocator, target) catch unreachable).target;
             if (target_info.isDarwin()) {
                 lib.addCSourceFile(soundio_path ++ "/src/coreaudio.c", &.{});
                 lib.linkFramework("AudioToolbox");

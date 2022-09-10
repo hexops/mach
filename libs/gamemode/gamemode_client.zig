@@ -648,7 +648,7 @@ pub inline fn gamemode_error_string() [*c]const u8 {
             };
         };
     };
-    return REAL_internal_gamemode_error_string.?();
+    return REAL_internal_gamemode_error_string.?.*();
 }
 pub inline fn gamemode_request_start() c_int {
     if (internal_load_libgamemode() < @as(c_int, 0)) {
@@ -662,7 +662,7 @@ pub inline fn gamemode_request_start() c_int {
             };
         };
     };
-    if (REAL_internal_gamemode_request_start.?() < @as(c_int, 0)) {
+    if (REAL_internal_gamemode_request_start.?.*() < @as(c_int, 0)) {
         return -@as(c_int, 1);
     }
     return 0;
@@ -679,7 +679,7 @@ pub inline fn gamemode_request_end() c_int {
             };
         };
     };
-    if (REAL_internal_gamemode_request_end.?() < @as(c_int, 0)) {
+    if (REAL_internal_gamemode_request_end.?.*() < @as(c_int, 0)) {
         return -@as(c_int, 1);
     }
     return 0;

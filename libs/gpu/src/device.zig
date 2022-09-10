@@ -326,7 +326,7 @@ pub const Device = opaque {
                     cb(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)), typ, message);
                 }
             };
-            Impl.deviceSetUncapturedErrorCallback(device, Helper.cCallback, if (Context == void) null else context);
+            Impl.deviceSetUncapturedErrorCallback(device, &Helper.cCallback, if (Context == void) null else context);
         } else {
             Impl.deviceSetUncapturedErrorCallback(device, null, null);
         }

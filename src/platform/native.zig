@@ -668,7 +668,7 @@ pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
         if (@hasDecl(App, "resize")) {
             try app.resize(core, core.target_desc.width, core.target_desc.height);
         } else if (resize != null) {
-            resize.?(core, core.target_desc.width, core.target_desc.height);
+            resize.?.*(core, core.target_desc.width, core.target_desc.height);
         }
         core.current_desc = core.target_desc;
     }

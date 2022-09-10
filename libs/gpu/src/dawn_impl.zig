@@ -22,10 +22,11 @@ pub const Interface = struct {
     }
 
     pub inline fn getProcAddress(device: *gpu.Device, proc_name: [*:0]const u8) ?gpu.Proc {
-        return procs.getProcAddress.?(
+        const a: ?fn() callconv(.C) void = procs.getProcAddress.?(
             @ptrCast(c.WGPUDevice, device),
             proc_name,
         );
+        return &(a orelse return null);
     }
 
     pub inline fn adapterCreateDevice(adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor) ?*gpu.Device {
