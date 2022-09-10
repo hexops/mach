@@ -1,5 +1,4 @@
 const std = @import("std");
-const sysjs = @import("libs/mach-sysjs/build.zig");
 
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
@@ -8,7 +7,7 @@ pub fn Sdk(comptime deps: anytype) type {
         pub const pkg = std.build.Pkg{
             .name = "sysaudio",
             .source = .{ .path = thisDir() ++ "/src/main.zig" },
-            .dependencies = &.{ sysjs.pkg, soundio_pkg },
+            .dependencies = &.{ deps.sysjs.pkg, soundio_pkg },
         };
 
         pub const soundio_pkg = std.build.Pkg{

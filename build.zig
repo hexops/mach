@@ -22,6 +22,7 @@ const gpu = gpu_sdk.Sdk(.{
 });
 const sysaudio = sysaudio_sdk.Sdk(.{
     .system_sdk = system_sdk,
+    .sysjs = sysjs,
 });
 
 pub fn build(b: *std.build.Builder) void {
