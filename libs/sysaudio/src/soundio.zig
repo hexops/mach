@@ -80,7 +80,7 @@ pub const Device = struct {
                         const addr = @ptrToInt(&device.planar_buffer);
                         const aligned_addr = std.mem.alignForward(addr, @alignOf(f32));
                         const padding = aligned_addr - addr;
-                        const planar_buffer = device.planar_buffer[padding..padding + buffer_size];
+                        const planar_buffer = device.planar_buffer[padding .. padding + buffer_size];
                         device.data_callback.?(device, device.user_data.?, planar_buffer);
 
                         var frames_left = total_frame_count;

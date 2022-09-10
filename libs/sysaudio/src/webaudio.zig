@@ -1,7 +1,7 @@
 const std = @import("std");
 const Mode = @import("main.zig").Mode;
 const DeviceOptions = @import("main.zig").DeviceOptions;
-const DeviceProperties  = @import("main.zig").DeviceProperties;
+const DeviceProperties = @import("main.zig").DeviceProperties;
 const js = @import("sysjs");
 
 const Audio = @This();
@@ -117,7 +117,7 @@ pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, options: Device
         _ = node.call("connect", &.{destination.toValue()});
     }
 
-    var properties = DeviceProperties {
+    var properties = DeviceProperties{
         .format = .F32,
         .mode = options.mode orelse .output,
         .channels = options.channels orelse default_channel_count,
