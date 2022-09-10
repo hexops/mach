@@ -80,10 +80,11 @@ pub const Device = struct {
                         const addr = @ptrToInt(&device.planar_buffer);
                         const aligned_addr = std.mem.alignForward(addr, @alignOf(f32));
                         const padding = aligned_addr - addr;
-                        const planar_buffer = device.planar_buffer[padding..buffer_size];
+                        const planar_buffer = device.planar_buffer[padding..padding + buffer_size];
                         device.data_callback.?(device, device.user_data.?, planar_buffer);
 
                         var frames_left = total_frame_count;
+                        var frame_offset: usize = 0;
                         while (frames_left > 0) {
                             var frame_count: i32 = @intCast(i32, frames_left);
 
@@ -101,7 +102,7 @@ pub const Device = struct {
                                 const channel_ptr = areas[channel].ptr;
                                 var frame: c_int = 0;
                                 while (frame < frame_count) : (frame += 1) {
-                                    const sample_start = (channel * total_frame_count * @sizeOf(f32)) + (@intCast(usize, frame) * @sizeOf(f32));
+                                    const sample_start = (channel * total_frame_count * @sizeOf(f32)) + ((frame_offset + @intCast(usize, frame)) * @sizeOf(f32));
                                     const src = @ptrCast(*f32, @alignCast(@alignOf(f32), &planar_buffer[sample_start]));
                                     const dst = &channel_ptr[@intCast(usize, areas[channel].step * frame)];
                                     @ptrCast(*f32, @alignCast(@alignOf(f32), dst)).* = src.*;
@@ -110,6 +111,7 @@ pub const Device = struct {
                             // TODO(sysaudio): improve error handling
                             outstream.endWrite() catch |err| std.debug.panic("end write failed: {s}", .{@errorName(err)});
                             frames_left -= @intCast(usize, frame_count);
+                            frame_offset += @intCast(usize, frame_count);
                         }
                     }
                 }).cCallback);
