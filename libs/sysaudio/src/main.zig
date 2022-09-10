@@ -27,38 +27,6 @@ pub const Format = enum {
     F32,
 };
 
-pub const DeviceOptions = struct {
-    mode: Mode = .output,
-    format: ?Format = null,
-    is_raw: ?bool = null,
-    channels: ?u8 = null,
-    sample_rate: ?u32 = null,
-    id: ?[:0]const u8 = null,
-    name: ?[]const u8 = null,
-};
-
-pub const DeviceProperties = struct {
-    mode: Mode,
-    format: Format,
-    is_raw: bool,
-    channels: u8,
-    sample_rate: u32,
-    id: [:0]const u8,
-    name: []const u8,
-
-    pub fn intoConfig(properties: DeviceProperties) DeviceOptions {
-        return .{
-            .mode = properties.mode,
-            .format = properties.format,
-            .is_raw = properties.is_raw,
-            .channels = properties.channels,
-            .sample_rate = properties.sample_rate,
-            .id = properties.id,
-            .name = properties.name,
-        };
-    }
-};
-
 const Audio = @This();
 
 backend: Backend,

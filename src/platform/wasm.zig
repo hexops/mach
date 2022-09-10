@@ -3,6 +3,7 @@ const app_pkg = @import("app");
 const Core = @import("../Core.zig");
 const structs = @import("../structs.zig");
 const enums = @import("../enums.zig");
+const gpu = @import("gpu");
 
 const js = struct {
     extern fn machCanvasInit(selector_id: *u8) CanvasId;
