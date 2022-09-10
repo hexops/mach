@@ -40,3 +40,6 @@
 [submodule "examples/gkurve/assets"]
 	path = examples/gkurve/assets
 	url = https://github.com/hexops/mach-example-assets
+[submodule "examples/cubemap/assets"]
+	path = examples/cubemap/assets
+	url = https://github.com/hexops/mach-example-assets
