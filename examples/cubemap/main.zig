@@ -84,7 +84,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
         }),
         .primitive = .{
             // Since the cube has its face pointing outwards, cull_mode must be
-            // set to .front or .none here since we are inside the cube looking out.  
+            // set to .front or .none here since we are inside the cube looking out.
             // Ideally you would set this to .back and have a custom cube primitive
             // with the faces pointing towards the inside of the cube.
             .cull_mode = .none,
@@ -112,11 +112,11 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .mag_filter = .linear,
         .min_filter = .linear,
     });
-    
+
     const queue = core.device.getQueue();
-    
+
     // WebGPU expects the cubemap textures in this order: (+X,-X,+Y,-Y,+Z,-Z)
-    var images:[6]zigimg.Image = undefined;
+    var images: [6]zigimg.Image = undefined;
     images[0] = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/skybox/posx.png"));
     defer images[0].deinit();
     images[1] = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/skybox/negx.png"));
@@ -129,16 +129,16 @@ pub fn init(app: *App, core: *mach.Core) !void {
     defer images[4].deinit();
     images[5] = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/skybox/negz.png"));
     defer images[5].deinit();
-    
+
     // Use the first image of the set for sizing
-    const img_size = gpu.Extent3D{ 
-        .width = @intCast(u32, images[0].width), 
+    const img_size = gpu.Extent3D{
+        .width = @intCast(u32, images[0].width),
         .height = @intCast(u32, images[0].height),
     };
 
     // We set depth_or_array_layers to 6 here to indicate there are 6 images in this texture
-    const tex_size = gpu.Extent3D{ 
-        .width = @intCast(u32, images[0].width), 
+    const tex_size = gpu.Extent3D{
+        .width = @intCast(u32, images[0].width),
         .height = @intCast(u32, images[0].height),
         .depth_or_array_layers = 6,
     };
@@ -159,61 +159,61 @@ pub fn init(app: *App, core: *mach.Core) !void {
         .bytes_per_row = @intCast(u32, images[0].width * 4),
         .rows_per_image = @intCast(u32, images[0].height),
     };
-    
+
     const encoder = core.device.createCommandEncoder(null);
 
     // We have to create a staging buffer, copy all the image data into the
     // staging buffer at the correct Z offset, encode a command to copy
-    // the buffer to the texture for each image, then push it to the command 
+    // the buffer to the texture for each image, then push it to the command
     // queue
-    var staging_buff:[6]*gpu.Buffer = undefined;
-    var i:u32 = 0;
+    var staging_buff: [6]*gpu.Buffer = undefined;
+    var i: u32 = 0;
     while (i < 6) : (i += 1) {
         staging_buff[i] = core.device.createBuffer(&.{
             .usage = .{ .copy_src = true, .map_write = true },
-            .size = @intCast(u64, images[0].width) * @intCast(u64, images[0].height) * @sizeOf(u32), 
+            .size = @intCast(u64, images[0].width) * @intCast(u64, images[0].height) * @sizeOf(u32),
             .mapped_at_creation = true,
-        });        
+        });
         switch (images[i].pixels) {
             .rgba32 => |pixels| {
                 // Map a section of the staging buffer
                 var staging_map = staging_buff[i].getMappedRange(u32, 0, @intCast(u64, images[i].width) * @intCast(u64, images[i].height));
                 // Copy the image data into the mapped buffer
-                std.mem.copy(u32,staging_map.?,@ptrCast([]u32,pixels));
+                std.mem.copy(u32, staging_map.?, @ptrCast([]u32, pixels));
                 // And release the mapping
                 staging_buff[i].unmap();
             },
-            .rgb24 => |pixels| {                
+            .rgb24 => |pixels| {
                 var staging_map = staging_buff[i].getMappedRange(u32, 0, @intCast(u64, images[i].width) * @intCast(u64, images[i].height));
                 // In this case, we have to convert the data to rgba32 first
                 const data = try rgb24ToRgba32(core.allocator, pixels);
                 defer data.deinit(core.allocator);
-                std.mem.copy(u32,staging_map.?,@ptrCast([]u32,data.rgba32));
+                std.mem.copy(u32, staging_map.?, @ptrCast([]u32, data.rgba32));
                 staging_buff[i].unmap();
             },
             else => @panic("unsupported image color format"),
         }
-        
+
         // These define the source and target for the buffer to texture copy command
-        const copy_buff = gpu.ImageCopyBuffer {
+        const copy_buff = gpu.ImageCopyBuffer{
             .layout = data_layout,
             .buffer = staging_buff[i],
         };
-        const copy_tex = gpu.ImageCopyTexture {
+        const copy_tex = gpu.ImageCopyTexture{
             .texture = cube_texture,
             .origin = gpu.Origin3D{ .x = 0, .y = 0, .z = i },
         };
 
         // Encode the copy command, we do this for every image in the texture.
-        encoder.copyBufferToTexture(&copy_buff,&copy_tex,&img_size);
+        encoder.copyBufferToTexture(&copy_buff, &copy_tex, &img_size);
     }
-    // Now that the commands to copy our buffer data to the texture is filled, 
-    // push the encoded commands over to the queue and execute to get the 
+    // Now that the commands to copy our buffer data to the texture is filled,
+    // push the encoded commands over to the queue and execute to get the
     // texture filled with the image data.
     var command = encoder.finish(null);
     encoder.release();
     queue.submit(&.{command});
-    command.release();    
+    command.release();
 
     // The textureView in the bind group needs dimension defined as "dimension_cube".
     const bind_group = core.device.createBindGroup(
@@ -222,9 +222,7 @@ pub fn init(app: *App, core: *mach.Core) !void {
             .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, uniform_buffer, 0, @sizeOf(UniformBufferObject)),
                 gpu.BindGroup.Entry.sampler(1, sampler),
-                gpu.BindGroup.Entry.textureView(2, cube_texture.createView(&gpu.TextureView.Descriptor{
-                    .dimension = .dimension_cube
-                })),
+                gpu.BindGroup.Entry.textureView(2, cube_texture.createView(&gpu.TextureView.Descriptor{ .dimension = .dimension_cube })),
             },
         }),
     );
@@ -281,10 +279,10 @@ pub fn update(app: *App, core: *mach.Core) !void {
 
     {
         const time = timer.read();
-        const aspect = @intToFloat(f32,core.current_desc.width) / @intToFloat(f32,core.current_desc.height);
+        const aspect = @intToFloat(f32, core.current_desc.width) / @intToFloat(f32, core.current_desc.height);
         const proj = zm.perspectiveFovRh((2 * std.math.pi) / 5.0, aspect, 0.1, 3000);
         const model = zm.mul(
-            zm.scaling(1000,1000,1000),
+            zm.scaling(1000, 1000, 1000),
             zm.rotationX(std.math.pi / 2.0 * 3.0),
         );
         const view = zm.mul(
@@ -293,15 +291,15 @@ pub fn update(app: *App, core: *mach.Core) !void {
                     zm.f32x4(0, 0, 0, 1),
                     zm.f32x4(1, 0, 0, 1),
                     zm.f32x4(0, 0, 1, 0),
-                ),    
+                ),
                 zm.rotationY(time * 0.2),
             ),
             zm.rotationX((std.math.pi / 10.0) * std.math.sin(time)),
         );
 
         const mvp = zm.mul(zm.mul(zm.transpose(model), view), proj);
-        const ubo = UniformBufferObject{.mat = mvp};
-        
+        const ubo = UniformBufferObject{ .mat = mvp };
+
         encoder.writeBuffer(app.uniform_buffer, 0, &[_]UniformBufferObject{ubo});
     }
 
