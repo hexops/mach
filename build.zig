@@ -3,11 +3,11 @@ const builtin = @import("builtin");
 const gpu_sdk = @import("libs/gpu/sdk.zig");
 const gpu_dawn_sdk = @import("libs/gpu-dawn/sdk.zig");
 const system_sdk = @import("libs/glfw/system_sdk.zig");
+const sysaudio_sdk = @import("libs/sysaudio/sdk.zig");
 const glfw = @import("libs/glfw/build.zig");
 const ecs = @import("libs/ecs/build.zig");
 const freetype = @import("libs/freetype/build.zig");
 const basisu = @import("libs/basisu/build.zig");
-const sysaudio = @import("libs/sysaudio/build.zig");
 const sysjs = @import("libs/sysjs/build.zig");
 const Pkg = std.build.Pkg;
 
@@ -19,6 +19,9 @@ const gpu_dawn = gpu_dawn_sdk.Sdk(.{
 const gpu = gpu_sdk.Sdk(.{
     .glfw = glfw,
     .gpu_dawn = gpu_dawn,
+});
+const sysaudio = sysaudio_sdk.Sdk(.{
+    .system_sdk = system_sdk,
 });
 
 pub fn build(b: *std.build.Builder) void {
