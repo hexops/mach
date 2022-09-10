@@ -1,12 +1,14 @@
 const std = @import("std");
 const sysaudio_sdk = @import("sdk.zig");
 const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
+const sysjs = @import("libs/mach-sysjs/build.zig");
 
 pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
     const sysaudio = sysaudio_sdk.Sdk(.{
         .system_sdk = system_sdk,
+        .sysjs = sysjs,
     });
 
     const test_step = b.step("test", "Run library tests");

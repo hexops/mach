@@ -35,6 +35,8 @@ comptime {
 }
 const App = app_pkg.App;
 
+pub const GPUInterface = gpu.StubInterface;
+
 pub const CanvasId = u32;
 
 pub const Platform = struct {
