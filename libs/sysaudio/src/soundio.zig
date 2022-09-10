@@ -23,6 +23,8 @@ pub const DataCallback = if (@import("builtin").zig_backend == .stage1)
 else
     *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
 
+const default_buffer_size_per_channel = 1024; // 21.33ms
+
 pub const Device = struct {
     properties: Properties,
 
@@ -75,7 +77,16 @@ pub const Device = struct {
                         // Invoke our data callback with a temporary buffer, this involves one copy later
                         // but it's such a small amount of memory it is entirely negligible.
                         const layout = outstream.layout();
-                        const total_frame_count = @intCast(usize, frame_count_max);
+
+                        const desired_frame_count = default_buffer_size_per_channel * layout.channelCount();
+                        const total_frame_count = if (frame_count_max > desired_frame_count)
+                            if (frame_count_min <= desired_frame_count)
+                                @intCast(usize, desired_frame_count)
+                            else
+                                @intCast(usize, frame_count_min)
+                        else
+                            @intCast(usize, frame_count_max);
+
                         const buffer_size: usize = @sizeOf(f32) * total_frame_count * @intCast(usize, layout.channelCount());
                         const addr = @ptrToInt(&device.planar_buffer);
                         const aligned_addr = std.mem.alignForward(addr, @alignOf(f32));
