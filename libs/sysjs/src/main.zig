@@ -208,12 +208,8 @@ export fn wasmCallFunction(id: *anyopaque, args: u32, len: u32, captures: [*]Val
     captures_slice.len = captures_len;
 
     const obj = Object{ .ref = args };
-    if (builtin.zig_backend == .stage1) {
-        obj.set("return_value", functions.items[@ptrToInt(id) - 1](obj, len, captures_slice));
-    } else {
-        var func = @ptrCast(FunType, @alignCast(std.meta.alignment(FunType), id));
-        obj.set("return_value", func(obj, len, captures_slice));
-    }
+    var func = @ptrCast(FunType, @alignCast(std.meta.alignment(FunType), id));
+    obj.set("return_value", func(obj, len, captures_slice));
 }
 
 pub fn global() Object {
@@ -248,18 +244,9 @@ pub fn createUndefined() Value {
     return .{ .tag = .undef, .val = undefined };
 }
 
-const FunType = if (@import("builtin").zig_backend == .stage1)
-    fn (args: Object, args_len: u32, captures: []Value) Value
-else
-    *const fn (args: Object, args_len: u32, captures: []Value) Value;
-
-var functions: std.ArrayListUnmanaged(FunType) = .{};
+const FunType = *const fn (args: Object, args_len: u32, captures: []Value) Value;
 
 pub fn createFunction(fun: FunType, captures: []Value) Function {
-    if (builtin.zig_backend == .stage1) {
-        functions.append(std.heap.page_allocator, fun) catch unreachable;
-        return .{ .ref = js.zigCreateFunction(@intToPtr(*anyopaque, functions.items.len), captures.ptr, @intCast(u32, captures.len)) };
-    }
     return .{ .ref = js.zigCreateFunction(fun, captures.ptr, captures.len) };
 }
 

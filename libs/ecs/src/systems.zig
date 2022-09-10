@@ -47,6 +47,7 @@ pub fn Messages(comptime messages: anytype) type {
         }};
     }
 
+    // TODO(self-hosted): check if we can remove this now
     // Hack to workaround stage1 compiler bug. https://github.com/ziglang/zig/issues/8114
     //
     // return @Type(.{

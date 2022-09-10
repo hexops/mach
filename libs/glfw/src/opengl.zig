@@ -153,7 +153,7 @@ const builtin = @import("builtin");
 /// Generic function pointer used for returning client API function pointers.
 ///
 /// see also: context_glext, glfwGetProcAddress
-pub const GLProc = if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other) fn () callconv(.C) void else *const fn () callconv(.C) void;
+pub const GLProc = *const fn () callconv(.C) void;
 
 /// Returns the address of the specified function for the current context.
 ///

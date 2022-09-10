@@ -5,10 +5,7 @@ const js = @import("sysjs");
 
 const Audio = @This();
 
-pub const DataCallback = if (@import("builtin").zig_backend == .stage1)
-    fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void
-else
-    *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
+pub const DataCallback = *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
 
 pub const Device = struct {
     properties: Properties,

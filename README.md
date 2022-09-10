@@ -72,18 +72,16 @@ Mach is still early stages, so far we have support for building from the followi
 
 ## Supported Zig version
 
-Zig has switched to the self-hosted compiler recently. This is a huge milestone, but currently means that Zig nightly versions are a little bit unstable. For now, we suggest using a slightly older Zig version before the switch to the self-hosted compiler.
+Mach works with the new self-hosted Zig compiler only. This means you'll need to use the latest Zig nightly version.
 
-Currently tested with: 0.10.0-dev.3952+9e070b653
-
-You can download binary releases of this version at:
+Currently we test using `0.10.0-dev.3952+9e070b653`. Newer is generally better, but you can download this version here:
 
 * **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.3952+9e070b653.tar.xz)
 * **windows-x86_64**: https://ziglang.org/builds/zig-windows-x86_64-0.10.0-dev.3952+9e070b653.zip
 * **macos-x86_64** (Intel): https://ziglang.org/builds/zig-macos-x86_64-0.10.0-dev.3952+9e070b653.tar.xz
 * **macos-aarch64** (Apple Silicon): https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.3952+9e070b653.tar.xz
 
-You can subscribe to [issue #180](https://github.com/hexops/mach/issues/180) for how we're tracking towards support for the latest nightly version of Zig.
+`mach/ecs` and WebAssembly examples have known issues unless using `-fstage1`, see [issue #180](https://github.com/hexops/mach/issues/180) for details.
 
 ## Contributing
 

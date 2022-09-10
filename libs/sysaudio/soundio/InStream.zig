@@ -6,10 +6,7 @@ const ChannelLayout = @import("ChannelLayout.zig");
 
 const InStream = @This();
 
-pub const WriteCallback = if (@import("builtin").zig_backend == .stage1)
-    fn (stream: ?[*]c.SoundIoInStream, frame_count_min: c_int, frame_count_max: c_int) callconv(.C) void
-else
-    *const fn (stream: ?[*]c.SoundIoInStream, frame_count_min: c_int, frame_count_max: c_int) callconv(.C) void;
+pub const WriteCallback = *const fn (stream: ?[*]c.SoundIoInStream, frame_count_min: c_int, frame_count_max: c_int) callconv(.C) void;
 
 handle: *c.SoundIoInStream,
 

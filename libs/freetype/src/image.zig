@@ -14,10 +14,7 @@ const BBox = @import("types.zig").BBox;
 pub const Vector = c.FT_Vector;
 pub const GlyphMetrics = c.FT_Glyph_Metrics;
 pub const Span = c.FT_Span;
-pub const SpanFunc = if (builtin.zig_backend == .stage1)
-    fn (y: c_int, count: c_int, spans: [*]const Span, user: *anyopaque) callconv(.C) void
-else
-    *const fn (y: c_int, count: c_int, spans: [*]const Span, user: *anyopaque) callconv(.C) void;
+pub const SpanFunc = *const fn (y: c_int, count: c_int, spans: [*]const Span, user: *anyopaque) callconv(.C) void;
 
 pub const PixelMode = enum(u3) {
     none = c.FT_PIXEL_MODE_NONE,
@@ -204,10 +201,10 @@ pub const Outline = struct {
 
     pub fn Funcs(comptime Context: type) type {
         return struct {
-            move_to: if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other) fn (ctx: Context, to: Vector) Error!void else *const fn (ctx: Context, to: Vector) Error!void,
-            line_to: if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other) fn (ctx: Context, to: Vector) Error!void else *const fn (ctx: Context, to: Vector) Error!void,
-            conic_to: if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other) fn (ctx: Context, control: Vector, to: Vector) Error!void else *const fn (ctx: Context, control: Vector, to: Vector) Error!void,
-            cubic_to: if (builtin.zig_backend == .stage1 or builtin.zig_backend == .other) fn (ctx: Context, control_0: Vector, control_1: Vector, to: Vector) Error!void else *const fn (ctx: Context, control_0: Vector, control_1: Vector, to: Vector) Error!void,
+            move_to: *const fn (ctx: Context, to: Vector) Error!void,
+            line_to: *const fn (ctx: Context, to: Vector) Error!void,
+            conic_to: *const fn (ctx: Context, control: Vector, to: Vector) Error!void,
+            cubic_to: *const fn (ctx: Context, control_0: Vector, control_1: Vector, to: Vector) Error!void,
             shift: i32,
             delta: i32,
         };
@@ -295,34 +292,13 @@ pub const Outline = struct {
 pub const Raster = struct {
     handle: c.FT_Raster,
 
-    pub const NewFunc = if (builtin.zig_backend == .stage1)
-        fn (memory: ?*anyopaque, raster: [*c]c.FT_Raster) callconv(.C) c_int
-    else
-        *const fn (memory: ?*anyopaque, raster: [*c]c.FT_Raster) callconv(.C) c_int;
-    pub const DoneFunc = if (builtin.zig_backend == .stage1)
-        fn (raster: [*c]c.FT_Raster) callconv(.C) void
-    else
-        *const fn (raster: [*c]c.FT_Raster) callconv(.C) void;
-    pub const ResetFunc = if (builtin.zig_backend == .stage1)
-        fn (raster: c.FT_Raster, pool_base: [*c]u8, pool_size: c_ulong) callconv(.C) void
-    else
-        *const fn (raster: c.FT_Raster, pool_base: [*c]u8, pool_size: c_ulong) callconv(.C) void;
-    pub const SetModeFunc = if (builtin.zig_backend == .stage1)
-        fn (raster: c.FT_Raster, mode: c_ulong, args: ?*anyopaque) callconv(.C) c_int
-    else
-        *const fn (raster: c.FT_Raster, mode: c_ulong, args: ?*anyopaque) callconv(.C) c_int;
-    pub const RenderFunc = if (builtin.zig_backend == .stage1)
-        fn (raster: c.FT_Raster, params: Params) callconv(.C) c_int
-    else
-        *const fn (raster: c.FT_Raster, params: Params) callconv(.C) c_int;
-    pub const BitTestFunc = if (builtin.zig_backend == .stage1)
-        fn (y: c_int, x: c_int, user: ?*anyopaque) callconv(.C) c_int
-    else
-        *const fn (y: c_int, x: c_int, user: ?*anyopaque) callconv(.C) c_int;
-    pub const BitSetFunc = if (builtin.zig_backend == .stage1)
-        fn (y: c_int, x: c_int, user: ?*anyopaque) callconv(.C) void
-    else
-        *const fn (y: c_int, x: c_int, user: ?*anyopaque) callconv(.C) void;
+    pub const NewFunc = *const fn (memory: ?*anyopaque, raster: [*c]c.FT_Raster) callconv(.C) c_int;
+    pub const DoneFunc = *const fn (raster: [*c]c.FT_Raster) callconv(.C) void;
+    pub const ResetFunc = *const fn (raster: c.FT_Raster, pool_base: [*c]u8, pool_size: c_ulong) callconv(.C) void;
+    pub const SetModeFunc = *const fn (raster: c.FT_Raster, mode: c_ulong, args: ?*anyopaque) callconv(.C) c_int;
+    pub const RenderFunc = *const fn (raster: c.FT_Raster, params: Params) callconv(.C) c_int;
+    pub const BitTestFunc = *const fn (y: c_int, x: c_int, user: ?*anyopaque) callconv(.C) c_int;
+    pub const BitSetFunc = *const fn (y: c_int, x: c_int, user: ?*anyopaque) callconv(.C) void;
 
     pub const Params = extern struct {
         target: [*c]const c.FT_Bitmap,
