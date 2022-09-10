@@ -236,7 +236,7 @@ pub const App = struct {
         deps: ?[]const Pkg = null,
         res_dirs: ?[]const []const u8 = null,
     }) App {
-        const target = (std.zig.system.NativeTargetInfo.detect(b.allocator, options.target) catch unreachable).target;
+        const target = (std.zig.system.NativeTargetInfo.detect(options.target) catch unreachable).target;
         const platform = Platform.fromTarget(target);
 
         var deps = std.ArrayList(std.build.Pkg).init(b.allocator);
