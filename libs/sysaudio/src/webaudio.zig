@@ -1,7 +1,6 @@
 const std = @import("std");
 const Mode = @import("main.zig").Mode;
-const DeviceOptions = @import("main.zig").DeviceOptions;
-const DeviceProperties = @import("main.zig").DeviceProperties;
+const Format = @import("main.zig").Format;
 const js = @import("sysjs");
 
 const Audio = @This();
@@ -12,13 +11,30 @@ else
     *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
 
 pub const Device = struct {
-    properties: DeviceProperties,
+    properties: Properties,
 
     // Internal fields.
     context: js.Object,
 
-    pub const Options = DeviceOptions;
-    pub const Properties = DeviceProperties;
+    pub const Options = struct {
+        mode: Mode = .output,
+        format: ?Format = null,
+        is_raw: ?bool = null,
+        channels: ?u8 = null,
+        sample_rate: ?u32 = null,
+        id: ?[:0]const u8 = null,
+        name: ?[]const u8 = null,
+    };
+
+    pub const Properties = struct {
+        mode: Mode,
+        format: Format,
+        is_raw: bool,
+        channels: u8,
+        sample_rate: u32,
+        id: [:0]const u8,
+        name: []const u8,
+    };
 
     pub fn deinit(device: *Device, allocator: std.mem.Allocator) void {
         device.context.deinit();
@@ -45,7 +61,7 @@ pub const DeviceIterator = struct {
     ctx: *Audio,
     mode: Mode,
 
-    pub fn next(_: DeviceIterator) IteratorError!?DeviceProperties {
+    pub fn next(_: DeviceIterator) IteratorError!?Device.Properties {
         return null;
     }
 };
@@ -78,7 +94,7 @@ const default_channel_count = 2;
 const default_sample_rate = 48000;
 const default_buffer_size_per_channel = 1024; // 21.33ms
 
-pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, options: DeviceOptions) Error!*Device {
+pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, options: Device.Options) Error!*Device {
     // NOTE: WebAudio only supports F32 audio format, so options.format is unused
     const mode = options.mode;
     const channels = options.channels orelse default_channel_count;
@@ -117,9 +133,13 @@ pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, options: Device
         _ = node.call("connect", &.{destination.toValue()});
     }
 
-    var properties = DeviceProperties{
+    // TODO(sysaudio): Figure out ID/name or make optional again
+    var properties = Device.Properties{
+        .id = "0",
+        .name = "WebAudio",
         .format = .F32,
-        .mode = options.mode orelse .output,
+        .mode = options.mode,
+        .is_raw = false,
         .channels = options.channels orelse default_channel_count,
         .sample_rate = options.sample_rate orelse default_sample_rate,
     };

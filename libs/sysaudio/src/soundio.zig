@@ -1,7 +1,5 @@
 const std = @import("std");
 const Mode = @import("main.zig").Mode;
-const DeviceOptions = @import("main.zig").DeviceOptions;
-const DeviceProperties = @import("main.zig").DeviceProperties;
 const Format = @import("main.zig").Format;
 const c = @import("soundio").c;
 const Aim = @import("soundio").Aim;
@@ -35,8 +33,25 @@ pub const Device = struct {
     planar_buffer: [512000]u8 = undefined,
     started: bool = false,
 
-    pub const Options = DeviceOptions;
-    pub const Properties = DeviceProperties;
+    pub const Options = struct {
+        mode: Mode = .output,
+        format: ?Format = null,
+        is_raw: ?bool = null,
+        channels: ?u8 = null,
+        sample_rate: ?u32 = null,
+        id: ?[:0]const u8 = null,
+        name: ?[]const u8 = null,
+    };
+
+    pub const Properties = struct {
+        mode: Mode,
+        format: Format,
+        is_raw: bool,
+        channels: u8,
+        sample_rate: u32,
+        id: [:0]const u8,
+        name: []const u8,
+    };
 
     pub fn deinit(self: *Device, allocator: std.mem.Allocator) void {
         switch (self.handle) {
@@ -176,14 +191,14 @@ pub const DeviceIterator = struct {
     device_len: u16,
     index: u16,
 
-    pub fn next(self: *DeviceIterator) IteratorError!?DeviceOptions {
+    pub fn next(self: *DeviceIterator) IteratorError!?Device.Options {
         if (self.index < self.device_len) {
             const device_desc = switch (self.mode) {
                 .input => self.ctx.handle.getInputDevice(self.index) orelse return null,
                 .output => self.ctx.handle.getOutputDevice(self.index) orelse return null,
             };
             self.index += 1;
-            return DeviceOptions{
+            return Device.Options{
                 .mode = switch (@intToEnum(Aim, device_desc.handle.aim)) {
                     .input => .input,
                     .output => .output,
@@ -251,7 +266,7 @@ pub fn waitEvents(self: Audio) void {
     self.handle.waitEvents();
 }
 
-pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, options: DeviceOptions) Error!*Device {
+pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, options: Device.Options) Error!*Device {
     var sio_device: SoundIoDevice = undefined;
 
     if (options.id) |id| {
@@ -324,7 +339,7 @@ pub fn requestDevice(self: Audio, allocator: std.mem.Allocator, options: DeviceO
     // };
     // const name = std.mem.sliceTo(name_ptr, 0);
 
-    var properties = DeviceProperties{
+    var properties = Device.Properties{
         .is_raw = options.is_raw orelse false,
         .format = format,
         .mode = options.mode,

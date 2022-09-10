@@ -1,5 +1,6 @@
 const std = @import("std");
 const mach = @import("mach");
+const gpu = @import("gpu");
 const sysaudio = mach.sysaudio;
 const js = mach.sysjs;
 const builtin = @import("builtin");
@@ -48,10 +49,12 @@ pub fn update(app: *App, engine: *mach.Core) !void {
         }
     }
 
-    const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
+    if (builtin.cpu.arch != .wasm32) {
+        const back_buffer_view = engine.swap_chain.?.getCurrentTextureView();
 
-    engine.swap_chain.?.present();
-    back_buffer_view.release();
+        engine.swap_chain.?.present();
+        back_buffer_view.release();
+    }
 }
 
 // A simple tone engine.
