@@ -1,16 +1,23 @@
-# mach/gpu, cross-platform GPU API for Zig <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/master/readme.svg"></img></a>
+# mach/gpu: the WebGPU interface for Zig
+
+<picture>
+  <source srcset="https://raw.githubusercontent.com/hexops/media/839b04fa5a72428052733d2095726894ff93466a/gpu/logo_dark.svg" media="(prefers-color-scheme: dark)">
+  <img align="center" style="height: 100px;" src="https://raw.githubusercontent.com/hexops/media/839b04fa5a72428052733d2095726894ff93466a/gpu/logo_light.svg">
+</picture>
 
 `mach/gpu` provides a truly cross-platform graphics API (desktop, mobile, and web) with unified low-level graphics & compute backed by Vulkan, Metal, D3D12, and OpenGL (as a best-effort fallback.)
 
-![](https://user-images.githubusercontent.com/3173176/137646296-72ba698e-c710-4daf-aa75-222f8d717d00.png)
+## Examples
+
+See [the mach/gpu examples showcase](https://machengine.org/gpu) for more information.
 
 ## Features
 
-* Desktop, (future) mobile, and web support.
+* Desktop, Steam Deck, (soon) web, and (future) mobile support.
 * A modern graphics API similar to Metal, Vulkan, and DirectX 12. 
 * Cross-platform shading language
 * Compute shaders
-* Cross-compilation & no fuss installation, using `zig build`, as with all Mach libraries.
+* Seamless cross-compilation & zero-fuss installation, as with all Mach libraries.
 * Advanced GPU features where hardware support is available, such as:
   * Depth buffer clip control
   * Special depth/stencil format with 32 bit floating point depth and 8 bits integer stencil.
@@ -22,17 +29,7 @@
   * Shader 16-bit float support
   * Multi planar formats
 
-## A different approach to graphics API abstraction
-
-Most engines today (Unreal, Unity, Godot, etc.) maintain their own GPU abstraction layer over native graphics APIs at great expense, requiring years of development and ongoing maintenance.
-
-Many are attempting graphics abstraction layers on their own including Godot (and their custom shading language), [SDL's recently announced GPU abstraction layer](https://news.ycombinator.com/item?id=29203534), [sokol_gfx](https://github.com/floooh/sokol), and others including Blender3D which target varying native graphics APIs on their own. These are admirable efforts, but cost a great deal of effort.
-
-Vulkan aims to be a cross-platform graphics API, but also requires abstraction layers like MoltenVK on Apple hardware and is often in practice too verbose for use by mere mortals without at least one higher level abstraction layer (often the engine's rendering layer.) With a more refined API that acts as the union of Vulkan/Metal/D3D APIs, we believe one could stay closer to the underlying API without introducing as many abstractions on top and perhaps make smarter choices as a result.
-
-With Mach, we'd rather focus on building the interesting and innovative bits of an engine rather than burning years on yet-another-graphics-abstraction-layer, and so..
-
-## WebGPU / Dawn for Zig
+## Benefits of mach/gpu and WebGPU 
 
 `mach/gpu` is a zero-cost idiomatic Zig interface to [the next-generation WebGPU API](https://www.w3.org/TR/webgpu/), which supersedes WebGL and exposes the common denominator between the latest low-level graphics APIs (Vulkan, Metal, D3D12) in the web.
 
@@ -42,7 +39,9 @@ When targeting WebAssembly, `mach/gpu` merely calls into the browser's native We
 
 When targeting native platforms, we build Google Chrome's WebGPU implementation, [Dawn](https://dawn.googlesource.com/dawn) using Zig as the C/C++ compiler toolchain. We bypass the client-server sandboxing model, and use `zig build` (plus a lot of hand-holding) to support zero-fuss cross compilation & installation without any third-party Google tools, libraries, etc. Just `zig` and `git` needed, nothing else.
 
-[Read more about why we believe WebGPU may be the future of graphics here](https://devlog.hexops.com/2021/mach-engine-the-future-of-graphics-with-zig#truly-cross-platform-graphics-api)
+## Perfecting WebGPU for Zig
+
+There is a detailed write-up of how we've been [perfecting WebGPU for Zig](https://devlog.hexops.com/2022/perfecting-webgpu-native).
 
 ## Usage
 
@@ -50,33 +49,23 @@ When targeting native platforms, we build Google Chrome's WebGPU implementation,
 
 ### "I want to do everything myself"
 
-See `examples/main.zig` - note that this is complex, involves creating a window yourself, using Dawn's API to create a device and bind it to the window, use OS-specific APIs to get the window handle, etc.
+See `examples/main.zig` - note that this is fairly involved, involves creating a window yourself, using Dawn's API to create a device and bind it to the window, use OS-specific APIs to get the window handle, etc.
 
-### "I want a Window, input & the WebGPU API - nothing else."
+### "I want a window, input & the WebGPU API - nothing else."
 
 **Mach core** provides this:
 
-* Mach handles creating a window and giving you user input for every OS (desktop, mobile & web.)
+* Mach handles creating a window, giving you user input, and WebGPU API access for every platform.
 * You give Mach an `init`, `deinit` and `update` function for your app which will be called every frame.
-* You'll have access to the WebGPU API, and nothing else.
+* As we add support for more platforms (browser, mobile, etc.) in the future, you get them for free.
 
-### "I want a full engine"
+### "I want a full game engine"
 
-See https://machengine.org
-
-### Examples & Learning aterial
-
-Check out https://machengine.org/gpu
-
-The following may also prove useful:
-
-* Surma's compute article: https://surma.dev/things/webgpu/
-* WebGPU Specification: https://gpuweb.github.io/gpuweb/
-* WebGPU Explainer: https://gpuweb.github.io/gpuweb/explainer/
+`mach/gpu` is the graphics abstraction _Mach engine_ will use, but we're not there yet. See https://machengine.org for more information.
 
 ## Join the community
 
-Join the Mach engine community [on Matrix chat](https://matrix.to/#/#hexops:matrix.org) to discuss this project, ask questions, get help, etc.
+Join us in the [Mach Discord server](https://discord.gg/XNG3NZgCqp) to discuss the project, ask questions, get help, etc.
 
 ## Issues
 
@@ -89,48 +78,15 @@ Contributions are very welcome. Pull requests must be sent to [the main reposito
 ## Goals
 
 * Allow comptime-defined interception of WebGPU API requests (comptime interfaces.)
-* Expose a standard Dawn `webgpu.h`-compliant C ABI, which routes through comptime interfaces.
+* Expose a standard Dawn `webgpu.h`-compliant C ABI, which routes through Zig comptime interfaces.
 * Support Dawn and Browser (via WASM/JS) implementations of WebGPU.
+* Broad platform support: desktop, mobile, web, consoles.
+* First-class Linux support (Wayland, OpenGL and OpenGL ES fallbacks, etc.)
 
 ## Non-goals
 
 * Support non-Dawn (e.g. Rust WebGPU) implementations if they don't match the same `webgpu.h` as Dawn.
 * Maintain backwards compatibility with deprecated `webgpu.h` methods.
-
-## WebGPU version
-
-Dawn's `webgpu.h` is the authoritative source for our API. You can find [the current version we use here](https://github.com/hexops/dawn/blob/generated-2022-07-10/out/Debug/gen/include/dawn/webgpu.h).
-
-When updating, every single change is verified against [the WebGPU spec itself](https://github.com/gpuweb/gpuweb/tree/main/spec) to ensure our WebAssembly backend also functions effectively.
-
-The rules for translating `webgpu.h` are as follows:
-
-* `WGPUBuffer` -> `gpu.Buffer`:
-  * Opaque pointers like these become a `pub const Buffer = opaque {_}` to ensure they are still pointers compatible with the C ABI, while still allowing us to declare methods on them.
-  * As a result, a `null`able `Buffer` is represented simply as `?*Buffer`, and any function that would normally take `WGPUBuffer` now takes `*Buffer` as a parameter.
-* `WGPUBufferBindingType` -> `gpu.Buffer.BindingType` (purely because it's prefix matches an opaque pointer type, it thus goes into the `Buffer` opaque type.)
-* Reserved Zig keywords are translated as follows:
-  * `undefined` -> `undef`
-  * `null` -> `nul`
-  * `error` -> `err`
-  * `type` -> `typ`
-  * `opaque` -> `opaq`
-* Undefined in Zig commonly means _undefined memory_. WebGPU however uses _undefined_ as terminology to indicate something was not _specified_, as the optional _none value_, which Zig represents as _null_. Since _null_ is a reserved keyword in Zig, we rename all WebGPU _undefined_ terminology to "_unspecified_" instead.
-* Constant names map using a few simple rules, but it's easiest to describe them with some concrete examples:
-  * `RG11B10Ufloat -> rg11_b10_ufloat`
-  * `Depth24PlusStencil8 -> depth24_plus_stencil8`
-  * `BC5RGUnorm -> bc5_rg_unorm`
-  * `BC6HRGBUfloat -> bc6_hrgb_ufloat`
-  * `ASTC4x4UnormSrgb -> astc4x4_unorm_srgb`
-  * `maxTextureDimension3D -> max_texture_dimension_3d`
-* Sometimes an enum will begin with numbers, e.g. `WGPUTextureViewDimension_2DArray`. In this case, we add a prefix so instead of the enum field being `2d_array` it is `dimension_2d_array` (an enum field name must not start with a number in Zig.)
-* Dawn extension types `WGPUDawnFoobar` are placed under `gpu.dawn.Foobar`
-* Regarding _"undefined"_ terminology:
-  * In Zig, _undefined_ usually means _undefined memory_, _undefined behavior_, etc.
-  * In WebGPU, _undefined_ commonly refers to JS-style undefined: _an optional value that was not specified_
-  * Zig refers to optional values not specified as _null_, but _null_ is a reserved keyword and so can't be used.
-  * We could use "_none_", but "BindingType none" and "BindingType not specified" clearly have non-equal meanings.
-  * As a result of all this, we translate _"undefined"_ in WebGPU to "undef" in Zig: it has no overlap with the reserved _undefined_ keyword, and distinguishes its meaning.
 
 ## Quality of life improvements
 
@@ -138,7 +94,7 @@ We make the following quality of life improvements.
 
 ### Flag sets
 
-TODO: explain it
+See [perfecting WebGPU for Zig](https://devlog.hexops.com/2022/perfecting-webgpu-native).
 
 ### Optionality & nullability
 
@@ -241,3 +197,38 @@ const descriptor = gpu.Surface.Descriptor{
 * `Device.createShaderModuleWGSL` (helper to create WGSL shader modules more nicely)
 
 There may be other opportunities for helpers, to improve the existing APIs, or add utility APIs on top of the existing APIs. If you find one, please open an issue we'd love to consider it.
+
+## WebGPU version
+
+Dawn's `webgpu.h` is the **authoritative source** for our API. You can find [the current version we use here](https://github.com/hexops/dawn/blob/generated-2022-07-10/out/Debug/gen/include/dawn/webgpu.h).
+
+## Development rules
+
+The rules for translating `webgpu.h` are as follows:
+
+* `WGPUBuffer` -> `gpu.Buffer`:
+  * Opaque pointers like these become a `pub const Buffer = opaque {_}` to ensure they are still pointers compatible with the C ABI, while still allowing us to declare methods on them.
+  * As a result, a `null`able `Buffer` is represented simply as `?*Buffer`, and any function that would normally take `WGPUBuffer` now takes `*Buffer` as a parameter.
+* `WGPUBufferBindingType` -> `gpu.Buffer.BindingType` (purely because it's prefix matches an opaque pointer type, it thus goes into the `Buffer` opaque type.)
+* Reserved Zig keywords are translated as follows:
+  * `undefined` -> `undef`
+  * `null` -> `nul`
+  * `error` -> `err`
+  * `type` -> `typ`
+  * `opaque` -> `opaq`
+* Undefined in Zig commonly means _undefined memory_. WebGPU however uses _undefined_ as terminology to indicate something was not _specified_, as the optional _none value_, which Zig represents as _null_. Since _null_ is a reserved keyword in Zig, we rename all WebGPU _undefined_ terminology to "_unspecified_" instead.
+* Constant names map using a few simple rules, but it's easiest to describe them with some concrete examples:
+  * `RG11B10Ufloat -> rg11_b10_ufloat`
+  * `Depth24PlusStencil8 -> depth24_plus_stencil8`
+  * `BC5RGUnorm -> bc5_rg_unorm`
+  * `BC6HRGBUfloat -> bc6_hrgb_ufloat`
+  * `ASTC4x4UnormSrgb -> astc4x4_unorm_srgb`
+  * `maxTextureDimension3D -> max_texture_dimension_3d`
+* Sometimes an enum will begin with numbers, e.g. `WGPUTextureViewDimension_2DArray`. In this case, we add a prefix so instead of the enum field being `2d_array` it is `dimension_2d_array` (an enum field name must not start with a number in Zig.)
+* Dawn extension types `WGPUDawnFoobar` are placed under `gpu.dawn.Foobar`
+* Regarding _"undefined"_ terminology:
+  * In Zig, _undefined_ usually means _undefined memory_, _undefined behavior_, etc.
+  * In WebGPU, _undefined_ commonly refers to JS-style undefined: _an optional value that was not specified_
+  * Zig refers to optional values not specified as _null_, but _null_ is a reserved keyword and so can't be used.
+  * We could use "_none_", but "BindingType none" and "BindingType not specified" clearly have non-equal meanings.
+  * As a result of all this, we translate _"undefined"_ in WebGPU to "undef" in Zig: it has no overlap with the reserved _undefined_ keyword, and distinguishes its meaning.
