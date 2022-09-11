@@ -114,7 +114,6 @@ pub fn build(b: *std.build.Builder) void {
             if (std.mem.eql(u8, p.name, freetype.pkg.name))
                 freetype.link(example_app.b, example_app.step, .{});
         }
-        sysaudio.link(example_app.b, example_app.step, .{});
 
         example_app.link(options);
         example_app.install();
@@ -187,6 +186,7 @@ fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.Cross
 pub const Options = struct {
     glfw_options: glfw.Options = .{},
     gpu_dawn_options: gpu_dawn.Options = .{},
+    sysaudio_options: sysaudio.Options = .{},
 
     pub fn gpuOptions(options: Options) gpu.Options {
         return .{
@@ -349,6 +349,7 @@ pub const App = struct {
             glfw.link(app.b, app.step, options.glfw_options);
             gpu.link(app.b, app.step, options.gpuOptions());
         }
+        sysaudio.link(app.b, app.step, options.sysaudio_options);
     }
 
     pub fn setBuildMode(app: *const App, mode: std.builtin.Mode) void {
