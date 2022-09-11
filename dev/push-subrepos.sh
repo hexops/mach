@@ -55,5 +55,6 @@ git clone https://github.com/hexops/mach staging-clean
 push_subrepo 'glfw'
 push_subrepo 'gpu-dawn'
 push_subrepo 'freetype'
+push_subrepo 'gpu'
 
 rm -rf staging-clean
