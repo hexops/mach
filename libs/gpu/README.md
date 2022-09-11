@@ -1,11 +1,13 @@
+<p align="center">
+ <picture>
+   <source srcset="https://raw.githubusercontent.com/hexops/media/839b04fa5a72428052733d2095726894ff93466a/gpu/logo_dark.svg" media="(prefers-color-scheme: dark)">
+   <img align="center" height="100" src="https://raw.githubusercontent.com/hexops/media/839b04fa5a72428052733d2095726894ff93466a/gpu/logo_light.svg">
+ </picture>
+ </p>
+
 # mach/gpu: the WebGPU interface for Zig
 
-<picture>
-  <source srcset="https://raw.githubusercontent.com/hexops/media/839b04fa5a72428052733d2095726894ff93466a/gpu/logo_dark.svg" media="(prefers-color-scheme: dark)">
-  <img align="center" style="height: 100px;" src="https://raw.githubusercontent.com/hexops/media/839b04fa5a72428052733d2095726894ff93466a/gpu/logo_light.svg">
-</picture>
-
-`mach/gpu` provides a truly cross-platform graphics API (desktop, mobile, and web) with unified low-level graphics & compute backed by Vulkan, Metal, D3D12, and OpenGL (as a best-effort fallback.)
+`mach/gpu` provides a truly cross-platform graphics API for Zig (desktop, mobile, and web) with unified low-level graphics & compute backed by Vulkan, Metal, D3D12, and OpenGL (as a best-effort fallback.)
 
 ## Examples
 
@@ -47,21 +49,23 @@ There is a detailed write-up of how we've been [perfecting WebGPU for Zig](https
 
 `mach/gpu` can be used in three ways:
 
-### "I want to do everything myself"
+### "I want to do _everything_ myself"
 
-See `examples/main.zig` - note that this is fairly involved, involves creating a window yourself, using Dawn's API to create a device and bind it to the window, use OS-specific APIs to get the window handle, etc.
+This involves creating a window (using GLFW, and other APIs if you want Web, Mobile, or other platform support), using Dawn's API to create a device and bind it to that window, using OS-specific APIs to get the window handle to bind, etc.
 
-### "I want a window, input & the WebGPU API - nothing else."
+`examples/main.zig` demonstrates how to do this. There's a fair amount of setup code involved. You might instead want to consider _Mach core_:
 
-**Mach core** provides this:
+### Mach core: "I want a window, input & the WebGPU API - nothing else."
 
-* Mach handles creating a window, giving you user input, and WebGPU API access for every platform.
+**Mach core** can be thought of as an alternative to SDL or GLFW:
+
+* Mach handles creating a window, giving you user input, and gives you the WebGPU API for every platform.
 * You give Mach an `init`, `deinit` and `update` function for your app which will be called every frame.
-* As we add support for more platforms (browser, mobile, etc.) in the future, you get them for free.
+* As we add support for more platforms (browser, mobile, etc.) in the future, you get them for free because _Mach core_ is _truly cross platform_.
 
 ### "I want a full game engine"
 
-`mach/gpu` is the graphics abstraction _Mach engine_ will use, but we're not there yet. See https://machengine.org for more information.
+`mach/gpu` is the graphics abstraction used by _Mach engine_, but we're not there yet. See https://machengine.org for more information.
 
 ## Join the community
 
