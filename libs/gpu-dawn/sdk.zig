@@ -149,15 +149,24 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn ensureSubmodules(allocator: std.mem.Allocator) !void {
-            if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
-                defer allocator.free(no_ensure_submodules);
-                if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
-            } else |_| {}
+            if (isEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES")) {
+                return;
+            }
             var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", "--recursive" }, allocator);
             child.cwd = comptime thisDir();
             child.stderr = std.io.getStdErr();
             child.stdout = std.io.getStdOut();
             _ = try child.spawnAndWait();
+        }
+
+        fn isEnvVarTruthy(allocator: std.mem.Allocator, name: []const u8) bool {
+            if (std.process.getEnvVarOwned(allocator, name)) |truthy| {
+                defer allocator.free(truthy);
+                if (std.mem.eql(u8, truthy, "true")) return true;
+                return false;
+            } else |_| {
+                return false;
+            }
         }
 
         pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
@@ -448,7 +457,13 @@ pub fn Sdk(comptime deps: anytype) type {
 
         fn downloadFile(allocator: std.mem.Allocator, target_file: []const u8, url: []const u8) !void {
             std.debug.print("downloading {s}..\n", .{url});
-            var child = std.ChildProcess.init(&.{ "curl", "-L", "-o", target_file, url }, allocator);
+
+            // Some Windows users experience `SSL certificate problem: unable to get local issuer certificate`
+            // so we give them the option to disable SSL if they desire / don't want to debug the issue.
+            var child = if (isEnvVarTruthy(allocator, "CURL_INSECURE"))
+                std.ChildProcess.init(&.{ "curl", "--insecure", "-L", "-o", target_file, url }, allocator)
+            else
+                std.ChildProcess.init(&.{ "curl", "-L", "-o", target_file, url }, allocator);
             child.cwd = comptime thisDir();
             child.stderr = std.io.getStdErr();
             child.stdout = std.io.getStdOut();
