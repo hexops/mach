@@ -15,7 +15,7 @@ pub const mime_list = [_]struct { ext: []const []const u8, mime: []const u8 }{
     .{ .ext = &.{".ico"}, .mime = "image/vnd.microsoft.icon" },
     .{ .ext = &.{".ics"}, .mime = "text/calendar" },
     .{ .ext = &.{".jar"}, .mime = "application/java-archive" },
-    .{ .ext = &.{ "..jpeg", "..jpg" }, .mime = "image/jpeg" },
+    .{ .ext = &.{ ".jpeg", ".jpg" }, .mime = "image/jpeg" },
     .{ .ext = &.{".js"}, .mime = "text/javascript" },
     .{ .ext = &.{".json"}, .mime = "application/json" },
     .{ .ext = &.{".md"}, .mime = "text/x-markdown" },

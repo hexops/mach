@@ -5,8 +5,7 @@ const mem = std.mem;
 const fs = std.fs;
 const build = std.build;
 
-const js_path = "/www/wasmserve.js";
-const default_mime = "text/plain";
+const www_dir_path = thisDir() ++ "/www";
 const buffer_size = 2048;
 const esc = struct {
     pub const reset = "\x1b[0m";
@@ -19,6 +18,7 @@ const esc = struct {
 };
 
 pub const Options = struct {
+    install_step_name: []const u8 = "install",
     install_dir: ?build.InstallDir = null,
     watch_paths: []const []const u8 = &.{},
     listen_address: net.Address = net.Address.initIp4([4]u8{ 127, 0, 0, 1 }, 8080),
@@ -31,14 +31,16 @@ pub fn serve(step: *build.LibExeObjStep, options: Options) !*Wasmserve {
         .step = build.Step.init(.run, "wasmserve", step.builder.allocator, Wasmserve.make),
         .b = step.builder,
         .exe_step = step,
+        .install_step_name = options.install_step_name,
         .install_dir = install_dir,
         .install_dir_iter = try fs.cwd().makeOpenPathIterable(step.builder.getInstallPath(install_dir, ""), .{}),
         .address = options.listen_address,
         .subscriber = null,
         .watch_paths = options.watch_paths,
         .mtimes = std.AutoHashMap(fs.File.INode, i128).init(step.builder.allocator),
+        .status = .idle,
+        .notify_msg = try step.builder.allocator.alloc(u8, 0),
     };
-    self.step.dependOn(&step.install_step.?.step);
     return self;
 }
 
@@ -46,15 +48,20 @@ const Wasmserve = struct {
     step: build.Step,
     b: *build.Builder,
     exe_step: *build.LibExeObjStep,
+    install_step_name: []const u8,
     install_dir: build.InstallDir,
     install_dir_iter: fs.IterableDir,
     address: net.Address,
     subscriber: ?*net.StreamServer.Connection,
     watch_paths: []const []const u8,
     mtimes: std.AutoHashMap(fs.File.INode, i128),
+    status: Status,
+    notify_msg: []u8,
 
-    const NotifyMessage = enum {
-        reload,
+    const Status = enum {
+        idle,
+        built,
+        build_error,
     };
 
     pub fn make(step: *build.Step) !void {
@@ -63,12 +70,19 @@ const Wasmserve = struct {
         self.compile();
         std.debug.assert(mem.eql(u8, fs.path.extension(self.exe_step.out_filename), ".wasm"));
 
-        const install_js = self.b.addInstallFileWithDir(
-            .{ .path = comptime thisDir() ++ js_path },
-            self.install_dir,
-            fs.path.basename(js_path),
-        );
-        try install_js.step.make();
+        var www_dir = try fs.cwd().openIterableDir(www_dir_path, .{});
+        defer www_dir.close();
+        var www_dir_iter = www_dir.iterate();
+        while (try www_dir_iter.next()) |file| {
+            const path = try fs.path.join(self.b.allocator, &.{ www_dir_path, file.name });
+            defer self.b.allocator.free(path);
+            const install_www = self.b.addInstallFileWithDir(
+                .{ .path = path },
+                self.install_dir,
+                file.name,
+            );
+            try install_www.step.make();
+        }
 
         const watch_thread = try std.Thread.spawn(.{}, watch, .{self});
         defer watch_thread.detach();
@@ -118,6 +132,7 @@ const Wasmserve = struct {
                 _ = try conn.stream.write("HTTP/1.1 200 OK\r\nConnection: Keep-Alive\r\nContent-Type: text/event-stream\r\nCache-Control: No-Cache\r\n\r\n");
                 self.subscriber = try self.b.allocator.create(net.StreamServer.Connection);
                 self.subscriber.?.* = conn;
+                self.notify();
                 return;
             }
             if (self.researchPath(url)) |file_path| {
@@ -240,19 +255,38 @@ const Wasmserve = struct {
         return false;
     }
 
-    fn notify(self: *Wasmserve, msg: NotifyMessage) void {
-        if (self.subscriber) |s|
-            _ = s.stream.writer().print("data: {s}\n\n", .{@tagName(msg)}) catch |err| logErr(err, @src());
+    fn notify(self: *Wasmserve) void {
+        if (self.subscriber) |s| {
+            s.stream.writer().print("event: {s}\n", .{@tagName(self.status)}) catch |err| logErr(err, @src());
+            var lines = std.mem.split(u8, self.notify_msg, "\n");
+            while (lines.next()) |line|
+                s.stream.writer().print("data: {s}\n", .{line}) catch |err| logErr(err, @src());
+            _ = s.stream.write("\n") catch |err| logErr(err, @src());
+            if (self.status == .built) self.status = .idle;
+        }
     }
 
     fn compile(self: *Wasmserve) void {
         std.log.info("Compiling...", .{});
-        self.exe_step.install_step.?.step.done_flag = false;
-        if (self.exe_step.install_step.?.step.make()) {
-            self.notify(.reload);
-        } else |err| {
+        const res = std.ChildProcess.exec(.{
+            .allocator = self.b.allocator,
+            .argv = &.{ self.b.zig_exe, "build", self.install_step_name, "--prominent-compile-errors", "--color", "on" },
+        }) catch |err| {
             logErr(err, @src());
+            return;
+        };
+        self.b.allocator.free(res.stdout);
+        self.b.allocator.free(self.notify_msg);
+        std.debug.print("{s}", .{res.stderr});
+        self.notify_msg = res.stderr;
+        switch (res.term) {
+            .Exited => |code| {
+                self.status = if (code == 0) .built else .build_error;
+            },
+            // TODO: separate status and message
+            else => {},
         }
+        self.notify();
     }
 };
 

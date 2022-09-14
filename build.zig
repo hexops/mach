@@ -362,12 +362,13 @@ pub const App = struct {
         if (app.platform == .web) {
             const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch app.b.allocator.dupe(u8, "127.0.0.1") catch unreachable;
             const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch app.b.allocator.dupe(u8, "8080") catch unreachable;
-            const address_parsed = std.net.Address.parseIp4(address, std.fmt.parseInt(u16, port, 10) catch unreachable) catch unreachable;
+            const address_parsed = std.net.Address.resolveIp(address, std.fmt.parseInt(u16, port, 10) catch unreachable) catch unreachable;
 
             const wasmserve = @import("tools/wasmserve/wasmserve.zig");
             const serve_step = wasmserve.serve(
                 app.step,
                 .{
+                    .install_step_name = app.step.name,
                     .install_dir = web_install_dir,
                     .watch_paths = &.{"tools/wasmserve/wasmserve.zig"},
                     .listen_address = address_parsed,
