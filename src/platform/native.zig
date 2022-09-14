@@ -290,8 +290,6 @@ pub const Platform = struct {
                     }),
                     else => {},
                 }
-
-                _ = mods;
             }
         }.callback;
         platform.window.setMouseButtonCallback(mouse_button_callback);

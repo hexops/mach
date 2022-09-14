@@ -342,7 +342,6 @@ pub const void_archetype_hash = std.math.maxInt(u64);
 /// * ComponentStorage(T) is a column of data within a table for a single type of component `T`.
 pub fn Entities(comptime all_components: anytype) type {
     // TODO: validate all_components is a namespaced component set in the form we expect
-    _ = all_components;
     return struct {
         allocator: Allocator,
 

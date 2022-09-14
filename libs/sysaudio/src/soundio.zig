@@ -73,7 +73,6 @@ pub const Device = struct {
                         frame_count_min: c_int,
                         frame_count_max: c_int,
                     ) callconv(.C) void {
-                        _ = frame_count_min;
                         const outstream = SoundIoOutStream{ .handle = @ptrCast(*c.SoundIoOutStream, c_outstream) };
                         const device = @ptrCast(*Device, @alignCast(@alignOf(Device), outstream.handle.userdata));
 
