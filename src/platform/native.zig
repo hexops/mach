@@ -408,7 +408,7 @@ pub const Platform = struct {
             // TODO: In the future we shouldn't hit this because we'll provide backup
             // custom cursors.
             // See https://github.com/hexops/mach/pull/352 for more info
-            std.log.warn("mach: setMouseCursor: {s} not yet supported\n", .{cursor});
+            std.log.warn("mach: setMouseCursor: {} not yet supported\n", .{@tagName(cursor)});
         }
     }
 
