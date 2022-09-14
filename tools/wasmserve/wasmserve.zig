@@ -176,6 +176,8 @@ const Wasmserve = struct {
                 "Connection: close\r\n" ++
                 "Content-Length: {d}\r\n" ++
                 "Content-Type: {s}\r\n" ++
+                "Cross-Origin-Opener-Policy: same-origin\r\n" ++
+                "Cross-Origin-Embedder-Policy: require-corp\r\n" ++
                 "\r\n",
             .{ file_size, file_mime },
         );
