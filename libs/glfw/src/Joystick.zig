@@ -62,13 +62,11 @@ const GamepadState = extern struct {
 
     /// Returns the state of the specified gamepad button.
     pub fn getButton(self: @This(), which: GamepadButton) Action {
-        _ = self;
         return @intToEnum(Action, self.buttons[@intCast(u32, @enumToInt(which))]);
     }
 
     /// Returns the status of the specified gamepad axis, in the range -1.0 to 1.0 inclusive.
     pub fn getAxis(self: @This(), which: GamepadAxis) f32 {
-        _ = self;
         return self.axes[@intCast(u32, @enumToInt(which))];
     }
 };
