@@ -155,6 +155,8 @@ fn addGLFWSources(b: *Builder, lib: *std.build.LibExeObjStep, options: Options) 
                 flags.append("-D_GLFW_WAYLAND") catch unreachable;
             }
             flags.append("-I" ++ thisDir() ++ "/upstream/glfw/src") catch unreachable;
+            // TODO(upstream): glfw can't compile on clang15 without this flag
+            flags.append("-Wno-implicit-function-declaration") catch unreachable;
 
             lib.addCSourceFiles(sources.items, flags.items);
         },
