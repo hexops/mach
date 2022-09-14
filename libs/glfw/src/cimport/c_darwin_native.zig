@@ -11710,7 +11710,6 @@ pub inline fn __inline_signbitf(arg___x: f32) c_int {
         __f: f32,
         __u: c_uint,
     };
-    _ = union_unnamed_1;
     var __u: union_unnamed_1 = undefined;
     __u.__f = __x;
     return @bitCast(c_int, __u.__u >> @intCast(@import("std").math.Log2Int(c_uint), 31));
@@ -11721,7 +11720,6 @@ pub inline fn __inline_signbitd(arg___x: f64) c_int {
         __f: f64,
         __u: c_ulonglong,
     };
-    _ = union_unnamed_2;
     var __u: union_unnamed_2 = undefined;
     __u.__f = __x;
     return @bitCast(c_int, @truncate(c_uint, __u.__u >> @intCast(@import("std").math.Log2Int(c_ulonglong), 63)));
@@ -11732,7 +11730,6 @@ pub inline fn __inline_signbitl(arg___x: c_longdouble) c_int {
         __f: c_longdouble,
         __u: c_ulonglong,
     };
-    _ = union_unnamed_3;
     var __u: union_unnamed_3 = undefined;
     __u.__f = __x;
     return @bitCast(c_int, @truncate(c_uint, __u.__u >> @intCast(@import("std").math.Log2Int(c_ulonglong), 63)));
@@ -13323,7 +13320,6 @@ pub inline fn CFConvertFloat32HostToSwapped(arg_arg: Float32) CFSwappedFloat32 {
         v: Float32,
         sv: CFSwappedFloat32,
     };
-    _ = union_CFSwap;
     var result: union_CFSwap = undefined;
     result.v = arg;
     result.sv.v = CFSwapInt32(result.sv.v);
@@ -13335,7 +13331,6 @@ pub inline fn CFConvertFloat32SwappedToHost(arg_arg: CFSwappedFloat32) Float32 {
         v: Float32,
         sv: CFSwappedFloat32,
     };
-    _ = union_CFSwap;
     var result: union_CFSwap = undefined;
     result.sv = arg;
     result.sv.v = CFSwapInt32(result.sv.v);
@@ -13347,7 +13342,6 @@ pub inline fn CFConvertFloat64HostToSwapped(arg_arg: Float64) CFSwappedFloat64 {
         v: Float64,
         sv: CFSwappedFloat64,
     };
-    _ = union_CFSwap;
     var result: union_CFSwap = undefined;
     result.v = arg;
     result.sv.v = CFSwapInt64(result.sv.v);
@@ -13359,7 +13353,6 @@ pub inline fn CFConvertFloat64SwappedToHost(arg_arg: CFSwappedFloat64) Float64 {
         v: Float64,
         sv: CFSwappedFloat64,
     };
-    _ = union_CFSwap;
     var result: union_CFSwap = undefined;
     result.sv = arg;
     result.sv.v = CFSwapInt64(result.sv.v);
@@ -13371,7 +13364,6 @@ pub inline fn CFConvertFloatHostToSwapped(arg_arg: f32) CFSwappedFloat32 {
         v: f32,
         sv: CFSwappedFloat32,
     };
-    _ = union_CFSwap;
     var result: union_CFSwap = undefined;
     result.v = arg;
     result.sv.v = CFSwapInt32(result.sv.v);
@@ -13383,7 +13375,6 @@ pub inline fn CFConvertFloatSwappedToHost(arg_arg: CFSwappedFloat32) f32 {
         v: f32,
         sv: CFSwappedFloat32,
     };
-    _ = union_CFSwap;
     var result: union_CFSwap = undefined;
     result.sv = arg;
     result.sv.v = CFSwapInt32(result.sv.v);
@@ -13395,7 +13386,6 @@ pub inline fn CFConvertDoubleHostToSwapped(arg_arg: f64) CFSwappedFloat64 {
         v: f64,
         sv: CFSwappedFloat64,
     };
-    _ = union_CFSwap;
     var result: union_CFSwap = undefined;
     result.v = arg;
     result.sv.v = CFSwapInt64(result.sv.v);
@@ -13407,7 +13397,6 @@ pub inline fn CFConvertDoubleSwappedToHost(arg_arg: CFSwappedFloat64) f64 {
         v: f64,
         sv: CFSwappedFloat64,
     };
-    _ = union_CFSwap;
     var result: union_CFSwap = undefined;
     result.sv = arg;
     result.sv.v = CFSwapInt64(result.sv.v);
