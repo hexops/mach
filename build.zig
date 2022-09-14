@@ -122,9 +122,9 @@ pub fn build(b: *std.build.Builder) void {
         example_compile_step.dependOn(&example_app.getInstallStep().?.step);
 
         const example_run_cmd = example_app.run();
-        example_run_cmd.step.dependOn(&example_app.getInstallStep().?.step);
+        example_run_cmd.dependOn(&example_app.getInstallStep().?.step);
         const example_run_step = b.step("run-example-" ++ example.name, "Run '" ++ example.name ++ "' example");
-        example_run_step.dependOn(&example_run_cmd.step);
+        example_run_step.dependOn(example_run_cmd);
     }
 
     if (target.toTarget().cpu.arch != .wasm32) {
@@ -144,9 +144,9 @@ pub fn build(b: *std.build.Builder) void {
         shaderexp_compile_step.dependOn(&shaderexp_app.getInstallStep().?.step);
 
         const shaderexp_run_cmd = shaderexp_app.run();
-        shaderexp_run_cmd.step.dependOn(&shaderexp_app.getInstallStep().?.step);
+        shaderexp_run_cmd.dependOn(&shaderexp_app.getInstallStep().?.step);
         const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
-        shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
+        shaderexp_run_step.dependOn(shaderexp_run_cmd);
     }
 
     const compile_all = b.step("compile-all", "Compile all examples and applications");
@@ -314,9 +314,7 @@ pub const App = struct {
                 app.getInstallStep().?.step.dependOn(&install_js.step);
             }
 
-            const html_generator = app.b.addExecutable("html-generator", (comptime thisDir()) ++ "/tools/html-generator.zig");
-            html_generator.main_pkg_path = (comptime thisDir());
-
+            const html_generator = app.b.addExecutable("html-generator", (comptime thisDir()) ++ "/tools/html-generator/main.zig");
             const run_html_generator = html_generator.run();
             const html_file_name = std.mem.concat(
                 app.b.allocator,
@@ -360,45 +358,24 @@ pub const App = struct {
         return app.step.install_step;
     }
 
-    pub fn run(app: *const App) *std.build.RunStep {
+    pub fn run(app: *const App) *std.build.Step {
         if (app.platform == .web) {
-            ensureDependencySubmodule(app.b.allocator, "tools/libs/apple_pie") catch unreachable;
-
-            const http_server = app.b.addExecutable("http-server", (comptime thisDir()) ++ "/tools/http-server.zig");
-            http_server.addPackage(.{
-                .name = "apple_pie",
-                .source = .{ .path = "tools/libs/apple_pie/src/apple_pie.zig" },
-            });
-
-            // NOTE: The launch actually takes place in reverse order. The browser is launched first
-            // and then the http-server.
-            // This is because running the server would block the process (a limitation of current
-            // RunStep). So we assume that (xdg-)open is a launcher and not a blocking process.
-
             const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch app.b.allocator.dupe(u8, "127.0.0.1") catch unreachable;
             const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch app.b.allocator.dupe(u8, "8080") catch unreachable;
-            defer {
-                app.b.allocator.free(address);
-                app.b.allocator.free(port);
-            }
+            const address_parsed = std.net.Address.parseIp4(address, std.fmt.parseInt(u16, port, 10) catch unreachable) catch unreachable;
 
-            const launch = app.b.addSystemCommand(&.{
-                switch (builtin.os.tag) {
-                    .macos, .windows => "open",
-                    else => "xdg-open", // Assume linux-like
+            const wasmserve = @import("tools/wasmserve/wasmserve.zig");
+            const serve_step = wasmserve.serve(
+                app.step,
+                .{
+                    .install_dir = web_install_dir,
+                    .watch_paths = &.{"tools/wasmserve/wasmserve.zig"},
+                    .listen_address = address_parsed,
                 },
-                app.b.fmt("http://{s}:{s}/{s}.html", .{ address, port, app.name }),
-            });
-            launch.step.dependOn(&app.getInstallStep().?.step);
-
-            const serve = http_server.run();
-            serve.addArgs(&.{ app.name, address, port });
-            serve.step.dependOn(&launch.step);
-            serve.cwd = app.b.getInstallPath(web_install_dir, "");
-
-            return serve;
+            ) catch unreachable;
+            return &serve_step.step;
         } else {
-            return app.step.run();
+            return &app.step.run().step;
         }
     }
 };

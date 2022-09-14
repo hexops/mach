@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>{ app_name }</title>
+</head>
+
+<body>
+  <script type="module">
+    import { mach } from "./mach.js";
+    import { zig } from "./mach-sysjs.js";
+    import setupWasmserve from "./wasmserve.js";
+
+    setupWasmserve();
+
+    let imports = {
+      env: { ...mach, ...zig },
+    };
+
+    fetch("{ app_name }.wasm")
+      .then(response => response.arrayBuffer())
+      .then(buffer => WebAssembly.instantiate(buffer, imports))
+      .then(results => results.instance)
+      .then(instance => {
+        zig.init(instance);
+        mach.init(instance);
+        instance.exports.wasmInit();
+
+        let frame = true;
+        let last_update_time = performance.now();
+        let update = function () {
+          if (!frame) return;
+          if (mach.machHasEvent() ||
+            (last_update_time + (mach.wait_event_timeout * 1000)) <= performance.now()) {
+            instance.exports.wasmUpdate();
+            last_update_time = performance.now();
+          }
+          window.requestAnimationFrame(update);
+        };
+
+        window.requestAnimationFrame(update);
+
+        window.addEventListener("mach-close", () => {
+          instance.exports.wasmDeinit();
+          frame = false;
+        });
+      })
+      .catch(err => console.error(err));
+  </script>
+</body>
+
+</html>
