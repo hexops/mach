@@ -19,11 +19,8 @@
       sysjs,
     };
 
-    fetch("{ app_name }.wasm")
-      .then(response => response.arrayBuffer())
-      .then(buffer => WebAssembly.instantiate(buffer, imports))
-      .then(results => results.instance)
-      .then(instance => {
+    WebAssembly.instantiateStreaming(fetch("{ app_name }.wasm"), imports)
+      .then(({ instance, module }) => {
         sysjs.init(instance);
         mach.init(instance);
         instance.exports.wasmInit();
