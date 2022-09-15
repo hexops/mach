@@ -47,7 +47,6 @@ pub fn init(engine: *ecs.World(modules)) !void {
     const player = try engine.entities.new();
     try engine.entities.setComponent(player, .renderer, .location, .{ .x = 0, .y = 0, .z = 0 });
     try engine.entities.setComponent(player, .physics2d, .location, .{ .x = 0, .y = 0 });
-    _ = player;
 
     // TODO: there could be an entities wrapper to interact with a single namespace so you don't
     // have to pass it in as a parameter always?

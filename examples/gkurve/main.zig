@@ -121,7 +121,6 @@ pub fn init(app: *App, core: *mach.Core) !void {
     _ = window_height;
     _ = triangle_scale;
     _ = img_uv_data;
-    _ = white_texture_uv_data;
     // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 }, triangle_scale, .{}, img_uv_data);
     // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 - triangle_scale }, triangle_scale, .{ .type = .concave }, img_uv_data);
     // try draw.equilateralTriangle(app, .{ window_width / 2 - triangle_scale, window_height / 2 - triangle_scale / 2 }, triangle_scale, .{ .type = .convex }, white_texture_uv_data);
