@@ -32,12 +32,6 @@ bind_group: *gpu.BindGroup,
 texture_atlas_data: AtlasRGB8,
 
 pub fn init(app: *App, core: *mach.Core) !void {
-    try core.setOptions(.{
-        .width = 640,
-        .height = 480,
-        .size_min = .{ .width = 20, .height = 20 },
-    });
-
     const queue = core.device.getQueue();
 
     // TODO: Refactor texture atlas size number
@@ -121,7 +115,6 @@ pub fn init(app: *App, core: *mach.Core) !void {
     _ = window_height;
     _ = triangle_scale;
     _ = img_uv_data;
-    _ = white_texture_uv_data;
     // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 }, triangle_scale, .{}, img_uv_data);
     // try draw.equilateralTriangle(app, .{ window_width / 2, window_height / 2 - triangle_scale }, triangle_scale, .{ .type = .concave }, img_uv_data);
     // try draw.equilateralTriangle(app, .{ window_width / 2 - triangle_scale, window_height / 2 - triangle_scale / 2 }, triangle_scale, .{ .type = .convex }, white_texture_uv_data);

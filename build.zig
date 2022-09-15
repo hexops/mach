@@ -107,6 +107,7 @@ pub fn build(b: *std.build.Builder) void {
                 .target = target,
                 .deps = example.packages,
                 .res_dirs = if (example.has_assets) &.{"examples/" ++ example.name ++ "/assets"} else null,
+                .watch_paths = &.{"examples/" ++ example.name},
             },
         );
         example_app.setBuildMode(mode);
@@ -165,6 +166,10 @@ pub fn build(b: *std.build.Builder) void {
     lib.addPackage(gpu.pkg);
     lib.addPackage(glfw.pkg);
     lib.addPackage(sysaudio.pkg);
+    if (target.toTarget().os.tag == .linux) {
+        // TODO: add gamemode.pkg instead of using addPackagePath
+        lib.addPackagePath("gamemode", (comptime thisDir()) ++ "/libs/gamemode/gamemode.zig");
+    }
     glfw.link(b, lib, options.glfw_options);
     gpu.link(b, lib, options.gpuOptions());
     lib.setOutputDir("./libmach/build");
@@ -223,6 +228,7 @@ pub const App = struct {
     step: *std.build.LibExeObjStep,
     platform: Platform,
     res_dirs: ?[]const []const u8,
+    watch_paths: ?[]const []const u8,
 
     pub const Platform = enum {
         native,
@@ -240,6 +246,7 @@ pub const App = struct {
         target: std.zig.CrossTarget,
         deps: ?[]const Pkg = null,
         res_dirs: ?[]const []const u8 = null,
+        watch_paths: ?[]const []const u8 = null,
     }) App {
         const target = (std.zig.system.NativeTargetInfo.detect(options.target) catch unreachable).target;
         const platform = Platform.fromTarget(target);
@@ -293,6 +300,7 @@ pub const App = struct {
             .name = options.name,
             .platform = platform,
             .res_dirs = options.res_dirs,
+            .watch_paths = options.watch_paths,
         };
     }
 
@@ -363,14 +371,17 @@ pub const App = struct {
             const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch app.b.allocator.dupe(u8, "127.0.0.1") catch unreachable;
             const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch app.b.allocator.dupe(u8, "8080") catch unreachable;
             const address_parsed = std.net.Address.resolveIp(address, std.fmt.parseInt(u16, port, 10) catch unreachable) catch unreachable;
-
             const wasmserve = @import("tools/wasmserve/wasmserve.zig");
+            const install_step_name = if (std.mem.startsWith(u8, app.step.name, "example-"))
+                app.step.name
+            else
+                null;
             const serve_step = wasmserve.serve(
                 app.step,
                 .{
-                    .install_step_name = app.step.name,
+                    .install_step_name = install_step_name,
                     .install_dir = web_install_dir,
-                    .watch_paths = &.{"tools/wasmserve/wasmserve.zig"},
+                    .watch_paths = app.watch_paths,
                     .listen_address = address_parsed,
                 },
             ) catch unreachable;

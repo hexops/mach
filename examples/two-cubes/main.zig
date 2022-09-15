@@ -24,10 +24,6 @@ pub const App = @This();
 pub fn init(app: *App, core: *mach.Core) !void {
     timer = try mach.Timer.start();
 
-    try core.setOptions(.{
-        .size_min = .{ .width = 20, .height = 20 },
-    });
-
     const vs_module = core.device.createShaderModuleWGSL("vert.wgsl", @embedFile("vert.wgsl"));
 
     const vertex_attributes = [_]gpu.VertexAttribute{

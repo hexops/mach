@@ -1,5 +1,4 @@
-import AnsiUp from "./ansi_up.js";
-const ansiup = new AnsiUp;
+import ansi_to_html from "./ansi_to_html.js";
 
 let evtSource = new EventSource("/notify");
 
@@ -8,25 +7,35 @@ function setup() {
 		window.location.reload();
 	});
 	evtSource.addEventListener("build_error", function (e) {
-		if (document.getElementById("error-screen") == null) {
-			let es = document.createElement("div");
-			es.id = "error-screen";
-			es.style.cssText = error_screen_css;
-			let h2 = document.createElement("h2");
-			let pre = document.createElement("pre");
-			h2.textContent = "An error occurred while building:";
-			h2.style.cssText = error_screen_h2_css;
-			pre.innerHTML = ansiup.ansi_to_html(e.data);
-			pre.style.cssText = error_screen_pre_css;
-			es.appendChild(h2);
-			es.appendChild(pre);
-			document.body.appendChild(es);
-			console.error(e.data);
-		} else {
-			document.getElementById("error-screen").
-				getElementsByTagName("pre").innerHTML = ansiup.ansi_to_html(e.data);
-		}
+		createErrorScreen("An error occurred while building:", e.data)
 	});
+	evtSource.addEventListener("stopped", function (e) {
+		createErrorScreen("The build process has stopped unexpectedly:", e.data)
+	});
+}
+
+function createErrorScreen(msg, data) {
+	if (document.getElementById("error-screen") == null) {
+		let es = document.createElement("div");
+		es.id = "error-screen";
+		es.style.cssText = error_screen_css;
+		let h2 = document.createElement("h2");
+		let pre = document.createElement("pre");
+		h2.textContent = msg;
+		h2.style.cssText = error_screen_h2_css;
+		pre.innerHTML = ansi_to_html.toHtml(data);
+		pre.style.cssText = error_screen_pre_css;
+		es.appendChild(h2);
+		es.appendChild(pre);
+		document.body.appendChild(es);
+
+		// atm ANSI escape codes only works in chromium based browsers
+		if (!!window.chrome)
+			console.log(data);
+	} else {
+		document.getElementById("error-screen").
+			getElementsByTagName("pre").innerHTML = ansi_to_html.toHtml(data);
+	}
 }
 
 const error_screen_css =
@@ -35,23 +44,22 @@ const error_screen_css =
 	"height: 100vh;" +
 	"top: 0;" +
 	"left: 0;" +
-	"background: rgba(0, 0, 0, 0.85);" +
+	"background: rgba(0, 0, 0, 0.8);" +
 	"font-family: system-ui, monospace;" +
 	"font-size: 16pt;" +
 	"padding: 20px;" +
-	"box-sizing: border-box;";
-
-const error_screen_h2_css =
+	"box-sizing: border-box;" +
 	"color: white;" +
-	"margin-top: 0;";
+	"z-index: 1;";
+
+const error_screen_h2_css = "margin-top: 0;";
 
 const error_screen_pre_css =
-	"border: 2px solid rgb(205, 92, 92);" +
+	"border-top: 8px solid #A00;" +
 	"padding: 10px;" +
-	"background: rgba(0, 0, 0, 0.5);" +
+	"background: black;" +
 	"font-size: 12pt;" +
 	"white-space: pre-wrap;" +
-	"overflow: hidden;" +
-	"color: lightgray;";
+	"overflow: hidden;";
 
 export default setup;
