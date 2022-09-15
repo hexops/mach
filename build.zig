@@ -165,6 +165,10 @@ pub fn build(b: *std.build.Builder) void {
     lib.addPackage(gpu.pkg);
     lib.addPackage(glfw.pkg);
     lib.addPackage(sysaudio.pkg);
+    if (target.toTarget().os.tag == .linux) {
+        // TODO: add gamemode.pkg instead of using addPackagePath
+        lib.addPackagePath("gamemode", (comptime thisDir()) ++ "/libs/gamemode/gamemode.zig");
+    }
     glfw.link(b, lib, options.glfw_options);
     gpu.link(b, lib, options.gpuOptions());
     lib.setOutputDir("./libmach/build");
