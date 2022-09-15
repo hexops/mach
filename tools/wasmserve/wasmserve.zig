@@ -18,10 +18,10 @@ const esc = struct {
 };
 
 pub const Options = struct {
-    install_step_name: []const u8 = "install",
+    install_step_name: ?[]const u8 = null,
     install_dir: ?build.InstallDir = null,
-    watch_paths: []const []const u8 = &.{},
-    listen_address: net.Address = net.Address.initIp4([4]u8{ 127, 0, 0, 1 }, 8080),
+    watch_paths: ?[]const []const u8 = null,
+    listen_address: ?net.Address = null,
 };
 
 pub fn serve(step: *build.LibExeObjStep, options: Options) !*Wasmserve {
@@ -31,15 +31,15 @@ pub fn serve(step: *build.LibExeObjStep, options: Options) !*Wasmserve {
         .step = build.Step.init(.run, "wasmserve", step.builder.allocator, Wasmserve.make),
         .b = step.builder,
         .exe_step = step,
-        .install_step_name = options.install_step_name,
+        .install_step_name = options.install_step_name orelse step.builder.getInstallStep().name,
         .install_dir = install_dir,
         .install_dir_iter = try fs.cwd().makeOpenPathIterable(step.builder.getInstallPath(install_dir, ""), .{}),
-        .address = options.listen_address,
+        .address = options.listen_address orelse net.Address.initIp4([4]u8{ 127, 0, 0, 1 }, 8080),
         .subscriber = null,
-        .watch_paths = options.watch_paths,
+        .watch_paths = options.watch_paths orelse &.{"src"},
         .mtimes = std.AutoHashMap(fs.File.INode, i128).init(step.builder.allocator),
-        .status = .idle,
-        .notify_msg = try step.builder.allocator.alloc(u8, 0),
+        .notify_msg = null,
+        .build_per_stop_count = 0,
     };
     return self;
 }
@@ -55,13 +55,18 @@ const Wasmserve = struct {
     subscriber: ?*net.StreamServer.Connection,
     watch_paths: []const []const u8,
     mtimes: std.AutoHashMap(fs.File.INode, i128),
-    status: Status,
-    notify_msg: []u8,
+    notify_msg: ?NotifyMessage,
+    build_per_stop_count: u5,
 
-    const Status = enum {
-        idle,
-        built,
-        build_error,
+    const NotifyMessage = struct {
+        const Event = enum {
+            built,
+            build_error,
+            stopped,
+        };
+
+        event: Event,
+        data: []const u8,
     };
 
     pub fn make(step: *build.Step) !void {
@@ -132,7 +137,9 @@ const Wasmserve = struct {
                 _ = try conn.stream.write("HTTP/1.1 200 OK\r\nConnection: Keep-Alive\r\nContent-Type: text/event-stream\r\nCache-Control: No-Cache\r\n\r\n");
                 self.subscriber = try self.b.allocator.create(net.StreamServer.Connection);
                 self.subscriber.?.* = conn;
-                self.notify();
+                if (self.notify_msg) |msg|
+                    if (msg.event != .built)
+                        self.notify();
                 return;
             }
             if (self.researchPath(url)) |file_path| {
@@ -168,23 +175,7 @@ const Wasmserve = struct {
                 "\r\n",
             .{ file_size, file_mime },
         );
-
-        const zero_iovec = &[0]std.os.iovec_const{};
-        var send_total: usize = 0;
-        while (true) {
-            const send_len = try std.os.sendfile(
-                stream.handle,
-                file.handle,
-                send_total,
-                file_size,
-                zero_iovec,
-                zero_iovec,
-                0,
-            );
-            if (send_len == 0)
-                break;
-            send_total += send_len;
-        }
+        try fs.File.writeFileAll(.{ .handle = stream.handle }, file, .{});
     }
 
     fn respondError(stream: net.Stream, code: u32, desc: []const u8) !void {
@@ -213,7 +204,7 @@ const Wasmserve = struct {
         timer_loop: while (true) : (std.time.sleep(100 * std.time.ns_per_ms)) {
             for (self.watch_paths) |path| {
                 var dir = fs.cwd().openIterableDir(path, .{}) catch {
-                    if (self.checkForUpdate(path)) |is_updated| {
+                    if (self.checkForUpdate(fs.cwd(), path)) |is_updated| {
                         if (is_updated)
                             continue :timer_loop;
                     } else |err| logErr(err, @src());
@@ -230,7 +221,7 @@ const Wasmserve = struct {
                     continue;
                 }) |walk_entry| {
                     if (walk_entry.kind != .File) continue;
-                    if (self.checkForUpdate(walk_entry.path)) |is_updated| {
+                    if (self.checkForUpdate(dir.dir, walk_entry.path)) |is_updated| {
                         if (is_updated)
                             continue :timer_loop;
                     } else |err| {
@@ -242,8 +233,8 @@ const Wasmserve = struct {
         }
     }
 
-    fn checkForUpdate(self: *Wasmserve, path: []const u8) !bool {
-        const stat = try fs.cwd().statFile(path);
+    fn checkForUpdate(self: *Wasmserve, p_dir: fs.Dir, path: []const u8) !bool {
+        const stat = try p_dir.statFile(path);
         const entry = try self.mtimes.getOrPut(stat.inode);
         if (entry.found_existing and stat.mtime > entry.value_ptr.*) {
             std.log.info(esc.yellow ++ esc.underline ++ "{s}" ++ esc.reset ++ " updated", .{path});
@@ -257,17 +248,19 @@ const Wasmserve = struct {
 
     fn notify(self: *Wasmserve) void {
         if (self.subscriber) |s| {
-            s.stream.writer().print("event: {s}\n", .{@tagName(self.status)}) catch |err| logErr(err, @src());
-            var lines = std.mem.split(u8, self.notify_msg, "\n");
-            while (lines.next()) |line|
-                s.stream.writer().print("data: {s}\n", .{line}) catch |err| logErr(err, @src());
-            _ = s.stream.write("\n") catch |err| logErr(err, @src());
-            if (self.status == .built) self.status = .idle;
+            if (self.notify_msg) |msg| {
+                s.stream.writer().print("event: {s}\n", .{@tagName(msg.event)}) catch |err| logErr(err, @src());
+
+                var lines = std.mem.split(u8, msg.data, "\n");
+                while (lines.next()) |line|
+                    s.stream.writer().print("data: {s}\n", .{line}) catch |err| logErr(err, @src());
+                _ = s.stream.write("\n") catch |err| logErr(err, @src());
+            }
         }
     }
 
     fn compile(self: *Wasmserve) void {
-        std.log.info("Compiling...", .{});
+        std.log.info("Building...", .{});
         const res = std.ChildProcess.exec(.{
             .allocator = self.b.allocator,
             .argv = &.{ self.b.zig_exe, "build", self.install_step_name, "--prominent-compile-errors", "--color", "on" },
@@ -276,16 +269,35 @@ const Wasmserve = struct {
             return;
         };
         self.b.allocator.free(res.stdout);
-        self.b.allocator.free(self.notify_msg);
-        std.debug.print("{s}", .{res.stderr});
-        self.notify_msg = res.stderr;
+        if (self.notify_msg) |msg|
+            if (msg.event == .build_error)
+                self.b.allocator.free(msg.data);
+
         switch (res.term) {
             .Exited => |code| {
-                self.status = if (code == 0) .built else .build_error;
+                if (code == 0) {
+                    std.log.info("Built", .{});
+                    self.notify_msg = .{
+                        .event = .built,
+                        .data = "",
+                    };
+                } else {
+                    std.log.err("Compile error", .{});
+                    self.notify_msg = .{
+                        .event = .build_error,
+                        .data = res.stderr,
+                    };
+                }
             },
-            // TODO: separate status and message
-            else => {},
+            .Signal, .Stopped, .Unknown => {
+                std.log.err("The build process has stopped unexpectedly", .{});
+                self.notify_msg = .{
+                    .event = .stopped,
+                    .data = "",
+                };
+            },
         }
+        std.io.getStdErr().writeAll(res.stderr) catch |err| logErr(err, @src());
         self.notify();
     }
 };
