@@ -30,10 +30,6 @@ var block_dimension: u32 = tile_dimension - (filter_size - 1);
 pub fn init(app: *App, core: *mach.Core) !void {
     const queue = core.device.getQueue();
 
-    try core.setOptions(.{
-        .size_min = .{ .width = 20, .height = 20 },
-    });
-
     const blur_shader_module = core.device.createShaderModuleWGSL("blur.wgsl", @embedFile("blur.wgsl"));
 
     const blur_pipeline_descriptor = gpu.ComputePipeline.Descriptor{

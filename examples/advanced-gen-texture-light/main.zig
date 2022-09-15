@@ -33,10 +33,6 @@ const Dir = struct {
 };
 
 pub fn init(app: *App, core: *mach.Core) !void {
-    try core.setOptions(.{
-        .size_min = .{ .width = 20, .height = 20 },
-    });
-
     const eye = vec3(5.0, 7.0, 5.0);
     const target = vec3(0.0, 0.0, 0.0);
 
