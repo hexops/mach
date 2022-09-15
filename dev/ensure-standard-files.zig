@@ -16,6 +16,7 @@ const projects = [_][]const u8{
     "gpu-dawn",
     "sysaudio",
     "sysjs",
+    "trimesh2d",
 };
 
 pub fn main() !void {
