@@ -32,12 +32,6 @@ bind_group: *gpu.BindGroup,
 texture_atlas_data: AtlasRGB8,
 
 pub fn init(app: *App, core: *mach.Core) !void {
-    try core.setOptions(.{
-        .width = 640,
-        .height = 480,
-        .size_min = .{ .width = 20, .height = 20 },
-    });
-
     const queue = core.device.getQueue();
 
     // TODO: Refactor texture atlas size number

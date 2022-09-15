@@ -25,8 +25,10 @@ pub const Options = struct {
     /// The height of the window.
     height: u32 = 480,
 
-    /// The minimum allowed size for the window.
-    size_min: SizeOptional = .{ .width = null, .height = null },
+    /// The minimum allowed size for the window. On Linux, if we don't set a minimum size,
+    /// you can squish the window to 0 width and height with strange effects, so it's better to leave
+    /// a minimum size to avoid that. This doesn't prevent you from minimizing the window.
+    size_min: SizeOptional = .{ .width = 1, .height = 1 },
 
     /// The maximum allowed size for the window.
     size_max: SizeOptional = .{ .width = null, .height = null },
