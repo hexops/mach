@@ -264,8 +264,15 @@ pub fn Sdk(comptime deps: anytype) type {
             //   Download archive to zig-cache/mach/gpu-dawn/download/macos-aarch64
             //   Extract to zig-cache/mach/gpu-dawn/<git revision>/macos-aarch64/libgpu.a
             //   Remove zig-cache/mach/gpu-dawn/download
-
-            const base_cache_dir_rel = std.fs.path.join(allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
+            const system_cache_dir = blk:{
+                if (is_windows) {
+                    break :blk "zig-cache";
+                } else {
+                    const HOME = std.os.getenv("HOME") orelse unreachable;
+                    break :blk std.fs.path.join(allocator, &.{ HOME, ".cache" }) catch unreachable;
+                }
+            };
+            const base_cache_dir_rel = std.fs.path.join(allocator, &.{ system_cache_dir, "mach", "gpu-dawn" }) catch unreachable;
             std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
             const base_cache_dir = std.fs.cwd().realpathAlloc(allocator, base_cache_dir_rel) catch unreachable;
             const commit_cache_dir = std.fs.path.join(allocator, &.{ base_cache_dir, version }) catch unreachable;
