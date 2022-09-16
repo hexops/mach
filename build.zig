@@ -288,6 +288,7 @@ pub const App = struct {
                 lib.addPackage(sysjs.pkg);
                 lib.shared_memory = true;
                 lib.max_memory = 100 * 0x10000;
+                lib.import_memory = true;
 
                 break :blk lib;
             } else {

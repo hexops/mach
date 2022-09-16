@@ -136,13 +136,15 @@ function convertKeyCode(code) {
 const mach = {
   canvases: [],
   wasm: undefined,
+  memory: undefined,
   observer: undefined,
   events: [],
   changes: [],
   wait_event_timeout: 0,
 
-  init(wasm) {
+  init(wasm, memory) {
     this.wasm = wasm;
+    this.memory = memory;
     this.observer = new MutationObserver((mutables) => {
       mutables.forEach((mutable) => {
         if (mutable.type === 'attributes') {
@@ -155,20 +157,19 @@ const mach = {
   },
 
   getString(str, len) {
-    const memory = mach.wasm.exports.memory.buffer;
-    if (memory instanceof SharedArrayBuffer) {
+    if (mach.memory.buffer instanceof SharedArrayBuffer) {
       // Copy slice out of SharedArrayBuffer state, as the TextDecoder API does not support SharedArrayBuffer
       // as of 2022-09-13
       const slice = new Uint8Array(len);
-      slice.set(new Uint8Array(memory, str, len));
+      slice.set(new Uint8Array(mach.memory.buffer, str, len));
       const text = text_decoder.decode(slice);
       return text;
     }
-    return text_decoder.decode(new Uint8Array(memory, str, len));
+    return text_decoder.decode(new Uint8Array(mach.memory.buffer, str, len));
   },
 
   setString(str, buf) {
-    const memory = this.wasm.exports.memory.buffer;
+    const memory = this.memory.buffer;
     const strbuf = text_encoder.encode(str);
     const outbuf = new Uint8Array(memory, buf, strbuf.length);
     for (let i = 0; i < strbuf.length; i += 1) {

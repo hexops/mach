@@ -84,10 +84,12 @@ class MemoryBlock {
 
 const sysjs = {
   wasm: undefined,
+  memory: undefined,
   buffer: undefined,
 
-  init(wasm) {
+  init(wasm, memory) {
     this.wasm = wasm;
+    this.memory = memory;
 
     values = [];
     value_map = {};
@@ -116,7 +118,7 @@ const sysjs = {
   },
 
   zigCreateString(str, len) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     return sysjs.addValue(memory.getString(str, len));
   },
 
@@ -228,17 +230,17 @@ const sysjs = {
   },
 
   getProperty(prop, ret_ptr) {
-    return sysjs.getPropertyEx(prop, sysjs.wasm.exports.memory.buffer, ret_ptr);
+    return sysjs.getPropertyEx(prop, sysjs.memory.buffer, ret_ptr);
   },
 
   zigGetProperty(id, name, len, ret_ptr) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     let prop = values[id][memory.getString(name, len)];
     sysjs.getProperty(prop, ret_ptr);
   },
 
   zigSetProperty(id, name, len, set_ptr) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     values[id][memory.getString(name, len)] = sysjs.readObject(
       memory.slice(set_ptr),
       memory
@@ -246,7 +248,7 @@ const sysjs = {
   },
 
   zigDeleteProperty(id, name, len) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     delete values[id][memory.getString(name, len)];
   },
 
@@ -256,7 +258,7 @@ const sysjs = {
   },
 
   zigSetIndex(id, index, set_ptr) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     values[id][index] = sysjs.readObject(memory.slice(set_ptr), memory);
   },
 
@@ -265,7 +267,7 @@ const sysjs = {
   },
 
   zigCopyBytes(id, bytes, expected_length) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     const array = values[id];
     if (array.length != expected_length) {
       throw Error("copyBytes given array of length " + expected_length + " but destination has length " + array.length);
@@ -291,26 +293,26 @@ const sysjs = {
   },
 
   zigGetString(val_id, ptr) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     memory.setString(ptr, values[value_map[val_id]]);
   },
 
   zigValueEqual(val, other) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     const val_js = sysjs.readObject(memory.slice(val), memory);
     const other_js = sysjs.readObject(memory.slice(other), memory);
     return val_js === other_js;
   },
 
   zigValueInstanceOf(val, other) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     const val_js = sysjs.readObject(memory.slice(val), memory);
     const other_js = sysjs.readObject(memory.slice(other), memory);
     return val_js instanceof other_js;
   },
 
   functionCall(func, this_param, args, args_len, ret_ptr) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     let argv = [];
     for (let i = 0; i < args_len; i += 1) {
       argv.push(sysjs.readObject(memory.slice(args + i * 16), memory));
@@ -335,7 +337,7 @@ const sysjs = {
   },
 
   zigFunctionCall(id, name, len, args, args_len, ret_ptr) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     sysjs.functionCall(
       values[id][memory.getString(name, len)],
       values[id],
@@ -354,7 +356,7 @@ const sysjs = {
   },
 
   zigConstructType(id, args, args_len) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     let argv = [];
     for (let i = 0; i < args_len; i += 1) {
       argv.push(sysjs.readObject(memory.slice(args + i * 16), memory));
@@ -364,7 +366,7 @@ const sysjs = {
   },
 
   wzLogWrite(str, len) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     log_buf += memory.getString(str, len);
   },
 
@@ -374,7 +376,7 @@ const sysjs = {
   },
 
   wzPanic(str, len) {
-    let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
+    let memory = new MemoryBlock(sysjs.memory.buffer);
     throw Error(memory.getString(str, len));
   },
 };

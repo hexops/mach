@@ -17,12 +17,19 @@
     let imports = {
       mach,
       sysjs,
+      env: {
+        memory: new WebAssembly.Memory({
+          initial: 20,
+          maximum: 100,
+          shared: true,
+        })
+      },
     };
 
     WebAssembly.instantiateStreaming(fetch("{ app_name }.wasm"), imports)
       .then(({ instance, module }) => {
-        sysjs.init(instance);
-        mach.init(instance);
+        sysjs.init(instance, imports.env.memory);
+        mach.init(instance, imports.env.memory);
         instance.exports.wasmInit();
 
         let frame = true;
