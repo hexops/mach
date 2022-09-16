@@ -45,6 +45,14 @@ class MemoryBlock {
   }
 
   getString(offset, len) {
+    if (this.mem instanceof SharedArrayBuffer) {
+      // Copy slice out of SharedArrayBuffer state, as the TextDecoder API does not support SharedArrayBuffer
+      // as of 2022-09-13
+      const slice = new Uint8Array(len);
+      slice.set(new Uint8Array(this.mem, offset, len));
+      const text = text_decoder.decode(slice);
+      return text;
+    }
     return text_decoder.decode(new Uint8Array(this.mem, offset, len));
   }
 

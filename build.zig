@@ -286,6 +286,8 @@ pub const App = struct {
                 lib.addPackage(gpu.pkg);
                 lib.addPackage(sysaudio.pkg);
                 lib.addPackage(sysjs.pkg);
+                lib.shared_memory = true;
+                lib.max_memory = 100 * 0x10000;
 
                 break :blk lib;
             } else {

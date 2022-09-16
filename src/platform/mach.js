@@ -156,6 +156,14 @@ const mach = {
 
   getString(str, len) {
     const memory = mach.wasm.exports.memory.buffer;
+    if (memory instanceof SharedArrayBuffer) {
+      // Copy slice out of SharedArrayBuffer state, as the TextDecoder API does not support SharedArrayBuffer
+      // as of 2022-09-13
+      const slice = new Uint8Array(len);
+      slice.set(new Uint8Array(memory, str, len));
+      const text = text_decoder.decode(slice);
+      return text;
+    }
     return text_decoder.decode(new Uint8Array(memory, str, len));
   },
 
