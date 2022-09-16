@@ -41,7 +41,7 @@ pub fn main() {
 
     var polygon = std.ArrayListUnmanaged(f32){};
     // append your polygon vertices:
-    // try polygon.append(1.0);
+    // try polygon.append(allocator, 1.0);
 
     var out_triangles = std.ArrayListUnmanaged(u32){};
     var processor = trimesh2d.Processor(f32){};
