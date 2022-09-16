@@ -9,13 +9,14 @@
 <body>
   <script type="module">
     import { mach } from "./mach.js";
-    import { zig } from "./mach-sysjs.js";
+    import { sysjs } from "./mach-sysjs.js";
     import setupWasmserve from "./wasmserve.js";
 
     setupWasmserve();
 
     let imports = {
-      env: { ...mach, ...zig },
+      mach,
+      sysjs,
     };
 
     fetch("{ app_name }.wasm")
