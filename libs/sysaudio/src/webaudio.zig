@@ -6,11 +6,13 @@ const js = @import("sysjs");
 
 const Audio = @This();
 
+pub const sysaudio = struct {
+    extern "sysaudio" fn start() void;
+    extern "sysaudio" fn pause() void;
+};
+
 pub const Device = struct {
     properties: Properties,
-
-    // Internal fields.
-    context: js.Object,
 
     pub const Options = struct {
         mode: Mode = .output,
@@ -33,23 +35,23 @@ pub const Device = struct {
     };
 
     pub fn deinit(device: *Device, allocator: std.mem.Allocator) void {
-        device.context.deinit();
         allocator.destroy(device);
     }
 
     pub fn setCallback(device: *Device, callback: DataCallback, user_data: ?*anyopaque) void {
-        device.context.set("device", js.createNumber(@intToFloat(f64, @ptrToInt(device))));
-        device.context.set("callback", js.createNumber(@intToFloat(f64, @ptrToInt(callback))));
-        if (user_data) |ud|
-            device.context.set("user_data", js.createNumber(@intToFloat(f64, @ptrToInt(ud))));
+        _ = device;
+        audio_callback = callback;
+        audio_user_data = user_data;
     }
 
     pub fn pause(device: *Device) Error!void {
-        _ = device.context.call("suspend", &.{});
+        _ = device;
+        sysaudio.pause();
     }
 
     pub fn start(device: *Device) Error!void {
-        _ = device.context.call("resume", &.{});
+        _ = device;
+        sysaudio.start();
     }
 };
 
@@ -69,18 +71,17 @@ pub const Error = error{
     AudioUnsupported,
 };
 
-context_constructor: js.Function,
-
 pub fn init() Error!Audio {
     const context = js.global().get("AudioContext");
+    defer context.view(.func).deinit();
     if (context.is(.undef))
         return error.AudioUnsupported;
 
-    return Audio{ .context_constructor = context.view(.func) };
+    return Audio{};
 }
 
 pub fn deinit(audio: Audio) void {
-    audio.context_constructor.deinit();
+    _ = audio;
 }
 
 // TODO(sysaudio): implement waitEvents for WebAudio, will a WASM process terminate without this?
@@ -92,42 +93,11 @@ const default_buffer_size_per_channel = 1024; // 21.33ms
 
 pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, options: Device.Options) Error!*Device {
     // NOTE: WebAudio only supports F32 audio format, so options.format is unused
-    const mode = options.mode;
-    const channels = options.channels orelse default_channel_count;
-    const sample_rate = options.sample_rate orelse default_sample_rate;
-
-    const context_options = js.createMap();
-    defer context_options.deinit();
-    context_options.set("sampleRate", js.createNumber(@intToFloat(f64, sample_rate)));
-
-    const context = audio.context_constructor.construct(&.{context_options.toValue()});
-    _ = context.call("suspend", &.{});
-
-    const input_channels = if (mode == .input) js.createNumber(@intToFloat(f64, channels)) else js.createUndefined();
-    const output_channels = if (mode == .output) js.createNumber(@intToFloat(f64, channels)) else js.createUndefined();
-
-    const node = context.call("createScriptProcessor", &.{ js.createNumber(default_buffer_size_per_channel), input_channels, output_channels }).view(.object);
-    defer node.deinit();
-
-    context.set("node", node.toValue());
-
-    {
-        // TODO(sysaudio): this capture leaks for now, we need a better way to pass captures via sysjs
-        // that passes by value I think.
-        const captures = std.heap.page_allocator.alloc(js.Value, 1) catch unreachable;
-        captures[0] = context.toValue();
-        const audio_process_event = js.createFunction(audioProcessEvent, captures);
-
-        // TODO(sysaudio): this leaks, we need a good place to clean this up.
-        // defer audio_process_event.deinit();
-        node.set("onaudioprocess", audio_process_event.toValue());
-    }
-
-    {
-        const destination = context.get("destination").view(.object);
-        defer destination.deinit();
-        _ = node.call("connect", &.{destination.toValue()});
-    }
+    //const mode = options.mode;
+    //const channels = options.channels orelse default_channel_count;
+    //const sample_rate = options.sample_rate orelse default_sample_rate;
+    _ = audio;
+    _ = allocator;
 
     // TODO(sysaudio): Figure out ID/name or make optional again
     var properties = Device.Properties{
@@ -140,68 +110,44 @@ pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, options: Device
         .sample_rate = options.sample_rate orelse default_sample_rate,
     };
 
-    const device = try allocator.create(Device);
-    device.* = .{
+    audio_device = Device{
         .properties = properties,
-        .context = context,
     };
-    return device;
+    return &(audio_device.?);
 }
 
-fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
-    const device_context = captures[0].view(.object);
+// TODO(sysaudio): Remove this global state if possible
+var audio_device: ?Device = null;
+var audio_callback: ?DataCallback = null;
+var audio_user_data: ?*anyopaque = null;
+var audio_output_buffer: ?[]f32 = null;
 
-    const audio_event = args.getIndex(0).view(.object);
-    defer audio_event.deinit();
-    const output_buffer = audio_event.get("outputBuffer").view(.object);
-    defer output_buffer.deinit();
-    const num_channels = @floatToInt(usize, output_buffer.get("numberOfChannels").view(.num));
-
-    const buffer_length = default_buffer_size_per_channel * num_channels * @sizeOf(f32);
-    // TODO(sysaudio): reuse buffer, do not allocate in this hot path
-    const buffer = std.heap.page_allocator.alloc(u8, buffer_length) catch unreachable;
-    defer std.heap.page_allocator.free(buffer);
-
-    const callback = device_context.get("callback");
-    if (!callback.is(.undef)) {
-        var dev = @intToPtr(*Device, @floatToInt(usize, device_context.get("device").view(.num)));
-        const cb = @intToPtr(DataCallback, @floatToInt(usize, callback.view(.num)));
-        const user_data = device_context.get("user_data");
-        const ud = if (user_data.is(.undef)) null else @intToPtr(*anyopaque, @floatToInt(usize, user_data.view(.num)));
-
-        // TODO(sysaudio): do not reconstruct Uint8Array (expensive)
-        const source = js.constructType("Uint8Array", &.{js.createNumber(@intToFloat(f64, buffer_length))});
-        defer source.deinit();
-
-        cb(dev, ud, buffer[0..]);
-        source.copyBytes(buffer[0..]);
-
-        const float_source = js.constructType("Float32Array", &.{
-            source.get("buffer"),
-            source.get("byteOffset"),
-            js.createNumber(source.get("byteLength").view(.num) / 4),
-        });
-        defer float_source.deinit();
-
-        js.global().set("source", source.toValue());
-        js.global().set("float_source", float_source.toValue());
-        js.global().set("output_buffer", output_buffer.toValue());
-
-        var channel: usize = 0;
-        while (channel < num_channels) : (channel += 1) {
-            // TODO(sysaudio): investigate if using copyToChannel would be better?
-            //_ = output_buffer.call("copyToChannel", &.{ float_source.toValue(), js.createNumber(@intToFloat(f64, channel)) });
-            const output_data = output_buffer.call("getChannelData", &.{js.createNumber(@intToFloat(f64, channel))}).view(.object);
-            defer output_data.deinit();
-            const channel_slice = float_source.call("slice", &.{
-                js.createNumber(@intToFloat(f64, channel * default_buffer_size_per_channel)),
-                js.createNumber(@intToFloat(f64, (channel + 1) * default_buffer_size_per_channel)),
-            });
-            _ = output_data.call("set", &.{channel_slice});
+fn get_output_buffer(length: usize) ?[]f32 {
+    if (audio_output_buffer) |buffer| {
+        if (buffer.len >= length) {
+            // We can reuse the buffer
+            return buffer;
         }
+        // The buffer isn't large enough, we'll have to allocate a new one
+        std.heap.page_allocator.free(buffer);
     }
+    const new_buffer = std.heap.page_allocator.alloc(f32, length) catch unreachable;
+    audio_output_buffer = new_buffer;
+    return new_buffer;
+}
 
-    return js.createUndefined();
+export fn audioProcessEvent(sample_rate: u32, num_channels: u8, num_samples: u32) ?[*]const f32 {
+    const dev = &(audio_device orelse return null);
+
+    dev.properties.sample_rate = sample_rate;
+    dev.properties.channels = num_channels;
+
+    const cb = audio_callback orelse return null;
+    const buffer = get_output_buffer(@intCast(u32, num_channels) * num_samples) orelse return null;
+
+    cb(dev, audio_user_data, @ptrCast([*]u8, buffer.ptr)[0 .. buffer.len * @sizeOf(f32)]);
+
+    return buffer.ptr;
 }
 
 pub fn outputDeviceIterator(audio: Audio) DeviceIterator {

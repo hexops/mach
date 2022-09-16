@@ -337,7 +337,7 @@ pub const App = struct {
             // Set install directory to '{prefix}/www'
             app.getInstallStep().?.dest_dir = web_install_dir;
 
-            inline for (.{ "/src/platform/mach.js", "/libs/sysjs/src/mach-sysjs.js" }) |js| {
+            inline for (.{ "/src/platform/mach.js", "/libs/sysjs/src/mach-sysjs.js", "/libs/sysaudio/src/mach-sysaudio.js", "/libs/sysaudio/src/mach-sysaudio-worklet.js" }) |js| {
                 const install_js = app.b.addInstallFileWithDir(
                     .{ .path = (comptime thisDir()) ++ js },
                     web_install_dir,

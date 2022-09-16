@@ -10,6 +10,7 @@
   <script type="module">
     import { mach } from "./mach.js";
     import { sysjs } from "./mach-sysjs.js";
+    import { sysaudio } from "./mach-sysaudio.js";
     import setupWasmserve from "./wasmserve.js";
 
     setupWasmserve();
@@ -17,6 +18,7 @@
     let imports = {
       mach,
       sysjs,
+      sysaudio,
       env: {
         memory: new WebAssembly.Memory({
           initial: 20,
@@ -25,12 +27,19 @@
         })
       },
     };
+    
 
     WebAssembly.instantiateStreaming(fetch("{ app_name }.wasm"), imports)
-      .then(({ instance, module }) => {
+      .then(async ({ instance, module }) => {
+        // must be called first until the module is split to not overwrite memory
+        await sysaudio.init(module, imports.env.memory);
+
         sysjs.init(instance, imports.env.memory);
         mach.init(instance, imports.env.memory);
         instance.exports.wasmInit();
+        console.trace("init finished");
+
+        window.getWasmString = mach.getString;
 
         let frame = true;
         let last_update_time = performance.now();

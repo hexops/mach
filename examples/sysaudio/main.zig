@@ -29,6 +29,8 @@ fn callback(device: *sysaudio.Device, user_data: ?*anyopaque, buffer: []u8) void
     // TODO(sysaudio): should make user_data pointer type-safe
     const app: *App = @ptrCast(*App, @alignCast(@alignOf(App), user_data));
 
+    dbg_buffer_size = buffer.len;
+
     // Where the magic happens: fill our audio buffer with PCM dat.
     app.tone_engine.render(device.properties, buffer);
 }
@@ -38,12 +40,16 @@ pub fn deinit(app: *App, core: *mach.Core) void {
     app.audio.deinit();
 }
 
+var dbg_buffer_size: usize = 0;
+
 pub fn update(app: *App, engine: *mach.Core) !void {
     while (engine.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 try app.device.start();
                 app.tone_engine.play(app.device.properties, ToneEngine.keyToFrequency(ev.key));
+                std.log.debug("buffer size = {}", .{dbg_buffer_size});
+                std.log.debug("device = {any}", .{app.device});
             },
             else => {},
         }
