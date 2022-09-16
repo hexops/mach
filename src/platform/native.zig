@@ -41,7 +41,7 @@ pub const Platform = struct {
 
     last_cursor_position: structs.WindowPos,
 
-    linux_gamemode_is_active: bool,
+    linux_gamemode: ?bool,
 
     const EventQueue = std.TailQueue(structs.Event);
     const EventNode = EventQueue.Node;
@@ -50,15 +50,7 @@ pub const Platform = struct {
         platform: *Platform,
     };
 
-    fn getEnvVarOwned(allocator: std.mem.Allocator, key: []const u8) error{ OutOfMemory, InvalidUtf8 }!?[]u8 {
-        return std.process.getEnvVarOwned(allocator, key) catch |err| switch (err) {
-            error.EnvironmentVariableNotFound => @as(?[]u8, null),
-            else => |e| e,
-        };
-    }
     pub fn init(allocator: std.mem.Allocator, core: *Core) !Platform {
-        const linux_gamemode_is_active = try initLinuxGamemode(allocator);
-
         const options = core.options;
         const backend_type = try util.detectBackendType(allocator);
 
@@ -166,7 +158,7 @@ pub const Platform = struct {
             },
             .instance = instance.?,
             .adapter = response.?.adapter,
-            .linux_gamemode_is_active = linux_gamemode_is_active,
+            .linux_gamemode = null,
         };
     }
 
@@ -180,40 +172,10 @@ pub const Platform = struct {
             platform.allocator.destroy(ev);
         }
 
-        platform.deinitLinuxGamemode();
-    }
-
-    /// Check if gamemode should be activated
-    fn activateGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!bool {
-        const GAMEMODE_ENV = try getEnvVarOwned(allocator, "GAMEMODE");
-        if (GAMEMODE_ENV) |env| {
-            defer allocator.free(env);
-            return !(std.ascii.eqlIgnoreCase(env, "off") or std.ascii.eqlIgnoreCase(env, "false"));
-        }
-        return true;
-    }
-    fn initLinuxGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, DLOpenFailed, InvalidUtf8 }!bool {
-        if (builtin.os.tag == .linux) {
-            const gamemode = @import("gamemode");
-            if (try activateGamemode(allocator)) {
-                gamemode.requestStart() catch |err| {
-                    if (!std.mem.containsAtLeast(u8, gamemode.errorString(), 1, "dlopen failed"))
-                        std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
-                    return false;
-                };
-                std.log.info("Gamemode activated", .{});
-                return true;
-            }
-        }
-        return false;
-    }
-    fn deinitLinuxGamemode(platform: *Platform) void {
-        if (builtin.os.tag == .linux and platform.linux_gamemode_is_active) {
-            const gamemode = @import("gamemode");
-            gamemode.requestEnd() catch |err| {
-                std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
-            };
-        }
+        if (builtin.os.tag == .linux and
+            platform.linux_gamemode != null and
+            platform.linux_gamemode.?)
+            deinitLinuxGamemode();
     }
 
     fn pushEvent(platform: *Platform, event: structs.Event) void {
@@ -640,6 +602,10 @@ pub fn coreDeinit(core: *Core, allocator: std.mem.Allocator) void {
 pub const CoreResizeCallback = *const fn (*Core, u32, u32) callconv(.C) void;
 
 pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
+    if (builtin.os.tag == .linux and !core.options.is_app and
+        core.internal.linux_gamemode == null and try activateGamemode(core.allocator))
+        core.internal.linux_gamemode = initLinuxGamemode();
+
     if (core.internal.wait_event_timeout > 0.0) {
         if (core.internal.wait_event_timeout == std.math.inf(f64)) {
             // Wait for an event
@@ -672,9 +638,43 @@ pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
     }
 }
 
+fn getEnvVarOwned(allocator: std.mem.Allocator, key: []const u8) error{ OutOfMemory, InvalidUtf8 }!?[]u8 {
+    return std.process.getEnvVarOwned(allocator, key) catch |err| switch (err) {
+        error.EnvironmentVariableNotFound => @as(?[]u8, null),
+        else => |e| e,
+    };
+}
+
 fn glfwSizeOptional(size: structs.SizeOptional) glfw.Window.SizeOptional {
     return .{
         .width = size.width,
         .height = size.height,
+    };
+}
+
+/// Check if gamemode should be activated
+fn activateGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!bool {
+    if (try getEnvVarOwned(allocator, "GAMEMODE")) |env| {
+        defer allocator.free(env);
+        return !(std.ascii.eqlIgnoreCase(env, "off") or std.ascii.eqlIgnoreCase(env, "false"));
+    }
+    return true;
+}
+
+fn initLinuxGamemode() bool {
+    const gamemode = @import("gamemode");
+    gamemode.requestStart() catch |err| {
+        if (!std.mem.containsAtLeast(u8, gamemode.errorString(), 1, "dlopen failed"))
+            std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+        return false;
+    };
+    std.log.info("Gamemode activated", .{});
+    return true;
+}
+
+fn deinitLinuxGamemode() void {
+    const gamemode = @import("gamemode");
+    gamemode.requestEnd() catch |err| {
+        std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
     };
 }
