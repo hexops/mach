@@ -78,6 +78,7 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "triangle-msaa" },
         .{ .name = "boids" },
         .{ .name = "rotating-cube", .packages = &[_]Pkg{Packages.zmath} },
+        .{ .name = "pixel-post-process", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "two-cubes", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "instanced-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
