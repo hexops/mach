@@ -3,27 +3,27 @@ const Allocator = std.mem.Allocator;
 const builtin = @import("builtin");
 
 const js = struct {
-    extern fn zigCreateMap() u32;
-    extern fn zigCreateArray() u32;
-    extern fn zigCreateString(str: [*]const u8, len: u32) u32;
-    extern fn zigCreateFunction(id: *const anyopaque, captures: [*]Value, len: u32) u32;
-    extern fn zigGetAttributeCount(id: u64) u32;
-    extern fn zigGetProperty(id: u64, name: [*]const u8, len: u32, ret_ptr: *anyopaque) void;
-    extern fn zigSetProperty(id: u64, name: [*]const u8, len: u32, set_ptr: *const anyopaque) void;
-    extern fn zigDeleteProperty(id: u64, name: [*]const u8, len: u32) void;
-    extern fn zigGetIndex(id: u64, index: u32, ret_ptr: *anyopaque) void;
-    extern fn zigSetIndex(id: u64, index: u32, set_ptr: *const anyopaque) void;
-    extern fn zigGetString(val_id: u64, ptr: [*]const u8) void;
-    extern fn zigGetStringLength(val_id: u64) u32;
-    extern fn zigValueEqual(val: *const anyopaque, other: *const anyopaque) bool;
-    extern fn zigValueInstanceOf(val: *const anyopaque, other: *const anyopaque) bool;
-    extern fn zigDeleteIndex(id: u64, index: u32) void;
-    extern fn zigCopyBytes(id: u64, bytes: [*]u8, expected_len: u32) void;
-    extern fn zigFunctionCall(id: u64, name: [*]const u8, len: u32, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
-    extern fn zigFunctionInvoke(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
-    extern fn zigGetParamCount(id: u64) u32;
-    extern fn zigConstructType(id: u64, args: ?*const anyopaque, args_len: u32) u32;
-    extern fn zigCleanupObject(id: u64) void;
+    extern "sysjs" fn zigCreateMap() u32;
+    extern "sysjs" fn zigCreateArray() u32;
+    extern "sysjs" fn zigCreateString(str: [*]const u8, len: u32) u32;
+    extern "sysjs" fn zigCreateFunction(id: *const anyopaque, captures: [*]Value, len: u32) u32;
+    extern "sysjs" fn zigGetAttributeCount(id: u64) u32;
+    extern "sysjs" fn zigGetProperty(id: u64, name: [*]const u8, len: u32, ret_ptr: *anyopaque) void;
+    extern "sysjs" fn zigSetProperty(id: u64, name: [*]const u8, len: u32, set_ptr: *const anyopaque) void;
+    extern "sysjs" fn zigDeleteProperty(id: u64, name: [*]const u8, len: u32) void;
+    extern "sysjs" fn zigGetIndex(id: u64, index: u32, ret_ptr: *anyopaque) void;
+    extern "sysjs" fn zigSetIndex(id: u64, index: u32, set_ptr: *const anyopaque) void;
+    extern "sysjs" fn zigGetString(val_id: u64, ptr: [*]const u8) void;
+    extern "sysjs" fn zigGetStringLength(val_id: u64) u32;
+    extern "sysjs" fn zigValueEqual(val: *const anyopaque, other: *const anyopaque) bool;
+    extern "sysjs" fn zigValueInstanceOf(val: *const anyopaque, other: *const anyopaque) bool;
+    extern "sysjs" fn zigDeleteIndex(id: u64, index: u32) void;
+    extern "sysjs" fn zigCopyBytes(id: u64, bytes: [*]u8, expected_len: u32) void;
+    extern "sysjs" fn zigFunctionCall(id: u64, name: [*]const u8, len: u32, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
+    extern "sysjs" fn zigFunctionInvoke(id: u64, args: ?*const anyopaque, args_len: u32, ret_ptr: *anyopaque) void;
+    extern "sysjs" fn zigGetParamCount(id: u64) u32;
+    extern "sysjs" fn zigConstructType(id: u64, args: ?*const anyopaque, args_len: u32) u32;
+    extern "sysjs" fn zigCleanupObject(id: u64) void;
 };
 
 pub const Value = extern struct {
