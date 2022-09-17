@@ -23,7 +23,7 @@ Windows does not have symlinks enabled, or Git is not configured to use them. Th
 
 ## Windows: "SSL certificate problem: unable to get local issuer certificate"
 
-This is a curl SSL CA issue, you may want to Google for proper solutions on your system. That said, you can `set CURL_INSECURE=true` and retry to disable SSL verification if you want to workaround the issue.
+This is a curl SSL CA issue, you may want to Google for proper solutions on your system. That said, you can `git config --global http.sslVerify false` and retry to disable SSL verification if you want to workaround the issue.
 
 ## Linux: `Error: Couldn't load Vulkan. Searched /tmp/mach/gpu/zig-out/bin/libvulkan.so.1`
 
