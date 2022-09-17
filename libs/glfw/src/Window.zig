@@ -36,7 +36,7 @@ pub inline fn from(handle: *c.GLFWwindow) Window {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_hints, glfw.Window.hint, glfw.Window.hintString
-inline fn defaultHints() void {
+pub inline fn defaultHints() void {
     internal_debug.assertInitialized();
     c.glfwDefaultWindowHints();
     getError() catch |err| return switch (err) {
@@ -389,7 +389,6 @@ pub inline fn create(
     internal_debug.assertInitialized();
     const ignore_hints_struct = if (comptime @import("builtin").is_test) testing_ignore_window_hints_struct else false;
     if (!ignore_hints_struct) hints.set();
-    defer if (!ignore_hints_struct) defaultHints();
 
     if (c.glfwCreateWindow(
         @intCast(c_int, width),
