@@ -8,15 +8,15 @@ pub fn checkApplication(comptime app_pkg: type) void {
 
     // If App has no fields, it gets interpretted as '*const App' when it should be '*App'
     // This gives a more useful compiler error.
-    switch(@typeInfo(App)) {
+    switch (@typeInfo(App)) {
         .Struct => |app| {
-            if(app.fields.len == 0) {
+            if (app.fields.len == 0) {
                 @compileError("App must contain fields. Example: '_unused: i32,'");
             }
         },
         else => {
             @compileError("App must be a struct type. Found:" ++ @typeName(App));
-        }
+        },
     }
 
     if (@hasDecl(App, "init")) {
