@@ -51,6 +51,9 @@ pub const Options = struct {
 
     /// Whether the application has a preference for low power or high performance GPU.
     power_preference: gpu.PowerPreference = .undef,
+
+    /// If set, optimize for regular applications rather than games. e.g. disable Linux gamemode / process priority, prefer low-power GPU (if preference is .undef), etc.
+    is_app: bool = false,
 };
 
 pub const Event = union(enum) {
