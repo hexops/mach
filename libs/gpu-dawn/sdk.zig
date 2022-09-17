@@ -169,6 +169,15 @@ pub fn Sdk(comptime deps: anytype) type {
             }
         }
 
+        fn getGitHubBaseURLOwned(allocator: std.mem.Allocator) []const u8 {
+            if (std.process.getEnvVarOwned(allocator, "MACH_GITHUB_BASE_URL")) |base_url| {
+                std.log.info("mach: respecting MACH_GITHUB_BASE_URL: {s}\n", .{base_url});
+                return base_url;
+            } else |_| {
+                return "https://github.com";
+            }
+        }
+
         pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
             const target = step.target_info.target;
             const binaries_available = switch (target.os.tag) {
@@ -321,11 +330,14 @@ pub fn Sdk(comptime deps: anytype) type {
 
             // Compose the download URL, e.g.:
             // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/libdawn_x86_64-macos-none_debug.a.gz
+            const github_base_url = getGitHubBaseURLOwned(allocator);
+            defer allocator.free(github_base_url);
             const lib_prefix = if (is_windows) "dawn_" else "libdawn_";
             const lib_ext = if (is_windows) ".lib" else ".a";
             const lib_file_name = if (is_windows) "dawn.lib" else "libdawn.a";
             const download_url = try std.mem.concat(allocator, u8, &.{
-                "https://github.com/hexops/mach-gpu-dawn/releases/download/",
+                github_base_url,
+                "/hexops/mach-gpu-dawn/releases/download/",
                 version,
                 "/",
                 lib_prefix,

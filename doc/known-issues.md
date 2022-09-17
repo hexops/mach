@@ -44,3 +44,15 @@ This is [a bug in Dawn](https://github.com/NixOS/nixpkgs/issues/150398), you can
 ```
 LD_PRELOAD=/run/current-system/profile/lib/libvulkan.so zig-out/bin/gpu-hello-triangle
 ```
+
+## Choosing a different GitHub download mirror (Chinese users)
+
+**Background**: `zig build` on the first time around will download a 20-30MB file of Dawn (Google's WebGPU implementation) from https://github.com/hexops/mach-gpu-dawn/releases - the build system uses `curl` to do this automatically. You can of course build Dawn from source using the `-Ddawn-from-source=true` flag, but this will require a clone of the Dawn sources which are a larger download and takes a few minutes to build as it is a large C++ codebase.
+
+Users in Chinese mainland may find that download speeds to github.com are too slow (hours to download a 30 MB file), and apparently it is common to use GitHub mirror sites like https://fastgit.org to download files from GitHub.
+
+You can have Mach use such websites by setting an environment variable e.g.:
+
+```sh
+MACH_GITHUB_BASE_URL=https://download.fastgit.org
+```
