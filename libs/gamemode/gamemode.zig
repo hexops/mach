@@ -1,7 +1,7 @@
 //! Note: All the above requests can be blocking - dbus requests can and will block while the daemon
 //! handles the request. It is not recommended to make these calls in performance critical code
 const builtin = @import("builtin");
-pub const c = @import("gamemode_client.zig");
+pub const c = @cImport(@cInclude("gamemode_client.h"));
 
 pub const GamemodeError = error{
     RequestFailed,

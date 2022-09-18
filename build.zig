@@ -9,6 +9,7 @@ const ecs = @import("libs/ecs/build.zig");
 const freetype = @import("libs/freetype/build.zig");
 const basisu = @import("libs/basisu/build.zig");
 const sysjs = @import("libs/sysjs/build.zig");
+const gamemode = @import("libs/gamemode/build.zig");
 const Pkg = std.build.Pkg;
 
 const gpu_dawn = gpu_dawn_sdk.Sdk(.{
@@ -167,12 +168,11 @@ pub fn build(b: *std.build.Builder) void {
     lib.addPackage(gpu.pkg);
     lib.addPackage(glfw.pkg);
     lib.addPackage(sysaudio.pkg);
-    if (target.toTarget().os.tag == .linux) {
-        // TODO: add gamemode.pkg instead of using addPackagePath
-        lib.addPackagePath("gamemode", (comptime thisDir()) ++ "/libs/gamemode/gamemode.zig");
-    }
+    if (target.toTarget().os.tag == .linux)
+        lib.addPackage(gamemode.pkg);
     glfw.link(b, lib, options.glfw_options);
     gpu.link(b, lib, options.gpuOptions());
+    gamemode.link(lib);
     lib.setOutputDir("./libmach/build");
     lib.install();
 }
@@ -282,10 +282,8 @@ pub const App = struct {
                 exe.addPackage(sysaudio.pkg);
                 exe.addPackage(glfw.pkg);
 
-                if (target.os.tag == .linux) {
-                    // TODO: add gamemode.pkg instead of using addPackagePath
-                    exe.addPackagePath("gamemode", (comptime thisDir()) ++ "/libs/gamemode/gamemode.zig");
-                }
+                if (target.os.tag == .linux)
+                    exe.addPackage(gamemode.pkg);
 
                 break :blk exe;
             }
@@ -355,6 +353,8 @@ pub const App = struct {
         if (app.platform != .web) {
             glfw.link(app.b, app.step, options.glfw_options);
             gpu.link(app.b, app.step, options.gpuOptions());
+            if (app.step.target.isLinux())
+                gamemode.link(app.step);
         }
         sysaudio.link(app.b, app.step, options.sysaudio_options);
     }
