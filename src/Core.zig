@@ -50,8 +50,8 @@ pub fn setOptions(core: *Core, options: structs.Options) !void {
 }
 
 // Signals mach to stop the update loop.
-pub fn setShouldClose(core: *Core, value: bool) void {
-    core.internal.setShouldClose(value);
+pub fn close(core: *Core) void {
+    core.internal.close();
 }
 
 // Sets seconds to wait for an event with timeout before calling update()

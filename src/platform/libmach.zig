@@ -22,8 +22,8 @@ pub fn update(_: *App, _: *Core) !void {}
 // 2. Core might need to expose more state so more API functions can be exposed (for example, the WebGPU API)
 // 3. Be very careful about arguments, types, memory, etc - any mismatch will result in undefined behavior
 
-pub export fn mach_core_set_should_close(core: *Core) void {
-    core.setShouldClose(true);
+pub export fn mach_core_close(core: *Core) void {
+    core.close();
 }
 
 pub export fn mach_core_delta_time(core: *Core) f32 {

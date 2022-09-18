@@ -329,8 +329,8 @@ pub const Platform = struct {
         if (options.headless) platform.window.hide() catch {};
     }
 
-    pub fn setShouldClose(platform: *Platform, value: bool) void {
-        platform.window.setShouldClose(value);
+    pub fn close(platform: *Platform) void {
+        platform.window.setShouldClose(true);
     }
 
     pub fn getFramebufferSize(platform: *Platform) structs.Size {

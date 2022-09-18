@@ -95,8 +95,8 @@ pub const Platform = struct {
         js.machCanvasSetFullscreen(platform.id, options.fullscreen);
     }
 
-    pub fn setShouldClose(_: *Platform, value: bool) void {
-        if (value) js.machEmitCloseEvent();
+    pub fn close(_: *Platform) void {
+        js.machEmitCloseEvent();
     }
 
     pub fn setWaitEvent(_: *Platform, timeout: f64) void {
@@ -297,7 +297,7 @@ export fn wasmUpdate() void {
     core.delta_time_ns = core.timer.lapPrecise();
     core.delta_time = @intToFloat(f32, core.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
-    app.update(&core) catch core.setShouldClose(true);
+    app.update(&core) catch core.close();
 }
 
 export fn wasmDeinit() void {

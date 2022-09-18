@@ -54,7 +54,7 @@ pub fn update(app: *App, core: *mach.Core) !void {
     while (core.pollEvent()) |event| {
         switch (event) {
             .key_press => |ev| switch (ev.key) {
-                .q, .escape, .space => core.setShouldClose(true),
+                .q, .escape, .space => core.close(),
                 .w, .up => {
                     app.keys |= Dir.up;
                 },

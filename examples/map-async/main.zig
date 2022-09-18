@@ -82,5 +82,5 @@ pub fn init(_: *App, core: *mach.Core) !void {
 pub fn deinit(_: *App, _: *mach.Core) void {}
 
 pub fn update(_: *App, core: *mach.Core) !void {
-    core.setShouldClose(true);
+    core.close();
 }
