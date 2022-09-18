@@ -24,7 +24,7 @@
       .then(buffer => WebAssembly.instantiate(buffer, imports))
       .then(results => results.instance)
       .then(instance => {
-        zig.init(instance);
+        sysjs.init(instance);
         mach.init(instance);
         instance.exports.wasmInit();
 
