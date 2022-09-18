@@ -364,7 +364,8 @@ pub fn Sdk(comptime deps: anytype) type {
                 // Compose the headers download URL, e.g.:
                 // https://github.com/hexops/mach-gpu-dawn/releases/download/release-6b59025/headers.json.gz
                 const headers_download_url = try std.mem.concat(allocator, u8, &.{
-                    "https://github.com/hexops/mach-gpu-dawn/releases/download/",
+                    github_base_url,
+                    "/hexops/mach-gpu-dawn/releases/download/",
                     version,
                     "/headers.json.gz",
                 });
