@@ -113,17 +113,17 @@ pub fn init(app: *App, core: *mach.Core) !void {
 
     // WebGPU expects the cubemap textures in this order: (+X,-X,+Y,-Y,+Z,-Z)
     var images: [6]zigimg.Image = undefined;
-    images[0] = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/skybox/posx.png"));
+    images[0] = try zigimg.Image.fromMemory(core.allocator, @embedFile("../mach-example-assets/skybox/posx.png"));
     defer images[0].deinit();
-    images[1] = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/skybox/negx.png"));
+    images[1] = try zigimg.Image.fromMemory(core.allocator, @embedFile("../mach-example-assets/skybox/negx.png"));
     defer images[1].deinit();
-    images[2] = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/skybox/posy.png"));
+    images[2] = try zigimg.Image.fromMemory(core.allocator, @embedFile("../mach-example-assets/skybox/posy.png"));
     defer images[2].deinit();
-    images[3] = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/skybox/negy.png"));
+    images[3] = try zigimg.Image.fromMemory(core.allocator, @embedFile("../mach-example-assets/skybox/negy.png"));
     defer images[3].deinit();
-    images[4] = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/skybox/posz.png"));
+    images[4] = try zigimg.Image.fromMemory(core.allocator, @embedFile("../mach-example-assets/skybox/posz.png"));
     defer images[4].deinit();
-    images[5] = try zigimg.Image.fromMemory(core.allocator, @embedFile("./assets/skybox/negz.png"));
+    images[5] = try zigimg.Image.fromMemory(core.allocator, @embedFile("../mach-example-assets/skybox/negz.png"));
     defer images[5].deinit();
 
     // Use the first image of the set for sizing

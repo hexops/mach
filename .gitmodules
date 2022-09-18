@@ -28,15 +28,6 @@
 [submodule "basisu/upstream"]
 	path = libs/basisu/upstream
 	url = https://github.com/hexops/basisu
-[submodule "examples/image-blur/assets"]
-	path = examples/image-blur/assets
-	url = https://github.com/hexops/mach-example-assets
-[submodule "examples/textured-cube/assets"]
-	path = examples/textured-cube/assets
-	url = https://github.com/hexops/mach-example-assets
-[submodule "examples/gkurve/assets"]
-	path = examples/gkurve/assets
-	url = https://github.com/hexops/mach-example-assets
-[submodule "examples/cubemap/assets"]
-	path = examples/cubemap/assets
+[submodule "examples/mach-example-assets"]
+	path = examples/mach-example-assets
 	url = https://github.com/hexops/mach-example-assets
