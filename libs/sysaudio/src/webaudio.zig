@@ -1,11 +1,10 @@
 const std = @import("std");
 const Mode = @import("main.zig").Mode;
 const Format = @import("main.zig").Format;
+const DataCallback = @import("main.zig").DataCallback;
 const js = @import("sysjs");
 
 const Audio = @This();
-
-pub const DataCallback = *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
 
 pub const Device = struct {
     properties: Properties,
