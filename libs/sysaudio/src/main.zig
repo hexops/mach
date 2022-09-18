@@ -14,6 +14,8 @@ pub const Error = Backend.Error;
 pub const Device = Backend.Device;
 pub const DeviceIterator = Backend.DeviceIterator;
 
+pub const DataCallback = *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
+
 pub const Mode = enum {
     input,
     output,

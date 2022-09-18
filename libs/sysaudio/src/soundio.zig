@@ -1,6 +1,7 @@
 const std = @import("std");
 const Mode = @import("main.zig").Mode;
 const Format = @import("main.zig").Format;
+const DataCallback = @import("main.zig").DataCallback;
 const c = @import("soundio").c;
 const Aim = @import("soundio").Aim;
 const SoundIo = @import("soundio").SoundIo;
@@ -15,8 +16,6 @@ const SoundIoStream = union(Mode) {
 };
 
 const Audio = @This();
-
-pub const DataCallback = *const fn (device: *Device, user_data: ?*anyopaque, buffer: []u8) void;
 
 const default_buffer_size_per_channel = 1024; // 21.33ms
 
