@@ -88,7 +88,7 @@ pub fn update(app: *App, core: *mach.Core) !void {
         switch (event) {
             .key_press => |ev| {
                 if (ev.key == .space)
-                    core.setShouldClose(true);
+                    core.close();
             },
             else => {},
         }
@@ -101,7 +101,7 @@ pub fn update(app: *App, core: *mach.Core) !void {
             app.fragment_shader_file.seekTo(0) catch unreachable;
             app.fragment_shader_code = app.fragment_shader_file.readToEndAllocOptions(core.allocator, std.math.maxInt(u32), null, 1, 0) catch |err| {
                 std.log.err("Err: {}", .{err});
-                return core.setShouldClose(true);
+                return core.close();
             };
             app.pipeline = recreatePipeline(core, app.fragment_shader_code, null);
         }

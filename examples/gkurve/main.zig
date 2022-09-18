@@ -238,7 +238,7 @@ pub fn update(app: *App, core: *mach.Core) !void {
         switch (event) {
             .key_press => |ev| {
                 if (ev.key == .space)
-                    core.setShouldClose(true);
+                    core.close();
             },
             else => {},
         }
