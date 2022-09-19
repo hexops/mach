@@ -43,6 +43,7 @@ pub const CanvasId = u32;
 pub const Platform = struct {
     id: CanvasId,
     selector_id: []const u8,
+    allocator: std.mem.Allocator,
 
     last_window_size: structs.Size,
     last_framebuffer_size: structs.Size,
@@ -57,6 +58,7 @@ pub const Platform = struct {
         var platform = Platform{
             .id = id,
             .selector_id = try allocator.dupe(u8, selector[0 .. selector.len - @as(u32, if (selector[selector.len - 1] == 0) 1 else 0)]),
+            .allocator = allocator,
             .last_window_size = .{
                 .width = js.machCanvasGetWindowWidth(id),
                 .height = js.machCanvasGetWindowHeight(id),
@@ -83,6 +85,11 @@ pub const Platform = struct {
 
         try platform.setOptions(eng.options);
         return platform;
+    }
+
+    pub fn deinit(platform: *Platform) void {
+        js.machCanvasDeinit(platform.id);
+        platform.allocator.free(platform.selector_id);
     }
 
     pub fn setOptions(platform: *Platform, options: structs.Options) !void {
@@ -302,6 +309,7 @@ export fn wasmUpdate() void {
 
 export fn wasmDeinit() void {
     app.deinit(&core);
+    core.internal.deinit();
 }
 
 pub const log_level = if (@hasDecl(App, "log_level")) App.log_level else std.log.default_level;
