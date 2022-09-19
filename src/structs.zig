@@ -36,8 +36,7 @@ pub const Options = struct {
     /// Fullscreen window.
     fullscreen: bool = false,
 
-    /// Headless mode. Once set, this cannot be unset (because e.g. Wayland does not support showing
-    /// a window after it was hidden.)
+    /// Headless mode.
     headless: bool = false,
 
     /// Monitor synchronization modes.
