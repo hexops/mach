@@ -87,8 +87,7 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void 
     addGLFWIncludes(step);
     if (options.shared) {
         step.defineCMacro("GLFW_DLL", null);
-        // TODO(build-system): pass system SDK options through
-        system_sdk.include(b, step, .{});
+        system_sdk.include(b, step, options.system_sdk);
     } else {
         linkGLFWDependencies(b, step, options);
     }
@@ -182,8 +181,7 @@ inline fn thisDir() []const u8 {
 
 fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
     step.linkLibC();
-    // TODO(build-system): pass system SDK options through
-    system_sdk.include(b, step, .{});
+    system_sdk.include(b, step, options.system_sdk);
     switch (step.target_info.target.os.tag) {
         .windows => {
             step.linkSystemLibraryName("gdi32");
