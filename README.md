@@ -76,10 +76,10 @@ Mach works with the new self-hosted Zig compiler only. This means you'll need to
 
 Currently we test using `0.10.0-dev.3952+9e070b653`. Newer is generally better, but you can download this version here:
 
-* **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.3952+9e070b653.tar.xz)
-* **windows-x86_64**: https://ziglang.org/builds/zig-windows-x86_64-0.10.0-dev.3952+9e070b653.zip
-* **macos-x86_64** (Intel): https://ziglang.org/builds/zig-macos-x86_64-0.10.0-dev.3952+9e070b653.tar.xz
-* **macos-aarch64** (Apple Silicon): https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.3952+9e070b653.tar.xz
+* **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.4060+61aaef0b0.tar.xz)
+* **windows-x86_64**: https://ziglang.org/builds/zig-windows-x86_64-0.10.0-dev.4060+61aaef0b0.zip
+* **macos-x86_64** (Intel): https://ziglang.org/builds/zig-macos-x86_64-0.10.0-dev.4060+61aaef0b0.tar.xz
+* **macos-aarch64** (Apple Silicon): https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.4060+61aaef0b0.tar.xz
 
 `mach/ecs` and WebAssembly examples have known issues unless using `-fstage1`, see [issue #180](https://github.com/hexops/mach/issues/180) for details.
 
