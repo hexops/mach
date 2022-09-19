@@ -1,4 +1,6 @@
 const std = @import("std");
+const pow = std.math.pow;
+const sqrt = std.math.sqrt;
 
 /// Returns a trimesh2d processor, which can reuse its internal buffers to process multiple polygons
 /// (call reset between process calls.) The type T denotes e.g. f16, f32, or f64 vertices.
@@ -63,81 +65,53 @@ pub fn Processor(comptime T: type) type {
             // [1, 2, 3, 4, 0]
             for (self.next.items) |_, i| self.next.items[i] = @intCast(u32, if (i == size - 1) 0 else i + 1);
 
-            // Detect all safe ears in O(n).
-            // This amounts to finding all convex vertices but the endpoints of the constrained edge
-            var curr: u32 = 1;
-            while (curr < size - 1) : (curr += 1) {
-                // NOTE: the polygon may contain dangling edges
-                if (orient2d(
-                    polygon.items[self.prev.items[curr]],
-                    polygon.items[curr],
-                    polygon.items[self.next.items[curr]],
-                ) > 0) {
-                    try self.ears.append(allocator, curr);
-                    self.is_ear.items[curr] = true;
-                }
-            }
+            // var length: usize = size;
+            var begin: usize = 0;
+            while (true) {
+                // length -= 1;
+                // if (length < 3) return; // last triangle
 
-            // Progressively delete all ears, updating the data structure
-            while (self.ears.items.len > 0) {
-                curr = self.ears.pop();
-
-                // make new tri
-                try out_triangles.append(allocator, self.prev.items[curr]);
-                try out_triangles.append(allocator, curr);
-                try out_triangles.append(allocator, self.next.items[curr]);
-
-                // exclude curr from the polygon, connecting prev and next
-                self.next.items[self.prev.items[curr]] = self.next.items[curr];
-                self.prev.items[self.next.items[curr]] = self.prev.items[curr];
-
-                // check if prev and next have become new ears
-                if (!self.is_ear.items[self.prev.items[curr]] and self.prev.items[curr] != 0) {
-                    if (self.prev.items[self.prev.items[curr]] != self.next.items[curr] and orient2d(
-                        polygon.items[self.prev.items[self.prev.items[curr]]],
-                        polygon.items[self.prev.items[curr]],
-                        polygon.items[self.next.items[curr]],
-                    ) > 0) {
-                        try self.ears.append(allocator, self.prev.items[curr]);
-                        self.is_ear.items[self.prev.items[curr]] = true;
+                // Find the convex ear in the polygon that has the shortest distance between two
+                // vertices we would need to connect in order to clip the ear.
+                var ear: u32 = undefined;
+                var min_dist = std.math.floatMax(T);
+                var i: u32 = @intCast(u32, begin);
+                var found: bool = false;
+                while (true) {
+                    const prev = self.prev.items[i];
+                    const next = self.next.items[i];
+                    if (orient2d(polygon.items[prev], polygon.items[i], polygon.items[next]) > 0) {
+                        // Convex
+                        // const d = dist(polygon.items[prev], polygon.items[next]);
+                        const d = triangleArea(polygon.items[prev], polygon.items[i], polygon.items[next]);
+                        if (d < min_dist) {
+                            // Smaller distance.
+                            min_dist = d;
+                            ear = i;
+                            found = true;
+                        }
                     }
+                    if (next == begin) break;
+                    i = next;
                 }
-                if (!self.is_ear.items[self.next.items[curr]] and self.next.items[curr] < size - 1) {
-                    if (self.next.items[self.next.items[curr]] != self.prev.items[curr] and orient2d(
-                        polygon.items[self.prev.items[curr]],
-                        polygon.items[self.next.items[curr]],
-                        polygon.items[self.next.items[self.next.items[curr]]],
-                    ) > 0) {
-                        try self.ears.append(allocator, self.next.items[curr]);
-                        self.is_ear.items[self.next.items[curr]] = true;
-                    }
-                }
+                if (!found) return;
+                if (begin == ear) begin = self.next.items[ear];
+
+                // Clip this ear.
+
+                // Create the triangle.
+                try out_triangles.append(allocator, self.prev.items[ear]);
+                try out_triangles.append(allocator, ear);
+                try out_triangles.append(allocator, self.next.items[ear]);
+
+                // Exclude the ear vertex from the polygon, connecting prev and next.
+                self.next.items[self.prev.items[ear]] = self.next.items[ear];
+                self.prev.items[self.next.items[ear]] = self.prev.items[ear];
             }
         }
 
-        pub fn sort(allocator: std.mem.Allocator, polygon: std.ArrayListUnmanaged(Vec2)) !std.ArrayListUnmanaged(Vec2) {
-            var max_dist: f32 = 0;
-            var extrema_start: usize = undefined;
-            var extrema_end: usize = undefined;
-            var i: usize = 0;
-            while (i < polygon.items.len) : (i += 1) {
-                var next_index = (i + 1) % polygon.items.len;
-                var p0 = polygon.items[i];
-                var p1 = polygon.items[next_index];
-                var dist = std.math.hypot(T, p1[0] - p0[0], p1[1] - p0[1]);
-                if (dist > max_dist) {
-                    max_dist = dist;
-                    extrema_start = i;
-                    extrema_end = next_index;
-                }
-            }
-
-            var sorted = std.ArrayListUnmanaged(Vec2){};
-            i = extrema_end;
-            while (i < polygon.items.len) : (i += 1) try sorted.append(allocator, polygon.items[i]);
-            i = 0;
-            while (i <= extrema_start) : (i += 1) try sorted.append(allocator, polygon.items[i]);
-            return sorted;
+        fn dist(p0: Vec2, p1: Vec2) T {
+            return std.math.hypot(T, p1[0] - p0[0], p1[1] - p0[1]);
         }
 
         /// Inexact geometric predicate.
@@ -152,6 +126,14 @@ pub fn Processor(comptime T: type) type {
             const acy = pa[1] - pc[1];
             const bcy = pb[1] - pc[1];
             return acx * bcy - acy * bcx;
+        }
+
+        fn triangleArea(a: Vec2, b: Vec2, c: Vec2) T {
+            const l1 = sqrt(pow(T, a[0] - b[0], 2) + pow(T, a[1] - b[1], 2));
+            const l2 = sqrt(pow(T, b[0] - c[0], 2) + pow(T, b[1] - c[1], 2));
+            const l3 = sqrt(pow(T, c[0] - a[0], 2) + pow(T, c[1] - a[1], 2));
+            const p = (l1 + l2 + l3) / 2;
+            return sqrt(p * (p - l1) * (p - l2) * (p - l3));
         }
     };
 }
@@ -179,12 +161,12 @@ test "simple" {
     // out_triangles has indices into polygon.items of our triangle vertices.
     // If desired, call .reset() and call .process() again! Internal buffers will be reused.
     try std.testing.expectEqual(@as(usize, 6), out_triangles.items.len);
-    try std.testing.expectEqual(@as(u32, 1), out_triangles.items[0]); // bottom-right
-    try std.testing.expectEqual(@as(u32, 2), out_triangles.items[1]); // top-right
-    try std.testing.expectEqual(@as(u32, 3), out_triangles.items[2]); // top-left
-    try std.testing.expectEqual(@as(u32, 0), out_triangles.items[3]); // bottom-left
+    try std.testing.expectEqual(@as(u32, 3), out_triangles.items[0]); // top-left
+    try std.testing.expectEqual(@as(u32, 0), out_triangles.items[1]); // bottom-left
+    try std.testing.expectEqual(@as(u32, 1), out_triangles.items[2]); // bottom-right
+    try std.testing.expectEqual(@as(u32, 3), out_triangles.items[3]); // top-left
     try std.testing.expectEqual(@as(u32, 1), out_triangles.items[4]); // bottom-right
-    try std.testing.expectEqual(@as(u32, 3), out_triangles.items[5]); // top-left
+    try std.testing.expectEqual(@as(u32, 2), out_triangles.items[5]); // top-right
 }
 
 test {

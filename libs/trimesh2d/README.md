@@ -1,11 +1,13 @@
-# mach/trimesh2d - simple polygon triangulation in linear time
+# mach/trimesh2d - simple polygon triangulation
 
-Converts 'simple' polygons (i.e. no holes) into triangle meshes in linear time using a modern earcut algorithm that works in linear time and has proven correctness.
+Triangulates 'simple' polygons (i.e. no holes) into triangle meshes.
 
-This is a Zig implementation of the paper:
+This uses inspiration/ideas from the paper:
 
 > "_[Deterministic Linear Time Constrained Triangulation using Simplified Earcut](https://arxiv.org/abs/2009.04294)_" - Marco Livesu, Gianmarco Cherchi, Riccardo Scateni, Marco Attene, 2020.
 > IEEE Transactions on Visualization and Computer Graphics, 2021. [arXiv:2009.04294](https://arxiv.org/abs/2009.04294)
+
+Notably, this paper does not consider lateral ears ("we never consider lateral ears in our triangulation algorithm"); and so we found many polygons that failed to triangulate with it due to extremas. To correct this, we adjusted the algorithm to clip ears with the smallest produced triangle area first.
 
 (This repository is a separate copy of the same library in the [main Mach repository](https://github.com/hexops/mach), and is automatically kept in sync, so that anyone can use this library in their own project if they like!)
 
