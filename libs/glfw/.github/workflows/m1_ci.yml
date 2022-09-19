@@ -24,7 +24,7 @@ jobs:
       - name: Setup Zig
         run: |
           sudo rm -rf /usr/local/bin/zig /usr/local/bin/lib/
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.3952+9e070b653.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.4060+61aaef0b0.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: test
         run: zig build test
         env:
