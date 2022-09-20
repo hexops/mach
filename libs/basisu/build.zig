@@ -23,7 +23,7 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     main_tests.main_pkg_path = thisDir();
-    link(b, main_tests, .{
+    link(b, main_tests, target, .{
         .encoder = .{},
         .transcoder = .{},
     });
@@ -31,24 +31,25 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     return main_tests.run();
 }
 
-pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+pub fn link(b: *Builder, step: *std.build.LibExeObjStep, target: std.zig.CrossTarget, options: Options) void {
     if (options.encoder) |encoder_options| {
-        step.linkLibrary(buildEncoder(b, encoder_options));
+        step.linkLibrary(buildEncoder(b, target, encoder_options));
         step.addCSourceFile(comptime thisDir() ++ "/src/encoder/wrapper.cpp", &.{});
         step.addIncludePath(basisu_root ++ "/encoder");
     }
     if (options.transcoder) |transcoder_options| {
-        step.linkLibrary(buildTranscoder(b, transcoder_options));
+        step.linkLibrary(buildTranscoder(b, target, transcoder_options));
         step.addCSourceFile(comptime thisDir() ++ "/src/transcoder/wrapper.cpp", &.{});
         step.addIncludePath(basisu_root ++ "/transcoder");
     }
 }
 
-pub fn buildEncoder(b: *Builder, options: EncoderOptions) *std.build.LibExeObjStep {
+pub fn buildEncoder(b: *Builder, target: std.zig.CrossTarget, options: EncoderOptions) *std.build.LibExeObjStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
     const encoder = b.addStaticLibrary("basisu-encoder", null);
+    encoder.setTarget(target);
     encoder.linkLibCpp();
     encoder.addCSourceFiles(
         encoder_sources,
@@ -62,11 +63,12 @@ pub fn buildEncoder(b: *Builder, options: EncoderOptions) *std.build.LibExeObjSt
     return encoder;
 }
 
-pub fn buildTranscoder(b: *Builder, options: TranscoderOptions) *std.build.LibExeObjStep {
+pub fn buildTranscoder(b: *Builder, target: std.zig.CrossTarget, options: TranscoderOptions) *std.build.LibExeObjStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
     const transcoder = b.addStaticLibrary("basisu-transcoder", null);
+    transcoder.setTarget(target);
     transcoder.linkLibCpp();
     transcoder.addCSourceFiles(
         transcoder_sources,
