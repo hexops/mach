@@ -66,7 +66,7 @@ pub const Queue = opaque {
             buffer,
             buffer_offset_bytes,
             @ptrCast(*const anyopaque, data_slice.ptr),
-            @intCast(u64, data_slice.len) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
+            data_slice.len * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
         );
     }
 
