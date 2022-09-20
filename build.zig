@@ -36,35 +36,78 @@ pub fn build(b: *std.build.Builder) void {
     };
     const options = Options{ .gpu_dawn_options = gpu_dawn_options };
 
-    const all_tests_step = b.step("test", "Run library tests");
-    const glfw_test_step = b.step("test-glfw", "Run GLFW library tests");
-    const gpu_test_step = b.step("test-gpu", "Run GPU library tests");
-    // TODO(self-hosted) uncomment this
-    // const ecs_test_step = b.step("test-ecs", "Run ECS library tests");
-    const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
-    const basisu_test_step = b.step("test-basisu", "Run Basis-Universal library tests");
-    const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
-    const mach_test_step = b.step("test-mach", "Run Mach Core library tests");
+    if (target.getCpuArch() != .wasm32) {
+        const all_tests_step = b.step("test", "Run library tests");
+        const glfw_test_step = b.step("test-glfw", "Run GLFW library tests");
+        const gpu_test_step = b.step("test-gpu", "Run GPU library tests");
+        // TODO(self-hosted) uncomment this
+        // const ecs_test_step = b.step("test-ecs", "Run ECS library tests");
+        const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
+        const basisu_test_step = b.step("test-basisu", "Run Basis-Universal library tests");
+        const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
+        const mach_test_step = b.step("test-mach", "Run Mach Core library tests");
 
-    glfw_test_step.dependOn(&glfw.testStep(b, mode, target).step);
-    gpu_test_step.dependOn(&gpu.testStep(b, mode, target, options.gpuOptions()).step);
-    freetype_test_step.dependOn(&freetype.testStep(b, mode, target).step);
-    // TODO(self-hosted) uncomment this
-    // ecs_test_step.dependOn(&ecs.testStep(b, mode, target).step);
-    if (target.isNativeOs())
-        basisu_test_step.dependOn(&basisu.testStep(b, mode, target).step);
-    sysaudio_test_step.dependOn(&sysaudio.testStep(b, mode, target).step);
-    mach_test_step.dependOn(&testStep(b, mode, target).step);
+        glfw_test_step.dependOn(&glfw.testStep(b, mode, target).step);
+        gpu_test_step.dependOn(&gpu.testStep(b, mode, target, options.gpuOptions()).step);
+        freetype_test_step.dependOn(&freetype.testStep(b, mode, target).step);
+        // TODO(self-hosted) uncomment this
+        // ecs_test_step.dependOn(&ecs.testStep(b, mode, target).step);
+        if (target.isNativeOs())
+            basisu_test_step.dependOn(&basisu.testStep(b, mode, target).step);
+        sysaudio_test_step.dependOn(&sysaudio.testStep(b, mode, target).step);
+        mach_test_step.dependOn(&testStep(b, mode, target).step);
 
-    all_tests_step.dependOn(glfw_test_step);
-    all_tests_step.dependOn(gpu_test_step);
-    // TODO(self-hosted) uncomment this
-    // all_tests_step.dependOn(ecs_test_step);
-    if (target.isNativeOs())
-        all_tests_step.dependOn(basisu_test_step);
-    all_tests_step.dependOn(freetype_test_step);
-    all_tests_step.dependOn(sysaudio_test_step);
-    all_tests_step.dependOn(mach_test_step);
+        all_tests_step.dependOn(glfw_test_step);
+        all_tests_step.dependOn(gpu_test_step);
+        // TODO(self-hosted) uncomment this
+        // all_tests_step.dependOn(ecs_test_step);
+        if (target.isNativeOs())
+            all_tests_step.dependOn(basisu_test_step);
+        all_tests_step.dependOn(freetype_test_step);
+        all_tests_step.dependOn(sysaudio_test_step);
+        all_tests_step.dependOn(mach_test_step);
+
+        const shaderexp_app = App.init(
+            b,
+            .{
+                .name = "shaderexp",
+                .src = "shaderexp/main.zig",
+                .target = target,
+            },
+        );
+        shaderexp_app.setBuildMode(mode);
+        shaderexp_app.link(options);
+        shaderexp_app.install();
+
+        const shaderexp_compile_step = b.step("shaderexp", "Compile shaderexp");
+        shaderexp_compile_step.dependOn(&shaderexp_app.getInstallStep().?.step);
+
+        const shaderexp_run_cmd = shaderexp_app.run();
+        shaderexp_run_cmd.dependOn(&shaderexp_app.getInstallStep().?.step);
+        const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
+        shaderexp_run_step.dependOn(shaderexp_run_cmd);
+
+        // compiles the `libmach` shared library
+        const lib = b.addSharedLibrary("mach", "src/platform/libmach.zig", .unversioned);
+        lib.setTarget(target);
+        lib.setBuildMode(mode);
+        lib.main_pkg_path = "src/";
+        const app_pkg = std.build.Pkg{
+            .name = "app",
+            .source = .{ .path = "src/platform/libmach.zig" },
+        };
+        lib.addPackage(app_pkg);
+        lib.addPackage(gpu.pkg);
+        lib.addPackage(glfw.pkg);
+        lib.addPackage(sysaudio.pkg);
+        if (target.toTarget().os.tag == .linux)
+            lib.addPackage(gamemode.pkg);
+        glfw.link(b, lib, options.glfw_options);
+        gpu.link(b, lib, options.gpuOptions());
+        gamemode.link(lib);
+        lib.setOutputDir("./libmach/build");
+        lib.install();
+    }
 
     // TODO: we need a way to test wasm stuff
     // const sysjs_test_step = b.step( "test-sysjs", "Run sysjs library tests");
@@ -137,51 +180,8 @@ pub fn build(b: *std.build.Builder) void {
         example_run_step.dependOn(example_run_cmd);
     }
 
-    if (target.toTarget().cpu.arch != .wasm32) {
-        const shaderexp_app = App.init(
-            b,
-            .{
-                .name = "shaderexp",
-                .src = "shaderexp/main.zig",
-                .target = target,
-            },
-        );
-        shaderexp_app.setBuildMode(mode);
-        shaderexp_app.link(options);
-        shaderexp_app.install();
-
-        const shaderexp_compile_step = b.step("shaderexp", "Compile shaderexp");
-        shaderexp_compile_step.dependOn(&shaderexp_app.getInstallStep().?.step);
-
-        const shaderexp_run_cmd = shaderexp_app.run();
-        shaderexp_run_cmd.dependOn(&shaderexp_app.getInstallStep().?.step);
-        const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
-        shaderexp_run_step.dependOn(shaderexp_run_cmd);
-    }
-
     const compile_all = b.step("compile-all", "Compile all examples and applications");
     compile_all.dependOn(b.getInstallStep());
-
-    // compiles the `libmach` shared library
-    const lib = b.addSharedLibrary("mach", "src/platform/libmach.zig", .unversioned);
-    lib.setTarget(target);
-    lib.setBuildMode(mode);
-    lib.main_pkg_path = "src/";
-    const app_pkg = std.build.Pkg{
-        .name = "app",
-        .source = .{ .path = "src/platform/libmach.zig" },
-    };
-    lib.addPackage(app_pkg);
-    lib.addPackage(gpu.pkg);
-    lib.addPackage(glfw.pkg);
-    lib.addPackage(sysaudio.pkg);
-    if (target.toTarget().os.tag == .linux)
-        lib.addPackage(gamemode.pkg);
-    glfw.link(b, lib, options.glfw_options);
-    gpu.link(b, lib, options.gpuOptions());
-    gamemode.link(lib);
-    lib.setOutputDir("./libmach/build");
-    lib.install();
 }
 
 fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
