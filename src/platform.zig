@@ -6,6 +6,7 @@ else
     Interface(@import("platform/native.zig"));
 
 pub const Type = Platform.Platform;
+pub const BackingWindowType = Platform.BackingWindow; // TODO: window interface check, platform support
 pub const BackingTimerType = Platform.BackingTimer;
 
 /// Verifies that a Platform implementation exposes the expected function declarations.

@@ -4,6 +4,7 @@ const glfw = @import("glfw");
 const gpu = @import("gpu");
 const app_pkg = @import("app");
 const Core = @import("../Core.zig");
+const Window = @import("../Window.zig");
 const structs = @import("../structs.zig");
 const enums = @import("../enums.zig");
 const util = @import("util.zig");
@@ -18,28 +19,24 @@ pub const scope_levels = if (@hasDecl(App, "scope_levels")) App.scope_levels els
 pub const log_level = if (@hasDecl(App, "log_level")) App.log_level else std.log.default_level;
 
 pub const Platform = struct {
-    window: glfw.Window,
     core: *Core,
     backend_type: gpu.BackendType,
     allocator: std.mem.Allocator,
     events: EventQueue = .{},
+    wait_event_timeout: f64 = 0.0,
+
+    window: glfw.Window,
     user_ptr: UserPtr = undefined,
 
     last_window_size: structs.Size,
     last_framebuffer_size: structs.Size,
     last_position: glfw.Window.Pos,
-    wait_event_timeout: f64 = 0.0,
+    last_cursor_position: structs.WindowPos,
 
     cursors: [@typeInfo(enums.MouseCursor).Enum.fields.len]?glfw.Cursor =
         std.mem.zeroes([@typeInfo(enums.MouseCursor).Enum.fields.len]?glfw.Cursor),
     cursors_tried: [@typeInfo(enums.MouseCursor).Enum.fields.len]bool =
         [_]bool{false} ** @typeInfo(enums.MouseCursor).Enum.fields.len,
-
-    // TODO: these can be moved to Core
-    instance: *gpu.Instance,
-    adapter: *gpu.Adapter,
-
-    last_cursor_position: structs.WindowPos,
 
     linux_gamemode: ?bool,
 
@@ -136,8 +133,11 @@ pub const Platform = struct {
 
         device.?.setUncapturedErrorCallback({}, util.printUnhandledErrorCallback);
 
+        core.instance = instance.?;
+        core.adapter = response.?.adapter;
         core.device = device.?;
         core.backend_type = backend_type;
+
         core.surface = surface;
         core.current_desc = descriptor;
         core.target_desc = descriptor;
@@ -156,8 +156,6 @@ pub const Platform = struct {
                 .x = cursor_pos.xpos,
                 .y = cursor_pos.ypos,
             },
-            .instance = instance.?,
-            .adapter = response.?.adapter,
             .linux_gamemode = null,
         };
     }
@@ -331,6 +329,12 @@ pub const Platform = struct {
 
     pub fn close(platform: *Platform) void {
         platform.window.setShouldClose(true);
+    }
+
+    pub fn initWindow(platform: *Platform, window: *Window) !void {
+        _ = platform;
+        _ = window;
+        unreachable; // TODO
     }
 
     pub fn getFramebufferSize(platform: *Platform) structs.Size {
@@ -549,6 +553,38 @@ pub const Platform = struct {
     /// Default GLFW error handling callback
     fn errorCallback(error_code: glfw.Error, description: [:0]const u8) void {
         std.log.err("glfw: {}: {s}\n", .{ error_code, description });
+    }
+};
+
+pub const BackingWindow = struct {
+    glfw_window: glfw.Window,
+    user_ptr: UserPtr = undefined,
+
+    last_window_size: structs.Size,
+    last_framebuffer_size: structs.Size,
+    last_position: glfw.Window.Pos,
+    last_cursor_position: structs.WindowPos,
+
+    const UserPtr = struct {
+        platform: *Platform,
+    };
+
+    pub fn setOptions(window: *BackingWindow, options: structs.WindowOptions) !void {
+        _ = window;
+        _ = options;
+        unreachable; // TODO
+    }
+
+    pub fn close(window: *BackingWindow) void {
+        window.glfw_window.setShouldClose(true);
+    }
+
+    pub fn getFramebufferSize(window: *BackingWindow) structs.Size {
+        return window.last_framebuffer_size;
+    }
+
+    pub fn getSize(window: *BackingWindow) structs.Size {
+        return window.last_window_size;
     }
 };
 

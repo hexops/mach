@@ -36,11 +36,11 @@ pub const Options = struct {
     /// Fullscreen window.
     fullscreen: bool = false,
 
-    /// Headless mode.
-    headless: bool = false,
-
     /// Monitor synchronization modes.
     vsync: enums.VSyncMode = .double,
+
+    /// Headless mode.
+    headless: bool = false,
 
     /// GPU features required by the application.
     required_features: ?[]gpu.FeatureName = null,
@@ -51,8 +51,35 @@ pub const Options = struct {
     /// Whether the application has a preference for low power or high performance GPU.
     power_preference: gpu.PowerPreference = .undef,
 
-    /// If set, optimize for regular applications rather than games. e.g. disable Linux gamemode / process priority, prefer low-power GPU (if preference is .undef), etc.
+    /// If set, optimize for regular applications rather than games. e.g. disable Linux gamemode /
+    /// process priority, prefer low-power GPU (if preference is .undef), etc.
     is_app: bool = false,
+};
+
+/// Per-window options that can be configured at run time.
+pub const WindowOptions = struct {
+    /// The title of the window.
+    title: [*:0]const u8 = "Mach core",
+
+    /// The width of the window.
+    width: u32 = 640,
+
+    /// The height of the window.
+    height: u32 = 480,
+
+    /// The minimum allowed size for the window. On Linux, if we don't set a minimum size,
+    /// you can squish the window to 0 width and height with strange effects, so it's better to leave
+    /// a minimum size to avoid that. This doesn't prevent you from minimizing the window.
+    size_min: SizeOptional = .{ .width = 350, .height = 350 },
+
+    /// The maximum allowed size for the window.
+    size_max: SizeOptional = .{ .width = null, .height = null },
+
+    /// Fullscreen window.
+    fullscreen: bool = false,
+
+    /// Monitor synchronization modes.
+    vsync: enums.VSyncMode = .double,
 };
 
 pub const Event = union(enum) {

@@ -1,11 +1,11 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const builtin = @import("builtin");
-const glfw = @import("glfw");
 const gpu = @import("gpu");
 const platform = @import("platform.zig");
 const structs = @import("structs.zig");
 const enums = @import("enums.zig");
+const Window = @import("Window.zig");
 const Timer = @import("Timer.zig");
 
 const Core = @This();
@@ -23,8 +23,11 @@ delta_time: f32 = 0,
 delta_time_ns: u64 = 0,
 timer: Timer,
 
+instance: *gpu.Instance,
+adapter: *gpu.Adapter,
 device: *gpu.Device,
 backend_type: gpu.BackendType,
+
 swap_chain: ?*gpu.SwapChain,
 swap_chain_format: gpu.Texture.Format,
 
@@ -52,6 +55,11 @@ pub fn setOptions(core: *Core, options: structs.Options) !void {
 // Signals mach to stop the update loop.
 pub fn close(core: *Core) void {
     core.internal.close();
+}
+
+pub fn initWindow(core: *Core, window: *Window) !void {
+    window.options = structs.WindowOptions{};
+    window.internal = try core.internal.initWindow(window);
 }
 
 // Sets seconds to wait for an event with timeout before calling update()
