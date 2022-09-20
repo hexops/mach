@@ -11,17 +11,17 @@ else
 fi
 
 update_zig() {
-    $gsed -i 's|\(Currently tested with: \).*|\1'"$1"'|' $2
+    $gsed -i 's|\(Currently we test using\ \)`.*`|\1'"\`$1\`|" $2
     $gsed -i 's|\(https://ziglang.org/builds/zig-[^/ -]*-[^/ -]*-\)[^/ ]*\(\(\.tar\.xz\)[^/ ]*\)|\1'"$1"'\2|' $2
     $gsed -i 's|\(https://ziglang.org/builds/zig-[^/ -]*-[^/ -]*-\)[^/ ]*\(\(\.zip\)[^/ ]*\)|\1'"$1"'\2|' $2
-    $gsed -i 's|\(C:\\zig-[^/ -]*-[^/ -]*-\)[^/ \\]*\(.*"\)|\1'"$1"'\2|' $2
+    $gsed -i 's|\(C:\\zig-[^/ -]*-[^/ -]*-\)[^/ \\]*|\1'"$1|" $2
 }
 
 if [ -n "${ZIG_VERSION:-}" ]; then
     version="${ZIG_VERSION:-}"
-
+    
     update_zig "$version" README.md
-
+    
     sources=$(find . | grep './.github/workflows' | grep -v 'third_party/' | grep -v 'DirectXShaderCompiler' | grep '\.yml')
     echo "$sources" | while read line ; do update_zig "$version" "$line" ; done
 else
