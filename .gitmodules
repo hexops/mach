@@ -14,8 +14,8 @@
 	url = https://github.com/PiergiorgioZagaria/zmath
 [submodule "examples/libs/zigimg"]
 	path = examples/libs/zigimg
-	url = https://github.com/slimsag/zigimg
-	branch = zig-master
+	url = https://github.com/zigimg/zigimg
+	branch = stage2_compat
 [submodule "freetype/upstream"]
 	path = libs/freetype/upstream
 	url = https://github.com/hexops/freetype
