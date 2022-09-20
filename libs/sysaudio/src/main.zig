@@ -67,6 +67,7 @@ test "list devices" {
     while (try iter.next()) |_| {}
 }
 
+// TODO(sysaudio): get this test passing on CI
 test "connect to device" {
     return error.SkipZigTest;
 
@@ -77,6 +78,7 @@ test "connect to device" {
     // defer d.deinit(std.testing.allocator);
 }
 
+// TODO(sysaudio): get this test passing on CI
 test "connect to device from descriptor" {
     return error.SkipZigTest;
 
@@ -95,6 +97,7 @@ test "connect to device from descriptor" {
     // return error.SkipZigTest;
 }
 
+// TODO(sysaudio): get this test passing on CI
 test "requestDevice behavior: null is_raw" {
     return error.SkipZigTest;
 
@@ -112,6 +115,7 @@ test "requestDevice behavior: null is_raw" {
     // try testing.expectError(error.InvalidParameter, a.requestDevice(std.testing.allocator, bad_conf));
 }
 
+// TODO(sysaudio): get this test passing on CI
 test "requestDevice behavior: invalid id" {
     return error.SkipZigTest;
 
