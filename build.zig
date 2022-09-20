@@ -39,7 +39,8 @@ pub fn build(b: *std.build.Builder) void {
     const all_tests_step = b.step("test", "Run library tests");
     const glfw_test_step = b.step("test-glfw", "Run GLFW library tests");
     const gpu_test_step = b.step("test-gpu", "Run GPU library tests");
-    const ecs_test_step = b.step("test-ecs", "Run ECS library tests");
+    // TODO(self-hosted) uncomment this
+    // const ecs_test_step = b.step("test-ecs", "Run ECS library tests");
     const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
     const basisu_test_step = b.step("test-basisu", "Run Basis-Universal library tests");
     const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
@@ -48,16 +49,20 @@ pub fn build(b: *std.build.Builder) void {
     glfw_test_step.dependOn(&glfw.testStep(b, mode, target).step);
     gpu_test_step.dependOn(&gpu.testStep(b, mode, target, options.gpuOptions()).step);
     freetype_test_step.dependOn(&freetype.testStep(b, mode, target).step);
-    ecs_test_step.dependOn(&ecs.testStep(b, mode, target).step);
-    basisu_test_step.dependOn(&basisu.testStep(b, mode, target).step);
+    // TODO(self-hosted) uncomment this
+    // ecs_test_step.dependOn(&ecs.testStep(b, mode, target).step);
+    if (target.isNativeOs())
+        basisu_test_step.dependOn(&basisu.testStep(b, mode, target).step);
     sysaudio_test_step.dependOn(&sysaudio.testStep(b, mode, target).step);
     mach_test_step.dependOn(&testStep(b, mode, target).step);
 
     all_tests_step.dependOn(glfw_test_step);
     all_tests_step.dependOn(gpu_test_step);
-    all_tests_step.dependOn(ecs_test_step);
+    // TODO(self-hosted) uncomment this
+    // all_tests_step.dependOn(ecs_test_step);
+    if (target.isNativeOs())
+        all_tests_step.dependOn(basisu_test_step);
     all_tests_step.dependOn(freetype_test_step);
-    all_tests_step.dependOn(basisu_test_step);
     all_tests_step.dependOn(sysaudio_test_step);
     all_tests_step.dependOn(mach_test_step);
 
@@ -85,7 +90,8 @@ pub fn build(b: *std.build.Builder) void {
         .{ .name = "advanced-gen-texture-light", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "fractal-cube", .packages = &[_]Pkg{Packages.zmath} },
         .{ .name = "textured-cube", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg }, .has_assets = true },
-        .{ .name = "ecs-app", .packages = &[_]Pkg{} },
+        // TODO(self-hosted) uncomment this
+        // .{ .name = "ecs-app", .packages = &[_]Pkg{} },
         .{ .name = "image-blur", .packages = &[_]Pkg{Packages.zigimg}, .has_assets = true },
         .{ .name = "cubemap", .packages = &[_]Pkg{ Packages.zmath, Packages.zigimg }, .has_assets = true },
         .{ .name = "map-async", .packages = &[_]Pkg{} },
