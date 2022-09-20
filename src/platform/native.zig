@@ -626,7 +626,7 @@ pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
     core.target_desc.width = framebuffer_size.width;
     core.target_desc.height = framebuffer_size.height;
 
-    if (core.swap_chain == null or !std.meta.eql(core.current_desc, core.target_desc)) {
+    if ((core.swap_chain == null or !std.meta.eql(core.current_desc, core.target_desc)) and !(core.target_desc.width == 0 or core.target_desc.height == 0)) {
         core.swap_chain = core.device.createSwapChain(core.surface, &core.target_desc);
 
         if (@hasDecl(App, "resize")) {
