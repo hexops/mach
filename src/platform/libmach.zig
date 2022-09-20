@@ -7,6 +7,8 @@ const native = @import("native.zig");
 
 pub const App = @This();
 
+_unused: i32,
+
 pub const GPUInterface = gpu.dawn.Interface;
 
 // Dummy init, deinit, and update functions
