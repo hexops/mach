@@ -7,6 +7,7 @@ const native = @import("native.zig");
 
 pub const App = @This();
 
+// TODO(self-hosted): https://github.com/ziglang/zig/issues/12275
 _unused: i32,
 
 pub const GPUInterface = gpu.dawn.Interface;
