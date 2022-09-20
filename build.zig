@@ -78,6 +78,7 @@ pub fn build(b: *std.build.Builder) void {
     ensureDependencySubmodule(b.allocator, "examples/gkurve/assets") catch unreachable;
     ensureDependencySubmodule(b.allocator, "examples/image-blur/assets") catch unreachable;
     ensureDependencySubmodule(b.allocator, "examples/textured-cube/assets") catch unreachable;
+    ensureDependencySubmodule(b.allocator, "examples/cubemap/assets") catch unreachable;
 
     inline for ([_]ExampleDefinition{
         .{ .name = "triangle" },
