@@ -10,6 +10,19 @@ pub const pkg = std.build.Pkg{
     },
 };
 
+pub const Options = struct {
+    encoder: ?EncoderOptions,
+    transcoder: ?TranscoderOptions,
+};
+
+pub const EncoderOptions = struct {
+    install_libs: bool = false,
+};
+
+pub const TranscoderOptions = struct {
+    install_libs: bool = false,
+};
+
 pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
@@ -81,19 +94,6 @@ pub fn buildTranscoder(b: *Builder, target: std.zig.CrossTarget, options: Transc
         transcoder.install();
     return transcoder;
 }
-
-pub const Options = struct {
-    encoder: ?EncoderOptions,
-    transcoder: ?TranscoderOptions,
-};
-
-pub const EncoderOptions = struct {
-    install_libs: bool = false,
-};
-
-pub const TranscoderOptions = struct {
-    install_libs: bool = false,
-};
 
 fn thisDir() []const u8 {
     return std.fs.path.dirname(@src().file) orelse ".";

@@ -24,16 +24,20 @@ pub const Options = struct {
     listen_address: ?net.Address = null,
 };
 
-pub fn serve(step: *build.LibExeObjStep, options: Options) !*Wasmserve {
-    const self = step.builder.allocator.create(Wasmserve) catch unreachable;
+pub const Error = error{CannotOpenDirectory} || mem.Allocator.Error;
+
+pub fn serve(step: *build.LibExeObjStep, options: Options) Error!*Wasmserve {
+    const self = try step.builder.allocator.create(Wasmserve);
     const install_dir = options.install_dir orelse build.InstallDir{ .lib = {} };
+    const install_dir_iter = fs.cwd().makeOpenPathIterable(step.builder.getInstallPath(install_dir, ""), .{}) catch
+        return error.CannotOpenDirectory;
     self.* = Wasmserve{
         .step = build.Step.init(.run, "wasmserve", step.builder.allocator, Wasmserve.make),
         .b = step.builder,
         .exe_step = step,
         .install_step_name = options.install_step_name orelse step.builder.getInstallStep().name,
         .install_dir = install_dir,
-        .install_dir_iter = try fs.cwd().makeOpenPathIterable(step.builder.getInstallPath(install_dir, ""), .{}),
+        .install_dir_iter = install_dir_iter,
         .address = options.listen_address orelse net.Address.initIp4([4]u8{ 127, 0, 0, 1 }, 8080),
         .subscriber = null,
         .watch_paths = options.watch_paths orelse &.{"src"},

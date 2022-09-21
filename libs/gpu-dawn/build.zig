@@ -4,7 +4,7 @@ const glfw = @import("libs/mach-glfw/build.zig");
 const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
 const gpu_dawn_sdk = @import("sdk.zig");
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *Builder) !void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
     const gpu_dawn = gpu_dawn_sdk.Sdk(.{
@@ -23,8 +23,8 @@ pub fn build(b: *Builder) void {
     const example = b.addExecutable("dawn-example", "src/main.zig");
     example.setBuildMode(mode);
     example.setTarget(target);
-    gpu_dawn.link(b, example, options);
-    glfw.link(b, example, .{ .system_sdk = .{ .set_sysroot = false } });
+    try gpu_dawn.link(b, example, options);
+    try glfw.link(b, example, .{ .system_sdk = .{ .set_sysroot = false } });
     example.addPackage(glfw.pkg);
     example.install();
 }

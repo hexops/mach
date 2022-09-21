@@ -79,50 +79,53 @@ pub fn Sdk(comptime deps: anytype) type {
             }
         };
 
-        pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+        pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !void {
             const opt = options.detectDefaults(step.target_info.target);
 
-            if (options.from_source) linkFromSource(b, step, opt) else linkFromBinary(b, step, opt);
+            try if (options.from_source)
+                linkFromSource(b, step, opt)
+            else
+                linkFromBinary(b, step, opt);
         }
 
-        fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
-            ensureSubmodules(b.allocator) catch |err| @panic(@errorName(err));
+        fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !void {
+            try ensureSubmodules(b.allocator);
 
             step.addIncludePath(comptime thisDir() ++ "/libs/dawn/out/Debug/gen/include");
             step.addIncludePath(comptime thisDir() ++ "/libs/dawn/include");
             step.addIncludePath(comptime thisDir() ++ "/src/dawn");
 
             if (options.separate_libs) {
-                const lib_mach_dawn_native = buildLibMachDawnNative(b, step, options);
+                const lib_mach_dawn_native = try buildLibMachDawnNative(b, step, options);
                 step.linkLibrary(lib_mach_dawn_native);
 
-                const lib_dawn_common = buildLibDawnCommon(b, step, options);
+                const lib_dawn_common = try buildLibDawnCommon(b, step, options);
                 step.linkLibrary(lib_dawn_common);
 
-                const lib_dawn_platform = buildLibDawnPlatform(b, step, options);
+                const lib_dawn_platform = try buildLibDawnPlatform(b, step, options);
                 step.linkLibrary(lib_dawn_platform);
 
                 // dawn-native
-                const lib_abseil_cpp = buildLibAbseilCpp(b, step, options);
+                const lib_abseil_cpp = try buildLibAbseilCpp(b, step, options);
                 step.linkLibrary(lib_abseil_cpp);
-                const lib_dawn_native = buildLibDawnNative(b, step, options);
+                const lib_dawn_native = try buildLibDawnNative(b, step, options);
                 step.linkLibrary(lib_dawn_native);
 
                 if (options.d3d12.?) {
-                    const lib_dxcompiler = buildLibDxcompiler(b, step, options);
+                    const lib_dxcompiler = try buildLibDxcompiler(b, step, options);
                     step.linkLibrary(lib_dxcompiler);
                 }
 
-                const lib_dawn_wire = buildLibDawnWire(b, step, options);
+                const lib_dawn_wire = try buildLibDawnWire(b, step, options);
                 step.linkLibrary(lib_dawn_wire);
 
-                const lib_dawn_utils = buildLibDawnUtils(b, step, options);
+                const lib_dawn_utils = try buildLibDawnUtils(b, step, options);
                 step.linkLibrary(lib_dawn_utils);
 
-                const lib_spirv_tools = buildLibSPIRVTools(b, step, options);
+                const lib_spirv_tools = try buildLibSPIRVTools(b, step, options);
                 step.linkLibrary(lib_spirv_tools);
 
-                const lib_tint = buildLibTint(b, step, options);
+                const lib_tint = try buildLibTint(b, step, options);
                 step.linkLibrary(lib_tint);
                 return;
             }
@@ -136,16 +139,16 @@ pub fn Sdk(comptime deps: anytype) type {
                 lib_dawn.install();
             step.linkLibrary(lib_dawn);
 
-            _ = buildLibMachDawnNative(b, lib_dawn, options);
-            _ = buildLibDawnCommon(b, lib_dawn, options);
-            _ = buildLibDawnPlatform(b, lib_dawn, options);
-            _ = buildLibAbseilCpp(b, lib_dawn, options);
-            _ = buildLibDawnNative(b, lib_dawn, options);
-            _ = buildLibDawnWire(b, lib_dawn, options);
-            _ = buildLibDawnUtils(b, lib_dawn, options);
-            _ = buildLibSPIRVTools(b, lib_dawn, options);
-            _ = buildLibTint(b, lib_dawn, options);
-            if (options.d3d12.?) _ = buildLibDxcompiler(b, lib_dawn, options);
+            _ = try buildLibMachDawnNative(b, lib_dawn, options);
+            _ = try buildLibDawnCommon(b, lib_dawn, options);
+            _ = try buildLibDawnPlatform(b, lib_dawn, options);
+            _ = try buildLibAbseilCpp(b, lib_dawn, options);
+            _ = try buildLibDawnNative(b, lib_dawn, options);
+            _ = try buildLibDawnWire(b, lib_dawn, options);
+            _ = try buildLibDawnUtils(b, lib_dawn, options);
+            _ = try buildLibSPIRVTools(b, lib_dawn, options);
+            _ = try buildLibTint(b, lib_dawn, options);
+            if (options.d3d12.?) _ = try buildLibDxcompiler(b, lib_dawn, options);
         }
 
         fn ensureSubmodules(allocator: std.mem.Allocator) !void {
@@ -178,7 +181,7 @@ pub fn Sdk(comptime deps: anytype) type {
             }
         }
 
-        pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+        pub fn linkFromBinary(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !void {
             const target = step.target_info.target;
             const binaries_available = switch (target.os.tag) {
                 .windows => target.abi.isGnu(),
@@ -195,7 +198,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 else => false,
             };
             if (!binaries_available) {
-                const zig_triple = target.zigTriple(b.allocator) catch unreachable;
+                const zig_triple = try target.zigTriple(b.allocator);
                 defer b.allocator.free(zig_triple);
                 std.log.err("gpu-dawn binaries for {s} not available.", .{zig_triple});
                 std.log.err("-> open an issue: https://github.com/hexops/mach/issues", .{});
@@ -215,17 +218,17 @@ pub fn Sdk(comptime deps: anytype) type {
             binary_target.os_version_min = .{ .none = undefined };
             binary_target.os_version_max = .{ .none = undefined };
             binary_target.glibc_version = null;
-            const zig_triple = binary_target.zigTriple(b.allocator) catch unreachable;
+            const zig_triple = try binary_target.zigTriple(b.allocator);
             defer b.allocator.free(zig_triple);
-            ensureBinaryDownloaded(b.allocator, zig_triple, options.debug, target.os.tag == .windows, options.binary_version);
+            try ensureBinaryDownloaded(b.allocator, zig_triple, options.debug, target.os.tag == .windows, options.binary_version);
 
-            const base_cache_dir_rel = std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
-            std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
-            const base_cache_dir = std.fs.cwd().realpathAlloc(b.allocator, base_cache_dir_rel) catch unreachable;
-            const commit_cache_dir = std.fs.path.join(b.allocator, &.{ base_cache_dir, options.binary_version }) catch unreachable;
+            const base_cache_dir_rel = try std.fs.path.join(b.allocator, &.{ "zig-cache", "mach", "gpu-dawn" });
+            try std.fs.cwd().makePath(base_cache_dir_rel);
+            const base_cache_dir = try std.fs.cwd().realpathAlloc(b.allocator, base_cache_dir_rel);
+            const commit_cache_dir = try std.fs.path.join(b.allocator, &.{ base_cache_dir, options.binary_version });
             const release_tag = if (options.debug) "debug" else "release-fast";
-            const target_cache_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, zig_triple, release_tag }) catch unreachable;
-            const include_dir = std.fs.path.join(b.allocator, &.{ commit_cache_dir, "include" }) catch unreachable;
+            const target_cache_dir = try std.fs.path.join(b.allocator, &.{ commit_cache_dir, zig_triple, release_tag });
+            const include_dir = try std.fs.path.join(b.allocator, &.{ commit_cache_dir, "include" });
             defer {
                 b.allocator.free(base_cache_dir);
                 b.allocator.free(commit_cache_dir);
@@ -263,7 +266,7 @@ pub fn Sdk(comptime deps: anytype) type {
             is_debug: bool,
             is_windows: bool,
             version: []const u8,
-        ) void {
+        ) !void {
             // If zig-cache/mach/gpu-dawn/<git revision> does not exist:
             //   If on a commit in the main branch => rm -r zig-cache/mach/gpu-dawn/
             //   else => noop
@@ -274,10 +277,10 @@ pub fn Sdk(comptime deps: anytype) type {
             //   Extract to zig-cache/mach/gpu-dawn/<git revision>/macos-aarch64/libgpu.a
             //   Remove zig-cache/mach/gpu-dawn/download
 
-            const base_cache_dir_rel = std.fs.path.join(allocator, &.{ "zig-cache", "mach", "gpu-dawn" }) catch unreachable;
-            std.fs.cwd().makePath(base_cache_dir_rel) catch unreachable;
-            const base_cache_dir = std.fs.cwd().realpathAlloc(allocator, base_cache_dir_rel) catch unreachable;
-            const commit_cache_dir = std.fs.path.join(allocator, &.{ base_cache_dir, version }) catch unreachable;
+            const base_cache_dir_rel = try std.fs.path.join(allocator, &.{ "zig-cache", "mach", "gpu-dawn" });
+            try std.fs.cwd().makePath(base_cache_dir_rel);
+            const base_cache_dir = try std.fs.cwd().realpathAlloc(allocator, base_cache_dir_rel);
+            const commit_cache_dir = try std.fs.path.join(allocator, &.{ base_cache_dir, version });
             defer {
                 allocator.free(base_cache_dir_rel);
                 allocator.free(base_cache_dir);
@@ -287,14 +290,14 @@ pub fn Sdk(comptime deps: anytype) type {
             if (!dirExists(commit_cache_dir)) {
                 // Commit cache dir does not exist. If the commit we're on is in the main branch, we're
                 // probably moving to a newer commit and so we should cleanup older cached binaries.
-                const current_git_commit = getCurrentGitCommit(allocator) catch unreachable;
+                const current_git_commit = try getCurrentGitCommit(allocator);
                 if (gitBranchContainsCommit(allocator, "main", current_git_commit) catch false) {
                     std.fs.deleteTreeAbsolute(base_cache_dir) catch {};
                 }
             }
 
             const release_tag = if (is_debug) "debug" else "release-fast";
-            const target_cache_dir = std.fs.path.join(allocator, &.{ commit_cache_dir, zig_triple, release_tag }) catch unreachable;
+            const target_cache_dir = try std.fs.path.join(allocator, &.{ commit_cache_dir, zig_triple, release_tag });
             defer allocator.free(target_cache_dir);
             if (dirExists(target_cache_dir)) {
                 return; // nothing to do, already have the binary
@@ -484,10 +487,9 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn ensureCanDownloadFiles(allocator: std.mem.Allocator) void {
-            const argv = &[_][]const u8{ "curl", "--version" };
             const result = std.ChildProcess.exec(.{
                 .allocator = allocator,
-                .argv = argv,
+                .argv = &.{ "curl", "--version" },
                 .cwd = comptime thisDir(),
             }) catch { // e.g. FileNotFound
                 std.log.err("mach: error: 'curl --version' failed. Is curl not installed?", .{});
@@ -508,7 +510,7 @@ pub fn Sdk(comptime deps: anytype) type {
             return !tag.isDarwin() and tag != .windows and tag != .fuchsia and tag != .emscripten and !target.isAndroid();
         }
 
-        fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+        fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-native-mach", main_abs);
@@ -521,30 +523,30 @@ pub fn Sdk(comptime deps: anytype) type {
             };
 
             // TODO(build-system): pass system SDK options through
-            deps.glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
+            try deps.glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            options.appendFlags(&cpp_flags, false, true) catch unreachable;
-            appendDawnEnableBackendTypeFlags(&cpp_flags, options) catch unreachable;
-            cpp_flags.appendSlice(&.{
+            try options.appendFlags(&cpp_flags, false, true);
+            try appendDawnEnableBackendTypeFlags(&cpp_flags, options);
+            try cpp_flags.appendSlice(&.{
                 include(deps.glfw_include_dir),
                 include("libs/dawn/out/Debug/gen/include"),
                 include("libs/dawn/out/Debug/gen/src"),
                 include("libs/dawn/include"),
                 include("libs/dawn/src"),
-            }) catch unreachable;
+            });
             if (step.target_info.target.os.tag == .windows) {
-                cpp_flags.appendSlice(&.{
+                try cpp_flags.appendSlice(&.{
                     "-D_DEBUG",
                     "-D_MT",
                     "-D_DLL",
-                }) catch unreachable;
+                });
             }
             return lib;
         }
 
         // Builds common sources; derived from src/common/BUILD.gn
-        fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+        fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-common", main_abs);
@@ -557,12 +559,12 @@ pub fn Sdk(comptime deps: anytype) type {
             };
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            flags.appendSlice(&.{
+            try flags.appendSlice(&.{
                 include("libs/dawn/src"),
                 include("libs/dawn/out/Debug/gen/include"),
                 include("libs/dawn/out/Debug/gen/src"),
-            }) catch unreachable;
-            appendLangScannedSources(b, lib, options, .{
+            });
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/dawn/common/",
                     "libs/dawn/out/Debug/gen/src/dawn/common/",
@@ -574,7 +576,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     "mock",
                     "WindowsUtils.cpp",
                 },
-            }) catch unreachable;
+            });
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
             if (step.target_info.target.os.tag == .macos) {
@@ -582,22 +584,22 @@ pub fn Sdk(comptime deps: anytype) type {
                 deps.system_sdk.include(b, lib, .{});
                 lib.linkFramework("Foundation");
                 const abs_path = comptime thisDir() ++ "/libs/dawn/src/dawn/common/SystemUtils_mac.mm";
-                cpp_sources.append(abs_path) catch unreachable;
+                try cpp_sources.append(abs_path);
             }
             if (step.target_info.target.os.tag == .windows) {
                 const abs_path = comptime thisDir() ++ "/libs/dawn/src/dawn/common/WindowsUtils.cpp";
-                cpp_sources.append(abs_path) catch unreachable;
+                try cpp_sources.append(abs_path);
             }
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            cpp_flags.appendSlice(flags.items) catch unreachable;
-            options.appendFlags(&cpp_flags, false, true) catch unreachable;
+            try cpp_flags.appendSlice(flags.items);
+            try options.appendFlags(&cpp_flags, false, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
 
         // Build dawn platform sources; derived from src/dawn/platform/BUILD.gn
-        fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+        fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-platform", main_abs);
@@ -610,13 +612,13 @@ pub fn Sdk(comptime deps: anytype) type {
             };
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            options.appendFlags(&cpp_flags, false, true) catch unreachable;
-            cpp_flags.appendSlice(&.{
+            try options.appendFlags(&cpp_flags, false, true);
+            try cpp_flags.appendSlice(&.{
                 include("libs/dawn/src"),
                 include("libs/dawn/include"),
 
                 include("libs/dawn/out/Debug/gen/include"),
-            }) catch unreachable;
+            });
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
             inline for ([_][]const u8{
@@ -625,7 +627,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "src/dawn/platform/tracing/EventTracer.cpp",
             }) |path| {
                 const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                cpp_sources.append(abs_path) catch unreachable;
+                try cpp_sources.append(abs_path);
             }
 
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
@@ -669,7 +671,7 @@ pub fn Sdk(comptime deps: anytype) type {
         };
 
         // Builds dawn native sources; derived from src/dawn/native/BUILD.gn
-        fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+        fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-native", main_abs);
@@ -683,8 +685,8 @@ pub fn Sdk(comptime deps: anytype) type {
             deps.system_sdk.include(b, lib, .{});
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
-            flags.appendSlice(&.{
+            try appendDawnEnableBackendTypeFlags(&flags, options);
+            try flags.appendSlice(&.{
                 include("libs/dawn"),
                 include("libs/dawn/src"),
                 include("libs/dawn/include"),
@@ -707,10 +709,10 @@ pub fn Sdk(comptime deps: anytype) type {
 
                 include("libs/dawn/out/Debug/gen/include"),
                 include("libs/dawn/out/Debug/gen/src"),
-            }) catch unreachable;
-            if (options.d3d12.?) flags.appendSlice(dawn_d3d12_flags) catch unreachable;
+            });
+            if (options.d3d12.?) try flags.appendSlice(dawn_d3d12_flags);
 
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/out/Debug/gen/src/dawn/",
                     "libs/dawn/src/dawn/native/",
@@ -725,16 +727,16 @@ pub fn Sdk(comptime deps: anytype) type {
                     "SpirvValidation.cpp",
                     "XlibXcbFunctions.cpp",
                 },
-            }) catch unreachable;
+            });
 
             // dawn_native_gen
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/out/Debug/gen/src/dawn/native/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "benchmark", "mock" },
-            }) catch unreachable;
+            });
 
             // TODO(build-system): could allow enable_vulkan_validation_layers here. See src/dawn/native/BUILD.gn
             // TODO(build-system): allow use_angle here. See src/dawn/native/BUILD.gn
@@ -749,16 +751,16 @@ pub fn Sdk(comptime deps: anytype) type {
                     "src/dawn/mingw_helpers.cpp",
                 }) |path| {
                     const abs_path = comptime thisDir() ++ "/" ++ path;
-                    cpp_sources.append(abs_path) catch unreachable;
+                    try cpp_sources.append(abs_path);
                 }
 
-                appendLangScannedSources(b, lib, options, .{
+                try appendLangScannedSources(b, lib, options, .{
                     .rel_dirs = &.{
                         "libs/dawn/src/dawn/native/d3d12/",
                     },
                     .flags = flags.items,
                     .excluding_contains = &.{ "test", "benchmark", "mock" },
-                }) catch unreachable;
+                });
             }
             if (options.metal.?) {
                 lib.linkFramework("Metal");
@@ -768,7 +770,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 lib.linkFramework("IOSurface");
                 lib.linkFramework("QuartzCore");
 
-                appendLangScannedSources(b, lib, options, .{
+                try appendLangScannedSources(b, lib, options, .{
                     .objc = true,
                     .rel_dirs = &.{
                         "libs/dawn/src/dawn/native/metal/",
@@ -776,7 +778,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     },
                     .flags = flags.items,
                     .excluding_contains = &.{ "test", "benchmark", "mock" },
-                }) catch unreachable;
+                });
             }
 
             if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
@@ -785,7 +787,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     "src/dawn/native/XlibXcbFunctions.cpp",
                 }) |path| {
                     const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                    cpp_sources.append(abs_path) catch unreachable;
+                    try cpp_sources.append(abs_path);
                 }
             }
 
@@ -793,7 +795,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "src/dawn/native/null/DeviceNull.cpp",
             }) |path| {
                 const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                cpp_sources.append(abs_path) catch unreachable;
+                try cpp_sources.append(abs_path);
             }
 
             if (options.desktop_gl.? or options.vulkan.?) {
@@ -801,29 +803,29 @@ pub fn Sdk(comptime deps: anytype) type {
                     "src/dawn/native/SpirvValidation.cpp",
                 }) |path| {
                     const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                    cpp_sources.append(abs_path) catch unreachable;
+                    try cpp_sources.append(abs_path);
                 }
             }
 
             if (options.desktop_gl.?) {
-                appendLangScannedSources(b, lib, options, .{
+                try appendLangScannedSources(b, lib, options, .{
                     .rel_dirs = &.{
                         "libs/dawn/out/Debug/gen/src/dawn/native/opengl/",
                         "libs/dawn/src/dawn/native/opengl/",
                     },
                     .flags = flags.items,
                     .excluding_contains = &.{ "test", "benchmark", "mock" },
-                }) catch unreachable;
+                });
             }
 
             if (options.vulkan.?) {
-                appendLangScannedSources(b, lib, options, .{
+                try appendLangScannedSources(b, lib, options, .{
                     .rel_dirs = &.{
                         "libs/dawn/src/dawn/native/vulkan/",
                     },
                     .flags = flags.items,
                     .excluding_contains = &.{ "test", "benchmark", "mock" },
-                }) catch unreachable;
+                });
 
                 if (isLinuxDesktopLike(step.target_info.target)) {
                     inline for ([_][]const u8{
@@ -831,7 +833,7 @@ pub fn Sdk(comptime deps: anytype) type {
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
                     }) |path| {
                         const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                        cpp_sources.append(abs_path) catch unreachable;
+                        try cpp_sources.append(abs_path);
                     }
                 } else if (step.target_info.target.os.tag == .fuchsia) {
                     inline for ([_][]const u8{
@@ -839,7 +841,7 @@ pub fn Sdk(comptime deps: anytype) type {
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
                     }) |path| {
                         const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                        cpp_sources.append(abs_path) catch unreachable;
+                        try cpp_sources.append(abs_path);
                     }
                 } else {
                     inline for ([_][]const u8{
@@ -847,7 +849,7 @@ pub fn Sdk(comptime deps: anytype) type {
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceNull.cpp",
                     }) |path| {
                         const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                        cpp_sources.append(abs_path) catch unreachable;
+                        try cpp_sources.append(abs_path);
                     }
                 }
             }
@@ -895,7 +897,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "src/dawn/native/null/NullBackend.cpp",
             }) |path| {
                 const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                cpp_sources.append(abs_path) catch unreachable;
+                try cpp_sources.append(abs_path);
             }
 
             if (options.d3d12.?) {
@@ -903,7 +905,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     "src/dawn/native/d3d12/D3D12Backend.cpp",
                 }) |path| {
                     const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                    cpp_sources.append(abs_path) catch unreachable;
+                    try cpp_sources.append(abs_path);
                 }
             }
             if (options.desktop_gl.?) {
@@ -911,7 +913,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     "src/dawn/native/opengl/OpenGLBackend.cpp",
                 }) |path| {
                     const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                    cpp_sources.append(abs_path) catch unreachable;
+                    try cpp_sources.append(abs_path);
                 }
             }
             if (options.vulkan.?) {
@@ -919,7 +921,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     "src/dawn/native/vulkan/VulkanBackend.cpp",
                 }) |path| {
                     const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                    cpp_sources.append(abs_path) catch unreachable;
+                    try cpp_sources.append(abs_path);
                 }
                 // TODO(build-system): vulkan
                 //     if (enable_vulkan_validation_layers) {
@@ -933,14 +935,14 @@ pub fn Sdk(comptime deps: anytype) type {
             }
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            cpp_flags.appendSlice(flags.items) catch unreachable;
-            options.appendFlags(&cpp_flags, false, true) catch unreachable;
+            try cpp_flags.appendSlice(flags.items);
+            try options.appendFlags(&cpp_flags, false, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
 
         // Builds tint sources; derived from src/tint/BUILD.gn
-        fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+        fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("tint", main_abs);
@@ -953,7 +955,7 @@ pub fn Sdk(comptime deps: anytype) type {
             };
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            flags.appendSlice(&.{
+            try flags.appendSlice(&.{
                 // TODO(build-system): make these optional
                 "-DTINT_BUILD_SPV_READER=1",
                 "-DTINT_BUILD_SPV_WRITER=1",
@@ -974,10 +976,10 @@ pub fn Sdk(comptime deps: anytype) type {
                 include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
                 include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
                 include("libs/dawn/include"),
-            }) catch unreachable;
+            });
 
             // libtint_core_all_src
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint",
                     "libs/dawn/src/tint/diagnostic/",
@@ -994,101 +996,101 @@ pub fn Sdk(comptime deps: anytype) type {
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "bench", "printer_windows", "printer_linux", "printer_other", "glsl.cc" },
-            }) catch unreachable;
+            });
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
             switch (step.target_info.target.os.tag) {
-                .windows => cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_windows.cc") catch unreachable,
-                .linux => cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_linux.cc") catch unreachable,
-                else => cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_other.cc") catch unreachable,
+                .windows => try cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_windows.cc"),
+                .linux => try cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_linux.cc"),
+                else => try cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_other.cc"),
             }
 
             // libtint_sem_src
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/sem/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "benchmark" },
-            }) catch unreachable;
+            });
 
             // libtint_spv_reader_src
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/reader/spirv/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "benchmark" },
-            }) catch unreachable;
+            });
 
             // libtint_spv_writer_src
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/spirv/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "bench" },
-            }) catch unreachable;
+            });
 
             // TODO(build-system): make optional
             // libtint_wgsl_reader_src
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/reader/wgsl/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "bench" },
-            }) catch unreachable;
+            });
 
             // TODO(build-system): make optional
             // libtint_wgsl_writer_src
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/wgsl/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "bench" },
-            }) catch unreachable;
+            });
 
             // TODO(build-system): make optional
             // libtint_msl_writer_src
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/msl/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "bench" },
-            }) catch unreachable;
+            });
 
             // TODO(build-system): make optional
             // libtint_hlsl_writer_src
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/hlsl/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "bench" },
-            }) catch unreachable;
+            });
 
             // TODO(build-system): make optional
             // libtint_glsl_writer_src
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/glsl/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "bench" },
-            }) catch unreachable;
+            });
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            cpp_flags.appendSlice(flags.items) catch unreachable;
-            options.appendFlags(&cpp_flags, false, true) catch unreachable;
+            try cpp_flags.appendSlice(flags.items);
+            try options.appendFlags(&cpp_flags, false, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
 
         // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
-        fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+        fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("spirv-tools", main_abs);
@@ -1101,7 +1103,7 @@ pub fn Sdk(comptime deps: anytype) type {
             };
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            flags.appendSlice(&.{
+            try flags.appendSlice(&.{
                 include("libs/dawn"),
                 include("libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
                 include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
@@ -1109,44 +1111,44 @@ pub fn Sdk(comptime deps: anytype) type {
                 include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
                 include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
                 include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include/spirv/unified1"),
-            }) catch unreachable;
+            });
 
             // spvtools
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/",
                     "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/util/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "benchmark" },
-            }) catch unreachable;
+            });
 
             // spvtools_val
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/val/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "benchmark" },
-            }) catch unreachable;
+            });
 
             // spvtools_opt
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "benchmark" },
-            }) catch unreachable;
+            });
 
             // spvtools_link
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/link/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "benchmark" },
-            }) catch unreachable;
+            });
             return lib;
         }
 
@@ -1156,7 +1158,7 @@ pub fn Sdk(comptime deps: anytype) type {
         // $ find third_party/abseil-cpp/absl | grep '\.cc' | grep -v 'test' | grep -v 'benchmark' | grep -v gaussian_distribution_gentables | grep -v print_hash_of | grep -v chi_square
         // ```
         //
-        fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+        fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("abseil-cpp-common", main_abs);
@@ -1174,21 +1176,21 @@ pub fn Sdk(comptime deps: anytype) type {
             if (target.os.tag == .windows) lib.linkSystemLibraryName("bcrypt");
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            flags.appendSlice(&.{
+            try flags.appendSlice(&.{
                 include("libs/dawn"),
                 include("libs/dawn/third_party/abseil-cpp"),
-            }) catch unreachable;
-            if (target.os.tag == .windows) flags.appendSlice(&.{
+            });
+            if (target.os.tag == .windows) try flags.appendSlice(&.{
                 "-DABSL_FORCE_THREAD_IDENTITY_MODE=2",
                 "-DWIN32_LEAN_AND_MEAN",
                 "-DD3D10_ARBITRARY_HEADER_ORDERING",
                 "-D_CRT_SECURE_NO_WARNINGS",
                 "-DNOMINMAX",
                 include("src/dawn/zig_mingw_pthread"),
-            }) catch unreachable;
+            });
 
             // absl
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/third_party/abseil-cpp/absl/strings/",
                     "libs/dawn/third_party/abseil-cpp/absl/strings/internal/",
@@ -1213,12 +1215,12 @@ pub fn Sdk(comptime deps: anytype) type {
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "_test", "_testing", "benchmark", "print_hash_of.cc", "gaussian_distribution_gentables.cc" },
-            }) catch unreachable;
+            });
             return lib;
         }
 
         // Buids dawn wire sources; derived from src/dawn/wire/BUILD.gn
-        fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+        fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-wire", main_abs);
@@ -1231,15 +1233,15 @@ pub fn Sdk(comptime deps: anytype) type {
             };
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            flags.appendSlice(&.{
+            try flags.appendSlice(&.{
                 include("libs/dawn"),
                 include("libs/dawn/src"),
                 include("libs/dawn/include"),
                 include("libs/dawn/out/Debug/gen/include"),
                 include("libs/dawn/out/Debug/gen/src"),
-            }) catch unreachable;
+            });
 
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
                     "libs/dawn/out/Debug/gen/src/dawn/wire/",
                     "libs/dawn/out/Debug/gen/src/dawn/wire/client/",
@@ -1250,12 +1252,12 @@ pub fn Sdk(comptime deps: anytype) type {
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "benchmark", "mock" },
-            }) catch unreachable;
+            });
             return lib;
         }
 
         // Builds dawn utils sources; derived from src/dawn/utils/BUILD.gn
-        fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+        fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dawn-utils", main_abs);
@@ -1266,16 +1268,16 @@ pub fn Sdk(comptime deps: anytype) type {
                     separate_lib.install();
                 break :blk separate_lib;
             };
-            deps.glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
+            try deps.glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            appendDawnEnableBackendTypeFlags(&flags, options) catch unreachable;
-            flags.appendSlice(&.{
+            try appendDawnEnableBackendTypeFlags(&flags, options);
+            try flags.appendSlice(&.{
                 include(deps.glfw_include_dir),
                 include("libs/dawn/src"),
                 include("libs/dawn/include"),
                 include("libs/dawn/out/Debug/gen/include"),
-            }) catch unreachable;
+            });
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
             inline for ([_][]const u8{
@@ -1283,7 +1285,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "src/dawn/utils/NullBinding.cpp",
             }) |path| {
                 const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                cpp_sources.append(abs_path) catch unreachable;
+                try cpp_sources.append(abs_path);
             }
 
             if (options.d3d12.?) {
@@ -1291,16 +1293,16 @@ pub fn Sdk(comptime deps: anytype) type {
                     "src/dawn/utils/D3D12Binding.cpp",
                 }) |path| {
                     const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                    cpp_sources.append(abs_path) catch unreachable;
+                    try cpp_sources.append(abs_path);
                 }
-                flags.appendSlice(dawn_d3d12_flags) catch unreachable;
+                try flags.appendSlice(dawn_d3d12_flags);
             }
             if (options.metal.?) {
                 inline for ([_][]const u8{
                     "src/dawn/utils/MetalBinding.mm",
                 }) |path| {
                     const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                    cpp_sources.append(abs_path) catch unreachable;
+                    try cpp_sources.append(abs_path);
                 }
             }
 
@@ -1309,7 +1311,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     "src/dawn/utils/OpenGLBinding.cpp",
                 }) |path| {
                     const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                    cpp_sources.append(abs_path) catch unreachable;
+                    try cpp_sources.append(abs_path);
                 }
             }
 
@@ -1318,19 +1320,19 @@ pub fn Sdk(comptime deps: anytype) type {
                     "src/dawn/utils/VulkanBinding.cpp",
                 }) |path| {
                     const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
-                    cpp_sources.append(abs_path) catch unreachable;
+                    try cpp_sources.append(abs_path);
                 }
             }
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            cpp_flags.appendSlice(flags.items) catch unreachable;
-            options.appendFlags(&cpp_flags, false, true) catch unreachable;
+            try cpp_flags.appendSlice(flags.items);
+            try options.appendFlags(&cpp_flags, false, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
 
         // Buids dxcompiler sources; derived from libs/DirectXShaderCompiler/CMakeLists.txt
-        fn buildLibDxcompiler(b: *Builder, step: *std.build.LibExeObjStep, options: Options) *std.build.LibExeObjStep {
+        fn buildLibDxcompiler(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
                 const separate_lib = b.addStaticLibrary("dxcompiler", main_abs);
@@ -1350,7 +1352,7 @@ pub fn Sdk(comptime deps: anytype) type {
             lib.linkLibCpp();
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            flags.appendSlice(&.{
+            try flags.appendSlice(&.{
                 include("libs/"),
                 include("libs/DirectXShaderCompiler/include/llvm/llvm_assert"),
                 include("libs/DirectXShaderCompiler/include"),
@@ -1368,9 +1370,9 @@ pub fn Sdk(comptime deps: anytype) type {
                 "-DHAVE_LIBPSAPI=1",
                 "-DHAVE_LIBSHELL32=1",
                 "-DLLVM_ON_WIN32=1",
-            }) catch unreachable;
+            });
 
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .zero_debug_symbols = true,
                 .rel_dirs = &.{
                     "libs/DirectXShaderCompiler/lib/Analysis/IPA",
@@ -1401,9 +1403,9 @@ pub fn Sdk(comptime deps: anytype) type {
                     "libs/DirectXShaderCompiler/lib/Transforms/Vectorize",
                 },
                 .flags = flags.items,
-            }) catch unreachable;
+            });
 
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .zero_debug_symbols = true,
                 .rel_dirs = &.{
                     "libs/DirectXShaderCompiler/lib/Support",
@@ -1415,9 +1417,9 @@ pub fn Sdk(comptime deps: anytype) type {
                     "Path.cpp", // ignore, LLVM_INCLUDE_TESTS
                     "DynamicLibrary.cpp", // ignore
                 },
-            }) catch unreachable;
+            });
 
-            appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, options, .{
                 .zero_debug_symbols = true,
                 .rel_dirs = &.{
                     "libs/DirectXShaderCompiler/lib/Bitcode/Reader",
@@ -1426,7 +1428,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 .excluding_contains = &.{
                     "BitReader.cpp", // ignore
                 },
-            }) catch unreachable;
+            });
             return lib;
         }
 
@@ -1453,7 +1455,7 @@ pub fn Sdk(comptime deps: anytype) type {
         ) !void {
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(args.flags);
-            options.appendFlags(&cpp_flags, args.zero_debug_symbols, true) catch unreachable;
+            try options.appendFlags(&cpp_flags, args.zero_debug_symbols, true);
             const cpp_extensions: []const []const u8 = if (args.objc) &.{".mm"} else &.{ ".cpp", ".cc" };
             try appendScannedSources(b, step, .{
                 .flags = cpp_flags.items,
@@ -1465,7 +1467,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(args.flags);
-            options.appendFlags(&flags, args.zero_debug_symbols, false) catch unreachable;
+            try options.appendFlags(&flags, args.zero_debug_symbols, false);
             const c_extensions: []const []const u8 = if (args.objc) &.{".m"} else &.{".c"};
             try appendScannedSources(b, step, .{
                 .flags = flags.items,
