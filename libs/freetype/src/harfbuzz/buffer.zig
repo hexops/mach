@@ -40,6 +40,7 @@ pub const Position = extern struct {
     y_advance: i32,
     x_offset: i32,
     y_offset: i32,
+    _padding: u32, // private
 };
 
 pub const GlyphFlags = packed struct {
