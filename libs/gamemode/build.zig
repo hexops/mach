@@ -6,7 +6,7 @@ pub const pkg = std.build.Pkg{
 };
 
 pub fn link(step: *std.build.LibExeObjStep) void {
-    step.addIncludeDir(comptime thisDir() ++ "/upstream/include");
+    step.addIncludePath(comptime thisDir() ++ "/upstream/include");
 }
 
 fn thisDir() []const u8 {
