@@ -20,20 +20,20 @@ There are 130+ tests, and CI tests on all major platforms as well as cross-compi
 
 Why create a ziggified GLFW wrapper, instead of just using `@cImport` and interfacing with GLFW directly? You get:
 
-* Errors as [zig errors](https://ziglang.org/documentation/master/#Errors) instead of via a callback function.
-* `true` and `false` instead of `c.GLFW_TRUE` and `c.GLFW_FALSE` constants.
-* Generics, so you can just use `window.hint` instead of `glfwWindowHint`, `glfwWindowHintString`, etc.
-* **Enums**, always know what value a GLFW function can accept as everything is strictly typed. And use the nice Zig syntax to access enums, like `window.getKey(.escape)` instead of `c.glfwGetKey(window, c.GLFW_KEY_ESCAPE)`
-* Slices instead of C pointers and lengths.
-* [packed structs](https://ziglang.org/documentation/master/#packed-struct) represent bit masks, so you can use `if (joystick.down and joystick.right)` instead of `if (joystick & c.GLFW_HAT_DOWN and joystick & c.GLFW_HAT_RIGHT)`, etc.
-* Methods, e.g. `my_window.hint(...)` instead of `glfwWindowHint(my_window, ...)`
+- Errors as [zig errors](https://ziglang.org/documentation/master/#Errors) instead of via a callback function.
+- `true` and `false` instead of `c.GLFW_TRUE` and `c.GLFW_FALSE` constants.
+- Generics, so you can just use `window.hint` instead of `glfwWindowHint`, `glfwWindowHintString`, etc.
+- **Enums**, always know what value a GLFW function can accept as everything is strictly typed. And use the nice Zig syntax to access enums, like `window.getKey(.escape)` instead of `c.glfwGetKey(window, c.GLFW_KEY_ESCAPE)`
+- Slices instead of C pointers and lengths.
+- [packed structs](https://ziglang.org/documentation/master/#packed-struct) represent bit masks, so you can use `if (joystick.down and joystick.right)` instead of `if (joystick & c.GLFW_HAT_DOWN and joystick & c.GLFW_HAT_RIGHT)`, etc.
+- Methods, e.g. `my_window.hint(...)` instead of `glfwWindowHint(my_window, ...)`
 
 ## How do I use OpenGL, Vulkan, WebGPU, etc. with this?
 
 You'll need to bring your own library for this. Some are:
 
-* (Vulkan) https://github.com/Snektron/vulkan-zig (also see https://github.com/Avokadoen/zig_vulkan)
-* (OpenGL) https://github.com/ziglibs/zgl
+- (Vulkan) https://github.com/Snektron/vulkan-zig (also see https://github.com/Avokadoen/zig_vulkan)
+- (OpenGL) https://github.com/ziglibs/zgl
 
 ## Examples
 
@@ -57,10 +57,10 @@ Then in your `build.zig` add:
 ...
 const glfw = @import("libs/mach-glfw/build.zig");
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *Builder) !void {
     ...
     exe.addPackage(glfw.pkg);
-    glfw.link(b, exe, .{});
+    try glfw.link(b, exe, .{});
 }
 ```
 
@@ -83,11 +83,11 @@ Then in your `build.zig` add:
 const pkgs = @import("deps.zig").pkgs;
 const glfw = @import("build-glfw");
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *Builder) !void {
     ...
 
     exe.addPackage(pkgs.glfw);
-    glfw.link(b, exe, .{});
+    try glfw.link(b, exe, .{});
 }
 ```
 
@@ -134,11 +134,11 @@ const pos = window.getPos() catch |err| {
 
 Here is a rough list of functionality Wayland does not support:
 
-* `Window.setIcon`
-* `Window.setPos`, `Window.getPos`
-* `Window.iconify`, `Window.focus`
-* `Monitor.setGamma`
-* `Monitor.getGammaRamp`, `Monitor.setGammaRamp`
+- `Window.setIcon`
+- `Window.setPos`, `Window.getPos`
+- `Window.iconify`, `Window.focus`
+- `Monitor.setGamma`
+- `Monitor.getGammaRamp`, `Monitor.setGammaRamp`
 
 ## Join the community
 

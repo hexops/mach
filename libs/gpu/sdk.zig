@@ -2,11 +2,11 @@ const std = @import("std");
 
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
-        pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.RunStep {
+        pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) !*std.build.RunStep {
             const main_tests = b.addTestExe("gpu-tests", (comptime thisDir()) ++ "/src/main.zig");
             main_tests.setBuildMode(mode);
             main_tests.setTarget(target);
-            link(b, main_tests, options);
+            try link(b, main_tests, options);
             main_tests.install();
             return main_tests.run();
         }
@@ -22,10 +22,10 @@ pub fn Sdk(comptime deps: anytype) type {
             .dependencies = &.{deps.glfw.pkg},
         };
 
-        pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Options) void {
+        pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Options) !void {
             if (step.target.toTarget().cpu.arch != .wasm32) {
-                deps.glfw.link(b, step, options.glfw_options);
-                deps.gpu_dawn.link(b, step, options.gpu_dawn_options);
+                try deps.glfw.link(b, step, options.glfw_options);
+                try deps.gpu_dawn.link(b, step, options.gpu_dawn_options);
                 step.addCSourceFile((comptime thisDir()) ++ "/src/mach_dawn.cpp", &.{"-std=c++17"});
                 step.addIncludePath((comptime thisDir()) ++ "/src");
             }
