@@ -9,12 +9,21 @@ registerProcessor("WasmProcessor", class WasmProcessor extends AudioWorkletProce
       sysaudio,
       env: { memory: this.memory }
     });
+    
+    this.stack_pointer_set = false;
 
     sysjs.init(this.instance, this.memory, this.port);
     mach.init(this.instance, this.memory, this.port);
+    this.port.onmessage = this._handle_message.bind(this);
+  }
+  
+  _handle_message(e) {
+      this.instance.exports.__stack_pointer.value = e.data;
+      this.stack_pointer_set = true;
   }
   
   process(inputs, outputs) {
+    if (!this.stack_pointer_set) return;
     const num_channels = outputs[0].length;
     const num_samples = outputs[0][0].length;
     const sizeof_f32 = 4;

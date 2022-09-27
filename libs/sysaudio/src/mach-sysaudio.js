@@ -23,7 +23,8 @@ let sysaudio = {
     sysaudio.worklet.connect(sysaudio.audio.destination);
   },
   
-  start() {
+  start(stack_pointer) {
+    sysaudio.worklet.port.postMessage(stack_pointer);
     sysaudio.audio.resume();
   },
 

@@ -289,6 +289,13 @@ pub const App = struct {
                 lib.shared_memory = true;
                 lib.max_memory = 100 * 0x10000;
                 lib.import_memory = true;
+                lib.export_symbol_names = &.{
+                    "__stack_pointer",
+                    "wasmInit",
+                    "wasmDeinit",
+                    "wasmUpdate",
+                    "audioProcessEvent",
+                };
 
                 break :blk lib;
             } else {

@@ -7,11 +7,12 @@ const js = @import("sysjs");
 const Audio = @This();
 
 pub const sysaudio = struct {
-    extern "sysaudio" fn start() void;
+    extern "sysaudio" fn start(audio_stack_frame: [*]align(std.Target.stack_align) u8) void;
     extern "sysaudio" fn pause() void;
 };
 
 pub const Device = struct {
+    stack: []align(std.Target.stack_align) u8,
     properties: Properties,
 
     pub const Options = struct {
@@ -35,6 +36,7 @@ pub const Device = struct {
     };
 
     pub fn deinit(device: *Device, allocator: std.mem.Allocator) void {
+        allocator.free(device.stack);
         allocator.destroy(device);
     }
 
@@ -50,8 +52,7 @@ pub const Device = struct {
     }
 
     pub fn start(device: *Device) Error!void {
-        _ = device;
-        sysaudio.start();
+        sysaudio.start(device.stack.ptr);
     }
 };
 
@@ -97,7 +98,8 @@ pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, options: Device
     //const channels = options.channels orelse default_channel_count;
     //const sample_rate = options.sample_rate orelse default_sample_rate;
     _ = audio;
-    _ = allocator;
+    const audio_stack = try allocator.allocAdvanced(u8, std.Target.stack_align, 4096, .at_least);
+    errdefer allocator.free(audio_stack);
 
     // TODO(sysaudio): Figure out ID/name or make optional again
     var properties = Device.Properties{
@@ -111,6 +113,7 @@ pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, options: Device
     };
 
     audio_device = Device{
+        .stack = audio_stack,
         .properties = properties,
     };
     return &(audio_device.?);
