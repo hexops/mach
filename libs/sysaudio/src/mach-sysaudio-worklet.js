@@ -28,8 +28,6 @@ registerProcessor("WasmProcessor", class WasmProcessor extends AudioWorkletProce
     const num_samples = outputs[0][0].length;
     const sizeof_f32 = 4;
     
-    console.log(num_channels, num_samples, sizeof_f32);
-
     const result_buffer = this.instance.exports.audioProcessEvent(sampleRate, num_channels, num_samples);
     if (result_buffer !== 0) {
       for (let i = 0; i < num_channels; i += 1) {
