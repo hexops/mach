@@ -80,8 +80,10 @@ pub const SegmentProps = struct {
         return c.hb_segment_properties_hash(&self.cast());
     }
 
-    pub fn overlay(self: SegmentProps, src: SegmentProps) void {
-        c.hb_segment_properties_overlay(&self.cast(), &src.cast());
+    pub fn overlay(self: *SegmentProps, src: SegmentProps) void {
+        var seg_props = self.cast();
+        c.hb_segment_properties_overlay(&seg_props, &src.cast());
+        self.* = SegmentProps.from(seg_props);
     }
 };
 

@@ -62,8 +62,8 @@ pub fn vectorLength(vec: *Vector) i32 {
     return @intCast(i32, _c.FT_Vector_Length(vec));
 }
 
-pub fn vectorPolarize(vec: *Vector, length: *i32, angle: *i32) void {
-    _c.FT_Vector_Polarize(vec, &@intCast(c_long, length.*), &@intCast(c_long, angle.*));
+pub fn vectorPolarize(vec: *Vector, length: *c_long, angle: *c_long) void {
+    _c.FT_Vector_Polarize(vec, length, angle);
 }
 
 pub fn vectorFromPolar(vec: *Vector, length: i32, angle: i32) void {
