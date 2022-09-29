@@ -65,19 +65,6 @@ test "load glyph" {
     face.deinit();
 }
 
-test "attach file" {
-    const lib = try ft.Library.init();
-    const face = try lib.createFace(sdkPath("/../upstream/assets/DejaVuSans.pfb"), 0);
-    try face.attachFile(sdkPath("/../upstream/assets/DejaVuSans.pfm"));
-}
-
-test "attach from memory" {
-    const lib = try ft.Library.init();
-    const face = try lib.createFace(sdkPath("/../upstream/assets/DejaVuSans.pfb"), 0);
-    const file = @embedFile(sdkPath("/../upstream/assets/DejaVuSans.pfm"));
-    try face.attachMemory(file);
-}
-
 test "charmap iterator" {
     const lib = try ft.Library.init();
     const face = try lib.createFace(firasans_font_path, 0);

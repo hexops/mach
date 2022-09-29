@@ -131,9 +131,9 @@ pub fn getKerning(self: Face, left_char_index: u32, right_char_index: u32, mode:
 }
 
 pub fn getTrackKerning(self: Face, point_size: i32, degree: i32) Error!i32 {
-    var kerning: i32 = 0;
-    try intToError(c.FT_Get_Track_Kerning(self.handle, point_size, degree, &@intCast(c_long, kerning)));
-    return kerning;
+    var kerning: c_long = 0;
+    try intToError(c.FT_Get_Track_Kerning(self.handle, point_size, degree, kerning));
+    return @intCast(i32, kerning);
 }
 
 pub fn getGlyphName(self: Face, index: u32, buf: []u8) Error!void {
@@ -308,9 +308,9 @@ pub fn availableSizes(self: Face) []BitmapSize {
 }
 
 pub fn getAdvance(self: Face, glyph_index: u32, load_flags: LoadFlags) Error!i32 {
-    var a: i32 = 0;
-    try intToError(c.FT_Get_Advance(self.handle, glyph_index, @bitCast(i32, load_flags), &@intCast(c_long, a)));
-    return a;
+    var a: c_long = 0;
+    try intToError(c.FT_Get_Advance(self.handle, glyph_index, @bitCast(i32, load_flags), &a));
+    return @intCast(i32, a);
 }
 
 pub fn getAdvances(self: Face, start: u32, advances_out: []c_long, load_flags: LoadFlags) Error!void {
