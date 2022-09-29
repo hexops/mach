@@ -91,9 +91,9 @@ pub fn Sdk(comptime deps: anytype) type {
         fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !void {
             try ensureSubmodules(b.allocator);
 
-            step.addIncludePath(comptime thisDir() ++ "/libs/dawn/out/Debug/gen/include");
-            step.addIncludePath(comptime thisDir() ++ "/libs/dawn/include");
-            step.addIncludePath(comptime thisDir() ++ "/src/dawn");
+            step.addIncludePath(sdkPath("/libs/dawn/out/Debug/gen/include"));
+            step.addIncludePath(sdkPath("/libs/dawn/include"));
+            step.addIncludePath(sdkPath("/src/dawn"));
 
             if (options.separate_libs) {
                 const lib_mach_dawn_native = try buildLibMachDawnNative(b, step, options);
@@ -130,7 +130,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 return;
             }
 
-            const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+            const main_abs = sdkPath("/src/dawn/dummy.zig");
             const lib_dawn = b.addStaticLibrary("dawn", main_abs);
             lib_dawn.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
             lib_dawn.setTarget(step.target);
@@ -156,7 +156,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 return;
             }
             var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", "--recursive" }, allocator);
-            child.cwd = comptime thisDir();
+            child.cwd = sdkPath("/");
             child.stderr = std.io.getStdErr();
             child.stdout = std.io.getStdOut();
             _ = try child.spawnAndWait();
@@ -241,7 +241,7 @@ pub fn Sdk(comptime deps: anytype) type {
             step.linkLibCpp();
 
             step.addIncludePath(include_dir);
-            step.addIncludePath(comptime thisDir() ++ "/src/dawn");
+            step.addIncludePath(sdkPath("/src/dawn"));
 
             if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
                 step.linkSystemLibraryName("X11");
@@ -438,7 +438,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const result = try std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "git", "branch", branch, "--contains", commit },
-                .cwd = comptime thisDir(),
+                .cwd = sdkPath("/"),
             });
             defer {
                 allocator.free(result.stdout);
@@ -451,7 +451,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const result = try std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "git", "rev-parse", "HEAD" },
-                .cwd = comptime thisDir(),
+                .cwd = sdkPath("/"),
             });
             defer allocator.free(result.stderr);
             if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
@@ -462,7 +462,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const result = try std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "git", "clone", repository, dir },
-                .cwd = comptime thisDir(),
+                .cwd = sdkPath("/"),
             });
             defer {
                 allocator.free(result.stdout);
@@ -480,7 +480,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 std.ChildProcess.init(&.{ "curl", "--insecure", "-L", "-o", target_file, url }, allocator)
             else
                 std.ChildProcess.init(&.{ "curl", "-L", "-o", target_file, url }, allocator);
-            child.cwd = comptime thisDir();
+            child.cwd = sdkPath("/");
             child.stderr = std.io.getStdErr();
             child.stdout = std.io.getStdOut();
             _ = try child.spawnAndWait();
@@ -490,7 +490,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const result = std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "curl", "--version" },
-                .cwd = comptime thisDir(),
+                .cwd = sdkPath("/"),
             }) catch { // e.g. FileNotFound
                 std.log.err("mach: error: 'curl --version' failed. Is curl not installed?", .{});
                 std.process.exit(1);
@@ -512,7 +512,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
         fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+                const main_abs = sdkPath("/src/dawn/dummy.zig");
                 const separate_lib = b.addStaticLibrary("dawn-native-mach", main_abs);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
@@ -548,7 +548,7 @@ pub fn Sdk(comptime deps: anytype) type {
         // Builds common sources; derived from src/common/BUILD.gn
         fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+                const main_abs = sdkPath("/src/dawn/dummy.zig");
                 const separate_lib = b.addStaticLibrary("dawn-common", main_abs);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
@@ -583,11 +583,11 @@ pub fn Sdk(comptime deps: anytype) type {
                 // TODO(build-system): pass system SDK options through
                 deps.system_sdk.include(b, lib, .{});
                 lib.linkFramework("Foundation");
-                const abs_path = comptime thisDir() ++ "/libs/dawn/src/dawn/common/SystemUtils_mac.mm";
+                const abs_path = sdkPath("/libs/dawn/src/dawn/common/SystemUtils_mac.mm");
                 try cpp_sources.append(abs_path);
             }
             if (step.target_info.target.os.tag == .windows) {
-                const abs_path = comptime thisDir() ++ "/libs/dawn/src/dawn/common/WindowsUtils.cpp";
+                const abs_path = sdkPath("/libs/dawn/src/dawn/common/WindowsUtils.cpp");
                 try cpp_sources.append(abs_path);
             }
 
@@ -601,7 +601,7 @@ pub fn Sdk(comptime deps: anytype) type {
         // Build dawn platform sources; derived from src/dawn/platform/BUILD.gn
         fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+                const main_abs = sdkPath("/src/dawn/dummy.zig");
                 const separate_lib = b.addStaticLibrary("dawn-platform", main_abs);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
@@ -626,7 +626,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "src/dawn/platform/WorkerThread.cpp",
                 "src/dawn/platform/tracing/EventTracer.cpp",
             }) |path| {
-                const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                const abs_path = sdkPath("/libs/dawn/" ++ path);
                 try cpp_sources.append(abs_path);
             }
 
@@ -673,7 +673,7 @@ pub fn Sdk(comptime deps: anytype) type {
         // Builds dawn native sources; derived from src/dawn/native/BUILD.gn
         fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+                const main_abs = sdkPath("/src/dawn/dummy.zig");
                 const separate_lib = b.addStaticLibrary("dawn-native", main_abs);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
@@ -750,7 +750,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/mingw_helpers.cpp",
                 }) |path| {
-                    const abs_path = comptime thisDir() ++ "/" ++ path;
+                    const abs_path = sdkPath("/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
 
@@ -786,7 +786,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/native/XlibXcbFunctions.cpp",
                 }) |path| {
-                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                    const abs_path = sdkPath("/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -794,7 +794,7 @@ pub fn Sdk(comptime deps: anytype) type {
             inline for ([_][]const u8{
                 "src/dawn/native/null/DeviceNull.cpp",
             }) |path| {
-                const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                const abs_path = sdkPath("/libs/dawn/" ++ path);
                 try cpp_sources.append(abs_path);
             }
 
@@ -802,7 +802,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/native/SpirvValidation.cpp",
                 }) |path| {
-                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                    const abs_path = sdkPath("/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -832,7 +832,7 @@ pub fn Sdk(comptime deps: anytype) type {
                         "src/dawn/native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
                     }) |path| {
-                        const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                        const abs_path = sdkPath("/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
                 } else if (step.target_info.target.os.tag == .fuchsia) {
@@ -840,7 +840,7 @@ pub fn Sdk(comptime deps: anytype) type {
                         "src/dawn/native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
                     }) |path| {
-                        const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                        const abs_path = sdkPath("/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
                 } else {
@@ -848,7 +848,7 @@ pub fn Sdk(comptime deps: anytype) type {
                         "src/dawn/native/vulkan/external_memory/MemoryServiceNull.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceNull.cpp",
                     }) |path| {
-                        const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                        const abs_path = sdkPath("/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
                 }
@@ -896,7 +896,7 @@ pub fn Sdk(comptime deps: anytype) type {
             inline for ([_][]const u8{
                 "src/dawn/native/null/NullBackend.cpp",
             }) |path| {
-                const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                const abs_path = sdkPath("/libs/dawn/" ++ path);
                 try cpp_sources.append(abs_path);
             }
 
@@ -904,7 +904,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/native/d3d12/D3D12Backend.cpp",
                 }) |path| {
-                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                    const abs_path = sdkPath("/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -912,7 +912,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/native/opengl/OpenGLBackend.cpp",
                 }) |path| {
-                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                    const abs_path = sdkPath("/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -920,7 +920,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/native/vulkan/VulkanBackend.cpp",
                 }) |path| {
-                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                    const abs_path = sdkPath("/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
                 // TODO(build-system): vulkan
@@ -944,7 +944,7 @@ pub fn Sdk(comptime deps: anytype) type {
         // Builds tint sources; derived from src/tint/BUILD.gn
         fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+                const main_abs = sdkPath("/src/dawn/dummy.zig");
                 const separate_lib = b.addStaticLibrary("tint", main_abs);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
@@ -1000,9 +1000,9 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
             switch (step.target_info.target.os.tag) {
-                .windows => try cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_windows.cc"),
-                .linux => try cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_linux.cc"),
-                else => try cpp_sources.append(comptime thisDir() ++ "/libs/dawn/src/tint/diagnostic/printer_other.cc"),
+                .windows => try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_windows.cc")),
+                .linux => try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_linux.cc")),
+                else => try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_other.cc")),
             }
 
             // libtint_sem_src
@@ -1092,7 +1092,7 @@ pub fn Sdk(comptime deps: anytype) type {
         // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
         fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+                const main_abs = sdkPath("/src/dawn/dummy.zig");
                 const separate_lib = b.addStaticLibrary("spirv-tools", main_abs);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
@@ -1160,7 +1160,7 @@ pub fn Sdk(comptime deps: anytype) type {
         //
         fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+                const main_abs = sdkPath("/src/dawn/dummy.zig");
                 const separate_lib = b.addStaticLibrary("abseil-cpp-common", main_abs);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
@@ -1222,7 +1222,7 @@ pub fn Sdk(comptime deps: anytype) type {
         // Buids dawn wire sources; derived from src/dawn/wire/BUILD.gn
         fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+                const main_abs = sdkPath("/src/dawn/dummy.zig");
                 const separate_lib = b.addStaticLibrary("dawn-wire", main_abs);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
@@ -1259,7 +1259,7 @@ pub fn Sdk(comptime deps: anytype) type {
         // Builds dawn utils sources; derived from src/dawn/utils/BUILD.gn
         fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+                const main_abs = sdkPath("/src/dawn/dummy.zig");
                 const separate_lib = b.addStaticLibrary("dawn-utils", main_abs);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
@@ -1284,7 +1284,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "src/dawn/utils/BackendBinding.cpp",
                 "src/dawn/utils/NullBinding.cpp",
             }) |path| {
-                const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                const abs_path = sdkPath("/libs/dawn/" ++ path);
                 try cpp_sources.append(abs_path);
             }
 
@@ -1292,7 +1292,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/utils/D3D12Binding.cpp",
                 }) |path| {
-                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                    const abs_path = sdkPath("/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
                 try flags.appendSlice(dawn_d3d12_flags);
@@ -1301,7 +1301,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/utils/MetalBinding.mm",
                 }) |path| {
-                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                    const abs_path = sdkPath("/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -1310,7 +1310,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/utils/OpenGLBinding.cpp",
                 }) |path| {
-                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                    const abs_path = sdkPath("/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -1319,7 +1319,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/utils/VulkanBinding.cpp",
                 }) |path| {
-                    const abs_path = comptime thisDir() ++ "/libs/dawn/" ++ path;
+                    const abs_path = sdkPath("/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -1334,7 +1334,7 @@ pub fn Sdk(comptime deps: anytype) type {
         // Buids dxcompiler sources; derived from libs/DirectXShaderCompiler/CMakeLists.txt
         fn buildLibDxcompiler(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const main_abs = comptime thisDir() ++ "/src/dawn/dummy.zig";
+                const main_abs = sdkPath("/src/dawn/dummy.zig");
                 const separate_lib = b.addStaticLibrary("dxcompiler", main_abs);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
@@ -1432,14 +1432,6 @@ pub fn Sdk(comptime deps: anytype) type {
             return lib;
         }
 
-        fn include(comptime rel: []const u8) []const u8 {
-            return "-I" ++ (comptime thisDir()) ++ "/" ++ rel;
-        }
-
-        fn thisDir() []const u8 {
-            return std.fs.path.dirname(@src().file) orelse ".";
-        }
-
         fn appendLangScannedSources(
             b: *Builder,
             step: *std.build.LibExeObjStep,
@@ -1503,7 +1495,7 @@ pub fn Sdk(comptime deps: anytype) type {
             excluding: []const []const u8,
             excluding_contains: []const []const u8,
         ) !void {
-            const abs_dir = try std.fs.path.join(b.allocator, &.{ comptime thisDir(), rel_dir });
+            const abs_dir = try std.fs.path.join(b.allocator, &.{ sdkPath("/"), rel_dir });
             defer b.allocator.free(abs_dir);
             var dir = try std.fs.openIterableDirAbsolute(abs_dir, .{});
             defer dir.close();
@@ -1540,6 +1532,18 @@ pub fn Sdk(comptime deps: anytype) type {
 
                 try dst.append(abs_path);
             }
+        }
+
+        fn include(comptime rel: []const u8) []const u8 {
+            return comptime "-I" ++ sdkPath("/" ++ rel);
+        }
+
+        fn sdkPath(comptime suffix: []const u8) []const u8 {
+            if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+            return comptime blk: {
+                const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+                break :blk root_dir ++ suffix;
+            };
         }
     };
 }

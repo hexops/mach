@@ -5,7 +5,7 @@ const mem = std.mem;
 const fs = std.fs;
 const build = std.build;
 
-const www_dir_path = thisDir() ++ "/www";
+const www_dir_path = sdkPath("/www");
 const buffer_size = 2048;
 const esc = struct {
     pub const reset = "\x1b[0m";
@@ -334,6 +334,10 @@ fn logErr(err: anyerror, src: std.builtin.SourceLocation) void {
     }
 }
 
-fn thisDir() []const u8 {
-    return fs.path.dirname(@src().file) orelse ".";
+fn sdkPath(comptime suffix: []const u8) []const u8 {
+    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+    return comptime blk: {
+        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+        break :blk root_dir ++ suffix;
+    };
 }

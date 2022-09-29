@@ -8,7 +8,7 @@ pub fn build(b: *std.build.Builder) void {
 }
 
 pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("sysjs-tests", thisDir() ++ "/src/main.zig");
+    const main_tests = b.addTestExe("sysjs-tests", sdkPath("/src/main.zig"));
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     return main_tests.run();
@@ -16,10 +16,14 @@ pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.C
 
 pub const pkg = std.build.Pkg{
     .name = "sysjs",
-    .source = .{ .path = thisDir() ++ "/src/main.zig" },
+    .source = .{ .path = sdkPath("/src/main.zig") },
     .dependencies = &[_]std.build.Pkg{},
 };
 
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
+fn sdkPath(comptime suffix: []const u8) []const u8 {
+    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+    return comptime blk: {
+        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+        break :blk root_dir ++ suffix;
+    };
 }

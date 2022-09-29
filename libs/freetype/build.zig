@@ -1,21 +1,21 @@
 const std = @import("std");
 const Builder = std.build.Builder;
 
-const ft_root = thisDir() ++ "/upstream/freetype";
+const ft_root = sdkPath("/upstream/freetype");
 const ft_include_path = ft_root ++ "/include";
-const hb_root = thisDir() ++ "/upstream/harfbuzz";
+const hb_root = sdkPath("/upstream/harfbuzz");
 const hb_include_path = hb_root ++ "/src";
-const brotli_root = thisDir() ++ "/upstream/brotli";
+const brotli_root = sdkPath("/upstream/brotli");
 
 pub const pkg = std.build.Pkg{
     .name = "freetype",
-    .source = .{ .path = thisDir() ++ "/src/main.zig" },
+    .source = .{ .path = sdkPath("/src/main.zig") },
     .dependencies = &.{},
 };
 
 pub const harfbuzz_pkg = std.build.Pkg{
     .name = "harfbuzz",
-    .source = .{ .path = thisDir() ++ "/src/harfbuzz/main.zig" },
+    .source = .{ .path = sdkPath("/src/harfbuzz/main.zig") },
     .dependencies = &.{pkg},
 };
 
@@ -70,7 +70,7 @@ pub fn build(b: *std.build.Builder) !void {
 }
 
 pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("freetype-tests", (comptime thisDir()) ++ "/src/main.zig");
+    const main_tests = b.addTestExe("freetype-tests", sdkPath("/src/main.zig"));
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     main_tests.addPackage(pkg);
@@ -80,10 +80,10 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         },
         .harfbuzz = .{},
     });
-    main_tests.main_pkg_path = (comptime thisDir());
+    main_tests.main_pkg_path = sdkPath("/");
     main_tests.install();
 
-    const harfbuzz_tests = b.addTestExe("harfbuzz-tests", (comptime thisDir()) ++ "/src/harfbuzz/main.zig");
+    const harfbuzz_tests = b.addTestExe("harfbuzz-tests", sdkPath("/src/harfbuzz/main.zig"));
     harfbuzz_tests.setBuildMode(mode);
     harfbuzz_tests.setTarget(target);
     harfbuzz_tests.addPackage(pkg);
@@ -93,7 +93,7 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
         },
         .harfbuzz = .{},
     });
-    harfbuzz_tests.main_pkg_path = (comptime thisDir());
+    harfbuzz_tests.main_pkg_path = sdkPath("/");
     harfbuzz_tests.install();
 
     const main_tests_run = main_tests.run();
@@ -190,21 +190,25 @@ fn buildBrotli(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget)
     return lib;
 }
 
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
-}
-
 fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
     if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
         defer allocator.free(no_ensure_submodules);
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = (comptime thisDir());
+    child.cwd = sdkPath("/");
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
 
     _ = try child.spawnAndWait();
+}
+
+fn sdkPath(comptime suffix: []const u8) []const u8 {
+    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+    return comptime blk: {
+        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+        break :blk root_dir ++ suffix;
+    };
 }
 
 const freetype_base_sources = &[_][]const u8{

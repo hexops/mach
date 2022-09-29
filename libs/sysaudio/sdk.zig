@@ -2,17 +2,17 @@ const std = @import("std");
 
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
-        const soundio_path = thisDir() ++ "/upstream/soundio";
+        const soundio_path = sdkPath("/upstream/soundio");
 
         pub const pkg = std.build.Pkg{
             .name = "sysaudio",
-            .source = .{ .path = thisDir() ++ "/src/main.zig" },
+            .source = .{ .path = sdkPath("/src/main.zig") },
             .dependencies = &.{ deps.sysjs.pkg, soundio_pkg },
         };
 
         pub const soundio_pkg = std.build.Pkg{
             .name = "soundio",
-            .source = .{ .path = thisDir() ++ "/soundio/main.zig" },
+            .source = .{ .path = sdkPath("/soundio/main.zig") },
         };
 
         pub const Options = struct {
@@ -20,13 +20,13 @@ pub fn Sdk(comptime deps: anytype) type {
         };
 
         pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-            const soundio_tests = b.addTestExe("soundio-tests", (comptime thisDir()) ++ "/soundio/main.zig");
+            const soundio_tests = b.addTestExe("soundio-tests", sdkPath("/soundio/main.zig"));
             soundio_tests.setBuildMode(mode);
             soundio_tests.setTarget(target);
             link(b, soundio_tests, .{});
             soundio_tests.install();
 
-            const main_tests = b.addTestExe("sysaudio-tests", (comptime thisDir()) ++ "/src/main.zig");
+            const main_tests = b.addTestExe("sysaudio-tests", sdkPath("/src/main.zig"));
             main_tests.setBuildMode(mode);
             main_tests.setTarget(target);
             main_tests.addPackage(soundio_pkg);
@@ -104,15 +104,19 @@ pub fn Sdk(comptime deps: anytype) type {
                 if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
             } else |_| {}
             var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-            child.cwd = (comptime thisDir());
+            child.cwd = sdkPath("/");
             child.stderr = std.io.getStdErr();
             child.stdout = std.io.getStdOut();
 
             _ = try child.spawnAndWait();
         }
 
-        fn thisDir() []const u8 {
-            return std.fs.path.dirname(@src().file) orelse ".";
+        fn sdkPath(comptime suffix: []const u8) []const u8 {
+            if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+            return comptime blk: {
+                const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+                break :blk root_dir ++ suffix;
+            };
         }
 
         const soundio_sources = &[_][]const u8{

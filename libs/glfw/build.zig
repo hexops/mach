@@ -4,17 +4,17 @@ const Builder = std.build.Builder;
 
 const system_sdk = @import("system_sdk.zig");
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *Builder) !void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode, target).step);
-    test_step.dependOn(&testStepShared(b, mode, target).step);
+    test_step.dependOn(&(try testStep(b, mode, target)).step);
+    test_step.dependOn(&(try testStepShared(b, mode, target)).step);
 }
 
 pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) !*std.build.RunStep {
-    const main_tests = b.addTestExe("glfw-tests", thisDir() ++ "/src/main.zig");
+    const main_tests = b.addTestExe("glfw-tests", sdkPath("/src/main.zig"));
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     try link(b, main_tests, .{});
@@ -23,7 +23,7 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
 }
 
 fn testStepShared(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) !*std.build.RunStep {
-    const main_tests = b.addTestExe("glfw-tests-shared", thisDir() ++ "/src/main.zig");
+    const main_tests = b.addTestExe("glfw-tests-shared", sdkPath("/src/main.zig"));
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     try link(b, main_tests, .{ .shared = true });
@@ -66,7 +66,7 @@ pub const Options = struct {
 
 pub const pkg = std.build.Pkg{
     .name = "glfw",
-    .source = .{ .path = thisDir() ++ "/src/main.zig" },
+    .source = .{ .path = sdkPath("/src/main.zig") },
 };
 
 // TODO(self-hosted): HACK: workaround https://github.com/ziglang/zig/issues/12784
@@ -74,9 +74,9 @@ pub const pkg = std.build.Pkg{
 // Extracted from a build using stage1 from zig-cache/ (`cimport/c_darwin_native.zig`)
 // Then find+replace `= ?fn` -> `= ?*const fn`
 fn cimportWorkaround() void {
-    const dest_dir = std.fs.cwd().openDir(thisDir() ++ "/src", .{}) catch unreachable;
-    const cn_path = thisDir() ++ "/src/cimport/" ++ if (builtin.os.tag == .macos) "c_darwin_native.zig" else "c_normal_native.zig";
-    std.fs.cwd().copyFile(cn_path, dest_dir, thisDir() ++ "/src/c_native.zig", .{}) catch unreachable;
+    const dest_dir = std.fs.cwd().openDir(sdkPath("/src"), .{}) catch unreachable;
+    const cn_path = sdkPath("/src/cimport/" ++ if (builtin.os.tag == .macos) "c_darwin_native.zig" else "c_normal_native.zig");
+    std.fs.cwd().copyFile(cn_path, dest_dir, sdkPath("/src/c_native.zig"), .{}) catch unreachable;
 }
 
 pub const LinkError = error{FailedToLinkGPU} || BuildError;
@@ -120,21 +120,21 @@ fn buildLibrary(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
 }
 
 fn addGLFWIncludes(step: *std.build.LibExeObjStep) void {
-    step.addIncludePath(thisDir() ++ "/upstream/glfw/include");
-    step.addIncludePath(thisDir() ++ "/upstream/vulkan_headers/include");
+    step.addIncludePath(sdkPath("/upstream/glfw/include"));
+    step.addIncludePath(sdkPath("/upstream/vulkan_headers/include"));
 }
 
 fn addGLFWSources(b: *Builder, lib: *std.build.LibExeObjStep, options: Options) std.mem.Allocator.Error!void {
-    const include_glfw_src = "-I" ++ thisDir() ++ "/upstream/glfw/src";
+    const include_glfw_src = comptime "-I" ++ sdkPath("/upstream/glfw/src");
     switch (lib.target_info.target.os.tag) {
         .windows => lib.addCSourceFiles(&.{
-            thisDir() ++ "/src/sources_all.c",
-            thisDir() ++ "/src/sources_windows.c",
+            sdkPath("/src/sources_all.c"),
+            sdkPath("/src/sources_windows.c"),
         }, &.{ "-D_GLFW_WIN32", include_glfw_src }),
         .macos => lib.addCSourceFiles(&.{
-            thisDir() ++ "/src/sources_all.c",
-            thisDir() ++ "/src/sources_macos.m",
-            thisDir() ++ "/src/sources_macos.c",
+            sdkPath("/src/sources_all.c"),
+            sdkPath("/src/sources_macos.m"),
+            sdkPath("/src/sources_macos.c"),
         }, &.{ "-D_GLFW_COCOA", include_glfw_src }),
         else => {
             // TODO(future): for now, Linux can't be built with musl:
@@ -145,17 +145,17 @@ fn addGLFWSources(b: *Builder, lib: *std.build.LibExeObjStep, options: Options) 
             // ```
             var sources = std.ArrayList([]const u8).init(b.allocator);
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            try sources.append(thisDir() ++ "/src/sources_all.c");
-            try sources.append(thisDir() ++ "/src/sources_linux.c");
+            try sources.append(sdkPath("/src/sources_all.c"));
+            try sources.append(sdkPath("/src/sources_linux.c"));
             if (options.x11) {
-                try sources.append(thisDir() ++ "/src/sources_linux_x11.c");
+                try sources.append(sdkPath("/src/sources_linux_x11.c"));
                 try flags.append("-D_GLFW_X11");
             }
             if (options.wayland) {
-                try sources.append(thisDir() ++ "/src/sources_linux_wayland.c");
+                try sources.append(sdkPath("/src/sources_linux_wayland.c"));
                 try flags.append("-D_GLFW_WAYLAND");
             }
-            try flags.append("-I" ++ thisDir() ++ "/upstream/glfw/src");
+            try flags.append(comptime "-I" ++ sdkPath("/upstream/glfw/src"));
             // TODO(upstream): glfw can't compile on clang15 without this flag
             try flags.append("-Wno-implicit-function-declaration");
 
@@ -209,13 +209,17 @@ fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !vo
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = thisDir();
+    child.cwd = sdkPath("/");
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
 
     _ = try child.spawnAndWait();
 }
 
-inline fn thisDir() []const u8 {
-    return comptime std.fs.path.dirname(@src().file) orelse ".";
+fn sdkPath(comptime suffix: []const u8) []const u8 {
+    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+    return comptime blk: {
+        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+        break :blk root_dir ++ suffix;
+    };
 }
