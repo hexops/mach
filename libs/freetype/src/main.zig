@@ -7,7 +7,6 @@ pub usingnamespace @import("stroke.zig");
 pub usingnamespace @import("types.zig");
 pub usingnamespace @import("computations.zig");
 pub usingnamespace @import("error.zig");
-pub const harfbuzz = @import("harfbuzz/main.zig");
 pub const c = @import("c.zig");
 
 const std = @import("std");
