@@ -3,7 +3,7 @@ const std = @import("std");
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
         pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) !*std.build.RunStep {
-            const main_tests = b.addTestExe("gpu-tests", (comptime thisDir()) ++ "/src/main.zig");
+            const main_tests = b.addTestExe("gpu-tests", sdkPath("/src/main.zig"));
             main_tests.setBuildMode(mode);
             main_tests.setTarget(target);
             try link(b, main_tests, options);
@@ -18,7 +18,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
         pub const pkg = std.build.Pkg{
             .name = "gpu",
-            .source = .{ .path = thisDir() ++ "/src/main.zig" },
+            .source = .{ .path = sdkPath("/src/main.zig") },
             .dependencies = &.{deps.glfw.pkg},
         };
 
@@ -26,13 +26,17 @@ pub fn Sdk(comptime deps: anytype) type {
             if (step.target.toTarget().cpu.arch != .wasm32) {
                 try deps.glfw.link(b, step, options.glfw_options);
                 try deps.gpu_dawn.link(b, step, options.gpu_dawn_options);
-                step.addCSourceFile((comptime thisDir()) ++ "/src/mach_dawn.cpp", &.{"-std=c++17"});
-                step.addIncludePath((comptime thisDir()) ++ "/src");
+                step.addCSourceFile(sdkPath("/src/mach_dawn.cpp"), &.{"-std=c++17"});
+                step.addIncludePath(sdkPath("/src"));
             }
         }
 
-        fn thisDir() []const u8 {
-            return std.fs.path.dirname(@src().file) orelse ".";
+        fn sdkPath(comptime suffix: []const u8) []const u8 {
+            if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+            return comptime blk: {
+                const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+                break :blk root_dir ++ suffix;
+            };
         }
     };
 }

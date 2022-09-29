@@ -1,7 +1,7 @@
 const std = @import("std");
 const Builder = std.build.Builder;
 
-const basisu_root = thisDir() ++ "/upstream/basisu";
+const basisu_root = sdkPath("/upstream/basisu");
 
 pub const pkg = std.build.Pkg{
     .name = "basisu",
@@ -32,10 +32,10 @@ pub fn build(b: *Builder) void {
 }
 
 pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("basisu-tests", comptime thisDir() ++ "/src/main.zig");
+    const main_tests = b.addTestExe("basisu-tests", sdkPath("/src/main.zig"));
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
-    main_tests.main_pkg_path = thisDir();
+    main_tests.main_pkg_path = sdkPath("/");
     link(b, main_tests, target, .{
         .encoder = .{},
         .transcoder = .{},
@@ -47,12 +47,12 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, target: std.zig.CrossTarget, options: Options) void {
     if (options.encoder) |encoder_options| {
         step.linkLibrary(buildEncoder(b, target, encoder_options));
-        step.addCSourceFile(comptime thisDir() ++ "/src/encoder/wrapper.cpp", &.{});
+        step.addCSourceFile(sdkPath("/src/encoder/wrapper.cpp"), &.{});
         step.addIncludePath(basisu_root ++ "/encoder");
     }
     if (options.transcoder) |transcoder_options| {
         step.linkLibrary(buildTranscoder(b, target, transcoder_options));
-        step.addCSourceFile(comptime thisDir() ++ "/src/transcoder/wrapper.cpp", &.{});
+        step.addCSourceFile(sdkPath("/src/transcoder/wrapper.cpp"), &.{});
         step.addIncludePath(basisu_root ++ "/transcoder");
     }
 }
@@ -95,21 +95,25 @@ pub fn buildTranscoder(b: *Builder, target: std.zig.CrossTarget, options: Transc
     return transcoder;
 }
 
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
-}
-
 fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
     if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
         defer allocator.free(no_ensure_submodules);
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = (comptime thisDir());
+    child.cwd = sdkPath("/");
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
 
     _ = try child.spawnAndWait();
+}
+
+fn sdkPath(comptime suffix: []const u8) []const u8 {
+    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+    return comptime blk: {
+        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+        break :blk root_dir ++ suffix;
+    };
 }
 
 const transcoder_sources = &[_][]const u8{

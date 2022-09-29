@@ -14,8 +14,12 @@ const std = @import("std");
 const testing = std.testing;
 const ft = @import("freetype.zig");
 
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
+fn sdkPath(comptime suffix: []const u8) []const u8 {
+    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+    return comptime blk: {
+        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+        break :blk root_dir ++ suffix;
+    };
 }
 
 test {
@@ -30,8 +34,8 @@ test {
     std.testing.refAllDeclsRecursive(@import("computations.zig"));
 }
 
-const firasans_font_path = thisDir() ++ "/../upstream/assets/FiraSans-Regular.ttf";
-const firasans_font_data = @embedFile(thisDir() ++ "/../upstream/assets/FiraSans-Regular.ttf");
+const firasans_font_path = sdkPath("/../upstream/assets/FiraSans-Regular.ttf");
+const firasans_font_data = @embedFile(sdkPath("/../upstream/assets/FiraSans-Regular.ttf"));
 
 test "create face from file" {
     const lib = try ft.Library.init();
@@ -63,14 +67,14 @@ test "load glyph" {
 
 test "attach file" {
     const lib = try ft.Library.init();
-    const face = try lib.createFace(comptime thisDir() ++ "/../upstream/assets/DejaVuSans.pfb", 0);
-    try face.attachFile(comptime thisDir() ++ "/../upstream/assets/DejaVuSans.pfm");
+    const face = try lib.createFace(sdkPath("/../upstream/assets/DejaVuSans.pfb"), 0);
+    try face.attachFile(sdkPath("/../upstream/assets/DejaVuSans.pfm"));
 }
 
 test "attach from memory" {
     const lib = try ft.Library.init();
-    const face = try lib.createFace(comptime thisDir() ++ "/../upstream/assets/DejaVuSans.pfb", 0);
-    const file = @embedFile(comptime thisDir() ++ "/../upstream/assets/DejaVuSans.pfm");
+    const face = try lib.createFace(sdkPath("/../upstream/assets/DejaVuSans.pfb"), 0);
+    const file = @embedFile(sdkPath("/../upstream/assets/DejaVuSans.pfm"));
     try face.attachMemory(file);
 }
 

@@ -2420,7 +2420,7 @@ pub inline fn setDropCallback(self: Window, comptime callback: ?fn (window: Wind
 inline fn hint(h: Hint, value: anytype) void {
     internal_debug.assertInitialized();
     const value_type = @TypeOf(value);
-    const value_type_info: std.builtin.TypeInfo = @typeInfo(value_type);
+    const value_type_info: std.builtin.Type = @typeInfo(value_type);
 
     switch (value_type_info) {
         .Int, .ComptimeInt => {

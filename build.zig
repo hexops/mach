@@ -27,7 +27,7 @@ const Pkg = std.build.Pkg;
 
 pub const pkg = Pkg{
     .name = "mach",
-    .source = .{ .path = thisDir() ++ "/src/main.zig" },
+    .source = .{ .path = sdkPath("/src/main.zig") },
     .dependencies = &.{ gpu.pkg, ecs.pkg, sysaudio.pkg },
 };
 
@@ -282,14 +282,14 @@ pub const App = struct {
 
         const step = blk: {
             if (platform == .web) {
-                const lib = b.addSharedLibrary(options.name, (comptime thisDir()) ++ "/src/platform/wasm.zig", .unversioned);
+                const lib = b.addSharedLibrary(options.name, sdkPath("/src/platform/wasm.zig"), .unversioned);
                 lib.addPackage(gpu.pkg);
                 lib.addPackage(sysaudio.pkg);
                 lib.addPackage(sysjs.pkg);
 
                 break :blk lib;
             } else {
-                const exe = b.addExecutable(options.name, (comptime thisDir()) ++ "/src/platform/native.zig");
+                const exe = b.addExecutable(options.name, sdkPath("/src/platform/native.zig"));
                 exe.addPackage(gpu.pkg);
                 exe.addPackage(sysaudio.pkg);
                 exe.addPackage(glfw.pkg);
@@ -301,7 +301,7 @@ pub const App = struct {
             }
         };
 
-        step.main_pkg_path = (comptime thisDir()) ++ "/src";
+        step.main_pkg_path = sdkPath("/src");
         step.addPackage(app_pkg);
         step.setTarget(options.target);
 
@@ -336,14 +336,14 @@ pub const App = struct {
 
             inline for (.{ "/src/platform/mach.js", "/libs/sysjs/src/mach-sysjs.js" }) |js| {
                 const install_js = app.b.addInstallFileWithDir(
-                    .{ .path = (comptime thisDir()) ++ js },
+                    .{ .path = sdkPath(js) },
                     web_install_dir,
                     std.fs.path.basename(js),
                 );
                 app.getInstallStep().?.step.dependOn(&install_js.step);
             }
 
-            const html_generator = app.b.addExecutable("html-generator", (comptime thisDir()) ++ "/tools/html-generator/main.zig");
+            const html_generator = app.b.addExecutable("html-generator", sdkPath("/tools/html-generator/main.zig"));
             const run_html_generator = html_generator.run();
             const html_file_name = std.mem.concat(
                 app.b.allocator,
@@ -421,7 +421,7 @@ fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !vo
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = (comptime thisDir());
+    child.cwd = sdkPath("/");
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
 
@@ -446,6 +446,10 @@ fn ensureGit(allocator: std.mem.Allocator) void {
     }
 }
 
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
+fn sdkPath(comptime suffix: []const u8) []const u8 {
+    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+    return comptime blk: {
+        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+        break :blk root_dir ++ suffix;
+    };
 }
