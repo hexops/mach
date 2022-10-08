@@ -16,7 +16,7 @@ pub const module = ecs.Module(.{
     .update = update,
 });
 
-pub const Vec2 = struct { x: f32, y: f32 };
+pub const Vec2 = extern struct { x: f32, y: f32 };
 
 fn update(msg: Message) void {
     switch (msg) {

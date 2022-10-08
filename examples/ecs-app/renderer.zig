@@ -10,4 +10,4 @@ pub const module = ecs.Module(.{
     // with renderer components like `.geometry` and render them for example!
 });
 
-pub const Vec3 = struct { x: f32, y: f32, z: f32 };
+pub const Vec3 = extern struct { x: f32, y: f32, z: f32 };

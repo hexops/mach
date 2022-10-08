@@ -7,7 +7,7 @@ const UVData = @import("atlas.zig").UVData;
 
 const Vec2 = @Vector(2, f32);
 
-pub const Vertex = struct {
+pub const Vertex = extern struct {
     pos: @Vector(4, f32),
     uv: Vec2,
 };
@@ -31,7 +31,7 @@ const GkurveType = enum(u32) {
     filled = 2,
 };
 
-pub const FragUniform = struct {
+pub const FragUniform = extern struct {
     type: GkurveType = .filled,
     // Padding for struct alignment to 16 bytes (minimum in WebGPU uniform).
     padding: @Vector(3, f32) = undefined,

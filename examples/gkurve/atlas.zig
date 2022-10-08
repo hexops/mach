@@ -46,7 +46,7 @@ pub const Region = struct {
     }
 };
 
-pub const UVData = struct {
+pub const UVData = extern struct {
     bottom_left: @Vector(2, f32),
     width_and_height: @Vector(2, f32),
 };

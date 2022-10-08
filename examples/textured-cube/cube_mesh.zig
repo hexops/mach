@@ -1,4 +1,4 @@
-pub const Vertex = struct {
+pub const Vertex = extern struct {
     pos: @Vector(4, f32),
     col: @Vector(4, f32),
     uv: @Vector(2, f32),
