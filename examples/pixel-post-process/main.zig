@@ -16,7 +16,7 @@ const pixel_size = 8;
 const UniformBufferObject = struct {
     mat: zm.Mat,
 };
-const PostUniformBufferObject = struct {
+const PostUniformBufferObject = extern struct {
     width: u32,
     height: u32,
     pixel_size: u32 = pixel_size,
