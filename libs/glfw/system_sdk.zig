@@ -195,7 +195,7 @@ fn determineSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const
     var sdk_root_dir: []const u8 = undefined;
     var sdk_path_dir: []const u8 = undefined;
     var custom_sdk_path = false;
-    if (std.process.getEnvVarOwned(allocator, "SDK_PATH")) |sdk_path| {
+    if (std.process.getEnvVarOwned(allocator, "MACH_SDK_PATH")) |sdk_path| {
         custom_sdk_path = true;
         sdk_path_dir = sdk_path;
         sdk_root_dir = try std.fs.path.join(allocator, &.{ sdk_path, name });

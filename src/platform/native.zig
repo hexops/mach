@@ -656,7 +656,7 @@ fn glfwSizeOptional(size: structs.SizeOptional) glfw.Window.SizeOptional {
 
 /// Check if gamemode should be activated
 fn activateGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!bool {
-    if (try getEnvVarOwned(allocator, "GAMEMODE")) |env| {
+    if (try getEnvVarOwned(allocator, "MACH_USE_GAMEMODE")) |env| {
         defer allocator.free(env);
         return !(std.ascii.eqlIgnoreCase(env, "off") or std.ascii.eqlIgnoreCase(env, "false"));
     }
