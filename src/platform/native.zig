@@ -558,6 +558,8 @@ var app: App = undefined;
 
 pub const GPUInterface = gpu.dawn.Interface;
 
+const _ = gpu.Export(GPUInterface);
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();

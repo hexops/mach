@@ -12,6 +12,8 @@ _unused: i32,
 
 pub const GPUInterface = gpu.dawn.Interface;
 
+const _ = gpu.Export(GPUInterface);
+
 // Dummy init, deinit, and update functions
 pub fn init(_: *App, _: *Core) !void {}
 
