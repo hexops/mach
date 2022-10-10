@@ -558,14 +558,13 @@ var app: App = undefined;
 
 pub const GPUInterface = gpu.dawn.Interface;
 
-const _ = gpu.Export(GPUInterface);
-
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     gpu.Impl.init();
+    _ = gpu.Export(GPUInterface);
 
     var core = try coreInit(allocator);
     defer coreDeinit(core, allocator);
