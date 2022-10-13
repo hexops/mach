@@ -33,6 +33,19 @@ pub const MouseCursor = enum {
     not_allowed,
 };
 
+pub const CursorMode = enum {
+    /// Makes the cursor visible and behaving normally.
+    normal,
+
+    /// Makes the cursor invisible when it is over the content area of the window but does not
+    /// restrict it from leaving.
+    hidden,
+
+    /// Hides and grabs the cursor, providing virtual and unlimited cursor movement. This is useful
+    /// for implementing for example 3D camera controls.
+    disabled,
+};
+
 pub const MouseButton = enum {
     left,
     right,

@@ -87,6 +87,10 @@ pub fn setMouseCursor(core: *Core, cursor: enums.MouseCursor) !void {
     try core.internal.setMouseCursor(cursor);
 }
 
+pub fn setCursorMode(core: *Core, mode: enums.CursorMode) !void {
+    try core.internal.setCursorMode(mode);
+}
+
 pub fn hasEvent(core: *Core) bool {
     return core.internal.hasEvent();
 }

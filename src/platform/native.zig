@@ -374,6 +374,15 @@ pub const Platform = struct {
         }
     }
 
+    pub fn setCursorMode(platform: *Platform, mode: enums.CursorMode) !void {
+        const glfw_mode: glfw.Window.InputModeCursor = switch (mode) {
+            .normal => .normal,
+            .hidden => .hidden,
+            .disabled => .disabled,
+        };
+        try platform.window.setInputModeCursor(glfw_mode);
+    }
+
     pub fn hasEvent(platform: *Platform) bool {
         return platform.events.first != null;
     }

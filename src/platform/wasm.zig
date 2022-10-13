@@ -123,6 +123,10 @@ pub const Platform = struct {
         js.machSetMouseCursor(cursor_name.ptr, cursor_name.len);
     }
 
+    pub fn setCursorMode(_: *Platform, _: enums.CursorMode) !void {
+        @panic("TODO: Implement setCursorMode for wasm");
+    }
+
     fn pollChanges(platform: *Platform) void {
         const change_type = js.machChangeShift();
 

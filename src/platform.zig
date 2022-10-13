@@ -20,6 +20,7 @@ fn Interface(comptime T: type) type {
     assertHasDecl(T.Platform, "getFramebufferSize");
     assertHasDecl(T.Platform, "getWindowSize");
     assertHasDecl(T.Platform, "setMouseCursor");
+    assertHasDecl(T.Platform, "setCursorMode");
     assertHasDecl(T.Platform, "hasEvent");
     assertHasDecl(T.Platform, "pollEvent");
     assertHasDecl(T.BackingTimer, "start");
