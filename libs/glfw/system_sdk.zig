@@ -210,7 +210,7 @@ fn determineSdkRoot(allocator: std.mem.Allocator, org: []const u8, name: []const
     ensureGit(allocator);
 
     // If the SDK exists, return it. Otherwise, clone it.
-    if (std.fs.openDirAbsolute(sdk_root_dir, .{})) {
+    if (std.fs.openDirAbsolute(sdk_root_dir, .{})) |_| {
         const current_revision = try getCurrentGitRevision(allocator, sdk_root_dir);
         if (!std.mem.eql(u8, current_revision, revision)) {
             // Update the SDK to the target revision. This may be either forward or backwards in
