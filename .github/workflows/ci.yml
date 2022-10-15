@@ -32,8 +32,6 @@ jobs:
         run: zig build -Dtarget=x86_64-windows-gnu
       - name: compile all examples
         run: zig build compile-all -Dtarget=x86_64-linux-gnu
-      - name: compile all examples (WASM)
-        run: zig build compile-all -Dtarget=wasm32-freestanding-none
       - name: launch xvfb
         run: Xvfb :99 -screen 0 1680x720x24 > /dev/null 2>&1 &
       - name: test
@@ -42,6 +40,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install mesa-utils mesa-utils-extra mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers xvfb
           zig build test
+  wasm32-freestanding:
+    runs-on: ubuntu-latest
+    # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
+    # to the branch.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Zig
+        run: |
+          sudo apt install xz-utils libasound2-dev
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.4333+f5f28e0d2.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+      - name: compile all examples
+        run: zig build compile-all -Dtarget=wasm32-freestanding-none
   x86_64-windows:
     runs-on: windows-latest
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
