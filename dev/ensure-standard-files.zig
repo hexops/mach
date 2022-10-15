@@ -42,6 +42,8 @@ pub fn main() !void {
     removeFile("libs/ecs/fetch.zig");
     removeFile("libs/gamemode/fetch.zig");
     removeFile("libs/sysjs/fetch.zig");
+
+    appendToFile("libs/freetype/.gitignore", "\n/out.svg\n");
 }
 
 pub fn copyFile(src_path: []const u8, dst_path: []const u8) void {
@@ -58,4 +60,11 @@ pub fn replaceInFile(file_path: []const u8, needle: []const u8, replacement: []c
 
 pub fn removeFile(file_path: []const u8) void {
     std.fs.cwd().deleteFile(file_path) catch unreachable;
+}
+
+pub fn appendToFile(file_path: []const u8, data: []const u8) void {
+    const file = std.fs.cwd().openFile(file_path, .{ .mode = .write_only }) catch unreachable;
+    defer file.close();
+    file.seekFromEnd(0) catch unreachable;
+    _ = file.write(data) catch unreachable;
 }
