@@ -47,23 +47,14 @@ pub fn Messages(comptime messages: anytype) type {
         }};
     }
 
-    // TODO(self-hosted): check if we can remove this now
-    // Hack to workaround stage1 compiler bug. https://github.com/ziglang/zig/issues/8114
-    //
-    // return @Type(.{
-    //     .Union = .{
-    //         .layout = .Auto,
-    //         .tag_type = MessagesTag(messages),
-    //         .fields = fields,
-    //         .decls = &[_]std.builtin.Type.Declaration{},
-    //     },
-    // });
-    //
-    const Ref = union(enum) { temp };
-    var info = @typeInfo(Ref);
-    info.Union.tag_type = MessagesTag(messages);
-    info.Union.fields = fields;
-    return @Type(info);
+    return @Type(.{
+        .Union = .{
+            .layout = .Auto,
+            .tag_type = MessagesTag(messages),
+            .fields = fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+        },
+    });
 }
 
 /// Returns the tag enum for a tagged union representing the messages, turning this:
