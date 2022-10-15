@@ -69,20 +69,8 @@ pub const pkg = std.build.Pkg{
     .source = .{ .path = sdkPath("/src/main.zig") },
 };
 
-// TODO(self-hosted): HACK: workaround https://github.com/ziglang/zig/issues/12784
-//
-// Extracted from a build using stage1 from zig-cache/ (`cimport/c_darwin_native.zig`)
-// Then find+replace `= ?fn` -> `= ?*const fn`
-fn cimportWorkaround() void {
-    const dest_dir = std.fs.cwd().openDir(sdkPath("/src"), .{}) catch unreachable;
-    const cn_path = sdkPath("/src/cimport/" ++ if (builtin.os.tag == .macos) "c_darwin_native.zig" else "c_normal_native.zig");
-    std.fs.cwd().copyFile(cn_path, dest_dir, sdkPath("/src/c_native.zig"), .{}) catch unreachable;
-}
-
 pub const LinkError = error{FailedToLinkGPU} || BuildError;
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) LinkError!void {
-    cimportWorkaround();
-
     const lib = try buildLibrary(b, step.build_mode, step.target, options);
     step.linkLibrary(lib);
     addGLFWIncludes(step);
