@@ -26,6 +26,7 @@ pub fn main() !void {
         copyFile("dev/template/LICENSE-APACHE", libs ++ project ++ "/LICENSE-APACHE");
         copyFile("dev/template/.gitattributes", libs ++ project ++ "/.gitattributes");
         copyFile("dev/template/.gitignore", libs ++ project ++ "/.gitignore");
+        copyFile("dev/template/fetch.zig", libs ++ project ++ "/fetch.zig");
 
         if (!std.mem.eql(u8, project, ".")) {
             copyFile(
@@ -36,6 +37,11 @@ pub fn main() !void {
         }
         copyFile("dev/template/.github/FUNDING.yml", libs ++ project ++ "/.github/FUNDING.yml");
     }
+
+    // Remove fetch.zig from projects that do not have dependencies.
+    removeFile("libs/ecs/fetch.zig");
+    removeFile("libs/gamemode/fetch.zig");
+    removeFile("libs/sysjs/fetch.zig");
 }
 
 pub fn copyFile(src_path: []const u8, dst_path: []const u8) void {
@@ -48,4 +54,8 @@ pub fn replaceInFile(file_path: []const u8, needle: []const u8, replacement: []c
     const data = std.fs.cwd().readFileAlloc(allocator, file_path, std.math.maxInt(usize)) catch unreachable;
     const new_data = std.mem.replaceOwned(u8, allocator, data, needle, replacement) catch unreachable;
     std.fs.cwd().writeFile(file_path, new_data) catch unreachable;
+}
+
+pub fn removeFile(file_path: []const u8) void {
+    std.fs.cwd().deleteFile(file_path) catch unreachable;
 }
