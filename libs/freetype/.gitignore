@@ -11,6 +11,7 @@
 
 zig-cache/
 zig-out/
+zig-deps/
 /release/
 /debug/
 /build/
