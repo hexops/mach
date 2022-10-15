@@ -340,7 +340,9 @@ pub fn log(
     js.machLogFlush();
 }
 
-pub fn panic(msg: []const u8, _: ?*std.builtin.StackTrace) noreturn {
+pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, ret_addr: ?usize) noreturn {
+    _ = error_return_trace;
+    _ = ret_addr;
     js.machPanic(msg.ptr, msg.len);
     unreachable;
 }
