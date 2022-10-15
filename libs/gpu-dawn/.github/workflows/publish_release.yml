@@ -21,7 +21,7 @@ jobs:
         # to 'update to latest binary release' instead of the commit we were building.
         # By doing this, we ensure any update we push would refer to the absolute latest binary
         # release even if *this* CI run is older.
-        run: echo "::set-output name=commit::$(git log --oneline | grep -v 'update to latest binary release' | head -n1 | cut -d " " -f1)"
+        run: echo "recorded_release_version=$(git log --oneline | grep -v 'update to latest binary release' | head -n1 | cut -d " " -f1)" >> $GITHUB_ENV
       # - name: Publish release
       #   run: echo "TODO(build-system): gh CLI has no way to mark draft as published?"
       #   env:
@@ -33,7 +33,7 @@ jobs:
           token: ${{ secrets.HEXOPS_MACH_GPU_DAWN_PUSH }}
       - name: 'gpu/dawn: update hard-coded binary release version'
         env:
-          RELEASE_COMMIT: ${{steps.recorded_release_version.outputs.commit}}
+          RELEASE_COMMIT: ${{env.recorded_release_version}}
         run: |
           sed -i "/binary_version: \[\]const u8 =/c\    binary_version: []const u8 = \"release-$RELEASE_COMMIT\"," ./libs/gpu-dawn/build.zig
       - name: 'gpu/dawn: use latest binary release'
