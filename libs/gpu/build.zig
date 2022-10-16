@@ -1,40 +1,36 @@
+const fetch = @import("fetch.zig");
 const std = @import("std");
-const glfw = @import("libs/mach-glfw/build.zig");
-const gpu_dawn_sdk = @import("libs/mach-gpu-dawn/sdk.zig");
-const gpu_sdk = @import("sdk.zig");
-const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
 
-pub fn build(b: *std.build.Builder) !void {
-    const mode = b.standardReleaseOptions();
-    const target = b.standardTargetOptions(.{});
-    const gpu_dawn = gpu_dawn_sdk.Sdk(.{
-        .glfw = glfw,
-        .glfw_include_dir = "libs/mach-glfw/upstream/glfw/include",
-        .system_sdk = system_sdk,
-    });
-    const gpu = gpu_sdk.Sdk(.{
-        .glfw = glfw,
-        .gpu_dawn = gpu_dawn,
-    });
+const deps = [_]fetch.Dependency{
+    .{
+        .name = "mach-glfw",
+        .vcs = .{
+            .git = .{
+                .url = "https://github.com/hexops/mach-glfw",
+                .commit = "b803782349c9ab80ba885054e23133b468ec041a",
+            },
+        },
+        // TODO(build-system): remove this once subrepo is updated
+        .recursive_fetch = false,
+    },
+    .{
+        .name = "mach-gpu-dawn",
+        .vcs = .{
+            .git = .{
+                .url = "https://github.com/hexops/mach-gpu-dawn",
+                .commit = "96808c0b6fe133cb982195916e8c0a1caa268c83",
+            },
+        },
+        // TODO(build-system): remove this once subrepo is updated
+        .recursive_fetch = false,
+    },
+};
 
-    const gpu_dawn_options = gpu_dawn.Options{
-        .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
-        .debug = b.option(bool, "dawn-debug", "Use a debug build of Dawn") orelse false,
-    };
+pub fn build(builder: *std.build.Builder) !void {
+    fetch.addStep(builder, "test", "Run library tests");
+    fetch.addStep(builder, "run-example", "Run example");
+    fetch.addOption(builder, bool, "dawn-from-source", "Build Dawn purely from source (default false)");
+    fetch.addOption(builder, bool, "dawn-debug", "Use a version of Dawn with full debug symbols");
 
-    const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&(try gpu.testStep(b, mode, target, .{ .gpu_dawn_options = gpu_dawn_options })).step);
-
-    const example = b.addExecutable("gpu-hello-triangle", "examples/main.zig");
-    example.setBuildMode(mode);
-    example.setTarget(target);
-    example.addPackage(gpu.pkg);
-    example.addPackage(glfw.pkg);
-    try gpu.link(b, example, .{ .gpu_dawn_options = gpu_dawn_options });
-    example.install();
-
-    const example_run_cmd = example.run();
-    example_run_cmd.step.dependOn(b.getInstallStep());
-    const example_run_step = b.step("run-example", "Run the example");
-    example_run_step.dependOn(&example_run_cmd.step);
+    try fetch.fetchAndBuild(builder, "zig-deps", &deps, "compile.zig");
 }
