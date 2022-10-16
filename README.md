@@ -17,14 +17,18 @@ Written in [Zig](https://ziglang.org/), Mach is for creating games, graphical ap
 ## Cross-platform graphics in ~60 seconds
 
 ```sh
-git clone https://github.com/hexops/mach
-cd mach/
-zig build run-example-boids
+git clone --recursive https://github.com/hexops/mach-examples
+cd mach-examples/
+zig build run-boids
 ```
 
 Cross-platform graphics, a unified shader language & compute shaders.
 
 (Requires [zig 0.10.x](https://ziglang.org/) | [known issues](https://github.com/hexops/mach/blob/main/doc/known-issues.md#known-issues))
+
+## Get started with 15+ examples
+
+* Examples showcase: https://machengine.org/gpu/
 
 ## Libraries
 
