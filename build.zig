@@ -110,83 +110,9 @@ pub fn build(b: *Builder) !void {
         shared_lib.install();
     }
 
-    try ensureExamplesDependencySubmodules(b.allocator);
-    inline for ([_]struct {
-        name: []const u8,
-        deps: []const Pkg = &.{},
-        std_platform_only: bool = false,
-        has_assets: bool = false,
-    }{
-        .{ .name = "triangle" },
-        .{ .name = "triangle-msaa" },
-        .{ .name = "boids" },
-        .{ .name = "rotating-cube", .deps = &.{Packages.zmath} },
-        .{ .name = "pixel-post-process", .deps = &.{Packages.zmath} },
-        .{ .name = "two-cubes", .deps = &.{Packages.zmath} },
-        .{ .name = "instanced-cube", .deps = &.{Packages.zmath} },
-        .{ .name = "advanced-gen-texture-light", .deps = &.{Packages.zmath} },
-        .{ .name = "fractal-cube", .deps = &.{Packages.zmath} },
-        .{ .name = "textured-cube", .deps = &.{ Packages.zmath, Packages.zigimg }, .has_assets = true },
-        .{ .name = "ecs-app", .deps = &.{} },
-        .{ .name = "image-blur", .deps = &.{Packages.zigimg}, .has_assets = true },
-        .{ .name = "cubemap", .deps = &.{ Packages.zmath, Packages.zigimg }, .has_assets = true },
-        .{ .name = "map-async", .deps = &.{} },
-        .{ .name = "sysaudio", .deps = &.{} },
-        .{ .name = "gkurve", .deps = &.{ Packages.zmath, Packages.zigimg, freetype.pkg }, .std_platform_only = true, .has_assets = true },
-    }) |example| {
-        // FIXME: this is workaround for a problem that some examples
-        // (having the std_platform_only=true field) as well as zigimg
-        // uses IO which is not supported in freestanding environments.
-        // So break out of this loop as soon as any such examples is found.
-        // This does means that any example which works on wasm should be
-        // placed before those who dont.
-        if (example.std_platform_only)
-            if (target.getCpuArch() == .wasm32)
-                break;
-
-        const example_app = try App.init(
-            b,
-            .{
-                .name = "example-" ++ example.name,
-                .src = "examples/" ++ example.name ++ "/main.zig",
-                .target = target,
-                .deps = example.deps,
-                .res_dirs = if (example.has_assets) &.{"examples/" ++ example.name ++ "/assets"} else null,
-                .watch_paths = &.{"examples/" ++ example.name},
-            },
-        );
-        example_app.setBuildMode(mode);
-        inline for (example.deps) |p| {
-            if (std.mem.eql(u8, p.name, freetype.pkg.name))
-                freetype.link(example_app.b, example_app.step, .{});
-        }
-        try example_app.link(options);
-        example_app.install();
-
-        const example_compile_step = b.step("example-" ++ example.name, "Compile '" ++ example.name ++ "' example");
-        example_compile_step.dependOn(&example_app.getInstallStep().?.step);
-
-        const example_run_cmd = try example_app.run();
-        example_run_cmd.dependOn(example_compile_step);
-        const example_run_step = b.step("run-example-" ++ example.name, "Run '" ++ example.name ++ "' example");
-        example_run_step.dependOn(example_run_cmd);
-    }
-
-    const compile_all = b.step("compile-all", "Compile all examples and applications");
+    const compile_all = b.step("compile-all", "Compile Mach");
     compile_all.dependOn(b.getInstallStep());
 }
-
-const Packages = struct {
-    // Declared here because submodule may not be cloned at the time build.zig runs.
-    const zmath = Pkg{
-        .name = "zmath",
-        .source = .{ .path = "examples/libs/zmath/src/zmath.zig" },
-    };
-    const zigimg = Pkg{
-        .name = "zigimg",
-        .source = .{ .path = "examples/libs/zigimg/zigimg.zig" },
-    };
-};
 
 fn testStep(b: *Builder, mode: std.builtin.Mode, target: CrossTarget) *std.build.RunStep {
     const main_tests = b.addTestExe("mach-tests", "src/main.zig");
@@ -399,48 +325,6 @@ pub const App = struct {
         return app.step.install_step;
     }
 };
-
-fn ensureExamplesDependencySubmodules(allocator: std.mem.Allocator) !void {
-    // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
-    ensureGit(allocator);
-    try ensureDependencySubmodule(allocator, "examples/libs/zmath");
-    try ensureDependencySubmodule(allocator, "examples/libs/zigimg");
-    try ensureDependencySubmodule(allocator, "examples/gkurve/assets");
-    try ensureDependencySubmodule(allocator, "examples/image-blur/assets");
-    try ensureDependencySubmodule(allocator, "examples/textured-cube/assets");
-    try ensureDependencySubmodule(allocator, "examples/cubemap/assets");
-}
-
-fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
-    if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
-        defer allocator.free(no_ensure_submodules);
-        if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
-    } else |_| {}
-    var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = sdkPath("/");
-    child.stderr = std.io.getStdErr();
-    child.stdout = std.io.getStdOut();
-
-    _ = try child.spawnAndWait();
-}
-
-fn ensureGit(allocator: std.mem.Allocator) void {
-    const result = std.ChildProcess.exec(.{
-        .allocator = allocator,
-        .argv = &.{ "git", "--version" },
-    }) catch { // e.g. FileNotFound
-        std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
-        std.process.exit(1);
-    };
-    defer {
-        allocator.free(result.stderr);
-        allocator.free(result.stdout);
-    }
-    if (result.term.Exited != 0) {
-        std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
-        std.process.exit(1);
-    }
-}
 
 fn sdkPath(comptime suffix: []const u8) []const u8 {
     if (suffix[0] != '/') @compileError("suffix must be an absolute path");

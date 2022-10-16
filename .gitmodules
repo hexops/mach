@@ -9,13 +9,6 @@
 	shallow = true
 	branch = "mach"
 
-[submodule "examples/libs/zmath"]
-	path = examples/libs/zmath
-	url = https://github.com/PiergiorgioZagaria/zmath
-[submodule "examples/libs/zigimg"]
-	path = examples/libs/zigimg
-	url = https://github.com/zigimg/zigimg
-	branch = stage2_compat
 [submodule "freetype/upstream"]
 	path = libs/freetype/upstream
 	url = https://github.com/hexops/freetype
@@ -28,15 +21,4 @@
 [submodule "basisu/upstream"]
 	path = libs/basisu/upstream
 	url = https://github.com/hexops/basisu
-[submodule "examples/image-blur/assets"]
-	path = examples/image-blur/assets
-	url = https://github.com/hexops/mach-example-assets
-[submodule "examples/textured-cube/assets"]
-	path = examples/textured-cube/assets
-	url = https://github.com/hexops/mach-example-assets
-[submodule "examples/gkurve/assets"]
-	path = examples/gkurve/assets
-	url = https://github.com/hexops/mach-example-assets
-[submodule "examples/cubemap/assets"]
-	path = examples/cubemap/assets
-	url = https://github.com/hexops/mach-example-assets
+
