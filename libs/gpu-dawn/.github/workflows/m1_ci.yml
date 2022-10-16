@@ -22,8 +22,6 @@ jobs:
         run: |
           sudo rm -rf /usr/local/bin/zig /usr/local/bin/lib/
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.4333+f5f28e0d2.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
-      - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
         run: zig build install -Dtarget=aarch64-macos.12-none
         env:

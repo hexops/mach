@@ -1,30 +1,18 @@
+const fetch = @import("fetch.zig");
 const std = @import("std");
-const Builder = std.build.Builder;
-const glfw = @import("libs/mach-glfw/compile.zig");
-const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
-const gpu_dawn_sdk = @import("sdk.zig");
 
-pub fn build(b: *Builder) !void {
-    const mode = b.standardReleaseOptions();
-    const target = b.standardTargetOptions(.{});
-    const gpu_dawn = gpu_dawn_sdk.Sdk(.{
-        .glfw = glfw,
-        .glfw_include_dir = "libs/mach-glfw/upstream/glfw/include",
-        .system_sdk = system_sdk,
-    });
+const deps = [_]fetch.Dependency{
+    .{
+        .name = "mach-glfw",
+        .vcs = .{
+            .git = .{
+                .url = "https://github.com/hexops/mach-glfw",
+                .commit = "b803782349c9ab80ba885054e23133b468ec041a",
+            },
+        },
+    },
+};
 
-    const options = gpu_dawn.Options{
-        .install_libs = true,
-        .from_source = true,
-    };
-
-    // Just to demonstrate/test linking. This is not a functional example, see the mach/gpu examples
-    // or Dawn C++ examples for functional example code.
-    const example = b.addExecutable("dawn-example", "src/main.zig");
-    example.setBuildMode(mode);
-    example.setTarget(target);
-    try gpu_dawn.link(b, example, options);
-    try glfw.link(b, example, .{ .system_sdk = .{ .set_sysroot = false } });
-    example.addPackage(glfw.pkg);
-    example.install();
+pub fn build(builder: *std.build.Builder) !void {
+    try fetch.fetchAndBuild(builder, "zig-deps", &deps, "compile.zig");
 }

@@ -1,14 +1,3 @@
-[submodule "gpu-dawn/libs/dawn"]
-	path = libs/gpu-dawn/libs/dawn
-	url = https://github.com/hexops/dawn.git
-	shallow = true
-	branch = "generated-2022-08-06"
-[submodule "gpu-dawn/libs/DirectXShaderCompiler"]
-	path = libs/gpu-dawn/libs/DirectXShaderCompiler
-	url = https://github.com/hexops/DirectXShaderCompiler
-	shallow = true
-	branch = "mach"
-
 [submodule "examples/libs/zmath"]
 	path = examples/libs/zmath
 	url = https://github.com/PiergiorgioZagaria/zmath
