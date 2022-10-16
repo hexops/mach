@@ -1,6 +1,6 @@
 const std = @import("std");
 const Builder = std.build.Builder;
-const glfw = @import("libs/mach-glfw/build.zig");
+const glfw = @import("libs/mach-glfw/compile.zig");
 const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
 const gpu_dawn_sdk = @import("sdk.zig");
 

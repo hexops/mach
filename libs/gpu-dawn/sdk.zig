@@ -1,5 +1,19 @@
 const std = @import("std");
 const Builder = std.build.Builder;
+const fetch = @import("fetch.zig");
+
+const git_deps = .{
+    .dxcompiler = .{
+        .url = "https://github.com/hexops/DirectXShaderCompiler",
+        .commit = "9832f72b8ab48ca5a80b32ec5592812921833dc8",
+        .shallow_branch = "mach",
+    },
+    .dawn = .{
+        .url = "https://github.com/hexops/dawn",
+        .commit = "0b704c4acae154ec8d4be7615d18a489f270f6c0",
+        .shallow_branch = "generated-2022-08-06",
+    },
+};
 
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
@@ -50,7 +64,7 @@ pub fn Sdk(comptime deps: anytype) type {
             install_libs: bool = false,
 
             /// The binary release version to use from https://github.com/hexops/mach-gpu-dawn/releases
-    binary_version: []const u8 = "release-e595f1c",
+            binary_version: []const u8 = "release-e595f1c",
 
             /// Detects the default options to use for the given target.
             pub fn detectDefaults(self: Options, target: std.Target) Options {
@@ -89,8 +103,6 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !void {
-            try ensureSubmodules(b.allocator);
-
             step.addIncludePath(sdkPath("/libs/dawn/out/Debug/gen/include"));
             step.addIncludePath(sdkPath("/libs/dawn/include"));
             step.addIncludePath(sdkPath("/src/dawn"));
@@ -139,6 +151,19 @@ pub fn Sdk(comptime deps: anytype) type {
                 lib_dawn.install();
             step.linkLibrary(lib_dawn);
 
+            // Fetch sources. This is required before we attempt to build the libraries, since we
+            // must scan for C++ sources to build.
+
+            // Fetch Dawn sources if needed.
+            const dawn_dir = b.pathJoin(&.{ b.build_root, "libs", "dawn" });
+            const dawn_git_fetch = try fetch.GitFetch.init(b, dawn_dir, git_deps.dawn);
+            try fetch.GitFetch.make(&dawn_git_fetch.step);
+
+            // Fetch DirectXShaderCompiler sources if needed.
+            const dxcompiler_dir = b.pathJoin(&.{ b.build_root, "libs", "DirectXShaderCompiler" });
+            const dxcompiler_git_fetch = try fetch.GitFetch.init(b, dxcompiler_dir, git_deps.dxcompiler);
+            try fetch.GitFetch.make(&dxcompiler_git_fetch.step);
+
             _ = try buildLibMachDawnNative(b, lib_dawn, options);
             _ = try buildLibDawnCommon(b, lib_dawn, options);
             _ = try buildLibDawnPlatform(b, lib_dawn, options);
@@ -149,17 +174,6 @@ pub fn Sdk(comptime deps: anytype) type {
             _ = try buildLibSPIRVTools(b, lib_dawn, options);
             _ = try buildLibTint(b, lib_dawn, options);
             if (options.d3d12.?) _ = try buildLibDxcompiler(b, lib_dawn, options);
-        }
-
-        fn ensureSubmodules(allocator: std.mem.Allocator) !void {
-            if (isEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES")) {
-                return;
-            }
-            var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", "--recursive" }, allocator);
-            child.cwd = sdkPath("/");
-            child.stderr = std.io.getStdErr();
-            child.stdout = std.io.getStdOut();
-            _ = try child.spawnAndWait();
         }
 
         fn isEnvVarTruthy(allocator: std.mem.Allocator, name: []const u8) bool {
