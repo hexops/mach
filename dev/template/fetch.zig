@@ -362,6 +362,15 @@ pub const GitFetch = struct {
         // exists and the revision has changed. It should run something akin to `git fetch` (adding
         // `--depth 1` if a shallow clone) followed by `git checkout`. This is a network access,
         // though, so should be ran rarely.
+
+        if (git_fetch.dep.shallow_branch) |_| {
+            // Works around an issue where a shallow clone gets the last commit, but that commit is
+            // in fact not the one we want (it's a newer one and we want an older one) e.g.:
+            // fatal: reference is not a tree: fff6ea92a00c5f6092b896d754a932b8b88149ff
+            const args = &.{ "git", "fetch", "--depth", "1", "origin", git_fetch.dep.commit };
+            try runChildProcess(builder, git_fetch.dir, args, builder.verbose);
+        }
+
         const checkout_args = &.{ "git", "checkout", git_fetch.dep.commit };
         try runChildProcess(builder, git_fetch.dir, checkout_args, builder.verbose);
     }
