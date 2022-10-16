@@ -89,7 +89,11 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !void {
-            try ensureSubmodules(b.allocator);
+            // branch: generated-2022-08-06
+            try ensureGitRepoCloned(b.allocator, "https://github.com/hexops/dawn", "0b704c4acae154ec8d4be7615d18a489f270f6c0", sdkPath("/libs/dawn"));
+
+            // branch: mach
+            try ensureGitRepoCloned(b.allocator, "https://github.com/hexops/DirectXShaderCompiler", "cff9a6f0b7f961748b822e1d313a7205dfdecf9d", sdkPath("/libs/DirectXShaderCompiler"));
 
             step.addIncludePath(sdkPath("/libs/dawn/out/Debug/gen/include"));
             step.addIncludePath(sdkPath("/libs/dawn/include"));
@@ -151,15 +155,65 @@ pub fn Sdk(comptime deps: anytype) type {
             if (options.d3d12.?) _ = try buildLibDxcompiler(b, lib_dawn, options);
         }
 
-        fn ensureSubmodules(allocator: std.mem.Allocator) !void {
-            if (isEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES")) {
+        fn ensureGitRepoCloned(allocator: std.mem.Allocator, clone_url: []const u8, revision: []const u8, dir: []const u8) !void {
+            if (isEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES") or isEnvVarTruthy(allocator, "NO_ENSURE_GIT")) {
                 return;
             }
-            var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", "--recursive" }, allocator);
-            child.cwd = sdkPath("/");
-            child.stderr = std.io.getStdErr();
-            child.stdout = std.io.getStdOut();
+
+            ensureGit(allocator);
+
+            if (std.fs.openDirAbsolute(dir, .{})) |_| {
+                const current_revision = try getCurrentGitRevision(allocator, dir);
+                if (!std.mem.eql(u8, current_revision, revision)) {
+                    // Reset to the desired revision
+                    exec(allocator, &[_][]const u8{ "git", "fetch" }, dir) catch |err| std.debug.print("warning: failed to 'git fetch' in {s}: {s}\n", .{ dir, @errorName(err) });
+                    try exec(allocator, &[_][]const u8{ "git", "reset", "--quiet", "--hard", revision }, dir);
+                    try exec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
+                }
+                return;
+            } else |err| return switch (err) {
+                error.FileNotFound => {
+                    std.log.info("cloning required dependency..\ngit clone {s} {s}..\n", .{ clone_url, dir });
+
+                    try exec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", clone_url, dir }, sdkPath("/"));
+                    try exec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
+                    return;
+                },
+                else => err,
+            };
+        }
+
+        fn exec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
+            var child = std.ChildProcess.init(argv, allocator);
+            child.cwd = cwd;
             _ = try child.spawnAndWait();
+        }
+
+        fn getCurrentGitRevision(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
+            const result = try std.ChildProcess.exec(.{ .allocator = allocator, .argv = &.{ "git", "rev-parse", "HEAD" }, .cwd = cwd });
+            allocator.free(result.stderr);
+            if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
+            return result.stdout;
+        }
+
+        fn ensureGit(allocator: std.mem.Allocator) void {
+            const argv = &[_][]const u8{ "git", "--version" };
+            const result = std.ChildProcess.exec(.{
+                .allocator = allocator,
+                .argv = argv,
+                .cwd = ".",
+            }) catch { // e.g. FileNotFound
+                std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
+                std.process.exit(1);
+            };
+            defer {
+                allocator.free(result.stderr);
+                allocator.free(result.stdout);
+            }
+            if (result.term.Exited != 0) {
+                std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
+                std.process.exit(1);
+            }
         }
 
         fn isEnvVarTruthy(allocator: std.mem.Allocator, name: []const u8) bool {
