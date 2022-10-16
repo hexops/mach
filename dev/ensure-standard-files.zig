@@ -36,6 +36,8 @@ pub fn main() !void {
         }
         copyFile("dev/template/.github/FUNDING.yml", libs ++ project ++ "/.github/FUNDING.yml");
     }
+
+    appendToFile("libs/freetype/.gitignore", "\n/out.svg\n");
 }
 
 pub fn copyFile(src_path: []const u8, dst_path: []const u8) void {
@@ -48,4 +50,11 @@ pub fn replaceInFile(file_path: []const u8, needle: []const u8, replacement: []c
     const data = std.fs.cwd().readFileAlloc(allocator, file_path, std.math.maxInt(usize)) catch unreachable;
     const new_data = std.mem.replaceOwned(u8, allocator, data, needle, replacement) catch unreachable;
     std.fs.cwd().writeFile(file_path, new_data) catch unreachable;
+}
+
+pub fn appendToFile(file_path: []const u8, data: []const u8) void {
+    const file = std.fs.cwd().openFile(file_path, .{ .mode = .write_only }) catch unreachable;
+    defer file.close();
+    file.seekFromEnd(0) catch unreachable;
+    _ = file.write(data) catch unreachable;
 }
