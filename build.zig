@@ -177,18 +177,21 @@ pub const App = struct {
         }
     };
 
-    pub fn init(b: *Builder, options: struct {
-        name: []const u8,
-        src: []const u8,
-        target: CrossTarget,
-        deps: ?[]const Pkg = null,
-        res_dirs: ?[]const []const u8 = null,
-        watch_paths: ?[]const []const u8 = null,
+    pub fn init(
+        b: *Builder,
+        options: struct {
+            name: []const u8,
+            src: []const u8,
+            target: CrossTarget,
+            deps: ?[]const Pkg = null,
+            res_dirs: ?[]const []const u8 = null,
+            watch_paths: ?[]const []const u8 = null,
 
-        /// If set, freetype will be linked and can be imported using this name.
-        // TODO(build-system): name is currently not used / always "freetype"
-        use_freetype: ?[]const u8 = null,
-    }) InitError!App {
+            /// If set, freetype will be linked and can be imported using this name.
+            // TODO(build-system): name is currently not used / always "freetype"
+            use_freetype: ?[]const u8 = null,
+        },
+    ) InitError!App {
         const target = (try std.zig.system.NativeTargetInfo.detect(options.target)).target;
         const platform = Platform.fromTarget(target);
 
