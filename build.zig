@@ -35,6 +35,7 @@ pub const Options = struct {
     glfw_options: glfw.Options = .{},
     gpu_dawn_options: gpu_dawn.Options = .{},
     sysaudio_options: sysaudio.Options = .{},
+    freetype_options: freetype.Options = .{},
 
     pub fn gpuOptions(options: Options) gpu.Options {
         return .{
@@ -158,6 +159,7 @@ pub const App = struct {
     platform: Platform,
     res_dirs: ?[]const []const u8,
     watch_paths: ?[]const []const u8,
+    use_freetype: ?[]const u8 = null,
 
     pub const InitError = std.zig.system.NativeTargetInfo.DetectError;
     pub const LinkError = glfw.LinkError;
@@ -182,6 +184,10 @@ pub const App = struct {
         deps: ?[]const Pkg = null,
         res_dirs: ?[]const []const u8 = null,
         watch_paths: ?[]const []const u8 = null,
+
+        /// If set, freetype will be linked and can be imported using this name.
+        // TODO(build-system): name is currently not used / always "freetype"
+        use_freetype: ?[]const u8 = null,
     }) InitError!App {
         const target = (try std.zig.system.NativeTargetInfo.detect(options.target)).target;
         const platform = Platform.fromTarget(target);
@@ -194,6 +200,7 @@ pub const App = struct {
             .native => try deps.append(glfw.pkg),
             .web => try deps.append(sysjs.pkg),
         }
+        if (options.use_freetype) |_| try deps.append(freetype.pkg);
         if (options.deps) |app_deps| try deps.appendSlice(app_deps);
 
         const app_pkg = Pkg{
@@ -234,6 +241,7 @@ pub const App = struct {
             .platform = platform,
             .res_dirs = options.res_dirs,
             .watch_paths = options.watch_paths,
+            .use_freetype = options.use_freetype,
         };
     }
 
@@ -245,6 +253,7 @@ pub const App = struct {
                 gamemode.link(app.step);
         }
         sysaudio.link(app.b, app.step, options.sysaudio_options);
+        if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype_options);
     }
 
     pub fn install(app: *const App) void {
