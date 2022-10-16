@@ -40,7 +40,7 @@ pub const BackendOptions = struct {
 /// The chosen backends must match those the library was compiled for. Failure to do so
 /// will cause a link-time error.
 pub fn Native(comptime options: BackendOptions) type {
-    const native = @import("c_native.zig").import(options);
+    const native = @import("cimport/c_normal_native.zig").import(options);
 
     return struct {
         /// Returns the adapter device name of the specified monitor.
