@@ -33,8 +33,8 @@ test {
     std.testing.refAllDeclsRecursive(@import("computations.zig"));
 }
 
-const firasans_font_path = sdkPath("/../upstream/assets/FiraSans-Regular.ttf");
-const firasans_font_data = @embedFile(sdkPath("/../upstream/assets/FiraSans-Regular.ttf"));
+const firasans_font_path = sdkPath("/../zig-deps/upstream/assets/FiraSans-Regular.ttf");
+const firasans_font_data = @embedFile(sdkPath("/../zig-deps/upstream/assets/FiraSans-Regular.ttf"));
 
 test "create face from file" {
     const lib = try ft.Library.init();
