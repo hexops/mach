@@ -34,6 +34,7 @@ pub const Dependency = struct {
     vcs: union(enum) {
         git: GitDependency,
     },
+    recursive_fetch: bool = true,
 };
 
 pub fn fetchAndBuild(
@@ -119,16 +120,20 @@ const FetchAndBuild = struct {
                 }
 
                 const fetch_dir = builder.pathJoin(&.{ builder.build_root, deps_dir, dep.name });
-                const recursive_fetch = try RecursiveFetch.init(builder, fetch_dir, fetch_force);
-                fetch_and_build.step.dependOn(&recursive_fetch.step);
-
                 switch (dep.vcs) {
                     .git => |git_dep| {
                         if (!git_available) {
                             return error.GitNotAvailable;
                         }
                         const git_fetch = try GitFetch.init(builder, fetch_dir, git_dep);
-                        recursive_fetch.step.dependOn(&git_fetch.step);
+
+                        if (dep.recursive_fetch) {
+                            const recursive_fetch = try RecursiveFetch.init(builder, fetch_dir, fetch_force);
+                            fetch_and_build.step.dependOn(&recursive_fetch.step);
+                            recursive_fetch.step.dependOn(&git_fetch.step);
+                        } else {
+                            fetch_and_build.step.dependOn(&git_fetch.step);
+                        }
                     },
                 }
 
