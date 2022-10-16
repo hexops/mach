@@ -50,7 +50,7 @@ pub fn Sdk(comptime deps: anytype) type {
             install_libs: bool = false,
 
             /// The binary release version to use from https://github.com/hexops/mach-gpu-dawn/releases
-            binary_version: []const u8 = "release-e595f1c",
+            binary_version: []const u8 = "release-d56b395",
 
             /// Detects the default options to use for the given target.
             pub fn detectDefaults(self: Options, target: std.Target) Options {
