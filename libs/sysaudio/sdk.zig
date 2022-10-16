@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
-        const soundio_path = sdkPath("/upstream/soundio");
+        const soundio_path = sdkPath("/zig-deps/upstream/soundio");
 
         pub const pkg = std.build.Pkg{
             .name = "sysaudio",
@@ -49,9 +49,6 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn buildSoundIo(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) *std.build.LibExeObjStep {
-            // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
-            ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
-
             const config_base =
                 \\#ifndef SOUNDIO_CONFIG_H
                 \\#define SOUNDIO_CONFIG_H
@@ -96,19 +93,6 @@ pub fn Sdk(comptime deps: anytype) type {
             if (options.install_libs)
                 lib.install();
             return lib;
-        }
-
-        fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !void {
-            if (std.process.getEnvVarOwned(allocator, "NO_ENSURE_SUBMODULES")) |no_ensure_submodules| {
-                defer allocator.free(no_ensure_submodules);
-                if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
-            } else |_| {}
-            var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-            child.cwd = sdkPath("/");
-            child.stderr = std.io.getStdErr();
-            child.stdout = std.io.getStdOut();
-
-            _ = try child.spawnAndWait();
         }
 
         fn sdkPath(comptime suffix: []const u8) []const u8 {

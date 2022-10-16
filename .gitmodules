@@ -22,9 +22,6 @@
 [submodule "glfw/upstream"]
 	path = libs/glfw/upstream
 	url = https://github.com/hexops/glfw
-[submodule "sysaudio/upstream"]
-	path = libs/sysaudio/upstream
-	url = https://github.com/hexops/soundio
 [submodule "examples/image-blur/assets"]
 	path = examples/image-blur/assets
 	url = https://github.com/hexops/mach-example-assets
