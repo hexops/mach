@@ -16,3 +16,6 @@ zig-out/
 /build/
 /build-*/
 /docgen_tmp/
+
+libs/DirectXShaderCompiler
+libs/dawn
