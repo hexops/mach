@@ -17,3 +17,5 @@ zig-deps/
 /build/
 /build-*/
 /docgen_tmp/
+
+examples/**/assets/
