@@ -176,6 +176,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     std.log.info("cloning required dependency..\ngit clone {s} {s}..\n", .{ clone_url, dir });
 
                     try exec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", clone_url, dir }, sdkPath("/"));
+                    try exec(allocator, &[_][]const u8{ "git", "reset", "--quiet", "--hard", revision }, dir);
                     try exec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
                     return;
                 },
