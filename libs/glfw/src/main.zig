@@ -8,7 +8,10 @@ const key = @import("key.zig");
 /// Possible value for various window hints, etc.
 pub const dont_care = c.GLFW_DONT_CARE;
 
-const errors = @import("errors.zig");
+/// Most users should not access the error functions in this namespace, but in some rare cases they
+/// may be useful.
+pub const errors = @import("errors.zig");
+
 const getError = errors.getError;
 pub const setErrorCallback = errors.setErrorCallback;
 pub const Error = errors.Error;
