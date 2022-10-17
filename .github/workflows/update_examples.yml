@@ -1,9 +1,8 @@
 name: Update examples
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
+  push:
+    branches:
+      - "main"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -21,7 +20,7 @@ jobs:
       - name: 'mach-examples: update mach submodule'
         run: |
           cd libs/mach
-          git pull
+          git checkout origin/main
           cd ../../
       - name: 'mach-examples: push submodule update'
         run: |
