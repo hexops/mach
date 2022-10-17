@@ -781,6 +781,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     "mock",
                     "SpirvValidation.cpp",
                     "XlibXcbFunctions.cpp",
+                    "dawn_proc.c",
                 },
             });
 

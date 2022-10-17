@@ -57,6 +57,14 @@ Here's how to read the downloads provided:
 * `headers.json.gz` is a JSON archive of all the Dawn/WebGPU headers.
 * Files ending in `.a.gz` and `.lib.gz` are the individual static `libdawn.a` and `dawn.lib` (Windows) gzippped and distributed. These are provided as individual downloads so there is no need to extract a tarball.
 
+## Important: Building WebGPU API symbols
+
+Dawn and other WebGPU implementations (like the Rust one) do not agree on a standard `webgpu.h` API. Aspirationally, they aim to target the same https://github.com/webgpu-native/webgpu-headers header, but in practice they expose different APIs which are not ABI compatible.
+
+When you call a Dawn `webgpu.h` function, Dawn internally diverts this call through a vtable which must be initialized using a call to `dawnProcSetProcs`.
+
+`mach/gpu-dawn` builds since Oct 17th 2022 no longer include the `webgpu.h` symbols by default. If you intend to actually call the WebGPU API, you should build [`dawn_proc.c`](https://raw.githubusercontent.com/hexops/dawn/generated-2022-08-06/out/Debug/gen/src/dawn/dawn_proc.c) as part of your application and call `dawnProcSetProcs`.
+
 ## A warning about API stability
 
 You should be aware:
