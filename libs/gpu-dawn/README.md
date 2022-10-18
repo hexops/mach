@@ -63,7 +63,12 @@ Dawn and other WebGPU implementations (like the Rust one) do not agree on a stan
 
 When you call a Dawn `webgpu.h` function, Dawn internally diverts this call through a vtable which must be initialized using a call to `dawnProcSetProcs`.
 
-`mach/gpu-dawn` builds since Oct 17th 2022 no longer include the `webgpu.h` symbols by default. If you intend to actually call the WebGPU API, you should build [`dawn_proc.c`](https://raw.githubusercontent.com/hexops/dawn/generated-2022-08-06/out/Debug/gen/src/dawn/dawn_proc.c) as part of your application and call `dawnProcSetProcs`.
+`mach/gpu-dawn` builds since Oct 17th 2022 no longer include the `webgpu.h` symbols by default. If you intend to actually call the WebGPU API, you should build these two source files as part of your application:
+
+1. [`dawn_proc.c`](https://raw.githubusercontent.com/hexops/dawn/generated-2022-08-06/out/Debug/gen/src/dawn/dawn_proc.c)
+2. [`webgpu_dawn_native_proc.cpp`](https://raw.githubusercontent.com/hexops/dawn/generated-2022-08-06/out/Debug/gen/src/dawn/native/webgpu_dawn_native_proc.cpp)
+
+And call `dawnProcSetProcs` to set up the proc table.
 
 ## A warning about API stability
 

@@ -791,7 +791,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     "libs/dawn/out/Debug/gen/src/dawn/native/",
                 },
                 .flags = flags.items,
-                .excluding_contains = &.{ "test", "benchmark", "mock" },
+                .excluding_contains = &.{ "test", "benchmark", "mock", "webgpu_dawn_native_proc.cpp" },
             });
 
             // TODO(build-system): could allow enable_vulkan_validation_layers here. See src/dawn/native/BUILD.gn
