@@ -6,6 +6,7 @@ const ecs = @import("libs/ecs/build.zig");
 const freetype = @import("libs/freetype/build.zig");
 const basisu = @import("libs/basisu/build.zig");
 const sysjs = @import("libs/sysjs/build.zig");
+const trimesh2d = @import("libs/trimesh2d/build.zig");
 const gamemode = @import("libs/gamemode/build.zig");
 const wasmserve = @import("tools/wasmserve/wasmserve.zig");
 const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
@@ -28,7 +29,7 @@ const Pkg = std.build.Pkg;
 pub const pkg = Pkg{
     .name = "mach",
     .source = .{ .path = sdkPath("/src/main.zig") },
-    .dependencies = &.{ gpu.pkg, ecs.pkg, sysaudio.pkg },
+    .dependencies = &.{ gpu.pkg, ecs.pkg, sysaudio.pkg, trimesh2d.pkg },
 };
 
 pub const Options = struct {
