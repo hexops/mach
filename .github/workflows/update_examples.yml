@@ -8,6 +8,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   publish:
+    if: github.repository_owner == 'hexops'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout hexops/mach-examples repo
