@@ -8,6 +8,7 @@ const basisu = @import("libs/basisu/build.zig");
 const sysjs = @import("libs/sysjs/build.zig");
 const trimesh2d = @import("libs/trimesh2d/build.zig");
 const gamemode = @import("libs/gamemode/build.zig");
+const model3d = @import("libs/model3d/build.zig");
 const wasmserve = @import("tools/wasmserve/wasmserve.zig");
 const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
     .glfw = glfw,
@@ -64,6 +65,7 @@ pub fn build(b: *Builder) !void {
         const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
         const basisu_test_step = b.step("test-basisu", "Run Basis-Universal library tests");
         const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
+        const model3d_test_step = b.step("test-model3d", "Run Model3D library tests");
         const mach_test_step = b.step("test-mach", "Run Mach Core library tests");
 
         glfw_test_step.dependOn(&(try glfw.testStep(b, mode, target)).step);
@@ -72,6 +74,7 @@ pub fn build(b: *Builder) !void {
         ecs_test_step.dependOn(&ecs.testStep(b, mode, target).step);
         basisu_test_step.dependOn(&basisu.testStep(b, mode, target).step);
         sysaudio_test_step.dependOn(&sysaudio.testStep(b, mode, target).step);
+        model3d_test_step.dependOn(&model3d.testStep(b, mode, target).step);
         mach_test_step.dependOn(&testStep(b, mode, target).step);
 
         all_tests_step.dependOn(glfw_test_step);
@@ -80,6 +83,7 @@ pub fn build(b: *Builder) !void {
         all_tests_step.dependOn(basisu_test_step);
         all_tests_step.dependOn(freetype_test_step);
         all_tests_step.dependOn(sysaudio_test_step);
+        all_tests_step.dependOn(model3d_test_step);
         all_tests_step.dependOn(mach_test_step);
 
         // TODO: we need a way to test wasm stuff
