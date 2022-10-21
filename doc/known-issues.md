@@ -29,7 +29,9 @@ This is a curl SSL CA issue, you may want to Google for proper solutions on your
 
 Some distros require packages to be installed to support the Vulkan graphics API.
 
-For instance, Arch Linux has [specific packages](https://wiki.archlinux.org/title/Vulkan#Installation) for Nvidia, Intel and AMD GPUs.  
+For instance, Arch Linux has [specific packages](https://wiki.archlinux.org/title/Vulkan#Installation) for Nvidia, Intel and AMD GPUs.
+
+You may also try using OpenGL using the env var `MACH_GPU_BACKEND=opengl`.
 
 ## Linux: `Error: Couldn't load Vulkan. Searched /tmp/mach/gpu/zig-out/bin/libvulkan.so.1`
 
