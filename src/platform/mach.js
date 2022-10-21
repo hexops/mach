@@ -323,6 +323,16 @@ const mach = {
     }
   },
 
+  machSetCursorMode(cursor_ptr, len) {
+    let mach_name = mach.getString(cursor_ptr, len);
+
+    if (mach_name === 'normal') document.body.style.cursor = 'default';
+    else if (mach_name === 'hidden' || mach_name === 'disabled') document.body.style.cursor = 'none';
+    else {
+      console.log("machSetMouseCursor failed for " + mach_name);
+    }
+  },
+
   machSetWaitEvent(timeout) {
     mach.wait_event_timeout = timeout;  
   },
