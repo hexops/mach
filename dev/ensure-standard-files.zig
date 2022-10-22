@@ -38,7 +38,15 @@ pub fn main() !void {
         copyFile("dev/template/.github/FUNDING.yml", libs ++ project ++ "/.github/FUNDING.yml");
     }
 
-    appendToFile("libs/freetype/.gitignore", "\n/out.svg\n");
+    appendToFile("libs/freetype/.gitignore",
+        \\
+        \\/out.svg
+    );
+    appendToFile("libs/gpu-dawn/.gitignore",
+        \\
+        \\libs/DirectXShaderCompiler
+        \\libs/dawn
+    );
 }
 
 pub fn copyFile(src_path: []const u8, dst_path: []const u8) void {
