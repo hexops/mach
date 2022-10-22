@@ -14,6 +14,7 @@ const projects = [_][]const u8{
     "glfw",
     "gpu",
     "gpu-dawn",
+    "model3d",
     "sysaudio",
     "sysjs",
     "trimesh2d",
