@@ -22,7 +22,7 @@ cd mach-gpu-dawn
 rm -rf libs/mach-glfw
 git clone https://github.com/hexops/mach-glfw libs/mach-glfw
 
-zig build -Ddawn-from-source=true
+zig build
 ```
 
 (Please make sure to use Zig nightly, e.g. v0.10, not v0.9, which you can get a binary release of at the very top of this page: https://ziglang.org/download/)
@@ -47,7 +47,7 @@ The following platforms are not yet supported, but we hope to support soon:
 
 ## Binary releases
 
-Dawn (specifically all the shader compilers, and the DirectXShaderCompiler) is a large C++ codebase and takes 5-10 minutes to build on a modern laptop, you just need to specify `-Ddawn-from-source=true` and wait. Since waiting is no fun, we also have binary releases produced by our GitHub actions:
+Dawn (specifically all the shader compilers, and the DirectXShaderCompiler) is a large C++ codebase and takes 5-10 minutes to build on a modern laptop. Since waiting is no fun, we also have binary releases produced by our GitHub actions:
 
 **[View binary releases](https://github.com/hexops/mach-gpu-dawn/releases/latest)**
 
