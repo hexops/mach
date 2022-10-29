@@ -79,7 +79,7 @@ pub const Options = struct {
                 .linux = .{
                     .range = .{
                         .min = .{ .major = 3, .minor = 16 },
-                        .max = .{ .major = 5, .minor = std.math.maxInt(u32) },
+                        .max = .{ .major = 6, .minor = std.math.maxInt(u32) },
                     },
                     .glibc = .{ .major = 0, .minor = 0 },
                 },
@@ -95,7 +95,7 @@ pub const Options = struct {
                 .linux = .{
                     .range = .{
                         .min = .{ .major = 3, .minor = 16 },
-                        .max = .{ .major = 5, .minor = std.math.maxInt(u32) },
+                        .max = .{ .major = 6, .minor = std.math.maxInt(u32) },
                     },
                     .glibc = .{ .major = 0, .minor = 0 },
                 },
