@@ -18,6 +18,7 @@ const projects = [_][]const u8{
     "sysaudio",
     "sysjs",
     "trimesh2d",
+    "earcut",
 };
 
 pub fn main() !void {

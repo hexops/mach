@@ -8,6 +8,7 @@ pub const ecs = @import("ecs");
 pub const sysaudio = @import("sysaudio");
 pub const sysjs = @import("sysjs");
 pub const trimesh2d = @import("trimesh2d");
+pub const earcut = @import("earcut");
 
 // Engine exports
 pub const App = @import("engine.zig").App;
