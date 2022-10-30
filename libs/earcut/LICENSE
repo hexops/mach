@@ -1,0 +1,13 @@
+Copyright 2021, Hexops Contributors (given via the Git commit history).
+
+All documentation, image, sound, font, and 2D/3D model files are CC-BY-4.0 licensed unless
+otherwise noted. You may get a copy of this license at https://creativecommons.org/licenses/by/4.0
+
+Files in a directory with a separate LICENSE file may contain files under different license terms,
+described within that LICENSE file.
+
+All other files are licensed under the Apache License, Version 2.0 (see LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
+or the MIT license (see LICENSE-MIT or http://opensource.org/licenses/MIT), at your option.
+
+All files in the project without exclusions may not be copied, modified, or distributed except
+according to the terms above.
