@@ -196,7 +196,7 @@ pub const App = struct {
             // TODO(build-system): name is currently not used / always "freetype"
             use_freetype: ?[]const u8 = null,
         },
-    ) InitError!App {
+    ) anyerror!App {
         const target = (try std.zig.system.NativeTargetInfo.detect(options.target)).target;
         const platform = Platform.fromTarget(target);
 
