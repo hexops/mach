@@ -14,24 +14,33 @@ pub fn Processor(comptime T: type) type {
         triangles: std.ArrayListUnmanaged(u32) = .{},
 
         /// Internal node buffer.
-        nodes: std.ArrayListUnmanaged(Node) = .{},
+        nodes: std.MultiArrayList(Node) = .{},
+        i: []u32 = &.{}, // node index -> vertex index in coordinates array
+        x: []T = &.{}, // node index -> x vertex coordinate
+        y: []T = &.{}, // node index -> y vertex coordinate
+        z: []T = &.{}, // node index -> z-order curve value
+        prev: []NodeIndex = &.{}, // node index -> prev node index in polygon ring
+        next: []NodeIndex = &.{}, // node index -> next node index in polygon ring
+        prev_z: []?NodeIndex = &.{}, // node index -> prev node index in z-order
+        next_z: []?NodeIndex = &.{}, // node index -> next node index in z-order
+        steiner: []bool = &.{}, // node index -> is this a steiner point?
+
+        const NodeIndex = u32;
 
         pub fn deinit(processor: *@This(), allocator: Allocator) void {
             processor.triangles.deinit(allocator);
-
-            // TODO: since nodes list is unused currently, this results in a big leak.
             processor.nodes.deinit(allocator);
         }
 
-        pub fn process(processor: *@This(), allocator: Allocator, data: []const T, hole_indices: ?[]const u32, dim: u3) error{OutOfMemory}!void {
-            processor.triangles.clearRetainingCapacity();
-            processor.nodes.clearRetainingCapacity();
+        pub fn process(p: *@This(), allocator: Allocator, data: []const T, hole_indices: ?[]const u32, dim: u3) error{OutOfMemory}!void {
+            p.triangles.clearRetainingCapacity();
+            p.nodes.shrinkRetainingCapacity(0);
 
             var has_holes = hole_indices != null and hole_indices.?.len > 0;
             var outer_len: u32 = if (has_holes) hole_indices.?[0] * dim else @intCast(u32, data.len);
-            var outer_node = try processor.linkedList(allocator, data, 0, outer_len, dim, true);
+            var outer_node = try p.linkedList(allocator, data, 0, outer_len, dim, true);
 
-            if (outer_node == null or outer_node.?.next == outer_node.?.prev) return;
+            if (outer_node == null or p.next[outer_node.?] == p.prev[outer_node.?]) return;
 
             var min_x: T = undefined;
             var min_y: T = undefined;
@@ -41,7 +50,7 @@ pub fn Processor(comptime T: type) type {
             var y: T = undefined;
             var inv_size: T = 0;
 
-            if (has_holes) outer_node = try processor.eliminateHoles(allocator, data, hole_indices.?, outer_node, dim);
+            if (has_holes) outer_node = try p.eliminateHoles(allocator, data, hole_indices.?, outer_node, dim);
 
             // if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
             if (data.len > 80 * @intCast(usize, dim)) {
@@ -65,103 +74,104 @@ pub fn Processor(comptime T: type) type {
                 inv_size = if (inv_size != 0) 32767 / inv_size else 0;
             }
 
-            if (outer_node) |e| try processor.earcutLinked(allocator, e, &processor.triangles, dim, min_x, min_y, inv_size, 0);
+            if (outer_node) |e| try p.earcutLinked(allocator, e, &p.triangles, dim, min_x, min_y, inv_size, 0);
         }
 
         /// create a circular doubly linked list from polygon points in the specified winding order
-        fn linkedList(processor: *@This(), allocator: Allocator, data: []const T, start: u32, end: u32, dim: u3, clockwise: bool) error{OutOfMemory}!?*Node {
+        fn linkedList(p: *@This(), allocator: Allocator, data: []const T, start: u32, end: u32, dim: u3, clockwise: bool) error{OutOfMemory}!?NodeIndex {
             var i: u32 = undefined;
-            var last: ?*Node = null;
+            var last: ?NodeIndex = null;
 
             if (clockwise == (signedArea(data, start, end, dim) > 0)) {
                 i = start;
-                while (i < end) : (i += dim) last = try processor.insertNode(allocator, i, data[i], data[i + 1], last);
+                while (i < end) : (i += dim) last = try p.insertNode(allocator, i, data[i], data[i + 1], last);
             } else {
                 i = end - dim;
                 while (i >= start) : (i -= dim) {
-                    last = try processor.insertNode(allocator, i, data[i], data[i + 1], last);
+                    last = try p.insertNode(allocator, i, data[i], data[i + 1], last);
                     if (i == 0) break;
                 }
             }
 
-            if (last != null and equals(last.?, last.?.next.?)) {
-                removeNode(last.?);
-                last = last.?.next.?;
+            if (last != null and p.equals(last.?, p.next[last.?])) {
+                p.removeNode(last.?);
+                last = p.next[last.?];
             }
             return last;
         }
 
         /// eliminate colinear or duplicate points
-        fn filterPoints(start: ?*Node, end_in: ?*Node) ?*Node {
+        fn filterPoints(p: *@This(), start: ?NodeIndex, end_in: ?NodeIndex) ?NodeIndex {
             if (start == null) return start;
-            var end = if (end_in) |e| e else start;
+            var end = if (end_in) |e| e else start.?;
 
-            var p = start;
+            var n = start.?;
             var again = false;
             while (true) {
                 again = false;
 
-                if (!p.?.steiner and (equals(p.?, p.?.next.?) or area(p.?.prev.?, p.?, p.?.next.?) == 0)) {
-                    removeNode(p.?);
-                    p = p.?.prev;
-                    end = p.?.prev;
-                    if (p == p.?.next) break;
+                if (!p.steiner[n] and (p.equals(n, p.next[n]) or p.area(p.prev[n], n, p.next[n]) == 0)) {
+                    p.removeNode(n);
+                    n = p.prev[n];
+                    end = p.prev[n];
+                    if (n == p.next[n]) break;
                     again = true;
                 } else {
-                    p = p.?.next;
+                    n = p.next[n];
                 }
-                if (again or p != end) break;
+                if (again or n != end) break;
             }
 
             return end;
         }
 
         /// main ear slicing loop which triangulates a polygon (given as a linked list)
-        fn earcutLinked(processor: *@This(), allocator: Allocator, ear_in: *Node, triangles: *std.ArrayListUnmanaged(u32), dim: u3, min_x: T, min_y: T, inv_size: T, pass: u2) error{OutOfMemory}!void {
+        fn earcutLinked(p: *@This(), allocator: Allocator, ear_in: NodeIndex, triangles: *std.ArrayListUnmanaged(u32), dim: u3, min_x: T, min_y: T, inv_size: T, pass: u2) error{OutOfMemory}!void {
             // interlink polygon nodes in z-order
-            if (pass == 0 and inv_size != 0) indexCurve(ear_in, min_x, min_y, inv_size);
+            if (pass == 0 and inv_size != 0) p.indexCurve(ear_in, min_x, min_y, inv_size);
 
-            var ear: ?*Node = ear_in;
+            var ear = ear_in;
             var stop = ear;
-            var prev: ?*Node = null;
-            var next: ?*Node = null;
+            var t_prev: NodeIndex = undefined;
+            var t_next: NodeIndex = undefined;
 
             // iterate through ears, slicing them one by one
-            while (ear.?.prev != ear.?.next) {
-                prev = ear.?.prev;
-                next = ear.?.next;
+            while (p.prev[ear] != p.next[ear]) {
+                t_prev = p.prev[ear];
+                t_next = p.next[ear];
 
-                if (if (inv_size != 0) isEarHashed(ear.?, min_x, min_y, inv_size) else isEar(ear.?)) {
+                if (if (inv_size != 0) p.isEarHashed(ear, min_x, min_y, inv_size) else p.isEar(ear)) {
                     // cut off the triangle
-                    try triangles.append(allocator, prev.?.i / dim | 0);
-                    try triangles.append(allocator, ear.?.i / dim | 0);
-                    try triangles.append(allocator, next.?.i / dim | 0);
+                    try triangles.append(allocator, p.i[t_prev] / dim | 0);
+                    try triangles.append(allocator, p.i[ear] / dim | 0);
+                    try triangles.append(allocator, p.i[t_next] / dim | 0);
 
-                    removeNode(ear.?);
+                    p.removeNode(ear);
 
                     // skipping the next vertex leads to less sliver triangles
-                    ear = next.?.next;
-                    stop = next.?.next;
+                    ear = p.next[t_next];
+                    stop = p.next[t_next];
 
                     continue;
                 }
 
-                ear = next;
+                ear = t_next;
 
                 // if we looped through the whole remaining polygon and can't find any more ears
                 if (ear == stop) {
                     // try filtering points and slicing again
                     if (pass == 0) {
-                        if (filterPoints(ear, null)) |e| try processor.earcutLinked(allocator, e, triangles, dim, min_x, min_y, inv_size, 1);
+                        if (p.filterPoints(ear, null)) |e| try p.earcutLinked(allocator, e, triangles, dim, min_x, min_y, inv_size, 1);
 
                         // if this didn't work, try curing all small self-intersections locally
                     } else if (pass == 1) {
-                        ear = try cureLocalIntersections(allocator, filterPoints(ear, null).?, triangles, dim);
-                        if (ear) |e| try processor.earcutLinked(allocator, e, triangles, dim, min_x, min_y, inv_size, 2);
+                        const ear_maybe = try p.cureLocalIntersections(allocator, p.filterPoints(ear, null).?, triangles, dim);
+                        ear = ear_maybe.?; // TODO: can it actually return null?
+                        try p.earcutLinked(allocator, ear, triangles, dim, min_x, min_y, inv_size, 2);
 
                         // as a last resort, try splitting the remaining polygon into two
                     } else if (pass == 2) {
-                        try processor.splitEarcut(allocator, ear.?, triangles, dim, min_x, min_y, inv_size);
+                        try p.splitEarcut(allocator, ear, triangles, dim, min_x, min_y, inv_size);
                     }
 
                     break;
@@ -170,20 +180,20 @@ pub fn Processor(comptime T: type) type {
         }
 
         /// check whether a polygon node forms a valid ear with adjacent nodes
-        fn isEar(ear: *Node) bool {
-            var a = ear.prev.?;
+        fn isEar(p: *@This(), ear: NodeIndex) bool {
+            var a = p.prev[ear];
             var b = ear;
-            var c = ear.next.?;
+            var c = p.next[ear];
 
-            if (area(a, b, c) >= 0) return false; // reflex, can't be an ear
+            if (p.area(a, b, c) >= 0) return false; // reflex, can't be an ear
 
             // now make sure we don't have other points inside the potential ear
-            var ax = a.x;
-            var bx = b.x;
-            var cx = c.x;
-            var ay = a.y;
-            var by = b.y;
-            var cy = c.y;
+            var ax = p.x[a];
+            var bx = p.x[b];
+            var cx = p.x[c];
+            var ay = p.y[a];
+            var by = p.y[b];
+            var cy = p.y[c];
 
             // triangle bbox; min & max are calculated like this for speed
             var x0 = if (ax < bx) (if (ax < cx) ax else cx) else (if (bx < cx) bx else cx);
@@ -191,30 +201,30 @@ pub fn Processor(comptime T: type) type {
             var x1 = if (ax > bx) (if (ax > cx) ax else cx) else (if (bx > cx) bx else cx);
             var y1 = if (ay > by) (if (ay > cy) ay else cy) else (if (by > cy) by else cy);
 
-            var p = c.next;
-            while (p != a) {
-                if (p.?.x >= x0 and p.?.x <= x1 and p.?.y >= y0 and p.?.y <= y1 and
-                    pointInTriangle(ax, ay, bx, by, cx, cy, p.?.x, p.?.y) and
-                    area(p.?.prev.?, p.?, p.?.next.?) >= 0) return false;
-                p = p.?.next;
+            var n = p.next[c];
+            while (n != a) {
+                if (p.x[n] >= x0 and p.x[n] <= x1 and p.y[n] >= y0 and p.y[n] <= y1 and
+                    pointInTriangle(ax, ay, bx, by, cx, cy, p.x[n], p.y[n]) and
+                    p.area(p.prev[n], n, p.next[n]) >= 0) return false;
+                n = p.next[n];
             }
 
             return true;
         }
 
-        fn isEarHashed(ear: *Node, min_x: T, min_y: T, inv_size: T) bool {
-            var a = ear.prev.?;
+        fn isEarHashed(p: *@This(), ear: NodeIndex, min_x: T, min_y: T, inv_size: T) bool {
+            var a = p.prev[ear];
             var b = ear;
-            var c = ear.next.?;
+            var c = p.next[ear];
 
-            if (area(a, b, c) >= 0) return false; // reflex, can't be an ear
+            if (p.area(a, b, c) >= 0) return false; // reflex, can't be an ear
 
-            var ax = a.x;
-            var bx = b.x;
-            var cx = c.x;
-            var ay = a.y;
-            var by = b.y;
-            var cy = c.y;
+            var ax = p.x[a];
+            var bx = p.x[b];
+            var cx = p.x[c];
+            var ay = p.y[a];
+            var by = p.y[b];
+            var cy = p.y[c];
 
             // triangle bbox; min & max are calculated like this for speed
             var x0 = if (ax < bx) (if (ax < cx) ax else cx) else (if (bx < cx) bx else cx);
@@ -226,94 +236,96 @@ pub fn Processor(comptime T: type) type {
             var min_z = zOrder(x0, y0, min_x, min_y, inv_size);
             var max_z = zOrder(x1, y1, min_x, min_y, inv_size);
 
-            var p = ear.prev_z;
-            var n = ear.next_z;
+            var p2 = p.prev_z[ear];
+            var n = p.next_z[ear];
 
             // look for points inside the triangle in both directions
-            while (p != null and p.?.z >= min_z and n != null and n.?.z <= max_z) {
-                if (p.?.x >= x0 and p.?.x <= x1 and p.?.y >= y0 and p.?.y <= y1 and p != a and p != c and
-                    pointInTriangle(ax, ay, bx, by, cx, cy, p.?.x, p.?.y) and area(p.?.prev.?, p.?, p.?.next.?) >= 0) return false;
-                p = p.?.prev_z;
+            while (p2 != null and p.z[p2.?] >= min_z and n != null and p.z[n.?] <= max_z) {
+                if (p.x[p2.?] >= x0 and p.x[p2.?] <= x1 and p.y[p2.?] >= y0 and p.y[p2.?] <= y1 and p2 != a and p2 != c and
+                    pointInTriangle(ax, ay, bx, by, cx, cy, p.x[p2.?], p.y[p2.?]) and p.area(p.prev[p2.?], p2.?, p.next[p2.?]) >= 0) return false;
+                p2 = p.prev_z[p2.?];
 
-                if (n.?.x >= x0 and n.?.x <= x1 and n.?.y >= y0 and n.?.y <= y1 and n != a and n != c and
-                    pointInTriangle(ax, ay, bx, by, cx, cy, n.?.x, n.?.y) and area(n.?.prev.?, n.?, n.?.next.?) >= 0) return false;
-                n = n.?.next_z;
+                if (p.x[n.?] >= x0 and p.x[n.?] <= x1 and p.y[n.?] >= y0 and p.y[n.?] <= y1 and n != a and n != c and
+                    pointInTriangle(ax, ay, bx, by, cx, cy, p.x[n.?], p.y[n.?]) and p.area(p.prev[n.?], n.?, p.next[n.?]) >= 0) return false;
+                n = p.next_z[n.?];
             }
 
             // look for remaining points in decreasing z-order
-            while (p != null and p.?.z >= min_z) {
-                if (p.?.x >= x0 and p.?.x <= x1 and p.?.y >= y0 and p.?.y <= y1 and p != a and p != c and
-                    pointInTriangle(ax, ay, bx, by, cx, cy, p.?.x, p.?.y) and area(p.?.prev.?, p.?, p.?.next.?) >= 0) return false;
-                p = p.?.prev_z;
+            while (p2 != null and p.z[p2.?] >= min_z) {
+                if (p.x[p2.?] >= x0 and p.x[p2.?] <= x1 and p.y[p2.?] >= y0 and p.y[p2.?] <= y1 and p2 != a and p2 != c and
+                    pointInTriangle(ax, ay, bx, by, cx, cy, p.x[p2.?], p.y[p2.?]) and p.area(p.prev[p2.?], p2.?, p.next[p2.?]) >= 0) return false;
+                p2 = p.prev_z[p2.?];
             }
 
             // look for remaining points in increasing z-order
-            while (n != null and n.?.z <= max_z) {
-                if (n.?.x >= x0 and n.?.x <= x1 and n.?.y >= y0 and n.?.y <= y1 and n != a and n != c and
-                    pointInTriangle(ax, ay, bx, by, cx, cy, n.?.x, n.?.y) and area(n.?.prev.?, n.?, n.?.next.?) >= 0) return false;
-                n = n.?.next_z;
+            while (n != null and p.z[n.?] <= max_z) {
+                if (p.x[n.?] >= x0 and p.x[n.?] <= x1 and p.y[n.?] >= y0 and p.y[n.?] <= y1 and n != a and n != c and
+                    pointInTriangle(ax, ay, bx, by, cx, cy, p.x[n.?], p.y[n.?]) and p.area(p.prev[n.?], n.?, p.next[n.?]) >= 0) return false;
+                n = p.next_z[n.?];
             }
 
             return true;
         }
 
         /// go through all polygon nodes and cure small local self-intersections
-        fn cureLocalIntersections(allocator: Allocator, start_in: *Node, triangles: *std.ArrayListUnmanaged(u32), dim: u3) error{OutOfMemory}!?*Node {
+        fn cureLocalIntersections(p: *@This(), allocator: Allocator, start_in: NodeIndex, triangles: *std.ArrayListUnmanaged(u32), dim: u3) error{OutOfMemory}!?NodeIndex {
             var start = start_in;
-            var p = start;
+            var n = start;
             while (true) {
-                var a = p.prev.?;
-                var b = p.next.?.next.?;
+                var a = p.prev[n];
+                var b = p.next[p.next[n]];
 
-                if (!equals(a, b) and intersects(a, p, p.next.?, b) and locallyInside(a, b) and locallyInside(b, a)) {
-                    try triangles.append(allocator, a.i / dim | 0);
-                    try triangles.append(allocator, p.i / dim | 0);
-                    try triangles.append(allocator, b.i / dim | 0);
+                if (!p.equals(a, b) and p.intersects(a, n, p.next[n], b) and p.locallyInside(a, b) and p.locallyInside(b, a)) {
+                    try triangles.append(allocator, p.i[a] / dim | 0);
+                    try triangles.append(allocator, p.i[n] / dim | 0);
+                    try triangles.append(allocator, p.i[b] / dim | 0);
 
                     // remove two nodes involved
-                    removeNode(p);
-                    removeNode(p.next.?);
+                    p.removeNode(n);
+                    p.removeNode(p.next[n]);
 
-                    p = b;
+                    n = b;
                     start = b;
                 }
-                p = p.next.?;
-                if (p != start) break;
+                n = p.next[n];
+                if (n != start) break;
             }
 
-            return filterPoints(p, null);
+            return p.filterPoints(n, null);
         }
 
         /// try splitting polygon into two and triangulate them independently
-        fn splitEarcut(processor: *@This(), allocator: Allocator, start: *Node, triangles: *std.ArrayListUnmanaged(u32), dim: u3, min_x: T, min_y: T, inv_size: T) error{OutOfMemory}!void {
+        fn splitEarcut(p: *@This(), allocator: Allocator, start: NodeIndex, triangles: *std.ArrayListUnmanaged(u32), dim: u3, min_x: T, min_y: T, inv_size: T) error{OutOfMemory}!void {
             // look for a valid diagonal that divides the polygon into two
             var a = start;
             while (true) {
-                var b = a.next.?.next;
-                while (b != a.prev) {
-                    if (a.i != b.?.i and isValidDiagonal(a, b.?)) {
+                var b = p.next[p.next[a]];
+                while (b != p.prev[a]) {
+                    if (p.i[a] != p.i[b] and p.isValidDiagonal(a, b)) {
                         // split the polygon in two by the diagonal
-                        var c = try processor.splitPolygon(allocator, a, b.?);
+                        var c = try p.splitPolygon(allocator, a, b);
 
                         // filter colinear points around the cuts
-                        a = filterPoints(a, a.next).?;
-                        c = filterPoints(c, c.next).?;
+                        a = p.filterPoints(a, p.next[a]).?;
+                        c = p.filterPoints(c, p.next[c]).?;
 
                         // run earcut on each half
-                        try processor.earcutLinked(allocator, a, triangles, dim, min_x, min_y, inv_size, 0);
-                        try processor.earcutLinked(allocator, c, triangles, dim, min_x, min_y, inv_size, 0);
+                        try p.earcutLinked(allocator, a, triangles, dim, min_x, min_y, inv_size, 0);
+                        try p.earcutLinked(allocator, c, triangles, dim, min_x, min_y, inv_size, 0);
                         return;
                     }
-                    b = b.?.next.?;
+                    b = p.next[b];
                 }
-                a = a.next.?;
+                a = p.next[a];
                 if (a != start) break;
             }
         }
 
         /// link every hole into the outer loop, producing a single-ring polygon without holes
-        fn eliminateHoles(processor: *@This(), allocator: Allocator, data: []const T, hole_indices: []const u32, outer_node_in: ?*Node, dim: u3) error{OutOfMemory}!?*Node {
-            var queue = std.ArrayListUnmanaged(*Node){};
+        fn eliminateHoles(p: *@This(), allocator: Allocator, data: []const T, hole_indices: []const u32, outer_node_in: ?NodeIndex, dim: u3) error{OutOfMemory}!?NodeIndex {
+            if (hole_indices.len == 0) return null;
+            // TODO: save/reuse this buffer.
+            var queue = std.ArrayListUnmanaged(NodeIndex){};
             defer queue.deinit(allocator);
             var start: u32 = undefined;
             var end: u32 = undefined;
@@ -323,63 +335,63 @@ pub fn Processor(comptime T: type) type {
             while (i < len) : (i += 1) {
                 start = hole_indices[i] * dim;
                 end = if (i < len - 1) hole_indices[i + 1] * dim else @intCast(u32, data.len);
-                const list = try processor.linkedList(allocator, data, start, end, dim, false);
-                if (list == list.?.next) list.?.steiner = true;
-                try queue.append(allocator, getLeftmost(list.?));
+                const list_maybe = try p.linkedList(allocator, data, start, end, dim, false);
+                const list = list_maybe.?; // TODO: if returns null, assertion would fail
+                if (list == p.next[list]) p.steiner[list] = true;
+                try queue.append(allocator, p.getLeftmost(list));
             }
 
-            std.sort.sort(*Node, queue.items, {}, compareX);
+            std.sort.sort(NodeIndex, queue.items, p, compareX);
 
             // process holes from left to right
             i = 0;
             var outer_node = outer_node_in;
             while (i < queue.items.len) : (i += 1) {
-                outer_node = try processor.eliminateHole(allocator, queue.items[i], outer_node.?);
+                outer_node = try p.eliminateHole(allocator, queue.items[i], outer_node.?); // TODO: if outer_node_in == null, this assertion would fail?
             }
 
             return outer_node;
         }
 
-        fn compareX(context: void, lhs: *Node, rhs: *Node) bool {
-            _ = context;
-            return (lhs.x - rhs.x) < 0;
+        fn compareX(p: *@This(), lhs: NodeIndex, rhs: NodeIndex) bool {
+            return (p.x[lhs] - p.x[rhs]) < 0;
         }
 
         /// find a bridge between vertices that connects hole with an outer ring and and link it
-        fn eliminateHole(processor: *@This(), allocator: Allocator, hole: *Node, outer_node: *Node) error{OutOfMemory}!?*Node {
-            var bridge = findHoleBridge(hole, outer_node);
+        fn eliminateHole(p: *@This(), allocator: Allocator, hole: NodeIndex, outer_node: NodeIndex) error{OutOfMemory}!?NodeIndex {
+            var bridge = p.findHoleBridge(hole, outer_node);
             if (bridge == null) {
                 return outer_node;
             }
 
-            var bridge_reverse = try processor.splitPolygon(allocator, bridge.?, hole);
+            var bridge_reverse = try p.splitPolygon(allocator, bridge.?, hole);
 
             // filter collinear points around the cuts
-            _ = filterPoints(bridge_reverse, bridge_reverse.next); // TODO: is this ineffective?
-            return filterPoints(bridge, bridge.?.next);
+            _ = p.filterPoints(bridge_reverse, p.next[bridge_reverse]); // TODO: is this ineffective?
+            return p.filterPoints(bridge, p.next[bridge.?]);
         }
 
         /// David Eberly's algorithm for finding a bridge between hole and outer polygon
-        fn findHoleBridge(hole: *Node, outer_node: *Node) ?*Node {
-            var p = outer_node;
-            var hx = hole.x;
-            var hy = hole.y;
+        fn findHoleBridge(p: *@This(), hole: NodeIndex, outer_node: NodeIndex) ?NodeIndex {
+            var n = outer_node;
+            var hx = p.x[hole];
+            var hy = p.y[hole];
             var qx = -inf(T);
-            var m: ?*Node = null;
+            var m: ?NodeIndex = null;
 
             // find a segment intersected by a ray from the hole's leftmost point to the left;
             // segment's endpoint with lesser x will be potential connection point
             while (true) {
-                if (hy <= p.y and hy >= p.next.?.y and p.next.?.y != p.y) {
-                    var x = p.x + (hy - p.y) * (p.next.?.x - p.x) / (p.next.?.y - p.y);
+                if (hy <= p.y[n] and hy >= p.y[p.next[n]] and p.y[p.next[n]] != p.y[n]) {
+                    var x = p.x[n] + (hy - p.y[n]) * (p.x[p.next[n]] - p.x[n]) / (p.y[p.next[n]] - p.y[n]);
                     if (x <= hx and x > qx) {
                         qx = x;
-                        m = if (p.x < p.next.?.x) p else p.next.?;
+                        m = if (p.x[n] < p.x[p.next[n]]) n else p.next[n];
                         if (x == hx) return m; // hole touches outer segment; pick leftmost endpoint
                     }
                 }
-                p = p.next.?;
-                if (p != outer_node) break;
+                n = p.next[n];
+                if (n != outer_node) break;
             }
 
             if (m == null) return null;
@@ -388,110 +400,110 @@ pub fn Processor(comptime T: type) type {
             // if there are no points found, we have a valid connection;
             // otherwise choose the point of the minimum angle with the ray as connection point
 
-            var stop = m;
-            var mx = m.?.x;
-            var my = m.?.y;
+            var stop = m.?;
+            var mx = p.x[m.?];
+            var my = p.y[m.?];
             var tan_min = inf(T);
             var tan: T = 0;
 
-            p = m.?;
+            n = m.?;
 
             while (true) {
-                if (hx >= p.x and p.x >= mx and hx != p.x and
-                    pointInTriangle(if (hy < my) hx else qx, hy, mx, my, if (hy < my) qx else hx, hy, p.x, p.y))
+                if (hx >= p.x[n] and p.x[n] >= mx and hx != p.x[n] and
+                    pointInTriangle(if (hy < my) hx else qx, hy, mx, my, if (hy < my) qx else hx, hy, p.x[n], p.y[n]))
                 {
-                    tan = @fabs(hy - p.y) / (hx - p.x); // tangential
+                    tan = @fabs(hy - p.y[n]) / (hx - p.x[n]); // tangential
 
-                    if (locallyInside(p, hole) and
-                        (tan < tan_min or (tan == tan_min and (p.x > m.?.x or (p.x == m.?.x and sectorContainsSector(m.?, p))))))
+                    if (p.locallyInside(n, hole) and
+                        (tan < tan_min or (tan == tan_min and (p.x[n] > p.x[m.?] or (p.x[n] == p.x[m.?] and p.sectorContainsSector(m.?, n))))))
                     {
-                        m = p;
+                        m = n;
                         tan_min = tan;
                     }
                 }
 
-                p = p.next.?;
-                if (p != stop) break;
+                n = p.next[n];
+                if (n != stop) break;
             }
 
             return m;
         }
 
         /// whether sector in vertex m contains sector in vertex p in the same coordinates
-        fn sectorContainsSector(m: *Node, p: *Node) bool {
-            return area(m.prev.?, m, p.prev.?) < 0 and area(p.next.?, m, m.next.?) < 0;
+        fn sectorContainsSector(p: *@This(), m: NodeIndex, n: NodeIndex) bool {
+            return p.area(p.prev[m], m, p.prev[n]) < 0 and p.area(p.next[n], m, p.next[m]) < 0;
         }
 
         /// interlink polygon nodes in z-order
-        fn indexCurve(start: *Node, min_x: T, min_y: T, inv_size: T) void {
-            var p = start;
+        fn indexCurve(p: *@This(), start: NodeIndex, min_x: T, min_y: T, inv_size: T) void {
+            var n = start;
             while (true) {
-                if (p.z == 0) p.z = zOrder(p.x, p.y, min_x, min_y, inv_size);
-                p.prev_z = p.prev;
-                p.next_z = p.next;
-                p = p.next.?;
-                if (p != start) break;
+                if (p.z[n] == 0) p.z[n] = zOrder(p.x[n], p.y[n], min_x, min_y, inv_size);
+                p.prev_z[n] = p.prev[n];
+                p.next_z[n] = p.next[n];
+                n = p.next[n];
+                if (n != start) break;
             }
 
-            p.prev_z.?.next_z = null;
-            p.prev_z = null;
+            p.next_z[p.prev_z[n].?] = null;
+            p.prev_z[n] = null;
 
-            _ = sortLinked(p);
+            _ = p.sortLinked(n);
         }
 
         /// Simon Tatham's linked list merge sort algorithm
         /// http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
-        fn sortLinked(list_in: *Node) ?*Node {
-            var list: ?*Node = list_in;
+        fn sortLinked(p: *@This(), list_in: NodeIndex) ?NodeIndex {
+            var list: ?NodeIndex = list_in;
             var i: usize = undefined;
-            var p: ?*Node = null;
-            var q: ?*Node = null;
-            var e: ?*Node = null;
-            var tail: ?*Node = null;
+            var n: ?NodeIndex = null;
+            var q: ?NodeIndex = null;
+            var e: ?NodeIndex = null;
+            var tail: ?NodeIndex = null;
             var num_merges: usize = 0;
-            var p_size: usize = 0;
+            var n_size: usize = 0;
             var q_size: usize = 0;
             var in_size: usize = 1;
 
             while (true) {
-                p = list;
+                n = list;
                 list = null;
                 tail = null;
                 num_merges = 0;
 
-                while (p != null) {
+                while (n != null) {
                     num_merges += 1;
-                    q = p;
-                    p_size = 0;
+                    q = n;
+                    n_size = 0;
                     i = 0;
                     while (i < in_size) : (i += 1) {
-                        p_size += 1;
-                        q = q.?.next_z;
+                        n_size += 1;
+                        q = p.next_z[q.?];
                         if (q == null) break;
                     }
                     q_size = in_size;
 
-                    while (p_size > 0 or (q_size > 0 and q != null)) {
-                        if (p_size != 0 and (q_size == 0 or q == null or p.?.z <= q.?.z)) {
-                            e = p;
-                            p = p.?.next_z;
-                            p_size -= 1;
+                    while (n_size > 0 or (q_size > 0 and q != null)) {
+                        if (n_size != 0 and (q_size == 0 or q == null or p.z[n.?] <= p.z[q.?])) {
+                            e = n;
+                            n = p.next_z[n.?];
+                            n_size -= 1;
                         } else {
                             e = q;
-                            q = q.?.next_z;
+                            q = p.next_z[q.?];
                             q_size -= 1;
                         }
 
-                        if (tail != null) tail.?.next_z = e else list = e;
+                        if (tail != null) p.next_z[tail.?] = e else list = e;
 
-                        e.?.prev_z = tail;
+                        p.prev_z[e.?] = tail;
                         tail = e;
                     }
 
-                    p = q;
+                    n = q;
                 }
 
-                tail.?.next_z = null;
+                p.next_z[tail.?] = null;
                 in_size *= 2;
                 if (num_merges > 1) break;
             }
@@ -519,13 +531,15 @@ pub fn Processor(comptime T: type) type {
         }
 
         /// find the leftmost node of a polygon ring
-        fn getLeftmost(start: *Node) *Node {
-            var p = start;
+        fn getLeftmost(p: *@This(), start: NodeIndex) NodeIndex {
+            var n = start;
             var leftmost = start;
             while (true) {
-                if (p.x < leftmost.x or (p.x == leftmost.x and p.y < leftmost.y)) leftmost = p;
-                p = p.next.?;
-                if (p != start) break;
+                if (p.x[n] < p.x[leftmost] or (p.x[n] == p.x[leftmost] and p.y[n] < p.y[leftmost])) {
+                    leftmost = n;
+                }
+                n = p.next[n];
+                if (n != start) break;
             }
             return leftmost;
         }
@@ -538,77 +552,77 @@ pub fn Processor(comptime T: type) type {
         }
 
         /// check if a diagonal between two polygon nodes is valid (lies in polygon interior)
-        fn isValidDiagonal(a: *Node, b: *Node) bool {
-            return a.next.?.i != b.i and a.prev.?.i != b.i and !intersectsPolygon(a, b) and // dones't intersect other edges
-                (locallyInside(a, b) and locallyInside(b, a) and middleInside(a, b) and // locally visible
-                (area(a.prev.?, a, b.prev.?) != 0 or area(a, b.prev.?, b) != 0) or // does not create opposite-facing sectors
-                equals(a, b) and area(a.prev.?, a, a.next.?) > 0 and area(b.prev.?, b, b.next.?) > 0); // special zero-length case
+        fn isValidDiagonal(p: *@This(), a: NodeIndex, b: NodeIndex) bool {
+            return p.i[p.next[a]] != p.i[b] and p.i[p.prev[a]] != p.i[b] and !p.intersectsPolygon(a, b) and // dones't intersect other edges
+                (p.locallyInside(a, b) and p.locallyInside(b, a) and p.middleInside(a, b) and // locally visible
+                (p.area(p.prev[a], a, p.prev[b]) != 0 or p.area(a, p.prev[b], b) != 0) or // does not create opposite-facing sectors
+                p.equals(a, b) and p.area(p.prev[a], a, p.next[a]) > 0 and p.area(p.prev[b], b, p.next[b]) > 0); // special zero-length case
         }
 
         /// signed area of a triangle
-        fn area(p: *Node, q: *Node, r: *Node) T {
-            return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+        inline fn area(p: *@This(), n: NodeIndex, q: NodeIndex, r: NodeIndex) T {
+            return (p.y[q] - p.y[n]) * (p.x[r] - p.x[q]) - (p.x[q] - p.x[n]) * (p.y[r] - p.y[q]);
         }
 
         /// check if two points are equal
-        fn equals(p1: *Node, p2: *Node) bool {
-            return p1.x == p2.x and p1.y == p2.y;
+        inline fn equals(p: *@This(), p1: NodeIndex, p2: NodeIndex) bool {
+            return p.x[p1] == p.x[p2] and p.y[p1] == p.y[p2];
         }
 
         /// check if two segments intersect
-        fn intersects(p1: *Node, q1: *Node, p2: *Node, q2: *Node) bool {
-            var o1 = sign(area(p1, q1, p2));
-            var o2 = sign(area(p1, q1, q2));
-            var o3 = sign(area(p2, q2, p1));
-            var o4 = sign(area(p2, q2, q1));
+        fn intersects(p: *@This(), p1: NodeIndex, q1: NodeIndex, p2: NodeIndex, q2: NodeIndex) bool {
+            var o1 = sign(p.area(p1, q1, p2));
+            var o2 = sign(p.area(p1, q1, q2));
+            var o3 = sign(p.area(p2, q2, p1));
+            var o4 = sign(p.area(p2, q2, q1));
 
             if (o1 != o2 and o3 != o4) return true; // general case
 
-            if (o1 == 0 and onSegment(p1, p2, q1)) return true; // p1, q1 and p2 are collinear and p2 lies on p1q1
-            if (o2 == 0 and onSegment(p1, q2, q1)) return true; // p1, q1 and q2 are collinear and q2 lies on p1q1
-            if (o3 == 0 and onSegment(p2, p1, q2)) return true; // p2, q2 and p1 are collinear and p1 lies on p2q2
-            if (o4 == 0 and onSegment(p2, q1, q2)) return true; // p2, q2 and q1 are collinear and q1 lies on p2q2
+            if (o1 == 0 and p.onSegment(p1, p2, q1)) return true; // p1, q1 and p2 are collinear and p2 lies on p1q1
+            if (o2 == 0 and p.onSegment(p1, q2, q1)) return true; // p1, q1 and q2 are collinear and q2 lies on p1q1
+            if (o3 == 0 and p.onSegment(p2, p1, q2)) return true; // p2, q2 and p1 are collinear and p1 lies on p2q2
+            if (o4 == 0 and p.onSegment(p2, q1, q2)) return true; // p2, q2 and q1 are collinear and q1 lies on p2q2
 
             return false;
         }
 
         /// for collinear points p, q, r, check if point q lies on segment pr
-        fn onSegment(p: *Node, q: *Node, r: *Node) bool {
-            return q.x <= max(p.x, r.x) and q.x >= min(p.x, r.x) and q.y <= max(p.y, r.y) and q.y >= min(p.y, r.y);
+        inline fn onSegment(p: *@This(), n: NodeIndex, q: NodeIndex, r: NodeIndex) bool {
+            return p.x[q] <= max(p.x[n], p.x[r]) and p.x[q] >= min(p.x[n], p.x[r]) and p.y[q] <= max(p.y[n], p.y[r]) and p.y[q] >= min(p.y[n], p.y[r]);
         }
 
         /// check if a polygon diagonal intersects any polygon segments
-        fn intersectsPolygon(a: *Node, b: *Node) bool {
-            var p = a;
+        fn intersectsPolygon(p: *@This(), a: NodeIndex, b: NodeIndex) bool {
+            var n = a;
             while (true) {
-                if (p.i != a.i and p.next.?.i != a.i and p.i != b.i and p.next.?.i != b.i and
-                    intersects(p, p.next.?, a, b)) return true;
-                p = p.next.?;
-                if (p != a) break;
+                if (p.i[n] != p.i[a] and p.i[p.next[n]] != p.i[a] and p.i[n] != p.i[b] and p.i[p.next[n]] != p.i[b] and
+                    p.intersects(n, p.next[n], a, b)) return true;
+                n = p.next[n];
+                if (n != a) break;
             }
             return false;
         }
 
         /// check if a polygon diagonal is locally inside the polygon
-        fn locallyInside(a: *Node, b: *Node) bool {
-            return if (area(a.prev.?, a, a.next.?) < 0)
-                area(a, b, a.next.?) >= 0 and area(a, a.prev.?, b) >= 0
+        fn locallyInside(p: *@This(), a: NodeIndex, b: NodeIndex) bool {
+            return if (p.area(p.prev[a], a, p.next[a]) < 0)
+                p.area(a, b, p.next[a]) >= 0 and p.area(a, p.prev[a], b) >= 0
             else
-                area(a, b, a.prev.?) < 0 or area(a, a.next.?, b) < 0;
+                p.area(a, b, p.prev[a]) < 0 or p.area(a, p.next[a], b) < 0;
         }
 
         /// check if the middle point of a polygon diagonal is inside the polygon
-        fn middleInside(a: *Node, b: *Node) bool {
-            var p = a;
+        fn middleInside(p: *@This(), a: NodeIndex, b: NodeIndex) bool {
+            var n = a;
             var inside = false;
-            var px = (a.x + b.x) / 2.0;
-            var py = (a.y + b.y) / 2.0;
+            var px = (p.x[a] + p.x[b]) / 2.0;
+            var py = (p.y[a] + p.y[b]) / 2.0;
             while (true) {
-                if (((p.y > py) != (p.next.?.y > py)) and p.next.?.y != p.y and
-                    (px < (p.next.?.x - p.x) * (py - p.y) / (p.next.?.y - p.y) + p.x))
+                if (((p.y[n] > py) != (p.y[p.next[n]] > py)) and p.y[p.next[n]] != p.y[n] and
+                    (px < (p.x[p.next[n]] - p.x[n]) * (py - p.y[n]) / (p.y[p.next[n]] - p.y[n]) + p.x[n]))
                     inside = !inside;
-                p = p.next.?;
-                if (p != a) break;
+                n = p.next[n];
+                if (n != a) break;
             }
             return inside;
         }
@@ -616,59 +630,75 @@ pub fn Processor(comptime T: type) type {
         /// link two polygon vertices with a bridge; if the vertices belong the same ring, it splits
         /// polygon into two; if one belongs to the outer ring and another to a hole, it merges it
         /// into a single ring.
-        fn splitPolygon(processor: *@This(), allocator: Allocator, a: *Node, b: *Node) error{OutOfMemory}!*Node {
-            var a2 = try processor.initNode(allocator, a.i, a.x, a.y);
-            var b2 = try processor.initNode(allocator, b.i, b.x, b.y);
-            var an = a.next;
-            var bp = b.prev;
-
-            a.next = b;
-            b.prev = a;
-
-            a2.next = an;
-            an.?.prev = a2;
-
-            b2.next = a2;
-            a2.prev = b2;
-
-            bp.?.next = b2;
-            b2.prev = bp;
-
+        fn splitPolygon(p: *@This(), allocator: Allocator, a: NodeIndex, b: NodeIndex) error{OutOfMemory}!NodeIndex {
+            var b2 = @intCast(NodeIndex, p.nodes.len + 1);
+            var a2 = try p.initNode(allocator, .{ // a2
+                .i = p.i[a],
+                .x = p.x[a],
+                .y = p.y[a],
+                .next = p.next[a],
+                .prev = b2,
+            });
+            _ = try p.initNode(allocator, .{ // b2
+                .i = p.i[b],
+                .x = p.x[b],
+                .y = p.y[b],
+                .next = a2,
+                .prev = p.prev[b],
+            });
+            p.next[a] = b;
+            p.prev[b] = a;
+            p.prev[p.next[a]] = a2;
+            p.next[p.prev[b]] = b2;
             return b2;
         }
 
         /// create a node and optionally link it with previous one (in a circular doubly linked list)
-        fn insertNode(processor: *@This(), allocator: Allocator, i: u32, x: T, y: T, last: ?*Node) error{OutOfMemory}!*Node {
-            var p = try processor.initNode(allocator, i, x, y);
-            if (last != null) {
-                p.next = last.?.next;
-                p.prev = last.?;
-                last.?.next.?.prev = p;
-                last.?.next = p;
+        fn insertNode(p: *@This(), allocator: Allocator, i: u32, x: T, y: T, last: ?NodeIndex) error{OutOfMemory}!NodeIndex {
+            const new_node = @intCast(NodeIndex, p.nodes.len);
+            if (last) |l| {
+                _ = try p.initNode(allocator, .{
+                    .i = i,
+                    .x = x,
+                    .y = y,
+                    .next = p.next[l],
+                    .prev = l,
+                });
+                p.prev[p.next[l]] = new_node;
+                p.next[l] = new_node;
             } else {
-                p.prev = p;
-                p.next = p;
+                _ = try p.initNode(allocator, .{
+                    .i = i,
+                    .x = x,
+                    .y = y,
+                    .prev = new_node,
+                    .next = new_node,
+                });
             }
-            return p;
+            return new_node;
         }
 
-        fn removeNode(p: *Node) void {
-            p.next.?.prev = p.prev;
-            p.prev.?.next = p.next;
-            if (p.prev_z) |prev_z| prev_z.next_z = p.next_z;
-            if (p.next_z) |next_z| next_z.prev_z = p.prev_z;
+        fn removeNode(p: *@This(), n: NodeIndex) void {
+            p.prev[p.next[n]] = p.prev[n];
+            p.next[p.prev[n]] = p.next[n];
+            if (p.prev_z[n]) |prev_z| p.next_z[prev_z] = p.next_z[n];
+            if (p.next_z[n]) |next_z| p.prev_z[next_z] = p.prev_z[n];
         }
 
-        fn initNode(processor: *@This(), allocator: Allocator, i: u32, x: T, y: T) error{OutOfMemory}!*Node {
-            // TODO: make use of processor.nodes list for allocation.
-            _ = processor;
-            var n = try allocator.create(Node);
-            n.* = .{
-                .i = i,
-                .x = x,
-                .y = y,
-            };
-            return n;
+        fn initNode(p: *@This(), allocator: Allocator, n: Node) error{OutOfMemory}!NodeIndex {
+            try p.nodes.append(allocator, n);
+
+            const slice = p.nodes.slice();
+            p.i = slice.items(.i);
+            p.x = slice.items(.x);
+            p.y = slice.items(.y);
+            p.z = slice.items(.z);
+            p.prev = slice.items(.prev);
+            p.next = slice.items(.next);
+            p.prev_z = slice.items(.prev_z);
+            p.next_z = slice.items(.next_z);
+            p.steiner = slice.items(.steiner);
+            return @intCast(NodeIndex, p.nodes.len - 1);
         }
 
         const Node = struct {
@@ -679,15 +709,15 @@ pub fn Processor(comptime T: type) type {
             y: T,
 
             // previous and next vertex nodes in a polygon ring
-            prev: ?*Node = null,
-            next: ?*Node = null,
+            prev: NodeIndex,
+            next: NodeIndex,
+
+            // previous and next nodes in z-order
+            prev_z: ?NodeIndex = null,
+            next_z: ?NodeIndex = null,
 
             // z-order curve value
             z: T = 0,
-
-            // previous and next nodes in z-order
-            prev_z: ?*Node = null,
-            next_z: ?*Node = null,
 
             // indicates whether this is a steiner point
             steiner: bool = false,
