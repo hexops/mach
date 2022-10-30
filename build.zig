@@ -6,7 +6,6 @@ const ecs = @import("libs/ecs/build.zig");
 const freetype = @import("libs/freetype/build.zig");
 const basisu = @import("libs/basisu/build.zig");
 const sysjs = @import("libs/sysjs/build.zig");
-const trimesh2d = @import("libs/trimesh2d/build.zig");
 const earcut = @import("libs/earcut/build.zig");
 const gamemode = @import("libs/gamemode/build.zig");
 const model3d = @import("libs/model3d/build.zig");
@@ -31,7 +30,7 @@ const Pkg = std.build.Pkg;
 pub const pkg = Pkg{
     .name = "mach",
     .source = .{ .path = sdkPath("/src/main.zig") },
-    .dependencies = &.{ gpu.pkg, ecs.pkg, sysaudio.pkg, trimesh2d.pkg, earcut.pkg },
+    .dependencies = &.{ gpu.pkg, ecs.pkg, sysaudio.pkg, earcut.pkg },
 };
 
 pub const Options = struct {

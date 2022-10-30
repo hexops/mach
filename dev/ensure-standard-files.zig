@@ -17,7 +17,6 @@ const projects = [_][]const u8{
     "model3d",
     "sysaudio",
     "sysjs",
-    "trimesh2d",
     "earcut",
 };
 
