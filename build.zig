@@ -166,7 +166,7 @@ pub const App = struct {
     watch_paths: ?[]const []const u8,
     use_freetype: ?[]const u8 = null,
 
-    pub const InitError = std.zig.system.NativeTargetInfo.DetectError;
+    pub const InitError = error{OutOfMemory} || std.zig.system.NativeTargetInfo.DetectError;
     pub const LinkError = glfw.LinkError;
     pub const RunError = error{
         ParsingIpFailed,
@@ -196,7 +196,7 @@ pub const App = struct {
             // TODO(build-system): name is currently not used / always "freetype"
             use_freetype: ?[]const u8 = null,
         },
-    ) anyerror!App {
+    ) InitError!App {
         const target = (try std.zig.system.NativeTargetInfo.detect(options.target)).target;
         const platform = Platform.fromTarget(target);
 
