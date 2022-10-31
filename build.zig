@@ -166,7 +166,7 @@ pub const App = struct {
     watch_paths: ?[]const []const u8,
     use_freetype: ?[]const u8 = null,
 
-    pub const InitError = std.zig.system.NativeTargetInfo.DetectError;
+    pub const InitError = error{OutOfMemory} || std.zig.system.NativeTargetInfo.DetectError;
     pub const LinkError = glfw.LinkError;
     pub const RunError = error{
         ParsingIpFailed,
