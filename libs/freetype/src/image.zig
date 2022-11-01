@@ -105,7 +105,7 @@ pub const Outline = struct {
         none = c.FT_ORIENTATION_NONE,
     };
 
-    pub const Flags = packed struct {
+    pub const Flags = packed struct(c_int) {
         owner: bool = false,
         even_odd_fill: bool = false,
         reverse_fill: bool = false,
@@ -312,7 +312,7 @@ pub const Raster = struct {
         clip_box: BBox,
     };
 
-    pub const Flags = packed struct {
+    pub const Flags = packed struct(c_int) {
         aa: bool = false,
         direct: bool = false,
         clip: bool = false,

@@ -43,7 +43,7 @@ pub const Position = extern struct {
     _padding: u32, // private
 };
 
-pub const GlyphFlags = packed struct {
+pub const GlyphFlags = packed struct(c_int) {
     unsafe_to_break: bool = false,
     unsafe_to_concat: bool = false,
     _padding: u30 = 0,
@@ -87,7 +87,7 @@ pub const SegmentProps = struct {
     }
 };
 
-pub const SerializeFlags = packed struct {
+pub const SerializeFlags = packed struct(c_int) {
     no_clusters: bool = false,
     no_positions: bool = false,
     no_glyph_names: bool = false,
@@ -97,7 +97,7 @@ pub const SerializeFlags = packed struct {
     _padding: u26 = 0,
 };
 
-pub const DiffFlags = packed struct {
+pub const DiffFlags = packed struct(c_int) {
     content_type_mismatch: bool = false,
     length_mismatch: bool = false,
     notdef_present: bool = false,
@@ -110,7 +110,7 @@ pub const DiffFlags = packed struct {
 };
 
 pub const Buffer = struct {
-    pub const Flags = packed struct {
+    pub const Flags = packed struct(c_int) {
         bot: bool = false,
         eot: bool = false,
         preserve_default_ignorables: bool = false,
