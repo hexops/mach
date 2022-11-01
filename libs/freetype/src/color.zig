@@ -128,7 +128,7 @@ pub const PaletteData = struct {
     }
 };
 
-pub const PaletteFlags = packed struct {
+pub const PaletteFlags = packed struct(c_ushort) {
     for_light_background: bool = false,
     for_dark_background: bool = false,
     _padding: u14 = 0,

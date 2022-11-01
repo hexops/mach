@@ -80,7 +80,7 @@ pub const Size = struct {
     }
 };
 
-pub const LoadFlags = packed struct {
+pub const LoadFlags = packed struct(c_int) {
     no_scale: bool = false,
     no_hinting: bool = false,
     render: bool = false,
@@ -107,7 +107,7 @@ pub const LoadFlags = packed struct {
     _padding0: u9 = 0,
 };
 
-pub const FaceFlags = packed struct {
+pub const FaceFlags = packed struct(c_long) {
     scalable: bool = false,
     fixed_sizes: bool = false,
     fixed_width: bool = false,
@@ -130,7 +130,7 @@ pub const FaceFlags = packed struct {
     _padding: if (@sizeOf(c_long) == 4) u13 else u45 = 0,
 };
 
-pub const FSType = packed struct {
+pub const FSType = packed struct(c_ushort) {
     installable_embedding: bool = false,
     restriced_license_embedding: bool = false,
     preview_and_print_embedding: bool = false,
@@ -141,13 +141,13 @@ pub const FSType = packed struct {
     _padding0: u6 = 0,
 };
 
-pub const StyleFlags = packed struct {
+pub const StyleFlags = packed struct(c_long) {
     italic: bool = false,
     bold: bool = false,
     _padding: if (@sizeOf(c_long) == 4) u30 else u62 = 0,
 };
 
-pub const OpenFlags = packed struct {
+pub const OpenFlags = packed struct(c_int) {
     memory: bool = false,
     stream: bool = false,
     path: bool = false,
