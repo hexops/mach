@@ -79,6 +79,7 @@ pub fn Processor(comptime T: type) type {
 
         /// create a circular doubly linked list from polygon points in the specified winding order
         fn linkedList(p: *@This(), allocator: Allocator, data: []const T, start: u32, end: u32, dim: u3, clockwise: bool) error{OutOfMemory}!?NodeIndex {
+            if (data.len < dim) return null;
             var i: u32 = undefined;
             var last: ?NodeIndex = null;
 
