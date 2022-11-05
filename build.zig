@@ -124,9 +124,13 @@ fn testStep(b: *Builder, mode: std.builtin.Mode, target: CrossTarget) *std.build
     const main_tests = b.addTestExe("mach-tests", "src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
-    main_tests.addPackage(pkg);
-    main_tests.addPackage(gpu.pkg);
-    main_tests.addPackage(glfw.pkg);
+    for (pkg.dependencies.?) |dependency| {
+        main_tests.addPackage(dependency);
+    }
+
+    main_tests.addPackage(freetype.pkg);
+    freetype.link(b, main_tests, .{});
+
     main_tests.install();
 
     return main_tests.run();
