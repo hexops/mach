@@ -30,8 +30,8 @@ pub fn init(allocator: std.mem.Allocator, paths: []const []const u8, resource_ty
 
 pub const ResourceType = struct {
     name: []const u8,
-    load: fn (context: ?*anyopaque, mem: []const u8) error{ InvalidResource, CorruptData }!*anyopaque,
-    unload: fn (context: ?*anyopaque, resource: *anyopaque) void,
+    load: *const fn (context: ?*anyopaque, mem: []const u8) error{ InvalidResource, CorruptData }!*anyopaque,
+    unload: *const fn (context: ?*anyopaque, resource: *anyopaque) void,
 };
 
 pub fn setLoadContext(self: *ResourceManager, ctx: anytype) void {
