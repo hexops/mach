@@ -23,8 +23,8 @@ const Window = @This();
 handle: *c.GLFWwindow,
 
 /// Returns a Zig GLFW window from an underlying C GLFW window handle.
-pub inline fn from(handle: *c.GLFWwindow) Window {
-    return Window{ .handle = handle };
+pub inline fn from(handle: *anyopaque) Window {
+    return Window{ .handle = @ptrCast(*c.GLFWwindow, @alignCast(@alignOf(*c.GLFWwindow), handle)) };
 }
 
 /// Resets all window hints to their default values.
