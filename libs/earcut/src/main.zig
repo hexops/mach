@@ -443,7 +443,7 @@ pub fn Processor(comptime T: type) type {
                 p.prev_z[n] = p.prev[n];
                 p.next_z[n] = p.next[n];
                 n = p.next[n];
-                if (n != start) break;
+                if (n == start) break;
             }
 
             p.next_z[p.prev_z[n].?] = null;
