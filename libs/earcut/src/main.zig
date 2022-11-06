@@ -59,7 +59,7 @@ pub fn Processor(comptime T: type) type {
                 min_y = data[1];
                 max_y = data[1];
 
-                var i = dim;
+                var i: u32 = dim;
                 while (i < outer_len) : (i += dim) {
                     x = data[i];
                     y = data[i + 1];
