@@ -316,8 +316,10 @@ pub const Platform = struct {
             .double => .fifo,
             .triple => .mailbox,
         };
+
+        platform.last_position = try platform.window.getPos();
+
         if (options.fullscreen) {
-            platform.last_position = try platform.window.getPos();
 
             const monitorList = try glfw.Monitor.getAll(platform.allocator);
             defer platform.allocator.free(monitorList);
