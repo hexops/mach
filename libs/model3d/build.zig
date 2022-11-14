@@ -16,15 +16,17 @@ pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.C
     const main_tests = b.addTestExe("model3d-tests", "src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
-    link(main_tests);
+    link(b, main_tests);
     main_tests.install();
     return main_tests.run();
 }
 
-pub fn link(step: *std.build.LibExeObjStep) void {
-    step.addCSourceFile(sdkPath("/src/c/m3d.c"), &.{});
-    step.addIncludePath(sdkPath("/src/c"));
-    step.linkLibC();
+pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep) void {
+    const lib = b.addStaticLibrarySource("model3d", null);
+    lib.addCSourceFile(sdkPath("/src/c/m3d.c"), &.{ "-std=c89", "-DM3D_ASCII" });
+    lib.linkLibC();
+    step.addIncludePath(sdkPath("/src/c/"));
+    step.linkLibrary(lib);
 }
 
 fn sdkPath(comptime suffix: []const u8) []const u8 {
