@@ -320,13 +320,17 @@ pub const Platform = struct {
         platform.last_position = try platform.window.getPos();
 
         if (options.fullscreen) {
+            var monitor: ?glfw.Monitor = null;
 
-            const monitorList = try glfw.Monitor.getAll(platform.allocator);
-            defer platform.allocator.free(monitorList);
+            if (options.monitor) |monitorIndex| {
+                const monitorList = try glfw.Monitor.getAll(platform.allocator);
+                defer platform.allocator.free(monitorList);
+                monitor = monitorList[monitorIndex];
+            } else {
+                monitor = glfw.Monitor.getPrimary();
+            }
 
-            const monitor = monitorList[options.monitor];
-    
-            const video_mode = try monitor.getVideoMode();
+            const video_mode = try monitor.?.getVideoMode();
             try platform.window.setMonitor(monitor, 0, 0, video_mode.getWidth(), video_mode.getHeight(), null);
         } else {
             const position = platform.last_position;

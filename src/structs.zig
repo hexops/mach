@@ -36,8 +36,8 @@ pub const Options = struct {
     /// Fullscreen window.
     fullscreen: bool = false,
 
-    // Fullscreen monitor index
-    monitor: u32 = 0,
+    /// Fullscreen monitor index
+    monitor: ?u32 = null,
 
     /// Headless mode.
     headless: bool = false,
