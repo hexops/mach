@@ -21,6 +21,8 @@ Windows does not have symlinks enabled, or Git is not configured to use them. Th
   * [Ensure symlinks are installed in Git](https://stackoverflow.com/a/59761201) `git config --global core.symlinks true`
   * Re-clone the repository and try again.
 
+3. Use `git clone --recursive`
+
 ## Windows: "SSL certificate problem: unable to get local issuer certificate"
 
 This is a curl SSL CA issue, you may want to Google for proper solutions on your system. That said, you can `set CURL_INSECURE=true` and retry to disable SSL verification if you want to workaround the issue.
