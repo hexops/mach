@@ -23,7 +23,7 @@ pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.C
 
 pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep) void {
     const lib = b.addStaticLibrarySource("model3d", null);
-    lib.addCSourceFile(sdkPath("/src/c/m3d.c"), &.{ "-std=c89", "-DM3D_ASCII" });
+    lib.addCSourceFile(sdkPath("/src/c/m3d.c"), &.{ "-std=c89" });
     lib.linkLibC();
     step.addIncludePath(sdkPath("/src/c/"));
     step.linkLibrary(lib);
