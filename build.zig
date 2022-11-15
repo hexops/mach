@@ -270,7 +270,7 @@ pub const App = struct {
         sysaudio.link(app.b, app.step, options.sysaudio_options);
         if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype_options);
         if (app.use_model3d) {
-            model3d.link(app.b, app.step);
+            model3d.link(app.b, app.step, app.step.target);
         }
     }
 
