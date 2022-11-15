@@ -10,7 +10,7 @@ If you encounter an error like this:
 
 Windows does not have symlinks enabled, or Git is not configured to use them. This is very annoying and [has been reported to Microsoft](https://twitter.com/slimsag/status/1508114938933362688).
 
-**Two solutions:**
+**Three solutions:**
 
 1. (recommended) Build a native Windows binary by cross-compiling from WSL -> Windows:
   * `cd mach/gpu`
