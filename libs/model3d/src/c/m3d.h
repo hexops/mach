@@ -2377,7 +2377,6 @@ static M3D_FLOAT _m3d_rsq(M3D_FLOAT x)
 /**
  * Function to decode a Model 3D into in-memory format
  */
-__attribute__((no_sanitize("alignment"))) // TODO(model3d): https://gitlab.com/bztsrc/model3d/-/issues/19
 m3d_t *m3d_load(unsigned char *data, m3dread_t readfilecb, m3dfree_t freecb, m3d_t *mtllib)
 {
     unsigned char *end, *chunk, *buff, weights[8];

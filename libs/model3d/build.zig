@@ -24,7 +24,9 @@ pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.C
 pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, target: std.zig.CrossTarget) void {
     const lib = b.addStaticLibrarySource("model3d", null);
     lib.setTarget(target);
-    lib.addCSourceFile(sdkPath("/src/c/m3d.c"), &.{ "-std=c89" });
+    // Note: model3d needs unaligned accesses, which are safe on all modern architectures.
+    // See https://gitlab.com/bztsrc/model3d/-/issues/19
+    lib.addCSourceFile(sdkPath("/src/c/m3d.c"), &.{ "-std=c89", "-fno-sanitize=alignment" });
     lib.linkLibC();
     step.addIncludePath(sdkPath("/src/c/"));
     step.linkLibrary(lib);
