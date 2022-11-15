@@ -316,11 +316,21 @@ pub const Platform = struct {
             .double => .fifo,
             .triple => .mailbox,
         };
-        if (options.fullscreen) {
-            platform.last_position = try platform.window.getPos();
 
-            const monitor = glfw.Monitor.getPrimary().?;
-            const video_mode = try monitor.getVideoMode();
+        platform.last_position = try platform.window.getPos();
+
+        if (options.fullscreen) {
+            var monitor: ?glfw.Monitor = null;
+
+            if (options.monitor) |monitorIndex| {
+                const monitorList = try glfw.Monitor.getAll(platform.allocator);
+                defer platform.allocator.free(monitorList);
+                monitor = monitorList[monitorIndex];
+            } else {
+                monitor = glfw.Monitor.getPrimary();
+            }
+
+            const video_mode = try monitor.?.getVideoMode();
             try platform.window.setMonitor(monitor, 0, 0, video_mode.getWidth(), video_mode.getHeight(), null);
         } else {
             const position = platform.last_position;

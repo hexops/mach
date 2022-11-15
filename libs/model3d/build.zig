@@ -16,15 +16,20 @@ pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.C
     const main_tests = b.addTestExe("model3d-tests", "src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
-    link(main_tests);
+    link(b, main_tests, target);
     main_tests.install();
     return main_tests.run();
 }
 
-pub fn link(step: *std.build.LibExeObjStep) void {
-    step.addCSourceFile(sdkPath("/src/c/m3d.c"), &.{});
-    step.addIncludePath(sdkPath("/src/c"));
-    step.linkLibC();
+pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, target: std.zig.CrossTarget) void {
+    const lib = b.addStaticLibrarySource("model3d", null);
+    lib.setTarget(target);
+    // Note: model3d needs unaligned accesses, which are safe on all modern architectures.
+    // See https://gitlab.com/bztsrc/model3d/-/issues/19
+    lib.addCSourceFile(sdkPath("/src/c/m3d.c"), &.{ "-std=c89", "-fno-sanitize=alignment" });
+    lib.linkLibC();
+    step.addIncludePath(sdkPath("/src/c/"));
+    step.linkLibrary(lib);
 }
 
 fn sdkPath(comptime suffix: []const u8) []const u8 {

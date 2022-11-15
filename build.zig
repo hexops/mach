@@ -169,6 +169,7 @@ pub const App = struct {
     res_dirs: ?[]const []const u8,
     watch_paths: ?[]const []const u8,
     use_freetype: ?[]const u8 = null,
+    use_model3d: bool = false,
 
     pub const InitError = error{OutOfMemory} || std.zig.system.NativeTargetInfo.DetectError;
     pub const LinkError = glfw.LinkError;
@@ -199,6 +200,7 @@ pub const App = struct {
             /// If set, freetype will be linked and can be imported using this name.
             // TODO(build-system): name is currently not used / always "freetype"
             use_freetype: ?[]const u8 = null,
+            use_model3d: bool = false,
         },
     ) InitError!App {
         const target = (try std.zig.system.NativeTargetInfo.detect(options.target)).target;
@@ -254,6 +256,7 @@ pub const App = struct {
             .res_dirs = options.res_dirs,
             .watch_paths = options.watch_paths,
             .use_freetype = options.use_freetype,
+            .use_model3d = options.use_model3d,
         };
     }
 
@@ -266,6 +269,9 @@ pub const App = struct {
         }
         sysaudio.link(app.b, app.step, options.sysaudio_options);
         if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype_options);
+        if (app.use_model3d) {
+            model3d.link(app.b, app.step, app.step.target);
+        }
     }
 
     pub fn install(app: *const App) void {
