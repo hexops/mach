@@ -17,6 +17,9 @@ pub fn Sdk(comptime deps: anytype) type {
 
         pub const Options = struct {
             install_libs: bool = false,
+
+            /// System SDK options.
+            system_sdk: deps.system_sdk.Options = .{},
         };
 
         pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
@@ -44,7 +47,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 const soundio_lib = buildSoundIo(b, step.build_mode, step.target, options);
                 step.linkLibrary(soundio_lib);
                 step.addIncludePath(soundio_path);
-                deps.system_sdk.include(b, step, .{});
+                deps.system_sdk.include(b, step, options.system_sdk);
             }
         }
 
@@ -72,7 +75,7 @@ pub fn Sdk(comptime deps: anytype) type {
             lib.linkLibC();
             lib.addIncludePath(soundio_path);
             lib.addCSourceFiles(soundio_sources, &.{});
-            deps.system_sdk.include(b, lib, .{});
+            deps.system_sdk.include(b, lib, options.system_sdk);
 
             const target_info = (std.zig.system.NativeTargetInfo.detect(target) catch unreachable).target;
             if (target_info.isDarwin()) {
