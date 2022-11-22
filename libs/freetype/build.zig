@@ -30,6 +30,7 @@ pub const FreetypeOptions = struct {
     config_path: ?[]const u8 = null,
     install_libs: bool = false,
     brotli: bool = false,
+    use_system_zlib: bool = false,
 };
 
 pub const HarfbuzzOptions = struct {
@@ -131,6 +132,9 @@ pub fn buildFreetype(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossT
 
     const lib = b.addStaticLibrary("freetype", null);
     lib.defineCMacro("FT2_BUILD_LIBRARY", "1");
+    if (options.use_system_zlib) {
+        lib.defineCMacro("FT_CONFIG_OPTION_SYSTEM_ZLIB", "1");
+    }
     lib.setBuildMode(mode);
     lib.setTarget(target);
     lib.linkLibC();

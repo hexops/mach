@@ -30,6 +30,9 @@ pub fn build(b: *Builder) void {
     ...
     exe.addPackage(freetype.pkg);
     freetype.link(b, exe, .{});
+
+    // use this option if you are including zlib separately
+    //freetype.link(b, exe, .{ .freetype = .{ .use_system_zlib = true } });
 }
 ```
 
