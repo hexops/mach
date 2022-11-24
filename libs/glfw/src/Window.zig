@@ -2503,11 +2503,11 @@ test "hint enum(u1)" {
     defer glfw.terminate();
 
     const MyEnum = enum(u1) {
-        @"true" = 1,
-        @"false" = 0,
+        true = 1,
+        false = 0,
     };
 
-    hint(.focused, MyEnum.@"true");
+    hint(.focused, MyEnum.true);
     defaultHints();
 }
 
@@ -2516,11 +2516,11 @@ test "hint enum(i32)" {
     defer glfw.terminate();
 
     const MyEnum = enum(i32) {
-        @"true" = 1,
-        @"false" = 0,
+        true = 1,
+        false = 0,
     };
 
-    hint(.focused, MyEnum.@"true");
+    hint(.focused, MyEnum.true);
     defaultHints();
 }
 
