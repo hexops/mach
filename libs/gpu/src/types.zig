@@ -707,9 +707,17 @@ pub const RequiredLimits = extern struct {
     limits: Limits,
 };
 
+/// Used to query limits from a Device or Adapter. Can be used as follows:
+///
+/// ```
+/// var limits: gpu.SupportedLimits = .{};
+/// if (!adapter.getLimits(&limits)) @panic("unsupported options");
+/// ```
+///
+/// Note that `getLimits` can only fail if `next_in_chain` options are invalid.
 pub const SupportedLimits = extern struct {
     next_in_chain: ?*ChainedStructOut = null,
-    limits: Limits,
+    limits: Limits = undefined,
 };
 
 pub const VertexBufferLayout = extern struct {
