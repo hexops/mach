@@ -52,7 +52,7 @@ pub const Options = struct {
             .os_version = .{
                 .semver = .{
                     .min = .{ .major = 12, .minor = 0 },
-                    .max = .{ .major = 12, .minor = std.math.maxInt(u32) },
+                    .max = .{ .major = 13, .minor = std.math.maxInt(u32) },
                 },
             },
         },
