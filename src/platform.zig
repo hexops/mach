@@ -25,6 +25,7 @@ fn Interface(comptime T: type) type {
     assertHasDecl(T.Platform, "pollEvent");
     assertHasDecl(T.BackingTimer, "start");
     assertHasDecl(T.BackingTimer, "read");
+	assertHasDecl(T.BackingTimer, "readTotal");
     assertHasDecl(T.BackingTimer, "reset");
     assertHasDecl(T.BackingTimer, "lap");
 

@@ -36,3 +36,11 @@ pub inline fn lapPrecise(timer: *Timer) u64 {
 pub inline fn lap(timer: *Timer) f32 {
     return @intToFloat(f32, timer.lapPrecise()) / @intToFloat(f32, std.time.ns_per_s);
 }
+
+pub inline fn readTotalPrecise(timer: *Timer) u64 {
+	return timer.backing_timer.readTotal();
+}
+
+pub inline fn readTotal(timer: *Timer) f32 {
+	return @intToFloat(f32, timer.readTotal()) / @intToFloat(f32, std.time.ns_per_s);
+}

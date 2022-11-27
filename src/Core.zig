@@ -21,6 +21,11 @@ options: structs.Options,
 /// (360.0 * core.delta_time)
 delta_time: f32 = 0,
 delta_time_ns: u64 = 0,
+
+/// The amount of time (in seconds) that has passed since the start of the application
+total_time: f32 = 0,
+total_time_ns: u64 = 0,
+
 timer: Timer,
 
 device: *gpu.Device,
