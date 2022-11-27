@@ -572,32 +572,28 @@ pub const Platform = struct {
 };
 
 pub const BackingTimer = struct {
-
-	start_time: f64 = undefined,
+    start_time: f64 = undefined,
     timer: std.time.Timer = undefined,
 
-	pub fn start() std.time.Timer.Error!BackingTimer {
-		return BackingTimer{
-			.time = try std.time.Timer.start(),
-			.start_time = std.time.Instant.now()
-		};
-	}
+    pub fn start() std.time.Timer.Error!BackingTimer {
+        return BackingTimer{ .time = try std.time.Timer.start(), .start_time = std.time.Instant.now() };
+    }
 
-	pub fn read(self: *BackingTimer) u64 {
-		return self.timer.read();
-	}
+    pub fn read(self: *BackingTimer) u64 {
+        return self.timer.read();
+    }
 
-	pub fn readTotal(self: *BackingTimer) u64 {
-		return std.time.Instant.now() - self.start_time;
-	}
+    pub fn readTotal(self: *BackingTimer) u64 {
+        return std.time.Instant.now() - self.start_time;
+    }
 
-	pub fn reset(self: *BackingTimer) void {
-		return self.timer.reset();
-	}
+    pub fn reset(self: *BackingTimer) void {
+        return self.timer.reset();
+    }
 
-	pub fn lap(self: *BackingTimer) u64 {
-		return self.timer.lap();
-	}
+    pub fn lap(self: *BackingTimer) u64 {
+        return self.timer.lap();
+    }
 };
 
 var app: App = undefined;
@@ -669,8 +665,8 @@ pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
     core.delta_time_ns = core.timer.lapPrecise();
     core.delta_time = @intToFloat(f32, core.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
-	core.total_time_ns = core.timer.readTotalPrecise();
-	core.total_time = @intToFloat(f32, core.total_time_ns) / @intToFloat(f32, std.time.ns_per_s);
+    core.total_time_ns = core.timer.readTotalPrecise();
+    core.total_time = @intToFloat(f32, core.total_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
     var framebuffer_size = core.getFramebufferSize();
     core.target_desc.width = framebuffer_size.width;

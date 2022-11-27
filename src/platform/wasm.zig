@@ -263,25 +263,22 @@ pub const Platform = struct {
 };
 
 pub const BackingTimer = struct {
-	start_time: f64 = undefined,
+    start_time: f64 = undefined,
     initial: f64 = undefined,
 
     const WasmTimer = @This();
 
     pub fn start() !WasmTimer {
-		const initial = js.machPerfNow(); 
+        const initial = js.machPerfNow();
 
-        return WasmTimer{ 
-			.initial = initial,
-			.start_time = initial
-		};
+        return WasmTimer{ .initial = initial, .start_time = initial };
     }
 
     pub fn read(timer: *WasmTimer) u64 {
         return timeToNs(js.machPerfNow() - timer.initial);
     }
 
-	pub fn readTotal(timer: *WasmTimer) u64 {
+    pub fn readTotal(timer: *WasmTimer) u64 {
         return timeToNs(js.machPerfNow() - timer.start_time);
     }
 
@@ -319,8 +316,8 @@ export fn wasmUpdate() void {
     core.delta_time_ns = core.timer.lapPrecise();
     core.delta_time = @intToFloat(f32, core.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
-	core.total_time_ns = core.timer.readTotalPrecise();
-	core.total_time = @intToFloat(f32, core.total_time_ns) / @intToFloat(f32, std.time.ns_per_s);
+    core.total_time_ns = core.timer.readTotalPrecise();
+    core.total_time = @intToFloat(f32, core.total_time_ns) / @intToFloat(f32, std.time.ns_per_s);
 
     app.update(&core) catch core.close();
 }
