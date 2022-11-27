@@ -28,7 +28,7 @@ const Column = struct {
     offset: usize,
 };
 
-fn by_alignment_name(context: void, lhs: Column, rhs: Column) bool {
+fn byAlignmentName(context: void, lhs: Column, rhs: Column) bool {
     _ = context;
     if (lhs.alignment < rhs.alignment) return true;
     return std.mem.lessThan(u8, lhs.name, rhs.name);
@@ -580,7 +580,7 @@ pub fn Entities(comptime all_components: anytype) type {
                     .alignment = if (@sizeOf(@TypeOf(component)) == 0) 1 else @alignOf(@TypeOf(component)),
                     .offset = undefined,
                 };
-                std.sort.sort(Column, columns, {}, by_alignment_name);
+                std.sort.sort(Column, columns, {}, byAlignmentName);
 
                 archetype_entry.value_ptr.* = ArchetypeStorage{
                     .allocator = entities.allocator,
