@@ -470,7 +470,7 @@ pub fn Entities(comptime all_components: anytype) type {
                 .len = 0,
                 .capacity = 0,
                 .columns = columns,
-                .block = undefined,
+                .block = &[_]u8{},
                 .hash = void_archetype_hash,
             });
 
@@ -587,7 +587,7 @@ pub fn Entities(comptime all_components: anytype) type {
                     .len = 0,
                     .capacity = 0,
                     .columns = columns,
-                    .block = undefined,
+                    .block = &[_]u8{},
                     .hash = undefined,
                 };
 
@@ -715,7 +715,7 @@ pub fn Entities(comptime all_components: anytype) type {
                     .len = 0,
                     .capacity = 0,
                     .columns = columns,
-                    .block = undefined,
+                    .block = &[_]u8{},
                     .hash = undefined,
                 };
 
@@ -866,4 +866,12 @@ test "example" {
     //-------------------------------------------------------------------------
     // Remove an entity whenever you wish. Just be sure not to try and use it later!
     try world.remove(player1);
+}
+
+test "empty_world" {
+    const allocator = testing.allocator;
+    //-------------------------------------------------------------------------
+    var world = try Entities(.{}).init(allocator);
+    // Create a world.
+    defer world.deinit();
 }
