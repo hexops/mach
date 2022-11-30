@@ -3,7 +3,7 @@ const std = @import("std");
 /// Vertex writer manages the placement of vertices by tracking which are unique. If a duplicate vertex is added
 /// with `put`, only it's index will be written to the index buffer.
 /// `IndexType` should match the integer type used for the index buffer
-fn VertexWriter(comptime VertexType: type, comptime IndexType: type) type {
+pub fn VertexWriter(comptime VertexType: type, comptime IndexType: type) type {
     return struct {
         const MapEntry = struct {
             packed_index: IndexType = null_index,
@@ -36,7 +36,7 @@ fn VertexWriter(comptime VertexType: type, comptime IndexType: type) type {
             max_vertex_count: IndexType,
         ) !@This() {
             var result: @This() = undefined;
-            result.vertices = try allocator.alloc(Vertex, max_vertex_count);
+            result.vertices = try allocator.alloc(VertexType, max_vertex_count);
             result.indices = try allocator.alloc(IndexType, indices_count);
             result.sparse_to_packed_map = try allocator.alloc(MapEntry, max_vertex_count);
             result.next_collision_index = sparse_vertices_count;
@@ -46,7 +46,7 @@ fn VertexWriter(comptime VertexType: type, comptime IndexType: type) type {
             return result;
         }
 
-        pub fn put(self: *@This(), vertex: Vertex, sparse_index: IndexType) void {
+        pub fn put(self: *@This(), vertex: VertexType, sparse_index: IndexType) void {
             if (self.sparse_to_packed_map[sparse_index].packed_index == null_index) {
                 // New start of chain, reserve a new packed index and add entry to `index_map`
                 const packed_index = self.next_packed_index;
@@ -92,22 +92,19 @@ fn VertexWriter(comptime VertexType: type, comptime IndexType: type) type {
             return self.indices;
         }
 
-        pub fn vertexBuffer(self: @This()) []Vertex {
+        pub fn vertexBuffer(self: @This()) []VertexType {
             return self.vertices[0..self.next_packed_index];
         }
     };
 }
 
-const Vec4 = [4]f32;
-const Vec3 = [3]f32;
-const Vec2 = [2]f32;
-
-const Vertex = extern struct {
-    position: Vec3,
-    normal: Vec3,
-};
-
 test "VertexWriter" {
+    const Vec3 = [3]f32;
+    const Vertex = extern struct {
+        position: Vec3,
+        normal: Vec3,
+    };
+
     const expect = std.testing.expect;
     const allocator = std.testing.allocator;
 
