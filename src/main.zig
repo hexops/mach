@@ -22,8 +22,6 @@ test {
     // TODO: can't reference because they import "app"
     // testing.refAllDeclsRecursive(Core);
     // testing.refAllDeclsRecursive(Timer);
-    comptime {
-        testing.refAllDeclsRecursive(ResourceManager);
-        testing.refAllDeclsRecursive(gfx);
-    }
+    testing.refAllDeclsRecursive(ResourceManager);
+    testing.refAllDeclsRecursive(gfx);
 }
