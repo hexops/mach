@@ -220,7 +220,7 @@ pub const App = struct {
         const app_pkg = Pkg{
             .name = "app",
             .source = .{ .path = options.src },
-            .dependencies = deps.toOwnedSlice(),
+            .dependencies = try deps.toOwnedSlice(),
         };
 
         const step = blk: {
