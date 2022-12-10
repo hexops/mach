@@ -220,7 +220,8 @@ pub const App = struct {
         const app_pkg = Pkg{
             .name = "app",
             .source = .{ .path = options.src },
-            .dependencies = try deps.toOwnedSlice(),
+            // .dependencies = try deps.toOwnedSlice(),
+            .dependencies = try arrayListToOwnedSlice(&deps),
         };
 
         const step = blk: {
@@ -359,4 +360,10 @@ fn sdkPath(comptime suffix: []const u8) []const u8 {
         const root_dir = std.fs.path.dirname(@src().file) orelse ".";
         break :blk root_dir ++ suffix;
     };
+}
+
+// compat function for 0.10.0
+// TODO: remove on zig 0.11.0 release
+inline fn arrayListToOwnedSlice(list: anytype) !@TypeOf(list.*).Slice {
+    return list.*.toOwnedSlice();
 }
