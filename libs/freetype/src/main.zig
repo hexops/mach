@@ -34,7 +34,7 @@ test {
 }
 
 const firasans_font_path = sdkPath("/../upstream/assets/FiraSans-Regular.ttf");
-const firasans_font_data = @embedFile(sdkPath("/../upstream/assets/FiraSans-Regular.ttf"));
+const firasans_font_data = @embedFile("../upstream/assets/FiraSans-Regular.ttf");
 
 test "create face from file" {
     const lib = try ft.Library.init();
