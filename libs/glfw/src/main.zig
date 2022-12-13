@@ -249,7 +249,7 @@ pub const PlatformType = enum(c_int) {
     cocoa = c.GLFW_PLATFORM_COCOA,
     wayland = c.GLFW_PLATFORM_WAYLAND,
     x11 = c.GLFW_PLATFORM_X11,
-    nul = c.GLFW_PLATFORM_NULL,
+    null = c.GLFW_PLATFORM_NULL,
 };
 
 /// Sets the specified init hint to the desired value.
@@ -315,7 +315,7 @@ pub inline fn getVersionString() [:0]const u8 {
 ///
 /// This function returns the platform that was selected during initialization. The returned value
 /// will be one of `glfw.PlatformType.win32`, `glfw.PlatformType.cocoa`,
-/// `glfw.PlatformType.wayland`, `glfw.PlatformType.x11` or `glfw.PlatformType.nul`.
+/// `glfw.PlatformType.wayland`, `glfw.PlatformType.x11` or `glfw.PlatformType.null`.
 ///
 /// thread_safety: This function may be called from any thread.
 pub fn getPlatform() PlatformType {
@@ -332,7 +332,7 @@ pub fn getPlatform() PlatformType {
 ///
 /// This function returns whether the library was compiled with support for the specified platform.
 /// The platform must be one of `glfw.PlatformType.win32`, `glfw.PlatformType.cocoa`,
-/// `glfw.PlatformType.wayland`, `glfw.PlatformType.x11` or `glfw.PlatformType.nul`.
+/// `glfw.PlatformType.wayland`, `glfw.PlatformType.x11` or `glfw.PlatformType.null`.
 ///
 /// remark: This function may be called before glfw.Init.
 ///
