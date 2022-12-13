@@ -73,7 +73,7 @@ context_constructor: js.Function,
 
 pub fn init() Error!Audio {
     const context = js.global().get("AudioContext");
-    if (context.is(.undef))
+    if (context.is(.undefined))
         return error.AudioUnsupported;
 
     return Audio{ .context_constructor = context.view(.func) };
@@ -163,11 +163,11 @@ fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
     defer std.heap.page_allocator.free(buffer);
 
     const callback = device_context.get("callback");
-    if (!callback.is(.undef)) {
+    if (!callback.is(.undefined)) {
         var dev = @intToPtr(*Device, @floatToInt(usize, device_context.get("device").view(.num)));
         const cb = @intToPtr(DataCallback, @floatToInt(usize, callback.view(.num)));
         const user_data = device_context.get("user_data");
-        const ud = if (user_data.is(.undef)) null else @intToPtr(*anyopaque, @floatToInt(usize, user_data.view(.num)));
+        const ud = if (user_data.is(.undefined)) null else @intToPtr(*anyopaque, @floatToInt(usize, user_data.view(.num)));
 
         // TODO(sysaudio): do not reconstruct Uint8Array (expensive)
         const source = js.constructType("Uint8Array", &.{js.createNumber(@intToFloat(f64, buffer_length))});
