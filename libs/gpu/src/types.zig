@@ -27,14 +27,14 @@ pub const ComputePassTimestampWrite = extern struct {
 
 pub const RenderPassDepthStencilAttachment = extern struct {
     view: *TextureView,
-    depth_load_op: LoadOp = .undef,
-    depth_store_op: StoreOp = .undef,
+    depth_load_op: LoadOp = .undefined,
+    depth_store_op: StoreOp = .undefined,
     /// deprecated
     clear_depth: f32 = std.math.nan(f32),
     depth_clear_value: f32 = 0,
     depth_read_only: bool = false,
-    stencil_load_op: LoadOp = .undef,
-    stencil_store_op: StoreOp = .undef,
+    stencil_load_op: LoadOp = .undefined,
+    stencil_store_op: StoreOp = .undefined,
     /// deprecated
     clear_stencil: u32 = 0,
     stencil_clear_value: u32 = 0,
@@ -50,7 +50,7 @@ pub const RenderPassTimestampWrite = extern struct {
 pub const RequestAdapterOptions = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     compatible_surface: ?*Surface = null,
-    power_preference: PowerPreference = .undef,
+    power_preference: PowerPreference = .undefined,
     force_fallback_adapter: bool = false,
 };
 
@@ -115,7 +115,7 @@ pub const RenderPassDescriptor = extern struct {
 pub const AlphaMode = enum(u32) { premultiplied = 0x00000000, unpremultiplied = 0x00000001, opaq = 0x00000002 };
 
 pub const BackendType = enum(u32) {
-    nul,
+    null,
     webgpu,
     d3d11,
     d3d12,
@@ -126,7 +126,7 @@ pub const BackendType = enum(u32) {
 
     pub fn name(t: BackendType) []const u8 {
         return switch (t) {
-            .nul => "Null",
+            .null => "Null",
             .webgpu => "WebGPU",
             .d3d11 => "D3D11",
             .d3d12 => "D3D12",
@@ -163,7 +163,7 @@ pub const BlendOperation = enum(u32) {
 };
 
 pub const CompareFunction = enum(u32) {
-    undef = 0x00000000,
+    undefined = 0x00000000,
     never = 0x00000001,
     less = 0x00000002,
     less_equal = 0x00000003,
@@ -220,7 +220,7 @@ pub const ErrorType = enum(u32) {
 };
 
 pub const FeatureName = enum(u32) {
-    undef = 0x00000000,
+    undefined = 0x00000000,
     depth_clip_control = 0x00000001,
     depth32_float_stencil8 = 0x00000002,
     timestamp_query = 0x00000003,
@@ -247,13 +247,13 @@ pub const FrontFace = enum(u32) {
 };
 
 pub const IndexFormat = enum(u32) {
-    undef = 0x00000000,
+    undefined = 0x00000000,
     uint16 = 0x00000001,
     uint32 = 0x00000002,
 };
 
 pub const LoadOp = enum(u32) {
-    undef = 0x00000000,
+    undefined = 0x00000000,
     clear = 0x00000001,
     load = 0x00000002,
 };
@@ -274,7 +274,7 @@ pub const PipelineStatisticName = enum(u32) {
 };
 
 pub const PowerPreference = enum(u32) {
-    undef = 0x00000000,
+    undefined = 0x00000000,
     low_power = 0x00000001,
     high_performance = 0x00000002,
 };
@@ -352,18 +352,18 @@ pub const StencilOperation = enum(u32) {
 };
 
 pub const StorageTextureAccess = enum(u32) {
-    undef = 0x00000000,
+    undefined = 0x00000000,
     write_only = 0x00000001,
 };
 
 pub const StoreOp = enum(u32) {
-    undef = 0x00000000,
+    undefined = 0x00000000,
     store = 0x00000001,
     discard = 0x00000002,
 };
 
 pub const VertexFormat = enum(u32) {
-    undef = 0x00000000,
+    undefined = 0x00000000,
     uint8x2 = 0x00000001,
     uint8x4 = 0x00000002,
     sint8x2 = 0x00000003,
@@ -586,7 +586,7 @@ pub const PrimitiveState = extern struct {
 
     next_in_chain: NextInChain = .{ .generic = null },
     topology: PrimitiveTopology = .triangle_list,
-    strip_index_format: IndexFormat = .undef,
+    strip_index_format: IndexFormat = .undefined,
     front_face: FrontFace = .ccw,
     cull_mode: CullMode = .none,
 };
@@ -605,8 +605,8 @@ pub const StencilFaceState = extern struct {
 
 pub const StorageTextureBindingLayout = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    access: StorageTextureAccess = .undef,
-    format: Texture.Format = .undef,
+    access: StorageTextureAccess = .undefined,
+    format: Texture.Format = .undefined,
     view_dimension: TextureView.Dimension = .dimension_undef,
 };
 
