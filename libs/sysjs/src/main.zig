@@ -39,8 +39,8 @@ pub const Value = extern struct {
         num,
         bool,
         str,
-        nulled,
-        undef,
+        null,
+        undefined,
         func,
     };
 
@@ -54,7 +54,7 @@ pub const Value = extern struct {
         .bool => bool,
         .str => String,
         .func => Function,
-        .nulled, .undef => @compileError("Cannot get null or undefined as a value"),
+        .null, .undefined => @compileError("Cannot get null or undefined as a value"),
     } {
         return switch (tag) {
             .object => Object{ .ref = val.val.ref },
@@ -92,8 +92,8 @@ pub const Value = extern struct {
             .bool => try writer.writeAll(if (val.view(.bool)) "true" else "false"),
             .str => try writer.print("String@{}({})", .{ val.val.ref, val.view(.str).getLength() }),
             .func => try writer.print("Function@{}({})", .{ val.val.ref, val.view(.func).paramCount() }),
-            .nulled => try writer.writeAll("null"),
-            .undef => try writer.writeAll("undefined"),
+            .null => try writer.writeAll("null"),
+            .undefined => try writer.writeAll("undefined"),
         }
     }
 };
@@ -237,11 +237,11 @@ pub fn createBool(val: bool) Value {
 }
 
 pub fn createNull() Value {
-    return .{ .tag = .nulled, .val = undefined };
+    return .{ .tag = .null, .val = undefined };
 }
 
 pub fn createUndefined() Value {
-    return .{ .tag = .undef, .val = undefined };
+    return .{ .tag = .undefined, .val = undefined };
 }
 
 const FunType = *const fn (args: Object, args_len: u32, captures: []Value) Value;
