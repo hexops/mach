@@ -7,7 +7,7 @@ pub const Buffer = opaque {
     pub const MapCallback = *const fn (status: MapAsyncStatus, userdata: ?*anyopaque) callconv(.C) void;
 
     pub const BindingType = enum(u32) {
-        undef = 0x00000000,
+        undefined = 0x00000000,
         uniform = 0x00000001,
         storage = 0x00000002,
         read_only_storage = 0x00000003,
@@ -52,7 +52,7 @@ pub const Buffer = opaque {
 
     pub const BindingLayout = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
-        type: BindingType = .undef,
+        type: BindingType = .undefined,
         has_dynamic_offset: bool = false,
         min_binding_size: u64 = 0,
     };

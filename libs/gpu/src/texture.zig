@@ -29,7 +29,7 @@ pub const Texture = opaque {
     };
 
     pub const Format = enum(u32) {
-        undef = 0x00000000,
+        undefined = 0x00000000,
         r8_unorm = 0x00000001,
         r8_snorm = 0x00000002,
         r8_uint = 0x00000003,
@@ -128,7 +128,7 @@ pub const Texture = opaque {
     };
 
     pub const SampleType = enum(u32) {
-        undef = 0x00000000,
+        undefined = 0x00000000,
         float = 0x00000001,
         unfilterable_float = 0x00000002,
         depth = 0x00000003,
@@ -162,7 +162,7 @@ pub const Texture = opaque {
 
     pub const BindingLayout = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
-        sample_type: SampleType = .undef,
+        sample_type: SampleType = .undefined,
         view_dimension: TextureView.Dimension = .dimension_undef,
         multisampled: bool = false,
     };

@@ -11,7 +11,7 @@ pub const Sampler = opaque {
     };
 
     pub const BindingType = enum(u32) {
-        undef = 0x00000000,
+        undefined = 0x00000000,
         filtering = 0x00000001,
         non_filtering = 0x00000002,
         comparison = 0x00000003,
@@ -19,7 +19,7 @@ pub const Sampler = opaque {
 
     pub const BindingLayout = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
-        type: BindingType = .undef,
+        type: BindingType = .undefined,
     };
 
     pub const Descriptor = extern struct {
@@ -33,7 +33,7 @@ pub const Sampler = opaque {
         mipmap_filter: FilterMode = .nearest,
         lod_min_clamp: f32 = 0.0,
         lod_max_clamp: f32 = 1000.0,
-        compare: CompareFunction = .undef,
+        compare: CompareFunction = .undefined,
         max_anisotropy: u16 = 1,
     };
 
