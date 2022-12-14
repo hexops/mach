@@ -215,8 +215,6 @@ The rules for translating `webgpu.h` are as follows:
   * As a result, a `null`able `Buffer` is represented simply as `?*Buffer`, and any function that would normally take `WGPUBuffer` now takes `*Buffer` as a parameter.
 * `WGPUBufferBindingType` -> `gpu.Buffer.BindingType` (purely because it's prefix matches an opaque pointer type, it thus goes into the `Buffer` opaque type.)
 * Reserved Zig keywords are translated as follows:
-  * `undefined` -> `undef`
-  * `null` -> `nul`
   * `error` -> `err`
   * `type` -> `typ`
   * `opaque` -> `opaq`
