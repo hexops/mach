@@ -372,12 +372,13 @@ pub fn platformSupported(platform: PlatformType) bool {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-pub inline fn pollEvents() error{PlatformError}!void {
+pub inline fn pollEvents() error{PlatformError,InvalidValue}!void {
     internal_debug.assertInitialized();
     c.glfwPollEvents();
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.PlatformError => |e| e,
+        Error.InvalidValue => |e| e,
         else => unreachable,
     };
 }
