@@ -1387,7 +1387,7 @@ pub inline fn setPosCallback(self: Window, comptime callback: ?fn (window: Windo
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn posCallbackWrapper(handle: ?*c.GLFWwindow, xpos: c_int, ypos: c_int) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     @intCast(i32, xpos),
                     @intCast(i32, ypos),
@@ -1425,7 +1425,7 @@ pub inline fn setSizeCallback(self: Window, comptime callback: ?fn (window: Wind
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn sizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     @intCast(i32, width),
                     @intCast(i32, height),
@@ -1471,7 +1471,7 @@ pub inline fn setCloseCallback(self: Window, comptime callback: ?fn (window: Win
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn closeCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                 });
             }
@@ -1513,7 +1513,7 @@ pub inline fn setRefreshCallback(self: Window, comptime callback: ?fn (window: W
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn refreshCallbackWrapper(handle: ?*c.GLFWwindow) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                 });
             }
@@ -1556,7 +1556,7 @@ pub inline fn setFocusCallback(self: Window, comptime callback: ?fn (window: Win
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn focusCallbackWrapper(handle: ?*c.GLFWwindow, focused: c_int) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     focused == c.GLFW_TRUE,
                 });
@@ -1595,7 +1595,7 @@ pub inline fn setIconifyCallback(self: Window, comptime callback: ?fn (window: W
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn iconifyCallbackWrapper(handle: ?*c.GLFWwindow, iconified: c_int) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     iconified == c.GLFW_TRUE,
                 });
@@ -1635,7 +1635,7 @@ pub inline fn setMaximizeCallback(self: Window, comptime callback: ?fn (window: 
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn maximizeCallbackWrapper(handle: ?*c.GLFWwindow, maximized: c_int) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     maximized == c.GLFW_TRUE,
                 });
@@ -1675,7 +1675,7 @@ pub inline fn setFramebufferSizeCallback(self: Window, comptime callback: ?fn (w
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn framebufferSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     @intCast(u32, width),
                     @intCast(u32, height),
@@ -1716,7 +1716,7 @@ pub inline fn setContentScaleCallback(self: Window, comptime callback: ?fn (wind
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn windowScaleCallbackWrapper(handle: ?*c.GLFWwindow, xscale: f32, yscale: f32) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     xscale,
                     yscale,
@@ -2109,7 +2109,7 @@ pub inline fn setKeyCallback(self: Window, comptime callback: ?fn (window: Windo
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn keyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     @intToEnum(Key, key),
                     @intCast(i32, scancode),
@@ -2160,7 +2160,7 @@ pub inline fn setCharCallback(self: Window, comptime callback: ?fn (window: Wind
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn charCallbackWrapper(handle: ?*c.GLFWwindow, codepoint: c_uint) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     @intCast(u21, codepoint),
                 });
@@ -2206,7 +2206,7 @@ pub inline fn setMouseButtonCallback(self: Window, comptime callback: ?fn (windo
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn mouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: c_int, mods: c_int) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     @intToEnum(MouseButton, button),
                     @intToEnum(Action, action),
@@ -2249,7 +2249,7 @@ pub inline fn setCursorPosCallback(self: Window, comptime callback: ?fn (window:
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn cursorPosCallbackWrapper(handle: ?*c.GLFWwindow, xpos: f64, ypos: f64) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     xpos,
                     ypos,
@@ -2288,7 +2288,7 @@ pub inline fn setCursorEnterCallback(self: Window, comptime callback: ?fn (windo
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn cursorEnterCallbackWrapper(handle: ?*c.GLFWwindow, entered: c_int) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     entered == c.GLFW_TRUE,
                 });
@@ -2330,7 +2330,7 @@ pub inline fn setScrollCallback(self: Window, comptime callback: ?fn (window: Wi
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn scrollCallbackWrapper(handle: ?*c.GLFWwindow, xoffset: f64, yoffset: f64) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     xoffset,
                     yoffset,
@@ -2380,7 +2380,7 @@ pub inline fn setDropCallback(self: Window, comptime callback: ?fn (window: Wind
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn dropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c][*c]const u8) callconv(.C) void {
-                @call(.{ .modifier = .always_inline }, user_callback, .{
+                @call(.always_inline, user_callback, .{
                     from(handle.?),
                     @ptrCast([*][*:0]const u8, paths)[0..@intCast(u32, path_count)],
                 });
