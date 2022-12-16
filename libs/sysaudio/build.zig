@@ -15,12 +15,12 @@ pub fn build(b: *std.build.Builder) void {
     test_step.dependOn(&sysaudio.testStep(b, mode, target).step);
 
     inline for ([_][]const u8{
-        "soundio-sine-wave",
+        "sine-wave",
     }) |example| {
         const example_exe = b.addExecutable("example-" ++ example, "examples/" ++ example ++ ".zig");
         example_exe.setBuildMode(mode);
         example_exe.setTarget(target);
-        example_exe.addPackage(sysaudio.soundio_pkg);
+        example_exe.addPackage(sysaudio.pkg);
         sysaudio.link(b, example_exe, .{});
         example_exe.install();
 
