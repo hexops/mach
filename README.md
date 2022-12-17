@@ -78,12 +78,12 @@ Mach is still early stages, so far we have support for building from the followi
 
 Mach works with the new self-hosted Zig compiler only. This means you'll need to use the latest Zig nightly version.
 
-Currently we test using `0.10.0-dev.4476+0f0076666`. Newer is generally better, but you can download this version here:
+Currently we test using `0.11.0-dev.829+68d2f68ed`. Newer is generally better, but you can download this version here:
 
-- **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.4476+0f0076666.tar.xz)
-- **windows-x86_64**: https://ziglang.org/builds/zig-windows-x86_64-0.10.0-dev.4476+0f0076666.zip
-- **macos-x86_64** (Intel): https://ziglang.org/builds/zig-macos-x86_64-0.10.0-dev.4476+0f0076666.tar.xz
-- **macos-aarch64** (Apple Silicon): https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.4476+0f0076666.tar.xz
+- **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.829+68d2f68ed.tar.xz)
+- **windows-x86_64**: https://ziglang.org/builds/zig-windows-x86_64-0.11.0-dev.829+68d2f68ed.zip
+- **macos-x86_64** (Intel): https://ziglang.org/builds/zig-macos-x86_64-0.11.0-dev.829+68d2f68ed.tar.xz
+- **macos-aarch64** (Apple Silicon): https://ziglang.org/builds/zig-macos-aarch64-0.11.0-dev.829+68d2f68ed.tar.xz
 
 `mach/ecs` and WebAssembly examples have known issues unless using `-fstage1`, see [issue #180](https://github.com/hexops/mach/issues/180) for details.
 
