@@ -180,5 +180,5 @@ pub fn msgSend(obj: anytype, sel_name: [:0]const u8, args: anytype, comptime Ret
     var func = @ptrCast(FnType, &objc.objc_msgSend);
     const sel = objc.sel_getUid(@ptrCast([*c]const u8, sel_name));
 
-    return @call(.{}, func, .{ obj, sel } ++ args);
+    return @call(.auto, func, .{ obj, sel } ++ args);
 }
