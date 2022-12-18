@@ -472,7 +472,8 @@ pub const Context = struct {
 
         hr = audio_client.?.Initialize(
             .SHARED,
-            win32.AUDCLNT_STREAMFLAGS_NOPERSIST,
+            win32.AUDCLNT_STREAMFLAGS_EVENTCALLBACK |
+                win32.AUDCLNT_STREAMFLAGS_NOPERSIST,
             0,
             0,
             @ptrCast(?*const win32.WAVEFORMATEX, @alignCast(@alignOf(*win32.WAVEFORMATEX), &wave_format)),
@@ -526,6 +527,18 @@ pub const Context = struct {
             else => return error.OpeningDevice,
         }
 
+        var ready_event = win32.CreateEventA(null, 0, 0, null) orelse return error.SystemResources;
+        hr = audio_client.?.SetEventHandle(ready_event);
+        switch (hr) {
+            win32.S_OK => {},
+            win32.E_INVALIDARG => unreachable,
+            win32.AUDCLNT_E_EVENTHANDLE_NOT_EXPECTED => unreachable,
+            win32.AUDCLNT_E_NOT_INITIALIZED => unreachable,
+            win32.AUDCLNT_E_DEVICE_INVALIDATED => return error.OpeningDevice,
+            win32.AUDCLNT_E_SERVICE_NOT_RUNNING => return error.OpeningDevice,
+            else => return error.OpeningDevice,
+        }
+
         return .{
             .wasapi = .{
                 .thread = undefined,
@@ -538,6 +551,7 @@ pub const Context = struct {
                 .simple_volume = simple_volume,
                 .imm_device = imm_device,
                 .render_client = render_client,
+                .ready_event = ready_event,
                 .is_paused = false,
                 .vol = 1.0,
                 .aborted = .{ .value = false },
@@ -595,6 +609,7 @@ pub const Player = struct {
     imm_device: ?*win32.IMMDevice,
     audio_client: ?*win32.IAudioClient,
     render_client: ?*win32.IAudioRenderClient,
+    ready_event: win32.HANDLE,
     aborted: std.atomic.Atomic(bool),
     is_paused: bool,
     vol: f32,
@@ -634,8 +649,10 @@ pub const Player = struct {
         }
 
         while (!self.aborted.load(.Unordered)) {
-            var frames_buf: u32 = 0;
-            hr = self.audio_client.?.GetBufferSize(&frames_buf);
+            _ = win32.WaitForSingleObject(self.ready_event, win32.INFINITE);
+
+            var buf_frames: u32 = 0;
+            hr = self.audio_client.?.GetBufferSize(&buf_frames);
             switch (hr) {
                 win32.S_OK => {},
                 win32.E_POINTER => unreachable,
@@ -645,8 +662,8 @@ pub const Player = struct {
                 else => unreachable,
             }
 
-            var frames_used: u32 = 0;
-            hr = self.audio_client.?.GetCurrentPadding(&frames_used);
+            var padding_frames: u32 = 0;
+            hr = self.audio_client.?.GetCurrentPadding(&padding_frames);
             switch (hr) {
                 win32.S_OK => {},
                 win32.E_POINTER => unreachable,
@@ -655,10 +672,10 @@ pub const Player = struct {
                 win32.AUDCLNT_E_SERVICE_NOT_RUNNING => return,
                 else => unreachable,
             }
-            const writable_frame_count = frames_buf - frames_used;
-            if (writable_frame_count > 0) {
+            const frames = buf_frames - padding_frames;
+            if (frames > 0) {
                 var data: [*]u8 = undefined;
-                hr = self.render_client.?.GetBuffer(writable_frame_count, @ptrCast(?*?*u8, &data));
+                hr = self.render_client.?.GetBuffer(frames, @ptrCast(?*?*u8, &data));
                 switch (hr) {
                     win32.S_OK => {},
                     win32.E_POINTER => unreachable,
@@ -676,8 +693,9 @@ pub const Player = struct {
                     ch.*.ptr = data + self.format().frameSize(i);
                 }
 
-                self.writeFn(parent, writable_frame_count);
-                hr = self.render_client.?.ReleaseBuffer(writable_frame_count, 0);
+                self.writeFn(parent, frames);
+
+                hr = self.render_client.?.ReleaseBuffer(frames, 0);
                 switch (hr) {
                     win32.S_OK => {},
                     win32.E_INVALIDARG => unreachable,
