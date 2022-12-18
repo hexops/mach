@@ -22,7 +22,7 @@ fn typeId(comptime T: type) TypeId {
 
 const Column = struct {
     name: []const u8,
-    typeId: TypeId,
+    type_id: TypeId,
     size: u32,
     alignment: u16,
     offset: usize,
@@ -81,7 +81,7 @@ pub const ArchetypeStorage = struct {
     fn debugValidateRow(storage: *ArchetypeStorage, gpa: Allocator, row: anytype) void {
         inline for (std.meta.fields(@TypeOf(row))) |field, index| {
             const column = storage.columns[index];
-            if (typeId(field.field_type) != column.typeId) {
+            if (typeId(field.field_type) != column.type_id) {
                 const msg = std.mem.concat(gpa, u8, &.{
                     "unexpected type: ",
                     @typeName(field.field_type),
@@ -182,8 +182,8 @@ pub const ArchetypeStorage = struct {
             const ColumnType = field.field_type;
             if (@sizeOf(ColumnType) == 0) continue;
             const column = storage.columns[index];
-            const columnValues = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &storage.block[column.offset]));
-            columnValues[row_index] = @field(row, field.name);
+            const column_values = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &storage.block[column.offset]));
+            column_values[row_index] = @field(row, field.name);
         }
     }
 
@@ -194,7 +194,7 @@ pub const ArchetypeStorage = struct {
         for (storage.columns) |column| {
             if (!std.mem.eql(u8, column.name, name)) continue;
             if (is_debug) {
-                if (typeId(ColumnType) != column.typeId) {
+                if (typeId(ColumnType) != column.type_id) {
                     const msg = std.mem.concat(gpa, u8, &.{
                         "unexpected type: ",
                         @typeName(ColumnType),
@@ -204,8 +204,8 @@ pub const ArchetypeStorage = struct {
                     @panic(msg);
                 }
             }
-            const columnValues = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &storage.block[column.offset]));
-            columnValues[row_index] = component;
+            const column_values = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &storage.block[column.offset]));
+            column_values[row_index] = component;
             return;
         }
         @panic("no such component");
@@ -216,7 +216,7 @@ pub const ArchetypeStorage = struct {
             if (!std.mem.eql(u8, column.name, name)) continue;
             if (@sizeOf(ColumnType) == 0) return {};
             if (is_debug) {
-                if (typeId(ColumnType) != column.typeId) {
+                if (typeId(ColumnType) != column.type_id) {
                     const msg = std.mem.concat(gpa, u8, &.{
                         "unexpected type: ",
                         @typeName(ColumnType),
@@ -226,8 +226,8 @@ pub const ArchetypeStorage = struct {
                     @panic(msg);
                 }
             }
-            const columnValues = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &storage.block[column.offset]));
-            return columnValues[row_index];
+            const column_values = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &storage.block[column.offset]));
+            return column_values[row_index];
         }
         return null;
     }
@@ -459,7 +459,7 @@ pub fn Entities(comptime all_components: anytype) type {
             const columns = try allocator.alloc(Column, 1);
             columns[0] = .{
                 .name = "id",
-                .typeId = typeId(EntityID),
+                .type_id = typeId(EntityID),
                 .size = @sizeOf(EntityID),
                 .alignment = @alignOf(EntityID),
                 .offset = undefined,
@@ -575,7 +575,7 @@ pub fn Entities(comptime all_components: anytype) type {
                 mem.copy(Column, columns, archetype.columns);
                 columns[columns.len - 1] = .{
                     .name = name,
-                    .typeId = typeId(@TypeOf(component)),
+                    .type_id = typeId(@TypeOf(component)),
                     .size = @sizeOf(@TypeOf(component)),
                     .alignment = if (@sizeOf(@TypeOf(component)) == 0) 1 else @alignOf(@TypeOf(component)),
                     .offset = undefined,
