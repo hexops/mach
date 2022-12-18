@@ -25,13 +25,12 @@ const Column = struct {
     type_id: TypeId,
     size: u32,
     alignment: u16,
-    offset: usize,
+    index: usize,
 };
 
-fn byAlignmentName(context: void, lhs: Column, rhs: Column) bool {
+fn byTypeId(context: void, lhs: Column, rhs: Column) bool {
     _ = context;
-    if (lhs.alignment < rhs.alignment) return true;
-    return std.mem.lessThan(u8, lhs.name, rhs.name);
+    return @enumToInt(lhs.type_id) < @enumToInt(rhs.type_id);
 }
 
 /// Represents a single archetype, that is, entities which have the same exact set of component
@@ -63,7 +62,7 @@ pub const ArchetypeStorage = struct {
     ///
     /// When necessary, padding is added between the column value *arrays* in order to achieve
     /// alignment.
-    block: []u8,
+    blocks: [][]u8,
 
     /// Calculates the storage.hash value. This is a hash of all the component names, and can
     /// effectively be used to uniquely identify this table within the database.
@@ -76,13 +75,21 @@ pub const ArchetypeStorage = struct {
 
     pub fn deinit(storage: *ArchetypeStorage, gpa: Allocator) void {
         gpa.free(storage.columns);
+
+        if (storage.capacity > 0) {
+            for (storage.blocks) |block| {
+                gpa.free(block);
+            }
+        }
+
+        gpa.free(storage.blocks);
     }
 
-    fn debugValidateRow(storage: *ArchetypeStorage, gpa: Allocator, row: anytype) void {
+    fn debugValidateRow(storage: *ArchetypeStorage, row: anytype) void {
         inline for (std.meta.fields(@TypeOf(row))) |field, index| {
             const column = storage.columns[index];
             if (typeId(field.field_type) != column.type_id) {
-                const msg = std.mem.concat(gpa, u8, &.{
+                const msg = std.mem.concat(storage.allocator, u8, &.{
                     "unexpected type: ",
                     @typeName(field.field_type),
                     " expected: ",
@@ -94,22 +101,22 @@ pub const ArchetypeStorage = struct {
     }
 
     /// appends a new row to this table, with all undefined values.
-    pub fn appendUndefined(storage: *ArchetypeStorage, gpa: Allocator) !u32 {
-        try storage.ensureUnusedCapacity(gpa, 1);
+    pub fn appendUndefined(storage: *ArchetypeStorage) !u32 {
+        try storage.ensureUnusedCapacity(1);
         assert(storage.len < storage.capacity);
         const row_index = storage.len;
         storage.len += 1;
         return row_index;
     }
 
-    pub fn append(storage: *ArchetypeStorage, gpa: Allocator, row: anytype) !u32 {
-        if (is_debug) storage.debugValidateRow(gpa, row);
+    pub fn append(storage: *ArchetypeStorage, row: anytype) !u32 {
+        if (is_debug) storage.debugValidateRow(row);
 
-        try storage.ensureUnusedCapacity(gpa, 1);
+        try storage.ensureUnusedCapacity(1);
         assert(storage.len < storage.capacity);
         storage.len += 1;
 
-        storage.setRow(gpa, storage.len - 1, row);
+        storage.setRow(storage.len - 1, row);
         return storage.len;
     }
 
@@ -118,12 +125,12 @@ pub const ArchetypeStorage = struct {
     }
 
     /// Ensures there is enough unused capacity to store `num_rows`.
-    pub fn ensureUnusedCapacity(storage: *ArchetypeStorage, gpa: Allocator, num_rows: usize) !void {
-        return storage.ensureTotalCapacity(gpa, storage.len + num_rows);
+    pub fn ensureUnusedCapacity(storage: *ArchetypeStorage, num_rows: usize) !void {
+        return storage.ensureTotalCapacity(storage.len + num_rows);
     }
 
     /// Ensures the total capacity is enough to store `new_capacity` rows total.
-    pub fn ensureTotalCapacity(storage: *ArchetypeStorage, gpa: Allocator, new_capacity: usize) !void {
+    pub fn ensureTotalCapacity(storage: *ArchetypeStorage, new_capacity: usize) !void {
         var better_capacity = storage.capacity;
         if (better_capacity >= new_capacity) return;
 
@@ -132,57 +139,43 @@ pub const ArchetypeStorage = struct {
             if (better_capacity >= new_capacity) break;
         }
 
-        return storage.setCapacity(gpa, better_capacity);
+        return storage.setCapacity(better_capacity);
     }
 
     /// Sets the capacity to exactly `new_capacity` rows total
     ///
     /// Asserts `new_capacity >= storage.len`, if you want to shrink capacity then change the len
     /// yourself first.
-    pub fn setCapacity(storage: *ArchetypeStorage, gpa: Allocator, new_capacity: usize) !void {
+    pub fn setCapacity(storage: *ArchetypeStorage, new_capacity: usize) !void {
         assert(storage.capacity >= storage.len);
 
-        // TODO: ensure columns are sorted by alignment
+        // TODO: ensure columns are sorted by type_id
 
-        var new_capacity_bytes: usize = 0;
-        for (storage.columns) |*column| {
-            const max_padding = column.alignment - 1;
-            new_capacity_bytes += max_padding;
-            new_capacity_bytes += new_capacity * column.size;
-        }
-        const new_block = try gpa.alloc(u8, new_capacity_bytes);
+        for (storage.columns) |*column, i| {
+            const old_block = storage.blocks[i];
+            const new_block = try storage.allocator.alloc(u8, new_capacity * column.size);
 
-        var offset: usize = 0;
-        for (storage.columns) |*column| {
-            const addr = @ptrToInt(&new_block[offset]);
-            const aligned_addr = std.mem.alignForward(addr, column.alignment);
-            const padding = aligned_addr - addr;
-            offset += padding;
             if (storage.capacity > 0) {
-                const slice = storage.block[column.offset .. column.offset + storage.capacity * column.size];
-                mem.copy(u8, new_block[offset..], slice);
+                mem.copy(u8, new_block[0..], old_block);
+                storage.allocator.free(old_block);
             }
-            column.offset = offset;
-            offset += new_capacity * column.size;
+
+            storage.blocks[i] = new_block;
         }
 
-        if (storage.capacity > 0) {
-            gpa.free(storage.block);
-        }
-        storage.block = new_block;
         storage.capacity = @intCast(u32, new_capacity);
     }
 
     /// Sets the entire row's values in the table.
-    pub fn setRow(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, row: anytype) void {
-        if (is_debug) storage.debugValidateRow(gpa, row);
+    pub fn setRow(storage: *ArchetypeStorage, row_index: u32, row: anytype) void {
+        if (is_debug) storage.debugValidateRow(row);
 
         const fields = std.meta.fields(@TypeOf(row));
         inline for (fields) |field, index| {
             const ColumnType = field.field_type;
             if (@sizeOf(ColumnType) == 0) continue;
-            const column = storage.columns[index];
-            const column_values = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &storage.block[column.offset]));
+            var block = storage.blocks[index];
+            const column_values = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &block));
             column_values[row_index] = @field(row, field.name);
         }
     }
@@ -218,11 +211,12 @@ pub const ArchetypeStorage = struct {
     /// Swap-removes the specified row with the last row in the table.
     pub fn remove(storage: *ArchetypeStorage, row_index: u32) void {
         if (storage.len > 1) {
-            for (storage.columns) |column| {
-                const dstStart = column.offset + (column.size * row_index);
-                const dst = storage.block[dstStart .. dstStart + (column.size)];
-                const srcStart = column.offset + (column.size * (storage.len - 1));
-                const src = storage.block[srcStart .. srcStart + (column.size)];
+            for (storage.columns) |column, i| {
+                const block = storage.blocks[i];
+                const dstStart = column.size * row_index;
+                const dst = block[dstStart .. dstStart + (column.size)];
+                const srcStart = column.size * (storage.len - 1);
+                const src = block[srcStart .. srcStart + (column.size)];
                 std.mem.copy(u8, dst, src);
             }
         }
@@ -248,7 +242,7 @@ pub const ArchetypeStorage = struct {
     pub fn getColumnValues(storage: *ArchetypeStorage, comptime ColumnType: type) ?[]ColumnType {
         const type_id = typeId(ColumnType);
 
-        for (storage.columns) |column| {
+        for (storage.columns) |column, i| {
             if (column.type_id != type_id) continue;
 
             if (is_debug) {
@@ -262,7 +256,8 @@ pub const ArchetypeStorage = struct {
                     @panic(msg);
                 }
             }
-            const ptr = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &storage.block[column.offset]));
+            var block = storage.blocks[i];
+            const ptr = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &block));
             const slice = ptr[0..storage.capacity];
             return slice;
         }
@@ -271,11 +266,9 @@ pub const ArchetypeStorage = struct {
     }
 
     pub fn getRawColumnValues(storage: *ArchetypeStorage, name: []const u8) ?[]u8 {
-        for (storage.columns) |column| {
+        for (storage.columns) |column, i| {
             if (!std.mem.eql(u8, column.name, name)) continue;
-            const start = column.offset;
-            const end = column.offset + storage.capacity * column.size;
-            return storage.block[start..end];
+            return storage.blocks[i];
         }
 
         return null;
@@ -452,12 +445,14 @@ pub fn Entities(comptime all_components: anytype) type {
             var entities = Self{ .allocator = allocator };
 
             const columns = try allocator.alloc(Column, 1);
+            const blocks = try allocator.alloc([]u8, 1);
+
             columns[0] = .{
                 .name = "id",
                 .type_id = typeId(EntityID),
                 .size = @sizeOf(EntityID),
                 .alignment = @alignOf(EntityID),
-                .offset = undefined,
+                .index = 0,
             };
 
             try entities.archetypes.put(allocator, void_archetype_hash, ArchetypeStorage{
@@ -465,7 +460,7 @@ pub fn Entities(comptime all_components: anytype) type {
                 .len = 0,
                 .capacity = 0,
                 .columns = columns,
-                .block = &[_]u8{},
+                .blocks = blocks,
                 .hash = void_archetype_hash,
             });
 
@@ -477,7 +472,6 @@ pub fn Entities(comptime all_components: anytype) type {
 
             var iter = entities.archetypes.iterator();
             while (iter.next()) |entry| {
-                entities.allocator.free(entry.value_ptr.block);
                 entry.value_ptr.deinit(entities.allocator);
             }
             entities.archetypes.deinit(entities.allocator);
@@ -489,7 +483,7 @@ pub fn Entities(comptime all_components: anytype) type {
             entities.counter += 1;
 
             var void_archetype = entities.archetypes.getPtr(void_archetype_hash).?;
-            const new_row = try void_archetype.append(entities.allocator, .{ .id = new_id });
+            const new_row = try void_archetype.append(.{ .id = new_id });
             const void_pointer = Pointer{
                 .archetype_index = 0, // void archetype is guaranteed to be first index
                 .row_index = new_row,
@@ -567,22 +561,30 @@ pub fn Entities(comptime all_components: anytype) type {
                     assert(entities.archetypes.swapRemove(new_hash));
                     return err;
                 };
+                const blocks = entities.allocator.alloc([]u8, columns.len) catch |err| {
+                    assert(entities.archetypes.swapRemove(new_hash));
+                    return err;
+                };
                 mem.copy(Column, columns, archetype.columns);
                 columns[columns.len - 1] = .{
                     .name = name,
                     .type_id = typeId(@TypeOf(component)),
                     .size = @sizeOf(@TypeOf(component)),
                     .alignment = if (@sizeOf(@TypeOf(component)) == 0) 1 else @alignOf(@TypeOf(component)),
-                    .offset = undefined,
+                    .index = 0,
                 };
-                std.sort.sort(Column, columns, {}, byAlignmentName);
+                std.sort.sort(Column, columns, {}, byTypeId);
+
+                for (columns) |*column, i| {
+                    column.index = i;
+                }
 
                 archetype_entry.value_ptr.* = ArchetypeStorage{
                     .allocator = entities.allocator,
                     .len = 0,
                     .capacity = 0,
                     .columns = columns,
-                    .block = &[_]u8{},
+                    .blocks = blocks,
                     .hash = undefined,
                 };
 
@@ -604,7 +606,7 @@ pub fn Entities(comptime all_components: anytype) type {
 
             // Copy to all component values for our entity from the old archetype storage (archetype)
             // to the new one (current_archetype_storage).
-            const new_row = try current_archetype_storage.appendUndefined(entities.allocator);
+            const new_row = try current_archetype_storage.appendUndefined();
             const old_ptr = entities.entities.get(entity).?;
 
             // Update the storage/columns for all of the existing components on the entity.
@@ -697,10 +699,15 @@ pub fn Entities(comptime all_components: anytype) type {
                     assert(entities.archetypes.swapRemove(new_hash));
                     return err;
                 };
+                const blocks = entities.allocator.alloc([]u8, columns.len) catch |err| {
+                    assert(entities.archetypes.swapRemove(new_hash));
+                    return err;
+                };
                 var i: usize = 0;
                 for (archetype.columns) |column| {
                     if (std.mem.eql(u8, column.name, name)) continue;
                     columns[i] = column;
+                    columns[i].index = i;
                     i += 1;
                 }
 
@@ -709,7 +716,7 @@ pub fn Entities(comptime all_components: anytype) type {
                     .len = 0,
                     .capacity = 0,
                     .columns = columns,
-                    .block = &[_]u8{},
+                    .blocks = blocks,
                     .hash = undefined,
                 };
 
@@ -721,7 +728,7 @@ pub fn Entities(comptime all_components: anytype) type {
 
             // Copy to all component values for our entity from the old archetype storage (archetype)
             // to the new one (current_archetype_storage).
-            const new_row = try current_archetype_storage.appendUndefined(entities.allocator);
+            const new_row = try current_archetype_storage.appendUndefined();
             const old_ptr = entities.entities.get(entity).?;
 
             // Update the storage/columns for all of the existing components on the entity that exist in
@@ -847,9 +854,9 @@ test "example" {
     // Components for a given archetype.
     var columns = world.archetypes.get(archetypes[2]).?.columns;
     try testing.expectEqual(@as(usize, 3), columns.len);
-    try testing.expectEqualStrings("game.location", columns[0].name);
+    try testing.expectEqualStrings("id", columns[0].name);
     try testing.expectEqualStrings("game.name", columns[1].name);
-    try testing.expectEqualStrings("id", columns[2].name);
+    try testing.expectEqualStrings("game.location", columns[2].name);
 
     // Archetype resolved via entity ID
     var player2_archetype = world.archetypeByID(player2);
