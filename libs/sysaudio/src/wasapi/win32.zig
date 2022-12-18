@@ -217,6 +217,22 @@ pub extern "ole32" fn CoCreateInstance(
     riid: *const Guid,
     ppv: ?*?*anyopaque,
 ) callconv(WINAPI) HRESULT;
+pub extern "kernel32" fn CreateEventA(
+    lpEventAttributes: ?*SECURITY_ATTRIBUTES,
+    bManualReset: BOOL,
+    bInitialState: BOOL,
+    lpName: ?[*:0]const u8,
+) callconv(WINAPI) ?HANDLE;
+pub extern "kernel32" fn WaitForSingleObject(
+    hHandle: ?HANDLE,
+    dwMilliseconds: u32,
+) callconv(WINAPI) u32;
+pub const INFINITE = 4294967295;
+pub const SECURITY_ATTRIBUTES = extern struct {
+    nLength: u32,
+    lpSecurityDescriptor: ?*anyopaque,
+    bInheritHandle: BOOL,
+};
 pub const IID_IUnknown = &Guid.initString("00000000-0000-0000-c000-000000000046");
 pub const IUnknown = extern struct {
     pub const VTable = extern struct {
@@ -1576,7 +1592,14 @@ pub const IMMEndpoint = extern struct {
     }
     pub usingnamespace MethodMixin(@This());
 };
+pub const AUDCLNT_STREAMFLAGS_CROSSPROCESS = 65536;
+pub const AUDCLNT_STREAMFLAGS_LOOPBACK = 131072;
+pub const AUDCLNT_STREAMFLAGS_EVENTCALLBACK = 262144;
 pub const AUDCLNT_STREAMFLAGS_NOPERSIST = 524288;
+pub const AUDCLNT_STREAMFLAGS_RATEADJUST = 1048576;
+pub const AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY = 134217728;
+pub const AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM = 2147483648;
+pub const AUDCLNT_SESSIONFLAGS_EXPIREWHENUNOWNED = 268435456;
 pub const PKEY_Device_FriendlyName = PROPERTYKEY{ .fmtid = Guid.initString("a45c254e-df1c-4efd-8020-67d146a850e0"), .pid = 14 };
 pub const CLSID_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT = &Guid.initString("00000003-0000-0010-8000-00aa00389b71");
 pub const SPEAKER_FRONT_LEFT = 1;
