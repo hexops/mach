@@ -81,10 +81,10 @@ pub const ArchetypeStorage = struct {
     fn debugValidateRow(storage: *ArchetypeStorage, gpa: Allocator, row: anytype) void {
         inline for (std.meta.fields(@TypeOf(row))) |field, index| {
             const column = storage.columns[index];
-            if (typeId(field.field_type) != column.type_id) {
+            if (typeId(field.type) != column.type_id) {
                 const msg = std.mem.concat(gpa, u8, &.{
                     "unexpected type: ",
-                    @typeName(field.field_type),
+                    @typeName(field.type),
                     " expected: ",
                     column.name,
                 }) catch |err| @panic(@errorName(err));
@@ -179,7 +179,7 @@ pub const ArchetypeStorage = struct {
 
         const fields = std.meta.fields(@TypeOf(row));
         inline for (fields) |field, index| {
-            const ColumnType = field.field_type;
+            const ColumnType = field.type;
             if (@sizeOf(ColumnType) == 0) continue;
             const column = storage.columns[index];
             const column_values = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &storage.block[column.offset]));
@@ -375,10 +375,10 @@ pub fn Entities(comptime all_components: anytype) type {
             const namespaces = std.meta.fields(@TypeOf(all_components));
             var fields: [namespaces.len]std.builtin.Type.UnionField = undefined;
             inline for (namespaces) |namespace, i| {
-                const component_enum = std.meta.FieldEnum(namespace.field_type);
+                const component_enum = std.meta.FieldEnum(namespace.type);
                 fields[i] = .{
                     .name = namespace.name,
-                    .field_type = component_enum,
+                    .type = component_enum,
                     .alignment = @alignOf(component_enum),
                 };
             }
