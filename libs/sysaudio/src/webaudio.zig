@@ -70,24 +70,24 @@ pub const Context = struct {
     pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
         const context_options = js.createMap();
         defer context_options.deinit();
-        context_options.set("sampleRate", js.createNumber(@intToFloat(f64, options.sample_rate)));
+        context_options.set("sampleRate", js.createNumber(options.sample_rate));
 
         const audio_context = js.constructType("AudioContext", &.{context_options.toValue()});
         const gain_node = audio_context.call("createGain", &.{
             js.createNumber(1),
             js.createNumber(0),
-            js.createNumber(@intToFloat(f64, device.channels.len)),
+            js.createNumber(device.channels.len),
         }).view(.object);
         const process_node = audio_context.call("createScriptProcessor", &.{
             js.createNumber(channel_size),
-            js.createNumber(@intToFloat(f64, device.channels.len)),
+            js.createNumber(device.channels.len),
         }).view(.object);
 
         var player = try self.allocator.create(Player);
         errdefer self.allocator.destroy(player);
 
         var captures = try self.allocator.alloc(js.Value, 1);
-        captures[0] = js.createNumber(@intToFloat(f64, @ptrToInt(player)));
+        captures[0] = js.createNumber(@ptrToInt(player));
 
         const document = js.global().get("document").view(.object);
         defer document.deinit();
@@ -190,7 +190,7 @@ pub const Player = struct {
             self.buf_js.copyBytes(self.buf[i * channel_size_bytes .. (i + 1) * channel_size_bytes]);
             const buf_f32_js = js.constructType("Float32Array", &.{ self.buf_js.get("buffer"), self.buf_js.get("byteOffset"), js.createNumber(channel_size) });
             defer buf_f32_js.deinit();
-            _ = output_buffer.call("copyToChannel", &.{ buf_f32_js.toValue(), js.createNumber(@intToFloat(f64, i)) });
+            _ = output_buffer.call("copyToChannel", &.{ buf_f32_js.toValue(), js.createNumber(i) });
         }
 
         return js.createUndefined();
