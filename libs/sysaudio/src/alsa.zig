@@ -13,7 +13,7 @@ pub const Context = struct {
 
     const Watcher = struct {
         deviceChangeFn: main.DeviceChangeFn,
-        userdata: ?*anyopaque,
+        user_data: ?*anyopaque,
         thread: std.Thread,
         aborted: std.atomic.Atomic(bool),
         notify_fd: std.os.fd_t,
@@ -71,7 +71,7 @@ pub const Context = struct {
 
                     break :blk .{
                         .deviceChangeFn = deviceChangeFn,
-                        .userdata = options.userdata,
+                        .user_data = options.user_data,
                         .aborted = .{ .value = false },
                         .notify_fd = notify_fd,
                         .notify_wd = notify_wd,
@@ -172,7 +172,7 @@ pub const Context = struct {
             }
 
             if (scan) {
-                watcher.deviceChangeFn(self.watcher.?.userdata);
+                watcher.deviceChangeFn(self.watcher.?.user_data);
                 scan = false;
             }
         }
@@ -410,24 +410,26 @@ pub const Context = struct {
                 return error.IncompatibleDevice;
         }
 
-        return .{
-            .alsa = .{
-                .allocator = self.allocator,
-                .thread = undefined,
-                .mutex = .{},
-                ._channels = device.channels,
-                ._format = format,
-                .sample_rate = sample_rate,
-                .writeFn = writeFn,
-                .aborted = .{ .value = false },
-                .sample_buffer = try self.allocator.alloc(u8, period_size * format.frameSize(device.channels.len)),
-                .period_size = period_size,
-                .pcm = pcm.?,
-                .mixer = mixer.?,
-                .selem = selem.?,
-                .mixer_elm = mixer_elm.?,
-            },
+        var player = try self.allocator.create(Player);
+        player.* = .{
+            .allocator = self.allocator,
+            .thread = undefined,
+            .mutex = .{},
+            .aborted = .{ .value = false },
+            .sample_buffer = try self.allocator.alloc(u8, period_size * format.frameSize(device.channels.len)),
+            .period_size = period_size,
+            .pcm = pcm.?,
+            .mixer = mixer.?,
+            .selem = selem.?,
+            .mixer_elm = mixer_elm.?,
+            .sample_rate = sample_rate,
+            .writeFn = writeFn,
+            .user_data = options.user_data,
+            .channels = device.channels,
+            .format = format,
+            .write_step = format.frameSize(device.channels.len),
         };
+        return .{ .alsa = player };
     }
 };
 
@@ -435,10 +437,6 @@ pub const Player = struct {
     allocator: std.mem.Allocator,
     thread: std.Thread,
     mutex: std.Thread.Mutex,
-    _channels: []main.Channel,
-    _format: main.Format,
-    sample_rate: u24,
-    writeFn: main.WriteFn,
     aborted: std.atomic.Atomic(bool),
     sample_buffer: []u8,
     period_size: c_ulong,
@@ -446,6 +444,13 @@ pub const Player = struct {
     mixer: *c.snd_mixer_t,
     selem: *c.snd_mixer_selem_id_t,
     mixer_elm: *c.snd_mixer_elem_t,
+    writeFn: main.WriteFn,
+    user_data: ?*anyopaque,
+    sample_rate: u24,
+
+    channels: []main.Channel,
+    format: main.Format,
+    write_step: u8,
 
     pub fn deinit(self: *Player) void {
         self.aborted.store(true, .Unordered);
@@ -457,6 +462,7 @@ pub const Player = struct {
         _ = c.snd_pcm_hw_free(self.pcm);
 
         self.allocator.free(self.sample_buffer);
+        self.allocator.destroy(self);
     }
 
     pub fn start(self: *Player) !void {
@@ -471,16 +477,14 @@ pub const Player = struct {
     }
 
     fn writeLoop(self: *Player) void {
-        var parent = @fieldParentPtr(main.Player, "data", @ptrCast(*backends.BackendPlayer, self));
-
-        for (self.channels()) |*ch, i| {
-            ch.*.ptr = self.sample_buffer.ptr + self.format().frameSize(i);
+        for (self.channels) |*ch, i| {
+            ch.*.ptr = self.sample_buffer.ptr + self.format.frameSize(i);
         }
 
         while (!self.aborted.load(.Unordered)) {
             var frames_left = self.period_size;
             while (frames_left > 0) {
-                self.writeFn(parent, frames_left);
+                self.writeFn(self.user_data, frames_left);
                 const n = c.snd_pcm_writei(self.pcm, self.sample_buffer.ptr, frames_left);
                 if (n < 0) {
                     if (c.snd_pcm_recover(self.pcm, @intCast(c_int, n), 1) < 0) {
@@ -554,19 +558,6 @@ pub const Player = struct {
         return @intToFloat(f32, vol) / @intToFloat(f32, max_vol - min_vol);
     }
 
-    pub fn writeRaw(self: *Player, channel: main.Channel, frame: usize, sample: anytype) void {
-        var ptr = channel.ptr + frame * self.format().frameSize(self.channels().len);
-        std.mem.bytesAsValue(@TypeOf(sample), ptr[0..@sizeOf(@TypeOf(sample))]).* = sample;
-    }
-
-    pub fn channels(self: Player) []main.Channel {
-        return self._channels;
-    }
-
-    pub fn format(self: Player) main.Format {
-        return self._format;
-    }
-
     pub fn sampleRate(self: Player) u24 {
         return self.sample_rate;
     }
@@ -595,7 +586,6 @@ pub fn toAlsaFormat(format: main.Format) !c.snd_pcm_format_t {
         .i24_4b => if (is_little) c.SND_PCM_FORMAT_S24_LE else c.SND_PCM_FORMAT_S24_BE,
         .i32 => if (is_little) c.SND_PCM_FORMAT_S32_LE else c.SND_PCM_FORMAT_S32_BE,
         .f32 => if (is_little) c.SND_PCM_FORMAT_FLOAT_LE else c.SND_PCM_FORMAT_FLOAT_BE,
-        .f64 => if (is_little) c.SND_PCM_FORMAT_FLOAT64_LE else c.SND_PCM_FORMAT_FLOAT64_BE,
     };
 }
 

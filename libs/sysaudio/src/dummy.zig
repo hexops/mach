@@ -44,19 +44,6 @@ pub const Context = struct {
             .devices_info = util.DevicesInfo.init(),
         };
 
-        try self.devices_info.list.append(self.allocator, dummy_playback);
-        try self.devices_info.list.append(self.allocator, dummy_capture);
-        self.devices_info.list.items[0].channels = try allocator.alloc(main.Channel, 1);
-        self.devices_info.list.items[0].channels[0] = .{
-            .id = .front_center,
-        };
-        self.devices_info.list.items[1].channels = try allocator.alloc(main.Channel, 1);
-        self.devices_info.list.items[1].channels[0] = .{
-            .id = .front_center,
-        };
-        self.devices_info.setDefault(.playback, 0);
-        self.devices_info.setDefault(.capture, 1);
-
         return .{ .dummy = self };
     }
 
@@ -68,7 +55,22 @@ pub const Context = struct {
     }
 
     pub fn refresh(self: *Context) !void {
-        _ = self;
+        for (self.devices_info.list.items) |d|
+            freeDevice(self.allocator, d);
+        self.devices_info.clear(self.allocator);
+
+        try self.devices_info.list.append(self.allocator, dummy_playback);
+        try self.devices_info.list.append(self.allocator, dummy_capture);
+        self.devices_info.list.items[0].channels = try self.allocator.alloc(main.Channel, 1);
+        self.devices_info.list.items[0].channels[0] = .{
+            .id = .front_center,
+        };
+        self.devices_info.list.items[1].channels = try self.allocator.alloc(main.Channel, 1);
+        self.devices_info.list.items[1].channels[0] = .{
+            .id = .front_center,
+        };
+        self.devices_info.setDefault(.playback, 0);
+        self.devices_info.setDefault(.capture, 1);
     }
 
     pub fn devices(self: Context) []const main.Device {
@@ -80,29 +82,33 @@ pub const Context = struct {
     }
 
     pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
-        _ = self;
         _ = writeFn;
-        return .{
-            .dummy = .{
-                ._channels = device.channels,
-                ._format = options.format,
-                .sample_rate = options.sample_rate,
-                .is_paused = false,
-                .vol = 1.0,
-            },
+        var player = try self.allocator.create(Player);
+        player.* = .{
+            .allocator = self.allocator,
+            .sample_rate = options.sample_rate,
+            .is_paused = false,
+            .vol = 1.0,
+            .channels = device.channels,
+            .format = options.format,
+            .write_step = 0,
         };
+        return .{ .dummy = player };
     }
 };
 
 pub const Player = struct {
-    _channels: []main.Channel,
-    _format: main.Format,
+    allocator: std.mem.Allocator,
     sample_rate: u24,
     is_paused: bool,
     vol: f32,
 
-    pub fn deinit(self: Player) void {
-        _ = self;
+    channels: []main.Channel,
+    format: main.Format,
+    write_step: u8,
+
+    pub fn deinit(self: *Player) void {
+        self.allocator.destroy(self);
     }
 
     pub fn start(self: Player) !void {
@@ -127,21 +133,6 @@ pub const Player = struct {
 
     pub fn volume(self: Player) !f32 {
         return self.vol;
-    }
-
-    pub fn writeRaw(self: Player, channel: main.Channel, frame: usize, sample: anytype) void {
-        _ = self;
-        _ = channel;
-        _ = frame;
-        _ = sample;
-    }
-
-    pub fn channels(self: Player) []main.Channel {
-        return self._channels;
-    }
-
-    pub fn format(self: Player) main.Format {
-        return self._format;
     }
 
     pub fn sampleRate(self: Player) u24 {

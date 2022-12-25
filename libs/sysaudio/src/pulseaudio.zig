@@ -18,7 +18,7 @@ pub const Context = struct {
 
     const Watcher = struct {
         deviceChangeFn: main.DeviceChangeFn,
-        userdata: ?*anyopaque,
+        user_data: ?*anyopaque,
     };
 
     pub fn init(allocator: std.mem.Allocator, options: main.Context.Options) !backends.BackendContext {
@@ -44,7 +44,7 @@ pub const Context = struct {
             .default_source = null,
             .watcher = if (options.deviceChangeFn) |dcf| .{
                 .deviceChangeFn = dcf,
-                .userdata = options.userdata,
+                .user_data = options.user_data,
             } else null,
         };
 
@@ -97,13 +97,13 @@ pub const Context = struct {
         return .{ .pulseaudio = self };
     }
 
-    fn subscribeOp(_: ?*c.pa_context, _: c.pa_subscription_event_type_t, _: u32, userdata: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), userdata.?));
-        self.watcher.?.deviceChangeFn(self.watcher.?.userdata);
+    fn subscribeOp(_: ?*c.pa_context, _: c.pa_subscription_event_type_t, _: u32, user_data: ?*anyopaque) callconv(.C) void {
+        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
+        self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
     }
 
-    fn contextStateOp(ctx: ?*c.pa_context, userdata: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), userdata.?));
+    fn contextStateOp(ctx: ?*c.pa_context, user_data: ?*anyopaque) callconv(.C) void {
+        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
 
         self.ctx_state = c.pa_context_get_state(ctx);
         c.pa_threaded_mainloop_signal(self.main_loop, 0);
@@ -159,8 +159,8 @@ pub const Context = struct {
         }
     }
 
-    fn serverInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_server_info, userdata: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), userdata.?));
+    fn serverInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_server_info, user_data: ?*anyopaque) callconv(.C) void {
+        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
 
         defer c.pa_threaded_mainloop_signal(self.main_loop, 0);
         self.default_sink = self.allocator.dupeZ(u8, std.mem.span(info.*.default_sink_name)) catch return;
@@ -170,8 +170,8 @@ pub const Context = struct {
         };
     }
 
-    fn sinkInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_sink_info, eol: c_int, userdata: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), userdata.?));
+    fn sinkInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_sink_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
+        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
         if (eol != 0) {
             c.pa_threaded_mainloop_signal(self.main_loop, 0);
             return;
@@ -180,8 +180,8 @@ pub const Context = struct {
         self.deviceInfoOp(info, .playback) catch return;
     }
 
-    fn sourceInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_source_info, eol: c_int, userdata: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), userdata.?));
+    fn sourceInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_source_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
+        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
         if (eol != 0) {
             c.pa_threaded_mainloop_signal(self.main_loop, 0);
             return;
@@ -274,19 +274,22 @@ pub const Context = struct {
             }
         }
 
-        return .{
-            .pulseaudio = .{
-                .main_loop = self.main_loop,
-                .ctx = self.ctx,
-                .stream = stream.?,
-                ._channels = device.channels,
-                ._format = format,
-                .sample_rate = sample_rate,
-                .writeFn = writeFn,
-                .write_ptr = undefined,
-                .vol = 1.0,
-            },
+        var player = try self.allocator.create(Player);
+        player.* = .{
+            .allocator = self.allocator,
+            .main_loop = self.main_loop,
+            .ctx = self.ctx,
+            .stream = stream.?,
+            .write_ptr = undefined,
+            .vol = 1.0,
+            .sample_rate = sample_rate,
+            .writeFn = writeFn,
+            .user_data = options.user_data,
+            .channels = device.channels,
+            .format = format,
+            .write_step = format.frameSize(device.channels.len),
         };
+        return .{ .pulseaudio = player };
     }
 
     const StreamStatus = struct {
@@ -298,8 +301,8 @@ pub const Context = struct {
         },
     };
 
-    fn streamStateOp(stream: ?*c.pa_stream, userdata: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*StreamStatus, @alignCast(@alignOf(*StreamStatus), userdata.?));
+    fn streamStateOp(stream: ?*c.pa_stream, user_data: ?*anyopaque) callconv(.C) void {
+        var self = @ptrCast(*StreamStatus, @alignCast(@alignOf(*StreamStatus), user_data.?));
 
         switch (c.pa_stream_get_state(stream)) {
             c.PA_STREAM_UNCONNECTED,
@@ -320,15 +323,19 @@ pub const Context = struct {
 };
 
 pub const Player = struct {
+    allocator: std.mem.Allocator,
     main_loop: *c.pa_threaded_mainloop,
     ctx: *c.pa_context,
     stream: *c.pa_stream,
-    _channels: []main.Channel,
-    _format: main.Format,
-    sample_rate: u24,
-    writeFn: main.WriteFn,
     write_ptr: [*]u8,
     vol: f32,
+    sample_rate: u24,
+    writeFn: main.WriteFn,
+    user_data: ?*anyopaque,
+
+    channels: []main.Channel,
+    format: main.Format,
+    write_step: u8,
 
     pub fn deinit(self: *Player) void {
         c.pa_threaded_mainloop_lock(self.main_loop);
@@ -352,9 +359,8 @@ pub const Player = struct {
         c.pa_stream_set_write_callback(self.stream, playbackStreamWriteOp, self);
     }
 
-    fn playbackStreamWriteOp(_: ?*c.pa_stream, nbytes: usize, userdata: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), userdata.?));
-        var parent = @fieldParentPtr(main.Player, "data", @ptrCast(*backends.BackendPlayer, self));
+    fn playbackStreamWriteOp(_: ?*c.pa_stream, nbytes: usize, user_data: ?*anyopaque) callconv(.C) void {
+        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), user_data.?));
 
         var frames_left = nbytes;
         while (frames_left > 0) {
@@ -371,12 +377,12 @@ pub const Player = struct {
                 return;
             }
 
-            for (self.channels()) |*ch, i| {
-                ch.*.ptr = self.write_ptr + self.format().frameSize(i);
+            for (self.channels) |*ch, i| {
+                ch.*.ptr = self.write_ptr + self.format.frameSize(i);
             }
 
-            const frames = chunk_size / self.format().frameSize(self.channels().len);
-            self.writeFn(parent, frames);
+            const frames = chunk_size / self.format.frameSize(self.channels.len);
+            self.writeFn(self.user_data, frames);
 
             if (c.pa_stream_write(self.stream, self.write_ptr, chunk_size, null, 0, c.PA_SEEK_RELATIVE) != 0) {
                 if (std.debug.runtime_safety) unreachable;
@@ -422,7 +428,7 @@ pub const Player = struct {
 
         var cvolume: c.pa_cvolume = undefined;
         _ = c.pa_cvolume_init(&cvolume);
-        _ = c.pa_cvolume_set(&cvolume, @intCast(c_uint, self.channels().len), c.pa_sw_volume_from_linear(vol));
+        _ = c.pa_cvolume_set(&cvolume, @intCast(c_uint, self.channels.len), c.pa_sw_volume_from_linear(vol));
 
         performOperation(
             self.main_loop,
@@ -436,8 +442,8 @@ pub const Player = struct {
         );
     }
 
-    fn successOp(_: ?*c.pa_context, success: c_int, userdata: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), userdata.?));
+    fn successOp(_: ?*c.pa_context, success: c_int, user_data: ?*anyopaque) callconv(.C) void {
+        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), user_data.?));
         if (success == 1)
             c.pa_threaded_mainloop_signal(self.main_loop, 0);
     }
@@ -459,8 +465,8 @@ pub const Player = struct {
         return self.vol;
     }
 
-    fn sinkInputInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_sink_input_info, eol: c_int, userdata: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), userdata.?));
+    fn sinkInputInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_sink_input_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
+        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), user_data.?));
 
         if (eol != 0) {
             c.pa_threaded_mainloop_signal(self.main_loop, 0);
@@ -468,19 +474,6 @@ pub const Player = struct {
         }
 
         self.vol = @intToFloat(f32, info.*.volume.values[0]) / @intToFloat(f32, c.PA_VOLUME_NORM);
-    }
-
-    pub fn writeRaw(self: *Player, channel: main.Channel, frame: usize, sample: anytype) void {
-        var ptr = channel.ptr + self.format().frameSize(self.channels().len) * frame;
-        std.mem.bytesAsValue(@TypeOf(sample), ptr[0..@sizeOf(@TypeOf(sample))]).* = sample;
-    }
-
-    pub fn channels(self: Player) []main.Channel {
-        return self._channels;
-    }
-
-    pub fn format(self: Player) main.Format {
-        return self._format;
     }
 
     pub fn sampleRate(self: Player) u24 {
@@ -552,7 +545,7 @@ pub fn toPAFormat(format: main.Format) !c.pa_sample_format_t {
         .i32 => if (is_little) c.PA_SAMPLE_S32LE else c.PA_SAMPLE_S32BE,
         .f32 => if (is_little) c.PA_SAMPLE_FLOAT32LE else c.PA_SAMPLE_FLOAT32BE,
 
-        .f64, .i8 => error.Invalid,
+        .i8 => error.Invalid,
     };
 }
 

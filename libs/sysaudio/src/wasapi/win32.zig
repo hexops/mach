@@ -1272,6 +1272,162 @@ pub const IAudioClient = extern struct {
     }
     pub usingnamespace MethodMixin(@This());
 };
+pub const AUDCLNT_STREAMOPTIONS = enum(u32) {
+    NONE = 0,
+    RAW = 1,
+    MATCH_FORMAT = 2,
+    AMBISONICS = 4,
+};
+pub const AudioClientProperties = extern struct {
+    cbSize: u32,
+    bIsOffload: BOOL,
+    eCategory: AUDIO_STREAM_CATEGORY,
+    Options: AUDCLNT_STREAMOPTIONS,
+};
+pub const AUDIO_STREAM_CATEGORY = enum(i32) {
+    Other = 0,
+    ForegroundOnlyMedia = 1,
+    Communications = 3,
+    Alerts = 4,
+    SoundEffects = 5,
+    GameEffects = 6,
+    GameMedia = 7,
+    GameChat = 8,
+    Speech = 9,
+    Movie = 10,
+    Media = 11,
+    FarFieldSpeech = 12,
+    UniformSpeech = 13,
+    VoiceTyping = 14,
+};
+const IID_IAudioClient2 = &Guid.initString("726778cd-f60a-4eda-82de-e47610cd78aa");
+pub const IAudioClient2 = extern struct {
+    pub const VTable = extern struct {
+        base: IAudioClient.VTable,
+        IsOffloadCapable: switch (@import("builtin").zig_backend) {
+            .stage1 => fn (
+                self: *const IAudioClient2,
+                Category: AUDIO_STREAM_CATEGORY,
+                pbOffloadCapable: ?*BOOL,
+            ) callconv(WINAPI) HRESULT,
+            else => *const fn (
+                self: *const IAudioClient2,
+                Category: AUDIO_STREAM_CATEGORY,
+                pbOffloadCapable: ?*BOOL,
+            ) callconv(WINAPI) HRESULT,
+        },
+        SetClientProperties: switch (@import("builtin").zig_backend) {
+            .stage1 => fn (
+                self: *const IAudioClient2,
+                pProperties: ?*const AudioClientProperties,
+            ) callconv(WINAPI) HRESULT,
+            else => *const fn (
+                self: *const IAudioClient2,
+                pProperties: ?*const AudioClientProperties,
+            ) callconv(WINAPI) HRESULT,
+        },
+        GetBufferSizeLimits: switch (@import("builtin").zig_backend) {
+            .stage1 => fn (
+                self: *const IAudioClient2,
+                pFormat: ?*const WAVEFORMATEX,
+                bEventDriven: BOOL,
+                phnsMinBufferDuration: ?*i64,
+                phnsMaxBufferDuration: ?*i64,
+            ) callconv(WINAPI) HRESULT,
+            else => *const fn (
+                self: *const IAudioClient2,
+                pFormat: ?*const WAVEFORMATEX,
+                bEventDriven: BOOL,
+                phnsMinBufferDuration: ?*i64,
+                phnsMaxBufferDuration: ?*i64,
+            ) callconv(WINAPI) HRESULT,
+        },
+    };
+    vtable: *const VTable,
+    pub fn MethodMixin(comptime T: type) type {
+        return struct {
+            pub usingnamespace IAudioClient.MethodMixin(T);
+            pub inline fn IsOffloadCapable(self: *const T, Category: AUDIO_STREAM_CATEGORY, pbOffloadCapable: ?*BOOL) HRESULT {
+                return @ptrCast(*const IAudioClient2.VTable, self.vtable).IsOffloadCapable(@ptrCast(*const IAudioClient2, self), Category, pbOffloadCapable);
+            }
+            pub inline fn SetClientProperties(self: *const T, pProperties: ?*const AudioClientProperties) HRESULT {
+                return @ptrCast(*const IAudioClient2.VTable, self.vtable).SetClientProperties(@ptrCast(*const IAudioClient2, self), pProperties);
+            }
+            pub inline fn GetBufferSizeLimits(self: *const T, pFormat: ?*const WAVEFORMATEX, bEventDriven: BOOL, phnsMinBufferDuration: ?*i64, phnsMaxBufferDuration: ?*i64) HRESULT {
+                return @ptrCast(*const IAudioClient2.VTable, self.vtable).GetBufferSizeLimits(@ptrCast(*const IAudioClient2, self), pFormat, bEventDriven, phnsMinBufferDuration, phnsMaxBufferDuration);
+            }
+        };
+    }
+    pub usingnamespace MethodMixin(@This());
+};
+pub const IID_IAudioClient3 = &Guid.initString("7ed4ee07-8e67-4cd4-8c1a-2b7a5987ad42");
+pub const IAudioClient3 = extern struct {
+    pub const VTable = extern struct {
+        base: IAudioClient2.VTable,
+        GetSharedModeEnginePeriod: switch (@import("builtin").zig_backend) {
+            .stage1 => fn (
+                self: *const IAudioClient3,
+                pFormat: ?*const WAVEFORMATEX,
+                pDefaultPeriodInFrames: ?*u32,
+                pFundamentalPeriodInFrames: ?*u32,
+                pMinPeriodInFrames: ?*u32,
+                pMaxPeriodInFrames: ?*u32,
+            ) callconv(WINAPI) HRESULT,
+            else => *const fn (
+                self: *const IAudioClient3,
+                pFormat: ?*const WAVEFORMATEX,
+                pDefaultPeriodInFrames: ?*u32,
+                pFundamentalPeriodInFrames: ?*u32,
+                pMinPeriodInFrames: ?*u32,
+                pMaxPeriodInFrames: ?*u32,
+            ) callconv(WINAPI) HRESULT,
+        },
+        GetCurrentSharedModeEnginePeriod: switch (@import("builtin").zig_backend) {
+            .stage1 => fn (
+                self: *const IAudioClient3,
+                ppFormat: ?*?*WAVEFORMATEX,
+                pCurrentPeriodInFrames: ?*u32,
+            ) callconv(WINAPI) HRESULT,
+            else => *const fn (
+                self: *const IAudioClient3,
+                ppFormat: ?*?*WAVEFORMATEX,
+                pCurrentPeriodInFrames: ?*u32,
+            ) callconv(WINAPI) HRESULT,
+        },
+        InitializeSharedAudioStream: switch (@import("builtin").zig_backend) {
+            .stage1 => fn (
+                self: *const IAudioClient3,
+                StreamFlags: u32,
+                PeriodInFrames: u32,
+                pFormat: ?*const WAVEFORMATEX,
+                AudioSessionGuid: ?*const Guid,
+            ) callconv(WINAPI) HRESULT,
+            else => *const fn (
+                self: *const IAudioClient3,
+                StreamFlags: u32,
+                PeriodInFrames: u32,
+                pFormat: ?*const WAVEFORMATEX,
+                AudioSessionGuid: ?*const Guid,
+            ) callconv(WINAPI) HRESULT,
+        },
+    };
+    vtable: *const VTable,
+    pub fn MethodMixin(comptime T: type) type {
+        return struct {
+            pub usingnamespace IAudioClient2.MethodMixin(T);
+            pub inline fn GetSharedModeEnginePeriod(self: *const T, pFormat: ?*const WAVEFORMATEX, pDefaultPeriodInFrames: ?*u32, pFundamentalPeriodInFrames: ?*u32, pMinPeriodInFrames: ?*u32, pMaxPeriodInFrames: ?*u32) HRESULT {
+                return @ptrCast(*const IAudioClient3.VTable, self.vtable).GetSharedModeEnginePeriod(@ptrCast(*const IAudioClient3, self), pFormat, pDefaultPeriodInFrames, pFundamentalPeriodInFrames, pMinPeriodInFrames, pMaxPeriodInFrames);
+            }
+            pub inline fn GetCurrentSharedModeEnginePeriod(self: *const T, ppFormat: ?*?*WAVEFORMATEX, pCurrentPeriodInFrames: ?*u32) HRESULT {
+                return @ptrCast(*const IAudioClient3.VTable, self.vtable).GetCurrentSharedModeEnginePeriod(@ptrCast(*const IAudioClient3, self), ppFormat, pCurrentPeriodInFrames);
+            }
+            pub inline fn InitializeSharedAudioStream(self: *const T, StreamFlags: u32, PeriodInFrames: u32, pFormat: ?*const WAVEFORMATEX, AudioSessionGuid: ?*const Guid) HRESULT {
+                return @ptrCast(*const IAudioClient3.VTable, self.vtable).InitializeSharedAudioStream(@ptrCast(*const IAudioClient3, self), StreamFlags, PeriodInFrames, pFormat, AudioSessionGuid);
+            }
+        };
+    }
+    pub usingnamespace MethodMixin(@This());
+};
 pub extern "ole32" fn CoTaskMemFree(pv: ?*anyopaque) callconv(WINAPI) void;
 pub const IID_IAudioRenderClient = &Guid.initString("f294acfc-3146-4483-a7bf-addca7c260e2");
 pub const IAudioRenderClient = extern struct {

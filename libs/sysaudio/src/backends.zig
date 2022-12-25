@@ -20,29 +20,47 @@ pub const BackendContext = switch (builtin.os.tag) {
         wasapi: *@import("wasapi.zig").Context,
         dummy: *@import("dummy.zig").Context,
     },
+    .freestanding => switch (builtin.cpu.arch) {
+        .wasm32 => union(enum) {
+            webaudio: *@import("webaudio.zig").Context,
+            dummy: *@import("dummy.zig").Context,
+        },
+        else => union(enum) {
+            dummy: *@import("dummy.zig").Context,
+        },
+    },
     else => union(enum) {
         dummy: *@import("dummy.zig").Context,
     },
 };
 pub const BackendPlayer = switch (builtin.os.tag) {
     .linux => union(enum) {
-        pulseaudio: @import("pulseaudio.zig").Player,
-        alsa: @import("alsa.zig").Player,
-        jack: @import("jack.zig").Player,
-        dummy: @import("dummy.zig").Player,
+        pulseaudio: *@import("pulseaudio.zig").Player,
+        alsa: *@import("alsa.zig").Player,
+        jack: *@import("jack.zig").Player,
+        dummy: *@import("dummy.zig").Player,
     },
     .freebsd, .netbsd, .openbsd, .solaris => union(enum) {
-        pulseaudio: @import("pulseaudio.zig").Player,
-        dummy: @import("dummy.zig").Player,
+        pulseaudio: *@import("pulseaudio.zig").Player,
+        dummy: *@import("dummy.zig").Player,
     },
     .macos, .ios, .watchos, .tvos => union(enum) {
-        dummy: @import("dummy.zig").Player,
+        dummy: *@import("dummy.zig").Player,
     },
     .windows => union(enum) {
-        wasapi: @import("wasapi.zig").Player,
-        dummy: @import("dummy.zig").Player,
+        wasapi: *@import("wasapi.zig").Player,
+        dummy: *@import("dummy.zig").Player,
+    },
+    .freestanding => switch (builtin.cpu.arch) {
+        .wasm32 => union(enum) {
+            webaudio: *@import("webaudio.zig").Player,
+            dummy: *@import("dummy.zig").Player,
+        },
+        else => union(enum) {
+            dummy: *@import("dummy.zig").Player,
+        },
     },
     else => union(enum) {
-        dummy: @import("dummy.zig").Player,
+        dummy: *@import("dummy.zig").Player,
     },
 };
