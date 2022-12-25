@@ -115,6 +115,9 @@ pub fn build(b: *Builder) !void {
         const shared_lib = try buildSharedLib(b, mode, target, options);
         shared_lib.install();
     }
+
+    const compile_all = b.step("compile-all", "Compile Mach");
+    compile_all.dependOn(b.getInstallStep());
 }
 
 fn testStep(b: *Builder, mode: std.builtin.Mode, target: CrossTarget) *std.build.RunStep {
@@ -322,14 +325,9 @@ pub const App = struct {
             const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch try app.b.allocator.dupe(u8, "127.0.0.1");
             const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch try app.b.allocator.dupe(u8, "8080");
             const address_parsed = std.net.Address.parseIp4(address, try std.fmt.parseInt(u16, port, 10)) catch return error.ParsingIpFailed;
-            const install_step_name = if (std.mem.startsWith(u8, app.step.name, "example-"))
-                app.step.name
-            else
-                null;
             const serve_step = try wasmserve.serve(
                 app.step,
                 .{
-                    .install_step_name = install_step_name,
                     .install_dir = web_install_dir,
                     .watch_paths = app.watch_paths,
                     .listen_address = address_parsed,
