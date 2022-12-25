@@ -12,7 +12,7 @@ pub const Context = struct {
 
     const Watcher = struct {
         deviceChangeFn: main.DeviceChangeFn,
-        userdata: ?*anyopaque,
+        user_data: ?*anyopaque,
     };
 
     pub fn init(allocator: std.mem.Allocator, options: main.Context.Options) !backends.BackendContext {
@@ -34,7 +34,7 @@ pub const Context = struct {
             },
             .watcher = if (options.deviceChangeFn) |deviceChangeFn| .{
                 .deviceChangeFn = deviceChangeFn,
-                .userdata = options.userdata,
+                .user_data = options.user_data,
             } else null,
         };
 
@@ -115,18 +115,18 @@ pub const Context = struct {
 
     fn sampleRateCallback(_: c.jack_nframes_t, arg: ?*anyopaque) callconv(.C) c_int {
         var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), arg.?));
-        self.watcher.?.deviceChangeFn(self.watcher.?.userdata);
+        self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
         return 0;
     }
 
     fn portRegistrationCallback(_: c.jack_port_id_t, _: c_int, arg: ?*anyopaque) callconv(.C) void {
         var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), arg.?));
-        self.watcher.?.deviceChangeFn(self.watcher.?.userdata);
+        self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
     }
 
     fn portRenameCalllback(_: c.jack_port_id_t, _: [*c]const u8, _: [*c]const u8, arg: ?*anyopaque) callconv(.C) void {
         var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), arg.?));
-        self.watcher.?.deviceChangeFn(self.watcher.?.userdata);
+        self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
     }
 
     pub fn devices(self: *Context) []const main.Device {
@@ -138,8 +138,6 @@ pub const Context = struct {
     }
 
     pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
-        _ = options;
-
         var ports = try self.allocator.alloc(*c.jack_port_t, device.channels.len);
         var dest_ports = try self.allocator.alloc([:0]const u8, ports.len);
         var buf: [64]u8 = undefined;
@@ -151,36 +149,46 @@ pub const Context = struct {
             dest_ports[i] = dest_name;
         }
 
-        return .{
-            .jack = .{
-                .allocator = self.allocator,
-                .mutex = .{},
-                .cond = .{},
-                .device = device,
-                .writeFn = writeFn,
-                .client = self.client,
-                .ports = ports,
-                .dest_ports = dest_ports,
-            },
+        var player = try self.allocator.create(Player);
+        player.* = .{
+            .allocator = self.allocator,
+            .mutex = .{},
+            .client = self.client,
+            .ports = ports,
+            .dest_ports = dest_ports,
+            .device = device,
+            .vol = 1.0,
+            .writeFn = writeFn,
+            .user_data = options.user_data,
+            .channels = device.channels,
+            .format = .f32,
+            .write_step = main.Format.size(.f32),
         };
+        return .{ .jack = player };
     }
 };
 
 pub const Player = struct {
     allocator: std.mem.Allocator,
     mutex: std.Thread.Mutex,
-    cond: std.Thread.Condition,
-    device: main.Device,
-    writeFn: main.WriteFn,
     client: *c.jack_client_t,
     ports: []const *c.jack_port_t,
     dest_ports: []const [:0]const u8,
+    device: main.Device,
+    vol: f32,
+    writeFn: main.WriteFn,
+    user_data: ?*anyopaque,
+
+    channels: []main.Channel,
+    format: main.Format,
+    write_step: u8,
 
     pub fn deinit(self: *Player) void {
         self.allocator.free(self.ports);
         for (self.dest_ports) |d|
             self.allocator.free(d);
         self.allocator.free(self.dest_ports);
+        self.allocator.destroy(self);
     }
 
     pub fn start(self: *Player) !void {
@@ -198,11 +206,10 @@ pub const Player = struct {
 
     fn processCallback(n_frames: c.jack_nframes_t, self_opaque: ?*anyopaque) callconv(.C) c_int {
         const self = @ptrCast(*Player, @alignCast(@alignOf(*Player), self_opaque.?));
-        var parent = @fieldParentPtr(main.Player, "data", @ptrCast(*backends.BackendPlayer, self));
-        for (self.channels()) |*ch, i| {
+        for (self.channels) |*ch, i| {
             ch.*.ptr = @ptrCast([*]u8, c.jack_port_get_buffer(self.ports[i], n_frames));
         }
-        self.writeFn(parent, n_frames);
+        self.writeFn(self.user_data, n_frames);
         return 0;
     }
 
@@ -235,28 +242,11 @@ pub const Player = struct {
     }
 
     pub fn setVolume(self: *Player, vol: f32) !void {
-        _ = self;
-        _ = vol;
-        @panic("incompatible backend");
+        self.vol = vol;
     }
 
     pub fn volume(self: *Player) !f32 {
-        _ = self;
-        @panic("incompatible backend");
-    }
-
-    pub fn writeRaw(self: *Player, channel: main.Channel, frame: usize, sample: anytype) void {
-        var ptr = channel.ptr + frame * self.format().size();
-        std.mem.bytesAsValue(@TypeOf(sample), ptr[0..@sizeOf(@TypeOf(sample))]).* = sample;
-    }
-
-    pub fn channels(self: Player) []main.Channel {
-        return self.device.channels;
-    }
-
-    pub fn format(self: Player) main.Format {
-        _ = self;
-        return .f32;
+        return self.vol;
     }
 
     pub fn sampleRate(self: Player) u24 {
