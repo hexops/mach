@@ -115,9 +115,6 @@ pub fn build(b: *Builder) !void {
         const shared_lib = try buildSharedLib(b, mode, target, options);
         shared_lib.install();
     }
-
-    const compile_all = b.step("compile-all", "Compile Mach");
-    compile_all.dependOn(b.getInstallStep());
 }
 
 fn testStep(b: *Builder, mode: std.builtin.Mode, target: CrossTarget) *std.build.RunStep {
