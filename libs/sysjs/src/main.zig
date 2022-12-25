@@ -228,8 +228,15 @@ pub fn createString(string: []const u8) String {
     return .{ .ref = js.zigCreateString(string.ptr, @intCast(u32, string.len)) };
 }
 
-pub fn createNumber(num: f64) Value {
-    return .{ .tag = .num, .val = .{ .num = num } };
+pub fn createNumber(num: anytype) Value {
+    switch (@typeInfo(@TypeOf(num))) {
+        .Int,
+        .Float,
+        .ComptimeInt,
+        .ComptimeFloat,
+        => return .{ .tag = .num, .val = .{ .num = std.math.lossyCast(f64, num) } },
+        else => @compileError("expected integer, found " ++ @typeName(@TypeOf(num))),
+    }
 }
 
 pub fn createBool(val: bool) Value {

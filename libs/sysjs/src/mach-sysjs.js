@@ -131,7 +131,6 @@ const sysjs = {
           default:
             return 0;
         }
-        break;
       case "number":
         return 1;
       case "boolean":
@@ -173,27 +172,21 @@ const sysjs = {
     }
   },
 
-  readObject(block, memory) {
+  readObject(block) {
     switch (block.getU8(0)) {
       case 0:
       case 6:
         return values[block.getU64(8)];
-        break;
       case 1:
         return block.getF64(8);
-        break;
       case 2:
         return Boolean(block.getU8(8));
-        break;
       case 3:
         return values[block.getU64(8)];
-        break;
       case 4:
         return null;
-        break;
       case 5:
         return undefined;
-        break;
     }
   },
 
@@ -232,8 +225,7 @@ const sysjs = {
   zigSetProperty(id, name, len, set_ptr) {
     let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
     values[id][memory.getString(name, len)] = sysjs.readObject(
-      memory.slice(set_ptr),
-      memory
+      memory.slice(set_ptr)
     );
   },
 
@@ -249,7 +241,7 @@ const sysjs = {
 
   zigSetIndex(id, index, set_ptr) {
     let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
-    values[id][index] = sysjs.readObject(memory.slice(set_ptr), memory);
+    values[id][index] = sysjs.readObject(memory.slice(set_ptr));
   },
 
   zigDeleteIndex(id, index) {
@@ -289,15 +281,15 @@ const sysjs = {
 
   zigValueEqual(val, other) {
     let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
-    const val_js = sysjs.readObject(memory.slice(val), memory);
-    const other_js = sysjs.readObject(memory.slice(other), memory);
+    const val_js = sysjs.readObject(memory.slice(val));
+    const other_js = sysjs.readObject(memory.slice(other));
     return val_js === other_js;
   },
 
   zigValueInstanceOf(val, other) {
     let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
-    const val_js = sysjs.readObject(memory.slice(val), memory);
-    const other_js = sysjs.readObject(memory.slice(other), memory);
+    const val_js = sysjs.readObject(memory.slice(val));
+    const other_js = sysjs.readObject(memory.slice(other));
     return val_js instanceof other_js;
   },
 
@@ -305,7 +297,7 @@ const sysjs = {
     let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
     let argv = [];
     for (let i = 0; i < args_len; i += 1) {
-      argv.push(sysjs.readObject(memory.slice(args + i * 16), memory));
+      argv.push(sysjs.readObject(memory.slice(args + i * 16)));
     }
 
     let result = func.apply(this_param, argv);
@@ -349,7 +341,7 @@ const sysjs = {
     let memory = new MemoryBlock(sysjs.wasm.exports.memory.buffer);
     let argv = [];
     for (let i = 0; i < args_len; i += 1) {
-      argv.push(sysjs.readObject(memory.slice(args + i * 16), memory));
+      argv.push(sysjs.readObject(memory.slice(args + i * 16)));
     }
 
     return sysjs.addValue(new values[id](...argv));
