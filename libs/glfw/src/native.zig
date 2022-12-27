@@ -61,17 +61,12 @@ pub fn Native(comptime options: BackendOptions) type {
         /// return: The UTF-8 encoded adapter device name (for example `\\.\DISPLAY1`) of the
         /// specified monitor.
         ///
-        /// Possible errors include glfw.Error.NotInitalized.
-        ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWin32Adapter(monitor: Monitor) [*:0]const u8 {
             internal_debug.assertInitialized();
             if (native.glfwGetWin32Adapter(@ptrCast(*native.GLFWmonitor, monitor.handle))) |adapter| return adapter;
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetWin32Adapter` returns `null` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
@@ -80,17 +75,12 @@ pub fn Native(comptime options: BackendOptions) type {
         /// return: The UTF-8 encoded display device name (for example `\\.\DISPLAY1\Monitor0`)
         /// of the specified monitor.
         ///
-        /// Possible errors include glfw.Error.NotInitalized.
-        ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWin32Monitor(monitor: Monitor) [*:0]const u8 {
             internal_debug.assertInitialized();
             if (native.glfwGetWin32Monitor(@ptrCast(*native.GLFWmonitor, monitor.handle))) |mon| return mon;
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetWin32Monitor` returns `null` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
@@ -104,18 +94,13 @@ pub fn Native(comptime options: BackendOptions) type {
         /// ```
         /// This DC is private and does not need to be released.
         ///
-        /// Possible errors include glfw.Error.NotInitalized.
-        ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWin32Window(window: Window) std.os.windows.HWND {
             internal_debug.assertInitialized();
             if (native.glfwGetWin32Window(@ptrCast(*native.GLFWwindow, window.handle))) |win|
                 return @ptrCast(std.os.windows.HWND, win);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetWin32Window` returns `null` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
@@ -129,260 +114,180 @@ pub fn Native(comptime options: BackendOptions) type {
         /// ```
         /// This DC is private and does not need to be released.
         ///
-        /// Possible errors include glfw.Error.NotInitalized.
+        /// Possible errors include glfw.Error.NoWindowContext
+        /// null is returned in the event of an error.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
-        pub fn getWGLContext(window: Window) error{NoWindowContext}!std.os.windows.HGLRC {
+        pub fn getWGLContext(window: Window) ?std.os.windows.HGLRC {
             internal_debug.assertInitialized();
             if (native.glfwGetWGLContext(@ptrCast(*native.GLFWwindow, window.handle))) |context| return context;
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| e,
-                else => unreachable,
-            };
-            // `glfwGetWGLContext` returns `null` only for errors
-            unreachable;
+            return null;
         }
 
         /// Returns the `CGDirectDisplayID` of the specified monitor.
-        ///
-        /// Possible errors include glfw.Error.NotInitalized.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getCocoaMonitor(monitor: Monitor) u32 {
             internal_debug.assertInitialized();
             const mon = native.glfwGetCocoaMonitor(@ptrCast(*native.GLFWmonitor, monitor.handle));
             if (mon != native.kCGNullDirectDisplay) return mon;
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetCocoaMonitor` returns `kCGNullDirectDisplay` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
         /// Returns the `NSWindow` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NotInitalized.
-        ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getCocoaWindow(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
-            const win = native.glfwGetCocoaWindow(@ptrCast(*native.GLFWwindow, window.handle));
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
-            return win;
+            return native.glfwGetCocoaWindow(@ptrCast(*native.GLFWwindow, window.handle));
         }
 
         /// Returns the `NSWindow` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NotInitialized, glfw.Error.NoWindowContext.
+        /// Possible errors include glfw.Error.NoWindowContext.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
-        pub fn getNSGLContext(window: Window) error{NoWindowContext}!u32 {
+        pub fn getNSGLContext(window: Window) u32 {
             internal_debug.assertInitialized();
-            const context = native.glfwGetNSGLContext(@ptrCast(*native.GLFWwindow, window.handle));
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| e,
-                else => unreachable,
-            };
-            return context;
+            return native.glfwGetNSGLContext(@ptrCast(*native.GLFWwindow, window.handle));
         }
 
         /// Returns the `Display` used by GLFW.
-        ///
-        /// Possible errors include glfw.Error.NotInitalized.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getX11Display() *anyopaque {
             internal_debug.assertInitialized();
             if (native.glfwGetX11Display()) |display| return @ptrCast(*anyopaque, display);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetX11Display` returns `null` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
         /// Returns the `RRCrtc` of the specified monitor.
-        ///
-        /// Possible errors include glfw.Error.NotInitalized.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getX11Adapter(monitor: Monitor) u32 {
             internal_debug.assertInitialized();
             const adapter = native.glfwGetX11Adapter(@ptrCast(*native.GLFWMonitor, monitor.handle));
             if (adapter != 0) return adapter;
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetX11Adapter` returns `0` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
         /// Returns the `RROutput` of the specified monitor.
-        ///
-        /// Possible errors include glfw.Error.NotInitalized.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getX11Monitor(monitor: Monitor) u32 {
             internal_debug.assertInitialized();
             const mon = native.glfwGetX11Monitor(@ptrCast(*native.GLFWmonitor, monitor.handle));
             if (mon != 0) return mon;
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetX11Monitor` returns `0` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
         /// Returns the `Window` of the specified window.
-        ///
-        /// Possible errors include glfw.Error.NotInitalized.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getX11Window(window: Window) u32 {
             internal_debug.assertInitialized();
             const win = native.glfwGetX11Window(@ptrCast(*native.GLFWwindow, window.handle));
             if (win != 0) return @intCast(u32, win);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetX11Window` returns `0` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
         /// Sets the current primary selection to the specified string.
         ///
-        /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+        /// Possible errors include glfw.Error.PlatformError.
         ///
         /// The specified string is copied before this function returns.
         ///
         /// thread_safety: This function must only be called from the main thread.
-        pub fn setX11SelectionString(string: [*:0]const u8) error{PlatformError}!void {
+        pub fn setX11SelectionString(string: [*:0]const u8) void {
             internal_debug.assertInitialized();
             native.glfwSetX11SelectionString(string);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.PlatformError => |e| e,
-                else => unreachable,
-            };
         }
 
         /// Returns the contents of the current primary selection as a string.
         ///
-        /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+        /// Possible errors include glfw.Error.PlatformError.
+        /// Returns null in the event of an error.
         ///
         /// The returned string is allocated and freed by GLFW. You should not free it
         /// yourself. It is valid until the next call to getX11SelectionString or
         /// setX11SelectionString, or until the library is terminated.
         ///
         /// thread_safety: This function must only be called from the main thread.
-        pub fn getX11SelectionString() error{FormatUnavailable}![*:0]const u8 {
+        pub fn getX11SelectionString() ?[*:0]const u8 {
             internal_debug.assertInitialized();
             if (native.glfwGetX11SelectionString()) |str| return str;
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.FormatUnavailable => |e| e,
-                else => unreachable,
-            };
-            // `glfwGetX11SelectionString` returns `null` only for errors
-            unreachable;
+            return null;
         }
 
         /// Returns the `GLXContext` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NoWindowContext and glfw.Error.NotInitialized.
+        /// Possible errors include glfw.Error.NoWindowContext.
+        /// Returns null in the event of an error.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
-        pub fn getGLXContext(window: Window) error{NoWindowContext}!*anyopaque {
+        pub fn getGLXContext(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
             if (native.glfwGetGLXContext(@ptrCast(*native.GLFWwindow, window.handle))) |context| return @ptrCast(*anyopaque, context);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| e,
-                else => unreachable,
-            };
-            // `glfwGetGLXContext` returns `null` only for errors
-            unreachable;
+            return null;
         }
 
         /// Returns the `GLXWindow` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NoWindowContext and glfw.Error.NotInitialized.
+        /// Possible errors include glfw.Error.NoWindowContext.
+        /// Returns null in the event of an error.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
-        pub fn getGLXWindow(window: Window) error{NoWindowContext}!*anyopaque {
+        pub fn getGLXWindow(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
             const win = native.glfwGetGLXWindow(@ptrCast(*native.GLFWwindow, window.handle));
             if (win != 0) return @ptrCast(*anyopaque, win);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| e,
-                else => unreachable,
-            };
-            // `glfwGetGLXWindow` returns `0` only for errors
-            unreachable;
+            return null;
         }
 
         /// Returns the `*wl_display` used by GLFW.
-        ///
-        /// Possible errors include glfw.Error.NotInitalized.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWaylandDisplay() *anyopaque {
             internal_debug.assertInitialized();
             if (native.glfwGetWaylandDisplay()) |display| return @ptrCast(*anyopaque, display);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetWaylandDisplay` returns `null` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
         /// Returns the `*wl_output` of the specified monitor.
         ///
-        /// Possible errors include glfw.Error.NotInitalized.
-        ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWaylandMonitor(monitor: Monitor) *anyopaque {
             internal_debug.assertInitialized();
             if (native.glfwGetWaylandMonitor(@ptrCast(*native.GLFWmonitor, monitor.handle))) |mon| return @ptrCast(*anyopaque, mon);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetWaylandMonitor` returns `null` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
         /// Returns the `*wl_surface` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NotInitalized.
-        ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWaylandWindow(window: Window) *anyopaque {
             internal_debug.assertInitialized();
             if (native.glfwGetWaylandWindow(@ptrCast(*native.GLFWwindow, window.handle))) |win| return @ptrCast(*anyopaque, win);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetWaylandWindow` returns `null` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
         /// Returns the `EGLDisplay` used by GLFW.
-        ///
-        /// Possible errors include glfw.Error.NotInitalized.
         ///
         /// remark: Because EGL is initialized on demand, this function will return `EGL_NO_DISPLAY`
         /// until the first context has been created via EGL.
@@ -392,30 +297,22 @@ pub fn Native(comptime options: BackendOptions) type {
             internal_debug.assertInitialized();
             const display = native.glfwGetEGLDisplay();
             if (display != native.EGL_NO_DISPLAY) return @ptrCast(*anyopaque, display);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                else => unreachable,
-            };
             // `glfwGetEGLDisplay` returns `EGL_NO_DISPLAY` only for errors
+            // but the only potential error is unreachable (NotInitialized)
             unreachable;
         }
 
         /// Returns the `EGLContext` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NotInitalized and glfw.Error.NoWindowContext.
+        /// Possible errors include glfw.Error.NoWindowContext.
+        /// Returns null in the event of an error.
         ///
         /// thread_safety This function may be called from any thread. Access is not synchronized.
-        pub fn getEGLContext(window: Window) error{NoWindowContext}!*anyopaque {
+        pub fn getEGLContext(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
             const context = native.glfwGetEGLContext(@ptrCast(*native.GLFWwindow, window.handle));
             if (context != native.EGL_NO_CONTEXT) return @ptrCast(*anyopaque, context);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| e,
-                else => unreachable,
-            };
-            // `glfwGetEGLContext` returns `EGL_NO_CONTEXT` only for errors
-            unreachable;
+            return null;
         }
 
         /// Returns the `EGLSurface` of the specified window.
@@ -423,17 +320,11 @@ pub fn Native(comptime options: BackendOptions) type {
         /// Possible errors include glfw.Error.NotInitalized and glfw.Error.NoWindowContext.
         ///
         /// thread_safety This function may be called from any thread. Access is not synchronized.
-        pub fn getEGLSurface(window: Window) error{NoWindowContext}!*anyopaque {
+        pub fn getEGLSurface(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
             const surface = native.glfwGetEGLSurface(@ptrCast(*native.GLFWwindow, window.handle));
             if (surface != native.EGL_NO_SURFACE) return @ptrCast(*anyopaque, surface);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| e,
-                else => unreachable,
-            };
-            // `glfwGetEGLSurface` returns `EGL_NO_SURFACE` only for errors
-            unreachable;
+            return null;
         }
 
         pub const OSMesaColorBuffer = struct {
@@ -445,11 +336,11 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Retrieves the color buffer associated with the specified window.
         ///
-        /// Possible errors include glfw.Error.NotInitalized, glfw.Error.NoWindowContext
-        /// and glfw.Error.PlatformError.
+        /// Possible errors include glfw.Error.NoWindowContext and glfw.Error.PlatformError.
+        /// Returns null in the event of an error.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
-        pub fn getOSMesaColorBuffer(window: Window) error{ PlatformError, NoWindowContext }!OSMesaColorBuffer {
+        pub fn getOSMesaColorBuffer(window: Window) ?OSMesaColorBuffer {
             internal_debug.assertInitialized();
             var buf: OSMesaColorBuffer = undefined;
             if (native.glfwGetOSMesaColorBuffer(
@@ -459,13 +350,7 @@ pub fn Native(comptime options: BackendOptions) type {
                 &buf.format,
                 &buf.buffer,
             ) == native.GLFW_TRUE) return buf;
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.PlatformError, Error.NoWindowContext => |e| e,
-                else => unreachable,
-            };
-            // `glfwGetOSMesaColorBuffer` returns `GLFW_FALSE` only for errors
-            unreachable;
+            return null;
         }
 
         pub const OSMesaDepthBuffer = struct {
@@ -477,11 +362,11 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Retrieves the depth buffer associated with the specified window.
         ///
-        /// Possible errors include glfw.Error.NotInitalized, glfw.Error.NoWindowContext
-        /// and glfw.Error.PlatformError.
+        /// Possible errors include glfw.Error.NoWindowContext and glfw.Error.PlatformError.
+        /// Returns null in the event of an error.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
-        pub fn getOSMesaDepthBuffer(window: Window) error{ PlatformError, NoWindowContext }!OSMesaDepthBuffer {
+        pub fn getOSMesaDepthBuffer(window: Window) ?OSMesaDepthBuffer {
             internal_debug.assertInitialized();
             var buf: OSMesaDepthBuffer = undefined;
             if (native.glfwGetOSMesaDepthBuffer(
@@ -491,30 +376,18 @@ pub fn Native(comptime options: BackendOptions) type {
                 &buf.bytes_per_value,
                 &buf.buffer,
             ) == native.GLFW_TRUE) return buf;
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.PlatformError, Error.NoWindowContext => |e| e,
-                else => unreachable,
-            };
-            // `glfwGetOSMesaDepthBuffer` returns `GLFW_FALSE` only for errors
-            unreachable;
+            return null;
         }
 
         /// Returns the 'OSMesaContext' of the specified window.
         ///
-        /// Possible errors include glfw.Error.NotInitalized and glfw.Error.NoWindowContext.
+        /// Possible errors include glfw.Error.NoWindowContext.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
-        pub fn getOSMesaContext(window: Window) error{NoWindowContext}!*anyopaque {
+        pub fn getOSMesaContext(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
             if (native.glfwGetOSMesaContext(@ptrCast(*native.GLFWwindow, window.handle))) |context| return @ptrCast(*anyopaque, context);
-            getError() catch |err| return switch (err) {
-                Error.NotInitialized => unreachable,
-                Error.NoWindowContext => |e| e,
-                else => unreachable,
-            };
-            // `glfwGetOSMesaContext` returns `null` only for errors
-            unreachable;
+            return null;
         }
     };
 }

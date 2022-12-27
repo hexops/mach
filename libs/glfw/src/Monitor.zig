@@ -27,21 +27,16 @@ const Pos = struct {
 
 /// Returns the position of the monitor's viewport on the virtual screen.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_properties
-pub inline fn getPos(self: Monitor) error{PlatformError}!Pos {
+pub inline fn getPos(self: Monitor) Pos {
     internal_debug.assertInitialized();
     var xpos: c_int = 0;
     var ypos: c_int = 0;
     c.glfwGetMonitorPos(self.handle, &xpos, &ypos);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
     return Pos{ .x = @intCast(u32, xpos), .y = @intCast(u32, ypos) };
 }
 
@@ -60,23 +55,19 @@ const Workarea = struct {
 
 /// Retrieves the work area of the monitor.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
+/// A zero value is returned in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_workarea
-pub inline fn getWorkarea(self: Monitor) error{PlatformError}!Workarea {
+pub inline fn getWorkarea(self: Monitor) Workarea {
     internal_debug.assertInitialized();
     var xpos: c_int = 0;
     var ypos: c_int = 0;
     var width: c_int = 0;
     var height: c_int = 0;
     c.glfwGetMonitorWorkarea(self.handle, &xpos, &ypos, &width, &height);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
     return Workarea{ .x = @intCast(u32, xpos), .y = @intCast(u32, ypos), .width = @intCast(u32, width), .height = @intCast(u32, height) };
 }
 
@@ -92,9 +83,6 @@ const PhysicalSize = struct {
 /// [EDID](https://en.wikipedia.org/wiki/Extended_display_identification_data)
 /// data is incorrect or because the driver does not report it accurately.
 ///
-/// Possible errors include glfw.Error.NotInitialized.
-///
-///
 /// win32: On Windows 8 and earlier the physical size is calculated from
 /// the current resolution and system DPI instead of querying the monitor EDID data
 /// @thread_safety This function must only be called from the main thread.
@@ -105,10 +93,6 @@ pub inline fn getPhysicalSize(self: Monitor) PhysicalSize {
     var width_mm: c_int = 0;
     var height_mm: c_int = 0;
     c.glfwGetMonitorPhysicalSize(self.handle, &width_mm, &height_mm);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
     return PhysicalSize{ .width_mm = @intCast(u32, width_mm), .height_mm = @intCast(u32, height_mm) };
 }
 
@@ -130,21 +114,17 @@ const ContentScale = struct {
 
 /// Returns the content scale for the monitor.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
+/// A zero value is returned in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_scale, glfw.Window.getContentScale
-pub inline fn getContentScale(self: Monitor) error{PlatformError}!ContentScale {
+pub inline fn getContentScale(self: Monitor) ContentScale {
     internal_debug.assertInitialized();
     var x_scale: f32 = 0;
     var y_scale: f32 = 0;
     c.glfwGetMonitorContentScale(self.handle, &x_scale, &y_scale);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
     return ContentScale{ .x_scale = @floatCast(f32, x_scale), .y_scale = @floatCast(f32, y_scale) };
 }
 
@@ -153,8 +133,6 @@ pub inline fn getContentScale(self: Monitor) error{PlatformError}!ContentScale {
 /// This function returns a human-readable name, encoded as UTF-8, of the specified monitor. The
 /// name typically reflects the make and model of the monitor and is not guaranteed to be unique
 /// among the connected monitors.
-///
-/// Possible errors include glfw.Error.NotInitialized.
 ///
 /// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
 /// yourself. It is valid until the specified monitor is disconnected or the library is terminated.
@@ -165,11 +143,8 @@ pub inline fn getContentScale(self: Monitor) error{PlatformError}!ContentScale {
 pub inline fn getName(self: Monitor) [*:0]const u8 {
     internal_debug.assertInitialized();
     if (c.glfwGetMonitorName(self.handle)) |name| return @ptrCast([*:0]const u8, name);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
-    // `glfwGetMonitorName` returns `null` only for errors
+    // `glfwGetMonitorName` returns `null` only for errors, but the only error is unreachable
+    // (NotInitialized)
     unreachable;
 }
 
@@ -181,18 +156,12 @@ pub inline fn getName(self: Monitor) [*:0]const u8 {
 /// This function may be called from the monitor callback, even for a monitor that is being
 /// disconnected.
 ///
-/// Possible errors include glfw.Error.NotInitialized.
-///
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: monitor_userptr, glfw.Monitor.getUserPointer
 pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) void {
     internal_debug.assertInitialized();
     c.glfwSetMonitorUserPointer(self.handle, ptr);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
 }
 
 /// Returns the user pointer of the specified monitor.
@@ -202,18 +171,12 @@ pub inline fn setUserPointer(self: Monitor, comptime T: type, ptr: *T) void {
 /// This function may be called from the monitor callback, even for a monitor that is being
 /// disconnected.
 ///
-/// Possible errors include glfw.Error.NotInitialized.
-///
 /// @thread_safety This function may be called from any thread. Access is not synchronized.
 ///
 /// see also: monitor_userptr, glfw.Monitor.setUserPointer
 pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
     internal_debug.assertInitialized();
     const ptr = c.glfwGetMonitorUserPointer(self.handle);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
     if (ptr == null) return null;
     return @ptrCast(*T, @alignCast(@alignOf(T), ptr.?));
 }
@@ -225,14 +188,17 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
 /// then by resolution area (the product of width and height), then resolution width and finally
 /// by refresh rate.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
+/// Returns null in the event of an error.
 ///
 /// The returned slice memory is owned by the caller.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_modes, glfw.Monitor.getVideoMode
-pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Allocator.Error || error{PlatformError})![]VideoMode {
+//
+/// TODO(glfw): rewrite this to not require any allocation.
+pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) mem.Allocator.Error!?[]VideoMode {
     internal_debug.assertInitialized();
     var count: c_int = 0;
     if (c.glfwGetVideoModes(self.handle, &count)) |modes| {
@@ -243,13 +209,7 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Alloca
         }
         return slice;
     }
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
-    // `glfwGetVideoModes` returns `null` only for errors
-    unreachable;
+    return null;
 }
 
 /// Returns the current mode of the specified monitor.
@@ -258,21 +218,16 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) (mem.Alloca
 /// full screen window for that monitor, the return value will depend on whether that window is
 /// iconified.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
+/// Additionally returns null in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_modes, glfw.Monitor.getVideoModes
-pub inline fn getVideoMode(self: Monitor) error{PlatformError}!VideoMode {
+pub inline fn getVideoMode(self: Monitor) ?VideoMode {
     internal_debug.assertInitialized();
     if (c.glfwGetVideoMode(self.handle)) |mode| return VideoMode{ .handle = mode.* };
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
-    // `glfwGetVideoMode` returns `null` only for errors
-    unreachable;
+    return null;
 }
 
 /// Generates a gamma ramp and sets it for the specified monitor.
@@ -286,7 +241,7 @@ pub inline fn getVideoMode(self: Monitor) error{PlatformError}!VideoMode {
 ///
 /// For gamma correct rendering with OpenGL or OpenGL ES, see the glfw.srgb_capable hint.
 ///
-/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidValue and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.InvalidValue and glfw.Error.PlatformError.
 ///
 /// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
 /// and emits glfw.Error.PlatformError.
@@ -294,7 +249,7 @@ pub inline fn getVideoMode(self: Monitor) error{PlatformError}!VideoMode {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_gamma
-pub inline fn setGamma(self: Monitor, gamma: f32) error{PlatformError}!void {
+pub inline fn setGamma(self: Monitor, gamma: f32) void {
     internal_debug.assertInitialized();
 
     std.debug.assert(!std.math.isNan(gamma));
@@ -302,19 +257,14 @@ pub inline fn setGamma(self: Monitor, gamma: f32) error{PlatformError}!void {
     std.debug.assert(gamma <= std.math.f32_max);
 
     c.glfwSetGamma(self.handle, gamma);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidValue => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
 }
 
 /// Returns the current gamma ramp for the specified monitor.
 ///
 /// This function returns the current gamma ramp of the specified monitor.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
+/// Additionally returns null in the event of an error.
 ///
 /// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
 /// and returns glfw.Error.PlatformError.
@@ -326,16 +276,10 @@ pub inline fn setGamma(self: Monitor, gamma: f32) error{PlatformError}!void {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_gamma
-pub inline fn getGammaRamp(self: Monitor) error{ PlatformError, FeatureUnavailable }!GammaRamp {
+pub inline fn getGammaRamp(self: Monitor) ?GammaRamp {
     internal_debug.assertInitialized();
     if (c.glfwGetGammaRamp(self.handle)) |ramp| return GammaRamp.fromC(ramp.*);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError, Error.FeatureUnavailable => |e| e,
-        else => unreachable,
-    };
-    // `glfwGetGammaRamp` returns `null` only for errors
-    unreachable;
+    return null;
 }
 
 /// Sets the current gamma ramp for the specified monitor.
@@ -350,7 +294,7 @@ pub inline fn getGammaRamp(self: Monitor) error{ PlatformError, FeatureUnavailab
 ///
 /// For gamma correct rendering with OpenGL or OpenGL ES, see the glfw.srgb_capable hint.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
 ///
 /// The size of the specified gamma ramp should match the size of the current ramp for that
 /// monitor. On win32, the gamma ramp size must be 256.
@@ -363,14 +307,9 @@ pub inline fn getGammaRamp(self: Monitor) error{ PlatformError, FeatureUnavailab
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_gamma
-pub inline fn setGammaRamp(self: Monitor, ramp: GammaRamp) error{PlatformError}!void {
+pub inline fn setGammaRamp(self: Monitor, ramp: GammaRamp) void {
     internal_debug.assertInitialized();
     c.glfwSetGammaRamp(self.handle, &ramp.toC());
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
 }
 
 /// Returns the currently connected monitors.
@@ -395,11 +334,8 @@ pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
         }
         return slice;
     }
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
-    // `glfwGetMonitors` returning null can be either an error or no monitors
+    // `glfwGetMonitors` returning null can be either an error or no monitors, but the only error is
+    // unreachable (NotInitialized)
     return &[_]Monitor{};
 }
 
@@ -408,18 +344,12 @@ pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
 /// This function returns the primary monitor. This is usually the monitor where elements like
 /// the task bar or global menu bar are located.
 ///
-/// Possible errors include glfw.Error.NotInitialized.
-///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_monitors, glfw.monitors.getAll
 pub inline fn getPrimary() ?Monitor {
     internal_debug.assertInitialized();
     if (c.glfwGetPrimaryMonitor()) |handle| return Monitor{ .handle = handle };
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
     return null;
 }
 
@@ -448,8 +378,6 @@ pub const Event = enum(c_int) {
 ///
 /// `event` may be one of .connected or .disconnected. More events may be added in the future.
 ///
-/// Possible errors include glfw.Error.NotInitialized.
-///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_event
@@ -470,16 +398,15 @@ pub inline fn setCallback(comptime callback: ?fn (monitor: Monitor, event: Event
     } else {
         if (c.glfwSetMonitorCallback(null) != null) return;
     }
-
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
 }
 
 test "getAll" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const allocator = testing.allocator;
@@ -489,7 +416,11 @@ test "getAll" {
 
 test "getPrimary" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     _ = getPrimary();
@@ -497,29 +428,41 @@ test "getPrimary" {
 
 test "getPos" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const monitor = getPrimary();
     if (monitor) |m| {
-        _ = try m.getPos();
+        _ = m.getPos();
     }
 }
 
 test "getWorkarea" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const monitor = getPrimary();
     if (monitor) |m| {
-        _ = try m.getWorkarea();
+        _ = m.getWorkarea();
     }
 }
 
 test "getPhysicalSize" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const monitor = getPrimary();
@@ -530,18 +473,26 @@ test "getPhysicalSize" {
 
 test "getContentScale" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const monitor = getPrimary();
     if (monitor) |m| {
-        _ = try m.getContentScale();
+        _ = m.getContentScale();
     }
 }
 
 test "getName" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const monitor = getPrimary();
@@ -552,7 +503,11 @@ test "getName" {
 
 test "userPointer" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const monitor = getPrimary();
@@ -568,7 +523,11 @@ test "userPointer" {
 
 test "setCallback" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     setCallback(struct {
@@ -581,46 +540,57 @@ test "setCallback" {
 
 test "getVideoModes" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const monitor = getPrimary();
     if (monitor) |m| {
         const allocator = testing.allocator;
-        const modes = try m.getVideoModes(allocator);
-        defer allocator.free(modes);
+        const modes_maybe = try m.getVideoModes(allocator);
+        if (modes_maybe) |modes| {
+            defer allocator.free(modes);
+        }
     }
 }
 
 test "getVideoMode" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const monitor = getPrimary();
     if (monitor) |m| {
-        _ = try m.getVideoMode();
+        _ = m.getVideoMode();
     }
 }
 
 test "set_getGammaRamp" {
     const allocator = testing.allocator;
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const monitor = getPrimary();
     if (monitor) |m| {
-        const ramp = m.getGammaRamp() catch |err| {
-            std.debug.print("can't get window position, wayland maybe? error={}\n", .{err});
-            return;
-        };
+        if (m.getGammaRamp()) |ramp| {
+            // Set it to the exact same value; if we do otherwise an our tests fail it wouldn't call
+            // terminate and our made-up gamma ramp would get stuck.
+            m.setGammaRamp(ramp);
 
-        // Set it to the exact same value; if we do otherwise an our tests fail it wouldn't call
-        // terminate and our made-up gamma ramp would get stuck.
-        try m.setGammaRamp(ramp);
-
-        // technically not needed here / noop because GLFW owns this gamma ramp.
-        defer ramp.deinit(allocator);
+            // technically not needed here / noop because GLFW owns this gamma ramp.
+            defer ramp.deinit(allocator);
+        }
     }
 }

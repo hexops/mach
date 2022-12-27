@@ -80,20 +80,14 @@ const GamepadState = extern struct {
 ///
 /// @return `true` if the joystick is present, or `false` otherwise.
 ///
-/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: joystick
-pub inline fn present(self: Joystick) error{PlatformError}!bool {
+pub inline fn present(self: Joystick) bool {
     internal_debug.assertInitialized();
     const is_present = c.glfwJoystickPresent(@enumToInt(self.jid));
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidEnum => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
     return is_present == c.GLFW_TRUE;
 }
 
@@ -107,7 +101,8 @@ pub inline fn present(self: Joystick) error{PlatformError}!bool {
 ///
 /// @return An array of axis values, or null if the joystick is not present.
 ///
-/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// null is additionally returned in the event of an error.
 ///
 /// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
 /// yourself. It is valid until the specified joystick is disconnected or the library is
@@ -117,16 +112,10 @@ pub inline fn present(self: Joystick) error{PlatformError}!bool {
 ///
 /// see also: joystick_axis
 /// Replaces `glfwGetJoystickPos`.
-pub inline fn getAxes(self: Joystick) error{PlatformError}!?[]const f32 {
+pub inline fn getAxes(self: Joystick) ?[]const f32 {
     internal_debug.assertInitialized();
     var count: c_int = undefined;
     const axes = c.glfwGetJoystickAxes(@enumToInt(self.jid), &count);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidEnum => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
     if (axes == null) return null;
     return axes[0..@intCast(u32, count)];
 }
@@ -147,7 +136,8 @@ pub inline fn getAxes(self: Joystick) error{PlatformError}!?[]const f32 {
 ///
 /// @return An array of button states, or null if the joystick is not present.
 ///
-/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// null is additionally returned in the event of an error.
 ///
 /// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
 /// yourself. It is valid until the specified joystick is disconnected or the library is terminated.
@@ -155,16 +145,10 @@ pub inline fn getAxes(self: Joystick) error{PlatformError}!?[]const f32 {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: joystick_button
-pub inline fn getButtons(self: Joystick) error{PlatformError}!?[]const u8 {
+pub inline fn getButtons(self: Joystick) ?[]const u8 {
     internal_debug.assertInitialized();
     var count: c_int = undefined;
     const buttons = c.glfwGetJoystickButtons(@enumToInt(self.jid), &count);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidEnum => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
     if (buttons == null) return null;
     return buttons[0..@intCast(u32, count)];
 }
@@ -200,7 +184,8 @@ pub inline fn getButtons(self: Joystick) error{PlatformError}!?[]const u8 {
 ///
 /// @return An array of hat states, or null if the joystick is not present.
 ///
-/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// null is additionally returned in the event of an error.
 ///
 /// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
 /// yourself. It is valid until the specified joystick is disconnected, this function is called
@@ -209,16 +194,10 @@ pub inline fn getButtons(self: Joystick) error{PlatformError}!?[]const u8 {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: joystick_hat
-pub inline fn getHats(self: Joystick) error{PlatformError}!?[]const Hat {
+pub inline fn getHats(self: Joystick) ?[]const Hat {
     internal_debug.assertInitialized();
     var count: c_int = undefined;
     const hats = c.glfwGetJoystickHats(@enumToInt(self.jid), &count);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidEnum => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
     if (hats == null) return null;
     const slice = hats[0..@intCast(u32, count)];
     return @ptrCast(*const []const Hat, &slice).*;
@@ -235,7 +214,8 @@ pub inline fn getHats(self: Joystick) error{PlatformError}!?[]const Hat {
 /// @return The UTF-8 encoded name of the joystick, or null if the joystick is not present or an
 /// error occurred.
 ///
-/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// null is additionally returned in the event of an error.
 ///
 /// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
 /// yourself. It is valid until the specified joystick is disconnected or the library is terminated.
@@ -243,15 +223,9 @@ pub inline fn getHats(self: Joystick) error{PlatformError}!?[]const Hat {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: joystick_name
-pub inline fn getName(self: Joystick) error{PlatformError}!?[:0]const u8 {
+pub inline fn getName(self: Joystick) ?[:0]const u8 {
     internal_debug.assertInitialized();
     const name_opt = c.glfwGetJoystickName(@enumToInt(self.jid));
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidEnum => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
     return if (name_opt) |name|
         std.mem.span(@ptrCast([*:0]const u8, name))
     else
@@ -277,7 +251,8 @@ pub inline fn getName(self: Joystick) error{PlatformError}!?[:0]const u8 {
 ///
 /// @return The UTF-8 encoded GUID of the joystick, or null if the joystick is not present.
 ///
-/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// null is additionally returned in the event of an error.
 ///
 /// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
 /// yourself. It is valid until the specified joystick is disconnected or the library is terminated.
@@ -285,15 +260,9 @@ pub inline fn getName(self: Joystick) error{PlatformError}!?[:0]const u8 {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: gamepad
-pub inline fn getGUID(self: Joystick) error{PlatformError}!?[:0]const u8 {
+pub inline fn getGUID(self: Joystick) ?[:0]const u8 {
     internal_debug.assertInitialized();
     const guid_opt = c.glfwGetJoystickGUID(@enumToInt(self.jid));
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidEnum => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
     return if (guid_opt) |guid|
         std.mem.span(@ptrCast([*:0]const u8, guid))
     else
@@ -313,10 +282,6 @@ pub inline fn getGUID(self: Joystick) error{PlatformError}!?[:0]const u8 {
 pub inline fn setUserPointer(self: Joystick, comptime T: type, pointer: *T) void {
     internal_debug.assertInitialized();
     c.glfwSetJoystickUserPointer(@enumToInt(self.jid), @ptrCast(*anyopaque, pointer));
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
 }
 
 /// Returns the user pointer of the specified joystick.
@@ -333,10 +298,6 @@ pub inline fn setUserPointer(self: Joystick, comptime T: type, pointer: *T) void
 pub inline fn getUserPointer(self: Joystick, comptime PointerType: type) ?PointerType {
     internal_debug.assertInitialized();
     const ptr = c.glfwGetJoystickUserPointer(@enumToInt(self.jid));
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
     if (ptr) |p| return @ptrCast(PointerType, @alignCast(@alignOf(std.meta.Child(PointerType)), p));
     return null;
 }
@@ -366,8 +327,6 @@ pub const Event = enum(c_int) {
 /// @callback_param `event` One of `.connected` or `.disconnected`. Future releases may add
 /// more events.
 ///
-/// Possible errors include glfw.Error.NotInitialized.
-///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: joystick_event
@@ -388,11 +347,6 @@ pub inline fn setCallback(comptime callback: ?fn (joystick: Joystick, event: Eve
     } else {
         if (c.glfwSetJoystickCallback(null) != null) return;
     }
-
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
 }
 
 /// Adds the specified SDL_GameControllerDB gamepad mappings.
@@ -410,7 +364,8 @@ pub inline fn setCallback(comptime callback: ?fn (joystick: Joystick, event: Eve
 ///
 /// @param[in] string The string containing the gamepad mappings.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidValue.
+/// Possible errors include glfw.Error.InvalidValue.
+/// Returns a boolean indicating success.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -418,18 +373,9 @@ pub inline fn setCallback(comptime callback: ?fn (joystick: Joystick, event: Eve
 ///
 ///
 /// @ingroup input
-pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) error{InvalidValue}!void {
+pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) bool {
     internal_debug.assertInitialized();
-    if (c.glfwUpdateGamepadMappings(gamepad_mappings) == c.GLFW_TRUE) return;
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        // TODO: Maybe return as 'ParseError' here?
-        // TODO: Look into upstream proposal for GLFW to publicize
-        // their Gamepad mappings parsing functions/interface
-        // for a better error message in debug.
-        Error.InvalidValue => |e| e,
-        else => unreachable,
-    };
+    return c.glfwUpdateGamepadMappings(gamepad_mappings) == c.GLFW_TRUE;
 }
 
 /// Returns whether the specified joystick has a gamepad mapping.
@@ -442,7 +388,8 @@ pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) error{Inval
 ///
 /// @return `true` if a joystick is both present and has a gamepad mapping, or `false` otherwise.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+/// Possible errors include glfw.Error.InvalidEnum.
+/// Additionally returns false in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -450,11 +397,6 @@ pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) error{Inval
 pub inline fn isGamepad(self: Joystick) bool {
     internal_debug.assertInitialized();
     const is_gamepad = c.glfwJoystickIsGamepad(@enumToInt(self.jid));
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidEnum => unreachable,
-        else => unreachable,
-    };
     return is_gamepad == c.GLFW_TRUE;
 }
 
@@ -470,7 +412,8 @@ pub inline fn isGamepad(self: Joystick) bool {
 /// @return The UTF-8 encoded name of the gamepad, or null if the joystick is not present or does
 /// not have a mapping.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+/// Possible errors include glfw.Error.InvalidEnum.
+/// Additionally returns null in the event of an error.
 ///
 /// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
 /// yourself. It is valid until the specified joystick is disconnected, the gamepad mappings are
@@ -482,11 +425,6 @@ pub inline fn isGamepad(self: Joystick) bool {
 pub inline fn getGamepadName(self: Joystick) ?[:0]const u8 {
     internal_debug.assertInitialized();
     const name_opt = c.glfwGetGamepadName(@enumToInt(self.jid));
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidValue => unreachable,
-        else => unreachable,
-    };
     return if (name_opt) |name|
         std.mem.span(@ptrCast([*:0]const u8, name))
     else
@@ -512,7 +450,8 @@ pub inline fn getGamepadName(self: Joystick) ?[:0]const u8 {
 /// @return the gamepad input state if successful, or null if no joystick is connected or it has no
 /// gamepad mapping.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidEnum.
+/// Possible errors include glfw.Error.InvalidEnum.
+/// Returns null in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -521,81 +460,101 @@ pub inline fn getGamepadState(self: Joystick) ?GamepadState {
     internal_debug.assertInitialized();
     var state: GamepadState = undefined;
     const success = c.glfwGetGamepadState(@enumToInt(self.jid), @ptrCast(*c.GLFWgamepadstate, &state));
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidEnum => unreachable,
-        else => unreachable,
-    };
     return if (success == c.GLFW_TRUE) state else null;
 }
 
 test "present" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
-
-    _ = joystick.present() catch |err| std.debug.print("failed to detect joystick, joysticks not supported? error={}\n", .{err});
+    _ = joystick.present();
 }
 
 test "getAxes" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
-
-    _ = joystick.getAxes() catch |err| std.debug.print("failed to get joystick axes, joysticks not supported? error={}\n", .{err});
+    _ = joystick.getAxes();
 }
 
 test "getButtons" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
-
-    _ = joystick.getButtons() catch |err| std.debug.print("failed to get joystick buttons, joysticks not supported? error={}\n", .{err});
+    _ = joystick.getButtons();
 }
 
 test "getHats" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
 
-    _ = joystick.getHats() catch |err| std.debug.print("failed to get joystick hats, joysticks not supported? error={}\n", .{err});
-    const hats = std.mem.zeroes(Hat);
-    if (hats.down and hats.up) {
-        // down-up!
+    if (joystick.getHats()) |hats| {
+        for (hats) |hat| {
+            if (hat.down and hat.up) {
+                // down-up!
+            }
+        }
     }
 }
 
 test "getName" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
-
-    _ = joystick.getName() catch |err| std.debug.print("failed to get joystick name, joysticks not supported? error={}\n", .{err});
+    _ = joystick.getName();
 }
 
 test "getGUID" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
-
-    _ = joystick.getGUID() catch |err| std.debug.print("failed to get joystick GUID, joysticks not supported? error={}\n", .{err});
+    _ = joystick.getGUID();
 }
 
 test "setUserPointer_syntax" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
@@ -607,7 +566,11 @@ test "setUserPointer_syntax" {
 
 test "getUserPointer_syntax" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
@@ -619,7 +582,11 @@ test "getUserPointer_syntax" {
 
 test "setCallback" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     glfw.Joystick.setCallback((struct {
@@ -637,7 +604,11 @@ test "updateGamepadMappings_syntax" {
 
 test "isGamepad" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
@@ -646,7 +617,11 @@ test "isGamepad" {
 
 test "getGamepadName" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
@@ -655,7 +630,11 @@ test "getGamepadName" {
 
 test "getGamepadState" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const joystick = glfw.Joystick{ .jid = .one };
