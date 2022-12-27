@@ -241,7 +241,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const target = step.target_info.target;
             const binaries_available = switch (target.os.tag) {
                 .windows => target.abi.isGnu(),
-                .linux => target.cpu.arch.isX86() and (target.abi.isGnu() or target.abi.isMusl()),
+                .linux => (target.cpu.arch.isX86() or target.cpu.arch.isAARCH64()) and (target.abi.isGnu() or target.abi.isMusl()),
                 .macos => blk: {
                     if (!target.cpu.arch.isX86() and !target.cpu.arch.isAARCH64()) break :blk false;
 
