@@ -97,9 +97,9 @@ pub fn build(b: *Builder) !void {
                 .name = "shaderexp",
                 .src = "shaderexp/main.zig",
                 .target = target,
+                .mode = mode,
             },
         );
-        shaderexp_app.setBuildMode(mode);
         try shaderexp_app.link(options);
         shaderexp_app.install();
 
@@ -193,6 +193,7 @@ pub const App = struct {
             name: []const u8,
             src: []const u8,
             target: CrossTarget,
+            mode: std.builtin.Mode,
             deps: ?[]const Pkg = null,
             res_dirs: ?[]const []const u8 = null,
             watch_paths: ?[]const []const u8 = null,
@@ -247,6 +248,7 @@ pub const App = struct {
         step.main_pkg_path = sdkPath("/src");
         step.addPackage(app_pkg);
         step.setTarget(options.target);
+        step.setBuildMode(options.mode);
 
         return .{
             .b = b,
@@ -337,10 +339,6 @@ pub const App = struct {
         } else {
             return &app.step.run().step;
         }
-    }
-
-    pub fn setBuildMode(app: *const App, mode: std.builtin.Mode) void {
-        app.step.setBuildMode(mode);
     }
 
     pub fn getInstallStep(app: *const App) ?*std.build.InstallArtifactStep {
