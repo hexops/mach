@@ -31,11 +31,8 @@ pub inline fn getTime() f64 {
     internal_debug.assertInitialized();
     const time = c.glfwGetTime();
     if (time != 0) return time;
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
     // `glfwGetTime` returns `0` only for errors
+    // but the only potential error is unreachable (NotInitialized)
     unreachable;
 }
 
@@ -49,7 +46,7 @@ pub inline fn getTime() f64 {
 ///
 /// @param[in] time The new value, in seconds.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.InvalidValue.
+/// Possible errors include glfw.Error.InvalidValue.
 ///
 /// The upper limit of GLFW time is calculated as `floor((2^64 - 1) / 10^9)` and is due to
 /// implementations storing nanoseconds in 64 bits. The limit may be increased in the future.
@@ -70,11 +67,6 @@ pub inline fn setTime(time: f64) void {
     });
 
     c.glfwSetTime(time);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidValue => unreachable,
-        else => unreachable,
-    };
 }
 
 /// Returns the current value of the raw timer.
@@ -91,11 +83,8 @@ pub inline fn getTimerValue() u64 {
     internal_debug.assertInitialized();
     const value = c.glfwGetTimerValue();
     if (value != 0) return value;
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
     // `glfwGetTimerValue` returns `0` only for errors
+    // but the only potential error is unreachable (NotInitialized)
     unreachable;
 }
 
@@ -112,17 +101,18 @@ pub inline fn getTimerFrequency() u64 {
     internal_debug.assertInitialized();
     const frequency = c.glfwGetTimerFrequency();
     if (frequency != 0) return frequency;
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
     // `glfwGetTimerFrequency` returns `0` only for errors
+    // but the only potential error is unreachable (NotInitialized)
     unreachable;
 }
 
 test "getTime" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     _ = getTime();
@@ -130,7 +120,11 @@ test "getTime" {
 
 test "setTime" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     _ = glfw.setTime(1234);
@@ -138,7 +132,11 @@ test "setTime" {
 
 test "getTimerValue" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     _ = glfw.getTimerValue();
@@ -146,7 +144,11 @@ test "getTimerValue" {
 
 test "getTimerFrequency" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     _ = glfw.getTimerFrequency();

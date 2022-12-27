@@ -190,6 +190,13 @@ pub inline fn getError() Error!void {
     return convertError(c.glfwGetError(null));
 }
 
+/// Returns and clears the last error for the calling thread. If no error is present, this function
+/// panics.
+pub inline fn mustGetError() Error {
+    try getError();
+    @panic("glfw: mustGetError called but no error is present");
+}
+
 /// Returns and clears the last error description for the calling thread.
 ///
 /// This function returns a UTF-8 encoded human-readable description of the last error that occured

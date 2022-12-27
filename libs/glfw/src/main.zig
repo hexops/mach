@@ -12,7 +12,9 @@ pub const dont_care = c.GLFW_DONT_CARE;
 /// may be useful.
 pub const errors = @import("errors.zig");
 
-const getError = errors.getError;
+pub const getError = errors.getError;
+pub const mustGetError = errors.mustGetError;
+pub const getErrorString = errors.getErrorString;
 pub const setErrorCallback = errors.setErrorCallback;
 pub const Error = errors.Error;
 
@@ -81,8 +83,11 @@ pub fn assumeInitialized() void {
 /// current environment if that category is still "C".  This is because the "C" locale breaks
 /// Unicode text input.
 ///
+/// Possible errors include glfw.Error.PlatformUnavailable, glfw.Error.PlatformError.
+/// Returns a bool indicating success.
+///
 /// @thread_safety This function must only be called from the main thread.
-pub inline fn init(hints: InitHints) error{ PlatformUnavailable, PlatformError }!void {
+pub inline fn init(hints: InitHints) bool {
     internal_debug.toggleInitialized();
     internal_debug.assertInitialized();
     errdefer {
@@ -100,12 +105,7 @@ pub inline fn init(hints: InitHints) error{ PlatformUnavailable, PlatformError }
         }
     }
 
-    if (c.glfwInit() == c.GLFW_TRUE) return;
-    getError() catch |err| return switch (err) {
-        Error.PlatformUnavailable => |e| e,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
+    return c.glfwInit() == c.GLFW_TRUE;
 }
 
 // TODO: implement custom allocator support
@@ -161,10 +161,6 @@ pub inline fn terminate() void {
     internal_debug.assertInitialized();
     internal_debug.toggleInitialized();
     c.glfwTerminate();
-    getError() catch |err| return switch (err) {
-        Error.PlatformError => std.log.err("mach/glfw: Failed to terminate GLFW: {}", .{err}),
-        else => unreachable,
-    };
 }
 
 /// Initialization hints for passing into glfw.init
@@ -280,11 +276,6 @@ fn initHint(hint: InitHint, value: anytype) void {
         .Bool => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, @boolToInt(value))),
         else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
     }
-    getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable,
-        Error.InvalidValue => unreachable,
-        else => unreachable,
-    };
 }
 
 /// Returns a string describing the compile-time configuration.
@@ -320,12 +311,7 @@ pub inline fn getVersionString() [:0]const u8 {
 /// thread_safety: This function may be called from any thread.
 pub fn getPlatform() PlatformType {
     internal_debug.assertInitialized();
-    const platform = @intToEnum(PlatformType, c.glfwGetPlatform());
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
-    return platform;
+    return @intToEnum(PlatformType, c.glfwGetPlatform());
 }
 
 /// Returns whether the library includes support for the specified platform.
@@ -339,12 +325,7 @@ pub fn getPlatform() PlatformType {
 /// thread_safety: This function may be called from any thread.
 pub fn platformSupported(platform: PlatformType) bool {
     internal_debug.assertInitialized();
-    const is_supported = c.glfwPlatformSupported(@enumToInt(platform));
-    getError() catch |err| return switch (err) {
-        Error.InvalidEnum => unreachable,
-        else => unreachable,
-    };
-    return is_supported == c.GLFW_TRUE;
+    return c.glfwPlatformSupported(@enumToInt(platform)) == c.GLFW_TRUE;
 }
 
 /// Processes all pending events.
@@ -365,21 +346,16 @@ pub fn platformSupported(platform: PlatformType) bool {
 ///
 /// Event processing is not required for joystick input to work.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
 ///
 /// @reentrancy This function must not be called from a callback.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-pub inline fn pollEvents() error{PlatformError}!void {
+pub inline fn pollEvents() void {
     internal_debug.assertInitialized();
     c.glfwPollEvents();
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
 }
 
 /// Waits until events are queued and processes them.
@@ -405,21 +381,16 @@ pub inline fn pollEvents() error{PlatformError}!void {
 ///
 /// Event processing is not required for joystick input to work.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
 ///
 /// @reentrancy This function must not be called from a callback.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.pollEvents, glfw.waitEventsTimeout
-pub inline fn waitEvents() error{PlatformError}!void {
+pub inline fn waitEvents() void {
     internal_debug.assertInitialized();
     c.glfwWaitEvents();
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
 }
 
 /// Waits with timeout until events are queued and processes them.
@@ -449,25 +420,19 @@ pub inline fn waitEvents() error{PlatformError}!void {
 ///
 /// @param[in] timeout The maximum amount of time, in seconds, to wait.
 ///
-/// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidValue and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.InvalidValue and glfw.Error.PlatformError.
 ///
 /// @reentrancy This function must not be called from a callback.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: events, glfw.pollEvents, glfw.waitEvents
-pub inline fn waitEventsTimeout(timeout: f64) error{PlatformError}!void {
+pub inline fn waitEventsTimeout(timeout: f64) void {
     internal_debug.assertInitialized();
     std.debug.assert(!std.math.isNan(timeout));
     std.debug.assert(timeout >= 0);
     std.debug.assert(timeout <= std.math.f64_max);
     c.glfwWaitEventsTimeout(timeout);
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidValue => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
 }
 
 /// Posts an empty event to the event queue.
@@ -475,19 +440,14 @@ pub inline fn waitEventsTimeout(timeout: f64) error{PlatformError}!void {
 /// This function posts an empty event from the current thread to the event queue, causing
 /// glfw.waitEvents or glfw.waitEventsTimeout to return.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
 ///
 /// @thread_safety This function may be called from any thread.
 ///
 /// see also: events, glfw.waitEvents, glfw.waitEventsTimeout
-pub inline fn postEmptyEvent() error{PlatformError}!void {
+pub inline fn postEmptyEvent() void {
     internal_debug.assertInitialized();
     c.glfwPostEmptyEvent();
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
 }
 
 /// Returns whether raw mouse motion is supported.
@@ -509,23 +469,20 @@ pub inline fn postEmptyEvent() error{PlatformError}!void {
 /// see also: raw_mouse_motion, glfw.setInputMode
 pub inline fn rawMouseMotionSupported() bool {
     internal_debug.assertInitialized();
-    const supported = c.glfwRawMouseMotionSupported();
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        else => unreachable,
-    };
-    return supported == c.GLFW_TRUE;
+    return c.glfwRawMouseMotionSupported() == c.GLFW_TRUE;
 }
 
 pub fn basicTest() !void {
-    try init(.{});
+    defer getError() catch {}; // clear any error we generate
+    if (!init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
+        std.process.exit(1);
+    }
     defer terminate();
 
-    const window = Window.create(640, 480, "GLFW example", null, null, .{}) catch |err| {
-        // return without fail, because most of our CI environments are headless / we cannot open
-        // windows on them.
-        std.debug.print("note: failed to create window: {}\n", .{err});
-        return;
+    const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
+        std.log.err("failed to create window: {?s}", .{getErrorString()});
+        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -545,34 +502,54 @@ test "getVersionString" {
 }
 
 test "pollEvents" {
-    try init(.{ .cocoa_chdir_resources = true });
+    init(.{ .cocoa_chdir_resources = true });
+    if (getErrorString()) |err| {
+        std.log.err("failed to initialize GLFW: {?s}", .{err});
+        std.process.exit(1);
+    }
     defer terminate();
 }
 
 test "pollEvents" {
-    try init(.{});
+    defer getError() catch {}; // clear any error we generate
+    if (!init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
+        std.process.exit(1);
+    }
     defer terminate();
 
-    try pollEvents();
+    pollEvents();
 }
 
 test "waitEventsTimeout" {
-    try init(.{});
+    defer getError() catch {}; // clear any error we generate
+    if (!init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
+        std.process.exit(1);
+    }
     defer terminate();
 
-    try waitEventsTimeout(0.25);
+    waitEventsTimeout(0.25);
 }
 
 test "postEmptyEvent_and_waitEvents" {
-    try init(.{});
+    defer getError() catch {}; // clear any error we generate
+    if (!init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
+        std.process.exit(1);
+    }
     defer terminate();
 
-    try postEmptyEvent();
-    try waitEvents();
+    postEmptyEvent();
+    waitEvents();
 }
 
 test "rawMouseMotionSupported" {
-    try init(.{});
+    defer getError() catch {}; // clear any error we generate
+    if (!init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
+        std.process.exit(1);
+    }
     defer terminate();
 
     _ = rawMouseMotionSupported();

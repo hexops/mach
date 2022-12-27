@@ -106,23 +106,19 @@ pub const Shape = enum(i32) {
 /// @param[in] yhot The desired y-coordinate, in pixels, of the cursor hotspot.
 /// @return The handle of the created cursor.
 ///
+/// Possible errors include glfw.Error.PlatformError and glfw.Error.InvalidValue
+/// null is returned in the event of an error.
+///
 /// @pointer_lifetime The specified image data is copied before this function returns.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_object, glfw.Cursor.destroy, glfw.Cursor.createStandard
-pub inline fn create(image: Image, xhot: i32, yhot: i32) error{ PlatformError, InvalidValue }!Cursor {
+pub inline fn create(image: Image, xhot: i32, yhot: i32) ?Cursor {
     internal_debug.assertInitialized();
     const img = image.toC();
     if (c.glfwCreateCursor(&img, @intCast(c_int, xhot), @intCast(c_int, yhot))) |cursor| return Cursor{ .ptr = cursor };
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.PlatformError => |e| e,
-        Error.InvalidValue => |e| e,
-        else => unreachable,
-    };
-    // `glfwCreateCursor` returns `null` only for errors
-    unreachable;
+    return null;
 }
 
 /// Creates a cursor with a standard shape.
@@ -151,22 +147,16 @@ pub inline fn create(image: Image, xhot: i32, yhot: i32) error{ PlatformError, I
 /// 2. This uses a newer standard that not all cursor themes support.
 ///
 /// If the requested shape is not available, this function emits a CursorUnavailable error
+/// Possible errors include glfw.Error.PlatformError and glfw.Error.CursorUnavailable.
+/// null is returned in the event of an error.
 ///
 /// thread_safety: This function must only be called from the main thread.
 ///
 /// see also: cursor_object, glfwCreateCursor
-pub inline fn createStandard(shape: Shape) error{ PlatformError, CursorUnavailable }!Cursor {
+pub inline fn createStandard(shape: Shape) ?Cursor {
     internal_debug.assertInitialized();
     if (c.glfwCreateStandardCursor(@intCast(c_int, @enumToInt(shape)))) |cursor| return Cursor{ .ptr = cursor };
-    getError() catch |err| return switch (err) {
-        Error.NotInitialized => unreachable,
-        Error.InvalidEnum => unreachable,
-        Error.CursorUnavailable => |e| e,
-        Error.PlatformError => |e| e,
-        else => unreachable,
-    };
-    // `glfwCreateStandardCursor` returns `null` only for errors
-    unreachable;
+    return null;
 }
 
 /// Destroys a cursor.
@@ -177,7 +167,7 @@ pub inline fn createStandard(shape: Shape) error{ PlatformError, CursorUnavailab
 /// If the specified cursor is current for any window, that window will be reverted to the default
 /// cursor. This does not affect the cursor mode.
 ///
-/// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+/// Possible errors include glfw.Error.PlatformError.
 ///
 /// @reentrancy This function must not be called from a callback.
 ///
@@ -187,37 +177,35 @@ pub inline fn createStandard(shape: Shape) error{ PlatformError, CursorUnavailab
 pub inline fn destroy(self: Cursor) void {
     internal_debug.assertInitialized();
     c.glfwDestroyCursor(self.ptr);
-    getError() catch |err| return switch (err) {
-        Error.PlatformError => std.log.err("mach/glfw: unable to destroy Cursor: {}\n", .{err}),
-        else => unreachable,
-    };
 }
 
 test "create" {
     const allocator = testing.allocator;
 
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
     const image = try Image.init(allocator, 32, 32, 32 * 32 * 4);
     defer image.deinit(allocator);
 
-    const cursor = glfw.Cursor.create(image, 0, 0) catch |err| {
-        std.debug.print("failed to create cursor, custom cursors not supported? error={}\n", .{err});
-        return;
-    };
-    cursor.destroy();
+    const cursor = glfw.Cursor.create(image, 0, 0);
+    if (cursor) |cur| cur.destroy();
 }
 
 test "createStandard" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
-    const cursor = glfw.Cursor.createStandard(.ibeam) catch |err| {
-        std.debug.print("failed to create cursor, custom cursors not supported? error={}\n", .{err});
-        return;
-    };
-    cursor.destroy();
+    const cursor = glfw.Cursor.createStandard(.ibeam);
+    if (cursor) |cur| cur.destroy();
 }

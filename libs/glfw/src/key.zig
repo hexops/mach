@@ -204,7 +204,8 @@ pub const Key = enum(c_int) {
     /// @param[in] scancode The scancode of the key to query.
     /// @return The UTF-8 encoded, layout-specific name of the key, or null.
     ///
-    /// Possible errors include glfw.Error.NotInitialized and glfw.Error.PlatformError.
+    /// Possible errors include glfw.Error.PlatformError.
+    /// Also returns null in the event of an error.
     ///
     /// The contents of the returned string may change when a keyboard layout change event is received.
     ///
@@ -214,14 +215,9 @@ pub const Key = enum(c_int) {
     /// @thread_safety This function must only be called from the main thread.
     ///
     /// see also: input_key_name
-    pub inline fn getName(self: Key, scancode: i32) error{PlatformError}!?[:0]const u8 {
+    pub inline fn getName(self: Key, scancode: i32) ?[:0]const u8 {
         internal_debug.assertInitialized();
         const name_opt = cc.glfwGetKeyName(@enumToInt(self), @intCast(c_int, scancode));
-        getError() catch |err| return switch (err) {
-            Error.NotInitialized => unreachable,
-            Error.PlatformError => |e| e,
-            else => unreachable,
-        };
         return if (name_opt) |name|
             std.mem.span(@ptrCast([*:0]const u8, name))
         else
@@ -237,36 +233,36 @@ pub const Key = enum(c_int) {
     /// @param[in] key Any named key (see keys).
     /// @return The platform-specific scancode for the key.
     ///
-    /// Possible errors include glfw.Error.NotInitialized, glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+    /// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+    /// Additionally returns -1 in the event of an error.
     ///
     /// @thread_safety This function may be called from any thread.
-    pub inline fn getScancode(self: Key) error{PlatformError}!i32 {
+    pub inline fn getScancode(self: Key) i32 {
         internal_debug.assertInitialized();
-        const scancode = cc.glfwGetKeyScancode(@enumToInt(self));
-        if (scancode != -1) return scancode;
-        getError() catch |err| return switch (err) {
-            Error.NotInitialized => unreachable,
-            Error.InvalidEnum => unreachable,
-            Error.PlatformError => |e| e,
-            else => unreachable,
-        };
-        // `glfwGetKeyScancode` returns `-1` only for errors
-        unreachable;
+        return cc.glfwGetKeyScancode(@enumToInt(self));
     }
 };
 
 test "getName" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
-    _ = glfw.Key.a.getName(0) catch |err| std.debug.print("failed to get key name, not supported? error={}\n", .{err});
+    _ = glfw.Key.a.getName(0);
 }
 
 test "getScancode" {
     const glfw = @import("main.zig");
-    try glfw.init(.{});
+    defer glfw.getError() catch {}; // clear any error we generate
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
-    _ = glfw.Key.a.getScancode() catch |err| std.debug.print("failed to get key scancode, not supported? error={}\n", .{err});
+    _ = glfw.Key.a.getScancode();
 }
