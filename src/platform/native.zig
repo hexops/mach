@@ -320,6 +320,10 @@ pub const Platform = struct {
 
         platform.last_position = try platform.window.getPos();
 
+        if (options.borderless_window) {
+            try glfw.Window.setAttrib(platform.window, .decorated, false);
+        }
+
         if (options.fullscreen) {
             var monitor: ?glfw.Monitor = null;
 
