@@ -42,6 +42,9 @@ pub const Options = struct {
     /// Headless mode.
     headless: bool = false,
 
+    /// Borderless window
+    borderless_window: bool = false,
+
     /// Monitor synchronization modes.
     vsync: enums.VSyncMode = .double,
 
