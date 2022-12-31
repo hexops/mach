@@ -208,9 +208,9 @@ pub const ArchetypeStorage = struct {
             for (storage.columns) |column, i| {
                 const block = storage.blocks[i];
                 const dstStart = column.size * row_index;
-                const dst = block[dstStart .. dstStart + (column.size)];
+                const dst = block[dstStart .. dstStart + column.size];
                 const srcStart = column.size * (storage.len - 1);
-                const src = block[srcStart .. srcStart + (column.size)];
+                const src = block[srcStart .. srcStart + column.size];
                 std.mem.copy(u8, dst, src);
             }
         }
