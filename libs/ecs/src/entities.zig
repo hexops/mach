@@ -198,6 +198,7 @@ pub const ArchetypeStorage = struct {
     pub fn setRaw(storage: *ArchetypeStorage, row_index: u32, column: Column, component: []u8) !void {
         const values = storage.getRawColumnValues(column.name) orelse @panic("setRaw(): no such component");
         const start = column.size * row_index;
+        assert(component.len == column.size);
         mem.copy(u8, values[start..], component);
     }
 
