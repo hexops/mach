@@ -92,7 +92,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
     var response: ?RequestAdapterResponse = null;
     instance.?.requestAdapter(&gpu.RequestAdapterOptions{
         .compatible_surface = surface,
-        .power_preference = .undef,
+        .power_preference = .undefined,
         .force_fallback_adapter = false,
     }, &response, requestAdapterCallback);
     if (response.?.status != .success) {
@@ -235,10 +235,10 @@ pub fn msgSend(obj: anytype, sel_name: [:0]const u8, args: anytype, comptime Ret
 
     const FnType = switch (args_meta.len) {
         0 => *const fn (@TypeOf(obj), objc.SEL) callconv(.C) ReturnType,
-        1 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type) callconv(.C) ReturnType,
-        2 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type) callconv(.C) ReturnType,
-        3 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type) callconv(.C) ReturnType,
-        4 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type, args_meta[3].field_type) callconv(.C) ReturnType,
+        1 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].type) callconv(.C) ReturnType,
+        2 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].type, args_meta[1].type) callconv(.C) ReturnType,
+        3 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].type, args_meta[1].type, args_meta[2].type) callconv(.C) ReturnType,
+        4 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].type, args_meta[1].type, args_meta[2].type, args_meta[3].type) callconv(.C) ReturnType,
         else => @compileError("Unsupported number of args"),
     };
 
@@ -246,5 +246,5 @@ pub fn msgSend(obj: anytype, sel_name: [:0]const u8, args: anytype, comptime Ret
     var func = @ptrCast(FnType, &objc.objc_msgSend);
     const sel = objc.sel_getUid(@ptrCast([*c]const u8, sel_name));
 
-    return @call(.{}, func, .{ obj, sel } ++ args);
+    return @call(.auto, func, .{ obj, sel } ++ args);
 }
