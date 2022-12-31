@@ -144,19 +144,15 @@ pub const ArchetypeStorage = struct {
         assert(storage.capacity >= storage.len);
 
         // TODO: ensure columns are sorted by type_id
-
         for (storage.columns) |*column, i| {
             const old_block = storage.blocks[i];
             const new_block = try gpa.alloc(u8, new_capacity * column.size);
-
             if (storage.capacity > 0) {
                 mem.copy(u8, new_block[0..], old_block);
                 gpa.free(old_block);
             }
-
             storage.blocks[i] = new_block;
         }
-
         storage.capacity = @intCast(u32, new_capacity);
     }
 
