@@ -164,7 +164,9 @@ pub const ArchetypeStorage = struct {
         inline for (fields) |field, index| {
             const ColumnType = field.type;
             if (@sizeOf(ColumnType) == 0) continue;
-            var block = storage.blocks[index];
+
+            const column = storage.columns[index];
+            var block = storage.blocks[column.index];
             const column_values = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &block));
             column_values[row_index] = @field(row, field.name);
         }
