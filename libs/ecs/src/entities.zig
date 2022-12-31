@@ -173,17 +173,18 @@ pub const ArchetypeStorage = struct {
     }
 
     /// Sets the value of the named components (columns) for the given row in the table.
-    pub fn set(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, component: anytype) void {
+    pub fn set(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, name: []const u8, component: anytype) void {
         const ColumnType = @TypeOf(component);
+        if (@sizeOf(ColumnType) == 0) return;
 
-        const values = storage.getColumnValues(gpa, ColumnType) orelse @panic("no such component");
+        const values = storage.getColumnValues(gpa, name, ColumnType) orelse @panic("no such component");
         values[row_index] = component;
     }
 
-    pub fn get(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, comptime ColumnType: type) ?ColumnType {
+    pub fn get(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, name: []const u8, comptime ColumnType: type) ?ColumnType {
         if (@sizeOf(ColumnType) == 0) return {};
 
-        const values = storage.getColumnValues(gpa, ColumnType) orelse return null;
+        const values = storage.getColumnValues(gpa, name, ColumnType) orelse return null;
         return values[row_index];
     }
 
@@ -231,12 +232,9 @@ pub const ArchetypeStorage = struct {
         return false;
     }
 
-    pub fn getColumnValues(storage: *ArchetypeStorage, gpa: Allocator, comptime ColumnType: type) ?[]ColumnType {
-        const type_id = typeId(ColumnType);
-
+    pub fn getColumnValues(storage: *ArchetypeStorage, gpa: Allocator, name: []const u8, comptime ColumnType: type) ?[]ColumnType {
         for (storage.columns) |column, i| {
-            if (column.type_id != type_id) continue;
-
+            if (!std.mem.eql(u8, column.name, name)) continue;
             if (is_debug) {
                 if (typeId(ColumnType) != column.type_id) {
                     const msg = std.mem.concat(gpa, u8, &.{
@@ -250,8 +248,8 @@ pub const ArchetypeStorage = struct {
             }
             var block = storage.blocks[i];
             const ptr = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &block));
-            const slice = ptr[0..storage.capacity];
-            return slice;
+            const column_values = ptr[0..storage.capacity];
+            return column_values;
         }
 
         return null;
@@ -495,7 +493,7 @@ pub fn Entities(comptime all_components: anytype) type {
             // A swap removal will be performed, update the entity stored in the last row of the
             // archetype table to point to the row the entity we are removing is currently located.
             if (archetype.len > 1) {
-                const last_row_entity_id = archetype.get(entities.allocator, archetype.len - 1, EntityID).?;
+                const last_row_entity_id = archetype.get(entities.allocator, archetype.len - 1, "id", EntityID).?;
                 try entities.entities.put(entities.allocator, last_row_entity_id, Pointer{
                     .archetype_index = ptr.archetype_index,
                     .row_index = ptr.row_index,
@@ -590,7 +588,7 @@ pub fn Entities(comptime all_components: anytype) type {
             if (new_hash == old_hash) {
                 // Update the value of the existing component of the entity.
                 const ptr = entities.entities.get(entity).?;
-                current_archetype_storage.set(entities.allocator, ptr.row_index, component);
+                current_archetype_storage.set(entities.allocator, ptr.row_index, name, component);
                 return;
             }
 
@@ -600,7 +598,7 @@ pub fn Entities(comptime all_components: anytype) type {
             const old_ptr = entities.entities.get(entity).?;
 
             // Update the storage/columns for all of the existing components on the entity.
-            current_archetype_storage.set(entities.allocator, new_row, entity);
+            current_archetype_storage.set(entities.allocator, new_row, "id", entity);
             for (archetype.columns) |column| {
                 if (std.mem.eql(u8, column.name, "id")) continue;
                 for (current_archetype_storage.columns) |corresponding| {
@@ -616,10 +614,10 @@ pub fn Entities(comptime all_components: anytype) type {
             }
 
             // Update the storage/column for the new component.
-            current_archetype_storage.set(entities.allocator, new_row, component);
+            current_archetype_storage.set(entities.allocator, new_row, name, component);
 
             archetype.remove(old_ptr.row_index);
-            const swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, EntityID).?;
+            const swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, "id", EntityID).?;
             // TODO: try is wrong here and below?
             // if we removed the last entry from archetype, then swapped_entity_id == entity
             // so the second entities.put will clobber this one
@@ -647,10 +645,11 @@ pub fn Entities(comptime all_components: anytype) type {
                 @field(all_components, @tagName(namespace_name)),
                 @tagName(component_name),
             );
+            const name = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             var archetype = entities.archetypeByID(entity);
 
             const ptr = entities.entities.get(entity).?;
-            return archetype.get(entities.allocator, ptr.row_index, Component);
+            return archetype.get(entities.allocator, ptr.row_index, name, Component);
         }
 
         /// Removes the named component from the entity, or noop if it doesn't have such a component.
@@ -722,7 +721,7 @@ pub fn Entities(comptime all_components: anytype) type {
 
             // Update the storage/columns for all of the existing components on the entity that exist in
             // the new archetype table (i.e. excluding the component to remove.)
-            current_archetype_storage.set(entities.allocator, new_row, entity);
+            current_archetype_storage.set(entities.allocator, new_row, "id", entity);
             for (current_archetype_storage.columns) |column| {
                 if (std.mem.eql(u8, column.name, "id")) continue;
                 for (archetype.columns) |corresponding| {
@@ -738,7 +737,7 @@ pub fn Entities(comptime all_components: anytype) type {
             }
 
             archetype.remove(old_ptr.row_index);
-            const swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, EntityID).?;
+            const swapped_entity_id = archetype.get(entities.allocator, old_ptr.row_index, "id", EntityID).?;
             // TODO: try is wrong here and below?
             // if we removed the last entry from archetype, then swapped_entity_id == entity
             // so the second entities.put will clobber this one
