@@ -15,9 +15,6 @@
 [submodule "glfw/upstream"]
 	path = libs/glfw/upstream
 	url = https://github.com/hexops/glfw
-[submodule "sysaudio/upstream"]
-	path = libs/sysaudio/upstream
-	url = https://github.com/hexops/soundio
 [submodule "basisu/upstream"]
 	path = libs/basisu/upstream
 	url = https://github.com/hexops/basisu

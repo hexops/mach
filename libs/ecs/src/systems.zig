@@ -42,7 +42,7 @@ pub fn Messages(comptime messages: anytype) type {
         const message_type = @field(messages, message_field.name);
         fields = fields ++ [_]std.builtin.Type.UnionField{.{
             .name = message_field.name,
-            .field_type = message_type,
+            .type = message_type,
             .alignment = if (message_type == void) 0 else @alignOf(message_type),
         }};
     }
@@ -80,7 +80,6 @@ pub fn MessagesTag(comptime messages: anytype) type {
 
     return @Type(.{
         .Enum = .{
-            .layout = .Auto,
             .tag_type = std.meta.Int(.unsigned, @floatToInt(u16, math.ceil(math.log2(@intToFloat(f64, message_fields.len))))),
             .fields = fields,
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -99,7 +98,7 @@ fn NamespacedComponents(comptime modules: anytype) type {
         if (@hasField(@TypeOf(module), "components")) {
             fields = fields ++ [_]std.builtin.Type.StructField{.{
                 .name = module_field.name,
-                .field_type = @TypeOf(module.components),
+                .type = @TypeOf(module.components),
                 .default_value = null,
                 .is_comptime = false,
                 .alignment = @alignOf(@TypeOf(module.components)),
@@ -204,7 +203,7 @@ fn NamespacedGlobals(comptime modules: anytype) type {
         if (@hasField(@TypeOf(module), "globals")) {
             fields = fields ++ [_]std.builtin.Type.StructField{.{
                 .name = module_field.name,
-                .field_type = module.globals,
+                .type = module.globals,
                 .default_value = null,
                 .is_comptime = false,
                 .alignment = @alignOf(module.globals),

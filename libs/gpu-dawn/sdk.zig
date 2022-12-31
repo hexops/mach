@@ -50,7 +50,7 @@ pub fn Sdk(comptime deps: anytype) type {
             install_libs: bool = false,
 
             /// The binary release version to use from https://github.com/hexops/mach-gpu-dawn/releases
-            binary_version: []const u8 = "release-dd770e7",
+            binary_version: []const u8 = "release-8b2d2c0",
 
             /// Detects the default options to use for the given target.
             pub fn detectDefaults(self: Options, target: std.Target) Options {
@@ -241,7 +241,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const target = step.target_info.target;
             const binaries_available = switch (target.os.tag) {
                 .windows => target.abi.isGnu(),
-                .linux => target.cpu.arch.isX86() and (target.abi.isGnu() or target.abi.isMusl()),
+                .linux => (target.cpu.arch.isX86() or target.cpu.arch.isAARCH64()) and (target.abi.isGnu() or target.abi.isMusl()),
                 .macos => blk: {
                     if (!target.cpu.arch.isX86() and !target.cpu.arch.isAARCH64()) break :blk false;
 

@@ -16,7 +16,7 @@ jobs:
       - name: Setup Zig
         run: |
           sudo apt install xz-utils libasound2-dev
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.4476+0f0076666.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.1000+94780f7cd.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       # - name: x86_64-linux -> x86_64-linux-musl
       #   if: matrix.project == 'libs/freetype' || matrix.project == 'libs/glfw'
       #   run: zig build -Dtarget=x86_64-linux-musl
@@ -30,30 +30,14 @@ jobs:
           AGREE: true
       - name: x86_64-linux -> x86_64-windows
         run: zig build -Dtarget=x86_64-windows-gnu
-      - name: compile all examples
-        run: zig build compile-all -Dtarget=x86_64-linux-gnu
       - name: launch xvfb
         run: Xvfb :99 -screen 0 1680x720x24 > /dev/null 2>&1 &
       - name: test
         run: |
           sudo add-apt-repository -y ppa:kisak/kisak-mesa
           sudo apt-get update
-          sudo apt-get install mesa-utils mesa-utils-extra mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers xvfb
+          sudo apt-get install mesa-utils mesa-utils-extra mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers xvfb pulseaudio jackd
           zig build test
-  wasm32-freestanding:
-    runs-on: ubuntu-latest
-    # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
-    # to the branch.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Zig
-        run: |
-          sudo apt install xz-utils libasound2-dev
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.4476+0f0076666.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
-      - name: compile all examples
-        run: zig build compile-all -Dtarget=wasm32-freestanding-none
   x86_64-windows:
     runs-on: windows-latest
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
@@ -67,12 +51,10 @@ jobs:
       - name: Setup Zig
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri 'https://ziglang.org/builds/zig-windows-x86_64-0.10.0-dev.4476+0f0076666.zip' -OutFile 'C:\zig.zip'
+          Invoke-WebRequest -Uri 'https://ziglang.org/builds/zig-windows-x86_64-0.11.0-dev.1000+94780f7cd.zip' -OutFile 'C:\zig.zip'
           cd C:\
           7z x zig.zip
-          Add-Content $env:GITHUB_PATH 'C:\zig-windows-x86_64-0.10.0-dev.4476+0f0076666\'
-      - name: compile all examples
-        run: zig build compile-all
+          Add-Content $env:GITHUB_PATH 'C:\zig-windows-x86_64-0.11.0-dev.1000+94780f7cd\'
       - name: test
         run: zig build test
   x86_64-macos:
@@ -87,7 +69,7 @@ jobs:
         run: |
           brew uninstall --ignore-dependencies libx11 # https://github.com/ziglang/zig/issues/11066
           brew install xz
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.10.0-dev.4476+0f0076666.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.11.0-dev.1000+94780f7cd.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: test
         run: zig build test
         env:

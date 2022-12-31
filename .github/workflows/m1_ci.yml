@@ -21,17 +21,13 @@ jobs:
           rm -rf $GITHUB_WORKSPACE && mkdir $GITHUB_WORKSPACE
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Setup Zig
-        run: |
-          sudo rm -rf /usr/local/bin/zig /usr/local/bin/lib/
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.4476+0f0076666.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
-      - name: mach::test
+      - name: test
         run: zig build test
         env:
           AGREE: true
-      - name: compile all examples
-        run: zig build compile-all
+      - name: build
+        run: zig build
         env:
           AGREE: true
-      - name: compile all examples (WASM)
-        run: zig build compile-all -Dtarget=wasm32-freestanding-none
+      - name: build (WASM)
+        run: zig build -Dtarget=wasm32-freestanding-none

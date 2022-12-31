@@ -1,213 +1,236 @@
 const std = @import("std");
-const Mode = @import("main.zig").Mode;
-const Format = @import("main.zig").Format;
-const DataCallback = @import("main.zig").DataCallback;
 const js = @import("sysjs");
+const main = @import("main.zig");
+const backends = @import("backends.zig");
+const util = @import("util.zig");
 
-const Audio = @This();
+const channel_size = 1024;
+const channel_size_bytes = channel_size * @sizeOf(f32);
 
-pub const Device = struct {
-    properties: Properties,
-
-    // Internal fields.
-    context: js.Object,
-
-    pub const Options = struct {
-        mode: Mode = .output,
-        format: ?Format = null,
-        is_raw: ?bool = null,
-        channels: ?u8 = null,
-        sample_rate: ?u32 = null,
-        id: ?[:0]const u8 = null,
-        name: ?[]const u8 = null,
-    };
-
-    pub const Properties = struct {
-        mode: Mode,
-        format: Format,
-        is_raw: bool,
-        channels: u8,
-        sample_rate: u32,
-        id: [:0]const u8,
-        name: []const u8,
-    };
-
-    pub fn deinit(device: *Device, allocator: std.mem.Allocator) void {
-        device.context.deinit();
-        allocator.destroy(device);
-    }
-
-    pub fn setCallback(device: *Device, callback: DataCallback, user_data: ?*anyopaque) void {
-        device.context.set("device", js.createNumber(@intToFloat(f64, @ptrToInt(device))));
-        device.context.set("callback", js.createNumber(@intToFloat(f64, @ptrToInt(callback))));
-        if (user_data) |ud|
-            device.context.set("user_data", js.createNumber(@intToFloat(f64, @ptrToInt(ud))));
-    }
-
-    pub fn pause(device: *Device) Error!void {
-        _ = device.context.call("suspend", &.{});
-    }
-
-    pub fn start(device: *Device) Error!void {
-        _ = device.context.call("resume", &.{});
-    }
+const dummy_playback = main.Device{
+    .id = "default-playback",
+    .name = "Default Device",
+    .mode = .playback,
+    .channels = undefined,
+    .formats = &.{.f32},
+    .sample_rate = .{
+        .min = 8_000,
+        .max = 96_000,
+    },
 };
 
-pub const DeviceIterator = struct {
-    ctx: *Audio,
-    mode: Mode,
+pub const Context = struct {
+    allocator: std.mem.Allocator,
+    devices_info: util.DevicesInfo,
 
-    pub fn next(_: DeviceIterator) IteratorError!?Device.Properties {
-        return null;
-    }
-};
+    pub fn init(allocator: std.mem.Allocator, options: main.Context.Options) !backends.BackendContext {
+        _ = options;
 
-pub const IteratorError = error{};
+        const audio_context = js.global().get("AudioContext");
+        if (audio_context.is(.undefined))
+            return error.ConnectionRefused;
 
-pub const Error = error{
-    OutOfMemory,
-    AudioUnsupported,
-};
+        var self = try allocator.create(Context);
+        errdefer allocator.destroy(self);
+        self.* = .{
+            .allocator = allocator,
+            .devices_info = util.DevicesInfo.init(),
+        };
 
-context_constructor: js.Function,
-
-pub fn init() Error!Audio {
-    const context = js.global().get("AudioContext");
-    if (context.is(.undefined))
-        return error.AudioUnsupported;
-
-    return Audio{ .context_constructor = context.view(.func) };
-}
-
-pub fn deinit(audio: Audio) void {
-    audio.context_constructor.deinit();
-}
-
-// TODO(sysaudio): implement waitEvents for WebAudio, will a WASM process terminate without this?
-pub fn waitEvents(_: Audio) void {}
-
-const default_channel_count = 2;
-const default_sample_rate = 48000;
-const default_buffer_size_per_channel = 1024; // 21.33ms
-
-pub fn requestDevice(audio: Audio, allocator: std.mem.Allocator, options: Device.Options) Error!*Device {
-    // NOTE: WebAudio only supports F32 audio format, so options.format is unused
-    const mode = options.mode;
-    const channels = options.channels orelse default_channel_count;
-    const sample_rate = options.sample_rate orelse default_sample_rate;
-
-    const context_options = js.createMap();
-    defer context_options.deinit();
-    context_options.set("sampleRate", js.createNumber(@intToFloat(f64, sample_rate)));
-
-    const context = audio.context_constructor.construct(&.{context_options.toValue()});
-    _ = context.call("suspend", &.{});
-
-    const input_channels = if (mode == .input) js.createNumber(@intToFloat(f64, channels)) else js.createUndefined();
-    const output_channels = if (mode == .output) js.createNumber(@intToFloat(f64, channels)) else js.createUndefined();
-
-    const node = context.call("createScriptProcessor", &.{ js.createNumber(default_buffer_size_per_channel), input_channels, output_channels }).view(.object);
-    defer node.deinit();
-
-    context.set("node", node.toValue());
-
-    {
-        // TODO(sysaudio): this capture leaks for now, we need a better way to pass captures via sysjs
-        // that passes by value I think.
-        const captures = std.heap.page_allocator.alloc(js.Value, 1) catch unreachable;
-        captures[0] = context.toValue();
-        const audio_process_event = js.createFunction(audioProcessEvent, captures);
-
-        // TODO(sysaudio): this leaks, we need a good place to clean this up.
-        // defer audio_process_event.deinit();
-        node.set("onaudioprocess", audio_process_event.toValue());
+        return .{ .webaudio = self };
     }
 
-    {
-        const destination = context.get("destination").view(.object);
-        defer destination.deinit();
-        _ = node.call("connect", &.{destination.toValue()});
+    pub fn deinit(self: *Context) void {
+        for (self.devices_info.list.items) |d|
+            freeDevice(self.allocator, d);
+        self.devices_info.list.deinit(self.allocator);
+        self.allocator.destroy(self);
     }
 
-    // TODO(sysaudio): Figure out ID/name or make optional again
-    var properties = Device.Properties{
-        .id = "0",
-        .name = "WebAudio",
-        .format = .F32,
-        .mode = options.mode,
-        .is_raw = false,
-        .channels = options.channels orelse default_channel_count,
-        .sample_rate = options.sample_rate orelse default_sample_rate,
-    };
+    pub fn refresh(self: *Context) !void {
+        for (self.devices_info.list.items) |d|
+            freeDevice(self.allocator, d);
+        self.devices_info.clear(self.allocator);
 
-    const device = try allocator.create(Device);
-    device.* = .{
-        .properties = properties,
-        .context = context,
-    };
-    return device;
-}
+        try self.devices_info.list.append(self.allocator, dummy_playback);
+        self.devices_info.list.items[0].channels = try self.allocator.alloc(main.Channel, 2);
+        self.devices_info.list.items[0].channels[0] = .{ .id = .front_left };
+        self.devices_info.list.items[0].channels[1] = .{ .id = .front_right };
+        self.devices_info.setDefault(.playback, 0);
+    }
 
-fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
-    const device_context = captures[0].view(.object);
+    pub fn devices(self: Context) []const main.Device {
+        return self.devices_info.list.items;
+    }
 
-    const audio_event = args.getIndex(0).view(.object);
-    defer audio_event.deinit();
-    const output_buffer = audio_event.get("outputBuffer").view(.object);
-    defer output_buffer.deinit();
-    const num_channels = @floatToInt(usize, output_buffer.get("numberOfChannels").view(.num));
+    pub fn defaultDevice(self: Context, mode: main.Device.Mode) ?main.Device {
+        return self.devices_info.default(mode);
+    }
 
-    const buffer_length = default_buffer_size_per_channel * num_channels * @sizeOf(f32);
-    // TODO(sysaudio): reuse buffer, do not allocate in this hot path
-    const buffer = std.heap.page_allocator.alloc(u8, buffer_length) catch unreachable;
-    defer std.heap.page_allocator.free(buffer);
+    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
+        const context_options = js.createMap();
+        defer context_options.deinit();
+        context_options.set("sampleRate", js.createNumber(options.sample_rate));
 
-    const callback = device_context.get("callback");
-    if (!callback.is(.undefined)) {
-        var dev = @intToPtr(*Device, @floatToInt(usize, device_context.get("device").view(.num)));
-        const cb = @intToPtr(DataCallback, @floatToInt(usize, callback.view(.num)));
-        const user_data = device_context.get("user_data");
-        const ud = if (user_data.is(.undefined)) null else @intToPtr(*anyopaque, @floatToInt(usize, user_data.view(.num)));
+        const audio_context = js.constructType("AudioContext", &.{context_options.toValue()});
+        const gain_node = audio_context.call("createGain", &.{
+            js.createNumber(1),
+            js.createNumber(0),
+            js.createNumber(device.channels.len),
+        }).view(.object);
+        const process_node = audio_context.call("createScriptProcessor", &.{
+            js.createNumber(channel_size),
+            js.createNumber(device.channels.len),
+        }).view(.object);
 
-        // TODO(sysaudio): do not reconstruct Uint8Array (expensive)
-        const source = js.constructType("Uint8Array", &.{js.createNumber(@intToFloat(f64, buffer_length))});
-        defer source.deinit();
+        var player = try self.allocator.create(Player);
+        errdefer self.allocator.destroy(player);
 
-        cb(dev, ud, buffer[0..]);
-        source.copyBytes(buffer[0..]);
+        var captures = try self.allocator.alloc(js.Value, 1);
+        captures[0] = js.createNumber(@ptrToInt(player));
 
-        const float_source = js.constructType("Float32Array", &.{
-            source.get("buffer"),
-            source.get("byteOffset"),
-            js.createNumber(source.get("byteLength").view(.num) / 4),
-        });
-        defer float_source.deinit();
+        const document = js.global().get("document").view(.object);
+        defer document.deinit();
+        const click_event_str = js.createString("click");
+        defer click_event_str.deinit();
+        const resume_on_click = js.createFunction(Player.resumeOnClick, captures);
+        _ = document.call("addEventListener", &.{ click_event_str.toValue(), resume_on_click.toValue() });
 
-        js.global().set("source", source.toValue());
-        js.global().set("float_source", float_source.toValue());
-        js.global().set("output_buffer", output_buffer.toValue());
+        const audio_process_event = js.createFunction(Player.audioProcessEvent, captures);
+        defer audio_process_event.deinit();
+        process_node.set("onaudioprocess", audio_process_event.toValue());
 
-        var channel: usize = 0;
-        while (channel < num_channels) : (channel += 1) {
-            // TODO(sysaudio): investigate if using copyToChannel would be better?
-            //_ = output_buffer.call("copyToChannel", &.{ float_source.toValue(), js.createNumber(@intToFloat(f64, channel)) });
-            const output_data = output_buffer.call("getChannelData", &.{js.createNumber(@intToFloat(f64, channel))}).view(.object);
-            defer output_data.deinit();
-            const channel_slice = float_source.call("slice", &.{
-                js.createNumber(@intToFloat(f64, channel * default_buffer_size_per_channel)),
-                js.createNumber(@intToFloat(f64, (channel + 1) * default_buffer_size_per_channel)),
-            });
-            _ = output_data.call("set", &.{channel_slice});
+        player.* = .{
+            .allocator = self.allocator,
+            .audio_context = audio_context,
+            .process_node = process_node,
+            .gain_node = gain_node,
+            .process_captures = captures,
+            .resume_on_click = resume_on_click,
+            .buf = try self.allocator.alloc(u8, channel_size_bytes * device.channels.len),
+            .buf_js = js.constructType("Uint8Array", &.{js.createNumber(channel_size_bytes)}),
+            .is_paused = false,
+            .writeFn = writeFn,
+            .user_data = options.user_data,
+            .sample_rate = options.sample_rate,
+            .channels = device.channels,
+            .format = .f32,
+            .write_step = @sizeOf(f32),
+        };
+
+        for (player.channels) |*ch, i| {
+            ch.*.ptr = player.buf.ptr + i * channel_size_bytes;
         }
+
+        return .{ .webaudio = player };
+    }
+};
+
+pub const Player = struct {
+    allocator: std.mem.Allocator,
+    audio_context: js.Object,
+    process_node: js.Object,
+    gain_node: js.Object,
+    process_captures: []js.Value,
+    resume_on_click: js.Function,
+    buf: []u8,
+    buf_js: js.Object,
+    is_paused: bool,
+    writeFn: main.WriteFn,
+    user_data: ?*anyopaque,
+    sample_rate: u24,
+
+    channels: []main.Channel,
+    format: main.Format,
+    write_step: u8,
+
+    pub fn deinit(self: *Player) void {
+        self.resume_on_click.deinit();
+        self.buf_js.deinit();
+        self.gain_node.deinit();
+        self.process_node.deinit();
+        self.audio_context.deinit();
+        self.allocator.free(self.process_captures);
+        self.allocator.free(self.buf);
+        self.allocator.destroy(self);
     }
 
-    return js.createUndefined();
+    pub fn start(self: Player) !void {
+        const destination = self.audio_context.get("destination").view(.object);
+        defer destination.deinit();
+        _ = self.gain_node.call("connect", &.{destination.toValue()});
+        _ = self.process_node.call("connect", &.{self.gain_node.toValue()});
+    }
+
+    fn resumeOnClick(args: js.Object, _: usize, captures: []js.Value) js.Value {
+        const self = @intToPtr(*Player, @floatToInt(usize, captures[0].view(.num)));
+        self.play() catch {};
+
+        const document = js.global().get("document").view(.object);
+        defer document.deinit();
+
+        const event = args.getIndex(0).view(.object);
+        defer event.deinit();
+        _ = document.call("removeEventListener", &.{ event.toValue(), self.resume_on_click.toValue() });
+
+        return js.createUndefined();
+    }
+
+    fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
+        const self = @intToPtr(*Player, @floatToInt(usize, captures[0].view(.num)));
+
+        const event = args.getIndex(0).view(.object);
+        defer event.deinit();
+        const output_buffer = event.get("outputBuffer").view(.object);
+        defer output_buffer.deinit();
+
+        self.writeFn(self.user_data, channel_size);
+
+        for (self.channels) |_, i| {
+            self.buf_js.copyBytes(self.buf[i * channel_size_bytes .. (i + 1) * channel_size_bytes]);
+            const buf_f32_js = js.constructType("Float32Array", &.{ self.buf_js.get("buffer"), self.buf_js.get("byteOffset"), js.createNumber(channel_size) });
+            defer buf_f32_js.deinit();
+            _ = output_buffer.call("copyToChannel", &.{ buf_f32_js.toValue(), js.createNumber(i) });
+        }
+
+        return js.createUndefined();
+    }
+
+    pub fn play(self: *Player) !void {
+        _ = self.audio_context.call("resume", &.{js.createUndefined()});
+        self.is_paused = false;
+    }
+
+    pub fn pause(self: *Player) !void {
+        _ = self.audio_context.call("suspend", &.{js.createUndefined()});
+        self.is_paused = true;
+    }
+
+    pub fn paused(self: Player) bool {
+        return self.is_paused;
+    }
+
+    pub fn setVolume(self: *Player, vol: f32) !void {
+        const gain = self.gain_node.get("gain").view(.object);
+        defer gain.deinit();
+        gain.set("value", js.createNumber(vol));
+    }
+
+    pub fn volume(self: Player) !f32 {
+        const gain = self.gain_node.get("gain").view(.object);
+        defer gain.deinit();
+        return @floatCast(f32, gain.get("value").view(.num));
+    }
+
+    pub fn sampleRate(self: Player) u24 {
+        return self.sample_rate;
+    }
+};
+
+fn freeDevice(allocator: std.mem.Allocator, device: main.Device) void {
+    allocator.free(device.channels);
 }
 
-pub fn outputDeviceIterator(audio: Audio) DeviceIterator {
-    return .{ .audio = audio, .mode = .output };
-}
-
-pub fn inputDeviceIterator(audio: Audio) DeviceIterator {
-    return .{ .audio = audio, .mode = .input };
+test {
+    std.testing.refAllDeclsRecursive(@This());
 }

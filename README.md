@@ -24,7 +24,7 @@ zig build run-boids
 
 Cross-platform graphics, a unified shader language & compute shaders.
 
-(Requires [zig 0.10.x](https://ziglang.org/) | [known issues](https://github.com/hexops/mach/blob/main/doc/known-issues.md#known-issues))
+(Requires [zig 0.11.x](https://ziglang.org/) | [known issues](https://github.com/hexops/mach/blob/main/doc/known-issues.md#known-issues))
 
 ## Get started with 15+ examples
 
@@ -78,17 +78,15 @@ Mach is still early stages, so far we have support for building from the followi
 
 Mach works with the new self-hosted Zig compiler only. This means you'll need to use the latest Zig nightly version.
 
-Currently we test using `0.10.0-dev.4476+0f0076666`. Newer is generally better, but you can download this version here:
+Currently we test using `0.11.0-dev.1000+94780f7cd`. Newer is generally better, but you can download this version here:
 
-- **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.10.0-dev.4476+0f0076666.tar.xz)
-- **windows-x86_64**: https://ziglang.org/builds/zig-windows-x86_64-0.10.0-dev.4476+0f0076666.zip
-- **macos-x86_64** (Intel): https://ziglang.org/builds/zig-macos-x86_64-0.10.0-dev.4476+0f0076666.tar.xz
-- **macos-aarch64** (Apple Silicon): https://ziglang.org/builds/zig-macos-aarch64-0.10.0-dev.4476+0f0076666.tar.xz
-
-`mach/ecs` and WebAssembly examples have known issues unless using `-fstage1`, see [issue #180](https://github.com/hexops/mach/issues/180) for details.
+- **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.1000+94780f7cd.tar.xz)
+- **windows-x86_64**: https://ziglang.org/builds/zig-windows-x86_64-0.11.0-dev.1000+94780f7cd.zip
+- **macos-x86_64** (Intel): https://ziglang.org/builds/zig-macos-x86_64-0.11.0-dev.1000+94780f7cd.tar.xz
+- **macos-aarch64** (Apple Silicon): https://ziglang.org/builds/zig-macos-aarch64-0.11.0-dev.1000+94780f7cd.tar.xz
 
 ## Contributing
 
-Mach is maintained as a monorepo. When changes are merged to this repository, we use some git-fu to pick out the commits to subdirectories and push them to sub-repositories automagically. Changes to the `glfw/` directory in this repository get pushed to the separate [mach-glfw](https://github.com/hexops/mach-glfw) repository after being merged here, for example.
+Mach is maintained as a monorepo. When changes are merged to this repository, we use some git-fu to pick out the commits to subdirectories and push them to sub-repositories automagically. Changes to the `libs/glfw/` directory in this repository get pushed to the separate [mach-glfw](https://github.com/hexops/mach-glfw) repository after being merged here, for example.
 
-Please prefix commits / pull requests with the project name (`glfw: fix an issue`, `gpu: fix an issue`, `examples: fix an issue`, etc.) and if possible only one project per commit. If you don't know how to do this, no worries, we can help - just send your PR anyway!
+Please prefix commits / pull requests with the project name (`glfw: fix an issue`, `gpu: fix an issue`, etc.) and if possible only one project per commit. If you don't know how to do this, no worries, we can help - just send your PR anyway!

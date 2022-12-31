@@ -699,8 +699,7 @@ pub const SizeOptional = struct {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: window_sizelimits, glfw.Window.setAspectRatio
-// TODO(self-hosted): make inline fn again, once https://github.com/ziglang/zig/issues/13164 is fixed.
-pub fn setSizeLimits(self: Window, min: SizeOptional, max: SizeOptional) error{PlatformError}!void {
+pub inline fn setSizeLimits(self: Window, min: SizeOptional, max: SizeOptional) error{PlatformError}!void {
     internal_debug.assertInitialized();
 
     if (min.width != null and max.width != null) {
@@ -2059,9 +2058,9 @@ pub inline fn setCursorPos(self: Window, xpos: f64, ypos: f64) error{PlatformErr
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: cursor_object
-pub inline fn setCursor(self: Window, cursor: Cursor) error{PlatformError}!void {
+pub inline fn setCursor(self: Window, cursor: ?Cursor) error{PlatformError}!void {
     internal_debug.assertInitialized();
-    c.glfwSetCursor(self.handle, cursor.ptr);
+    c.glfwSetCursor(self.handle, if (cursor) |cs| cs.ptr else null);
     getError() catch |err| return switch (err) {
         Error.NotInitialized => unreachable,
         Error.PlatformError => |e| e,

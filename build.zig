@@ -97,9 +97,9 @@ pub fn build(b: *Builder) !void {
                 .name = "shaderexp",
                 .src = "shaderexp/main.zig",
                 .target = target,
+                .mode = mode,
             },
         );
-        shaderexp_app.setBuildMode(mode);
         try shaderexp_app.link(options);
         shaderexp_app.install();
 
@@ -193,6 +193,7 @@ pub const App = struct {
             name: []const u8,
             src: []const u8,
             target: CrossTarget,
+            mode: std.builtin.Mode,
             deps: ?[]const Pkg = null,
             res_dirs: ?[]const []const u8 = null,
             watch_paths: ?[]const []const u8 = null,
@@ -247,6 +248,7 @@ pub const App = struct {
         step.main_pkg_path = sdkPath("/src");
         step.addPackage(app_pkg);
         step.setTarget(options.target);
+        step.setBuildMode(options.mode);
 
         return .{
             .b = b,
@@ -325,14 +327,9 @@ pub const App = struct {
             const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch try app.b.allocator.dupe(u8, "127.0.0.1");
             const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch try app.b.allocator.dupe(u8, "8080");
             const address_parsed = std.net.Address.parseIp4(address, try std.fmt.parseInt(u16, port, 10)) catch return error.ParsingIpFailed;
-            const install_step_name = if (std.mem.startsWith(u8, app.step.name, "example-"))
-                app.step.name
-            else
-                null;
             const serve_step = try wasmserve.serve(
                 app.step,
                 .{
-                    .install_step_name = install_step_name,
                     .install_dir = web_install_dir,
                     .watch_paths = app.watch_paths,
                     .listen_address = address_parsed,
@@ -342,10 +339,6 @@ pub const App = struct {
         } else {
             return &app.step.run().step;
         }
-    }
-
-    pub fn setBuildMode(app: *const App, mode: std.builtin.Mode) void {
-        app.step.setBuildMode(mode);
     }
 
     pub fn getInstallStep(app: *const App) ?*std.build.InstallArtifactStep {

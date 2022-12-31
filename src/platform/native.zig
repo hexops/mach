@@ -299,6 +299,7 @@ pub const Platform = struct {
                 const pf = (window.getUserPointer(UserPtr) orelse unreachable).platform;
                 pf.last_framebuffer_size.width = width;
                 pf.last_framebuffer_size.height = height;
+                render(pf.core) catch {};
             }
         }.callback;
         platform.window.setFramebufferSizeCallback(framebuffer_size_callback);
@@ -318,6 +319,10 @@ pub const Platform = struct {
         };
 
         platform.last_position = try platform.window.getPos();
+
+        if (options.borderless_window) {
+            try glfw.Window.setAttrib(platform.window, .decorated, false);
+        }
 
         if (options.fullscreen) {
             var monitor: ?glfw.Monitor = null;
@@ -592,15 +597,19 @@ pub fn main() !void {
     defer app.deinit(core);
 
     while (!core.internal.window.shouldClose()) {
-        // On Darwin targets, Dawn requires an NSAutoreleasePool per frame to release
-        // some resources. See Dawn's CHelloWorld example.
-        const pool = try util.AutoReleasePool.init();
-        defer util.AutoReleasePool.release(pool);
-
-        try coreUpdate(core, null);
-
-        try app.update(core);
+        try render(core);
     }
+}
+
+fn render(core: *Core) !void {
+    // On Darwin targets, Dawn requires an NSAutoreleasePool per frame to release
+    // some resources. See Dawn's CHelloWorld example.
+    const pool = try util.AutoReleasePool.init();
+    defer util.AutoReleasePool.release(pool);
+
+    try coreUpdate(core, null);
+
+    try app.update(core);
 }
 
 pub fn coreInit(allocator: std.mem.Allocator) !*Core {
