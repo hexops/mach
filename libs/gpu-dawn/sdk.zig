@@ -90,14 +90,14 @@ pub fn Sdk(comptime deps: anytype) type {
 
         fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !void {
             // branch: generated-2022-08-06
-            try ensureGitRepoCloned(b.allocator, "https://github.com/hexops/dawn", "0b704c4acae154ec8d4be7615d18a489f270f6c0", sdkPath("/libs/dawn"));
+            try ensureGitRepoCloned(b.allocator, "https://github.com/hexops/dawn", "0b704c4acae154ec8d4be7615d18a489f270f6c0", sdkPath(b, "/libs/dawn"));
 
             // branch: mach
-            try ensureGitRepoCloned(b.allocator, "https://github.com/hexops/DirectXShaderCompiler", "cff9a6f0b7f961748b822e1d313a7205dfdecf9d", sdkPath("/libs/DirectXShaderCompiler"));
+            try ensureGitRepoCloned(b.allocator, "https://github.com/hexops/DirectXShaderCompiler", "cff9a6f0b7f961748b822e1d313a7205dfdecf9d", sdkPath(b, "/libs/DirectXShaderCompiler"));
 
-            step.addIncludePath(sdkPath("/libs/dawn/out/Debug/gen/include"));
-            step.addIncludePath(sdkPath("/libs/dawn/include"));
-            step.addIncludePath(sdkPath("/src/dawn"));
+            step.addIncludePath(sdkPath(b, "/libs/dawn/out/Debug/gen/include"));
+            step.addIncludePath(sdkPath(b, "/libs/dawn/include"));
+            step.addIncludePath(sdkPath(b, "/src/dawn"));
 
             if (options.separate_libs) {
                 const lib_mach_dawn_native = try buildLibMachDawnNative(b, step, options);
@@ -176,7 +176,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 error.FileNotFound => {
                     std.log.info("cloning required dependency..\ngit clone {s} {s}..\n", .{ clone_url, dir });
 
-                    try exec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", clone_url, dir }, sdkPath("/"));
+                    try exec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", clone_url, dir }, sdkPathAllocator(allocator, "/"));
                     try exec(allocator, &[_][]const u8{ "git", "reset", "--quiet", "--hard", revision }, dir);
                     try exec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
                     return;
@@ -297,7 +297,7 @@ pub fn Sdk(comptime deps: anytype) type {
             step.linkLibCpp();
 
             step.addIncludePath(include_dir);
-            step.addIncludePath(sdkPath("/src/dawn"));
+            step.addIncludePath(sdkPath(b, "/src/dawn"));
 
             if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
                 step.linkSystemLibraryName("X11");
@@ -494,7 +494,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const result = try std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "git", "branch", branch, "--contains", commit },
-                .cwd = sdkPath("/"),
+                .cwd = sdkPathAllocator(allocator, "/"),
             });
             defer {
                 allocator.free(result.stdout);
@@ -507,7 +507,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const result = try std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "git", "rev-parse", "HEAD" },
-                .cwd = sdkPath("/"),
+                .cwd = sdkPathAllocator(allocator, "/"),
             });
             defer allocator.free(result.stderr);
             if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
@@ -518,7 +518,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const result = try std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "git", "clone", repository, dir },
-                .cwd = sdkPath("/"),
+                .cwd = sdkPathAllocator(allocator, "/"),
             });
             defer {
                 allocator.free(result.stdout);
@@ -536,7 +536,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 std.ChildProcess.init(&.{ "curl", "--insecure", "-L", "-o", target_file, url }, allocator)
             else
                 std.ChildProcess.init(&.{ "curl", "-L", "-o", target_file, url }, allocator);
-            child.cwd = sdkPath("/");
+            child.cwd = sdkPathAllocator(allocator, "/");
             child.stderr = std.io.getStdErr();
             child.stdout = std.io.getStdOut();
             _ = try child.spawnAndWait();
@@ -546,7 +546,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const result = std.ChildProcess.exec(.{
                 .allocator = allocator,
                 .argv = &.{ "curl", "--version" },
-                .cwd = sdkPath("/"),
+                .cwd = sdkPathAllocator(allocator, "/"),
             }) catch { // e.g. FileNotFound
                 std.log.err("mach: error: 'curl --version' failed. Is curl not installed?", .{});
                 std.process.exit(1);
@@ -586,11 +586,11 @@ pub fn Sdk(comptime deps: anytype) type {
             try options.appendFlags(&cpp_flags, false, true);
             try appendDawnEnableBackendTypeFlags(&cpp_flags, options);
             try cpp_flags.appendSlice(&.{
-                include(deps.glfw_include_dir),
-                include("libs/dawn/out/Debug/gen/include"),
-                include("libs/dawn/out/Debug/gen/src"),
-                include("libs/dawn/include"),
-                include("libs/dawn/src"),
+                include(b, deps.glfw_include_dir),
+                include(b, "libs/dawn/out/Debug/gen/include"),
+                include(b, "libs/dawn/out/Debug/gen/src"),
+                include(b, "libs/dawn/include"),
+                include(b, "libs/dawn/src"),
             });
             if (step.target_info.target.os.tag == .windows) {
                 try cpp_flags.appendSlice(&.{
@@ -618,9 +618,9 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
-                include("libs/dawn/src"),
-                include("libs/dawn/out/Debug/gen/include"),
-                include("libs/dawn/out/Debug/gen/src"),
+                include(b, "libs/dawn/src"),
+                include(b, "libs/dawn/out/Debug/gen/include"),
+                include(b, "libs/dawn/out/Debug/gen/src"),
             });
             try appendLangScannedSources(b, lib, options, .{
                 .rel_dirs = &.{
@@ -641,11 +641,11 @@ pub fn Sdk(comptime deps: anytype) type {
                 // TODO(build-system): pass system SDK options through
                 deps.system_sdk.include(b, lib, .{});
                 lib.linkFramework("Foundation");
-                const abs_path = sdkPath("/libs/dawn/src/dawn/common/SystemUtils_mac.mm");
+                const abs_path = sdkPath(b, "/libs/dawn/src/dawn/common/SystemUtils_mac.mm");
                 try cpp_sources.append(abs_path);
             }
             if (step.target_info.target.os.tag == .windows) {
-                const abs_path = sdkPath("/libs/dawn/src/dawn/common/WindowsUtils.cpp");
+                const abs_path = sdkPath(b, "/libs/dawn/src/dawn/common/WindowsUtils.cpp");
                 try cpp_sources.append(abs_path);
             }
 
@@ -673,10 +673,10 @@ pub fn Sdk(comptime deps: anytype) type {
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try options.appendFlags(&cpp_flags, false, true);
             try cpp_flags.appendSlice(&.{
-                include("libs/dawn/src"),
-                include("libs/dawn/include"),
+                include(b, "libs/dawn/src"),
+                include(b, "libs/dawn/include"),
 
-                include("libs/dawn/out/Debug/gen/include"),
+                include(b, "libs/dawn/out/Debug/gen/include"),
             });
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
@@ -685,7 +685,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "src/dawn/platform/WorkerThread.cpp",
                 "src/dawn/platform/tracing/EventTracer.cpp",
             }) |path| {
-                const abs_path = sdkPath("/libs/dawn/" ++ path);
+                const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                 try cpp_sources.append(abs_path);
             }
 
@@ -747,12 +747,12 @@ pub fn Sdk(comptime deps: anytype) type {
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try appendDawnEnableBackendTypeFlags(&flags, options);
             try flags.appendSlice(&.{
-                include("libs/dawn"),
-                include("libs/dawn/src"),
-                include("libs/dawn/include"),
-                include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
-                include("libs/dawn/third_party/abseil-cpp"),
-                include("libs/dawn/third_party/khronos"),
+                include(b, "libs/dawn"),
+                include(b, "libs/dawn/src"),
+                include(b, "libs/dawn/include"),
+                include(b, "libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
+                include(b, "libs/dawn/third_party/abseil-cpp"),
+                include(b, "libs/dawn/third_party/khronos"),
 
                 // TODO(build-system): make these optional
                 "-DTINT_BUILD_SPV_READER=1",
@@ -763,12 +763,12 @@ pub fn Sdk(comptime deps: anytype) type {
                 "-DTINT_BUILD_HLSL_WRITER=1",
                 "-DTINT_BUILD_GLSL_WRITER=1",
 
-                include("libs/dawn/"),
-                include("libs/dawn/include/tint"),
-                include("libs/dawn/third_party/vulkan-deps/vulkan-tools/src/"),
+                include(b, "libs/dawn/"),
+                include(b, "libs/dawn/include/tint"),
+                include(b, "libs/dawn/third_party/vulkan-deps/vulkan-tools/src/"),
 
-                include("libs/dawn/out/Debug/gen/include"),
-                include("libs/dawn/out/Debug/gen/src"),
+                include(b, "libs/dawn/out/Debug/gen/include"),
+                include(b, "libs/dawn/out/Debug/gen/src"),
             });
             if (options.d3d12.?) try flags.appendSlice(dawn_d3d12_flags);
 
@@ -811,7 +811,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/mingw_helpers.cpp",
                 }) |path| {
-                    const abs_path = sdkPath("/" ++ path);
+                    const abs_path = sdkPath(b, "/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
 
@@ -847,7 +847,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/native/XlibXcbFunctions.cpp",
                 }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
+                    const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -855,7 +855,7 @@ pub fn Sdk(comptime deps: anytype) type {
             inline for ([_][]const u8{
                 "src/dawn/native/null/DeviceNull.cpp",
             }) |path| {
-                const abs_path = sdkPath("/libs/dawn/" ++ path);
+                const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                 try cpp_sources.append(abs_path);
             }
 
@@ -863,7 +863,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/native/SpirvValidation.cpp",
                 }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
+                    const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -893,7 +893,7 @@ pub fn Sdk(comptime deps: anytype) type {
                         "src/dawn/native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
                     }) |path| {
-                        const abs_path = sdkPath("/libs/dawn/" ++ path);
+                        const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
                 } else if (step.target_info.target.os.tag == .fuchsia) {
@@ -901,7 +901,7 @@ pub fn Sdk(comptime deps: anytype) type {
                         "src/dawn/native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
                     }) |path| {
-                        const abs_path = sdkPath("/libs/dawn/" ++ path);
+                        const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
                 } else {
@@ -909,7 +909,7 @@ pub fn Sdk(comptime deps: anytype) type {
                         "src/dawn/native/vulkan/external_memory/MemoryServiceNull.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceNull.cpp",
                     }) |path| {
-                        const abs_path = sdkPath("/libs/dawn/" ++ path);
+                        const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
                 }
@@ -957,7 +957,7 @@ pub fn Sdk(comptime deps: anytype) type {
             inline for ([_][]const u8{
                 "src/dawn/native/null/NullBackend.cpp",
             }) |path| {
-                const abs_path = sdkPath("/libs/dawn/" ++ path);
+                const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                 try cpp_sources.append(abs_path);
             }
 
@@ -965,7 +965,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/native/d3d12/D3D12Backend.cpp",
                 }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
+                    const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -973,7 +973,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/native/opengl/OpenGLBackend.cpp",
                 }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
+                    const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -981,7 +981,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/native/vulkan/VulkanBackend.cpp",
                 }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
+                    const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
                 // TODO(build-system): vulkan
@@ -1027,17 +1027,17 @@ pub fn Sdk(comptime deps: anytype) type {
                 "-DTINT_BUILD_HLSL_WRITER=1",
                 "-DTINT_BUILD_GLSL_WRITER=1",
 
-                include("libs/dawn/"),
-                include("libs/dawn/include/tint"),
+                include(b, "libs/dawn/"),
+                include(b, "libs/dawn/include/tint"),
 
                 // Required for TINT_BUILD_SPV_READER=1 and TINT_BUILD_SPV_WRITER=1, if specified
-                include("libs/dawn/third_party/vulkan-deps"),
-                include("libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
-                include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
-                include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include"),
-                include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
-                include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
-                include("libs/dawn/include"),
+                include(b, "libs/dawn/third_party/vulkan-deps"),
+                include(b, "libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
+                include(b, "libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
+                include(b, "libs/dawn/third_party/vulkan-deps/spirv-headers/src/include"),
+                include(b, "libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
+                include(b, "libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
+                include(b, "libs/dawn/include"),
             });
 
             // libtint_core_all_src
@@ -1062,9 +1062,9 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
             switch (step.target_info.target.os.tag) {
-                .windows => try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_windows.cc")),
-                .linux => try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_linux.cc")),
-                else => try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_other.cc")),
+                .windows => try cpp_sources.append(sdkPath(b, "/libs/dawn/src/tint/diagnostic/printer_windows.cc")),
+                .linux => try cpp_sources.append(sdkPath(b, "/libs/dawn/src/tint/diagnostic/printer_linux.cc")),
+                else => try cpp_sources.append(sdkPath(b, "/libs/dawn/src/tint/diagnostic/printer_other.cc")),
             }
 
             // libtint_sem_src
@@ -1167,13 +1167,13 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
-                include("libs/dawn"),
-                include("libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
-                include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
-                include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include"),
-                include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
-                include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
-                include("libs/dawn/third_party/vulkan-deps/spirv-headers/src/include/spirv/unified1"),
+                include(b, "libs/dawn"),
+                include(b, "libs/dawn/third_party/vulkan-deps/spirv-tools/src"),
+                include(b, "libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
+                include(b, "libs/dawn/third_party/vulkan-deps/spirv-headers/src/include"),
+                include(b, "libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
+                include(b, "libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
+                include(b, "libs/dawn/third_party/vulkan-deps/spirv-headers/src/include/spirv/unified1"),
             });
 
             // spvtools
@@ -1241,8 +1241,8 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
-                include("libs/dawn"),
-                include("libs/dawn/third_party/abseil-cpp"),
+                include(b, "libs/dawn"),
+                include(b, "libs/dawn/third_party/abseil-cpp"),
             });
             if (target.os.tag == .windows) try flags.appendSlice(&.{
                 "-DABSL_FORCE_THREAD_IDENTITY_MODE=2",
@@ -1250,7 +1250,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "-DD3D10_ARBITRARY_HEADER_ORDERING",
                 "-D_CRT_SECURE_NO_WARNINGS",
                 "-DNOMINMAX",
-                include("src/dawn/zig_mingw_pthread"),
+                include(b, "src/dawn/zig_mingw_pthread"),
             });
 
             // absl
@@ -1299,11 +1299,11 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
-                include("libs/dawn"),
-                include("libs/dawn/src"),
-                include("libs/dawn/include"),
-                include("libs/dawn/out/Debug/gen/include"),
-                include("libs/dawn/out/Debug/gen/src"),
+                include(b, "libs/dawn"),
+                include(b, "libs/dawn/src"),
+                include(b, "libs/dawn/include"),
+                include(b, "libs/dawn/out/Debug/gen/include"),
+                include(b, "libs/dawn/out/Debug/gen/src"),
             });
 
             try appendLangScannedSources(b, lib, options, .{
@@ -1339,10 +1339,10 @@ pub fn Sdk(comptime deps: anytype) type {
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try appendDawnEnableBackendTypeFlags(&flags, options);
             try flags.appendSlice(&.{
-                include(deps.glfw_include_dir),
-                include("libs/dawn/src"),
-                include("libs/dawn/include"),
-                include("libs/dawn/out/Debug/gen/include"),
+                include(b, deps.glfw_include_dir),
+                include(b, "libs/dawn/src"),
+                include(b, "libs/dawn/include"),
+                include(b, "libs/dawn/out/Debug/gen/include"),
             });
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
@@ -1350,7 +1350,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "src/dawn/utils/BackendBinding.cpp",
                 "src/dawn/utils/NullBinding.cpp",
             }) |path| {
-                const abs_path = sdkPath("/libs/dawn/" ++ path);
+                const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                 try cpp_sources.append(abs_path);
             }
 
@@ -1358,7 +1358,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/utils/D3D12Binding.cpp",
                 }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
+                    const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
                 try flags.appendSlice(dawn_d3d12_flags);
@@ -1367,7 +1367,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/utils/MetalBinding.mm",
                 }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
+                    const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -1376,7 +1376,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/utils/OpenGLBinding.cpp",
                 }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
+                    const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -1385,7 +1385,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 inline for ([_][]const u8{
                     "src/dawn/utils/VulkanBinding.cpp",
                 }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
+                    const abs_path = sdkPath(b, "/libs/dawn/" ++ path);
                     try cpp_sources.append(abs_path);
                 }
             }
@@ -1420,13 +1420,13 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
-                include("libs/"),
-                include("libs/DirectXShaderCompiler/include/llvm/llvm_assert"),
-                include("libs/DirectXShaderCompiler/include"),
-                include("libs/DirectXShaderCompiler/build/include"),
-                include("libs/DirectXShaderCompiler/build/lib/HLSL"),
-                include("libs/DirectXShaderCompiler/build/lib/DxilPIXPasses"),
-                include("libs/DirectXShaderCompiler/build/include"),
+                include(b, "libs/"),
+                include(b, "libs/DirectXShaderCompiler/include/llvm/llvm_assert"),
+                include(b, "libs/DirectXShaderCompiler/include"),
+                include(b, "libs/DirectXShaderCompiler/build/include"),
+                include(b, "libs/DirectXShaderCompiler/build/lib/HLSL"),
+                include(b, "libs/DirectXShaderCompiler/build/lib/DxilPIXPasses"),
+                include(b, "libs/DirectXShaderCompiler/build/include"),
                 "-DUNREFERENCED_PARAMETER(x)=",
                 "-Wno-inconsistent-missing-override",
                 "-Wno-missing-exception-spec",
@@ -1562,7 +1562,7 @@ pub fn Sdk(comptime deps: anytype) type {
             excluding: []const []const u8,
             excluding_contains: []const []const u8,
         ) !void {
-            const abs_dir = try std.fs.path.join(b.allocator, &.{ sdkPath("/"), rel_dir });
+            const abs_dir = try std.fs.path.join(b.allocator, &.{ sdkPath(b, "/"), rel_dir });
             defer b.allocator.free(abs_dir);
             var dir = try std.fs.openIterableDirAbsolute(abs_dir, .{});
             defer dir.close();
@@ -1601,16 +1601,34 @@ pub fn Sdk(comptime deps: anytype) type {
             }
         }
 
-        fn include(comptime rel: []const u8) []const u8 {
-            return comptime "-I" ++ sdkPath("/" ++ rel);
+        var this_dir: ?[]const u8 = null;
+
+        fn thisDir(allocator: std.mem.Allocator) []const u8 {
+            if (this_dir == null) {
+                const unresolved_dir = comptime std.fs.path.dirname(@src().file) orelse ".";
+
+                if (comptime unresolved_dir[0] == '/') {
+                    this_dir = unresolved_dir;
+                } else {
+                    this_dir = std.fs.cwd().realpathAlloc(allocator, unresolved_dir) catch unreachable;
+                }
+            }
+
+            return this_dir.?;
         }
 
-        fn sdkPath(comptime suffix: []const u8) []const u8 {
+        fn sdkPath(b: *Builder, comptime suffix: []const u8) []const u8 {
+            return sdkPathAllocator(b.allocator, suffix);
+        }
+
+        fn sdkPathAllocator(allocator: std.mem.Allocator, comptime suffix: []const u8) []const u8 {
             if (suffix[0] != '/') @compileError("suffix must be an absolute path");
-            return comptime blk: {
-                const root_dir = std.fs.path.dirname(@src().file) orelse ".";
-                break :blk root_dir ++ suffix;
-            };
+
+            return std.fs.path.resolve(allocator, &.{ thisDir(allocator), suffix[1..] }) catch unreachable;
+        }
+
+        fn include(b: *Builder, comptime rel: []const u8) []const u8 {
+            return std.mem.concat(b.allocator, u8, &.{ "-I", sdkPath(b, "/" ++ rel) }) catch unreachable;
         }
     };
 }

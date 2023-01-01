@@ -1,14 +1,21 @@
 const std = @import("std");
 const Builder = std.build.Builder;
 
-const basisu_root = sdkPath("/upstream/basisu");
+const basisu_root = "/upstream/basisu";
 
-pub const pkg = std.build.Pkg{
-    .name = "basisu",
-    .source = .{
-        .path = "src/main.zig",
-    },
-};
+var cached_pkg: ?std.build.Pkg = null;
+
+pub fn pkg(b: *Builder) std.build.Pkg {
+    if (cached_pkg == null) {
+        cached_pkg = .{
+            .name = "basisu",
+            .source = .{ .path = sdkPath(b, "/src/main.zig") },
+            .dependencies = &.{},
+        };
+    }
+
+    return cached_pkg.?;
+}
 
 pub const Options = struct {
     encoder: ?EncoderOptions,
@@ -32,10 +39,10 @@ pub fn build(b: *Builder) void {
 }
 
 pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("basisu-tests", sdkPath("/src/main.zig"));
+    const main_tests = b.addTestExe("basisu-tests", sdkPath(b, "/src/main.zig"));
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
-    main_tests.main_pkg_path = sdkPath("/");
+    main_tests.main_pkg_path = sdkPath(b, "/");
     link(b, main_tests, target, .{
         .encoder = .{},
         .transcoder = .{},
@@ -47,13 +54,13 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, target: std.zig.CrossTarget, options: Options) void {
     if (options.encoder) |encoder_options| {
         step.linkLibrary(buildEncoder(b, target, encoder_options));
-        step.addCSourceFile(sdkPath("/src/encoder/wrapper.cpp"), &.{});
-        step.addIncludePath(basisu_root ++ "/encoder");
+        step.addCSourceFile(sdkPath(b, "/src/encoder/wrapper.cpp"), &.{});
+        step.addIncludePath(sdkPath(b, basisu_root ++ "/encoder"));
     }
     if (options.transcoder) |transcoder_options| {
         step.linkLibrary(buildTranscoder(b, target, transcoder_options));
-        step.addCSourceFile(sdkPath("/src/transcoder/wrapper.cpp"), &.{});
-        step.addIncludePath(basisu_root ++ "/transcoder");
+        step.addCSourceFile(sdkPath(b, "/src/transcoder/wrapper.cpp"), &.{});
+        step.addIncludePath(sdkPath(b, basisu_root ++ "/transcoder"));
     }
 }
 
@@ -64,10 +71,11 @@ pub fn buildEncoder(b: *Builder, target: std.zig.CrossTarget, options: EncoderOp
     const encoder = b.addStaticLibrary("basisu-encoder", null);
     encoder.setTarget(target);
     encoder.linkLibCpp();
-    encoder.addCSourceFiles(
-        encoder_sources,
-        &.{},
-    );
+
+    inline for (encoder_sources) |encoder_source| {
+        encoder.addCSourceFile(sdkPath(b, encoder_source), &.{});
+    }
+
     encoder.defineCMacro("BASISU_FORCE_DEVEL_MESSAGES", "0");
     encoder.defineCMacro("BASISD_SUPPORT_KTX2_ZSTD", "0");
 
@@ -83,10 +91,11 @@ pub fn buildTranscoder(b: *Builder, target: std.zig.CrossTarget, options: Transc
     const transcoder = b.addStaticLibrary("basisu-transcoder", null);
     transcoder.setTarget(target);
     transcoder.linkLibCpp();
-    transcoder.addCSourceFiles(
-        transcoder_sources,
-        &.{},
-    );
+
+    inline for (transcoder_sources) |transcoder_source| {
+        transcoder.addCSourceFile(sdkPath(b, transcoder_source), &.{});
+    }
+
     transcoder.defineCMacro("BASISU_FORCE_DEVEL_MESSAGES", "0");
     transcoder.defineCMacro("BASISD_SUPPORT_KTX2_ZSTD", "0");
 
@@ -101,19 +110,59 @@ fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !vo
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = sdkPath("/");
+    child.cwd = sdkPathAllocator(allocator, "/");
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
 
     _ = try child.spawnAndWait();
 }
 
-fn sdkPath(comptime suffix: []const u8) []const u8 {
+const unresolved_dir = (struct {
+    inline fn unresolvedDir() []const u8 {
+        return comptime std.fs.path.dirname(@src().file) orelse ".";
+    }
+}).unresolvedDir();
+
+fn thisDir(allocator: std.mem.Allocator) []const u8 {
+    if (comptime unresolved_dir[0] == '/') {
+        return unresolved_dir;
+    }
+
+    const cached_dir = &(struct {
+        var cached_dir: ?[]const u8 = null;
+    }).cached_dir;
+
+    if (cached_dir.* == null) {
+        cached_dir.* = std.fs.cwd().realpathAlloc(allocator, unresolved_dir) catch unreachable;
+    }
+
+    return cached_dir.*.?;
+}
+
+inline fn sdkPath(b: *Builder, comptime suffix: []const u8) []const u8 {
+    return sdkPathAllocator(b.allocator, suffix);
+}
+
+inline fn sdkPathAllocator(allocator: std.mem.Allocator, comptime suffix: []const u8) []const u8 {
+    return sdkPathInternal(allocator, suffix.len, suffix[0..suffix.len].*);
+}
+
+fn sdkPathInternal(allocator: std.mem.Allocator, comptime len: usize, comptime suffix: [len]u8) []const u8 {
     if (suffix[0] != '/') @compileError("suffix must be an absolute path");
-    return comptime blk: {
-        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
-        break :blk root_dir ++ suffix;
-    };
+
+    if (comptime unresolved_dir[0] == '/') {
+        return unresolved_dir ++ @as([]const u8, &suffix);
+    }
+
+    const cached_dir = &(struct {
+        var cached_dir: ?[]const u8 = null;
+    }).cached_dir;
+
+    if (cached_dir.* == null) {
+        cached_dir.* = std.fs.path.resolve(allocator, &.{ thisDir(allocator), suffix[1..] }) catch unreachable;
+    }
+
+    return cached_dir.*.?;
 }
 
 const transcoder_sources = &[_][]const u8{

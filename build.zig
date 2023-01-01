@@ -27,11 +27,27 @@ const CrossTarget = std.zig.CrossTarget;
 const Builder = std.build.Builder;
 const Pkg = std.build.Pkg;
 
-pub const pkg = Pkg{
-    .name = "mach",
-    .source = .{ .path = sdkPath("/src/main.zig") },
-    .dependencies = &.{ gpu.pkg, ecs.pkg, sysaudio.pkg, earcut.pkg },
-};
+var cached_pkg: ?Pkg = null;
+
+pub fn pkg(b: *Builder) Pkg {
+    if (cached_pkg == null) {
+        const dependencies = b.allocator.create([4]Pkg) catch unreachable;
+        dependencies.* = .{
+            gpu.pkg(b),
+            ecs.pkg(b),
+            sysaudio.pkg(b),
+            earcut.pkg(b),
+        };
+
+        cached_pkg = .{
+            .name = "mach",
+            .source = .{ .path = sdkPath(b, "/src/main.zig") },
+            .dependencies = dependencies,
+        };
+    }
+
+    return cached_pkg.?;
+}
 
 pub const Options = struct {
     glfw_options: glfw.Options = .{},
@@ -124,11 +140,12 @@ fn testStep(b: *Builder, mode: std.builtin.Mode, target: CrossTarget) *std.build
     const main_tests = b.addTestExe("mach-tests", "src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
-    for (pkg.dependencies.?) |dependency| {
+
+    for (pkg(b).dependencies.?) |dependency| {
         main_tests.addPackage(dependency);
     }
 
-    main_tests.addPackage(freetype.pkg);
+    main_tests.addPackage(freetype.pkg(b));
     freetype.link(b, main_tests, .{});
 
     main_tests.install();
@@ -146,11 +163,11 @@ fn buildSharedLib(b: *Builder, mode: std.builtin.Mode, target: CrossTarget, opti
         .source = .{ .path = "src/platform/libmach.zig" },
     };
     lib.addPackage(app_pkg);
-    lib.addPackage(glfw.pkg);
-    lib.addPackage(gpu.pkg);
-    lib.addPackage(sysaudio.pkg);
+    lib.addPackage(glfw.pkg(b));
+    lib.addPackage(gpu.pkg(b));
+    lib.addPackage(sysaudio.pkg(b));
     if (target.isLinux()) {
-        lib.addPackage(gamemode.pkg);
+        lib.addPackage(gamemode.pkg(b));
         gamemode.link(lib);
     }
     try glfw.link(b, lib, options.glfw_options);
@@ -208,14 +225,14 @@ pub const App = struct {
         const platform = Platform.fromTarget(target);
 
         var deps = std.ArrayList(Pkg).init(b.allocator);
-        try deps.append(pkg);
-        try deps.append(gpu.pkg);
-        try deps.append(sysaudio.pkg);
+        try deps.append(pkg(b));
+        try deps.append(gpu.pkg(b));
+        try deps.append(sysaudio.pkg(b));
         switch (platform) {
-            .native => try deps.append(glfw.pkg),
-            .web => try deps.append(sysjs.pkg),
+            .native => try deps.append(glfw.pkg(b)),
+            .web => try deps.append(sysjs.pkg(b)),
         }
-        if (options.use_freetype) |_| try deps.append(freetype.pkg);
+        if (options.use_freetype) |_| try deps.append(freetype.pkg(b));
         if (options.deps) |app_deps| try deps.appendSlice(app_deps);
 
         const app_pkg = Pkg{
@@ -226,26 +243,26 @@ pub const App = struct {
 
         const step = blk: {
             if (platform == .web) {
-                const lib = b.addSharedLibrary(options.name, sdkPath("/src/platform/wasm.zig"), .unversioned);
-                lib.addPackage(gpu.pkg);
-                lib.addPackage(sysaudio.pkg);
-                lib.addPackage(sysjs.pkg);
+                const lib = b.addSharedLibrary(options.name, sdkPath(b, "/src/platform/wasm.zig"), .unversioned);
+                lib.addPackage(gpu.pkg(b));
+                lib.addPackage(sysaudio.pkg(b));
+                lib.addPackage(sysjs.pkg(b));
 
                 break :blk lib;
             } else {
-                const exe = b.addExecutable(options.name, sdkPath("/src/platform/native.zig"));
-                exe.addPackage(gpu.pkg);
-                exe.addPackage(sysaudio.pkg);
-                exe.addPackage(glfw.pkg);
+                const exe = b.addExecutable(options.name, sdkPath(b, "/src/platform/native.zig"));
+                exe.addPackage(gpu.pkg(b));
+                exe.addPackage(sysaudio.pkg(b));
+                exe.addPackage(glfw.pkg(b));
 
                 if (target.os.tag == .linux)
-                    exe.addPackage(gamemode.pkg);
+                    exe.addPackage(gamemode.pkg(b));
 
                 break :blk exe;
             }
         };
 
-        step.main_pkg_path = sdkPath("/src");
+        step.main_pkg_path = sdkPath(b, "/src");
         step.addPackage(app_pkg);
         step.setTarget(options.target);
         step.setBuildMode(options.mode);
@@ -287,14 +304,14 @@ pub const App = struct {
 
             inline for (.{ "/src/platform/mach.js", "/libs/sysjs/src/mach-sysjs.js" }) |js| {
                 const install_js = app.b.addInstallFileWithDir(
-                    .{ .path = sdkPath(js) },
+                    .{ .path = sdkPath(app.b, js) },
                     web_install_dir,
                     std.fs.path.basename(js),
                 );
                 app.getInstallStep().?.step.dependOn(&install_js.step);
             }
 
-            const html_generator = app.b.addExecutable("html-generator", sdkPath("/tools/html-generator/main.zig"));
+            const html_generator = app.b.addExecutable("html-generator", sdkPath(app.b, "/tools/html-generator/main.zig"));
             const run_html_generator = html_generator.run();
             const html_file_name = std.mem.concat(
                 app.b.allocator,
@@ -346,10 +363,50 @@ pub const App = struct {
     }
 };
 
-fn sdkPath(comptime suffix: []const u8) []const u8 {
+const unresolved_dir = (struct {
+    inline fn unresolvedDir() []const u8 {
+        return comptime std.fs.path.dirname(@src().file) orelse ".";
+    }
+}).unresolvedDir();
+
+fn thisDir(allocator: std.mem.Allocator) []const u8 {
+    if (comptime unresolved_dir[0] == '/') {
+        return unresolved_dir;
+    }
+
+    const cached_dir = &(struct {
+        var cached_dir: ?[]const u8 = null;
+    }).cached_dir;
+
+    if (cached_dir.* == null) {
+        cached_dir.* = std.fs.cwd().realpathAlloc(allocator, unresolved_dir) catch unreachable;
+    }
+
+    return cached_dir.*.?;
+}
+
+inline fn sdkPath(b: *Builder, comptime suffix: []const u8) []const u8 {
+    return sdkPathAllocator(b.allocator, suffix);
+}
+
+inline fn sdkPathAllocator(allocator: std.mem.Allocator, comptime suffix: []const u8) []const u8 {
+    return sdkPathInternal(allocator, suffix.len, suffix[0..suffix.len].*);
+}
+
+fn sdkPathInternal(allocator: std.mem.Allocator, comptime len: usize, comptime suffix: [len]u8) []const u8 {
     if (suffix[0] != '/') @compileError("suffix must be an absolute path");
-    return comptime blk: {
-        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
-        break :blk root_dir ++ suffix;
-    };
+
+    if (comptime unresolved_dir[0] == '/') {
+        return unresolved_dir ++ @as([]const u8, &suffix);
+    }
+
+    const cached_dir = &(struct {
+        var cached_dir: ?[]const u8 = null;
+    }).cached_dir;
+
+    if (cached_dir.* == null) {
+        cached_dir.* = std.fs.path.resolve(allocator, &.{ thisDir(allocator), suffix[1..] }) catch unreachable;
+    }
+
+    return cached_dir.*.?;
 }
