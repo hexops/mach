@@ -55,24 +55,25 @@ pub const Platform = struct {
         const backend_type = try util.detectBackendType(allocator);
 
         glfw.setErrorCallback(Platform.errorCallback);
-        try glfw.init(.{});
+        if (!glfw.init(.{})) try glfw.getError();
 
         // Create the test window and discover adapters using it (esp. for OpenGL)
         var hints = util.glfwWindowHintsForBackend(backend_type);
         hints.cocoa_retina_framebuffer = true;
-        const window = try glfw.Window.create(
+        const window = glfw.Window.create(
             options.width,
             options.height,
             options.title,
             null,
             null,
             hints,
-        );
-        if (backend_type == .opengl) try glfw.makeContextCurrent(window);
-        if (backend_type == .opengles) try glfw.makeContextCurrent(window);
+        ) orelse return glfw.mustGetError();
 
-        const window_size = try window.getSize();
-        const framebuffer_size = try window.getFramebufferSize();
+        if (backend_type == .opengl) glfw.makeContextCurrent(window);
+        if (backend_type == .opengles) glfw.makeContextCurrent(window);
+        const window_size = window.getSize();
+        const framebuffer_size = window.getFramebufferSize();
+        try glfw.getError();
 
         const instance = gpu.createInstance(null);
         if (instance == null) {
@@ -142,7 +143,8 @@ pub const Platform = struct {
         core.current_desc = descriptor;
         core.target_desc = descriptor;
         core.swap_chain = null;
-        const cursor_pos = try window.getCursorPos();
+        const cursor_pos = window.getCursorPos();
+        try glfw.getError();
 
         return Platform{
             .window = window,
@@ -151,7 +153,7 @@ pub const Platform = struct {
             .allocator = core.allocator,
             .last_window_size = .{ .width = window_size.width, .height = window_size.height },
             .last_framebuffer_size = .{ .width = framebuffer_size.width, .height = framebuffer_size.height },
-            .last_position = try window.getPos(),
+            .last_position = window.getPos(),
             .last_cursor_position = .{
                 .x = cursor_pos.xpos,
                 .y = cursor_pos.ypos,
@@ -321,7 +323,8 @@ pub const Platform = struct {
         platform.last_position = try platform.window.getPos();
 
         if (options.borderless_window) {
-            try glfw.Window.setAttrib(platform.window, .decorated, false);
+            glfw.Window.setAttrib(platform.window, .decorated, false);
+            try glfw.getError();
         }
 
         if (options.fullscreen) {
@@ -638,15 +641,16 @@ pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
     if (core.internal.wait_event_timeout > 0.0) {
         if (core.internal.wait_event_timeout == std.math.inf(f64)) {
             // Wait for an event
-            try glfw.waitEvents();
+            glfw.waitEvents();
         } else {
             // Wait for an event with a timeout
-            try glfw.waitEventsTimeout(core.internal.wait_event_timeout);
+            glfw.waitEventsTimeout(core.internal.wait_event_timeout);
         }
     } else {
         // Don't wait for events
-        try glfw.pollEvents();
+        glfw.pollEvents();
     }
+    try glfw.getError();
 
     core.delta_time_ns = core.timer.lapPrecise();
     core.delta_time = @intToFloat(f32, core.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);
