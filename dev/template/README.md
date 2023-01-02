@@ -20,7 +20,7 @@ const foobar = @import("libs/mach-foobar/build.zig");
 
 pub fn build(b: *Builder) void {
     ...
-    exe.addPackage(foobar.pkg);
+    exe.addPackage(foobar.pkg(b));
     foobar.link(b, exe, .{});
 }
 ```
