@@ -32,7 +32,7 @@ const earcut = @import("libs/mach-earcut/build.zig");
 
 pub fn build(b: *Builder) void {
     ...
-    exe.addPackage(earcut.pkg);
+    exe.addPackage(earcut.pkg(b));
 }
 ```
 

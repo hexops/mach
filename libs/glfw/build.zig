@@ -14,7 +14,7 @@ pub fn build(b: *Builder) !void {
 }
 
 pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) !*std.build.RunStep {
-    const main_tests = b.addTestExe("glfw-tests", sdkPath("/src/main.zig"));
+    const main_tests = b.addTestExe("glfw-tests", sdkPath(b, "/src/main.zig"));
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     try link(b, main_tests, .{});
@@ -23,7 +23,7 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
 }
 
 fn testStepShared(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) !*std.build.RunStep {
-    const main_tests = b.addTestExe("glfw-tests-shared", sdkPath("/src/main.zig"));
+    const main_tests = b.addTestExe("glfw-tests-shared", sdkPath(b, "/src/main.zig"));
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     try link(b, main_tests, .{ .shared = true });
@@ -64,10 +64,19 @@ pub const Options = struct {
     install_libs: bool = false,
 };
 
-pub const pkg = std.build.Pkg{
-    .name = "glfw",
-    .source = .{ .path = sdkPath("/src/main.zig") },
-};
+var cached_pkg: ?std.build.Pkg = null;
+
+pub fn pkg(b: *Builder) std.build.Pkg {
+    if (cached_pkg == null) {
+        cached_pkg = .{
+            .name = "glfw",
+            .source = .{ .path = sdkPath(b, "/src/main.zig") },
+            .dependencies = &.{},
+        };
+    }
+
+    return cached_pkg.?;
+}
 
 pub const LinkError = error{FailedToLinkGPU} || BuildError;
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) LinkError!void {
@@ -108,21 +117,21 @@ fn buildLibrary(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
 }
 
 fn addGLFWIncludes(step: *std.build.LibExeObjStep) void {
-    step.addIncludePath(sdkPath("/upstream/glfw/include"));
-    step.addIncludePath(sdkPath("/upstream/vulkan_headers/include"));
+    step.addIncludePath(sdkPath(step.builder, "/upstream/glfw/include"));
+    step.addIncludePath(sdkPath(step.builder, "/upstream/vulkan_headers/include"));
 }
 
 fn addGLFWSources(b: *Builder, lib: *std.build.LibExeObjStep, options: Options) std.mem.Allocator.Error!void {
-    const include_glfw_src = comptime "-I" ++ sdkPath("/upstream/glfw/src");
+    const include_glfw_src = try std.mem.concat(b.allocator, u8, &.{ "-I", sdkPath(b, "/upstream/glfw/src") });
     switch (lib.target_info.target.os.tag) {
         .windows => lib.addCSourceFiles(&.{
-            sdkPath("/src/sources_all.c"),
-            sdkPath("/src/sources_windows.c"),
+            sdkPath(b, "/src/sources_all.c"),
+            sdkPath(b, "/src/sources_windows.c"),
         }, &.{ "-D_GLFW_WIN32", include_glfw_src }),
         .macos => lib.addCSourceFiles(&.{
-            sdkPath("/src/sources_all.c"),
-            sdkPath("/src/sources_macos.m"),
-            sdkPath("/src/sources_macos.c"),
+            sdkPath(b, "/src/sources_all.c"),
+            sdkPath(b, "/src/sources_macos.m"),
+            sdkPath(b, "/src/sources_macos.c"),
         }, &.{ "-D_GLFW_COCOA", include_glfw_src }),
         else => {
             // TODO(future): for now, Linux can't be built with musl:
@@ -133,17 +142,17 @@ fn addGLFWSources(b: *Builder, lib: *std.build.LibExeObjStep, options: Options) 
             // ```
             var sources = std.ArrayList([]const u8).init(b.allocator);
             var flags = std.ArrayList([]const u8).init(b.allocator);
-            try sources.append(sdkPath("/src/sources_all.c"));
-            try sources.append(sdkPath("/src/sources_linux.c"));
+            try sources.append(sdkPath(b, "/src/sources_all.c"));
+            try sources.append(sdkPath(b, "/src/sources_linux.c"));
             if (options.x11) {
-                try sources.append(sdkPath("/src/sources_linux_x11.c"));
+                try sources.append(sdkPath(b, "/src/sources_linux_x11.c"));
                 try flags.append("-D_GLFW_X11");
             }
             if (options.wayland) {
-                try sources.append(sdkPath("/src/sources_linux_wayland.c"));
+                try sources.append(sdkPath(b, "/src/sources_linux_wayland.c"));
                 try flags.append("-D_GLFW_WAYLAND");
             }
-            try flags.append(comptime "-I" ++ sdkPath("/upstream/glfw/src"));
+            try flags.append(include_glfw_src);
             // TODO(upstream): glfw can't compile on clang15 without this flag
             try flags.append("-Wno-implicit-function-declaration");
 
@@ -197,17 +206,57 @@ fn ensureDependencySubmodule(allocator: std.mem.Allocator, path: []const u8) !vo
         if (std.mem.eql(u8, no_ensure_submodules, "true")) return;
     } else |_| {}
     var child = std.ChildProcess.init(&.{ "git", "submodule", "update", "--init", path }, allocator);
-    child.cwd = sdkPath("/");
+    child.cwd = sdkPathAllocator(allocator, "/");
     child.stderr = std.io.getStdErr();
     child.stdout = std.io.getStdOut();
 
     _ = try child.spawnAndWait();
 }
 
-fn sdkPath(comptime suffix: []const u8) []const u8 {
+const unresolved_dir = (struct {
+    inline fn unresolvedDir() []const u8 {
+        return comptime std.fs.path.dirname(@src().file) orelse ".";
+    }
+}).unresolvedDir();
+
+fn thisDir(allocator: std.mem.Allocator) []const u8 {
+    if (comptime unresolved_dir[0] == '/') {
+        return unresolved_dir;
+    }
+
+    const cached_dir = &(struct {
+        var cached_dir: ?[]const u8 = null;
+    }).cached_dir;
+
+    if (cached_dir.* == null) {
+        cached_dir.* = std.fs.cwd().realpathAlloc(allocator, unresolved_dir) catch unreachable;
+    }
+
+    return cached_dir.*.?;
+}
+
+inline fn sdkPath(b: *Builder, comptime suffix: []const u8) []const u8 {
+    return sdkPathAllocator(b.allocator, suffix);
+}
+
+inline fn sdkPathAllocator(allocator: std.mem.Allocator, comptime suffix: []const u8) []const u8 {
+    return sdkPathInternal(allocator, suffix.len, suffix[0..suffix.len].*);
+}
+
+fn sdkPathInternal(allocator: std.mem.Allocator, comptime len: usize, comptime suffix: [len]u8) []const u8 {
     if (suffix[0] != '/') @compileError("suffix must be an absolute path");
-    return comptime blk: {
-        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
-        break :blk root_dir ++ suffix;
-    };
+
+    if (comptime unresolved_dir[0] == '/') {
+        return unresolved_dir ++ @as([]const u8, &suffix);
+    }
+
+    const cached_dir = &(struct {
+        var cached_dir: ?[]const u8 = null;
+    }).cached_dir;
+
+    if (cached_dir.* == null) {
+        cached_dir.* = std.fs.path.resolve(allocator, &.{ thisDir(allocator), suffix[1..] }) catch unreachable;
+    }
+
+    return cached_dir.*.?;
 }

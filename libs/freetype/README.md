@@ -28,7 +28,7 @@ const freetype = @import("libs/mach-freetype/build.zig");
 
 pub fn build(b: *Builder) void {
     ...
-    exe.addPackage(freetype.pkg);
+    exe.addPackage(freetype.pkg(b));
     freetype.link(b, exe, .{});
 
     // use this option if you are including zlib separately
@@ -46,7 +46,7 @@ freetype.link(b, exe, .{ .harfbuzz = .{} });
 You can also optionally build brotli compression (for WOFF2 font support):
 
 ```zig
-    exe.addPackage(freetype.pkg);
+    exe.addPackage(freetype.pkg(b));
     freetype.link(b, exe, .{ .freetype = .{ .brotli = true } });
 ```
 
