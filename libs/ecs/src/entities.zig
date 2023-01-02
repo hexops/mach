@@ -25,7 +25,7 @@ const Column = struct {
     type_id: TypeId,
     size: u32,
     alignment: u16,
-    index: usize,
+    values: []u8,
 };
 
 fn byTypeId(context: void, lhs: Column, rhs: Column) bool {
@@ -47,20 +47,8 @@ pub const ArchetypeStorage = struct {
     /// The capacity of the table (allocated number of rows.)
     capacity: u32,
 
-    /// Describes the columns stored in the `block` of memory, sorted by the smallest alignment
-    /// value.
+    /// Describes the columns in this table. Each column stores its row values.
     columns: []Column,
-
-    /// The block of memory where all entities of this archetype are actually stored. This memory is
-    /// laid out as contiguous column values (i.e. the same way MultiArrayList works, SoA style)
-    /// so `[col1_val1, col1_val2, col2_val1, col2_val2, ...]`. The number of rows is always
-    /// identical (the `ArchetypeStorage.capacity`), and an "id" column is always present (the
-    /// entity IDs stored in the table.) The value names, size, and alignments are described by the
-    /// `ArchetypeStorage.columns` slice.
-    ///
-    /// When necessary, padding is added between the column value *arrays* in order to achieve
-    /// alignment.
-    blocks: [][]u8,
 
     /// Calculates the storage.hash value. This is a hash of all the component names, and can
     /// effectively be used to uniquely identify this table within the database.
@@ -72,11 +60,10 @@ pub const ArchetypeStorage = struct {
     }
 
     pub fn deinit(storage: *ArchetypeStorage, gpa: Allocator) void {
-        gpa.free(storage.columns);
         if (storage.capacity > 0) {
-            for (storage.blocks) |block| gpa.free(block);
+            for (storage.columns) |column| gpa.free(column.values);
         }
-        gpa.free(storage.blocks);
+        gpa.free(storage.columns);
     }
 
     fn debugValidateRow(storage: *ArchetypeStorage, gpa: Allocator, row: anytype) void {
@@ -144,14 +131,14 @@ pub const ArchetypeStorage = struct {
         assert(storage.capacity >= storage.len);
 
         // TODO: ensure columns are sorted by type_id
-        for (storage.columns) |*column, i| {
-            const old_block = storage.blocks[i];
-            const new_block = try gpa.alloc(u8, new_capacity * column.size);
+        for (storage.columns) |*column| {
+            const old_values = column.values;
+            const new_values = try gpa.alloc(u8, new_capacity * column.size);
             if (storage.capacity > 0) {
-                mem.copy(u8, new_block[0..], old_block);
-                gpa.free(old_block);
+                mem.copy(u8, new_values[0..], old_values);
+                gpa.free(old_values);
             }
-            storage.blocks[i] = new_block;
+            column.values = new_values;
         }
         storage.capacity = @intCast(u32, new_capacity);
     }
@@ -165,9 +152,8 @@ pub const ArchetypeStorage = struct {
             const ColumnType = field.type;
             if (@sizeOf(ColumnType) == 0) continue;
 
-            const column = storage.columns[index];
-            var block = storage.blocks[column.index];
-            const column_values = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &block));
+            var column = storage.columns[index];
+            const column_values = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), column.values.ptr));
             column_values[row_index] = @field(row, field.name);
         }
     }
@@ -205,12 +191,11 @@ pub const ArchetypeStorage = struct {
     /// Swap-removes the specified row with the last row in the table.
     pub fn remove(storage: *ArchetypeStorage, row_index: u32) void {
         if (storage.len > 1) {
-            for (storage.columns) |column, i| {
-                const block = storage.blocks[i];
+            for (storage.columns) |column| {
                 const dstStart = column.size * row_index;
-                const dst = block[dstStart .. dstStart + column.size];
+                const dst = column.values[dstStart .. dstStart + column.size];
                 const srcStart = column.size * (storage.len - 1);
-                const src = block[srcStart .. srcStart + column.size];
+                const src = column.values[srcStart .. srcStart + column.size];
                 std.mem.copy(u8, dst, src);
             }
         }
@@ -234,7 +219,7 @@ pub const ArchetypeStorage = struct {
     }
 
     pub fn getColumnValues(storage: *ArchetypeStorage, gpa: Allocator, name: []const u8, comptime ColumnType: type) ?[]ColumnType {
-        for (storage.columns) |column, i| {
+        for (storage.columns) |*column| {
             if (!std.mem.eql(u8, column.name, name)) continue;
             if (is_debug) {
                 if (typeId(ColumnType) != column.type_id) {
@@ -247,21 +232,18 @@ pub const ArchetypeStorage = struct {
                     @panic(msg);
                 }
             }
-            var block = storage.blocks[i];
-            const ptr = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), &block));
+            var ptr = @ptrCast([*]ColumnType, @alignCast(@alignOf(ColumnType), column.values.ptr));
             const column_values = ptr[0..storage.capacity];
             return column_values;
         }
-
         return null;
     }
 
     pub fn getRawColumnValues(storage: *ArchetypeStorage, name: []const u8) ?[]u8 {
-        for (storage.columns) |column, i| {
+        for (storage.columns) |column| {
             if (!std.mem.eql(u8, column.name, name)) continue;
-            return storage.blocks[i];
+            return column.values;
         }
-
         return null;
     }
 };
@@ -436,21 +418,18 @@ pub fn Entities(comptime all_components: anytype) type {
             var entities = Self{ .allocator = allocator };
 
             const columns = try allocator.alloc(Column, 1);
-            const blocks = try allocator.alloc([]u8, 1);
-
             columns[0] = .{
                 .name = "id",
                 .type_id = typeId(EntityID),
                 .size = @sizeOf(EntityID),
                 .alignment = @alignOf(EntityID),
-                .index = 0,
+                .values = undefined,
             };
 
             try entities.archetypes.put(allocator, void_archetype_hash, ArchetypeStorage{
                 .len = 0,
                 .capacity = 0,
                 .columns = columns,
-                .blocks = blocks,
                 .hash = void_archetype_hash,
             });
 
@@ -551,34 +530,26 @@ pub fn Entities(comptime all_components: anytype) type {
                     assert(entities.archetypes.swapRemove(new_hash));
                     return err;
                 };
-                const blocks = entities.allocator.alloc([]u8, columns.len) catch |err| {
-                    assert(entities.archetypes.swapRemove(new_hash));
-                    return err;
-                };
                 mem.copy(Column, columns, archetype.columns);
+                for (columns) |*column| {
+                    column.values = undefined;
+                }
                 columns[columns.len - 1] = .{
                     .name = name,
                     .type_id = typeId(@TypeOf(component)),
                     .size = @sizeOf(@TypeOf(component)),
                     .alignment = if (@sizeOf(@TypeOf(component)) == 0) 1 else @alignOf(@TypeOf(component)),
-                    .index = 0,
+                    .values = undefined,
                 };
                 std.sort.sort(Column, columns, {}, byTypeId);
-
-                for (columns) |*column, i| {
-                    column.index = i;
-                }
 
                 archetype_entry.value_ptr.* = ArchetypeStorage{
                     .len = 0,
                     .capacity = 0,
                     .columns = columns,
-                    .blocks = blocks,
                     .hash = undefined,
                 };
-
-                const new_archetype = archetype_entry.value_ptr;
-                new_archetype.calculateHash();
+                archetype_entry.value_ptr.calculateHash();
             }
 
             // Either new storage (if the entity moved between storage tables due to having a new
@@ -689,15 +660,11 @@ pub fn Entities(comptime all_components: anytype) type {
                     assert(entities.archetypes.swapRemove(new_hash));
                     return err;
                 };
-                const blocks = entities.allocator.alloc([]u8, columns.len) catch |err| {
-                    assert(entities.archetypes.swapRemove(new_hash));
-                    return err;
-                };
                 var i: usize = 0;
-                for (archetype.columns) |column| {
-                    if (std.mem.eql(u8, column.name, name)) continue;
-                    columns[i] = column;
-                    columns[i].index = i;
+                for (archetype.columns) |old_column| {
+                    if (std.mem.eql(u8, old_column.name, name)) continue;
+                    columns[i] = old_column;
+                    columns[i].values = undefined;
                     i += 1;
                 }
 
@@ -705,7 +672,6 @@ pub fn Entities(comptime all_components: anytype) type {
                     .len = 0,
                     .capacity = 0,
                     .columns = columns,
-                    .blocks = blocks,
                     .hash = undefined,
                 };
 
