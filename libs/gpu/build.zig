@@ -28,8 +28,8 @@ pub fn build(b: *std.build.Builder) !void {
     const example = b.addExecutable("gpu-hello-triangle", "examples/main.zig");
     example.setBuildMode(mode);
     example.setTarget(target);
-    example.addPackage(gpu.pkg);
-    example.addPackage(glfw.pkg);
+    example.addPackage(gpu.pkg(b));
+    example.addPackage(glfw.pkg(b));
     try gpu.link(b, example, .{ .gpu_dawn_options = gpu_dawn_options });
     example.install();
 
