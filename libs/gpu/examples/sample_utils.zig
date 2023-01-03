@@ -92,7 +92,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
     var response: ?RequestAdapterResponse = null;
     instance.?.requestAdapter(&gpu.RequestAdapterOptions{
         .compatible_surface = surface,
-        .power_preference = .undef,
+        .power_preference = .undefined,
         .force_fallback_adapter = false,
     }, &response, requestAdapterCallback);
     if (response.?.status != .success) {
