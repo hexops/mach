@@ -340,7 +340,7 @@ fn getExecArgs(self: *build.LibExeObjStep) ![]const []const u8 {
     const builder = self.builder;
 
     if (self.root_src == null and self.link_objects.items.len == 0) {
-        std.log.err("linker needs 1 or more objects to link", .{});
+        std.log.err("{s}: linker needs 1 or more objects to link", .{self.step.name});
         return error.NeedAnObject;
     }
 
@@ -358,8 +358,10 @@ fn getExecArgs(self: *build.LibExeObjStep) ![]const []const u8 {
     };
     zig_args.append(cmd) catch unreachable;
 
-    try zig_args.append("--color");
-    try zig_args.append("on");
+    if (builder.color != .auto) {
+        try zig_args.append("--color");
+        try zig_args.append(@tagName(builder.color));
+    }
 
     if (builder.reference_trace) |some| {
         try zig_args.append(try std.fmt.allocPrint(builder.allocator, "-freference-trace={d}", .{some}));
@@ -401,7 +403,7 @@ fn getExecArgs(self: *build.LibExeObjStep) ![]const []const u8 {
 
     // Resolve transitive dependencies
     {
-        var transitive_dependencies = std.ArrayList(build.LibExeObjStep.LinkObject).init(builder.allocator);
+        var transitive_dependencies = std.ArrayList(std.build.LibExeObjStep.LinkObject).init(builder.allocator);
         defer transitive_dependencies.deinit();
 
         for (self.link_objects.items) |link_object| {
@@ -632,6 +634,14 @@ fn getExecArgs(self: *build.LibExeObjStep) ![]const []const u8 {
         try zig_args.append("-z");
         try zig_args.append("lazy");
     }
+    if (self.link_z_common_page_size) |size| {
+        try zig_args.append("-z");
+        try zig_args.append(builder.fmt("common-page-size={d}", .{size}));
+    }
+    if (self.link_z_max_page_size) |size| {
+        try zig_args.append("-z");
+        try zig_args.append(builder.fmt("max-page-size={d}", .{size}));
+    }
 
     if (self.libc_file) |libc_file| {
         try zig_args.append("--libc");
@@ -754,6 +764,9 @@ fn getExecArgs(self: *build.LibExeObjStep) ![]const []const u8 {
     }
     if (self.import_memory) {
         try zig_args.append("--import-memory");
+    }
+    if (self.import_symbols) {
+        try zig_args.append("--import-symbols");
     }
     if (self.import_table) {
         try zig_args.append("--import-table");
@@ -906,8 +919,6 @@ fn getExecArgs(self: *build.LibExeObjStep) ![]const []const u8 {
                     try zig_args.append(bin_name);
                     try zig_args.append("--test-cmd");
                     try zig_args.append("--dir=.");
-                    try zig_args.append("--test-cmd");
-                    try zig_args.append("--allow-unknown-exports"); // TODO: Remove when stage2 is default compiler
                     try zig_args.append("--test-cmd-bin");
                 } else {
                     try zig_args.append("--test-no-exec");
@@ -962,6 +973,10 @@ fn getExecArgs(self: *build.LibExeObjStep) ![]const []const u8 {
                 const h_path = other.getOutputHSource().getPath(self.builder);
                 try zig_args.append("-isystem");
                 try zig_args.append(fs.path.dirname(h_path).?);
+            },
+            .config_header_step => |config_header| {
+                try zig_args.append("-I");
+                try zig_args.append(config_header.output_dir);
             },
         }
     }
@@ -1168,13 +1183,67 @@ fn getExecArgs(self: *build.LibExeObjStep) ![]const []const u8 {
         try zig_args.append(try std.mem.concat(builder.allocator, u8, &[_][]const u8{ "@", args_file }));
     }
 
+    const output_dir_nl = try builder.execFromStep(zig_args.items, &self.step);
+    const build_output_dir = mem.trimRight(u8, output_dir_nl, "\r\n");
+
+    if (self.output_dir) |output_dir| {
+        var src_dir = try std.fs.cwd().openIterableDir(build_output_dir, .{});
+        defer src_dir.close();
+
+        // Create the output directory if it doesn't exist.
+        try std.fs.cwd().makePath(output_dir);
+
+        var dest_dir = try std.fs.cwd().openDir(output_dir, .{});
+        defer dest_dir.close();
+
+        var it = src_dir.iterate();
+        while (try it.next()) |entry| {
+            // The compiler can put these files into the same directory, but we don't
+            // want to copy them over.
+            if (mem.eql(u8, entry.name, "llvm-ar.id") or
+                mem.eql(u8, entry.name, "libs.txt") or
+                mem.eql(u8, entry.name, "builtin.zig") or
+                mem.eql(u8, entry.name, "zld.id") or
+                mem.eql(u8, entry.name, "lld.id")) continue;
+
+            _ = try src_dir.dir.updateFile(entry.name, dest_dir, entry.name, .{});
+        }
+    } else {
+        self.output_dir = build_output_dir;
+    }
+
+    // Update generated files
+    if (self.output_dir != null) {
+        self.output_path_source.path = builder.pathJoin(
+            &.{ self.output_dir.?, self.out_filename },
+        );
+
+        if (self.emit_h) {
+            self.output_h_path_source.path = builder.pathJoin(
+                &.{ self.output_dir.?, self.out_h_filename },
+            );
+        }
+
+        if (self.target.isWindows() or self.target.isUefi()) {
+            self.output_pdb_path_source.path = builder.pathJoin(
+                &.{ self.output_dir.?, self.out_pdb_filename },
+            );
+        }
+    }
+
+    if (self.kind == .lib and self.linkage != null and self.linkage.? == .dynamic and self.version != null and self.target.wantSharedLibSymLinks()) {
+        try doAtomicSymLinks(builder.allocator, self.getOutputSource().getPath(builder), self.major_only_filename.?, self.name_only_filename.?);
+    }
+
     return zig_args.toOwnedSlice();
 }
 
-fn makePackageCmd(self: *build.LibExeObjStep, pkg: build.Pkg, zig_args: *std.ArrayList([]const u8)) error{OutOfMemory}!void {
+fn makePackageCmd(self: *std.build.LibExeObjStep, pkg: std.build.Pkg, zig_args: *std.ArrayList([]const u8)) error{OutOfMemory}!void {
+    const builder = self.builder;
+
     try zig_args.append("--pkg-begin");
     try zig_args.append(pkg.name);
-    try zig_args.append(self.builder.pathFromRoot(pkg.source.getPath(self.builder)));
+    try zig_args.append(builder.pathFromRoot(pkg.source.getPath(self.builder)));
 
     if (pkg.dependencies) |dependencies| {
         for (dependencies) |sub_pkg| {
@@ -1183,4 +1252,27 @@ fn makePackageCmd(self: *build.LibExeObjStep, pkg: build.Pkg, zig_args: *std.Arr
     }
 
     try zig_args.append("--pkg-end");
+}
+
+pub fn doAtomicSymLinks(allocator: std.mem.Allocator, output_path: []const u8, filename_major_only: []const u8, filename_name_only: []const u8) !void {
+    const out_dir = fs.path.dirname(output_path) orelse ".";
+    const out_basename = fs.path.basename(output_path);
+    // sym link for libfoo.so.1 to libfoo.so.1.2.3
+    const major_only_path = fs.path.join(
+        allocator,
+        &[_][]const u8{ out_dir, filename_major_only },
+    ) catch unreachable;
+    fs.atomicSymLink(allocator, out_basename, major_only_path) catch |err| {
+        std.log.err("Unable to symlink {s} -> {s}", .{ major_only_path, out_basename });
+        return err;
+    };
+    // sym link for libfoo.so to libfoo.so.1
+    const name_only_path = fs.path.join(
+        allocator,
+        &[_][]const u8{ out_dir, filename_name_only },
+    ) catch unreachable;
+    fs.atomicSymLink(allocator, filename_major_only, name_only_path) catch |err| {
+        std.log.err("Unable to symlink {s} -> {s}", .{ name_only_path, filename_major_only });
+        return err;
+    };
 }
