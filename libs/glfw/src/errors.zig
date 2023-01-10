@@ -5,7 +5,7 @@ const mem = @import("std").mem;
 const c = @import("c.zig").c;
 
 /// Errors that GLFW can produce.
-pub const Error = error{
+pub const ErrorCode = error{
     /// GLFW has not been initialized.
     ///
     /// This occurs if a GLFW function was called that must not be called unless the library is
@@ -31,7 +31,7 @@ pub const Error = error{
     /// non-existent OpenGL or OpenGL ES version like 2.7.
     ///
     /// Requesting a valid but unavailable OpenGL or OpenGL ES version will instead result in a
-    /// glfw.Error.VersionUnavailable error.
+    /// glfw.ErrorCode.VersionUnavailable error.
     InvalidValue,
 
     /// A memory allocation failed.
@@ -56,7 +56,7 @@ pub const Error = error{
     /// machine does not match your requirements.
     ///
     /// Future invalid OpenGL and OpenGL ES versions, for example OpenGL 4.8 if 5.0 comes out
-    /// before the 4.x series gets that far, also fail with this error and not glfw.Error.InvalidValue,
+    /// before the 4.x series gets that far, also fail with this error and not glfw.ErrorCode.InvalidValue,
     /// because GLFW cannot know what future versions will exist.
     VersionUnavailable,
 
@@ -148,36 +148,49 @@ pub const Error = error{
     PlatformUnavailable,
 };
 
-fn convertError(e: c_int) Error!void {
+/// An error produced by GLFW and the description associated with it.
+pub const Error = struct {
+    error_code: ErrorCode,
+    description: [:0]const u8,
+};
+
+fn convertError(e: c_int) ErrorCode!void {
     return switch (e) {
         c.GLFW_NO_ERROR => {},
-        c.GLFW_NOT_INITIALIZED => Error.NotInitialized,
-        c.GLFW_NO_CURRENT_CONTEXT => Error.NoCurrentContext,
-        c.GLFW_INVALID_ENUM => Error.InvalidEnum,
-        c.GLFW_INVALID_VALUE => Error.InvalidValue,
-        c.GLFW_OUT_OF_MEMORY => Error.OutOfMemory,
-        c.GLFW_API_UNAVAILABLE => Error.APIUnavailable,
-        c.GLFW_VERSION_UNAVAILABLE => Error.VersionUnavailable,
-        c.GLFW_PLATFORM_ERROR => Error.PlatformError,
-        c.GLFW_FORMAT_UNAVAILABLE => Error.FormatUnavailable,
-        c.GLFW_NO_WINDOW_CONTEXT => Error.NoWindowContext,
-        c.GLFW_CURSOR_UNAVAILABLE => Error.CursorUnavailable,
-        c.GLFW_FEATURE_UNAVAILABLE => Error.FeatureUnavailable,
-        c.GLFW_FEATURE_UNIMPLEMENTED => Error.FeatureUnimplemented,
-        c.GLFW_PLATFORM_UNAVAILABLE => Error.PlatformUnavailable,
+        c.GLFW_NOT_INITIALIZED => ErrorCode.NotInitialized,
+        c.GLFW_NO_CURRENT_CONTEXT => ErrorCode.NoCurrentContext,
+        c.GLFW_INVALID_ENUM => ErrorCode.InvalidEnum,
+        c.GLFW_INVALID_VALUE => ErrorCode.InvalidValue,
+        c.GLFW_OUT_OF_MEMORY => ErrorCode.OutOfMemory,
+        c.GLFW_API_UNAVAILABLE => ErrorCode.APIUnavailable,
+        c.GLFW_VERSION_UNAVAILABLE => ErrorCode.VersionUnavailable,
+        c.GLFW_PLATFORM_ERROR => ErrorCode.PlatformError,
+        c.GLFW_FORMAT_UNAVAILABLE => ErrorCode.FormatUnavailable,
+        c.GLFW_NO_WINDOW_CONTEXT => ErrorCode.NoWindowContext,
+        c.GLFW_CURSOR_UNAVAILABLE => ErrorCode.CursorUnavailable,
+        c.GLFW_FEATURE_UNAVAILABLE => ErrorCode.FeatureUnavailable,
+        c.GLFW_FEATURE_UNIMPLEMENTED => ErrorCode.FeatureUnimplemented,
+        c.GLFW_PLATFORM_UNAVAILABLE => ErrorCode.PlatformUnavailable,
         else => unreachable,
     };
+}
+
+/// Clears the last error and the error description pointer for the calling thread. Does nothing if
+/// no error has occurred since the last call.
+///
+/// @remark This function may be called before @ref glfwInit.
+///
+/// @thread_safety This function may be called from any thread.
+pub inline fn clearError() void {
+    _ = c.glfwGetError(null);
 }
 
 /// Returns and clears the last error for the calling thread.
 ///
 /// This function returns and clears the error code of the last error that occurred on the calling
-/// thread, and optionally a UTF-8 encoded human-readable description of it. If no error has
-/// occurred since the last call, it returns GLFW_NO_ERROR (zero) and the description pointer is
-/// set to `NULL`.
-///
-/// * @param[in] description Where to store the error description pointer, or `NULL`.
-/// @return The last error code for the calling thread, or @ref GLFW_NO_ERROR (zero).
+/// thread, along with a UTF-8 encoded human-readable description of it. If no error has occurred
+/// since the last call, it returns GLFW_NO_ERROR (zero) and the description pointer is set to
+/// `NULL`.
 ///
 /// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
 /// yourself. It is guaranteed to be valid only until the next error occurs or the library is
@@ -186,15 +199,42 @@ fn convertError(e: c_int) Error!void {
 /// @remark This function may be called before @ref glfwInit.
 ///
 /// @thread_safety This function may be called from any thread.
-pub inline fn getError() Error!void {
+pub inline fn getError() ?Error {
+    var desc: [*c]const u8 = null;
+    convertError(c.glfwGetError(&desc)) catch |error_code| {
+        return .{
+            .error_code = error_code,
+            .description = mem.sliceTo(desc, 0),
+        };
+    };
+    return null;
+}
+
+pub inline fn mustGetError() Error {
+    return getError() orelse {
+        @panic("glfw: mustGetError called but no error is present");
+    };
+}
+
+/// Returns and clears the last error for the calling thread.
+///
+/// This function returns and clears the error code of the last error that occurred on the calling
+/// thread. If no error has occurred since the last call, it returns GLFW_NO_ERROR (zero).
+///
+/// @return The last error code for the calling thread, or @ref GLFW_NO_ERROR (zero).
+///
+/// @remark This function may be called before @ref glfwInit.
+///
+/// @thread_safety This function may be called from any thread.
+pub inline fn getErrorCode() ErrorCode!void {
     return convertError(c.glfwGetError(null));
 }
 
-/// Returns and clears the last error for the calling thread. If no error is present, this function
-/// panics.
-pub inline fn mustGetError() Error {
-    try getError();
-    @panic("glfw: mustGetError called but no error is present");
+/// Returns and clears the last error code for the calling thread. If no error is present, this
+/// function panics.
+pub inline fn mustGetErrorCode() ErrorCode {
+    try getErrorCode();
+    @panic("glfw: mustGetErrorCode called but no error is present");
 }
 
 /// Returns and clears the last error description for the calling thread.
@@ -209,13 +249,21 @@ pub inline fn mustGetError() Error {
 /// @remark This function may be called before @ref glfwInit.
 ///
 /// @thread_safety This function may be called from any thread.
-pub inline fn getErrorString() ?[]const u8 {
+pub inline fn getErrorString() ?[:0]const u8 {
     var desc: [*c]const u8 = null;
     const error_code = c.glfwGetError(&desc);
-    convertError(error_code) catch {
+    if (error_code != c.GLFW_NO_ERROR) {
         return mem.sliceTo(desc, 0);
-    };
+    }
     return null;
+}
+
+/// Returns and clears the last error description for the calling thread. If no error is present,
+/// this function panics.
+pub inline fn mustGetErrorString() [:0]const u8 {
+    return getErrorString() orelse {
+        @panic("glfw: mustGetErrorString called but no error is present");
+    };
 }
 
 /// Sets the error callback.
@@ -249,16 +297,13 @@ pub inline fn getErrorString() ?[]const u8 {
 /// @remark This function may be called before @ref glfwInit.
 ///
 /// @thread_safety This function must only be called from the main thread.
-pub fn setErrorCallback(comptime callback: ?fn (error_code: Error, description: [:0]const u8) void) void {
+pub fn setErrorCallback(comptime callback: ?fn (error_code: ErrorCode, description: [:0]const u8) void) void {
     if (callback) |user_callback| {
         const CWrapper = struct {
             pub fn errorCallbackWrapper(err_int: c_int, c_description: [*c]const u8) callconv(.C) void {
-                if (convertError(err_int)) |_| {
-                    // This means the error was `GLFW_NO_ERROR`
-                    return;
-                } else |err| {
-                    user_callback(err, mem.sliceTo(c_description, 0));
-                }
+                convertError(err_int) catch |error_code| {
+                    user_callback(error_code, mem.sliceTo(c_description, 0));
+                };
             }
         };
 
@@ -269,13 +314,25 @@ pub fn setErrorCallback(comptime callback: ?fn (error_code: Error, description: 
     _ = c.glfwSetErrorCallback(null);
 }
 
-test "errorCallback" {
+test "set error callback" {
     const TestStruct = struct {
-        pub fn callback(_: Error, _: [:0]const u8) void {}
+        pub fn callback(_: ErrorCode, _: [:0]const u8) void {}
     };
     setErrorCallback(TestStruct.callback);
 }
 
 test "error string" {
     try testing.expect(getErrorString() == null);
+}
+
+test "error code" {
+    try getErrorCode();
+}
+
+test "error code and string" {
+    try testing.expect(getError() == null);
+}
+
+test "clear error" {
+    clearError();
 }

@@ -6,8 +6,6 @@ const mem = std.mem;
 const c = @import("c.zig").c;
 
 const glfw = @import("main.zig");
-const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
 const Image = @import("Image.zig");
 const Monitor = @import("Monitor.zig");
 const Cursor = @import("Cursor.zig");
@@ -295,9 +293,9 @@ pub const Hints = struct {
 /// The swap interval is not set during window creation and the initial value may vary depending on
 /// driver settings and defaults.
 ///
-/// Possible errors include glfw.Error.InvalidEnum, glfw.Error.InvalidValue,
-/// glfw.Error.APIUnavailable, glfw.Error.VersionUnavailable, glfw.Error.FormatUnavailable and
-/// glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidEnum, glfw.ErrorCode.InvalidValue,
+/// glfw.ErrorCode.APIUnavailable, glfw.ErrorCode.VersionUnavailable, glfw.ErrorCode.FormatUnavailable and
+/// glfw.ErrorCode.PlatformError.
 /// Returns null in the event of an error.
 ///
 /// Parameters are as follows:
@@ -402,7 +400,7 @@ var testing_ignore_window_hints_struct = if (@import("builtin").is_test) false e
 /// note: The context of the specified window must not be current on any other thread when this
 /// function is called.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// @reentrancy This function must not be called from a callback.
 ///
@@ -445,7 +443,7 @@ pub inline fn setShouldClose(self: Window, value: bool) void {
 ///
 /// This function sets the window title, encoded as UTF-8, of the specified window.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// macos: The window title will not be updated until the next time you process events.
 ///
@@ -478,9 +476,9 @@ pub inline fn setTitle(self: Window, title: [*:0]const u8) void {
 /// in the Mac Developer Library.
 ///
 /// wayland: There is no existing protocol to change an icon, the window will thus inherit the one
-/// defined in the application's desktop file. This function will emit glfw.Error.FeatureUnavailable.
+/// defined in the application's desktop file. This function will emit glfw.ErrorCode.FeatureUnavailable.
 ///
-/// Possible errors include glfw.Error.InvalidValue, glfw.Error.FeatureUnavailable
+/// Possible errors include glfw.ErrorCode.InvalidValue, glfw.ErrorCode.FeatureUnavailable
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -505,11 +503,11 @@ pub const Pos = struct {
 /// This function retrieves the position, in screen coordinates, of the upper-left corner of the
 /// content area of the specified window.
 ///
-/// Possible errors include glfw.Error.FeatureUnavailable.
+/// Possible errors include glfw.ErrorCode.FeatureUnavailable.
 /// Additionally returns a zero value in the event of an error.
 ///
 /// wayland: There is no way for an application to retrieve the global position of its windows,
-/// this function will always emit glfw.Error.FeatureUnavailable.
+/// this function will always emit glfw.ErrorCode.FeatureUnavailable.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -534,10 +532,10 @@ pub inline fn getPos(self: Window) Pos {
 /// The window manager may put limits on what positions are allowed. GLFW cannot and should not
 /// override these limits.
 ///
-/// Possible errors include glfw.Error.FeatureUnavailable.
+/// Possible errors include glfw.ErrorCode.FeatureUnavailable.
 ///
 /// wayland: There is no way for an application to set the global position of its windows, this
-/// function will always emit glfw.Error.FeatureUnavailable.
+/// function will always emit glfw.ErrorCode.FeatureUnavailable.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -558,7 +556,7 @@ pub const Size = struct {
 /// window. If you wish to retrieve the size of the framebuffer of the window in pixels, see
 /// glfw.Window.getFramebufferSize.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// Additionally returns a zero value in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -586,7 +584,7 @@ pub inline fn getSize(self: Window) Size {
 /// The window manager may put limits on what sizes are allowed. GLFW cannot and should not
 /// override these limits.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// wayland: A full screen window will not attempt to change the mode, no matter what the requested
 /// size.
@@ -617,7 +615,7 @@ pub const SizeOptional = struct {
 /// The maximum dimensions must be greater than or equal to the minimum dimensions. glfw.dont_care
 /// may be used for any width/height parameter.
 ///
-/// Possible errors include glfw.Error.InvalidValue and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidValue and glfw.ErrorCode.PlatformError.
 ///
 /// If you set size limits and an aspect ratio that conflict, the results are undefined.
 ///
@@ -661,7 +659,7 @@ pub inline fn setSizeLimits(self: Window, min: SizeOptional, max: SizeOptional) 
 /// The aspect ratio is applied immediately to a windowed mode window and may cause it to be
 /// resized.
 ///
-/// Possible errors include glfw.Error.InvalidValue and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidValue and glfw.ErrorCode.PlatformError.
 ///
 /// If you set size limits and an aspect ratio that conflict, the results are undefined.
 ///
@@ -672,7 +670,7 @@ pub inline fn setSizeLimits(self: Window, min: SizeOptional, max: SizeOptional) 
 ///
 /// see also: window_sizelimits, glfw.Window.setSizeLimits
 ///
-/// WARNING: on wayland it will return Error.FeatureUnimplemented
+/// WARNING: on wayland it will return glfw.ErrorCode.FeatureUnimplemented
 pub inline fn setAspectRatio(self: Window, numerator: ?u32, denominator: ?u32) void {
     internal_debug.assertInitialized();
 
@@ -693,7 +691,7 @@ pub inline fn setAspectRatio(self: Window, numerator: ?u32, denominator: ?u32) v
 /// This function retrieves the size, in pixels, of the framebuffer of the specified window. If you
 /// wish to retrieve the size of the window in screen coordinates, see @ref glfwGetWindowSize.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// Additionally returns a zero value in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -723,7 +721,7 @@ pub const FrameSize = struct {
 /// Because this function retrieves the size of each window frame edge and not the offset along a
 /// particular coordinate axis, the retrieved values will always be zero or positive.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// Additionally returns a zero value in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -761,7 +759,7 @@ pub const ContentScale = struct {
 /// On platforms where each monitors can have its own content scale, the window content scale will
 /// depend on which monitor the system considers the window to be on.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// Additionally returns a zero value in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -785,7 +783,7 @@ pub inline fn getContentScale(self: Window) ContentScale {
 ///
 /// The initial opacity value for newly created windows is one.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// Additionally returns a zero value in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -825,7 +823,7 @@ pub inline fn setOpacity(self: Window, opacity: f32) void {
 /// If the specified window is a full screen window, the original monitor resolution is restored
 /// until the window is restored.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// wayland: Once a window is iconified, glfw.Window.restorebe able to restore it. This is a design
 /// decision of the xdg-shell protocol.
@@ -846,7 +844,7 @@ pub inline fn iconify(self: Window) void {
 /// If the specified window is a full screen window, the resolution chosen for the window is
 /// restored on the selected monitor.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -863,7 +861,7 @@ pub inline fn restore(self: Window) void {
 ///
 /// If the specified window is a full screen window, this function does nothing.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -890,7 +888,7 @@ pub inline fn maximize(self: Window) void {
 ///
 /// see also: window_hide, glfw.Window.hide
 ///
-/// WARNING: on wayland it will return Error.FeatureUnavailable
+/// WARNING: on wayland it will return glfw.ErrorCode.FeatureUnavailable
 pub inline fn show(self: Window) void {
     internal_debug.assertInitialized();
     c.glfwShowWindow(self.handle);
@@ -901,7 +899,7 @@ pub inline fn show(self: Window) void {
 /// This function hides the specified window if it was previously visible. If the window is already
 /// hidden or is in full screen mode, this function does nothing.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -927,7 +925,8 @@ pub inline fn hide(self: Window) void {
 ///
 /// For a less disruptive way of getting the user's attention, see [attention requests (window_attention).
 ///
-/// wayland It is not possible for an application to set the input focus. This function will emit glfw.Error.FeatureUnavailable.
+/// wayland It is not possible for an application to set the input focus. This function will emit
+/// glfw.ErrorCode.FeatureUnavailable.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -944,7 +943,7 @@ pub inline fn focus(self: Window) void {
 ///
 /// Once the user has given attention, usually by focusing the window or application, the system will end the request automatically.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// macos: Attention is requested to the application as a whole, not the
 /// specific window.
@@ -953,7 +952,7 @@ pub inline fn focus(self: Window) void {
 ///
 /// see also: window_attention
 ///
-/// WARNING: on wayland it will return Error.FeatureUnimplemented
+/// WARNING: on wayland it will return glfw.ErrorCode.FeatureUnimplemented
 pub inline fn requestAttention(self: Window) void {
     internal_debug.assertInitialized();
     c.glfwRequestWindowAttention(self.handle);
@@ -966,14 +965,14 @@ pub inline fn requestAttention(self: Window) void {
 /// specified number of screen updates before swapping the buffers.
 ///
 /// The specified window must have an OpenGL or OpenGL ES context. Specifying a window without a
-/// context will generate Error.NoWindowContext.
+/// context will generate glfw.ErrorCode.NoWindowContext.
 ///
 /// This function does not apply to Vulkan. If you are rendering with Vulkan, see `vkQueuePresentKHR`
 /// instead.
 ///
 /// @param[in] window The window whose buffers to swap.
 ///
-/// Possible errors include glfw.Error.NoWindowContext and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.NoWindowContext and glfw.ErrorCode.PlatformError.
 ///
 /// __EGL:__ The context of the specified window must be current on the calling thread.
 ///
@@ -1027,7 +1026,7 @@ pub inline fn getMonitor(self: Window) ?Monitor {
 /// @param[in] height The desired height, in screen coordinates, of the content area or video mode.
 /// @param[in] refreshRate The desired refresh rate, in Hz, of the video mode, or `glfw.dont_care`.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// The OpenGL or OpenGL ES context will not be destroyed or otherwise affected by any resizing or
 /// mode switching, although you may need to update your viewport if the framebuffer size has
@@ -1094,7 +1093,7 @@ pub const Attrib = enum(c_int) {
 /// @param[in] attrib The window attribute (see window_attribs) whose value to return.
 /// @return The value of the attribute, or zero if an error occurred.
 ///
-/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidEnum and glfw.ErrorCode.PlatformError.
 /// Additionally returns a zero value in the event of an error.
 ///
 /// Framebuffer related hints are not window attributes. See window_attribs_fb for more information.
@@ -1126,7 +1125,8 @@ pub inline fn getAttrib(self: Window, attrib: Attrib) i32 {
 ///
 /// @param[in] attrib A supported window attribute.
 ///
-/// Possible errors include glfw.Error.InvalidEnum, glfw.Error.InvalidValue and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidEnum, glfw.ErrorCode.InvalidValue and
+/// glfw.ErrorCode.PlatformError.
 ///
 /// Calling glfw.Window.getAttrib will always return the latest
 /// value, even if that value is ignored by the current mode of the window.
@@ -1584,8 +1584,8 @@ pub inline fn getInputModeLockKeyMods(self: Window) bool {
 /// mouse motion events will be sent, otherwise standard mouse motion events respecting the user's
 /// OS settings will be sent.
 ///
-/// If raw motion is not supported, attempting to set this will emit glfw.Error.FeatureUnavailable. Call
-/// glfw.rawMouseMotionSupported to check for support.
+/// If raw motion is not supported, attempting to set this will emit glfw.ErrorCode.FeatureUnavailable.
+/// Call glfw.rawMouseMotionSupported to check for support.
 pub inline fn setInputModeRawMouseMotion(self: Window, enabled: bool) void {
     return self.setInputMode(InputMode.raw_mouse_motion, enabled);
 }
@@ -1702,7 +1702,7 @@ pub inline fn getKey(self: Window, key: Key) Action {
 /// @param[in] button The desired mouse button.
 /// @return One of `true` (if pressed) or `false` (if released)
 ///
-/// Possible errors include glfw.Error.InvalidEnum.
+/// Possible errors include glfw.ErrorCode.InvalidEnum.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -1738,7 +1738,7 @@ pub const CursorPos = struct {
 /// @param[out] ypos Where to store the cursor y-coordinate, relative to the to top edge of the
 /// content area, or null.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// Additionally returns a zero value in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -1768,7 +1768,7 @@ pub inline fn getCursorPos(self: Window) CursorPos {
 /// @param[in] xpos The desired x-coordinate, relative to the left edge of the content area.
 /// @param[in] ypos The desired y-coordinate, relative to the top edge of the content area.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// wayland: This function will only work when the cursor mode is `glfw.cursor_disabled`, otherwise
 /// it will do nothing.
@@ -1791,7 +1791,7 @@ pub inline fn setCursorPos(self: Window, xpos: f64, ypos: f64) void {
 ///
 /// @param[in] cursor The cursor to set, or null to switch back to the default arrow cursor.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -2106,7 +2106,7 @@ pub inline fn setDropCallback(self: Window, comptime callback: ?fn (window: Wind
 /// Some hints are platform specific. These may be set on any platform but they will only affect
 /// their specific platform. Other platforms will ignore them.
 ///
-/// Possible errors include glfw.Error.InvalidEnum.
+/// Possible errors include glfw.ErrorCode.InvalidEnum.
 ///
 /// @pointer_lifetime in the event that value is of a str type, the specified string is copied before this function returns.
 ///
@@ -2156,7 +2156,7 @@ inline fn hint(h: Hint, value: anytype) void {
 }
 
 test "defaultHints" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2167,7 +2167,7 @@ test "defaultHints" {
 }
 
 test "hint comptime int" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2179,7 +2179,7 @@ test "hint comptime int" {
 }
 
 test "hint int" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2193,7 +2193,7 @@ test "hint int" {
 }
 
 test "hint bool" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2205,7 +2205,7 @@ test "hint bool" {
 }
 
 test "hint enum(u1)" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2222,7 +2222,7 @@ test "hint enum(u1)" {
 }
 
 test "hint enum(i32)" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2239,7 +2239,7 @@ test "hint enum(i32)" {
 }
 
 test "hint array str" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2253,7 +2253,7 @@ test "hint array str" {
 }
 
 test "hint pointer str" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2264,7 +2264,7 @@ test "hint pointer str" {
 }
 
 test "createWindow" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2272,14 +2272,14 @@ test "createWindow" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 }
 
 test "setShouldClose" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2287,15 +2287,15 @@ test "setShouldClose" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     window.setShouldClose(true);
     defer window.destroy();
 }
 
 test "setTitle" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2303,8 +2303,8 @@ test "setTitle" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2313,7 +2313,7 @@ test "setTitle" {
 
 test "setIcon" {
     const allocator = testing.allocator;
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2321,8 +2321,8 @@ test "setIcon" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2346,7 +2346,7 @@ test "setIcon" {
 }
 
 test "getPos" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2354,8 +2354,8 @@ test "getPos" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2363,7 +2363,7 @@ test "getPos" {
 }
 
 test "setPos" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2371,8 +2371,8 @@ test "setPos" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2380,7 +2380,7 @@ test "setPos" {
 }
 
 test "getSize" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2388,8 +2388,8 @@ test "getSize" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2397,7 +2397,7 @@ test "getSize" {
 }
 
 test "setSize" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2405,8 +2405,8 @@ test "setSize" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2414,7 +2414,7 @@ test "setSize" {
 }
 
 test "setSizeLimits" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2422,8 +2422,8 @@ test "setSizeLimits" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2434,7 +2434,7 @@ test "setSizeLimits" {
 }
 
 test "setAspectRatio" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2442,8 +2442,8 @@ test "setAspectRatio" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2451,7 +2451,7 @@ test "setAspectRatio" {
 }
 
 test "getFramebufferSize" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2459,8 +2459,8 @@ test "getFramebufferSize" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2468,7 +2468,7 @@ test "getFramebufferSize" {
 }
 
 test "getFrameSize" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2476,8 +2476,8 @@ test "getFrameSize" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2485,7 +2485,7 @@ test "getFrameSize" {
 }
 
 test "getContentScale" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2493,8 +2493,8 @@ test "getContentScale" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2502,7 +2502,7 @@ test "getContentScale" {
 }
 
 test "getOpacity" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2510,8 +2510,8 @@ test "getOpacity" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2519,7 +2519,7 @@ test "getOpacity" {
 }
 
 test "iconify" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2527,8 +2527,8 @@ test "iconify" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2536,7 +2536,7 @@ test "iconify" {
 }
 
 test "restore" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2544,8 +2544,8 @@ test "restore" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2553,7 +2553,7 @@ test "restore" {
 }
 
 test "maximize" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2561,8 +2561,8 @@ test "maximize" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2570,7 +2570,7 @@ test "maximize" {
 }
 
 test "show" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2578,8 +2578,8 @@ test "show" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2587,7 +2587,7 @@ test "show" {
 }
 
 test "hide" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2595,8 +2595,8 @@ test "hide" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2604,7 +2604,7 @@ test "hide" {
 }
 
 test "focus" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2612,8 +2612,8 @@ test "focus" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2621,7 +2621,7 @@ test "focus" {
 }
 
 test "requestAttention" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2629,8 +2629,8 @@ test "requestAttention" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2638,7 +2638,7 @@ test "requestAttention" {
 }
 
 test "swapBuffers" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2646,8 +2646,8 @@ test "swapBuffers" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2655,7 +2655,7 @@ test "swapBuffers" {
 }
 
 test "getMonitor" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2663,8 +2663,8 @@ test "getMonitor" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2672,7 +2672,7 @@ test "getMonitor" {
 }
 
 test "setMonitor" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2680,8 +2680,8 @@ test "setMonitor" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2689,7 +2689,7 @@ test "setMonitor" {
 }
 
 test "getAttrib" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2697,8 +2697,8 @@ test "getAttrib" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2706,7 +2706,7 @@ test "getAttrib" {
 }
 
 test "setAttrib" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2714,8 +2714,8 @@ test "setAttrib" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2723,7 +2723,7 @@ test "setAttrib" {
 }
 
 test "setUserPointer" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2731,8 +2731,8 @@ test "setUserPointer" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2743,7 +2743,7 @@ test "setUserPointer" {
 }
 
 test "getUserPointer" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2751,8 +2751,8 @@ test "getUserPointer" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2765,7 +2765,7 @@ test "getUserPointer" {
 }
 
 test "setPosCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2773,8 +2773,8 @@ test "setPosCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2788,7 +2788,7 @@ test "setPosCallback" {
 }
 
 test "setSizeCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2796,8 +2796,8 @@ test "setSizeCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2811,7 +2811,7 @@ test "setSizeCallback" {
 }
 
 test "setCloseCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2819,8 +2819,8 @@ test "setCloseCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2832,7 +2832,7 @@ test "setCloseCallback" {
 }
 
 test "setRefreshCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2840,8 +2840,8 @@ test "setRefreshCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2853,7 +2853,7 @@ test "setRefreshCallback" {
 }
 
 test "setFocusCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2861,8 +2861,8 @@ test "setFocusCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2875,7 +2875,7 @@ test "setFocusCallback" {
 }
 
 test "setIconifyCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2883,8 +2883,8 @@ test "setIconifyCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2897,7 +2897,7 @@ test "setIconifyCallback" {
 }
 
 test "setMaximizeCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2905,8 +2905,8 @@ test "setMaximizeCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2919,7 +2919,7 @@ test "setMaximizeCallback" {
 }
 
 test "setFramebufferSizeCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2927,8 +2927,8 @@ test "setFramebufferSizeCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2942,7 +2942,7 @@ test "setFramebufferSizeCallback" {
 }
 
 test "setContentScaleCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2950,8 +2950,8 @@ test "setContentScaleCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2965,7 +2965,7 @@ test "setContentScaleCallback" {
 }
 
 test "setDropCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2973,8 +2973,8 @@ test "setDropCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -2987,7 +2987,7 @@ test "setDropCallback" {
 }
 
 test "getInputModeCursor" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -2995,8 +2995,8 @@ test "getInputModeCursor" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3004,7 +3004,7 @@ test "getInputModeCursor" {
 }
 
 test "setInputModeCursor" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3012,8 +3012,8 @@ test "setInputModeCursor" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3021,7 +3021,7 @@ test "setInputModeCursor" {
 }
 
 test "getInputModeStickyKeys" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3029,8 +3029,8 @@ test "getInputModeStickyKeys" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3038,7 +3038,7 @@ test "getInputModeStickyKeys" {
 }
 
 test "setInputModeStickyKeys" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3046,8 +3046,8 @@ test "setInputModeStickyKeys" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3055,7 +3055,7 @@ test "setInputModeStickyKeys" {
 }
 
 test "getInputModeStickyMouseButtons" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3063,8 +3063,8 @@ test "getInputModeStickyMouseButtons" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3072,7 +3072,7 @@ test "getInputModeStickyMouseButtons" {
 }
 
 test "setInputModeStickyMouseButtons" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3080,8 +3080,8 @@ test "setInputModeStickyMouseButtons" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3089,7 +3089,7 @@ test "setInputModeStickyMouseButtons" {
 }
 
 test "getInputModeLockKeyMods" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3097,8 +3097,8 @@ test "getInputModeLockKeyMods" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3106,7 +3106,7 @@ test "getInputModeLockKeyMods" {
 }
 
 test "setInputModeLockKeyMods" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3114,8 +3114,8 @@ test "setInputModeLockKeyMods" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3123,7 +3123,7 @@ test "setInputModeLockKeyMods" {
 }
 
 test "getInputModeRawMouseMotion" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3131,8 +3131,8 @@ test "getInputModeRawMouseMotion" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3140,7 +3140,7 @@ test "getInputModeRawMouseMotion" {
 }
 
 test "setInputModeRawMouseMotion" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3148,8 +3148,8 @@ test "setInputModeRawMouseMotion" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3157,7 +3157,7 @@ test "setInputModeRawMouseMotion" {
 }
 
 test "getInputMode" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3165,8 +3165,8 @@ test "getInputMode" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3174,7 +3174,7 @@ test "getInputMode" {
 }
 
 test "setInputMode" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3182,8 +3182,8 @@ test "setInputMode" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3195,7 +3195,7 @@ test "setInputMode" {
 }
 
 test "getKey" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3203,8 +3203,8 @@ test "getKey" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3212,7 +3212,7 @@ test "getKey" {
 }
 
 test "getMouseButton" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3220,8 +3220,8 @@ test "getMouseButton" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3229,7 +3229,7 @@ test "getMouseButton" {
 }
 
 test "getCursorPos" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3237,8 +3237,8 @@ test "getCursorPos" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3246,7 +3246,7 @@ test "getCursorPos" {
 }
 
 test "setCursorPos" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3254,8 +3254,8 @@ test "setCursorPos" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3263,7 +3263,7 @@ test "setCursorPos" {
 }
 
 test "setCursor" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3271,8 +3271,8 @@ test "setCursor" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3284,7 +3284,7 @@ test "setCursor" {
 }
 
 test "setKeyCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3292,8 +3292,8 @@ test "setKeyCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3309,7 +3309,7 @@ test "setKeyCallback" {
 }
 
 test "setCharCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3317,8 +3317,8 @@ test "setCharCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3331,7 +3331,7 @@ test "setCharCallback" {
 }
 
 test "setMouseButtonCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3339,8 +3339,8 @@ test "setMouseButtonCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3355,7 +3355,7 @@ test "setMouseButtonCallback" {
 }
 
 test "setCursorPosCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3363,8 +3363,8 @@ test "setCursorPosCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3378,7 +3378,7 @@ test "setCursorPosCallback" {
 }
 
 test "setCursorEnterCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3386,8 +3386,8 @@ test "setCursorEnterCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3400,7 +3400,7 @@ test "setCursorEnterCallback" {
 }
 
 test "setScrollCallback" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3408,8 +3408,8 @@ test "setScrollCallback" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -3423,7 +3423,7 @@ test "setScrollCallback" {
 }
 
 test "hint-attribute default value parity" {
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -3432,15 +3432,15 @@ test "hint-attribute default value parity" {
 
     testing_ignore_window_hints_struct = true;
     const window_a = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window_a: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window_a: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window_a.destroy();
 
     testing_ignore_window_hints_struct = false;
     const window_b = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window_b: {?s}", .{glfw.getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window_b: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window_b.destroy();
 

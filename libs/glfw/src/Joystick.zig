@@ -7,8 +7,6 @@ const std = @import("std");
 
 const c = @import("c.zig").c;
 const Window = @import("Window.zig");
-const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
 const Action = @import("action.zig").Action;
 const GamepadAxis = @import("gamepad_axis.zig").GamepadAxis;
 const GamepadButton = @import("gamepad_button.zig").GamepadButton;
@@ -80,7 +78,7 @@ const GamepadState = extern struct {
 ///
 /// @return `true` if the joystick is present, or `false` otherwise.
 ///
-/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidEnum and glfw.ErrorCode.PlatformError.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -101,7 +99,7 @@ pub inline fn present(self: Joystick) bool {
 ///
 /// @return An array of axis values, or null if the joystick is not present.
 ///
-/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidEnum and glfw.ErrorCode.PlatformError.
 /// null is additionally returned in the event of an error.
 ///
 /// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
@@ -136,7 +134,7 @@ pub inline fn getAxes(self: Joystick) ?[]const f32 {
 ///
 /// @return An array of button states, or null if the joystick is not present.
 ///
-/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidEnum and glfw.ErrorCode.PlatformError.
 /// null is additionally returned in the event of an error.
 ///
 /// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
@@ -184,7 +182,7 @@ pub inline fn getButtons(self: Joystick) ?[]const u8 {
 ///
 /// @return An array of hat states, or null if the joystick is not present.
 ///
-/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidEnum and glfw.ErrorCode.PlatformError.
 /// null is additionally returned in the event of an error.
 ///
 /// @pointer_lifetime The returned array is allocated and freed by GLFW. You should not free it
@@ -214,7 +212,7 @@ pub inline fn getHats(self: Joystick) ?[]const Hat {
 /// @return The UTF-8 encoded name of the joystick, or null if the joystick is not present or an
 /// error occurred.
 ///
-/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidEnum and glfw.ErrorCode.PlatformError.
 /// null is additionally returned in the event of an error.
 ///
 /// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
@@ -251,7 +249,7 @@ pub inline fn getName(self: Joystick) ?[:0]const u8 {
 ///
 /// @return The UTF-8 encoded GUID of the joystick, or null if the joystick is not present.
 ///
-/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidEnum and glfw.ErrorCode.PlatformError.
 /// null is additionally returned in the event of an error.
 ///
 /// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
@@ -364,7 +362,7 @@ pub inline fn setCallback(comptime callback: ?fn (joystick: Joystick, event: Eve
 ///
 /// @param[in] string The string containing the gamepad mappings.
 ///
-/// Possible errors include glfw.Error.InvalidValue.
+/// Possible errors include glfw.ErrorCode.InvalidValue.
 /// Returns a boolean indicating success.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -388,7 +386,7 @@ pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) bool {
 ///
 /// @return `true` if a joystick is both present and has a gamepad mapping, or `false` otherwise.
 ///
-/// Possible errors include glfw.Error.InvalidEnum.
+/// Possible errors include glfw.ErrorCode.InvalidEnum.
 /// Additionally returns false in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -412,7 +410,7 @@ pub inline fn isGamepad(self: Joystick) bool {
 /// @return The UTF-8 encoded name of the gamepad, or null if the joystick is not present or does
 /// not have a mapping.
 ///
-/// Possible errors include glfw.Error.InvalidEnum.
+/// Possible errors include glfw.ErrorCode.InvalidEnum.
 /// Additionally returns null in the event of an error.
 ///
 /// @pointer_lifetime The returned string is allocated and freed by GLFW. You should not free it
@@ -450,7 +448,7 @@ pub inline fn getGamepadName(self: Joystick) ?[:0]const u8 {
 /// @return the gamepad input state if successful, or null if no joystick is connected or it has no
 /// gamepad mapping.
 ///
-/// Possible errors include glfw.Error.InvalidEnum.
+/// Possible errors include glfw.ErrorCode.InvalidEnum.
 /// Returns null in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -465,7 +463,7 @@ pub inline fn getGamepadState(self: Joystick) ?GamepadState {
 
 test "present" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -478,7 +476,7 @@ test "present" {
 
 test "getAxes" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -491,7 +489,7 @@ test "getAxes" {
 
 test "getButtons" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -504,7 +502,7 @@ test "getButtons" {
 
 test "getHats" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -524,7 +522,7 @@ test "getHats" {
 
 test "getName" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -537,7 +535,7 @@ test "getName" {
 
 test "getGUID" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -550,7 +548,7 @@ test "getGUID" {
 
 test "setUserPointer_syntax" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -566,7 +564,7 @@ test "setUserPointer_syntax" {
 
 test "getUserPointer_syntax" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -582,7 +580,7 @@ test "getUserPointer_syntax" {
 
 test "setCallback" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -604,7 +602,7 @@ test "updateGamepadMappings_syntax" {
 
 test "isGamepad" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -617,7 +615,7 @@ test "isGamepad" {
 
 test "getGamepadName" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -630,7 +628,7 @@ test "getGamepadName" {
 
 test "getGamepadState" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);

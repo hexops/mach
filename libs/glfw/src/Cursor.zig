@@ -4,8 +4,6 @@ const std = @import("std");
 const testing = std.testing;
 
 const c = @import("c.zig").c;
-const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
 const Image = @import("Image.zig");
 
 const internal_debug = @import("internal_debug.zig");
@@ -106,7 +104,7 @@ pub const Shape = enum(i32) {
 /// @param[in] yhot The desired y-coordinate, in pixels, of the cursor hotspot.
 /// @return The handle of the created cursor.
 ///
-/// Possible errors include glfw.Error.PlatformError and glfw.Error.InvalidValue
+/// Possible errors include glfw.ErrorCode.PlatformError and glfw.ErrorCode.InvalidValue
 /// null is returned in the event of an error.
 ///
 /// @pointer_lifetime The specified image data is copied before this function returns.
@@ -147,7 +145,7 @@ pub inline fn create(image: Image, xhot: i32, yhot: i32) ?Cursor {
 /// 2. This uses a newer standard that not all cursor themes support.
 ///
 /// If the requested shape is not available, this function emits a CursorUnavailable error
-/// Possible errors include glfw.Error.PlatformError and glfw.Error.CursorUnavailable.
+/// Possible errors include glfw.ErrorCode.PlatformError and glfw.ErrorCode.CursorUnavailable.
 /// null is returned in the event of an error.
 ///
 /// thread_safety: This function must only be called from the main thread.
@@ -167,7 +165,7 @@ pub inline fn createStandard(shape: Shape) ?Cursor {
 /// If the specified cursor is current for any window, that window will be reverted to the default
 /// cursor. This does not affect the cursor mode.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// @reentrancy This function must not be called from a callback.
 ///
@@ -183,7 +181,7 @@ test "create" {
     const allocator = testing.allocator;
 
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -199,7 +197,7 @@ test "create" {
 
 test "createStandard" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);

@@ -2,8 +2,6 @@ const std = @import("std");
 
 const c = @import("c.zig").c;
 const Window = @import("Window.zig");
-const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
 
 const internal_debug = @import("internal_debug.zig");
 
@@ -21,12 +19,12 @@ const internal_debug = @import("internal_debug.zig");
 /// by setting the glfw.context_release_behavior hint.
 ///
 /// The specified window must have an OpenGL or OpenGL ES context. Specifying a window without a
-/// context will generate Error.NoWindowContext.
+/// context will generate glfw.ErrorCode.NoWindowContext.
 ///
 /// @param[in] window The window whose context to make current, or null to
 /// detach the current context.
 ///
-/// Possible errors include glfw.Error.NoWindowContext and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.NoWindowContext and glfw.ErrorCode.PlatformError.
 ///
 /// @thread_safety This function may be called from any thread.
 ///
@@ -64,7 +62,7 @@ pub inline fn getCurrentContext() ?Window {
 /// even if a frame arrives a little bit late. You can check for these extensions with glfw.extensionSupported.
 ///
 /// A context must be current on the calling thread. Calling this function without a current context
-/// will cause Error.NoCurrentContext.
+/// will cause glfw.ErrorCode.NoCurrentContext.
 ///
 /// This function does not apply to Vulkan. If you are rendering with Vulkan, see the present mode
 /// of your swapchain instead.
@@ -72,7 +70,7 @@ pub inline fn getCurrentContext() ?Window {
 /// @param[in] interval The minimum number of screen updates to wait for until the buffers are
 /// swapped by glfw.swapBuffers.
 ///
-/// Possible errors include glfw.Error.NoCurrentContext and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.NoCurrentContext and glfw.ErrorCode.PlatformError.
 ///
 /// This function is not called during context creation, leaving the swap interval set to whatever
 /// is the default for that API. This is done because some swap interval extensions used by
@@ -97,7 +95,7 @@ pub inline fn swapInterval(interval: i32) void {
 /// creation API extensions.
 ///
 /// A context must be current on the calling thread. Calling this function without a current
-/// context will cause Error.NoCurrentContext.
+/// context will cause glfw.ErrorCode.NoCurrentContext.
 ///
 /// As this functions retrieves and searches one or more extension strings each call, it is
 /// recommended that you cache its results if it is going to be used frequently. The extension
@@ -109,8 +107,8 @@ pub inline fn swapInterval(interval: i32) void {
 /// @param[in] extension The ASCII encoded name of the extension.
 /// @return `true` if the extension is available, or `false` otherwise.
 ///
-/// Possible errors include glfw.Error.NoCurrentContext, glfw.Error.InvalidValue
-/// and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.NoCurrentContext, glfw.ErrorCode.InvalidValue
+/// and glfw.ErrorCode.PlatformError.
 ///
 /// @thread_safety This function may be called from any thread.
 ///
@@ -138,7 +136,7 @@ pub const GLProc = *const fn () callconv(.C) void;
 /// function (see context_glext), if it is supported by the current context.
 ///
 /// A context must be current on the calling thread. Calling this function without a current
-/// context will cause Error.NoCurrentContext.
+/// context will cause glfw.ErrorCode.NoCurrentContext.
 ///
 /// This function does not apply to Vulkan. If you are rendering with Vulkan, see glfw.getInstanceProcAddress,
 /// `vkGetInstanceProcAddr` and `vkGetDeviceProcAddr` instead.
@@ -148,8 +146,8 @@ pub const GLProc = *const fn () callconv(.C) void;
 ///
 /// To maintain ABI compatability with the C glfwGetProcAddress, as it is commonly passed into
 /// libraries expecting that exact ABI, this function does not return an error. Instead, if
-/// glfw.Error.NotInitialized, glfw.Error.NoCurrentContext, or glfw.Error.PlatformError would
-/// occur this function will panic. You should ensure a valid OpenGL context exists and the
+/// glfw.ErrorCode.NotInitialized, glfw.ErrorCode.NoCurrentContext, or glfw.ErrorCode.PlatformError
+/// would occur this function will panic. You should ensure a valid OpenGL context exists and the
 /// GLFW is initialized before calling this function.
 ///
 /// The address of a given function is not guaranteed to be the same between contexts.
@@ -171,7 +169,7 @@ pub fn getProcAddress(proc_name: [*:0]const u8) callconv(.C) ?GLProc {
 
 test "makeContextCurrent" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -179,8 +177,8 @@ test "makeContextCurrent" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "Hello, Zig!", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(1);
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -189,7 +187,7 @@ test "makeContextCurrent" {
 
 test "getCurrentContext" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -202,7 +200,7 @@ test "getCurrentContext" {
 
 test "swapInterval" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -210,8 +208,8 @@ test "swapInterval" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "Hello, Zig!", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(1);
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -221,7 +219,7 @@ test "swapInterval" {
 
 test "getProcAddress" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -229,8 +227,8 @@ test "getProcAddress" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "Hello, Zig!", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(1);
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -240,7 +238,7 @@ test "getProcAddress" {
 
 test "extensionSupported" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -248,8 +246,8 @@ test "extensionSupported" {
     defer glfw.terminate();
 
     const window = Window.create(640, 480, "Hello, Zig!", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{glfw.getErrorString()});
-        std.process.exit(1);
+        std.log.warn("failed to create window: {?s}", .{glfw.getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
