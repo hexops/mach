@@ -1,8 +1,6 @@
 const std = @import("std");
 
 const c = @import("c.zig").c;
-const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
 const Window = @import("Window.zig");
 
 const internal_debug = @import("internal_debug.zig");
@@ -64,13 +62,13 @@ pub inline fn vulkanSupported() bool {
 /// directly to the `VkInstanceCreateInfo` struct.
 ///
 /// If Vulkan is not available on the machine, this function returns null and generates a
-/// glfw.Error.APIUnavailable error. Call glfw.vulkanSupported to check whether Vulkan is at least
-/// minimally available.
+/// glfw.ErrorCode.APIUnavailable error. Call glfw.vulkanSupported to check whether Vulkan is at
+/// least minimally available.
 ///
 /// If Vulkan is available but no set of extensions allowing window surface creation was found,
 /// this function returns null. You may still use Vulkan for off-screen rendering and compute work.
 ///
-/// Possible errors include glfw.Error.APIUnavailable.
+/// Possible errors include glfw.ErrorCode.APIUnavailable.
 /// Returns null in the event of an error.
 ///
 /// Additional extensions may be required by future versions of GLFW. You should check if any
@@ -109,8 +107,8 @@ pub const VKProc = *const fn () callconv(.C) void;
 /// - `vkGetInstanceProcAddr`
 ///
 /// If Vulkan is not available on the machine, this function returns null and generates a
-/// glfw.Error.APIUnavailable error. Call glfw.vulkanSupported to check whether Vulkan is at least
-/// minimally available.
+/// glfw.ErrorCode.APIUnavailable error. Call glfw.vulkanSupported to check whether Vulkan is at
+/// least minimally available.
 ///
 /// This function is equivalent to calling `vkGetInstanceProcAddr` with a platform-specific query
 /// of the Vulkan loader as a fallback.
@@ -122,7 +120,7 @@ pub const VKProc = *const fn () callconv(.C) void;
 ///
 /// To maintain ABI compatability with the C glfwGetInstanceProcAddress, as it is commonly passed
 /// into libraries expecting that exact ABI, this function does not return an error. Instead, if
-/// glfw.Error.NotInitialized or glfw.Error.APIUnavailable would occur this function will panic.
+/// glfw.ErrorCode.NotInitialized or glfw.ErrorCode.APIUnavailable would occur this function will panic.
 /// You may check glfw.vulkanSupported prior to invoking this function.
 ///
 /// @pointer_lifetime The returned function pointer is valid until the library is terminated.
@@ -141,7 +139,7 @@ pub fn getInstanceProcAddress(vk_instance: ?*anyopaque, proc_name: [*:0]const u8
 ///
 /// If Vulkan or the required window surface creation instance extensions are not available on the
 /// machine, or if the specified instance was not created with the required extensions, this
-/// function returns `GLFW_FALSE` and generates a glfw.Error.APIUnavailable error. Call
+/// function returns `GLFW_FALSE` and generates a glfw.ErrorCode.APIUnavailable error. Call
 /// glfw.vulkanSupported to check whether Vulkan is at least minimally available and
 /// glfw.getRequiredInstanceExtensions to check what instance extensions are required.
 ///
@@ -150,7 +148,7 @@ pub fn getInstanceProcAddress(vk_instance: ?*anyopaque, proc_name: [*:0]const u8
 /// @param[in] queuefamily The index of the queue family to query.
 /// @return `true` if the queue family supports presentation, or `false` otherwise.
 ///
-/// Possible errors include glfw.Error.APIUnavailable and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.APIUnavailable and glfw.ErrorCode.PlatformError.
 /// Returns false in the event of an error.
 ///
 /// macos: This function currently always returns `true`, as the `VK_MVK_macos_surface` and
@@ -178,16 +176,16 @@ pub inline fn getPhysicalDevicePresentationSupport(
 /// This function creates a Vulkan surface for the specified window.
 ///
 /// If the Vulkan loader or at least one minimally functional ICD were not found, this function
-/// returns `VK_ERROR_INITIALIZATION_FAILED` and generates a glfw.Error.APIUnavailable error. Call
+/// returns `VK_ERROR_INITIALIZATION_FAILED` and generates a glfw.ErrorCode.APIUnavailable error. Call
 /// glfw.vulkanSupported to check whether Vulkan is at least minimally available.
 ///
 /// If the required window surface creation instance extensions are not available or if the
 /// specified instance was not created with these extensions enabled, this function returns `VK_ERROR_EXTENSION_NOT_PRESENT`
-/// and generates a glfw.Error.APIUnavailable error. Call glfw.getRequiredInstanceExtensions to
+/// and generates a glfw.ErrorCode.APIUnavailable error. Call glfw.getRequiredInstanceExtensions to
 /// check what instance extensions are required.
 ///
 /// The window surface cannot be shared with another API so the window must have been created with
-/// the client api hint set to `GLFW_NO_API` otherwise it generates a glfw.Error.InvalidValue error
+/// the client api hint set to `GLFW_NO_API` otherwise it generates a glfw.ErrorCode.InvalidValue error
 /// and returns `VK_ERROR_NATIVE_WINDOW_IN_USE_KHR`.
 ///
 /// The window surface must be destroyed before the specified Vulkan instance. It is the
@@ -203,7 +201,7 @@ pub inline fn getPhysicalDevicePresentationSupport(
 /// @return `VkResult` type, `VK_SUCCESS` if successful, or a Vulkan error code if an
 /// error occurred.
 ///
-/// Possible errors include glfw.Error.APIUnavailable, glfw.Error.PlatformError and glfw.Error.InvalidValue
+/// Possible errors include glfw.ErrorCode.APIUnavailable, glfw.ErrorCode.PlatformError and glfw.ErrorCode.InvalidValue
 /// Returns a bool indicating success.
 ///
 /// If an error occurs before the creation call is made, GLFW returns the Vulkan error code most
@@ -247,7 +245,7 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
 
 test "vulkanSupported" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -259,7 +257,7 @@ test "vulkanSupported" {
 
 test "getRequiredInstanceExtensions" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -271,7 +269,7 @@ test "getRequiredInstanceExtensions" {
 
 test "getInstanceProcAddress" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);

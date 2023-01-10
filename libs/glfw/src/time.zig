@@ -1,8 +1,6 @@
 const std = @import("std");
 
 const c = @import("c.zig").c;
-const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
 
 const internal_debug = @import("internal_debug.zig");
 
@@ -46,7 +44,7 @@ pub inline fn getTime() f64 {
 ///
 /// @param[in] time The new value, in seconds.
 ///
-/// Possible errors include glfw.Error.InvalidValue.
+/// Possible errors include glfw.ErrorCode.InvalidValue.
 ///
 /// The upper limit of GLFW time is calculated as `floor((2^64 - 1) / 10^9)` and is due to
 /// implementations storing nanoseconds in 64 bits. The limit may be increased in the future.
@@ -108,7 +106,7 @@ pub inline fn getTimerFrequency() u64 {
 
 test "getTime" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -120,7 +118,7 @@ test "getTime" {
 
 test "setTime" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -132,7 +130,7 @@ test "setTime" {
 
 test "getTimerValue" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -144,7 +142,7 @@ test "getTimerValue" {
 
 test "getTimerFrequency" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);

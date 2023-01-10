@@ -4,18 +4,20 @@ const testing = std.testing;
 const c = @import("c.zig").c;
 
 const key = @import("key.zig");
+const errors = @import("errors.zig");
 
 /// Possible value for various window hints, etc.
 pub const dont_care = c.GLFW_DONT_CARE;
 
-/// Most users should not access the error functions in this namespace, but in some rare cases they
-/// may be useful.
-pub const errors = @import("errors.zig");
-
 pub const getError = errors.getError;
 pub const mustGetError = errors.mustGetError;
+pub const getErrorCode = errors.getErrorCode;
+pub const mustGetErrorCode = errors.mustGetErrorCode;
 pub const getErrorString = errors.getErrorString;
+pub const mustGetErrorString = errors.mustGetErrorString;
 pub const setErrorCallback = errors.setErrorCallback;
+pub const clearError = errors.clearError;
+pub const ErrorCode = errors.ErrorCode;
 pub const Error = errors.Error;
 
 pub const Action = @import("action.zig").Action;
@@ -83,7 +85,7 @@ pub fn assumeInitialized() void {
 /// current environment if that category is still "C".  This is because the "C" locale breaks
 /// Unicode text input.
 ///
-/// Possible errors include glfw.Error.PlatformUnavailable, glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformUnavailable, glfw.ErrorCode.PlatformError.
 /// Returns a bool indicating success.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -149,7 +151,7 @@ pub inline fn init(hints: InitHints) bool {
 ///
 /// This function has no effect if GLFW is not initialized.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// warning: The contexts of any remaining windows must not be current on any other thread when
 /// this function is called.
@@ -263,7 +265,7 @@ pub const PlatformType = enum(c_int) {
 /// @param hint: The init hint to set.
 /// @param value: The new value of the init hint.
 ///
-/// Possible errors include glfw.Error.InvalidEnum and glfw.Error.InvalidValue.
+/// Possible errors include glfw.ErrorCode.InvalidEnum and glfw.ErrorCode.InvalidValue.
 ///
 /// @remarks This function may be called before glfw.init.
 ///
@@ -346,7 +348,7 @@ pub fn platformSupported(platform: PlatformType) bool {
 ///
 /// Event processing is not required for joystick input to work.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// @reentrancy This function must not be called from a callback.
 ///
@@ -381,7 +383,7 @@ pub inline fn pollEvents() void {
 ///
 /// Event processing is not required for joystick input to work.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// @reentrancy This function must not be called from a callback.
 ///
@@ -420,7 +422,7 @@ pub inline fn waitEvents() void {
 ///
 /// @param[in] timeout The maximum amount of time, in seconds, to wait.
 ///
-/// Possible errors include glfw.Error.InvalidValue and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidValue and glfw.ErrorCode.PlatformError.
 ///
 /// @reentrancy This function must not be called from a callback.
 ///
@@ -440,7 +442,7 @@ pub inline fn waitEventsTimeout(timeout: f64) void {
 /// This function posts an empty event from the current thread to the event queue, causing
 /// glfw.waitEvents or glfw.waitEventsTimeout to return.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// @thread_safety This function may be called from any thread.
 ///
@@ -454,8 +456,8 @@ pub inline fn postEmptyEvent() void {
 ///
 /// This function returns whether raw mouse motion is supported on the current system. This status
 /// does not change after GLFW has been initialized so you only need to check this once. If you
-/// attempt to enable raw motion on a system that does not support it, glfw.Error.PlatformError will
-/// be emitted.
+/// attempt to enable raw motion on a system that does not support it, glfw.ErrorCode.PlatformError
+/// will be emitted.
 ///
 /// Raw mouse motion is closer to the actual motion of the mouse across a surface. It is not
 /// affected by the scaling and acceleration applied to the motion of the desktop cursor. That
@@ -473,7 +475,7 @@ pub inline fn rawMouseMotionSupported() bool {
 }
 
 pub fn basicTest() !void {
-    defer getError() catch {}; // clear any error we generate
+    defer clearError(); // clear any error we generate
     if (!init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
         std.process.exit(1);
@@ -481,8 +483,8 @@ pub fn basicTest() !void {
     defer terminate();
 
     const window = Window.create(640, 480, "GLFW example", null, null, .{}) orelse {
-        std.log.err("failed to create window: {?s}", .{getErrorString()});
-        std.process.exit(0); // note: we don't exit(1) here because our CI can't open windows
+        std.log.warn("failed to create window: {?s}", .{getErrorString()});
+        return error.SkipZigTest; // note: we don't exit(1) here because our CI can't open windows
     };
     defer window.destroy();
 
@@ -511,7 +513,7 @@ test "pollEvents" {
 }
 
 test "pollEvents" {
-    defer getError() catch {}; // clear any error we generate
+    defer clearError(); // clear any error we generate
     if (!init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
         std.process.exit(1);
@@ -522,7 +524,7 @@ test "pollEvents" {
 }
 
 test "waitEventsTimeout" {
-    defer getError() catch {}; // clear any error we generate
+    defer clearError(); // clear any error we generate
     if (!init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
         std.process.exit(1);
@@ -533,7 +535,7 @@ test "waitEventsTimeout" {
 }
 
 test "postEmptyEvent_and_waitEvents" {
-    defer getError() catch {}; // clear any error we generate
+    defer clearError(); // clear any error we generate
     if (!init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
         std.process.exit(1);
@@ -545,7 +547,7 @@ test "postEmptyEvent_and_waitEvents" {
 }
 
 test "rawMouseMotionSupported" {
-    defer getError() catch {}; // clear any error we generate
+    defer clearError(); // clear any error we generate
     if (!init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
         std.process.exit(1);

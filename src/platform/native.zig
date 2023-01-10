@@ -54,8 +54,9 @@ pub const Platform = struct {
         const options = core.options;
         const backend_type = try util.detectBackendType(allocator);
 
+        defer glfw.clearError();
         glfw.setErrorCallback(Platform.errorCallback);
-        if (!glfw.init(.{})) try glfw.getError();
+        if (!glfw.init(.{})) try glfw.getErrorCode();
 
         // Create the test window and discover adapters using it (esp. for OpenGL)
         var hints = util.glfwWindowHintsForBackend(backend_type);
@@ -67,13 +68,13 @@ pub const Platform = struct {
             null,
             null,
             hints,
-        ) orelse return glfw.mustGetError();
+        ) orelse return glfw.mustGetErrorCode();
 
         if (backend_type == .opengl) glfw.makeContextCurrent(window);
         if (backend_type == .opengles) glfw.makeContextCurrent(window);
         const window_size = window.getSize();
         const framebuffer_size = window.getFramebufferSize();
-        try glfw.getError();
+        try glfw.getErrorCode();
 
         const instance = gpu.createInstance(null);
         if (instance == null) {
@@ -144,7 +145,7 @@ pub const Platform = struct {
         core.target_desc = descriptor;
         core.swap_chain = null;
         const cursor_pos = window.getCursorPos();
-        try glfw.getError();
+        try glfw.getErrorCode();
 
         return Platform{
             .window = window,
@@ -324,7 +325,7 @@ pub const Platform = struct {
 
         if (options.borderless_window) {
             glfw.Window.setAttrib(platform.window, .decorated, false);
-            try glfw.getError();
+            try glfw.getErrorCode();
         }
 
         if (options.fullscreen) {
@@ -650,7 +651,7 @@ pub fn coreUpdate(core: *Core, resize: ?CoreResizeCallback) !void {
         // Don't wait for events
         glfw.pollEvents();
     }
-    try glfw.getError();
+    try glfw.getErrorCode();
 
     core.delta_time_ns = core.timer.lapPrecise();
     core.delta_time = @intToFloat(f32, core.delta_time_ns) / @intToFloat(f32, std.time.ns_per_s);

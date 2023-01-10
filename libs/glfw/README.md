@@ -20,7 +20,6 @@ There are 130+ tests, and CI tests on all major platforms as well as cross-compi
 
 Why create a ziggified GLFW wrapper, instead of just using `@cImport` and interfacing with GLFW directly? You get:
 
-- Errors as [zig errors](https://ziglang.org/documentation/master/#Errors) instead of via a callback function.
 - `true` and `false` instead of `c.GLFW_TRUE` and `c.GLFW_FALSE` constants.
 - Generics, so you can just use `window.hint` instead of `glfwWindowHint`, `glfwWindowHintString`, etc.
 - **Enums**, always know what value a GLFW function can accept as everything is strictly typed. And use the nice Zig syntax to access enums, like `window.getKey(.escape)` instead of `c.glfwGetKey(window, c.GLFW_KEY_ESCAPE)`
@@ -103,7 +102,7 @@ Now in your code you may import and use GLFW:
 const glfw = @import("glfw");
 
 /// Default GLFW error handling callback
-fn errorCallback(error_code: glfw.Error, description: [:0]const u8) void {
+fn errorCallback(error_code: glfw.ErrorCode, description: [:0]const u8) void {
     std.log.err("glfw: {}: {s}\n", .{ error_code, description });
 }
 
@@ -131,18 +130,9 @@ pub fn main() !void {
 
 ## A warning about error handling
 
-Unless the action you're performing is truly critical to your application continuing further, you should avoid using `try`.
+Unless the action you're performing is truly critical to your application continuing further, you should avoid terminating on error.
 
 This is because GLFW unfortunately must return errors for _a large portion_ of its functionality on some platforms, but especially for Wayland - so ideally your application is resiliant to such errors and merely e.g. logs failures that are not critical.
-
-Instead of `try window.getPos()` for example, you may use:
-
-```zig
-const pos = window.getPos() catch |err| {
-    std.log.err("failed to get window position: error={}\n", .{err});
-    return;
-};
-```
 
 Here is a rough list of functionality Wayland does not support:
 
@@ -151,6 +141,37 @@ Here is a rough list of functionality Wayland does not support:
 - `Window.iconify`, `Window.focus`
 - `Monitor.setGamma`
 - `Monitor.getGammaRamp`, `Monitor.setGammaRamp`
+
+For example, `window.getPos()` will always return x=0, y=0 on Wayland due to lack of platform support.
+Ignoring this error is a reasonable choice for most applications.
+However, errors like this can still be caught and handled:
+
+```zig
+const pos = window.getPos();
+
+// Option 1: convert a GLFW error into a Zig error.
+glfw.getErrorCode() catch |err| {
+    std.log.err("failed to get window position: error={}", .{err});
+    return err; // Or fall back to an alternative implementation.
+};
+
+// Option 2: log a human-readable description of the error.
+if (glfw.getErrorString()) |description| {
+    std.log.err("failed to get window position: {s}", .{description});
+    // ...
+}
+
+// Option 3: use a combination of the above approaches.
+if (glfw.getError()) |err| {
+    const error_code = err.error_code; // Zig error
+    const description = err.description; // Human-readable description
+    std.log.err("failed to get window position: error={}: {s}", .{error_code, description});
+    // ...
+}
+```
+
+Note that the above example relies on GLFW's saved error being empty; otherwise, previously emitted errors may be mistaken for an error caused by `window.getPos()`.
+If your application frequently ignores errors, it may be necessary to call `glfw.clearError()` or `defer glfw.clearError()` to ensure a clean slate for future error handling.
 
 ## Join the community
 

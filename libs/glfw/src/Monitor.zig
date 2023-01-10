@@ -5,8 +5,6 @@ const mem = std.mem;
 const testing = std.testing;
 const c = @import("c.zig").c;
 
-const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
 const GammaRamp = @import("GammaRamp.zig");
 const VideoMode = @import("VideoMode.zig");
 
@@ -27,7 +25,7 @@ const Pos = struct {
 
 /// Returns the position of the monitor's viewport on the virtual screen.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -55,7 +53,7 @@ const Workarea = struct {
 
 /// Retrieves the work area of the monitor.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// A zero value is returned in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -114,7 +112,7 @@ const ContentScale = struct {
 
 /// Returns the content scale for the monitor.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// A zero value is returned in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -188,7 +186,7 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
 /// then by resolution area (the product of width and height), then resolution width and finally
 /// by refresh rate.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// Returns null in the event of an error.
 ///
 /// The returned slice memory is owned by the caller.
@@ -218,7 +216,7 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) mem.Allocat
 /// full screen window for that monitor, the return value will depend on whether that window is
 /// iconified.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// Additionally returns null in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
@@ -241,10 +239,10 @@ pub inline fn getVideoMode(self: Monitor) ?VideoMode {
 ///
 /// For gamma correct rendering with OpenGL or OpenGL ES, see the glfw.srgb_capable hint.
 ///
-/// Possible errors include glfw.Error.InvalidValue and glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidValue and glfw.ErrorCode.PlatformError.
 ///
 /// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
-/// and emits glfw.Error.PlatformError.
+/// and emits glfw.ErrorCode.PlatformError.
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -263,11 +261,11 @@ pub inline fn setGamma(self: Monitor, gamma: f32) void {
 ///
 /// This function returns the current gamma ramp of the specified monitor.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 /// Additionally returns null in the event of an error.
 ///
 /// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
-/// and returns glfw.Error.PlatformError.
+/// and returns glfw.ErrorCode.PlatformError.
 /// TODO: Is the documentation obsolete? On wayland the error returned is FeatureUnavailable
 ///
 /// The returned gamma ramp is `.owned = true` by GLFW, and is valid until the monitor is
@@ -294,13 +292,13 @@ pub inline fn getGammaRamp(self: Monitor) ?GammaRamp {
 ///
 /// For gamma correct rendering with OpenGL or OpenGL ES, see the glfw.srgb_capable hint.
 ///
-/// Possible errors include glfw.Error.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError.
 ///
 /// The size of the specified gamma ramp should match the size of the current ramp for that
 /// monitor. On win32, the gamma ramp size must be 256.
 ///
 /// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
-/// and emits glfw.Error.PlatformError.
+/// and emits glfw.ErrorCode.PlatformError.
 ///
 /// @pointer_lifetime The specified gamma ramp is copied before this function returns.
 ///
@@ -402,7 +400,7 @@ pub inline fn setCallback(comptime callback: ?fn (monitor: Monitor, event: Event
 
 test "getAll" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -416,7 +414,7 @@ test "getAll" {
 
 test "getPrimary" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -428,7 +426,7 @@ test "getPrimary" {
 
 test "getPos" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -443,7 +441,7 @@ test "getPos" {
 
 test "getWorkarea" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -458,7 +456,7 @@ test "getWorkarea" {
 
 test "getPhysicalSize" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -473,7 +471,7 @@ test "getPhysicalSize" {
 
 test "getContentScale" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -488,7 +486,7 @@ test "getContentScale" {
 
 test "getName" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -503,7 +501,7 @@ test "getName" {
 
 test "userPointer" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -523,7 +521,7 @@ test "userPointer" {
 
 test "setCallback" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -540,7 +538,7 @@ test "setCallback" {
 
 test "getVideoModes" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -559,7 +557,7 @@ test "getVideoModes" {
 
 test "getVideoMode" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -575,7 +573,7 @@ test "getVideoMode" {
 test "set_getGammaRamp" {
     const allocator = testing.allocator;
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);

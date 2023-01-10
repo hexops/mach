@@ -3,8 +3,6 @@ const std = @import("std");
 
 const Window = @import("Window.zig");
 const Monitor = @import("Monitor.zig");
-const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
 
 const internal_debug = @import("internal_debug.zig");
 
@@ -114,7 +112,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// ```
         /// This DC is private and does not need to be released.
         ///
-        /// Possible errors include glfw.Error.NoWindowContext
+        /// Possible errors include glfw.ErrorCode.NoWindowContext
         /// null is returned in the event of an error.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
@@ -146,7 +144,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Returns the `NSWindow` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NoWindowContext.
+        /// Possible errors include glfw.ErrorCode.NoWindowContext.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getNSGLContext(window: Window) u32 {
@@ -203,7 +201,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Sets the current primary selection to the specified string.
         ///
-        /// Possible errors include glfw.Error.PlatformError.
+        /// Possible errors include glfw.ErrorCode.PlatformError.
         ///
         /// The specified string is copied before this function returns.
         ///
@@ -215,7 +213,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Returns the contents of the current primary selection as a string.
         ///
-        /// Possible errors include glfw.Error.PlatformError.
+        /// Possible errors include glfw.ErrorCode.PlatformError.
         /// Returns null in the event of an error.
         ///
         /// The returned string is allocated and freed by GLFW. You should not free it
@@ -231,7 +229,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Returns the `GLXContext` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NoWindowContext.
+        /// Possible errors include glfw.ErrorCode.NoWindowContext.
         /// Returns null in the event of an error.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
@@ -243,7 +241,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Returns the `GLXWindow` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NoWindowContext.
+        /// Possible errors include glfw.ErrorCode.NoWindowContext.
         /// Returns null in the event of an error.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
@@ -304,7 +302,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Returns the `EGLContext` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NoWindowContext.
+        /// Possible errors include glfw.ErrorCode.NoWindowContext.
         /// Returns null in the event of an error.
         ///
         /// thread_safety This function may be called from any thread. Access is not synchronized.
@@ -317,7 +315,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Returns the `EGLSurface` of the specified window.
         ///
-        /// Possible errors include glfw.Error.NotInitalized and glfw.Error.NoWindowContext.
+        /// Possible errors include glfw.ErrorCode.NotInitalized and glfw.ErrorCode.NoWindowContext.
         ///
         /// thread_safety This function may be called from any thread. Access is not synchronized.
         pub fn getEGLSurface(window: Window) ?*anyopaque {
@@ -336,7 +334,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Retrieves the color buffer associated with the specified window.
         ///
-        /// Possible errors include glfw.Error.NoWindowContext and glfw.Error.PlatformError.
+        /// Possible errors include glfw.ErrorCode.NoWindowContext and glfw.ErrorCode.PlatformError.
         /// Returns null in the event of an error.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
@@ -362,7 +360,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Retrieves the depth buffer associated with the specified window.
         ///
-        /// Possible errors include glfw.Error.NoWindowContext and glfw.Error.PlatformError.
+        /// Possible errors include glfw.ErrorCode.NoWindowContext and glfw.ErrorCode.PlatformError.
         /// Returns null in the event of an error.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
@@ -381,7 +379,7 @@ pub fn Native(comptime options: BackendOptions) type {
 
         /// Returns the 'OSMesaContext' of the specified window.
         ///
-        /// Possible errors include glfw.Error.NoWindowContext.
+        /// Possible errors include glfw.ErrorCode.NoWindowContext.
         ///
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getOSMesaContext(window: Window) ?*anyopaque {

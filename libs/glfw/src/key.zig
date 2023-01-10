@@ -17,8 +17,6 @@
 const std = @import("std");
 
 const cc = @import("c.zig").c;
-const Error = @import("errors.zig").Error;
-const getError = @import("errors.zig").getError;
 
 const internal_debug = @import("internal_debug.zig");
 
@@ -204,7 +202,7 @@ pub const Key = enum(c_int) {
     /// @param[in] scancode The scancode of the key to query.
     /// @return The UTF-8 encoded, layout-specific name of the key, or null.
     ///
-    /// Possible errors include glfw.Error.PlatformError.
+    /// Possible errors include glfw.ErrorCode.PlatformError.
     /// Also returns null in the event of an error.
     ///
     /// The contents of the returned string may change when a keyboard layout change event is received.
@@ -233,7 +231,7 @@ pub const Key = enum(c_int) {
     /// @param[in] key Any named key (see keys).
     /// @return The platform-specific scancode for the key.
     ///
-    /// Possible errors include glfw.Error.InvalidEnum and glfw.Error.PlatformError.
+    /// Possible errors include glfw.ErrorCode.InvalidEnum and glfw.ErrorCode.PlatformError.
     /// Additionally returns -1 in the event of an error.
     ///
     /// @thread_safety This function may be called from any thread.
@@ -245,7 +243,7 @@ pub const Key = enum(c_int) {
 
 test "getName" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
@@ -257,7 +255,7 @@ test "getName" {
 
 test "getScancode" {
     const glfw = @import("main.zig");
-    defer glfw.getError() catch {}; // clear any error we generate
+    defer glfw.clearError(); // clear any error we generate
     if (!glfw.init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
         std.process.exit(1);
