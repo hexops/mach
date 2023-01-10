@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub const pkg = std.build.Pkg{
     .name = "gamemode",
-    .source = .{ .path = sdkPath("/gamemode.zig") },
+    .source = .{ .path = sdkPath("/src/main.zig") },
 };
 
 pub fn link(step: *std.build.LibExeObjStep) void {
