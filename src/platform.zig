@@ -1,42 +1,62 @@
 const builtin = @import("builtin");
 
-const Platform = if (builtin.cpu.arch == .wasm32)
-    Interface(@import("platform/wasm.zig"))
+pub usingnamespace if (builtin.cpu.arch == .wasm32)
+    @import("platform/wasm.zig")
 else
-    Interface(@import("platform/native.zig"));
+    @import("platform/native.zig");
 
-pub const Type = Platform.Platform;
-pub const BackingTimerType = Platform.BackingTimer;
+// Verifies that a platform implementation exposes the expected function declarations.
+comptime {
+    assertHasDecl(@This(), "entry");
+    assertHasDecl(@This(), "Core");
+    assertHasDecl(@This(), "Timer");
 
-/// Verifies that a Platform implementation exposes the expected function declarations.
-fn Interface(comptime T: type) type {
-    assertHasDecl(T, "Platform");
-    assertHasDecl(T, "BackingTimer");
-    assertHasDecl(T.Platform, "init");
-    assertHasDecl(T.Platform, "deinit");
-    assertHasDecl(T.Platform, "setOptions");
-    assertHasDecl(T.Platform, "close");
-    assertHasDecl(T.Platform, "setWaitEvent");
-    assertHasDecl(T.Platform, "getFramebufferSize");
-    assertHasDecl(T.Platform, "getWindowSize");
-    assertHasDecl(T.Platform, "setMouseCursor");
-    assertHasDecl(T.Platform, "setCursorMode");
-    assertHasDecl(T.Platform, "hasEvent");
-    assertHasDecl(T.Platform, "pollEvent");
-    assertHasDecl(T.BackingTimer, "start");
-    assertHasDecl(T.BackingTimer, "read");
-    assertHasDecl(T.BackingTimer, "reset");
-    assertHasDecl(T.BackingTimer, "lap");
+    // Core
+    assertHasDecl(@This().Core, "init");
+    assertHasDecl(@This().Core, "deinit");
+    assertHasDecl(@This().Core, "hasEvent");
+    assertHasDecl(@This().Core, "pollEvents");
+    assertHasDecl(@This().Core, "framebufferSize");
 
-    return T;
-}
+    assertHasDecl(@This().Core, "setWaitTimeout");
+    assertHasDecl(@This().Core, "setTitle");
 
-fn assertDecl(comptime T: anytype, comptime name: []const u8, comptime Decl: type) void {
-    assertHasDecl(T, name);
-    const FoundDecl = @TypeOf(@field(T, name));
-    if (FoundDecl != Decl) @compileError("Platform field '" ++ name ++ "'\n\texpected type: " ++ @typeName(Decl) ++ "\n\t   found type: " ++ @typeName(FoundDecl));
+    assertHasDecl(@This().Core, "setDisplayMode");
+    assertHasDecl(@This().Core, "displayMode");
+
+    assertHasDecl(@This().Core, "setBorder");
+    assertHasDecl(@This().Core, "border");
+
+    assertHasDecl(@This().Core, "setHeadless");
+    assertHasDecl(@This().Core, "headless");
+
+    assertHasDecl(@This().Core, "setVSync");
+    assertHasDecl(@This().Core, "vsync");
+
+    assertHasDecl(@This().Core, "setSize");
+    assertHasDecl(@This().Core, "size");
+
+    assertHasDecl(@This().Core, "setSizeLimit");
+    assertHasDecl(@This().Core, "sizeLimit");
+
+    assertHasDecl(@This().Core, "setCursorMode");
+    assertHasDecl(@This().Core, "cursorMode");
+
+    assertHasDecl(@This().Core, "setCursorShape");
+    assertHasDecl(@This().Core, "cursorShape");
+
+    assertHasDecl(@This().Core, "adapter");
+    assertHasDecl(@This().Core, "device");
+    assertHasDecl(@This().Core, "swapChain");
+    assertHasDecl(@This().Core, "descriptor");
+
+    // Timer
+    assertHasDecl(@This().Timer, "start");
+    assertHasDecl(@This().Timer, "read");
+    assertHasDecl(@This().Timer, "reset");
+    assertHasDecl(@This().Timer, "lap");
 }
 
 fn assertHasDecl(comptime T: anytype, comptime name: []const u8) void {
-    if (!@hasDecl(T, name)) @compileError("Platform missing declaration: " ++ name);
+    if (!@hasDecl(T, name)) @compileError("Core missing declaration: " ++ name);
 }

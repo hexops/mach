@@ -127,12 +127,7 @@ fn testStep(b: *Builder, mode: std.builtin.Mode, target: CrossTarget) *std.build
     for (pkg.dependencies.?) |dependency| {
         main_tests.addPackage(dependency);
     }
-
-    main_tests.addPackage(freetype.pkg);
-    freetype.link(b, main_tests, .{});
-
     main_tests.install();
-
     return main_tests.run();
 }
 
@@ -226,16 +221,12 @@ pub const App = struct {
 
         const step = blk: {
             if (platform == .web) {
-                const lib = b.addSharedLibrary(options.name, sdkPath("/src/platform/wasm.zig"), .unversioned);
-                lib.addPackage(gpu.pkg);
-                lib.addPackage(sysaudio.pkg);
+                const lib = b.addSharedLibrary(options.name, sdkPath("/src/main.zig"), .unversioned);
                 lib.addPackage(sysjs.pkg);
 
                 break :blk lib;
             } else {
-                const exe = b.addExecutable(options.name, sdkPath("/src/platform/native.zig"));
-                exe.addPackage(gpu.pkg);
-                exe.addPackage(sysaudio.pkg);
+                const exe = b.addExecutable(options.name, sdkPath("/src/main.zig"));
                 exe.addPackage(glfw.pkg);
 
                 if (target.os.tag == .linux)
@@ -246,6 +237,9 @@ pub const App = struct {
         };
 
         step.main_pkg_path = sdkPath("/src");
+        step.addPackage(ecs.pkg);
+        step.addPackage(sysaudio.pkg);
+        step.addPackage(gpu.pkg);
         step.addPackage(app_pkg);
         step.setTarget(options.target);
         step.setBuildMode(options.mode);
@@ -285,7 +279,7 @@ pub const App = struct {
             // Set install directory to '{prefix}/www'
             app.getInstallStep().?.dest_dir = web_install_dir;
 
-            inline for (.{ "/src/platform/mach.js", "/libs/sysjs/src/mach-sysjs.js" }) |js| {
+            inline for (.{ "/src/platform/wasm/mach.js", "/libs/sysjs/src/mach-sysjs.js" }) |js| {
                 const install_js = app.b.addInstallFileWithDir(
                     .{ .path = sdkPath(js) },
                     web_install_dir,

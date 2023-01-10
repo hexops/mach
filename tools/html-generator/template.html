@@ -31,21 +31,21 @@
         let frame = true;
         let last_update_time = performance.now();
         let update = function () {
-          if (!frame) return;
-          if (mach.machHasEvent() ||
-            (last_update_time + (mach.wait_event_timeout * 1000)) <= performance.now()) {
-            instance.exports.wasmUpdate();
+          if (!frame) {
+            instance.exports.wasmDeinit();
+            return;
+          }
+          if (mach.machHasEvent() || 
+            last_update_time + mach.wait_timeout * 1000 <= performance.now()) {
+            if (instance.exports.wasmUpdate()) {
+              instance.exports.wasmDeinit();
+              return;
+            }
             last_update_time = performance.now();
           }
           window.requestAnimationFrame(update);
         };
-
         window.requestAnimationFrame(update);
-
-        window.addEventListener("mach-close", () => {
-          instance.exports.wasmDeinit();
-          frame = false;
-        });
       })
       .catch(err => console.error(err));
   </script>
