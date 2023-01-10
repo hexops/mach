@@ -1,3 +1,4 @@
+const std = @import("std");
 pub const Core = @import("Core.zig");
 pub const gpu = @import("gpu");
 pub const ecs = @import("ecs");
@@ -12,6 +13,9 @@ pub const module = ecs.Module(.{
     },
 });
 
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+const allocator = gpa.allocator();
+
 pub fn App(
     comptime modules: anytype,
     comptime app_init: anytype, // fn (engine: *ecs.World(modules)) !void
@@ -22,26 +26,32 @@ pub fn App(
     return struct {
         engine: ecs.World(modules),
 
-        pub fn init(app: *@This(), core: *Core) !void {
+        pub fn init(app: *@This()) !void {
             app.* = .{
-                .engine = try ecs.World(modules).init(core.allocator),
+                .engine = try ecs.World(modules).init(allocator),
             };
-            app.*.engine.set(.mach, .core, core);
-            app.*.engine.set(.mach, .device, core.device);
+            var core = try allocator.create(Core);
+            core.* = try Core.init(allocator, .{});
+            app.engine.set(.mach, .core, core);
+            app.engine.set(.mach, .device, core.device());
             try app_init(&app.engine);
         }
 
-        pub fn deinit(app: *@This(), _: *Core) void {
+        pub fn deinit(app: *@This()) void {
+            const core = app.engine.get(.mach, .core);
+            core.deinit();
+            allocator.destroy(core);
             app.engine.deinit();
+            _ = gpa.deinit();
         }
 
-        pub fn update(app: *@This(), _: *Core) !void {
+        pub fn update(app: *@This()) !bool {
             app.engine.tick();
+            return false;
         }
 
-        pub fn resize(app: *@This(), core: *Core, width: u32, height: u32) !void {
+        pub fn resize(app: *@This(), width: u32, height: u32) !void {
             _ = app;
-            _ = core;
             _ = width;
             _ = height;
             // TODO: send resize messages to ECS modules
