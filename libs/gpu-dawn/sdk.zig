@@ -29,15 +29,10 @@ pub fn Sdk(comptime deps: anytype) type {
             // TODO(build-system): not respected at all currently
             opengl_es: ?bool = null,
 
-            /// Whether or not to use Dawn in debug mode.
-            debug: bool = false,
-
             /// Whether or not minimal debug symbols should be emitted. This is -g1 in most cases, enough to
             /// produce stack traces but omitting debug symbols for locals. For spirv-tools and tint in
             /// specific, -g0 will be used (no debug symbols at all) to save an additional ~39M.
-            ///
-            /// When enabled, a debug build of the static library goes from ~947M to just ~53M.
-            minimal_debug_symbols: bool = true,
+            debug: bool = false,
 
             /// Whether or not to produce separate static libraries for each component of Dawn (reduces
             /// iteration times when building from source / testing changes to Dawn source code.)
@@ -70,10 +65,8 @@ pub fn Sdk(comptime deps: anytype) type {
                 return options;
             }
 
-            pub fn appendFlags(self: Options, flags: *std.ArrayList([]const u8), zero_debug_symbols: bool, is_cpp: bool) !void {
-                if (self.minimal_debug_symbols) {
-                    if (zero_debug_symbols) try flags.append("-g0") else try flags.append("-g1");
-                }
+            pub fn appendFlags(self: Options, flags: *std.ArrayList([]const u8), debug_symbols: bool, is_cpp: bool) !void {
+                if (debug_symbols) try flags.append("-g1") else try flags.append("-g0");
                 if (is_cpp) try flags.append("-std=c++17");
                 if (self.linux_window_manager != null and self.linux_window_manager.? == .X11) try flags.append("-DDAWN_USE_X11");
             }
@@ -137,8 +130,6 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib_dawn = b.addStaticLibrary("dawn", null);
             lib_dawn.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
             lib_dawn.setTarget(step.target);
-            if (!options.debug)
-                lib_dawn.strip = true;
             lib_dawn.linkLibCpp();
             if (options.install_libs)
                 lib_dawn.install();
@@ -571,8 +562,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const separate_lib = b.addStaticLibrary("dawn-native-mach", null);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
-                if (!options.debug)
-                    separate_lib.strip = true;
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -583,7 +572,7 @@ pub fn Sdk(comptime deps: anytype) type {
             try deps.glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            try options.appendFlags(&cpp_flags, false, true);
+            try options.appendFlags(&cpp_flags, options.debug, true);
             try appendDawnEnableBackendTypeFlags(&cpp_flags, options);
             try cpp_flags.appendSlice(&.{
                 include(deps.glfw_include_dir),
@@ -608,8 +597,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const separate_lib = b.addStaticLibrary("dawn-common", null);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
-                if (!options.debug)
-                    separate_lib.strip = true;
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -651,7 +638,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(flags.items);
-            try options.appendFlags(&cpp_flags, false, true);
+            try options.appendFlags(&cpp_flags, options.debug, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
@@ -662,8 +649,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const separate_lib = b.addStaticLibrary("dawn-platform", null);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
-                if (!options.debug)
-                    separate_lib.strip = true;
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -671,7 +656,7 @@ pub fn Sdk(comptime deps: anytype) type {
             };
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            try options.appendFlags(&cpp_flags, false, true);
+            try options.appendFlags(&cpp_flags, options.debug, true);
             try cpp_flags.appendSlice(&.{
                 include("libs/dawn/src"),
                 include("libs/dawn/include"),
@@ -735,8 +720,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const separate_lib = b.addStaticLibrary("dawn-native", null);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
-                if (!options.debug)
-                    separate_lib.strip = true;
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -997,7 +980,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(flags.items);
-            try options.appendFlags(&cpp_flags, false, true);
+            try options.appendFlags(&cpp_flags, options.debug, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
@@ -1008,8 +991,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const separate_lib = b.addStaticLibrary("tint", null);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
-                if (!options.debug)
-                    separate_lib.strip = true;
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1146,7 +1127,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(flags.items);
-            try options.appendFlags(&cpp_flags, false, true);
+            try options.appendFlags(&cpp_flags, options.debug, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
@@ -1157,8 +1138,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const separate_lib = b.addStaticLibrary("spirv-tools", null);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
-                if (!options.debug)
-                    separate_lib.strip = true;
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1226,8 +1205,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const separate_lib = b.addStaticLibrary("abseil-cpp-common", null);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
-                if (!options.debug)
-                    separate_lib.strip = true;
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1289,8 +1266,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const separate_lib = b.addStaticLibrary("dawn-wire", null);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
-                if (!options.debug)
-                    separate_lib.strip = true;
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1327,8 +1302,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const separate_lib = b.addStaticLibrary("dawn-utils", null);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
-                if (!options.debug)
-                    separate_lib.strip = true;
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1392,7 +1365,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(flags.items);
-            try options.appendFlags(&cpp_flags, false, true);
+            try options.appendFlags(&cpp_flags, options.debug, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
@@ -1403,8 +1376,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const separate_lib = b.addStaticLibrary("dxcompiler", null);
                 separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
                 separate_lib.setTarget(step.target);
-                if (!options.debug)
-                    separate_lib.strip = true;
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1440,7 +1411,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             try appendLangScannedSources(b, lib, options, .{
-                .zero_debug_symbols = true,
+                .debug_symbols = false,
                 .rel_dirs = &.{
                     "libs/DirectXShaderCompiler/lib/Analysis/IPA",
                     "libs/DirectXShaderCompiler/lib/Analysis",
@@ -1473,7 +1444,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             try appendLangScannedSources(b, lib, options, .{
-                .zero_debug_symbols = true,
+                .debug_symbols = false,
                 .rel_dirs = &.{
                     "libs/DirectXShaderCompiler/lib/Support",
                 },
@@ -1487,7 +1458,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             try appendLangScannedSources(b, lib, options, .{
-                .zero_debug_symbols = true,
+                .debug_symbols = false,
                 .rel_dirs = &.{
                     "libs/DirectXShaderCompiler/lib/Bitcode/Reader",
                 },
@@ -1504,7 +1475,7 @@ pub fn Sdk(comptime deps: anytype) type {
             step: *std.build.LibExeObjStep,
             options: Options,
             args: struct {
-                zero_debug_symbols: bool = false,
+                debug_symbols: bool = false,
                 flags: []const []const u8,
                 rel_dirs: []const []const u8 = &.{},
                 objc: bool = false,
@@ -1514,7 +1485,7 @@ pub fn Sdk(comptime deps: anytype) type {
         ) !void {
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(args.flags);
-            try options.appendFlags(&cpp_flags, args.zero_debug_symbols, true);
+            try options.appendFlags(&cpp_flags, args.debug_symbols, true);
             const cpp_extensions: []const []const u8 = if (args.objc) &.{".mm"} else &.{ ".cpp", ".cc" };
             try appendScannedSources(b, step, .{
                 .flags = cpp_flags.items,
@@ -1526,7 +1497,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(args.flags);
-            try options.appendFlags(&flags, args.zero_debug_symbols, false);
+            try options.appendFlags(&flags, args.debug_symbols, false);
             const c_extensions: []const []const u8 = if (args.objc) &.{".m"} else &.{".c"};
             try appendScannedSources(b, step, .{
                 .flags = flags.items,
