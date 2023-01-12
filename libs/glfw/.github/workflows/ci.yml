@@ -43,8 +43,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Install Git
-        run: choco install git
       - name: Setup Zig
         run: |
           $ProgressPreference = 'SilentlyContinue'
