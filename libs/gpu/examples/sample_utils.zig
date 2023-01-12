@@ -156,7 +156,7 @@ pub fn detectGLFWOptions() glfw.BackendOptions {
     if (target.isDarwin()) return .{ .cocoa = true };
     return switch (target.os.tag) {
         .windows => .{ .win32 = true },
-        .linux => .{ .x11 = true },
+        .linux => .{ .x11 = true, .wayland = true },
         else => .{},
     };
 }

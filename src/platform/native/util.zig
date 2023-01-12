@@ -90,7 +90,7 @@ pub fn detectGLFWOptions() glfw.BackendOptions {
     if (target.isDarwin()) return .{ .cocoa = true };
     return switch (target.os.tag) {
         .windows => .{ .win32 = true },
-        .linux => .{ .x11 = true },
+        .linux => .{ .x11 = true, .wayland = true },
         else => .{},
     };
 }
@@ -111,6 +111,11 @@ pub fn createSurfaceForWindow(
             .display = glfw_native.getX11Display(),
             .window = glfw_native.getX11Window(window),
         },
+    } else if (glfw_options.wayland) gpu.Surface.Descriptor.NextInChain{
+        .from_wayland_surface = &.{
+            .display = glfw_native.getWaylandDisplay(),
+            .surface = glfw_native.getWaylandWindow(window),
+        },
     } else if (glfw_options.cocoa) blk: {
         const ns_window = glfw_native.getCocoaWindow(window);
         const ns_view = msgSend(ns_window, "contentView", .{}, *anyopaque); // [nsWindow contentView]
@@ -126,8 +131,6 @@ pub fn createSurfaceForWindow(
         msgSend(layer.?, "setContentsScale:", .{scale_factor}, void); // [layer setContentsScale:scale_factor]
 
         break :blk gpu.Surface.Descriptor.NextInChain{ .from_metal_layer = &.{ .layer = layer.? } };
-    } else if (glfw_options.wayland) {
-        @panic("TODO: this example does not support Wayland");
     } else unreachable;
 
     return instance.createSurface(&gpu.Surface.Descriptor{
