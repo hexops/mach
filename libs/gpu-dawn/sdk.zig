@@ -3,15 +3,7 @@ const Builder = std.build.Builder;
 
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
-        pub const LinuxWindowManager = enum {
-            X11,
-            Wayland,
-        };
-
         pub const Options = struct {
-            /// Defaults to X11 on Linux.
-            linux_window_manager: ?LinuxWindowManager = null,
-
             /// Defaults to true on Windows
             d3d12: ?bool = null,
 
@@ -50,25 +42,20 @@ pub fn Sdk(comptime deps: anytype) type {
             /// Detects the default options to use for the given target.
             pub fn detectDefaults(self: Options, target: std.Target) Options {
                 const tag = target.os.tag;
-                const linux_desktop_like = isLinuxDesktopLike(target);
 
                 var options = self;
-                if (options.linux_window_manager == null and linux_desktop_like) options.linux_window_manager = .X11;
                 if (options.d3d12 == null) options.d3d12 = tag == .windows;
                 if (options.metal == null) options.metal = tag.isDarwin();
-                if (options.vulkan == null) options.vulkan = tag == .fuchsia or linux_desktop_like;
+                if (options.vulkan == null) options.vulkan = tag == .fuchsia or isLinuxDesktopLike(target);
 
                 // TODO(build-system): technically Dawn itself defaults desktop_gl to true on Windows.
-                if (options.desktop_gl == null) options.desktop_gl = linux_desktop_like;
-                options.opengl_es = false; // TODO(build-system): OpenGL ES
-                // if (options.opengl_es == null) options.opengl_es = tag == .windows or tag == .emscripten or target.isAndroid() or linux_desktop_like;
-                return options;
-            }
+                if (options.desktop_gl == null) options.desktop_gl = isLinuxDesktopLike(target);
 
-            pub fn appendFlags(self: Options, flags: *std.ArrayList([]const u8), debug_symbols: bool, is_cpp: bool) !void {
-                if (debug_symbols) try flags.append("-g1") else try flags.append("-g0");
-                if (is_cpp) try flags.append("-std=c++17");
-                if (self.linux_window_manager != null and self.linux_window_manager.? == .X11) try flags.append("-DDAWN_USE_X11");
+                // TODO(build-system): OpenGL ES
+                options.opengl_es = false;
+                // if (options.opengl_es == null) options.opengl_es = tag == .windows or tag == .emscripten or target.isAndroid() or linux_desktop_like;
+
+                return options;
             }
         };
 
@@ -290,7 +277,7 @@ pub fn Sdk(comptime deps: anytype) type {
             step.addIncludePath(include_dir);
             step.addIncludePath(sdkPath("/src/dawn"));
 
-            if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
+            if (isLinuxDesktopLike(step.target_info.target)) {
                 step.linkSystemLibraryName("X11");
             }
             if (options.metal.?) {
@@ -557,6 +544,15 @@ pub fn Sdk(comptime deps: anytype) type {
             return !tag.isDarwin() and tag != .windows and tag != .fuchsia and tag != .emscripten and !target.isAndroid();
         }
 
+        pub fn appendFlags(step: *std.build.LibExeObjStep, flags: *std.ArrayList([]const u8), debug_symbols: bool, is_cpp: bool) !void {
+            if (debug_symbols) try flags.append("-g1") else try flags.append("-g0");
+            if (is_cpp) try flags.append("-std=c++17");
+            if (isLinuxDesktopLike(step.target_info.target)) {
+                try flags.append("-DDAWN_USE_X11");
+                try flags.append("-DDAWN_USE_WAYLAND");
+            }
+        }
+
         fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
                 const separate_lib = b.addStaticLibrary("dawn-native-mach", null);
@@ -572,7 +568,7 @@ pub fn Sdk(comptime deps: anytype) type {
             try deps.glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            try options.appendFlags(&cpp_flags, options.debug, true);
+            try appendFlags(step, &cpp_flags, options.debug, true);
             try appendDawnEnableBackendTypeFlags(&cpp_flags, options);
             try cpp_flags.appendSlice(&.{
                 include(deps.glfw_include_dir),
@@ -609,7 +605,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 include("libs/dawn/out/Debug/gen/include"),
                 include("libs/dawn/out/Debug/gen/src"),
             });
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/dawn/common/",
                     "libs/dawn/out/Debug/gen/src/dawn/common/",
@@ -638,7 +634,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(flags.items);
-            try options.appendFlags(&cpp_flags, options.debug, true);
+            try appendFlags(step, &cpp_flags, options.debug, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
@@ -656,7 +652,7 @@ pub fn Sdk(comptime deps: anytype) type {
             };
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            try options.appendFlags(&cpp_flags, options.debug, true);
+            try appendFlags(step, &cpp_flags, options.debug, true);
             try cpp_flags.appendSlice(&.{
                 include("libs/dawn/src"),
                 include("libs/dawn/include"),
@@ -755,7 +751,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
             if (options.d3d12.?) try flags.appendSlice(dawn_d3d12_flags);
 
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/out/Debug/gen/src/dawn/",
                     "libs/dawn/src/dawn/native/",
@@ -774,7 +770,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             // dawn_native_gen
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/out/Debug/gen/src/dawn/native/",
                 },
@@ -798,7 +794,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     try cpp_sources.append(abs_path);
                 }
 
-                try appendLangScannedSources(b, lib, options, .{
+                try appendLangScannedSources(b, lib, .{
                     .rel_dirs = &.{
                         "libs/dawn/src/dawn/native/d3d12/",
                     },
@@ -814,7 +810,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 lib.linkFramework("IOSurface");
                 lib.linkFramework("QuartzCore");
 
-                try appendLangScannedSources(b, lib, options, .{
+                try appendLangScannedSources(b, lib, .{
                     .objc = true,
                     .rel_dirs = &.{
                         "libs/dawn/src/dawn/native/metal/",
@@ -825,7 +821,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
             }
 
-            if (options.linux_window_manager != null and options.linux_window_manager.? == .X11) {
+            if (isLinuxDesktopLike(step.target_info.target)) {
                 lib.linkSystemLibraryName("X11");
                 inline for ([_][]const u8{
                     "src/dawn/native/XlibXcbFunctions.cpp",
@@ -852,7 +848,7 @@ pub fn Sdk(comptime deps: anytype) type {
             }
 
             if (options.desktop_gl.?) {
-                try appendLangScannedSources(b, lib, options, .{
+                try appendLangScannedSources(b, lib, .{
                     .rel_dirs = &.{
                         "libs/dawn/out/Debug/gen/src/dawn/native/opengl/",
                         "libs/dawn/src/dawn/native/opengl/",
@@ -863,7 +859,7 @@ pub fn Sdk(comptime deps: anytype) type {
             }
 
             if (options.vulkan.?) {
-                try appendLangScannedSources(b, lib, options, .{
+                try appendLangScannedSources(b, lib, .{
                     .rel_dirs = &.{
                         "libs/dawn/src/dawn/native/vulkan/",
                     },
@@ -980,7 +976,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(flags.items);
-            try options.appendFlags(&cpp_flags, options.debug, true);
+            try appendFlags(step, &cpp_flags, options.debug, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
@@ -1022,7 +1018,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             // libtint_core_all_src
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint",
                     "libs/dawn/src/tint/diagnostic/",
@@ -1049,7 +1045,7 @@ pub fn Sdk(comptime deps: anytype) type {
             }
 
             // libtint_sem_src
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/sem/",
                 },
@@ -1058,7 +1054,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             // libtint_spv_reader_src
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/reader/spirv/",
                 },
@@ -1067,7 +1063,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             // libtint_spv_writer_src
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/spirv/",
                 },
@@ -1077,7 +1073,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             // TODO(build-system): make optional
             // libtint_wgsl_reader_src
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/reader/wgsl/",
                 },
@@ -1087,7 +1083,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             // TODO(build-system): make optional
             // libtint_wgsl_writer_src
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/wgsl/",
                 },
@@ -1097,7 +1093,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             // TODO(build-system): make optional
             // libtint_msl_writer_src
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/msl/",
                 },
@@ -1107,7 +1103,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             // TODO(build-system): make optional
             // libtint_hlsl_writer_src
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/hlsl/",
                 },
@@ -1117,7 +1113,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             // TODO(build-system): make optional
             // libtint_glsl_writer_src
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/glsl/",
                 },
@@ -1127,7 +1123,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(flags.items);
-            try options.appendFlags(&cpp_flags, options.debug, true);
+            try appendFlags(step, &cpp_flags, options.debug, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
@@ -1156,7 +1152,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             // spvtools
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/",
                     "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/util/",
@@ -1166,7 +1162,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             // spvtools_val
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/val/",
                 },
@@ -1175,7 +1171,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             // spvtools_opt
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/opt/",
                 },
@@ -1184,7 +1180,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             // spvtools_link
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/third_party/vulkan-deps/spirv-tools/src/source/link/",
                 },
@@ -1231,7 +1227,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
 
             // absl
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/third_party/abseil-cpp/absl/strings/",
                     "libs/dawn/third_party/abseil-cpp/absl/strings/internal/",
@@ -1281,7 +1277,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 include("libs/dawn/out/Debug/gen/src"),
             });
 
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/out/Debug/gen/src/dawn/wire/",
                     "libs/dawn/out/Debug/gen/src/dawn/wire/client/",
@@ -1365,7 +1361,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(flags.items);
-            try options.appendFlags(&cpp_flags, options.debug, true);
+            try appendFlags(step, &cpp_flags, options.debug, true);
             lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
             return lib;
         }
@@ -1410,7 +1406,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "-DLLVM_ON_WIN32=1",
             });
 
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .debug_symbols = false,
                 .rel_dirs = &.{
                     "libs/DirectXShaderCompiler/lib/Analysis/IPA",
@@ -1443,7 +1439,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 .flags = flags.items,
             });
 
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .debug_symbols = false,
                 .rel_dirs = &.{
                     "libs/DirectXShaderCompiler/lib/Support",
@@ -1457,7 +1453,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 },
             });
 
-            try appendLangScannedSources(b, lib, options, .{
+            try appendLangScannedSources(b, lib, .{
                 .debug_symbols = false,
                 .rel_dirs = &.{
                     "libs/DirectXShaderCompiler/lib/Bitcode/Reader",
@@ -1473,7 +1469,6 @@ pub fn Sdk(comptime deps: anytype) type {
         fn appendLangScannedSources(
             b: *Builder,
             step: *std.build.LibExeObjStep,
-            options: Options,
             args: struct {
                 debug_symbols: bool = false,
                 flags: []const []const u8,
@@ -1485,7 +1480,7 @@ pub fn Sdk(comptime deps: anytype) type {
         ) !void {
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try cpp_flags.appendSlice(args.flags);
-            try options.appendFlags(&cpp_flags, args.debug_symbols, true);
+            try appendFlags(step, &cpp_flags, args.debug_symbols, true);
             const cpp_extensions: []const []const u8 = if (args.objc) &.{".mm"} else &.{ ".cpp", ".cc" };
             try appendScannedSources(b, step, .{
                 .flags = cpp_flags.items,
@@ -1497,7 +1492,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(args.flags);
-            try options.appendFlags(&flags, args.debug_symbols, false);
+            try appendFlags(step, &flags, args.debug_symbols, false);
             const c_extensions: []const []const u8 = if (args.objc) &.{".m"} else &.{".c"};
             try appendScannedSources(b, step, .{
                 .flags = flags.items,
