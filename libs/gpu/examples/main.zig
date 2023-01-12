@@ -11,7 +11,7 @@ pub fn main() !void {
 
     gpu.Impl.init();
     const setup = try sample_utils.setup(allocator);
-    const framebuffer_size = try setup.window.getFramebufferSize();
+    const framebuffer_size = setup.window.getFramebufferSize();
 
     const window_data = try allocator.create(WindowData);
     window_data.* = .{
@@ -133,7 +133,7 @@ fn frame(params: FrameParams) !void {
     const pool = try sample_utils.AutoReleasePool.init();
     defer sample_utils.AutoReleasePool.release(pool);
 
-    try glfw.pollEvents();
+    glfw.pollEvents();
     const pl = params.window.getUserPointer(WindowData).?;
     if (pl.swap_chain == null or !std.meta.eql(pl.current_desc, pl.target_desc)) {
         pl.swap_chain = params.device.createSwapChain(pl.surface, &pl.target_desc);

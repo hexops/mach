@@ -73,14 +73,22 @@ inline fn requestAdapterCallback(
 pub fn setup(allocator: std.mem.Allocator) !Setup {
     const backend_type = try detectBackendType(allocator);
 
-    try glfw.init(.{});
+    glfw.setErrorCallback(errorCallback);
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
 
     // Create the test window and discover adapters using it (esp. for OpenGL)
     var hints = glfwWindowHintsForBackend(backend_type);
     hints.cocoa_retina_framebuffer = true;
-    const window = try glfw.Window.create(640, 480, "mach/gpu window", null, null, hints);
-    if (backend_type == .opengl) try glfw.makeContextCurrent(window);
-    if (backend_type == .opengles) try glfw.makeContextCurrent(window);
+    const window = glfw.Window.create(640, 480, "mach/gpu window", null, null, hints) orelse {
+        std.log.err("failed to create GLFW window: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    };
+
+    if (backend_type == .opengl) glfw.makeContextCurrent(window);
+    if (backend_type == .opengles) glfw.makeContextCurrent(window);
 
     const instance = gpu.createInstance(null);
     if (instance == null) {
@@ -229,16 +237,21 @@ pub const AutoReleasePool = if (!@import("builtin").target.isDarwin()) opaque {
     }
 };
 
+/// Default GLFW error handling callback
+fn errorCallback(error_code: glfw.ErrorCode, description: [:0]const u8) void {
+    std.log.err("glfw: {}: {s}\n", .{ error_code, description });
+}
+
 // Borrowed from https://github.com/hazeycode/zig-objcrt
 pub fn msgSend(obj: anytype, sel_name: [:0]const u8, args: anytype, comptime ReturnType: type) ReturnType {
     const args_meta = @typeInfo(@TypeOf(args)).Struct.fields;
 
     const FnType = switch (args_meta.len) {
         0 => *const fn (@TypeOf(obj), objc.SEL) callconv(.C) ReturnType,
-        1 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type) callconv(.C) ReturnType,
-        2 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type) callconv(.C) ReturnType,
-        3 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type) callconv(.C) ReturnType,
-        4 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].field_type, args_meta[1].field_type, args_meta[2].field_type, args_meta[3].field_type) callconv(.C) ReturnType,
+        1 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].type) callconv(.C) ReturnType,
+        2 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].type, args_meta[1].type) callconv(.C) ReturnType,
+        3 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].type, args_meta[1].type, args_meta[2].type) callconv(.C) ReturnType,
+        4 => *const fn (@TypeOf(obj), objc.SEL, args_meta[0].type, args_meta[1].type, args_meta[2].type, args_meta[3].type) callconv(.C) ReturnType,
         else => @compileError("Unsupported number of args"),
     };
 
@@ -246,5 +259,5 @@ pub fn msgSend(obj: anytype, sel_name: [:0]const u8, args: anytype, comptime Ret
     var func = @ptrCast(FnType, &objc.objc_msgSend);
     const sel = objc.sel_getUid(@ptrCast([*c]const u8, sel_name));
 
-    return @call(.{}, func, .{ obj, sel } ++ args);
+    return @call(.auto, func, .{ obj, sel } ++ args);
 }
