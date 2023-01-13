@@ -1,6 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 const Texture = @import("texture.zig").Texture;
+const ExternalTexture = @import("external_texture.zig").ExternalTexture;
 const TextureView = @import("texture_view.zig").TextureView;
 const Buffer = @import("buffer.zig").Buffer;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
@@ -209,14 +210,16 @@ pub const CullMode = enum(u32) {
 pub const ErrorFilter = enum(u32) {
     validation = 0x00000000,
     out_of_memory = 0x00000001,
+    internal = 0x00000002,
 };
 
 pub const ErrorType = enum(u32) {
     no_error = 0x00000000,
     validation = 0x00000001,
     out_of_memory = 0x00000002,
-    unknown = 0x00000003,
-    device_lost = 0x00000004,
+    internal = 0x00000003,
+    unknown = 0x00000004,
+    device_lost = 0x00000005,
 };
 
 pub const FeatureName = enum(u32) {
@@ -229,11 +232,14 @@ pub const FeatureName = enum(u32) {
     texture_compression_etc2 = 0x00000006,
     texture_compression_astc = 0x00000007,
     indirect_first_instance = 0x00000008,
+    shader_f16 = 0x00000009,
+    rg11_b10_ufloat_renderable = 0x0000000A,
     dawn_shader_float16 = 0x000003e9,
     dawn_internal_usages = 0x000003ea,
     dawn_multi_planar_formats = 0x000003eb,
     dawn_native = 0x000003ec,
     chromium_experimental_dp4a = 0x000003ed,
+    timestamp_query_inside_passes = 0x000003EE,
 };
 
 pub const FilterMode = enum(u32) {
@@ -338,6 +344,8 @@ pub const SType = enum(u32) {
     dawn_encoder_internal_usage_descriptor = 0x000003EB,
     dawn_instance_descriptor = 0x000003EC,
     dawn_cache_device_descriptor = 0x000003ED,
+    dawn_adapter_properties_power_preference = 0x000003EE,
+    dawn_buffer_descriptor_error_info_from_wire_client = 0x000003EF,
 };
 
 pub const StencilOperation = enum(u32) {
@@ -495,6 +503,11 @@ pub const Color = extern struct {
     a: f64,
 };
 
+pub const Extent2D = extern struct {
+    width: u32,
+    height: u32 = 1,
+};
+
 pub const Extent3D = extern struct {
     width: u32,
     height: u32 = 1,
@@ -507,6 +520,7 @@ pub const Limits = extern struct {
     max_texture_dimension_3d: u32 = limit_u32_undef,
     max_texture_array_layers: u32 = limit_u32_undef,
     max_bind_groups: u32 = limit_u32_undef,
+    max_bindings_per_bind_group: u32 = limit_u32_undef,
     max_dynamic_uniform_buffers_per_pipeline_layout: u32 = limit_u32_undef,
     max_dynamic_storage_buffers_per_pipeline_layout: u32 = limit_u32_undef,
     max_sampled_textures_per_shader_stage: u32 = limit_u32_undef,
@@ -519,17 +533,24 @@ pub const Limits = extern struct {
     min_uniform_buffer_offset_alignment: u32 = limit_u32_undef,
     min_storage_buffer_offset_alignment: u32 = limit_u32_undef,
     max_vertex_buffers: u32 = limit_u32_undef,
+    max_buffer_size: u32 = limit_u32_undef,
     max_vertex_attributes: u32 = limit_u32_undef,
     max_vertex_buffer_array_stride: u32 = limit_u32_undef,
     max_inter_stage_shader_components: u32 = limit_u32_undef,
     max_inter_stage_shader_variables: u32 = limit_u32_undef,
     max_color_attachments: u32 = limit_u32_undef,
+    max_color_attachment_bytes_per_sample: u32 = limit_u32_undef,
     max_compute_workgroup_storage_size: u32 = limit_u32_undef,
     max_compute_invocations_per_workgroup: u32 = limit_u32_undef,
     max_compute_workgroup_size_x: u32 = limit_u32_undef,
     max_compute_workgroup_size_y: u32 = limit_u32_undef,
     max_compute_workgroup_size_z: u32 = limit_u32_undef,
     max_compute_workgroups_per_dimension: u32 = limit_u32_undef,
+};
+
+pub const Origin2D = extern struct {
+    x: u32 = 0,
+    y: u32 = 0,
 };
 
 pub const Origin3D = extern struct {
@@ -546,6 +567,9 @@ pub const CompilationMessage = extern struct {
     line_pos: u64,
     offset: u64,
     length: u64,
+    utf16_line_pos: u64,
+    utf16_offset: u64,
+    utf16_length: u64,
 };
 
 pub const ConstantEntry = extern struct {
@@ -653,6 +677,12 @@ pub const ImageCopyBuffer = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     layout: Texture.DataLayout,
     buffer: *Buffer,
+};
+
+pub const ImageCopyExternalTexture = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    external_texture: *ExternalTexture,
+    origin: Origin3D,
 };
 
 pub const ImageCopyTexture = extern struct {

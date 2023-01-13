@@ -12,19 +12,16 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         pub const Options = struct {
-            glfw_options: deps.glfw.Options = .{},
             gpu_dawn_options: deps.gpu_dawn.Options = .{},
         };
 
         pub const pkg = std.build.Pkg{
             .name = "gpu",
             .source = .{ .path = sdkPath("/src/main.zig") },
-            .dependencies = &.{deps.glfw.pkg},
         };
 
         pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Options) !void {
             if (step.target.toTarget().cpu.arch != .wasm32) {
-                try deps.glfw.link(b, step, options.glfw_options);
                 try deps.gpu_dawn.link(b, step, options.gpu_dawn_options);
                 step.addCSourceFile(sdkPath("/src/mach_dawn.cpp"), &.{"-std=c++17"});
                 step.addIncludePath(sdkPath("/src"));

@@ -3,6 +3,7 @@ const CommandBuffer = @import("command_buffer.zig").CommandBuffer;
 const Buffer = @import("buffer.zig").Buffer;
 const Texture = @import("texture.zig").Texture;
 const ImageCopyTexture = @import("types.zig").ImageCopyTexture;
+const ImageCopyExternalTexture = @import("types.zig").ImageCopyExternalTexture;
 const ChainedStruct = @import("types.zig").ChainedStruct;
 const Extent3D = @import("types.zig").Extent3D;
 const CopyTextureForBrowserOptions = @import("types.zig").CopyTextureForBrowserOptions;
@@ -25,6 +26,10 @@ pub const Queue = opaque {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
     };
+
+    pub inline fn copyExternalTextureForBrowser(queue: *Queue, source: *const ImageCopyExternalTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D, options: *const CopyTextureForBrowserOptions) void {
+        Impl.queueCopyExternalTextureForBrowser(queue, source, destination, copy_size, options);
+    }
 
     pub inline fn copyTextureForBrowser(queue: *Queue, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D, options: *const CopyTextureForBrowserOptions) void {
         Impl.queueCopyTextureForBrowser(queue, source, destination, copy_size, options);
