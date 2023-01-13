@@ -1,4 +1,6 @@
 const ChainedStruct = @import("types.zig").ChainedStruct;
+const ChainedStructOut = @import("types.zig").ChainedStructOut;
+const PowerPreference = @import("types.zig").PowerPreference;
 const Texture = @import("texture.zig").Texture;
 pub const Interface = @import("dawn_impl.zig").Interface;
 
@@ -56,4 +58,20 @@ pub const TogglesDeviceDescriptor = extern struct {
             .force_disabled_toggles = if (v.force_disabled_toggles) |e| e.ptr else null,
         };
     }
+};
+
+const AdapterPropertiesPowerPreference = extern struct {
+    chain: ChainedStructOut = .{
+        .next = null,
+        .s_type = .dawn_adapter_properties_power_preference,
+    },
+    power_preference: PowerPreference = .undefined,
+};
+
+const BufferDescriptorErrorInfoFromWireClient = extern struct {
+    chain: ChainedStruct = .{
+        .next = null,
+        .s_type = .dawn_buffer_descriptor_error_info_from_wire_client,
+    },
+    out_of_memory: bool = false,
 };

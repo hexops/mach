@@ -108,6 +108,10 @@ pub const Interface = struct {
         procs.bufferDestroy.?(@ptrCast(c.WGPUBuffer, buffer));
     }
 
+    pub inline fn bufferGetMapState(buffer: *gpu.Buffer) gpu.Buffer.MapState {
+        return procs.bufferGetMapState.?(@ptrCast(c.WGPUBuffer, buffer));
+    }
+
     // TODO: dawn: return value not marked as nullable in dawn.json but in fact is.
     pub inline fn bufferGetConstMappedRange(buffer: *gpu.Buffer, offset: usize, size: usize) ?*const anyopaque {
         return procs.bufferGetConstMappedRange.?(
@@ -455,8 +459,11 @@ pub const Interface = struct {
         );
     }
 
-    pub inline fn deviceCreateErrorBuffer(device: *gpu.Device) *gpu.Buffer {
-        return @ptrCast(*gpu.Buffer, procs.deviceCreateErrorBuffer.?(@ptrCast(c.WGPUDevice, device)));
+    pub inline fn deviceCreateErrorBuffer(device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) *gpu.Buffer {
+        return @ptrCast(*gpu.Buffer, procs.deviceCreateErrorBuffer.?(
+            @ptrCast(c.WGPUDevice, device),
+            @ptrCast(*const c.WGPUBufferDescriptor, descriptor),
+        ));
     }
 
     pub inline fn deviceCreateErrorExternalTexture(device: *gpu.Device) *gpu.ExternalTexture {
@@ -556,6 +563,18 @@ pub const Interface = struct {
         );
     }
 
+    pub inline fn forceLoss(device: *gpu.Device, reason: gpu.Device.LostReason, message: [*:0]const u8) void {
+        return procs.deviceForceLoss.?(
+            @ptrCast(c.WGPUDevice, device),
+            reason,
+            message,
+        );
+    }
+
+    pub inline fn deviceGetAdapter(device: *gpu.Device) *gpu.Adapter {
+        return procs.deviceGetAdapter.?(@ptrCast(c.WGPUDevice, device));
+    }
+
     pub inline fn deviceGetLimits(device: *gpu.Device, limits: *gpu.SupportedLimits) bool {
         return procs.deviceGetLimits.?(
             @ptrCast(c.WGPUDevice, device),
@@ -580,10 +599,6 @@ pub const Interface = struct {
             @enumToInt(typ),
             message,
         );
-    }
-
-    pub inline fn deviceLoseForTesting(device: *gpu.Device) void {
-        procs.deviceLoseForTesting.?(@ptrCast(c.WGPUDevice, device));
     }
 
     pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) bool {
@@ -631,6 +646,10 @@ pub const Interface = struct {
 
     pub inline fn deviceTick(device: *gpu.Device) void {
         procs.deviceTick.?(@ptrCast(c.WGPUDevice, device));
+    }
+
+    pub inline fn deviceValidateTextureDescriptor(device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) void {
+        procs.deviceValidateTextureDescriptor(device, descriptor);
     }
 
     pub inline fn deviceReference(device: *gpu.Device) void {
@@ -715,6 +734,16 @@ pub const Interface = struct {
 
     pub inline fn querySetRelease(query_set: *gpu.QuerySet) void {
         procs.querySetRelease.?(@ptrCast(c.WGPUQuerySet, query_set));
+    }
+
+    pub inline fn queueCopyExternalTextureForBrowser(queue: *gpu.Queue, source: *const gpu.ImageCopyExternalTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D, options: *const gpu.CopyTextureForBrowserOptions) void {
+        procs.queueCopyExternalTextureForBrowser.?(
+            @ptrCast(c.WGPUQueue, queue),
+            @ptrCast(*const c.ImageCopyExternalTexture, source),
+            @ptrCast(*const c.WGPUImageCopyTexture, destination),
+            @ptrCast(*const c.WGPUExtent3D, copy_size),
+            @ptrCast(*const c.WGPUCopyTextureForBrowserOptions, options),
+        );
     }
 
     pub inline fn queueCopyTextureForBrowser(queue: *gpu.Queue, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D, options: *const gpu.CopyTextureForBrowserOptions) void {

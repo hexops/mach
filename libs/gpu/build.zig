@@ -8,12 +8,10 @@ pub fn build(b: *std.build.Builder) !void {
     const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
     const gpu_dawn = gpu_dawn_sdk.Sdk(.{
-        .glfw = glfw,
         .glfw_include_dir = "libs/mach-glfw/upstream/glfw/include",
         .system_sdk = system_sdk,
     });
     const gpu = gpu_sdk.Sdk(.{
-        .glfw = glfw,
         .gpu_dawn = gpu_dawn,
     });
 

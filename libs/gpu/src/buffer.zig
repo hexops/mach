@@ -13,6 +13,12 @@ pub const Buffer = opaque {
         read_only_storage = 0x00000003,
     };
 
+    pub const MapState = enum(u32) {
+        unmapped = 0x00000000,
+        pending = 0x00000001,
+        mapped = 0x00000002,
+    };
+
     pub const MapAsyncStatus = enum(u32) {
         success = 0x00000000,
         err = 0x00000001,
@@ -67,6 +73,10 @@ pub const Buffer = opaque {
 
     pub inline fn destroy(buffer: *Buffer) void {
         Impl.bufferDestroy(buffer);
+    }
+
+    pub inline fn getMapState(buffer: *Buffer) MapState {
+        return Impl.bufferGetMapState(buffer);
     }
 
     /// Default `offset_bytes`: 0

@@ -116,7 +116,7 @@ pub fn init(allocator: std.mem.Allocator, options: Options) !*Core {
     }
 
     // Print which adapter we are going to use.
-    var props: gpu.Adapter.Properties = undefined;
+    var props = std.mem.zeroes(gpu.Adapter.Properties);
     response.adapter.getProperties(&props);
     if (props.backend_type == .null) {
         std.log.err("no backend found for {s} adapter", .{props.adapter_type.name()});

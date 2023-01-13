@@ -1,4 +1,5 @@
 const std = @import("std");
+const Adapter = @import("adapter.zig").Adapter;
 const Queue = @import("queue.zig").Queue;
 const BindGroup = @import("bind_group.zig").BindGroup;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
@@ -124,8 +125,8 @@ pub const Device = opaque {
         Impl.deviceCreateComputePipelineAsync(device, descriptor, Helper.cCallback, if (Context == void) null else context);
     }
 
-    pub inline fn createErrorBuffer(device: *Device) *Buffer {
-        return Impl.deviceCreateErrorBuffer(device);
+    pub inline fn createErrorBuffer(device: *Device, descriptor: *const Buffer.Descriptor) *Buffer {
+        return Impl.deviceCreateErrorBuffer(device, descriptor);
     }
 
     pub inline fn createErrorExternalTexture(device: *Device) *ExternalTexture {
@@ -236,6 +237,14 @@ pub const Device = opaque {
         return data;
     }
 
+    pub inline fn forceLoss(device: *Device, reason: LostReason, message: [*:0]const u8) void {
+        return Impl.deviceForceLoss(device, reason, message);
+    }
+
+    pub inline fn getAdapter(device: *Device) *Adapter {
+        return Impl.deviceGetAdapter(device);
+    }
+
     pub inline fn getLimits(device: *Device, limits: *SupportedLimits) bool {
         return Impl.deviceGetLimits(device, limits);
     }
@@ -250,10 +259,6 @@ pub const Device = opaque {
 
     pub inline fn injectError(device: *Device, typ: ErrorType, message: [*:0]const u8) void {
         Impl.deviceInjectError(device, typ, message);
-    }
-
-    pub inline fn loseForTesting(device: *Device) void {
-        Impl.deviceLoseForTesting(device);
     }
 
     pub inline fn popErrorScope(
@@ -334,6 +339,10 @@ pub const Device = opaque {
 
     pub inline fn tick(device: *Device) void {
         Impl.deviceTick(device);
+    }
+
+    pub inline fn validateTextureDescriptor(device: *Device, descriptor: *const Texture.Descriptor) void {
+        Impl.deviceVlidateTextureDescriptor(device, descriptor);
     }
 
     pub inline fn reference(device: *Device) void {

@@ -87,7 +87,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceCreateCommandEncoder", fn (device: *gpu.Device, descriptor: ?*const gpu.CommandEncoder.Descriptor) callconv(.Inline) *gpu.CommandEncoder);
     assertDecl(T, "deviceCreateComputePipeline", fn (device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor) callconv(.Inline) *gpu.ComputePipeline);
     assertDecl(T, "deviceCreateComputePipelineAsync", fn (device: *gpu.Device, descriptor: *const gpu.ComputePipeline.Descriptor, callback: gpu.CreateComputePipelineAsyncCallback, userdata: ?*anyopaque) callconv(.Inline) void);
-    assertDecl(T, "deviceCreateErrorBuffer", fn (device: *gpu.Device) callconv(.Inline) *gpu.Buffer);
+    assertDecl(T, "deviceCreateErrorBuffer", fn (device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) callconv(.Inline) *gpu.Buffer);
     assertDecl(T, "deviceCreateErrorExternalTexture", fn (device: *gpu.Device) callconv(.Inline) *gpu.ExternalTexture);
     assertDecl(T, "deviceCreateErrorTexture", fn (device: *gpu.Device, descriptor: *const gpu.Texture.Descriptor) callconv(.Inline) *gpu.Texture);
     assertDecl(T, "deviceCreateExternalTexture", fn (device: *gpu.Device, external_texture_descriptor: *const gpu.ExternalTexture.Descriptor) callconv(.Inline) *gpu.ExternalTexture);
@@ -108,7 +108,6 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceGetQueue", fn (device: *gpu.Device) callconv(.Inline) *gpu.Queue);
     assertDecl(T, "deviceHasFeature", fn (device: *gpu.Device, feature: gpu.FeatureName) callconv(.Inline) bool);
     assertDecl(T, "deviceInjectError", fn (device: *gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "deviceLoseForTesting", fn (device: *gpu.Device) callconv(.Inline) void);
     assertDecl(T, "devicePopErrorScope", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) callconv(.Inline) bool);
     assertDecl(T, "devicePushErrorScope", fn (device: *gpu.Device, filter: gpu.ErrorFilter) callconv(.Inline) void);
     assertDecl(T, "deviceSetDeviceLostCallback", fn (device: *gpu.Device, callback: ?gpu.Device.LostCallback, userdata: ?*anyopaque) callconv(.Inline) void);
@@ -580,9 +579,9 @@ pub fn Export(comptime T: type) type {
             T.deviceCreateComputePipelineAsync(device, descriptor, callback, userdata);
         }
 
-        // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device);
-        export fn wgpuDeviceCreateErrorBuffer(device: *gpu.Device) *gpu.Buffer {
-            return T.deviceCreateErrorBuffer(device);
+        // WGPU_EXPORT WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor);
+        export fn wgpuDeviceCreateErrorBuffer(device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) *gpu.Buffer {
+            return T.deviceCreateErrorBuffer(device, descriptor);
         }
 
         // WGPU_EXPORT WGPUExternalTexture wgpuDeviceCreateErrorExternalTexture(WGPUDevice device);
@@ -673,11 +672,6 @@ pub fn Export(comptime T: type) type {
         // WGPU_EXPORT void wgpuDeviceInjectError(WGPUDevice device, WGPUErrorType type, char const * message);
         export fn wgpuDeviceInjectError(device: *gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) void {
             T.deviceInjectError(device, typ, message);
-        }
-
-        // WGPU_EXPORT void wgpuDeviceLoseForTesting(WGPUDevice device);
-        export fn wgpuDeviceLoseForTesting(device: *gpu.Device) void {
-            T.deviceLoseForTesting(device);
         }
 
         // WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
@@ -1664,8 +1658,9 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn deviceCreateErrorBuffer(device: *gpu.Device) *gpu.Buffer {
+    pub inline fn deviceCreateErrorBuffer(device: *gpu.Device, descriptor: *const gpu.Buffer.Descriptor) *gpu.Buffer {
         _ = device;
+        _ = descriptor;
         unreachable;
     }
 
