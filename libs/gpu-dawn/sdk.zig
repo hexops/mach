@@ -277,6 +277,9 @@ pub fn Sdk(comptime deps: anytype) type {
             step.addIncludePath(include_dir);
             step.addIncludePath(sdkPath("/src/dawn"));
 
+            if (isLinuxDesktopLike(step.target_info.target.os.tag)) {
+                step.linkSystemLibraryName("X11");
+            }
             if (options.metal.?) {
                 step.linkFramework("Metal");
                 step.linkFramework("CoreGraphics");

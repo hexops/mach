@@ -60,7 +60,7 @@ pub const TogglesDeviceDescriptor = extern struct {
     }
 };
 
-const AdapterPropertiesPowerPreference = extern struct {
+pub const AdapterPropertiesPowerPreference = extern struct {
     chain: ChainedStructOut = .{
         .next = null,
         .s_type = .dawn_adapter_properties_power_preference,
@@ -68,7 +68,7 @@ const AdapterPropertiesPowerPreference = extern struct {
     power_preference: PowerPreference = .undefined,
 };
 
-const BufferDescriptorErrorInfoFromWireClient = extern struct {
+pub const BufferDescriptorErrorInfoFromWireClient = extern struct {
     chain: ChainedStruct = .{
         .next = null,
         .s_type = .dawn_buffer_descriptor_error_info_from_wire_client,

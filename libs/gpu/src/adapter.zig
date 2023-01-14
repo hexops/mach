@@ -1,5 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
+const dawn = @import("dawn.zig");
 const ChainedStructOut = @import("types.zig").ChainedStructOut;
 const Device = @import("device.zig").Device;
 const FeatureName = @import("types.zig").FeatureName;
@@ -27,7 +28,12 @@ pub const Adapter = opaque {
     };
 
     pub const Properties = extern struct {
-        next_in_chain: ?*ChainedStructOut = null,
+        pub const NextInChain = extern union {
+            generic: ?*const ChainedStructOut,
+            dawn_adapter_properties_power_preference: *const dawn.AdapterPropertiesPowerPreference,
+        };
+
+        next_in_chain: NextInChain = .{ .generic = null },
         vendor_id: u32,
         vendor_name: [*:0]const u8,
         architecture: [*:0]const u8,
