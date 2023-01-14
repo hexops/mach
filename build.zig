@@ -11,12 +11,10 @@ const gamemode = @import("libs/gamemode/build.zig");
 const model3d = @import("libs/model3d/build.zig");
 const wasmserve = @import("tools/wasmserve/wasmserve.zig");
 const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
-    .glfw = glfw,
-    .glfw_include_dir = "glfw/upstream/glfw/include",
+    .glfw_include_dir = sdkPath("/libs/glfw/upstream/glfw/include"),
     .system_sdk = system_sdk,
 });
 const gpu = @import("libs/gpu/sdk.zig").Sdk(.{
-    .glfw = glfw,
     .gpu_dawn = gpu_dawn,
 });
 const sysaudio = @import("libs/sysaudio/sdk.zig").Sdk(.{
@@ -41,7 +39,6 @@ pub const Options = struct {
 
     pub fn gpuOptions(options: Options) gpu.Options {
         return .{
-            .glfw_options = options.glfw_options,
             .gpu_dawn_options = options.gpu_dawn_options,
         };
     }

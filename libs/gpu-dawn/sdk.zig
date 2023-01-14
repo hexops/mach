@@ -46,10 +46,10 @@ pub fn Sdk(comptime deps: anytype) type {
                 var options = self;
                 if (options.d3d12 == null) options.d3d12 = tag == .windows;
                 if (options.metal == null) options.metal = tag.isDarwin();
-                if (options.vulkan == null) options.vulkan = tag == .fuchsia or isLinuxDesktopLike(target);
+                if (options.vulkan == null) options.vulkan = tag == .fuchsia or isLinuxDesktopLike(tag);
 
                 // TODO(build-system): technically Dawn itself defaults desktop_gl to true on Windows.
-                if (options.desktop_gl == null) options.desktop_gl = isLinuxDesktopLike(target);
+                if (options.desktop_gl == null) options.desktop_gl = isLinuxDesktopLike(tag);
 
                 // TODO(build-system): OpenGL ES
                 options.opengl_es = false;
@@ -277,9 +277,6 @@ pub fn Sdk(comptime deps: anytype) type {
             step.addIncludePath(include_dir);
             step.addIncludePath(sdkPath("/src/dawn"));
 
-            if (isLinuxDesktopLike(step.target_info.target)) {
-                step.linkSystemLibraryName("X11");
-            }
             if (options.metal.?) {
                 step.linkFramework("Metal");
                 step.linkFramework("CoreGraphics");
@@ -539,15 +536,22 @@ pub fn Sdk(comptime deps: anytype) type {
             }
         }
 
-        fn isLinuxDesktopLike(target: std.Target) bool {
-            const tag = target.os.tag;
-            return !tag.isDarwin() and tag != .windows and tag != .fuchsia and tag != .emscripten and !target.isAndroid();
+        fn isLinuxDesktopLike(tag: std.Target.Os.Tag) bool {
+            return switch (tag) {
+                .linux,
+                .freebsd,
+                .kfreebsd,
+                .openbsd,
+                .dragonfly,
+                => true,
+                else => false,
+            };
         }
 
         pub fn appendFlags(step: *std.build.LibExeObjStep, flags: *std.ArrayList([]const u8), debug_symbols: bool, is_cpp: bool) !void {
             if (debug_symbols) try flags.append("-g1") else try flags.append("-g0");
             if (is_cpp) try flags.append("-std=c++17");
-            if (isLinuxDesktopLike(step.target_info.target)) {
+            if (isLinuxDesktopLike(step.target_info.target.os.tag)) {
                 try flags.append("-DDAWN_USE_X11");
                 try flags.append("-DDAWN_USE_WAYLAND");
             }
@@ -564,14 +568,11 @@ pub fn Sdk(comptime deps: anytype) type {
                 break :blk separate_lib;
             };
 
-            // TODO(build-system): pass system SDK options through
-            try deps.glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
-
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try appendFlags(step, &cpp_flags, options.debug, true);
             try appendDawnEnableBackendTypeFlags(&cpp_flags, options);
             try cpp_flags.appendSlice(&.{
-                include(deps.glfw_include_dir),
+                "-I" ++ deps.glfw_include_dir,
                 include("libs/dawn/out/Debug/gen/include"),
                 include("libs/dawn/out/Debug/gen/src"),
                 include("libs/dawn/include"),
@@ -821,7 +822,8 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
             }
 
-            if (isLinuxDesktopLike(step.target_info.target)) {
+            const tag = step.target_info.target.os.tag;
+            if (isLinuxDesktopLike(tag)) {
                 lib.linkSystemLibraryName("X11");
                 inline for ([_][]const u8{
                     "src/dawn/native/XlibXcbFunctions.cpp",
@@ -866,8 +868,9 @@ pub fn Sdk(comptime deps: anytype) type {
                     .flags = flags.items,
                     .excluding_contains = &.{ "test", "benchmark", "mock" },
                 });
+                try cpp_sources.append(sdkPath("/libs/dawn/" ++ "src/dawn/native/vulkan/external_memory/MemoryService.cpp"));
 
-                if (isLinuxDesktopLike(step.target_info.target)) {
+                if (isLinuxDesktopLike(tag)) {
                     inline for ([_][]const u8{
                         "src/dawn/native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
@@ -875,7 +878,7 @@ pub fn Sdk(comptime deps: anytype) type {
                         const abs_path = sdkPath("/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
-                } else if (step.target_info.target.os.tag == .fuchsia) {
+                } else if (tag == .fuchsia) {
                     inline for ([_][]const u8{
                         "src/dawn/native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
                         "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
@@ -883,6 +886,15 @@ pub fn Sdk(comptime deps: anytype) type {
                         const abs_path = sdkPath("/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
+                } else if (step.target_info.target.isAndroid()) {
+                    inline for ([_][]const u8{
+                        "src/dawn/native/vulkan/external_memory/MemoryServiceAHardwareBuffer.cpp",
+                        "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
+                    }) |path| {
+                        const abs_path = sdkPath("/libs/dawn/" ++ path);
+                        try cpp_sources.append(abs_path);
+                    }
+                    try cpp_sources.append("-DDAWN_USE_SYNC_FDS");
                 } else {
                     inline for ([_][]const u8{
                         "src/dawn/native/vulkan/external_memory/MemoryServiceNull.cpp",
@@ -1021,12 +1033,14 @@ pub fn Sdk(comptime deps: anytype) type {
             try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint",
+                    "libs/dawn/src/tint/constant/",
                     "libs/dawn/src/tint/diagnostic/",
                     "libs/dawn/src/tint/inspector/",
                     "libs/dawn/src/tint/reader/",
                     "libs/dawn/src/tint/resolver/",
                     "libs/dawn/src/tint/utils/",
                     "libs/dawn/src/tint/text/",
+                    "libs/dawn/src/tint/type/",
                     "libs/dawn/src/tint/transform/",
                     "libs/dawn/src/tint/transform/utils",
                     "libs/dawn/src/tint/writer/",
@@ -1034,14 +1048,18 @@ pub fn Sdk(comptime deps: anytype) type {
                     "libs/dawn/src/tint/val/",
                 },
                 .flags = flags.items,
-                .excluding_contains = &.{ "test", "bench", "printer_windows", "printer_linux", "printer_other", "glsl.cc" },
+                .excluding_contains = &.{ "test", "bench", "printer_windows", "printer_posix", "printer_other", "glsl.cc" },
             });
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
-            switch (step.target_info.target.os.tag) {
-                .windows => try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_windows.cc")),
-                .linux => try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_linux.cc")),
-                else => try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_other.cc")),
+
+            const tag = step.target_info.target.os.tag;
+            if (tag == .windows) {
+                try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_windows.cc"));
+            } else if (tag.isDarwin() or isLinuxDesktopLike(tag)) {
+                try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_posix.cc"));
+            } else {
+                try cpp_sources.append(sdkPath("/libs/dawn/src/tint/diagnostic/printer_other.cc"));
             }
 
             // libtint_sem_src
@@ -1303,12 +1321,11 @@ pub fn Sdk(comptime deps: anytype) type {
                     separate_lib.install();
                 break :blk separate_lib;
             };
-            try deps.glfw.link(b, lib, .{ .system_sdk = .{ .set_sysroot = false } });
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try appendDawnEnableBackendTypeFlags(&flags, options);
             try flags.appendSlice(&.{
-                include(deps.glfw_include_dir),
+                "-I" ++ deps.glfw_include_dir,
                 include("libs/dawn/src"),
                 include("libs/dawn/include"),
                 include("libs/dawn/out/Debug/gen/include"),
