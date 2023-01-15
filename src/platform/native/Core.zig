@@ -460,11 +460,15 @@ pub fn headless(self: *Core) bool {
 }
 
 pub fn setVSync(self: *Core, mode: VSyncMode) void {
+    const framebuffer_size = self.framebufferSize();
     self.swap_chain_desc.present_mode = switch (mode) {
         .none => .immediate,
         .double => .fifo,
         .triple => .mailbox,
     };
+    self.swap_chain_desc.width = framebuffer_size.width;
+    self.swap_chain_desc.height = framebuffer_size.height;
+    self.swap_chain = self.gpu_device.createSwapChain(self.surface, &self.swap_chain_desc);
 }
 
 pub fn vsync(self: *Core) VSyncMode {
