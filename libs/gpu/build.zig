@@ -29,6 +29,7 @@ pub fn build(b: *std.build.Builder) !void {
     example.addPackage(gpu.pkg);
     example.addPackage(glfw.pkg);
     try gpu.link(b, example, .{ .gpu_dawn_options = gpu_dawn_options });
+    try glfw.link(b, example, .{});
     example.install();
 
     const example_run_cmd = example.run();
