@@ -270,6 +270,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 b.allocator.free(include_dir);
             }
 
+            deps.system_sdk.include(b, step, .{});
             step.addLibraryPath(target_cache_dir);
             step.linkSystemLibraryName("dawn");
             step.linkLibCpp();
@@ -282,11 +283,13 @@ pub fn Sdk(comptime deps: anytype) type {
             }
             if (options.metal.?) {
                 step.linkFramework("Metal");
+                step.linkFramework("CoreFoundation");
                 step.linkFramework("CoreGraphics");
                 step.linkFramework("Foundation");
                 step.linkFramework("IOKit");
                 step.linkFramework("IOSurface");
                 step.linkFramework("QuartzCore");
+                step.linkSystemLibraryName("objc");
             }
             if (options.d3d12.?) {
                 step.linkSystemLibraryName("ole32");
