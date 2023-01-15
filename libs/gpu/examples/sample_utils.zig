@@ -109,7 +109,7 @@ pub fn setup(allocator: std.mem.Allocator) !Setup {
     }
 
     // Print which adapter we are using.
-    var props: gpu.Adapter.Properties = undefined;
+    var props = std.mem.zeroes(gpu.Adapter.Properties);
     response.?.adapter.getProperties(&props);
     std.debug.print("found {s} backend on {s} adapter: {s}, {s}\n", .{
         props.backend_type.name(),
