@@ -49,12 +49,5 @@ pub fn App(
             app.engine.tick();
             return false;
         }
-
-        pub fn resize(app: *@This(), width: u32, height: u32) !void {
-            _ = app;
-            _ = width;
-            _ = height;
-            // TODO: send resize messages to ECS modules
-        }
     };
 }

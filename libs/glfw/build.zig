@@ -31,11 +31,6 @@ fn testStepShared(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarg
     return main_tests.run();
 }
 
-pub const LinuxWindowManager = enum {
-    X11,
-    Wayland,
-};
-
 pub const Options = struct {
     /// Not supported on macOS.
     vulkan: bool = true,
