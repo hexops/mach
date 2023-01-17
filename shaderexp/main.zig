@@ -25,7 +25,7 @@ fragment_shader_code: [:0]const u8,
 last_mtime: i128,
 
 pub fn init(app: *App) !void {
-    app.core = try mach.Core.init(allocator, .{ .title = "shaderexp" });
+    try app.core.init(allocator, .{ .title = "shaderexp" });
 
     var fragment_file: std.fs.File = undefined;
     var last_mtime: i128 = undefined;
