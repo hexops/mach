@@ -25,14 +25,12 @@ id: js.CanvasId,
 last_cursor_position: Position,
 last_key_mods: KeyMods,
 
-pub fn init(allocator: std.mem.Allocator, options: Options) !*Core {
+pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !*Core {
     _ = options;
     var selector = [1]u8{0} ** 15;
     const id = js.machCanvasInit(&selector[0]);
 
-    const self: *Core = try allocator.create(Core);
-    errdefer allocator.destroy(self);
-    self.* = Core{
+    core.* = Core{
         .allocator = allocator,
         .id = id,
 
@@ -50,8 +48,6 @@ pub fn init(allocator: std.mem.Allocator, options: Options) !*Core {
             .num_lock = false,
         },
     };
-
-    return self;
 }
 
 pub fn deinit(self: *Core) void {

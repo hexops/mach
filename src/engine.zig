@@ -25,15 +25,16 @@ pub fn App(
 
     return struct {
         engine: ecs.World(modules),
+        core: Core,
 
         pub fn init(app: *@This()) !void {
+            try app.core.init(allocator, .{});
             app.* = .{
+                .core = app.core,
                 .engine = try ecs.World(modules).init(allocator),
             };
-            var core = try allocator.create(Core);
-            core.* = try Core.init(allocator, .{});
-            app.engine.set(.mach, .core, core);
-            app.engine.set(.mach, .device, core.device());
+            app.engine.set(.mach, .core, &app.core);
+            app.engine.set(.mach, .device, app.core.device());
             try app_init(&app.engine);
         }
 
