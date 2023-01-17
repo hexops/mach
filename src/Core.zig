@@ -5,7 +5,7 @@ const platform = @import("platform.zig");
 
 pub const Core = @This();
 
-internal: *platform.Core,
+internal: platform.Core,
 
 pub const Options = struct {
     is_app: bool = false,
@@ -16,10 +16,8 @@ pub const Options = struct {
     required_limits: ?gpu.Limits = null,
 };
 
-pub fn init(allocator: std.mem.Allocator, options: Options) !Core {
-    return .{
-        .internal = try platform.Core.init(allocator, options),
-    };
+pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
+    try platform.Core.init(&core.internal, allocator, options);
 }
 
 pub fn deinit(core: *Core) void {

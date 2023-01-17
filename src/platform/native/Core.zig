@@ -52,7 +52,7 @@ const UserPtr = struct {
     self: *Core,
 };
 
-pub fn init(allocator: std.mem.Allocator, options: Options) !*Core {
+pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
     const backend_type = try util.detectBackendType(allocator);
 
     glfw.setErrorCallback(errorCallback);
@@ -153,9 +153,7 @@ pub fn init(allocator: std.mem.Allocator, options: Options) !*Core {
     };
     const swap_chain = gpu_device.createSwapChain(surface, &swap_chain_desc);
 
-    const self: *Core = try allocator.create(Core);
-    errdefer allocator.destroy(self);
-    self.* = .{
+    core.* = .{
         .allocator = allocator,
         .window = window,
         .backend_type = backend_type,
@@ -186,14 +184,12 @@ pub fn init(allocator: std.mem.Allocator, options: Options) !*Core {
         .linux_gamemode = null,
     };
 
-    self.setSizeLimit(self.size_limit);
+    core.setSizeLimit(core.size_limit);
 
-    self.initCallbacks();
+    core.initCallbacks();
     if (builtin.os.tag == .linux and !options.is_app and
-        self.linux_gamemode == null and try activateGamemode(self.allocator))
-        self.linux_gamemode = initLinuxGamemode();
-
-    return self;
+        core.linux_gamemode == null and try activateGamemode(core.allocator))
+        core.linux_gamemode = initLinuxGamemode();
 }
 
 fn initCallbacks(self: *Core) void {
@@ -316,8 +312,6 @@ pub fn deinit(self: *Core) void {
         self.linux_gamemode != null and
         self.linux_gamemode.?)
         deinitLinuxGamemode();
-
-    self.allocator.destroy(self);
 }
 
 pub fn hasEvent(self: *Core) bool {
