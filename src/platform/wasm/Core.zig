@@ -25,7 +25,7 @@ id: js.CanvasId,
 last_cursor_position: Position,
 last_key_mods: KeyMods,
 
-pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !*Core {
+pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
     _ = options;
     var selector = [1]u8{0} ** 15;
     const id = js.machCanvasInit(&selector[0]);
