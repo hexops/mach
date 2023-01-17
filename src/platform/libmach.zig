@@ -24,7 +24,13 @@ const allocator = gpa.allocator();
 // Will return a null pointer if an error occurred while initializing Core
 pub export fn mach_core_init() ?*native.Core {
     gpu.Impl.init();
-    const core = native.Core.init(allocator, .{}) catch {
+    // TODO(libmach): eliminate this allocation
+    var core = allocator.create(native.Core) catch {
+        return @intToPtr(?*native.Core, 0);
+    };
+    // TODO(libmach): allow passing init options
+    core.init(allocator, .{}) catch {
+        // TODO(libmach): better error handling
         return @intToPtr(?*native.Core, 0);
     };
     return core;
