@@ -16,7 +16,7 @@ jobs:
       - name: Setup Zig
         run: |
           sudo apt install xz-utils
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.1268+0e66df209.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.1350+bbab4beda.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: x86_64-linux -> x86_64-macos
         run: zig build test -Dtarget=x86_64-macos
         env:
@@ -46,10 +46,10 @@ jobs:
       - name: Setup Zig
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://ziglang.org/builds/zig-windows-x86_64-0.11.0-dev.1268+0e66df209.zip" -OutFile "C:\zig.zip"
+          Invoke-WebRequest -Uri "https://ziglang.org/builds/zig-windows-x86_64-0.11.0-dev.1350+bbab4beda.zip" -OutFile "C:\zig.zip"
           cd C:\
           7z x zig.zip
-          Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.11.0-dev.1268+0e66df209\"
+          Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.11.0-dev.1350+bbab4beda\"
       - name: x86_64-windows -> x86_64-macos
         run: zig build test -Dtarget=x86_64-macos
         env:
@@ -74,7 +74,7 @@ jobs:
         run: |
           brew uninstall --ignore-dependencies libx11 # https://github.com/ziglang/zig/issues/11066
           brew install xz
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.11.0-dev.1268+0e66df209.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.11.0-dev.1350+bbab4beda.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: test
         run: zig build test
         env:
