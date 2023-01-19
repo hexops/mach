@@ -28,18 +28,20 @@ fn writeLog(_: void, msg: []const u8) LogError!usize {
     return msg.len;
 }
 
-pub fn log(
-    comptime message_level: std.log.Level,
-    comptime scope: @Type(.EnumLiteral),
-    comptime format: []const u8,
-    args: anytype,
-) void {
-    const prefix = if (scope == .default) ": " else "(" ++ @tagName(scope) ++ "): ";
-    const writer = LogWriter{ .context = {} };
+pub const std_options = struct {
+    pub fn logFn(
+        comptime message_level: std.log.Level,
+        comptime scope: @Type(.EnumLiteral),
+        comptime format: []const u8,
+        args: anytype,
+    ) void {
+        const prefix = if (scope == .default) ": " else "(" ++ @tagName(scope) ++ "): ";
+        const writer = LogWriter{ .context = {} };
 
-    writer.print(message_level.asText() ++ prefix ++ format ++ "\n", args) catch return;
-    js.machLogFlush();
-}
+        writer.print(message_level.asText() ++ prefix ++ format ++ "\n", args) catch return;
+        js.machLogFlush();
+    }
+};
 
 pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, ret_addr: ?usize) noreturn {
     _ = error_return_trace;
