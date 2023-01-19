@@ -206,10 +206,12 @@ pub const Player = struct {
 
     fn processCallback(n_frames: c.jack_nframes_t, self_opaque: ?*anyopaque) callconv(.C) c_int {
         const self = @ptrCast(*Player, @alignCast(@alignOf(*Player), self_opaque.?));
+
         for (self.channels) |*ch, i| {
             ch.*.ptr = @ptrCast([*]u8, c.jack_port_get_buffer(self.ports[i], n_frames));
         }
         self.writeFn(self.user_data, n_frames);
+
         return 0;
     }
 

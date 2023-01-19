@@ -3,9 +3,6 @@ const main = @import("main.zig");
 const backends = @import("backends.zig");
 const util = @import("util.zig");
 
-pub const min_sample_rate = 8_000; // Hz
-pub const max_sample_rate = 5_644_800; // Hz
-
 const dummy_playback = main.Device{
     .id = "dummy-playback",
     .name = "Dummy Device",
@@ -13,8 +10,8 @@ const dummy_playback = main.Device{
     .channels = undefined,
     .formats = std.meta.tags(main.Format),
     .sample_rate = .{
-        .min = min_sample_rate,
-        .max = max_sample_rate,
+        .min = main.min_sample_rate,
+        .max = main.max_sample_rate,
     },
 };
 
@@ -25,8 +22,8 @@ const dummy_capture = main.Device{
     .channels = undefined,
     .formats = std.meta.tags(main.Format),
     .sample_rate = .{
-        .min = min_sample_rate,
-        .max = max_sample_rate,
+        .min = main.min_sample_rate,
+        .max = main.max_sample_rate,
     },
 };
 
@@ -61,16 +58,15 @@ pub const Context = struct {
 
         try self.devices_info.list.append(self.allocator, dummy_playback);
         try self.devices_info.list.append(self.allocator, dummy_capture);
-        self.devices_info.list.items[0].channels = try self.allocator.alloc(main.Channel, 1);
-        self.devices_info.list.items[0].channels[0] = .{
-            .id = .front_center,
-        };
-        self.devices_info.list.items[1].channels = try self.allocator.alloc(main.Channel, 1);
-        self.devices_info.list.items[1].channels[0] = .{
-            .id = .front_center,
-        };
+
         self.devices_info.setDefault(.playback, 0);
         self.devices_info.setDefault(.capture, 1);
+
+        self.devices_info.list.items[0].channels = try self.allocator.alloc(main.Channel, 1);
+        self.devices_info.list.items[1].channels = try self.allocator.alloc(main.Channel, 1);
+
+        self.devices_info.list.items[0].channels[0] = .{ .id = .front_center };
+        self.devices_info.list.items[1].channels[0] = .{ .id = .front_center };
     }
 
     pub fn devices(self: Context) []const main.Device {
@@ -86,11 +82,11 @@ pub const Context = struct {
         var player = try self.allocator.create(Player);
         player.* = .{
             .allocator = self.allocator,
-            .sample_rate = options.sample_rate,
             .is_paused = false,
             .vol = 1.0,
             .channels = device.channels,
             .format = options.format,
+            .sample_rate = options.sample_rate,
             .write_step = 0,
         };
         return .{ .dummy = player };
@@ -99,12 +95,12 @@ pub const Context = struct {
 
 pub const Player = struct {
     allocator: std.mem.Allocator,
-    sample_rate: u24,
     is_paused: bool,
     vol: f32,
 
     channels: []main.Channel,
     format: main.Format,
+    sample_rate: u24,
     write_step: u8,
 
     pub fn deinit(self: *Player) void {
@@ -133,10 +129,6 @@ pub const Player = struct {
 
     pub fn volume(self: Player) !f32 {
         return self.vol;
-    }
-
-    pub fn sampleRate(self: Player) u24 {
-        return self.sample_rate;
     }
 };
 
