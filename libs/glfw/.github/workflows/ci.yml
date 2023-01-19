@@ -18,15 +18,15 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.1350+bbab4beda.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: x86_64-linux -> x86_64-macos
-        run: zig build test -Dtarget=x86_64-macos
+        run: zig build -Dtarget=x86_64-macos
         env:
           AGREE: true
       - name: x86_64-linux -> aarch64-macos
-        run: zig build test -Dtarget=aarch64-macos
+        run: zig build -Dtarget=aarch64-macos
         env:
           AGREE: true
       - name: x86_64-linux -> x86_64-windows
-        run: zig build test -Dtarget=x86_64-windows
+        run: zig build -Dtarget=x86_64-windows
       - name: launch xvfb
         run: Xvfb :99 -screen 0 1680x720x24 > /dev/null 2>&1 &
       - name: test
@@ -51,15 +51,15 @@ jobs:
           7z x zig.zip
           Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.11.0-dev.1350+bbab4beda\"
       - name: x86_64-windows -> x86_64-macos
-        run: zig build test -Dtarget=x86_64-macos
+        run: zig build -Dtarget=x86_64-macos
         env:
           AGREE: true
       - name: x86_64-windows -> aarch64-macos
-        run: zig build test -Dtarget=aarch64-macos
+        run: zig build -Dtarget=aarch64-macos
         env:
           AGREE: true
       - name: x86_64-windows -> x86_64-linux
-        run: zig build test -Dtarget=x86_64-linux
+        run: zig build -Dtarget=x86_64-linux
       - name: test
         run: zig build test
   x86_64-macos:
@@ -80,10 +80,10 @@ jobs:
         env:
           AGREE: true
       - name: x86_64-macos -> aarch64-macos
-        run: zig build test -Dtarget=aarch64-macos
+        run: zig build -Dtarget=aarch64-macos
         env:
           AGREE: true
       - name: x86_64-macos -> x86_64-windows
-        run: zig build test -Dtarget=x86_64-windows
+        run: zig build -Dtarget=x86_64-windows
       - name: x86_64-macos -> x86_64-linux
-        run: zig build test -Dtarget=x86_64-linux
+        run: zig build -Dtarget=x86_64-linux
