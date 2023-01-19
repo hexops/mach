@@ -422,11 +422,11 @@ pub const Context = struct {
             .mixer = mixer.?,
             .selem = selem.?,
             .mixer_elm = mixer_elm.?,
-            .sample_rate = sample_rate,
             .writeFn = writeFn,
             .user_data = options.user_data,
             .channels = device.channels,
             .format = format,
+            .sample_rate = sample_rate,
             .write_step = format.frameSize(device.channels.len),
         };
         return .{ .alsa = player };
@@ -446,10 +446,10 @@ pub const Player = struct {
     mixer_elm: *c.snd_mixer_elem_t,
     writeFn: main.WriteFn,
     user_data: ?*anyopaque,
-    sample_rate: u24,
 
     channels: []main.Channel,
     format: main.Format,
+    sample_rate: u24,
     write_step: u8,
 
     pub fn deinit(self: *Player) void {
@@ -556,10 +556,6 @@ pub const Player = struct {
             return error.CannotGetVolume;
 
         return @intToFloat(f32, vol) / @intToFloat(f32, max_vol - min_vol);
-    }
-
-    pub fn sampleRate(self: Player) u24 {
-        return self.sample_rate;
     }
 };
 

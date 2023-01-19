@@ -112,9 +112,9 @@ pub const Context = struct {
             .is_paused = false,
             .writeFn = writeFn,
             .user_data = options.user_data,
-            .sample_rate = options.sample_rate,
             .channels = device.channels,
             .format = .f32,
+            .sample_rate = options.sample_rate,
             .write_step = @sizeOf(f32),
         };
 
@@ -138,10 +138,10 @@ pub const Player = struct {
     is_paused: bool,
     writeFn: main.WriteFn,
     user_data: ?*anyopaque,
-    sample_rate: u24,
 
     channels: []main.Channel,
     format: main.Format,
+    sample_rate: u24,
     write_step: u8,
 
     pub fn deinit(self: *Player) void {
@@ -220,10 +220,6 @@ pub const Player = struct {
         const gain = self.gain_node.get("gain").view(.object);
         defer gain.deinit();
         return @floatCast(f32, gain.get("value").view(.num));
-    }
-
-    pub fn sampleRate(self: Player) u24 {
-        return self.sample_rate;
     }
 };
 

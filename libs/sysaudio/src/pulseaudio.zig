@@ -282,11 +282,11 @@ pub const Context = struct {
             .stream = stream.?,
             .write_ptr = undefined,
             .vol = 1.0,
-            .sample_rate = sample_rate,
             .writeFn = writeFn,
             .user_data = options.user_data,
             .channels = device.channels,
             .format = format,
+            .sample_rate = sample_rate,
             .write_step = format.frameSize(device.channels.len),
         };
         return .{ .pulseaudio = player };
@@ -329,24 +329,25 @@ pub const Player = struct {
     stream: *c.pa_stream,
     write_ptr: [*]u8,
     vol: f32,
-    sample_rate: u24,
     writeFn: main.WriteFn,
     user_data: ?*anyopaque,
 
     channels: []main.Channel,
     format: main.Format,
+    sample_rate: u24,
     write_step: u8,
 
     pub fn deinit(self: *Player) void {
         c.pa_threaded_mainloop_lock(self.main_loop);
-        defer c.pa_threaded_mainloop_unlock(self.main_loop);
-
         c.pa_stream_set_write_callback(self.stream, null, null);
         c.pa_stream_set_state_callback(self.stream, null, null);
         c.pa_stream_set_underflow_callback(self.stream, null, null);
         c.pa_stream_set_overflow_callback(self.stream, null, null);
         _ = c.pa_stream_disconnect(self.stream);
         c.pa_stream_unref(self.stream);
+        c.pa_threaded_mainloop_unlock(self.main_loop);
+
+        self.allocator.destroy(self);
     }
 
     pub fn start(self: *Player) !void {
@@ -474,10 +475,6 @@ pub const Player = struct {
         }
 
         self.vol = @intToFloat(f32, info.*.volume.values[0]) / @intToFloat(f32, c.PA_VOLUME_NORM);
-    }
-
-    pub fn sampleRate(self: Player) u24 {
-        return self.sample_rate;
     }
 };
 
