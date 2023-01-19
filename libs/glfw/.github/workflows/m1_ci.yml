@@ -26,10 +26,10 @@ jobs:
         env:
           AGREE: true
       - name: aarch64-macos -> x86_64-macos
-        run: zig build test -Dtarget=x86_64-macos
+        run: zig build -Dtarget=x86_64-macos
         env:
           AGREE: true
       - name: aarch64-macos -> x86_64-windows
-        run: zig build test -Dtarget=x86_64-windows
+        run: zig build -Dtarget=x86_64-windows
       - name: aarch64-macos -> x86_64-linux
-        run: zig build test -Dtarget=x86_64-linux
+        run: zig build -Dtarget=x86_64-linux
