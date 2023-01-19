@@ -1,0 +1,43 @@
+name: CI
+on:
+  - push
+  - pull_request
+jobs:
+  x86_64-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Zig
+        run: |
+          sudo apt install xz-utils
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.1350+bbab4beda.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+      - name: x86_64-linux -> aarch64-macos
+        run: zig build -Dtarget=aarch64-macos.12-none
+      - name: test
+        run: zig build test
+  x86_64-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Zig
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          Invoke-WebRequest -Uri "https://ziglang.org/builds/zig-windows-x86_64-0.11.0-dev.1350+bbab4beda.zip" -OutFile "C:\zig.zip"
+          cd C:\
+          7z x zig.zip
+          Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.11.0-dev.1350+bbab4beda\"
+      - name: test
+        run: zig build test
+  x86_64-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Zig
+        run: |
+          brew install xz
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.11.0-dev.1350+bbab4beda.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+      - name: test
+        run: zig build test
