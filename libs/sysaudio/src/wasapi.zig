@@ -9,6 +9,7 @@ pub const Context = struct {
     devices_info: util.DevicesInfo,
     enumerator: ?*win32.IMMDeviceEnumerator,
     watcher: ?Watcher,
+    is_wine: bool,
 
     const Watcher = struct {
         deviceChangeFn: main.DeviceChangeFn,
@@ -72,6 +73,15 @@ pub const Context = struct {
                     },
                 },
             } else null,
+            .is_wine = blk: {
+                const hntdll = win32.GetModuleHandleA("ntdll.dll");
+                if (hntdll) |_| {
+                    if (win32.GetProcAddress(hntdll, "wine_get_version")) |_| {
+                        break :blk true;
+                    }
+                }
+                break :blk false;
+            },
         };
 
         if (options.deviceChangeFn) |_| {
@@ -303,27 +313,15 @@ pub const Context = struct {
                 },
                 .formats = blk: {
                     var audio_client: ?*win32.IAudioClient = null;
-                    var audio_client3: ?*win32.IAudioClient3 = null;
-                    hr = imm_device.?.Activate(win32.IID_IAudioClient3, win32.CLSCTX_ALL, null, @ptrCast(?*?*anyopaque, &audio_client3));
-                    if (hr == win32.S_OK) {
-                        hr = audio_client3.?.QueryInterface(win32.IID_IAudioClient, @ptrCast(?*?*anyopaque, &audio_client));
-                        switch (hr) {
-                            win32.S_OK => {},
-                            win32.E_NOINTERFACE => unreachable,
-                            win32.E_POINTER => unreachable,
-                            else => return error.OpeningDevice,
-                        }
-                    } else {
-                        hr = imm_device.?.Activate(win32.IID_IAudioClient, win32.CLSCTX_ALL, null, @ptrCast(?*?*anyopaque, &audio_client));
-                        switch (hr) {
-                            win32.S_OK => {},
-                            win32.E_POINTER => unreachable,
-                            win32.E_INVALIDARG => unreachable,
-                            win32.E_NOINTERFACE => unreachable,
-                            win32.E_OUTOFMEMORY => return error.OutOfMemory,
-                            win32.AUDCLNT_E_DEVICE_INVALIDATED => unreachable,
-                            else => return error.OpeningDevice,
-                        }
+                    hr = imm_device.?.Activate(win32.IID_IAudioClient, win32.CLSCTX_ALL, null, @ptrCast(?*?*anyopaque, &audio_client));
+                    switch (hr) {
+                        win32.S_OK => {},
+                        win32.E_POINTER => unreachable,
+                        win32.E_INVALIDARG => unreachable,
+                        win32.E_NOINTERFACE => unreachable,
+                        win32.E_OUTOFMEMORY => return error.OutOfMemory,
+                        win32.AUDCLNT_E_DEVICE_INVALIDATED => unreachable,
+                        else => return error.OpeningDevice,
                     }
 
                     var fmt_arr = std.ArrayList(main.Format).init(self.allocator);
@@ -493,10 +491,10 @@ pub const Context = struct {
             .SubFormat = toSubFormat(format) catch return error.OpeningDevice,
         };
 
-        if (audio_client3) |_| {
+        if (!self.is_wine and audio_client3 != null) {
             hr = audio_client3.?.InitializeSharedAudioStream(
                 win32.AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
-                0,
+                0, // TODO: use the advantage of AudioClient3
                 @ptrCast(?*const win32.WAVEFORMATEX, @alignCast(@alignOf(*win32.WAVEFORMATEX), &wave_format)),
                 null,
             );
@@ -600,11 +598,11 @@ pub const Context = struct {
             .ready_event = ready_event,
             .aborted = .{ .value = false },
             .is_paused = false,
-            .sample_rate = sample_rate,
             .writeFn = writeFn,
             .user_data = options.user_data,
             .channels = device.channels,
             .format = format,
+            .sample_rate = sample_rate,
             .write_step = format.frameSize(device.channels.len),
         };
         return .{ .wasapi = player };
@@ -658,16 +656,16 @@ pub const Player = struct {
     audio_client: ?*win32.IAudioClient,
     audio_client3: ?*win32.IAudioClient3,
     render_client: ?*win32.IAudioRenderClient,
-    ready_event: win32.HANDLE,
+    ready_event: *anyopaque,
     aborted: std.atomic.Atomic(bool),
     is_paused: bool,
-    sample_rate: u24,
     writeFn: main.WriteFn,
     user_data: ?*anyopaque,
 
-    write_step: u8,
     channels: []main.Channel,
     format: main.Format,
+    sample_rate: u24,
+    write_step: u8,
 
     pub fn deinit(self: *Player) void {
         self.aborted.store(true, .Unordered);
@@ -820,9 +818,6 @@ pub const Player = struct {
             else => return error.CannotGetVolume,
         }
         return vol;
-    }
-    pub fn sampleRate(self: Player) u24 {
-        return self.sample_rate;
     }
 };
 

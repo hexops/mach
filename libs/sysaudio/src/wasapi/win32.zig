@@ -222,11 +222,18 @@ pub extern "kernel32" fn CreateEventA(
     bManualReset: BOOL,
     bInitialState: BOOL,
     lpName: ?[*:0]const u8,
-) callconv(WINAPI) ?HANDLE;
+) callconv(WINAPI) ?*anyopaque;
 pub extern "kernel32" fn WaitForSingleObject(
-    hHandle: ?HANDLE,
+    hHandle: ?*anyopaque,
     dwMilliseconds: u32,
 ) callconv(WINAPI) u32;
+pub extern "kernel32" fn GetModuleHandleA(
+    lpModuleName: ?[*:0]const u8,
+) callconv(WINAPI) ?*anyopaque;
+pub extern "kernel32" fn GetProcAddress(
+    hModule: ?*anyopaque,
+    lpProcName: ?[*:0]const u8,
+) callconv(WINAPI) ?*const fn () callconv(WINAPI) isize;
 pub const INFINITE = 4294967295;
 pub const SECURITY_ATTRIBUTES = extern struct {
     nLength: u32,
@@ -1168,7 +1175,6 @@ pub const AUDCLNT_SHAREMODE = enum(i32) {
     SHARED = 0,
     EXCLUSIVE = 1,
 };
-pub const HANDLE = @import("std").os.windows.HANDLE;
 pub const IID_IAudioClient = &Guid.initString("1cb9ad4c-dbfa-4c32-b178-c2f568a703b2");
 pub const IAudioClient = extern struct {
     pub const VTable = extern struct {
@@ -1220,7 +1226,7 @@ pub const IAudioClient = extern struct {
         ) callconv(WINAPI) HRESULT,
         SetEventHandle: *const fn (
             self: *const IAudioClient,
-            eventHandle: ?HANDLE,
+            eventHandle: ?*anyopaque,
         ) callconv(WINAPI) HRESULT,
         GetService: *const fn (
             self: *const IAudioClient,
@@ -1262,7 +1268,7 @@ pub const IAudioClient = extern struct {
             pub inline fn Reset(self: *const T) HRESULT {
                 return @ptrCast(*const IAudioClient.VTable, self.vtable).Reset(@ptrCast(*const IAudioClient, self));
             }
-            pub inline fn SetEventHandle(self: *const T, eventHandle: ?HANDLE) HRESULT {
+            pub inline fn SetEventHandle(self: *const T, eventHandle: ?*anyopaque) HRESULT {
                 return @ptrCast(*const IAudioClient.VTable, self.vtable).SetEventHandle(@ptrCast(*const IAudioClient, self), eventHandle);
             }
             pub inline fn GetService(self: *const T, riid: ?*const Guid, ppv: ?*?*anyopaque) HRESULT {
