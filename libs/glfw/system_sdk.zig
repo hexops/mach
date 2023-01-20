@@ -72,7 +72,7 @@ pub const Options = struct {
         .{
             .name = "sdk-linux-x86_64",
             .git_addr = "https://github.com/hexops/sdk-linux-x86_64",
-            .git_revision = "a41c5d8da0a22f1d609467a0ff03515a28583c8f",
+            .git_revision = "4a885f866b1d66208be4c3208c7d7fea092742b4",
             .cpu_arch = &.{.x86_64},
             .os_tag = .linux,
             .os_version = .{
@@ -88,7 +88,7 @@ pub const Options = struct {
         .{
             .name = "sdk-linux-aarch64",
             .git_addr = "https://github.com/hexops/sdk-linux-aarch64",
-            .git_revision = "1eec18d60d13dfc334ba8cd4f0e4625ca636770c",
+            .git_revision = "f87c90c2e598b0d596a01e67b5e2172bc7753ce6",
             .cpu_arch = &.{.aarch64},
             .os_tag = .linux,
             .os_version = .{
