@@ -34,7 +34,6 @@ pub fn Sdk(comptime deps: anytype) type {
                     step.linkFramework("CoreAudio");
                 } else if (step.target.toTarget().os.tag == .linux) {
                     step.addCSourceFile(sdkPath("/src/pipewire/sysaudio.c"), &.{"-std=gnu99"});
-                    step.linkSystemLibrary("pipewire-0.3");
                     step.linkLibC();
                 }
             }
