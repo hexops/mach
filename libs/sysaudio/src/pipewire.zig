@@ -7,6 +7,52 @@ const main = @import("main.zig");
 const backends = @import("backends.zig");
 const util = @import("util.zig");
 
+const lib = struct {
+    var handle: std.DynLib = undefined;
+
+    var pw_init: *const fn ([*c]c_int, [*c][*c][*c]u8) callconv(.C) void = undefined;
+    var pw_deinit: *const fn () callconv(.C) void = undefined;
+    var pw_thread_loop_new: *const fn ([*c]const u8, [*c]const c.spa_dict) callconv(.C) ?*c.pw_thread_loop = undefined;
+    var pw_thread_loop_destroy: *const fn (?*c.pw_thread_loop) callconv(.C) void = undefined;
+    var pw_thread_loop_start: *const fn (?*c.pw_thread_loop) callconv(.C) c_int = undefined;
+    var pw_thread_loop_stop: *const fn (?*c.pw_thread_loop) callconv(.C) void = undefined;
+    var pw_thread_loop_signal: *const fn (?*c.pw_thread_loop, bool) callconv(.C) void = undefined;
+    var pw_thread_loop_wait: *const fn (?*c.pw_thread_loop) callconv(.C) void = undefined;
+    var pw_thread_loop_lock: *const fn (?*c.pw_thread_loop) callconv(.C) void = undefined;
+    var pw_thread_loop_unlock: *const fn (?*c.pw_thread_loop) callconv(.C) void = undefined;
+    var pw_thread_loop_get_loop: *const fn (?*c.pw_thread_loop) callconv(.C) [*c]c.pw_loop = undefined;
+    var pw_properties_new: *const fn ([*c]const u8, ...) callconv(.C) [*c]c.pw_properties = undefined;
+    var pw_stream_new_simple: *const fn ([*c]c.pw_loop, [*c]const u8, [*c]c.pw_properties, [*c]const c.pw_stream_events, ?*anyopaque) callconv(.C) ?*c.pw_stream = undefined;
+    var pw_stream_destroy: *const fn (?*c.pw_stream) callconv(.C) void = undefined;
+    var pw_stream_connect: *const fn (?*c.pw_stream, c.spa_direction, u32, c.pw_stream_flags, [*c][*c]const c.spa_pod, u32) callconv(.C) c_int = undefined;
+    var pw_stream_queue_buffer: *const fn (?*c.pw_stream, [*c]c.pw_buffer) callconv(.C) c_int = undefined;
+    var pw_stream_dequeue_buffer: *const fn (?*c.pw_stream) callconv(.C) [*c]c.pw_buffer = undefined;
+    var pw_stream_get_state: *const fn (?*c.pw_stream, [*c][*c]const u8) callconv(.C) c.pw_stream_state = undefined;
+
+    pub fn load() !void {
+        handle = std.DynLib.openZ("libpipewire-0.3.so") catch return error.LibraryNotFound;
+
+        pw_init = handle.lookup(@TypeOf(pw_init), "pw_init") orelse return error.SymbolLookup;
+        pw_deinit = handle.lookup(@TypeOf(pw_deinit), "pw_deinit") orelse return error.SymbolLookup;
+        pw_thread_loop_new = handle.lookup(@TypeOf(pw_thread_loop_new), "pw_thread_loop_new") orelse return error.SymbolLookup;
+        pw_thread_loop_destroy = handle.lookup(@TypeOf(pw_thread_loop_destroy), "pw_thread_loop_destroy") orelse return error.SymbolLookup;
+        pw_thread_loop_start = handle.lookup(@TypeOf(pw_thread_loop_start), "pw_thread_loop_start") orelse return error.SymbolLookup;
+        pw_thread_loop_stop = handle.lookup(@TypeOf(pw_thread_loop_stop), "pw_thread_loop_stop") orelse return error.SymbolLookup;
+        pw_thread_loop_signal = handle.lookup(@TypeOf(pw_thread_loop_signal), "pw_thread_loop_signal") orelse return error.SymbolLookup;
+        pw_thread_loop_wait = handle.lookup(@TypeOf(pw_thread_loop_wait), "pw_thread_loop_wait") orelse return error.SymbolLookup;
+        pw_thread_loop_lock = handle.lookup(@TypeOf(pw_thread_loop_lock), "pw_thread_loop_lock") orelse return error.SymbolLookup;
+        pw_thread_loop_unlock = handle.lookup(@TypeOf(pw_thread_loop_unlock), "pw_thread_loop_unlock") orelse return error.SymbolLookup;
+        pw_thread_loop_get_loop = handle.lookup(@TypeOf(pw_thread_loop_get_loop), "pw_thread_loop_get_loop") orelse return error.SymbolLookup;
+        pw_properties_new = handle.lookup(@TypeOf(pw_properties_new), "pw_properties_new") orelse return error.SymbolLookup;
+        pw_stream_new_simple = handle.lookup(@TypeOf(pw_stream_new_simple), "pw_stream_new_simple") orelse return error.SymbolLookup;
+        pw_stream_destroy = handle.lookup(@TypeOf(pw_stream_destroy), "pw_stream_destroy") orelse return error.SymbolLookup;
+        pw_stream_connect = handle.lookup(@TypeOf(pw_stream_connect), "pw_stream_connect") orelse return error.SymbolLookup;
+        pw_stream_queue_buffer = handle.lookup(@TypeOf(pw_stream_queue_buffer), "pw_stream_queue_buffer") orelse return error.SymbolLookup;
+        pw_stream_dequeue_buffer = handle.lookup(@TypeOf(pw_stream_dequeue_buffer), "pw_stream_dequeue_buffer") orelse return error.SymbolLookup;
+        pw_stream_get_state = handle.lookup(@TypeOf(pw_stream_get_state), "pw_stream_get_state") orelse return error.SymbolLookup;
+    }
+};
+
 const default_playback = main.Device{
     .id = "default-playback",
     .name = "Default Device",
@@ -45,7 +91,9 @@ pub const Context = struct {
     };
 
     pub fn init(allocator: std.mem.Allocator, options: main.Context.Options) !backends.BackendContext {
-        c.pw_init(null, null);
+        try lib.load();
+
+        lib.pw_init(null, null);
 
         var self = try allocator.create(Context);
         errdefer allocator.destroy(self);
@@ -82,8 +130,9 @@ pub const Context = struct {
         for (self.devices_info.list.items) |d|
             freeDevice(self.allocator, d);
         self.devices_info.list.deinit(self.allocator);
-        c.pw_deinit();
+        lib.pw_deinit();
         self.allocator.destroy(self);
+        lib.handle.close();
     }
 
     pub fn refresh(self: *Context) !void {
@@ -130,7 +179,7 @@ pub const Context = struct {
     };
 
     pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
-        const thread = c.pw_thread_loop_new(device.id, null) orelse return error.SystemResources;
+        const thread = lib.pw_thread_loop_new(device.id, null) orelse return error.SystemResources;
 
         const media_role = switch (options.media_role) {
             .default => "Screen",
@@ -143,7 +192,7 @@ pub const Context = struct {
         var buf: [8]u8 = undefined;
         const audio_rate = std.fmt.bufPrintZ(&buf, "{d}", .{options.sample_rate}) catch unreachable;
 
-        const props = c.pw_properties_new(
+        const props = lib.pw_properties_new(
             c.PW_KEY_MEDIA_TYPE,
             "Audio",
 
@@ -165,8 +214,8 @@ pub const Context = struct {
         var player = try self.allocator.create(Player);
         errdefer self.allocator.destroy(player);
 
-        const stream = c.pw_stream_new_simple(
-            c.pw_thread_loop_get_loop(thread),
+        const stream = lib.pw_stream_new_simple(
+            lib.pw_thread_loop_get_loop(thread),
             "audio-src",
             props,
             &stream_events,
@@ -196,7 +245,7 @@ pub const Context = struct {
             sysaudio_spa_format_audio_raw_build(&pod_builder, c.SPA_PARAM_EnumFormat, &info),
         };
 
-        if (c.pw_stream_connect(
+        if (lib.pw_stream_connect(
             stream,
             c.PW_DIRECTION_OUTPUT,
             c.PW_ID_ANY,
@@ -243,16 +292,16 @@ pub const Player = struct {
         var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), self_opaque.?));
 
         if (state == c.PW_STREAM_STATE_STREAMING or state == c.PW_STREAM_STATE_ERROR) {
-            c.pw_thread_loop_signal(self.thread, false);
+            lib.pw_thread_loop_signal(self.thread, false);
         }
     }
 
     pub fn processCb(self_opaque: ?*anyopaque) callconv(.C) void {
         var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), self_opaque.?));
 
-        const buf = c.pw_stream_dequeue_buffer(self.stream) orelse unreachable;
+        const buf = lib.pw_stream_dequeue_buffer(self.stream) orelse unreachable;
         if (buf.*.buffer.*.datas[0].data == null) return;
-        defer _ = c.pw_stream_queue_buffer(self.stream, buf);
+        defer _ = lib.pw_stream_queue_buffer(self.stream, buf);
 
         const stride = self.format.frameSize(self.channels.len);
         const n_frames = std.math.min(
@@ -276,20 +325,20 @@ pub const Player = struct {
     }
 
     pub fn deinit(self: *Player) void {
-        c.pw_thread_loop_stop(self.thread);
-        c.pw_thread_loop_destroy(self.thread);
-        c.pw_stream_destroy(self.stream);
+        lib.pw_thread_loop_stop(self.thread);
+        lib.pw_thread_loop_destroy(self.thread);
+        lib.pw_stream_destroy(self.stream);
         self.allocator.destroy(self);
     }
 
     pub fn start(self: *Player) !void {
-        if (c.pw_thread_loop_start(self.thread) < 0) return error.SystemResources;
+        if (lib.pw_thread_loop_start(self.thread) < 0) return error.SystemResources;
 
-        c.pw_thread_loop_lock(self.thread);
-        c.pw_thread_loop_wait(self.thread);
-        c.pw_thread_loop_unlock(self.thread);
+        lib.pw_thread_loop_lock(self.thread);
+        lib.pw_thread_loop_wait(self.thread);
+        lib.pw_thread_loop_unlock(self.thread);
 
-        if (c.pw_stream_get_state(self.stream, null) == c.PW_STREAM_STATE_ERROR) {
+        if (lib.pw_stream_get_state(self.stream, null) == c.PW_STREAM_STATE_ERROR) {
             return error.CannotPlay;
         }
     }
