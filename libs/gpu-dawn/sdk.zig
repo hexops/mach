@@ -69,7 +69,7 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn linkFromSource(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !void {
-            // branch: origin/origin/generated-2023-01-19.1674151689
+            // branch: generated-2023-01-12.1673546526
             try ensureGitRepoCloned(b.allocator, "https://github.com/hexops/dawn", "d8468ba09e23c482de1012e00b3adcf98dfe950f", sdkPath("/libs/dawn"));
 
             // branch: mach
