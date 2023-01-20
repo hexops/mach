@@ -5,6 +5,98 @@ const backends = @import("backends.zig");
 const util = @import("util.zig");
 const is_little = @import("builtin").cpu.arch.endian() == .Little;
 
+const lib = struct {
+    var handle: std.DynLib = undefined;
+
+    var pa_threaded_mainloop_new: *const fn () callconv(.C) ?*c.pa_threaded_mainloop = undefined;
+    var pa_threaded_mainloop_free: *const fn (?*c.pa_threaded_mainloop) callconv(.C) void = undefined;
+    var pa_threaded_mainloop_start: *const fn (?*c.pa_threaded_mainloop) callconv(.C) c_int = undefined;
+    var pa_threaded_mainloop_stop: *const fn (?*c.pa_threaded_mainloop) callconv(.C) void = undefined;
+    var pa_threaded_mainloop_signal: *const fn (?*c.pa_threaded_mainloop, c_int) callconv(.C) void = undefined;
+    var pa_threaded_mainloop_wait: *const fn (?*c.pa_threaded_mainloop) callconv(.C) void = undefined;
+    var pa_threaded_mainloop_lock: *const fn (?*c.pa_threaded_mainloop) callconv(.C) void = undefined;
+    var pa_threaded_mainloop_unlock: *const fn (?*c.pa_threaded_mainloop) callconv(.C) void = undefined;
+    var pa_threaded_mainloop_get_api: *const fn (?*c.pa_threaded_mainloop) callconv(.C) [*c]c.pa_mainloop_api = undefined;
+    var pa_operation_unref: *const fn (?*c.pa_operation) callconv(.C) void = undefined;
+    var pa_operation_get_state: *const fn (?*const c.pa_operation) callconv(.C) c.pa_operation_state_t = undefined;
+    var pa_context_new_with_proplist: *const fn ([*c]c.pa_mainloop_api, [*c]const u8, ?*const c.pa_proplist) callconv(.C) ?*c.pa_context = undefined;
+    var pa_context_unref: *const fn (?*c.pa_context) callconv(.C) void = undefined;
+    var pa_context_connect: *const fn (?*c.pa_context, [*c]const u8, c.pa_context_flags_t, [*c]const c.pa_spawn_api) callconv(.C) c_int = undefined;
+    var pa_context_disconnect: *const fn (?*c.pa_context) callconv(.C) void = undefined;
+    var pa_context_subscribe: *const fn (?*c.pa_context, c.pa_subscription_mask_t, c.pa_context_success_cb_t, ?*anyopaque) callconv(.C) ?*c.pa_operation = undefined;
+    var pa_context_get_state: *const fn (?*const c.pa_context) callconv(.C) c.pa_context_state_t = undefined;
+    var pa_context_set_state_callback: *const fn (?*c.pa_context, c.pa_context_notify_cb_t, ?*anyopaque) callconv(.C) void = undefined;
+    var pa_context_set_subscribe_callback: *const fn (?*c.pa_context, c.pa_context_subscribe_cb_t, ?*anyopaque) callconv(.C) void = undefined;
+    var pa_context_get_sink_input_info: *const fn (?*c.pa_context, u32, c.pa_sink_input_info_cb_t, ?*anyopaque) callconv(.C) ?*c.pa_operation = undefined;
+    var pa_context_get_sink_info_list: *const fn (?*c.pa_context, c.pa_sink_info_cb_t, ?*anyopaque) callconv(.C) ?*c.pa_operation = undefined;
+    var pa_context_set_sink_input_volume: *const fn (?*c.pa_context, u32, [*c]const c.pa_cvolume, c.pa_context_success_cb_t, ?*anyopaque) callconv(.C) ?*c.pa_operation = undefined;
+    var pa_context_get_source_info_list: *const fn (?*c.pa_context, c.pa_source_info_cb_t, ?*anyopaque) callconv(.C) ?*c.pa_operation = undefined;
+    var pa_context_get_server_info: *const fn (?*c.pa_context, c.pa_server_info_cb_t, ?*anyopaque) callconv(.C) ?*c.pa_operation = undefined;
+    var pa_stream_new: *const fn (?*c.pa_context, [*c]const u8, [*c]const c.pa_sample_spec, [*c]const c.pa_channel_map) callconv(.C) ?*c.pa_stream = undefined;
+    var pa_stream_unref: *const fn (?*c.pa_stream) callconv(.C) void = undefined;
+    var pa_stream_connect_playback: *const fn (?*c.pa_stream, [*c]const u8, [*c]const c.pa_buffer_attr, c.pa_stream_flags_t, [*c]const c.pa_cvolume, ?*c.pa_stream) callconv(.C) c_int = undefined;
+    var pa_stream_disconnect: *const fn (?*c.pa_stream) callconv(.C) c_int = undefined;
+    var pa_stream_cork: *const fn (?*c.pa_stream, c_int, c.pa_stream_success_cb_t, ?*anyopaque) callconv(.C) ?*c.pa_operation = undefined;
+    var pa_stream_is_corked: *const fn (?*const c.pa_stream) callconv(.C) c_int = undefined;
+    var pa_stream_begin_write: *const fn (?*c.pa_stream, [*c]?*anyopaque, [*c]usize) callconv(.C) c_int = undefined;
+    var pa_stream_write: *const fn (?*c.pa_stream, ?*const anyopaque, usize, c.pa_free_cb_t, i64, c.pa_seek_mode_t) callconv(.C) c_int = undefined;
+    var pa_stream_get_state: *const fn (?*const c.pa_stream) callconv(.C) c.pa_stream_state_t = undefined;
+    var pa_stream_get_index: *const fn (?*const c.pa_stream) callconv(.C) u32 = undefined;
+    var pa_stream_set_state_callback: *const fn (?*c.pa_stream, c.pa_stream_notify_cb_t, ?*anyopaque) callconv(.C) void = undefined;
+    var pa_stream_set_write_callback: *const fn (?*c.pa_stream, c.pa_stream_request_cb_t, ?*anyopaque) callconv(.C) void = undefined;
+    var pa_stream_set_underflow_callback: *const fn (?*c.pa_stream, c.pa_stream_notify_cb_t, ?*anyopaque) callconv(.C) void = undefined;
+    var pa_stream_set_overflow_callback: *const fn (?*c.pa_stream, c.pa_stream_notify_cb_t, ?*anyopaque) callconv(.C) void = undefined;
+    var pa_cvolume_init: *const fn ([*c]c.pa_cvolume) callconv(.C) [*c]c.pa_cvolume = undefined;
+    var pa_cvolume_set: *const fn ([*c]c.pa_cvolume, c_uint, c.pa_volume_t) callconv(.C) [*c]c.pa_cvolume = undefined;
+    var pa_sw_volume_from_linear: *const fn (f64) callconv(.C) c.pa_volume_t = undefined;
+
+    pub fn load() !void {
+        handle = std.DynLib.openZ("libpulse.so") catch return error.LibraryNotFound;
+
+        pa_threaded_mainloop_new = handle.lookup(@TypeOf(pa_threaded_mainloop_new), "pa_threaded_mainloop_new") orelse return error.SymbolLookup;
+        pa_threaded_mainloop_free = handle.lookup(@TypeOf(pa_threaded_mainloop_free), "pa_threaded_mainloop_free") orelse return error.SymbolLookup;
+        pa_threaded_mainloop_start = handle.lookup(@TypeOf(pa_threaded_mainloop_start), "pa_threaded_mainloop_start") orelse return error.SymbolLookup;
+        pa_threaded_mainloop_stop = handle.lookup(@TypeOf(pa_threaded_mainloop_stop), "pa_threaded_mainloop_stop") orelse return error.SymbolLookup;
+        pa_threaded_mainloop_signal = handle.lookup(@TypeOf(pa_threaded_mainloop_signal), "pa_threaded_mainloop_signal") orelse return error.SymbolLookup;
+        pa_threaded_mainloop_wait = handle.lookup(@TypeOf(pa_threaded_mainloop_wait), "pa_threaded_mainloop_wait") orelse return error.SymbolLookup;
+        pa_threaded_mainloop_lock = handle.lookup(@TypeOf(pa_threaded_mainloop_lock), "pa_threaded_mainloop_lock") orelse return error.SymbolLookup;
+        pa_threaded_mainloop_unlock = handle.lookup(@TypeOf(pa_threaded_mainloop_unlock), "pa_threaded_mainloop_unlock") orelse return error.SymbolLookup;
+        pa_threaded_mainloop_get_api = handle.lookup(@TypeOf(pa_threaded_mainloop_get_api), "pa_threaded_mainloop_get_api") orelse return error.SymbolLookup;
+        pa_operation_unref = handle.lookup(@TypeOf(pa_operation_unref), "pa_operation_unref") orelse return error.SymbolLookup;
+        pa_operation_get_state = handle.lookup(@TypeOf(pa_operation_get_state), "pa_operation_get_state") orelse return error.SymbolLookup;
+        pa_context_new_with_proplist = handle.lookup(@TypeOf(pa_context_new_with_proplist), "pa_context_new_with_proplist") orelse return error.SymbolLookup;
+        pa_context_unref = handle.lookup(@TypeOf(pa_context_unref), "pa_context_unref") orelse return error.SymbolLookup;
+        pa_context_connect = handle.lookup(@TypeOf(pa_context_connect), "pa_context_connect") orelse return error.SymbolLookup;
+        pa_context_disconnect = handle.lookup(@TypeOf(pa_context_disconnect), "pa_context_disconnect") orelse return error.SymbolLookup;
+        pa_context_subscribe = handle.lookup(@TypeOf(pa_context_subscribe), "pa_context_subscribe") orelse return error.SymbolLookup;
+        pa_context_get_state = handle.lookup(@TypeOf(pa_context_get_state), "pa_context_get_state") orelse return error.SymbolLookup;
+        pa_context_set_state_callback = handle.lookup(@TypeOf(pa_context_set_state_callback), "pa_context_set_state_callback") orelse return error.SymbolLookup;
+        pa_context_set_subscribe_callback = handle.lookup(@TypeOf(pa_context_set_subscribe_callback), "pa_context_set_subscribe_callback") orelse return error.SymbolLookup;
+        pa_context_get_sink_input_info = handle.lookup(@TypeOf(pa_context_get_sink_input_info), "pa_context_get_sink_input_info") orelse return error.SymbolLookup;
+        pa_context_get_sink_info_list = handle.lookup(@TypeOf(pa_context_get_sink_info_list), "pa_context_get_sink_info_list") orelse return error.SymbolLookup;
+        pa_context_set_sink_input_volume = handle.lookup(@TypeOf(pa_context_set_sink_input_volume), "pa_context_set_sink_input_volume") orelse return error.SymbolLookup;
+        pa_context_get_source_info_list = handle.lookup(@TypeOf(pa_context_get_source_info_list), "pa_context_get_source_info_list") orelse return error.SymbolLookup;
+        pa_context_get_server_info = handle.lookup(@TypeOf(pa_context_get_server_info), "pa_context_get_server_info") orelse return error.SymbolLookup;
+        pa_stream_new = handle.lookup(@TypeOf(pa_stream_new), "pa_stream_new") orelse return error.SymbolLookup;
+        pa_stream_unref = handle.lookup(@TypeOf(pa_stream_unref), "pa_stream_unref") orelse return error.SymbolLookup;
+        pa_stream_connect_playback = handle.lookup(@TypeOf(pa_stream_connect_playback), "pa_stream_connect_playback") orelse return error.SymbolLookup;
+        pa_stream_disconnect = handle.lookup(@TypeOf(pa_stream_disconnect), "pa_stream_disconnect") orelse return error.SymbolLookup;
+        pa_stream_cork = handle.lookup(@TypeOf(pa_stream_cork), "pa_stream_cork") orelse return error.SymbolLookup;
+        pa_stream_is_corked = handle.lookup(@TypeOf(pa_stream_is_corked), "pa_stream_is_corked") orelse return error.SymbolLookup;
+        pa_stream_begin_write = handle.lookup(@TypeOf(pa_stream_begin_write), "pa_stream_begin_write") orelse return error.SymbolLookup;
+        pa_stream_write = handle.lookup(@TypeOf(pa_stream_write), "pa_stream_write") orelse return error.SymbolLookup;
+        pa_stream_get_state = handle.lookup(@TypeOf(pa_stream_get_state), "pa_stream_get_state") orelse return error.SymbolLookup;
+        pa_stream_get_index = handle.lookup(@TypeOf(pa_stream_get_index), "pa_stream_get_index") orelse return error.SymbolLookup;
+        pa_stream_set_state_callback = handle.lookup(@TypeOf(pa_stream_set_state_callback), "pa_stream_set_state_callback") orelse return error.SymbolLookup;
+        pa_stream_set_write_callback = handle.lookup(@TypeOf(pa_stream_set_write_callback), "pa_stream_set_write_callback") orelse return error.SymbolLookup;
+        pa_stream_set_underflow_callback = handle.lookup(@TypeOf(pa_stream_set_underflow_callback), "pa_stream_set_underflow_callback") orelse return error.SymbolLookup;
+        pa_stream_set_overflow_callback = handle.lookup(@TypeOf(pa_stream_set_overflow_callback), "pa_stream_set_overflow_callback") orelse return error.SymbolLookup;
+        pa_cvolume_init = handle.lookup(@TypeOf(pa_cvolume_init), "pa_cvolume_init") orelse return error.SymbolLookup;
+        pa_cvolume_set = handle.lookup(@TypeOf(pa_cvolume_set), "pa_cvolume_set") orelse return error.SymbolLookup;
+        pa_sw_volume_from_linear = handle.lookup(@TypeOf(pa_sw_volume_from_linear), "pa_sw_volume_from_linear") orelse return error.SymbolLookup;
+    }
+};
+
 pub const Context = struct {
     allocator: std.mem.Allocator,
     devices_info: util.DevicesInfo,
@@ -17,19 +109,21 @@ pub const Context = struct {
     watcher: ?Watcher,
 
     const Watcher = struct {
-        deviceChangeFn: main.DeviceChangeFn,
+        deviceChangeFn: main.Context.DeviceChangeFn,
         user_data: ?*anyopaque,
     };
 
     pub fn init(allocator: std.mem.Allocator, options: main.Context.Options) !backends.BackendContext {
-        const main_loop = c.pa_threaded_mainloop_new() orelse
-            return error.OutOfMemory;
-        errdefer c.pa_threaded_mainloop_free(main_loop);
-        var main_loop_api = c.pa_threaded_mainloop_get_api(main_loop);
+        try lib.load();
 
-        const ctx = c.pa_context_new_with_proplist(main_loop_api, options.app_name.ptr, null) orelse
+        const main_loop = lib.pa_threaded_mainloop_new() orelse
             return error.OutOfMemory;
-        errdefer c.pa_context_unref(ctx);
+        errdefer lib.pa_threaded_mainloop_free(main_loop);
+        var main_loop_api = lib.pa_threaded_mainloop_get_api(main_loop);
+
+        const ctx = lib.pa_context_new_with_proplist(main_loop_api, options.app_name.ptr, null) orelse
+            return error.OutOfMemory;
+        errdefer lib.pa_context_unref(ctx);
 
         var self = try allocator.create(Context);
         errdefer allocator.destroy(self);
@@ -48,17 +142,17 @@ pub const Context = struct {
             } else null,
         };
 
-        if (c.pa_context_connect(ctx, null, 0, null) != 0)
+        if (lib.pa_context_connect(ctx, null, 0, null) != 0)
             return error.ConnectionRefused;
-        errdefer c.pa_context_disconnect(ctx);
-        c.pa_context_set_state_callback(ctx, contextStateOp, self);
+        errdefer lib.pa_context_disconnect(ctx);
+        lib.pa_context_set_state_callback(ctx, contextStateOp, self);
 
-        if (c.pa_threaded_mainloop_start(main_loop) != 0)
+        if (lib.pa_threaded_mainloop_start(main_loop) != 0)
             return error.SystemResources;
-        errdefer c.pa_threaded_mainloop_stop(main_loop);
+        errdefer lib.pa_threaded_mainloop_stop(main_loop);
 
-        c.pa_threaded_mainloop_lock(main_loop);
-        defer c.pa_threaded_mainloop_unlock(main_loop);
+        lib.pa_threaded_mainloop_lock(main_loop);
+        defer lib.pa_threaded_mainloop_unlock(main_loop);
 
         while (true) {
             switch (self.ctx_state) {
@@ -70,7 +164,7 @@ pub const Context = struct {
                 c.PA_CONTEXT_AUTHORIZING,
                 // The client is passing its application name to the daemon.
                 c.PA_CONTEXT_SETTING_NAME,
-                => c.pa_threaded_mainloop_wait(main_loop),
+                => lib.pa_threaded_mainloop_wait(main_loop),
 
                 // The connection is established, the context is ready to execute operations.
                 c.PA_CONTEXT_READY => break,
@@ -87,11 +181,11 @@ pub const Context = struct {
 
         // subscribe to events
         if (options.deviceChangeFn != null) {
-            c.pa_context_set_subscribe_callback(ctx, subscribeOp, self);
+            lib.pa_context_set_subscribe_callback(ctx, subscribeOp, self);
             const events = c.PA_SUBSCRIPTION_MASK_SINK | c.PA_SUBSCRIPTION_MASK_SOURCE;
-            const subscribe_op = c.pa_context_subscribe(ctx, events, null, self) orelse
+            const subscribe_op = lib.pa_context_subscribe(ctx, events, null, self) orelse
                 return error.OutOfMemory;
-            c.pa_operation_unref(subscribe_op);
+            lib.pa_operation_unref(subscribe_op);
         }
 
         return .{ .pulseaudio = self };
@@ -105,34 +199,35 @@ pub const Context = struct {
     fn contextStateOp(ctx: ?*c.pa_context, user_data: ?*anyopaque) callconv(.C) void {
         var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
 
-        self.ctx_state = c.pa_context_get_state(ctx);
-        c.pa_threaded_mainloop_signal(self.main_loop, 0);
+        self.ctx_state = lib.pa_context_get_state(ctx);
+        lib.pa_threaded_mainloop_signal(self.main_loop, 0);
     }
 
     pub fn deinit(self: *Context) void {
-        c.pa_context_set_subscribe_callback(self.ctx, null, null);
-        c.pa_context_set_state_callback(self.ctx, null, null);
-        c.pa_context_disconnect(self.ctx);
-        c.pa_context_unref(self.ctx);
-        c.pa_threaded_mainloop_stop(self.main_loop);
-        c.pa_threaded_mainloop_free(self.main_loop);
+        lib.pa_context_set_subscribe_callback(self.ctx, null, null);
+        lib.pa_context_set_state_callback(self.ctx, null, null);
+        lib.pa_context_disconnect(self.ctx);
+        lib.pa_context_unref(self.ctx);
+        lib.pa_threaded_mainloop_stop(self.main_loop);
+        lib.pa_threaded_mainloop_free(self.main_loop);
         for (self.devices_info.list.items) |d|
             freeDevice(self.allocator, d);
         self.devices_info.list.deinit(self.allocator);
         self.allocator.destroy(self);
+        lib.handle.close();
     }
 
     pub fn refresh(self: *Context) !void {
-        c.pa_threaded_mainloop_lock(self.main_loop);
-        defer c.pa_threaded_mainloop_unlock(self.main_loop);
+        lib.pa_threaded_mainloop_lock(self.main_loop);
+        defer lib.pa_threaded_mainloop_unlock(self.main_loop);
 
         for (self.devices_info.list.items) |d|
             freeDevice(self.allocator, d);
         self.devices_info.clear(self.allocator);
 
-        const list_sink_op = c.pa_context_get_sink_info_list(self.ctx, sinkInfoOp, self);
-        const list_source_op = c.pa_context_get_source_info_list(self.ctx, sourceInfoOp, self);
-        const server_info_op = c.pa_context_get_server_info(self.ctx, serverInfoOp, self);
+        const list_sink_op = lib.pa_context_get_sink_info_list(self.ctx, sinkInfoOp, self);
+        const list_source_op = lib.pa_context_get_source_info_list(self.ctx, sourceInfoOp, self);
+        const server_info_op = lib.pa_context_get_server_info(self.ctx, serverInfoOp, self);
 
         performOperation(self.main_loop, list_sink_op);
         performOperation(self.main_loop, list_source_op);
@@ -162,7 +257,7 @@ pub const Context = struct {
     fn serverInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_server_info, user_data: ?*anyopaque) callconv(.C) void {
         var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
 
-        defer c.pa_threaded_mainloop_signal(self.main_loop, 0);
+        defer lib.pa_threaded_mainloop_signal(self.main_loop, 0);
         self.default_sink = self.allocator.dupeZ(u8, std.mem.span(info.*.default_sink_name)) catch return;
         self.default_source = self.allocator.dupeZ(u8, std.mem.span(info.*.default_source_name)) catch {
             self.allocator.free(self.default_sink.?);
@@ -173,7 +268,7 @@ pub const Context = struct {
     fn sinkInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_sink_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
         var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
         if (eol != 0) {
-            c.pa_threaded_mainloop_signal(self.main_loop, 0);
+            lib.pa_threaded_mainloop_signal(self.main_loop, 0);
             return;
         }
 
@@ -183,7 +278,7 @@ pub const Context = struct {
     fn sourceInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_source_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
         var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
         if (eol != 0) {
-            c.pa_threaded_mainloop_signal(self.main_loop, 0);
+            lib.pa_threaded_mainloop_signal(self.main_loop, 0);
             return;
         }
 
@@ -225,8 +320,8 @@ pub const Context = struct {
     }
 
     pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
-        c.pa_threaded_mainloop_lock(self.main_loop);
-        defer c.pa_threaded_mainloop_unlock(self.main_loop);
+        lib.pa_threaded_mainloop_lock(self.main_loop);
+        defer lib.pa_threaded_mainloop_unlock(self.main_loop);
 
         const format = device.preferredFormat(options.format);
         const sample_rate = device.sample_rate.clamp(options.sample_rate);
@@ -239,13 +334,13 @@ pub const Context = struct {
 
         const channel_map = try toPAChannelMap(device.channels);
 
-        var stream = c.pa_stream_new(self.ctx, self.app_name.ptr, &sample_spec, &channel_map);
+        var stream = lib.pa_stream_new(self.ctx, self.app_name.ptr, &sample_spec, &channel_map);
         if (stream == null)
             return error.OutOfMemory;
-        errdefer c.pa_stream_unref(stream);
+        errdefer lib.pa_stream_unref(stream);
 
         var status: StreamStatus = .{ .main_loop = self.main_loop, .status = .unknown };
-        c.pa_stream_set_state_callback(stream, streamStateOp, &status);
+        lib.pa_stream_set_state_callback(stream, streamStateOp, &status);
 
         const buf_attr = c.pa_buffer_attr{
             .maxlength = std.math.maxInt(u32),
@@ -261,14 +356,14 @@ pub const Context = struct {
             c.PA_STREAM_INTERPOLATE_TIMING |
             c.PA_STREAM_ADJUST_LATENCY;
 
-        if (c.pa_stream_connect_playback(stream, device.id.ptr, &buf_attr, flags, null, null) != 0) {
+        if (lib.pa_stream_connect_playback(stream, device.id.ptr, &buf_attr, flags, null, null) != 0) {
             return error.OpeningDevice;
         }
-        errdefer _ = c.pa_stream_disconnect(stream);
+        errdefer _ = lib.pa_stream_disconnect(stream);
 
         while (true) {
             switch (status.status) {
-                .unknown => c.pa_threaded_mainloop_wait(self.main_loop),
+                .unknown => lib.pa_threaded_mainloop_wait(self.main_loop),
                 .ready => break,
                 .failure => return error.OpeningDevice,
             }
@@ -304,18 +399,18 @@ pub const Context = struct {
     fn streamStateOp(stream: ?*c.pa_stream, user_data: ?*anyopaque) callconv(.C) void {
         var self = @ptrCast(*StreamStatus, @alignCast(@alignOf(*StreamStatus), user_data.?));
 
-        switch (c.pa_stream_get_state(stream)) {
+        switch (lib.pa_stream_get_state(stream)) {
             c.PA_STREAM_UNCONNECTED,
             c.PA_STREAM_CREATING,
             c.PA_STREAM_TERMINATED,
             => {},
             c.PA_STREAM_READY => {
                 self.status = .ready;
-                c.pa_threaded_mainloop_signal(self.main_loop, 0);
+                lib.pa_threaded_mainloop_signal(self.main_loop, 0);
             },
             c.PA_STREAM_FAILED => {
                 self.status = .failure;
-                c.pa_threaded_mainloop_signal(self.main_loop, 0);
+                lib.pa_threaded_mainloop_signal(self.main_loop, 0);
             },
             else => unreachable,
         }
@@ -338,26 +433,26 @@ pub const Player = struct {
     write_step: u8,
 
     pub fn deinit(self: *Player) void {
-        c.pa_threaded_mainloop_lock(self.main_loop);
-        c.pa_stream_set_write_callback(self.stream, null, null);
-        c.pa_stream_set_state_callback(self.stream, null, null);
-        c.pa_stream_set_underflow_callback(self.stream, null, null);
-        c.pa_stream_set_overflow_callback(self.stream, null, null);
-        _ = c.pa_stream_disconnect(self.stream);
-        c.pa_stream_unref(self.stream);
-        c.pa_threaded_mainloop_unlock(self.main_loop);
+        lib.pa_threaded_mainloop_lock(self.main_loop);
+        lib.pa_stream_set_write_callback(self.stream, null, null);
+        lib.pa_stream_set_state_callback(self.stream, null, null);
+        lib.pa_stream_set_underflow_callback(self.stream, null, null);
+        lib.pa_stream_set_overflow_callback(self.stream, null, null);
+        _ = lib.pa_stream_disconnect(self.stream);
+        lib.pa_stream_unref(self.stream);
+        lib.pa_threaded_mainloop_unlock(self.main_loop);
 
         self.allocator.destroy(self);
     }
 
     pub fn start(self: *Player) !void {
-        c.pa_threaded_mainloop_lock(self.main_loop);
-        defer c.pa_threaded_mainloop_unlock(self.main_loop);
+        lib.pa_threaded_mainloop_lock(self.main_loop);
+        defer lib.pa_threaded_mainloop_unlock(self.main_loop);
 
-        const op = c.pa_stream_cork(self.stream, 0, null, null) orelse
+        const op = lib.pa_stream_cork(self.stream, 0, null, null) orelse
             return error.CannotPlay;
-        c.pa_operation_unref(op);
-        c.pa_stream_set_write_callback(self.stream, playbackStreamWriteOp, self);
+        lib.pa_operation_unref(op);
+        lib.pa_stream_set_write_callback(self.stream, playbackStreamWriteOp, self);
     }
 
     fn playbackStreamWriteOp(_: ?*c.pa_stream, nbytes: usize, user_data: ?*anyopaque) callconv(.C) void {
@@ -366,7 +461,7 @@ pub const Player = struct {
         var frames_left = nbytes;
         while (frames_left > 0) {
             var chunk_size = frames_left;
-            if (c.pa_stream_begin_write(
+            if (lib.pa_stream_begin_write(
                 self.stream,
                 @ptrCast(
                     [*c]?*anyopaque,
@@ -385,7 +480,7 @@ pub const Player = struct {
             const frames = chunk_size / self.format.frameSize(self.channels.len);
             self.writeFn(self.user_data, frames);
 
-            if (c.pa_stream_write(self.stream, self.write_ptr, chunk_size, null, 0, c.PA_SEEK_RELATIVE) != 0) {
+            if (lib.pa_stream_write(self.stream, self.write_ptr, chunk_size, null, 0, c.PA_SEEK_RELATIVE) != 0) {
                 if (std.debug.runtime_safety) unreachable;
                 return;
             }
@@ -395,47 +490,47 @@ pub const Player = struct {
     }
 
     pub fn play(self: *Player) !void {
-        c.pa_threaded_mainloop_lock(self.main_loop);
-        defer c.pa_threaded_mainloop_unlock(self.main_loop);
+        lib.pa_threaded_mainloop_lock(self.main_loop);
+        defer lib.pa_threaded_mainloop_unlock(self.main_loop);
 
-        if (c.pa_stream_is_corked(self.stream) > 0) {
-            const op = c.pa_stream_cork(self.stream, 0, null, null) orelse
+        if (lib.pa_stream_is_corked(self.stream) > 0) {
+            const op = lib.pa_stream_cork(self.stream, 0, null, null) orelse
                 return error.CannotPlay;
-            c.pa_operation_unref(op);
+            lib.pa_operation_unref(op);
         }
     }
 
     pub fn pause(self: *Player) !void {
-        c.pa_threaded_mainloop_lock(self.main_loop);
-        defer c.pa_threaded_mainloop_unlock(self.main_loop);
+        lib.pa_threaded_mainloop_lock(self.main_loop);
+        defer lib.pa_threaded_mainloop_unlock(self.main_loop);
 
-        if (c.pa_stream_is_corked(self.stream) == 0) {
-            const op = c.pa_stream_cork(self.stream, 1, null, null) orelse
+        if (lib.pa_stream_is_corked(self.stream) == 0) {
+            const op = lib.pa_stream_cork(self.stream, 1, null, null) orelse
                 return error.CannotPause;
-            c.pa_operation_unref(op);
+            lib.pa_operation_unref(op);
         }
     }
 
     pub fn paused(self: *Player) bool {
-        c.pa_threaded_mainloop_lock(self.main_loop);
-        defer c.pa_threaded_mainloop_unlock(self.main_loop);
+        lib.pa_threaded_mainloop_lock(self.main_loop);
+        defer lib.pa_threaded_mainloop_unlock(self.main_loop);
 
-        return c.pa_stream_is_corked(self.stream) > 0;
+        return lib.pa_stream_is_corked(self.stream) > 0;
     }
 
     pub fn setVolume(self: *Player, vol: f32) !void {
-        c.pa_threaded_mainloop_lock(self.main_loop);
-        defer c.pa_threaded_mainloop_unlock(self.main_loop);
+        lib.pa_threaded_mainloop_lock(self.main_loop);
+        defer lib.pa_threaded_mainloop_unlock(self.main_loop);
 
         var cvolume: c.pa_cvolume = undefined;
-        _ = c.pa_cvolume_init(&cvolume);
-        _ = c.pa_cvolume_set(&cvolume, @intCast(c_uint, self.channels.len), c.pa_sw_volume_from_linear(vol));
+        _ = lib.pa_cvolume_init(&cvolume);
+        _ = lib.pa_cvolume_set(&cvolume, @intCast(c_uint, self.channels.len), lib.pa_sw_volume_from_linear(vol));
 
         performOperation(
             self.main_loop,
-            c.pa_context_set_sink_input_volume(
+            lib.pa_context_set_sink_input_volume(
                 self.ctx,
-                c.pa_stream_get_index(self.stream),
+                lib.pa_stream_get_index(self.stream),
                 &cvolume,
                 successOp,
                 self,
@@ -446,18 +541,18 @@ pub const Player = struct {
     fn successOp(_: ?*c.pa_context, success: c_int, user_data: ?*anyopaque) callconv(.C) void {
         var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), user_data.?));
         if (success == 1)
-            c.pa_threaded_mainloop_signal(self.main_loop, 0);
+            lib.pa_threaded_mainloop_signal(self.main_loop, 0);
     }
 
     pub fn volume(self: *Player) !f32 {
-        c.pa_threaded_mainloop_lock(self.main_loop);
-        defer c.pa_threaded_mainloop_unlock(self.main_loop);
+        lib.pa_threaded_mainloop_lock(self.main_loop);
+        defer lib.pa_threaded_mainloop_unlock(self.main_loop);
 
         performOperation(
             self.main_loop,
-            c.pa_context_get_sink_input_info(
+            lib.pa_context_get_sink_input_info(
                 self.ctx,
-                c.pa_stream_get_index(self.stream),
+                lib.pa_stream_get_index(self.stream),
                 sinkInputInfoOp,
                 self,
             ),
@@ -470,7 +565,7 @@ pub const Player = struct {
         var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), user_data.?));
 
         if (eol != 0) {
-            c.pa_threaded_mainloop_signal(self.main_loop, 0);
+            lib.pa_threaded_mainloop_signal(self.main_loop, 0);
             return;
         }
 
@@ -486,12 +581,12 @@ fn freeDevice(allocator: std.mem.Allocator, device: main.Device) void {
 
 fn performOperation(main_loop: *c.pa_threaded_mainloop, op: ?*c.pa_operation) void {
     while (true) {
-        switch (c.pa_operation_get_state(op)) {
-            c.PA_OPERATION_RUNNING => c.pa_threaded_mainloop_wait(main_loop),
-            c.PA_OPERATION_DONE => return c.pa_operation_unref(op),
+        switch (lib.pa_operation_get_state(op)) {
+            c.PA_OPERATION_RUNNING => lib.pa_threaded_mainloop_wait(main_loop),
+            c.PA_OPERATION_DONE => return lib.pa_operation_unref(op),
             c.PA_OPERATION_CANCELLED => {
                 std.debug.assert(false);
-                c.pa_operation_unref(op);
+                lib.pa_operation_unref(op);
                 return;
             },
             else => unreachable,
