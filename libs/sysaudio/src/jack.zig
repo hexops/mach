@@ -11,7 +11,7 @@ pub const Context = struct {
     watcher: ?Watcher,
 
     const Watcher = struct {
-        deviceChangeFn: main.DeviceChangeFn,
+        deviceChangeFn: main.Context.DeviceChangeFn,
         user_data: ?*anyopaque,
     };
 
