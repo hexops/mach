@@ -12,7 +12,7 @@ pub const Context = struct {
     is_wine: bool,
 
     const Watcher = struct {
-        deviceChangeFn: main.DeviceChangeFn,
+        deviceChangeFn: main.Context.DeviceChangeFn,
         user_data: ?*anyopaque,
         notif_client: win32.IMMNotificationClient,
     };

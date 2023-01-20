@@ -3,21 +3,14 @@ const std = @import("std");
 const util = @import("util.zig");
 const backends = @import("backends.zig");
 
+pub const Backend = backends.Backend;
 pub const default_sample_rate = 44_100; // Hz
 pub const default_latency = 500 * std.time.us_per_ms; // μs
 pub const min_sample_rate = 8_000; // Hz
 pub const max_sample_rate = 5_644_800; // Hz
 
-pub const Backend = backends.Backend;
-pub const DeviceChangeFn = *const fn (self: ?*anyopaque) void;
-pub const ConnectError = error{
-    OutOfMemory,
-    AccessDenied,
-    SystemResources,
-    ConnectionRefused,
-};
-
 pub const Context = struct {
+    pub const DeviceChangeFn = *const fn (self: ?*anyopaque) void;
     pub const Options = struct {
         app_name: [:0]const u8 = "Mach Game",
         deviceChangeFn: ?DeviceChangeFn = null,
@@ -26,7 +19,16 @@ pub const Context = struct {
 
     data: backends.BackendContext,
 
-    pub fn init(comptime backend: ?Backend, allocator: std.mem.Allocator, options: Options) ConnectError!Context {
+    pub const InitError = error{
+        OutOfMemory,
+        AccessDenied,
+        LibraryNotFound,
+        SymbolLookup,
+        SystemResources,
+        ConnectionRefused,
+    };
+
+    pub fn init(comptime backend: ?Backend, allocator: std.mem.Allocator, options: Options) InitError!Context {
         var data: backends.BackendContext = blk: {
             if (backend) |b| {
                 break :blk try @typeInfo(
