@@ -303,25 +303,25 @@ pub const Player = struct {
         if (buf.*.buffer.*.datas[0].data == null) return;
         defer _ = lib.pw_stream_queue_buffer(self.stream, buf);
 
+        buf.*.buffer.*.datas[0].chunk.*.offset = 0;
+        if (self.is_paused.load(.Unordered)) {
+            buf.*.buffer.*.datas[0].chunk.*.stride = 0;
+            buf.*.buffer.*.datas[0].chunk.*.size = 0;
+            return;
+        }
+
         const stride = self.format.frameSize(self.channels.len);
         const n_frames = std.math.min(
             buf.*.requested,
             buf.*.buffer.*.datas[0].maxsize / stride,
         );
+        buf.*.buffer.*.datas[0].chunk.*.stride = stride;
+        buf.*.buffer.*.datas[0].chunk.*.size = n_frames * stride;
 
         for (self.channels) |*ch, i| {
-            ch.*.ptr = @ptrCast([*]u8, buf.*.buffer.*.datas[0].data.?) + self.format.frameSize(i);
+            ch.ptr = @ptrCast([*]u8, buf.*.buffer.*.datas[0].data.?) + self.format.frameSize(i);
         }
-
-        buf.*.buffer.*.datas[0].chunk.*.offset = 0;
-        if (!self.is_paused.load(.Unordered)) {
-            buf.*.buffer.*.datas[0].chunk.*.stride = stride;
-            buf.*.buffer.*.datas[0].chunk.*.size = n_frames * stride;
-            self.writeFn(self.user_data, n_frames);
-        } else {
-            buf.*.buffer.*.datas[0].chunk.*.stride = 0;
-            buf.*.buffer.*.datas[0].chunk.*.size = 0;
-        }
+        self.writeFn(self.user_data, n_frames);
     }
 
     pub fn deinit(self: *Player) void {

@@ -7,7 +7,7 @@ const util = @import("util.zig");
 const channel_size = 1024;
 const channel_size_bytes = channel_size * @sizeOf(f32);
 
-const dummy_playback = main.Device{
+const default_playback = main.Device{
     .id = "default-playback",
     .name = "Default Device",
     .mode = .playback,
@@ -52,7 +52,7 @@ pub const Context = struct {
             freeDevice(self.allocator, d);
         self.devices_info.clear(self.allocator);
 
-        try self.devices_info.list.append(self.allocator, dummy_playback);
+        try self.devices_info.list.append(self.allocator, default_playback);
         self.devices_info.list.items[0].channels = try self.allocator.alloc(main.Channel, 2);
         self.devices_info.list.items[0].channels[0] = .{ .id = .front_left };
         self.devices_info.list.items[0].channels[1] = .{ .id = .front_right };
