@@ -8,6 +8,7 @@ const std = @import("std");
 const projects = [_][]const u8{
     ".",
     "basisu",
+    "earcut",
     "ecs",
     "freetype",
     "gamemode",
@@ -17,7 +18,6 @@ const projects = [_][]const u8{
     "model3d",
     "sysaudio",
     "sysjs",
-    "earcut",
 };
 
 pub fn main() !void {
@@ -48,6 +48,7 @@ pub fn main() !void {
         \\libs/DirectXShaderCompiler
         \\libs/dawn
     );
+    appendToFile(".gitattributes", "libs/model3d/src/c/** linguist-vendored");
 }
 
 pub fn copyFile(src_path: []const u8, dst_path: []const u8) void {
