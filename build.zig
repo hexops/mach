@@ -219,6 +219,7 @@ pub const App = struct {
         const step = blk: {
             if (platform == .web) {
                 const lib = b.addSharedLibrary(options.name, sdkPath("/src/main.zig"), .unversioned);
+                lib.rdynamic = true;
                 lib.addPackage(sysjs.pkg);
 
                 break :blk lib;
