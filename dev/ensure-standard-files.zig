@@ -8,6 +8,7 @@ const std = @import("std");
 const projects = [_][]const u8{
     ".",
     "basisu",
+    "core",
     "earcut",
     "ecs",
     "freetype",
