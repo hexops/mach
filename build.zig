@@ -288,13 +288,7 @@ pub const App = struct {
 
             const html_generator = app.b.addExecutable("html-generator", sdkPath("/tools/html-generator/main.zig"));
             const run_html_generator = html_generator.run();
-            const html_file_name = std.mem.concat(
-                app.b.allocator,
-                u8,
-                &.{ app.name, ".html" },
-            ) catch unreachable;
-            defer app.b.allocator.free(html_file_name);
-            run_html_generator.addArgs(&.{ html_file_name, app.name });
+            run_html_generator.addArgs(&.{ "index.html", app.name });
 
             run_html_generator.cwd = app.b.getInstallPath(web_install_dir, "");
             app.getInstallStep().?.step.dependOn(&run_html_generator.step);
