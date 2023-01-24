@@ -72,7 +72,7 @@ pub fn build(b: *Builder) !void {
 }
 
 fn testStep(b: *Builder, mode: std.builtin.Mode, target: CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("mach-tests", "src/main.zig");
+    const main_tests = b.addTestExe("core-tests", "src/main.zig");
     main_tests.setBuildMode(mode);
     main_tests.setTarget(target);
     for (pkg.dependencies.?) |dependency| {
