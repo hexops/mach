@@ -83,7 +83,7 @@ fn testStep(b: *Builder, mode: std.builtin.Mode, target: CrossTarget) *std.build
 }
 
 fn buildSharedLib(b: *Builder, mode: std.builtin.Mode, target: CrossTarget, options: Options) !*std.build.LibExeObjStep {
-    const lib = b.addSharedLibrary("mach", "src/platform/libmachcore.zig", .unversioned);
+    const lib = b.addSharedLibrary("machcore", "src/platform/libmachcore.zig", .unversioned);
     lib.setTarget(target);
     lib.setBuildMode(mode);
     lib.main_pkg_path = "src/";
