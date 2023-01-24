@@ -1,10 +1,14 @@
-pub usingnamespace @import("entry.zig");
-pub const Core = @import("Core.zig");
-pub const Timer = @import("Timer.zig");
-pub const gpu = @import("gpu");
+const core = @import("core");
+pub const GPUInterface = core.GPUInterface;
+pub const scope_levels = core.scope_levels;
+pub const log_level = core.log_level;
+pub const Core = core.Core;
+pub const Timer = core.Timer;
+pub const gpu = core.gpu;
+pub const sysjs = core.sysjs;
+
 pub const ecs = @import("ecs");
 pub const sysaudio = @import("sysaudio");
-pub const sysjs = @import("sysjs");
 pub const earcut = @import("earcut");
 pub const gfx = @import("gfx/util.zig");
 pub const ResourceManager = @import("resource/ResourceManager.zig");
