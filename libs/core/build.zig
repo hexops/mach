@@ -19,7 +19,7 @@ const Pkg = std.build.Pkg;
 pub const pkg = Pkg{
     .name = "core",
     .source = .{ .path = sdkPath("/src/main.zig") },
-    .dependencies = &.{ gpu.pkg },
+    .dependencies = &.{gpu.pkg},
 };
 
 pub const Options = struct {
