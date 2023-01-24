@@ -1,7 +1,8 @@
+const Core = @import("core").Core;
+const gpu = @import("core").gpu;
+
 const std = @import("std");
-pub const Core = @import("Core.zig");
-pub const gpu = @import("gpu");
-pub const ecs = @import("ecs");
+const ecs = @import("ecs");
 
 /// The Mach engine ECS module. This enables access to `engine.get(.mach, .core)` `*Core` APIs, as
 /// to for example `.setOptions(.{.title = "foobar"})`, or to access the GPU device via
