@@ -1,41 +1,30 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const system_sdk = @import("libs/glfw/system_sdk.zig");
-const glfw = @import("libs/glfw/build.zig");
-const ecs = @import("libs/ecs/build.zig");
-const freetype = @import("libs/freetype/build.zig");
-const basisu = @import("libs/basisu/build.zig");
-const sysjs = @import("libs/sysjs/build.zig");
-const earcut = @import("libs/earcut/build.zig");
-const gamemode = @import("libs/gamemode/build.zig");
-const model3d = @import("libs/model3d/build.zig");
-const wasmserve = @import("tools/wasmserve/wasmserve.zig");
-const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
-    .glfw_include_dir = sdkPath("/libs/glfw/upstream/glfw/include"),
+const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
+const glfw = @import("libs/mach-glfw/build.zig");
+const sysjs = @import("libs/mach-sysjs/build.zig");
+const gamemode = @import("libs/mach-gamemode/build.zig");
+const wasmserve = @import("libs/mach-wasmserve/wasmserve.zig");
+const gpu_dawn = @import("libs/mach-gpu-dawn/sdk.zig").Sdk(.{
+    .glfw_include_dir = sdkPath("/libs/mach-glfw/upstream/glfw/include"),
     .system_sdk = system_sdk,
 });
-const gpu = @import("libs/gpu/sdk.zig").Sdk(.{
+const gpu = @import("libs/mach-gpu/sdk.zig").Sdk(.{
     .gpu_dawn = gpu_dawn,
-});
-const sysaudio = @import("libs/sysaudio/sdk.zig").Sdk(.{
-    .system_sdk = system_sdk,
-    .sysjs = sysjs,
 });
 const CrossTarget = std.zig.CrossTarget;
 const Builder = std.build.Builder;
 const Pkg = std.build.Pkg;
 
 pub const pkg = Pkg{
-    .name = "mach",
+    .name = "core",
     .source = .{ .path = sdkPath("/src/main.zig") },
-    .dependencies = &.{ gpu.pkg, ecs.pkg, sysaudio.pkg, earcut.pkg },
+    .dependencies = &.{ gpu.pkg },
 };
 
 pub const Options = struct {
     glfw_options: glfw.Options = .{},
     gpu_dawn_options: gpu_dawn.Options = .{},
-    sysaudio_options: sysaudio.Options = .{},
-    freetype_options: freetype.Options = .{},
 
     pub fn gpuOptions(options: Options) gpu.Options {
         return .{
@@ -58,29 +47,14 @@ pub fn build(b: *Builder) !void {
         const all_tests_step = b.step("test", "Run library tests");
         const glfw_test_step = b.step("test-glfw", "Run GLFW library tests");
         const gpu_test_step = b.step("test-gpu", "Run GPU library tests");
-        const ecs_test_step = b.step("test-ecs", "Run ECS library tests");
-        const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
-        const basisu_test_step = b.step("test-basisu", "Run Basis-Universal library tests");
-        const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
-        const model3d_test_step = b.step("test-model3d", "Run Model3D library tests");
         const mach_test_step = b.step("test-mach", "Run Mach Core library tests");
 
         glfw_test_step.dependOn(&(try glfw.testStep(b, mode, target)).step);
         gpu_test_step.dependOn(&(try gpu.testStep(b, mode, target, options.gpuOptions())).step);
-        freetype_test_step.dependOn(&freetype.testStep(b, mode, target).step);
-        ecs_test_step.dependOn(&ecs.testStep(b, mode, target).step);
-        basisu_test_step.dependOn(&basisu.testStep(b, mode, target).step);
-        sysaudio_test_step.dependOn(&sysaudio.testStep(b, mode, target).step);
-        model3d_test_step.dependOn(&model3d.testStep(b, mode, target).step);
         mach_test_step.dependOn(&testStep(b, mode, target).step);
 
         all_tests_step.dependOn(glfw_test_step);
         all_tests_step.dependOn(gpu_test_step);
-        all_tests_step.dependOn(ecs_test_step);
-        all_tests_step.dependOn(basisu_test_step);
-        all_tests_step.dependOn(freetype_test_step);
-        all_tests_step.dependOn(sysaudio_test_step);
-        all_tests_step.dependOn(model3d_test_step);
         all_tests_step.dependOn(mach_test_step);
 
         // TODO: we need a way to test wasm stuff
@@ -88,27 +62,7 @@ pub fn build(b: *Builder) !void {
         // sysjs_test_step.dependOn(&sysjs.testStep(b, mode, target).step);
         // all_tests_step.dependOn(sysjs_test_step);
 
-        const shaderexp_app = try App.init(
-            b,
-            .{
-                .name = "shaderexp",
-                .src = "shaderexp/main.zig",
-                .target = target,
-                .mode = mode,
-            },
-        );
-        try shaderexp_app.link(options);
-        shaderexp_app.install();
-
-        const shaderexp_compile_step = b.step("shaderexp", "Compile shaderexp");
-        shaderexp_compile_step.dependOn(&shaderexp_app.getInstallStep().?.step);
-
-        const shaderexp_run_cmd = try shaderexp_app.run();
-        shaderexp_run_cmd.dependOn(&shaderexp_app.getInstallStep().?.step);
-        const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
-        shaderexp_run_step.dependOn(shaderexp_run_cmd);
-
-        // Compiles the `libmach` shared library
+        // Compiles the `libmachcore` shared library
         const shared_lib = try buildSharedLib(b, mode, target, options);
         shared_lib.install();
     }
@@ -129,25 +83,23 @@ fn testStep(b: *Builder, mode: std.builtin.Mode, target: CrossTarget) *std.build
 }
 
 fn buildSharedLib(b: *Builder, mode: std.builtin.Mode, target: CrossTarget, options: Options) !*std.build.LibExeObjStep {
-    const lib = b.addSharedLibrary("mach", "src/platform/libmach.zig", .unversioned);
+    const lib = b.addSharedLibrary("mach", "src/platform/libmachcore.zig", .unversioned);
     lib.setTarget(target);
     lib.setBuildMode(mode);
     lib.main_pkg_path = "src/";
     const app_pkg = Pkg{
         .name = "app",
-        .source = .{ .path = "src/platform/libmach.zig" },
+        .source = .{ .path = "src/platform/libmachcore.zig" },
     };
     lib.addPackage(app_pkg);
     lib.addPackage(glfw.pkg);
     lib.addPackage(gpu.pkg);
-    lib.addPackage(sysaudio.pkg);
     if (target.isLinux()) {
         lib.addPackage(gamemode.pkg);
         gamemode.link(lib);
     }
     try glfw.link(b, lib, options.glfw_options);
     try gpu.link(b, lib, options.gpuOptions());
-    lib.setOutputDir("libmach/build");
     return lib;
 }
 
@@ -160,8 +112,6 @@ pub const App = struct {
     platform: Platform,
     res_dirs: ?[]const []const u8,
     watch_paths: ?[]const []const u8,
-    use_freetype: ?[]const u8 = null,
-    use_model3d: bool = false,
 
     pub const InitError = error{OutOfMemory} || std.zig.system.NativeTargetInfo.DetectError;
     pub const LinkError = glfw.LinkError;
@@ -189,11 +139,6 @@ pub const App = struct {
             deps: ?[]const Pkg = null,
             res_dirs: ?[]const []const u8 = null,
             watch_paths: ?[]const []const u8 = null,
-
-            /// If set, freetype will be linked and can be imported using this name.
-            // TODO(build-system): name is currently not used / always "freetype"
-            use_freetype: ?[]const u8 = null,
-            use_model3d: bool = false,
         },
     ) InitError!App {
         const target = (try std.zig.system.NativeTargetInfo.detect(options.target)).target;
@@ -202,12 +147,10 @@ pub const App = struct {
         var deps = std.ArrayList(Pkg).init(b.allocator);
         try deps.append(pkg);
         try deps.append(gpu.pkg);
-        try deps.append(sysaudio.pkg);
         switch (platform) {
             .native => try deps.append(glfw.pkg),
             .web => try deps.append(sysjs.pkg),
         }
-        if (options.use_freetype) |_| try deps.append(freetype.pkg);
         if (options.deps) |app_deps| try deps.appendSlice(app_deps);
 
         const app_pkg = Pkg{
@@ -235,8 +178,6 @@ pub const App = struct {
         };
 
         step.main_pkg_path = sdkPath("/src");
-        step.addPackage(ecs.pkg);
-        step.addPackage(sysaudio.pkg);
         step.addPackage(gpu.pkg);
         step.addPackage(app_pkg);
         step.setTarget(options.target);
@@ -249,8 +190,6 @@ pub const App = struct {
             .platform = platform,
             .res_dirs = options.res_dirs,
             .watch_paths = options.watch_paths,
-            .use_freetype = options.use_freetype,
-            .use_model3d = options.use_model3d,
         };
     }
 
@@ -260,11 +199,6 @@ pub const App = struct {
             gpu.link(app.b, app.step, options.gpuOptions()) catch return error.FailedToLinkGPU;
             if (app.step.target.isLinux())
                 gamemode.link(app.step);
-        }
-        sysaudio.link(app.b, app.step, options.sysaudio_options);
-        if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype_options);
-        if (app.use_model3d) {
-            model3d.link(app.b, app.step, app.step.target);
         }
     }
 
