@@ -115,6 +115,11 @@ fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.Cross
 }
 
 pub const App = struct {
+    b: *std.build.Builder,
+    name: []const u8,
+    step: *std.build.LibExeObjStep,
+    platform: core.App.Platform,
+
     core: core.App,
     use_freetype: ?[]const u8 = null,
     use_model3d: bool = false,
@@ -146,16 +151,21 @@ pub const App = struct {
         try deps.append(sysaudio.pkg);
         if (options.use_freetype) |_| try deps.append(freetype.pkg);
 
+        const app = try core.App.init(b, .{
+            .name = options.name,
+            .src = options.src,
+            .target = options.target,
+            .mode = options.mode,
+            .deps = deps.items,
+            .res_dirs = options.res_dirs,
+            .watch_paths = options.watch_paths,
+        });
         return .{
-            .core = try core.App.init(b, .{
-                .name = options.name,
-                .src = options.src,
-                .target = options.target,
-                .mode = options.mode,
-                .deps = deps.items,
-                .res_dirs = options.res_dirs,
-                .watch_paths = options.watch_paths,
-            }),
+            .core = app,
+            .b = app.b,
+            .name = app.name,
+            .step = app.step,
+            .platform = app.platform,
             .use_freetype = options.use_freetype,
             .use_model3d = options.use_model3d,
         };
@@ -163,10 +173,10 @@ pub const App = struct {
 
     pub fn link(app: *const App, options: Options) LinkError!void {
         try app.core.link(options.core);
-        sysaudio.link(app.core.b, app.core.step, options.sysaudio);
-        if (app.use_freetype) |_| freetype.link(app.core.b, app.core.step, options.freetype);
+        sysaudio.link(app.b, app.step, options.sysaudio);
+        if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype);
         if (app.use_model3d) {
-            model3d.link(app.core.b, app.core.step, app.core.step.target);
+            model3d.link(app.b, app.step, app.step.target);
         }
     }
 
