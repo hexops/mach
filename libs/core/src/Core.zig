@@ -24,12 +24,16 @@ pub fn deinit(core: *Core) void {
     return core.internal.deinit();
 }
 
-pub fn hasEvent(core: *Core) bool {
-    return core.internal.hasEvent();
-}
+pub const EventIterator = struct {
+    internal: platform.Core.EventIterator,
 
-pub fn pollEvents(core: *Core) ?Event {
-    return core.internal.pollEvents();
+    pub inline fn next(self: *EventIterator) ?Event {
+        return self.internal.next();
+    }
+};
+
+pub inline fn pollEvents(core: *Core) EventIterator {
+    return .{ .internal = core.internal.pollEvents() };
 }
 
 /// Returns the framebuffer size, in subpixel units.
