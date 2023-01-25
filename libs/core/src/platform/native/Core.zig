@@ -45,8 +45,15 @@ cursors_tried: [@typeInfo(CursorShape).Enum.fields.len]bool,
 
 linux_gamemode: ?bool,
 
-const EventQueue = std.TailQueue(Event);
-const EventNode = EventQueue.Node;
+const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
+
+pub const EventIterator = struct {
+    queue: *EventQueue,
+
+    pub inline fn next(self: *EventIterator) ?Event {
+        return self.queue.readItem();
+    }
+};
 
 const UserPtr = struct {
     self: *Core,
@@ -153,6 +160,14 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
     };
     const swap_chain = gpu_device.createSwapChain(surface, &swap_chain_desc);
 
+    // The initial capacity we choose for the event queue is 2x our maximum expected event rate per
+    // frame. Specifically, 1000hz mouse updates are likely the maximum event rate we will encounter
+    // so we anticipate 2x that. If the event rate is higher than this per frame, it will grow to
+    // that maximum (we never shrink the event queue capacity in order to avoid allocations causing
+    // any stutter.)
+    var events = EventQueue.init(allocator);
+    try events.ensureTotalCapacity(2048);
+
     core.* = .{
         .allocator = allocator,
         .window = window,
@@ -166,7 +181,7 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
         .swap_chain = swap_chain,
         .swap_chain_desc = swap_chain_desc,
 
-        .events = .{},
+        .events = events,
         .wait_timeout = 0.0,
 
         .last_size = window.getSize(),
@@ -292,9 +307,8 @@ fn initCallbacks(self: *Core) void {
 }
 
 fn pushEvent(self: *Core, event: Event) void {
-    const node = self.allocator.create(EventNode) catch unreachable;
-    node.* = .{ .data = event };
-    self.events.append(node);
+    // TODO(core): handle OOM via error flag
+    self.events.writeItem(event) catch unreachable;
 }
 
 pub fn deinit(self: *Core) void {
@@ -303,10 +317,7 @@ pub fn deinit(self: *Core) void {
             cur.destroy();
         }
     }
-
-    while (self.events.popFirst()) |ev| {
-        self.allocator.destroy(ev);
-    }
+    self.events.deinit();
 
     if (builtin.os.tag == .linux and
         self.linux_gamemode != null and
@@ -314,11 +325,7 @@ pub fn deinit(self: *Core) void {
         deinitLinuxGamemode();
 }
 
-pub fn hasEvent(self: *Core) bool {
-    return self.events.first != null;
-}
-
-pub fn pollEvents(self: *Core) ?Event {
+pub inline fn pollEvents(self: *Core) EventIterator {
     if (self.wait_timeout > 0.0) {
         if (self.wait_timeout == std.math.inf(f64)) {
             // Wait for an event
@@ -361,13 +368,7 @@ pub fn pollEvents(self: *Core) ?Event {
         self.pushEvent(.close);
     }
 
-    if (self.events.popFirst()) |n| {
-        const data = n.data;
-        self.allocator.destroy(n);
-        return data;
-    }
-
-    return null;
+    return EventIterator{ .queue = &self.events };
 }
 
 pub fn shouldClose(self: *Core) bool {
