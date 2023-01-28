@@ -38,6 +38,8 @@ last_size: glfw.Window.Size,
 last_pos: glfw.Window.Pos,
 size_limit: SizeLimit,
 frame_buffer_resized: bool,
+display_mode: DisplayMode,
+border: bool,
 
 current_cursor: CursorShape,
 cursors: [@typeInfo(CursorShape).Enum.fields.len]?glfw.Cursor,
@@ -191,6 +193,8 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
             .max = .{ .width = null, .height = null },
         },
         .frame_buffer_resized = false,
+        .display_mode = .windowed,
+        .border = true,
 
         .current_cursor = .arrow,
         .cursors = std.mem.zeroes([@typeInfo(CursorShape).Enum.fields.len]?glfw.Cursor),
@@ -391,10 +395,12 @@ pub fn setTitle(self: *Core, title: [:0]const u8) void {
     self.window.setTitle(title);
 }
 
-pub fn setDisplayMode(self: *Core, mode: DisplayMode, monitor_index: ?usize) !void {
+pub fn setDisplayMode(self: *Core, mode: DisplayMode, monitor_index: ?usize) void {
     switch (mode) {
         .windowed => {
-            try self.window.setMonitor(
+            self.window.setAttrib(.decorated, self.border);
+            self.window.setAttrib(.floating, false);
+            self.window.setMonitor(
                 null,
                 @intCast(i32, self.last_pos.x),
                 @intCast(i32, self.last_pos.y),
@@ -404,41 +410,68 @@ pub fn setDisplayMode(self: *Core, mode: DisplayMode, monitor_index: ?usize) !vo
             );
         },
         .fullscreen => {
-            if (try self.displayMode() == .windowed) {
-                self.last_size = try self.window.getSize();
-                self.last_pos = try self.window.getPos();
+            if (self.display_mode == .windowed) {
+                self.last_size = self.window.getSize();
+                self.last_pos = self.window.getPos();
             }
 
             const monitor = blk: {
                 if (monitor_index) |i| {
-                    const monitor_list = try glfw.Monitor.getAll(self.allocator);
+                    // TODO(core): handle OOM via error flag
+                    const monitor_list = glfw.Monitor.getAll(self.allocator) catch unreachable;
                     defer self.allocator.free(monitor_list);
                     break :blk monitor_list[i];
                 }
                 break :blk glfw.Monitor.getPrimary();
             };
+            if (monitor) |m| {
+                const video_mode = m.getVideoMode();
+                if (video_mode) |v| {
+                    self.window.setMonitor(m, 0, 0, v.getWidth(), v.getHeight(), null);
+                }
+            }
+        },
+        .borderless => {
+            if (self.display_mode == .windowed) {
+                self.last_size = self.window.getSize();
+                self.last_pos = self.window.getPos();
+            }
 
-            const video_mode = try monitor.?.getVideoMode();
-            try self.window.setMonitor(monitor, 0, 0, video_mode.getWidth(), video_mode.getHeight(), null);
+            const monitor = blk: {
+                if (monitor_index) |i| {
+                    // TODO(core): handle OOM via error flag
+                    const monitor_list = glfw.Monitor.getAll(self.allocator) catch unreachable;
+                    defer self.allocator.free(monitor_list);
+                    break :blk monitor_list[i];
+                }
+                break :blk glfw.Monitor.getPrimary();
+            };
+            if (monitor) |m| {
+                const video_mode = m.getVideoMode();
+                if (video_mode) |v| {
+                    self.window.setAttrib(.decorated, false);
+                    self.window.setAttrib(.floating, true);
+                    self.window.setMonitor(null, 0, 0, v.getWidth(), v.getHeight(), null);
+                }
+            }
         },
     }
+    self.display_mode = mode;
 }
 
 pub fn displayMode(self: *Core) DisplayMode {
-    if (self.window.getMonitor()) |_| {
-        return .fullscreen;
-    } else {
-        return .windowed;
-    }
+    return self.display_mode;
 }
 
 pub fn setBorder(self: *Core, value: bool) void {
-    self.window.setAttrib(.decorated, value);
+    if (self.border != value) {
+        self.border = value;
+        if (self.display_mode != .borderless) self.window.setAttrib(.decorated, value);
+    }
 }
 
-pub fn border(self: *Core) !bool {
-    const decorated = try self.window.getAttrib(.decorated);
-    return decorated == 1;
+pub fn border(self: *Core) bool {
+    return self.border;
 }
 
 pub fn setHeadless(self: *Core, value: bool) void {

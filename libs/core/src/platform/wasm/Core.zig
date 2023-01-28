@@ -183,6 +183,10 @@ pub fn setTitle(self: *Core, title: [:0]const u8) void {
 
 pub fn setDisplayMode(self: *Core, mode: DisplayMode, monitor: ?usize) void {
     _ = monitor;
+    if (mode == .borderless) {
+        // borderless fullscreen window has no meaning in web
+        mode = .fullscreen;
+    }
     js.machCanvasSetDisplayMode(self.id, @enumToInt(mode));
 }
 

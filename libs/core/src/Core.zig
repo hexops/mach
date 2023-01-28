@@ -373,9 +373,21 @@ pub const KeyMods = packed struct {
 };
 
 pub const DisplayMode = enum {
+    /// Windowed mode.
     windowed,
+
+    /// Fullscreen mode, using this option may change the display's video mode.
     fullscreen,
-    // TODO: fullscreen_windowed,
+
+    /// Borderless fullscreen window.
+    ///
+    /// Beware that true .fullscreen is also a hint to the OS that is used in various contexts, e.g.
+    ///
+    /// * macOS: Moving to a virtual space dedicated to fullscreen windows as the user expects
+    /// * macOS: .borderless windows cannot prevent the system menu bar from being displayed
+    ///
+    /// Always allow users to choose their preferred display mode.
+    borderless,
 };
 
 pub const CursorMode = enum {
