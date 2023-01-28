@@ -457,7 +457,7 @@ pub fn Sdk(comptime deps: anytype) type {
             defer file.close();
 
             var buf_stream = std.io.bufferedReader(file.reader());
-            var gzip_stream = try std.compress.gzip.gzipStream(allocator, buf_stream.reader());
+            var gzip_stream = try std.compress.gzip.decompress(allocator, buf_stream.reader());
             defer gzip_stream.deinit();
 
             // Read and decompress the whole file
