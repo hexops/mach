@@ -66,7 +66,7 @@ pub const pkg = std.build.Pkg{
 
 pub const LinkError = error{FailedToLinkGPU} || BuildError;
 pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) LinkError!void {
-    const lib = try buildLibrary(b, step.build_mode, step.target, options);
+    const lib = try buildLibrary(b, step.optimize, step.target, options);
     step.linkLibrary(lib);
     addGLFWIncludes(step);
     if (options.shared) {
@@ -78,16 +78,22 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) LinkE
 }
 
 pub const BuildError = error{CannotEnsureDependency} || std.mem.Allocator.Error;
-fn buildLibrary(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) BuildError!*std.build.LibExeObjStep {
+fn buildLibrary(b: *Builder, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget, options: Options) BuildError!*std.build.LibExeObjStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch return error.CannotEnsureDependency;
 
     const lib = if (options.shared)
-        b.addSharedLibrary("glfw", null, .unversioned)
+        b.addSharedLibrary(.{
+            .name = "glfw",
+            .optimize = optimize,
+            .target = target,
+        })
     else
-        b.addStaticLibrary("glfw", null);
-    lib.setBuildMode(mode);
-    lib.setTarget(target);
+        b.addStaticLibrary(.{
+            .name = "glfw",
+            .optimize = optimize,
+            .target = target,
+        });
 
     if (options.shared)
         lib.defineCMacro("_GLFW_BUILD_DLL", null);
