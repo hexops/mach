@@ -113,9 +113,11 @@ pub fn Sdk(comptime deps: anytype) type {
                 return;
             }
 
-            const lib_dawn = b.addStaticLibrary("dawn", null);
-            lib_dawn.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-            lib_dawn.setTarget(step.target);
+            const lib_dawn = b.addStaticLibrary(.{
+                .name = "dawn",
+                .optimize = if (options.debug) .Debug else .ReleaseFast,
+                .target = step.target,
+            });
             lib_dawn.linkLibCpp();
             if (options.install_libs)
                 lib_dawn.install();
@@ -564,9 +566,11 @@ pub fn Sdk(comptime deps: anytype) type {
 
         fn buildLibMachDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary("dawn-native-mach", null);
-                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-                separate_lib.setTarget(step.target);
+                const separate_lib = b.addStaticLibrary(.{
+                    .name = "dawn-native-mach",
+                    .optimize = if (options.debug) .Debug else .ReleaseFast,
+                    .target = step.target,
+                });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -596,9 +600,11 @@ pub fn Sdk(comptime deps: anytype) type {
         // Builds common sources; derived from src/common/BUILD.gn
         fn buildLibDawnCommon(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary("dawn-common", null);
-                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-                separate_lib.setTarget(step.target);
+                const separate_lib = b.addStaticLibrary(.{
+                    .name = "dawn-common",
+                    .optimize = if (options.debug) .Debug else .ReleaseFast,
+                    .target = step.target,
+                });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -648,9 +654,11 @@ pub fn Sdk(comptime deps: anytype) type {
         // Build dawn platform sources; derived from src/dawn/platform/BUILD.gn
         fn buildLibDawnPlatform(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary("dawn-platform", null);
-                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-                separate_lib.setTarget(step.target);
+                const separate_lib = b.addStaticLibrary(.{
+                    .name = "dawn-platform",
+                    .optimize = if (options.debug) .Debug else .ReleaseFast,
+                    .target = step.target,
+                });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -719,9 +727,11 @@ pub fn Sdk(comptime deps: anytype) type {
         // Builds dawn native sources; derived from src/dawn/native/BUILD.gn
         fn buildLibDawnNative(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary("dawn-native", null);
-                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-                separate_lib.setTarget(step.target);
+                const separate_lib = b.addStaticLibrary(.{
+                    .name = "dawn-native",
+                    .optimize = if (options.debug) .Debug else .ReleaseFast,
+                    .target = step.target,
+                });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1001,9 +1011,11 @@ pub fn Sdk(comptime deps: anytype) type {
         // Builds tint sources; derived from src/tint/BUILD.gn
         fn buildLibTint(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary("tint", null);
-                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-                separate_lib.setTarget(step.target);
+                const separate_lib = b.addStaticLibrary(.{
+                    .name = "tint",
+                    .optimize = if (options.debug) .Debug else .ReleaseFast,
+                    .target = step.target,
+                });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1154,9 +1166,11 @@ pub fn Sdk(comptime deps: anytype) type {
         // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
         fn buildLibSPIRVTools(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary("spirv-tools", null);
-                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-                separate_lib.setTarget(step.target);
+                const separate_lib = b.addStaticLibrary(.{
+                    .name = "spirv-tools",
+                    .optimize = if (options.debug) .Debug else .ReleaseFast,
+                    .target = step.target,
+                });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1221,9 +1235,11 @@ pub fn Sdk(comptime deps: anytype) type {
         //
         fn buildLibAbseilCpp(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary("abseil-cpp-common", null);
-                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-                separate_lib.setTarget(step.target);
+                const separate_lib = b.addStaticLibrary(.{
+                    .name = "abseil-cpp-common",
+                    .optimize = if (options.debug) .Debug else .ReleaseFast,
+                    .target = step.target,
+                });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1282,9 +1298,11 @@ pub fn Sdk(comptime deps: anytype) type {
         // Buids dawn wire sources; derived from src/dawn/wire/BUILD.gn
         fn buildLibDawnWire(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary("dawn-wire", null);
-                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-                separate_lib.setTarget(step.target);
+                const separate_lib = b.addStaticLibrary(.{
+                    .name = "dawn-wire",
+                    .optimize = if (options.debug) .Debug else .ReleaseFast,
+                    .target = step.target,
+                });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1318,9 +1336,11 @@ pub fn Sdk(comptime deps: anytype) type {
         // Builds dawn utils sources; derived from src/dawn/utils/BUILD.gn
         fn buildLibDawnUtils(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary("dawn-utils", null);
-                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-                separate_lib.setTarget(step.target);
+                const separate_lib = b.addStaticLibrary(.{
+                    .name = "dawn-utils",
+                    .optimize = if (options.debug) .Debug else .ReleaseFast,
+                    .target = step.target,
+                });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
@@ -1391,9 +1411,11 @@ pub fn Sdk(comptime deps: anytype) type {
         // Buids dxcompiler sources; derived from libs/DirectXShaderCompiler/CMakeLists.txt
         fn buildLibDxcompiler(b: *Builder, step: *std.build.LibExeObjStep, options: Options) !*std.build.LibExeObjStep {
             const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary("dxcompiler", null);
-                separate_lib.setBuildMode(if (options.debug) .Debug else .ReleaseFast);
-                separate_lib.setTarget(step.target);
+                const separate_lib = b.addStaticLibrary(.{
+                    .name = "dxcompiler",
+                    .optimize = if (options.debug) .Debug else .ReleaseFast,
+                    .target = step.target,
+                });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
                     separate_lib.install();
