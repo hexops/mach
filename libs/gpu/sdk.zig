@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
-        pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) !*std.build.RunStep {
+        pub fn testStep(b: *std.Build, mode: std.builtin.OptimizeMode, target: std.zig.CrossTarget, options: Options) !*std.Build.RunStep {
             const main_tests = b.addTestExe("gpu-tests", sdkPath("/src/main.zig"));
             main_tests.setBuildMode(mode);
             main_tests.setTarget(target);
@@ -15,12 +15,12 @@ pub fn Sdk(comptime deps: anytype) type {
             gpu_dawn_options: deps.gpu_dawn.Options = .{},
         };
 
-        pub const pkg = std.build.Pkg{
+        pub const pkg = std.Build.Pkg{
             .name = "gpu",
             .source = .{ .path = sdkPath("/src/main.zig") },
         };
 
-        pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Options) !void {
+        pub fn link(b: *std.Build, step: *std.Build.CompileStep, options: Options) !void {
             if (step.target.toTarget().cpu.arch != .wasm32) {
                 try deps.gpu_dawn.link(b, step, options.gpu_dawn_options);
                 step.addCSourceFile(sdkPath("/src/mach_dawn.cpp"), &.{"-std=c++17"});
