@@ -56,9 +56,9 @@ Then in your `build.zig` add:
 ...
 const glfw = @import("libs/mach-glfw/build.zig");
 
-pub fn build(b: *Builder) !void {
+pub fn build(b: *Build) !void {
     ...
-    exe.addPackage(glfw.pkg);
+    exe.addModule("glfw", glfw.module(b));
     try glfw.link(b, exe, .{});
 }
 ```
@@ -82,10 +82,10 @@ Then in your `build.zig` add:
 const pkgs = @import("deps.zig").pkgs;
 const glfw = @import("build-glfw");
 
-pub fn build(b: *Builder) !void {
+pub fn build(b: *Build) !void {
     ...
 
-    exe.addPackage(pkgs.glfw);
+    exe.addModule("glfw", pkgs.glfw);
     try glfw.link(b, exe, .{});
 }
 ```
