@@ -30,7 +30,7 @@
 //! version: Mar 4, 2022
 
 const std = @import("std");
-const Builder = std.build.Builder;
+const Build = std.Build;
 
 pub const Options = struct {
     pub const Sdk = struct {
@@ -123,7 +123,7 @@ pub const Options = struct {
     set_sysroot: bool = false,
 };
 
-pub fn include(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+pub fn include(b: *Build, step: *std.build.CompileStep, options: Options) void {
     const target = step.target_info.target;
     // var best_sdk: ?Options.Sdk = null;
     for (options.sdk_list) |sdk| {
