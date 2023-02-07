@@ -1,11 +1,11 @@
 const builtin = @import("builtin");
 const std = @import("std");
-const Builder = std.build.Builder;
+const Build = std.Build;
 
 const system_sdk = @import("system_sdk.zig");
 
-pub fn build(b: *Builder) !void {
-    const mode = b.standardReleaseOptions();
+pub fn build(b: *Build) !void {
+    const mode = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
 
     const test_step = b.step("test", "Run library tests");
@@ -13,19 +13,29 @@ pub fn build(b: *Builder) !void {
     test_step.dependOn(&(try testStepShared(b, mode, target)).step);
 }
 
-pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) !*std.build.RunStep {
-    const main_tests = b.addTestExe("glfw-tests", sdkPath("/src/main.zig"));
-    main_tests.setBuildMode(mode);
-    main_tests.setTarget(target);
+pub fn testStep(b: *Build, mode: std.builtin.Mode, target: std.zig.CrossTarget) !*std.build.RunStep {
+    const main_tests = b.addTest(.{
+        .name = "glfw-tests",
+        .kind = .test_exe,
+        .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+        .target = target,
+        .optimize = mode,
+    });
+
     try link(b, main_tests, .{});
     main_tests.install();
     return main_tests.run();
 }
 
-fn testStepShared(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) !*std.build.RunStep {
-    const main_tests = b.addTestExe("glfw-tests-shared", sdkPath("/src/main.zig"));
-    main_tests.setBuildMode(mode);
-    main_tests.setTarget(target);
+fn testStepShared(b: *Build, mode: std.builtin.Mode, target: std.zig.CrossTarget) !*std.build.RunStep {
+    const main_tests = b.addTest(.{
+        .name = "glfw-tests-shared",
+        .kind = .test_exe,
+        .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+        .target = target,
+        .optimize = mode,
+    });
+
     try link(b, main_tests, .{ .shared = true });
     main_tests.install();
     return main_tests.run();
@@ -64,9 +74,9 @@ pub const pkg = std.build.Pkg{
     .source = .{ .path = sdkPath("/src/main.zig") },
 };
 
-pub const LinkError = error{FailedToLinkGPU} || BuildError;
-pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) LinkError!void {
-    const lib = try buildLibrary(b, step.build_mode, step.target, options);
+pub const LinkError = error{FailedToLinkGPU} || Buildror;
+pub fn link(b: *Build, step: *std.build.CompileStep, options: Options) LinkError!void {
+    const lib = try buildLibrary(b, step.optimize, step.target, options);
     step.linkLibrary(lib);
     addGLFWIncludes(step);
     if (options.shared) {
@@ -77,17 +87,15 @@ pub fn link(b: *Builder, step: *std.build.LibExeObjStep, options: Options) LinkE
     }
 }
 
-pub const BuildError = error{CannotEnsureDependency} || std.mem.Allocator.Error;
-fn buildLibrary(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) BuildError!*std.build.LibExeObjStep {
+pub const Buildror = error{CannotEnsureDependency} || std.mem.Allocator.Error;
+fn buildLibrary(b: *Build, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) Buildror!*std.build.CompileStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch return error.CannotEnsureDependency;
 
     const lib = if (options.shared)
-        b.addSharedLibrary("glfw", null, .unversioned)
+        b.addSharedLibrary(.{ .name = "glfw", .target = target, .optimize = mode })
     else
-        b.addStaticLibrary("glfw", null);
-    lib.setBuildMode(mode);
-    lib.setTarget(target);
+        b.addStaticLibrary(.{ .name = "glfw", .target = target, .optimize = mode });
 
     if (options.shared)
         lib.defineCMacro("_GLFW_BUILD_DLL", null);
@@ -102,12 +110,12 @@ fn buildLibrary(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     return lib;
 }
 
-fn addGLFWIncludes(step: *std.build.LibExeObjStep) void {
+fn addGLFWIncludes(step: *std.build.CompileStep) void {
     step.addIncludePath(sdkPath("/upstream/glfw/include"));
     step.addIncludePath(sdkPath("/upstream/vulkan_headers/include"));
 }
 
-fn addGLFWSources(b: *Builder, lib: *std.build.LibExeObjStep, options: Options) std.mem.Allocator.Error!void {
+fn addGLFWSources(b: *Build, lib: *std.build.CompileStep, options: Options) std.mem.Allocator.Error!void {
     const include_glfw_src = comptime "-I" ++ sdkPath("/upstream/glfw/src");
     switch (lib.target_info.target.os.tag) {
         .windows => lib.addCSourceFiles(&.{
@@ -147,7 +155,7 @@ fn addGLFWSources(b: *Builder, lib: *std.build.LibExeObjStep, options: Options) 
     }
 }
 
-fn linkGLFWDependencies(b: *Builder, step: *std.build.LibExeObjStep, options: Options) void {
+fn linkGLFWDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
     step.linkLibC();
     system_sdk.include(b, step, options.system_sdk);
     switch (step.target_info.target.os.tag) {
