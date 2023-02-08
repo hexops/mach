@@ -1,29 +1,37 @@
 const std = @import("std");
 
-pub const pkg = std.build.Pkg{
-    .name = "model3d",
-    .source = .{ .path = sdkPath("/src/main.zig") },
-};
-
-pub fn build(b: *std.build.Builder) void {
-    const mode = b.standardReleaseOptions();
-    const target = b.standardTargetOptions(.{});
-    const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode, target).step);
+pub fn module(b: *std.Build) *std.build.Module {
+    return b.createModule(.{
+        .source_file = .{ .path = sdkPath("/src/main.zig") },
+    });
 }
 
-pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("model3d-tests", "src/main.zig");
-    main_tests.setBuildMode(mode);
-    main_tests.setTarget(target);
+pub fn build(b: *std.Build) void {
+    const optimize = b.standardOptimizeOption(.{});
+    const target = b.standardTargetOptions(.{});
+    const test_step = b.step("test", "Run library tests");
+    test_step.dependOn(&testStep(b, optimize, target).step);
+}
+
+pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTest(.{
+        .name = "model3d-tests",
+        .kind = .test_exe,
+        .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+        .target = target,
+        .optimize = optimize,
+    });
     link(b, main_tests, target);
     main_tests.install();
     return main_tests.run();
 }
 
-pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, target: std.zig.CrossTarget) void {
-    const lib = b.addStaticLibrarySource("model3d", null);
-    lib.setTarget(target);
+pub fn link(b: *std.Build, step: *std.build.CompileStep, target: std.zig.CrossTarget) void {
+    const lib = b.addStaticLibrary(.{
+        .name = "model3d",
+        .target = target,
+        .optimize = step.optimize,
+    });
     // Note: model3d needs unaligned accesses, which are safe on all modern architectures.
     // See https://gitlab.com/bztsrc/model3d/-/issues/19
     lib.addCSourceFile(sdkPath("/src/c/m3d.c"), &.{ "-std=c89", "-fno-sanitize=alignment" });
