@@ -26,9 +26,9 @@ Then in your `build.zig` add:
 ...
 const core = @import("libs/mach-core/build.zig");
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *Build) void {
     ...
-    exe.addPackage(core.pkg);
+    exe.addModule("core", core.module(b));
     core.link(b, exe, .{});
 }
 ```
