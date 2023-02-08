@@ -18,9 +18,9 @@ Then in your `build.zig` add:
 ...
 const foobar = @import("libs/mach-foobar/build.zig");
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *Build) void {
     ...
-    exe.addPackage(foobar.pkg);
+    exe.addModule("foobar", foobar.module(b));
     foobar.link(b, exe, .{});
 }
 ```
