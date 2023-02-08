@@ -1,10 +1,10 @@
 const std = @import("std");
 
-pub const pkg = std.build.AddModuleOptions{
-    .name = "ecs",
-    .source_file = .{ .path = sdkPath("/src/main.zig") },
-    .dependencies = &[_]std.build.AddModuleOptions{},
-};
+pub fn module(b: *std.Build) *std.build.Module {
+    return b.createModule(.{
+        .source_file = .{ .path = sdkPath("/src/main.zig") },
+    });
+}
 
 pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
