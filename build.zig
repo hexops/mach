@@ -30,11 +30,17 @@ const core = @import("libs/core/sdk.zig").Sdk(.{
     .sysjs = sysjs,
 });
 
-pub const pkg = std.build.Pkg{
-    .name = "mach",
-    .source = .{ .path = sdkPath("/src/main.zig") },
-    .dependencies = &.{ core.pkg, ecs.pkg, sysaudio.pkg, earcut.pkg },
-};
+pub fn module(b: *std.Build) *std.build.Module {
+    return b.createModule(.{
+        .source_file = .{ .path = sdkPath("/src/main.zig") },
+        .dependencies = &.{
+            .{ .name = "core", .module = core.module(b) },
+            .{ .name = "ecs", .module = ecs.module(b) },
+            .{ .name = "sysaudio", .module = sysaudio.module(b) },
+            .{ .name = "earcut", .module = earcut.module(b) },
+        },
+    });
+}
 
 pub const Options = struct {
     core: core.Options = .{},
@@ -42,8 +48,8 @@ pub const Options = struct {
     freetype: freetype.Options = .{},
 };
 
-pub fn build(b: *std.build.Builder) !void {
-    const mode = b.standardReleaseOptions();
+pub fn build(b: *std.Build) !void {
+    const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
 
     const gpu_dawn_options = gpu_dawn.Options{
@@ -62,13 +68,13 @@ pub fn build(b: *std.build.Builder) !void {
         const model3d_test_step = b.step("test-model3d", "Run Model3D library tests");
         const mach_test_step = b.step("test-mach", "Run Engine library tests");
 
-        core_test_step.dependOn(&(try core.testStep(b, mode, target)).step);
-        freetype_test_step.dependOn(&freetype.testStep(b, mode, target).step);
-        ecs_test_step.dependOn(&ecs.testStep(b, mode, target).step);
-        basisu_test_step.dependOn(&basisu.testStep(b, mode, target).step);
-        sysaudio_test_step.dependOn(&sysaudio.testStep(b, mode, target).step);
-        model3d_test_step.dependOn(&model3d.testStep(b, mode, target).step);
-        mach_test_step.dependOn(&testStep(b, mode, target).step);
+        core_test_step.dependOn(&(try core.testStep(b, optimize, target)).step);
+        freetype_test_step.dependOn(&freetype.testStep(b, optimize, target).step);
+        ecs_test_step.dependOn(&ecs.testStep(b, optimize, target).step);
+        basisu_test_step.dependOn(&basisu.testStep(b, optimize, target).step);
+        sysaudio_test_step.dependOn(&sysaudio.testStep(b, optimize, target).step);
+        model3d_test_step.dependOn(&model3d.testStep(b, optimize, target).step);
+        mach_test_step.dependOn(&testStep(b, optimize, target).step);
 
         all_tests_step.dependOn(core_test_step);
         all_tests_step.dependOn(ecs_test_step);
@@ -84,7 +90,7 @@ pub fn build(b: *std.build.Builder) !void {
                 .name = "shaderexp",
                 .src = "shaderexp/main.zig",
                 .target = target,
-                .mode = mode,
+                .optimize = optimize,
             },
         );
         try shaderexp_app.link(options);
@@ -103,21 +109,26 @@ pub fn build(b: *std.build.Builder) !void {
     compile_all.dependOn(b.getInstallStep());
 }
 
-fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("mach-tests", "src/main.zig");
-    main_tests.setBuildMode(mode);
-    main_tests.setTarget(target);
-    for (pkg.dependencies.?) |dependency| {
-        main_tests.addPackage(dependency);
+fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTest(.{
+        .name = "mach-tests",
+        .kind = .test_exe,
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    var iter = module(b).dependencies.iterator();
+    while (iter.next()) |e| {
+        main_tests.addModule(e.key_ptr.*, e.value_ptr.*);
     }
     main_tests.install();
     return main_tests.run();
 }
 
 pub const App = struct {
-    b: *std.build.Builder,
+    b: *std.Build,
     name: []const u8,
-    step: *std.build.LibExeObjStep,
+    step: *std.build.CompileStep,
     platform: core.App.Platform,
 
     core: core.App,
@@ -129,13 +140,13 @@ pub const App = struct {
     pub const RunError = core.App.RunError;
 
     pub fn init(
-        b: *std.build.Builder,
+        b: *std.Build,
         options: struct {
             name: []const u8,
             src: []const u8,
             target: std.zig.CrossTarget,
-            mode: std.builtin.Mode,
-            deps: ?[]const std.build.Pkg = null,
+            optimize: std.builtin.OptimizeMode,
+            deps: ?[]const std.build.ModuleDependency = null,
             res_dirs: ?[]const []const u8 = null,
             watch_paths: ?[]const []const u8 = null,
 
@@ -145,17 +156,17 @@ pub const App = struct {
             use_model3d: bool = false,
         },
     ) InitError!App {
-        var deps = std.ArrayList(std.build.Pkg).init(b.allocator);
+        var deps = std.ArrayList(std.build.ModuleDependency).init(b.allocator);
         if (options.deps) |v| try deps.appendSlice(v);
-        try deps.append(pkg);
-        try deps.append(sysaudio.pkg);
-        if (options.use_freetype) |_| try deps.append(freetype.pkg);
+        try deps.append(.{ .name = "mach", .module = module(b) });
+        try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(b) });
+        if (options.use_freetype) |_| try deps.append(.{ .name = "freetype", .module = freetype.module(b) });
 
         const app = try core.App.init(b, .{
             .name = options.name,
             .src = options.src,
             .target = options.target,
-            .mode = options.mode,
+            .optimize = options.optimize,
             .deps = deps.items,
             .res_dirs = options.res_dirs,
             .watch_paths = options.watch_paths,
