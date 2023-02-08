@@ -4,8 +4,8 @@ const gpu_dawn_sdk = @import("libs/mach-gpu-dawn/sdk.zig");
 const gpu_sdk = @import("sdk.zig");
 const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
 
-pub fn build(b: *std.build.Builder) !void {
-    const mode = b.standardReleaseOptions();
+pub fn build(b: *std.Build) !void {
+    const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
     const gpu_dawn = gpu_dawn_sdk.Sdk(.{
         .glfw_include_dir = "libs/mach-glfw/upstream/glfw/include",
@@ -21,13 +21,16 @@ pub fn build(b: *std.build.Builder) !void {
     };
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&(try gpu.testStep(b, mode, target, .{ .gpu_dawn_options = gpu_dawn_options })).step);
+    test_step.dependOn(&(try gpu.testStep(b, optimize, target, .{ .gpu_dawn_options = gpu_dawn_options })).step);
 
-    const example = b.addExecutable("gpu-hello-triangle", "examples/main.zig");
-    example.setBuildMode(mode);
-    example.setTarget(target);
-    example.addPackage(gpu.pkg);
-    example.addPackage(glfw.pkg);
+    const example = b.addExecutable(.{
+        .name = "gpu-hello-triangle",
+        .root_source_file = .{ .path = "examples/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    example.addModule("gpu", gpu.module(b));
+    example.addModule("glfw", glfw.module(b));
     try gpu.link(b, example, .{ .gpu_dawn_options = gpu_dawn_options });
     try glfw.link(b, example, .{});
     example.install();
