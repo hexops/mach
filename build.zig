@@ -62,7 +62,7 @@ pub fn build(b: *std.build.Builder) !void {
         const model3d_test_step = b.step("test-model3d", "Run Model3D library tests");
         const mach_test_step = b.step("test-mach", "Run Engine library tests");
 
-        core_test_step.dependOn(&core.testStep(b, mode, target).step);
+        core_test_step.dependOn(&(try core.testStep(b, mode, target)).step);
         freetype_test_step.dependOn(&freetype.testStep(b, mode, target).step);
         ecs_test_step.dependOn(&ecs.testStep(b, mode, target).step);
         basisu_test_step.dependOn(&basisu.testStep(b, mode, target).step);
