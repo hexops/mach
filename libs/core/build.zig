@@ -39,7 +39,7 @@ pub fn build(b: *std.build.Builder) !void {
 
         glfw_test_step.dependOn(&(try glfw.testStep(b, mode, target)).step);
         gpu_test_step.dependOn(&(try gpu.testStep(b, mode, target, options.gpuOptions())).step);
-        core_test_step.dependOn(&core.testStep(b, mode, target).step);
+        core_test_step.dependOn(&(try core.testStep(b, mode, target)).step);
 
         all_tests_step.dependOn(glfw_test_step);
         all_tests_step.dependOn(gpu_test_step);
@@ -52,6 +52,7 @@ pub fn build(b: *std.build.Builder) !void {
 
         // Compiles the `libmachcore` shared library
         const shared_lib = try core.buildSharedLib(b, mode, target, options);
+
         shared_lib.install();
     }
 
