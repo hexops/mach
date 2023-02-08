@@ -1,14 +1,15 @@
 const std = @import("std");
-const Builder = std.build.Builder;
+const Build = std.Build;
 
 const basisu_root = sdkPath("/upstream/basisu");
 
-pub const pkg = std.build.Pkg{
-    .name = "basisu",
-    .source = .{
-        .path = "src/main.zig",
-    },
-};
+pub fn module(b: *std.Build) *std.build.Module {
+    return b.createModule(.{
+        .source = .{
+            .path = "src/main.zig",
+        },
+    });
+}
 
 pub const Options = struct {
     encoder: ?EncoderOptions,
@@ -23,20 +24,24 @@ pub const TranscoderOptions = struct {
     install_libs: bool = false,
 };
 
-pub fn build(b: *Builder) void {
-    const mode = b.standardReleaseOptions();
+pub fn build(b: *Build) void {
+    const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode, target).step);
+    test_step.dependOn(&testStep(b, optimize, target).step);
 }
 
-pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("basisu-tests", sdkPath("/src/main.zig"));
-    main_tests.setBuildMode(mode);
-    main_tests.setTarget(target);
+pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTest(.{
+        .name = "basisu-tests",
+        .kind = .test_exe,
+        .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+        .target = target,
+        .optimize = optimize,
+    });
     main_tests.main_pkg_path = sdkPath("/");
-    link(b, main_tests, target, .{
+    link(b, main_tests, target, optimize, .{
         .encoder = .{},
         .transcoder = .{},
     });
@@ -44,25 +49,28 @@ pub fn testStep(b: *Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget
     return main_tests.run();
 }
 
-pub fn link(b: *Builder, step: *std.build.LibExeObjStep, target: std.zig.CrossTarget, options: Options) void {
+pub fn link(b: *Build, step: *std.build.CompileStep, target: std.zig.CrossTarget, optimize: std.builtin.OptimizeMode, options: Options) void {
     if (options.encoder) |encoder_options| {
-        step.linkLibrary(buildEncoder(b, target, encoder_options));
+        step.linkLibrary(buildEncoder(b, target, optimize, encoder_options));
         step.addCSourceFile(sdkPath("/src/encoder/wrapper.cpp"), &.{});
         step.addIncludePath(basisu_root ++ "/encoder");
     }
     if (options.transcoder) |transcoder_options| {
-        step.linkLibrary(buildTranscoder(b, target, transcoder_options));
+        step.linkLibrary(buildTranscoder(b, target, optimize, transcoder_options));
         step.addCSourceFile(sdkPath("/src/transcoder/wrapper.cpp"), &.{});
         step.addIncludePath(basisu_root ++ "/transcoder");
     }
 }
 
-pub fn buildEncoder(b: *Builder, target: std.zig.CrossTarget, options: EncoderOptions) *std.build.LibExeObjStep {
+pub fn buildEncoder(b: *Build, target: std.zig.CrossTarget, optimize: std.builtin.OptimizeMode, options: EncoderOptions) *std.build.CompileStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
-    const encoder = b.addStaticLibrary("basisu-encoder", null);
-    encoder.setTarget(target);
+    const encoder = b.addStaticLibrary(.{
+        .name = "basisu-encoder",
+        .target = target,
+        .optimize = optimize,
+    });
     encoder.linkLibCpp();
     encoder.addCSourceFiles(
         encoder_sources,
@@ -76,17 +84,21 @@ pub fn buildEncoder(b: *Builder, target: std.zig.CrossTarget, options: EncoderOp
     return encoder;
 }
 
-pub fn buildTranscoder(b: *Builder, target: std.zig.CrossTarget, options: TranscoderOptions) *std.build.LibExeObjStep {
+pub fn buildTranscoder(b: *Build, target: std.zig.CrossTarget, optimize: std.builtin.OptimizeMode, options: TranscoderOptions) *std.build.CompileStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch unreachable;
 
-    const transcoder = b.addStaticLibrary("basisu-transcoder", null);
-    transcoder.setTarget(target);
+    const transcoder = b.addStaticLibrary(.{
+        .name = "basisu-transcoder",
+        .target = target,
+        .optimize = optimize,
+    });
     transcoder.linkLibCpp();
-    transcoder.addCSourceFiles(
-        transcoder_sources,
-        &.{},
-    );
+    transcoder.addCSourceFiles(transcoder_sources, &.{
+        "-Wno-deprecated-builtins",
+        "-Wno-deprecated-declarations",
+        "-Wno-array-bounds",
+    });
     transcoder.defineCMacro("BASISU_FORCE_DEVEL_MESSAGES", "0");
     transcoder.defineCMacro("BASISD_SUPPORT_KTX2_ZSTD", "0");
 

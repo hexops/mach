@@ -18,9 +18,9 @@ Then in your `build.zig` add:
 ...
 const basisu = @import("libs/mach-basisu/build.zig");
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *Build) void {
     ...
-    exe.addPackage(basisu.pkg);
+    exe.addModule("basisu", basisu.module(b));
     basisu.link(b, exe, .{});
 }
 ```
