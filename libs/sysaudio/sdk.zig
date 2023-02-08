@@ -2,12 +2,6 @@ const std = @import("std");
 
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
-        pub const pkg = std.build.Pkg{
-            .name = "sysaudio",
-            .source = .{ .path = sdkPath("/src/main.zig") },
-            .dependencies = &.{deps.sysjs.pkg},
-        };
-
         pub const Options = struct {
             install_libs: bool = false,
 
@@ -15,16 +9,29 @@ pub fn Sdk(comptime deps: anytype) type {
             system_sdk: deps.system_sdk.Options = .{},
         };
 
-        pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-            const main_tests = b.addTestExe("sysaudio-tests", sdkPath("/src/main.zig"));
-            main_tests.setBuildMode(mode);
-            main_tests.setTarget(target);
+        pub fn module(b: *std.Build) *std.build.Module {
+            return b.createModule(.{
+                .source_file = .{ .path = sdkPath("/src/main.zig") },
+                .dependencies = &.{
+                    .{ .name = "sysjs", .module = deps.sysjs.module(b) },
+                },
+            });
+        }
+
+        pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
+            const main_tests = b.addTest(.{
+                .name = "sysaudio-tests",
+                .kind = .test_exe,
+                .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+                .target = target,
+                .optimize = optimize,
+            });
             link(b, main_tests, .{});
             main_tests.install();
             return main_tests.run();
         }
 
-        pub fn link(b: *std.build.Builder, step: *std.build.LibExeObjStep, options: Options) void {
+        pub fn link(b: *std.Build, step: *std.build.CompileStep, options: Options) void {
             if (step.target.toTarget().cpu.arch != .wasm32) {
                 // TODO(build-system): pass system SDK options through
                 deps.system_sdk.include(b, step, .{});

@@ -3,8 +3,8 @@ const sysaudio_sdk = @import("sdk.zig");
 const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
 const sysjs = @import("libs/mach-sysjs/build.zig");
 
-pub fn build(b: *std.build.Builder) void {
-    const mode = b.standardReleaseOptions();
+pub fn build(b: *std.Build) void {
+    const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
     const sysaudio = sysaudio_sdk.Sdk(.{
         .system_sdk = system_sdk,
@@ -12,15 +12,18 @@ pub fn build(b: *std.build.Builder) void {
     });
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&sysaudio.testStep(b, mode, target).step);
+    test_step.dependOn(&sysaudio.testStep(b, optimize, target).step);
 
     inline for ([_][]const u8{
         "sine-wave",
     }) |example| {
-        const example_exe = b.addExecutable("example-" ++ example, "examples/" ++ example ++ ".zig");
-        example_exe.setBuildMode(mode);
-        example_exe.setTarget(target);
-        example_exe.addPackage(sysaudio.pkg);
+        const example_exe = b.addExecutable(.{
+            .name = "example-" ++ example,
+            .root_source_file = .{ .path = "examples/" ++ example ++ ".zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        example_exe.addModule("sysaudio", sysaudio.module(b));
         sysaudio.link(b, example_exe, .{});
         example_exe.install();
 
