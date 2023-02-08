@@ -1,22 +1,26 @@
 const std = @import("std");
 
-pub const pkg = std.build.Pkg{
+pub const pkg = std.build.AddModuleOptions{
     .name = "ecs",
-    .source = .{ .path = sdkPath("/src/main.zig") },
-    .dependencies = &[_]std.build.Pkg{},
+    .source_file = .{ .path = sdkPath("/src/main.zig") },
+    .dependencies = &[_]std.build.AddModuleOptions{},
 };
 
-pub fn build(b: *std.build.Builder) void {
-    const mode = b.standardReleaseOptions();
+pub fn build(b: *std.Build) void {
+    const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&testStep(b, mode, target).step);
+    test_step.dependOn(&testStep(b, optimize, target).step);
 }
 
-pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTestExe("ecs-tests", sdkPath("/src/main.zig"));
-    main_tests.setBuildMode(mode);
-    main_tests.setTarget(target);
+pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const main_tests = b.addTest(.{
+        .name = "ecs-tests",
+        .kind = .test_exe,
+        .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+        .target = target,
+        .optimize = optimize,
+    });
     main_tests.install();
     return main_tests.run();
 }
