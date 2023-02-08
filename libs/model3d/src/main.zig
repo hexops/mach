@@ -216,7 +216,7 @@ fn intToError(int: c_int) Error {
 test {
     testing.refAllDeclsRecursive(@This());
 
-    var model_file = try std.fs.cwd().openFile("assets/cube.m3d", .{});
+    var model_file = try std.fs.cwd().openFile( thisDir("/../assets/cube.m3d"), .{});
     defer model_file.close();
     var model_data = try model_file.readToEndAllocOptions(testing.allocator, 1024, 119, @alignOf(u8), 0);
     defer testing.allocator.free(model_data);
@@ -228,4 +228,12 @@ test {
     var out = try model.save(.float, .{});
     defer std.heap.c_allocator.free(out);
     try testing.expect(out.len >= 119);
+}
+
+fn thisDir(comptime suffix: []const u8) []const u8 {
+    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+    return comptime blk: {
+        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+        break :blk root_dir ++ suffix;
+    };
 }
