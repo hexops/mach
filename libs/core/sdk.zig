@@ -19,13 +19,16 @@ pub fn Sdk(comptime deps: anytype) type {
             }
         };
 
-        pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) *std.build.RunStep {
+        pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) !*std.build.RunStep {
             const main_tests = b.addTestExe("core-tests", "src/main.zig");
             main_tests.setBuildMode(mode);
             main_tests.setTarget(target);
             for (pkg.dependencies.?) |dependency| {
                 main_tests.addPackage(dependency);
             }
+            main_tests.addPackage(deps.glfw.pkg);
+            try deps.glfw.link(b, main_tests, .{});
+            main_tests.addIncludePath(sdkPath("/include"));
             main_tests.install();
             return main_tests.run();
         }
