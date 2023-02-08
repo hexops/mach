@@ -30,9 +30,9 @@ Then in your `build.zig` add:
 ...
 const earcut = @import("libs/mach-earcut/build.zig");
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *Build) void {
     ...
-    exe.addPackage(earcut.pkg);
+    exe.addModule("earcut", earcut.module(b));
 }
 ```
 
