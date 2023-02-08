@@ -92,14 +92,13 @@ pub const CommandEncoder = opaque {
         command_encoder: *CommandEncoder,
         buffer: *Buffer,
         buffer_offset_bytes: u64,
-        data_span: anytype,
+        data_slice: anytype,
     ) void {
-        const data_slice = std.mem.span(data_span);
         Impl.commandEncoderWriteBuffer(
             command_encoder,
             buffer,
             buffer_offset_bytes,
-            @ptrCast([*]const u8, data_slice.ptr),
+            @ptrCast([*]const u8, std.mem.sliceAsBytes(data_slice).ptr),
             @intCast(u64, data_slice.len) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
         );
     }

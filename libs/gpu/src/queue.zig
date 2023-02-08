@@ -63,14 +63,13 @@ pub const Queue = opaque {
         queue: *Queue,
         buffer: *Buffer,
         buffer_offset_bytes: u64,
-        data_span: anytype,
+        data_slice: anytype,
     ) void {
-        const data_slice = std.mem.span(data_span);
         Impl.queueWriteBuffer(
             queue,
             buffer,
             buffer_offset_bytes,
-            @ptrCast(*const anyopaque, data_slice.ptr),
+            @ptrCast(*const anyopaque, std.mem.sliceAsBytes(data_slice).ptr),
             data_slice.len * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
         );
     }
@@ -80,13 +79,12 @@ pub const Queue = opaque {
         destination: *const ImageCopyTexture,
         data_layout: *const Texture.DataLayout,
         write_size: *const Extent3D,
-        data_span: anytype,
+        data_slice: anytype,
     ) void {
-        const data_slice = std.mem.span(data_span);
         Impl.queueWriteTexture(
             queue,
             destination,
-            @ptrCast(*const anyopaque, data_slice.ptr),
+            @ptrCast(*const anyopaque, std.mem.sliceAsBytes(data_slice).ptr),
             @intCast(usize, data_slice.len) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
             data_layout,
             write_size,
