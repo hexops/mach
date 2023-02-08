@@ -2,12 +2,6 @@ const std = @import("std");
 
 pub fn Sdk(comptime deps: anytype) type {
     return struct {
-        pub const pkg = std.build.Pkg{
-            .name = "core",
-            .source = .{ .path = sdkPath("/src/main.zig") },
-            .dependencies = &.{deps.gpu.pkg},
-        };
-
         pub const Options = struct {
             glfw_options: deps.glfw.Options = .{},
             gpu_dawn_options: deps.gpu_dawn.Options = .{},
@@ -19,35 +13,46 @@ pub fn Sdk(comptime deps: anytype) type {
             }
         };
 
-        pub fn testStep(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget) !*std.build.RunStep {
-            const main_tests = b.addTestExe("core-tests", "src/main.zig");
-            main_tests.setBuildMode(mode);
-            main_tests.setTarget(target);
-            for (pkg.dependencies.?) |dependency| {
-                main_tests.addPackage(dependency);
+        pub fn module(b: *std.Build) *std.build.Module {
+            return b.createModule(.{
+                .source_file = .{ .path = sdkPath("/src/main.zig") },
+                .dependencies = &.{
+                    .{ .name = "gpu", .module = deps.gpu.module(b) },
+                },
+            });
+        }
+
+        pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) !*std.build.RunStep {
+            const main_tests = b.addTest(.{
+                .name = "core-tests",
+                .kind = .test_exe,
+                .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+                .target = target,
+                .optimize = optimize,
+            });
+            var iter = module(b).dependencies.iterator();
+            while (iter.next()) |e| {
+                main_tests.addModule(e.key_ptr.*, e.value_ptr.*);
             }
-            main_tests.addPackage(deps.glfw.pkg);
+            main_tests.addModule("glfw", deps.glfw.module(b));
             try deps.glfw.link(b, main_tests, .{});
             main_tests.addIncludePath(sdkPath("/include"));
             main_tests.install();
             return main_tests.run();
         }
 
-        pub fn buildSharedLib(b: *std.build.Builder, mode: std.builtin.Mode, target: std.zig.CrossTarget, options: Options) !*std.build.LibExeObjStep {
+        pub fn buildSharedLib(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget, options: Options) !*std.build.CompileStep {
             // TODO(build): this should use the App abstraction instead of being built manually
-            const lib = b.addSharedLibrary("machcore", "src/platform/libmachcore.zig", .unversioned);
-            lib.setTarget(target);
-            lib.setBuildMode(mode);
+            const lib = b.addSharedLibrary(.{ .name = "machcore", .root_source_file = .{ .path = "src/platform/libmachcore.zig" }, .target = target, .optimize = optimize });
             lib.main_pkg_path = "src/";
-            const app_pkg = std.build.Pkg{
-                .name = "app",
-                .source = .{ .path = "src/platform/libmachcore.zig" },
-            };
-            lib.addPackage(app_pkg);
-            lib.addPackage(deps.glfw.pkg);
-            lib.addPackage(deps.gpu.pkg);
+            const app_module = b.createModule(.{
+                .source_file = .{ .path = "src/platform/libmachcore.zig" },
+            });
+            lib.addModule("app", app_module);
+            lib.addModule("glfw", deps.glfw.module(b));
+            lib.addModule("gpu", deps.gpu.module(b));
             if (target.isLinux()) {
-                lib.addPackage(deps.gamemode.pkg);
+                lib.addModule("gamemode", deps.gamemode.module(b));
                 deps.gamemode.link(lib);
             }
             try deps.glfw.link(b, lib, options.glfw_options);
@@ -64,9 +69,9 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         pub const App = struct {
-            b: *std.build.Builder,
+            b: *std.Build,
             name: []const u8,
-            step: *std.build.LibExeObjStep,
+            step: *std.build.CompileStep,
             platform: Platform,
             res_dirs: ?[]const []const u8,
             watch_paths: ?[]const []const u8,
@@ -90,13 +95,13 @@ pub fn Sdk(comptime deps: anytype) type {
             };
 
             pub fn init(
-                b: *std.build.Builder,
+                b: *std.Build,
                 options: struct {
                     name: []const u8,
                     src: []const u8,
                     target: std.zig.CrossTarget,
-                    mode: std.builtin.Mode,
-                    deps: ?[]const std.build.Pkg = null,
+                    optimize: std.builtin.OptimizeMode,
+                    deps: ?[]const std.build.ModuleDependency = null,
                     res_dirs: ?[]const []const u8 = null,
                     watch_paths: ?[]const []const u8 = null,
                 },
@@ -104,44 +109,46 @@ pub fn Sdk(comptime deps: anytype) type {
                 const target = (try std.zig.system.NativeTargetInfo.detect(options.target)).target;
                 const platform = Platform.fromTarget(target);
 
-                var dependencies = std.ArrayList(std.build.Pkg).init(b.allocator);
-                try dependencies.append(pkg);
-                try dependencies.append(deps.gpu.pkg);
+                var dependencies = std.ArrayList(std.build.ModuleDependency).init(b.allocator);
+                try dependencies.append(.{ .name = "core", .module = module(b) });
+                try dependencies.append(.{ .name = "gpu", .module = deps.gpu.module(b) });
                 switch (platform) {
-                    .native => try dependencies.append(deps.glfw.pkg),
-                    .web => try dependencies.append(deps.sysjs.pkg),
+                    .native => try dependencies.append(.{ .name = "glfw", .module = deps.glfw.module(b) }),
+                    .web => try dependencies.append(.{ .name = "sysjs", .module = deps.sysjs.module(b) }),
                 }
                 if (options.deps) |app_deps| try dependencies.appendSlice(app_deps);
 
-                const app_pkg = std.build.Pkg{
-                    .name = "app",
-                    .source = .{ .path = options.src },
+                const app_module = b.createModule(.{
+                    .source_file = .{ .path = options.src },
                     .dependencies = try dependencies.toOwnedSlice(),
-                };
+                });
 
                 const step = blk: {
                     if (platform == .web) {
-                        const lib = b.addSharedLibrary(options.name, sdkPath("/src/main.zig"), .unversioned);
+                        const lib = b.addSharedLibrary(.{ .name = options.name, .root_source_file = .{ .path = sdkPath("/src/main.zig") }, .target = options.target, .optimize = options.optimize });
                         lib.rdynamic = true;
-                        lib.addPackage(deps.sysjs.pkg);
+                        lib.addModule("sysjs", deps.sysjs.module(b));
 
                         break :blk lib;
                     } else {
-                        const exe = b.addExecutable(options.name, sdkPath("/src/main.zig"));
-                        exe.addPackage(deps.glfw.pkg);
+                        const exe = b.addExecutable(.{
+                            .name = options.name,
+                            .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+                            .target = options.target,
+                            .optimize = options.optimize,
+                        });
+                        exe.addModule("glfw", deps.glfw.module(b));
 
                         if (target.os.tag == .linux)
-                            exe.addPackage(deps.gamemode.pkg);
+                            exe.addModule("gamemode", deps.gamemode.module(b));
 
                         break :blk exe;
                     }
                 };
 
                 step.main_pkg_path = sdkPath("/src");
-                step.addPackage(deps.gpu.pkg);
-                step.addPackage(app_pkg);
-                step.setTarget(options.target);
-                step.setBuildMode(options.mode);
+                step.addModule("gpu", deps.gpu.module(b));
+                step.addModule("app", app_module);
 
                 return .{
                     .b = b,
@@ -180,7 +187,10 @@ pub fn Sdk(comptime deps: anytype) type {
                         app.getInstallStep().?.step.dependOn(&install_js.step);
                     }
 
-                    const html_generator = app.b.addExecutable("html-generator", sdkPath("/tools/html-generator/main.zig"));
+                    const html_generator = app.b.addExecutable(.{
+                        .name = "html-generator",
+                        .root_source_file = .{ .path = sdkPath("/tools/html-generator/main.zig") },
+                    });
                     const run_html_generator = html_generator.run();
                     run_html_generator.addArgs(&.{ "index.html", app.name });
 

@@ -21,8 +21,8 @@ const core = @import("sdk.zig").Sdk(.{
     .sysjs = sysjs,
 });
 
-pub fn build(b: *std.build.Builder) !void {
-    const mode = b.standardReleaseOptions();
+pub fn build(b: *std.Build) !void {
+    const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
 
     const gpu_dawn_options = gpu_dawn.Options{
@@ -37,9 +37,9 @@ pub fn build(b: *std.build.Builder) !void {
         const gpu_test_step = b.step("test-gpu", "Run GPU library tests");
         const core_test_step = b.step("test-core", "Run Mach Core library tests");
 
-        glfw_test_step.dependOn(&(try glfw.testStep(b, mode, target)).step);
-        gpu_test_step.dependOn(&(try gpu.testStep(b, mode, target, options.gpuOptions())).step);
-        core_test_step.dependOn(&(try core.testStep(b, mode, target)).step);
+        glfw_test_step.dependOn(&(try glfw.testStep(b, optimize, target)).step);
+        gpu_test_step.dependOn(&(try gpu.testStep(b, optimize, target, options.gpuOptions())).step);
+        core_test_step.dependOn(&(try core.testStep(b, optimize, target)).step);
 
         all_tests_step.dependOn(glfw_test_step);
         all_tests_step.dependOn(gpu_test_step);
@@ -47,11 +47,11 @@ pub fn build(b: *std.build.Builder) !void {
 
         // TODO: we need a way to test wasm stuff
         // const sysjs_test_step = b.step( "test-sysjs", "Run sysjs library tests");
-        // sysjs_test_step.dependOn(&sysjs.testStep(b, mode, target).step);
+        // sysjs_test_step.dependOn(&sysjs.testStep(b, optimize, target).step);
         // all_tests_step.dependOn(sysjs_test_step);
 
         // Compiles the `libmachcore` shared library
-        const shared_lib = try core.buildSharedLib(b, mode, target, options);
+        const shared_lib = try core.buildSharedLib(b, optimize, target, options);
 
         shared_lib.install();
     }
