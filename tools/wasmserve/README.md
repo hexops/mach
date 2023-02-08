@@ -18,7 +18,7 @@ Then in your `build.zig` add:
 ...
 const wasmserve = @import("libs/wasmserve/wasmserve.zig");
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *Build) void {
     ...
     const serve_step = try wasmserve.serve(exe, .{ .watch_paths = &.{"src/main.zig"} });
     const run_step = b.step("run", "Run development web server");

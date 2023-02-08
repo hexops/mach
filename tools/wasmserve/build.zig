@@ -1,12 +1,15 @@
 const std = @import("std");
 const wasmserve = @import("wasmserve.zig");
 
-pub fn build(b: *std.build.Builder) !void {
-    const mode = b.standardReleaseOptions();
+pub fn build(b: *std.Build) !void {
+    const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addSharedLibrary("test", "test/main.zig", .unversioned);
-    exe.setBuildMode(mode);
-    exe.setTarget(.{ .cpu_arch = .wasm32, .os_tag = .freestanding, .abi = .none });
+    const exe = b.addSharedLibrary(.{
+        .name = "test",
+        .root_source_file = .{ .path = "test/main.zig" },
+        .target = .{ .cpu_arch = .wasm32, .os_tag = .freestanding, .abi = .none },
+        .optimize = optimize,
+    });
     exe.install();
 
     const serve_step = try wasmserve.serve(exe, .{ .watch_paths = &.{"wasmserve.zig"} });
