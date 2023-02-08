@@ -1,11 +1,12 @@
 const std = @import("std");
 
-pub const pkg = std.build.Pkg{
-    .name = "gamemode",
-    .source = .{ .path = sdkPath("/src/main.zig") },
-};
+pub fn module(b: *std.Build) *std.build.Module {
+    return b.createModule(.{
+        .source_file = .{ .path = sdkPath("/src/main.zig") },
+    });
+}
 
-pub fn link(step: *std.build.LibExeObjStep) void {
+pub fn link(step: *std.build.CompileStep) void {
     step.addIncludePath(sdkPath("/upstream/include"));
 }
 
