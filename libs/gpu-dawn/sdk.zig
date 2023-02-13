@@ -764,6 +764,8 @@ pub fn Sdk(comptime deps: anytype) type {
 
                 include("libs/dawn/out/Debug/gen/include"),
                 include("libs/dawn/out/Debug/gen/src"),
+
+                "-Wno-deprecated-declarations",
             });
             if (options.d3d12.?) try flags.appendSlice(dawn_d3d12_flags);
 
@@ -1255,6 +1257,7 @@ pub fn Sdk(comptime deps: anytype) type {
             try flags.appendSlice(&.{
                 include("libs/dawn"),
                 include("libs/dawn/third_party/abseil-cpp"),
+                "-Wno-deprecated-declarations",
             });
             if (target.os.tag == .windows) try flags.appendSlice(&.{
                 "-DABSL_FORCE_THREAD_IDENTITY_MODE=2",
