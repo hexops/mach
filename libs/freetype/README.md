@@ -93,7 +93,7 @@ zig build run-example-<name> # e.g run-example-single-glyph
 
 ## Join the community
 
-Join the Mach engine community [on Matrix chat](https://matrix.to/#/#hexops:matrix.org) to discuss this project, ask questions, get help, etc.
+Join the Mach engine community [on Discord](https://discord.gg/XNG3NZgCqp) to discuss this project, ask questions, get help, etc.
 
 ## Issues
 

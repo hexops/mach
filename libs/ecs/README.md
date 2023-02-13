@@ -16,7 +16,7 @@ Under heavy development, not ready for use!
 
 As development continues, we're publishing a blog series ["Let's build an Entity Component System from scatch"](https://devlog.hexops.com/categories/build-an-ecs/).
 
-Join us in developing it, give us advice, etc. [on Matrix chat](https://matrix.to/#/#ecs:matrix.org) or [follow updates on Twitter](https://twitter.com/machengine).
+Join us in developing it, give us advice, etc. [on Discord](https://discord.gg/XNG3NZgCqp) or [follow updates on Twitter](https://twitter.com/machengine).
 
 ## Known issues
 
