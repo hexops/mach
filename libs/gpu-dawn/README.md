@@ -31,7 +31,7 @@ This will take ~10 minutes to finish (see the 'binary releases' section below.) 
 
 | Option                        | Description                                                |
 |-------------------------------|------------------------------------------------------------|
-| `-Drelease-fast=true`         | Build a release binary instead of a debug binary (default) |
+| `-Doptimize=ReleaseFast`      | Build a release binary instead of a debug binary (default) |
 | `-Dtarget=x86_64-macos.12`    | Cross compile to macOS (Intel chipsets)                    |
 | `-Dtarget=aarch64-macos.12`   | Cross compile to macOS (Apple Silicon)                     |
 | `-Dtarget=x86_64-linux-gnu`   | Cross compile to x86_64 Linux (glibc)                      |

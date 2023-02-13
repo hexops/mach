@@ -41,7 +41,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
-        run: zig build install -Drelease-fast=true -Dtarget=x86_64-linux-gnu
+        run: zig build install -Doptimize=ReleaseFast -Dtarget=x86_64-linux-gnu
       - name: upload (release-fast)
         run: ./dev/upload-release.sh
         env:
@@ -83,7 +83,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
-        run: zig build install -Drelease-fast=true -Dtarget=x86_64-linux-musl
+        run: zig build install -Doptimize=ReleaseFast -Dtarget=x86_64-linux-musl
       - name: upload (release-fast)
         run: ./dev/upload-release.sh
         env:
@@ -125,7 +125,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
-        run: zig build install -Drelease-fast=true -Dtarget=aarch64-linux-gnu
+        run: zig build install -Doptimize=ReleaseFast -Dtarget=aarch64-linux-gnu
       - name: upload (release-fast)
         run: ./dev/upload-release.sh
         env:
@@ -167,7 +167,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
-        run: zig build install -Drelease-fast=true -Dtarget=aarch64-linux-musl
+        run: zig build install -Doptimize=ReleaseFast -Dtarget=aarch64-linux-musl
       - name: upload (release-fast)
         run: ./dev/upload-release.sh
         env:
@@ -217,7 +217,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
-        run: zig build install -Dtarget=x86_64-windows-gnu -Drelease-fast=true
+        run: zig build install -Dtarget=x86_64-windows-gnu -Doptimize=ReleaseFast
       - name: upload (release-fast)
         run: ./dev/upload-release.sh
         shell: bash
@@ -265,7 +265,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
-        run: zig build install -Drelease-fast=true -Dtarget=x86_64-macos.12-none
+        run: zig build install -Doptimize=ReleaseFast -Dtarget=x86_64-macos.12-none
         env:
           AGREE: true
       - name: upload (release-fast)
