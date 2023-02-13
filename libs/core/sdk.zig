@@ -36,6 +36,10 @@ pub fn Sdk(comptime deps: anytype) type {
             }
             main_tests.addModule("glfw", deps.glfw.module(b));
             try deps.glfw.link(b, main_tests, .{});
+            if (target.isLinux()) {
+                main_tests.addModule("gamemode", deps.gamemode.module(b));
+                deps.gamemode.link(main_tests);
+            }
             main_tests.addIncludePath(sdkPath("/include"));
             main_tests.install();
             return main_tests.run();
