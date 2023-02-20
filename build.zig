@@ -117,6 +117,7 @@ fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
         .target = target,
         .optimize = optimize,
     });
+    main_tests.emit_docs = .emit;
     var iter = module(b).dependencies.iterator();
     while (iter.next()) |e| {
         main_tests.addModule(e.key_ptr.*, e.value_ptr.*);
