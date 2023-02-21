@@ -488,7 +488,7 @@ pub inline fn setIcon(self: Window, allocator: mem.Allocator, images: ?[]Image) 
     if (images) |im| {
         const tmp = try allocator.alloc(c.GLFWimage, im.len);
         defer allocator.free(tmp);
-        for (im) |img, index| tmp[index] = img.toC();
+        for (im, 0..) |img, index| tmp[index] = img.toC();
         c.glfwSetWindowIcon(self.handle, @intCast(c_int, im.len), &tmp[0]);
     } else c.glfwSetWindowIcon(self.handle, 0, null);
 }

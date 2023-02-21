@@ -742,7 +742,7 @@ pub const Player = struct {
                     else => unreachable,
                 }
 
-                for (self.channels) |*ch, i| {
+                for (self.channels, 0..) |*ch, i| {
                     ch.*.ptr = data + self.format.frameSize(i);
                 }
 

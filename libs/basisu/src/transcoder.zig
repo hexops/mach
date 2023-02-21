@@ -21,7 +21,8 @@ pub const Transcoder = struct {
         const h = b.transcoder_init(src.ptr, @intCast(u32, src.len));
         return if (!b.transcoder_start_transcoding(h))
             error.Unknown
-        else .{ .handle = h };
+        else
+            .{ .handle = h };
     }
 
     pub fn deinit(self: Transcoder) void {

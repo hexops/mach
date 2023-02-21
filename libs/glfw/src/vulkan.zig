@@ -235,12 +235,12 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
         else => @ptrCast(c.VkInstance, vk_instance),
     };
 
-    return @boolToInt(c.glfwCreateWindowSurface(
+    return c.glfwCreateWindowSurface(
         instance,
         window.handle,
         if (vk_allocation_callbacks == null) null else @ptrCast(*const c.VkAllocationCallbacks, @alignCast(@alignOf(c.VkAllocationCallbacks), vk_allocation_callbacks)),
         @ptrCast(*c.VkSurfaceKHR, @alignCast(@alignOf(c.VkSurfaceKHR), vk_surface_khr)),
-    ) == c.VK_SUCCESS);
+    );
 }
 
 test "vulkanSupported" {

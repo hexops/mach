@@ -299,7 +299,7 @@ const Wasmserve = struct {
 };
 
 fn dropFragment(input: []const u8) []const u8 {
-    for (input) |c, i|
+    for (input, 0..) |c, i|
         if (c == '?' or c == '#')
             return input[0..i];
 
