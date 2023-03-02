@@ -71,7 +71,7 @@ pub fn Messages(comptime messages: anytype) type {
 pub fn MessagesTag(comptime messages: anytype) type {
     var fields: []const EnumField = &[0]EnumField{};
     const message_fields = std.meta.fields(@TypeOf(messages));
-    inline for (message_fields) |message_field, index| {
+    inline for (message_fields, 0..) |message_field, index| {
         fields = fields ++ [_]std.builtin.Type.EnumField{.{
             .name = message_field.name,
             .value = index,

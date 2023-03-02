@@ -239,7 +239,7 @@ pub const Context = struct {
             if (self.default_source) |d|
                 self.allocator.free(d);
         }
-        for (self.devices_info.list.items) |device, i| {
+        for (self.devices_info.list.items, 0..) |device, i| {
             if ((device.mode == .playback and
                 self.default_sink != null and
                 std.mem.eql(u8, device.id, self.default_sink.?)) or
@@ -295,7 +295,7 @@ pub const Context = struct {
             .mode = mode,
             .channels = blk: {
                 var channels = try self.allocator.alloc(main.Channel, info.*.channel_map.channels);
-                for (channels) |*ch, i|
+                for (channels, 0..) |*ch, i|
                     ch.*.id = fromPAChannelPos(info.*.channel_map.map[i]) catch unreachable;
                 break :blk channels;
             },
@@ -473,7 +473,7 @@ pub const Player = struct {
                 return;
             }
 
-            for (self.channels) |*ch, i| {
+            for (self.channels, 0..) |*ch, i| {
                 ch.*.ptr = self.write_ptr + self.format.frameSize(i);
             }
 
@@ -644,7 +644,7 @@ pub fn toPAFormat(format: main.Format) !c.pa_sample_format_t {
 pub fn toPAChannelMap(channels: []const main.Channel) !c.pa_channel_map {
     var channel_map: c.pa_channel_map = undefined;
     channel_map.channels = @intCast(u5, channels.len);
-    for (channels) |ch, i|
+    for (channels, 0..) |ch, i|
         channel_map.map[i] = try toPAChannelPos(ch.id);
     return channel_map;
 }

@@ -67,7 +67,7 @@ pub const ArchetypeStorage = struct {
     }
 
     fn debugValidateRow(storage: *ArchetypeStorage, gpa: Allocator, row: anytype) void {
-        inline for (std.meta.fields(@TypeOf(row))) |field, index| {
+        inline for (std.meta.fields(@TypeOf(row)), 0..) |field, index| {
             const column = storage.columns[index];
             if (typeId(field.type) != column.type_id) {
                 const msg = std.mem.concat(gpa, u8, &.{
@@ -148,7 +148,7 @@ pub const ArchetypeStorage = struct {
         if (is_debug) storage.debugValidateRow(gpa, row);
 
         const fields = std.meta.fields(@TypeOf(row));
-        inline for (fields) |field, index| {
+        inline for (fields, 0..) |field, index| {
             const ColumnType = field.type;
             if (@sizeOf(ColumnType) == 0) continue;
 
@@ -335,7 +335,7 @@ pub fn Entities(comptime all_components: anytype) type {
         pub const Query = Query: {
             const namespaces = std.meta.fields(@TypeOf(all_components));
             var fields: [namespaces.len]std.builtin.Type.UnionField = undefined;
-            inline for (namespaces) |namespace, i| {
+            inline for (namespaces, 0..) |namespace, i| {
                 const component_enum = std.meta.FieldEnum(namespace.type);
                 fields[i] = .{
                     .name = namespace.name,

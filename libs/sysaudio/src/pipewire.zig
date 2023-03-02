@@ -318,7 +318,7 @@ pub const Player = struct {
         buf.*.buffer.*.datas[0].chunk.*.stride = stride;
         buf.*.buffer.*.datas[0].chunk.*.size = n_frames * stride;
 
-        for (self.channels) |*ch, i| {
+        for (self.channels, 0..) |*ch, i| {
             ch.ptr = @ptrCast([*]u8, buf.*.buffer.*.datas[0].data.?) + self.format.frameSize(i);
         }
         self.writeFn(self.user_data, n_frames);

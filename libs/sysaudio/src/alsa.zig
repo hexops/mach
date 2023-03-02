@@ -364,7 +364,7 @@ pub const Context = struct {
                             if (chmap[0] == null) continue;
 
                             var channels = try self.allocator.alloc(main.Channel, chmap.*.*.map.channels);
-                            for (channels) |*ch, i|
+                            for (channels, 0..) |*ch, i|
                                 ch.*.id = fromAlsaChannel(chmap[0][0].map.pos()[i]) catch return error.OpeningDevice;
                             break :blk channels;
                         } else {
@@ -580,7 +580,7 @@ pub const Player = struct {
     }
 
     fn writeLoop(self: *Player) void {
-        for (self.channels) |*ch, i| {
+        for (self.channels, 0..) |*ch, i| {
             ch.*.ptr = self.sample_buffer.ptr + self.format.frameSize(i);
         }
 

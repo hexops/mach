@@ -118,7 +118,7 @@ pub const Context = struct {
             .write_step = @sizeOf(f32),
         };
 
-        for (player.channels) |*ch, i| {
+        for (player.channels, 0..) |*ch, i| {
             ch.*.ptr = player.buf.ptr + i * channel_size_bytes;
         }
 
@@ -186,7 +186,7 @@ pub const Player = struct {
 
         self.writeFn(self.user_data, channel_size);
 
-        for (self.channels) |_, i| {
+        for (self.channels, 0..) |_, i| {
             self.buf_js.copyBytes(self.buf[i * channel_size_bytes .. (i + 1) * channel_size_bytes]);
             const buf_f32_js = js.constructType("Float32Array", &.{ self.buf_js.get("buffer"), self.buf_js.get("byteOffset"), js.createNumber(channel_size) });
             defer buf_f32_js.deinit();

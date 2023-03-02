@@ -13,7 +13,7 @@ pub const Guid = extern union {
     };
     pub fn initString(s: []const u8) Guid {
         var guid = Guid{ .Bytes = undefined };
-        for (hex_offsets) |hex_offset, i| {
+        for (hex_offsets, 0..) |hex_offset, i| {
             guid.Bytes[i] = decodeHexByte([2]u8{ s[hex_offset], s[hex_offset + 1] });
         }
         return guid;

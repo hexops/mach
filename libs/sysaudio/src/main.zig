@@ -35,7 +35,7 @@ pub const Context = struct {
                     std.meta.fieldInfo(backends.BackendContext, b).type,
                 ).Pointer.child.init(allocator, options);
             } else {
-                inline for (std.meta.fields(Backend)) |b, i| {
+                inline for (std.meta.fields(Backend), 0..) |b, i| {
                     if (@typeInfo(
                         std.meta.fieldInfo(backends.BackendContext, @intToEnum(Backend, b.value)).type,
                     ).Pointer.child.init(allocator, options)) |d| {

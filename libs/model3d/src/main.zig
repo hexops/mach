@@ -216,7 +216,7 @@ fn intToError(int: c_int) Error {
 test {
     testing.refAllDeclsRecursive(@This());
 
-    var model_file = try std.fs.cwd().openFile( thisDir("/../assets/cube.m3d"), .{});
+    var model_file = try std.fs.cwd().openFile(thisDir("/../assets/cube.m3d"), .{});
     defer model_file.close();
     var model_data = try model_file.readToEndAllocOptions(testing.allocator, 1024, 119, @alignOf(u8), 0);
     defer testing.allocator.free(model_data);
