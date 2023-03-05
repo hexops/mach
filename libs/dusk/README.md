@@ -1,10 +1,10 @@
-# mach/dusk - a WebGPU implementation
+# mach/dusk - WebGPU implementation in Zig
 
 This repository is a separate copy of the same library in the [main Mach repository](https://github.com/hexops/mach), and is automatically kept in sync, so that anyone can use this library in their own project if they like!
 
 ## Current Status
 
-this library is in **very early stages** and under heavy development and there's hundred known bugs/missing features.
+Dusk is in **very early stages** and under heavy development; there are hundreds of known bugs/missing features.
 
 ### WGSL compiler
 
