@@ -9,6 +9,7 @@ const sysjs = @import("libs/sysjs/build.zig");
 const earcut = @import("libs/earcut/build.zig");
 const gamemode = @import("libs/gamemode/build.zig");
 const model3d = @import("libs/model3d/build.zig");
+const dusk = @import("libs/dusk/build.zig");
 const wasmserve = @import("tools/wasmserve/wasmserve.zig");
 const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
     .glfw_include_dir = sdkPath("/libs/glfw/upstream/glfw/include"),
@@ -66,6 +67,7 @@ pub fn build(b: *std.Build) !void {
         const basisu_test_step = b.step("test-basisu", "Run Basis-Universal library tests");
         const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
         const model3d_test_step = b.step("test-model3d", "Run Model3D library tests");
+        const dusk_test_step = b.step("test-dusk", "Run Dusk library tests");
         const mach_test_step = b.step("test-mach", "Run Engine library tests");
 
         core_test_step.dependOn(&(try core.testStep(b, optimize, target)).step);
@@ -74,6 +76,7 @@ pub fn build(b: *std.Build) !void {
         basisu_test_step.dependOn(&basisu.testStep(b, optimize, target).step);
         sysaudio_test_step.dependOn(&sysaudio.testStep(b, optimize, target).step);
         model3d_test_step.dependOn(&model3d.testStep(b, optimize, target).step);
+        dusk_test_step.dependOn(&dusk.testStep(b, optimize, target).step);
         mach_test_step.dependOn(&testStep(b, optimize, target).step);
 
         all_tests_step.dependOn(core_test_step);
@@ -82,6 +85,7 @@ pub fn build(b: *std.Build) !void {
         all_tests_step.dependOn(freetype_test_step);
         all_tests_step.dependOn(sysaudio_test_step);
         all_tests_step.dependOn(model3d_test_step);
+        all_tests_step.dependOn(dusk_test_step);
         all_tests_step.dependOn(mach_test_step);
 
         const shaderexp_app = try App.init(
