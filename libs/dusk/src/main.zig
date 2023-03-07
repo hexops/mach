@@ -15,10 +15,10 @@ pub const Extension = enum {
 pub const ErrorMsg = struct {
     loc: Token.Loc,
     msg: []const u8,
-    note: ?Note,
+    note: ?Note = null,
 
     pub const Note = struct {
-        loc: ?Token.Loc,
+        loc: ?Token.Loc = null,
         msg: []const u8,
 
         pub fn create(

@@ -106,6 +106,60 @@ fn expectTree(source: [:0]const u8) !dusk.Ast {
     }
 }
 
+fn expectError(source: [:0]const u8, err: dusk.ErrorMsg) !void {
+    var res = try dusk.Ast.parse(allocator, source);
+    const err_list = switch (res) {
+        .tree => |*tree| blk: {
+            defer tree.deinit(allocator);
+            if (try tree.analyse(allocator)) |errors| {
+                break :blk errors;
+            }
+            return error.ExpectedError;
+        },
+        .errors => |err_msgs| err_msgs,
+    };
+    defer {
+        for (err_list) |*err_msg| err_msg.deinit(allocator);
+        allocator.free(err_list);
+    }
+    {
+        errdefer {
+            std.debug.print(
+                "\n\x1b[31mexpected error({d}..{d}):\n{s}\n\x1b[32mactual error({d}..{d}):\n{s}\n\x1b[0m",
+                .{
+                    err.loc.start,         err.loc.end,         err.msg,
+                    err_list[0].loc.start, err_list[0].loc.end, err_list[0].msg,
+                },
+            );
+        }
+        try expect(std.mem.eql(u8, err.msg, err_list[0].msg));
+        try expect(err_list[0].loc.start == err.loc.start);
+        try expect(err_list[0].loc.end == err.loc.end);
+    }
+    if (err_list[0].note) |_| {
+        errdefer {
+            std.debug.print(
+                "\n\x1b[31mexpected note msg:\n{s}\n\x1b[32mactual note msg:\n{s}\n\x1b[0m",
+                .{ err.note.?.msg, err_list[0].note.?.msg },
+            );
+        }
+        try expect(std.mem.eql(u8, err.note.?.msg, err_list[0].note.?.msg));
+        if (err_list[0].note.?.loc) |_| {
+            errdefer {
+                std.debug.print(
+                    "\n\x1b[31mexpected note loc: {d}..{d}\n\x1b[32mactual note loc: {d}..{d}\n\x1b[0m",
+                    .{
+                        err.note.?.loc.?.start,         err.note.?.loc.?.end,
+                        err_list[0].note.?.loc.?.start, err_list[0].note.?.loc.?.end,
+                    },
+                );
+            }
+            try expect(err_list[0].note.?.loc.?.start == err.note.?.loc.?.start);
+            try expect(err_list[0].note.?.loc.?.end == err.note.?.loc.?.end);
+        }
+    }
+}
+
 test "empty" {
     const source = "";
     var tree = try expectTree(source);
@@ -167,4 +221,59 @@ test "variable & expressions" {
 
     const @"7" = tree.nodeRHS(@"6 >> 7");
     try expect(tree.nodeTag(@"7") == .number_literal);
+}
+
+test "analyser errors" {
+    {
+        const source = "^";
+        try expectError(source, .{
+            .msg = "expected global declaration, found '^'",
+            .loc = .{ .start = 0, .end = 1 },
+        });
+    }
+    {
+        const source = "struct S { m0: array<f32>, m1: f32 }";
+        try expectError(source, .{
+            .msg = "struct member with runtime-sized array type, must be the last member of the structure",
+            .loc = .{ .start = 11, .end = 13 },
+        });
+    }
+    {
+        const source = "struct S0 { m: S1 }";
+        try expectError(source, .{
+            .msg = "use of undeclared identifier 'S1'",
+            .loc = .{ .start = 15, .end = 17 },
+        });
+    }
+    {
+        const source =
+            \\var S1 = 0;
+            \\struct S0 { m: S1 }
+        ;
+        try expectError(source, .{
+            .msg = "'S1' is neither an struct or type alias",
+            .loc = .{ .start = 27, .end = 29 },
+        });
+    }
+    {
+        const source =
+            \\type T = sampler;
+            \\struct S0 { m: T }
+        ;
+        try expectError(source, .{
+            .msg = "invalid struct member type 'T'",
+            .loc = .{ .start = 30, .end = 31 },
+        });
+    }
+    {
+        const source =
+            \\var d1 = 0;
+            \\var d1 = 0;
+        ;
+        try expectError(source, .{
+            .msg = "redeclaration of 'd1'",
+            .loc = .{ .start = 16, .end = 18 },
+            .note = .{ .msg = "other declaration here", .loc = .{ .start = 4, .end = 6 } },
+        });
+    }
 }
