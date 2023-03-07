@@ -38,50 +38,89 @@ pub fn structDecl(self: *Analyse, parent_scope: []const Ast.Index, node: Ast.Ind
     const member_list = self.tree.spanToList(self.tree.nodeLHS(node));
     for (member_list, 0..) |member_node, i| {
         try self.checkRedeclaration(member_list[i + 1 ..], member_node);
-
         const member_loc = self.tree.tokenLoc(self.tree.nodeToken(member_node));
-        const member_name = member_loc.slice(self.tree.source);
         const member_type_node = self.tree.nodeRHS(member_node);
+        const member_type_loc = self.tree.tokenLoc(self.tree.nodeToken(member_type_node));
+        const member_type_name = member_type_loc.slice(self.tree.source);
 
-        switch (self.tree.nodeTag(member_type_node)) {
-            .scalar_type,
-            .vector_type,
-            .matrix_type,
-            .atomic_type,
-            => {},
-            .array_type => {
-                if (self.tree.nodeRHS(member_type_node) == Ast.null_index and
-                    i != member_list.len - 1)
-                {
+        var inner_type = member_type_node;
+        while (true) {
+            switch (self.tree.nodeTag(inner_type)) {
+                .scalar_type,
+                .vector_type,
+                .matrix_type,
+                .atomic_type,
+                => {},
+                .array_type => {
+                    if (self.tree.nodeRHS(member_type_node) == Ast.null_index and
+                        i != member_list.len - 1)
+                    {
+                        try self.addError(
+                            member_loc,
+                            "struct member with runtime-sized array type, must be the last member of the structure",
+                            .{},
+                            null,
+                        );
+                    }
+                },
+                .user_type => {
+                    const decl_node = try self.expectFindTypeAliasOrStructDeclNode(member_type_loc, parent_scope, member_type_name) orelse break;
+                    if (self.tree.nodeTag(decl_node) == .type_alias) {
+                        inner_type = self.tree.nodeLHS(decl_node);
+                        continue;
+                    }
+                },
+                else => {
                     try self.addError(
                         member_loc,
-                        "struct member with runtime-sized array type, must be the last member of the structure",
-                        .{},
+                        "invalid struct member type '{s}'",
+                        .{member_type_name},
                         null,
                     );
-                }
-            },
-            .user_type => {
-                _ = self.findDeclNode(parent_scope, member_name) orelse {
-                    try self.addError(
-                        member_loc, // TODO
-                        "use of undeclared identifier '{s}'",
-                        .{member_name},
-                        null,
-                    );
-                    continue;
-                };
-            },
+                },
+            }
+            break;
+        }
+    }
+}
+
+/// UNUSED
+/// returns the actual type of a type alias
+pub fn fetchTypeAliasType(self: *Analyse, node: Ast.Index) void {
+    std.debug.assert(self.tree.nodeTag(node) == .type_alias);
+    if (self.tree.nodeTag(node) == .type_alias) {
+        return self.fetchTypeAliasType(self.tree.nodeLHS(node));
+    }
+    return self.tree.nodeLHS(node);
+}
+
+pub fn expectFindTypeAliasOrStructDeclNode(self: *Analyse, ref_loc: Token.Loc, scope_items: []const Ast.Index, name: []const u8) !?Ast.Index {
+    if (try self.expectFindDeclNode(ref_loc, scope_items, name)) |decl_node| {
+        switch (self.tree.nodeTag(decl_node)) {
+            .struct_decl, .type_alias => return decl_node,
             else => {
                 try self.addError(
-                    member_loc,
-                    "invalid struct member type '{s}'",
-                    .{member_name},
+                    ref_loc,
+                    "'{s}' is neither an struct or type alias",
+                    .{name},
                     null,
                 );
             },
         }
     }
+    return null;
+}
+
+pub fn expectFindDeclNode(self: *Analyse, ref_loc: Token.Loc, scope_items: []const Ast.Index, name: []const u8) !?Ast.Index {
+    return self.findDeclNode(scope_items, name) orelse {
+        try self.addError(
+            ref_loc,
+            "use of undeclared identifier '{s}'",
+            .{name},
+            null,
+        );
+        return null;
+    };
 }
 
 pub fn findDeclNode(self: *Analyse, scope_items: []const Ast.Index, name: []const u8) ?Ast.Index {
