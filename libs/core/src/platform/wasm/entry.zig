@@ -4,8 +4,7 @@ const App = @import("app").App;
 const js = @import("js.zig");
 
 pub const GPUInterface = gpu.StubInterface;
-pub const log_level = if (@hasDecl(App, "log_level")) App.log_level else std.log.default_level;
-pub const scope_levels = if (@hasDecl(App, "scope_levels")) App.scope_levels else [0]std.log.ScopeLevel{};
+const app_std_options = if (@hasDecl(App, "std_options")) App.std_options else struct {};
 
 var app: App = undefined;
 export fn wasmInit() void {
@@ -41,6 +40,16 @@ pub const std_options = struct {
         writer.print(message_level.asText() ++ prefix ++ format ++ "\n", args) catch return;
         js.machLogFlush();
     }
+
+    pub const log_level = if (@hasDecl(app_std_options, "log_level"))
+        app_std_options.log_level
+    else
+        std.log.default_level;
+
+    pub const log_scope_levels = if (@hasDecl(app_std_options, "log_scope_levels"))
+        app_std_options.log_scope_levels
+    else
+        &[0]std.log.ScopeLevel{};
 };
 
 pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, ret_addr: ?usize) noreturn {
