@@ -12,7 +12,7 @@ const Parser = @This();
 allocator: std.mem.Allocator,
 source: [:0]const u8,
 tok_i: Ast.Index,
-tokens: Ast.TokenList.Slice,
+tokens: std.MultiArrayList(Token),
 nodes: std.MultiArrayList(Ast.Node),
 extra: std.ArrayListUnmanaged(Ast.Index),
 scratch: std.ArrayListUnmanaged(Ast.Index),
@@ -20,6 +20,7 @@ errors: std.ArrayListUnmanaged(ErrorMsg),
 extensions: Extension.Array,
 
 pub fn deinit(p: *Parser) void {
+    p.tokens.deinit(p.allocator);
     p.nodes.deinit(p.allocator);
     p.extra.deinit(p.allocator);
     p.scratch.deinit(p.allocator);
@@ -27,10 +28,10 @@ pub fn deinit(p: *Parser) void {
     p.errors.deinit(p.allocator);
 }
 
-pub fn parseRoot(p: *Parser) !void {
+pub fn translationUnit(p: *Parser) !?Ast.Index {
     const root = try p.addNode(.{ .tag = .span, .main_token = undefined });
 
-    while (try p.globalDirective()) |ext| {
+    while (try p.globalDirectiveRecoverable()) |ext| {
         p.extensions.set(ext, true);
     }
 
@@ -40,12 +41,24 @@ pub fn parseRoot(p: *Parser) !void {
     }
 
     if (p.errors.items.len > 0) {
-        return error.Parsing;
+        return null;
     }
 
     try p.extra.appendSlice(p.allocator, p.scratch.items);
     p.nodes.items(.lhs)[root] = @intCast(Ast.Index, p.extra.items.len - p.scratch.items.len);
     p.nodes.items(.rhs)[root] = @intCast(Ast.Index, p.extra.items.len);
+
+    return root;
+}
+
+pub fn globalDirectiveRecoverable(p: *Parser) !?Extension {
+    return p.globalDirective() catch |err| switch (err) {
+        error.Parsing => {
+            p.findNextGlobalDirective();
+            return null;
+        },
+        else => return err,
+    };
 }
 
 pub fn globalDirective(p: *Parser) !?Extension {
@@ -61,7 +74,7 @@ pub fn globalDirective(p: *Parser) !?Extension {
 pub fn expectGlobalDeclRecoverable(p: *Parser) !?Ast.Index {
     return p.expectGlobalDecl() catch |err| switch (err) {
         error.Parsing => {
-            p.findNextGlobal();
+            p.findNextGlobalDecl();
             return null;
         },
         else => return err,
@@ -1056,13 +1069,29 @@ pub fn typeSpecifier(p: *Parser) !?Ast.Index {
 }
 
 pub fn typeSpecifierWithoutIdent(p: *Parser) !?Ast.Index {
-    if (p.isVectorPrefix() or p.isMatrixPrefix()) {
+    if (p.isVectorPrefix()) {
         const main_token = p.advanceToken();
+
         _ = try p.expectToken(.less_than);
         const elem_type = try p.expectTypeSpecifier();
         _ = try p.expectToken(.greater_than);
+
         return try p.addNode(.{
-            .tag = if (p.isVectorPrefix()) .vector_type else .matrix_type,
+            .tag = .vector_type,
+            .main_token = main_token,
+            .lhs = elem_type,
+        });
+    }
+
+    if (p.isMatrixPrefix()) {
+        const main_token = p.advanceToken();
+
+        _ = try p.expectToken(.less_than);
+        const elem_type = try p.expectTypeSpecifier();
+        _ = try p.expectToken(.greater_than);
+
+        return try p.addNode(.{
+            .tag = .matrix_type,
             .main_token = main_token,
             .lhs = elem_type,
         });
@@ -1074,10 +1103,13 @@ pub fn typeSpecifierWithoutIdent(p: *Parser) !?Ast.Index {
         .k_u32,
         .k_f32,
         .k_f16,
-        .k_bool,
         => {
             _ = p.advanceToken();
-            return try p.addNode(.{ .tag = .scalar_type, .main_token = main_token });
+            return try p.addNode(.{ .tag = .number_type, .main_token = main_token });
+        },
+        .k_bool => {
+            _ = p.advanceToken();
+            return try p.addNode(.{ .tag = .bool_type, .main_token = main_token });
         },
         .k_sampler, .k_comparison_sampler => {
             _ = p.advanceToken();
@@ -1328,7 +1360,8 @@ pub fn callExpr(p: *Parser) !?Ast.Index {
         const type_node = try p.typeSpecifierWithoutIdent() orelse return null;
         const tag = p.nodes.items(.tag)[type_node];
         switch (tag) {
-            .scalar_type,
+            .bool_type,
+            .number_type,
             .vector_type,
             .matrix_type,
             .array_type,
@@ -1730,7 +1763,20 @@ pub fn componentOrSwizzleSpecifier(p: *Parser, prefix: Ast.Index) !Ast.Index {
     }
 }
 
-fn findNextGlobal(p: *Parser) void {
+fn findNextGlobalDirective(p: *Parser) void {
+    while (true) {
+        switch (p.peekToken(.tag, 0)) {
+            .k_enable, .k_require, .eof => return,
+            .semicolon => {
+                _ = p.advanceToken();
+                return;
+            },
+            else => _ = p.advanceToken(),
+        }
+    }
+}
+
+fn findNextGlobalDecl(p: *Parser) void {
     var level: Ast.Index = 0;
     while (true) {
         switch (p.peekToken(.tag, 0)) {

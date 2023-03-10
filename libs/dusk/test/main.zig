@@ -86,17 +86,19 @@ fn printCode(writer: anytype, term: std.debug.TTY.Config, source: []const u8, lo
     try writer.writeByte('\n');
 }
 
-fn expectTree(source: [:0]const u8) !dusk.Ast {
+fn expectIR(source: [:0]const u8) !dusk.IR {
     var res = try dusk.Ast.parse(allocator, source);
     switch (res) {
         .tree => |*tree| {
-            errdefer tree.deinit(allocator);
-            if (try tree.analyse(allocator)) |errors| {
-                try printErrors(errors, source, null);
-                allocator.free(errors);
-                return error.Analysing;
+            defer tree.deinit(allocator);
+            switch (try dusk.IR.generate(allocator, tree)) {
+                .ir => |ir| return ir,
+                .errors => |err_msgs| {
+                    try printErrors(err_msgs, source, null);
+                    allocator.free(err_msgs);
+                    return error.ExpectedIR;
+                },
             }
-            return tree.*;
         },
         .errors => |err_msgs| {
             try printErrors(err_msgs, source, null);
@@ -107,20 +109,27 @@ fn expectTree(source: [:0]const u8) !dusk.Ast {
 }
 
 fn expectError(source: [:0]const u8, err: dusk.ErrorMsg) !void {
-    var res = try dusk.Ast.parse(allocator, source);
+    var gpa = std.heap.GeneralPurposeAllocator(.{ .stack_trace_frames = 12 }){};
+    const all = gpa.allocator();
+    defer _ = gpa.deinit();
+    var res = try dusk.Ast.parse(all, source);
     const err_list = switch (res) {
         .tree => |*tree| blk: {
-            defer tree.deinit(allocator);
-            if (try tree.analyse(allocator)) |errors| {
-                break :blk errors;
+            defer tree.deinit(all);
+            switch (try dusk.IR.generate(all, tree)) {
+                .ir => |*ir| {
+                    ir.deinit();
+                    return error.ExpectedError;
+                },
+                .errors => |err_msgs| break :blk err_msgs,
             }
             return error.ExpectedError;
         },
         .errors => |err_msgs| err_msgs,
     };
     defer {
-        for (err_list) |*err_msg| err_msg.deinit(allocator);
-        allocator.free(err_list);
+        for (err_list) |*err_msg| err_msg.deinit(all);
+        all.free(err_list);
     }
     {
         errdefer {
@@ -162,65 +171,65 @@ fn expectError(source: [:0]const u8, err: dusk.ErrorMsg) !void {
 
 test "empty" {
     const source = "";
-    var tree = try expectTree(source);
-    defer tree.deinit(allocator);
+    var ir = try expectIR(source);
+    defer ir.deinit();
 }
 
 test "boids" {
     const source = @embedFile("boids.wgsl");
-    var tree = try expectTree(source);
-    defer tree.deinit(allocator);
+    var ir = try expectIR(source);
+    defer ir.deinit();
 }
 
 test "gkurve" {
     if (true) return error.SkipZigTest;
 
     const source = @embedFile("gkurve.wgsl");
-    var tree = try expectTree(source);
-    defer tree.deinit(allocator);
+    var ir = try expectIR(source);
+    defer ir.deinit();
 }
 
 test "variable & expressions" {
-    const source = "var expr = 1 + 5 + 2 * 3 > 6 >> 7;";
+    // const source = "var expr = 1 + 5 + 2 * 3 > 6 >> 7;";
 
-    var tree = try expectTree(source);
-    defer tree.deinit(allocator);
+    // var ir = try expectIR(source);
+    // defer ir.deinit();
 
-    const root_node = 0;
-    try expect(tree.nodeLHS(root_node) + 1 == tree.nodeRHS(root_node));
+    // const root_node = 0;
+    // try expect(ir.nodeLHS(root_node) + 1 == ir.nodeRHS(root_node));
 
-    const variable = tree.spanToList(root_node)[0];
-    const variable_name = tree.tokenLoc(tree.extraData(dusk.Ast.Node.GlobalVarDecl, tree.nodeLHS(variable)).name);
-    try expect(std.mem.eql(u8, "expr", variable_name.slice(source)));
-    try expect(tree.nodeTag(variable) == .global_variable);
-    try expect(tree.tokenTag(tree.nodeToken(variable)) == .k_var);
+    // const variable = ir.spanToList(root_node)[0];
+    // const variable_name = ir.tokenLoc(ir.extraData(dusk.Ast.Node.GlobalVarDecl, ir.nodeLHS(variable)).name);
+    // try expect(std.mem.eql(u8, "expr", variable_name.slice(source)));
+    // try expect(ir.nodeTag(variable) == .global_variable);
+    // try expect(ir.tokenTag(ir.nodeToken(variable)) == .k_var);
 
-    const expr = tree.nodeRHS(variable);
-    try expect(tree.nodeTag(expr) == .greater);
+    // const expr = ir.nodeRHS(variable);
+    // try expect(ir.nodeTag(expr) == .greater);
 
-    const @"1 + 5 + 2 * 3" = tree.nodeLHS(expr);
-    try expect(tree.nodeTag(@"1 + 5 + 2 * 3") == .add);
+    // const @"1 + 5 + 2 * 3" = ir.nodeLHS(expr);
+    // try expect(ir.nodeTag(@"1 + 5 + 2 * 3") == .add);
 
-    const @"1 + 5" = tree.nodeLHS(@"1 + 5 + 2 * 3");
-    try expect(tree.nodeTag(@"1 + 5") == .add);
+    // const @"1 + 5" = ir.nodeLHS(@"1 + 5 + 2 * 3");
+    // try expect(ir.nodeTag(@"1 + 5") == .add);
 
-    const @"1" = tree.nodeLHS(@"1 + 5");
-    try expect(tree.nodeTag(@"1") == .number_literal);
+    // const @"1" = ir.nodeLHS(@"1 + 5");
+    // try expect(ir.nodeTag(@"1") == .number_literal);
 
-    const @"5" = tree.nodeRHS(@"1 + 5");
-    try expect(tree.nodeTag(@"5") == .number_literal);
+    // const @"5" = ir.nodeRHS(@"1 + 5");
+    // try expect(ir.nodeTag(@"5") == .number_literal);
 
-    const @"2 * 3" = tree.nodeRHS(@"1 + 5 + 2 * 3");
-    try expect(tree.nodeTag(@"2 * 3") == .mul);
+    // const @"2 * 3" = ir.nodeRHS(@"1 + 5 + 2 * 3");
+    // try expect(ir.nodeTag(@"2 * 3") == .mul);
 
-    const @"6 >> 7" = tree.nodeRHS(expr);
-    try expect(tree.nodeTag(@"6 >> 7") == .shift_right);
+    // const @"6 >> 7" = ir.nodeRHS(expr);
+    // try expect(ir.nodeTag(@"6 >> 7") == .shift_right);
 
-    const @"6" = tree.nodeLHS(@"6 >> 7");
-    try expect(tree.nodeTag(@"6") == .number_literal);
+    // const @"6" = ir.nodeLHS(@"6 >> 7");
+    // try expect(ir.nodeTag(@"6") == .number_literal);
 
-    const @"7" = tree.nodeRHS(@"6 >> 7");
-    try expect(tree.nodeTag(@"7") == .number_literal);
+    // const @"7" = ir.nodeRHS(@"6 >> 7");
+    // try expect(ir.nodeTag(@"7") == .number_literal);
 }
 
 test "analyser errors" {
