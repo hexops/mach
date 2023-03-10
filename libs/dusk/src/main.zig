@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub const Ast = @import("Ast.zig");
-pub const Analyse = @import("Analyse.zig");
+pub const IR = @import("IR.zig");
 pub const Parser = @import("Parser.zig");
 pub const Token = @import("Token.zig");
 pub const Tokenizer = @import("Tokenizer.zig");

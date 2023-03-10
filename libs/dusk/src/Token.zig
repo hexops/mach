@@ -214,6 +214,8 @@ pub const Tag = enum {
     k_override,
     /// 'ptr'
     k_ptr,
+    /// 'require'
+    k_require,
     /// 'return'
     k_return,
     /// 'sampler'
@@ -363,6 +365,7 @@ pub const Tag = enum {
             .k_mat4x4 => "mat4x4",
             .k_override => "override",
             .k_ptr => "ptr",
+            .k_require => "require",
             .k_return => "return",
             .k_sampler => "sampler",
             .k_comparison_sampler => "sampler_comparison",
@@ -433,6 +436,7 @@ pub const keywords = std.ComptimeStringMap(Tag, .{
     .{ "mat4x4", .k_mat4x4 },
     .{ "override", .k_override },
     .{ "ptr", .k_ptr },
+    .{ "require", .k_require },
     .{ "return", .k_return },
     .{ "sampler", .k_sampler },
     .{ "sampler_comparison", .k_comparison_sampler },

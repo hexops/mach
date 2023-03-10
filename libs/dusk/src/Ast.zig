@@ -1,5 +1,4 @@
 const std = @import("std");
-const Analyse = @import("Analyse.zig");
 const Parser = @import("Parser.zig");
 const Token = @import("Token.zig");
 const Tokenizer = @import("Tokenizer.zig");
@@ -30,22 +29,27 @@ pub const ParseResult = union(enum) {
 
 /// parses a TranslationUnit (WGSL Program)
 pub fn parse(allocator: std.mem.Allocator, source: [:0]const u8) !ParseResult {
-    const estimated_tokens = source.len / 8;
-    var tokens = std.MultiArrayList(Token){};
-    try tokens.ensureTotalCapacity(allocator, estimated_tokens);
-
-    var tokenizer = Tokenizer.init(source);
-    while (true) {
-        const tok = tokenizer.next();
-        try tokens.append(allocator, tok);
-        if (tok.tag == .eof) break;
-    }
-
     var p = Parser{
         .allocator = allocator,
         .source = source,
         .tok_i = 0,
-        .tokens = tokens.toOwnedSlice(),
+        .tokens = blk: {
+            const estimated_tokens = source.len / 8;
+
+            var tokens = std.MultiArrayList(Token){};
+            errdefer tokens.deinit(allocator);
+
+            try tokens.ensureTotalCapacity(allocator, estimated_tokens);
+
+            var tokenizer = Tokenizer.init(source);
+            while (true) {
+                const tok = tokenizer.next();
+                try tokens.append(allocator, tok);
+                if (tok.tag == .eof) break;
+            }
+
+            break :blk tokens;
+        },
         .nodes = .{},
         .extra = .{},
         .scratch = .{},
@@ -53,46 +57,23 @@ pub fn parse(allocator: std.mem.Allocator, source: [:0]const u8) !ParseResult {
         .extensions = Extension.Array.initFill(false),
     };
     defer p.deinit();
-    errdefer p.tokens.deinit(allocator);
 
     // TODO: make sure tokens:nodes ratio is right
-    const estimated_node_count = (tokens.len + 2) / 2;
+    const estimated_node_count = (p.tokens.len + 2) / 2;
     try p.nodes.ensureTotalCapacity(allocator, estimated_node_count);
 
-    p.parseRoot() catch |err| {
-        if (err == error.Parsing) {
-            p.tokens.deinit(allocator);
-            return .{ .errors = try p.errors.toOwnedSlice(allocator) };
-        }
-        return err;
+    _ = try p.translationUnit() orelse {
+        return .{ .errors = try p.errors.toOwnedSlice(allocator) };
     };
 
     return .{
         .tree = .{
             .source = source,
-            .tokens = p.tokens,
+            .tokens = p.tokens.toOwnedSlice(),
             .nodes = p.nodes.toOwnedSlice(),
             .extra = try p.extra.toOwnedSlice(allocator),
         },
     };
-}
-
-pub fn analyse(tree: Ast, allocator: std.mem.Allocator) !?[]ErrorMsg {
-    var analyser = Analyse{
-        .allocator = allocator,
-        .tree = &tree,
-        .errors = .{},
-    };
-    defer analyser.deinit();
-
-    analyser.analyseRoot() catch |err| {
-        if (err == error.Analysing) {
-            return try analyser.errors.toOwnedSlice(allocator);
-        }
-        return err;
-    };
-
-    return null;
 }
 
 pub fn spanToList(tree: Ast, span: Ast.Index) []const Ast.Index {
@@ -313,7 +294,12 @@ pub const Node = struct {
         /// TOK : k_i32, k_u32, k_f32, k_f16, k_bool
         /// LHS : --
         /// RHS : --
-        scalar_type,
+        number_type,
+
+        /// TOK : k_bool
+        /// LHS : --
+        /// RHS : --
+        bool_type,
 
         /// TOK : k_sampler, k_comparison_sampler
         /// LHS : --
@@ -523,8 +509,8 @@ pub const Node = struct {
         /// vector prefix (e.g. vec2) and matrix prefix (e.g. mat2x2) LHS is null
         /// see callExpr in Parser.zig if you don't understand this
         ///
-        /// TOK : ident, k_array, 'scalar keywords', 'vector keywords', 'matrix keywords'
-        /// LHS : (scalar_type, vector_type, matrix_type, array_type)?
+        /// TOK : ident, k_array, k_bool, 'number type keywords', 'vector keywords', 'matrix keywords'
+        /// LHS : (number_type, bool_type, vector_type, matrix_type, array_type)?
         /// RHS : arguments (Expr span)
         call,
 
