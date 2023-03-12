@@ -6,8 +6,6 @@ const glfw = @import("glfw");
 const Core = @import("../Core.zig");
 const native = @import("native.zig");
 
-pub const App = @This();
-
 pub const GPUInterface = gpu.dawn.Interface;
 
 const _ = gpu.Export(GPUInterface);

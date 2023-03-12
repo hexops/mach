@@ -50,7 +50,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const lib = b.addSharedLibrary(.{ .name = "machcore", .root_source_file = .{ .path = "src/platform/libmachcore.zig" }, .target = target, .optimize = optimize });
             lib.main_pkg_path = "src/";
             const app_module = b.createModule(.{
-                .source_file = .{ .path = "src/platform/libmachcore.zig" },
+                .source_file = .{ .path = "src/platform/libmachcore_app.zig" },
             });
             lib.addModule("app", app_module);
             lib.addModule("glfw", deps.glfw.module(b));

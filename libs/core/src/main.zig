@@ -6,4 +6,5 @@ pub const sysjs = @import("sysjs");
 
 test {
     _ = @import("platform/libmachcore.zig");
+    _ = @import("platform/libmachcore_app.zig");
 }
