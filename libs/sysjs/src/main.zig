@@ -142,7 +142,7 @@ pub const Object = struct {
     }
 
     pub fn copyBytes(obj: *const Object, bytes: []u8) void {
-        js.zigCopyBytes(obj.ref, bytes.ptr, bytes.len);
+        js.zigCopyBytes(obj.ref, bytes.ptr, @intCast(u32, bytes.len));
     }
 
     pub fn call(obj: *const Object, fun: []const u8, args: []const Value) Value {
@@ -254,7 +254,7 @@ pub fn createUndefined() Value {
 const FunType = *const fn (args: Object, args_len: u32, captures: []Value) Value;
 
 pub fn createFunction(fun: FunType, captures: []Value) Function {
-    return .{ .ref = js.zigCreateFunction(fun, captures.ptr, captures.len) };
+    return .{ .ref = js.zigCreateFunction(fun, captures.ptr, @intCast(u32, captures.len)) };
 }
 
 pub fn constructType(t: []const u8, args: []const Value) Object {
