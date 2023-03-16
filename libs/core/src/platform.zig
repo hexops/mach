@@ -7,7 +7,6 @@ else
 
 // Verifies that a platform implementation exposes the expected function declarations.
 comptime {
-    assertHasDecl(@This(), "entry");
     assertHasDecl(@This(), "Core");
     assertHasDecl(@This(), "Timer");
 

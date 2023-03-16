@@ -115,11 +115,6 @@ pub fn Sdk(comptime deps: anytype) type {
 
                 var dependencies = std.ArrayList(std.build.ModuleDependency).init(b.allocator);
                 try dependencies.append(.{ .name = "core", .module = module(b) });
-                try dependencies.append(.{ .name = "gpu", .module = deps.gpu.module(b) });
-                switch (platform) {
-                    .native => try dependencies.append(.{ .name = "glfw", .module = deps.glfw.module(b) }),
-                    .web => try dependencies.append(.{ .name = "sysjs", .module = deps.sysjs.module(b) }),
-                }
                 if (options.deps) |app_deps| try dependencies.appendSlice(app_deps);
 
                 const app_module = b.createModule(.{
@@ -137,7 +132,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     } else {
                         const exe = b.addExecutable(.{
                             .name = options.name,
-                            .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+                            .root_source_file = .{ .path = sdkPath("/src/entry.zig") },
                             .target = options.target,
                             .optimize = options.optimize,
                         });
@@ -151,7 +146,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 };
 
                 step.main_pkg_path = sdkPath("/src");
-                step.addModule("gpu", deps.gpu.module(b));
+                step.addModule("core", module(b));
                 step.addModule("app", app_module);
 
                 return .{

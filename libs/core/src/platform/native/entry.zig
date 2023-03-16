@@ -1,7 +1,7 @@
 const std = @import("std");
-const gpu = @import("gpu");
 const App = @import("app").App;
-const util = @import("util.zig");
+const core = @import("core");
+const gpu = core.gpu;
 
 pub const GPUInterface = gpu.dawn.Interface;
 
@@ -28,8 +28,8 @@ pub fn main() !void {
     defer app.deinit();
 
     while (true) {
-        const pool = try util.AutoReleasePool.init();
-        defer util.AutoReleasePool.release(pool);
+        const pool = try core.platform_util.AutoReleasePool.init();
+        defer core.platform_util.AutoReleasePool.release(pool);
         if (try app.update()) return;
     }
 }

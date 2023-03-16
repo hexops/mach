@@ -1,6 +1,9 @@
 const builtin = @import("builtin");
 
-pub usingnamespace @import("platform.zig").entry;
+pub usingnamespace if (builtin.cpu.arch == .wasm32)
+    @import("platform/wasm/entry.zig")
+else
+    @import("platform/native/entry.zig");
 
 comptime {
     if (!builtin.is_test) {

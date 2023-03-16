@@ -1,7 +1,11 @@
 const std = @import("std");
-const gpu = @import("gpu");
+const core = @import("core");
+const gpu = core.gpu;
 const App = @import("app").App;
-const js = @import("js.zig");
+
+pub extern "mach" fn machLogWrite(str: [*]const u8, len: u32) void;
+pub extern "mach" fn machLogFlush() void;
+pub extern "mach" fn machPanic(str: [*]const u8, len: u32) void;
 
 pub const GPUInterface = gpu.StubInterface;
 const app_std_options = if (@hasDecl(App, "std_options")) App.std_options else struct {};
@@ -23,7 +27,7 @@ const LogError = error{};
 const LogWriter = std.io.Writer(void, LogError, writeLog);
 
 fn writeLog(_: void, msg: []const u8) LogError!usize {
-    js.machLogWrite(msg.ptr, msg.len);
+    machLogWrite(msg.ptr, msg.len);
     return msg.len;
 }
 
@@ -38,7 +42,7 @@ pub const std_options = struct {
         const writer = LogWriter{ .context = {} };
 
         writer.print(message_level.asText() ++ prefix ++ format ++ "\n", args) catch return;
-        js.machLogFlush();
+        machLogFlush();
     }
 
     pub const log_level = if (@hasDecl(app_std_options, "log_level"))
@@ -55,6 +59,6 @@ pub const std_options = struct {
 pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, ret_addr: ?usize) noreturn {
     _ = error_return_trace;
     _ = ret_addr;
-    js.machPanic(msg.ptr, msg.len);
+    machPanic(msg.ptr, msg.len);
     unreachable;
 }
