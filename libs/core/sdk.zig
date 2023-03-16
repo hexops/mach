@@ -30,7 +30,6 @@ pub fn Sdk(comptime deps: anytype) type {
         pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) !*std.build.RunStep {
             const main_tests = b.addTest(.{
                 .name = "core-tests",
-                .kind = .test_exe,
                 .root_source_file = .{ .path = sdkPath("/src/main.zig") },
                 .target = target,
                 .optimize = optimize,
@@ -91,7 +90,7 @@ pub fn Sdk(comptime deps: anytype) type {
             pub const LinkError = deps.glfw.LinkError;
             pub const RunError = error{
                 ParsingIpFailed,
-            } || deps.wasmserve.Error || std.fmt.ParseIntError;
+            } || std.fmt.ParseIntError;
 
             pub const Platform = enum {
                 native,
@@ -218,18 +217,20 @@ pub fn Sdk(comptime deps: anytype) type {
 
             pub fn run(app: *const App) RunError!*std.build.Step {
                 if (app.platform == .web) {
-                    const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch try app.b.allocator.dupe(u8, "127.0.0.1");
-                    const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch try app.b.allocator.dupe(u8, "8080");
-                    const address_parsed = std.net.Address.parseIp4(address, try std.fmt.parseInt(u16, port, 10)) catch return error.ParsingIpFailed;
-                    const serve_step = try deps.wasmserve.serve(
-                        app.step,
-                        .{
-                            .install_dir = web_install_dir,
-                            .watch_paths = app.watch_paths,
-                            .listen_address = address_parsed,
-                        },
-                    );
-                    return &serve_step.step;
+                    @panic("TODO: wasmserve is broken! sorry");
+                    // TODO: get wasmserve working
+                    // const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch try app.b.allocator.dupe(u8, "127.0.0.1");
+                    // const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch try app.b.allocator.dupe(u8, "8080");
+                    // const address_parsed = std.net.Address.parseIp4(address, try std.fmt.parseInt(u16, port, 10)) catch return error.ParsingIpFailed;
+                    // const serve_step = try deps.wasmserve.serve(
+                    // app.step,
+                    // .{
+                    // .install_dir = web_install_dir,
+                    // .watch_paths = app.watch_paths,
+                    // .listen_address = address_parsed,
+                    // },
+                    // );
+                    // return &serve_step.step;
                 } else {
                     return &app.step.run().step;
                 }

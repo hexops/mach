@@ -27,20 +27,20 @@ pub const Options = struct {
 pub const Error = error{CannotOpenDirectory} || mem.Allocator.Error;
 
 pub fn serve(step: *build.CompileStep, options: Options) Error!*Wasmserve {
-    const self = try step.builder.allocator.create(Wasmserve);
+    const self = try step.step.owner.allocator.create(Wasmserve);
     const install_dir = options.install_dir orelse build.InstallDir{ .lib = {} };
-    const install_dir_iter = fs.cwd().makeOpenPathIterable(step.builder.getInstallPath(install_dir, ""), .{}) catch
+    const install_dir_iter = fs.cwd().makeOpenPathIterable(step.step.owner.getInstallPath(install_dir, ""), .{}) catch
         return error.CannotOpenDirectory;
     self.* = Wasmserve{
-        .step = build.Step.init(.run, "wasmserve", step.builder.allocator, Wasmserve.make),
-        .b = step.builder,
+        .step = build.Step.init(.run, "wasmserve", step.step.owner.allocator, Wasmserve.make),
+        .b = step.step.owner,
         .exe_step = step,
         .install_dir = install_dir,
         .install_dir_iter = install_dir_iter,
         .address = options.listen_address orelse net.Address.initIp4([4]u8{ 127, 0, 0, 1 }, 8080),
         .subscriber = null,
         .watch_paths = options.watch_paths orelse &.{step.root_src.?.path},
-        .mtimes = std.AutoHashMap(fs.File.INode, i128).init(step.builder.allocator),
+        .mtimes = std.AutoHashMap(fs.File.INode, i128).init(step.step.owner.allocator),
         .notify_msg = null,
     };
     return self;

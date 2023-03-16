@@ -87,7 +87,6 @@ pub fn build(b: *std.Build) !void {
 pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
     const main_tests = b.addTest(.{
         .name = "freetype-tests",
-        .kind = .test_exe,
         .root_source_file = .{ .path = sdkPath("/src/main.zig") },
         .target = target,
         .optimize = optimize,
@@ -104,7 +103,6 @@ pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
 
     const harfbuzz_tests = b.addTest(.{
         .name = "harfbuzz-tests",
-        .kind = .test_exe,
         .root_source_file = .{ .path = sdkPath("/src/harfbuzz/main.zig") },
         .target = target,
         .optimize = optimize,
