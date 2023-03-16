@@ -13,13 +13,18 @@ pub fn Sdk(comptime deps: anytype) type {
             }
         };
 
+        var _module: ?*std.build.Module = null;
+
         pub fn module(b: *std.Build) *std.build.Module {
-            return b.createModule(.{
+            if (_module) |m| return m;
+            _module = b.createModule(.{
                 .source_file = .{ .path = sdkPath("/src/main.zig") },
                 .dependencies = &.{
                     .{ .name = "gpu", .module = deps.gpu.module(b) },
+                    .{ .name = "glfw", .module = deps.glfw.module(b) },
                 },
             });
+            return _module.?;
         }
 
         pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) !*std.build.RunStep {

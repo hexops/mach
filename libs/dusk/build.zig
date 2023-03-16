@@ -8,8 +8,14 @@ pub fn build(b: *std.Build) !void {
     test_step.dependOn(&testStep(b, optimize, target).step);
 }
 
-pub fn module(b: *std.build.Builder) *std.build.Module {
-    return b.createModule(.{ .source_file = .{ .path = sdkPath("/src/main.zig") } });
+var _module: ?*std.build.Module = null;
+
+pub fn module(b: *std.Build) *std.build.Module {
+    if (_module) |m| return m;
+    _module = b.createModule(.{
+        .source_file = .{ .path = sdkPath("/src/main.zig") },
+    });
+    return _module.?;
 }
 
 pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {

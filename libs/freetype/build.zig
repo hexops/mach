@@ -7,19 +7,27 @@ const hb_root = sdkPath("/upstream/harfbuzz");
 const hb_include_path = hb_root ++ "/src";
 const brotli_root = sdkPath("/upstream/brotli");
 
+var _module: ?*std.build.Module = null;
+
 pub fn module(b: *std.Build) *std.build.Module {
-    return b.createModule(.{
+    if (_module) |m| return m;
+    _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
     });
+    return _module.?;
 }
 
+var _harfbuzz_module: ?*std.build.Module = null;
+
 pub fn harfbuzzModule(b: *std.Build) *std.build.Module {
-    return b.createModule(.{
+    if (_harfbuzz_module) |m| return m;
+    _harfbuzz_module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/harfbuzz/main.zig") },
         .dependencies = &.{
             .{ .name = "freetype", .module = module(b) },
         },
     });
+    return _harfbuzz_module.?;
 }
 
 pub const Options = struct {

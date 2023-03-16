@@ -3,12 +3,16 @@ const Build = std.Build;
 
 const basisu_root = sdkPath("/upstream/basisu");
 
+var _module: ?*std.build.Module = null;
+
 pub fn module(b: *std.Build) *std.build.Module {
-    return b.createModule(.{
+    if (_module) |m| return m;
+    _module = b.createModule(.{
         .source = .{
             .path = "src/main.zig",
         },
     });
+    return _module.?;
 }
 
 pub const Options = struct {

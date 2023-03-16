@@ -25,10 +25,14 @@ pub fn build(b: *std.Build) void {
     _ = module(b);
 }
 
+var _module: ?*std.build.Module = null;
+
 pub fn module(b: *std.Build) *std.build.Module {
-    return b.createModule(.{
+    if (_module) |m| return m;
+    _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
     });
+    return _module.?;
 }
 
 fn sdkPath(comptime suffix: []const u8) []const u8 {

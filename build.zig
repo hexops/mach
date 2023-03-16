@@ -31,8 +31,11 @@ const core = @import("libs/core/sdk.zig").Sdk(.{
     .sysjs = sysjs,
 });
 
+var _module: ?*std.build.Module = null;
+
 pub fn module(b: *std.Build) *std.build.Module {
-    return b.createModule(.{
+    if (_module) |m| return m;
+    _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
         .dependencies = &.{
             .{ .name = "core", .module = core.module(b) },
@@ -41,6 +44,7 @@ pub fn module(b: *std.Build) *std.build.Module {
             .{ .name = "earcut", .module = earcut.module(b) },
         },
     });
+    return _module.?;
 }
 
 pub const Options = struct {

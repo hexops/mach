@@ -19,10 +19,14 @@ pub fn Sdk(comptime deps: anytype) type {
             gpu_dawn_options: deps.gpu_dawn.Options = .{},
         };
 
+        var _module: ?*std.build.Module = null;
+
         pub fn module(b: *std.Build) *std.build.Module {
-            return b.createModule(.{
+            if (_module) |m| return m;
+            _module = b.createModule(.{
                 .source_file = .{ .path = sdkPath("/src/main.zig") },
             });
+            return _module.?;
         }
 
         pub fn link(b: *std.Build, step: *std.build.CompileStep, options: Options) !void {

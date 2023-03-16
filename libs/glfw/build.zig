@@ -69,10 +69,14 @@ pub const Options = struct {
     install_libs: bool = false,
 };
 
+var _module: ?*std.build.Module = null;
+
 pub fn module(b: *std.Build) *std.build.Module {
-    return b.createModule(.{
+    if (_module) |m| return m;
+    _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
     });
+    return _module.?;
 }
 
 pub const LinkError = error{FailedToLinkGPU} || BuildError;

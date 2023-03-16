@@ -1,7 +1,6 @@
 const std = @import("std");
 const mach = @import("mach");
-const gpu = @import("gpu");
-const glfw = @import("glfw");
+const gpu = mach.gpu;
 
 pub const App = @This();
 

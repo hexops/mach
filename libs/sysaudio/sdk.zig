@@ -9,13 +9,17 @@ pub fn Sdk(comptime deps: anytype) type {
             system_sdk: deps.system_sdk.Options = .{},
         };
 
+        var _module: ?*std.build.Module = null;
+
         pub fn module(b: *std.Build) *std.build.Module {
-            return b.createModule(.{
+            if (_module) |m| return m;
+            _module = b.createModule(.{
                 .source_file = .{ .path = sdkPath("/src/main.zig") },
                 .dependencies = &.{
                     .{ .name = "sysjs", .module = deps.sysjs.module(b) },
                 },
             });
+            return _module.?;
         }
 
         pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
