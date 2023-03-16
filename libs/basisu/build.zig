@@ -39,7 +39,6 @@ pub fn build(b: *Build) void {
 pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
     const main_tests = b.addTest(.{
         .name = "basisu-tests",
-        .kind = .test_exe,
         .root_source_file = .{ .path = sdkPath("/src/main.zig") },
         .target = target,
         .optimize = optimize,

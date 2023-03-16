@@ -10,7 +10,8 @@ const earcut = @import("libs/earcut/build.zig");
 const gamemode = @import("libs/gamemode/build.zig");
 const model3d = @import("libs/model3d/build.zig");
 const dusk = @import("libs/dusk/build.zig");
-const wasmserve = @import("tools/wasmserve/wasmserve.zig");
+// TODO: get wasmserve working
+// const wasmserve = @import("tools/wasmserve/wasmserve.zig");
 pub const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
     .glfw_include_dir = sdkPath("/libs/glfw/upstream/glfw/include"),
     .system_sdk = system_sdk,
@@ -27,7 +28,8 @@ const core = @import("libs/core/sdk.zig").Sdk(.{
     .gpu_dawn = gpu_dawn,
     .glfw = glfw,
     .gamemode = gamemode,
-    .wasmserve = wasmserve,
+    // TODO: get wasmserve working
+    // .wasmserve = wasmserve,
     .sysjs = sysjs,
 });
 
@@ -120,7 +122,6 @@ pub fn build(b: *std.Build) !void {
 fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
     const main_tests = b.addTest(.{
         .name = "mach-tests",
-        .kind = .test_exe,
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,

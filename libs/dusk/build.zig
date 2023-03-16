@@ -21,7 +21,6 @@ pub fn module(b: *std.Build) *std.build.Module {
 pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
     const main_tests = b.addTest(.{
         .name = "dusk-tests",
-        .kind = .test_exe,
         .root_source_file = .{ .path = sdkPath("/test/main.zig") },
         .target = target,
         .optimize = optimize,
