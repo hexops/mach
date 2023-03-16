@@ -11,7 +11,7 @@ const gamemode = @import("libs/gamemode/build.zig");
 const model3d = @import("libs/model3d/build.zig");
 const dusk = @import("libs/dusk/build.zig");
 const wasmserve = @import("tools/wasmserve/wasmserve.zig");
-const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
+pub const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
     .glfw_include_dir = sdkPath("/libs/glfw/upstream/glfw/include"),
     .system_sdk = system_sdk,
 });
