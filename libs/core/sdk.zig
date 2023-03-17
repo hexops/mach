@@ -22,6 +22,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 .dependencies = &.{
                     .{ .name = "gpu", .module = deps.gpu.module(b) },
                     .{ .name = "glfw", .module = deps.glfw.module(b) },
+                    .{ .name = "gamemode", .module = deps.gamemode.module(b) },
                 },
             });
             return _module.?;
