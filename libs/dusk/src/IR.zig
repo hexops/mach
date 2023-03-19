@@ -4,11 +4,15 @@ const Ast = @import("Ast.zig");
 const ErrorMsg = @import("main.zig").ErrorMsg;
 const IR = @This();
 
-arena: std.heap.ArenaAllocator,
-root: TranslationUnit,
+allocator: std.mem.Allocator,
+instructions: []const Inst,
+refs: []const Ref,
+strings: []const u8,
 
 pub fn deinit(self: IR) void {
-    self.arena.deinit();
+    self.allocator.free(self.instructions);
+    self.allocator.free(self.refs);
+    self.allocator.free(self.strings);
 }
 
 pub const AstGenResult = union(enum) {
@@ -17,193 +21,276 @@ pub const AstGenResult = union(enum) {
 };
 
 pub fn generate(allocator: std.mem.Allocator, tree: *const Ast) !AstGenResult {
-    var arena = std.heap.ArenaAllocator.init(allocator);
-    errdefer arena.deinit();
-
     var astgen = AstGen{
-        .arena = arena.allocator(),
         .allocator = allocator,
         .tree = tree,
-        .errors = .{},
+        .scope_pool = std.heap.MemoryPool(AstGen.Scope).init(allocator),
     };
     defer astgen.deinit();
 
-    const root = try astgen.translationUnit() orelse {
-        arena.deinit();
-        return .{
-            .errors = try astgen.errors.toOwnedSlice(allocator),
-        };
-    };
+    if (!try astgen.translationUnit()) {
+        return .{ .errors = try astgen.errors.toOwnedSlice(allocator) };
+    }
 
-    return .{ .ir = .{ .arena = arena, .root = root } };
+    return .{ .ir = .{
+        .allocator = allocator,
+        .instructions = try astgen.instructions.toOwnedSlice(allocator),
+        .refs = try astgen.refs.toOwnedSlice(allocator),
+        .strings = try astgen.strings.toOwnedSlice(allocator),
+    } };
 }
 
-pub const TranslationUnit = []const GlobalDecl;
+pub const Ref = u32;
+pub const null_ref: Ref = std.math.maxInt(Ref);
 
-pub const GlobalDecl = union(enum) {
-    variable: GlobalVariable,
-    @"struct": StructDecl,
-};
+pub const Inst = packed struct {
+    tag: Tag,
+    data: Data,
 
-pub const GlobalVariable = struct {
-    name: []const u8,
-    type: union(enum) {},
-    expr: Expression,
-};
+    pub const Tag = enum(u6) {
+        /// data is global_variable
+        global_variable,
 
-pub const StructDecl = struct {
-    name: []const u8,
-    members: []const StructMember,
-};
+        /// data is struct_decl
+        struct_decl,
+        /// data is struct_member
+        struct_member,
 
-pub const StructMember = struct {
-    name: []const u8,
-    type: Type,
+        /// data is attr_simple
+        attr_simple,
+        /// data is attr_expr
+        attr_expr,
+        /// data is attr_builtin
+        attr_builtin,
+        /// data is attr_workgroup
+        attr_workgroup,
+        /// data is attr_interpolate
+        attr_interpolate,
 
-    pub const Type = union(enum) {
-        bool,
-        @"struct": []const u8,
-        number: NumberType,
-        vector: VectorType,
-        matrix: MatrixType,
-        atomic: AtomicType,
-        array: ArrayType,
+        /// data is none
+        bool_type,
+        /// data is none
+        i32_type,
+        /// data is none
+        u32_type,
+        /// data is none
+        f32_type,
+        /// data is none
+        f16_type,
+        /// data is vector_type
+        vector_type,
+        /// data is matrix_type
+        matrix_type,
+        /// data is atomic_type
+        atomic_type,
+        /// data is array_type
+        array_type,
+        /// data is ptr_type
+        ptr_type,
+        /// data is none
+        sampler_type,
+        /// data is none
+        comparison_sampler_type,
+        /// data is sampled_texture_type
+        sampled_texture_type,
+        /// data is multisampled_texture_type
+        multisampled_texture_type,
+        /// data is storage_texture_type
+        storage_texture_type,
+        /// data is depth_texture_type
+        depth_texture_type,
+        /// data is none
+        external_sampled_texture_type,
+
+        /// data is integer_literal
+        integer_literal,
+        /// data is float_literal
+        float_literal,
+        /// data is none
+        true_literal,
+        /// data is none
+        false_literal,
+
+        /// data is ref
+        not,
+        /// data is ref
+        negate,
+        /// data is ref
+        deref,
+        /// data is ref
+        addr_of,
+
+        /// data is binary
+        mul,
+        /// data is binary
+        div,
+        /// data is binary
+        mod,
+        /// data is binary
+        add,
+        /// data is binary
+        sub,
+        /// data is binary
+        shift_left,
+        /// data is binary
+        shift_right,
+        /// data is binary
+        binary_and,
+        /// data is binary
+        binary_or,
+        /// data is binary
+        binary_xor,
+        /// data is binary
+        circuit_and,
+        /// data is binary
+        circuit_or,
+        /// data is binary
+        equal,
+        /// data is binary
+        not_equal,
+        /// data is binary
+        less,
+        /// data is binary
+        less_equal,
+        /// data is binary
+        greater,
+        /// data is binary
+        greater_equal,
+
+        /// data is binary
+        index,
+        /// data is member_access
+        member_access,
+        /// data is binary (lhs is expr, rhs is type)
+        bitcast,
     };
-};
 
-pub const Expression = union(enum) {
-    literal: Literal,
-    ident: []const u8,
-    unary: struct {
-        op: UnaryOperator,
-        expr: *const Expression,
-    },
-    binary: struct {
-        op: BinaryOperator,
-        lhs: *const Expression,
-        rhs: *const Expression,
-    },
-    index: struct {
-        base: *const Expression,
-        index: *const Expression,
-    },
-    member: struct {
-        base: *const Expression,
-        field: []const u8,
-    },
-    bitcast: struct {
-        expr: *const Expression,
-        to: union(enum) {
-            number: NumberType,
-            vector: VectorType,
+    pub const Data = packed union {
+        /// TODO: https://github.com/ziglang/zig/issues/14980
+        none: u1,
+        ref: Ref,
+        global_variable: packed struct {
+            /// index to null-terminated string in `strings`
+            name: u32,
+            type: Ref,
+            addr_space: Ast.AddressSpace = .none,
+            access_mode: Ast.AccessMode = .none,
+            /// length of attributes
+            attrs: u4 = 0,
         },
-    },
-};
+        struct_decl: packed struct {
+            /// index to null-terminated string in `strings`
+            name: u32,
+            /// length of the member Ref's which comes after this
+            members: u32,
+        },
+        struct_member: packed struct {
+            /// index to null-terminated string in `strings`
+            name: u32,
+            type: Ref,
+            @"align": u29, // 0 means null
+        },
+        /// attributes with no argument.
+        attr_simple: enum {
+            invariant,
+            @"const",
+            vertex,
+            fragment,
+            compute,
+        },
+        /// attributes with an expression argument.
+        attr_expr: packed struct {
+            kind: enum {
+                @"align",
+                binding,
+                group,
+                id,
+                location,
+                size,
+            },
+            expr: Ref,
+        },
+        /// @builtin attribute which accepts a BuiltinValue argument.
+        attr_builtin: Ast.BuiltinValue,
+        /// @workgroup attribute. accepts at laest 1 argument.
+        attr_workgroup: packed struct {
+            expr0: Ref,
+            expr1: Ref = null_ref,
+            expr2: Ref = null_ref,
+        },
+        /// @interpolate attribute. accepts 2 arguments.
+        attr_interpolate: packed struct {
+            type: Ast.InterpolationType,
+            sample: Ast.InterpolationSample,
+        },
+        vector_type: packed struct {
+            component_type: Ref,
+            size: enum { two, three, four },
+        },
+        matrix_type: packed struct {
+            component_type: Ref,
+            cols: enum { two, three, four },
+            rows: enum { two, three, four },
+        },
+        atomic_type: packed struct { component_type: Ref },
+        array_type: packed struct {
+            component_type: Ref,
+            size: Ref = null_ref,
+        },
+        ptr_type: packed struct {
+            component_type: Ref,
+            addr_space: Ast.AddressSpace,
+            access_mode: Ast.AccessMode,
+        },
+        sampled_texture_type: packed struct {
+            kind: enum {
+                @"1d",
+                @"2d",
+                @"2d_array",
+                @"3d",
+                cube,
+                cube_array,
+            },
+            component_type: Ref,
+        },
+        multisampled_texture_type: packed struct {
+            kind: enum { @"2d" },
+            component_type: Ref,
+        },
+        storage_texture_type: packed struct {
+            kind: enum {
+                @"1d",
+                @"2d",
+                @"2d_array",
+                @"3d",
+            },
+            texel_format: Ast.TexelFormat,
+            access_mode: MultisampledTextureTypeKind,
+        },
+        depth_texture_type: enum {
+            @"2d",
+            @"2d_array",
+            cube,
+            cube_array,
+            multisampled_2d,
+        },
+        integer_literal: i64,
+        float_literal: f64,
+        /// meaning of LHS and RHS depends on the corresponding Tag.
+        binary: packed struct {
+            lhs: Ref,
+            rhs: Ref,
+        },
+        member_access: packed struct {
+            base: Ref,
+            /// index to null-terminated string in `strings`
+            name: u32,
+        },
 
-pub const Literal = union(enum) {
-    number: NumberLiteral,
-    bool: bool,
-};
-
-pub const NumberLiteral = union(enum) {
-    int: i64,
-    float: f64,
-};
-
-pub const UnaryOperator = enum {
-    not,
-    negate,
-    addr_of,
-    deref,
-};
-
-pub const BinaryOperator = enum {
-    mul,
-    div,
-    mod,
-    add,
-    sub,
-    shift_left,
-    shift_right,
-    binary_and,
-    binary_or,
-    binary_xor,
-    circuit_and,
-    circuit_or,
-    equal,
-    not_equal,
-    less,
-    less_equal,
-    greater,
-    greater_equal,
-};
-
-pub const NumberType = enum {
-    i32,
-    u32,
-    f32,
-    f16,
-};
-
-pub const VectorType = struct {
-    size: Size,
-    component_type: Type,
-
-    pub const Type = union(enum) {
-        bool,
-        number: NumberType,
+        pub const MultisampledTextureTypeKind = enum { write };
     };
 
-    pub const Size = enum {
-        vec2,
-        vec3,
-        vec4,
-    };
-};
-
-pub const MatrixType = struct {
-    size: Size,
-    component_type: Type,
-
-    pub const Type = enum {
-        f32,
-        f16,
-        abstract_float,
-    };
-
-    pub const Size = enum {
-        mat2x2,
-        mat2x3,
-        mat2x4,
-        mat3x2,
-        mat3x3,
-        mat3x4,
-        mat4x2,
-        mat4x3,
-        mat4x4,
-    };
-};
-
-pub const AtomicType = struct {
-    component_type: Type,
-
-    pub const Type = enum {
-        u32,
-        i32,
-    };
-};
-
-pub const ArrayType = struct {
-    component_type: Type,
-    size: ?NumberLiteral = null,
-
-    pub const Type = union(enum) {
-        bool,
-        number: NumberType,
-        @"struct": []const u8,
-        vector: VectorType,
-        matrix: MatrixType,
-        atomic: AtomicType,
-        array: *Type,
-    };
+    comptime {
+        std.debug.assert(@bitSizeOf(Inst) <= 104); // 13B
+    }
 };

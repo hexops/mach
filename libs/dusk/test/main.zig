@@ -152,6 +152,10 @@ fn expectError(source: [:0]const u8, err: dusk.ErrorMsg) !void {
                 .{ err.note.?.msg, err_list[0].note.?.msg },
             );
         }
+        if (err.note == null) {
+            std.debug.print("\x1b[31mnote missed: {s}\x1b[0m\n", .{err_list[0].note.?.msg});
+            return error.NoteMissed;
+        }
         try expect(std.mem.eql(u8, err.note.?.msg, err_list[0].note.?.msg));
         if (err_list[0].note.?.loc) |_| {
             errdefer {
@@ -232,7 +236,22 @@ test "variable & expressions" {
     // try expect(ir.nodeTag(@"7") == .number_literal);
 }
 
-test "analyser errors" {
+test "simple analyse's result" {
+    // {
+    //     const source =
+    //         \\type T0 = f32;
+    //         \\type T1 = T0;
+    //         \\type T2 = T1;
+    //         \\type T3 = T2;
+    //         \\struct S0 { m0: T3 }
+    //     ;
+    //     var ir = try expectIR(source);
+    //     // try std.testing.expect(ir.root[0].@"struct".members[0].type.number == .f32);
+    //     ir.deinit();
+    // }
+}
+
+test "must error" {
     {
         const source = "^";
         try expectError(source, .{
@@ -260,18 +279,17 @@ test "analyser errors" {
             \\struct S0 { m: S1 }
         ;
         try expectError(source, .{
-            .msg = "'S1' is neither an struct or type alias",
+            .msg = "'S1' is not a type",
             .loc = .{ .start = 27, .end = 29 },
         });
     }
     {
         const source =
-            \\type T = sampler;
-            \\struct S0 { m: T }
+            \\struct S0 { m: sampler }
         ;
         try expectError(source, .{
-            .msg = "invalid struct member type 'T'",
-            .loc = .{ .start = 30, .end = 31 },
+            .msg = "invalid struct member type 'sampler'",
+            .loc = .{ .start = 12, .end = 13 },
         });
     }
     {
@@ -283,6 +301,25 @@ test "analyser errors" {
             .msg = "redeclaration of 'd1'",
             .loc = .{ .start = 16, .end = 18 },
             .note = .{ .msg = "other declaration here", .loc = .{ .start = 4, .end = 6 } },
+        });
+    }
+    {
+        const source = "struct S { m0: vec2<sampler> }";
+        try expectError(source, .{
+            .msg = "invalid vector component type",
+            .loc = .{ .start = 20, .end = 27 },
+            .note = .{ .msg = "must be 'i32', 'u32', 'f32', 'f16' or 'bool'" },
+        });
+    }
+    {
+        const source =
+            \\type T0 = sampler;
+            \\type T1 = texture_1d<T0>;
+        ;
+        try expectError(source, .{
+            .msg = "invalid sampled texture component type",
+            .loc = .{ .start = 40, .end = 42 },
+            .note = .{ .msg = "must be 'i32', 'u32' or 'f32'" },
         });
     }
 }
