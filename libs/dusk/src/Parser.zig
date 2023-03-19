@@ -2,10 +2,8 @@
 const std = @import("std");
 const Ast = @import("Ast.zig");
 const Token = @import("Token.zig");
-const Tokenizer = @import("Tokenizer.zig");
 const Extension = @import("main.zig").Extension;
 const ErrorMsg = @import("main.zig").ErrorMsg;
-const comptimePrint = std.fmt.comptimePrint;
 const fieldNames = std.meta.fieldNames;
 const Parser = @This();
 
@@ -1877,7 +1875,7 @@ fn addExtra(p: *Parser, extra: anytype) error{OutOfMemory}!Ast.Index {
     try p.extra.ensureUnusedCapacity(p.allocator, fields.len);
     const result = @intCast(Ast.Index, p.extra.items.len);
     inline for (fields) |field| {
-        comptime std.debug.assert(field.type == Ast.Index or field.type == Ast.Index);
+        comptime std.debug.assert(field.type == Ast.Index);
         p.extra.appendAssumeCapacity(@field(extra, field.name));
     }
     return result;

@@ -171,7 +171,7 @@ pub const Node = struct {
         /// RHS : block
         fn_decl,
         /// TOK : ident
-        /// LHS : ? Attributes
+        /// LHS : ?span(Attribute)
         /// RHS : type
         fn_param,
 
@@ -367,7 +367,7 @@ pub const Node = struct {
         /// RHS : --
         user_type,
 
-        // ####### Attr #######
+        // ####### Attribute #######
 
         // TOK : attr
         attr,
@@ -650,6 +650,7 @@ pub const InterpolationSample = enum {
 };
 
 pub const AddressSpace = enum {
+    none, // TODO
     function,
     private,
     workgroup,
@@ -658,6 +659,7 @@ pub const AddressSpace = enum {
 };
 
 pub const AccessMode = enum {
+    none, // TODO
     read,
     write,
     read_write,
