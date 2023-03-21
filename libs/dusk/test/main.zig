@@ -183,6 +183,7 @@ test "boids" {
     const source = @embedFile("boids.wgsl");
     var ir = try expectIR(source);
     defer ir.deinit();
+    // try ir.print(std.io.getStdOut().writer());
 }
 
 test "gkurve" {
