@@ -91,7 +91,7 @@ pub fn Sdk(comptime deps: anytype) type {
             pub const LinkError = deps.glfw.LinkError;
             pub const RunError = error{
                 ParsingIpFailed,
-            } || std.fmt.ParseIntError;
+            } || deps.wasmserve.Error || std.fmt.ParseIntError;
 
             pub const Platform = enum {
                 native,
@@ -129,7 +129,12 @@ pub fn Sdk(comptime deps: anytype) type {
 
                 const step = blk: {
                     if (platform == .web) {
-                        const lib = b.addSharedLibrary(.{ .name = options.name, .root_source_file = .{ .path = sdkPath("/src/main.zig") }, .target = options.target, .optimize = options.optimize });
+                        const lib = b.addSharedLibrary(.{
+                            .name = options.name,
+                            .root_source_file = .{ .path = sdkPath("/src/entry.zig") },
+                            .target = options.target,
+                            .optimize = options.optimize,
+                        });
                         lib.rdynamic = true;
                         lib.addModule("sysjs", deps.sysjs.module(b));
 
@@ -182,7 +187,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     // Set install directory to '{prefix}/www'
                     app.getInstallStep().?.dest_dir = web_install_dir;
 
-                    inline for (.{ "/src/platform/wasm/mach.js", "/libs/sysjs/src/mach-sysjs.js" }) |js| {
+                    inline for (.{ "/src/platform/wasm/mach.js", "/libs/mach-sysjs/src/mach-sysjs.js" }) |js| {
                         const install_js = app.b.addInstallFileWithDir(
                             .{ .path = sdkPath(js) },
                             web_install_dir,
@@ -191,15 +196,9 @@ pub fn Sdk(comptime deps: anytype) type {
                         app.getInstallStep().?.step.dependOn(&install_js.step);
                     }
 
-                    const html_generator = app.b.addExecutable(.{
-                        .name = "html-generator",
-                        .root_source_file = .{ .path = sdkPath("/tools/html-generator/main.zig") },
-                    });
-                    const run_html_generator = html_generator.run();
-                    run_html_generator.addArgs(&.{ "index.html", app.name });
-
-                    run_html_generator.cwd = app.b.getInstallPath(web_install_dir, "");
-                    app.getInstallStep().?.step.dependOn(&run_html_generator.step);
+                    genHtml(app.b.allocator, app.b.getInstallPath(web_install_dir, "index.html"), app.name) catch |err| {
+                        std.log.err("unable to generate html: {s}", .{@errorName(err)});
+                    };
                 }
 
                 // Install resources
@@ -218,20 +217,19 @@ pub fn Sdk(comptime deps: anytype) type {
 
             pub fn run(app: *const App) RunError!*std.build.Step {
                 if (app.platform == .web) {
-                    @panic("TODO: wasmserve is broken! sorry");
-                    // TODO: get wasmserve working
-                    // const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch try app.b.allocator.dupe(u8, "127.0.0.1");
-                    // const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch try app.b.allocator.dupe(u8, "8080");
-                    // const address_parsed = std.net.Address.parseIp4(address, try std.fmt.parseInt(u16, port, 10)) catch return error.ParsingIpFailed;
-                    // const serve_step = try deps.wasmserve.serve(
-                    // app.step,
-                    // .{
-                    // .install_dir = web_install_dir,
-                    // .watch_paths = app.watch_paths,
-                    // .listen_address = address_parsed,
-                    // },
-                    // );
-                    // return &serve_step.step;
+                    const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch try app.b.allocator.dupe(u8, "127.0.0.1");
+                    const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch try app.b.allocator.dupe(u8, "8080");
+                    const address_parsed = std.net.Address.parseIp4(address, try std.fmt.parseInt(u16, port, 10)) catch return error.ParsingIpFailed;
+                    const serve_step = try deps.wasmserve.serve(
+                        app.b,
+                        .{
+                            // .step_name =
+                            .install_dir = web_install_dir,
+                            .watch_paths = app.watch_paths,
+                            .listen_address = address_parsed,
+                        },
+                    );
+                    return &serve_step.step;
                 } else {
                     return &app.step.run().step;
                 }
@@ -241,5 +239,72 @@ pub fn Sdk(comptime deps: anytype) type {
                 return app.step.install_step;
             }
         };
+
+        pub fn genHtml(allocator: std.mem.Allocator, output_name: []const u8, app_name: []const u8) !void {
+            const file = try std.fs.cwd().createFile(output_name, .{});
+            defer file.close();
+
+            var buf = try std.fmt.allocPrint(allocator, html_template, .{ .app_name = app_name });
+            defer allocator.free(buf);
+
+            _ = try file.write(buf);
+        }
+
+        const html_template =
+            \\<!doctype html>
+            \\<html>
+            \\
+            \\<head>
+            \\  <meta charset="utf-8">
+            \\  <title>{[app_name]s}</title>
+            \\</head>
+            \\
+            \\<body>
+            \\  <script type="module">
+            \\    import {{ mach }} from "./mach.js";
+            \\    import {{ sysjs }} from "./mach-sysjs.js";
+            \\    import setupWasmserve from "./wasmserve.js";
+            \\
+            \\    setupWasmserve();
+            \\
+            \\    let imports = {{
+            \\      mach,
+            \\      sysjs,
+            \\    }};
+            \\
+            \\    fetch("{[app_name]s}.wasm")
+            \\      .then(response => response.arrayBuffer())
+            \\      .then(buffer => WebAssembly.instantiate(buffer, imports))
+            \\      .then(results => results.instance)
+            \\      .then(instance => {{
+            \\        sysjs.init(instance);
+            \\        mach.init(instance);
+            \\        instance.exports.wasmInit();
+            \\
+            \\        let frame = true;
+            \\        let last_update_time = performance.now();
+            \\        let update = function () {{
+            \\          if (!frame) {{
+            \\            instance.exports.wasmDeinit();
+            \\            return;
+            \\          }}
+            \\          if (mach.machHasEvent() ||
+            \\              last_update_time + mach.wait_timeout * 1000 <= performance.now()) {{
+            \\            if (instance.exports.wasmUpdate()) {{
+            \\              instance.exports.wasmDeinit();
+            \\              return;
+            \\            }}
+            \\            last_update_time = performance.now();
+            \\          }}
+            \\          window.requestAnimationFrame(update);
+            \\        }};
+            \\        window.requestAnimationFrame(update);
+            \\      }})
+            \\      .catch(err => console.error(err));
+            \\  </script>
+            \\</body>
+            \\
+            \\</html>
+        ;
     };
 }

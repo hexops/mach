@@ -19,6 +19,7 @@ const esc = struct {
 };
 
 pub const Options = struct {
+    step_name: []const u8 = "install",
     install_dir: ?build.InstallDir = null,
     watch_paths: ?[]const []const u8 = null,
     listen_address: ?net.Address = null,
@@ -26,30 +27,30 @@ pub const Options = struct {
 
 pub const Error = error{CannotOpenDirectory} || mem.Allocator.Error;
 
-pub fn serve(step: *build.CompileStep, options: Options) Error!*Wasmserve {
-    const self = try step.step.owner.allocator.create(Wasmserve);
+pub fn serve(b: *std.Build.Builder, options: Options) Error!*Wasmserve {
+    const self = try b.allocator.create(Wasmserve);
     const install_dir = options.install_dir orelse build.InstallDir{ .lib = {} };
-    const install_dir_iter = fs.cwd().makeOpenPathIterable(step.step.owner.getInstallPath(install_dir, ""), .{}) catch
+    const install_dir_iter = fs.cwd().makeOpenPathIterable(b.getInstallPath(install_dir, ""), .{}) catch
         return error.CannotOpenDirectory;
     self.* = Wasmserve{
-        .step = build.Step.init(.run, "wasmserve", step.step.owner.allocator, Wasmserve.make),
-        .b = step.step.owner,
-        .exe_step = step,
+        .b = b,
+        .step = build.Step.init(.{ .id = .run, .name = "wasmserve", .owner = b, .makeFn = Wasmserve.make }),
+        .step_name = options.step_name,
         .install_dir = install_dir,
         .install_dir_iter = install_dir_iter,
         .address = options.listen_address orelse net.Address.initIp4([4]u8{ 127, 0, 0, 1 }, 8080),
         .subscriber = null,
-        .watch_paths = options.watch_paths orelse &.{step.root_src.?.path},
-        .mtimes = std.AutoHashMap(fs.File.INode, i128).init(step.step.owner.allocator),
+        .watch_paths = options.watch_paths orelse &.{"src"},
+        .mtimes = std.AutoHashMap(fs.File.INode, i128).init(b.allocator),
         .notify_msg = null,
     };
     return self;
 }
 
 const Wasmserve = struct {
-    step: build.Step,
     b: *build.Builder,
-    exe_step: *build.CompileStep,
+    step: build.Step,
+    step_name: []const u8,
     install_dir: build.InstallDir,
     install_dir_iter: fs.IterableDir,
     address: net.Address,
@@ -69,11 +70,13 @@ const Wasmserve = struct {
         data: []const u8,
     };
 
-    pub fn make(step: *build.Step) !void {
+    pub fn make(step: *build.Step, prog_node: *std.Progress.Node) !void {
+        std.debug.print("Really!\n", .{});
+
         const self = @fieldParentPtr(Wasmserve, "step", step);
 
-        self.compile();
-        std.debug.assert(mem.eql(u8, fs.path.extension(self.exe_step.out_filename), ".wasm"));
+        try self.compile();
+        // std.debug.assert(mem.eql(u8, fs.path.extension(self.compile_step.out_filename), ".wasm"));
 
         var www_dir = try fs.cwd().openIterableDir(www_dir_path, .{});
         defer www_dir.close();
@@ -86,7 +89,7 @@ const Wasmserve = struct {
                 self.install_dir,
                 file.name,
             );
-            try install_www.step.make();
+            try install_www.step.make(prog_node);
         }
 
         const watch_thread = try std.Thread.spawn(.{}, watch, .{self});
@@ -134,7 +137,12 @@ const Wasmserve = struct {
 
             const url = dropFragment(uri)[1..];
             if (mem.eql(u8, url, "notify")) {
-                _ = try conn.stream.write("HTTP/1.1 200 OK\r\nConnection: Keep-Alive\r\nContent-Type: text/event-stream\r\nCache-Control: No-Cache\r\n\r\n");
+                _ = try conn.stream.write(
+                    "HTTP/1.1 200 OK\r\n" ++
+                        "Connection: Keep-Alive\r\n" ++
+                        "Content-Type: text/event-stream\r\n" ++
+                        "Cache-Control: No-Cache\r\n\r\n",
+                );
                 self.subscriber = try self.b.allocator.create(net.StreamServer.Connection);
                 self.subscriber.?.* = conn;
                 if (self.notify_msg) |msg|
@@ -232,7 +240,7 @@ const Wasmserve = struct {
         const entry = try self.mtimes.getOrPut(stat.inode);
         if (entry.found_existing and stat.mtime > entry.value_ptr.*) {
             std.log.info(esc.yellow ++ esc.underline ++ "{s}" ++ esc.reset ++ " updated", .{path});
-            self.compile();
+            try self.compile();
             entry.value_ptr.* = stat.mtime;
             return true;
         }
@@ -253,14 +261,10 @@ const Wasmserve = struct {
         }
     }
 
-    fn compile(self: *Wasmserve) void {
+    fn compile(self: *Wasmserve) !void {
         std.log.info("Building...", .{});
-        const argv = getExecArgs(self.exe_step) catch |err| {
-            logErr(err, @src());
-            return;
-        };
-        defer self.b.allocator.free(argv);
-        var res = std.ChildProcess.exec(.{ .argv = argv, .allocator = self.b.allocator }) catch |err| {
+
+        var res = std.ChildProcess.exec(.{ .argv = &.{ self.b.zig_exe, "build", self.step_name, "-Dtarget=wasm32-freestanding-none" }, .allocator = self.b.allocator }) catch |err| {
             logErr(err, @src());
             return;
         };
@@ -307,8 +311,8 @@ fn dropFragment(input: []const u8) []const u8 {
 }
 
 fn logErr(err: anyerror, src: std.builtin.SourceLocation) void {
-    if (@errorReturnTrace()) |bt| {
-        std.log.err(esc.red ++ esc.bold ++ "{s}" ++ esc.reset ++ " >>>\n{s}", .{ @errorName(err), bt });
+    if (@errorReturnTrace()) |et| {
+        std.log.err(esc.red ++ esc.bold ++ "{s}" ++ esc.reset ++ " >>>\n{s}", .{ @errorName(err), et });
     } else {
         var file_name_buf: [1024]u8 = undefined;
         var fba = std.heap.FixedBufferAllocator.init(&file_name_buf);
@@ -332,29 +336,4 @@ fn sdkPath(comptime suffix: []const u8) []const u8 {
         const root_dir = std.fs.path.dirname(@src().file) orelse ".";
         break :blk root_dir ++ suffix;
     };
-}
-
-// copied from CompileStep.make()
-// TODO: this is very tricky
-// TODO(wasmserve): wasmserve is broken after recent Zig build changes, need to expose
-// this from Zig stdlib or something instead of copying this huge function out of stdlib
-// like this (nasty!)
-fn getExecArgs(_: *build.CompileStep) ![]const []const u8 {
-    @panic("wasmserve is currently not working");
-}
-
-fn makePackageCmd(self: *std.build.CompileStep, pkg: std.build.Pkg, zig_args: *std.ArrayList([]const u8)) error{OutOfMemory}!void {
-    const builder = self.builder;
-
-    try zig_args.append("--pkg-begin");
-    try zig_args.append(pkg.name);
-    try zig_args.append(builder.pathFromRoot(pkg.source.getPath(self.builder)));
-
-    if (pkg.dependencies) |dependencies| {
-        for (dependencies) |sub_pkg| {
-            try makePackageCmd(self, sub_pkg, zig_args);
-        }
-    }
-
-    try zig_args.append("--pkg-end");
 }

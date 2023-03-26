@@ -10,8 +10,7 @@ const earcut = @import("libs/earcut/build.zig");
 const gamemode = @import("libs/gamemode/build.zig");
 const model3d = @import("libs/model3d/build.zig");
 const dusk = @import("libs/dusk/build.zig");
-// TODO: get wasmserve working
-// const wasmserve = @import("tools/wasmserve/wasmserve.zig");
+const wasmserve = @import("tools/wasmserve/wasmserve.zig");
 pub const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
     .glfw_include_dir = sdkPath("/libs/glfw/upstream/glfw/include"),
     .system_sdk = system_sdk,
@@ -28,8 +27,7 @@ const core = @import("libs/core/sdk.zig").Sdk(.{
     .gpu_dawn = gpu_dawn,
     .glfw = glfw,
     .gamemode = gamemode,
-    // TODO: get wasmserve working
-    // .wasmserve = wasmserve,
+    .wasmserve = wasmserve,
     .sysjs = sysjs,
 });
 
