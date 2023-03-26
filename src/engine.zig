@@ -11,6 +11,7 @@ pub const module = ecs.Module(.{
     .globals = struct {
         core: *Core,
         device: *gpu.Device,
+        exit: bool,
     },
 });
 
@@ -36,16 +37,14 @@ pub fn App(comptime modules: anytype) type {
         }
 
         pub fn deinit(app: *@This()) void {
-            const core = app.engine.get(.mach, .core);
-            core.deinit();
-            allocator.destroy(core);
+            app.core.deinit();
             app.engine.deinit();
             _ = gpa.deinit();
         }
 
         pub fn update(app: *@This()) !bool {
             try app.engine.send(.tick);
-            return false;
+            return app.engine.get(.mach, .exit);
         }
     };
 }
