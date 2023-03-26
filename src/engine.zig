@@ -17,12 +17,8 @@ pub const module = ecs.Module(.{
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();
 
-pub fn App(
-    comptime modules: anytype,
-    comptime app_init: anytype, // fn (engine: *ecs.World(modules)) !void
-) type {
+pub fn App(comptime modules: anytype) type {
     // TODO: validate modules.mach is the expected type.
-    // TODO: validate init has the right function signature
 
     return struct {
         engine: ecs.World(modules),
@@ -36,7 +32,7 @@ pub fn App(
             };
             app.engine.set(.mach, .core, &app.core);
             app.engine.set(.mach, .device, app.core.device());
-            try app_init(&app.engine);
+            app.engine.send(.init);
         }
 
         pub fn deinit(app: *@This()) void {
