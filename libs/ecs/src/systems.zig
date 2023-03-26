@@ -269,12 +269,11 @@ pub fn World(comptime modules: anytype) type {
         }
 
         /// Broadcasts a global message to all modules that are subscribed to it.
-        pub fn send(world: *Self, comptime msg_tag: anytype) void {
-            _ = world;
+        pub fn send(world: *Self, comptime msg_tag: anytype) !void {
             inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
                 const module = @field(modules, module_field.name);
                 if (@hasField(@TypeOf(module), "messages")) {
-                    if (@hasField(module.messages, @tagName(msg_tag))) module.update(msg_tag);
+                    if (@hasField(module.messages, @tagName(msg_tag))) try module.update(world, msg_tag);
                 }
             }
         }

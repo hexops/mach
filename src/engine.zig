@@ -32,7 +32,7 @@ pub fn App(comptime modules: anytype) type {
             };
             app.engine.set(.mach, .core, &app.core);
             app.engine.set(.mach, .device, app.core.device());
-            app.engine.send(.init);
+            try app.engine.send(.init);
         }
 
         pub fn deinit(app: *@This()) void {
@@ -44,7 +44,7 @@ pub fn App(comptime modules: anytype) type {
         }
 
         pub fn update(app: *@This()) !bool {
-            app.engine.send(.tick);
+            try app.engine.send(.tick);
             return false;
         }
     };
