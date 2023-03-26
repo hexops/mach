@@ -268,13 +268,13 @@ pub fn World(comptime modules: anytype) type {
             ) = value;
         }
 
-        /// Tick sends the global 'tick' message to all modules that are subscribed to it.
-        pub fn tick(world: *Self) void {
+        /// Broadcasts a global message to all modules that are subscribed to it.
+        pub fn send(world: *Self, comptime msg_tag: anytype) void {
             _ = world;
             inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
                 const module = @field(modules, module_field.name);
                 if (@hasField(@TypeOf(module), "messages")) {
-                    if (@hasField(module.messages, "tick")) module.update(.tick);
+                    if (@hasField(module.messages, @tagName(msg_tag))) module.update(msg_tag);
                 }
             }
         }

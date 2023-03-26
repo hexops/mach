@@ -48,7 +48,7 @@ pub fn App(
         }
 
         pub fn update(app: *@This()) !bool {
-            app.engine.tick();
+            app.engine.send(.tick);
             return false;
         }
     };

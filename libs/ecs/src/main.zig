@@ -83,5 +83,5 @@ test "example" {
     try world.entities.setComponent(player2, .physics, .id, 1234);
     try world.entities.setComponent(player3, .physics, .id, 1234);
 
-    world.tick();
+    world.send(.tick);
 }
