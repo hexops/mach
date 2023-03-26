@@ -21,6 +21,7 @@ pub const Modules = @import("systems.zig").Modules;
 pub const Messages = @import("systems.zig").Messages;
 pub const MessagesTag = @import("systems.zig").MessagesTag;
 pub const World = @import("systems.zig").World;
+pub const View = @import("systems.zig").View;
 
 // TODO:
 // * Iteration
@@ -83,5 +84,5 @@ test "example" {
     try world.entities.setComponent(player2, .physics, .id, 1234);
     try world.entities.setComponent(player3, .physics, .id, 1234);
 
-    world.send(.tick);
+    try world.send(.tick);
 }
