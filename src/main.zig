@@ -15,7 +15,7 @@ pub const ResourceManager = @import("resource/ResourceManager.zig");
 
 // Engine exports
 pub const App = @import("engine.zig").App;
-pub const module = @import("engine.zig").module;
+pub const Module = @import("engine.zig").Module;
 
 const std = @import("std");
 

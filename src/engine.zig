@@ -7,13 +7,13 @@ const ecs = @import("ecs");
 /// The Mach engine ECS module. This enables access to `engine.get(.mach, .core)` `*Core` APIs, as
 /// to for example `.setOptions(.{.title = "foobar"})`, or to access the GPU device via
 /// `engine.get(.mach, .device)`
-pub const module = ecs.Module(.{
-    .globals = struct {
-        core: *Core,
-        device: *gpu.Device,
-        exit: bool,
-    },
-});
+pub const Module = struct {
+    core: *Core,
+    device: *gpu.Device,
+    exit: bool,
+
+    pub const name = .mach;
+};
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();
