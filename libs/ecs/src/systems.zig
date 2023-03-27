@@ -8,6 +8,7 @@ const EnumField = std.builtin.Type.EnumField;
 const UnionField = std.builtin.Type.UnionField;
 
 const Entities = @import("entities.zig").Entities;
+const EntityID = @import("entities.zig").EntityID;
 
 /// Validates that a module matches the expected type layout.
 ///
@@ -224,6 +225,79 @@ pub fn World(comptime modules: anytype) type {
 
         const Self = @This();
 
+        pub fn Module(comptime module_tag: anytype) type {
+            return struct {
+                world: *Self,
+
+                /// Gets a state value called `.state_tag` from the module.
+                pub inline fn getState(m: @This(), comptime state_tag: anytype) @TypeOf(@field(
+                    @field(m.world.state, @tagName(module_tag)),
+                    @tagName(state_tag),
+                )) {
+                    return comptime @field(
+                        @field(m.world.state, @tagName(module_tag)),
+                        @tagName(state_tag),
+                    );
+                }
+
+                /// Sets a state value called `.state_tag` in the module.
+                pub inline fn setState(
+                    m: *@This(),
+                    comptime state_tag: anytype,
+                    value: @TypeOf(@field(
+                        @field(m.world.state, @tagName(module_tag)),
+                        @tagName(state_tag),
+                    )),
+                ) void {
+                    comptime @field(
+                        @field(m.world.state, @tagName(module_tag)),
+                        @tagName(state_tag),
+                    ) = value;
+                }
+
+                /// Sets the named component to the specified value for the given entity,
+                /// moving the entity from it's current archetype table to the new archetype
+                /// table if required.
+                pub inline fn set(
+                    m: *@This(),
+                    entity: EntityID,
+                    comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(module_tag)))),
+                    component: @field(
+                        @field(all_components, @tagName(module_tag)),
+                        @tagName(component_name),
+                    ),
+                ) !void {
+                    try m.world.entities.setComponent(entity, module_tag, component_name, component);
+                }
+
+                /// gets the named component of the given type (which must be correct, otherwise undefined
+                /// behavior will occur). Returns null if the component does not exist on the entity.
+                pub inline fn get(
+                    m: *@This(),
+                    entity: EntityID,
+                    comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(module_tag)))),
+                ) ?@field(
+                    @field(all_components, @tagName(module_tag)),
+                    @tagName(component_name),
+                ) {
+                    return m.world.entities.getComponent(entity, module_tag, component_name);
+                }
+
+                /// Removes the named component from the entity, or noop if it doesn't have such a component.
+                pub inline fn remove(
+                    m: *@This(),
+                    entity: EntityID,
+                    comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(module_tag)))),
+                ) !void {
+                    try m.world.entities.removeComponent(entity, module_tag, component_name);
+                }
+            };
+        }
+
+        pub inline fn mod(world: *Self, comptime module_tag: anytype) Self.Module(module_tag) {
+            return .{ .world = world };
+        }
+
         pub fn init(allocator: Allocator) !Self {
             return Self{
                 .allocator = allocator,
@@ -236,33 +310,6 @@ pub fn World(comptime modules: anytype) type {
             world.entities.deinit();
         }
 
-        /// Gets a state value called `.state_tag` from the module named `.module_tag`
-        pub fn get(world: *Self, comptime module_tag: anytype, comptime state_tag: anytype) @TypeOf(@field(
-            @field(world.state, @tagName(module_tag)),
-            @tagName(state_tag),
-        )) {
-            return comptime @field(
-                @field(world.state, @tagName(module_tag)),
-                @tagName(state_tag),
-            );
-        }
-
-        /// Sets a state value called `.state_tag` in the module named `.module_tag`
-        pub fn set(
-            world: *Self,
-            comptime module_tag: anytype,
-            comptime state_tag: anytype,
-            value: @TypeOf(@field(
-                @field(world.state, @tagName(module_tag)),
-                @tagName(state_tag),
-            )),
-        ) void {
-            comptime @field(
-                @field(world.state, @tagName(module_tag)),
-                @tagName(state_tag),
-            ) = value;
-        }
-
         /// Broadcasts a state message to all modules that are subscribed to it.
         pub fn send(world: *Self, comptime msg_tag: anytype) !void {
             inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
@@ -272,6 +319,16 @@ pub fn World(comptime modules: anytype) type {
                     try handler(world);
                 }
             }
+        }
+
+        /// Returns a new entity.
+        pub inline fn newEntity(world: *Self) !EntityID {
+            return try world.entities.new();
+        }
+
+        /// Removes an entity.
+        pub inline fn remove(world: *Self, entity: EntityID) !void {
+            try world.entities.remove(entity);
         }
     };
 }

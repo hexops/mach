@@ -73,17 +73,19 @@ test "example" {
     defer world.deinit();
 
     // Initialize module state.
-    world.set(.physics, .pointer, 123);
-    _ = world.get(.physics, .pointer); // == 123
+    var physics = world.mod(.physics);
+    var renderer = world.mod(.renderer);
+    physics.setState(.pointer, 123);
+    _ = physics.getState(.pointer); // == 123
 
-    const player1 = try world.entities.new();
-    const player2 = try world.entities.new();
-    const player3 = try world.entities.new();
-    try world.entities.setComponent(player1, .physics, .id, 1234);
-    try world.entities.setComponent(player1, .renderer, .id, 1234);
+    const player1 = try world.newEntity();
+    const player2 = try world.newEntity();
+    const player3 = try world.newEntity();
+    try physics.set(player1, .id, 1234);
+    try renderer.set(player1, .id, 1234);
 
-    try world.entities.setComponent(player2, .physics, .id, 1234);
-    try world.entities.setComponent(player3, .physics, .id, 1234);
+    try physics.set(player2, .id, 1234);
+    try physics.set(player3, .id, 1234);
 
     try world.send(.tick);
 }
