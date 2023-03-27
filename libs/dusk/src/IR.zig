@@ -205,7 +205,7 @@ pub const Inst = struct {
         /// attributes with an expression argument.
         attr_expr: AttrExpr,
         /// @builtin attribute which accepts a BuiltinValue argument.
-        attr_builtin: Ast.BuiltinValue,
+        attr_builtin: BuiltinValue,
         /// @workgroup attribute. accepts at laest 1 argument.
         attr_workgroup: AttrWorkgroup,
         /// @interpolate attribute. accepts 2 arguments.
@@ -230,10 +230,26 @@ pub const Inst = struct {
         /// index to null-terminated string in `strings`
         name: u32,
         type: Ref,
-        addr_space: Ast.AddressSpace = .none,
-        access_mode: Ast.AccessMode = .none,
+        addr_space: AddressSpace,
+        access_mode: AccessMode,
         /// length of attributes
         attrs: u4 = 0,
+
+        pub const AddressSpace = enum {
+            none,
+            function,
+            private,
+            workgroup,
+            uniform,
+            storage,
+        };
+
+        pub const AccessMode = enum {
+            none,
+            read,
+            write,
+            read_write,
+        };
     };
 
     pub const StructDecl = struct {
@@ -248,6 +264,21 @@ pub const Inst = struct {
         name: u32,
         type: Ref,
         @"align": u29, // 0 means null
+    };
+
+    pub const BuiltinValue = enum {
+        vertex_index,
+        instance_index,
+        position,
+        front_facing,
+        frag_depth,
+        local_invocation_id,
+        local_invocation_index,
+        global_invocation_id,
+        workgroup_id,
+        num_workgroups,
+        sample_index,
+        sample_mask,
     };
 
     pub const AttrSimple = enum {
@@ -279,8 +310,20 @@ pub const Inst = struct {
     };
 
     pub const AttrInterpolate = struct {
-        type: Ast.InterpolationType,
-        sample: Ast.InterpolationSample,
+        type: InterpolationType,
+        sample: InterpolationSample,
+
+        pub const InterpolationType = enum {
+            perspective,
+            linear,
+            flat,
+        };
+
+        pub const InterpolationSample = enum {
+            center,
+            centroid,
+            sample,
+        };
     };
 
     pub const VectorType = struct {
@@ -305,8 +348,22 @@ pub const Inst = struct {
 
     pub const PointerType = struct {
         component_type: Ref,
-        addr_space: Ast.AddressSpace,
-        access_mode: Ast.AccessMode,
+        addr_space: AddressSpace,
+        access_mode: AccessMode,
+
+        pub const AddressSpace = enum {
+            function,
+            private,
+            workgroup,
+            uniform,
+            storage,
+        };
+
+        pub const AccessMode = enum {
+            read,
+            write,
+            read_write,
+        };
     };
 
     pub const SampledTextureType = struct {
@@ -332,7 +389,7 @@ pub const Inst = struct {
 
     pub const StorageTextureType = struct {
         kind: Kind,
-        texel_format: Ast.TexelFormat,
+        texel_format: TexelFormat,
         access_mode: AccessMode,
 
         pub const Kind = enum {
@@ -340,6 +397,26 @@ pub const Inst = struct {
             @"2d",
             @"2d_array",
             @"3d",
+        };
+
+        pub const TexelFormat = enum {
+            rgba8unorm,
+            rgba8snorm,
+            rgba8uint,
+            rgba8sint,
+            rgba16uint,
+            rgba16sint,
+            rgba16float,
+            r32uint,
+            r32sint,
+            r32float,
+            rg32uint,
+            rg32sint,
+            rg32float,
+            rgba32uint,
+            rgba32sint,
+            rgba32float,
+            bgra8unorm,
         };
 
         pub const AccessMode = enum { write };

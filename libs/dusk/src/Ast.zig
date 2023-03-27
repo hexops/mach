@@ -650,7 +650,6 @@ pub const InterpolationSample = enum {
 };
 
 pub const AddressSpace = enum {
-    none, // TODO
     function,
     private,
     workgroup,
@@ -659,7 +658,6 @@ pub const AddressSpace = enum {
 };
 
 pub const AccessMode = enum {
-    none, // TODO
     read,
     write,
     read_write,
