@@ -2,6 +2,7 @@ const std = @import("std");
 
 pub const Ast = @import("Ast.zig");
 pub const IR = @import("IR.zig");
+pub const printIR = @import("print_ir.zig").printIR;
 pub const Parser = @import("Parser.zig");
 pub const Token = @import("Token.zig");
 pub const Tokenizer = @import("Tokenizer.zig");
