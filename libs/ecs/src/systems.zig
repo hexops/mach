@@ -310,7 +310,15 @@ pub fn World(comptime modules: anytype) type {
             world.entities.deinit();
         }
 
-        /// Broadcasts a state message to all modules that are subscribed to it.
+        /// Broadcasts an event to all modules that are subscribed to it.
+        ///
+        /// The message tag corresponds with the handler method name to be invoked. For example,
+        /// if `send(.tick)` is invoked, all modules which declare a `pub fn init` will be invoked.
+        ///
+        /// Events sent by Mach itself, or the application itself, may be single words. To prevent
+        /// name conflicts, events sent by modules provided by a library should prefix their events
+        /// with their module name. For example, a module named `.ziglibs_imgui` should use event
+        /// names like `.ziglibsImguiClick`, `.ziglibsImguiFoobar`.
         pub fn send(world: *Self, comptime msg_tag: anytype) !void {
             inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
                 const module = @field(modules, module_field.name);
@@ -327,8 +335,8 @@ pub fn World(comptime modules: anytype) type {
         }
 
         /// Removes an entity.
-        pub inline fn remove(world: *Self, entity: EntityID) !void {
-            try world.entities.remove(entity);
+        pub inline fn removeEntity(world: *Self, entity: EntityID) !void {
+            try world.entities.removeEntity(entity);
         }
     };
 }
