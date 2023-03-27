@@ -99,7 +99,7 @@ pub fn MessagesTag(comptime messages: anytype) type {
     });
 }
 
-const NoComponents = @TypeOf(.{});
+const NoComponents = @TypeOf(.{ .none = void });
 const NoState = @TypeOf(.{});
 
 /// Returns the namespaced components struct **type**.
