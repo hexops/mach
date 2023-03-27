@@ -31,8 +31,9 @@ pub fn App(comptime modules: anytype) type {
                 .core = app.core,
                 .engine = try ecs.World(modules).init(allocator),
             };
-            app.engine.set(.mach, .core, &app.core);
-            app.engine.set(.mach, .device, app.core.device());
+            var mach = app.engine.mod(.mach);
+            mach.setState(.core, &app.core);
+            mach.setState(.device, app.core.device());
             try app.engine.send(.init);
         }
 
@@ -44,7 +45,7 @@ pub fn App(comptime modules: anytype) type {
 
         pub fn update(app: *@This()) !bool {
             try app.engine.send(.tick);
-            return app.engine.get(.mach, .exit);
+            return app.engine.mod(.mach).getState(.exit);
         }
     };
 }
