@@ -146,16 +146,28 @@ pub fn genGlobalVariable(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst
         var_type = try self.genType(scope, gv.type);
     }
 
-    var addr_space: Ast.AddressSpace = .none;
+    var addr_space: IR.Inst.GlobalVariableDecl.AddressSpace = .none;
     if (gv.access_mode != Ast.null_index) {
         const addr_space_loc = self.tree.tokenLoc(gv.addr_space);
-        addr_space = std.meta.stringToEnum(Ast.AddressSpace, addr_space_loc.slice(self.tree.source)).?;
+        const ast_addr_space = std.meta.stringToEnum(Ast.AddressSpace, addr_space_loc.slice(self.tree.source)).?;
+        addr_space = switch (ast_addr_space) {
+            .function => .function,
+            .private => .private,
+            .workgroup => .workgroup,
+            .uniform => .uniform,
+            .storage => .storage,
+        };
     }
 
-    var access_mode: Ast.AccessMode = .none;
+    var access_mode: IR.Inst.GlobalVariableDecl.AccessMode = .none;
     if (gv.access_mode != Ast.null_index) {
         const access_mode_loc = self.tree.tokenLoc(gv.access_mode);
-        access_mode = std.meta.stringToEnum(Ast.AccessMode, access_mode_loc.slice(self.tree.source)).?;
+        const ast_access_mode = std.meta.stringToEnum(Ast.AccessMode, access_mode_loc.slice(self.tree.source)).?;
+        access_mode = switch (ast_access_mode) {
+            .read => .read,
+            .write => .write,
+            .read_write => .read_write,
+        };
     }
 
     const name_index = try self.addString(self.declNameLoc(node).?.slice(self.tree.source));
@@ -579,7 +591,26 @@ pub fn genStorageTextureType(self: *AstGen, node: Ast.Index) !IR.Inst.Ref {
     std.debug.assert(self.tree.nodeTag(node) == .storage_texture_type);
 
     const texel_format_loc = self.tree.tokenLoc(self.tree.nodeLHS(node));
-    const texel_format = std.meta.stringToEnum(Ast.TexelFormat, texel_format_loc.slice(self.tree.source)).?;
+    const ast_texel_format = std.meta.stringToEnum(Ast.TexelFormat, texel_format_loc.slice(self.tree.source)).?;
+    const texel_format: IR.Inst.StorageTextureType.TexelFormat = switch (ast_texel_format) {
+        .rgba8unorm => .rgba8unorm,
+        .rgba8snorm => .rgba8snorm,
+        .rgba8uint => .rgba8uint,
+        .rgba8sint => .rgba8sint,
+        .rgba16uint => .rgba16uint,
+        .rgba16sint => .rgba16sint,
+        .rgba16float => .rgba16float,
+        .r32uint => .r32uint,
+        .r32sint => .r32sint,
+        .r32float => .r32float,
+        .rg32uint => .rg32uint,
+        .rg32sint => .rg32sint,
+        .rg32float => .rg32float,
+        .rgba32uint => .rgba32uint,
+        .rgba32sint => .rgba32sint,
+        .rgba32float => .rgba32float,
+        .bgra8unorm => .bgra8unorm,
+    };
 
     const access_mode_loc = self.tree.tokenLoc(self.tree.nodeRHS(node));
     const access_mode_full = std.meta.stringToEnum(Ast.AccessMode, access_mode_loc.slice(self.tree.source)).?;
