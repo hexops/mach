@@ -216,6 +216,14 @@ fn NamespacedState(comptime modules: anytype) type {
     });
 }
 
+/// Returns the type of the named field in the given struct.
+fn FieldType(comptime Struct: type, comptime field_name: []const u8) type {
+    inline for (@typeInfo(Struct).Struct.fields) |f| {
+        if (std.mem.eql(u8, f.name, field_name)) return f.type;
+    }
+    @panic("no such struct field '" ++ field_name ++ "' in type: " ++ @typeName(Struct));
+}
+
 pub fn World(comptime modules: anytype) type {
     const all_components = namespacedComponents(modules);
     return struct {
@@ -225,34 +233,20 @@ pub fn World(comptime modules: anytype) type {
 
         const Self = @This();
 
-        pub fn Module(comptime module_tag: anytype) type {
+        pub fn Module(comptime module_tag: anytype, comptime NSState: type) type {
             return struct {
                 world: *Self,
 
-                /// Gets a state value called `.state_tag` from the module.
-                pub inline fn getState(m: @This(), comptime state_tag: anytype) @TypeOf(@field(
-                    @field(m.world.state, @tagName(module_tag)),
-                    @tagName(state_tag),
-                )) {
-                    return comptime @field(
-                        @field(m.world.state, @tagName(module_tag)),
-                        @tagName(state_tag),
-                    );
+                const State = FieldType(NSState, @tagName(module_tag));
+
+                /// Returns a pointer to the state struct of this module.
+                pub inline fn state(m: @This()) *State {
+                    return &@field(m.world.state, @tagName(module_tag));
                 }
 
-                /// Sets a state value called `.state_tag` in the module.
-                pub inline fn setState(
-                    m: *@This(),
-                    comptime state_tag: anytype,
-                    value: @TypeOf(@field(
-                        @field(m.world.state, @tagName(module_tag)),
-                        @tagName(state_tag),
-                    )),
-                ) void {
-                    comptime @field(
-                        @field(m.world.state, @tagName(module_tag)),
-                        @tagName(state_tag),
-                    ) = value;
+                /// Returns a pointer to the state struct of this module.
+                pub inline fn initState(m: @This(), s: State) void {
+                    m.state().* = s;
                 }
 
                 /// Sets the named component to the specified value for the given entity,
@@ -294,7 +288,7 @@ pub fn World(comptime modules: anytype) type {
             };
         }
 
-        pub inline fn mod(world: *Self, comptime module_tag: anytype) Self.Module(module_tag) {
+        pub inline fn mod(world: *Self, comptime module_tag: anytype) Self.Module(module_tag, NamespacedState(modules)) {
             return .{ .world = world };
         }
 
