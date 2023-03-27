@@ -21,7 +21,6 @@ pub const Modules = @import("systems.zig").Modules;
 pub const Messages = @import("systems.zig").Messages;
 pub const MessagesTag = @import("systems.zig").MessagesTag;
 pub const World = @import("systems.zig").World;
-pub const View = @import("systems.zig").View;
 
 // TODO:
 // * Iteration
@@ -37,33 +36,34 @@ test "inclusion" {
 test "example" {
     const allocator = testing.allocator;
 
-    const PhysicsMsg = Messages(.{
-        .tick = void,
-    });
-    const physicsUpdate = (struct {
-        pub fn physicsUpdate(msg: PhysicsMsg) void {
+    const Physics2D = Module(struct {
+        pointer: u8,
+
+        pub const name = .physics;
+        pub const components = .{
+            .id = u32,
+        };
+        pub const Message = .{
+            .tick = void,
+        };
+
+        pub fn update(msg: Message) void {
             switch (msg) {
                 .tick => std.debug.print("\nphysics tick!\n", .{}),
             }
         }
-    }).physicsUpdate;
+    });
+
+    const Renderer = Module(struct {
+        pub const name = .renderer;
+        pub const components = .{
+            .id = u16,
+        };
+    });
 
     const modules = Modules(.{
-        .physics = Module(.{
-            .components = .{
-                .id = u32,
-            },
-            .globals = struct {
-                pointer: u8,
-            },
-            .messages = PhysicsMsg,
-            .update = physicsUpdate,
-        }),
-        .renderer = Module(.{
-            .components = .{
-                .id = u16,
-            },
-        }),
+        Physics2D,
+        Renderer,
     });
 
     //-------------------------------------------------------------------------

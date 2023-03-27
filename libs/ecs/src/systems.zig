@@ -9,15 +9,25 @@ const UnionField = std.builtin.Type.UnionField;
 
 const Entities = @import("entities.zig").Entities;
 
-/// An ECS module can provide components, systems, and global values.
-pub fn Module(comptime Params: anytype) @TypeOf(Params) {
-    // TODO: validate the type
-    return Params;
+/// Validates that a module matches the expected type layout.
+///
+/// An ECS module has components, systems, global values & more.
+pub fn Module(comptime M: anytype) type {
+    if (@hasDecl(M, "name")) {
+        _ = @tagName(M.name);
+    } else @compileError("Module missing `pub const name = .foobar;`");
+    if (@hasDecl(M, "Message")) _ = Messages(M.Message);
+
+    // TODO(ecs): validate M.components decl signature, if present.
+    // TODO(ecs): validate M.update method signature, if present.
+    return M;
 }
 
-/// Describes a set of ECS modules, each of which can provide components, systems, and more.
+/// Validates that a list of module matches the expected type layout.
+///
+/// ECS modules have components, systems, global values & more.
 pub fn Modules(comptime modules: anytype) @TypeOf(modules) {
-    // TODO: validate the type
+    inline for (modules) |m| _ = Module(m);
     return modules;
 }
 
@@ -95,9 +105,10 @@ fn NamespacedComponents(comptime modules: anytype) type {
     var fields: []const StructField = &[0]StructField{};
     inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
         const module = @field(modules, module_field.name);
-        if (@hasField(@TypeOf(module), "components")) {
+        const module_name = @tagName(@field(module, "name"));
+        if (@hasDecl(module, "components")) {
             fields = fields ++ [_]std.builtin.Type.StructField{.{
-                .name = module_field.name,
+                .name = module_name,
                 .type = @TypeOf(module.components),
                 .default_value = null,
                 .is_comptime = false,
@@ -115,28 +126,9 @@ fn NamespacedComponents(comptime modules: anytype) type {
     });
 }
 
-/// Extracts namespaces components from modules like this:
-///
-/// ```
-/// .{
-///     .renderer = .{
-///         .components = .{
-///             .location = Vec3,
-///             .rotation = Vec3,
-///         },
-///         ...
-///     },
-///     .physics2d = .{
-///         .components = .{
-///             .location = Vec2
-///             .velocity = Vec2,
-///         },
-///         ...
-///     },
-/// }
-/// ```
-///
-/// Returning a namespaced components value like this:
+/// Extracts namespaces components from modules like this. A module is said to have components if
+/// the struct has a `pub const components`. This function returns a namespaced components value
+/// like e.g.:
 ///
 /// ```
 /// .{
@@ -155,34 +147,16 @@ fn namespacedComponents(comptime modules: anytype) NamespacedComponents(modules)
     var x: NamespacedComponents(modules) = undefined;
     inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
         const module = @field(modules, module_field.name);
-        if (@hasField(@TypeOf(module), "components")) {
-            @field(x, module_field.name) = module.components;
+        const module_name = @tagName(@field(module, "name"));
+        if (@hasDecl(module, "components")) {
+            @field(x, module_name) = module.components;
         }
     }
     return x;
 }
 
-/// Extracts namespaced globals from modules like this:
-///
-/// ```
-/// .{
-///     .renderer = .{
-///         .globals = struct{
-///             foo: *Bar,
-///             baz: Bam,
-///         },
-///         ...
-///     },
-///     .physics2d = .{
-///         .globals = struct{
-///             foo: *Instance,
-///         },
-///         ...
-///     },
-/// }
-/// ```
-///
-/// Into a namespaced global type like this:
+/// Extracts namespaced globals from modules (a module is said to have globals if the struct has
+/// any fields), returning a type like e.g.:
 ///
 /// ```
 /// struct{
@@ -200,13 +174,23 @@ fn NamespacedGlobals(comptime modules: anytype) type {
     var fields: []const StructField = &[0]StructField{};
     inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
         const module = @field(modules, module_field.name);
-        if (@hasField(@TypeOf(module), "globals")) {
+        const module_name = @tagName(@field(module, "name"));
+        const global_fields = std.meta.fields(module);
+        if (global_fields.len > 0) {
+            const Globals = @Type(.{
+                .Struct = .{
+                    .layout = .Auto,
+                    .is_tuple = false,
+                    .fields = global_fields,
+                    .decls = &[_]std.builtin.Type.Declaration{},
+                },
+            });
             fields = fields ++ [_]std.builtin.Type.StructField{.{
-                .name = module_field.name,
-                .type = module.globals,
+                .name = module_name,
+                .type = Globals,
                 .default_value = null,
                 .is_comptime = false,
-                .alignment = @alignOf(module.globals),
+                .alignment = @alignOf(Globals),
             }};
         }
     }
@@ -272,7 +256,7 @@ pub fn World(comptime modules: anytype) type {
         pub fn send(world: *Self, comptime msg_tag: anytype) !void {
             inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
                 const module = @field(modules, module_field.name);
-                if (@hasField(@TypeOf(module), "messages")) {
+                if (@hasDecl(module, "messages")) {
                     if (@hasField(module.messages, @tagName(msg_tag))) try module.update(world, msg_tag);
                 }
             }
