@@ -2,7 +2,7 @@ const std = @import("std");
 const Ast = @import("Ast.zig");
 const Token = @import("Token.zig");
 const IR = @import("IR.zig");
-const ErrorMsg = @import("main.zig").ErrorMsg;
+const ErrorList = @import("ErrorList.zig");
 const AstGen = @This();
 
 allocator: std.mem.Allocator,
@@ -11,7 +11,7 @@ instructions: std.ArrayListUnmanaged(IR.Inst) = .{},
 refs: std.ArrayListUnmanaged(IR.Inst.Ref) = .{},
 strings: std.ArrayListUnmanaged(u8) = .{},
 scratch: std.ArrayListUnmanaged(IR.Inst.Ref) = .{},
-errors: std.ArrayListUnmanaged(ErrorMsg) = .{},
+errors: ErrorList,
 scope_pool: std.heap.MemoryPool(Scope),
 
 pub const Scope = struct {
@@ -27,16 +27,6 @@ pub const Scope = struct {
     };
 };
 
-pub fn deinit(self: *AstGen) void {
-    self.instructions.deinit(self.allocator);
-    self.refs.deinit(self.allocator);
-    self.strings.deinit(self.allocator);
-    self.scratch.deinit(self.allocator);
-    self.scope_pool.deinit();
-    for (self.errors.items) |*err_msg| err_msg.deinit(self.allocator);
-    self.errors.deinit(self.allocator);
-}
-
 pub fn genTranslationUnit(self: *AstGen) !u32 {
     const global_decls = self.tree.spanToList(0);
 
@@ -46,7 +36,10 @@ pub fn genTranslationUnit(self: *AstGen) !u32 {
     var root_scope = try self.scope_pool.create();
     root_scope.* = .{ .tag = .root, .parent = null };
 
-    try self.scanDecls(root_scope, global_decls);
+    self.scanDecls(root_scope, global_decls) catch |err| switch (err) {
+        error.AnalysisFail => return try self.addRefList(self.scratch.items[scratch_top..]),
+        error.OutOfMemory => return error.OutOfMemory,
+    };
 
     for (global_decls) |node| {
         const global = self.genDecl(root_scope, node) catch |err| switch (err) {
@@ -54,10 +47,6 @@ pub fn genTranslationUnit(self: *AstGen) !u32 {
             error.OutOfMemory => return error.OutOfMemory,
         };
         try self.scratch.append(self.allocator, global);
-    }
-
-    if (self.errors.items.len > 0) {
-        return error.AnalysisFail;
     }
 
     return try self.addRefList(self.scratch.items[scratch_top..]);
@@ -72,7 +61,7 @@ pub fn scanDecls(self: *AstGen, scope: *Scope, decls: []const Ast.Index) !void {
 
         // TODO
         // if (Token.isReserved(name)) {
-        //     try self.addError(
+        //     try self.errors.add(
         //         loc,
         //         "the name '{s}' has ben reserved",
         //         .{name},
@@ -83,12 +72,11 @@ pub fn scanDecls(self: *AstGen, scope: *Scope, decls: []const Ast.Index) !void {
         var name_iter = scope.decls.keyIterator();
         while (name_iter.next()) |node| {
             if (std.mem.eql(u8, self.declNameLoc(node.*).?.slice(self.tree.source), name)) {
-                try self.addError(
+                try self.errors.add(
                     loc,
                     "redeclaration of '{s}'",
                     .{name},
-                    try ErrorMsg.Note.create(
-                        self.allocator,
+                    try self.errors.createNote(
                         self.declNameLoc(node.*).?,
                         "other declaration here",
                         .{},
@@ -130,7 +118,7 @@ pub fn declRef(self: *AstGen, scope: *Scope, loc: Token.Loc) !IR.Inst.Ref {
         s = scope.parent orelse break;
     }
 
-    try self.addError(
+    try self.errors.add(
         loc,
         "use of undeclared identifier '{s}'",
         .{name},
@@ -208,7 +196,7 @@ pub fn genStruct(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref {
         switch (member_type_ref) {
             .bool_type, .i32_type, .u32_type, .f32_type, .f16_type => {},
             .sampler_type, .comparison_sampler_type, .external_sampled_texture_type => {
-                try self.addError(
+                try self.errors.add(
                     member_loc,
                     "invalid struct member type '{s}'",
                     .{member_type_name.slice(self.tree.source)},
@@ -221,7 +209,7 @@ pub fn genStruct(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref {
                 .vector_type, .matrix_type, .atomic_type, .struct_decl => {},
                 .array_type => {
                     if (self.instructions.items[member_type_ref.toIndex().?].data.array_type.size == .none and i + 1 != member_list.len) {
-                        try self.addError(
+                        try self.errors.add(
                             member_loc,
                             "struct member with runtime-sized array type, must be the last member of the structure",
                             .{},
@@ -236,7 +224,7 @@ pub fn genStruct(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref {
                 .storage_texture_type,
                 .depth_texture_type,
                 => {
-                    try self.addError(
+                    try self.errors.add(
                         member_loc,
                         "invalid struct member type '{s}'",
                         .{member_type_name.slice(self.tree.source)},
@@ -320,7 +308,7 @@ pub fn addInst(self: *AstGen, inst: IR.Inst) error{OutOfMemory}!IR.Inst.Index {
 // //                 ((lir == .construct and lir.construct == .vector) and (rir == .construct and rir.construct == .vector)) or
 // //                 ((lir == .construct and lir.construct == .matrix) and (rir == .construct and rir.construct == .matrix));
 // //             if (!is_valid_op) {
-// //                 try self.addError(
+// //                 try self.errors.add(
 // //                     loc,
 // //                     "invalid operation with '{s}' and '{s}'",
 // //                     .{ @tagName(std.meta.activeTag(lir)), @tagName(std.meta.activeTag(rir)) },
@@ -356,7 +344,7 @@ pub fn addInst(self: *AstGen, inst: IR.Inst) error{OutOfMemory}!IR.Inst.Index {
 // //         !std.mem.endsWith(u8, str, "f") and
 // //         !std.mem.endsWith(u8, str, "h"))
 // //     {
-// //         try self.addError(
+// //         try self.errors.add(
 // //             loc,
 // //             "number literal cannot have leading 0",
 // //             .{str},
@@ -409,7 +397,7 @@ pub fn genType(self: *AstGen, scope: *Scope, node: Ast.Index) error{ AnalysisFai
                     .struct_decl,
                     => return decl_ref,
                     .global_variable_decl => {
-                        try self.addError(
+                        try self.errors.add(
                             node_loc,
                             "'{s}' is not a type",
                             .{node_loc.slice(self.tree.source)},
@@ -449,12 +437,11 @@ pub fn genSampledTextureType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.
         .comparison_sampler_type,
         .external_sampled_texture_type,
         => {
-            try self.addError(
+            try self.errors.add(
                 self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                 "invalid sampled texture component type",
                 .{},
-                try ErrorMsg.Note.create(
-                    self.allocator,
+                try self.errors.createNote(
                     null,
                     "must be 'i32', 'u32' or 'f32'",
                     .{},
@@ -475,12 +462,11 @@ pub fn genSampledTextureType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.
             .depth_texture_type,
             .struct_decl,
             => {
-                try self.addError(
+                try self.errors.add(
                     self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                     "invalid sampled texture component type",
                     .{},
-                    try ErrorMsg.Note.create(
-                        self.allocator,
+                    try self.errors.createNote(
                         null,
                         "must be 'i32', 'u32' or 'f32'",
                         .{},
@@ -531,12 +517,11 @@ pub fn genMultigenSampledTextureType(self: *AstGen, scope: *Scope, node: Ast.Ind
         .comparison_sampler_type,
         .external_sampled_texture_type,
         => {
-            try self.addError(
+            try self.errors.add(
                 self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                 "invalid multisampled texture component type",
                 .{},
-                try ErrorMsg.Note.create(
-                    self.allocator,
+                try self.errors.createNote(
                     null,
                     "must be 'i32', 'u32' or 'f32'",
                     .{},
@@ -557,12 +542,11 @@ pub fn genMultigenSampledTextureType(self: *AstGen, scope: *Scope, node: Ast.Ind
             .depth_texture_type,
             .struct_decl,
             => {
-                try self.addError(
+                try self.errors.add(
                     self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                     "invalid multisampled texture component type",
                     .{},
-                    try ErrorMsg.Note.create(
-                        self.allocator,
+                    try self.errors.createNote(
                         null,
                         "must be 'i32', 'u32' or 'f32'",
                         .{},
@@ -602,12 +586,11 @@ pub fn genStorageTextureType(self: *AstGen, node: Ast.Index) !IR.Inst.Ref {
     const access_mode = switch (access_mode_full) {
         .write => IR.Inst.StorageTextureType.AccessMode.write,
         else => {
-            try self.addError(
+            try self.errors.add(
                 access_mode_loc,
                 "invalid access mode",
                 .{},
-                try ErrorMsg.Note.create(
-                    self.allocator,
+                try self.errors.createNote(
                     null,
                     "only 'write' is allowed",
                     .{},
@@ -704,12 +687,11 @@ pub fn genVectorType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref
     switch (component_type_ref) {
         .bool_type, .i32_type, .u32_type, .f32_type, .f16_type => {},
         .sampler_type, .comparison_sampler_type, .external_sampled_texture_type => {
-            try self.addError(
+            try self.errors.add(
                 self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                 "invalid vector component type",
                 .{},
-                try ErrorMsg.Note.create(
-                    self.allocator,
+                try self.errors.createNote(
                     null,
                     "must be 'i32', 'u32', 'f32', 'f16' or 'bool'",
                     .{},
@@ -730,12 +712,11 @@ pub fn genVectorType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref
             .depth_texture_type,
             .struct_decl,
             => {
-                try self.addError(
+                try self.errors.add(
                     self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                     "invalid vector component type",
                     .{},
-                    try ErrorMsg.Note.create(
-                        self.allocator,
+                    try self.errors.createNote(
                         null,
                         "must be 'i32', 'u32', 'f32', 'f16' or 'bool'",
                         .{},
@@ -784,12 +765,11 @@ pub fn genMatrixType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref
         .comparison_sampler_type,
         .external_sampled_texture_type,
         => {
-            try self.addError(
+            try self.errors.add(
                 self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                 "invalid matrix component type",
                 .{},
-                try ErrorMsg.Note.create(
-                    self.allocator,
+                try self.errors.createNote(
                     null,
                     "must be 'f32' or 'f16'",
                     .{},
@@ -810,12 +790,11 @@ pub fn genMatrixType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref
             .depth_texture_type,
             .struct_decl,
             => {
-                try self.addError(
+                try self.errors.add(
                     self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                     "invalid matrix component type",
                     .{},
-                    try ErrorMsg.Note.create(
-                        self.allocator,
+                    try self.errors.createNote(
                         null,
                         "must be 'f32' or 'f16'",
                         .{},
@@ -870,12 +849,11 @@ pub fn genAtomicType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref
         .comparison_sampler_type,
         .external_sampled_texture_type,
         => {
-            try self.addError(
+            try self.errors.add(
                 self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                 "invalid atomic component type",
                 .{},
-                try ErrorMsg.Note.create(
-                    self.allocator,
+                try self.errors.createNote(
                     null,
                     "must be 'i32' or 'u32'",
                     .{},
@@ -896,12 +874,11 @@ pub fn genAtomicType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref
             .depth_texture_type,
             .struct_decl,
             => {
-                try self.addError(
+                try self.errors.add(
                     self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                     "invalid atomic component type",
                     .{},
-                    try ErrorMsg.Note.create(
-                        self.allocator,
+                    try self.errors.createNote(
                         null,
                         "must be 'i32' or 'u32'",
                         .{},
@@ -939,7 +916,7 @@ pub fn genArrayType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref 
         .comparison_sampler_type,
         .external_sampled_texture_type,
         => {
-            try self.addError(
+            try self.errors.add(
                 self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                 "invalid array component type",
                 .{},
@@ -956,7 +933,7 @@ pub fn genArrayType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref 
             => {},
             .array_type => {
                 if (self.instructions.items[component_type_ref.toIndex().?].data.array_type.size == .none) {
-                    try self.addError(
+                    try self.errors.add(
                         self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                         "array componet type can not be a runtime-sized array",
                         .{},
@@ -971,7 +948,7 @@ pub fn genArrayType(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref 
             .storage_texture_type,
             .depth_texture_type,
             => {
-                try self.addError(
+                try self.errors.add(
                     self.tree.tokenLoc(self.tree.nodeToken(component_type_node)),
                     "invalid array component type",
                     .{},
@@ -1015,15 +992,4 @@ pub fn declNameLoc(self: *AstGen, node: Ast.Index) ?Token.Loc {
         else => return null,
     };
     return self.tree.tokenLoc(token);
-}
-
-pub fn addError(
-    self: *AstGen,
-    loc: Token.Loc,
-    comptime format: []const u8,
-    args: anytype,
-    note: ?ErrorMsg.Note,
-) !void {
-    const err_msg = try ErrorMsg.create(self.allocator, loc, format, args, note);
-    try self.errors.append(self.allocator, err_msg);
 }

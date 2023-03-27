@@ -2,7 +2,7 @@ const std = @import("std");
 const Parser = @import("Parser.zig");
 const Token = @import("Token.zig");
 const Tokenizer = @import("Tokenizer.zig");
-const ErrorMsg = @import("main.zig").ErrorMsg;
+const ErrorList = @import("ErrorList.zig");
 const Extension = @import("main.zig").Extension;
 
 const Ast = @This();
@@ -14,21 +14,18 @@ source: [:0]const u8,
 tokens: TokenList.Slice,
 nodes: NodeList.Slice,
 extra: []const Index,
+errors: ErrorList,
 
 pub fn deinit(tree: *Ast, allocator: std.mem.Allocator) void {
     tree.tokens.deinit(allocator);
     tree.nodes.deinit(allocator);
     allocator.free(tree.extra);
+    tree.errors.deinit();
     tree.* = undefined;
 }
 
-pub const ParseResult = union(enum) {
-    errors: []ErrorMsg,
-    tree: Ast,
-};
-
 /// parses a TranslationUnit (WGSL Program)
-pub fn parse(allocator: std.mem.Allocator, source: [:0]const u8) !ParseResult {
+pub fn parse(allocator: std.mem.Allocator, source: [:0]const u8) error{OutOfMemory}!Ast {
     var p = Parser{
         .allocator = allocator,
         .source = source,
@@ -53,26 +50,29 @@ pub fn parse(allocator: std.mem.Allocator, source: [:0]const u8) !ParseResult {
         .nodes = .{},
         .extra = .{},
         .scratch = .{},
-        .errors = .{},
+        .errors = try ErrorList.init(allocator),
         .extensions = Extension.Array.initFill(false),
     };
-    defer p.deinit();
+    defer p.scratch.deinit(allocator);
+    errdefer {
+        p.tokens.deinit(allocator);
+        p.nodes.deinit(allocator);
+        p.extra.deinit(allocator);
+        p.errors.deinit();
+    }
 
     // TODO: make sure tokens:nodes ratio is right
     const estimated_node_count = (p.tokens.len + 2) / 2;
     try p.nodes.ensureTotalCapacity(allocator, estimated_node_count);
 
-    _ = try p.translationUnit() orelse {
-        return .{ .errors = try p.errors.toOwnedSlice(allocator) };
-    };
+    try p.translationUnit();
 
     return .{
-        .tree = .{
-            .source = source,
-            .tokens = p.tokens.toOwnedSlice(),
-            .nodes = p.nodes.toOwnedSlice(),
-            .extra = try p.extra.toOwnedSlice(allocator),
-        },
+        .source = source,
+        .tokens = p.tokens.toOwnedSlice(),
+        .nodes = p.nodes.toOwnedSlice(),
+        .extra = try p.extra.toOwnedSlice(allocator),
+        .errors = p.errors,
     };
 }
 

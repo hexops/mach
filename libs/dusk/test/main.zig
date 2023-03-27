@@ -11,164 +11,82 @@ fn sdkPath(comptime suffix: []const u8) []const u8 {
     };
 }
 
-// TODO: move this to cli/main.zig
-pub fn printErrors(errors: []dusk.ErrorMsg, source: []const u8, file_path: ?[]const u8) !void {
-    var bw = std.io.bufferedWriter(std.io.getStdErr().writer());
-    const b = bw.writer();
-    const term = std.debug.TTY.Config{ .escape_codes = {} };
-
-    for (errors) |*err| {
-        defer err.deinit(allocator);
-
-        const loc_extra = err.loc.extraInfo(source);
-
-        // 'file:line:column error: <MSG>'
-        try term.setColor(b, .Bold);
-        try b.print("{?s}:{d}:{d} ", .{ file_path, loc_extra.line, loc_extra.col });
-        try term.setColor(b, .Red);
-        try b.writeAll("error: ");
-        try term.setColor(b, .Reset);
-        try term.setColor(b, .Bold);
-        try b.writeAll(err.msg);
-        try b.writeByte('\n');
-
-        try printCode(b, term, source, err.loc);
-
-        // note
-        if (err.note) |note| {
-            if (note.loc) |note_loc| {
-                const note_loc_extra = note_loc.extraInfo(source);
-
-                try term.setColor(b, .Reset);
-                try term.setColor(b, .Bold);
-                try b.print("{?s}:{d}:{d} ", .{ file_path, note_loc_extra.line, note_loc_extra.col });
-            }
-            try term.setColor(b, .Cyan);
-            try b.writeAll("note: ");
-
-            try term.setColor(b, .Reset);
-            try term.setColor(b, .Bold);
-            try b.writeAll(note.msg);
-            try b.writeByte('\n');
-
-            if (note.loc) |note_loc| {
-                try printCode(b, term, source, note_loc);
-            }
-        }
-
-        try term.setColor(b, .Reset);
-    }
-    try bw.flush();
-}
-
-fn printCode(writer: anytype, term: std.debug.TTY.Config, source: []const u8, loc: dusk.Token.Loc) !void {
-    const loc_extra = loc.extraInfo(source);
-    try term.setColor(writer, .Dim);
-    try writer.print("{d} │ ", .{loc_extra.line});
-    try term.setColor(writer, .Reset);
-    try writer.writeAll(source[loc_extra.line_start..loc.start]);
-    try term.setColor(writer, .Green);
-    try writer.writeAll(source[loc.start..loc.end]);
-    try term.setColor(writer, .Reset);
-    try writer.writeAll(source[loc.end..loc_extra.line_end]);
-    try writer.writeByte('\n');
-
-    // location pointer
-    const line_number_len = (std.math.log10(loc_extra.line) + 1) + 3;
-    try writer.writeByteNTimes(
-        ' ',
-        line_number_len + (loc_extra.col - 1),
-    );
-    try term.setColor(writer, .Bold);
-    try term.setColor(writer, .Green);
-    try writer.writeByte('^');
-    try writer.writeByteNTimes('~', loc.end - loc.start - 1);
-    try writer.writeByte('\n');
-}
-
 fn expectIR(source: [:0]const u8) !dusk.IR {
-    var res = try dusk.Ast.parse(allocator, source);
-    switch (res) {
-        .tree => |*tree| {
-            defer tree.deinit(allocator);
-            switch (try dusk.IR.generate(allocator, tree)) {
-                .ir => |ir| return ir,
-                .errors => |err_msgs| {
-                    try printErrors(err_msgs, source, null);
-                    allocator.free(err_msgs);
-                    return error.ExpectedIR;
-                },
-            }
-        },
-        .errors => |err_msgs| {
-            try printErrors(err_msgs, source, null);
-            allocator.free(err_msgs);
-            return error.Parsing;
-        },
+    var tree = try dusk.Ast.parse(allocator, source);
+    defer tree.deinit(allocator);
+
+    if (tree.errors.list.items.len > 0) {
+        try tree.errors.print(source, null);
+        return error.Parsing;
     }
+
+    var ir = try dusk.IR.generate(allocator, &tree);
+    errdefer ir.deinit();
+
+    if (ir.errors.list.items.len > 0) {
+        try ir.errors.print(source, null);
+        return error.ExpectedIR;
+    }
+
+    return ir;
 }
 
-fn expectError(source: [:0]const u8, err: dusk.ErrorMsg) !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{ .stack_trace_frames = 12 }){};
-    const all = gpa.allocator();
-    defer _ = gpa.deinit();
-    var res = try dusk.Ast.parse(all, source);
-    const err_list = switch (res) {
-        .tree => |*tree| blk: {
-            defer tree.deinit(all);
-            switch (try dusk.IR.generate(all, tree)) {
-                .ir => |*ir| {
-                    ir.deinit();
-                    return error.ExpectedError;
-                },
-                .errors => |err_msgs| break :blk err_msgs,
-            }
+fn expectError(source: [:0]const u8, err: dusk.ErrorList.ErrorMsg) !void {
+    var tree = try dusk.Ast.parse(allocator, source);
+    defer tree.deinit(allocator);
+    var err_list = tree.errors;
+
+    var ir: ?dusk.IR = null;
+    defer if (ir != null) ir.?.deinit();
+
+    if (err_list.list.items.len == 0) {
+        ir = try dusk.IR.generate(allocator, &tree);
+
+        err_list = ir.?.errors;
+        if (err_list.list.items.len == 0) {
             return error.ExpectedError;
-        },
-        .errors => |err_msgs| err_msgs,
-    };
-    defer {
-        for (err_list) |*err_msg| err_msg.deinit(all);
-        all.free(err_list);
+        }
     }
+
+    const first_error = err_list.list.items[0];
     {
         errdefer {
             std.debug.print(
                 "\n\x1b[31mexpected error({d}..{d}):\n{s}\n\x1b[32mactual error({d}..{d}):\n{s}\n\x1b[0m",
                 .{
                     err.loc.start,         err.loc.end,         err.msg,
-                    err_list[0].loc.start, err_list[0].loc.end, err_list[0].msg,
+                    first_error.loc.start, first_error.loc.end, first_error.msg,
                 },
             );
         }
-        try expect(std.mem.eql(u8, err.msg, err_list[0].msg));
-        try expect(err_list[0].loc.start == err.loc.start);
-        try expect(err_list[0].loc.end == err.loc.end);
+        try expect(std.mem.eql(u8, err.msg, first_error.msg));
+        try expect(first_error.loc.start == err.loc.start);
+        try expect(first_error.loc.end == err.loc.end);
     }
-    if (err_list[0].note) |_| {
+    if (first_error.note) |_| {
         errdefer {
             std.debug.print(
                 "\n\x1b[31mexpected note msg:\n{s}\n\x1b[32mactual note msg:\n{s}\n\x1b[0m",
-                .{ err.note.?.msg, err_list[0].note.?.msg },
+                .{ err.note.?.msg, first_error.note.?.msg },
             );
         }
         if (err.note == null) {
-            std.debug.print("\x1b[31mnote missed: {s}\x1b[0m\n", .{err_list[0].note.?.msg});
+            std.debug.print("\x1b[31mnote missed: {s}\x1b[0m\n", .{first_error.note.?.msg});
             return error.NoteMissed;
         }
-        try expect(std.mem.eql(u8, err.note.?.msg, err_list[0].note.?.msg));
-        if (err_list[0].note.?.loc) |_| {
+        try expect(std.mem.eql(u8, err.note.?.msg, first_error.note.?.msg));
+        if (first_error.note.?.loc) |_| {
             errdefer {
                 std.debug.print(
                     "\n\x1b[31mexpected note loc: {d}..{d}\n\x1b[32mactual note loc: {d}..{d}\n\x1b[0m",
                     .{
                         err.note.?.loc.?.start,         err.note.?.loc.?.end,
-                        err_list[0].note.?.loc.?.start, err_list[0].note.?.loc.?.end,
+                        first_error.note.?.loc.?.start, first_error.note.?.loc.?.end,
                     },
                 );
             }
-            try expect(err_list[0].note.?.loc.?.start == err.note.?.loc.?.start);
-            try expect(err_list[0].note.?.loc.?.end == err.note.?.loc.?.end);
+            try expect(first_error.note.?.loc.?.start == err.note.?.loc.?.start);
+            try expect(first_error.note.?.loc.?.end == err.note.?.loc.?.end);
         }
     }
 }
