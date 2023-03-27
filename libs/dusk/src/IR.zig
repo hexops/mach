@@ -1,7 +1,7 @@
 const std = @import("std");
 const AstGen = @import("AstGen.zig");
 const Ast = @import("Ast.zig");
-const ErrorMsg = @import("main.zig").ErrorMsg;
+const ErrorList = @import("ErrorList.zig");
 const IR = @This();
 
 allocator: std.mem.Allocator,
@@ -9,38 +9,43 @@ globals_index: u32,
 instructions: []const Inst,
 refs: []const Inst.Ref,
 strings: []const u8,
+errors: ErrorList,
 
-pub fn deinit(self: IR) void {
+pub fn deinit(self: *IR) void {
     self.allocator.free(self.instructions);
     self.allocator.free(self.refs);
     self.allocator.free(self.strings);
+    self.errors.deinit();
+    self.* = undefined;
 }
 
-pub const AstGenResult = union(enum) {
-    ir: IR,
-    errors: []ErrorMsg,
-};
-
-pub fn generate(allocator: std.mem.Allocator, tree: *const Ast) !AstGenResult {
+pub fn generate(allocator: std.mem.Allocator, tree: *const Ast) error{OutOfMemory}!IR {
     var astgen = AstGen{
         .allocator = allocator,
         .tree = tree,
+        .errors = try ErrorList.init(allocator),
         .scope_pool = std.heap.MemoryPool(AstGen.Scope).init(allocator),
     };
-    defer astgen.deinit();
+    defer {
+        astgen.scope_pool.deinit();
+        astgen.scratch.deinit(allocator);
+    }
+    errdefer {
+        astgen.instructions.deinit(allocator);
+        astgen.refs.deinit(allocator);
+        astgen.strings.deinit(allocator);
+    }
 
-    const globals_index = astgen.genTranslationUnit() catch |err| switch (err) {
-        error.AnalysisFail => return .{ .errors = try astgen.errors.toOwnedSlice(allocator) },
-        error.OutOfMemory => return error.OutOfMemory,
-    };
+    const globals_index = try astgen.genTranslationUnit();
 
-    return .{ .ir = .{
+    return .{
         .allocator = allocator,
         .globals_index = globals_index,
         .instructions = try astgen.instructions.toOwnedSlice(allocator),
         .refs = try astgen.refs.toOwnedSlice(allocator),
         .strings = try astgen.strings.toOwnedSlice(allocator),
-    } };
+        .errors = astgen.errors,
+    };
 }
 
 pub fn getStr(self: IR, index: u32) []const u8 {
