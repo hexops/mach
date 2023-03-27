@@ -11,7 +11,7 @@ const Entities = @import("entities.zig").Entities;
 
 /// Validates that a module matches the expected type layout.
 ///
-/// An ECS module has components, systems, global values & more.
+/// An ECS module has components, systems, state & more.
 pub fn Module(comptime M: anytype) type {
     if (@hasDecl(M, "name")) {
         _ = @tagName(M.name);
@@ -25,7 +25,7 @@ pub fn Module(comptime M: anytype) type {
 
 /// Validates that a list of module matches the expected type layout.
 ///
-/// ECS modules have components, systems, global values & more.
+/// ECS modules have components, systems, state & more.
 pub fn Modules(comptime modules: anytype) @TypeOf(modules) {
     inline for (modules) |m| _ = Module(m);
     return modules;
@@ -99,7 +99,7 @@ pub fn MessagesTag(comptime messages: anytype) type {
 }
 
 const NoComponents = @TypeOf(.{});
-const NoGlobals = @TypeOf(.{});
+const NoState = @TypeOf(.{});
 
 /// Returns the namespaced components struct **type**.
 //
@@ -168,7 +168,7 @@ fn namespacedComponents(comptime modules: anytype) NamespacedComponents(modules)
     return x;
 }
 
-/// Extracts namespaced globals from modules (a module is said to have globals if the struct has
+/// Extracts namespaced state from modules (a module is said to have state if the struct has
 /// any fields), returning a type like e.g.:
 ///
 /// ```
@@ -183,26 +183,26 @@ fn namespacedComponents(comptime modules: anytype) NamespacedComponents(modules)
 /// }
 /// ```
 ///
-fn NamespacedGlobals(comptime modules: anytype) type {
+fn NamespacedState(comptime modules: anytype) type {
     var fields: []const StructField = &[0]StructField{};
     inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
         const module = @field(modules, module_field.name);
         const module_name = @tagName(@field(module, "name"));
-        const global_fields = std.meta.fields(module);
-        const Globals = if (global_fields.len > 0) @Type(.{
+        const state_fields = std.meta.fields(module);
+        const State = if (state_fields.len > 0) @Type(.{
             .Struct = .{
                 .layout = .Auto,
                 .is_tuple = false,
-                .fields = global_fields,
+                .fields = state_fields,
                 .decls = &[_]std.builtin.Type.Declaration{},
             },
-        }) else NoGlobals;
+        }) else NoState;
         fields = fields ++ [_]std.builtin.Type.StructField{.{
             .name = module_name,
-            .type = Globals,
+            .type = State,
             .default_value = null,
             .is_comptime = false,
-            .alignment = @alignOf(Globals),
+            .alignment = @alignOf(State),
         }};
     }
     return @Type(.{
@@ -220,7 +220,7 @@ pub fn World(comptime modules: anytype) type {
     return struct {
         allocator: Allocator,
         entities: Entities(all_components),
-        globals: NamespacedGlobals(modules),
+        state: NamespacedState(modules),
 
         const Self = @This();
 
@@ -228,7 +228,7 @@ pub fn World(comptime modules: anytype) type {
             return Self{
                 .allocator = allocator,
                 .entities = try Entities(all_components).init(allocator),
-                .globals = undefined,
+                .state = undefined,
             };
         }
 
@@ -236,34 +236,34 @@ pub fn World(comptime modules: anytype) type {
             world.entities.deinit();
         }
 
-        /// Gets a global value called `.global_tag` from the module named `.module_tag`
-        pub fn get(world: *Self, comptime module_tag: anytype, comptime global_tag: anytype) @TypeOf(@field(
-            @field(world.globals, @tagName(module_tag)),
-            @tagName(global_tag),
+        /// Gets a state value called `.state_tag` from the module named `.module_tag`
+        pub fn get(world: *Self, comptime module_tag: anytype, comptime state_tag: anytype) @TypeOf(@field(
+            @field(world.state, @tagName(module_tag)),
+            @tagName(state_tag),
         )) {
             return comptime @field(
-                @field(world.globals, @tagName(module_tag)),
-                @tagName(global_tag),
+                @field(world.state, @tagName(module_tag)),
+                @tagName(state_tag),
             );
         }
 
-        /// Sets a global value called `.global_tag` in the module named `.module_tag`
+        /// Sets a state value called `.state_tag` in the module named `.module_tag`
         pub fn set(
             world: *Self,
             comptime module_tag: anytype,
-            comptime global_tag: anytype,
+            comptime state_tag: anytype,
             value: @TypeOf(@field(
-                @field(world.globals, @tagName(module_tag)),
-                @tagName(global_tag),
+                @field(world.state, @tagName(module_tag)),
+                @tagName(state_tag),
             )),
         ) void {
             comptime @field(
-                @field(world.globals, @tagName(module_tag)),
-                @tagName(global_tag),
+                @field(world.state, @tagName(module_tag)),
+                @tagName(state_tag),
             ) = value;
         }
 
-        /// Broadcasts a global message to all modules that are subscribed to it.
+        /// Broadcasts a state message to all modules that are subscribed to it.
         pub fn send(world: *Self, comptime msg_tag: anytype) !void {
             inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
                 const module = @field(modules, module_field.name);
