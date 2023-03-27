@@ -4,7 +4,7 @@
 
 ## Design principles:
 
-* Clean-room implementation (author has not read any other ECS implementation code, just working from first-principles)
+* Initially a 100% clean-room implementation, working from first-principles. Later informed by research into how other ECS work, with advice from e.g. Bevy and Flecs authors at different points (thank you!)
 * Solve the problems ECS solves, in a way that is natural to Zig and leverages Zig comptime.
 * Fast. Optimal for CPU caches, multi-threaded, leverage comptime as much as is reasonable.
 * Simple. Small API footprint, should be natural and fun - not like you're writing boilerplate.
