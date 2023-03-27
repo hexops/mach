@@ -267,8 +267,9 @@ pub fn World(comptime modules: anytype) type {
         pub fn send(world: *Self, comptime msg_tag: anytype) !void {
             inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
                 const module = @field(modules, module_field.name);
-                if (@hasDecl(module, "Message")) {
-                    if (@hasField(module.Message, @tagName(msg_tag))) try module.update(world, msg_tag);
+                if (@hasDecl(module, @tagName(msg_tag))) {
+                    const handler = @field(module, @tagName(msg_tag));
+                    try handler(world);
                 }
             }
         }
