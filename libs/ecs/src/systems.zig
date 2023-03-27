@@ -98,6 +98,9 @@ pub fn MessagesTag(comptime messages: anytype) type {
     });
 }
 
+const NoComponents = @TypeOf(.{});
+const NoGlobals = @TypeOf(.{});
+
 /// Returns the namespaced components struct **type**.
 //
 /// Consult `namespacedComponents` for how a value of this type looks.
@@ -113,6 +116,14 @@ fn NamespacedComponents(comptime modules: anytype) type {
                 .default_value = null,
                 .is_comptime = false,
                 .alignment = @alignOf(@TypeOf(module.components)),
+            }};
+        } else {
+            fields = fields ++ [_]std.builtin.Type.StructField{.{
+                .name = module_name,
+                .type = NoComponents,
+                .default_value = null,
+                .is_comptime = false,
+                .alignment = @alignOf(NoComponents),
             }};
         }
     }
@@ -150,6 +161,8 @@ fn namespacedComponents(comptime modules: anytype) NamespacedComponents(modules)
         const module_name = @tagName(@field(module, "name"));
         if (@hasDecl(module, "components")) {
             @field(x, module_name) = module.components;
+        } else {
+            @field(x, module_name) = .{};
         }
     }
     return x;
@@ -176,23 +189,21 @@ fn NamespacedGlobals(comptime modules: anytype) type {
         const module = @field(modules, module_field.name);
         const module_name = @tagName(@field(module, "name"));
         const global_fields = std.meta.fields(module);
-        if (global_fields.len > 0) {
-            const Globals = @Type(.{
-                .Struct = .{
-                    .layout = .Auto,
-                    .is_tuple = false,
-                    .fields = global_fields,
-                    .decls = &[_]std.builtin.Type.Declaration{},
-                },
-            });
-            fields = fields ++ [_]std.builtin.Type.StructField{.{
-                .name = module_name,
-                .type = Globals,
-                .default_value = null,
-                .is_comptime = false,
-                .alignment = @alignOf(Globals),
-            }};
-        }
+        const Globals = if (global_fields.len > 0) @Type(.{
+            .Struct = .{
+                .layout = .Auto,
+                .is_tuple = false,
+                .fields = global_fields,
+                .decls = &[_]std.builtin.Type.Declaration{},
+            },
+        }) else NoGlobals;
+        fields = fields ++ [_]std.builtin.Type.StructField{.{
+            .name = module_name,
+            .type = Globals,
+            .default_value = null,
+            .is_comptime = false,
+            .alignment = @alignOf(Globals),
+        }};
     }
     return @Type(.{
         .Struct = .{
@@ -256,8 +267,8 @@ pub fn World(comptime modules: anytype) type {
         pub fn send(world: *Self, comptime msg_tag: anytype) !void {
             inline for (std.meta.fields(@TypeOf(modules))) |module_field| {
                 const module = @field(modules, module_field.name);
-                if (@hasDecl(module, "messages")) {
-                    if (@hasField(module.messages, @tagName(msg_tag))) try module.update(world, msg_tag);
+                if (@hasDecl(module, "Message")) {
+                    if (@hasField(module.Message, @tagName(msg_tag))) try module.update(world, msg_tag);
                 }
             }
         }
