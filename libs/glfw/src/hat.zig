@@ -4,12 +4,12 @@ const c = @import("c.zig").c;
 /// A bitmask of all Joystick hat states
 ///
 /// See glfw.Joystick.getHats for how these are used.
-pub const Hat = packed struct {
+pub const Hat = packed struct(u8) {
     up: bool = false,
     right: bool = false,
     down: bool = false,
     left: bool = false,
-    _reserved: u4 = 0,
+    _padding: u4 = 0,
 
     pub inline fn centered(self: Hat) bool {
         return self.up == false and self.right == false and self.down == false and self.left == false;
@@ -57,7 +57,7 @@ test "from int, single" {
         .right = false,
         .down = false,
         .left = false,
-        ._reserved = 0,
+        ._padding = 0,
     }, Hat.fromInt(RawHat.up));
 }
 
@@ -69,7 +69,7 @@ test "from int, multi" {
         .right = false,
         .down = true,
         .left = true,
-        ._reserved = 0,
+        ._padding = 0,
     }, Hat.fromInt(RawHat.up | RawHat.down | RawHat.left));
 }
 
@@ -81,7 +81,7 @@ test "to int, single" {
         .right = false,
         .down = false,
         .left = false,
-        ._reserved = 0,
+        ._padding = 0,
     };
     try std.testing.expectEqual(v.toInt(c_int), RawHat.up);
 }
@@ -94,7 +94,7 @@ test "to int, multi" {
         .right = false,
         .down = true,
         .left = true,
-        ._reserved = 0,
+        ._padding = 0,
     };
     try std.testing.expectEqual(v.toInt(c_int), RawHat.up | RawHat.down | RawHat.left);
 }

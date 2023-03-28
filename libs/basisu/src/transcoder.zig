@@ -117,7 +117,7 @@ pub const Transcoder = struct {
         block_count: u32,
     };
 
-    pub const DecodeFlags = packed struct {
+    pub const DecodeFlags = packed struct(u32) {
         _padding: u1 = 0,
         pvrtc_decode_to_next_pow_2: bool = false,
         transcode_alpha_data_to_opaque_formats: bool = false,

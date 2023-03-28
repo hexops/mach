@@ -29,7 +29,7 @@ pub const Buffer = opaque {
         unmapped_before_callback = 0x00000005,
     };
 
-    pub const UsageFlags = packed struct {
+    pub const UsageFlags = packed struct(u32) {
         map_read: bool = false,
         map_write: bool = false,
         copy_src: bool = false,

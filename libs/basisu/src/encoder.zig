@@ -203,7 +203,7 @@ pub const Image = struct {
     }
 };
 
-pub const PackUASTCFlags = packed struct {
+pub const PackUASTCFlags = packed struct(u32) {
     fastest: bool = false,
     faster: bool = false,
     default: bool = false,

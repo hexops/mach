@@ -362,14 +362,14 @@ pub const Key = enum {
     unknown,
 };
 
-pub const KeyMods = packed struct {
+pub const KeyMods = packed struct(u8) {
     shift: bool,
     control: bool,
     alt: bool,
     super: bool,
     caps_lock: bool,
     num_lock: bool,
-    _reserved: u2 = 0,
+    _padding: u2 = 0,
 };
 
 pub const DisplayMode = enum {
