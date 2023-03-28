@@ -346,6 +346,21 @@ function convertKeyCode(code) {
   return 118; // Unknown
 }
 
+const EventCode = {
+  key_press: 0,
+  key_repeat: 1,
+  key_release: 2,
+  char_input: 3,
+  mouse_motion: 4,
+  mouse_press: 5,
+  mouse_release: 6,
+  mouse_scroll: 7,
+  framebuffer_resize: 8,
+  focus_gained: 9,
+  focus_lost: 10,
+  close: 11,
+};
+
 const Key = {
   KeyA: 0,
   KeyB: 1,
@@ -373,6 +388,7 @@ const Key = {
   KeyX: 23,
   KeyY: 24,
   KeyZ: 25,
+
   Digit0: 26,
   Digit1: 27,
   Digit2: 28,
@@ -383,6 +399,7 @@ const Key = {
   Digit7: 33,
   Digit8: 34,
   Digit9: 35,
+
   F1: 36,
   F2: 37,
   F3: 38,
@@ -408,6 +425,7 @@ const Key = {
   F23: 58,
   F24: 59,
   F25: 60,
+
   NumpadDivide: 61,
   NumpadMultiply: 62,
   NumpadSubtract: 63,
@@ -425,6 +443,7 @@ const Key = {
   NumpadDecimal: 75,
   NumpadEqual: 76,
   NumpadEnter: 77,
+
   Enter: 78,
   Escape: 79,
   Tab: 80,
@@ -467,21 +486,6 @@ const Key = {
   Period: 115,
   Slash: 116,
   Backquote: 117,
-};
-
-const EventCode = {
-  key_press: 0,
-  key_repeat: 1,
-  key_release: 2,
-  char_input: 3,
-  mouse_motion: 4,
-  mouse_press: 5,
-  mouse_release: 6,
-  mouse_scroll: 7,
-  framebuffer_resize: 8,
-  focus_gained: 9,
-  focus_lost: 10,
-  close: 11,
 };
 
 const DisplayMode = {
