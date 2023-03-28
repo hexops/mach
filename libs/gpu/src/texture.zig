@@ -136,7 +136,7 @@ pub const Texture = opaque {
         uint = 0x00000005,
     };
 
-    pub const UsageFlags = packed struct {
+    pub const UsageFlags = packed struct(u32) {
         copy_src: bool = false,
         copy_dst: bool = false,
         texture_binding: bool = false,

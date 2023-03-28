@@ -410,7 +410,7 @@ pub const VertexStepMode = enum(u32) {
     vertex_buffer_not_used = 0x00000002,
 };
 
-pub const ColorWriteMaskFlags = packed struct {
+pub const ColorWriteMaskFlags = packed struct(u32) {
     red: bool = false,
     green: bool = false,
     blue: bool = false,
@@ -437,7 +437,7 @@ pub const ColorWriteMaskFlags = packed struct {
     }
 };
 
-pub const MapModeFlags = packed struct {
+pub const MapModeFlags = packed struct(u32) {
     read: bool = false,
     write: bool = false,
 
@@ -457,7 +457,7 @@ pub const MapModeFlags = packed struct {
     }
 };
 
-pub const ShaderStageFlags = packed struct {
+pub const ShaderStageFlags = packed struct(u32) {
     vertex: bool = false,
     fragment: bool = false,
     compute: bool = false,

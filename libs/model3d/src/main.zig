@@ -154,7 +154,7 @@ pub const Quality = enum(u2) {
     double = c.M3D_EXP_DOUBLE,
 };
 
-pub const Flags = packed struct {
+pub const Flags = packed struct(u32) {
     // don't export color map
     nocmap: bool = false,
     // don't export materials
