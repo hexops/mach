@@ -4,6 +4,7 @@ const Allocator = mem.Allocator;
 const testing = std.testing;
 const builtin = @import("builtin");
 const assert = std.debug.assert;
+const query = @import("query.zig");
 
 const is_debug = builtin.mode == .Debug;
 
@@ -332,87 +333,8 @@ pub fn Entities(comptime all_components: anytype) type {
             row_index: u32,
         };
 
-        pub const Query = Query: {
-            const namespaces = std.meta.fields(@TypeOf(all_components));
-            var fields: [namespaces.len]std.builtin.Type.UnionField = undefined;
-            inline for (namespaces, 0..) |namespace, i| {
-                const component_enum = std.meta.FieldEnum(namespace.type);
-                fields[i] = .{
-                    .name = namespace.name,
-                    .type = component_enum,
-                    .alignment = @alignOf(component_enum),
-                };
-            }
-
-            // need type_info variable (rather than embedding in @Type() call)
-            // to work around stage 1 bug
-            const type_info = std.builtin.Type{
-                .Union = .{
-                    .layout = .Auto,
-                    .tag_type = std.meta.FieldEnum(@TypeOf(all_components)),
-                    .fields = &fields,
-                    .decls = &.{},
-                },
-            };
-            break :Query @Type(type_info);
-        };
-
-        fn fullComponentName(comptime q: Query) []const u8 {
-            return @tagName(q) ++ "." ++ @tagName(@field(q, @tagName(std.meta.activeTag(q))));
-        }
-
-        pub fn Iter(comptime components: []const Query) type {
-            return struct {
-                entities: *Self,
-                archetype_index: usize = 0,
-                row_index: u32 = 0,
-
-                const Iterator = @This();
-
-                pub const Entry = struct {
-                    entity: EntityID,
-
-                    pub fn unlock(e: Entry) void {
-                        _ = e;
-                    }
-                };
-
-                pub fn next(iter: *Iterator) ?Entry {
-                    const entities = iter.entities;
-
-                    // If the archetype table we're looking at does not contain the components we're
-                    // querying for, keep searching through tables until we find one that does.
-                    var archetype = entities.archetypes.entries.get(iter.archetype_index).value;
-                    while (!hasComponents(archetype, components) or iter.row_index >= archetype.len) {
-                        iter.archetype_index += 1;
-                        iter.row_index = 0;
-                        if (iter.archetype_index >= entities.archetypes.count()) {
-                            return null;
-                        }
-                        archetype = entities.archetypes.entries.get(iter.archetype_index).value;
-                    }
-
-                    const row_entity_id = archetype.get(iter.entities.allocator, iter.row_index, "id", EntityID).?;
-                    iter.row_index += 1;
-                    return Entry{ .entity = row_entity_id };
-                }
-            };
-        }
-
-        fn hasComponents(storage: ArchetypeStorage, comptime components: []const Query) bool {
-            var archetype = storage;
-            if (components.len == 0) return false;
-            inline for (components) |component| {
-                if (!archetype.hasComponent(fullComponentName(component))) return false;
-            }
-            return true;
-        }
-
-        pub fn query(entities: *Self, comptime components: []const Query) Iter(components) {
-            return Iter(components){
-                .entities = entities,
-            };
-        }
+        /// A complex query for entities matching a given criteria
+        pub const Query = query.Query(all_components);
 
         pub fn init(allocator: Allocator) !Self {
             var entities = Self{ .allocator = allocator };
