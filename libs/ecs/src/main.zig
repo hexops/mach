@@ -32,6 +32,7 @@ pub const World = @import("systems.zig").World;
 
 test "inclusion" {
     std.testing.refAllDeclsRecursive(@This());
+    std.testing.refAllDeclsRecursive(@import("query.zig"));
 }
 
 test "example" {
@@ -87,5 +88,7 @@ test "example" {
     try physics.set(player2, .id, 1234);
     try physics.set(player3, .id, 1234);
 
+    //-------------------------------------------------------------------------
+    // Send events to modules
     try world.send(.tick);
 }
