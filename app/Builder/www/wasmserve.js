@@ -3,10 +3,13 @@ import ansi_to_html from "./ansi_to_html.js";
 let evtSource = new EventSource("/notify");
 
 function setup() {
+	evtSource.addEventListener("building", function (e) {
+		// TODO
+	});
 	evtSource.addEventListener("built", function (e) {
 		window.location.reload();
 	});
-	evtSource.addEventListener("build_error", function (e) {
+	evtSource.addEventListener("compile_error", function (e) {
 		createErrorScreen("An error occurred while building:", e.data)
 	});
 	evtSource.addEventListener("stopped", function (e) {
