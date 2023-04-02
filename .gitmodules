@@ -11,7 +11,7 @@
 
 [submodule "freetype/upstream"]
 	path = libs/freetype/upstream
-	url = https://github.com/hexops/freetype
+	url = https://github.com/hexops-graveyard/freetype
 [submodule "glfw/upstream"]
 	path = libs/glfw/upstream
 	url = https://github.com/hexops/glfw
