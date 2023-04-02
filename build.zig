@@ -10,7 +10,6 @@ const earcut = @import("libs/earcut/build.zig");
 const gamemode = @import("libs/gamemode/build.zig");
 const model3d = @import("libs/model3d/build.zig");
 const dusk = @import("libs/dusk/build.zig");
-const wasmserve = @import("tools/wasmserve/wasmserve.zig");
 pub const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
     .glfw_include_dir = sdkPath("/libs/glfw/upstream/glfw/include"),
     .system_sdk = system_sdk,
@@ -27,7 +26,6 @@ const core = @import("libs/core/sdk.zig").Sdk(.{
     .gpu_dawn = gpu_dawn,
     .glfw = glfw,
     .gamemode = gamemode,
-    .wasmserve = wasmserve,
     .sysjs = sysjs,
 });
 
@@ -56,6 +54,22 @@ pub const Options = struct {
 pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
+
+    const app = b.addExecutable(.{
+        .name = "mach",
+        .root_source_file = .{ .path = "app/main.zig" },
+        .version = .{ .major = 0, .minor = 1, .patch = 0 },
+        .optimize = optimize,
+        .target = target,
+    });
+    app.addModule("mach", module(b));
+    if (app.target.getOsTag() == .windows) app.linkLibC();
+    app.install();
+
+    const app_run_cmd = app.run();
+    if (b.args) |args| app_run_cmd.addArgs(args);
+    const app_run_step = b.step("run", "Run Mach Engine Application");
+    app_run_step.dependOn(&app_run_cmd.step);
 
     const gpu_dawn_options = gpu_dawn.Options{
         .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
@@ -107,10 +121,10 @@ pub fn build(b: *std.Build) !void {
         const shaderexp_compile_step = b.step("shaderexp", "Compile shaderexp");
         shaderexp_compile_step.dependOn(&shaderexp_app.getInstallStep().?.step);
 
-        const shaderexp_run_cmd = try shaderexp_app.run();
-        shaderexp_run_cmd.dependOn(&shaderexp_app.getInstallStep().?.step);
+        const shaderexp_run_cmd = shaderexp_app.run();
+        shaderexp_run_cmd.step.dependOn(&shaderexp_app.getInstallStep().?.step);
         const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
-        shaderexp_run_step.dependOn(shaderexp_run_cmd);
+        shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
     }
 
     const compile_all = b.step("compile-all", "Compile Mach");
@@ -144,7 +158,6 @@ pub const App = struct {
 
     pub const InitError = core.App.InitError;
     pub const LinkError = core.App.LinkError;
-    pub const RunError = core.App.RunError;
 
     pub fn init(
         b: *std.Build,
@@ -202,8 +215,8 @@ pub const App = struct {
         app.core.install();
     }
 
-    pub fn run(app: *const App) RunError!*std.build.Step {
-        return try app.core.run();
+    pub fn run(app: *const App) *std.build.RunStep {
+        return app.core.run();
     }
 
     pub fn getInstallStep(app: *const App) ?*std.build.InstallArtifactStep {

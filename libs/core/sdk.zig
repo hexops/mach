@@ -89,9 +89,6 @@ pub fn Sdk(comptime deps: anytype) type {
 
             pub const InitError = error{OutOfMemory} || std.zig.system.NativeTargetInfo.DetectError;
             pub const LinkError = deps.glfw.LinkError;
-            pub const RunError = error{
-                ParsingIpFailed,
-            } || deps.wasmserve.Error || std.fmt.ParseIntError;
 
             pub const Platform = enum {
                 native,
@@ -181,7 +178,7 @@ pub fn Sdk(comptime deps: anytype) type {
             pub fn install(app: *const App) void {
                 app.step.install();
 
-                // Install additional files (src/mach.js and template.html)
+                // Install additional files (mach.js and mach-sysjs.js)
                 // in case of wasm
                 if (app.platform == .web) {
                     // Set install directory to '{prefix}/www'
@@ -195,10 +192,6 @@ pub fn Sdk(comptime deps: anytype) type {
                         );
                         app.getInstallStep().?.step.dependOn(&install_js.step);
                     }
-
-                    genHtml(app.b.allocator, app.b.getInstallPath(web_install_dir, "index.html"), app.name) catch |err| {
-                        std.log.err("unable to generate html: {s}", .{@errorName(err)});
-                    };
                 }
 
                 // Install resources
@@ -215,96 +208,13 @@ pub fn Sdk(comptime deps: anytype) type {
                 }
             }
 
-            pub fn run(app: *const App) RunError!*std.build.Step {
-                if (app.platform == .web) {
-                    const address = std.process.getEnvVarOwned(app.b.allocator, "MACH_ADDRESS") catch try app.b.allocator.dupe(u8, "127.0.0.1");
-                    const port = std.process.getEnvVarOwned(app.b.allocator, "MACH_PORT") catch try app.b.allocator.dupe(u8, "8080");
-                    const address_parsed = std.net.Address.parseIp4(address, try std.fmt.parseInt(u16, port, 10)) catch return error.ParsingIpFailed;
-                    const serve_step = try deps.wasmserve.serve(
-                        app.b,
-                        .{
-                            // .step_name =
-                            .install_dir = web_install_dir,
-                            .watch_paths = app.watch_paths,
-                            .listen_address = address_parsed,
-                        },
-                    );
-                    return &serve_step.step;
-                } else {
-                    return &app.step.run().step;
-                }
+            pub fn run(app: *const App) *std.build.RunStep {
+                return app.step.run();
             }
 
             pub fn getInstallStep(app: *const App) ?*std.build.InstallArtifactStep {
                 return app.step.install_step;
             }
         };
-
-        pub fn genHtml(allocator: std.mem.Allocator, output_name: []const u8, app_name: []const u8) !void {
-            const file = try std.fs.cwd().createFile(output_name, .{});
-            defer file.close();
-
-            var buf = try std.fmt.allocPrint(allocator, html_template, .{ .app_name = app_name });
-            defer allocator.free(buf);
-
-            _ = try file.write(buf);
-        }
-
-        const html_template =
-            \\<!doctype html>
-            \\<html>
-            \\
-            \\<head>
-            \\  <meta charset="utf-8">
-            \\  <title>{[app_name]s}</title>
-            \\</head>
-            \\
-            \\<body>
-            \\  <script type="module">
-            \\    import {{ mach }} from "./mach.js";
-            \\    import {{ sysjs }} from "./mach-sysjs.js";
-            \\    import setupWasmserve from "./wasmserve.js";
-            \\
-            \\    setupWasmserve();
-            \\
-            \\    let imports = {{
-            \\      mach,
-            \\      sysjs,
-            \\    }};
-            \\
-            \\    fetch("{[app_name]s}.wasm")
-            \\      .then(response => response.arrayBuffer())
-            \\      .then(buffer => WebAssembly.instantiate(buffer, imports))
-            \\      .then(results => results.instance)
-            \\      .then(instance => {{
-            \\        sysjs.init(instance);
-            \\        mach.init(instance);
-            \\        instance.exports.wasmInit();
-            \\
-            \\        let frame = true;
-            \\        let last_update_time = performance.now();
-            \\        let update = function () {{
-            \\          if (!frame) {{
-            \\            instance.exports.wasmDeinit();
-            \\            return;
-            \\          }}
-            \\          if (mach.machHasEvent() ||
-            \\              last_update_time + mach.wait_timeout * 1000 <= performance.now()) {{
-            \\            if (instance.exports.wasmUpdate()) {{
-            \\              instance.exports.wasmDeinit();
-            \\              return;
-            \\            }}
-            \\            last_update_time = performance.now();
-            \\          }}
-            \\          window.requestAnimationFrame(update);
-            \\        }};
-            \\        window.requestAnimationFrame(update);
-            \\      }})
-            \\      .catch(err => console.error(err));
-            \\  </script>
-            \\</body>
-            \\
-            \\</html>
-        ;
     };
 }
