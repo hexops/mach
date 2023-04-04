@@ -431,7 +431,7 @@ pub const Context = struct {
         wf.Samples.wValidBitsPerSample = format.validSizeBits();
     }
 
-    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
+    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.StreamOptions) !backends.BackendPlayer {
         var imm_device: ?*win32.IMMDevice = null;
         var id_u16 = std.unicode.utf8ToUtf16LeWithNull(self.allocator, device.id) catch |err| switch (err) {
             error.OutOfMemory => return error.OutOfMemory,
