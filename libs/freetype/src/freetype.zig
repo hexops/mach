@@ -159,7 +159,7 @@ pub const OpenArgs = struct {
     flags: OpenFlags,
     data: union(enum) {
         memory: []const u8,
-        path: []const u8,
+        path: [*:0]const u8,
         stream: c.FT_Stream,
         driver: c.FT_Module,
         params: []const c.FT_Parameter,
@@ -173,7 +173,9 @@ pub const OpenArgs = struct {
                 oa.memory_base = d.ptr;
                 oa.memory_size = @intCast(u31, d.len);
             },
-            .path => |*d| oa.pathname = @intToPtr(*u8, @ptrToInt(d.ptr)),
+            // The Freetype API requires a mutable string.
+            // This is an oversight, Freetype actually never writes to this string.
+            .path => |d| oa.pathname = @constCast(d),
             .stream => |d| oa.stream = d,
             .driver => |d| oa.driver = d,
             .params => |*d| {

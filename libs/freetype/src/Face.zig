@@ -58,7 +58,7 @@ pub fn deinit(self: Face) void {
     _ = c.FT_Done_Face(self.handle);
 }
 
-pub fn attachFile(self: Face, path: []const u8) Error!void {
+pub fn attachFile(self: Face, path: [*:0]const u8) Error!void {
     return self.attachStream(.{
         .flags = .{ .path = true },
         .data = .{ .path = path },

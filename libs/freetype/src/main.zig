@@ -13,7 +13,7 @@ const std = @import("std");
 const testing = std.testing;
 const ft = @import("freetype.zig");
 
-fn sdkPath(comptime suffix: []const u8) []const u8 {
+fn sdkPath(comptime suffix: [*:0]const u8) [*:0]const u8 {
     if (suffix[0] != '/') @compileError("suffix must be an absolute path");
     return comptime blk: {
         const root_dir = std.fs.path.dirname(@src().file) orelse ".";
