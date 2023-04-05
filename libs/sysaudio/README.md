@@ -1,4 +1,4 @@
-# mach/sysaudio - cross-platform audio IO in Zig
+# mach/sysaudio - cross-platform low-level audio IO in Zig
 
 This repository is a separate copy of the same library in the [main Mach repository](https://github.com/hexops/mach), and is automatically kept in sync, so that anyone can use this library in their own project if they like!
 
