@@ -3,7 +3,7 @@ const c = @import("c.zig");
 
 pub const ListShapers = struct {
     index: usize,
-    list: [*c][*c]const u8,
+    list: [*:null]const ?[*:0]const u8,
 
     pub fn init() ListShapers {
         return .{ .index = 0, .list = c.hb_shape_list_shapers() };
@@ -11,9 +11,8 @@ pub const ListShapers = struct {
 
     pub fn next(self: *ListShapers) ?[:0]const u8 {
         self.index += 1;
-        return std.mem.span(@ptrCast(
-            ?[*:0]const u8,
+        return std.mem.span(
             self.list[self.index - 1] orelse return null,
-        ));
+        );
     }
 };

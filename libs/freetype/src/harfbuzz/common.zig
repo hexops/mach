@@ -276,6 +276,8 @@ pub const Tag = struct {
     }
 };
 
+pub const Shapers = ?[*:null]const ?[*:0]const u8;
+
 pub extern fn hb_feature_from_string(str: [*c]const u8, len: c_int, feature: [*c]Feature) u8;
 pub extern fn hb_feature_to_string(feature: [*c]Feature, buf: [*c]u8, size: c_uint) void;
 pub extern fn hb_variation_from_string(str: [*c]const u8, len: c_int, variation: [*c]Variation) u8;

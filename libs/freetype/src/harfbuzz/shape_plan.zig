@@ -5,31 +5,32 @@ const Font = @import("font.zig").Font;
 const Face = @import("face.zig").Face;
 const SegmentProps = @import("buffer.zig").SegmentProps;
 const Feature = @import("common.zig").Feature;
+const Shapers = @import("common.zig").Shapers;
 
 pub const ShapePlan = struct {
     handle: *c.hb_shape_plan_t,
 
-    pub fn init(face: Face, props: SegmentProps, features: ?[]const Feature, shapers: []const []const u8) ShapePlan {
+    pub fn init(face: Face, props: SegmentProps, features: ?[]const Feature, shapers: Shapers) ShapePlan {
         return .{ .handle = hb_shape_plan_create(
             face.handle,
             &props.cast(),
             if (features) |f| f.ptr else null,
             if (features) |f| @intCast(c_uint, f.len) else 0,
-            @ptrCast([*c]const [*c]const u8, shapers),
+            shapers,
         ).? };
     }
 
-    pub fn initCached(face: Face, props: SegmentProps, features: ?[]const Feature, shapers: []const []const u8) ShapePlan {
+    pub fn initCached(face: Face, props: SegmentProps, features: ?[]const Feature, shapers: Shapers) ShapePlan {
         return .{ .handle = hb_shape_plan_create_cached(
             face.handle,
             &props.cast(),
             if (features) |f| f.ptr else null,
             if (features) |f| @intCast(c_uint, f.len) else 0,
-            @ptrCast([*c]const [*c]const u8, shapers),
+            shapers,
         ).? };
     }
 
-    pub fn init2(face: Face, props: SegmentProps, features: ?[]const Feature, cords: []const i32, shapers: []const []const u8) ShapePlan {
+    pub fn init2(face: Face, props: SegmentProps, features: ?[]const Feature, cords: []const i32, shapers: Shapers) ShapePlan {
         return .{ .handle = hb_shape_plan_create2(
             face.handle,
             &props.cast(),
@@ -37,11 +38,11 @@ pub const ShapePlan = struct {
             if (features) |f| @intCast(c_uint, f.len) else 0,
             cords.ptr,
             @intCast(c_uint, cords.len),
-            @ptrCast([*c]const [*c]const u8, shapers),
+            shapers,
         ).? };
     }
 
-    pub fn initCached2(face: Face, props: SegmentProps, features: ?[]const Feature, cords: []const i32, shapers: []const []const u8) ShapePlan {
+    pub fn initCached2(face: Face, props: SegmentProps, features: ?[]const Feature, cords: []const i32, shapers: Shapers) ShapePlan {
         return .{ .handle = hb_shape_plan_create_cached2(
             face.handle,
             &props.cast(),
@@ -49,7 +50,7 @@ pub const ShapePlan = struct {
             if (features) |f| @intCast(c_uint, f.len) else 0,
             cords.ptr,
             @intCast(c_uint, cords.len),
-            @ptrCast([*c]const [*c]const u8, shapers),
+            shapers,
         ).? };
     }
 
