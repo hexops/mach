@@ -2,6 +2,14 @@
 
 `mach/ecs` is an Entity Component System for Zig built from first-principles.
 
+## Experimental
+
+This is an _experimental_ Mach library, according to our [stability guarantees](https://machengine.org/next/docs/libs/):
+
+> Experimental libraries may have their APIs change without much notice, and you may have to look at recent changes in order to update your code.
+
+[Why this library is not declared stable yet](https://machengine.org/next/docs/libs/experimental/#ecs)
+
 ## Design principles:
 
 * Initially a 100% clean-room implementation, working from first-principles. Later informed by research into how other ECS work, with advice from e.g. Bevy and Flecs authors at different points (thank you!)
