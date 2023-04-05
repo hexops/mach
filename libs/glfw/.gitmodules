@@ -1,4 +1,4 @@
 [submodule "upstream"]
 	path = upstream
-	url = https://github.com/hexops/glfw
+	url = https://github.com/hexops-graveyard/glfw
 
