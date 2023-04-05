@@ -30,7 +30,7 @@ pub fn deinit(self: Library) void {
     _ = c.FT_Done_FreeType(self.handle);
 }
 
-pub fn createFace(self: Library, path: []const u8, face_index: i32) Error!Face {
+pub fn createFace(self: Library, path: [*:0]const u8, face_index: i32) Error!Face {
     return self.openFace(.{
         .flags = .{ .path = true },
         .data = .{ .path = path },
