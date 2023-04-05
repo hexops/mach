@@ -5,6 +5,7 @@ const Face = @import("face.zig").Face;
 const Buffer = @import("buffer.zig").Buffer;
 const Feature = @import("common.zig").Feature;
 const SegmentProps = @import("buffer.zig").SegmentProps;
+const Shapers = @import("common.zig").Shapers;
 
 pub const Font = struct {
     handle: *c.hb_font_t,
@@ -86,13 +87,13 @@ pub const Font = struct {
         );
     }
 
-    pub fn shapeFull(self: Font, buf: Buffer, features: ?[]const Feature, shapers: []const []const u8) error{ShapingFailed}!void {
+    pub fn shapeFull(self: Font, buf: Buffer, features: ?[]const Feature, shapers: Shapers) error{ShapingFailed}!void {
         if (hb_shape_full(
             self.handle,
             buf.handle,
             if (features) |f| f.ptr else null,
             if (features) |f| @intCast(c_uint, f.len) else 0,
-            @ptrCast([*c]const [*c]const u8, shapers),
+            shapers,
         ) < 1) return error.ShapingFailed;
     }
 };
