@@ -52,9 +52,18 @@ push_subrepo() {
 rm -rf staging-clean/ staging/
 git clone https://github.com/hexops/mach staging-clean
 
-push_subrepo 'glfw'
-push_subrepo 'gpu-dawn'
+push_subrepo 'basisu'
+push_subrepo 'core'
+push_subrepo 'dusk'
+push_subrepo 'earcut'
+push_subrepo 'ecs'
 push_subrepo 'freetype'
+push_subrepo 'gamemode'
+push_subrepo 'glfw'
 push_subrepo 'gpu'
+push_subrepo 'gpu-dawn'
+push_subrepo 'model3d'
+push_subrepo 'sysaudio'
+push_subrepo 'sysjs'
 
 rm -rf staging-clean
