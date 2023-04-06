@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - "main"
+    path:
+      - "libs/**"
 jobs:
   push:
     runs-on: ubuntu-latest
