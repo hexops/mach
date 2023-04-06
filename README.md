@@ -80,7 +80,7 @@ Mach works with the new self-hosted Zig compiler only. This means you'll need to
 
 Currently we test using `0.11.0-dev.2160+49d37e2d1`. Newer is generally better, but you can download this version here:
 
-- **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.2160+49d37e2d1.tar.xz)
+- **linux-x86_64**: https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.2160+49d37e2d1.tar.xz
 - **windows-x86_64**: https://ziglang.org/builds/zig-windows-x86_64-0.11.0-dev.2160+49d37e2d1.zip
 - **macos-x86_64** (Intel): https://ziglang.org/builds/zig-macos-x86_64-0.11.0-dev.2160+49d37e2d1.tar.xz
 - **macos-aarch64** (Apple Silicon): https://ziglang.org/builds/zig-macos-aarch64-0.11.0-dev.2160+49d37e2d1.tar.xz
