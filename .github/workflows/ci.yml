@@ -4,14 +4,12 @@ on:
     paths-ignore:
       - "doc/**"
       - "README.md"
-      - ".github/**"
       - "**.md"
       - "LICENSE**"
   pull_request:
     paths-ignore:
       - "doc/**"
       - "README.md"
-      - ".github/**"
       - "**.md"
       - "LICENSE**"
 jobs:
