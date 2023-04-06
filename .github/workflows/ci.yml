@@ -1,7 +1,19 @@
 name: CI
 on:
-  - push
-  - pull_request
+  push:
+    paths-ignore:
+      - "doc/**"
+      - "README.md"
+      - ".github/**"
+      - "**.md"
+      - "LICENSE**"
+  pull_request:
+    paths-ignore:
+      - "doc/**"
+      - "README.md"
+      - ".github/**"
+      - "**.md"
+      - "LICENSE**"
 jobs:
   x86_64-linux:
     runs-on: ubuntu-latest
