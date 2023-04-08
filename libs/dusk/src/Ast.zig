@@ -537,10 +537,14 @@ pub const Node = struct {
 
         // ####### Literals #######
 
-        /// TOK : k_true, k_false
+        /// TOK : k_true
         /// LHS : --
         /// RHS : --
-        bool_literal,
+        bool_true,
+        /// TOK : k_false
+        /// LHS : --
+        /// RHS : --
+        bool_false,
         /// TOK : number
         /// LHS : --
         /// RHS : --

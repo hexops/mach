@@ -1452,9 +1452,13 @@ pub fn primaryExpr(p: *Parser) !?Ast.Index {
     const main_token = p.tok_i;
     if (try p.callExpr()) |call| return call;
     switch (p.getToken(.tag, main_token)) {
-        .k_true, .k_false => {
+        .k_true => {
             _ = p.advanceToken();
-            return try p.addNode(.{ .tag = .bool_literal, .main_token = main_token });
+            return try p.addNode(.{ .tag = .bool_true, .main_token = main_token });
+        },
+        .k_false => {
+            _ = p.advanceToken();
+            return try p.addNode(.{ .tag = .bool_false, .main_token = main_token });
         },
         .number => {
             _ = p.advanceToken();

@@ -187,6 +187,9 @@ pub const Inst = struct {
         /// data is binary (lhs is expr, rhs is type)
         bitcast,
 
+        /// data is name
+        ident,
+
         pub fn isDecl(self: Tag) bool {
             return switch (self) {
                 .global_variable_decl, .struct_decl => true,
@@ -197,6 +200,8 @@ pub const Inst = struct {
 
     pub const Data = union {
         ref: Ref,
+        /// index to null-terminated string in `strings`
+        name: u32,
         global_variable_decl: GlobalVariableDecl,
         struct_decl: StructDecl,
         struct_member: StructMember,
@@ -234,6 +239,7 @@ pub const Inst = struct {
         access_mode: AccessMode,
         /// length of attributes
         attrs: u4 = 0,
+        expr: Ref = .none,
 
         pub const AddressSpace = enum {
             none,
@@ -442,6 +448,6 @@ pub const Inst = struct {
     };
 
     comptime {
-        std.debug.assert(@sizeOf(Inst) <= 24);
+        std.debug.assert(@sizeOf(Inst) <= 32);
     }
 };
