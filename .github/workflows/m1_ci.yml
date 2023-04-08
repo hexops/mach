@@ -6,7 +6,12 @@ on:
   #
   # Whenever GitHub Actions gets official M1 support, we can use that for PRs and get rid of this
   # self-hosted runner: https://github.com/actions/virtual-environments/issues/2187
-  - push
+  push:     
+    paths-ignore:
+      - "doc/**"
+      - "README.md"
+      - "**.md"
+      - "LICENSE**"
 jobs:
   aarch64-macos:
     if: ${{ github.repository == 'hexops/mach' }}
