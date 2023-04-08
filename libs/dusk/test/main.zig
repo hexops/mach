@@ -105,69 +105,9 @@ test "boids" {
 }
 
 test "gkurve" {
-    if (true) return error.SkipZigTest;
-
     const source = @embedFile("gkurve.wgsl");
     var ir = try expectIR(source);
     defer ir.deinit();
-}
-
-test "variable & expressions" {
-    // const source = "var expr = 1 + 5 + 2 * 3 > 6 >> 7;";
-
-    // var ir = try expectIR(source);
-    // defer ir.deinit();
-
-    // const root_node = 0;
-    // try expect(ir.nodeLHS(root_node) + 1 == ir.nodeRHS(root_node));
-
-    // const variable = ir.spanToList(root_node)[0];
-    // const variable_name = ir.tokenLoc(ir.extraData(dusk.Ast.Node.GlobalVarDecl, ir.nodeLHS(variable)).name);
-    // try expect(std.mem.eql(u8, "expr", variable_name.slice(source)));
-    // try expect(ir.nodeTag(variable) == .global_variable);
-    // try expect(ir.tokenTag(ir.nodeToken(variable)) == .k_var);
-
-    // const expr = ir.nodeRHS(variable);
-    // try expect(ir.nodeTag(expr) == .greater);
-
-    // const @"1 + 5 + 2 * 3" = ir.nodeLHS(expr);
-    // try expect(ir.nodeTag(@"1 + 5 + 2 * 3") == .add);
-
-    // const @"1 + 5" = ir.nodeLHS(@"1 + 5 + 2 * 3");
-    // try expect(ir.nodeTag(@"1 + 5") == .add);
-
-    // const @"1" = ir.nodeLHS(@"1 + 5");
-    // try expect(ir.nodeTag(@"1") == .number_literal);
-
-    // const @"5" = ir.nodeRHS(@"1 + 5");
-    // try expect(ir.nodeTag(@"5") == .number_literal);
-
-    // const @"2 * 3" = ir.nodeRHS(@"1 + 5 + 2 * 3");
-    // try expect(ir.nodeTag(@"2 * 3") == .mul);
-
-    // const @"6 >> 7" = ir.nodeRHS(expr);
-    // try expect(ir.nodeTag(@"6 >> 7") == .shift_right);
-
-    // const @"6" = ir.nodeLHS(@"6 >> 7");
-    // try expect(ir.nodeTag(@"6") == .number_literal);
-
-    // const @"7" = ir.nodeRHS(@"6 >> 7");
-    // try expect(ir.nodeTag(@"7") == .number_literal);
-}
-
-test "simple analyse's result" {
-    // {
-    //     const source =
-    //         \\type T0 = f32;
-    //         \\type T1 = T0;
-    //         \\type T2 = T1;
-    //         \\type T3 = T2;
-    //         \\struct S0 { m0: T3 }
-    //     ;
-    //     var ir = try expectIR(source);
-    //     // try std.testing.expect(ir.root[0].@"struct".members[0].type.number == .f32);
-    //     ir.deinit();
-    // }
 }
 
 test "must error" {
