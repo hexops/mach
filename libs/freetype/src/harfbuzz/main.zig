@@ -5,6 +5,7 @@ pub usingnamespace @import("face.zig");
 pub usingnamespace @import("font.zig");
 pub usingnamespace @import("shape.zig");
 pub usingnamespace @import("shape_plan.zig");
+pub const c = @import("c.zig");
 
 const std = @import("std");
 test {
