@@ -19,6 +19,14 @@ pub fn module(b: *std.Build) *std.build.Module {
 }
 
 pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
+    const lib_tests = b.addTest(.{
+        .name = "dusk-lib-tests",
+        .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+        .target = target,
+        .optimize = optimize,
+    });
+    lib_tests.install();
+
     const main_tests = b.addTest(.{
         .name = "dusk-tests",
         .root_source_file = .{ .path = sdkPath("/test/main.zig") },
@@ -27,6 +35,9 @@ pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.z
     });
     main_tests.addModule("dusk", module(b));
     main_tests.install();
+
+    const run_step = main_tests.run();
+    run_step.step.dependOn(&lib_tests.run().step);
     return main_tests.run();
 }
 

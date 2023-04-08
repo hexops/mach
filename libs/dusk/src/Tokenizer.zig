@@ -172,7 +172,7 @@ pub fn peek(self: *Tokenizer) Token {
             },
 
             .number => switch (c) {
-                '0'...'9', '.', 'i', 'u', 'f', 'h', 'e', '-', '+' => {},
+                '0'...'9', '.', 'i', 'u', 'f', 'h', 'e' => {},
                 else => {
                     result.tag = .number;
                     break;
@@ -288,6 +288,7 @@ pub fn peek(self: *Tokenizer) Token {
                     index += 1;
                     break;
                 },
+                '0'...'9' => state = .number,
                 else => {
                     result.tag = .minus;
                     break;
@@ -331,6 +332,7 @@ pub fn peek(self: *Tokenizer) Token {
                     index += 1;
                     break;
                 },
+                '0'...'9' => state = .number,
                 else => {
                     result.tag = .plus;
                     break;
@@ -384,8 +386,8 @@ pub fn next(self: *Tokenizer) Token {
 }
 
 test "tokenize identifier and numbers" {
-    comptime var str: [:0]const u8 =
-        \\_ __ _iden iden 100.8i // cc
+    const str =
+        \\_ __ _iden iden -100i 100.8i // cc
         \\// commnet
         \\
     ;
@@ -394,6 +396,7 @@ test "tokenize identifier and numbers" {
     try std.testing.expect(tokenizer.next().tag == .ident);
     try std.testing.expect(tokenizer.next().tag == .ident);
     try std.testing.expect(tokenizer.next().tag == .ident);
+    try std.testing.expectEqualStrings("-100i", tokenizer.next().loc.slice(str));
     try std.testing.expect(tokenizer.next().tag == .number);
     try std.testing.expect(tokenizer.next().tag == .eof);
 }
