@@ -77,7 +77,7 @@ pub const Context = struct {
         return self.devices_info.default(mode);
     }
 
-    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
+    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.StreamOptions) !backends.BackendPlayer {
         _ = writeFn;
         var player = try self.allocator.create(Player);
         player.* = .{

@@ -17,6 +17,7 @@ pub const BackendContext = switch (builtin.os.tag) {
         dummy: *@import("dummy.zig").Context,
     },
     .macos, .ios, .watchos, .tvos => union(enum) {
+        coreaudio: *@import("coreaudio.zig").Context,
         dummy: *@import("dummy.zig").Context,
     },
     .windows => union(enum) {
@@ -51,6 +52,7 @@ pub const BackendPlayer = switch (builtin.os.tag) {
         dummy: *@import("dummy.zig").Player,
     },
     .macos, .ios, .watchos, .tvos => union(enum) {
+        coreaudio: *@import("coreaudio.zig").Player,
         dummy: *@import("dummy.zig").Player,
     },
     .windows => union(enum) {

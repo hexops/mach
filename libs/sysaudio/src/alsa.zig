@@ -448,7 +448,7 @@ pub const Context = struct {
         return self.devices_info.default(mode);
     }
 
-    pub fn createPlayer(self: Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
+    pub fn createPlayer(self: Context, device: main.Device, writeFn: main.WriteFn, options: main.StreamOptions) !backends.BackendPlayer {
         const format = device.preferredFormat(options.format);
         const sample_rate = device.sample_rate.clamp(options.sample_rate);
         var pcm: ?*c.snd_pcm_t = null;

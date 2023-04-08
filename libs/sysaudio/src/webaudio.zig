@@ -67,7 +67,7 @@ pub const Context = struct {
         return self.devices_info.default(mode);
     }
 
-    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
+    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.StreamOptions) !backends.BackendPlayer {
         const context_options = js.createMap();
         defer context_options.deinit();
         context_options.set("sampleRate", js.createNumber(options.sample_rate));
@@ -115,7 +115,7 @@ pub const Context = struct {
             .channels = device.channels,
             .format = .f32,
             .sample_rate = options.sample_rate,
-            .write_step = @sizeOf(f32),
+            .write_step = main.Format.size(.f32),
         };
 
         for (player.channels, 0..) |*ch, i| {

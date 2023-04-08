@@ -89,7 +89,7 @@ pub const Context = struct {
         IncompatibleDevice,
     };
 
-    pub fn createPlayer(self: Context, device: Device, writeFn: WriteFn, options: Player.Options) CreateStreamError!Player {
+    pub fn createPlayer(self: Context, device: Device, writeFn: WriteFn, options: StreamOptions) CreateStreamError!Player {
         std.debug.assert(device.mode == .playback);
 
         return .{
@@ -100,26 +100,26 @@ pub const Context = struct {
     }
 };
 
+pub const StreamOptions = struct {
+    format: Format = .f32,
+    sample_rate: u24 = default_sample_rate,
+    media_role: MediaRole = .default,
+    user_data: ?*anyopaque = null,
+};
+
+pub const MediaRole = enum {
+    default,
+    game,
+    music,
+    movie,
+    communication,
+};
+
 // TODO: `*Player` instead `*anyopaque`
 // https://github.com/ziglang/zig/issues/12325
 pub const WriteFn = *const fn (user_data: ?*anyopaque, frame_count_max: usize) void;
 
 pub const Player = struct {
-    pub const Options = struct {
-        format: Format = .f32,
-        sample_rate: u24 = default_sample_rate,
-        media_role: MediaRole = .default,
-        user_data: ?*anyopaque = null,
-    };
-
-    pub const MediaRole = enum {
-        default,
-        game,
-        music,
-        movie,
-        communication,
-    };
-
     data: backends.BackendPlayer,
 
     pub fn deinit(self: Player) void {
@@ -360,6 +360,8 @@ pub const Channel = struct {
         front_left_center,
         front_right_center,
         back_center,
+        back_left,
+        back_right,
         side_left,
         side_right,
         top_center,

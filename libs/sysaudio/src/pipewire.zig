@@ -178,7 +178,7 @@ pub const Context = struct {
         .trigger_done = null,
     };
 
-    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
+    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.StreamOptions) !backends.BackendPlayer {
         const thread = lib.pw_thread_loop_new(device.id, null) orelse return error.SystemResources;
 
         const media_role = switch (options.media_role) {
@@ -265,7 +265,7 @@ pub const Context = struct {
             .channels = device.channels,
             .format = .f32,
             .sample_rate = options.sample_rate,
-            .write_step = main.Format.frameSize(.f32, 2),
+            .write_step = main.Format.frameSize(.f32, device.channels.len),
         };
         return .{ .pipewire = player };
     }

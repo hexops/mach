@@ -197,7 +197,7 @@ pub const Context = struct {
         return self.devices_info.default(mode);
     }
 
-    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.Player.Options) !backends.BackendPlayer {
+    pub fn createPlayer(self: *Context, device: main.Device, writeFn: main.WriteFn, options: main.StreamOptions) !backends.BackendPlayer {
         var ports = try self.allocator.alloc(*c.jack_port_t, device.channels.len);
         var dest_ports = try self.allocator.alloc([:0]const u8, ports.len);
         var buf: [64]u8 = undefined;
