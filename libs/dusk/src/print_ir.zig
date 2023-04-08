@@ -37,7 +37,7 @@ fn Printer(comptime Writer: type) type {
                     const inst = self.ir.instructions[index];
 
                     if (decl_scope and inst.tag.isDecl()) {
-                        try self.writer.print("%{d}", .{index});
+                        try self.writer.print("&[{d}]", .{index});
                         return;
                     }
 
@@ -45,8 +45,41 @@ fn Printer(comptime Writer: type) type {
                         .global_variable_decl => try self.printGlobalVariable(indent, index),
                         .struct_decl => try self.printStructDecl(indent, index),
                         .struct_member => try self.printStructMember(indent, index),
+                        .integer_literal => {
+                            try self.writer.print("int({d})", .{inst.data.integer_literal});
+                        },
+                        .float_literal => {
+                            try self.writer.print("float({d})", .{inst.data.float_literal});
+                        },
+                        .mul,
+                        .div,
+                        .mod,
+                        .add,
+                        .sub,
+                        .shift_left,
+                        .shift_right,
+                        .binary_and,
+                        .binary_or,
+                        .binary_xor,
+                        .circuit_and,
+                        .circuit_or,
+                        .equal,
+                        .not_equal,
+                        .less,
+                        .less_equal,
+                        .greater,
+                        .greater_equal,
+                        => {
+                            try self.instStart(index);
+                            defer self.instEnd() catch unreachable;
+                            try self.printInst(indent, inst.data.binary.lhs, true);
+                            try self.writer.writeAll(", ");
+                            try self.printInst(indent, inst.data.binary.rhs, true);
+                        },
                         else => {
-                            try self.writer.print("%{d} = {s}{{TODO}},\n", .{ index, @tagName(inst.tag) });
+                            try self.instStart(index);
+                            defer self.instEnd() catch unreachable;
+                            try self.writer.writeAll("TODO");
                         },
                     }
                 },
@@ -56,58 +89,88 @@ fn Printer(comptime Writer: type) type {
         fn printGlobalVariable(self: @This(), indent: u16, index: IR.Inst.Index) anyerror!void {
             const inst = self.ir.instructions[index];
 
-            try self.instStart(index);
-            defer self.instEnd(indent) catch unreachable;
+            try self.instBlockStart(index);
+            defer self.instBlockEnd(indent) catch unreachable;
 
-            try self.printIndent(indent + 1);
-            try self.writer.writeAll(".type = ");
+            try self.printField(indent + 1, "type");
             try self.printInst(indent + 2, inst.data.global_variable_decl.type, true);
+            try self.writer.writeAll(",\n");
+
+            try self.printField(indent + 1, "value");
+            try self.printInst(indent + 2, inst.data.global_variable_decl.expr, true);
             try self.writer.writeAll(",\n");
         }
 
         fn printStructDecl(self: @This(), indent: u16, index: IR.Inst.Index) anyerror!void {
             const inst = self.ir.instructions[index];
 
-            try self.instStart(index);
-            defer self.instEnd(indent) catch unreachable;
+            try self.instBlockStart(index);
+            defer self.instBlockEnd(indent) catch unreachable;
 
-            try self.printIndent(indent + 1);
-            try self.writer.print(".name = \"{s}\",\n", .{self.ir.getStr(inst.data.struct_decl.name)});
+            try self.printField(indent + 1, "name");
+            try self.printStr(inst.data.struct_decl.name);
+            try self.writer.writeAll(",\n");
 
+            try self.printField(indent + 1, "members");
+            try self.listStart();
             const members = std.mem.sliceTo(self.ir.refs[inst.data.struct_decl.members..], .none);
-            try self.printIndent(indent + 1);
-            try self.writer.writeAll(".members = [\n");
             for (members) |member| {
                 try self.printIndent(indent + 2);
                 try self.printStructMember(indent + 2, member.toIndex().?);
             }
-            try self.printIndent(indent + 1);
-            try self.writer.writeAll("],\n");
+            try self.listEnd(indent + 1);
         }
 
         fn printStructMember(self: @This(), indent: u16, index: IR.Inst.Index) anyerror!void {
             const inst = self.ir.instructions[index];
 
-            try self.instStart(index);
-            defer self.instEnd(indent) catch unreachable;
+            try self.instBlockStart(index);
+            defer self.instBlockEnd(indent) catch unreachable;
 
-            try self.printIndent(indent + 1);
-            try self.writer.print(".name = \"{s}\",\n", .{self.ir.getStr(inst.data.struct_member.name)});
+            try self.printField(indent + 1, "name");
+            try self.printStr(inst.data.struct_member.name);
+            try self.writer.writeAll(",\n");
 
-            try self.printIndent(indent + 1);
-            try self.writer.writeAll(".type = ");
+            try self.printField(indent + 1, "type");
             try self.printInst(indent + 2, inst.data.struct_member.type, true);
             try self.writer.writeAll(",\n");
         }
 
         fn instStart(self: @This(), index: IR.Inst.Index) !void {
             const inst = self.ir.instructions[index];
-            try self.writer.print("%{d} = {s}{{\n", .{ index, @tagName(inst.tag) });
+            try self.writer.print("[{d}] = {s}(", .{ index, @tagName(inst.tag) });
         }
 
-        fn instEnd(self: @This(), indent: u16) !void {
+        fn instEnd(self: @This()) !void {
+            try self.writer.writeAll(")");
+        }
+
+        fn instBlockStart(self: @This(), index: IR.Inst.Index) !void {
+            const inst = self.ir.instructions[index];
+            try self.writer.print("[{d}] = {s}{{\n", .{ index, @tagName(inst.tag) });
+        }
+
+        fn instBlockEnd(self: @This(), indent: u16) !void {
             try self.printIndent(indent);
             try self.writer.writeAll("},\n");
+        }
+
+        fn listStart(self: @This()) !void {
+            try self.writer.writeAll("{\n");
+        }
+
+        fn listEnd(self: @This(), indent: u16) !void {
+            try self.printIndent(indent);
+            try self.writer.writeAll("},\n");
+        }
+
+        fn printField(self: @This(), indent: u16, name: []const u8) !void {
+            try self.printIndent(indent);
+            try self.writer.print("{s} -> ", .{name});
+        }
+
+        fn printStr(self: @This(), name_index: u32) !void {
+            try self.writer.print("\"{s}\"", .{self.ir.getStr(name_index)});
         }
 
         fn printIndent(self: @This(), indent: u16) !void {

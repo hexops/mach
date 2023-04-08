@@ -135,6 +135,7 @@ pub fn genGlobalVariable(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst
     std.debug.assert(self.tree.nodeTag(node) == .global_variable);
 
     const inst = try self.reserveInst();
+    const rhs = self.tree.nodeRHS(node);
     const gv = self.tree.extraData(Ast.Node.GlobalVarDecl, self.tree.nodeLHS(node));
     // for (self.tree.spanToList(gv.attrs), 0..) |attr_node, i| {
     // const attr = switch (self.tree.nodeTag(attr_node)) {
@@ -170,6 +171,11 @@ pub fn genGlobalVariable(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst
         };
     }
 
+    var expr = IR.Inst.Ref.none;
+    if (rhs != Ast.null_index) {
+        expr = try self.genExpr(scope, rhs);
+    }
+
     const name_index = try self.addString(self.declNameLoc(node).?.slice(self.tree.source));
     self.instructions.items[inst] = .{
         .tag = .global_variable_decl,
@@ -180,6 +186,7 @@ pub fn genGlobalVariable(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst
                 .addr_space = addr_space,
                 .access_mode = access_mode,
                 .attrs = 0, // TODO
+                .expr = expr,
             },
         },
     };
@@ -276,6 +283,59 @@ pub fn genStruct(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref {
         },
     };
     return IR.Inst.toRef(inst);
+}
+
+pub fn genExpr(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref {
+    const tag = self.tree.nodeTag(node);
+    const lhs = self.tree.nodeLHS(node);
+    const rhs = self.tree.nodeRHS(node);
+
+    switch (tag) {
+        .bool_true => return .true_literal,
+        .bool_false => return .true_literal,
+        else => {},
+    }
+
+    const inst_index = try self.reserveInst();
+    const inst: IR.Inst = switch (tag) {
+        .number_literal => .{ .tag = .integer_literal, .data = .{ .integer_literal = 1 } },
+        .not => .{ .tag = .not, .data = .{ .ref = try self.genExpr(scope, lhs) } },
+        .negate => .{ .tag = .negate, .data = .{ .ref = try self.genExpr(scope, lhs) } },
+        .deref => .{ .tag = .deref, .data = .{ .ref = try self.genExpr(scope, lhs) } },
+        .addr_of => .{ .tag = .addr_of, .data = .{ .ref = try self.genExpr(scope, lhs) } },
+        .mul => .{ .tag = .mul, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .div => .{ .tag = .div, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .mod => .{ .tag = .mod, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .add => .{ .tag = .add, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .sub => .{ .tag = .sub, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .shift_left => .{ .tag = .shift_left, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .shift_right => .{ .tag = .shift_right, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .binary_and => .{ .tag = .binary_and, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .binary_or => .{ .tag = .binary_or, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .binary_xor => .{ .tag = .binary_xor, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .circuit_and => .{ .tag = .circuit_and, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .circuit_or => .{ .tag = .circuit_or, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .equal => .{ .tag = .equal, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .not_equal => .{ .tag = .not_equal, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .less => .{ .tag = .less, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .less_equal => .{ .tag = .less_equal, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .greater => .{ .tag = .greater, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .greater_equal => .{ .tag = .greater_equal, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .index_access => .{ .tag = .index, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .component_access => .{ .tag = .member_access, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
+        .bitcast => .{ .tag = .bitcast, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genType(scope, rhs) } } },
+        .ident_expr => .{
+            .tag = .ident,
+            .data = .{ .name = try self.addString(self.tree.tokenLoc(self.tree.nodeToken(node)).slice(self.tree.source)) },
+        },
+        else => {
+            std.debug.print("WTF REALLY\n", .{});
+            unreachable;
+        },
+    };
+
+    self.instructions.items[inst_index] = inst;
+    return IR.Inst.toRef(inst_index);
 }
 
 pub fn addString(self: *AstGen, str: []const u8) error{OutOfMemory}!u32 {
