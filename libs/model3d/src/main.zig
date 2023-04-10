@@ -58,7 +58,7 @@ pub fn deinit(self: M3d) void {
     c.m3d_free(self.handle);
 }
 
-/// return value must be freed with c_allocator
+/// return value must be freed with std.c.free
 pub fn save(self: M3d, quality: Quality, flags: Flags) Error![]u8 {
     var size: u32 = 0;
     return if (c.m3d_save(
@@ -226,7 +226,7 @@ test {
     try testing.expectEqualStrings(model.name(), "cube.obj");
 
     var out = try model.save(.float, .{});
-    defer std.heap.c_allocator.free(out);
+    defer std.c.free(out.ptr);
     try testing.expect(out.len >= 119);
 }
 
