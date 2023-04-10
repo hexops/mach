@@ -34,13 +34,15 @@ const Status = union(enum) {
 };
 
 pub fn run(self: *Builder) !void {
+    var child = try self.runZigBuild(.Inherit);
+    switch (try child.wait()) {
+        .Exited => |code| {
+            if (code != 0) std.os.exit(code);
+        },
+        else => std.os.exit(1),
+    }
+
     if (self.serve) {
-        const child_pid = try std.os.fork();
-        if (child_pid == 0) try self.exec();
-
-        const wait_res = std.os.waitpid(child_pid, 0);
-        if (wait_res.status != 0) std.os.exit(1);
-
         var out_dir = std.fs.cwd().openIterableDir(out_dir_path, .{}) catch |err| {
             std.log.err("cannot open '{s}': {s}", .{ out_dir_path, @errorName(err) });
             std.os.exit(1);
@@ -88,48 +90,46 @@ pub fn run(self: *Builder) !void {
             const conn = try server.accept();
             try pool.spawn(handleConn, .{ self, conn });
         }
-    } else {
-        try self.exec();
     }
 }
 
-fn exec(self: Builder) !void {
-    var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit();
-    const argv = try self.buildArgs(arena.allocator());
+fn runZigBuild(self: Builder, stderr_behavior: std.process.Child.StdIo) !std.process.Child {
+    var args_arena = std.heap.ArenaAllocator.init(allocator);
+    defer args_arena.deinit();
 
-    return std.os.execvpeZ(
-        argv[0].?,
-        @ptrCast([*:null]const ?[*:0]const u8, argv),
-        @ptrCast([*:null]const ?[*:0]const u8, std.os.environ.ptr),
-    );
+    const args = try self.buildArgs(args_arena.allocator());
+
+    var child = std.process.Child.init(args, allocator);
+    child.stderr_behavior = stderr_behavior;
+
+    try child.spawn();
+
+    return child;
 }
 
-fn buildArgs(self: Builder, arena: std.mem.Allocator) ![*:null]const ?[*:0]const u8 {
-    var argv = std.ArrayList(?[*:0]const u8).init(arena);
-    try argv.ensureTotalCapacity(self.steps.len + self.zig_build_args.len + 7);
+fn buildArgs(self: Builder, arena: std.mem.Allocator) ![]const []const u8 {
+    var argv = std.ArrayList([]const u8).init(arena);
+    try argv.ensureTotalCapacity(self.steps.len + self.zig_build_args.len + 6);
 
-    argv.appendAssumeCapacity(try arena.dupeZ(u8, self.zig_path));
+    argv.appendAssumeCapacity(try arena.dupe(u8, self.zig_path));
     argv.appendAssumeCapacity("build");
 
     for (self.steps) |step| {
-        argv.appendAssumeCapacity(try arena.dupeZ(u8, step));
+        argv.appendAssumeCapacity(try arena.dupe(u8, step));
     }
 
     argv.appendAssumeCapacity("--color");
     argv.appendAssumeCapacity("on");
-    argv.appendAssumeCapacity(try std.fmt.allocPrintZ(arena, "-Doptimize={s}", .{@tagName(self.optimize)}));
+    argv.appendAssumeCapacity(try std.fmt.allocPrint(arena, "-Doptimize={s}", .{@tagName(self.optimize)}));
     if (self.target) |target| {
-        argv.appendAssumeCapacity(try std.fmt.allocPrintZ(arena, "-Dtarget={s}", .{try target.toZigTriple()}));
+        argv.appendAssumeCapacity(try std.fmt.allocPrint(arena, "-Dtarget={s}", .{try target.toZigTriple()}));
     }
 
     for (self.zig_build_args) |arg| {
-        argv.appendAssumeCapacity(try arena.dupeZ(u8, arg));
+        argv.appendAssumeCapacity(try arena.dupe(u8, arg));
     }
 
-    argv.appendAssumeCapacity(null);
-
-    return @ptrCast([*:null]const ?[*:0]const u8, try argv.toOwnedSlice());
+    return try argv.toOwnedSlice();
 }
 
 fn watch(self: *Builder) void {
@@ -319,40 +319,29 @@ fn notify(self: *Builder, stream: std.net.Stream) void {
 fn compile(self: *Builder) void {
     std.log.info("building...", .{});
 
-    var pipes = std.os.pipe() catch unreachable;
-    const child_pid = std.os.fork() catch unreachable;
+    var child = self.runZigBuild(.Pipe) catch unreachable;
 
-    if (child_pid == 0) {
-        std.os.close(pipes[0]);
-        std.os.dup2(pipes[1], std.os.STDERR_FILENO) catch @panic("OOM");
-        std.os.close(pipes[1]);
-        return self.exec() catch unreachable;
-    }
-
-    std.os.close(pipes[1]);
-    const wait_result = std.os.waitpid(child_pid, 0);
-
-    const stderr_file = std.fs.File{ .handle = pipes[0] };
-    const stderr = stderr_file.reader().readAllAlloc(allocator, std.math.maxInt(usize)) catch @panic("OOM");
+    const stderr = child.stderr.?.reader().readAllAlloc(
+        allocator,
+        std.math.maxInt(usize),
+    ) catch @panic("OOM");
 
     std.io.getStdErr().writeAll(stderr) catch unreachable;
 
-    switch (wait_result.status) {
-        0 => {
-            allocator.free(stderr);
-            self.status = .built;
-            std.log.info("built", .{});
-        },
-        1 => {
-            std.log.warn("compile error", .{});
-            self.status = .{ .compile_error = stderr };
-        },
-        else => {
-            allocator.free(stderr);
-            self.status = .stopped;
-            std.log.warn("the build process has stopped unexpectedly", .{});
-        },
+    const term = child.wait() catch unreachable;
+    if (term == .Exited and term.Exited == 0) {
+        allocator.free(stderr);
+        self.status = .built;
+        std.log.info("built", .{});
+    } else if (term == .Exited and term.Exited == 1) {
+        std.log.warn("compile error", .{});
+        self.status = .{ .compile_error = stderr };
+    } else {
+        allocator.free(stderr);
+        self.status = .stopped;
+        std.log.warn("the build process has stopped unexpectedly", .{});
     }
+
     for (self.subscribers.items) |sub| {
         self.notify(sub);
     }
