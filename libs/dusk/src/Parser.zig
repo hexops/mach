@@ -305,6 +305,16 @@ pub fn globalVarDecl(p: *Parser, attrs: ?Ast.Index) !?Ast.Index {
         };
     }
 
+    if (initializer == Ast.null_index and var_type == Ast.null_index) {
+        try p.errors.add(
+            p.getToken(.loc, var_token),
+            "initializer expression is required while type is unknown",
+            .{},
+            null,
+        );
+        return error.Parsing;
+    }
+
     const extra = try p.addExtra(Ast.Node.GlobalVarDecl{
         .attrs = attrs orelse Ast.null_index,
         .name = name_token,
@@ -1042,7 +1052,7 @@ pub fn expectTypeSpecifier(p: *Parser) error{ OutOfMemory, Parsing }!Ast.Index {
 pub fn typeSpecifier(p: *Parser) !?Ast.Index {
     if (p.peekToken(.tag, 0) == .ident) {
         const main_token = p.advanceToken();
-        return try p.addNode(.{ .tag = .user_type, .main_token = main_token });
+        return try p.addNode(.{ .tag = .ident_expr, .main_token = main_token });
     }
     return p.typeSpecifierWithoutIdent();
 }

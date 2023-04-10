@@ -7,7 +7,7 @@ const AstGen = @This();
 
 allocator: std.mem.Allocator,
 tree: *const Ast,
-instructions: std.ArrayListUnmanaged(IR.Inst) = .{},
+instructions: IR.Inst.List = .{},
 refs: std.ArrayListUnmanaged(IR.Inst.Ref) = .{},
 strings: std.ArrayListUnmanaged(u8) = .{},
 scratch: std.ArrayListUnmanaged(IR.Inst.Ref) = .{},
@@ -52,6 +52,21 @@ pub fn genTranslationUnit(self: *AstGen) !u32 {
     return try self.addRefList(self.scratch.items[scratch_top..]);
 }
 
+pub fn genDecl(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref {
+    const ref = scope.decls.get(node).?;
+    if (ref != .none) return ref;
+
+    const decl = switch (self.tree.nodeTag(node)) {
+        .global_variable => try self.genGlobalVariable(scope, node),
+        .type_alias => try self.genTypeAlias(scope, node),
+        .struct_decl => try self.genStruct(scope, node),
+        else => return error.AnalysisFail, // TODO: make this unreachable
+    };
+    scope.decls.putAssumeCapacity(node, decl);
+    return decl;
+}
+
+/// adds `decls` to scope and checks for re-declarations
 pub fn scanDecls(self: *AstGen, scope: *Scope, decls: []const Ast.Index) !void {
     std.debug.assert(scope.decls.count() == 0);
 
@@ -69,15 +84,15 @@ pub fn scanDecls(self: *AstGen, scope: *Scope, decls: []const Ast.Index) !void {
         //     );
         // }
 
-        var name_iter = scope.decls.keyIterator();
-        while (name_iter.next()) |node| {
-            if (std.mem.eql(u8, self.declNameLoc(node.*).?.slice(self.tree.source), name)) {
+        var iter = scope.decls.keyIterator();
+        while (iter.next()) |node| {
+            if (std.mem.eql(u8, name, self.declNameLoc(node.*).?.slice(self.tree.source))) {
                 try self.errors.add(
                     loc,
                     "redeclaration of '{s}'",
                     .{name},
                     try self.errors.createNote(
-                        self.declNameLoc(node.*).?,
+                        self.declNameLoc(node.*),
                         "other declaration here",
                         .{},
                     ),
@@ -90,41 +105,42 @@ pub fn scanDecls(self: *AstGen, scope: *Scope, decls: []const Ast.Index) !void {
     }
 }
 
-pub fn genDecl(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref {
-    const ref = scope.decls.get(node).?;
-    if (ref != .none) return ref;
-
-    const decl = switch (self.tree.nodeTag(node)) {
-        .global_variable => try self.genGlobalVariable(scope, node),
-        .type_alias => try self.genTypeAlias(scope, node),
-        .struct_decl => try self.genStruct(scope, node),
-        else => return error.AnalysisFail, // TODO: else prong should not ever be trigerred
-    };
-    scope.decls.putAssumeCapacity(node, decl);
-    return decl;
-}
-
-pub fn declRef(self: *AstGen, scope: *Scope, loc: Token.Loc) !IR.Inst.Ref {
+/// takes token location and returns the first declaration
+/// in current and parent scopes
+pub fn declRef(self: *AstGen, scope: *Scope, loc: Token.Loc) error{ OutOfMemory, AnalysisFail }!IR.Inst.Ref {
     const name = loc.slice(self.tree.source);
-
     var s = scope;
     while (true) {
-        var name_iter = s.decls.keyIterator();
-        while (name_iter.next()) |node| {
-            if (std.mem.eql(u8, self.declNameLoc(node.*).?.slice(self.tree.source), name)) {
+        var node_iter = s.decls.keyIterator();
+        while (node_iter.next()) |node| {
+            if (std.mem.eql(u8, name, self.declNameLoc(node.*).?.slice(self.tree.source))) {
                 return self.genDecl(scope, node.*);
             }
         }
-        s = scope.parent orelse break;
+        s = scope.parent orelse {
+            try self.errors.add(
+                loc,
+                "use of undeclared identifier '{s}'",
+                .{name},
+                null,
+            );
+            return error.AnalysisFail;
+        };
     }
+}
 
-    try self.errors.add(
-        loc,
-        "use of undeclared identifier '{s}'",
-        .{name},
-        null,
-    );
-    return error.AnalysisFail;
+/// returns declaration type or if type is unkown, returns value
+pub fn valueOrType(inst: IR.Inst) IR.Inst.Ref {
+    switch (inst.tag) {
+        .global_variable_decl => {
+            const decl_type = inst.data.global_variable_decl.type;
+            if (decl_type == .none) {
+                return inst.data.global_variable_decl.expr;
+            }
+            return decl_type;
+        },
+        else => unreachable,
+    }
 }
 
 pub fn genTypeAlias(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref {
@@ -286,47 +302,103 @@ pub fn genStruct(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref {
 }
 
 pub fn genExpr(self: *AstGen, scope: *Scope, node: Ast.Index) !IR.Inst.Ref {
-    const tag = self.tree.nodeTag(node);
-    const lhs = self.tree.nodeLHS(node);
-    const rhs = self.tree.nodeRHS(node);
+    const node_loc = self.tree.tokenLoc(self.tree.nodeToken(node));
+    const node_tag = self.tree.nodeTag(node);
+    const node_lhs = self.tree.nodeLHS(node);
+    const node_rhs = self.tree.nodeRHS(node);
+    const node_lhs_loc = self.tree.tokenLoc(self.tree.nodeToken(node_lhs));
+    const node_rhs_loc = self.tree.tokenLoc(self.tree.nodeToken(node_rhs));
 
-    switch (tag) {
+    switch (node_tag) {
         .bool_true => return .true_literal,
-        .bool_false => return .true_literal,
+        .bool_false => return .false_literal,
         else => {},
     }
 
     const inst_index = try self.reserveInst();
-    const inst: IR.Inst = switch (tag) {
+    const inst: IR.Inst = switch (node_tag) {
         .number_literal => .{ .tag = .integer_literal, .data = .{ .integer_literal = 1 } },
-        .not => .{ .tag = .not, .data = .{ .ref = try self.genExpr(scope, lhs) } },
-        .negate => .{ .tag = .negate, .data = .{ .ref = try self.genExpr(scope, lhs) } },
-        .deref => .{ .tag = .deref, .data = .{ .ref = try self.genExpr(scope, lhs) } },
-        .addr_of => .{ .tag = .addr_of, .data = .{ .ref = try self.genExpr(scope, lhs) } },
-        .mul => .{ .tag = .mul, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .div => .{ .tag = .div, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .mod => .{ .tag = .mod, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .add => .{ .tag = .add, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .sub => .{ .tag = .sub, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .shift_left => .{ .tag = .shift_left, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .shift_right => .{ .tag = .shift_right, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .binary_and => .{ .tag = .binary_and, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .binary_or => .{ .tag = .binary_or, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .binary_xor => .{ .tag = .binary_xor, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .circuit_and => .{ .tag = .circuit_and, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .circuit_or => .{ .tag = .circuit_or, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .equal => .{ .tag = .equal, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .not_equal => .{ .tag = .not_equal, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .less => .{ .tag = .less, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .less_equal => .{ .tag = .less_equal, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .greater => .{ .tag = .greater, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .greater_equal => .{ .tag = .greater_equal, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .index_access => .{ .tag = .index, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .component_access => .{ .tag = .member_access, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genExpr(scope, rhs) } } },
-        .bitcast => .{ .tag = .bitcast, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, lhs), .rhs = try self.genType(scope, rhs) } } },
+        .not => .{ .tag = .not, .data = .{ .ref = try self.genExpr(scope, node_lhs) } },
+        .negate => .{ .tag = .negate, .data = .{ .ref = try self.genExpr(scope, node_lhs) } },
+        .deref => .{ .tag = .deref, .data = .{ .ref = try self.genExpr(scope, node_lhs) } },
+        .addr_of => .{ .tag = .addr_of, .data = .{ .ref = try self.genExpr(scope, node_lhs) } },
+
+        .mul,
+        .div,
+        .mod,
+        .add,
+        .sub,
+        .shift_left,
+        .shift_right,
+        .binary_and,
+        .binary_or,
+        .binary_xor,
+        .circuit_and,
+        .circuit_or,
+        .equal,
+        .not_equal,
+        .less,
+        .less_equal,
+        .greater,
+        .greater_equal,
+        => blk: {
+            const lhs = try self.genExpr(scope, node_lhs);
+            const rhs = try self.genExpr(scope, node_rhs);
+            const inst_tag: IR.Inst.Tag = switch (node_tag) {
+                .mul => .mul,
+                .div => .div,
+                .mod => .mod,
+                .add => .add,
+                .sub => .sub,
+                .shift_left => .shift_left,
+                .shift_right => .shift_right,
+                .binary_and => .binary_and,
+                .binary_or => .binary_or,
+                .binary_xor => .binary_xor,
+                .circuit_and => .circuit_and,
+                .circuit_or => .circuit_or,
+                .equal => .equal,
+                .not_equal => .not_equal,
+                .less => .less,
+                .less_equal => .less_equal,
+                .greater => .greater,
+                .greater_equal => .greater_equal,
+                else => unreachable,
+            };
+
+            if (try self.isIntegerResulting(lhs, false)) {
+                if (try self.isIntegerResulting(rhs, false)) {
+                    break :blk .{
+                        .tag = inst_tag,
+                        .data = .{ .binary = .{ .lhs = lhs, .rhs = rhs } },
+                    };
+                }
+            }
+
+            try self.errors.add(
+                node_loc,
+                "incompatible types: '{s}' and '{s}'",
+                .{ node_lhs_loc.slice(self.tree.source), node_rhs_loc.slice(self.tree.source) },
+                try self.errors.createNote(
+                    null,
+                    "{} and {}",
+                    .{ self.instructions.items[lhs.toIndex().?].tag, self.instructions.items[rhs.toIndex().?].tag },
+                ),
+            );
+            return error.AnalysisFail;
+        },
+
+        .index_access => .{ .tag = .index, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, node_lhs), .rhs = try self.genExpr(scope, node_rhs) } } },
+        .component_access => .{ .tag = .member_access, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, node_lhs), .rhs = try self.genExpr(scope, node_rhs) } } },
+        .bitcast => .{ .tag = .bitcast, .data = .{ .binary = .{ .lhs = try self.genExpr(scope, node_lhs), .rhs = try self.genType(scope, node_rhs) } } },
         .ident_expr => .{
-            .tag = .ident,
-            .data = .{ .name = try self.addString(self.tree.tokenLoc(self.tree.nodeToken(node)).slice(self.tree.source)) },
+            .tag = .var_ref,
+            .data = .{
+                .var_ref = .{
+                    .name = try self.addString(self.tree.tokenLoc(self.tree.nodeToken(node)).slice(self.tree.source)),
+                    .variable = try self.declRef(scope, node_loc),
+                },
+            },
         },
         else => {
             std.debug.print("WTF REALLY\n", .{});
@@ -364,76 +436,6 @@ pub fn addInst(self: *AstGen, inst: IR.Inst) error{OutOfMemory}!IR.Inst.Index {
     return @intCast(IR.Inst.Index, self.instructions.items.len - 1);
 }
 
-// // pub fn expression(self: *AstGen, node: Ast.Index) !?IR.Expression {
-// //     const lhs = self.tree.nodeLHS(node);
-// //     const rhs = self.tree.nodeRHS(node);
-// //     const loc = self.tree.tokenLoc(self.tree.nodeToken(node));
-// //     return switch (self.tree.nodeTag(node)) {
-// //         .mul => {
-// //             const lir = try self.expression(lhs) orelse return null;
-// //             const rir = try self.expression(rhs) orelse return null;
-
-// //             const is_valid_op =
-// //                 (lir == .number and rir == .number) or
-// //                 ((lir == .construct and lir.construct == .vector) and rir == .number) or
-// //                 (lir == .number and (rir == .construct and rir.construct == .vector)) or
-// //                 ((lir == .construct and lir.construct == .vector) and (rir == .construct and rir.construct == .vector)) or
-// //                 ((lir == .construct and lir.construct == .matrix) and (rir == .construct and rir.construct == .matrix));
-// //             if (!is_valid_op) {
-// //                 try self.errors.add(
-// //                     loc,
-// //                     "invalid operation with '{s}' and '{s}'",
-// //                     .{ @tagName(std.meta.activeTag(lir)), @tagName(std.meta.activeTag(rir)) },
-// //                     null,
-// //                 );
-// //                 return null;
-// //             }
-// //         },
-// //         // .div,
-// //         // .mod,
-// //         // .add,
-// //         // .sub,
-// //         // .shift_left,
-// //         // .shift_right,
-// //         // .binary_and,
-// //         // .binary_or,
-// //         // .binary_xor,
-// //         // .circuit_and,
-// //         // .circuit_or,
-// //         .number_literal => .{ .literal = try self.create(.{ .number = try self.create(try self.numberLiteral(node) orelse return null) }) },
-// //         .bool_literal => .{ .literal = try self.create(.{ .bool = self.boolLiteral(node) }) },
-// //         else => return null, // TODO
-// //     };
-// // }
-
-// // pub fn numberLiteral(self: *AstGen, node: Ast.Index) !?IR.NumberLiteral {
-// //     const loc = self.tree.tokenLoc(self.tree.nodeToken(node));
-// //     const str = loc.slice(self.tree.source);
-
-// //     if (std.mem.startsWith(u8, str, "0") and
-// //         !std.mem.endsWith(u8, str, "i") and
-// //         !std.mem.endsWith(u8, str, "u") and
-// //         !std.mem.endsWith(u8, str, "f") and
-// //         !std.mem.endsWith(u8, str, "h"))
-// //     {
-// //         try self.errors.add(
-// //             loc,
-// //             "number literal cannot have leading 0",
-// //             .{str},
-// //             null,
-// //         );
-// //         return null;
-// //     }
-
-// //     return null;
-// // }
-
-// // pub fn boolLiteral(self: *AstGen, node: Ast.Index) bool {
-// //     const loc = self.tree.tokenLoc(self.tree.nodeToken(node));
-// //     const str = loc.slice(self.tree.source);
-// //     return str[0] == 't';
-// // }
-
 pub fn genType(self: *AstGen, scope: *Scope, node: Ast.Index) error{ AnalysisFail, OutOfMemory }!IR.Inst.Ref {
     return switch (self.tree.nodeTag(node)) {
         .bool_type => try self.genBoolType(node),
@@ -442,7 +444,7 @@ pub fn genType(self: *AstGen, scope: *Scope, node: Ast.Index) error{ AnalysisFai
         .matrix_type => try self.genMatrixType(scope, node),
         .atomic_type => try self.genAtomicType(scope, node),
         .array_type => try self.genArrayType(scope, node),
-        .user_type => {
+        .ident_expr => {
             const node_loc = self.tree.tokenLoc(self.tree.nodeToken(node));
             const decl_ref = try self.declRef(scope, node_loc);
             switch (decl_ref) {
@@ -1083,4 +1085,35 @@ pub fn declNameLoc(self: *AstGen, node: Ast.Index) ?Token.Loc {
         else => return null,
     };
     return self.tree.tokenLoc(token);
+}
+
+pub fn isIntegerResulting(self: *AstGen, ref: IR.Inst.Ref, is_decl: bool) !bool {
+    if (is_decl and ref.isNumberType()) {
+        return true;
+    }
+
+    if (ref.isNumberLiteral(self.instructions) or
+        ref.is(self.instructions, &.{
+        .mul,
+        .div,
+        .mod,
+        .add,
+        .sub,
+        .shift_left,
+        .shift_right,
+        .binary_and,
+        .binary_or,
+        .binary_xor,
+    })) {
+        return true;
+    } else if (ref.is(self.instructions, &.{.var_ref})) {
+        const inst = self.instructions.items[ref.toIndex().?];
+        const var_inst = self.instructions.items[inst.data.var_ref.variable.toIndex().?];
+        return self.isIntegerResulting(valueOrType(var_inst), true);
+    } else if (ref.is(self.instructions, &.{.deref})) {
+        const inst = self.instructions.items[ref.toIndex().?];
+        return self.isIntegerResulting(inst.data.ref, true);
+    }
+
+    return false;
 }

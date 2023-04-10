@@ -56,6 +56,7 @@ pub const Inst = struct {
     tag: Tag,
     data: Data,
 
+    pub const List = std.ArrayListUnmanaged(Inst);
     pub const Index = u32;
 
     const ref_start_index = @typeInfo(Ref).Enum.fields.len;
@@ -87,6 +88,149 @@ pub const Inst = struct {
             } else {
                 return null;
             }
+        }
+
+        pub fn is(self: Ref, list: List, comptime expected: []const Inst.Tag) bool {
+            inline for (expected) |e| {
+                if (list.items[self.toIndex().?].tag == e) return true;
+            }
+            return false;
+        }
+
+        pub fn isType(self: Ref, list: List) bool {
+            return switch (self) {
+                .none,
+                .true_literal,
+                .false_literal,
+                => false,
+                .bool_type,
+                .i32_type,
+                .u32_type,
+                .f32_type,
+                .f16_type,
+                .sampler_type,
+                .comparison_sampler_type,
+                .external_sampled_texture_type,
+                => true,
+                _ => switch (list.items[self.toIndex().?].tag) {
+                    .struct_decl,
+                    .vector_type,
+                    .matrix_type,
+                    .atomic_type,
+                    .array_type,
+                    .ptr_type,
+                    .sampled_texture_type,
+                    .multisampled_texture_type,
+                    .storage_texture_type,
+                    .depth_texture_type,
+                    => true,
+                    else => false,
+                },
+            };
+        }
+
+        pub fn isNumberType(self: Ref) bool {
+            return switch (self) {
+                .i32_type,
+                .u32_type,
+                .f32_type,
+                .f16_type,
+                => true,
+                else => false,
+            };
+        }
+
+        pub fn isLiteral(self: Ref, list: List) bool {
+            return switch (self) {
+                .true_literal,
+                .false_literal,
+                => true,
+                .none,
+                .bool_type,
+                .i32_type,
+                .u32_type,
+                .f32_type,
+                .f16_type,
+                .sampler_type,
+                .comparison_sampler_type,
+                .external_sampled_texture_type,
+                => false,
+                _ => switch (list.items[self.toIndex().?].tag) {
+                    .integer_literal,
+                    .float_literal,
+                    => true,
+                    else => false,
+                },
+            };
+        }
+
+        pub fn isBoolLiteral(self: Ref) bool {
+            return switch (self) {
+                .true_literal,
+                .false_literal,
+                => true,
+                else => false,
+            };
+        }
+
+        pub fn isNumberLiteral(self: Ref, list: List) bool {
+            const i = self.toIndex() orelse return false;
+            return switch (list.items[i].tag) {
+                .integer_literal,
+                .float_literal,
+                => true,
+                else => false,
+            };
+        }
+
+        pub fn isExpr(self: Ref, list: List) bool {
+            const i = self.toIndex() orelse return false;
+            return switch (list.items[i].tag) {
+                .index,
+                .member_access,
+                .bitcast,
+                .ident,
+                => true,
+                else => self.isBinaryExpr() or self.isUnaryExpr(),
+            };
+        }
+
+        pub fn isBinaryExpr(self: Ref, list: List) bool {
+            const i = self.toIndex() orelse return false;
+            return switch (list.items[i].tag) {
+                .mul,
+                .div,
+                .mod,
+                .add,
+                .sub,
+                .shift_left,
+                .shift_right,
+                .binary_and,
+                .binary_or,
+                .binary_xor,
+                .circuit_and,
+                .circuit_or,
+                .equal,
+                .not_equal,
+                .less,
+                .less_equal,
+                .greater,
+                .greater_equal,
+                => true,
+                else => false,
+            };
+        }
+
+        pub fn isUnaryExpr(self: Ref, list: List) bool {
+            const i = self.toIndex() orelse return false;
+            return switch (list.items[i].tag) {
+                .not,
+                .negate,
+                .deref,
+                .addr_of,
+                => true,
+                else => false,
+            };
         }
     };
 
@@ -187,8 +331,8 @@ pub const Inst = struct {
         /// data is binary (lhs is expr, rhs is type)
         bitcast,
 
-        /// data is name
-        ident,
+        /// data is var_ref
+        var_ref,
 
         pub fn isDecl(self: Tag) bool {
             return switch (self) {
@@ -200,8 +344,7 @@ pub const Inst = struct {
 
     pub const Data = union {
         ref: Ref,
-        /// index to null-terminated string in `strings`
-        name: u32,
+        var_ref: VarRef,
         global_variable_decl: GlobalVariableDecl,
         struct_decl: StructDecl,
         struct_member: StructMember,
@@ -231,10 +374,16 @@ pub const Inst = struct {
         member_access: MemberAccess,
     };
 
+    pub const VarRef = struct {
+        /// index to null-terminated string in `strings`
+        name: u32,
+        variable: Ref,
+    };
+
     pub const GlobalVariableDecl = struct {
         /// index to null-terminated string in `strings`
         name: u32,
-        type: Ref,
+        type: Ref = .none,
         addr_space: AddressSpace,
         access_mode: AccessMode,
         /// length of attributes
