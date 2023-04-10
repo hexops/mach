@@ -19,7 +19,8 @@ struct SimParams {
   rule3Scale : f32,
 }
 
-@group(0) @binding(0) var<uniform> params : SimParams;
+var v0 = 5;
+@group(0) @binding(0) var<uniform> params : SimParams = *v0 * 1 + 2;
 @group(0) @binding(1) var<storage> particlesSrc : Particles;
 @group(0) @binding(2) var<storage,read_write> particlesDst : Particles;
 

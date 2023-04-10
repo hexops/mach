@@ -362,11 +362,6 @@ pub const Node = struct {
         /// RHS : --
         depth_texture_type,
 
-        /// TOK : ident
-        /// LHS : --
-        /// RHS : --
-        user_type,
-
         // ####### Attribute #######
 
         // TOK : attr
