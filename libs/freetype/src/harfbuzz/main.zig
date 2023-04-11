@@ -9,5 +9,11 @@ pub const c = @import("c.zig");
 
 const std = @import("std");
 test {
-    std.testing.refAllDeclsRecursive(@This());
+    std.testing.refAllDeclsRecursive(@import("blob.zig"));
+    std.testing.refAllDeclsRecursive(@import("buffer.zig"));
+    std.testing.refAllDeclsRecursive(@import("common.zig"));
+    std.testing.refAllDeclsRecursive(@import("face.zig"));
+    std.testing.refAllDeclsRecursive(@import("font.zig"));
+    std.testing.refAllDeclsRecursive(@import("shape.zig"));
+    std.testing.refAllDeclsRecursive(@import("shape_plan.zig"));
 }
