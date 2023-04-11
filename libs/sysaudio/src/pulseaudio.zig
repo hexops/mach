@@ -607,6 +607,8 @@ pub fn fromPAChannelPos(pos: c.pa_channel_position_t) !main.Channel.Id {
         c.PA_CHANNEL_POSITION_FRONT_RIGHT => .front_right, // PA_CHANNEL_POSITION_RIGHT
         c.PA_CHANNEL_POSITION_FRONT_CENTER => .front_center, // PA_CHANNEL_POSITION_CENTER
         c.PA_CHANNEL_POSITION_REAR_CENTER => .back_center,
+        c.PA_CHANNEL_POSITION_REAR_LEFT => .back_left,
+        c.PA_CHANNEL_POSITION_REAR_RIGHT => .back_right,
         c.PA_CHANNEL_POSITION_LFE => .lfe, // PA_CHANNEL_POSITION_SUBWOOFER
         c.PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER => .front_left_center,
         c.PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER => .front_right_center,
@@ -651,21 +653,23 @@ pub fn toPAChannelMap(channels: []const main.Channel) !c.pa_channel_map {
 
 fn toPAChannelPos(channel_id: main.Channel.Id) !c.pa_channel_position_t {
     return switch (channel_id) {
+        .lfe => c.PA_CHANNEL_POSITION_LFE,
+        .front_center => c.PA_CHANNEL_POSITION_FRONT_CENTER,
         .front_left => c.PA_CHANNEL_POSITION_FRONT_LEFT,
         .front_right => c.PA_CHANNEL_POSITION_FRONT_RIGHT,
-        .front_center => c.PA_CHANNEL_POSITION_FRONT_CENTER,
-        .lfe => c.PA_CHANNEL_POSITION_LFE,
         .front_left_center => c.PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER,
         .front_right_center => c.PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER,
         .back_center => c.PA_CHANNEL_POSITION_REAR_CENTER,
+        .back_left => c.PA_CHANNEL_POSITION_REAR_LEFT,
+        .back_right => c.PA_CHANNEL_POSITION_REAR_RIGHT,
         .side_left => c.PA_CHANNEL_POSITION_SIDE_LEFT,
         .side_right => c.PA_CHANNEL_POSITION_SIDE_RIGHT,
         .top_center => c.PA_CHANNEL_POSITION_TOP_CENTER,
-        .top_front_left => c.PA_CHANNEL_POSITION_TOP_FRONT_LEFT,
         .top_front_center => c.PA_CHANNEL_POSITION_TOP_FRONT_CENTER,
+        .top_front_left => c.PA_CHANNEL_POSITION_TOP_FRONT_LEFT,
         .top_front_right => c.PA_CHANNEL_POSITION_TOP_FRONT_RIGHT,
-        .top_back_left => c.PA_CHANNEL_POSITION_TOP_REAR_LEFT,
         .top_back_center => c.PA_CHANNEL_POSITION_TOP_REAR_CENTER,
+        .top_back_left => c.PA_CHANNEL_POSITION_TOP_REAR_LEFT,
         .top_back_right => c.PA_CHANNEL_POSITION_TOP_REAR_RIGHT,
     };
 }
