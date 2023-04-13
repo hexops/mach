@@ -46,8 +46,8 @@ pub fn Sdk(comptime deps: anytype) type {
                 deps.gamemode.link(main_tests);
             }
             main_tests.addIncludePath(sdkPath("/include"));
-            main_tests.install();
-            return main_tests.run();
+            b.installArtifact(main_tests);
+            return b.addRunArtifact(main_tests);
         }
 
         pub fn buildSharedLib(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget, options: Options) !*std.build.CompileStep {
@@ -176,7 +176,7 @@ pub fn Sdk(comptime deps: anytype) type {
             }
 
             pub fn install(app: *const App) void {
-                app.step.install();
+                app.b.installArtifact(app.step);
 
                 // Install additional files (mach.js and mach-sysjs.js)
                 // in case of wasm
@@ -209,11 +209,11 @@ pub fn Sdk(comptime deps: anytype) type {
             }
 
             pub fn run(app: *const App) *std.build.RunStep {
-                return app.step.run();
+                return app.b.addRunArtifact(app.step);
             }
 
             pub fn getInstallStep(app: *const App) ?*std.build.InstallArtifactStep {
-                return app.step.install_step;
+                return app.b.addInstallArtifact(app.step);
             }
         };
     };

@@ -25,7 +25,7 @@ pub fn build(b: *std.Build) void {
         });
         example_exe.addModule("sysaudio", sysaudio.module(b));
         sysaudio.link(b, example_exe, .{});
-        example_exe.install();
+        b.installArtifact(example_exe);
 
         const example_compile_step = b.step("example-" ++ example, "Compile '" ++ example ++ "' example");
         example_compile_step.dependOn(b.getInstallStep());

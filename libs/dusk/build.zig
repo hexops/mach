@@ -25,7 +25,7 @@ pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.z
         .target = target,
         .optimize = optimize,
     });
-    lib_tests.install();
+    b.installArtifact(lib_tests);
 
     const main_tests = b.addTest(.{
         .name = "dusk-tests",
@@ -34,11 +34,11 @@ pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.z
         .optimize = optimize,
     });
     main_tests.addModule("dusk", module(b));
-    main_tests.install();
+    b.installArtifact(main_tests);
 
-    const run_step = main_tests.run();
-    run_step.step.dependOn(&lib_tests.run().step);
-    return main_tests.run();
+    const run_step = b.addRunArtifact(main_tests);
+    run_step.step.dependOn(&b.addRunArtifact(lib_tests).step);
+    return b.addRunArtifact(main_tests);
 }
 
 fn sdkPath(comptime suffix: []const u8) []const u8 {

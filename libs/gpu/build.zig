@@ -33,9 +33,9 @@ pub fn build(b: *std.Build) !void {
     example.addModule("glfw", glfw.module(b));
     try gpu.link(b, example, .{ .gpu_dawn_options = gpu_dawn_options });
     try glfw.link(b, example, .{});
-    example.install();
+    b.installArtifact(example);
 
-    const example_run_cmd = example.run();
+    const example_run_cmd = b.addRunArtifact(example);
     example_run_cmd.step.dependOn(b.getInstallStep());
     const example_run_step = b.step("run-example", "Run the example");
     example_run_step.dependOn(&example_run_cmd.step);

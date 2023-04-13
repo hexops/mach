@@ -23,8 +23,8 @@ pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
     });
 
     try link(b, main_tests, .{});
-    main_tests.install();
-    return main_tests.run();
+    b.installArtifact(main_tests);
+    return b.addRunArtifact(main_tests);
 }
 
 fn testStepShared(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) !*std.build.RunStep {
@@ -37,8 +37,8 @@ fn testStepShared(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig
     });
 
     try link(b, main_tests, .{ .shared = true });
-    main_tests.install();
-    return main_tests.run();
+    b.installArtifact(main_tests);
+    return b.addRunArtifact(main_tests);
 }
 
 pub const Options = struct {
@@ -110,7 +110,7 @@ fn buildLibrary(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
     linkGLFWDependencies(b, lib, options);
 
     if (options.install_libs)
-        lib.install();
+        b.installArtifact(lib);
 
     return lib;
 }

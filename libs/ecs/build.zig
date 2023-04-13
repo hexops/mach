@@ -24,8 +24,8 @@ pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.z
         .target = target,
         .optimize = optimize,
     });
-    main_tests.install();
-    return main_tests.run();
+    b.installArtifact(main_tests);
+    return b.addRunArtifact(main_tests);
 }
 
 fn sdkPath(comptime suffix: []const u8) []const u8 {
