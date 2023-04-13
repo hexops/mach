@@ -11,8 +11,8 @@ pub fn Sdk(comptime deps: anytype) type {
                 .optimize = optimize,
             });
             try link(b, main_tests, options);
-            main_tests.install();
-            return main_tests.run();
+            b.installArtifact(main_tests);
+            return b.addRunArtifact(main_tests);
         }
 
         pub const Options = struct {

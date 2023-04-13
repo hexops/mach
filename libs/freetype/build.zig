@@ -74,7 +74,7 @@ pub fn build(b: *std.Build) !void {
         var example_compile_step = b.step("example-" ++ example, "Compile '" ++ example ++ "' example");
         example_compile_step.dependOn(&example_install.step);
 
-        const example_run_cmd = example_exe.run();
+        const example_run_cmd = b.addRunArtifact(example_exe);
         if (b.args) |args| {
             example_run_cmd.addArgs(args);
         }
@@ -99,7 +99,7 @@ pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
         .harfbuzz = .{},
     });
     main_tests.main_pkg_path = sdkPath("/");
-    main_tests.install();
+    b.installArtifact(main_tests);
 
     const harfbuzz_tests = b.addTest(.{
         .name = "harfbuzz-tests",
@@ -115,10 +115,10 @@ pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
         .harfbuzz = .{},
     });
     harfbuzz_tests.main_pkg_path = sdkPath("/");
-    harfbuzz_tests.install();
+    b.installArtifact(harfbuzz_tests);
 
-    const main_tests_run = main_tests.run();
-    main_tests_run.step.dependOn(&harfbuzz_tests.run().step);
+    const main_tests_run = b.addRunArtifact(main_tests);
+    main_tests_run.step.dependOn(&b.addRunArtifact(harfbuzz_tests).step);
     return main_tests_run;
 }
 
@@ -135,7 +135,7 @@ pub fn linkFreetype(b: *Build, step: *std.build.CompileStep, options: FreetypeOp
     if (options.brotli) {
         const brotli_lib = buildBrotli(b, step.optimize, step.target);
         if (options.install_libs)
-            brotli_lib.install();
+            b.installArtifact(brotli_lib);
         step.linkLibrary(brotli_lib);
     }
 }
@@ -187,7 +187,7 @@ pub fn buildFreetype(b: *Build, optimize: std.builtin.OptimizeMode, target: std.
     lib.addCSourceFiles(freetype_base_sources, &.{});
 
     if (options.install_libs)
-        lib.install();
+        b.installArtifact(lib);
     return lib;
 }
 
@@ -204,7 +204,7 @@ pub fn buildHarfbuzz(b: *Build, optimize: std.builtin.OptimizeMode, target: std.
     lib.defineCMacro("HAVE_FREETYPE", "1");
 
     if (options.install_libs)
-        lib.install();
+        b.installArtifact(lib);
     return lib;
 }
 
