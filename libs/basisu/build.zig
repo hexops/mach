@@ -48,8 +48,8 @@ pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
         .encoder = .{},
         .transcoder = .{},
     });
-    main_tests.install();
-    return main_tests.run();
+    b.installArtifact(main_tests);
+    return b.addRunArtifact(main_tests);
 }
 
 pub fn link(b: *Build, step: *std.build.CompileStep, target: std.zig.CrossTarget, optimize: std.builtin.OptimizeMode, options: Options) void {
@@ -83,7 +83,7 @@ pub fn buildEncoder(b: *Build, target: std.zig.CrossTarget, optimize: std.builti
     encoder.defineCMacro("BASISD_SUPPORT_KTX2_ZSTD", "0");
 
     if (options.install_libs)
-        encoder.install();
+        b.installArtifact(encoder);
     return encoder;
 }
 
@@ -106,7 +106,7 @@ pub fn buildTranscoder(b: *Build, target: std.zig.CrossTarget, optimize: std.bui
     transcoder.defineCMacro("BASISD_SUPPORT_KTX2_ZSTD", "0");
 
     if (options.install_libs)
-        transcoder.install();
+        b.installArtifact(transcoder);
     return transcoder;
 }
 

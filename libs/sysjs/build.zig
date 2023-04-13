@@ -15,7 +15,7 @@ pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.z
         .target = target,
         .optimize = optimize,
     });
-    return main_tests.run();
+    return b.addRunArtifact(main_tests);
 }
 
 var _module: ?*std.build.Module = null;

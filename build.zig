@@ -64,9 +64,9 @@ pub fn build(b: *std.Build) !void {
     });
     app.addModule("mach", module(b));
     if (app.target.getOsTag() == .windows) app.linkLibC();
-    app.install();
+    b.installArtifact(app);
 
-    const app_run_cmd = app.run();
+    const app_run_cmd = b.addRunArtifact(app);
     if (b.args) |args| app_run_cmd.addArgs(args);
     const app_run_step = b.step("run", "Run Mach Engine Application");
     app_run_step.dependOn(&app_run_cmd.step);
@@ -142,8 +142,8 @@ fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
     while (iter.next()) |e| {
         main_tests.addModule(e.key_ptr.*, e.value_ptr.*);
     }
-    main_tests.install();
-    return main_tests.run();
+    b.installArtifact(main_tests);
+    return b.addRunArtifact(main_tests);
 }
 
 pub const App = struct {

@@ -25,8 +25,8 @@ pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.z
         .optimize = optimize,
     });
     link(b, main_tests, target);
-    main_tests.install();
-    return main_tests.run();
+    b.installArtifact(main_tests);
+    return b.addRunArtifact(main_tests);
 }
 
 pub fn link(b: *std.Build, step: *std.build.CompileStep, target: std.zig.CrossTarget) void {

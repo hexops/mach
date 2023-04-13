@@ -9,7 +9,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    lib.install();
+    b.installArtifact(lib);
 
     const main_tests = b.addTest(.{
         .name = "earcut-tests",

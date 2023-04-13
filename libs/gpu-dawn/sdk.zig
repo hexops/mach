@@ -120,7 +120,7 @@ pub fn Sdk(comptime deps: anytype) type {
             });
             lib_dawn.linkLibCpp();
             if (options.install_libs)
-                lib_dawn.install();
+                b.installArtifact(lib_dawn);
             step.linkLibrary(lib_dawn);
 
             _ = try buildLibMachDawnNative(b, lib_dawn, options);
@@ -573,7 +573,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
-                    separate_lib.install();
+                    b.installArtifact(separate_lib);
                 break :blk separate_lib;
             };
 
@@ -607,7 +607,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
-                    separate_lib.install();
+                    b.installArtifact(separate_lib);
                 break :blk separate_lib;
             };
 
@@ -661,7 +661,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
-                    separate_lib.install();
+                    b.installArtifact(separate_lib);
                 break :blk separate_lib;
             };
 
@@ -734,7 +734,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
-                    separate_lib.install();
+                    b.installArtifact(separate_lib);
                 break :blk separate_lib;
             };
             deps.system_sdk.include(b, lib, .{});
@@ -1020,7 +1020,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
-                    separate_lib.install();
+                    b.installArtifact(separate_lib);
                 break :blk separate_lib;
             };
 
@@ -1175,7 +1175,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
-                    separate_lib.install();
+                    b.installArtifact(separate_lib);
                 break :blk separate_lib;
             };
 
@@ -1244,7 +1244,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
-                    separate_lib.install();
+                    b.installArtifact(separate_lib);
                 break :blk separate_lib;
             };
             deps.system_sdk.include(b, lib, .{});
@@ -1308,7 +1308,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
-                    separate_lib.install();
+                    b.installArtifact(separate_lib);
                 break :blk separate_lib;
             };
 
@@ -1346,7 +1346,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
-                    separate_lib.install();
+                    b.installArtifact(separate_lib);
                 break :blk separate_lib;
             };
 
@@ -1421,7 +1421,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 separate_lib.linkLibCpp();
                 if (options.install_libs)
-                    separate_lib.install();
+                    b.installArtifact(separate_lib);
                 break :blk separate_lib;
             };
             deps.system_sdk.include(b, lib, .{});

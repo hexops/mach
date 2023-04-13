@@ -53,7 +53,7 @@ pub fn build(b: *std.Build) !void {
         // Compiles the `libmachcore` shared library
         const shared_lib = try core.buildSharedLib(b, optimize, target, options);
 
-        shared_lib.install();
+        b.installArtifact(shared_lib);
     }
 
     const compile_all = b.step("compile-all", "Compile Mach");

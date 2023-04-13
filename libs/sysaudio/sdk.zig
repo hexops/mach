@@ -30,8 +30,8 @@ pub fn Sdk(comptime deps: anytype) type {
                 .optimize = optimize,
             });
             link(b, main_tests, .{});
-            main_tests.install();
-            return main_tests.run();
+            b.installArtifact(main_tests);
+            return b.addRunArtifact(main_tests);
         }
 
         pub fn link(b: *std.Build, step: *std.build.CompileStep, options: Options) void {
@@ -48,7 +48,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 }
             }
             if (options.install_libs) {
-                step.install();
+                b.installArtifact(step);
             }
         }
 
