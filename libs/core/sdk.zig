@@ -209,6 +209,9 @@ pub fn Sdk(comptime deps: anytype) type {
             }
 
             pub fn run(app: *const App) *std.build.RunStep {
+                if (app.platform == .web) {
+                    @panic("cannot run wasm binary; use mach app instead");
+                }
                 return app.step.run();
             }
 
