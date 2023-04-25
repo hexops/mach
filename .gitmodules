@@ -17,5 +17,5 @@
 	url = https://github.com/hexops-graveyard/glfw
 [submodule "basisu/upstream"]
 	path = libs/basisu/upstream
-	url = https://github.com/hexops/basisu
+	url = https://github.com/hexops-graveyard/basisu
 
