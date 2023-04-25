@@ -62,6 +62,5 @@ push_subrepo 'gpu'
 push_subrepo 'gpu-dawn'
 push_subrepo 'model3d'
 push_subrepo 'sysaudio'
-push_subrepo 'sysjs'
 
 rm -rf staging-clean
