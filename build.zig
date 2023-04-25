@@ -118,13 +118,14 @@ pub fn build(b: *std.Build) !void {
         try shaderexp_app.link(options);
         shaderexp_app.install();
 
-        const shaderexp_compile_step = b.step("shaderexp", "Compile shaderexp");
-        shaderexp_compile_step.dependOn(&shaderexp_app.getInstallStep().?.step);
+        const shaderexp_install_step = b.step("shaderexp", "Install shaderexp");
+        shaderexp_install_step.dependOn(&shaderexp_app.getInstallStep().?.step);
+        const shaderexp_run_cmd = shaderexp_app.addRunArtifact();
+        shaderexp_run_cmd.step.dependOn(shaderexp_install_step);
 
-        const shaderexp_run_cmd = shaderexp_app.run();
-        shaderexp_run_cmd.step.dependOn(&shaderexp_app.getInstallStep().?.step);
         const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
         shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
+        b.getInstallStep().dependOn(shaderexp_install_step);
     }
 
     const compile_all = b.step("compile-all", "Compile Mach");
@@ -215,8 +216,8 @@ pub const App = struct {
         app.core.install();
     }
 
-    pub fn run(app: *const App) *std.build.RunStep {
-        return app.core.run();
+    pub fn addRunArtifact(app: *const App) *std.build.RunStep {
+        return app.core.addRunArtifact();
     }
 
     pub fn getInstallStep(app: *const App) ?*std.build.InstallArtifactStep {
