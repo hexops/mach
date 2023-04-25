@@ -5,7 +5,6 @@ pub fn Sdk(comptime deps: anytype) type {
         pub fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget, options: Options) !*std.build.RunStep {
             const main_tests = b.addTest(.{
                 .name = "gpu-tests",
-                .kind = .test_exe,
                 .root_source_file = .{ .path = sdkPath("/src/main.zig") },
                 .target = target,
                 .optimize = optimize,

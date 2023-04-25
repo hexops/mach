@@ -13,7 +13,6 @@ pub fn build(b: *std.Build) void {
 
     const main_tests = b.addTest(.{
         .name = "earcut-tests",
-        .kind = .test_exe,
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,

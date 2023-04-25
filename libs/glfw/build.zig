@@ -16,7 +16,6 @@ pub fn build(b: *Build) !void {
 pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) !*std.build.RunStep {
     const main_tests = b.addTest(.{
         .name = "glfw-tests",
-        .kind = .test_exe,
         .root_source_file = .{ .path = sdkPath("/src/main.zig") },
         .target = target,
         .optimize = optimize,
@@ -30,7 +29,6 @@ pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
 fn testStepShared(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) !*std.build.RunStep {
     const main_tests = b.addTest(.{
         .name = "glfw-tests-shared",
-        .kind = .test_exe,
         .root_source_file = .{ .path = sdkPath("/src/main.zig") },
         .target = target,
         .optimize = optimize,
