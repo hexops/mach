@@ -30,7 +30,7 @@ pub fn build(b: *std.Build) void {
         const example_compile_step = b.step("example-" ++ example, "Compile '" ++ example ++ "' example");
         example_compile_step.dependOn(b.getInstallStep());
 
-        const example_run_cmd = example_exe.run();
+        const example_run_cmd = b.addRunArtifact(example_exe);
         example_run_cmd.step.dependOn(b.getInstallStep());
         if (b.args) |args| {
             example_run_cmd.addArgs(args);
