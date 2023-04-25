@@ -55,22 +55,6 @@ pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
 
-    const app = b.addExecutable(.{
-        .name = "mach",
-        .root_source_file = .{ .path = "app/main.zig" },
-        .version = .{ .major = 0, .minor = 1, .patch = 0 },
-        .optimize = optimize,
-        .target = target,
-    });
-    app.addModule("mach", module(b));
-    if (app.target.getOsTag() == .windows) app.linkLibC();
-    b.installArtifact(app);
-
-    const app_run_cmd = b.addRunArtifact(app);
-    if (b.args) |args| app_run_cmd.addArgs(args);
-    const app_run_step = b.step("run", "Run Mach Engine Application");
-    app_run_step.dependOn(&app_run_cmd.step);
-
     const gpu_dawn_options = gpu_dawn.Options{
         .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
         .debug = b.option(bool, "dawn-debug", "Use a debug build of Dawn") orelse false,
@@ -78,6 +62,22 @@ pub fn build(b: *std.Build) !void {
     const options = Options{ .core = .{ .gpu_dawn_options = gpu_dawn_options } };
 
     if (target.getCpuArch() != .wasm32) {
+        const app = b.addExecutable(.{
+            .name = "mach",
+            .root_source_file = .{ .path = "app/main.zig" },
+            .version = .{ .major = 0, .minor = 1, .patch = 0 },
+            .optimize = optimize,
+            .target = target,
+        });
+        app.addModule("mach", module(b));
+        if (app.target.getOsTag() == .windows) app.linkLibC();
+        b.installArtifact(app);
+
+        const app_run_cmd = b.addRunArtifact(app);
+        if (b.args) |args| app_run_cmd.addArgs(args);
+        const app_run_step = b.step("run", "Run Mach Engine Application");
+        app_run_step.dependOn(&app_run_cmd.step);
+
         const all_tests_step = b.step("test", "Run library tests");
         const core_test_step = b.step("test-core", "Run Core library tests");
         const ecs_test_step = b.step("test-ecs", "Run ECS library tests");
