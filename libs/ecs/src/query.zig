@@ -1,14 +1,14 @@
 const std = @import("std");
 const testing = std.testing;
 
-pub const QueryType = enum {
+pub const QueryTag = enum {
     any,
     all,
 };
 
 /// A complex query for entities matching a given criteria
 pub fn Query(comptime all_components: anytype) type {
-    return union(QueryType) {
+    return union(QueryTag) {
         /// Enum matching a namespace. e.g. `.game` or `.physics2d`
         pub const Namespace = std.meta.FieldEnum(@TypeOf(all_components));
 
@@ -25,7 +25,7 @@ pub fn Query(comptime all_components: anytype) type {
         }
 
         /// Tagged union of namespaces matching lists of components
-        /// e.g. `.physics2d = .{ .location, .rotation }`
+        /// e.g. `.physics2d = &.{ .location, .rotation }`
         pub const NamespaceComponent = T: {
             const namespaces = std.meta.fields(Namespace);
             var fields: [namespaces.len]std.builtin.Type.UnionField = undefined;
@@ -46,10 +46,10 @@ pub fn Query(comptime all_components: anytype) type {
             } });
         };
 
-        /// Matches entities with any of these components
+        /// Matches any of these components
         any: []const NamespaceComponent,
 
-        /// Matches entities with all of these components
+        /// Matches all of these components
         all: []const NamespaceComponent,
     };
 }

@@ -4,7 +4,7 @@ const Allocator = mem.Allocator;
 const testing = std.testing;
 const builtin = @import("builtin");
 const assert = std.debug.assert;
-const query = @import("query.zig");
+const query_mod = @import("query.zig");
 
 const is_debug = builtin.mode == .Debug;
 
@@ -336,7 +336,8 @@ pub fn Entities(comptime all_components: anytype) type {
         };
 
         /// A complex query for entities matching a given criteria
-        pub const Query = query.Query(all_components);
+        pub const Query = query_mod.Query(all_components);
+        pub const QueryTag = query_mod.QueryTag;
 
         pub fn init(allocator: Allocator) !Self {
             var entities = Self{ .allocator = allocator };
@@ -661,6 +662,14 @@ pub fn Entities(comptime all_components: anytype) type {
             });
         }
 
+        // Queries for archetypes matching the given query.
+        pub fn query(
+            entities: *Self,
+            q: Query,
+        ) ArchetypeIterator(all_components) {
+            return ArchetypeIterator(all_components).init(entities, q);
+        }
+
         // TODO: iteration over all entities
         // TODO: iteration over all entities with components (U, V, ...)
         // TODO: iteration over all entities with type T
@@ -675,6 +684,65 @@ pub fn Entities(comptime all_components: anytype) type {
 
         // TODO: ability to remove archetype entirely, deleting all entities in it
         // TODO: ability to remove archetypes with no entities (garbage collection)
+    };
+}
+
+// TODO: move this type somewhere else
+pub fn ArchetypeIterator(comptime all_components: anytype) type {
+    const EntitiesT = Entities(all_components);
+    return struct {
+        entities: *EntitiesT,
+        query: EntitiesT.Query,
+        index: usize,
+
+        const Self = @This();
+
+        pub fn init(entities: *EntitiesT, query: EntitiesT.Query) Self {
+            return Self{
+                .entities = entities,
+                .query = query,
+                .index = 0,
+            };
+        }
+
+        pub fn next(iter: *Self) ?*ArchetypeStorage {
+            var archetypes = iter.entities.archetypes.entries.items(.value);
+            while (true) {
+                if (iter.index == archetypes.len - 1) return null;
+                iter.index += 1;
+                var consideration = &archetypes[iter.index];
+                if (iter.match(consideration)) return consideration;
+            }
+        }
+
+        pub fn match(iter: *Self, consideration: *ArchetypeStorage) bool {
+            if (consideration.len == 0) return false;
+            switch (iter.query) {
+                .all => {
+                    for (iter.query.all) |namespace| {
+                        switch (namespace) {
+                            inline else => |components| {
+                                for (components) |component| {
+                                    const name = switch (component) {
+                                        inline else => |c| @tagName(namespace) ++ "." ++ @tagName(c),
+                                    };
+                                    var has_column = false;
+                                    for (consideration.columns) |column| {
+                                        if (std.mem.eql(u8, name, column.name)) {
+                                            has_column = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!has_column) return false;
+                                }
+                            },
+                        }
+                    }
+                    return true;
+                },
+                .any => @panic("TODO"),
+            }
+        }
     };
 }
 
@@ -763,6 +831,17 @@ test "example" {
     // Archetype resolved via entity ID
     var player2_archetype = world.archetypeByID(player2);
     try testing.expectEqual(@as(u64, 4263961864502127795), player2_archetype.hash);
+
+    //-------------------------------------------------------------------------
+    // Query for archetypes that have all of the given components
+    var iter = world.query(.{ .all = &.{
+        .{ .game = &.{.rotation} },
+    } });
+    while (iter.next()) |archetype| {
+        var entities = archetype.getColumnValues(allocator, "id", EntityID).?[0..archetype.len];
+        try testing.expectEqual(@as(usize, 1), entities.len);
+        try testing.expectEqual(player2, entities[0]);
+    }
 
     // TODO: iterating components an entity has not currently supported.
 
