@@ -129,7 +129,7 @@ pub const ArchetypeStorage = struct {
     /// Asserts `new_capacity >= storage.len`, if you want to shrink capacity then change the len
     /// yourself first.
     pub fn setCapacity(storage: *ArchetypeStorage, gpa: Allocator, new_capacity: usize) !void {
-        assert(storage.capacity >= storage.len);
+        assert(new_capacity >= storage.len);
 
         // TODO: ensure columns are sorted by type_id
         for (storage.columns) |*column| {
@@ -161,6 +161,8 @@ pub const ArchetypeStorage = struct {
 
     /// Sets the value of the named components (columns) for the given row in the table.
     pub fn set(storage: *ArchetypeStorage, gpa: Allocator, row_index: u32, name: []const u8, component: anytype) void {
+        assert(storage.len != 0 and storage.len >= row_index);
+
         const ColumnType = @TypeOf(component);
         if (@sizeOf(ColumnType) == 0) return;
 
@@ -436,7 +438,7 @@ pub fn Entities(comptime all_components: anytype) type {
 
             // Determine the new hash for the archetype + new component
             var have_already = archetype.hasComponent(name);
-            const new_hash = if (have_already) old_hash else old_hash ^ std.hash_map.hashString(name);
+            var new_hash = if (have_already) old_hash else old_hash ^ std.hash_map.hashString(name);
 
             // Find the archetype storage for this entity. Could be a new archetype storage table (if a
             // new component was added), or the same archetype storage table (if just updating the
@@ -449,6 +451,8 @@ pub fn Entities(comptime all_components: anytype) type {
 
             if (!archetype_entry.found_existing) {
                 const columns = entities.allocator.alloc(Column, archetype.columns.len + 1) catch |err| {
+                    // Note: this removal doesn't break index accesses performed by archetypeByID
+                    // since our archetype is guaranteed to be the last index right now.
                     assert(entities.archetypes.swapRemove(new_hash));
                     return err;
                 };
@@ -472,6 +476,23 @@ pub fn Entities(comptime all_components: anytype) type {
                     .hash = undefined,
                 };
                 archetype_entry.value_ptr.calculateHash();
+
+                // TODO: because hashing approach is poor, and specifically because columns are sorted,
+                // new_hash can actually not equal the result of .calculateHash which means the archetypes
+                // hashmap entry is under the wrong key now!
+                const old_hash_2 = new_hash;
+                new_hash = archetype_entry.value_ptr.hash;
+                var new_entry = archetype_entry.value_ptr.*;
+                // We rely on entities.archetypes access by array index (archetypeByID); but since
+                // it is guaranteed the item we're replacing is the last item in the array it's fine.
+                _ = entities.archetypes.orderedRemove(old_hash_2);
+                archetype_entry = try entities.archetypes.getOrPut(entities.allocator, new_hash);
+                if (archetype_entry.found_existing) {
+                    // oops! our bad hashing means we did extra work
+                    new_entry.deinit(entities.allocator);
+                } else {
+                    archetype_entry.value_ptr.* = new_entry;
+                }
             }
 
             // Either new storage (if the entity moved between storage tables due to having a new
@@ -579,6 +600,8 @@ pub fn Entities(comptime all_components: anytype) type {
 
             if (!archetype_entry.found_existing) {
                 const columns = entities.allocator.alloc(Column, archetype.columns.len - 1) catch |err| {
+                    // Note: this removal doesn't break index accesses performed by archetypeByID
+                    // since our archetype is guaranteed to be the last index right now.
                     assert(entities.archetypes.swapRemove(new_hash));
                     return err;
                 };
@@ -686,8 +709,9 @@ test "example" {
     //-------------------------------------------------------------------------
     // Create first player entity.
     var player1 = try world.new();
-    try world.setComponent(player1, .game, .name, "jane"); // add Name component
-    try world.setComponent(player1, .game, .location, .{}); // add Location component
+    try world.setComponent(player1, .game, .name, "jane"); // add .name component
+    try world.setComponent(player1, .game, .name, "joe"); // update .name component
+    try world.setComponent(player1, .game, .location, .{}); // add .location component
 
     // Create second player entity.
     var player2 = try world.new();
@@ -697,6 +721,7 @@ test "example" {
     //-------------------------------------------------------------------------
     // We can add new components at will.
     try world.setComponent(player2, .game, .rotation, .{ .degrees = 90 });
+    try world.setComponent(player2, .game, .rotation, .{ .degrees = 91 }); // update .rotation component
     try testing.expect(world.getComponent(player1, .game, .rotation) == null); // player1 has no rotation
 
     //-------------------------------------------------------------------------
@@ -714,9 +739,9 @@ test "example" {
     var archetypes = world.archetypes.keys();
     try testing.expectEqual(@as(usize, 6), archetypes.len);
     try testing.expectEqual(@as(u64, void_archetype_hash), archetypes[0]);
-    try testing.expectEqual(@as(u64, 10567852867187873021), archetypes[1]);
+    try testing.expectEqual(@as(u64, 5804575476291452713), archetypes[1]);
     try testing.expectEqual(@as(u64, 14072552683119202344), archetypes[2]);
-    try testing.expectEqual(@as(u64, 17945105277702244199), archetypes[3]);
+    try testing.expectEqual(@as(u64, 4263961864502127795), archetypes[3]);
     try testing.expectEqual(@as(u64, 12546098194442238762), archetypes[4]);
     try testing.expectEqual(@as(u64, 4457032469566706731), archetypes[5]);
 
