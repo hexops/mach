@@ -22,4 +22,6 @@ const std = @import("std");
 test {
     std.testing.refAllDeclsRecursive(ResourceManager);
     std.testing.refAllDeclsRecursive(gfx);
+    _ = ecs;
+    _ = earcut;
 }

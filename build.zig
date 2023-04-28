@@ -31,15 +31,25 @@ const core = @import("libs/core/sdk.zig").Sdk(.{
 
 var _module: ?*std.build.Module = null;
 
-pub fn module(b: *std.Build) *std.build.Module {
+pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.Module {
     if (_module) |m| return m;
+
+    const ecs_dep = b.dependency("mach_ecs", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const earcut_dep = b.dependency("mach_earcut", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
     _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
         .dependencies = &.{
             .{ .name = "core", .module = core.module(b) },
-            .{ .name = "ecs", .module = ecs.module(b) },
+            .{ .name = "ecs", .module = ecs_dep.module("mach-ecs") },
             .{ .name = "sysaudio", .module = sysaudio.module(b) },
-            .{ .name = "earcut", .module = earcut.module(b) },
+            .{ .name = "earcut", .module = earcut_dep.module("mach-earcut") },
         },
     });
     return _module.?;
@@ -69,7 +79,7 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .target = target,
         });
-        app.addModule("mach", module(b));
+        app.addModule("mach", module(b, optimize, target));
         if (app.target.getOsTag() == .windows) app.linkLibC();
         b.installArtifact(app);
 
@@ -80,7 +90,6 @@ pub fn build(b: *std.Build) !void {
 
         const all_tests_step = b.step("test", "Run library tests");
         const core_test_step = b.step("test-core", "Run Core library tests");
-        const ecs_test_step = b.step("test-ecs", "Run ECS library tests");
         const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
         const basisu_test_step = b.step("test-basisu", "Run Basis-Universal library tests");
         const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
@@ -90,7 +99,6 @@ pub fn build(b: *std.Build) !void {
 
         core_test_step.dependOn(&(try core.testStep(b, optimize, target)).step);
         freetype_test_step.dependOn(&freetype.testStep(b, optimize, target).step);
-        ecs_test_step.dependOn(&ecs.testStep(b, optimize, target).step);
         basisu_test_step.dependOn(&basisu.testStep(b, optimize, target).step);
         sysaudio_test_step.dependOn(&sysaudio.testStep(b, optimize, target).step);
         model3d_test_step.dependOn(&model3d.testStep(b, optimize, target).step);
@@ -98,7 +106,6 @@ pub fn build(b: *std.Build) !void {
         mach_test_step.dependOn(&testStep(b, optimize, target).step);
 
         all_tests_step.dependOn(core_test_step);
-        all_tests_step.dependOn(ecs_test_step);
         all_tests_step.dependOn(basisu_test_step);
         all_tests_step.dependOn(freetype_test_step);
         all_tests_step.dependOn(sysaudio_test_step);
@@ -139,7 +146,7 @@ fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
         .target = target,
         .optimize = optimize,
     });
-    var iter = module(b).dependencies.iterator();
+    var iter = module(b, optimize, target).dependencies.iterator();
     while (iter.next()) |e| {
         main_tests.addModule(e.key_ptr.*, e.value_ptr.*);
     }
@@ -179,7 +186,7 @@ pub const App = struct {
     ) InitError!App {
         var deps = std.ArrayList(std.build.ModuleDependency).init(b.allocator);
         if (options.deps) |v| try deps.appendSlice(v);
-        try deps.append(.{ .name = "mach", .module = module(b) });
+        try deps.append(.{ .name = "mach", .module = module(b, options.optimize, options.target) });
         try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(b) });
         if (options.use_freetype) |_| try deps.append(.{ .name = "freetype", .module = freetype.module(b) });
 
