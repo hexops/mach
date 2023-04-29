@@ -213,24 +213,17 @@ pub const Player = struct {
                 f32 => floatToUnsigned(u8, sample),
                 else => unreachable,
             },
-            .i8 => std.mem.bytesAsValue(i8, ptr[0..@sizeOf(i8)]).* = switch (@TypeOf(sample)) {
-                i8 => sample,
-                u8 => unsignedToSigned(i8, sample),
-                i16, i24, i32 => signedToSigned(i8, sample),
-                f32 => floatToSigned(i8, sample),
-                else => unreachable,
-            },
             .i16 => std.mem.bytesAsValue(i16, ptr[0..@sizeOf(i16)]).* = switch (@TypeOf(sample)) {
                 i16 => sample,
                 u8 => unsignedToSigned(i16, sample),
-                i8, i24, i32 => signedToSigned(i16, sample),
+                // i8, i24, i32 => signedToSigned(i16, sample),
                 f32 => floatToSigned(i16, sample),
                 else => unreachable,
             },
             .i24 => std.mem.bytesAsValue(i24, ptr[0..@sizeOf(i24)]).* = switch (@TypeOf(sample)) {
                 i24 => sample,
                 u8 => unsignedToSigned(i24, sample),
-                i8, i16, i32 => signedToSigned(i24, sample),
+                // i8, i16, i32 => signedToSigned(i24, sample),
                 f32 => floatToSigned(i24, sample),
                 else => unreachable,
             },
@@ -238,7 +231,7 @@ pub const Player = struct {
             .i32 => std.mem.bytesAsValue(i32, ptr[0..@sizeOf(i32)]).* = switch (@TypeOf(sample)) {
                 i32 => sample,
                 u8 => unsignedToSigned(i32, sample),
-                i8, i16, i24 => signedToSigned(i32, sample),
+                // i8, i16, i24 => signedToSigned(i32, sample),
                 f32 => floatToSigned(i32, sample),
                 else => unreachable,
             },
@@ -377,7 +370,6 @@ pub const Channel = struct {
 
 pub const Format = enum {
     u8,
-    i8,
     i16,
     i24,
     i24_4b,
@@ -386,7 +378,7 @@ pub const Format = enum {
 
     pub fn size(self: Format) u8 {
         return switch (self) {
-            .u8, .i8 => 1,
+            .u8 => 1,
             .i16 => 2,
             .i24 => 3,
             .i24_4b, .i32, .f32 => 4,
@@ -395,7 +387,7 @@ pub const Format = enum {
 
     pub fn validSize(self: Format) u8 {
         return switch (self) {
-            .u8, .i8 => 1,
+            .u8 => 1,
             .i16 => 2,
             .i24, .i24_4b => 3,
             .i32, .f32 => 4,

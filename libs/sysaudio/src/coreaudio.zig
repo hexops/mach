@@ -337,7 +337,7 @@ pub const Context = struct {
             return error.OpeningDevice;
         }
 
-        const stream_desc = createStreamDesc(options.format, options.sample_rate, device.channels.len);
+        const stream_desc = try createStreamDesc(options.format, options.sample_rate, device.channels.len);
         if (c.AudioUnitSetProperty(
             audio_unit,
             c.kAudioUnitProperty_StreamFormat,
@@ -487,7 +487,6 @@ fn createStreamDesc(format: main.Format, sample_rate: u24, ch_count: usize) !c.A
         .mSampleRate = @intToFloat(f64, sample_rate),
         .mFormatID = c.kAudioFormatLinearPCM,
         .mFormatFlags = switch (format) {
-            .i8 => c.kAudioFormatFlagIsSignedInteger,
             .i16 => c.kAudioFormatFlagIsSignedInteger,
             .i24 => c.kAudioFormatFlagIsSignedInteger,
             .i32 => c.kAudioFormatFlagIsSignedInteger,
@@ -500,7 +499,6 @@ fn createStreamDesc(format: main.Format, sample_rate: u24, ch_count: usize) !c.A
         .mBytesPerFrame = format.frameSize(ch_count),
         .mChannelsPerFrame = @intCast(c_uint, ch_count),
         .mBitsPerChannel = switch (format) {
-            .i8 => 8,
             .i16 => 16,
             .i24 => 24,
             .i32 => 32,
