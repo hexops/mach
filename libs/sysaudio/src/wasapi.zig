@@ -327,7 +327,7 @@ pub const Context = struct {
                     var fmt_arr = std.ArrayList(main.Format).init(self.allocator);
                     var closest_match: ?*win32.WAVEFORMATEX = null;
                     for (std.meta.tags(main.Format)) |format| {
-                        setWaveFormatFormat(wf, format) catch continue;
+                        setWaveFormatFormat(wf, format);
                         if (audio_client.?.IsFormatSupported(
                             .SHARED,
                             @ptrCast(?*const win32.WAVEFORMATEX, @alignCast(@alignOf(*win32.WAVEFORMATEX), wf)),
@@ -417,7 +417,7 @@ pub const Context = struct {
         };
     }
 
-    fn setWaveFormatFormat(wf: *win32.WAVEFORMATEXTENSIBLE, format: main.Format) !void {
+    fn setWaveFormatFormat(wf: *win32.WAVEFORMATEXTENSIBLE, format: main.Format) void {
         switch (format) {
             .u8, .i16, .i24, .i24_4b, .i32 => {
                 wf.SubFormat = win32.CLSID_KSDATAFORMAT_SUBTYPE_PCM.*;
@@ -425,7 +425,6 @@ pub const Context = struct {
             .f32 => {
                 wf.SubFormat = win32.CLSID_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT.*;
             },
-            .i8 => return error.Invalid,
         }
         wf.Format.wBitsPerSample = format.sizeBits();
         wf.Samples.wValidBitsPerSample = format.validSizeBits();
@@ -488,7 +487,7 @@ pub const Context = struct {
                 .wValidBitsPerSample = format.validSizeBits(),
             },
             .dwChannelMask = toChannelMask(device.channels),
-            .SubFormat = toSubFormat(format) catch return error.OpeningDevice,
+            .SubFormat = toSubFormat(format),
         };
 
         if (!self.is_wine and audio_client3 != null) {
@@ -608,7 +607,7 @@ pub const Context = struct {
         return .{ .wasapi = player };
     }
 
-    fn toSubFormat(format: main.Format) !win32.Guid {
+    fn toSubFormat(format: main.Format) win32.Guid {
         return switch (format) {
             .u8,
             .i16,
@@ -617,7 +616,6 @@ pub const Context = struct {
             .i32,
             => win32.CLSID_KSDATAFORMAT_SUBTYPE_PCM.*,
             .f32 => win32.CLSID_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT.*,
-            else => error.Invalid,
         };
     }
 
