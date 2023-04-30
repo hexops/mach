@@ -16,9 +16,7 @@ pub fn Sdk(comptime deps: anytype) type {
             _module = b.createModule(.{
                 .source_file = .{ .path = sdkPath("/src/main.zig") },
                 .dependencies = &.{
-                    .{ .name = "sysjs", .module = b.createModule(.{
-                        .source_file = .{ .path = "libs/mach-sysjs/src/main.zig" },
-                    }) },
+                    .{ .name = "sysjs", .module = deps.sysjs.module(b) },
                 },
             });
             return _module.?;
