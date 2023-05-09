@@ -4,8 +4,8 @@
 
     .dependencies = .{
         .mach_ecs = .{
-            .url = "https://github.com/hexops/mach-ecs/archive/f10b4e316b1463874495a82173b91b35e679724f.tar.gz",
-            .hash = "12200c82753e3956c3217d08784d534f6d2451b821960d7cb6337c2875fe9af14c34",
+            .url = "https://github.com/hexops/mach-ecs/archive/c5d3260541c430487788f78691894423723dd09d.tar.gz",
+            .hash = "1220ed5e8403f25069cc805bb4eaed8c80fe6b81de43cdfb19a18cca821b81db8c6f",
         },
         .mach_earcut = .{
             .url = "https://github.com/hexops/mach-earcut/archive/5a34772313a6a0679cc6c83f310a59741d03c246.tar.gz",
