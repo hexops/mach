@@ -19,7 +19,7 @@ Written in [Zig](https://ziglang.org/), Mach is for creating games, graphical ap
 ```sh
 git clone --recursive https://github.com/hexops/mach-examples
 cd mach-examples/
-zig build run-boids
+zig build run-core-boids
 ```
 
 Cross-platform graphics, a unified shader language & compute shaders.
