@@ -1880,7 +1880,7 @@ pub fn peekToken(
 
 pub fn advanceToken(p: *Parser) Ast.Index {
     const prev = p.tok_i;
-    p.tok_i = std.math.min(prev +| 1, p.tokens.len);
+    p.tok_i = @min(prev +| 1, p.tokens.len);
     return prev;
 }
 

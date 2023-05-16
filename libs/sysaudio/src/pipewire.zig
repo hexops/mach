@@ -311,10 +311,7 @@ pub const Player = struct {
         }
 
         const stride = self.format.frameSize(self.channels.len);
-        const n_frames = std.math.min(
-            buf.*.requested,
-            buf.*.buffer.*.datas[0].maxsize / stride,
-        );
+        const n_frames = @min(buf.*.requested, buf.*.buffer.*.datas[0].maxsize / stride);
         buf.*.buffer.*.datas[0].chunk.*.stride = stride;
         buf.*.buffer.*.datas[0].chunk.*.size = n_frames * stride;
 
