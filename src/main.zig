@@ -11,6 +11,9 @@ pub const ecs = @import("ecs");
 pub const sysaudio = @import("sysaudio");
 pub const earcut = @import("earcut");
 pub const gfx = @import("gfx/util.zig");
+pub const gfx2d = struct {
+    pub const Sprite2D = @import("gfx2d/Sprite2D.zig");
+};
 pub const math = @import("math.zig");
 pub const ResourceManager = @import("resource/ResourceManager.zig");
 
