@@ -10,7 +10,7 @@ internal: platform.Core,
 pub const Options = struct {
     is_app: bool = false,
     title: [*:0]const u8 = "Mach Engine",
-    size: Size = .{ .width = 640, .height = 640 },
+    size: Size = .{ .width = 1920 / 2, .height = 1080 / 2 },
     power_preference: gpu.PowerPreference = .undefined,
     required_features: ?[]const gpu.FeatureName = null,
     required_limits: ?gpu.Limits = null,
