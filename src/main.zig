@@ -11,6 +11,7 @@ pub const ecs = @import("ecs");
 pub const sysaudio = @import("sysaudio");
 pub const earcut = @import("earcut");
 pub const gfx = @import("gfx/util.zig");
+pub const math = @import("math.zig");
 pub const ResourceManager = @import("resource/ResourceManager.zig");
 
 // Engine exports
