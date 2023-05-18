@@ -1,6 +1,7 @@
 const std = @import("std");
-const gpu = @import("mach").gpu;
-const ecs = @import("mach").ecs;
+const core_mod = @import("core");
+const gpu = core_mod.gpu;
+const ecs = @import("ecs");
 
 const math = @import("../math.zig");
 const mat = math.mat;
