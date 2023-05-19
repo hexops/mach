@@ -9,7 +9,6 @@ const projects = [_][]const u8{
     ".",
     "basisu",
     "core",
-    "dusk",
     "earcut",
     "ecs",
     "freetype",
