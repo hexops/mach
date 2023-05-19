@@ -12,7 +12,6 @@ const projects = [_][]const u8{
     "earcut",
     "ecs",
     "freetype",
-    "gamemode",
     "glfw",
     "gpu",
     "gpu-dawn",
