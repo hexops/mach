@@ -144,7 +144,7 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
     const gpu_device = response.adapter.createDevice(&.{
         .required_features_count = if (options.required_features) |v| @intCast(u32, v.len) else 0,
         .required_features = if (options.required_features) |v| @as(?[*]const gpu.FeatureName, v.ptr) else null,
-        .required_limits = if (options.required_limits) |limits| @as(?*gpu.RequiredLimits, &gpu.RequiredLimits{
+        .required_limits = if (options.required_limits) |limits| @as(?*const gpu.RequiredLimits, &gpu.RequiredLimits{
             .limits = limits,
         }) else null,
     }) orelse {
