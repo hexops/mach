@@ -215,9 +215,6 @@ pub fn Sdk(comptime deps: anytype) type {
             }
 
             pub fn addRunArtifact(app: *const App) *std.build.RunStep {
-                if (app.platform == .web) {
-                    @panic("mach: to run wasm binaries, use `mach build` instead of `zig build`");
-                }
                 return app.b.addRunArtifact(app.step);
             }
 
