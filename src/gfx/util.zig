@@ -42,7 +42,7 @@ pub fn VertexWriter(comptime VertexType: type, comptime IndexType: type) type {
             result.next_collision_index = sparse_vertices_count;
             result.next_packed_index = 0;
             result.written_indices_count = 0;
-            std.mem.set(MapEntry, result.sparse_to_packed_map, .{});
+            @memset(result.sparse_to_packed_map, .{});
             return result;
         }
 
