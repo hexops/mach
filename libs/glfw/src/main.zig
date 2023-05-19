@@ -503,7 +503,7 @@ test "getVersionString" {
     std.debug.print("\nstring: {s}\n", .{getVersionString()});
 }
 
-test "pollEvents" {
+test "init" {
     init(.{ .cocoa_chdir_resources = true });
     if (getErrorString()) |err| {
         std.log.err("failed to initialize GLFW: {?s}", .{err});
@@ -512,7 +512,7 @@ test "pollEvents" {
     defer terminate();
 }
 
-test "pollEvents2" {
+test "pollEvents" {
     defer clearError(); // clear any error we generate
     if (!init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
