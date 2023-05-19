@@ -18,7 +18,6 @@ const projects = [_][]const u8{
     "gpu-dawn",
     "model3d",
     "sysaudio",
-    "sysjs",
 };
 
 pub fn main() !void {

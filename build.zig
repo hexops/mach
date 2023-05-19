@@ -4,7 +4,6 @@ const system_sdk = @import("libs/glfw/system_sdk.zig");
 const glfw = @import("libs/glfw/build.zig");
 const freetype = @import("libs/freetype/build.zig");
 const basisu = @import("libs/basisu/build.zig");
-const sysjs = @import("libs/sysjs/build.zig");
 const gamemode = @import("libs/gamemode/build.zig");
 const model3d = @import("libs/model3d/build.zig");
 pub const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
