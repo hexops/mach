@@ -1,14 +1,12 @@
 const std = @import("std");
 const sysaudio_sdk = @import("sdk.zig");
 const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
-const sysjs = @import("libs/mach-sysjs/build.zig");
 
 pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
     const sysaudio = sysaudio_sdk.Sdk(.{
         .system_sdk = system_sdk,
-        .sysjs = sysjs,
     });
 
     const test_step = b.step("test", "Run library tests");
@@ -23,7 +21,7 @@ pub fn build(b: *std.Build) void {
             .target = target,
             .optimize = optimize,
         });
-        example_exe.addModule("sysaudio", sysaudio.module(b));
+        example_exe.addModule("sysaudio", sysaudio.module(b, optimize, target));
         sysaudio.link(b, example_exe, .{});
         b.installArtifact(example_exe);
 

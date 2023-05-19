@@ -16,7 +16,6 @@ const gpu = @import("libs/gpu/sdk.zig").Sdk(.{
 });
 const sysaudio = @import("libs/sysaudio/sdk.zig").Sdk(.{
     .system_sdk = system_sdk,
-    .sysjs = sysjs,
 });
 const core = @import("libs/core/sdk.zig").Sdk(.{
     .gpu = gpu,
@@ -44,7 +43,7 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
         .dependencies = &.{
             .{ .name = "core", .module = core.module(b) },
             .{ .name = "ecs", .module = ecs_dep.module("mach-ecs") },
-            .{ .name = "sysaudio", .module = sysaudio.module(b) },
+            .{ .name = "sysaudio", .module = sysaudio.module(b, optimize, target) },
             .{ .name = "earcut", .module = earcut_dep.module("mach-earcut") },
         },
     });
@@ -180,7 +179,7 @@ pub const App = struct {
         var deps = std.ArrayList(std.build.ModuleDependency).init(b.allocator);
         if (options.deps) |v| try deps.appendSlice(v);
         try deps.append(.{ .name = "mach", .module = module(b, options.optimize, options.target) });
-        try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(b) });
+        try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(b, options.optimize, options.target) });
         if (options.use_freetype) |_| try deps.append(.{ .name = "freetype", .module = freetype.module(b) });
 
         const app = try core.App.init(b, .{

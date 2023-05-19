@@ -11,14 +11,25 @@ pub fn Sdk(comptime deps: anytype) type {
 
         var _module: ?*std.build.Module = null;
 
-        pub fn module(b: *std.Build) *std.build.Module {
+        pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.Module {
             if (_module) |m| return m;
-            _module = b.createModule(.{
-                .source_file = .{ .path = sdkPath("/src/main.zig") },
-                .dependencies = &.{
-                    .{ .name = "sysjs", .module = deps.sysjs.module(b) },
-                },
-            });
+
+            if (target.getCpuArch() == .wasm32) {
+                const sysjs_dep = b.dependency("mach_sysjs", .{
+                    .target = target,
+                    .optimize = optimize,
+                });
+                _module = b.createModule(.{
+                    .source_file = .{ .path = sdkPath("/src/main.zig") },
+                    .dependencies = &.{
+                        .{ .name = "sysjs", .module = sysjs_dep.module("mach-sysjs") },
+                    },
+                });
+            } else {
+                _module = b.createModule(.{
+                    .source_file = .{ .path = sdkPath("/src/main.zig") },
+                });
+            }
             return _module.?;
         }
 
