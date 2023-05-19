@@ -120,9 +120,6 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
         .power_preference = options.power_preference,
         .force_fallback_adapter = false,
     }, &response, util.requestAdapterCallback);
-    log.err("failed to create GPU adapter: {?s}", .{response.message});
-    log.info("-> maybe try MACH_GPU_BACKEND=opengl ?", .{});
-    std.process.exit(1);
     if (response.status != .success) {
         log.err("failed to create GPU adapter: {?s}", .{response.message});
         log.info("-> maybe try MACH_GPU_BACKEND=opengl ?", .{});
