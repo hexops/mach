@@ -2,7 +2,6 @@ const std = @import("std");
 const builtin = @import("builtin");
 const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
 const glfw = @import("libs/mach-glfw/build.zig");
-const sysjs = @import("libs/mach-sysjs/build.zig");
 const gamemode = @import("libs/mach-gamemode/build.zig");
 const gpu_dawn = @import("libs/mach-gpu-dawn/sdk.zig").Sdk(.{
     .glfw_include_dir = sdkPath("/libs/mach-glfw/upstream/glfw/include"),
@@ -16,7 +15,6 @@ const core = @import("sdk.zig").Sdk(.{
     .gpu_dawn = gpu_dawn,
     .glfw = glfw,
     .gamemode = gamemode,
-    .sysjs = sysjs,
 });
 
 pub fn build(b: *std.Build) !void {
@@ -42,11 +40,6 @@ pub fn build(b: *std.Build) !void {
         all_tests_step.dependOn(glfw_test_step);
         all_tests_step.dependOn(gpu_test_step);
         all_tests_step.dependOn(core_test_step);
-
-        // TODO: we need a way to test wasm stuff
-        // const sysjs_test_step = b.step( "test-sysjs", "Run sysjs library tests");
-        // sysjs_test_step.dependOn(&sysjs.testStep(b, optimize, target).step);
-        // all_tests_step.dependOn(sysjs_test_step);
 
         // Compiles the `libmachcore` shared library
         const shared_lib = try core.buildSharedLib(b, optimize, target, options);

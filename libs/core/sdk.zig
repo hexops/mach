@@ -84,6 +84,7 @@ pub fn Sdk(comptime deps: anytype) type {
             platform: Platform,
             res_dirs: ?[]const []const u8,
             watch_paths: ?[]const []const u8,
+            sysjs_dep: ?*std.Build.Dependency,
 
             const web_install_dir = std.build.InstallDir{ .custom = "www" };
 
@@ -124,6 +125,11 @@ pub fn Sdk(comptime deps: anytype) type {
                     .dependencies = try dependencies.toOwnedSlice(),
                 });
 
+                const sysjs_dep = if (platform == .web) b.dependency("mach_sysjs", .{
+                    .target = options.target,
+                    .optimize = options.optimize,
+                }) else null;
+
                 const step = blk: {
                     if (platform == .web) {
                         const lib = b.addSharedLibrary(.{
@@ -133,8 +139,7 @@ pub fn Sdk(comptime deps: anytype) type {
                             .optimize = options.optimize,
                         });
                         lib.rdynamic = true;
-                        lib.addModule("sysjs", deps.sysjs.module(b));
-
+                        lib.addModule("sysjs", sysjs_dep.?.module("mach-sysjs"));
                         break :blk lib;
                     } else {
                         const exe = b.addExecutable(.{
@@ -163,6 +168,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     .platform = platform,
                     .res_dirs = options.res_dirs,
                     .watch_paths = options.watch_paths,
+                    .sysjs_dep = sysjs_dep,
                 };
             }
 
@@ -184,9 +190,9 @@ pub fn Sdk(comptime deps: anytype) type {
                     // Set install directory to '{prefix}/www'
                     app.getInstallStep().?.dest_dir = web_install_dir;
 
-                    inline for (.{ "/src/platform/wasm/mach.js", "/libs/mach-sysjs/src/mach-sysjs.js" }) |js| {
+                    inline for (.{ sdkPath("/src/platform/wasm/mach.js"), @import("mach_sysjs").getJSPath() }) |js| {
                         const install_js = app.b.addInstallFileWithDir(
-                            .{ .path = sdkPath(js) },
+                            .{ .path = js },
                             web_install_dir,
                             std.fs.path.basename(js),
                         );

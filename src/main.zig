@@ -5,8 +5,8 @@ pub const log_level = core.log_level;
 pub const Core = core.Core;
 pub const Timer = core.Timer;
 pub const gpu = core.gpu;
-pub const sysjs = core.sysjs;
 
+pub const sysjs = @import("sysjs");
 pub const ecs = @import("ecs");
 pub const sysaudio = @import("sysaudio");
 pub const earcut = @import("earcut");

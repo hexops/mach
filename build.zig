@@ -23,7 +23,6 @@ const core = @import("libs/core/sdk.zig").Sdk(.{
     .gpu_dawn = gpu_dawn,
     .glfw = glfw,
     .gamemode = gamemode,
-    .sysjs = sysjs,
 });
 
 var _module: ?*std.build.Module = null;
