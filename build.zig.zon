@@ -15,5 +15,9 @@
             .url = "https://github.com/hexops/mach-sysjs/archive/b71eb0531f337fcca5a2b245f595355260109a34.tar.gz",
             .hash = "12208b30f1d9c229d1e64483354610207c9aa06350a46558560b818d597800ed86e0",
         },
+        .mach_gamemode = .{
+            .url = "https://github.com/hexops/mach-gamemode/archive/936bcd7767bf7cae720d36d930599c20fdc87b1d.tar.gz",
+            .hash = "12203cb075bec68c8cb4cfa1337bc9dabe47f055e377d1b8144b2c21f9a2577efb07",
+        },
     },
 }
