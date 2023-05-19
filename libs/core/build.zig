@@ -2,7 +2,6 @@ const std = @import("std");
 const builtin = @import("builtin");
 const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
 const glfw = @import("libs/mach-glfw/build.zig");
-const gamemode = @import("libs/mach-gamemode/build.zig");
 const gpu_dawn = @import("libs/mach-gpu-dawn/sdk.zig").Sdk(.{
     .glfw_include_dir = sdkPath("/libs/mach-glfw/upstream/glfw/include"),
     .system_sdk = system_sdk,
@@ -14,7 +13,6 @@ const core = @import("sdk.zig").Sdk(.{
     .gpu = gpu,
     .gpu_dawn = gpu_dawn,
     .glfw = glfw,
-    .gamemode = gamemode,
 });
 
 pub fn build(b: *std.Build) !void {

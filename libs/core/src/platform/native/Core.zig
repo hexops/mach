@@ -17,6 +17,8 @@ const CursorMode = @import("../../Core.zig").CursorMode;
 const Key = @import("../../Core.zig").Key;
 const KeyMods = @import("../../Core.zig").KeyMods;
 
+const log = std.log.scoped(.mach);
+
 pub const Core = @This();
 
 allocator: std.mem.Allocator,
@@ -107,7 +109,7 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
     }
 
     const instance = gpu.createInstance(null) orelse {
-        std.log.err("mach: failed to create GPU instance", .{});
+        log.err("failed to create GPU instance", .{});
         std.process.exit(1);
     };
     const surface = util.createSurfaceForWindow(instance, window, comptime util.detectGLFWOptions());
@@ -118,9 +120,12 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
         .power_preference = options.power_preference,
         .force_fallback_adapter = false,
     }, &response, util.requestAdapterCallback);
+    log.err("failed to create GPU adapter: {?s}", .{response.message});
+    log.info("-> maybe try MACH_GPU_BACKEND=opengl ?", .{});
+    std.process.exit(1);
     if (response.status != .success) {
-        std.log.err("mach: failed to create GPU adapter: {?s}", .{response.message});
-        std.log.info("-> maybe try MACH_GPU_BACKEND=opengl ?", .{});
+        log.err("failed to create GPU adapter: {?s}", .{response.message});
+        log.info("-> maybe try MACH_GPU_BACKEND=opengl ?", .{});
         std.process.exit(1);
     }
 
@@ -128,10 +133,10 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
     var props = std.mem.zeroes(gpu.Adapter.Properties);
     response.adapter.getProperties(&props);
     if (props.backend_type == .null) {
-        std.log.err("no backend found for {s} adapter", .{props.adapter_type.name()});
+        log.err("no backend found for {s} adapter", .{props.adapter_type.name()});
         std.process.exit(1);
     }
-    std.log.info("mach: found {s} backend on {s} adapter: {s}, {s}\n", .{
+    log.info("found {s} backend on {s} adapter: {s}, {s}\n", .{
         props.backend_type.name(),
         props.adapter_type.name(),
         props.name,
@@ -146,7 +151,7 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
             .limits = limits,
         }) else null,
     }) orelse {
-        std.log.err("mach: failed to create GPU device\n", .{});
+        log.err("failed to create GPU device\n", .{});
         std.process.exit(1);
     };
     gpu_device.setUncapturedErrorCallback({}, util.printUnhandledErrorCallback);
@@ -344,7 +349,7 @@ pub inline fn pollEvents(self: *Core) EventIterator {
     }
 
     glfw.getErrorCode() catch |err| switch (err) {
-        error.PlatformError => std.log.err("glfw: failed to poll events", .{}),
+        error.PlatformError => log.err("glfw: failed to poll events", .{}),
         error.InvalidValue => unreachable,
         else => unreachable,
     };
@@ -578,7 +583,7 @@ pub fn setCursorShape(self: *Core, cursor: CursorShape) void {
         // TODO: In the future we shouldn't hit this because we'll provide backup
         // custom cursors.
         // See https://github.com/hexops/mach/pull/352 for more info
-        std.log.warn("mach: setCursorShape: {s} not yet supported\n", .{@tagName(cursor)});
+        log.warn("setCursorShape: {s} not yet supported\n", .{@tagName(cursor)});
     }
 
     self.current_cursor = cursor;
@@ -761,7 +766,7 @@ fn toMachMods(mods: glfw.Mods) KeyMods {
 
 /// Default GLFW error handling callback
 fn errorCallback(error_code: glfw.ErrorCode, description: [:0]const u8) void {
-    std.log.err("glfw: {}: {s}\n", .{ error_code, description });
+    log.err("glfw: {}: {s}\n", .{ error_code, description });
 }
 
 fn getEnvVarOwned(allocator: std.mem.Allocator, key: []const u8) error{ OutOfMemory, InvalidUtf8 }!?[]u8 {
@@ -782,18 +787,20 @@ fn activateGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf
 
 fn initLinuxGamemode() bool {
     const gamemode = @import("gamemode");
+    _ = gamemode.init();
+
     gamemode.requestStart() catch |err| {
-        if (!std.mem.containsAtLeast(u8, gamemode.errorString(), 1, "dlopen failed"))
-            std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+        log.err("gamemode: {s}", .{@errorName(err)});
         return false;
     };
-    std.log.info("Gamemode activated", .{});
+    log.info("gamemode: activated", .{});
     return true;
 }
 
 fn deinitLinuxGamemode() void {
     const gamemode = @import("gamemode");
     gamemode.requestEnd() catch |err| {
-        std.log.err("Gamemode error {} -> {s}", .{ err, gamemode.errorString() });
+        log.err("gamemode: error {s}", .{@errorName(err)});
     };
+    gamemode.deinit();
 }

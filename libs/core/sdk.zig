@@ -17,12 +17,15 @@ pub fn Sdk(comptime deps: anytype) type {
 
         pub fn module(b: *std.Build) *std.build.Module {
             if (_module) |m| return m;
+
+            const gamemode_dep = b.dependency("mach_gamemode", .{});
+
             _module = b.createModule(.{
                 .source_file = .{ .path = sdkPath("/src/main.zig") },
                 .dependencies = &.{
                     .{ .name = "gpu", .module = deps.gpu.module(b) },
                     .{ .name = "glfw", .module = deps.glfw.module(b) },
-                    .{ .name = "gamemode", .module = deps.gamemode.module(b) },
+                    .{ .name = "gamemode", .module = gamemode_dep.module("mach-gamemode") },
                 },
             });
             return _module.?;
@@ -42,8 +45,8 @@ pub fn Sdk(comptime deps: anytype) type {
             main_tests.addModule("glfw", deps.glfw.module(b));
             try deps.glfw.link(b, main_tests, .{});
             if (target.isLinux()) {
-                main_tests.addModule("gamemode", deps.gamemode.module(b));
-                deps.gamemode.link(main_tests);
+                const gamemode_dep = b.dependency("mach_gamemode", .{});
+                main_tests.addModule("gamemode", gamemode_dep.module("mach-gamemode"));
             }
             main_tests.addIncludePath(sdkPath("/include"));
             b.installArtifact(main_tests);
@@ -61,8 +64,8 @@ pub fn Sdk(comptime deps: anytype) type {
             lib.addModule("glfw", deps.glfw.module(b));
             lib.addModule("gpu", deps.gpu.module(b));
             if (target.isLinux()) {
-                lib.addModule("gamemode", deps.gamemode.module(b));
-                deps.gamemode.link(lib);
+                const gamemode_dep = b.dependency("mach_gamemode", .{});
+                lib.addModule("gamemode", gamemode_dep.module("mach-gamemode"));
             }
             try deps.glfw.link(b, lib, options.glfw_options);
             try deps.gpu.link(b, lib, options.gpuOptions());
@@ -150,8 +153,10 @@ pub fn Sdk(comptime deps: anytype) type {
                         });
                         exe.addModule("glfw", deps.glfw.module(b));
 
-                        if (target.os.tag == .linux)
-                            exe.addModule("gamemode", deps.gamemode.module(b));
+                        if (target.os.tag == .linux) {
+                            const gamemode_dep = b.dependency("mach_gamemode", .{});
+                            exe.addModule("gamemode", gamemode_dep.module("mach-gamemode"));
+                        }
 
                         break :blk exe;
                     }
@@ -176,8 +181,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 if (app.platform != .web) {
                     try deps.glfw.link(app.b, app.step, options.glfw_options);
                     deps.gpu.link(app.b, app.step, options.gpuOptions()) catch return error.FailedToLinkGPU;
-                    if (app.step.target.isLinux())
-                        deps.gamemode.link(app.step);
                 }
             }
 
