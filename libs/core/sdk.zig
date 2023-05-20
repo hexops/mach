@@ -151,6 +151,8 @@ pub fn Sdk(comptime deps: anytype) type {
                             .target = options.target,
                             .optimize = options.optimize,
                         });
+                        // TODO(core): figure out why we need to disable LTO: https://github.com/hexops/mach/issues/597
+                        exe.want_lto = false;
                         exe.addModule("glfw", deps.glfw.module(b));
 
                         if (target.os.tag == .linux) {
