@@ -431,12 +431,12 @@ pub fn Sdk(comptime deps: anytype) type {
             const contents = try std.fs.cwd().readFileAlloc(allocator, json_file, std.math.maxInt(usize));
             defer allocator.free(contents);
 
-            var parser = std.json.Parser.init(allocator, false);
+            var parser = std.json.Parser.init(allocator, .alloc_if_needed);
             defer parser.deinit();
             var tree = try parser.parse(contents);
             defer tree.deinit();
 
-            var iter = tree.root.Object.iterator();
+            var iter = tree.root.object.iterator();
             while (iter.next()) |f| {
                 const out_path = try std.fs.path.join(allocator, &.{ out_dir, f.key_ptr.* });
                 defer allocator.free(out_path);
@@ -444,7 +444,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
                 var new_file = try std.fs.createFileAbsolute(out_path, .{});
                 defer new_file.close();
-                try new_file.writeAll(f.value_ptr.*.String);
+                try new_file.writeAll(f.value_ptr.*.string);
             }
         }
 
