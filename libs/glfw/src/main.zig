@@ -512,7 +512,7 @@ test "pollEvents" {
     defer terminate();
 }
 
-test "pollEvents" {
+test "pollEvents2" {
     defer clearError(); // clear any error we generate
     if (!init(.{})) {
         std.log.err("failed to initialize GLFW: {?s}", .{getErrorString()});
