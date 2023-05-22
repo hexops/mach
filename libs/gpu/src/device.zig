@@ -48,6 +48,7 @@ pub const Device = opaque {
             generic: ?*const ChainedStruct,
             dawn_toggles_device_descriptor: *const dawn.TogglesDeviceDescriptor,
             dawn_cache_device_descriptor: *const dawn.CacheDeviceDescriptor,
+            dawn_toggles_descriptor: *const dawn.TogglesDescriptor,
         };
 
         next_in_chain: NextInChain = .{ .generic = null },
