@@ -55,7 +55,7 @@ pub const Queue = opaque {
         Impl.queueSetLabel(queue, label);
     }
 
-    pub inline fn submit(queue: *Queue, commands: []*const CommandBuffer) void {
+    pub inline fn submit(queue: *Queue, commands: []const *const CommandBuffer) void {
         Impl.queueSubmit(queue, @intCast(u32, commands.len), commands.ptr);
     }
 
