@@ -346,7 +346,6 @@ pub const SType = enum(u32) {
     dawn_cache_device_descriptor = 0x000003ED,
     dawn_adapter_properties_power_preference = 0x000003EE,
     dawn_buffer_descriptor_error_info_from_wire_client = 0x000003EF,
-    dawn_toggles_descriptor = 0x000003F0,
 };
 
 pub const StencilOperation = enum(u32) {

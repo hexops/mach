@@ -60,29 +60,6 @@ pub const TogglesDeviceDescriptor = extern struct {
     }
 };
 
-pub const TogglesDescriptor = extern struct {
-    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_toggles_descriptor },
-    enabled_toggles_count: u32 = 0,
-    enabled_toggles: ?[*]const [*:0]const u8 = null,
-    disabled_toggles_count: u32 = 0,
-    disabled_toggles: ?[*]const [*:0]const u8 = null,
-
-    /// Provides a slightly friendlier Zig API to initialize this structure.
-    pub inline fn init(v: struct {
-        chain: ChainedStruct = .{ .next = null, .s_type = .dawn_toggles_descriptor },
-        enabled_toggles: ?[]const [*:0]const u8 = null,
-        disabled_toggles: ?[]const [*:0]const u8 = null,
-    }) TogglesDescriptor {
-        return .{
-            .chain = v.chain,
-            .enabled_toggles_count = if (v.enabled_toggles) |e| @intCast(u32, e.len) else 0,
-            .enabled_toggles = if (v.enabled_toggles) |e| e.ptr else null,
-            .disabled_toggles_count = if (v.disabled_toggles) |e| @intCast(u32, e.len) else 0,
-            .disabled_toggles = if (v.disabled_toggles) |e| e.ptr else null,
-        };
-    }
-};
-
 pub const AdapterPropertiesPowerPreference = extern struct {
     chain: ChainedStructOut = .{
         .next = null,

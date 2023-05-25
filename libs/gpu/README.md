@@ -129,7 +129,6 @@ And, to initialize data structures with slices in them, the following helpers ar
 * `BindGroup.Descriptor.init`
 * `InstanceDescriptor.init`
 * `TogglesDeviceDescriptor.init`
-* `TogglesDescriptor.init`
 * `Device.Descriptor.init`
 * `PipelineLayout.Descriptor.init`
 * `QuerySet.Descriptor.init`
