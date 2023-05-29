@@ -52,7 +52,7 @@ pub fn run(self: *Builder) !void {
         var wasm_file_name: ?[]const u8 = null;
         var out_dir_iter = out_dir.iterate();
         while (try out_dir_iter.next()) |entry| {
-            if (entry.kind != .File) continue;
+            if (entry.kind != .file) continue;
             if (std.mem.eql(u8, std.fs.path.extension(entry.name), ".wasm")) {
                 wasm_file_name = try allocator.dupe(u8, entry.name);
             }

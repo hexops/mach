@@ -1581,7 +1581,7 @@ pub fn Sdk(comptime deps: anytype) type {
             defer dir.close();
             var dir_it = dir.iterate();
             while (try dir_it.next()) |entry| {
-                if (entry.kind != .File) continue;
+                if (entry.kind != .file) continue;
                 var abs_path = try std.fs.path.join(b.allocator, &.{ abs_dir, entry.name });
                 abs_path = try std.fs.realpathAlloc(b.allocator, abs_path);
 
