@@ -313,7 +313,7 @@ pub const Player = struct {
         const stride = self.format.frameSize(self.channels.len);
         const n_frames = @min(buf.*.requested, buf.*.buffer.*.datas[0].maxsize / stride);
         buf.*.buffer.*.datas[0].chunk.*.stride = stride;
-        buf.*.buffer.*.datas[0].chunk.*.size = n_frames * stride;
+        buf.*.buffer.*.datas[0].chunk.*.size = @intCast(u32, n_frames * stride);
 
         for (self.channels, 0..) |*ch, i| {
             ch.ptr = @ptrCast([*]u8, buf.*.buffer.*.datas[0].data.?) + self.format.frameSize(i);
