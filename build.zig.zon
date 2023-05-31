@@ -1,15 +1,14 @@
 .{
     .name = "mach",
     .version = "0.2.0",
-
     .dependencies = .{
         .mach_ecs = .{
             .url = "https://github.com/hexops/mach-ecs/archive/c5d3260541c430487788f78691894423723dd09d.tar.gz",
             .hash = "1220ed5e8403f25069cc805bb4eaed8c80fe6b81de43cdfb19a18cca821b81db8c6f",
         },
         .mach_earcut = .{
-            .url = "https://github.com/hexops/mach-earcut/archive/5a34772313a6a0679cc6c83f310a59741d03c246.tar.gz",
-            .hash = "1220c7059f62cf479e1c3de773cddb71aeb5824ac74528392cd38715f586d7a52e2f",
+            .url = "https://github.com/hexops/mach-earcut/archive/2c85b3a65efcad41e2448a5701736997014f391b.tar.gz",
+            .hash = "12206101783b3cf54b2530e037efdac19e90820e85356f0d7962af94637466ce9237",
         },
         .mach_sysjs = .{
             .url = "https://github.com/hexops/mach-sysjs/archive/b71eb0531f337fcca5a2b245f595355260109a34.tar.gz",

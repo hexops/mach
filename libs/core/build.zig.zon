@@ -1,7 +1,6 @@
 .{
     .name = "mach-core",
     .version = "0.2.0",
-
     .dependencies = .{
         .mach_sysjs = .{
             .url = "https://github.com/hexops/mach-sysjs/archive/b71eb0531f337fcca5a2b245f595355260109a34.tar.gz",
