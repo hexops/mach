@@ -1,10 +1,12 @@
 const gpu = @import("main.zig");
+const builtin = @import("builtin");
 
 const c = @cImport({
     @cInclude("dawn/webgpu.h");
     @cInclude("mach_dawn.h");
 });
 
+var didInit = false;
 var procs: c.DawnProcTable = undefined;
 
 /// A Dawn implementation of the gpu.Interface, which merely directs calls to the Dawn proc table.
@@ -12,10 +14,12 @@ var procs: c.DawnProcTable = undefined;
 /// Before use, it must be `.init()`ialized in order to set the global proc table.
 pub const Interface = struct {
     pub fn init() void {
+        didInit = true;
         procs = c.machDawnGetProcTable();
     }
 
     pub inline fn createInstance(descriptor: ?*const gpu.Instance.Descriptor) ?*gpu.Instance {
+        if (builtin.mode == .Debug and !didInit) @panic("dawn: not initialized; did you forget to call gpu.Impl.init()?");
         return @ptrCast(?*gpu.Instance, procs.createInstance.?(
             @ptrCast(?*const c.WGPUInstanceDescriptor, descriptor),
         ));
