@@ -1,3 +1,6 @@
+// MacOS: this must be defined for system-sdk-13.3 and older.
+#define __kernel_ptr_semantics
+
 // General sources
 #include "monitor.c"
 #include "init.c"

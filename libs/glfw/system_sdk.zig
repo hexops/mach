@@ -8,8 +8,9 @@
 //! * Windows: https://github.com/hexops/sdk-windows-x86_64 (~7MB, updated DirectX headers for Zig/MinGW)
 //! * Linux: https://github.com/hexops/sdk-linux-x86_64 (~40MB, X11, Wayland, etc. development libraries)
 //! * MacOS (most frameworks you'd find in the XCode SDK):
-//!     * https://github.com/hexops/sdk-macos-11.3 (~160MB, default)
-//!     * https://github.com/hexops/sdk-macos-12.0 (~112MB, only if you specify a macOS 12 target triple.)
+//!     * https://github.com/hexops/sdk-macos-11.3 (~160MB)
+//!     * https://github.com/hexops/sdk-macos-12.0 (~112MB)
+//!     * https://github.com/hexops/sdk-macos-13.3 (~160MB)
 //!
 //! You may supply your own SDKs via the Options struct if needed, although the Mach versions above
 //! will generally work for most OpenGL/Vulkan applications.
@@ -44,6 +45,19 @@ pub const Options = struct {
 
     sdk_list: []const Sdk = &.{
         .{
+            .name = "sdk-macos-13.3",
+            .git_addr = "https://github.com/hexops/sdk-macos-13.3",
+            .git_revision = "1615cd09b3a42ae590e05e63251a0e9fbc47bab5",
+            .cpu_arch = &.{ .aarch64, .x86_64 },
+            .os_tag = .macos,
+            .os_version = .{
+                .semver = .{
+                    .min = .{ .major = 13, .minor = 0 },
+                    .max = .{ .major = 14, .minor = std.math.maxInt(u32) },
+                },
+            },
+        },
+        .{
             .name = "sdk-macos-12.0",
             .git_addr = "https://github.com/hexops/sdk-macos-12.0",
             .git_revision = "14613b4917c7059dad8f3789f55bb13a2548f83d",
@@ -52,7 +66,7 @@ pub const Options = struct {
             .os_version = .{
                 .semver = .{
                     .min = .{ .major = 12, .minor = 0 },
-                    .max = .{ .major = 13, .minor = std.math.maxInt(u32) },
+                    .max = .{ .major = 12, .minor = std.math.maxInt(u32) },
                 },
             },
         },
