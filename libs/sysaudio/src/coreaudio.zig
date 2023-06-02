@@ -151,7 +151,7 @@ pub const Context = struct {
                 return error.OpeningDevice;
             }
 
-            if (c.AudioObjectGetPropertyData(id, &prop_address, 0, null, &audio_buffer_list_size, @ptrCast(*anyopaque, &output_audio_buffer_list)) != c.noErr) {
+            if (c.AudioObjectGetPropertyData(id, &prop_address, 0, null, &audio_buffer_list_size, &output_audio_buffer_list) != c.noErr) {
                 return error.OpeningDevice;
             }
 
