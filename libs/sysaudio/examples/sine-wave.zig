@@ -4,23 +4,31 @@ const sysaudio = @import("sysaudio");
 var player: sysaudio.Player = undefined;
 
 pub fn main() !void {
+    var timer = try std.time.Timer.start();
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var ctx = try sysaudio.Context.init(null, allocator, .{ .deviceChangeFn = deviceChange });
+    std.log.info("Took {} to initialize the context...", .{std.fmt.fmtDuration(timer.lap())});
     defer ctx.deinit();
     try ctx.refresh();
+    std.log.info("Took {} to refresh the context...", .{std.fmt.fmtDuration(timer.lap())});
 
     const device = ctx.defaultDevice(.playback) orelse return error.NoDevice;
+    std.log.info("Took {} to get the default playback device...", .{std.fmt.fmtDuration(timer.lap())});
 
     player = try ctx.createPlayer(device, writeCallback, .{});
+    std.log.info("Took {} to create a player...", .{std.fmt.fmtDuration(timer.lap())});
     defer player.deinit();
     try player.start();
+    std.log.info("Took {} to start the player...", .{std.fmt.fmtDuration(timer.lap())});
 
     try player.setVolume(0.85);
+    std.log.info("Took {} to set the volume...", .{std.fmt.fmtDuration(timer.lap())});
 
     var buf: [16]u8 = undefined;
+    std.log.info("player created & entering i/o loop...", .{});
     while (true) {
         std.debug.print("( paused = {}, volume = {d} )\n> ", .{ player.paused(), try player.volume() });
         const line = (try std.io.getStdIn().reader().readUntilDelimiterOrEof(&buf, '\n')) orelse break;

@@ -312,6 +312,7 @@ pub const Device = struct {
     id: [:0]const u8,
     name: [:0]const u8,
     mode: Mode,
+    // NOTE(haze): we should elaborate on the `channels` field and seperate them into input and output channels
     channels: []Channel,
     formats: []const Format,
     sample_rate: util.Range(u24),

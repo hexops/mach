@@ -57,7 +57,7 @@ pub const Context = struct {
             0,
             null,
             &io_size,
-        ) != 0) {
+        ) != c.noErr) {
             return error.OpeningDevice;
         }
 
@@ -73,7 +73,7 @@ pub const Context = struct {
             null,
             &io_size,
             @ptrCast(*anyopaque, devs),
-        ) != 0) {
+        ) != c.noErr) {
             return error.OpeningDevice;
         }
 
@@ -85,7 +85,7 @@ pub const Context = struct {
             c.kAudioHardwarePropertyDefaultInputDevice,
             &io_size,
             &default_input_id,
-        ) != 0) {
+        ) != c.noErr) {
             return error.OpeningDevice;
         }
 
@@ -94,7 +94,7 @@ pub const Context = struct {
             c.kAudioHardwarePropertyDefaultOutputDevice,
             &io_size,
             &default_output_id,
-        ) != 0) {
+        ) != c.noErr) {
             return error.OpeningDevice;
         }
 
@@ -117,7 +117,7 @@ pub const Context = struct {
                     0,
                     null,
                     &io_size,
-                ) != 0) {
+                ) != c.noErr) {
                     continue;
                 }
 
@@ -129,7 +129,7 @@ pub const Context = struct {
                     null,
                     &io_size,
                     @ptrCast(*anyopaque, buf_list),
-                ) != 0) {
+                ) != c.noErr) {
                     return error.OpeningDevice;
                 }
 
@@ -138,28 +138,29 @@ pub const Context = struct {
                 }
             }
 
-            prop_address.mSelector = if (is_darling) c.kAudioDevicePropertyPreferredChannelsForStereo else c.kAudioDevicePropertyPreferredChannelLayout;
-            prop_address.mScope = if (mode == .playback) c.kAudioObjectPropertyScopeOutput else c.kAudioObjectPropertyScopeInput;
-            if (c.AudioObjectGetPropertyDataSize(id, &prop_address, 0, null, &io_size) != 0) {
-                return error.OpeningDevice;
-            }
-
-            var channel_layout: c.AudioChannelLayout = undefined;
-            if (c.AudioObjectGetPropertyData(
-                id,
-                &prop_address,
-                0,
-                null,
-                &io_size,
-                &channel_layout,
-            ) != 0) {
-                return error.OpeningDevice;
-            }
-
-            const channels = self.fromCoreAudioChannelLayout(channel_layout) catch |err| switch (err) {
-                error.IncompatibleDevice => continue,
-                error.OutOfMemory => return error.OutOfMemory,
+            // for now, only set `channels` to the output channels
+            const audio_buffer_list_property_address = c.AudioObjectPropertyAddress{
+                .mSelector = c.kAudioDevicePropertyStreamConfiguration,
+                .mScope = c.kAudioDevicePropertyScopeOutput,
+                .mElement = c.kAudioObjectPropertyElementMain,
             };
+            var output_audio_buffer_list: c.AudioBufferList = undefined;
+            var audio_buffer_list_size: c_uint = undefined;
+
+            if (c.AudioObjectGetPropertyDataSize(id, &audio_buffer_list_property_address, 0, null, &audio_buffer_list_size) != c.noErr) {
+                return error.OpeningDevice;
+            }
+
+            if (c.AudioObjectGetPropertyData(id, &prop_address, 0, null, &audio_buffer_list_size, @ptrCast(*anyopaque, &output_audio_buffer_list)) != c.noErr) {
+                return error.OpeningDevice;
+            }
+
+            var output_channel_count: usize = 0;
+            for (0..output_audio_buffer_list.mNumberBuffers) |mBufferIndex| {
+                output_channel_count += output_audio_buffer_list.mBuffers[mBufferIndex].mNumberChannels;
+            }
+
+            var channels = try self.allocator.alloc(main.Channel, output_channel_count);
 
             prop_address.mSelector = c.kAudioDevicePropertyNominalSampleRate;
             io_size = @sizeOf(f64);
@@ -171,7 +172,7 @@ pub const Context = struct {
                 null,
                 &io_size,
                 &sample_rate,
-            ) != 0) {
+            ) != c.noErr) {
                 return error.OpeningDevice;
             }
 
@@ -183,7 +184,7 @@ pub const Context = struct {
                 c.kAudioDevicePropertyDeviceName,
                 &io_size,
                 null,
-            ) != 0) {
+            ) != c.noErr) {
                 return error.OpeningDevice;
             }
 
@@ -196,7 +197,7 @@ pub const Context = struct {
                 c.kAudioDevicePropertyDeviceName,
                 &io_size,
                 name.ptr,
-            ) != 0) {
+            ) != c.noErr) {
                 return error.OpeningDevice;
             }
             const id_str = try std.fmt.allocPrintZ(self.allocator, "{d}", .{id});
@@ -218,84 +219,11 @@ pub const Context = struct {
             if (id == default_output_id) {
                 self.devices_info.default_output = self.devices_info.list.items.len - 1;
             }
+
             if (id == default_input_id) {
                 self.devices_info.default_input = self.devices_info.list.items.len - 1;
             }
         }
-    }
-
-    fn fromCoreAudioChannelLayout(self: Context, chan_layout: c.AudioChannelLayout) ![]main.Channel {
-        var channels: []main.Channel = undefined;
-        switch (chan_layout.mChannelLayoutTag) {
-            c.kAudioChannelLayoutTag_UseChannelDescriptions => {
-                const num_channels = if (is_darling) 1 else chan_layout.mNumberChannelDescriptions;
-                channels = try self.allocator.alloc(main.Channel, num_channels);
-                for (channels) |*ch| {
-                    ch.id = .front_center;
-                } // TODO
-            },
-            c.kAudioChannelLayoutTag_Mono => {
-                channels = try self.allocator.alloc(main.Channel, 1);
-                channels[0].id = .front_center;
-            },
-            c.kAudioChannelLayoutTag_Stereo,
-            c.kAudioChannelLayoutTag_StereoHeadphones,
-            c.kAudioChannelLayoutTag_MatrixStereo,
-            c.kAudioChannelLayoutTag_Binaural,
-            => {
-                channels = try self.allocator.alloc(main.Channel, 2);
-                channels[0].id = .front_left;
-                channels[1].id = .front_right;
-            },
-            c.kAudioChannelLayoutTag_Quadraphonic => {
-                channels = try self.allocator.alloc(main.Channel, 4);
-                channels[0].id = .front_left;
-                channels[1].id = .front_right;
-                channels[2].id = .back_left;
-                channels[3].id = .back_right;
-            },
-            c.kAudioChannelLayoutTag_Pentagonal => {
-                channels = try self.allocator.alloc(main.Channel, 5);
-                channels[0].id = .front_center;
-                channels[1].id = .side_left;
-                channels[2].id = .side_right;
-                channels[3].id = .back_left;
-                channels[4].id = .back_right;
-            },
-            c.kAudioChannelLayoutTag_Hexagonal => {
-                channels = try self.allocator.alloc(main.Channel, 6);
-                channels[0].id = .front_center;
-                channels[1].id = .side_left;
-                channels[2].id = .side_right;
-                channels[4].id = .back_center;
-                channels[5].id = .back_left;
-                channels[6].id = .back_right;
-            },
-            c.kAudioChannelLayoutTag_Octagonal => {
-                channels = try self.allocator.alloc(main.Channel, 8);
-                channels[0].id = .front_center;
-                channels[1].id = .back_center;
-                channels[2].id = .front_left;
-                channels[3].id = .front_right;
-                channels[4].id = .side_left;
-                channels[5].id = .side_right;
-                channels[6].id = .back_left;
-                channels[7].id = .back_right;
-            },
-            c.kAudioChannelLayoutTag_Cube => {
-                channels = try self.allocator.alloc(main.Channel, 8);
-                channels[0].id = .front_left;
-                channels[1].id = .front_right;
-                channels[2].id = .back_left;
-                channels[3].id = .back_right;
-                channels[4].id = .top_front_left;
-                channels[5].id = .top_front_right;
-                channels[6].id = .top_back_left;
-                channels[7].id = .top_back_right;
-            },
-            else => return error.IncompatibleDevice,
-        }
-        return channels;
     }
 
     pub fn devices(self: Context) []const main.Device {
@@ -320,9 +248,9 @@ pub const Context = struct {
         if (component == null) return error.OpeningDevice;
 
         var audio_unit: c.AudioComponentInstance = undefined;
-        if (c.AudioComponentInstanceNew(component, &audio_unit) != 0) return error.OpeningDevice;
+        if (c.AudioComponentInstanceNew(component, &audio_unit) != c.noErr) return error.OpeningDevice;
 
-        if (c.AudioUnitInitialize(audio_unit) != 0) return error.OpeningDevice;
+        if (c.AudioUnitInitialize(audio_unit) != c.noErr) return error.OpeningDevice;
         errdefer _ = c.AudioUnitUninitialize(audio_unit);
 
         const device_id = std.fmt.parseInt(c.AudioDeviceID, device.id, 10) catch unreachable;
@@ -333,7 +261,7 @@ pub const Context = struct {
             0,
             &device_id,
             @sizeOf(c.AudioDeviceID),
-        ) != 0) {
+        ) != c.noErr) {
             return error.OpeningDevice;
         }
 
@@ -345,7 +273,7 @@ pub const Context = struct {
             0,
             &stream_desc,
             @sizeOf(c.AudioStreamBasicDescription),
-        ) != 0) {
+        ) != c.noErr) {
             return error.OpeningDevice;
         }
 
@@ -360,7 +288,7 @@ pub const Context = struct {
             0,
             &render_callback,
             @sizeOf(c.AURenderCallbackStruct),
-        ) != 0) {
+        ) != c.noErr) {
             return error.OpeningDevice;
         }
 
@@ -409,7 +337,7 @@ pub const Player = struct {
         const self = @ptrCast(*Player, @alignCast(@alignOf(*Player), self_opaque.?));
 
         for (self.channels, 0..) |*ch, i| {
-            ch.*.ptr = @ptrCast([*]u8, buf.*.mBuffers[0].mData.?) + self.format.frameSize(i);
+            ch.ptr = @ptrCast([*]u8, buf.*.mBuffers[0].mData.?) + self.format.frameSize(i);
         }
         const frames = buf.*.mBuffers[0].mDataByteSize / self.format.frameSize(self.channels.len);
         self.writeFn(self.user_data, frames);
@@ -429,14 +357,14 @@ pub const Player = struct {
     }
 
     pub fn play(self: *Player) !void {
-        if (c.AudioOutputUnitStart(self.audio_unit) != 0) {
+        if (c.AudioOutputUnitStart(self.audio_unit) != c.noErr) {
             return error.CannotPlay;
         }
         self.is_paused = false;
     }
 
     pub fn pause(self: *Player) !void {
-        if (c.AudioOutputUnitStop(self.audio_unit) != 0) {
+        if (c.AudioOutputUnitStop(self.audio_unit) != c.noErr) {
             return error.CannotPause;
         }
         self.is_paused = true;
@@ -454,7 +382,7 @@ pub const Player = struct {
             0,
             vol,
             0,
-        ) != 0) {
+        ) != c.noErr) {
             if (is_darling) return;
             return error.CannotSetVolume;
         }
@@ -468,7 +396,7 @@ pub const Player = struct {
             c.kAudioUnitScope_Global,
             0,
             &vol,
-        ) != 0) {
+        ) != c.noErr) {
             if (is_darling) return 1;
             return error.CannotGetVolume;
         }
