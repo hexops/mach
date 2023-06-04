@@ -1,9 +1,12 @@
 const builtin = @import("builtin");
 
-pub usingnamespace if (builtin.cpu.arch == .wasm32)
+const platform = if (builtin.cpu.arch == .wasm32)
     @import("platform/wasm.zig")
 else
     @import("platform/native.zig");
+
+pub const Core = platform.Core;
+pub const Timer = platform.Timer;
 
 // Verifies that a platform implementation exposes the expected function declarations.
 comptime {
