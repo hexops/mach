@@ -235,7 +235,7 @@ fn handleConn(self: *Builder, conn: std.net.StreamServer.Connection) void {
             else => sendError(conn.stream, .bad_request),
         };
     };
-    var first_line_iter = std.mem.split(u8, first_line, " ");
+    var first_line_iter = std.mem.splitScalar(u8, first_line, ' ');
     _ = first_line_iter.next(); // skip method
     if (first_line_iter.next()) |uri_str| {
         const uri = std.Uri.parseWithoutScheme(uri_str) catch {
@@ -300,7 +300,7 @@ fn notify(self: *Builder, stream: std.net.Stream) void {
     };
     switch (self.status) {
         .compile_error => |msg| {
-            var lines = std.mem.split(u8, msg, "\n");
+            var lines = std.mem.splitScalar(u8, msg, '\n');
             while (lines.next()) |line| {
                 stream.writer().print("data: {s}\n", .{line}) catch {
                     stream.close();

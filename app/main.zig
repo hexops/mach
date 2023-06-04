@@ -48,7 +48,7 @@ pub fn main() !void {
                     std.os.exit(1);
                 };
             } else if (argOption("-watch-path")) |value| {
-                var paths = std.mem.split(u8, value, ",");
+                var paths = std.mem.splitScalar(u8, value, ',');
                 builder.watch_paths = try allocator.alloc([]const u8, std.mem.count(u8, value, ",") + 1);
                 for (0..255) |i| {
                     const path = paths.next() orelse break;
