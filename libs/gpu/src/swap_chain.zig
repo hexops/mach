@@ -1,5 +1,5 @@
-const ChainedStruct = @import("types.zig").ChainedStruct;
-const PresentMode = @import("types.zig").PresentMode;
+const ChainedStruct = @import("main.zig").ChainedStruct;
+const PresentMode = @import("main.zig").PresentMode;
 const Texture = @import("texture.zig").Texture;
 const TextureView = @import("texture_view.zig").TextureView;
 const Impl = @import("interface.zig").Impl;

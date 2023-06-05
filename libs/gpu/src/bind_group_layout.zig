@@ -1,11 +1,11 @@
-const ChainedStruct = @import("types.zig").ChainedStruct;
-const ShaderStageFlags = @import("types.zig").ShaderStageFlags;
+const ChainedStruct = @import("main.zig").ChainedStruct;
+const ShaderStageFlags = @import("main.zig").ShaderStageFlags;
 const Buffer = @import("buffer.zig").Buffer;
 const Sampler = @import("sampler.zig").Sampler;
 const Texture = @import("texture.zig").Texture;
 const TextureView = @import("texture_view.zig").TextureView;
-const StorageTextureBindingLayout = @import("types.zig").StorageTextureBindingLayout;
-const StorageTextureAccess = @import("types.zig").StorageTextureAccess;
+const StorageTextureBindingLayout = @import("main.zig").StorageTextureBindingLayout;
+const StorageTextureAccess = @import("main.zig").StorageTextureAccess;
 const ExternalTexture = @import("external_texture.zig").ExternalTexture;
 const Impl = @import("interface.zig").Impl;
 

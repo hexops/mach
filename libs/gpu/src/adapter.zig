@@ -1,13 +1,13 @@
 const std = @import("std");
 const testing = std.testing;
 const dawn = @import("dawn.zig");
-const ChainedStructOut = @import("types.zig").ChainedStructOut;
+const ChainedStructOut = @import("main.zig").ChainedStructOut;
 const Device = @import("device.zig").Device;
-const FeatureName = @import("types.zig").FeatureName;
-const SupportedLimits = @import("types.zig").SupportedLimits;
-const RequestDeviceStatus = @import("types.zig").RequestDeviceStatus;
-const BackendType = @import("types.zig").BackendType;
-const RequestDeviceCallback = @import("callbacks.zig").RequestDeviceCallback;
+const FeatureName = @import("main.zig").FeatureName;
+const SupportedLimits = @import("main.zig").SupportedLimits;
+const RequestDeviceStatus = @import("main.zig").RequestDeviceStatus;
+const BackendType = @import("main.zig").BackendType;
+const RequestDeviceCallback = @import("main.zig").RequestDeviceCallback;
 const Impl = @import("interface.zig").Impl;
 
 pub const Adapter = opaque {

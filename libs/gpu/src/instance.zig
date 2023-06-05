@@ -1,9 +1,9 @@
-const ChainedStruct = @import("types.zig").ChainedStruct;
-const RequestAdapterStatus = @import("types.zig").RequestAdapterStatus;
+const ChainedStruct = @import("main.zig").ChainedStruct;
+const RequestAdapterStatus = @import("main.zig").RequestAdapterStatus;
 const Surface = @import("surface.zig").Surface;
 const Adapter = @import("adapter.zig").Adapter;
-const RequestAdapterOptions = @import("types.zig").RequestAdapterOptions;
-const RequestAdapterCallback = @import("callbacks.zig").RequestAdapterCallback;
+const RequestAdapterOptions = @import("main.zig").RequestAdapterOptions;
+const RequestAdapterCallback = @import("main.zig").RequestAdapterCallback;
 const Impl = @import("interface.zig").Impl;
 const dawn = @import("dawn.zig");
 

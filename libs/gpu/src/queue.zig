@@ -2,11 +2,11 @@ const std = @import("std");
 const CommandBuffer = @import("command_buffer.zig").CommandBuffer;
 const Buffer = @import("buffer.zig").Buffer;
 const Texture = @import("texture.zig").Texture;
-const ImageCopyTexture = @import("types.zig").ImageCopyTexture;
-const ImageCopyExternalTexture = @import("types.zig").ImageCopyExternalTexture;
-const ChainedStruct = @import("types.zig").ChainedStruct;
-const Extent3D = @import("types.zig").Extent3D;
-const CopyTextureForBrowserOptions = @import("types.zig").CopyTextureForBrowserOptions;
+const ImageCopyTexture = @import("main.zig").ImageCopyTexture;
+const ImageCopyExternalTexture = @import("main.zig").ImageCopyExternalTexture;
+const ChainedStruct = @import("main.zig").ChainedStruct;
+const Extent3D = @import("main.zig").Extent3D;
+const CopyTextureForBrowserOptions = @import("main.zig").CopyTextureForBrowserOptions;
 const Impl = @import("interface.zig").Impl;
 
 pub const Queue = opaque {

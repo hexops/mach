@@ -1,6 +1,6 @@
-const ChainedStruct = @import("types.zig").ChainedStruct;
-const ChainedStructOut = @import("types.zig").ChainedStructOut;
-const PowerPreference = @import("types.zig").PowerPreference;
+const ChainedStruct = @import("main.zig").ChainedStruct;
+const ChainedStructOut = @import("main.zig").ChainedStructOut;
+const PowerPreference = @import("main.zig").PowerPreference;
 const Texture = @import("texture.zig").Texture;
 pub const Interface = @import("dawn_impl.zig").Interface;
 

@@ -1,4 +1,4 @@
-const ChainedStruct = @import("types.zig").ChainedStruct;
+const ChainedStruct = @import("main.zig").ChainedStruct;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Impl = @import("interface.zig").Impl;
 
