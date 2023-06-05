@@ -1,6 +1,6 @@
-const ChainedStruct = @import("types.zig").ChainedStruct;
-const FilterMode = @import("types.zig").FilterMode;
-const CompareFunction = @import("types.zig").CompareFunction;
+const ChainedStruct = @import("main.zig").ChainedStruct;
+const FilterMode = @import("main.zig").FilterMode;
+const CompareFunction = @import("main.zig").CompareFunction;
 const Impl = @import("interface.zig").Impl;
 
 pub const Sampler = opaque {

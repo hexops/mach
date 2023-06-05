@@ -1,6 +1,6 @@
-const ChainedStruct = @import("types.zig").ChainedStruct;
-const PipelineStatisticName = @import("types.zig").PipelineStatisticName;
-const QueryType = @import("types.zig").QueryType;
+const ChainedStruct = @import("main.zig").ChainedStruct;
+const PipelineStatisticName = @import("main.zig").PipelineStatisticName;
+const QueryType = @import("main.zig").QueryType;
 const Impl = @import("interface.zig").Impl;
 
 pub const QuerySet = opaque {

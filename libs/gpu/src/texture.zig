@@ -1,9 +1,9 @@
 const std = @import("std");
-const ChainedStruct = @import("types.zig").ChainedStruct;
+const ChainedStruct = @import("main.zig").ChainedStruct;
 const TextureView = @import("texture_view.zig").TextureView;
-const Extent3D = @import("types.zig").Extent3D;
+const Extent3D = @import("main.zig").Extent3D;
 const Impl = @import("interface.zig").Impl;
-const types = @import("types.zig");
+const types = @import("main.zig");
 const dawn = @import("dawn.zig");
 
 pub const Texture = opaque {

@@ -1,7 +1,7 @@
-const ChainedStruct = @import("types.zig").ChainedStruct;
+const ChainedStruct = @import("main.zig").ChainedStruct;
 const TextureView = @import("texture_view.zig").TextureView;
-const Origin2D = @import("types.zig").Origin2D;
-const Extent2D = @import("types.zig").Extent2D;
+const Origin2D = @import("main.zig").Origin2D;
+const Extent2D = @import("main.zig").Extent2D;
 const Impl = @import("interface.zig").Impl;
 
 pub const ExternalTexture = opaque {

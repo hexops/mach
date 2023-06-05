@@ -1,7 +1,7 @@
-const ChainedStruct = @import("types.zig").ChainedStruct;
+const ChainedStruct = @import("main.zig").ChainedStruct;
 const Texture = @import("texture.zig").Texture;
 const Impl = @import("interface.zig").Impl;
-const types = @import("types.zig");
+const types = @import("main.zig");
 
 pub const TextureView = opaque {
     pub const Dimension = enum(u32) {

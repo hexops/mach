@@ -1,5 +1,5 @@
-const ChainedStruct = @import("types.zig").ChainedStruct;
-const ProgrammableStageDescriptor = @import("types.zig").ProgrammableStageDescriptor;
+const ChainedStruct = @import("main.zig").ChainedStruct;
+const ProgrammableStageDescriptor = @import("main.zig").ProgrammableStageDescriptor;
 const PipelineLayout = @import("pipeline_layout.zig").PipelineLayout;
 const BindGroupLayout = @import("bind_group_layout.zig").BindGroupLayout;
 const Impl = @import("interface.zig").Impl;

@@ -1,7 +1,7 @@
 const std = @import("std");
-const ChainedStruct = @import("types.zig").ChainedStruct;
+const ChainedStruct = @import("main.zig").ChainedStruct;
 const dawn = @import("dawn.zig");
-const MapModeFlags = @import("types.zig").MapModeFlags;
+const MapModeFlags = @import("main.zig").MapModeFlags;
 const Impl = @import("interface.zig").Impl;
 
 pub const Buffer = opaque {
