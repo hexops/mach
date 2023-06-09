@@ -1157,8 +1157,8 @@ pub const Interface = struct {
         );
     }
 
-    pub inline fn swapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) *gpu.TextureView {
-        return @ptrCast(*gpu.TextureView, procs.swapChainGetCurrentTextureView.?(@ptrCast(c.WGPUSwapChain, swap_chain)));
+    pub inline fn swapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) ?*gpu.TextureView {
+        return @ptrCast(?*gpu.TextureView, procs.swapChainGetCurrentTextureView.?(@ptrCast(c.WGPUSwapChain, swap_chain)));
     }
 
     pub inline fn swapChainPresent(swap_chain: *gpu.SwapChain) void {

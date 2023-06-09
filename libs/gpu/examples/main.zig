@@ -140,7 +140,7 @@ fn frame(params: FrameParams) !void {
         pl.current_desc = pl.target_desc;
     }
 
-    const back_buffer_view = pl.swap_chain.?.getCurrentTextureView();
+    const back_buffer_view = pl.swap_chain.?.getCurrentTextureView().?;
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .resolve_target = null,
