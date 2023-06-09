@@ -196,7 +196,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "surfaceReference", fn (surface: *gpu.Surface) callconv(.Inline) void);
     assertDecl(T, "surfaceRelease", fn (surface: *gpu.Surface) callconv(.Inline) void);
     assertDecl(T, "swapChainConfigure", fn (swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: gpu.Texture.UsageFlags, width: u32, height: u32) callconv(.Inline) void);
-    assertDecl(T, "swapChainGetCurrentTextureView", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) *gpu.TextureView);
+    assertDecl(T, "swapChainGetCurrentTextureView", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) ?*gpu.TextureView);
     assertDecl(T, "swapChainPresent", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) void);
     assertDecl(T, "swapChainReference", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) void);
     assertDecl(T, "swapChainRelease", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) void);
@@ -1118,7 +1118,7 @@ pub fn Export(comptime T: type) type {
         }
 
         // WGPU_EXPORT WGPUTextureView wgpuSwapChainGetCurrentTextureView(WGPUSwapChain swapChain);
-        export fn wgpuSwapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) *gpu.TextureView {
+        export fn wgpuSwapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) ?*gpu.TextureView {
             return T.swapChainGetCurrentTextureView(swap_chain);
         }
 
@@ -2342,7 +2342,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn swapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) *gpu.TextureView {
+    pub inline fn swapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) ?*gpu.TextureView {
         _ = swap_chain;
         unreachable;
     }

@@ -117,7 +117,7 @@ pub fn update(app: *App) !bool {
         std.log.err("Something went wrong when attempting to stat file: {}\n", .{err});
     }
 
-    const back_buffer_view = app.core.swapChain().getCurrentTextureView();
+    const back_buffer_view = app.core.swapChain().getCurrentTextureView().?;
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .clear_value = std.mem.zeroes(gpu.Color),

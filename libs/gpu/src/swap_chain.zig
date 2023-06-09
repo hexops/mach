@@ -21,7 +21,7 @@ pub const SwapChain = opaque {
         Impl.swapChainConfigure(swap_chain, format, allowed_usage, width, height);
     }
 
-    pub inline fn getCurrentTextureView(swap_chain: *SwapChain) *TextureView {
+    pub inline fn getCurrentTextureView(swap_chain: *SwapChain) ?*TextureView {
         return Impl.swapChainGetCurrentTextureView(swap_chain);
     }
 
