@@ -180,7 +180,7 @@ pub fn tick(adapter: anytype) !void {
     const device = mach.state().device;
 
     // Begin our render pass
-    const back_buffer_view = core.swapChain().getCurrentTextureView();
+    const back_buffer_view = core.swapChain().getCurrentTextureView().?;
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .clear_value = gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 },
