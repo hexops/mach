@@ -44,12 +44,15 @@ pub const components = .{
     .size = Vec2,
 };
 
-const Uniforms = packed struct {
+const Uniforms = extern struct {
+    // WebGPU requires that the size of struct fields are multiples of 16
+    // So we use align(16) and 'extern' to maintain field order
+
     /// The view * orthographic projection matrix
-    view_projection: Mat4x4,
+    view_projection: Mat4x4 align(16),
 
     /// Total size of the sprite texture in pixels
-    texture_size: Vec2,
+    texture_size: Vec2 align(16),
 };
 
 pub fn machSprite2DInit(adapter: anytype) !void {
