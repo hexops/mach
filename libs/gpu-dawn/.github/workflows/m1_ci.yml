@@ -25,10 +25,11 @@ jobs:
         env:
           AGREE: true
       - name: upload (debug)
-        run: ./dev/upload-release.sh
-        env:
-          RELEASE_NAME: aarch64-macos-none_debug
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./dev/upload-release.sh
+          # HACK: without this we encounter error: StreamTooLong on the next `zig build` below.
+          # no clue why.
+          rm -rf zig-cache zig-out
       - name: install (release-fast)
         run: zig build install -Doptimize=ReleaseFast -Dtarget=aarch64-macos.12-none
         env:
