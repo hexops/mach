@@ -30,6 +30,9 @@ jobs:
           # HACK: without this we encounter error: StreamTooLong on the next `zig build` below.
           # no clue why.
           rm -rf zig-cache zig-out
+        env:
+          RELEASE_NAME: aarch64-macos-none_debug
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: install (release-fast)
         run: zig build install -Doptimize=ReleaseFast -Dtarget=aarch64-macos.12-none
         env:
