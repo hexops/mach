@@ -204,7 +204,7 @@ There may be other opportunities for helpers, to improve the existing APIs, or a
 
 ## WebGPU version
 
-Dawn's `webgpu.h` is the **authoritative source** for our API. You can find [the current version we use here](https://github.com/hexops/dawn/blob/generated-2023-01-28.1674950134/out/Debug/gen/include/dawn/webgpu.h).
+Dawn's `webgpu.h` is the **authoritative source** for our API. You can find [the current version we use here](https://github.com/hexops/dawn/blob/generated-2023-06-18.1687119009/out/Debug/gen/include/dawn/webgpu.h).
 
 ## Development rules
 
