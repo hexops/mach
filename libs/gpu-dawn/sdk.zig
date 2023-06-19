@@ -102,9 +102,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 const lib_dawn_wire = try buildLibDawnWire(b, step, options);
                 step.linkLibrary(lib_dawn_wire);
 
-                const lib_dawn_utils = try buildLibDawnUtils(b, step, options);
-                step.linkLibrary(lib_dawn_utils);
-
                 const lib_spirv_tools = try buildLibSPIRVTools(b, step, options);
                 step.linkLibrary(lib_spirv_tools);
 
@@ -129,7 +126,6 @@ pub fn Sdk(comptime deps: anytype) type {
             _ = try buildLibAbseilCpp(b, lib_dawn, options);
             _ = try buildLibDawnNative(b, lib_dawn, options);
             _ = try buildLibDawnWire(b, lib_dawn, options);
-            _ = try buildLibDawnUtils(b, lib_dawn, options);
             _ = try buildLibSPIRVTools(b, lib_dawn, options);
             _ = try buildLibTint(b, lib_dawn, options);
             if (options.d3d12.?) _ = try buildLibDxcompiler(b, lib_dawn, options);
@@ -1046,24 +1042,33 @@ pub fn Sdk(comptime deps: anytype) type {
                 include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src"),
                 include("libs/dawn/out/Debug/gen/third_party/vulkan-deps/spirv-tools/src/include"),
                 include("libs/dawn/include"),
+                include("libs/dawn/third_party/abseil-cpp"),
             });
+
+            // TODO: split out libtint builds, provide an example of building: src/tint/cmd
 
             // libtint_core_all_src
             try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint",
+                    "libs/dawn/src/tint/reader/",
+                    "libs/dawn/src/tint/writer/syntax_tree",
+                    "libs/dawn/src/tint/ir",
+                    "libs/dawn/src/tint/ir/transform",
+                    // "libs/dawn/src/tint/utils/io",
+                    "libs/dawn/src/tint/templates",
                     "libs/dawn/src/tint/constant/",
                     "libs/dawn/src/tint/diagnostic/",
                     "libs/dawn/src/tint/inspector/",
-                    "libs/dawn/src/tint/reader/",
+                    "libs/dawn/src/tint/builtin/",
                     "libs/dawn/src/tint/resolver/",
                     "libs/dawn/src/tint/utils/",
-                    "libs/dawn/src/tint/text/",
                     "libs/dawn/src/tint/type/",
                     "libs/dawn/src/tint/transform/",
-                    "libs/dawn/src/tint/transform/utils",
                     "libs/dawn/src/tint/writer/",
                     "libs/dawn/src/tint/ast/",
+                    "libs/dawn/src/tint/ast/transform/",
+                    "libs/dawn/src/tint/ast/transform/utils/",
                     "libs/dawn/src/tint/val/",
                 },
                 .flags = flags.items,
@@ -1103,6 +1108,7 @@ pub fn Sdk(comptime deps: anytype) type {
             try appendLangScannedSources(b, lib, .{
                 .rel_dirs = &.{
                     "libs/dawn/src/tint/writer/spirv/",
+                    // "libs/dawn/src/tint/writer/spirv/ir/",
                 },
                 .flags = flags.items,
                 .excluding_contains = &.{ "test", "bench" },
@@ -1336,81 +1342,6 @@ pub fn Sdk(comptime deps: anytype) type {
             return lib;
         }
 
-        // Builds dawn utils sources; derived from src/dawn/utils/BUILD.gn
-        fn buildLibDawnUtils(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-            const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary(.{
-                    .name = "dawn-utils",
-                    .target = step.target,
-                    .optimize = if (options.debug) .Debug else .ReleaseFast,
-                });
-                separate_lib.linkLibCpp();
-                if (options.install_libs)
-                    b.installArtifact(separate_lib);
-                break :blk separate_lib;
-            };
-
-            var flags = std.ArrayList([]const u8).init(b.allocator);
-            try appendDawnEnableBackendTypeFlags(&flags, options);
-            try flags.appendSlice(&.{
-                "-I" ++ deps.glfw_include_dir,
-                include("libs/dawn/src"),
-                include("libs/dawn/include"),
-                include("libs/dawn/out/Debug/gen/include"),
-            });
-
-            var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
-            inline for ([_][]const u8{
-                "src/dawn/utils/BackendBinding.cpp",
-                "src/dawn/utils/NullBinding.cpp",
-            }) |path| {
-                const abs_path = sdkPath("/libs/dawn/" ++ path);
-                try cpp_sources.append(abs_path);
-            }
-
-            if (options.d3d12.?) {
-                inline for ([_][]const u8{
-                    "src/dawn/utils/D3D12Binding.cpp",
-                }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
-                    try cpp_sources.append(abs_path);
-                }
-                try flags.appendSlice(dawn_d3d12_flags);
-            }
-            if (options.metal.?) {
-                inline for ([_][]const u8{
-                    "src/dawn/utils/MetalBinding.mm",
-                }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
-                    try cpp_sources.append(abs_path);
-                }
-            }
-
-            if (options.desktop_gl.?) {
-                inline for ([_][]const u8{
-                    "src/dawn/utils/OpenGLBinding.cpp",
-                }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
-                    try cpp_sources.append(abs_path);
-                }
-            }
-
-            if (options.vulkan.?) {
-                inline for ([_][]const u8{
-                    "src/dawn/utils/VulkanBinding.cpp",
-                }) |path| {
-                    const abs_path = sdkPath("/libs/dawn/" ++ path);
-                    try cpp_sources.append(abs_path);
-                }
-            }
-
-            var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            try cpp_flags.appendSlice(flags.items);
-            try appendFlags(step, &cpp_flags, options.debug, true);
-            lib.addCSourceFiles(cpp_sources.items, cpp_flags.items);
-            return lib;
-        }
-
         // Buids dxcompiler sources; derived from libs/DirectXShaderCompiler/CMakeLists.txt
         fn buildLibDxcompiler(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
             const lib = if (!options.separate_libs) step else blk: {
@@ -1577,7 +1508,10 @@ pub fn Sdk(comptime deps: anytype) type {
         ) !void {
             const abs_dir = try std.fs.path.join(b.allocator, &.{ sdkPath("/"), rel_dir });
             defer b.allocator.free(abs_dir);
-            var dir = try std.fs.openIterableDirAbsolute(abs_dir, .{});
+            var dir = std.fs.openIterableDirAbsolute(abs_dir, .{}) catch |err| {
+                std.log.err("mach: error: failed to open: {s}", .{abs_dir});
+                return err;
+            };
             defer dir.close();
             var dir_it = dir.iterate();
             while (try dir_it.next()) |entry| {
