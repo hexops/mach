@@ -98,7 +98,7 @@ pub const BindGroupLayout = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
-        entry_count: u32 = 0,
+        entry_count: usize = 0,
         entries: ?[*]const Entry = null,
 
         /// Provides a slightly friendlier Zig API to initialize this structure.
@@ -110,7 +110,7 @@ pub const BindGroupLayout = opaque {
             return .{
                 .next_in_chain = v.next_in_chain,
                 .label = v.label,
-                .entry_count = if (v.entries) |e| @intCast(u32, e.len) else 0,
+                .entry_count = if (v.entries) |e| e.len else 0,
                 .entries = if (v.entries) |e| e.ptr else null,
             };
         }

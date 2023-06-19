@@ -1,5 +1,6 @@
 const ChainedStruct = @import("main.zig").ChainedStruct;
 const FilterMode = @import("main.zig").FilterMode;
+const MipmapFilterMode = @import("main.zig").MipmapFilterMode;
 const CompareFunction = @import("main.zig").CompareFunction;
 const Impl = @import("interface.zig").Impl;
 
@@ -30,9 +31,9 @@ pub const Sampler = opaque {
         address_mode_w: AddressMode = .clamp_to_edge,
         mag_filter: FilterMode = .nearest,
         min_filter: FilterMode = .nearest,
-        mipmap_filter: FilterMode = .nearest,
+        mipmap_filter: MipmapFilterMode = .nearest,
         lod_min_clamp: f32 = 0.0,
-        lod_max_clamp: f32 = 1000.0,
+        lod_max_clamp: f32 = 32.0,
         compare: CompareFunction = .undefined,
         max_anisotropy: u16 = 1,
     };

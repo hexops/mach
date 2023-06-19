@@ -10,7 +10,7 @@ pub const QuerySet = opaque {
         type: QueryType,
         count: u32,
         pipeline_statistics: ?[*]const PipelineStatisticName = null,
-        pipeline_statistics_count: u32 = 0,
+        pipeline_statistics_count: usize = 0,
 
         /// Provides a slightly friendlier Zig API to initialize this structure.
         pub inline fn init(v: struct {
@@ -25,7 +25,7 @@ pub const QuerySet = opaque {
                 .label = v.label,
                 .type = v.type,
                 .count = v.count,
-                .pipeline_statistics_count = if (v.pipeline_statistics) |e| @intCast(u32, e.len) else 0,
+                .pipeline_statistics_count = if (v.pipeline_statistics) |e| e.len else 0,
                 .pipeline_statistics = if (v.pipeline_statistics) |e| e.ptr else null,
             };
         }

@@ -7,6 +7,10 @@ pub const RenderBundle = opaque {
         label: ?[*:0]const u8 = null,
     };
 
+    pub inline fn setLabel(render_bundle: *RenderBundle, label: [*:0]const u8) void {
+        Impl.renderBundleSetLabel(render_bundle, label);
+    }
+
     pub inline fn reference(render_bundle: *RenderBundle) void {
         Impl.renderBundleReference(render_bundle);
     }

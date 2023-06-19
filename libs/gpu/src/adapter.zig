@@ -3,6 +3,7 @@ const testing = std.testing;
 const dawn = @import("dawn.zig");
 const ChainedStructOut = @import("main.zig").ChainedStructOut;
 const Device = @import("device.zig").Device;
+const Instance = @import("instance.zig").Instance;
 const FeatureName = @import("main.zig").FeatureName;
 const SupportedLimits = @import("main.zig").SupportedLimits;
 const RequestDeviceStatus = @import("main.zig").RequestDeviceStatus;
@@ -42,6 +43,7 @@ pub const Adapter = opaque {
         driver_description: [*:0]const u8,
         adapter_type: Type,
         backend_type: BackendType,
+        compatibility_mode: bool = false,
     };
 
     pub inline fn createDevice(adapter: *Adapter, descriptor: ?*const Device.Descriptor) ?*Device {
@@ -62,6 +64,10 @@ pub const Adapter = opaque {
         var data = try allocator.alloc(FeatureName, count);
         _ = adapter.enumerateFeatures(data.ptr);
         return data;
+    }
+
+    pub inline fn getInstance(adapter: *Adapter) *Instance {
+        return Impl.adapterGetInstance(adapter);
     }
 
     pub inline fn getLimits(adapter: *Adapter, limits: *SupportedLimits) bool {

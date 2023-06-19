@@ -46,6 +46,12 @@ pub const Interface = struct {
         );
     }
 
+    pub inline fn adapterGetInstance(adapter: *gpu.Adapter) *gpu.Instance {
+        return @ptrCast(*gpu.Instance, procs.adapterGetInstance.?(
+            @ptrCast(c.WGPUAdapter, adapter),
+        ));
+    }
+
     pub inline fn adapterGetLimits(adapter: *gpu.Adapter, limits: *gpu.SupportedLimits) bool {
         return procs.adapterGetLimits.?(
             @ptrCast(c.WGPUAdapter, adapter),
@@ -363,7 +369,7 @@ pub const Interface = struct {
         );
     }
 
-    pub inline fn computePassEncoderSetBindGroup(compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
+    pub inline fn computePassEncoderSetBindGroup(compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) void {
         procs.computePassEncoderSetBindGroup.?(
             @ptrCast(c.WGPUComputePassEncoder, compute_pass_encoder),
             group_index,
@@ -605,8 +611,8 @@ pub const Interface = struct {
         );
     }
 
-    pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) bool {
-        return procs.devicePopErrorScope.?(
+    pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) void {
+        procs.devicePopErrorScope.?(
             @ptrCast(c.WGPUDevice, device),
             @ptrCast(c.WGPUErrorCallback, callback),
             userdata,
@@ -685,6 +691,12 @@ pub const Interface = struct {
             @ptrCast(c.WGPUInstance, instance),
             @ptrCast(*const c.WGPUSurfaceDescriptor, descriptor),
         ));
+    }
+
+    pub inline fn instanceProcessEvents(instance: *gpu.Instance) void {
+        procs.instanceProcessEvents.?(
+            @ptrCast(c.WGPUInstance, instance),
+        );
     }
 
     pub inline fn instanceRequestAdapter(instance: *gpu.Instance, options: ?*const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) void {
@@ -773,7 +785,7 @@ pub const Interface = struct {
         procs.queueSetLabel.?(@ptrCast(c.WGPUQueue, queue), label);
     }
 
-    pub inline fn queueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]const *const gpu.CommandBuffer) void {
+    pub inline fn queueSubmit(queue: *gpu.Queue, command_count: usize, commands: [*]const *const gpu.CommandBuffer) void {
         procs.queueSubmit.?(
             @ptrCast(c.WGPUQueue, queue),
             command_count,
@@ -808,6 +820,10 @@ pub const Interface = struct {
 
     pub inline fn queueRelease(queue: *gpu.Queue) void {
         procs.queueRelease.?(@ptrCast(c.WGPUQueue, queue));
+    }
+
+    pub inline fn renderBundleSetLabel(render_bundle: *gpu.RenderBundle, label: [*:0]const u8) void {
+        procs.renderBundleSetLabel.?(@ptrCast(c.WGPURenderBundle, render_bundle), label);
     }
 
     pub inline fn renderBundleReference(render_bundle: *gpu.RenderBundle) void {
@@ -871,7 +887,7 @@ pub const Interface = struct {
         procs.renderBundleEncoderPushDebugGroup.?(@ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder), group_label);
     }
 
-    pub inline fn renderBundleEncoderSetBindGroup(render_bundle_encoder: *gpu.RenderBundleEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
+    pub inline fn renderBundleEncoderSetBindGroup(render_bundle_encoder: *gpu.RenderBundleEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) void {
         procs.renderBundleEncoderSetBindGroup.?(
             @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
             group_index,
@@ -972,7 +988,7 @@ pub const Interface = struct {
         procs.renderPassEncoderEndOcclusionQuery.?(@ptrCast(c.WGPURenderPassEncoder, render_pass_encoder));
     }
 
-    pub inline fn renderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const *const gpu.RenderBundle) void {
+    pub inline fn renderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: usize, bundles: [*]const *const gpu.RenderBundle) void {
         procs.renderPassEncoderExecuteBundles.?(
             @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
             bundles_count,
@@ -995,7 +1011,7 @@ pub const Interface = struct {
         );
     }
 
-    pub inline fn renderPassEncoderSetBindGroup(render_pass_encoder: *gpu.RenderPassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
+    pub inline fn renderPassEncoderSetBindGroup(render_pass_encoder: *gpu.RenderPassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) void {
         procs.renderPassEncoderSetBindGroup.?(
             @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
             group_index,
@@ -1147,14 +1163,8 @@ pub const Interface = struct {
         procs.surfaceRelease.?(@ptrCast(c.WGPUSurface, surface));
     }
 
-    pub inline fn swapChainConfigure(swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: gpu.Texture.UsageFlags, width: u32, height: u32) void {
-        procs.swapChainConfigure.?(
-            @ptrCast(c.WGPUSwapChain, swap_chain),
-            @enumToInt(format),
-            @bitCast(c.WGPUTextureUsageFlags, allowed_usage),
-            width,
-            height,
-        );
+    pub inline fn swapChainGetCurrentTexture(swap_chain: *gpu.SwapChain) ?*gpu.Texture {
+        return @ptrCast(?*gpu.Texture, procs.swapChainGetCurrentTexture.?(@ptrCast(c.WGPUSwapChain, swap_chain)));
     }
 
     pub inline fn swapChainGetCurrentTextureView(swap_chain: *gpu.SwapChain) ?*gpu.TextureView {

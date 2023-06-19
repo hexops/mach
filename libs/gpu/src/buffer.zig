@@ -22,11 +22,14 @@ pub const Buffer = opaque {
 
     pub const MapAsyncStatus = enum(u32) {
         success = 0x00000000,
-        err = 0x00000001,
+        validation_error = 0x00000001,
         unknown = 0x00000002,
         device_lost = 0x00000003,
         destroyed_before_callback = 0x00000004,
         unmapped_before_callback = 0x00000005,
+        mapping_already_pending = 0x00000006,
+        offset_out_of_range = 0x00000007,
+        size_out_of_range = 0x00000008,
     };
 
     pub const UsageFlags = packed struct(u32) {

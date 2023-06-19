@@ -14,50 +14,37 @@ pub const EncoderInternalUsageDescriptor = extern struct {
     use_internal_usages: bool = false,
 };
 
-pub const InstanceDescriptor = extern struct {
-    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_instance_descriptor },
-    additional_runtime_search_paths_count: u32 = 0,
-    additional_runtime_search_paths: ?[*]const [*:0]const u8 = null,
-
-    /// Provides a slightly friendlier Zig API to initialize this structure.
-    pub inline fn init(v: struct {
-        chain: ChainedStruct = .{ .next = null, .s_type = .dawn_instance_descriptor },
-        additional_runtime_search_paths: ?[]const [*:0]const u8 = null,
-    }) InstanceDescriptor {
-        return .{
-            .chain = v.chain,
-            .additional_runtime_search_paths_count = if (v.additional_runtime_search_paths) |e| @intCast(u32, e.len) else 0,
-            .additional_runtime_search_paths = if (v.additional_runtime_search_paths) |e| e.ptr else null,
-        };
-    }
-};
-
 pub const TextureInternalUsageDescriptor = extern struct {
     chain: ChainedStruct = .{ .next = null, .s_type = .dawn_texture_internal_usage_descriptor },
     internal_usage: Texture.UsageFlags = Texture.UsageFlags.none,
 };
 
-pub const TogglesDeviceDescriptor = extern struct {
-    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_toggles_device_descriptor },
-    force_enabled_toggles_count: u32 = 0,
-    force_enabled_toggles: ?[*]const [*:0]const u8 = null,
-    force_disabled_toggles_count: u32 = 0,
-    force_disabled_toggles: ?[*]const [*:0]const u8 = null,
+pub const TogglesDescriptor = extern struct {
+    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_toggles_descriptor },
+    enabled_toggles_count: usize = 0,
+    enabled_toggles: ?[*]const [*:0]const u8 = null,
+    disabled_toggles_count: usize = 0,
+    disabled_toggles: ?[*]const [*:0]const u8 = null,
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
     pub inline fn init(v: struct {
-        chain: ChainedStruct = .{ .next = null, .s_type = .dawn_toggles_device_descriptor },
-        force_enabled_toggles: ?[]const [*:0]const u8 = null,
-        force_disabled_toggles: ?[]const [*:0]const u8 = null,
-    }) TogglesDeviceDescriptor {
+        chain: ChainedStruct = .{ .next = null, .s_type = .dawn_toggles_descriptor },
+        enabled_toggles: ?[]const [*:0]const u8 = null,
+        disabled_toggles: ?[]const [*:0]const u8 = null,
+    }) TogglesDescriptor {
         return .{
             .chain = v.chain,
-            .force_enabled_toggles_count = if (v.force_enabled_toggles) |e| @intCast(u32, e.len) else 0,
-            .force_enabled_toggles = if (v.force_enabled_toggles) |e| e.ptr else null,
-            .force_disabled_toggles_count = if (v.force_disabled_toggles) |e| @intCast(u32, e.len) else 0,
-            .force_disabled_toggles = if (v.force_disabled_toggles) |e| e.ptr else null,
+            .enabled_toggles_count = if (v.enabled_toggles) |e| e.len else 0,
+            .enabled_toggles = if (v.enabled_toggles) |e| e.ptr else null,
+            .disabled_toggles_count = if (v.disabled_toggles) |e| e.len else 0,
+            .disabled_toggles = if (v.disabled_toggles) |e| e.ptr else null,
         };
     }
+};
+
+pub const ShaderModuleSPIRVOptionsDescriptor = extern struct {
+    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_shader_module_spirv_options_descriptor },
+    allow_non_uniform_derivatives: bool = false,
 };
 
 pub const AdapterPropertiesPowerPreference = extern struct {

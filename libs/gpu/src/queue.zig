@@ -56,7 +56,7 @@ pub const Queue = opaque {
     }
 
     pub inline fn submit(queue: *Queue, commands: []const *const CommandBuffer) void {
-        Impl.queueSubmit(queue, @intCast(u32, commands.len), commands.ptr);
+        Impl.queueSubmit(queue, commands.len, commands.ptr);
     }
 
     pub inline fn writeBuffer(

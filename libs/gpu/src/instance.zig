@@ -11,7 +11,7 @@ pub const Instance = opaque {
     pub const Descriptor = extern struct {
         pub const NextInChain = extern union {
             generic: ?*const ChainedStruct,
-            dawn_instance_descriptor: *const dawn.InstanceDescriptor,
+            dawn_toggles_descriptor: *const dawn.TogglesDescriptor,
         };
 
         next_in_chain: NextInChain = .{ .generic = null },
@@ -19,6 +19,10 @@ pub const Instance = opaque {
 
     pub inline fn createSurface(instance: *Instance, descriptor: *const Surface.Descriptor) *Surface {
         return Impl.instanceCreateSurface(instance, descriptor);
+    }
+
+    pub inline fn processEvents(instance: *Instance) void {
+        Impl.instanceProcessEvents(instance);
     }
 
     pub inline fn requestAdapter(

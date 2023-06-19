@@ -21,6 +21,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "getProcAddress", fn (device: *gpu.Device, proc_name: [*:0]const u8) callconv(.Inline) ?gpu.Proc);
     assertDecl(T, "adapterCreateDevice", fn (adapter: *gpu.Adapter, descriptor: ?*const gpu.Device.Descriptor) callconv(.Inline) ?*gpu.Device);
     assertDecl(T, "adapterEnumerateFeatures", fn (adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) callconv(.Inline) usize);
+    assertDecl(T, "adapterGetInstance", fn (adapter: *gpu.Adapter) callconv(.Inline) *gpu.Instance);
     assertDecl(T, "adapterGetLimits", fn (adapter: *gpu.Adapter, limits: *gpu.SupportedLimits) callconv(.Inline) bool);
     assertDecl(T, "adapterGetProperties", fn (adapter: *gpu.Adapter, properties: *gpu.Adapter.Properties) callconv(.Inline) void);
     assertDecl(T, "adapterHasFeature", fn (adapter: *gpu.Adapter, feature: gpu.FeatureName) callconv(.Inline) bool);
@@ -71,7 +72,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "computePassEncoderInsertDebugMarker", fn (compute_pass_encoder: *gpu.ComputePassEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderPopDebugGroup", fn (compute_pass_encoder: *gpu.ComputePassEncoder) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderPushDebugGroup", fn (compute_pass_encoder: *gpu.ComputePassEncoder, group_label: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "computePassEncoderSetBindGroup", fn (compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) callconv(.Inline) void);
+    assertDecl(T, "computePassEncoderSetBindGroup", fn (compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderSetLabel", fn (compute_pass_encoder: *gpu.ComputePassEncoder, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderSetPipeline", fn (compute_pass_encoder: *gpu.ComputePassEncoder, pipeline: *gpu.ComputePipeline) callconv(.Inline) void);
     assertDecl(T, "computePassEncoderWriteTimestamp", fn (compute_pass_encoder: *gpu.ComputePassEncoder, query_set: *gpu.QuerySet, query_index: u32) callconv(.Inline) void);
@@ -108,7 +109,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "deviceGetQueue", fn (device: *gpu.Device) callconv(.Inline) *gpu.Queue);
     assertDecl(T, "deviceHasFeature", fn (device: *gpu.Device, feature: gpu.FeatureName) callconv(.Inline) bool);
     assertDecl(T, "deviceInjectError", fn (device: *gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "devicePopErrorScope", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) callconv(.Inline) bool);
+    assertDecl(T, "devicePopErrorScope", fn (device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "devicePushErrorScope", fn (device: *gpu.Device, filter: gpu.ErrorFilter) callconv(.Inline) void);
     assertDecl(T, "deviceSetDeviceLostCallback", fn (device: *gpu.Device, callback: ?gpu.Device.LostCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "deviceSetLabel", fn (device: *gpu.Device, label: [*:0]const u8) callconv(.Inline) void);
@@ -122,6 +123,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "externalTextureReference", fn (external_texture: *gpu.ExternalTexture) callconv(.Inline) void);
     assertDecl(T, "externalTextureRelease", fn (external_texture: *gpu.ExternalTexture) callconv(.Inline) void);
     assertDecl(T, "instanceCreateSurface", fn (instance: *gpu.Instance, descriptor: *const gpu.Surface.Descriptor) callconv(.Inline) *gpu.Surface);
+    assertDecl(T, "instanceProcessEvents", fn (instance: *gpu.Instance) callconv(.Inline) void);
     assertDecl(T, "instanceRequestAdapter", fn (instance: *gpu.Instance, options: ?*const gpu.RequestAdapterOptions, callback: gpu.RequestAdapterCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "instanceReference", fn (instance: *gpu.Instance) callconv(.Inline) void);
     assertDecl(T, "instanceRelease", fn (instance: *gpu.Instance) callconv(.Inline) void);
@@ -137,11 +139,12 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "queueCopyTextureForBrowser", fn (queue: *gpu.Queue, source: *const gpu.ImageCopyTexture, destination: *const gpu.ImageCopyTexture, copy_size: *const gpu.Extent3D, options: *const gpu.CopyTextureForBrowserOptions) callconv(.Inline) void);
     assertDecl(T, "queueOnSubmittedWorkDone", fn (queue: *gpu.Queue, signal_value: u64, callback: gpu.Queue.WorkDoneCallback, userdata: ?*anyopaque) callconv(.Inline) void);
     assertDecl(T, "queueSetLabel", fn (queue: *gpu.Queue, label: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "queueSubmit", fn (queue: *gpu.Queue, command_count: u32, commands: [*]const *const gpu.CommandBuffer) callconv(.Inline) void);
+    assertDecl(T, "queueSubmit", fn (queue: *gpu.Queue, command_count: usize, commands: [*]const *const gpu.CommandBuffer) callconv(.Inline) void);
     assertDecl(T, "queueWriteBuffer", fn (queue: *gpu.Queue, buffer: *gpu.Buffer, buffer_offset: u64, data: *const anyopaque, size: usize) callconv(.Inline) void);
     assertDecl(T, "queueWriteTexture", fn (queue: *gpu.Queue, destination: *const gpu.ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const gpu.Texture.DataLayout, write_size: *const gpu.Extent3D) callconv(.Inline) void);
     assertDecl(T, "queueReference", fn (queue: *gpu.Queue) callconv(.Inline) void);
     assertDecl(T, "queueRelease", fn (queue: *gpu.Queue) callconv(.Inline) void);
+    assertDecl(T, "renderBundleSetLabel", fn (render_bundle: *gpu.RenderBundle, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderBundleReference", fn (render_bundle: *gpu.RenderBundle) callconv(.Inline) void);
     assertDecl(T, "renderBundleRelease", fn (render_bundle: *gpu.RenderBundle) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderDraw", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) callconv(.Inline) void);
@@ -152,7 +155,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "renderBundleEncoderInsertDebugMarker", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderPopDebugGroup", fn (render_bundle_encoder: *gpu.RenderBundleEncoder) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderPushDebugGroup", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, group_label: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "renderBundleEncoderSetBindGroup", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) callconv(.Inline) void);
+    assertDecl(T, "renderBundleEncoderSetBindGroup", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderSetIndexBuffer", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, buffer: *gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderSetLabel", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderBundleEncoderSetPipeline", fn (render_bundle_encoder: *gpu.RenderBundleEncoder, pipeline: *gpu.RenderPipeline) callconv(.Inline) void);
@@ -166,11 +169,11 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "renderPassEncoderDrawIndirect", fn (render_pass_encoder: *gpu.RenderPassEncoder, indirect_buffer: *gpu.Buffer, indirect_offset: u64) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderEnd", fn (render_pass_encoder: *gpu.RenderPassEncoder) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderEndOcclusionQuery", fn (render_pass_encoder: *gpu.RenderPassEncoder) callconv(.Inline) void);
-    assertDecl(T, "renderPassEncoderExecuteBundles", fn (render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const *const gpu.RenderBundle) callconv(.Inline) void);
+    assertDecl(T, "renderPassEncoderExecuteBundles", fn (render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: usize, bundles: [*]const *const gpu.RenderBundle) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderInsertDebugMarker", fn (render_pass_encoder: *gpu.RenderPassEncoder, marker_label: [*:0]const u8) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderPopDebugGroup", fn (render_pass_encoder: *gpu.RenderPassEncoder) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderPushDebugGroup", fn (render_pass_encoder: *gpu.RenderPassEncoder, group_label: [*:0]const u8) callconv(.Inline) void);
-    assertDecl(T, "renderPassEncoderSetBindGroup", fn (render_pass_encoder: *gpu.RenderPassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) callconv(.Inline) void);
+    assertDecl(T, "renderPassEncoderSetBindGroup", fn (render_pass_encoder: *gpu.RenderPassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderSetBlendConstant", fn (render_pass_encoder: *gpu.RenderPassEncoder, color: *const gpu.Color) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderSetIndexBuffer", fn (render_pass_encoder: *gpu.RenderPassEncoder, buffer: *gpu.Buffer, format: gpu.IndexFormat, offset: u64, size: u64) callconv(.Inline) void);
     assertDecl(T, "renderPassEncoderSetLabel", fn (render_pass_encoder: *gpu.RenderPassEncoder, label: [*:0]const u8) callconv(.Inline) void);
@@ -195,7 +198,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "shaderModuleRelease", fn (shader_module: *gpu.ShaderModule) callconv(.Inline) void);
     assertDecl(T, "surfaceReference", fn (surface: *gpu.Surface) callconv(.Inline) void);
     assertDecl(T, "surfaceRelease", fn (surface: *gpu.Surface) callconv(.Inline) void);
-    assertDecl(T, "swapChainConfigure", fn (swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: gpu.Texture.UsageFlags, width: u32, height: u32) callconv(.Inline) void);
+    assertDecl(T, "swapChainGetCurrentTexture", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) ?*gpu.Texture);
     assertDecl(T, "swapChainGetCurrentTextureView", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) ?*gpu.TextureView);
     assertDecl(T, "swapChainPresent", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) void);
     assertDecl(T, "swapChainReference", fn (swap_chain: *gpu.SwapChain) callconv(.Inline) void);
@@ -247,6 +250,11 @@ pub fn Export(comptime T: type) type {
         // WGPU_EXPORT size_t wgpuAdapterEnumerateFeatures(WGPUAdapter adapter, WGPUFeatureName * features);
         export fn wgpuAdapterEnumerateFeatures(adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
             return T.adapterEnumerateFeatures(adapter, features);
+        }
+
+        // WGPU_EXPORT WGPUInstance wgpuAdapterGetInstance(WGPUAdapter adapter) WGPU_FUNCTION_ATTRIBUTE;
+        export fn wgpuAdapterGetInstance(adapter: *gpu.Adapter) *gpu.Instance {
+            return T.adapterGetInstance(adapter);
         }
 
         // WGPU_EXPORT bool wgpuAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits * limits);
@@ -499,8 +507,8 @@ pub fn Export(comptime T: type) type {
             T.computePassEncoderPushDebugGroup(compute_pass_encoder, group_label);
         }
 
-        // WGPU_EXPORT void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
-        export fn wgpuComputePassEncoderSetBindGroup(compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
+        // WGPU_EXPORT void wgpuComputePassEncoderSetBindGroup(WGPUComputePassEncoder computePassEncoder, uint32_t groupIndex, WGPUBindGroup group, size_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+        export fn wgpuComputePassEncoderSetBindGroup(compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) void {
             T.computePassEncoderSetBindGroup(compute_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
         }
 
@@ -674,9 +682,9 @@ pub fn Export(comptime T: type) type {
             T.deviceInjectError(device, typ, message);
         }
 
-        // WGPU_EXPORT bool wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
-        export fn wgpuDevicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) bool {
-            return T.devicePopErrorScope(device, callback, userdata);
+        // WGPU_EXPORT void wgpuDevicePopErrorScope(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
+        export fn wgpuDevicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) void {
+            T.devicePopErrorScope(device, callback, userdata);
         }
 
         // WGPU_EXPORT void wgpuDevicePushErrorScope(WGPUDevice device, WGPUErrorFilter filter);
@@ -745,6 +753,11 @@ pub fn Export(comptime T: type) type {
         // WGPU_EXPORT WGPUSurface wgpuInstanceCreateSurface(WGPUInstance instance, WGPUSurfaceDescriptor const * descriptor);
         export fn wgpuInstanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.Surface.Descriptor) *gpu.Surface {
             return T.instanceCreateSurface(instance, descriptor);
+        }
+
+        // WGPU_EXPORT void instanceProcessEvents(WGPUInstance instance);
+        export fn wgpuInstanceProcessEvents(instance: *gpu.Instance) void {
+            T.instanceProcessEvents(instance);
         }
 
         // WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const * options /* nullable */, WGPURequestAdapterCallback callback, void * userdata);
@@ -822,8 +835,8 @@ pub fn Export(comptime T: type) type {
             T.queueSetLabel(queue, label);
         }
 
-        // WGPU_EXPORT void wgpuQueueSubmit(WGPUQueue queue, uint32_t commandCount, WGPUCommandBuffer const * commands);
-        export fn wgpuQueueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]const *const gpu.CommandBuffer) void {
+        // WGPU_EXPORT void wgpuQueueSubmit(WGPUQueue queue, size_t commandCount, WGPUCommandBuffer const * commands);
+        export fn wgpuQueueSubmit(queue: *gpu.Queue, command_count: usize, commands: [*]const *const gpu.CommandBuffer) void {
             T.queueSubmit(queue, command_count, commands);
         }
 
@@ -845,6 +858,11 @@ pub fn Export(comptime T: type) type {
         // WGPU_EXPORT void wgpuQueueRelease(WGPUQueue queue);
         export fn wgpuQueueRelease(queue: *gpu.Queue) void {
             T.queueRelease(queue);
+        }
+
+        // WGPU_EXPORT void wgpuRenderBundleSetLabel(WGPURenderBundle renderBundle, char const * label);
+        export fn wgpuRenderBundleSetLabel(render_bundle: *gpu.RenderBundle, label: [*:0]const u8) void {
+            T.renderBundleSetLabel(render_bundle, label);
         }
 
         // WGPU_EXPORT void wgpuRenderBundleReference(WGPURenderBundle renderBundle);
@@ -897,8 +915,8 @@ pub fn Export(comptime T: type) type {
             T.renderBundleEncoderPushDebugGroup(render_bundle_encoder, group_label);
         }
 
-        // WGPU_EXPORT void wgpuRenderBundleEncoderSetBindGroup(WGPURenderBundleEncoder renderBundleEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
-        export fn wgpuRenderBundleEncoderSetBindGroup(render_bundle_encoder: *gpu.RenderBundleEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
+        // WGPU_EXPORT void wgpuRenderBundleEncoderSetBindGroup(WGPURenderBundleEncoder renderBundleEncoder, uint32_t groupIndex, WGPUBindGroup group, size_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+        export fn wgpuRenderBundleEncoderSetBindGroup(render_bundle_encoder: *gpu.RenderBundleEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) void {
             T.renderBundleEncoderSetBindGroup(render_bundle_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
         }
 
@@ -967,8 +985,8 @@ pub fn Export(comptime T: type) type {
             T.renderPassEncoderEndOcclusionQuery(render_pass_encoder);
         }
 
-        // WGPU_EXPORT void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder renderPassEncoder, uint32_t bundlesCount, WGPURenderBundle const * bundles);
-        export fn wgpuRenderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const *const gpu.RenderBundle) void {
+        // WGPU_EXPORT void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder renderPassEncoder, size_t bundleCount, WGPURenderBundle const * bundles);
+        export fn wgpuRenderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: usize, bundles: [*]const *const gpu.RenderBundle) void {
             T.renderPassEncoderExecuteBundles(render_pass_encoder, bundles_count, bundles);
         }
 
@@ -987,8 +1005,8 @@ pub fn Export(comptime T: type) type {
             T.renderPassEncoderPushDebugGroup(render_pass_encoder, group_label);
         }
 
-        // WGPU_EXPORT void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPUBindGroup group, uint32_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
-        export fn wgpuRenderPassEncoderSetBindGroup(render_pass_encoder: *gpu.RenderPassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
+        // WGPU_EXPORT void wgpuRenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPUBindGroup group, size_t dynamicOffsetCount, uint32_t const * dynamicOffsets);
+        export fn wgpuRenderPassEncoderSetBindGroup(render_pass_encoder: *gpu.RenderPassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) void {
             T.renderPassEncoderSetBindGroup(render_pass_encoder, group_index, group, dynamic_offset_count, dynamic_offsets);
         }
 
@@ -1112,9 +1130,9 @@ pub fn Export(comptime T: type) type {
             T.surfaceRelease(surface);
         }
 
-        // WGPU_EXPORT void wgpuSwapChainConfigure(WGPUSwapChain swapChain, WGPUTextureFormat format, WGPUTextureUsageFlags allowedUsage, uint32_t width, uint32_t height);
-        export fn wgpuSwapChainConfigure(swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: u32, width: u32, height: u32) void {
-            T.swapChainConfigure(swap_chain, format, @bitCast(gpu.Texture.UsageFlags, allowed_usage), width, height);
+        // WGPU_EXPORT WGPUTexture wgpuSwapChainGetCurrentTexture(WGPUSwapChain swapChain);
+        export fn wgpuSwapChainGetCurrentTexture(swap_chain: *gpu.SwapChain) ?*gpu.Texture {
+            return T.swapChainGetCurrentTexture(swap_chain);
         }
 
         // WGPU_EXPORT WGPUTextureView wgpuSwapChainGetCurrentTextureView(WGPUSwapChain swapChain);
@@ -1241,6 +1259,11 @@ pub const StubInterface = Interface(struct {
     pub inline fn adapterEnumerateFeatures(adapter: *gpu.Adapter, features: ?[*]gpu.FeatureName) usize {
         _ = adapter;
         _ = features;
+        unreachable;
+    }
+
+    pub inline fn adapterGetInstance(adapter: *gpu.Adapter) *gpu.Instance {
+        _ = adapter;
         unreachable;
     }
 
@@ -1560,7 +1583,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn computePassEncoderSetBindGroup(compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
+    pub inline fn computePassEncoderSetBindGroup(compute_pass_encoder: *gpu.ComputePassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) void {
         _ = compute_pass_encoder;
         _ = group_index;
         _ = group;
@@ -1780,7 +1803,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) bool {
+    pub inline fn devicePopErrorScope(device: *gpu.Device, callback: gpu.ErrorCallback, userdata: ?*anyopaque) void {
         _ = device;
         _ = callback;
         _ = userdata;
@@ -1859,6 +1882,11 @@ pub const StubInterface = Interface(struct {
     pub inline fn instanceCreateSurface(instance: *gpu.Instance, descriptor: *const gpu.Surface.Descriptor) *gpu.Surface {
         _ = instance;
         _ = descriptor;
+        unreachable;
+    }
+
+    pub inline fn instanceProcessEvents(instance: *gpu.Instance) void {
+        _ = instance;
         unreachable;
     }
 
@@ -1950,7 +1978,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn queueSubmit(queue: *gpu.Queue, command_count: u32, commands: [*]const *const gpu.CommandBuffer) void {
+    pub inline fn queueSubmit(queue: *gpu.Queue, command_count: usize, commands: [*]const *const gpu.CommandBuffer) void {
         _ = queue;
         _ = command_count;
         _ = commands;
@@ -1983,6 +2011,12 @@ pub const StubInterface = Interface(struct {
 
     pub inline fn queueRelease(queue: *gpu.Queue) void {
         _ = queue;
+        unreachable;
+    }
+
+    pub inline fn renderBundleSetLabel(render_bundle: *gpu.RenderBundle, label: [*:0]const u8) void {
+        _ = render_bundle;
+        _ = label;
         unreachable;
     }
 
@@ -2052,7 +2086,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn renderBundleEncoderSetBindGroup(render_bundle_encoder: *gpu.RenderBundleEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
+    pub inline fn renderBundleEncoderSetBindGroup(render_bundle_encoder: *gpu.RenderBundleEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) void {
         _ = render_bundle_encoder;
         _ = group_index;
         _ = group;
@@ -2150,7 +2184,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn renderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: u32, bundles: [*]const *const gpu.RenderBundle) void {
+    pub inline fn renderPassEncoderExecuteBundles(render_pass_encoder: *gpu.RenderPassEncoder, bundles_count: usize, bundles: [*]const *const gpu.RenderBundle) void {
         _ = render_pass_encoder;
         _ = bundles_count;
         _ = bundles;
@@ -2174,7 +2208,7 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn renderPassEncoderSetBindGroup(render_pass_encoder: *gpu.RenderPassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: u32, dynamic_offsets: ?[*]const u32) void {
+    pub inline fn renderPassEncoderSetBindGroup(render_pass_encoder: *gpu.RenderPassEncoder, group_index: u32, group: *gpu.BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) void {
         _ = render_pass_encoder;
         _ = group_index;
         _ = group;
@@ -2333,12 +2367,8 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn swapChainConfigure(swap_chain: *gpu.SwapChain, format: gpu.Texture.Format, allowed_usage: gpu.Texture.UsageFlags, width: u32, height: u32) void {
+    pub inline fn swapChainGetCurrentTexture(swap_chain: *gpu.SwapChain) ?*gpu.Texture {
         _ = swap_chain;
-        _ = format;
-        _ = allowed_usage;
-        _ = width;
-        _ = height;
         unreachable;
     }
 

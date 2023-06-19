@@ -44,7 +44,6 @@ pub inline fn getProcAddress(_device: *device.Device, proc_name: [*:0]const u8) 
     return Impl.getProcAddress(_device, proc_name);
 }
 
-
 pub const array_layer_count_undef = 0xffffffff;
 pub const copy_stride_undef = 0xffffffff;
 pub const limit_u32_undef = 0xffffffff;
@@ -67,14 +66,10 @@ pub const RenderPassDepthStencilAttachment = extern struct {
     view: *TextureView,
     depth_load_op: LoadOp = .undefined,
     depth_store_op: StoreOp = .undefined,
-    /// deprecated
-    clear_depth: f32 = std.math.nan(f32),
     depth_clear_value: f32 = 0,
     depth_read_only: bool = false,
     stencil_load_op: LoadOp = .undefined,
     stencil_store_op: StoreOp = .undefined,
-    /// deprecated
-    clear_stencil: u32 = 0,
     stencil_clear_value: u32 = 0,
     stencil_read_only: bool = false,
 };
@@ -90,12 +85,13 @@ pub const RequestAdapterOptions = extern struct {
     compatible_surface: ?*Surface = null,
     power_preference: PowerPreference = .undefined,
     force_fallback_adapter: bool = false,
+    compatibility_mode: bool = false,
 };
 
 pub const ComputePassDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    timestamp_write_count: u32 = 0,
+    timestamp_write_count: usize = 0,
     timestamp_writes: ?[*]const ComputePassTimestampWrite = null,
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
@@ -107,7 +103,7 @@ pub const ComputePassDescriptor = extern struct {
         return .{
             .next_in_chain = v.next_in_chain,
             .label = v.label,
-            .timestamp_write_count = if (v.timestamp_writes) |e| @intCast(u32, e.len) else 0,
+            .timestamp_write_count = if (v.timestamp_writes) |e| e.len else 0,
             .timestamp_writes = if (v.timestamp_writes) |e| e.ptr else null,
         };
     }
@@ -121,11 +117,11 @@ pub const RenderPassDescriptor = extern struct {
 
     next_in_chain: NextInChain = .{ .generic = null },
     label: ?[*:0]const u8 = null,
-    color_attachment_count: u32 = 0,
+    color_attachment_count: usize = 0,
     color_attachments: ?[*]const RenderPassColorAttachment = null,
     depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment = null,
     occlusion_query_set: ?*QuerySet = null,
-    timestamp_write_count: u32 = 0,
+    timestamp_write_count: usize = 0,
     timestamp_writes: ?[*]const RenderPassTimestampWrite = null,
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
@@ -140,11 +136,11 @@ pub const RenderPassDescriptor = extern struct {
         return .{
             .next_in_chain = v.next_in_chain,
             .label = v.label,
-            .color_attachment_count = if (v.color_attachments) |e| @intCast(u32, e.len) else 0,
+            .color_attachment_count = if (v.color_attachments) |e| e.len else 0,
             .color_attachments = if (v.color_attachments) |e| e.ptr else null,
             .depth_stencil_attachment = v.depth_stencil_attachment,
             .occlusion_query_set = v.occlusion_query_set,
-            .timestamp_write_count = if (v.timestamp_writes) |e| @intCast(u32, e.len) else 0,
+            .timestamp_write_count = if (v.timestamp_writes) |e| e.len else 0,
             .timestamp_writes = if (v.timestamp_writes) |e| e.ptr else null,
         };
     }
@@ -232,10 +228,11 @@ pub const ComputePassTimestampLocation = enum(u32) {
 
 pub const CreatePipelineAsyncStatus = enum(u32) {
     success = 0x00000000,
-    err = 0x00000001,
-    device_lost = 0x00000002,
-    device_destroyed = 0x00000003,
-    unknown = 0x00000004,
+    validation_error = 0x00000001,
+    internal_error = 0x00000002,
+    device_lost = 0x00000003,
+    device_destroyed = 0x00000004,
+    unknown = 0x00000005,
 };
 
 pub const CullMode = enum(u32) {
@@ -271,15 +268,25 @@ pub const FeatureName = enum(u32) {
     indirect_first_instance = 0x00000008,
     shader_f16 = 0x00000009,
     rg11_b10_ufloat_renderable = 0x0000000A,
+    bgra8_unorm_storage = 0x0000000B,
+    float32_filterable = 0x0000000C,
     dawn_shader_float16 = 0x000003e9,
     dawn_internal_usages = 0x000003ea,
     dawn_multi_planar_formats = 0x000003eb,
     dawn_native = 0x000003ec,
     chromium_experimental_dp4a = 0x000003ed,
     timestamp_query_inside_passes = 0x000003EE,
+    implicit_device_synchronization = 0x000003EF,
+    surface_capabilities = 0x000003F0,
+    transient_attachments = 0x000003F1,
 };
 
 pub const FilterMode = enum(u32) {
+    nearest = 0x00000000,
+    linear = 0x00000001,
+};
+
+pub const MipmapFilterMode = enum(u32) {
     nearest = 0x00000000,
     linear = 0x00000001,
 };
@@ -377,12 +384,13 @@ pub const SType = enum(u32) {
     surface_descriptor_from_windows_swap_chain_panel = 0x0000000E,
     render_pass_descriptor_max_draw_count = 0x0000000F,
     dawn_texture_internal_usage_descriptor = 0x000003E8,
-    dawn_toggles_device_descriptor = 0x000003EA,
     dawn_encoder_internal_usage_descriptor = 0x000003EB,
     dawn_instance_descriptor = 0x000003EC,
     dawn_cache_device_descriptor = 0x000003ED,
     dawn_adapter_properties_power_preference = 0x000003EE,
     dawn_buffer_descriptor_error_info_from_wire_client = 0x000003EF,
+    dawn_toggles_descriptor = 0x000003F0,
+    dawn_shader_module_spirv_options_descriptor = 0x000003F1,
 };
 
 pub const StencilOperation = enum(u32) {
@@ -684,7 +692,7 @@ pub const BlendState = extern struct {
 
 pub const CompilationInfo = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    message_count: u32,
+    message_count: usize,
     messages: ?[*]const CompilationMessage = null,
 
     /// Helper to get messages as a slice.
@@ -720,6 +728,7 @@ pub const ImageCopyExternalTexture = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     external_texture: *ExternalTexture,
     origin: Origin3D,
+    natural_size: Extent2D,
 };
 
 pub const ImageCopyTexture = extern struct {
@@ -734,7 +743,7 @@ pub const ProgrammableStageDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     module: *ShaderModule,
     entry_point: [*:0]const u8,
-    constant_count: u32 = 0,
+    constant_count: usize = 0,
     constants: ?[*]const ConstantEntry = null,
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
@@ -748,7 +757,7 @@ pub const ProgrammableStageDescriptor = extern struct {
             .next_in_chain = v.next_in_chain,
             .module = v.module,
             .entry_point = v.entry_point,
-            .constant_count = if (v.constants) |e| @intCast(u32, e.len) else 0,
+            .constant_count = if (v.constants) |e| e.len else 0,
             .constants = if (v.constants) |e| e.ptr else null,
         };
     }
@@ -759,13 +768,6 @@ pub const RenderPassColorAttachment = extern struct {
     resolve_target: ?*TextureView = null,
     load_op: LoadOp,
     store_op: StoreOp,
-    /// deprecated
-    clear_color: Color = .{
-        .r = std.math.nan(f64),
-        .g = std.math.nan(f64),
-        .b = std.math.nan(f64),
-        .a = std.math.nan(f64),
-    },
     clear_value: Color,
 };
 
@@ -790,7 +792,7 @@ pub const SupportedLimits = extern struct {
 pub const VertexBufferLayout = extern struct {
     array_stride: u64,
     step_mode: VertexStepMode = .vertex,
-    attribute_count: u32,
+    attribute_count: usize,
     attributes: ?[*]const VertexAttribute = null,
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
@@ -802,7 +804,7 @@ pub const VertexBufferLayout = extern struct {
         return .{
             .array_stride = v.array_stride,
             .step_mode = v.step_mode,
-            .attribute_count = if (v.attributes) |e| @intCast(u32, e.len) else 0,
+            .attribute_count = if (v.attributes) |e| e.len else 0,
             .attributes = if (v.attributes) |e| e.ptr else null,
         };
     }
@@ -819,9 +821,9 @@ pub const VertexState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     module: *ShaderModule,
     entry_point: [*:0]const u8,
-    constant_count: u32 = 0,
+    constant_count: usize = 0,
     constants: ?[*]const ConstantEntry = null,
-    buffer_count: u32 = 0,
+    buffer_count: usize = 0,
     buffers: ?[*]const VertexBufferLayout = null,
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
@@ -836,9 +838,9 @@ pub const VertexState = extern struct {
             .next_in_chain = v.next_in_chain,
             .module = v.module,
             .entry_point = v.entry_point,
-            .constant_count = if (v.constants) |e| @intCast(u32, e.len) else 0,
+            .constant_count = if (v.constants) |e| e.len else 0,
             .constants = if (v.constants) |e| e.ptr else null,
-            .buffer_count = if (v.buffers) |e| @intCast(u32, e.len) else 0,
+            .buffer_count = if (v.buffers) |e| e.len else 0,
             .buffers = if (v.buffers) |e| e.ptr else null,
         };
     }
@@ -848,9 +850,9 @@ pub const FragmentState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     module: *ShaderModule,
     entry_point: [*:0]const u8,
-    constant_count: u32 = 0,
+    constant_count: usize = 0,
     constants: ?[*]const ConstantEntry = null,
-    target_count: u32,
+    target_count: usize,
     targets: ?[*]const ColorTargetState = null,
 
     /// Provides a slightly friendlier Zig API to initialize this structure.
@@ -865,9 +867,9 @@ pub const FragmentState = extern struct {
             .next_in_chain = v.next_in_chain,
             .module = v.module,
             .entry_point = v.entry_point,
-            .constant_count = if (v.constants) |e| @intCast(u32, e.len) else 0,
+            .constant_count = if (v.constants) |e| e.len else 0,
             .constants = if (v.constants) |e| e.ptr else null,
-            .target_count = if (v.targets) |e| @intCast(u32, e.len) else 0,
+            .target_count = if (v.targets) |e| e.len else 0,
             .targets = if (v.targets) |e| e.ptr else null,
         };
     }
@@ -926,7 +928,6 @@ pub const CreateRenderPipelineAsyncCallback = *const fn (
     message: [*:0]const u8,
     userdata: ?*anyopaque,
 ) callconv(.C) void;
-
 
 test {
     std.testing.refAllDeclsRecursive(@This());
