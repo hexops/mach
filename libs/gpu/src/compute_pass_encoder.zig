@@ -37,7 +37,7 @@ pub const ComputePassEncoder = opaque {
             compute_pass_encoder,
             group_index,
             group,
-            if (dynamic_offsets) |v| @intCast(u32, v.len) else 0,
+            if (dynamic_offsets) |v| v.len else 0,
             if (dynamic_offsets) |v| v.ptr else null,
         );
     }

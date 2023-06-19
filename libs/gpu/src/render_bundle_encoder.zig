@@ -11,7 +11,7 @@ pub const RenderBundleEncoder = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
-        color_formats_count: u32 = 0,
+        color_formats_count: usize = 0,
         color_formats: ?[*]const Texture.Format = null,
         depth_stencil_format: Texture.Format = .undefined,
         sample_count: u32 = 1,
@@ -31,7 +31,7 @@ pub const RenderBundleEncoder = opaque {
             return .{
                 .next_in_chain = v.next_in_chain,
                 .label = v.label,
-                .color_formats_count = if (v.color_formats) |e| @intCast(u32, e.len) else 0,
+                .color_formats_count = if (v.color_formats) |e| e.len else 0,
                 .color_formats = if (v.color_formats) |e| e.ptr else null,
                 .depth_stencil_format = v.depth_stencil_format,
                 .sample_count = v.sample_count,
@@ -86,7 +86,7 @@ pub const RenderBundleEncoder = opaque {
             render_bundle_encoder,
             group_index,
             group,
-            if (dynamic_offsets) |v| @intCast(u32, v.len) else 0,
+            if (dynamic_offsets) |v| v.len else 0,
             if (dynamic_offsets) |v| v.ptr else null,
         );
     }

@@ -6,7 +6,7 @@ pub const PipelineLayout = opaque {
     pub const Descriptor = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         label: ?[*:0]const u8 = null,
-        bind_group_layout_count: u32 = 0,
+        bind_group_layout_count: usize = 0,
         bind_group_layouts: ?[*]const *BindGroupLayout = null,
 
         /// Provides a slightly friendlier Zig API to initialize this structure.
@@ -18,7 +18,7 @@ pub const PipelineLayout = opaque {
             return .{
                 .next_in_chain = v.next_in_chain,
                 .label = v.label,
-                .bind_group_layout_count = if (v.bind_group_layouts) |e| @intCast(u32, e.len) else 0,
+                .bind_group_layout_count = if (v.bind_group_layouts) |e| e.len else 0,
                 .bind_group_layouts = if (v.bind_group_layouts) |e| e.ptr else null,
             };
         }

@@ -3,6 +3,7 @@ const CompilationInfoCallback = @import("main.zig").CompilationInfoCallback;
 const CompilationInfoRequestStatus = @import("main.zig").CompilationInfoRequestStatus;
 const CompilationInfo = @import("main.zig").CompilationInfo;
 const Impl = @import("interface.zig").Impl;
+const dawn = @import("dawn.zig");
 
 pub const ShaderModule = opaque {
     pub const Descriptor = extern struct {
@@ -10,6 +11,7 @@ pub const ShaderModule = opaque {
             generic: ?*const ChainedStruct,
             spirv_descriptor: ?*const SPIRVDescriptor,
             wgsl_descriptor: ?*const WGSLDescriptor,
+            dawn_shader_module_spirv_options_descriptor: ?*const dawn.ShaderModuleSPIRVOptionsDescriptor,
         };
 
         next_in_chain: NextInChain = .{ .generic = null },
@@ -24,7 +26,7 @@ pub const ShaderModule = opaque {
 
     pub const WGSLDescriptor = extern struct {
         chain: ChainedStruct = .{ .next = null, .s_type = .shader_module_wgsl_descriptor },
-        source: [*:0]const u8,
+        code: [*:0]const u8,
     };
 
     pub inline fn getCompilationInfo(

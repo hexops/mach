@@ -46,16 +46,18 @@ pub const Device = opaque {
     pub const Descriptor = extern struct {
         pub const NextInChain = extern union {
             generic: ?*const ChainedStruct,
-            dawn_toggles_device_descriptor: *const dawn.TogglesDeviceDescriptor,
+            dawn_toggles_descriptor: *const dawn.TogglesDescriptor,
             dawn_cache_device_descriptor: *const dawn.CacheDeviceDescriptor,
         };
 
         next_in_chain: NextInChain = .{ .generic = null },
         label: ?[*:0]const u8 = null,
-        required_features_count: u32 = 0,
+        required_features_count: usize = 0,
         required_features: ?[*]const FeatureName = null,
         required_limits: ?*const RequiredLimits = null,
         default_queue: Queue.Descriptor = Queue.Descriptor{},
+        device_lost_callback: LostCallback,
+        device_lost_userdata: ?*anyopaque,
 
         /// Provides a slightly friendlier Zig API to initialize this structure.
         pub inline fn init(v: struct {
@@ -68,7 +70,7 @@ pub const Device = opaque {
             return .{
                 .next_in_chain = v.next_in_chain,
                 .label = v.label,
-                .required_features_count = if (v.required_features) |e| @intCast(u32, e.len) else 0,
+                .required_features_count = if (v.required_features) |e| e.len else 0,
                 .required_features = if (v.required_features) |e| e.ptr else null,
                 .default_queue = v.default_queue,
             };
@@ -199,11 +201,11 @@ pub const Device = opaque {
     pub inline fn createShaderModuleWGSL(
         device: *Device,
         label: ?[*:0]const u8,
-        wgsl_source: [*:0]const u8,
+        wgsl_code: [*:0]const u8,
     ) *ShaderModule {
         return device.createShaderModule(&ShaderModule.Descriptor{
             .next_in_chain = .{ .wgsl_descriptor = &.{
-                .source = wgsl_source,
+                .code = wgsl_code,
             } },
             .label = label,
         });
@@ -265,14 +267,14 @@ pub const Device = opaque {
         device: *Device,
         context: anytype,
         comptime callback: fn (ctx: @TypeOf(context), typ: ErrorType, message: [*:0]const u8) callconv(.Inline) void,
-    ) bool {
+    ) void {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn cCallback(typ: ErrorType, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
                 callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)), typ, message);
             }
         };
-        return Impl.devicePopErrorScope(device, Helper.cCallback, if (Context == void) null else context);
+        Impl.devicePopErrorScope(device, Helper.cCallback, if (Context == void) null else context);
     }
 
     pub inline fn pushErrorScope(device: *Device, filter: ErrorFilter) void {

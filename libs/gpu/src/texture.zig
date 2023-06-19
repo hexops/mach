@@ -15,13 +15,6 @@ pub const Texture = opaque {
         plane1_only = 0x00000004,
     };
 
-    pub const ComponentType = enum(u32) {
-        float = 0x00000000,
-        sint = 0x00000001,
-        uint = 0x00000002,
-        depth_comparison = 0x00000003,
-    };
-
     pub const Dimension = enum(u32) {
         dimension_1d = 0x00000000,
         dimension_2d = 0x00000001,
@@ -142,7 +135,7 @@ pub const Texture = opaque {
         texture_binding: bool = false,
         storage_binding: bool = false,
         render_attachment: bool = false,
-        present: bool = false,
+        transient_attachment: bool = false,
 
         _padding: u26 = 0,
 
@@ -188,7 +181,7 @@ pub const Texture = opaque {
         format: Format,
         mip_level_count: u32 = 1,
         sample_count: u32 = 1,
-        view_format_count: u32 = 0,
+        view_format_count: usize = 0,
         view_formats: ?[*]const Format = null,
 
         /// Provides a slightly friendlier Zig API to initialize this structure.
@@ -212,7 +205,7 @@ pub const Texture = opaque {
                 .format = v.format,
                 .mip_level_count = v.mip_level_count,
                 .sample_count = v.sample_count,
-                .view_format_count = if (v.view_formats) |e| @intCast(u32, e.len) else 0,
+                .view_format_count = if (v.view_formats) |e| e.len else 0,
                 .view_formats = if (v.view_formats) |e| e.ptr else null,
             };
         }

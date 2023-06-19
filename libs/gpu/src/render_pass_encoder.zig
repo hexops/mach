@@ -49,7 +49,7 @@ pub const RenderPassEncoder = opaque {
     ) void {
         Impl.renderPassEncoderExecuteBundles(
             render_pass_encoder,
-            @intCast(u32, bundles.len),
+            bundles.len,
             bundles.ptr,
         );
     }
@@ -73,7 +73,7 @@ pub const RenderPassEncoder = opaque {
             render_pass_encoder,
             group_index,
             group,
-            if (dynamic_offsets) |v| @intCast(u32, v.len) else 0,
+            if (dynamic_offsets) |v| v.len else 0,
             if (dynamic_offsets) |v| v.ptr else null,
         );
     }
