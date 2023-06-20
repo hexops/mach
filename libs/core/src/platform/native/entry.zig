@@ -13,7 +13,7 @@ pub const std_options = struct {
     else
         std.log.default_level;
 
-    pub const log_scope_levels = if (@hasDecl(App, "log_scope_levels"))
+    pub const log_scope_levels = if (@hasDecl(app_std_options, "log_scope_levels"))
         app_std_options.log_scope_levels
     else
         &[0]std.log.ScopeLevel{};
