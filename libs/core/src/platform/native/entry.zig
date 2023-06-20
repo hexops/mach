@@ -17,6 +17,11 @@ pub const std_options = struct {
         app_std_options.log_scope_levels
     else
         &[0]std.log.ScopeLevel{};
+
+    pub const logFn = if (@hasDecl(app_std_options, "logFn"))
+        app_std_options.logFn
+    else
+        std.log.defaultLog;
 };
 
 pub fn main() !void {
