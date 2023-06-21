@@ -222,7 +222,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
                     // If min. target macOS version is lesser than the min version we have available, then
                     // our binary is incompatible with the target.
-                    const min_available = std.builtin.Version{ .major = 12, .minor = 0 };
+                    const min_available = std.SemanticVersion{ .major = 12, .minor = 0, .patch = 0 };
                     if (target.os.version_range.semver.min.order(min_available) == .lt) break :blk false;
                     break :blk true;
                 },
