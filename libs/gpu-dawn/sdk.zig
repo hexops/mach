@@ -742,8 +742,10 @@ pub fn Sdk(comptime deps: anytype) type {
                 include("libs/dawn/src"),
                 include("libs/dawn/include"),
                 include("libs/dawn/third_party/vulkan-deps/spirv-tools/src/include"),
-                include("libs/dawn/third_party/abseil-cpp"),
                 include("libs/dawn/third_party/khronos"),
+
+                "-Wno-deprecated-declarations",
+                include("libs/dawn/third_party/abseil-cpp"),
 
                 // TODO(build-system): make these optional
                 "-DTINT_BUILD_SPV_READER=1",
@@ -760,8 +762,6 @@ pub fn Sdk(comptime deps: anytype) type {
 
                 include("libs/dawn/out/Debug/gen/include"),
                 include("libs/dawn/out/Debug/gen/src"),
-
-                "-Wno-deprecated-declarations",
             });
             if (options.d3d12.?) try flags.appendSlice(dawn_d3d12_flags);
 
@@ -882,40 +882,36 @@ pub fn Sdk(comptime deps: anytype) type {
                     .excluding_contains = &.{ "test", "benchmark", "mock" },
                 });
                 try cpp_sources.append(sdkPath("/libs/dawn/" ++ "src/dawn/native/vulkan/external_memory/MemoryService.cpp"));
+                try cpp_sources.append(sdkPath("/libs/dawn/" ++ "src/dawn/native/vulkan/external_memory/MemoryServiceImplementation.cpp"));
+                try cpp_sources.append(sdkPath("/libs/dawn/" ++ "src/dawn/native/vulkan/external_semaphore/SemaphoreService.cpp"));
+                try cpp_sources.append(sdkPath("/libs/dawn/" ++ "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceImplementation.cpp"));
 
+                // TODO: DMA option MemoryServiceImplementationDmaBuf.cpp
                 if (isLinuxDesktopLike(tag)) {
                     inline for ([_][]const u8{
-                        "src/dawn/native/vulkan/external_memory/MemoryServiceOpaqueFD.cpp",
-                        "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
+                        "src/dawn/native/vulkan/external_memory/MemoryServiceImplementationOpaqueFD.cpp",
+                        "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceImplementationFD.cpp",
                     }) |path| {
                         const abs_path = sdkPath("/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
                 } else if (tag == .fuchsia) {
                     inline for ([_][]const u8{
-                        "src/dawn/native/vulkan/external_memory/MemoryServiceZirconHandle.cpp",
-                        "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceZirconHandle.cpp",
+                        "src/dawn/native/vulkan/external_memory/MemoryServiceImplementationZirconHandle.cpp",
+                        "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceImplementationZirconHandle.cpp",
                     }) |path| {
                         const abs_path = sdkPath("/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
                 } else if (step.target_info.target.isAndroid()) {
                     inline for ([_][]const u8{
-                        "src/dawn/native/vulkan/external_memory/MemoryServiceAHardwareBuffer.cpp",
-                        "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceFD.cpp",
+                        "src/dawn/native/vulkan/external_memory/MemoryServiceImplementationAHardwareBuffer.cpp",
+                        "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceImplementationFD.cpp",
                     }) |path| {
                         const abs_path = sdkPath("/libs/dawn/" ++ path);
                         try cpp_sources.append(abs_path);
                     }
                     try cpp_sources.append("-DDAWN_USE_SYNC_FDS");
-                } else {
-                    inline for ([_][]const u8{
-                        "src/dawn/native/vulkan/external_memory/MemoryServiceNull.cpp",
-                        "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceNull.cpp",
-                    }) |path| {
-                        const abs_path = sdkPath("/libs/dawn/" ++ path);
-                        try cpp_sources.append(abs_path);
-                    }
                 }
             }
 
