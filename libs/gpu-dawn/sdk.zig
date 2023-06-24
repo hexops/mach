@@ -883,10 +883,10 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
                 try cpp_sources.append(sdkPath("/libs/dawn/" ++ "src/dawn/native/vulkan/external_memory/MemoryService.cpp"));
                 try cpp_sources.append(sdkPath("/libs/dawn/" ++ "src/dawn/native/vulkan/external_memory/MemoryServiceImplementation.cpp"));
+                try cpp_sources.append(sdkPath("/libs/dawn/" ++ "src/dawn/native/vulkan/external_memory/MemoryServiceImplementationDmaBuf.cpp"));
                 try cpp_sources.append(sdkPath("/libs/dawn/" ++ "src/dawn/native/vulkan/external_semaphore/SemaphoreService.cpp"));
                 try cpp_sources.append(sdkPath("/libs/dawn/" ++ "src/dawn/native/vulkan/external_semaphore/SemaphoreServiceImplementation.cpp"));
 
-                // TODO: DMA option MemoryServiceImplementationDmaBuf.cpp
                 if (isLinuxDesktopLike(tag)) {
                     inline for ([_][]const u8{
                         "src/dawn/native/vulkan/external_memory/MemoryServiceImplementationOpaqueFD.cpp",
