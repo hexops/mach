@@ -1259,6 +1259,9 @@ pub fn Sdk(comptime deps: anytype) type {
                 include("libs/dawn"),
                 include("libs/dawn/third_party/abseil-cpp"),
                 "-Wno-deprecated-declarations",
+
+                // musl needs this defined in order for off64_t to be a type, which abseil-cpp uses
+                "-D_FILE_OFFSET_BITS",
             });
             if (target.os.tag == .windows) try flags.appendSlice(&.{
                 "-DABSL_FORCE_THREAD_IDENTITY_MODE=2",
