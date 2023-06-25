@@ -13,7 +13,7 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3798+a5e15eced.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: x86_64-linux -> aarch64-macos
-        run: zig build -Dtarget=aarch64-macos.12-none
+        run: zig build -Dtarget=aarch64-macos
       - name: test
         run: |
           zig build test
