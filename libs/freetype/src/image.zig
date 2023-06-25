@@ -84,7 +84,7 @@ pub const Bitmap = struct {
     }
 
     pub fn pixelMode(self: Bitmap) PixelMode {
-        return @intToEnum(PixelMode, self.handle.pixel_mode);
+        return @enumFromInt(PixelMode, self.handle.pixel_mode);
     }
 
     pub fn buffer(self: Bitmap) ?[]const u8 {
@@ -188,15 +188,15 @@ pub const Outline = struct {
     }
 
     pub fn orientation(self: Outline) Orientation {
-        return @intToEnum(Orientation, c.FT_Outline_Get_Orientation(self.handle));
+        return @enumFromInt(Orientation, c.FT_Outline_Get_Orientation(self.handle));
     }
 
     pub fn getInsideBorder(self: Outline) Stroker.Border {
-        return @intToEnum(Stroker.Border, c.FT_Outline_GetInsideBorder(self.handle));
+        return @enumFromInt(Stroker.Border, c.FT_Outline_GetInsideBorder(self.handle));
     }
 
     pub fn getOutsideBorder(self: Outline) Stroker.Border {
-        return @intToEnum(Stroker.Border, c.FT_Outline_GetOutsideBorder(self.handle));
+        return @enumFromInt(Stroker.Border, c.FT_Outline_GetOutsideBorder(self.handle));
     }
 
     pub fn Funcs(comptime Context: type) type {

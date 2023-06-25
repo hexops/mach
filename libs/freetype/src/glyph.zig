@@ -32,7 +32,7 @@ pub const Glyph = struct {
     pub fn newGlyph(library: Library, glyph_format: GlyphFormat) Glyph {
         var g: c.FT_Glyph = undefined;
         return .{
-            .handle = c.FT_New_Glyph(library.handle, @enumToInt(glyph_format), &g),
+            .handle = c.FT_New_Glyph(library.handle, @intFromEnum(glyph_format), &g),
         };
     }
 
@@ -48,17 +48,17 @@ pub const Glyph = struct {
 
     pub fn getCBox(self: Glyph, bbox_mode: BBoxMode) BBox {
         var b: BBox = undefined;
-        c.FT_Glyph_Get_CBox(self.handle, @enumToInt(bbox_mode), &b);
+        c.FT_Glyph_Get_CBox(self.handle, @intFromEnum(bbox_mode), &b);
         return b;
     }
 
     pub fn toBitmapGlyph(self: *Glyph, render_mode: RenderMode, origin: ?Vector) Error!BitmapGlyph {
-        try intToError(c.FT_Glyph_To_Bitmap(&self.handle, @enumToInt(render_mode), if (origin) |o| &o else null, 1));
+        try intToError(c.FT_Glyph_To_Bitmap(&self.handle, @intFromEnum(render_mode), if (origin) |o| &o else null, 1));
         return BitmapGlyph{ .handle = @ptrCast(c.FT_BitmapGlyph, self.handle) };
     }
 
     pub fn copyBitmapGlyph(self: *Glyph, render_mode: RenderMode, origin: ?Vector) Error!BitmapGlyph {
-        try intToError(c.FT_Glyph_To_Bitmap(&self.handle, @enumToInt(render_mode), if (origin) |o| &o else null, 0));
+        try intToError(c.FT_Glyph_To_Bitmap(&self.handle, @intFromEnum(render_mode), if (origin) |o| &o else null, 0));
         return BitmapGlyph{ .handle = @ptrCast(c.FT_BitmapGlyph, self.handle) };
     }
 
@@ -83,7 +83,7 @@ pub const Glyph = struct {
     }
 
     pub fn format(self: Glyph) GlyphFormat {
-        return @intToEnum(GlyphFormat, self.handle.*.format);
+        return @enumFromInt(GlyphFormat, self.handle.*.format);
     }
 
     pub fn advanceX(self: Glyph) isize {

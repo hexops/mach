@@ -210,8 +210,8 @@ pub const Context = struct {
                 .channels = channels,
                 .formats = &.{ .i16, .i32, .f32 },
                 .sample_rate = .{
-                    .min = @floatToInt(u24, @floor(sample_rate)),
-                    .max = @floatToInt(u24, @floor(sample_rate)),
+                    .min = @intFromFloat(u24, @floor(sample_rate)),
+                    .max = @intFromFloat(u24, @floor(sample_rate)),
                 },
             };
 
@@ -412,7 +412,7 @@ fn freeDevice(allocator: std.mem.Allocator, device: main.Device) void {
 
 fn createStreamDesc(format: main.Format, sample_rate: u24, ch_count: usize) !c.AudioStreamBasicDescription {
     var desc = c.AudioStreamBasicDescription{
-        .mSampleRate = @intToFloat(f64, sample_rate),
+        .mSampleRate = @floatFromInt(f64, sample_rate),
         .mFormatID = c.kAudioFormatLinearPCM,
         .mFormatFlags = switch (format) {
             .i16 => c.kAudioFormatFlagIsSignedInteger,

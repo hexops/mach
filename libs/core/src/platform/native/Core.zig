@@ -567,7 +567,7 @@ pub fn setCursorShape(self: *Core, cursor: CursorShape) void {
     // we hope to provide custom backup images for these.
     // See https://github.com/hexops/mach/pull/352 for more info
 
-    const enum_int = @enumToInt(cursor);
+    const enum_int = @intFromEnum(cursor);
     const tried = self.cursors_tried[enum_int];
     if (!tried) {
         self.cursors_tried[enum_int] = true;

@@ -153,7 +153,7 @@ pub inline fn create(image: Image, xhot: i32, yhot: i32) ?Cursor {
 /// see also: cursor_object, glfwCreateCursor
 pub inline fn createStandard(shape: Shape) ?Cursor {
     internal_debug.assertInitialized();
-    if (c.glfwCreateStandardCursor(@intCast(c_int, @enumToInt(shape)))) |cursor| return Cursor{ .ptr = cursor };
+    if (c.glfwCreateStandardCursor(@intCast(c_int, @intFromEnum(shape)))) |cursor| return Cursor{ .ptr = cursor };
     return null;
 }
 

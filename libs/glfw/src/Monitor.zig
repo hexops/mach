@@ -387,7 +387,7 @@ pub inline fn setCallback(comptime callback: ?fn (monitor: Monitor, event: Event
             pub fn monitorCallbackWrapper(monitor: ?*c.GLFWmonitor, event: c_int) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     Monitor{ .handle = monitor.? },
-                    @intToEnum(Event, event),
+                    @enumFromInt(Event, event),
                 });
             }
         };

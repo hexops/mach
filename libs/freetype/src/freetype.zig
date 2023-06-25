@@ -179,7 +179,7 @@ pub const OpenArgs = struct {
             .stream => |d| oa.stream = d,
             .driver => |d| oa.driver = d,
             .params => |*d| {
-                oa.params = @intToPtr(*c.FT_Parameter, @ptrToInt(d.ptr));
+                oa.params = @ptrFromInt(*c.FT_Parameter, @intFromPtr(d.ptr));
                 oa.num_params = @intCast(u31, d.len);
             },
         }

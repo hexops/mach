@@ -69,7 +69,7 @@ pub const Interface = struct {
     pub inline fn adapterHasFeature(adapter: *gpu.Adapter, feature: gpu.FeatureName) bool {
         return procs.adapterHasFeature.?(
             @ptrCast(c.WGPUAdapter, adapter),
-            @enumToInt(feature),
+            @intFromEnum(feature),
         );
     }
 
@@ -599,14 +599,14 @@ pub const Interface = struct {
     pub inline fn deviceHasFeature(device: *gpu.Device, feature: gpu.FeatureName) bool {
         return procs.deviceHasFeature.?(
             @ptrCast(c.WGPUDevice, device),
-            @enumToInt(feature),
+            @intFromEnum(feature),
         );
     }
 
     pub inline fn deviceInjectError(device: *gpu.Device, typ: gpu.ErrorType, message: [*:0]const u8) void {
         procs.deviceInjectError.?(
             @ptrCast(c.WGPUDevice, device),
-            @enumToInt(typ),
+            @intFromEnum(typ),
             message,
         );
     }
@@ -622,7 +622,7 @@ pub const Interface = struct {
     pub inline fn devicePushErrorScope(device: *gpu.Device, filter: gpu.ErrorFilter) void {
         procs.devicePushErrorScope.?(
             @ptrCast(c.WGPUDevice, device),
-            @enumToInt(filter),
+            @intFromEnum(filter),
         );
     }
 
@@ -737,7 +737,7 @@ pub const Interface = struct {
     }
 
     pub inline fn querySetGetType(query_set: *gpu.QuerySet) gpu.QueryType {
-        return @intToEnum(gpu.QueryType, procs.querySetGetType.?(@ptrCast(c.WGPUQuerySet, query_set)));
+        return @enumFromInt(gpu.QueryType, procs.querySetGetType.?(@ptrCast(c.WGPUQuerySet, query_set)));
     }
 
     pub inline fn querySetSetLabel(query_set: *gpu.QuerySet, label: [*:0]const u8) void {
@@ -901,7 +901,7 @@ pub const Interface = struct {
         procs.renderBundleEncoderSetIndexBuffer.?(
             @ptrCast(c.WGPURenderBundleEncoder, render_bundle_encoder),
             @ptrCast(c.WGPUBuffer, buffer),
-            @enumToInt(format),
+            @intFromEnum(format),
             offset,
             size,
         );
@@ -1032,7 +1032,7 @@ pub const Interface = struct {
         procs.renderPassEncoderSetIndexBuffer.?(
             @ptrCast(c.WGPURenderPassEncoder, render_pass_encoder),
             @ptrCast(c.WGPUBuffer, buffer),
-            @enumToInt(format),
+            @intFromEnum(format),
             offset,
             size,
         );
@@ -1199,11 +1199,11 @@ pub const Interface = struct {
     }
 
     pub inline fn textureGetDimension(texture: *gpu.Texture) gpu.Texture.Dimension {
-        return @intToEnum(gpu.Texture.Dimension, procs.textureGetDimension.?(@ptrCast(c.WGPUTexture, texture)));
+        return @enumFromInt(gpu.Texture.Dimension, procs.textureGetDimension.?(@ptrCast(c.WGPUTexture, texture)));
     }
 
     pub inline fn textureGetFormat(texture: *gpu.Texture) gpu.Texture.Format {
-        return @intToEnum(gpu.Texture.Format, procs.textureGetFormat.?(@ptrCast(c.WGPUTexture, texture)));
+        return @enumFromInt(gpu.Texture.Format, procs.textureGetFormat.?(@ptrCast(c.WGPUTexture, texture)));
     }
 
     pub inline fn textureGetHeight(texture: *gpu.Texture) u32 {

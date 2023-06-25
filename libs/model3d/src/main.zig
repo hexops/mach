@@ -63,7 +63,7 @@ pub fn save(self: M3d, quality: Quality, flags: Flags) Error![]u8 {
     var size: u32 = 0;
     return if (c.m3d_save(
         self.handle,
-        @enumToInt(quality),
+        @intFromEnum(quality),
         @bitCast(c_int, flags),
         &size,
     )) |res|

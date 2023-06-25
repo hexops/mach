@@ -56,8 +56,8 @@ pub const SegmentProps = struct {
 
     pub fn from(c_struct: c.hb_segment_properties_t) SegmentProps {
         return .{
-            .direction = @intToEnum(Direction, c_struct.direction),
-            .script = @intToEnum(Script, c_struct.script),
+            .direction = @enumFromInt(Direction, c_struct.direction),
+            .script = @enumFromInt(Script, c_struct.script),
             .language = Language{ .handle = c_struct.language },
         };
     }
@@ -66,8 +66,8 @@ pub const SegmentProps = struct {
         return .{
             .reserved1 = undefined,
             .reserved2 = undefined,
-            .direction = @enumToInt(self.direction),
-            .script = @enumToInt(self.script),
+            .direction = @intFromEnum(self.direction),
+            .script = @intFromEnum(self.script),
             .language = self.language.handle,
         };
     }
@@ -197,27 +197,27 @@ pub const Buffer = struct {
     }
 
     pub fn getContentType(self: Buffer) ContentType {
-        return @intToEnum(ContentType, c.hb_buffer_get_content_type(self.handle));
+        return @enumFromInt(ContentType, c.hb_buffer_get_content_type(self.handle));
     }
 
     pub fn setContentType(self: Buffer, content_type: ContentType) void {
-        c.hb_buffer_set_content_type(self.handle, @enumToInt(content_type));
+        c.hb_buffer_set_content_type(self.handle, @intFromEnum(content_type));
     }
 
     pub fn getDirection(self: Buffer) Direction {
-        return @intToEnum(Direction, c.hb_buffer_get_direction(self.handle));
+        return @enumFromInt(Direction, c.hb_buffer_get_direction(self.handle));
     }
 
     pub fn setDirection(self: Buffer, direction: Direction) void {
-        c.hb_buffer_set_direction(self.handle, @enumToInt(direction));
+        c.hb_buffer_set_direction(self.handle, @intFromEnum(direction));
     }
 
     pub fn getScript(self: Buffer) Script {
-        return @intToEnum(Script, c.hb_buffer_get_script(self.handle));
+        return @enumFromInt(Script, c.hb_buffer_get_script(self.handle));
     }
 
     pub fn setScript(self: Buffer, script: Script) void {
-        c.hb_buffer_set_script(self.handle, @enumToInt(script));
+        c.hb_buffer_set_script(self.handle, @intFromEnum(script));
     }
 
     pub fn getLanguage(self: Buffer) Language {
@@ -237,11 +237,11 @@ pub const Buffer = struct {
     }
 
     pub fn getClusterLevel(self: Buffer) ClusterLevel {
-        return @intToEnum(ClusterLevel, c.hb_buffer_get_cluster_level(self.handle));
+        return @enumFromInt(ClusterLevel, c.hb_buffer_get_cluster_level(self.handle));
     }
 
     pub fn setClusterLevel(self: Buffer, level: ClusterLevel) void {
-        c.hb_buffer_set_cluster_level(self.handle, @enumToInt(level));
+        c.hb_buffer_set_cluster_level(self.handle, @intFromEnum(level));
     }
 
     pub fn getLength(self: Buffer) u32 {

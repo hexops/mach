@@ -142,7 +142,7 @@ pub const Context = struct {
             for (self.devices_info.list.items) |*dev| {
                 if (std.mem.eql(u8, dev.id, id) and mode == dev.mode) {
                     const new_ch = main.Channel{
-                        .id = @intToEnum(main.Channel.Id, dev.channels.len),
+                        .id = @enumFromInt(main.Channel.Id, dev.channels.len),
                     };
                     dev.channels = try self.allocator.realloc(dev.channels, dev.channels.len + 1);
                     dev.channels[dev.channels.len - 1] = new_ch;
@@ -156,7 +156,7 @@ pub const Context = struct {
                 .mode = mode,
                 .channels = blk: {
                     var channels = try self.allocator.alloc(main.Channel, 1);
-                    channels[0] = .{ .id = @intToEnum(main.Channel.Id, 0) };
+                    channels[0] = .{ .id = @enumFromInt(main.Channel.Id, 0) };
                     break :blk channels;
                 },
                 .formats = &.{.f32},

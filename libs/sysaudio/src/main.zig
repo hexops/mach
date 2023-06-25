@@ -37,7 +37,7 @@ pub const Context = struct {
             } else {
                 inline for (std.meta.fields(Backend), 0..) |b, i| {
                     if (@typeInfo(
-                        std.meta.fieldInfo(backends.BackendContext, @intToEnum(Backend, b.value)).type,
+                        std.meta.fieldInfo(backends.BackendContext, @enumFromInt(Backend, b.value)).type,
                     ).Pointer.child.init(allocator, options)) |d| {
                         break :blk d;
                     } else |err| {
@@ -280,7 +280,7 @@ fn unsignedToSigned(comptime T: type, sample: anytype) T {
 
 fn unsignedToFloat(comptime T: type, sample: anytype) T {
     const max_int = std.math.maxInt(@TypeOf(sample)) + 1.0;
-    return (@intToFloat(T, sample) - max_int) * 1.0 / max_int;
+    return (@floatFromInt(T, sample) - max_int) * 1.0 / max_int;
 }
 
 fn signedToSigned(comptime T: type, sample: anytype) T {
@@ -296,16 +296,16 @@ fn signedToUnsigned(comptime T: type, sample: anytype) T {
 
 fn signedToFloat(comptime T: type, sample: anytype) T {
     const max_int = std.math.maxInt(@TypeOf(sample)) + 1.0;
-    return @intToFloat(T, sample) * 1.0 / max_int;
+    return @floatFromInt(T, sample) * 1.0 / max_int;
 }
 
 fn floatToSigned(comptime T: type, sample: f64) T {
-    return @floatToInt(T, sample * std.math.maxInt(T));
+    return @intFromFloat(T, sample * std.math.maxInt(T));
 }
 
 fn floatToUnsigned(comptime T: type, sample: f64) T {
     const half = 1 << @bitSizeOf(T) - 1;
-    return @floatToInt(T, sample * (half - 1) + half);
+    return @intFromFloat(T, sample * (half - 1) + half);
 }
 
 pub const Device = struct {

@@ -185,7 +185,7 @@ fn sendData(
                 "Content-Type: {s}\r\n" ++
                 "\r\n{s}",
             .{
-                @enumToInt(status),
+                @intFromEnum(status),
                 status.phrase() orelse "N/A",
                 switch (connection) {
                     .close => "close",
@@ -206,7 +206,7 @@ fn sendData(
                 "Content-Type: {s}\r\n" ++
                 "\r\n",
             .{
-                @enumToInt(status),
+                @intFromEnum(status),
                 status.phrase() orelse "N/A",
                 switch (connection) {
                     .close => "close",

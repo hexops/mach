@@ -99,7 +99,7 @@ pub const Context = struct {
 
     fn queryInterfaceCB(self: *const win32.IUnknown, riid: ?*const win32.Guid, ppv: ?*?*anyopaque) callconv(std.os.windows.WINAPI) win32.HRESULT {
         if (riid.?.eql(win32.IID_IUnknown.*) or riid.?.eql(win32.IID_IMMNotificationClient.*)) {
-            ppv.?.* = @intToPtr(?*anyopaque, @ptrToInt(self));
+            ppv.?.* = @ptrFromInt(?*anyopaque, @intFromPtr(self));
             _ = self.AddRef();
             return win32.S_OK;
         } else {

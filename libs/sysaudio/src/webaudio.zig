@@ -87,7 +87,7 @@ pub const Context = struct {
         errdefer self.allocator.destroy(player);
 
         var captures = try self.allocator.alloc(js.Value, 1);
-        captures[0] = js.createNumber(@ptrToInt(player));
+        captures[0] = js.createNumber(@intFromPtr(player));
 
         const document = js.global().get("document").view(.object);
         defer document.deinit();
@@ -163,7 +163,7 @@ pub const Player = struct {
     }
 
     fn resumeOnClick(args: js.Object, _: usize, captures: []js.Value) js.Value {
-        const self = @intToPtr(*Player, @floatToInt(usize, captures[0].view(.num)));
+        const self = @ptrFromInt(*Player, @intFromFloat(usize, captures[0].view(.num)));
         self.play() catch {};
 
         const document = js.global().get("document").view(.object);
@@ -177,7 +177,7 @@ pub const Player = struct {
     }
 
     fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
-        const self = @intToPtr(*Player, @floatToInt(usize, captures[0].view(.num)));
+        const self = @ptrFromInt(*Player, @intFromFloat(usize, captures[0].view(.num)));
 
         const event = args.getIndex(0).view(.object);
         defer event.deinit();

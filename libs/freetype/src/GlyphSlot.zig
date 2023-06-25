@@ -57,7 +57,7 @@ pub fn advance(self: GlyphSlot) Vector {
 }
 
 pub fn format(self: GlyphSlot) GlyphFormat {
-    return @intToEnum(GlyphFormat, self.handle.*.format);
+    return @enumFromInt(GlyphFormat, self.handle.*.format);
 }
 
 pub fn ownBitmap(self: GlyphSlot) Error!void {
@@ -89,7 +89,7 @@ pub fn rsbDelta(self: GlyphSlot) i32 {
 }
 
 pub fn render(self: GlyphSlot, render_mode: RenderMode) Error!void {
-    return intToError(c.FT_Render_Glyph(self.handle, @enumToInt(render_mode)));
+    return intToError(c.FT_Render_Glyph(self.handle, @intFromEnum(render_mode)));
 }
 
 pub fn getSubGlyphInfo(self: GlyphSlot, sub_index: u32) Error!SubGlyphInfo {

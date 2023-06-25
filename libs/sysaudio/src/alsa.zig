@@ -311,7 +311,7 @@ pub const Context = struct {
             var ctl: ?*c.snd_ctl_t = undefined;
             _ = switch (-lib.snd_ctl_open(&ctl, card_id.ptr, 0)) {
                 0 => {},
-                @enumToInt(std.os.E.NOENT) => break,
+                @intFromEnum(std.os.E.NOENT) => break,
                 else => return error.OpeningDevice,
             };
             defer _ = lib.snd_ctl_close(ctl);
@@ -328,7 +328,7 @@ pub const Context = struct {
                 const snd_stream = modeToStream(mode);
                 lib.snd_pcm_info_set_stream(pcm_info, snd_stream);
                 const err = lib.snd_ctl_pcm_info(ctl, pcm_info);
-                switch (@intToEnum(std.os.E, -err)) {
+                switch (@enumFromInt(std.os.E, -err)) {
                     .SUCCESS => {},
                     .NOENT,
                     .NXIO,
@@ -622,10 +622,10 @@ pub const Player = struct {
         if (lib.snd_mixer_selem_get_playback_volume_range(self.mixer_elm, &min_vol, &max_vol) < 0)
             return error.CannotSetVolume;
 
-        const dist = @intToFloat(f32, max_vol - min_vol);
+        const dist = @floatFromInt(f32, max_vol - min_vol);
         if (lib.snd_mixer_selem_set_playback_volume_all(
             self.mixer_elm,
-            @floatToInt(c_long, dist * vol) + min_vol,
+            @intFromFloat(c_long, dist * vol) + min_vol,
         ) < 0)
             return error.CannotSetVolume;
     }
@@ -652,7 +652,7 @@ pub const Player = struct {
         if (lib.snd_mixer_selem_get_playback_volume_range(self.mixer_elm, &min_vol, &max_vol) < 0)
             return error.CannotGetVolume;
 
-        return @intToFloat(f32, vol) / @intToFloat(f32, max_vol - min_vol);
+        return @floatFromInt(f32, vol) / @floatFromInt(f32, max_vol - min_vol);
     }
 };
 

@@ -78,7 +78,7 @@ pub fn renderOutline(self: Library, outline: Outline, params: *RasterParams) Err
 }
 
 pub fn setLcdFilter(self: Library, lcd_filter: LcdFilter) Error!void {
-    return intToError(c.FT_Library_SetLcdFilter(self.handle, @enumToInt(lcd_filter)));
+    return intToError(c.FT_Library_SetLcdFilter(self.handle, @intFromEnum(lcd_filter)));
 }
 
 pub extern fn FT_Outline_Render(library: c.FT_Library, outline: [*c]c.FT_Outline, params: [*c]RasterParams) c_int;

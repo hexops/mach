@@ -31,10 +31,10 @@ pub const EventIterator = struct {
             const event_int = js.machEventShift();
             if (event_int == -1) return null;
 
-            const event_type = @intToEnum(std.meta.Tag(Event), event_int);
+            const event_type = @enumFromInt(std.meta.Tag(Event), event_int);
             return switch (event_type) {
                 .key_press, .key_repeat => blk: {
-                    const key = @intToEnum(Key, js.machEventShift());
+                    const key = @enumFromInt(Key, js.machEventShift());
                     switch (key) {
                         .left_shift, .right_shift => self.key_mods.shift = true,
                         .left_control, .right_control => self.key_mods.control = true,
@@ -63,7 +63,7 @@ pub const EventIterator = struct {
                     continue;
                 },
                 .key_release => blk: {
-                    const key = @intToEnum(Key, js.machEventShift());
+                    const key = @enumFromInt(Key, js.machEventShift());
                     switch (key) {
                         .left_shift, .right_shift => self.key_mods.shift = false,
                         .left_control, .right_control => self.key_mods.control = false,
@@ -83,8 +83,8 @@ pub const EventIterator = struct {
                     continue;
                 },
                 .mouse_motion => blk: {
-                    const x = @intToFloat(f64, js.machEventShift());
-                    const y = @intToFloat(f64, js.machEventShift());
+                    const x = @floatFromInt(f64, js.machEventShift());
+                    const y = @floatFromInt(f64, js.machEventShift());
                     self.last_cursor_position = .{
                         .x = x,
                         .y = y,
@@ -191,11 +191,11 @@ pub fn setDisplayMode(self: *Core, mode: DisplayMode, monitor: ?usize) void {
         // borderless fullscreen window has no meaning in web
         mode = .fullscreen;
     }
-    js.machCanvasSetDisplayMode(self.id, @enumToInt(mode));
+    js.machCanvasSetDisplayMode(self.id, @intFromEnum(mode));
 }
 
 pub fn displayMode(self: *Core) DisplayMode {
-    return @intToEnum(DisplayMode, js.machDisplayMode(self.id));
+    return @enumFromInt(DisplayMode, js.machDisplayMode(self.id));
 }
 
 pub fn setBorder(self: *Core, value: bool) void {
@@ -264,19 +264,19 @@ pub fn sizeLimit(self: *Core) SizeLimit {
 }
 
 pub fn setCursorMode(self: *Core, mode: CursorMode) void {
-    js.machSetCursorMode(self.id, @enumToInt(mode));
+    js.machSetCursorMode(self.id, @intFromEnum(mode));
 }
 
 pub fn cursorMode(self: *Core) CursorMode {
-    return @intToEnum(CursorMode, js.machCursorMode(self.id));
+    return @enumFromInt(CursorMode, js.machCursorMode(self.id));
 }
 
 pub fn setCursorShape(self: *Core, shape: CursorShape) void {
-    js.machSetCursorShape(self.id, @enumToInt(shape));
+    js.machSetCursorShape(self.id, @intFromEnum(shape));
 }
 
 pub fn cursorShape(self: *Core) CursorShape {
-    return @intToEnum(CursorShape, js.machCursorShape(self.id));
+    return @enumFromInt(CursorShape, js.machCursorShape(self.id));
 }
 
 pub fn adapter(_: *Core) *gpu.Adapter {

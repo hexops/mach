@@ -11,7 +11,7 @@ pub fn init_transcoder() void {
 
 /// Returns true if the specified format was enabled at compile time.
 pub fn isFormatEnabled(self: BasisTextureFormat, transcoder_format: Transcoder.TextureFormat) bool {
-    return b.transcoder_is_format_supported(@enumToInt(self), @enumToInt(transcoder_format));
+    return b.transcoder_is_format_supported(@intFromEnum(self), @intFromEnum(transcoder_format));
 }
 
 pub const Transcoder = struct {
@@ -62,7 +62,7 @@ pub const Transcoder = struct {
     /// Returns the bytes neeeded to store output.
     pub fn calcTranscodedSize(self: Transcoder, image_index: u32, level_index: u32, format: TextureFormat) error{OutOfBoundsLevelIndex}!u32 {
         var size: u32 = undefined;
-        return if (b.transcoder_get_image_transcoded_size(self.handle, image_index, level_index, @enumToInt(format), &size))
+        return if (b.transcoder_get_image_transcoded_size(self.handle, image_index, level_index, @intFromEnum(format), &size))
             size
         else
             error.OutOfBoundsLevelIndex;
@@ -104,7 +104,7 @@ pub const Transcoder = struct {
             @intCast(u32, out_buf.len),
             image_index,
             level_index,
-            @enumToInt(format),
+            @intFromEnum(format),
             @bitCast(u32, params.decode_flags),
             params.output_row_pitch orelse 0,
             params.output_rows orelse 0,

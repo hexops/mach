@@ -564,7 +564,7 @@ pub const Player = struct {
             return;
         }
 
-        self.vol = @intToFloat(f32, info.*.volume.values[0]) / @intToFloat(f32, c.PA_VOLUME_NORM);
+        self.vol = @floatFromInt(f32, info.*.volume.values[0]) / @floatFromInt(f32, c.PA_VOLUME_NORM);
     }
 };
 

@@ -152,8 +152,8 @@ pub fn machSprite2DInit(adapter: anytype) !void {
         .sprite_uv_transforms = sprite_uv_transforms,
         .sprite_sizes = sprite_sizes,
         .texture_size = Vec2{
-            @intToFloat(f32, sprite2d.state().texture.getWidth()),
-            @intToFloat(f32, sprite2d.state().texture.getHeight()),
+            @floatFromInt(f32, sprite2d.state().texture.getWidth()),
+            @floatFromInt(f32, sprite2d.state().texture.getHeight()),
         },
         .texture = sprite2d.state().texture,
     });
@@ -195,10 +195,10 @@ pub fn tick(adapter: anytype) !void {
 
     // Update uniform buffer
     const ortho = mat.ortho(
-        -@intToFloat(f32, core.size().width) / 2,
-        @intToFloat(f32, core.size().width) / 2,
-        -@intToFloat(f32, core.size().height) / 2,
-        @intToFloat(f32, core.size().height) / 2,
+        -@floatFromInt(f32, core.size().width) / 2,
+        @floatFromInt(f32, core.size().width) / 2,
+        -@floatFromInt(f32, core.size().height) / 2,
+        @floatFromInt(f32, core.size().height) / 2,
         -0.1,
         100000,
     );

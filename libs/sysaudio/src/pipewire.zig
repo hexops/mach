@@ -208,7 +208,7 @@ pub const Context = struct {
             c.PW_KEY_AUDIO_RATE,
             audio_rate.ptr,
 
-            @intToPtr(*allowzero u0, 0),
+            @ptrFromInt(*allowzero u0, 0),
         );
 
         var player = try self.allocator.create(Player);

@@ -229,10 +229,10 @@ pub const Hints = struct {
     fn set(hints: Hints) void {
         internal_debug.assertInitialized();
         inline for (comptime std.meta.fieldNames(Hint)) |field_name| {
-            const hint_tag = @enumToInt(@field(Hint, field_name));
+            const hint_tag = @intFromEnum(@field(Hint, field_name));
             const hint_value = @field(hints, field_name);
             switch (@TypeOf(hint_value)) {
-                bool => c.glfwWindowHint(hint_tag, @boolToInt(hint_value)),
+                bool => c.glfwWindowHint(hint_tag, @intFromBool(hint_value)),
                 ?PositiveCInt => c.glfwWindowHint(hint_tag, if (hint_value) |unwrapped| unwrapped else glfw.dont_care),
                 c_int => c.glfwWindowHint(hint_tag, hint_value),
 
@@ -241,7 +241,7 @@ pub const Hints = struct {
                 ContextRobustness,
                 ContextReleaseBehavior,
                 OpenGLProfile,
-                => c.glfwWindowHint(hint_tag, @enumToInt(hint_value)),
+                => c.glfwWindowHint(hint_tag, @intFromEnum(hint_value)),
 
                 [:0]const u8 => c.glfwWindowHintString(hint_tag, hint_value.ptr),
 
@@ -1107,7 +1107,7 @@ pub const Attrib = enum(c_int) {
 /// see also: window_attribs, glfw.Window.setAttrib
 pub inline fn getAttrib(self: Window, attrib: Attrib) i32 {
     internal_debug.assertInitialized();
-    return c.glfwGetWindowAttrib(self.handle, @enumToInt(attrib));
+    return c.glfwGetWindowAttrib(self.handle, @intFromEnum(attrib));
 }
 
 /// Sets an attribute of the specified window.
@@ -1148,7 +1148,7 @@ pub inline fn setAttrib(self: Window, attrib: Attrib, value: bool) void {
         => true,
         else => false,
     });
-    c.glfwSetWindowAttrib(self.handle, @enumToInt(attrib), if (value) c.GLFW_TRUE else c.GLFW_FALSE);
+    c.glfwSetWindowAttrib(self.handle, @intFromEnum(attrib), if (value) c.GLFW_TRUE else c.GLFW_FALSE);
 }
 
 /// Sets the user pointer of the specified window.
@@ -1541,7 +1541,7 @@ pub inline fn setInputModeCursor(self: Window, value: InputModeCursor) void {
 
 /// Gets the current input mode of the cursor.
 pub inline fn getInputModeCursor(self: Window) InputModeCursor {
-    return @intToEnum(InputModeCursor, self.getInputMode(InputMode.cursor));
+    return @enumFromInt(InputModeCursor, self.getInputMode(InputMode.cursor));
 }
 
 /// Sets the input mode of sticky keys, if enabled a key press will ensure that `glfw.Window.getKey`
@@ -1622,7 +1622,7 @@ pub inline fn getInputModeRawMouseMotion(self: Window) bool {
 /// see also: glfw.Window.setInputMode
 pub inline fn getInputMode(self: Window, mode: InputMode) i32 {
     internal_debug.assertInitialized();
-    const value = c.glfwGetInputMode(self.handle, @enumToInt(mode));
+    const value = c.glfwGetInputMode(self.handle, @intFromEnum(mode));
     return @intCast(i32, value);
 }
 
@@ -1660,10 +1660,10 @@ pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) void {
     const int_value: c_int = switch (@typeInfo(T)) {
         .Enum,
         .EnumLiteral,
-        => @enumToInt(@as(InputModeCursor, value)),
-        else => @boolToInt(value),
+        => @intFromEnum(@as(InputModeCursor, value)),
+        else => @intFromBool(value),
     };
-    c.glfwSetInputMode(self.handle, @enumToInt(mode), int_value);
+    c.glfwSetInputMode(self.handle, @intFromEnum(mode), int_value);
 }
 
 /// Returns the last reported press state of a keyboard key for the specified window.
@@ -1692,8 +1692,8 @@ pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) void {
 /// see also: input_key
 pub inline fn getKey(self: Window, key: Key) Action {
     internal_debug.assertInitialized();
-    const state = c.glfwGetKey(self.handle, @enumToInt(key));
-    return @intToEnum(Action, state);
+    const state = c.glfwGetKey(self.handle, @intFromEnum(key));
+    return @enumFromInt(Action, state);
 }
 
 /// Returns the last reported state of a mouse button for the specified window.
@@ -1714,8 +1714,8 @@ pub inline fn getKey(self: Window, key: Key) Action {
 /// see also: input_mouse_button
 pub inline fn getMouseButton(self: Window, button: MouseButton) Action {
     internal_debug.assertInitialized();
-    const state = c.glfwGetMouseButton(self.handle, @enumToInt(button));
-    return @intToEnum(Action, state);
+    const state = c.glfwGetMouseButton(self.handle, @intFromEnum(button));
+    return @enumFromInt(Action, state);
 }
 
 pub const CursorPos = struct {
@@ -1848,9 +1848,9 @@ pub inline fn setKeyCallback(self: Window, comptime callback: ?fn (window: Windo
             pub fn keyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     from(handle.?),
-                    @intToEnum(Key, key),
+                    @enumFromInt(Key, key),
                     @intCast(i32, scancode),
-                    @intToEnum(Action, action),
+                    @enumFromInt(Action, action),
                     Mods.fromInt(mods),
                 });
             }
@@ -1935,8 +1935,8 @@ pub inline fn setMouseButtonCallback(self: Window, comptime callback: ?fn (windo
             pub fn mouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: c_int, mods: c_int) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     from(handle.?),
-                    @intToEnum(MouseButton, button),
-                    @intToEnum(Action, action),
+                    @enumFromInt(MouseButton, button),
+                    @enumFromInt(Action, action),
                     Mods.fromInt(mods),
                 });
             }
@@ -2125,21 +2125,21 @@ inline fn hint(h: Hint, value: anytype) void {
 
     switch (value_type_info) {
         .Int, .ComptimeInt => {
-            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, value));
+            c.glfwWindowHint(@intFromEnum(h), @intCast(c_int, value));
         },
         .Bool => {
-            const int_value = @boolToInt(value);
-            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, int_value));
+            const int_value = @intFromBool(value);
+            c.glfwWindowHint(@intFromEnum(h), @intCast(c_int, int_value));
         },
         .Enum => {
-            const int_value = @enumToInt(value);
-            c.glfwWindowHint(@enumToInt(h), @intCast(c_int, int_value));
+            const int_value = @intFromEnum(value);
+            c.glfwWindowHint(@intFromEnum(h), @intCast(c_int, int_value));
         },
         .Array => |arr_type| {
             if (arr_type.child != u8) {
                 @compileError("expected array of u8, got " ++ @typeName(arr_type));
             }
-            c.glfwWindowHintString(@enumToInt(h), &value[0]);
+            c.glfwWindowHintString(@intFromEnum(h), &value[0]);
         },
         .Pointer => |pointer_info| {
             const pointed_type = @typeInfo(pointer_info.child);
@@ -2152,7 +2152,7 @@ inline fn hint(h: Hint, value: anytype) void {
                 else => @compileError("expected pointer to array, got " ++ @typeName(pointed_type)),
             }
 
-            c.glfwWindowHintString(@enumToInt(h), &value[0]);
+            c.glfwWindowHintString(@intFromEnum(h), &value[0]);
         },
         else => {
             @compileError("expected a int, bool, enum, array, or pointer, got " ++ @typeName(value_type));

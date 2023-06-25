@@ -13,13 +13,13 @@ pub const Blob = struct {
 
     pub fn init(data: []u8, mode: MemoryMode) ?Blob {
         return Blob{
-            .handle = c.hb_blob_create_or_fail(&data[0], @intCast(c_uint, data.len), @enumToInt(mode), null, null) orelse return null,
+            .handle = c.hb_blob_create_or_fail(&data[0], @intCast(c_uint, data.len), @intFromEnum(mode), null, null) orelse return null,
         };
     }
 
     pub fn initOrEmpty(data: []u8, mode: MemoryMode) Blob {
         return .{
-            .handle = c.hb_blob_create(&data[0], @intCast(c_uint, data.len), @enumToInt(mode), null, null).?,
+            .handle = c.hb_blob_create(&data[0], @intCast(c_uint, data.len), @intFromEnum(mode), null, null).?,
         };
     }
 

@@ -31,7 +31,7 @@ pub const Stroker = struct {
     handle: c.FT_Stroker,
 
     pub fn set(self: Stroker, radius: i32, line_cap: LineCap, line_join: LineJoin, miter_limit: i32) void {
-        c.FT_Stroker_Set(self.handle, radius, @enumToInt(line_cap), @enumToInt(line_join), miter_limit);
+        c.FT_Stroker_Set(self.handle, radius, @intFromEnum(line_cap), @intFromEnum(line_join), miter_limit);
     }
 
     pub fn rewind(self: Stroker) void {
@@ -64,12 +64,12 @@ pub const Stroker = struct {
 
     pub fn getBorderCounts(self: Stroker, border: Border) Error!BorderCounts {
         var counts: BorderCounts = undefined;
-        try intToError(c.FT_Stroker_GetBorderCounts(self.handle, @enumToInt(border), &counts.points, &counts.contours));
+        try intToError(c.FT_Stroker_GetBorderCounts(self.handle, @intFromEnum(border), &counts.points, &counts.contours));
         return counts;
     }
 
     pub fn exportBorder(self: Stroker, border: Border, outline: *Outline) void {
-        c.FT_Stroker_ExportBorder(self.handle, @enumToInt(border), outline.handle);
+        c.FT_Stroker_ExportBorder(self.handle, @intFromEnum(border), outline.handle);
     }
 
     pub fn getCounts(self: Stroker) Error!BorderCounts {

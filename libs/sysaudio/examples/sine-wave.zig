@@ -53,12 +53,12 @@ const pitch = 440.0;
 const radians_per_second = pitch * 2.0 * std.math.pi;
 var seconds_offset: f32 = 0.0;
 fn writeCallback(_: ?*anyopaque, frames: usize) void {
-    const seconds_per_frame = 1.0 / @intToFloat(f32, player.sampleRate());
+    const seconds_per_frame = 1.0 / @floatFromInt(f32, player.sampleRate());
     for (0..frames) |fi| {
-        const sample = std.math.sin((seconds_offset + @intToFloat(f32, fi) * seconds_per_frame) * radians_per_second);
+        const sample = std.math.sin((seconds_offset + @floatFromInt(f32, fi) * seconds_per_frame) * radians_per_second);
         player.writeAll(fi, sample);
     }
-    seconds_offset = @mod(seconds_offset + seconds_per_frame * @intToFloat(f32, frames), 1.0);
+    seconds_offset = @mod(seconds_offset + seconds_per_frame * @floatFromInt(f32, frames), 1.0);
 }
 
 fn deviceChange(_: ?*anyopaque) void {

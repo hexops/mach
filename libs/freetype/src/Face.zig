@@ -126,7 +126,7 @@ pub fn getNameIndex(self: Face, name: [:0]const u8) ?u32 {
 
 pub fn getKerning(self: Face, left_char_index: u32, right_char_index: u32, mode: KerningMode) Error!Vector {
     var kerning: Vector = undefined;
-    try intToError(c.FT_Get_Kerning(self.handle, left_char_index, right_char_index, @enumToInt(mode), &kerning));
+    try intToError(c.FT_Get_Kerning(self.handle, left_char_index, right_char_index, @intFromEnum(mode), &kerning));
     return kerning;
 }
 
@@ -152,7 +152,7 @@ pub fn iterateCharmap(self: Face) CharmapIterator {
 }
 
 pub fn selectCharmap(self: Face, encoding: Encoding) Error!void {
-    return intToError(c.FT_Select_Charmap(self.handle, @enumToInt(encoding)));
+    return intToError(c.FT_Select_Charmap(self.handle, @intFromEnum(encoding)));
 }
 
 pub fn setCharmap(self: Face, char_map: *CharMap) Error!void {
@@ -223,7 +223,7 @@ pub fn getGlyphLayersIterator(self: Face, glyph_index: u32) GlyphLayersIterator 
 
 pub fn getColorGlyphPaint(self: Face, base_glyph: u32, root_transform: RootTransform) ?Paint {
     var opaque_paint: OpaquePaint = undefined;
-    if (c.FT_Get_Color_Glyph_Paint(self.handle, base_glyph, @enumToInt(root_transform), &opaque_paint) == 0)
+    if (c.FT_Get_Color_Glyph_Paint(self.handle, base_glyph, @intFromEnum(root_transform), &opaque_paint) == 0)
         return null;
     return self.getPaint(opaque_paint);
 }
@@ -239,7 +239,7 @@ pub fn getPaint(self: Face, opaque_paint: OpaquePaint) ?Paint {
     var p: c.FT_COLR_Paint = undefined;
     if (c.FT_Get_Paint(self.handle, opaque_paint, &p) == 0)
         return null;
-    return switch (@intToEnum(PaintFormat, p.format)) {
+    return switch (@enumFromInt(PaintFormat, p.format)) {
         .color_layers => Paint{ .color_layers = p.u.colr_layers },
         .glyph => Paint{ .glyph = p.u.glyph },
         .solid => Paint{ .solid = p.u.solid },

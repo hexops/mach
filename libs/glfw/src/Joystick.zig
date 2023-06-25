@@ -39,7 +39,7 @@ pub const Id = enum(c_int) {
     fourteen = c.GLFW_JOYSTICK_14,
     fifteen = c.GLFW_JOYSTICK_15,
     sixteen = c.GLFW_JOYSTICK_16,
-    pub const last = @intToEnum(@This(), c.GLFW_JOYSTICK_LAST);
+    pub const last = @enumFromInt(@This(), c.GLFW_JOYSTICK_LAST);
 };
 
 /// Gamepad input state
@@ -60,12 +60,12 @@ const GamepadState = extern struct {
 
     /// Returns the state of the specified gamepad button.
     pub fn getButton(self: @This(), which: GamepadButton) Action {
-        return @intToEnum(Action, self.buttons[@intCast(u32, @enumToInt(which))]);
+        return @enumFromInt(Action, self.buttons[@intCast(u32, @intFromEnum(which))]);
     }
 
     /// Returns the status of the specified gamepad axis, in the range -1.0 to 1.0 inclusive.
     pub fn getAxis(self: @This(), which: GamepadAxis) f32 {
-        return self.axes[@intCast(u32, @enumToInt(which))];
+        return self.axes[@intCast(u32, @intFromEnum(which))];
     }
 };
 
@@ -85,7 +85,7 @@ const GamepadState = extern struct {
 /// see also: joystick
 pub inline fn present(self: Joystick) bool {
     internal_debug.assertInitialized();
-    const is_present = c.glfwJoystickPresent(@enumToInt(self.jid));
+    const is_present = c.glfwJoystickPresent(@intFromEnum(self.jid));
     return is_present == c.GLFW_TRUE;
 }
 
@@ -113,7 +113,7 @@ pub inline fn present(self: Joystick) bool {
 pub inline fn getAxes(self: Joystick) ?[]const f32 {
     internal_debug.assertInitialized();
     var count: c_int = undefined;
-    const axes = c.glfwGetJoystickAxes(@enumToInt(self.jid), &count);
+    const axes = c.glfwGetJoystickAxes(@intFromEnum(self.jid), &count);
     if (axes == null) return null;
     return axes[0..@intCast(u32, count)];
 }
@@ -146,7 +146,7 @@ pub inline fn getAxes(self: Joystick) ?[]const f32 {
 pub inline fn getButtons(self: Joystick) ?[]const u8 {
     internal_debug.assertInitialized();
     var count: c_int = undefined;
-    const buttons = c.glfwGetJoystickButtons(@enumToInt(self.jid), &count);
+    const buttons = c.glfwGetJoystickButtons(@intFromEnum(self.jid), &count);
     if (buttons == null) return null;
     return buttons[0..@intCast(u32, count)];
 }
@@ -195,7 +195,7 @@ pub inline fn getButtons(self: Joystick) ?[]const u8 {
 pub inline fn getHats(self: Joystick) ?[]const Hat {
     internal_debug.assertInitialized();
     var count: c_int = undefined;
-    const hats = c.glfwGetJoystickHats(@enumToInt(self.jid), &count);
+    const hats = c.glfwGetJoystickHats(@intFromEnum(self.jid), &count);
     if (hats == null) return null;
     const slice = hats[0..@intCast(u32, count)];
     return @ptrCast(*const []const Hat, &slice).*;
@@ -223,7 +223,7 @@ pub inline fn getHats(self: Joystick) ?[]const Hat {
 /// see also: joystick_name
 pub inline fn getName(self: Joystick) ?[:0]const u8 {
     internal_debug.assertInitialized();
-    const name_opt = c.glfwGetJoystickName(@enumToInt(self.jid));
+    const name_opt = c.glfwGetJoystickName(@intFromEnum(self.jid));
     return if (name_opt) |name|
         std.mem.span(@ptrCast([*:0]const u8, name))
     else
@@ -260,7 +260,7 @@ pub inline fn getName(self: Joystick) ?[:0]const u8 {
 /// see also: gamepad
 pub inline fn getGUID(self: Joystick) ?[:0]const u8 {
     internal_debug.assertInitialized();
-    const guid_opt = c.glfwGetJoystickGUID(@enumToInt(self.jid));
+    const guid_opt = c.glfwGetJoystickGUID(@intFromEnum(self.jid));
     return if (guid_opt) |guid|
         std.mem.span(@ptrCast([*:0]const u8, guid))
     else
@@ -279,7 +279,7 @@ pub inline fn getGUID(self: Joystick) ?[:0]const u8 {
 /// see also: joystick_userptr, glfw.Joystick.getUserPointer
 pub inline fn setUserPointer(self: Joystick, comptime T: type, pointer: *T) void {
     internal_debug.assertInitialized();
-    c.glfwSetJoystickUserPointer(@enumToInt(self.jid), @ptrCast(*anyopaque, pointer));
+    c.glfwSetJoystickUserPointer(@intFromEnum(self.jid), @ptrCast(*anyopaque, pointer));
 }
 
 /// Returns the user pointer of the specified joystick.
@@ -295,7 +295,7 @@ pub inline fn setUserPointer(self: Joystick, comptime T: type, pointer: *T) void
 /// see also: joystick_userptr, glfw.Joystick.setUserPointer
 pub inline fn getUserPointer(self: Joystick, comptime PointerType: type) ?PointerType {
     internal_debug.assertInitialized();
-    const ptr = c.glfwGetJoystickUserPointer(@enumToInt(self.jid));
+    const ptr = c.glfwGetJoystickUserPointer(@intFromEnum(self.jid));
     if (ptr) |p| return @ptrCast(PointerType, @alignCast(@alignOf(std.meta.Child(PointerType)), p));
     return null;
 }
@@ -335,8 +335,8 @@ pub inline fn setCallback(comptime callback: ?fn (joystick: Joystick, event: Eve
         const CWrapper = struct {
             pub fn joystickCallbackWrapper(jid: c_int, event: c_int) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
-                    Joystick{ .jid = @intToEnum(Joystick.Id, jid) },
-                    @intToEnum(Event, event),
+                    Joystick{ .jid = @enumFromInt(Joystick.Id, jid) },
+                    @enumFromInt(Event, event),
                 });
             }
         };
@@ -394,7 +394,7 @@ pub inline fn updateGamepadMappings(gamepad_mappings: [*:0]const u8) bool {
 /// see also: gamepad, glfw.Joystick.getGamepadState
 pub inline fn isGamepad(self: Joystick) bool {
     internal_debug.assertInitialized();
-    const is_gamepad = c.glfwJoystickIsGamepad(@enumToInt(self.jid));
+    const is_gamepad = c.glfwJoystickIsGamepad(@intFromEnum(self.jid));
     return is_gamepad == c.GLFW_TRUE;
 }
 
@@ -422,7 +422,7 @@ pub inline fn isGamepad(self: Joystick) bool {
 /// see also: gamepad, glfw.Joystick.isGamepad
 pub inline fn getGamepadName(self: Joystick) ?[:0]const u8 {
     internal_debug.assertInitialized();
-    const name_opt = c.glfwGetGamepadName(@enumToInt(self.jid));
+    const name_opt = c.glfwGetGamepadName(@intFromEnum(self.jid));
     return if (name_opt) |name|
         std.mem.span(@ptrCast([*:0]const u8, name))
     else
@@ -457,7 +457,7 @@ pub inline fn getGamepadName(self: Joystick) ?[:0]const u8 {
 pub inline fn getGamepadState(self: Joystick) ?GamepadState {
     internal_debug.assertInitialized();
     var state: GamepadState = undefined;
-    const success = c.glfwGetGamepadState(@enumToInt(self.jid), @ptrCast(*c.GLFWgamepadstate, &state));
+    const success = c.glfwGetGamepadState(@intFromEnum(self.jid), @ptrCast(*c.GLFWgamepadstate, &state));
     return if (success == c.GLFW_TRUE) state else null;
 }
 

@@ -132,7 +132,7 @@ pub fn update(app: *App) !bool {
 
     const time = app.timer.read() / @as(f32, std.time.ns_per_s);
     const ubo = UniformBufferObject{
-        .resolution = .{ @intToFloat(f32, app.core.descriptor().width), @intToFloat(f32, app.core.descriptor().height) },
+        .resolution = .{ @floatFromInt(f32, app.core.descriptor().width), @floatFromInt(f32, app.core.descriptor().height) },
         .time = time,
     };
     encoder.writeBuffer(app.uniform_buffer, 0, &[_]UniformBufferObject{ubo});

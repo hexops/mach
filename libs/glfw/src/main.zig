@@ -101,7 +101,7 @@ pub inline fn init(hints: InitHints) bool {
         const init_hint = @field(InitHint, field_name);
         const init_value = @field(hints, field_name);
         if (@TypeOf(init_value) == PlatformType) {
-            initHint(init_hint, @enumToInt(init_value));
+            initHint(init_hint, @intFromEnum(init_value));
         } else {
             initHint(init_hint, init_value);
         }
@@ -273,9 +273,9 @@ pub const PlatformType = enum(c_int) {
 fn initHint(hint: InitHint, value: anytype) void {
     switch (@typeInfo(@TypeOf(value))) {
         .Int, .ComptimeInt => {
-            c.glfwInitHint(@enumToInt(hint), @intCast(c_int, value));
+            c.glfwInitHint(@intFromEnum(hint), @intCast(c_int, value));
         },
-        .Bool => c.glfwInitHint(@enumToInt(hint), @intCast(c_int, @boolToInt(value))),
+        .Bool => c.glfwInitHint(@intFromEnum(hint), @intCast(c_int, @intFromBool(value))),
         else => @compileError("expected a int or bool, got " ++ @typeName(@TypeOf(value))),
     }
 }
@@ -313,7 +313,7 @@ pub inline fn getVersionString() [:0]const u8 {
 /// thread_safety: This function may be called from any thread.
 pub fn getPlatform() PlatformType {
     internal_debug.assertInitialized();
-    return @intToEnum(PlatformType, c.glfwGetPlatform());
+    return @enumFromInt(PlatformType, c.glfwGetPlatform());
 }
 
 /// Returns whether the library includes support for the specified platform.
@@ -327,7 +327,7 @@ pub fn getPlatform() PlatformType {
 /// thread_safety: This function may be called from any thread.
 pub fn platformSupported(platform: PlatformType) bool {
     internal_debug.assertInitialized();
-    return c.glfwPlatformSupported(@enumToInt(platform)) == c.GLFW_TRUE;
+    return c.glfwPlatformSupported(@intFromEnum(platform)) == c.GLFW_TRUE;
 }
 
 /// Processes all pending events.

@@ -9,11 +9,11 @@ pub const Direction = enum(u3) {
     bit = c.HB_DIRECTION_BTT,
 
     pub fn fromString(str: []const u8) Direction {
-        return @intToEnum(Direction, c.hb_direction_from_string(str.ptr, @intCast(c_int, str.len)));
+        return @enumFromInt(Direction, c.hb_direction_from_string(str.ptr, @intCast(c_int, str.len)));
     }
 
     pub fn toString(self: Direction) [:0]const u8 {
-        return std.mem.span(@ptrCast([*:0]const u8, c.hb_direction_to_string(@enumToInt(self))));
+        return std.mem.span(@ptrCast([*:0]const u8, c.hb_direction_to_string(@intFromEnum(self))));
     }
 };
 
@@ -184,19 +184,19 @@ pub const Script = enum(u31) {
     invalid = c.HB_SCRIPT_INVALID,
 
     pub fn fromISO15924Tag(tag: Tag) Script {
-        return @intToEnum(Script, c.hb_script_from_iso15924_tag(tag.handle));
+        return @enumFromInt(Script, c.hb_script_from_iso15924_tag(tag.handle));
     }
 
     pub fn fromString(str: []const u8) Script {
-        return @intToEnum(Script, c.hb_script_from_string(str.ptr, @intCast(c_int, str.len)));
+        return @enumFromInt(Script, c.hb_script_from_string(str.ptr, @intCast(c_int, str.len)));
     }
 
     pub fn toISO15924Tag(self: Script) Tag {
-        return .{ .handle = c.hb_script_to_iso15924_tag(@enumToInt(self)) };
+        return .{ .handle = c.hb_script_to_iso15924_tag(@intFromEnum(self)) };
     }
 
     pub fn getHorizontalDirection(self: Script) Direction {
-        return @intToEnum(Direction, c.hb_script_get_horizontal_direction(@enumToInt(self)));
+        return @enumFromInt(Direction, c.hb_script_get_horizontal_direction(@intFromEnum(self)));
     }
 };
 
