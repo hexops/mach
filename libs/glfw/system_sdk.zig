@@ -78,7 +78,7 @@ pub const Options = struct {
             .os_tag = .macos,
             .os_version = .{
                 .semver = .{
-                    .min = .{ .major = 11, .minor = 3, .patch = std.math.maxInt(u32) },
+                    .min = .{ .major = 11, .minor = 0, .patch = std.math.maxInt(u32) },
                     .max = .{ .major = 11, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
                 },
             },
