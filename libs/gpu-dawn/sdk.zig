@@ -220,11 +220,12 @@ pub fn Sdk(comptime deps: anytype) type {
                 .macos => blk: {
                     if (!target.cpu.arch.isX86() and !target.cpu.arch.isAARCH64()) break :blk false;
 
-                    // If min. target macOS version is lesser than the min version we have available, then
-                    // our binary is incompatible with the target.
-                    const min_available = std.SemanticVersion{ .major = 11, .minor = 0, .patch = std.math.maxInt(u32) };
-                    if (target.os.version_range.semver.min.order(min_available) == .lt) break :blk false;
-                    break :blk true;
+                    // The minimum macOS version with which our binaries can be used.
+                    const min_available = std.SemanticVersion{ .major = 11, .minor = 0, .patch = 0 };
+
+                    // If the target version is >= the available version, then it's OK.
+                    const order = target.os.version_range.semver.min.order(min_available);
+                    break :blk (order == .gt or order == .eq);
                 },
                 else => false,
             };
