@@ -222,7 +222,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
                     // If min. target macOS version is lesser than the min version we have available, then
                     // our binary is incompatible with the target.
-                    const min_available = std.builtin.Version{ .major = 12, .minor = 0 };
+                    const min_available = std.SemanticVersion{ .major = 12, .minor = 0, .patch = std.math.maxInt(u32) };
                     if (target.os.version_range.semver.min.order(min_available) == .lt) break :blk false;
                     break :blk true;
                 },
@@ -427,12 +427,10 @@ pub fn Sdk(comptime deps: anytype) type {
             const contents = try std.fs.cwd().readFileAlloc(allocator, json_file, std.math.maxInt(usize));
             defer allocator.free(contents);
 
-            var parser = std.json.Parser.init(allocator, .alloc_if_needed);
-            defer parser.deinit();
-            var tree = try parser.parse(contents);
+            var tree = try std.json.parseFromSlice(std.json.Value, allocator, contents, .{});
             defer tree.deinit();
 
-            var iter = tree.root.object.iterator();
+            var iter = tree.value.object.iterator();
             while (iter.next()) |f| {
                 const out_path = try std.fs.path.join(allocator, &.{ out_dir, f.key_ptr.* });
                 defer allocator.free(out_path);

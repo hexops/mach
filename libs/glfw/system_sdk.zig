@@ -52,8 +52,8 @@ pub const Options = struct {
             .os_tag = .macos,
             .os_version = .{
                 .semver = .{
-                    .min = .{ .major = 13, .minor = 0 },
-                    .max = .{ .major = 14, .minor = std.math.maxInt(u32) },
+                    .min = .{ .major = 13, .minor = 0, .patch = std.math.maxInt(u32) },
+                    .max = .{ .major = 14, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
                 },
             },
         },
@@ -65,8 +65,8 @@ pub const Options = struct {
             .os_tag = .macos,
             .os_version = .{
                 .semver = .{
-                    .min = .{ .major = 12, .minor = 0 },
-                    .max = .{ .major = 12, .minor = std.math.maxInt(u32) },
+                    .min = .{ .major = 12, .minor = 0, .patch = std.math.maxInt(u32) },
+                    .max = .{ .major = 12, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
                 },
             },
         },
@@ -78,24 +78,24 @@ pub const Options = struct {
             .os_tag = .macos,
             .os_version = .{
                 .semver = .{
-                    .min = .{ .major = 11, .minor = 3 },
-                    .max = .{ .major = 11, .minor = std.math.maxInt(u32) },
+                    .min = .{ .major = 11, .minor = 3, .patch = std.math.maxInt(u32) },
+                    .max = .{ .major = 11, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
                 },
             },
         },
         .{
             .name = "sdk-linux-x86_64",
             .git_addr = "https://github.com/hexops/sdk-linux-x86_64",
-            .git_revision = "311a0f18a2350c032a40b5917ae25c05cf500683",
+            .git_revision = "311a0f18a2350c032a40b5917ae25c05cf500683s",
             .cpu_arch = &.{.x86_64},
             .os_tag = .linux,
             .os_version = .{
                 .linux = .{
                     .range = .{
-                        .min = .{ .major = 3, .minor = 16 },
-                        .max = .{ .major = 6, .minor = std.math.maxInt(u32) },
+                        .min = .{ .major = 3, .minor = 16, .patch = std.math.maxInt(u32) },
+                        .max = .{ .major = 6, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
                     },
-                    .glibc = .{ .major = 0, .minor = 0 },
+                    .glibc = .{ .major = 0, .minor = 0, .patch = std.math.maxInt(u32) },
                 },
             },
         },
@@ -108,10 +108,10 @@ pub const Options = struct {
             .os_version = .{
                 .linux = .{
                     .range = .{
-                        .min = .{ .major = 3, .minor = 16 },
-                        .max = .{ .major = 6, .minor = std.math.maxInt(u32) },
+                        .min = .{ .major = 3, .minor = 16, .patch = std.math.maxInt(u32) },
+                        .max = .{ .major = 6, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
                     },
-                    .glibc = .{ .major = 0, .minor = 0 },
+                    .glibc = .{ .major = 0, .minor = 0, .patch = std.math.maxInt(u32) },
                 },
             },
         },
