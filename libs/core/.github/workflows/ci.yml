@@ -14,11 +14,9 @@ jobs:
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3798+a5e15eced.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: build
         run: |
-          rm -rf libs/mach-gamemode
           rm -rf libs/mach-glfw
           rm -rf libs/mach-gpu
           rm -rf libs/mach-gpu-dawn
-          git clone https://github.com/hexops/mach-gamemode libs/mach-gamemode
           git clone https://github.com/hexops/mach-glfw libs/mach-glfw
           git clone https://github.com/hexops/mach-gpu libs/mach-gpu
           git clone https://github.com/hexops/mach-gpu-dawn libs/mach-gpu-dawn
@@ -39,11 +37,9 @@ jobs:
           Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.11.0-dev.3798+a5e15eced\"
       - name: build
         run: |
-          Remove-Item -Recurse -Force libs/mach-gamemode
           Remove-Item -Recurse -Force libs/mach-glfw
           Remove-Item -Recurse -Force libs/mach-gpu
           Remove-Item -Recurse -Force libs/mach-gpu-dawn
-          git clone https://github.com/hexops/mach-gamemode libs/mach-gamemode
           git clone https://github.com/hexops/mach-glfw libs/mach-glfw
           git clone https://github.com/hexops/mach-gpu libs/mach-gpu
           git clone https://github.com/hexops/mach-gpu-dawn libs/mach-gpu-dawn
@@ -61,11 +57,9 @@ jobs:
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.11.0-dev.3798+a5e15eced.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: build
         run: |
-          rm -rf libs/mach-gamemode
           rm -rf libs/mach-glfw
           rm -rf libs/mach-gpu
           rm -rf libs/mach-gpu-dawn
-          git clone https://github.com/hexops/mach-gamemode libs/mach-gamemode
           git clone https://github.com/hexops/mach-glfw libs/mach-glfw
           git clone https://github.com/hexops/mach-gpu libs/mach-gpu
           git clone https://github.com/hexops/mach-gpu-dawn libs/mach-gpu-dawn
