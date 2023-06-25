@@ -87,6 +87,10 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
     // Create the test window and discover adapters using it (esp. for OpenGL)
     var hints = util.glfwWindowHintsForBackend(backend_type);
     hints.cocoa_retina_framebuffer = true;
+    if (options.is_headless) {
+        hints.visible = false; // Hiding window before creation otherwise you get the window showing up for a little bit then hiding.
+    }
+
     const window = glfw.Window.create(
         options.size.width,
         options.size.height,
