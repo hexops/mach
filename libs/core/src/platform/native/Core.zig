@@ -63,6 +63,15 @@ const UserPtr = struct {
     self: *Core,
 };
 
+// TODO(core): expose device loss to users, this can happen especially in the web and on mobile
+// devices. Users will need to re-upload all assets to the GPU in this event.
+fn deviceLostCallback(reason: gpu.Device.LostReason, msg: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
+    _ = userdata;
+    _ = reason;
+    log.err("mach: device lost: {s}", .{msg});
+    @panic("mach: device lost");
+}
+
 pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
     const backend_type = try util.detectBackendType(allocator);
 
@@ -147,6 +156,8 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
         .required_limits = if (options.required_limits) |limits| @as(?*const gpu.RequiredLimits, &gpu.RequiredLimits{
             .limits = limits,
         }) else null,
+        .device_lost_callback = &deviceLostCallback,
+        .device_lost_userdata = null,
     }) orelse {
         log.err("failed to create GPU device\n", .{});
         std.process.exit(1);
