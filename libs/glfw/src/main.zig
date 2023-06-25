@@ -433,7 +433,7 @@ pub inline fn waitEventsTimeout(timeout: f64) void {
     internal_debug.assertInitialized();
     std.debug.assert(!std.math.isNan(timeout));
     std.debug.assert(timeout >= 0);
-    std.debug.assert(timeout <= std.math.f64_max);
+    std.debug.assert(timeout <= std.math.floatMax(f64));
     c.glfwWaitEventsTimeout(timeout);
 }
 
