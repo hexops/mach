@@ -35,6 +35,7 @@ const Build = std.Build;
 
 pub const Options = struct {
     pub const Sdk = struct {
+        is_default: bool = false,
         name: []const u8,
         git_addr: []const u8,
         git_revision: []const u8,
@@ -52,12 +53,13 @@ pub const Options = struct {
             .os_tag = .macos,
             .os_version = .{
                 .semver = .{
-                    .min = .{ .major = 13, .minor = 0, .patch = std.math.maxInt(u32) },
+                    .min = .{ .major = 13, .minor = 0, .patch = 0 },
                     .max = .{ .major = 14, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
                 },
             },
         },
         .{
+            .is_default = true,
             .name = "sdk-macos-12.0",
             .git_addr = "https://github.com/hexops/sdk-macos-12.0",
             .git_revision = "14613b4917c7059dad8f3789f55bb13a2548f83d",
@@ -65,25 +67,28 @@ pub const Options = struct {
             .os_tag = .macos,
             .os_version = .{
                 .semver = .{
-                    .min = .{ .major = 12, .minor = 0, .patch = std.math.maxInt(u32) },
+                    // Note: we force 11.0 compatibility here, in practice it works and the 11.3 SDK
+                    // is missing AudioToolbox
+                    .min = .{ .major = 11, .minor = 0, .patch = 0 },
                     .max = .{ .major = 12, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
                 },
             },
         },
+        // .{
+        //     .name = "sdk-macos-11.3",
+        //     .git_addr = "https://github.com/hexops/sdk-macos-11.3",
+        //     .git_revision = "ccbaae84cc39469a6792108b24480a4806e09d59",
+        //     .cpu_arch = &.{ .aarch64, .x86_64 },
+        //     .os_tag = .macos,
+        //     .os_version = .{
+        //         .semver = .{
+        //             .min = .{ .major = 11, .minor = 0, .patch = 0 },
+        //             .max = .{ .major = 11, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
+        //         },
+        //     },
+        // },
         .{
-            .name = "sdk-macos-11.3",
-            .git_addr = "https://github.com/hexops/sdk-macos-11.3",
-            .git_revision = "ccbaae84cc39469a6792108b24480a4806e09d59",
-            .cpu_arch = &.{ .aarch64, .x86_64 },
-            .os_tag = .macos,
-            .os_version = .{
-                .semver = .{
-                    .min = .{ .major = 11, .minor = 0, .patch = std.math.maxInt(u32) },
-                    .max = .{ .major = 11, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
-                },
-            },
-        },
-        .{
+            .is_default = true,
             .name = "sdk-linux-x86_64",
             .git_addr = "https://github.com/hexops/sdk-linux-x86_64",
             .git_revision = "311a0f18a2350c032a40b5917ae25c05cf500683s",
@@ -92,7 +97,7 @@ pub const Options = struct {
             .os_version = .{
                 .linux = .{
                     .range = .{
-                        .min = .{ .major = 3, .minor = 16, .patch = std.math.maxInt(u32) },
+                        .min = .{ .major = 3, .minor = 16, .patch = 0 },
                         .max = .{ .major = 6, .minor = std.math.maxInt(u32), .patch = std.math.maxInt(u32) },
                     },
                     .glibc = .{ .major = 0, .minor = 0, .patch = std.math.maxInt(u32) },
@@ -100,6 +105,7 @@ pub const Options = struct {
             },
         },
         .{
+            .is_default = true,
             .name = "sdk-linux-aarch64",
             .git_addr = "https://github.com/hexops/sdk-linux-aarch64",
             .git_revision = "cefd56ea2e97623d308e1897491a322fdca23d97",
@@ -116,6 +122,7 @@ pub const Options = struct {
             },
         },
         .{
+            .is_default = true,
             .name = "sdk-windows-x86_64",
             .git_addr = "https://github.com/hexops/sdk-windows-x86_64",
             .git_revision = "13dcda7fe3f1aec0fc6130527226ad7ae0f4b792",
@@ -139,83 +146,94 @@ pub const Options = struct {
 
 pub fn include(b: *Build, step: *std.build.CompileStep, options: Options) void {
     const target = step.target_info.target;
-    // var best_sdk: ?Options.Sdk = null;
+    var best_sdk: ?Options.Sdk = null;
+
+    // Try to find an SDK that matches our minimum target version
     for (options.sdk_list) |sdk| {
         if (!std.mem.containsAtLeast(std.Target.Cpu.Arch, sdk.cpu_arch, 1, &.{target.cpu.arch}))
             continue;
         if (sdk.os_tag != target.os.tag) continue;
 
         const version_ok = switch (sdk.os_version) {
-            .semver => |vr| vr.includesVersion(target.os.version_range.semver.min) or vr.includesVersion(target.os.version_range.semver.max),
-            .linux => |vr| vr.includesVersion(target.os.version_range.linux.range.min) or vr.includesVersion(target.os.version_range.linux.range.max),
-            .windows => |vr| vr.includesVersion(target.os.version_range.windows.min) or vr.includesVersion(target.os.version_range.windows.max),
+            .semver => |vr| vr.includesVersion(target.os.version_range.semver.min),
+            .linux => |vr| vr.includesVersion(target.os.version_range.linux.range.min),
+            .windows => |vr| vr.includesVersion(target.os.version_range.windows.min),
             .none => false,
         };
         if (!version_ok) continue;
 
-        const sdk_root_dir = getSdkRoot(b.allocator, sdk) catch unreachable;
-        if (options.set_sysroot) {
-            // We have no sysroot for Windows, but we still set one to prevent inclusion of other system
-            // libs (if set_sysroot is set, don't want to accidentally depend on system libs.)
-            b.sysroot = sdk_root_dir;
-        }
-        return switch (target.os.tag) {
-            .windows => {
-                const sdk_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "include" }) catch unreachable;
-                const sdk_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "lib" }) catch unreachable;
-                defer {
-                    b.allocator.free(sdk_includes);
-                    b.allocator.free(sdk_libs);
-                }
-                step.addIncludePath(sdk_includes);
-                step.addLibraryPath(sdk_libs);
-            },
-            .macos => {
-                if (options.set_sysroot) {
-                    step.addFrameworkPath("/System/Library/Frameworks");
-                    step.addSystemIncludePath("/usr/include");
-                    step.addLibraryPath("/usr/lib");
-                    return;
-                }
-
-                const sdk_framework_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/System/Library/Frameworks" }) catch unreachable;
-                const sdk_include_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
-                const sdk_lib_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib" }) catch unreachable;
-                defer {
-                    b.allocator.free(sdk_framework_dir);
-                    b.allocator.free(sdk_include_dir);
-                    b.allocator.free(sdk_lib_dir);
-                }
-                step.addFrameworkPath(sdk_framework_dir);
-                step.addSystemIncludePath(sdk_include_dir);
-                step.addLibraryPath(sdk_lib_dir);
-            },
-            .linux => {
-                if (options.set_sysroot) return;
-
-                const sdk_root_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
-                const wayland_protocols_include = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/share/wayland-generated" }) catch unreachable;
-                const sdk_root_libs = switch (target.cpu.arch) {
-                    .x86_64 => std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib/x86_64-linux-gnu" }) catch unreachable,
-                    .aarch64 => std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib/aarch64-linux-gnu" }) catch unreachable,
-                    else => break,
-                };
-                defer {
-                    b.allocator.free(sdk_root_includes);
-                    b.allocator.free(wayland_protocols_include);
-                    b.allocator.free(sdk_root_libs);
-                }
-                step.addSystemIncludePath(sdk_root_includes);
-                step.addSystemIncludePath(wayland_protocols_include);
-                step.addLibraryPath(sdk_root_libs);
-            },
-            else => unreachable,
-        };
+        best_sdk = sdk;
     }
 
-    // TODO(error_handling)
-    std.debug.print("Unsupported Target!\n", .{});
-    unreachable;
+    if (best_sdk == null) {
+        // We found no SDK matching our minimum target version, select the default one matching our os+arch then
+        for (options.sdk_list) |sdk| {
+            if (!std.mem.containsAtLeast(std.Target.Cpu.Arch, sdk.cpu_arch, 1, &.{target.cpu.arch}))
+                continue;
+            if (sdk.os_tag != target.os.tag) continue;
+
+            if (sdk.is_default) best_sdk = sdk;
+        }
+    }
+
+    const sdk_root_dir = getSdkRoot(b.allocator, best_sdk.?) catch unreachable;
+    if (options.set_sysroot) {
+        // We have no sysroot for Windows, but we still set one to prevent inclusion of other system
+        // libs (if set_sysroot is set, don't want to accidentally depend on system libs.)
+        b.sysroot = sdk_root_dir;
+    }
+    return switch (target.os.tag) {
+        .windows => {
+            const sdk_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "include" }) catch unreachable;
+            const sdk_libs = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "lib" }) catch unreachable;
+            defer {
+                b.allocator.free(sdk_includes);
+                b.allocator.free(sdk_libs);
+            }
+            step.addIncludePath(sdk_includes);
+            step.addLibraryPath(sdk_libs);
+        },
+        .macos => {
+            if (options.set_sysroot) {
+                step.addFrameworkPath("/System/Library/Frameworks");
+                step.addSystemIncludePath("/usr/include");
+                step.addLibraryPath("/usr/lib");
+                return;
+            }
+
+            const sdk_framework_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/System/Library/Frameworks" }) catch unreachable;
+            const sdk_include_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
+            const sdk_lib_dir = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib" }) catch unreachable;
+            defer {
+                b.allocator.free(sdk_framework_dir);
+                b.allocator.free(sdk_include_dir);
+                b.allocator.free(sdk_lib_dir);
+            }
+            step.addFrameworkPath(sdk_framework_dir);
+            step.addSystemIncludePath(sdk_include_dir);
+            step.addLibraryPath(sdk_lib_dir);
+        },
+        .linux => {
+            if (options.set_sysroot) return;
+
+            const sdk_root_includes = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/include" }) catch unreachable;
+            const wayland_protocols_include = std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/share/wayland-generated" }) catch unreachable;
+            const sdk_root_libs = switch (target.cpu.arch) {
+                .x86_64 => std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib/x86_64-linux-gnu" }) catch unreachable,
+                .aarch64 => std.fs.path.join(b.allocator, &.{ sdk_root_dir, "root/usr/lib/aarch64-linux-gnu" }) catch unreachable,
+                else => unreachable,
+            };
+            defer {
+                b.allocator.free(sdk_root_includes);
+                b.allocator.free(wayland_protocols_include);
+                b.allocator.free(sdk_root_libs);
+            }
+            step.addSystemIncludePath(sdk_root_includes);
+            step.addSystemIncludePath(wayland_protocols_include);
+            step.addLibraryPath(sdk_root_libs);
+        },
+        else => unreachable,
+    };
 }
 
 var cached_sdk_roots: ?std.AutoHashMap(*const Options.Sdk, []const u8) = null;
