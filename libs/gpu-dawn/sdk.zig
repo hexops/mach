@@ -1265,6 +1265,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
                 // musl needs this defined in order for off64_t to be a type, which abseil-cpp uses
                 "-D_FILE_OFFSET_BITS",
+                "-D_LARGEFILE64_SOURCE",
             });
             if (target.os.tag == .windows) try flags.appendSlice(&.{
                 "-DABSL_FORCE_THREAD_IDENTITY_MODE=2",
