@@ -241,7 +241,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
-        run: zig build install -Dtarget=x86_64-macos.12-none
+        run: zig build install -Dtarget=x86_64-macos
         env:
           AGREE: true
       - name: upload (debug)
@@ -265,7 +265,7 @@ jobs:
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
-        run: zig build install -Doptimize=ReleaseFast -Dtarget=x86_64-macos.12-none
+        run: zig build install -Doptimize=ReleaseFast -Dtarget=x86_64-macos
         env:
           AGREE: true
       - name: upload (release-fast)
