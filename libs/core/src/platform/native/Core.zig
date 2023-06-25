@@ -224,7 +224,7 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
 
     core.initCallbacks();
     if (builtin.os.tag == .linux and !options.is_app and
-        core.linux_gamemode == null and try activateGamemode(core.allocator))
+        core.linux_gamemode == null and try wantGamemode(core.allocator))
         core.linux_gamemode = initLinuxGamemode();
 }
 
@@ -789,7 +789,7 @@ fn getEnvVarOwned(allocator: std.mem.Allocator, key: []const u8) error{ OutOfMem
 }
 
 /// Check if gamemode should be activated
-fn activateGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!bool {
+fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!bool {
     if (try getEnvVarOwned(allocator, "MACH_USE_GAMEMODE")) |env| {
         defer allocator.free(env);
         return !(std.ascii.eqlIgnoreCase(env, "off") or std.ascii.eqlIgnoreCase(env, "false"));
@@ -799,20 +799,13 @@ fn activateGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf
 
 fn initLinuxGamemode() bool {
     const gamemode = @import("gamemode");
-    _ = gamemode.init();
-
-    gamemode.requestStart() catch |err| {
-        log.err("gamemode: {s}", .{@errorName(err)});
-        return false;
-    };
+    gamemode.start();
+    if (!gamemode.isActive()) return false;
     log.info("gamemode: activated", .{});
     return true;
 }
 
 fn deinitLinuxGamemode() void {
     const gamemode = @import("gamemode");
-    gamemode.requestEnd() catch |err| {
-        log.err("gamemode: error {s}", .{@errorName(err)});
-    };
-    gamemode.deinit();
+    gamemode.stop();
 }
