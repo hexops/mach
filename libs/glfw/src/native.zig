@@ -40,7 +40,6 @@ pub const BackendOptions = struct {
 pub fn Native(comptime options: BackendOptions) type {
     const native = @cImport({
         @cDefine("GLFW_INCLUDE_VULKAN", "1");
-        @cInclude("GLFW/glfw3.h");
         if (options.win32) @cDefine("GLFW_EXPOSE_NATIVE_WIN32", "1");
         if (options.wgl) @cDefine("GLFW_EXPOSE_NATIVE_WGL", "1");
         if (options.cocoa) @cDefine("GLFW_EXPOSE_NATIVE_COCOA", "1");
@@ -50,7 +49,7 @@ pub fn Native(comptime options: BackendOptions) type {
         if (options.wayland) @cDefine("GLFW_EXPOSE_NATIVE_WAYLAND", "1");
         if (options.egl) @cDefine("GLFW_EXPOSE_NATIVE_EGL", "1");
         if (options.osmesa) @cDefine("GLFW_EXPOSE_NATIVE_OSMESA", "1");
-        @cInclude("GLFW/glfw3native.h");
+        @cInclude("glfw_native.h");
     });
 
     return struct {

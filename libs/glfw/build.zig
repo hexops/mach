@@ -116,6 +116,7 @@ fn buildLibrary(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
 fn addGLFWIncludes(step: *std.build.CompileStep) void {
     step.addIncludePath(sdkPath("/upstream/glfw/include"));
     step.addIncludePath(sdkPath("/upstream/vulkan_headers/include"));
+    step.addIncludePath(sdkPath("/src"));
 }
 
 fn addGLFWSources(b: *Build, lib: *std.build.CompileStep, options: Options) std.mem.Allocator.Error!void {
