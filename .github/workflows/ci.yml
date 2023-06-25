@@ -31,11 +31,11 @@ jobs:
       #   if: matrix.project == 'libs/freetype' || matrix.project == 'libs/glfw'
       #   run: zig build -Dtarget=x86_64-linux-musl
       - name: x86_64-linux -> x86_64-macos
-        run: zig build -Dtarget=x86_64-macos.12-none
+        run: zig build -Dtarget=x86_64-macos
         env:
           AGREE: true
       - name: x86_64-linux -> aarch64-macos
-        run: zig build -Dtarget=aarch64-macos.12-none
+        run: zig build -Dtarget=aarch64-macos
         env:
           AGREE: true
       - name: x86_64-linux -> x86_64-windows
