@@ -755,6 +755,9 @@ pub fn Sdk(comptime deps: anytype) type {
                 "-DTINT_BUILD_HLSL_WRITER=1",
                 "-DTINT_BUILD_GLSL_WRITER=1",
 
+                // MacOS: this must be defined for system-sdk-13.3 and older.
+                "-D__kernel_ptr_semantics",
+
                 include("libs/dawn/"),
                 include("libs/dawn/include/tint"),
                 include("libs/dawn/third_party/vulkan-deps/vulkan-tools/src/"),
