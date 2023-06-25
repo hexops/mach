@@ -25,4 +25,4 @@ jobs:
           git config user.email 'stephen@hexops.com'
           # See https://github.community/t/automating-push-to-public-repo/17742/12
           git config -l | grep 'http\..*\.extraheader' | cut -d= -f1 | xargs -L1 git config --unset-all
-          ./dev/push-subrepos.sh
+          ./.github/push-subrepos.sh
