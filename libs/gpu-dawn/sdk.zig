@@ -734,6 +734,11 @@ pub fn Sdk(comptime deps: anytype) type {
             };
             deps.system_sdk.include(b, lib, .{});
 
+            // MacOS: this must be defined for system-sdk-13.3 and older.
+            // Critically, this MUST NOT be included as a -D__kernel_ptr_semantics flag. If it is,
+            // then this macro will not be defined even if `defineCMacro` was also called!
+            lib.defineCMacro("__kernel_ptr_semantics", "");
+
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try appendDawnEnableBackendTypeFlags(&flags, options);
             try flags.appendSlice(&.{
@@ -754,9 +759,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 "-DTINT_BUILD_MSL_WRITER=1",
                 "-DTINT_BUILD_HLSL_WRITER=1",
                 "-DTINT_BUILD_GLSL_WRITER=1",
-
-                // MacOS: this must be defined for system-sdk-13.3 and older.
-                "-D__kernel_ptr_semantics",
 
                 include("libs/dawn/"),
                 include("libs/dawn/include/tint"),
