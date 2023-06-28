@@ -311,6 +311,32 @@ pub const mat = struct {
         } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
     }
 
+    /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
+    pub inline fn rotateX(angle_radians: f32) Mat4x4 {
+        const c = std.math.cos(angle_radians);
+        const s = std.math.sin(angle_radians);
+
+        return .{
+            1, 0,  0, 0,
+            0, c,  s, 0,
+            0, -s, c, 0,
+            0, 0,  0, 1,
+        };
+    }
+
+    /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
+    pub inline fn rotateY(angle_radians: f32) Mat4x4 {
+        const c = std.math.cos(angle_radians);
+        const s = std.math.sin(angle_radians);
+
+        return .{
+            c, 0, -s, 0,
+            0, 1, 0,  0,
+            s, 0, c,  0,
+            0, 0, 0,  1,
+        };
+    }
+
     /// Constructs a 3D matrix which rotates around the Z axis by `angle_radians`.
     pub inline fn rotateZ(angle_radians: f32) Mat4x4 {
         const c = std.math.cos(angle_radians);
