@@ -401,7 +401,7 @@ pub const mat = struct {
         } else @compileError("Expected matrix, found '" ++ @typeName(T) ++ "'");
     }
 
-    pub inline fn set_2d_matrix(data: []f32) Mat3x3 {
+    pub inline fn set_2d_matrix(data: []const f32) Mat3x3 {
         std.debug.assert(data.len == 9);
         return .{
             data[0], data[1], data[2], 0,
