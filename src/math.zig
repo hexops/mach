@@ -605,3 +605,370 @@ pub const mat = struct {
         };
     }
 };
+
+test "mat.identity" {
+    {
+        const identity_4x4: Mat4x4 = mat.identity(Mat4x4);
+        var row: u8 = 0;
+        while (row < 4) {
+            var column: u8 = 0;
+            while (column < 4) {
+                var value: f32 = if (row == column) 1 else 0;
+                try expect(identity_4x4[row * 4 + column] == value);
+
+                column += 1;
+            }
+            row += 1;
+        }
+    }
+
+    {
+        const identity_3x3: Mat3x3 = mat.identity(Mat3x3);
+        var row: u8 = 0;
+        while (row < 3) {
+            var column: u8 = 0;
+            while (column < 4) {
+                var value: f32 = if (row == column) 1 else 0;
+                try expect(identity_3x3[row * 4 + column] == value);
+
+                column += 1;
+            }
+            row += 1;
+        }
+    }
+}
+
+test "mat.orto" {
+    const orto_mat = mat.ortho(-2, 2, -2, 3, 10, 110);
+
+    // Computed Values
+    try expectEqual(orto_mat[0], 0.5);
+    try expectEqual(orto_mat[4 + 1], 0.4);
+    try expectEqual(orto_mat[4 * 2 + 2], -0.01);
+    try expectEqual(orto_mat[4 * 3 + 0], 0);
+    try expectEqual(orto_mat[4 * 3 + 1], -0.2);
+    try expectEqual(orto_mat[4 * 3 + 2], -0.1);
+
+    // Constant values, which should not change but we still check for completness
+    const zero_value_indexes = [_]u8{
+        1,     2,         3,
+        4,     4 + 2,     4 + 3,
+        4 * 2, 4 * 2 + 1, 4 * 2 + 3,
+    };
+    for (zero_value_indexes) |index| {
+        try expectEqual(orto_mat[index], 0);
+    }
+    try expectEqual(orto_mat[4 * 3 + 3], 1);
+}
+
+test "mat.translate2d" {
+    const v = Vec2{ 1.0, -2.5 };
+    const translation_mat = mat.translate2d(v);
+
+    // Computed Values
+    try expectEqual(translation_mat[4 * 2], v[0]);
+    try expectEqual(translation_mat[4 * 2 + 1], v[1]);
+
+    // Constant values, which should not change but we still check for completness
+    const zero_value_indexes = [_]u8{
+        1,         2,     3,
+        4,         4 + 2, 4 + 3,
+        4 * 2 + 3,
+    };
+    for (zero_value_indexes) |index| {
+        try expectEqual(translation_mat[index], 0);
+    }
+    try expectEqual(translation_mat[0], 1);
+    try expectEqual(translation_mat[4 + 1], 1);
+    try expectEqual(translation_mat[4 * 2 + 2], 1);
+}
+
+test "mat.translate3d" {
+    const v = Vec3{ 1.0, -2.5, 0.001 };
+    const translation_mat = mat.translate3d(v);
+
+    // Computed Values
+    try expectEqual(translation_mat[4 * 3], v[0]);
+    try expectEqual(translation_mat[4 * 3 + 1], v[1]);
+    try expectEqual(translation_mat[4 * 3 + 2], v[2]);
+
+    // Constant values, which should not change but we still check for completness
+    const zero_value_indexes = [_]u8{
+        1,     2,         3,
+        4,     4 + 2,     4 + 3,
+        4 * 2, 4 * 2 + 1, 4 * 2 + 3,
+    };
+    for (zero_value_indexes) |index| {
+        try expectEqual(translation_mat[index], 0);
+    }
+    try expectEqual(translation_mat[4 * 3 + 3], 1);
+}
+
+test "mat.translation" {
+    {
+        const v = Vec2{ 1.0, -2.5 };
+        const translation_mat = mat.translate2d(v);
+        const result = mat.translation2d(translation_mat);
+        try expectEqual(result[0], v[0]);
+        try expectEqual(result[1], v[1]);
+    }
+
+    {
+        const v = Vec3{ 1.0, -2.5, 0.001 };
+        const translation_mat = mat.translate3d(v);
+        const result = mat.translation3d(translation_mat);
+        try expectEqual(result[0], v[0]);
+        try expectEqual(result[1], v[1]);
+        try expectEqual(result[2], v[2]);
+    }
+}
+
+test "mat.scale2d" {
+    const v = Vec2{ 1.0, -2.5 };
+    const scale_mat = mat.scale2d(v);
+
+    // Computed Values
+    try expectEqual(scale_mat[0], v[0]);
+    try expectEqual(scale_mat[4 * 1 + 1], v[1]);
+
+    // Constant values, which should not change but we still check for completness
+    const zero_value_indexes = [_]u8{
+        1,     2,         3,
+        4,     4 + 2,     4 + 3,
+        4 * 2, 4 * 2 + 1, 4 * 2 + 3,
+    };
+    for (zero_value_indexes) |index| {
+        try expectEqual(scale_mat[index], 0);
+    }
+    try expectEqual(scale_mat[4 * 2 + 2], 1);
+}
+
+test "mat.scale3d" {
+    const v = Vec3{ 1.0, -2.5, 0.001 };
+    const scale_mat = mat.scale3d(v);
+
+    // Computed Values
+    try expectEqual(scale_mat[0], v[0]);
+    try expectEqual(scale_mat[4 * 1 + 1], v[1]);
+    try expectEqual(scale_mat[4 * 2 + 2], v[2]);
+
+    // Constant values, which should not change but we still check for completness
+    const zero_value_indexes = [_]u8{
+        1,     2,         3,
+        4,     4 + 2,     4 + 3,
+        4 * 2, 4 * 2 + 1, 4 * 2 + 3,
+        4 * 3, 4 * 3 + 1, 4 * 3 + 2,
+    };
+    for (zero_value_indexes) |index| {
+        try expectEqual(scale_mat[index], 0);
+    }
+    try expectEqual(scale_mat[4 * 3 + 3], 1);
+}
+
+const degreesToRadians = std.math.degreesToRadians;
+
+// NOTE: Maybe reconsider based on feedback to join all test for rotation into one test as only
+//       location of values change. And create some kind of struct that will hold this indexes and
+//       coresponding values
+test "mat.rotateX" {
+    const zero_value_indexes = [_]u8{
+        1,         2,     3,
+        4,         4 + 3, 4 * 2,
+        4 * 2 + 3, 4 * 3, 4 * 3 + 1,
+        4 * 3 + 2,
+    };
+
+    const one_value_indexes = [_]u8{
+        0, 4 * 3 + 3,
+    };
+
+    const tolerance = 1e-7;
+
+    {
+        const r = 90;
+        const R_x = mat.rotateX(degreesToRadians(f32, r));
+        try expectApproxEqAbs(R_x[4 * 1 + 1], 0, tolerance);
+        try expectApproxEqAbs(R_x[4 * 2 + 2], 0, tolerance);
+        try expectApproxEqAbs(R_x[4 * 1 + 2], 1, tolerance);
+        try expectApproxEqAbs(R_x[4 * 2 + 1], -1, tolerance);
+
+        for (zero_value_indexes) |index| {
+            try expectEqual(R_x[index], 0);
+        }
+
+        for (one_value_indexes) |index| {
+            try expectEqual(R_x[index], 1);
+        }
+    }
+
+    {
+        const r = 0;
+        const R_x = mat.rotateX(degreesToRadians(f32, r));
+        try expectApproxEqAbs(R_x[4 * 1 + 1], 1, tolerance);
+        try expectApproxEqAbs(R_x[4 * 2 + 2], 1, tolerance);
+        try expectApproxEqAbs(R_x[4 * 1 + 2], 0, tolerance);
+        try expectApproxEqAbs(R_x[4 * 2 + 1], 0, tolerance);
+
+        for (zero_value_indexes) |index| {
+            try expectEqual(R_x[index], 0);
+        }
+
+        for (one_value_indexes) |index| {
+            try expectEqual(R_x[index], 1);
+        }
+    }
+
+    {
+        const r = 45;
+        const result: f32 = std.math.sqrt(2.0) / 2.0; // sqrt(2) / 2
+        const R_x = mat.rotateX(degreesToRadians(f32, r));
+        try expectApproxEqAbs(R_x[4 * 1 + 1], result, tolerance);
+        try expectApproxEqAbs(R_x[4 * 2 + 2], result, tolerance);
+        try expectApproxEqAbs(R_x[4 * 1 + 2], result, tolerance);
+        try expectApproxEqAbs(R_x[4 * 2 + 1], -result, tolerance);
+
+        for (zero_value_indexes) |index| {
+            try expectEqual(R_x[index], 0);
+        }
+
+        for (one_value_indexes) |index| {
+            try expectEqual(R_x[index], 1);
+        }
+    }
+}
+
+test "mat.rotateY" {
+    const zero_value_indexes = [_]u8{
+        1,         3,
+        4,         4 + 2,
+        4 + 3,     4 * 2 + 1,
+        4 * 2 + 3, 4 * 3,
+        4 * 3 + 1, 4 * 3 + 2,
+    };
+
+    const one_value_indexes = [_]u8{
+        4 + 1, 4 * 3 + 3,
+    };
+
+    const tolerance = 1e-7;
+
+    {
+        const r = 90;
+        const R_y = mat.rotateY(degreesToRadians(f32, r));
+        try expectApproxEqAbs(R_y[0], 0, tolerance);
+        try expectApproxEqAbs(R_y[4 * 2 + 2], 0, tolerance);
+        try expectApproxEqAbs(R_y[2], -1, tolerance);
+        try expectApproxEqAbs(R_y[4 * 2], 1, tolerance);
+
+        for (zero_value_indexes) |index| {
+            try expectEqual(R_y[index], 0);
+        }
+
+        for (one_value_indexes) |index| {
+            try expectEqual(R_y[index], 1);
+        }
+    }
+
+    {
+        const r = 0;
+        const R_y = mat.rotateY(degreesToRadians(f32, r));
+        try expectApproxEqAbs(R_y[0], 1, tolerance);
+        try expectApproxEqAbs(R_y[4 * 2 + 2], 1, tolerance);
+        try expectApproxEqAbs(R_y[2], 0, tolerance);
+        try expectApproxEqAbs(R_y[4 * 2], 0, tolerance);
+
+        for (zero_value_indexes) |index| {
+            try expectEqual(R_y[index], 0);
+        }
+
+        for (one_value_indexes) |index| {
+            try expectEqual(R_y[index], 1);
+        }
+    }
+
+    {
+        const r = 45;
+        const result: f32 = std.math.sqrt(2.0) / 2.0; // sqrt(2) / 2
+        const R_y = mat.rotateY(degreesToRadians(f32, r));
+        try expectApproxEqAbs(R_y[0], result, tolerance);
+        try expectApproxEqAbs(R_y[4 * 2 + 2], result, tolerance);
+        try expectApproxEqAbs(R_y[2], -result, tolerance);
+        try expectApproxEqAbs(R_y[4 * 2], result, tolerance);
+
+        for (zero_value_indexes) |index| {
+            try expectEqual(R_y[index], 0);
+        }
+
+        for (one_value_indexes) |index| {
+            try expectEqual(R_y[index], 1);
+        }
+    }
+}
+
+test "mat.rotateZ" {
+    const zero_value_indexes = [_]u8{
+        2,         3,
+        4 + 2,     4 + 3,
+        4 * 2,     4 * 2 + 1,
+        4 * 2 + 3, 4 * 3,
+        4 * 3 + 1, 4 * 3 + 2,
+    };
+
+    const one_value_indexes = [_]u8{
+        4 * 2 + 2, 4 * 3 + 3,
+    };
+
+    const tolerance = 1e-7;
+
+    {
+        const r = 90;
+        const R_z = mat.rotateZ(degreesToRadians(f32, r));
+        try expectApproxEqAbs(R_z[0], 0, tolerance);
+        try expectApproxEqAbs(R_z[4 * 1 + 1], 0, tolerance);
+        try expectApproxEqAbs(R_z[1], 1, tolerance);
+        try expectApproxEqAbs(R_z[4], -1, tolerance);
+
+        for (zero_value_indexes) |index| {
+            try expectEqual(R_z[index], 0);
+        }
+
+        for (one_value_indexes) |index| {
+            try expectEqual(R_z[index], 1);
+        }
+    }
+
+    {
+        const r = 0;
+        const R_z = mat.rotateZ(degreesToRadians(f32, r));
+        try expectApproxEqAbs(R_z[0], 1, tolerance);
+        try expectApproxEqAbs(R_z[4 * 1 + 1], 1, tolerance);
+        try expectApproxEqAbs(R_z[1], 0, tolerance);
+        try expectApproxEqAbs(R_z[4], 0, tolerance);
+
+        for (zero_value_indexes) |index| {
+            try expectEqual(R_z[index], 0);
+        }
+
+        for (one_value_indexes) |index| {
+            try expectEqual(R_z[index], 1);
+        }
+    }
+
+    {
+        const r = 45;
+        const result: f32 = std.math.sqrt(2.0) / 2.0; // sqrt(2) / 2
+        const R_z = mat.rotateZ(degreesToRadians(f32, r));
+        try expectApproxEqAbs(R_z[0], result, tolerance);
+        try expectApproxEqAbs(R_z[4 * 1 + 1], result, tolerance);
+        try expectApproxEqAbs(R_z[1], result, tolerance);
+        try expectApproxEqAbs(R_z[4], -result, tolerance);
+
+        for (zero_value_indexes) |index| {
+            try expectEqual(R_z[index], 0);
+        }
+
+        for (one_value_indexes) |index| {
+            try expectEqual(R_z[index], 1);
+        }
+    }
+}
