@@ -27,6 +27,7 @@ const std = @import("std");
 test {
     std.testing.refAllDeclsRecursive(gfx);
     std.testing.refAllDeclsRecursive(Atlas);
+    std.testing.refAllDeclsRecursive(math);
     _ = ecs;
     _ = earcut;
 }

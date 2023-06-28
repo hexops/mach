@@ -39,6 +39,9 @@
 //!
 
 const std = @import("std");
+const expect = std.testing.expect;
+const expectEqual = std.testing.expectEqual;
+const expectApproxEqAbs = std.testing.expectApproxEqAbs;
 
 pub const Vec2 = @Vector(2, f32);
 pub const Vec3 = @Vector(3, f32);
@@ -129,6 +132,258 @@ pub const vec = struct {
         return (a * splat(@TypeOf(a), 1.0 - amount)) + (b * splat(@TypeOf(a), amount));
     }
 };
+
+test "vec.size" {
+    try expect(vec.size(Vec2) == 2);
+    try expect(vec.size(Vec3) == 3);
+    try expect(vec.size(Vec4) == 4);
+}
+
+test "vec.splat" {
+    const v2 = vec.splat(Vec2, 1337.0);
+    try expect(v2[0] == 1337 and v2[1] == 1337);
+
+    const v3 = vec.splat(Vec3, 1337.0);
+    try expect(v3[0] == 1337 and v3[1] == 1337 and v3[2] == 1337);
+
+    const v4 = vec.splat(Vec4, 1337.0);
+    try expect(v4[0] == 1337 and v4[1] == 1337 and v4[2] == 1337 and v4[3] == 1337);
+}
+
+test "vec.len2" {
+    {
+        const v = Vec2{ 1, 1 };
+        try expect(vec.len2(v) == 2);
+    }
+
+    {
+        const v = Vec3{ 2, 3, -4 };
+        try expect(vec.len2(v) == 29);
+    }
+
+    {
+        const v = Vec4{ 1.5, 2.25, 3.33, 4.44 };
+        try expectApproxEqAbs(vec.len2(v), 38.115, 0.0001);
+    }
+
+    {
+        const v = Vec4{ 0, 0, 0, 0 };
+        try expect(vec.len2(v) == 0);
+    }
+}
+
+test "vec.len" {
+    {
+        const v = Vec2{ 3, 4 };
+        try expect(vec.len(v) == 5);
+    }
+
+    {
+        const v = Vec3{ 4, 4, 2 };
+        try expect(vec.len(v) == 6);
+    }
+
+    {
+        const tolerance = 1e-8;
+        const v = Vec4{ 1.5, 2.25, 3.33, 4.44 };
+        try expectApproxEqAbs(vec.len(v), 6.17373468817700328621, tolerance);
+    }
+
+    {
+        const v = Vec4{ 0, 0, 0, 0 };
+        try expect(vec.len(v) == 0);
+    }
+}
+
+test "vec.normalize" {
+    const near_zero_value = 1e-8;
+
+    {
+        const v = Vec2{ 1, 1 };
+        const normalized = vec.normalize(v, 0);
+        const norm_val = std.math.sqrt1_2; // 1 / sqrt(2)
+        try expect(normalized[0] == norm_val and normalized[1] == norm_val);
+    }
+
+    {
+        const v = Vec4{ 10, 0.5, -3, -0.2 };
+        const normalized = vec.normalize(v, near_zero_value);
+        const result = Vec4{ 0.9565546486012808204, 0.04782773243006404102, -0.28696639458038424612, -0.01913109297202561641 };
+        try expectApproxEqAbs(normalized[0], result[0], 1e-7);
+        try expectApproxEqAbs(normalized[1], result[1], 1e-7);
+        try expectApproxEqAbs(normalized[2], result[2], 1e-7);
+        try expectApproxEqAbs(normalized[3], result[3], 1e-7);
+    }
+
+    //NOTE: This test ensures that zero vector is also normalized to zero vector with help of divisor
+    {
+        const v = Vec2{ 0, 0 };
+        const normalized = vec.normalize(v, near_zero_value);
+        try expect(normalized[0] == 0 and normalized[1] == 0);
+    }
+
+    //NOTE: This test should work but I am getting error:
+    // 'test.vec.normalize' failed: expected -nan, found -nan
+    // {
+    //     const v = Vec2{ 0, 0 };
+    //     const normalized = vec.normalize(v, 0);
+    //     const NaN = std.math.nan(f32);
+    //     try std.testing.expectEqual(-NaN, normalized[0]);
+    //     try std.testing.expectEqual(-NaN, normalized[1]);
+
+    //     // try std.testing.expectApproxEqAbs(normalized[0], -NaN, 0.00000001);
+    //     // try std.testing.expectApproxEqAbs(normalized[1], -NaN, 0.00000001);
+    // }
+
+    //NOTE: This two test show how for small values if we add divisor we get different normalized vectors
+    {
+        const v = Vec2{ near_zero_value, near_zero_value };
+        const normalized = vec.normalize(v, near_zero_value);
+        const norm_val = 0.4142135623730950488; // 0.00000001 / (sqrt((0.00000001×0.00000001) + (0.00000001×0.00000001)) + 0.00000001)
+        try expect(normalized[0] == norm_val and normalized[1] == norm_val);
+    }
+
+    {
+        const v = Vec2{ near_zero_value, near_zero_value };
+        const normalized = vec.normalize(v, 0);
+        const norm_val = std.math.sqrt1_2; // 1 / sqrt(2)
+        try expect(normalized[0] == norm_val and normalized[1] == norm_val);
+    }
+}
+
+test "vec.dir" {
+    const near_zero_value = 1e-8;
+
+    {
+        const a = Vec2{ 0, 0 };
+        const b = Vec2{ 0, 0 };
+        const d = vec.dir(a, b, near_zero_value);
+        try expect(d[0] == 0 and d[1] == 0);
+    }
+
+    {
+        const a = Vec2{ 1, 2 };
+        const b = Vec2{ 1, 2 };
+        const d = vec.dir(a, b, near_zero_value);
+        try expect(d[0] == 0 and d[1] == 0);
+    }
+
+    {
+        const a = Vec2{ 1, 2 };
+        const b = Vec2{ 3, 4 };
+        const d = vec.dir(a, b, 0);
+        const result = std.math.sqrt1_2; // 1 / sqrt(2)
+        try expect(d[0] == result and d[1] == result);
+    }
+
+    {
+        const a = Vec2{ 1, 2 };
+        const b = Vec2{ -1, -2 };
+        const d = vec.dir(a, b, 0);
+        const result = -0.44721359549995793928; // 1 / sqrt(5)
+        try expectApproxEqAbs(d[0], result, near_zero_value);
+        try expectApproxEqAbs(d[1], 2 * result, near_zero_value);
+    }
+
+    {
+        const a = Vec3{ 1, -1, 0 };
+        const b = Vec3{ 0, 1, 1 };
+        const d = vec.dir(a, b, 0);
+
+        const result_3 = 0.40824829046386301637; // 1 / sqrt(6)
+        const result_1 = -result_3; // -1 / sqrt(6)
+        const result_2 = 0.81649658092772603273; // sqrt(2/3)
+        try expectApproxEqAbs(d[0], result_1, 1e-7);
+        try expectApproxEqAbs(d[1], result_2, 1e-7);
+        try expectApproxEqAbs(d[2], result_3, 1e-7);
+    }
+}
+
+test "vec.dist2" {
+    {
+        const a = Vec4{ 0, 0, 0, 0 };
+        const b = Vec4{ 0, 0, 0, 0 };
+        try expect(vec.dist2(a, b) == 0);
+    }
+
+    {
+        const a = Vec2{ 1, 1 };
+        try expect(vec.dist2(a, a) == 0);
+    }
+
+    {
+        const a = Vec2{ 1, 2 };
+        const b = Vec2{ 3, 4 };
+        try expect(vec.dist2(a, b) == 8);
+    }
+
+    {
+        const a = Vec3{ -1, -2, -3 };
+        const b = Vec3{ 3, 2, 1 };
+        try expect(vec.dist2(a, b) == 48);
+    }
+
+    {
+        const a = Vec4{ 1.5, 2.25, 3.33, 4.44 };
+        const b = Vec4{ 1.44, -9.33, 7.25, -0.5 };
+        try expectApproxEqAbs(vec.dist2(a, b), 173.87, 1e-8);
+    }
+}
+
+test "vec.dist" {
+    {
+        const a = Vec4{ 0, 0, 0, 0 };
+        const b = Vec4{ 0, 0, 0, 0 };
+        try expect(vec.dist(a, b) == 0);
+    }
+
+    {
+        const a = Vec2{ 1, 1 };
+        try expect(vec.dist(a, a) == 0);
+    }
+
+    {
+        const a = Vec2{ 1, 2 };
+        const b = Vec2{ 4, 6 };
+        try expectEqual(vec.dist(a, b), 5);
+    }
+
+    {
+        const a = Vec3{ -1, -2, -3 };
+        const b = Vec3{ 3, 2, -1 };
+        try expect(vec.dist(a, b) == 6);
+    }
+
+    {
+        const a = Vec4{ 1.5, 2.25, 3.33, 4.44 };
+        const b = Vec4{ 1.44, -9.33, 7.25, -0.5 };
+        try expectApproxEqAbs(vec.dist(a, b), 13.18597740025364975978, 1e-8);
+    }
+}
+
+test "vec.lerp" {
+    {
+        const a = Vec4{ 1, 1, 1, 1 };
+        const b = Vec4{ 0, 0, 0, 0 };
+        const lerp_to_a = vec.lerp(a, b, 0.0);
+        try expectEqual(lerp_to_a[0], a[0]);
+        try expectEqual(lerp_to_a[1], a[1]);
+        try expectEqual(lerp_to_a[2], a[2]);
+        try expectEqual(lerp_to_a[3], a[3]);
+
+        const lerp_to_b = vec.lerp(a, b, 1.0);
+        try expectEqual(lerp_to_b[0], b[0]);
+        try expectEqual(lerp_to_b[1], b[1]);
+        try expectEqual(lerp_to_b[2], b[2]);
+        try expectEqual(lerp_to_b[3], b[3]);
+
+        const lerp_to_mid = vec.lerp(a, b, 0.5);
+        try expectEqual(lerp_to_mid[0], 0.5);
+        try expectEqual(lerp_to_mid[1], 0.5);
+        try expectEqual(lerp_to_mid[2], 0.5);
+        try expectEqual(lerp_to_mid[3], 0.5);
+    }
+}
 
 /// Matrix operations
 pub const mat = struct {
