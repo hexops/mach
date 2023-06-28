@@ -585,6 +585,78 @@ pub const mat = struct {
         } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
     }
 
+    /// Check if two matrices are exactly equal. For approximate comparison use `equalsApproximately()`
+    pub inline fn equals(a: anytype, b: @TypeOf(a)) bool {
+        return if (@TypeOf(a) == Mat3x3) {
+            return a[0] == b[0] and
+                a[1] == b[1] and
+                a[2] == b[2] and
+                a[3] == b[3] and
+                a[4] == b[4] and
+                a[5] == b[5] and
+                a[6] == b[6] and
+                a[7] == b[7] and
+                a[8] == b[8] and
+                a[9] == b[9] and
+                a[10] == b[10] and
+                a[11] == b[11];
+        } else if (@TypeOf(a) == Mat4x4) {
+            return a[0] == b[0] and
+                a[1] == b[1] and
+                a[2] == b[2] and
+                a[3] == b[3] and
+                a[4] == b[4] and
+                a[5] == b[5] and
+                a[6] == b[6] and
+                a[7] == b[7] and
+                a[8] == b[8] and
+                a[9] == b[9] and
+                a[10] == b[10] and
+                a[11] == b[11] and
+                a[12] == b[12] and
+                a[13] == b[13] and
+                a[14] == b[14] and
+                a[15] == b[15];
+        } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
+    }
+
+    const approxEqAbs = std.math.approxEqAbs;
+    /// Check if two matrices are approximate equal. Returns true if the absolute difference between
+    /// each element in matrix them is less or equal than the specified tolerance.
+    pub inline fn equalsApproximately(a: anytype, b: @TypeOf(a), tolerance: f32) bool {
+        return if (@TypeOf(a) == Mat3x3) {
+            return approxEqAbs(f32, a[0], b[0], tolerance) and
+                approxEqAbs(f32, a[1], b[1], tolerance) and
+                approxEqAbs(f32, a[2], b[2], tolerance) and
+                approxEqAbs(f32, a[3], b[3], tolerance) and
+                approxEqAbs(f32, a[4], b[4], tolerance) and
+                approxEqAbs(f32, a[5], b[5], tolerance) and
+                approxEqAbs(f32, a[6], b[6], tolerance) and
+                approxEqAbs(f32, a[7], b[7], tolerance) and
+                approxEqAbs(f32, a[8], b[8], tolerance) and
+                approxEqAbs(f32, a[9], b[9], tolerance) and
+                approxEqAbs(f32, a[10], b[10], tolerance) and
+                approxEqAbs(f32, a[11], b[11], tolerance);
+        } else if (@TypeOf(a) == Mat4x4) {
+            return approxEqAbs(f32, a[0], b[0], tolerance) and
+                approxEqAbs(f32, a[1], b[1], tolerance) and
+                approxEqAbs(f32, a[2], b[2], tolerance) and
+                approxEqAbs(f32, a[3], b[3], tolerance) and
+                approxEqAbs(f32, a[4], b[4], tolerance) and
+                approxEqAbs(f32, a[5], b[5], tolerance) and
+                approxEqAbs(f32, a[6], b[6], tolerance) and
+                approxEqAbs(f32, a[7], b[7], tolerance) and
+                approxEqAbs(f32, a[8], b[8], tolerance) and
+                approxEqAbs(f32, a[9], b[9], tolerance) and
+                approxEqAbs(f32, a[10], b[10], tolerance) and
+                approxEqAbs(f32, a[11], b[11], tolerance) and
+                approxEqAbs(f32, a[12], b[12], tolerance) and
+                approxEqAbs(f32, a[13], b[13], tolerance) and
+                approxEqAbs(f32, a[14], b[14], tolerance) and
+                approxEqAbs(f32, a[15], b[15], tolerance);
+        } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
+    }
+
     /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
     pub inline fn rotateX(angle_radians: f32) Mat4x4 {
         const c = std.math.cos(angle_radians);
