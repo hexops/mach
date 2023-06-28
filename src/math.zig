@@ -401,6 +401,25 @@ pub const mat = struct {
         } else @compileError("Expected matrix, found '" ++ @typeName(T) ++ "'");
     }
 
+    pub inline fn set_2d_matrix(data: []f32) Mat3x3 {
+        std.debug.assert(data.len == 9);
+        return .{
+            data[0], data[1], data[2], 0,
+            data[3], data[4], data[5], 0,
+            data[6], data[7], data[8], 0,
+        };
+    }
+
+    pub inline fn set_3d_matrix(data: []const f32) Mat4x4 {
+        std.debug.assert(data.len == 16);
+        return .{
+            data[0],  data[1],  data[2],  data[3],
+            data[4],  data[5],  data[6],  data[7],
+            data[8],  data[9],  data[10], data[11],
+            data[12], data[13], data[14], data[15],
+        };
+    }
+
     /// Constructs an orthographic projection matrix; an orthogonal transformation matrix which
     /// transforms from the given left, right, bottom, and top dimensions into -1 +1 in x and y,
     /// and 0 to +1 in z.
