@@ -22,7 +22,7 @@ handle: *c.GLFWwindow,
 
 /// Returns a Zig GLFW window from an underlying C GLFW window handle.
 pub inline fn from(handle: *anyopaque) Window {
-    return Window{ .handle = @as(*c.GLFWwindow, @ptrCast(@alignCast(@alignOf(*c.GLFWwindow), handle))) };
+    return Window{ .handle = @as(*c.GLFWwindow, @ptrCast(@alignCast(handle))) };
 }
 
 /// Resets all window hints to their default values.
@@ -1174,7 +1174,7 @@ pub inline fn setUserPointer(self: Window, pointer: ?*anyopaque) void {
 /// see also: window_userptr, glfw.Window.setUserPointer
 pub inline fn getUserPointer(self: Window, comptime T: type) ?*T {
     internal_debug.assertInitialized();
-    if (c.glfwGetWindowUserPointer(self.handle)) |user_pointer| return @as(?*T, @ptrCast(@alignCast(@alignOf(T), user_pointer)));
+    if (c.glfwGetWindowUserPointer(self.handle)) |user_pointer| return @as(?*T, @ptrCast(@alignCast(user_pointer)));
     return null;
 }
 

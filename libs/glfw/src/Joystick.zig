@@ -296,7 +296,7 @@ pub inline fn setUserPointer(self: Joystick, comptime T: type, pointer: *T) void
 pub inline fn getUserPointer(self: Joystick, comptime PointerType: type) ?PointerType {
     internal_debug.assertInitialized();
     const ptr = c.glfwGetJoystickUserPointer(@intFromEnum(self.jid));
-    if (ptr) |p| return @as(PointerType, @ptrCast(@alignCast(@alignOf(std.meta.Child(PointerType)), p)));
+    if (ptr) |p| return @as(PointerType, @ptrCast(@alignCast(p)));
     return null;
 }
 

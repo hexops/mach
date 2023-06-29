@@ -238,8 +238,8 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
     return c.glfwCreateWindowSurface(
         instance,
         window.handle,
-        if (vk_allocation_callbacks == null) null else @as(*const c.VkAllocationCallbacks, @ptrCast(@alignCast(@alignOf(c.VkAllocationCallbacks), vk_allocation_callbacks))),
-        @as(*c.VkSurfaceKHR, @ptrCast(@alignCast(@alignOf(c.VkSurfaceKHR), vk_surface_khr))),
+        if (vk_allocation_callbacks == null) null else @as(*const c.VkAllocationCallbacks, @ptrCast(@alignCast(vk_allocation_callbacks))),
+        @as(*c.VkSurfaceKHR, @ptrCast(@alignCast(vk_surface_khr))),
     );
 }
 

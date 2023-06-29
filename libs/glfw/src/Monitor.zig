@@ -176,7 +176,7 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
     internal_debug.assertInitialized();
     const ptr = c.glfwGetMonitorUserPointer(self.handle);
     if (ptr == null) return null;
-    return @as(*T, @ptrCast(@alignCast(@alignOf(T), ptr.?)));
+    return @as(*T, @ptrCast(@alignCast(ptr.?)));
 }
 
 /// Returns the available video modes for the specified monitor.
