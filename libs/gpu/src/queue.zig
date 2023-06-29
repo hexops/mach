@@ -45,7 +45,7 @@ pub const Queue = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn cCallback(status: WorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
-                callback(if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(std.meta.Child(Context)), userdata)), status);
+                callback(if (Context == void) {} else @as(Context, @ptrCast(@alignCast(@alignOf(std.meta.Child(Context)), userdata))), status);
             }
         };
         Impl.queueOnSubmittedWorkDone(queue, signal_value, Helper.cCallback, if (Context == void) null else context);
@@ -69,7 +69,7 @@ pub const Queue = opaque {
             queue,
             buffer,
             buffer_offset_bytes,
-            @ptrCast(*const anyopaque, std.mem.sliceAsBytes(data_slice).ptr),
+            @as(*const anyopaque, @ptrCast(std.mem.sliceAsBytes(data_slice).ptr)),
             data_slice.len * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
         );
     }
@@ -84,8 +84,8 @@ pub const Queue = opaque {
         Impl.queueWriteTexture(
             queue,
             destination,
-            @ptrCast(*const anyopaque, std.mem.sliceAsBytes(data_slice).ptr),
-            @intCast(usize, data_slice.len) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
+            @as(*const anyopaque, @ptrCast(std.mem.sliceAsBytes(data_slice).ptr)),
+            @as(usize, @intCast(data_slice.len)) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
             data_layout,
             write_size,
         );

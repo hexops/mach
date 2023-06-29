@@ -115,7 +115,7 @@ pub const Shape = enum(i32) {
 pub inline fn create(image: Image, xhot: i32, yhot: i32) ?Cursor {
     internal_debug.assertInitialized();
     const img = image.toC();
-    if (c.glfwCreateCursor(&img, @intCast(c_int, xhot), @intCast(c_int, yhot))) |cursor| return Cursor{ .ptr = cursor };
+    if (c.glfwCreateCursor(&img, @as(c_int, @intCast(xhot)), @as(c_int, @intCast(yhot)))) |cursor| return Cursor{ .ptr = cursor };
     return null;
 }
 
@@ -153,7 +153,7 @@ pub inline fn create(image: Image, xhot: i32, yhot: i32) ?Cursor {
 /// see also: cursor_object, glfwCreateCursor
 pub inline fn createStandard(shape: Shape) ?Cursor {
     internal_debug.assertInitialized();
-    if (c.glfwCreateStandardCursor(@intCast(c_int, @intFromEnum(shape)))) |cursor| return Cursor{ .ptr = cursor };
+    if (c.glfwCreateStandardCursor(@as(c_int, @intCast(@intFromEnum(shape))))) |cursor| return Cursor{ .ptr = cursor };
     return null;
 }
 

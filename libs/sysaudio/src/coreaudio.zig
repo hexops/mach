@@ -72,7 +72,7 @@ pub const Context = struct {
             0,
             null,
             &io_size,
-            @ptrCast(*anyopaque, devs),
+            @as(*anyopaque, @ptrCast(devs)),
         ) != c.noErr) {
             return error.OpeningDevice;
         }
@@ -128,7 +128,7 @@ pub const Context = struct {
                     0,
                     null,
                     &io_size,
-                    @ptrCast(*anyopaque, buf_list),
+                    @as(*anyopaque, @ptrCast(buf_list)),
                 ) != c.noErr) {
                     return error.OpeningDevice;
                 }
@@ -210,8 +210,8 @@ pub const Context = struct {
                 .channels = channels,
                 .formats = &.{ .i16, .i32, .f32 },
                 .sample_rate = .{
-                    .min = @intFromFloat(u24, @floor(sample_rate)),
-                    .max = @intFromFloat(u24, @floor(sample_rate)),
+                    .min = @as(u24, @intFromFloat(@floor(sample_rate))),
+                    .max = @as(u24, @intFromFloat(@floor(sample_rate))),
                 },
             };
 
@@ -334,10 +334,10 @@ pub const Player = struct {
         _ = bus_number;
         _ = frames_left;
 
-        const self = @ptrCast(*Player, @alignCast(@alignOf(*Player), self_opaque.?));
+        const self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), self_opaque.?)));
 
         for (self.channels, 0..) |*ch, i| {
-            ch.ptr = @ptrCast([*]u8, buf.*.mBuffers[0].mData.?) + self.format.frameSize(i);
+            ch.ptr = @as([*]u8, @ptrCast(buf.*.mBuffers[0].mData.?)) + self.format.frameSize(i);
         }
         const frames = buf.*.mBuffers[0].mDataByteSize / self.format.frameSize(self.channels.len);
         self.writeFn(self.user_data, frames);
@@ -412,7 +412,7 @@ fn freeDevice(allocator: std.mem.Allocator, device: main.Device) void {
 
 fn createStreamDesc(format: main.Format, sample_rate: u24, ch_count: usize) !c.AudioStreamBasicDescription {
     var desc = c.AudioStreamBasicDescription{
-        .mSampleRate = @floatFromInt(f64, sample_rate),
+        .mSampleRate = @as(f64, @floatFromInt(sample_rate)),
         .mFormatID = c.kAudioFormatLinearPCM,
         .mFormatFlags = switch (format) {
             .i16 => c.kAudioFormatFlagIsSignedInteger,
@@ -425,7 +425,7 @@ fn createStreamDesc(format: main.Format, sample_rate: u24, ch_count: usize) !c.A
         .mBytesPerPacket = format.frameSize(ch_count),
         .mFramesPerPacket = 1,
         .mBytesPerFrame = format.frameSize(ch_count),
-        .mChannelsPerFrame = @intCast(c_uint, ch_count),
+        .mChannelsPerFrame = @as(c_uint, @intCast(ch_count)),
         .mBitsPerChannel = switch (format) {
             .i16 => 16,
             .i24 => 24,

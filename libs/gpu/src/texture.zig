@@ -149,7 +149,7 @@ pub const Texture = opaque {
         pub const none = UsageFlags{};
 
         pub fn equal(a: UsageFlags, b: UsageFlags) bool {
-            return @truncate(u6, @bitCast(u32, a)) == @truncate(u6, @bitCast(u32, b));
+            return @as(u6, @truncate(@as(u32, @bitCast(a)))) == @as(u6, @truncate(@as(u32, @bitCast(b))));
         }
     };
 

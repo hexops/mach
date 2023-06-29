@@ -150,7 +150,7 @@ pub const Key = enum(c_int) {
     menu = cc.GLFW_KEY_MENU,
 
     pub inline fn last() Key {
-        return @enumFromInt(Key, cc.GLFW_KEY_LAST);
+        return @as(Key, @enumFromInt(cc.GLFW_KEY_LAST));
     }
 
     /// Returns the layout-specific name of the specified printable key.
@@ -215,9 +215,9 @@ pub const Key = enum(c_int) {
     /// see also: input_key_name
     pub inline fn getName(self: Key, scancode: i32) ?[:0]const u8 {
         internal_debug.assertInitialized();
-        const name_opt = cc.glfwGetKeyName(@intFromEnum(self), @intCast(c_int, scancode));
+        const name_opt = cc.glfwGetKeyName(@intFromEnum(self), @as(c_int, @intCast(scancode)));
         return if (name_opt) |name|
-            std.mem.span(@ptrCast([*:0]const u8, name))
+            std.mem.span(@as([*:0]const u8, @ptrCast(name)))
         else
             null;
     }

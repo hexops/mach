@@ -19,12 +19,12 @@ pub const Guid = extern union {
         return guid;
     }
     fn hexVal(c: u8) u4 {
-        if (c <= '9') return @intCast(u4, c - '0');
-        if (c >= 'a') return @intCast(u4, c + 10 - 'a');
-        return @intCast(u4, c + 10 - 'A');
+        if (c <= '9') return @as(u4, @intCast(c - '0'));
+        if (c >= 'a') return @as(u4, @intCast(c + 10 - 'a'));
+        return @as(u4, @intCast(c + 10 - 'A'));
     }
     fn decodeHexByte(hex: [2]u8) u8 {
-        return @intCast(u8, hexVal(hex[0])) << 4 | hexVal(hex[1]);
+        return @as(u8, @intCast(hexVal(hex[0]))) << 4 | hexVal(hex[1]);
     }
     pub fn eql(riid1: Guid, riid2: Guid) bool {
         return riid1.Ints.a == riid2.Ints.a and
@@ -259,13 +259,13 @@ pub const IUnknown = extern struct {
     pub fn MethodMixin(comptime T: type) type {
         return struct {
             pub inline fn QueryInterface(self: *const T, riid: ?*const Guid, ppvObject: ?*?*anyopaque) HRESULT {
-                return @ptrCast(*const IUnknown.VTable, self.vtable).QueryInterface(@ptrCast(*const IUnknown, self), riid, ppvObject);
+                return @as(*const IUnknown.VTable, @ptrCast(self.vtable)).QueryInterface(@as(*const IUnknown, @ptrCast(self)), riid, ppvObject);
             }
             pub inline fn AddRef(self: *const T) u32 {
-                return @ptrCast(*const IUnknown.VTable, self.vtable).AddRef(@ptrCast(*const IUnknown, self));
+                return @as(*const IUnknown.VTable, @ptrCast(self.vtable)).AddRef(@as(*const IUnknown, @ptrCast(self)));
             }
             pub inline fn Release(self: *const T) u32 {
-                return @ptrCast(*const IUnknown.VTable, self.vtable).Release(@ptrCast(*const IUnknown, self));
+                return @as(*const IUnknown.VTable, @ptrCast(self.vtable)).Release(@as(*const IUnknown, @ptrCast(self)));
             }
         };
     }
@@ -1239,40 +1239,40 @@ pub const IAudioClient = extern struct {
         return struct {
             pub usingnamespace IUnknown.MethodMixin(T);
             pub inline fn Initialize(self: *const T, ShareMode: AUDCLNT_SHAREMODE, StreamFlags: u32, hnsBufferDuration: i64, hnsPeriodicity: i64, pFormat: ?*const WAVEFORMATEX, AudioSessionGuid: ?*const Guid) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).Initialize(@ptrCast(*const IAudioClient, self), ShareMode, StreamFlags, hnsBufferDuration, hnsPeriodicity, pFormat, AudioSessionGuid);
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).Initialize(@as(*const IAudioClient, @ptrCast(self)), ShareMode, StreamFlags, hnsBufferDuration, hnsPeriodicity, pFormat, AudioSessionGuid);
             }
             pub inline fn GetBufferSize(self: *const T, pNumBufferFrames: ?*u32) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).GetBufferSize(@ptrCast(*const IAudioClient, self), pNumBufferFrames);
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).GetBufferSize(@as(*const IAudioClient, @ptrCast(self)), pNumBufferFrames);
             }
             pub inline fn GetStreamLatency(self: *const T, phnsLatency: ?*i64) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).GetStreamLatency(@ptrCast(*const IAudioClient, self), phnsLatency);
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).GetStreamLatency(@as(*const IAudioClient, @ptrCast(self)), phnsLatency);
             }
             pub inline fn GetCurrentPadding(self: *const T, pNumPaddingFrames: ?*u32) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).GetCurrentPadding(@ptrCast(*const IAudioClient, self), pNumPaddingFrames);
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).GetCurrentPadding(@as(*const IAudioClient, @ptrCast(self)), pNumPaddingFrames);
             }
             pub inline fn IsFormatSupported(self: *const T, ShareMode: AUDCLNT_SHAREMODE, pFormat: ?*const WAVEFORMATEX, ppClosestMatch: ?*?*WAVEFORMATEX) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).IsFormatSupported(@ptrCast(*const IAudioClient, self), ShareMode, pFormat, ppClosestMatch);
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).IsFormatSupported(@as(*const IAudioClient, @ptrCast(self)), ShareMode, pFormat, ppClosestMatch);
             }
             pub inline fn GetMixFormat(self: *const T, ppDeviceFormat: ?*?*WAVEFORMATEX) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).GetMixFormat(@ptrCast(*const IAudioClient, self), ppDeviceFormat);
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).GetMixFormat(@as(*const IAudioClient, @ptrCast(self)), ppDeviceFormat);
             }
             pub inline fn GetDevicePeriod(self: *const T, phnsDefaultDevicePeriod: ?*i64, phnsMinimumDevicePeriod: ?*i64) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).GetDevicePeriod(@ptrCast(*const IAudioClient, self), phnsDefaultDevicePeriod, phnsMinimumDevicePeriod);
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).GetDevicePeriod(@as(*const IAudioClient, @ptrCast(self)), phnsDefaultDevicePeriod, phnsMinimumDevicePeriod);
             }
             pub inline fn Start(self: *const T) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).Start(@ptrCast(*const IAudioClient, self));
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).Start(@as(*const IAudioClient, @ptrCast(self)));
             }
             pub inline fn Stop(self: *const T) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).Stop(@ptrCast(*const IAudioClient, self));
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).Stop(@as(*const IAudioClient, @ptrCast(self)));
             }
             pub inline fn Reset(self: *const T) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).Reset(@ptrCast(*const IAudioClient, self));
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).Reset(@as(*const IAudioClient, @ptrCast(self)));
             }
             pub inline fn SetEventHandle(self: *const T, eventHandle: ?*anyopaque) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).SetEventHandle(@ptrCast(*const IAudioClient, self), eventHandle);
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).SetEventHandle(@as(*const IAudioClient, @ptrCast(self)), eventHandle);
             }
             pub inline fn GetService(self: *const T, riid: ?*const Guid, ppv: ?*?*anyopaque) HRESULT {
-                return @ptrCast(*const IAudioClient.VTable, self.vtable).GetService(@ptrCast(*const IAudioClient, self), riid, ppv);
+                return @as(*const IAudioClient.VTable, @ptrCast(self.vtable)).GetService(@as(*const IAudioClient, @ptrCast(self)), riid, ppv);
             }
         };
     }
@@ -1354,13 +1354,13 @@ pub const IAudioClient2 = extern struct {
         return struct {
             pub usingnamespace IAudioClient.MethodMixin(T);
             pub inline fn IsOffloadCapable(self: *const T, Category: AUDIO_STREAM_CATEGORY, pbOffloadCapable: ?*BOOL) HRESULT {
-                return @ptrCast(*const IAudioClient2.VTable, self.vtable).IsOffloadCapable(@ptrCast(*const IAudioClient2, self), Category, pbOffloadCapable);
+                return @as(*const IAudioClient2.VTable, @ptrCast(self.vtable)).IsOffloadCapable(@as(*const IAudioClient2, @ptrCast(self)), Category, pbOffloadCapable);
             }
             pub inline fn SetClientProperties(self: *const T, pProperties: ?*const AudioClientProperties) HRESULT {
-                return @ptrCast(*const IAudioClient2.VTable, self.vtable).SetClientProperties(@ptrCast(*const IAudioClient2, self), pProperties);
+                return @as(*const IAudioClient2.VTable, @ptrCast(self.vtable)).SetClientProperties(@as(*const IAudioClient2, @ptrCast(self)), pProperties);
             }
             pub inline fn GetBufferSizeLimits(self: *const T, pFormat: ?*const WAVEFORMATEX, bEventDriven: BOOL, phnsMinBufferDuration: ?*i64, phnsMaxBufferDuration: ?*i64) HRESULT {
-                return @ptrCast(*const IAudioClient2.VTable, self.vtable).GetBufferSizeLimits(@ptrCast(*const IAudioClient2, self), pFormat, bEventDriven, phnsMinBufferDuration, phnsMaxBufferDuration);
+                return @as(*const IAudioClient2.VTable, @ptrCast(self.vtable)).GetBufferSizeLimits(@as(*const IAudioClient2, @ptrCast(self)), pFormat, bEventDriven, phnsMinBufferDuration, phnsMaxBufferDuration);
             }
         };
     }
@@ -1422,13 +1422,13 @@ pub const IAudioClient3 = extern struct {
         return struct {
             pub usingnamespace IAudioClient2.MethodMixin(T);
             pub inline fn GetSharedModeEnginePeriod(self: *const T, pFormat: ?*const WAVEFORMATEX, pDefaultPeriodInFrames: ?*u32, pFundamentalPeriodInFrames: ?*u32, pMinPeriodInFrames: ?*u32, pMaxPeriodInFrames: ?*u32) HRESULT {
-                return @ptrCast(*const IAudioClient3.VTable, self.vtable).GetSharedModeEnginePeriod(@ptrCast(*const IAudioClient3, self), pFormat, pDefaultPeriodInFrames, pFundamentalPeriodInFrames, pMinPeriodInFrames, pMaxPeriodInFrames);
+                return @as(*const IAudioClient3.VTable, @ptrCast(self.vtable)).GetSharedModeEnginePeriod(@as(*const IAudioClient3, @ptrCast(self)), pFormat, pDefaultPeriodInFrames, pFundamentalPeriodInFrames, pMinPeriodInFrames, pMaxPeriodInFrames);
             }
             pub inline fn GetCurrentSharedModeEnginePeriod(self: *const T, ppFormat: ?*?*WAVEFORMATEX, pCurrentPeriodInFrames: ?*u32) HRESULT {
-                return @ptrCast(*const IAudioClient3.VTable, self.vtable).GetCurrentSharedModeEnginePeriod(@ptrCast(*const IAudioClient3, self), ppFormat, pCurrentPeriodInFrames);
+                return @as(*const IAudioClient3.VTable, @ptrCast(self.vtable)).GetCurrentSharedModeEnginePeriod(@as(*const IAudioClient3, @ptrCast(self)), ppFormat, pCurrentPeriodInFrames);
             }
             pub inline fn InitializeSharedAudioStream(self: *const T, StreamFlags: u32, PeriodInFrames: u32, pFormat: ?*const WAVEFORMATEX, AudioSessionGuid: ?*const Guid) HRESULT {
-                return @ptrCast(*const IAudioClient3.VTable, self.vtable).InitializeSharedAudioStream(@ptrCast(*const IAudioClient3, self), StreamFlags, PeriodInFrames, pFormat, AudioSessionGuid);
+                return @as(*const IAudioClient3.VTable, @ptrCast(self.vtable)).InitializeSharedAudioStream(@as(*const IAudioClient3, @ptrCast(self)), StreamFlags, PeriodInFrames, pFormat, AudioSessionGuid);
             }
         };
     }
@@ -1455,10 +1455,10 @@ pub const IAudioRenderClient = extern struct {
         return struct {
             pub usingnamespace IUnknown.MethodMixin(T);
             pub inline fn GetBuffer(self: *const T, NumFramesRequested: u32, ppData: ?*?*u8) HRESULT {
-                return @ptrCast(*const IAudioRenderClient.VTable, self.vtable).GetBuffer(@ptrCast(*const IAudioRenderClient, self), NumFramesRequested, ppData);
+                return @as(*const IAudioRenderClient.VTable, @ptrCast(self.vtable)).GetBuffer(@as(*const IAudioRenderClient, @ptrCast(self)), NumFramesRequested, ppData);
             }
             pub inline fn ReleaseBuffer(self: *const T, NumFramesWritten: u32, dwFlags: u32) HRESULT {
-                return @ptrCast(*const IAudioRenderClient.VTable, self.vtable).ReleaseBuffer(@ptrCast(*const IAudioRenderClient, self), NumFramesWritten, dwFlags);
+                return @as(*const IAudioRenderClient.VTable, @ptrCast(self.vtable)).ReleaseBuffer(@as(*const IAudioRenderClient, @ptrCast(self)), NumFramesWritten, dwFlags);
             }
         };
     }
@@ -1492,16 +1492,16 @@ pub const ISimpleAudioVolume = extern struct {
         return struct {
             pub usingnamespace IUnknown.MethodMixin(T);
             pub inline fn SetMasterVolume(self: *const T, fLevel: f32, EventContext: ?*const Guid) HRESULT {
-                return @ptrCast(*const ISimpleAudioVolume.VTable, self.vtable).SetMasterVolume(@ptrCast(*const ISimpleAudioVolume, self), fLevel, EventContext);
+                return @as(*const ISimpleAudioVolume.VTable, @ptrCast(self.vtable)).SetMasterVolume(@as(*const ISimpleAudioVolume, @ptrCast(self)), fLevel, EventContext);
             }
             pub inline fn GetMasterVolume(self: *const T, pfLevel: ?*f32) HRESULT {
-                return @ptrCast(*const ISimpleAudioVolume.VTable, self.vtable).GetMasterVolume(@ptrCast(*const ISimpleAudioVolume, self), pfLevel);
+                return @as(*const ISimpleAudioVolume.VTable, @ptrCast(self.vtable)).GetMasterVolume(@as(*const ISimpleAudioVolume, @ptrCast(self)), pfLevel);
             }
             pub inline fn SetMute(self: *const T, bMute: BOOL, EventContext: ?*const Guid) HRESULT {
-                return @ptrCast(*const ISimpleAudioVolume.VTable, self.vtable).SetMute(@ptrCast(*const ISimpleAudioVolume, self), bMute, EventContext);
+                return @as(*const ISimpleAudioVolume.VTable, @ptrCast(self.vtable)).SetMute(@as(*const ISimpleAudioVolume, @ptrCast(self)), bMute, EventContext);
             }
             pub inline fn GetMute(self: *const T, pbMute: ?*BOOL) HRESULT {
-                return @ptrCast(*const ISimpleAudioVolume.VTable, self.vtable).GetMute(@ptrCast(*const ISimpleAudioVolume, self), pbMute);
+                return @as(*const ISimpleAudioVolume.VTable, @ptrCast(self.vtable)).GetMute(@as(*const ISimpleAudioVolume, @ptrCast(self)), pbMute);
             }
         };
     }
@@ -1538,19 +1538,19 @@ pub const IPropertyStore = extern struct {
         return struct {
             pub usingnamespace IUnknown.MethodMixin(T);
             pub inline fn GetCount(self: *const T, cProps: ?*u32) HRESULT {
-                return @ptrCast(*const IPropertyStore.VTable, self.vtable).GetCount(@ptrCast(*const IPropertyStore, self), cProps);
+                return @as(*const IPropertyStore.VTable, @ptrCast(self.vtable)).GetCount(@as(*const IPropertyStore, @ptrCast(self)), cProps);
             }
             pub inline fn GetAt(self: *const T, iProp: u32, pkey: ?*PROPERTYKEY) HRESULT {
-                return @ptrCast(*const IPropertyStore.VTable, self.vtable).GetAt(@ptrCast(*const IPropertyStore, self), iProp, pkey);
+                return @as(*const IPropertyStore.VTable, @ptrCast(self.vtable)).GetAt(@as(*const IPropertyStore, @ptrCast(self)), iProp, pkey);
             }
             pub inline fn GetValue(self: *const T, key: ?*const PROPERTYKEY, pv: ?*PROPVARIANT) HRESULT {
-                return @ptrCast(*const IPropertyStore.VTable, self.vtable).GetValue(@ptrCast(*const IPropertyStore, self), key, pv);
+                return @as(*const IPropertyStore.VTable, @ptrCast(self.vtable)).GetValue(@as(*const IPropertyStore, @ptrCast(self)), key, pv);
             }
             pub inline fn SetValue(self: *const T, key: ?*const PROPERTYKEY, propvar: ?*const PROPVARIANT) HRESULT {
-                return @ptrCast(*const IPropertyStore.VTable, self.vtable).SetValue(@ptrCast(*const IPropertyStore, self), key, propvar);
+                return @as(*const IPropertyStore.VTable, @ptrCast(self.vtable)).SetValue(@as(*const IPropertyStore, @ptrCast(self)), key, propvar);
             }
             pub inline fn Commit(self: *const T) HRESULT {
-                return @ptrCast(*const IPropertyStore.VTable, self.vtable).Commit(@ptrCast(*const IPropertyStore, self));
+                return @as(*const IPropertyStore.VTable, @ptrCast(self.vtable)).Commit(@as(*const IPropertyStore, @ptrCast(self)));
             }
         };
     }
@@ -1586,16 +1586,16 @@ pub const IMMDevice = extern struct {
         return struct {
             pub usingnamespace IUnknown.MethodMixin(T);
             pub inline fn Activate(self: *const T, iid: ?*const Guid, dwClsCtx: u32, pActivationParams: ?*PROPVARIANT, ppInterface: ?*?*anyopaque) HRESULT {
-                return @ptrCast(*const IMMDevice.VTable, self.vtable).Activate(@ptrCast(*const IMMDevice, self), iid, dwClsCtx, pActivationParams, ppInterface);
+                return @as(*const IMMDevice.VTable, @ptrCast(self.vtable)).Activate(@as(*const IMMDevice, @ptrCast(self)), iid, dwClsCtx, pActivationParams, ppInterface);
             }
             pub inline fn OpenPropertyStore(self: *const T, stgmAccess: u32, ppProperties: ?*?*IPropertyStore) HRESULT {
-                return @ptrCast(*const IMMDevice.VTable, self.vtable).OpenPropertyStore(@ptrCast(*const IMMDevice, self), stgmAccess, ppProperties);
+                return @as(*const IMMDevice.VTable, @ptrCast(self.vtable)).OpenPropertyStore(@as(*const IMMDevice, @ptrCast(self)), stgmAccess, ppProperties);
             }
             pub inline fn GetId(self: *const T, ppstrId: ?*?PWSTR) HRESULT {
-                return @ptrCast(*const IMMDevice.VTable, self.vtable).GetId(@ptrCast(*const IMMDevice, self), ppstrId);
+                return @as(*const IMMDevice.VTable, @ptrCast(self.vtable)).GetId(@as(*const IMMDevice, @ptrCast(self)), ppstrId);
             }
             pub inline fn GetState(self: *const T, pdwState: ?*u32) HRESULT {
-                return @ptrCast(*const IMMDevice.VTable, self.vtable).GetState(@ptrCast(*const IMMDevice, self), pdwState);
+                return @as(*const IMMDevice.VTable, @ptrCast(self.vtable)).GetState(@as(*const IMMDevice, @ptrCast(self)), pdwState);
             }
         };
     }
@@ -1635,19 +1635,19 @@ pub const IMMNotificationClient = extern struct {
         return struct {
             pub usingnamespace IUnknown.MethodMixin(T);
             pub inline fn OnDeviceStateChanged(self: *const T, pwstrDeviceId: ?[*:0]const u16, dwNewState: u32) HRESULT {
-                return @ptrCast(*const IMMNotificationClient.VTable, self.vtable).OnDeviceStateChanged(@ptrCast(*const IMMNotificationClient, self), pwstrDeviceId, dwNewState);
+                return @as(*const IMMNotificationClient.VTable, @ptrCast(self.vtable)).OnDeviceStateChanged(@as(*const IMMNotificationClient, @ptrCast(self)), pwstrDeviceId, dwNewState);
             }
             pub inline fn OnDeviceAdded(self: *const T, pwstrDeviceId: ?[*:0]const u16) HRESULT {
-                return @ptrCast(*const IMMNotificationClient.VTable, self.vtable).OnDeviceAdded(@ptrCast(*const IMMNotificationClient, self), pwstrDeviceId);
+                return @as(*const IMMNotificationClient.VTable, @ptrCast(self.vtable)).OnDeviceAdded(@as(*const IMMNotificationClient, @ptrCast(self)), pwstrDeviceId);
             }
             pub inline fn OnDeviceRemoved(self: *const T, pwstrDeviceId: ?[*:0]const u16) HRESULT {
-                return @ptrCast(*const IMMNotificationClient.VTable, self.vtable).OnDeviceRemoved(@ptrCast(*const IMMNotificationClient, self), pwstrDeviceId);
+                return @as(*const IMMNotificationClient.VTable, @ptrCast(self.vtable)).OnDeviceRemoved(@as(*const IMMNotificationClient, @ptrCast(self)), pwstrDeviceId);
             }
             pub inline fn OnDefaultDeviceChanged(self: *const T, flow: DataFlow, role: Role, pwstrDefaultDeviceId: ?[*:0]const u16) HRESULT {
-                return @ptrCast(*const IMMNotificationClient.VTable, self.vtable).OnDefaultDeviceChanged(@ptrCast(*const IMMNotificationClient, self), flow, role, pwstrDefaultDeviceId);
+                return @as(*const IMMNotificationClient.VTable, @ptrCast(self.vtable)).OnDefaultDeviceChanged(@as(*const IMMNotificationClient, @ptrCast(self)), flow, role, pwstrDefaultDeviceId);
             }
             pub inline fn OnPropertyValueChanged(self: *const T, pwstrDeviceId: ?[*:0]const u16, key: PROPERTYKEY) HRESULT {
-                return @ptrCast(*const IMMNotificationClient.VTable, self.vtable).OnPropertyValueChanged(@ptrCast(*const IMMNotificationClient, self), pwstrDeviceId, key);
+                return @as(*const IMMNotificationClient.VTable, @ptrCast(self.vtable)).OnPropertyValueChanged(@as(*const IMMNotificationClient, @ptrCast(self)), pwstrDeviceId, key);
             }
         };
     }
@@ -1672,10 +1672,10 @@ pub const IMMDeviceCollection = extern struct {
         return struct {
             pub usingnamespace IUnknown.MethodMixin(T);
             pub inline fn GetCount(self: *const T, pcDevices: ?*u32) HRESULT {
-                return @ptrCast(*const IMMDeviceCollection.VTable, self.vtable).GetCount(@ptrCast(*const IMMDeviceCollection, self), pcDevices);
+                return @as(*const IMMDeviceCollection.VTable, @ptrCast(self.vtable)).GetCount(@as(*const IMMDeviceCollection, @ptrCast(self)), pcDevices);
             }
             pub inline fn Item(self: *const T, nDevice: u32, ppDevice: ?*?*IMMDevice) HRESULT {
-                return @ptrCast(*const IMMDeviceCollection.VTable, self.vtable).Item(@ptrCast(*const IMMDeviceCollection, self), nDevice, ppDevice);
+                return @as(*const IMMDeviceCollection.VTable, @ptrCast(self.vtable)).Item(@as(*const IMMDeviceCollection, @ptrCast(self)), nDevice, ppDevice);
             }
         };
     }
@@ -1716,19 +1716,19 @@ pub const IMMDeviceEnumerator = extern struct {
         return struct {
             pub usingnamespace IUnknown.MethodMixin(T);
             pub inline fn EnumAudioEndpoints(self: *const T, dataFlow: DataFlow, dwStateMask: u32, ppDevices: ?*?*IMMDeviceCollection) HRESULT {
-                return @ptrCast(*const IMMDeviceEnumerator.VTable, self.vtable).EnumAudioEndpoints(@ptrCast(*const IMMDeviceEnumerator, self), dataFlow, dwStateMask, ppDevices);
+                return @as(*const IMMDeviceEnumerator.VTable, @ptrCast(self.vtable)).EnumAudioEndpoints(@as(*const IMMDeviceEnumerator, @ptrCast(self)), dataFlow, dwStateMask, ppDevices);
             }
             pub inline fn GetDefaultAudioEndpoint(self: *const T, dataFlow: DataFlow, role: Role, ppEndpoint: ?*?*IMMDevice) HRESULT {
-                return @ptrCast(*const IMMDeviceEnumerator.VTable, self.vtable).GetDefaultAudioEndpoint(@ptrCast(*const IMMDeviceEnumerator, self), dataFlow, role, ppEndpoint);
+                return @as(*const IMMDeviceEnumerator.VTable, @ptrCast(self.vtable)).GetDefaultAudioEndpoint(@as(*const IMMDeviceEnumerator, @ptrCast(self)), dataFlow, role, ppEndpoint);
             }
             pub inline fn GetDevice(self: *const T, pwstrId: ?[*:0]const u16, ppDevice: ?*?*IMMDevice) HRESULT {
-                return @ptrCast(*const IMMDeviceEnumerator.VTable, self.vtable).GetDevice(@ptrCast(*const IMMDeviceEnumerator, self), pwstrId, ppDevice);
+                return @as(*const IMMDeviceEnumerator.VTable, @ptrCast(self.vtable)).GetDevice(@as(*const IMMDeviceEnumerator, @ptrCast(self)), pwstrId, ppDevice);
             }
             pub inline fn RegisterEndpointNotificationCallback(self: *const T, pClient: ?*IMMNotificationClient) HRESULT {
-                return @ptrCast(*const IMMDeviceEnumerator.VTable, self.vtable).RegisterEndpointNotificationCallback(@ptrCast(*const IMMDeviceEnumerator, self), pClient);
+                return @as(*const IMMDeviceEnumerator.VTable, @ptrCast(self.vtable)).RegisterEndpointNotificationCallback(@as(*const IMMDeviceEnumerator, @ptrCast(self)), pClient);
             }
             pub inline fn UnregisterEndpointNotificationCallback(self: *const T, pClient: ?*IMMNotificationClient) HRESULT {
-                return @ptrCast(*const IMMDeviceEnumerator.VTable, self.vtable).UnregisterEndpointNotificationCallback(@ptrCast(*const IMMDeviceEnumerator, self), pClient);
+                return @as(*const IMMDeviceEnumerator.VTable, @ptrCast(self.vtable)).UnregisterEndpointNotificationCallback(@as(*const IMMDeviceEnumerator, @ptrCast(self)), pClient);
             }
         };
     }
@@ -1748,7 +1748,7 @@ pub const IMMEndpoint = extern struct {
         return struct {
             pub usingnamespace IUnknown.MethodMixin(T);
             pub inline fn GetDataFlow(self: *const T, pDataFlow: ?*DataFlow) HRESULT {
-                return @ptrCast(*const IMMEndpoint.VTable, self.vtable).GetDataFlow(@ptrCast(*const IMMEndpoint, self), pDataFlow);
+                return @as(*const IMMEndpoint.VTable, @ptrCast(self.vtable)).GetDataFlow(@as(*const IMMEndpoint, @ptrCast(self)), pDataFlow);
             }
         };
     }

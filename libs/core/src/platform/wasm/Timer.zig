@@ -21,5 +21,5 @@ pub fn lap(timer: *Timer) u64 {
     const now = js.machPerfNow();
     const initial = timer.initial;
     timer.initial = now;
-    return @intFromFloat(u64, now - initial) * std.time.ns_per_ms;
+    return @as(u64, @intFromFloat(now - initial)) * std.time.ns_per_ms;
 }

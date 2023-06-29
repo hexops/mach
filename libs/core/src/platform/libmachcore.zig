@@ -39,7 +39,7 @@ pub export fn mach_core_init() ?*MachCoreInstance {
 }
 
 pub export fn mach_core_deinit(_core: *MachCoreInstance) void {
-    var core = @ptrCast(*native.Core, @alignCast(@alignOf(@TypeOf(_core)), _core));
+    var core = @as(*native.Core, @ptrCast(@alignCast(@alignOf(@TypeOf(_core)), _core)));
     native.Core.deinit(core);
 }
 
@@ -50,13 +50,13 @@ pub const MachCoreEventIterator = extern struct {
 pub const MachCoreEvent = Core.Event;
 
 pub export fn mach_core_poll_events(_core: *MachCoreInstance) MachCoreEventIterator {
-    var core = @ptrCast(*native.Core, @alignCast(@alignOf(@TypeOf(_core)), _core));
+    var core = @as(*native.Core, @ptrCast(@alignCast(@alignOf(@TypeOf(_core)), _core)));
     var iter = native.Core.pollEvents(core);
-    return @ptrCast(*MachCoreEventIterator, &iter).*;
+    return @as(*MachCoreEventIterator, @ptrCast(&iter)).*;
 }
 
 pub export fn mach_core_event_iterator_next(_iter: *MachCoreEventIterator, event: *MachCoreEvent) bool {
-    var iter = @ptrCast(*native.Core.EventIterator, @alignCast(@alignOf(@TypeOf(_iter)), _iter));
+    var iter = @as(*native.Core.EventIterator, @ptrCast(@alignCast(@alignOf(@TypeOf(_iter)), _iter)));
     var value = iter.next() orelse return false;
     event.* = value;
     return true;

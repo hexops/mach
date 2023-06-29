@@ -116,7 +116,7 @@ pub const PaletteData = struct {
     }
 
     pub fn paletteFlag(self: PaletteData, index: u32) PaletteFlags {
-        return @bitCast(PaletteFlags, self.handle.palette_flags[index]);
+        return @as(PaletteFlags, @bitCast(self.handle.palette_flags[index]));
     }
 
     pub fn numPaletteEntries(self: PaletteData) u16 {

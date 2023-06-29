@@ -45,11 +45,11 @@ pub fn metrics(self: GlyphSlot) GlyphMetrics {
 }
 
 pub fn linearHoriAdvance(self: GlyphSlot) i32 {
-    return @intCast(i32, self.handle.*.linearHoriAdvance);
+    return @as(i32, @intCast(self.handle.*.linearHoriAdvance));
 }
 
 pub fn linearVertAdvance(self: GlyphSlot) i32 {
-    return @intCast(i32, self.handle.*.linearVertAdvance);
+    return @as(i32, @intCast(self.handle.*.linearVertAdvance));
 }
 
 pub fn advance(self: GlyphSlot) Vector {
@@ -57,7 +57,7 @@ pub fn advance(self: GlyphSlot) Vector {
 }
 
 pub fn format(self: GlyphSlot) GlyphFormat {
-    return @enumFromInt(GlyphFormat, self.handle.*.format);
+    return @as(GlyphFormat, @enumFromInt(self.handle.*.format));
 }
 
 pub fn ownBitmap(self: GlyphSlot) Error!void {
@@ -81,11 +81,11 @@ pub fn outline(self: GlyphSlot) ?Outline {
 }
 
 pub fn lsbDelta(self: GlyphSlot) i32 {
-    return @intCast(i32, self.handle.*.lsb_delta);
+    return @as(i32, @intCast(self.handle.*.lsb_delta));
 }
 
 pub fn rsbDelta(self: GlyphSlot) i32 {
-    return @intCast(i32, self.handle.*.rsb_delta);
+    return @as(i32, @intCast(self.handle.*.rsb_delta));
 }
 
 pub fn render(self: GlyphSlot, render_mode: RenderMode) Error!void {

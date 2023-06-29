@@ -11,27 +11,27 @@ pub const angel_pi2 = _c.FT_ANGLE_PI2;
 pub const angel_pi4 = _c.FT_ANGLE_PI4;
 
 pub fn mulDiv(a: i32, b: i32, c: i32) i32 {
-    return @intCast(i32, _c.FT_MulDiv(a, b, c));
+    return @as(i32, @intCast(_c.FT_MulDiv(a, b, c)));
 }
 
 pub fn mulFix(a: i32, b: i32) i32 {
-    return @intCast(i32, _c.FT_MulFix(a, b));
+    return @as(i32, @intCast(_c.FT_MulFix(a, b)));
 }
 
 pub fn divFix(a: i32, b: i32) i32 {
-    return @intCast(i32, _c.FT_DivFix(a, b));
+    return @as(i32, @intCast(_c.FT_DivFix(a, b)));
 }
 
 pub fn roundFix(a: i32) i32 {
-    return @intCast(i32, _c.FT_RoundFix(a));
+    return @as(i32, @intCast(_c.FT_RoundFix(a)));
 }
 
 pub fn ceilFix(a: i32) i32 {
-    return @intCast(i32, _c.FT_CeilFix(a));
+    return @as(i32, @intCast(_c.FT_CeilFix(a)));
 }
 
 pub fn floorFix(a: i32) i32 {
-    return @intCast(i32, _c.FT_FloorFix(a));
+    return @as(i32, @intCast(_c.FT_FloorFix(a)));
 }
 
 pub fn vectorTransform(vec: *Vector, matrix: Matrix) void {
@@ -47,7 +47,7 @@ pub fn matrixInvert(m: *Matrix) Error!void {
 }
 
 pub fn angleDiff(a: i32, b: i32) i32 {
-    return @intCast(i32, _c.FT_Angle_Diff(a, b));
+    return @as(i32, @intCast(_c.FT_Angle_Diff(a, b)));
 }
 
 pub fn vectorUnit(vec: *Vector, angle: i32) void {
@@ -59,7 +59,7 @@ pub fn vectorRotate(vec: *Vector, angle: i32) void {
 }
 
 pub fn vectorLength(vec: *Vector) i32 {
-    return @intCast(i32, _c.FT_Vector_Length(vec));
+    return @as(i32, @intCast(_c.FT_Vector_Length(vec)));
 }
 
 pub fn vectorPolarize(vec: *Vector, length: *c_long, angle: *c_long) void {

@@ -46,7 +46,7 @@ pub const ShaderModule = opaque {
                 userdata: ?*anyopaque,
             ) callconv(.C) void {
                 callback(
-                    if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
+                    if (Context == void) {} else @as(Context, @ptrCast(@alignCast(@alignOf(Context), userdata))),
                     status,
                     compilation_info,
                 );

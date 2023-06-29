@@ -134,7 +134,7 @@ pub const Context = struct {
     pub fn init(allocator: std.mem.Allocator, options: main.Context.Options) !backends.BackendContext {
         try lib.load();
 
-        _ = lib.snd_lib_error_set_handler(@ptrCast(c.snd_lib_error_handler_t, &util.doNothing));
+        _ = lib.snd_lib_error_set_handler(@as(c.snd_lib_error_handler_t, @ptrCast(&util.doNothing)));
 
         var self = try allocator.create(Context);
         errdefer allocator.destroy(self);
@@ -273,8 +273,8 @@ pub const Context = struct {
                     var i: usize = 0;
                     var evt: *inotify_event = undefined;
                     while (i < buf.len) : (i += @sizeOf(inotify_event) + evt.len) {
-                        evt = @ptrCast(*inotify_event, @alignCast(4, buf[i..]));
-                        const evt_name = @ptrCast([*]u8, buf[i..])[@sizeOf(inotify_event) .. @sizeOf(inotify_event) + 8];
+                        evt = @as(*inotify_event, @ptrCast(@alignCast(4, buf[i..])));
+                        const evt_name = @as([*]u8, @ptrCast(buf[i..]))[@sizeOf(inotify_event) .. @sizeOf(inotify_event) + 8];
 
                         if (evt.mask & std.os.linux.IN.ISDIR != 0 or !std.mem.startsWith(u8, evt_name, "pcm"))
                             continue;
@@ -320,7 +320,7 @@ pub const Context = struct {
             if (lib.snd_ctl_pcm_next_device(ctl, &dev_idx) < 0)
                 return error.SystemResources;
 
-            lib.snd_pcm_info_set_device(pcm_info, @intCast(c_uint, dev_idx));
+            lib.snd_pcm_info_set_device(pcm_info, @as(c_uint, @intCast(dev_idx)));
             lib.snd_pcm_info_set_subdevice(pcm_info, 0);
             const name = std.mem.span(lib.snd_pcm_info_get_name(pcm_info) orelse continue);
 
@@ -328,7 +328,7 @@ pub const Context = struct {
                 const snd_stream = modeToStream(mode);
                 lib.snd_pcm_info_set_stream(pcm_info, snd_stream);
                 const err = lib.snd_ctl_pcm_info(ctl, pcm_info);
-                switch (@enumFromInt(std.os.E, -err)) {
+                switch (@as(std.os.E, @enumFromInt(-err))) {
                     .SUCCESS => {},
                     .NOENT,
                     .NXIO,
@@ -417,8 +417,8 @@ pub const Context = struct {
                         if (lib.snd_pcm_hw_params_get_rate_max(params, &rate_max, null) < 0)
                             continue;
                         break :blk .{
-                            .min = @intCast(u24, rate_min),
-                            .max = @intCast(u24, rate_max),
+                            .min = @as(u24, @intCast(rate_min)),
+                            .max = @as(u24, @intCast(rate_max)),
                         };
                     },
                     .id = try self.allocator.dupeZ(u8, id),
@@ -464,7 +464,7 @@ pub const Context = struct {
                 pcm,
                 toAlsaFormat(format),
                 c.SND_PCM_ACCESS_RW_INTERLEAVED,
-                @intCast(c_uint, device.channels.len),
+                @as(c_uint, @intCast(device.channels.len)),
                 sample_rate,
                 1,
                 main.default_latency,
@@ -622,10 +622,10 @@ pub const Player = struct {
         if (lib.snd_mixer_selem_get_playback_volume_range(self.mixer_elm, &min_vol, &max_vol) < 0)
             return error.CannotSetVolume;
 
-        const dist = @floatFromInt(f32, max_vol - min_vol);
+        const dist = @as(f32, @floatFromInt(max_vol - min_vol));
         if (lib.snd_mixer_selem_set_playback_volume_all(
             self.mixer_elm,
-            @intFromFloat(c_long, dist * vol) + min_vol,
+            @as(c_long, @intFromFloat(dist * vol)) + min_vol,
         ) < 0)
             return error.CannotSetVolume;
     }
@@ -652,7 +652,7 @@ pub const Player = struct {
         if (lib.snd_mixer_selem_get_playback_volume_range(self.mixer_elm, &min_vol, &max_vol) < 0)
             return error.CannotGetVolume;
 
-        return @floatFromInt(f32, vol) / @floatFromInt(f32, max_vol - min_vol);
+        return @as(f32, @floatFromInt(vol)) / @as(f32, @floatFromInt(max_vol - min_vol));
     }
 };
 

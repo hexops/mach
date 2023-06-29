@@ -74,8 +74,8 @@ pub const Context = struct {
     pub fn init(allocator: std.mem.Allocator, options: main.Context.Options) !backends.BackendContext {
         try lib.load();
 
-        lib.jack_set_error_function(@ptrCast(?*const fn ([*c]const u8) callconv(.C) void, &util.doNothing));
-        lib.jack_set_info_function(@ptrCast(?*const fn ([*c]const u8) callconv(.C) void, &util.doNothing));
+        lib.jack_set_error_function(@as(?*const fn ([*c]const u8) callconv(.C) void, @ptrCast(&util.doNothing)));
+        lib.jack_set_info_function(@as(?*const fn ([*c]const u8) callconv(.C) void, @ptrCast(&util.doNothing)));
 
         var status: c.jack_status_t = 0;
         var self = try allocator.create(Context);
@@ -120,16 +120,16 @@ pub const Context = struct {
             freeDevice(self.allocator, d);
         self.devices_info.clear(self.allocator);
 
-        const sample_rate = @intCast(u24, lib.jack_get_sample_rate(self.client));
+        const sample_rate = @as(u24, @intCast(lib.jack_get_sample_rate(self.client)));
 
         const port_names = lib.jack_get_ports(self.client, null, null, 0) orelse
             return error.OutOfMemory;
-        defer lib.jack_free(@ptrCast(?*anyopaque, port_names));
+        defer lib.jack_free(@as(?*anyopaque, @ptrCast(port_names)));
 
         var i: usize = 0;
         outer: while (port_names[i] != null) : (i += 1) {
             const port = lib.jack_port_by_name(self.client, port_names[i]) orelse break;
-            const port_type = lib.jack_port_type(port)[0..@intCast(usize, lib.jack_port_type_size())];
+            const port_type = lib.jack_port_type(port)[0..@as(usize, @intCast(lib.jack_port_type_size()))];
             if (!std.mem.startsWith(u8, port_type, c.JACK_DEFAULT_AUDIO_TYPE))
                 continue;
 
@@ -142,7 +142,7 @@ pub const Context = struct {
             for (self.devices_info.list.items) |*dev| {
                 if (std.mem.eql(u8, dev.id, id) and mode == dev.mode) {
                     const new_ch = main.Channel{
-                        .id = @enumFromInt(main.Channel.Id, dev.channels.len),
+                        .id = @as(main.Channel.Id, @enumFromInt(dev.channels.len)),
                     };
                     dev.channels = try self.allocator.realloc(dev.channels, dev.channels.len + 1);
                     dev.channels[dev.channels.len - 1] = new_ch;
@@ -156,7 +156,7 @@ pub const Context = struct {
                 .mode = mode,
                 .channels = blk: {
                     var channels = try self.allocator.alloc(main.Channel, 1);
-                    channels[0] = .{ .id = @enumFromInt(main.Channel.Id, 0) };
+                    channels[0] = .{ .id = @as(main.Channel.Id, @enumFromInt(0)) };
                     break :blk channels;
                 },
                 .formats = &.{.f32},
@@ -174,18 +174,18 @@ pub const Context = struct {
     }
 
     fn sampleRateCallback(_: c.jack_nframes_t, arg: ?*anyopaque) callconv(.C) c_int {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), arg.?));
+        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), arg.?)));
         self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
         return 0;
     }
 
     fn portRegistrationCallback(_: c.jack_port_id_t, _: c_int, arg: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), arg.?));
+        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), arg.?)));
         self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
     }
 
     fn portRenameCalllback(_: c.jack_port_id_t, _: [*c]const u8, _: [*c]const u8, arg: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), arg.?));
+        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), arg.?)));
         self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
     }
 
@@ -266,10 +266,10 @@ pub const Player = struct {
     }
 
     fn processCallback(n_frames: c.jack_nframes_t, self_opaque: ?*anyopaque) callconv(.C) c_int {
-        const self = @ptrCast(*Player, @alignCast(@alignOf(*Player), self_opaque.?));
+        const self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), self_opaque.?)));
 
         for (self.channels, 0..) |*ch, i| {
-            ch.*.ptr = @ptrCast([*]u8, lib.jack_port_get_buffer(self.ports[i], n_frames));
+            ch.*.ptr = @as([*]u8, @ptrCast(lib.jack_port_get_buffer(self.ports[i], n_frames)));
         }
         self.writeFn(self.user_data, n_frames);
 
@@ -313,7 +313,7 @@ pub const Player = struct {
     }
 
     pub fn sampleRate(self: Player) u24 {
-        return @intCast(u24, lib.jack_get_sample_rate(self.client));
+        return @as(u24, @intCast(lib.jack_get_sample_rate(self.client)));
     }
 };
 

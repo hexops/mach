@@ -94,11 +94,11 @@ pub const CompressorParams = struct {
     }
 
     pub fn getPackUASTCFlags(self: CompressorParams) PackUASTCFlags {
-        return @bitCast(PackUASTCFlags, b.compressor_params_get_pack_uastc_flags(self.handle));
+        return @as(PackUASTCFlags, @bitCast(b.compressor_params_get_pack_uastc_flags(self.handle)));
     }
 
     pub fn setPackUASTCFlags(self: CompressorParams, flags: PackUASTCFlags) void {
-        b.compressor_params_set_pack_uastc_flags(self.handle, @bitCast(u32, flags));
+        b.compressor_params_set_pack_uastc_flags(self.handle, @as(u32, @bitCast(flags)));
     }
 
     pub fn setBasisFormat(self: CompressorParams, format: BasisTextureFormat) void {

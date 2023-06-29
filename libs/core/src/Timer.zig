@@ -19,7 +19,7 @@ pub inline fn readPrecise(timer: *Timer) u64 {
 
 /// Reads the timer value since start or the last reset in seconds.
 pub inline fn read(timer: *Timer) f32 {
-    return @floatFromInt(f32, timer.readPrecise()) / @floatFromInt(f32, std.time.ns_per_s);
+    return @as(f32, @floatFromInt(timer.readPrecise())) / @as(f32, @floatFromInt(std.time.ns_per_s));
 }
 
 /// Resets the timer value to 0/now.
@@ -34,5 +34,5 @@ pub inline fn lapPrecise(timer: *Timer) u64 {
 
 /// Returns the current value of the timer in seconds, then resets it.
 pub inline fn lap(timer: *Timer) f32 {
-    return @floatFromInt(f32, timer.lapPrecise()) / @floatFromInt(f32, std.time.ns_per_s);
+    return @as(f32, @floatFromInt(timer.lapPrecise())) / @as(f32, @floatFromInt(std.time.ns_per_s));
 }

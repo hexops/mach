@@ -344,7 +344,7 @@ pub fn Export(comptime T: type) type {
 
         // WGPU_EXPORT void wgpuBufferMapAsync(WGPUBuffer buffer, WGPUMapModeFlags mode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userdata);
         export fn wgpuBufferMapAsync(buffer: *gpu.Buffer, mode: u32, offset: usize, size: usize, callback: gpu.Buffer.MapCallback, userdata: ?*anyopaque) void {
-            T.bufferMapAsync(buffer, @bitCast(gpu.MapModeFlags, mode), offset, size, callback, userdata);
+            T.bufferMapAsync(buffer, @as(gpu.MapModeFlags, @bitCast(mode)), offset, size, callback, userdata);
         }
 
         // WGPU_EXPORT void wgpuBufferSetLabel(WGPUBuffer buffer, char const * label);

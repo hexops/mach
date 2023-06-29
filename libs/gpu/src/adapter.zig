@@ -97,7 +97,7 @@ pub const Adapter = opaque {
         const Helper = struct {
             pub fn cCallback(status: RequestDeviceStatus, device: *Device, message: ?[*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
                 callback(
-                    if (Context == void) {} else @ptrCast(Context, @alignCast(@alignOf(Context), userdata)),
+                    if (Context == void) {} else @as(Context, @ptrCast(@alignCast(@alignOf(Context), userdata))),
                     status,
                     device,
                     message,

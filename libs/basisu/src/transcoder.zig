@@ -18,7 +18,7 @@ pub const Transcoder = struct {
     handle: *b.BasisFile,
 
     pub fn init(src: []const u8) error{Unknown}!Transcoder {
-        const h = b.transcoder_init(src.ptr, @intCast(u32, src.len));
+        const h = b.transcoder_init(src.ptr, @as(u32, @intCast(src.len)));
         return if (!b.transcoder_start_transcoding(h))
             error.Unknown
         else
@@ -101,11 +101,11 @@ pub const Transcoder = struct {
         if (!b.transcoder_transcode(
             self.handle,
             out_buf.ptr,
-            @intCast(u32, out_buf.len),
+            @as(u32, @intCast(out_buf.len)),
             image_index,
             level_index,
             @intFromEnum(format),
-            @bitCast(u32, params.decode_flags),
+            @as(u32, @bitCast(params.decode_flags)),
             params.output_row_pitch orelse 0,
             params.output_rows orelse 0,
         )) return error.Unknown;

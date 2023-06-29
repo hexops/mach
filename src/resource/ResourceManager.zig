@@ -97,6 +97,6 @@ pub const Resource = struct {
     // Returns the raw data, which you can use in any ways. Internally it is stored
     // as an *anyopaque
     pub fn getData(res: *const Resource, comptime T: type) *T {
-        return @ptrCast(*T, @alignCast(std.meta.alignment(*T), res.resource));
+        return @as(*T, @ptrCast(@alignCast(std.meta.alignment(*T), res.resource)));
     }
 };

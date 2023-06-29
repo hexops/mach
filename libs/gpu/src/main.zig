@@ -478,7 +478,7 @@ pub const ColorWriteMaskFlags = packed struct(u32) {
     };
 
     pub fn equal(a: ColorWriteMaskFlags, b: ColorWriteMaskFlags) bool {
-        return @truncate(u4, @bitCast(u32, a)) == @truncate(u4, @bitCast(u32, b));
+        return @as(u4, @truncate(@as(u32, @bitCast(a)))) == @as(u4, @truncate(@as(u32, @bitCast(b))));
     }
 };
 
@@ -498,7 +498,7 @@ pub const MapModeFlags = packed struct(u32) {
     pub const undef = MapModeFlags{};
 
     pub fn equal(a: MapModeFlags, b: MapModeFlags) bool {
-        return @truncate(u2, @bitCast(u32, a)) == @truncate(u2, @bitCast(u32, b));
+        return @as(u2, @truncate(@as(u32, @bitCast(a)))) == @as(u2, @truncate(@as(u32, @bitCast(b))));
     }
 };
 
@@ -519,7 +519,7 @@ pub const ShaderStageFlags = packed struct(u32) {
     pub const none = ShaderStageFlags{};
 
     pub fn equal(a: ShaderStageFlags, b: ShaderStageFlags) bool {
-        return @truncate(u3, @bitCast(u32, a)) == @truncate(u3, @bitCast(u32, b));
+        return @as(u3, @truncate(@as(u32, @bitCast(a)))) == @as(u3, @truncate(@as(u32, @bitCast(b))));
     }
 };
 

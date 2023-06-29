@@ -152,8 +152,8 @@ pub fn machSprite2DInit(adapter: anytype) !void {
         .sprite_uv_transforms = sprite_uv_transforms,
         .sprite_sizes = sprite_sizes,
         .texture_size = Vec2{
-            @floatFromInt(f32, sprite2d.state().texture.getWidth()),
-            @floatFromInt(f32, sprite2d.state().texture.getHeight()),
+            @as(f32, @floatFromInt(sprite2d.state().texture.getWidth())),
+            @as(f32, @floatFromInt(sprite2d.state().texture.getHeight())),
         },
         .texture = sprite2d.state().texture,
     });
@@ -195,10 +195,10 @@ pub fn tick(adapter: anytype) !void {
 
     // Update uniform buffer
     const ortho = mat.ortho(
-        -@floatFromInt(f32, core.size().width) / 2,
-        @floatFromInt(f32, core.size().width) / 2,
-        -@floatFromInt(f32, core.size().height) / 2,
-        @floatFromInt(f32, core.size().height) / 2,
+        -@as(f32, @floatFromInt(core.size().width)) / 2,
+        @as(f32, @floatFromInt(core.size().width)) / 2,
+        -@as(f32, @floatFromInt(core.size().height)) / 2,
+        @as(f32, @floatFromInt(core.size().height)) / 2,
         -0.1,
         100000,
     );
@@ -234,7 +234,7 @@ pub fn tick(adapter: anytype) !void {
             try sprite_sizes.append(adapter.allocator, size);
         }
     }
-    const total_vertices = @intCast(u32, sprite_sizes.items.len * 6);
+    const total_vertices = @as(u32, @intCast(sprite_sizes.items.len * 6));
     if (sprite_transforms.items.len > 0) {
         encoder.writeBuffer(sprite2d.state().sprite_transforms, 0, sprite_transforms.items);
         encoder.writeBuffer(sprite2d.state().sprite_uv_transforms, 0, sprite_uv_transforms.items);

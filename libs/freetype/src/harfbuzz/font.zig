@@ -33,7 +33,7 @@ pub const Font = struct {
     }
 
     pub fn setFreetypeLoadFlags(self: Font, flags: freetype.LoadFlags) void {
-        c.hb_ft_font_set_load_flags(self.handle, @bitCast(i32, flags));
+        c.hb_ft_font_set_load_flags(self.handle, @as(i32, @bitCast(flags)));
     }
 
     pub fn getFace(self: Font) Face {
@@ -60,7 +60,7 @@ pub const Font = struct {
         var x: c_uint = 0;
         var y: c_uint = 0;
         c.hb_font_get_ppem(self.handle, &x, &y);
-        return @Vector(2, u32){ @intCast(u32, x), @intCast(u32, y) };
+        return @Vector(2, u32){ @as(u32, @intCast(x)), @as(u32, @intCast(y)) };
     }
 
     pub fn getPTEM(self: Font) f32 {
@@ -71,7 +71,7 @@ pub const Font = struct {
         var x: c_int = 0;
         var y: c_int = 0;
         c.hb_font_get_scale(self.handle, &x, &y);
-        return @Vector(2, i32){ @intCast(i32, x), @intCast(i32, y) };
+        return @Vector(2, i32){ @as(i32, @intCast(x)), @as(i32, @intCast(y)) };
     }
 
     pub fn setFace(self: Font, face: Face) void {
@@ -83,7 +83,7 @@ pub const Font = struct {
             self.handle,
             buf.handle,
             if (features) |f| f.ptr else null,
-            if (features) |f| @intCast(c_uint, f.len) else 0,
+            if (features) |f| @as(c_uint, @intCast(f.len)) else 0,
         );
     }
 
@@ -92,7 +92,7 @@ pub const Font = struct {
             self.handle,
             buf.handle,
             if (features) |f| f.ptr else null,
-            if (features) |f| @intCast(c_uint, f.len) else 0,
+            if (features) |f| @as(c_uint, @intCast(f.len)) else 0,
             shapers,
         ) < 1) return error.ShapingFailed;
     }

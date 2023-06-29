@@ -22,7 +22,7 @@ handle: *c.GLFWwindow,
 
 /// Returns a Zig GLFW window from an underlying C GLFW window handle.
 pub inline fn from(handle: *anyopaque) Window {
-    return Window{ .handle = @ptrCast(*c.GLFWwindow, @alignCast(@alignOf(*c.GLFWwindow), handle)) };
+    return Window{ .handle = @as(*c.GLFWwindow, @ptrCast(@alignCast(@alignOf(*c.GLFWwindow), handle))) };
 }
 
 /// Resets all window hints to their default values.
@@ -378,8 +378,8 @@ pub inline fn create(
     if (!ignore_hints_struct) hints.set();
 
     if (c.glfwCreateWindow(
-        @intCast(c_int, width),
-        @intCast(c_int, height),
+        @as(c_int, @intCast(width)),
+        @as(c_int, @intCast(height)),
         &title[0],
         if (monitor) |m| m.handle else null,
         if (share) |w| w.handle else null,
@@ -489,7 +489,7 @@ pub inline fn setIcon(self: Window, allocator: mem.Allocator, images: ?[]const I
         const tmp = try allocator.alloc(c.GLFWimage, im.len);
         defer allocator.free(tmp);
         for (im, 0..) |img, index| tmp[index] = img.toC();
-        c.glfwSetWindowIcon(self.handle, @intCast(c_int, im.len), &tmp[0]);
+        c.glfwSetWindowIcon(self.handle, @as(c_int, @intCast(im.len)), &tmp[0]);
     } else c.glfwSetWindowIcon(self.handle, 0, null);
 }
 
@@ -517,7 +517,7 @@ pub inline fn getPos(self: Window) Pos {
     var x: c_int = 0;
     var y: c_int = 0;
     c.glfwGetWindowPos(self.handle, &x, &y);
-    return Pos{ .x = @intCast(i64, x), .y = @intCast(i64, y) };
+    return Pos{ .x = @as(i64, @intCast(x)), .y = @as(i64, @intCast(y)) };
 }
 
 /// Sets the position of the content area of the specified window.
@@ -542,7 +542,7 @@ pub inline fn getPos(self: Window) Pos {
 /// see also: window_pos, glfw.Window.getPos
 pub inline fn setPos(self: Window, pos: Pos) void {
     internal_debug.assertInitialized();
-    c.glfwSetWindowPos(self.handle, @intCast(c_int, pos.x), @intCast(c_int, pos.y));
+    c.glfwSetWindowPos(self.handle, @as(c_int, @intCast(pos.x)), @as(c_int, @intCast(pos.y)));
 }
 
 pub const Size = struct {
@@ -567,7 +567,7 @@ pub inline fn getSize(self: Window) Size {
     var width: c_int = 0;
     var height: c_int = 0;
     c.glfwGetWindowSize(self.handle, &width, &height);
-    return Size{ .width = @intCast(u32, width), .height = @intCast(u32, height) };
+    return Size{ .width = @as(u32, @intCast(width)), .height = @as(u32, @intCast(height)) };
 }
 
 /// Sets the size of the content area of the specified window.
@@ -594,7 +594,7 @@ pub inline fn getSize(self: Window) Size {
 /// see also: window_size, glfw.Window.getSize, glfw.Window.SetMonitor
 pub inline fn setSize(self: Window, size: Size) void {
     internal_debug.assertInitialized();
-    c.glfwSetWindowSize(self.handle, @intCast(c_int, size.width), @intCast(c_int, size.height));
+    c.glfwSetWindowSize(self.handle, @as(c_int, @intCast(size.width)), @as(c_int, @intCast(size.height)));
 }
 
 /// A size with option width/height, used to represent e.g. constraints on a windows size while
@@ -637,10 +637,10 @@ pub inline fn setSizeLimits(self: Window, min: SizeOptional, max: SizeOptional) 
 
     c.glfwSetWindowSizeLimits(
         self.handle,
-        if (min.width) |min_width| @intCast(c_int, min_width) else glfw.dont_care,
-        if (min.height) |min_height| @intCast(c_int, min_height) else glfw.dont_care,
-        if (max.width) |max_width| @intCast(c_int, max_width) else glfw.dont_care,
-        if (max.height) |max_height| @intCast(c_int, max_height) else glfw.dont_care,
+        if (min.width) |min_width| @as(c_int, @intCast(min_width)) else glfw.dont_care,
+        if (min.height) |min_height| @as(c_int, @intCast(min_height)) else glfw.dont_care,
+        if (max.width) |max_width| @as(c_int, @intCast(max_width)) else glfw.dont_care,
+        if (max.height) |max_height| @as(c_int, @intCast(max_height)) else glfw.dont_care,
     );
 }
 
@@ -681,8 +681,8 @@ pub inline fn setAspectRatio(self: Window, numerator: ?u32, denominator: ?u32) v
 
     c.glfwSetWindowAspectRatio(
         self.handle,
-        if (numerator) |numerator_unwrapped| @intCast(c_int, numerator_unwrapped) else glfw.dont_care,
-        if (denominator) |denominator_unwrapped| @intCast(c_int, denominator_unwrapped) else glfw.dont_care,
+        if (numerator) |numerator_unwrapped| @as(c_int, @intCast(numerator_unwrapped)) else glfw.dont_care,
+        if (denominator) |denominator_unwrapped| @as(c_int, @intCast(denominator_unwrapped)) else glfw.dont_care,
     );
 }
 
@@ -702,7 +702,7 @@ pub inline fn getFramebufferSize(self: Window) Size {
     var width: c_int = 0;
     var height: c_int = 0;
     c.glfwGetFramebufferSize(self.handle, &width, &height);
-    return Size{ .width = @intCast(u32, width), .height = @intCast(u32, height) };
+    return Size{ .width = @as(u32, @intCast(width)), .height = @as(u32, @intCast(height)) };
 }
 
 pub const FrameSize = struct {
@@ -735,10 +735,10 @@ pub inline fn getFrameSize(self: Window) FrameSize {
     var bottom: c_int = 0;
     c.glfwGetWindowFrameSize(self.handle, &left, &top, &right, &bottom);
     return FrameSize{
-        .left = @intCast(u32, left),
-        .top = @intCast(u32, top),
-        .right = @intCast(u32, right),
-        .bottom = @intCast(u32, bottom),
+        .left = @as(u32, @intCast(left)),
+        .top = @as(u32, @intCast(top)),
+        .right = @as(u32, @intCast(right)),
+        .bottom = @as(u32, @intCast(bottom)),
     };
 }
 
@@ -1046,11 +1046,11 @@ pub inline fn setMonitor(self: Window, monitor: ?Monitor, xpos: i32, ypos: i32, 
     c.glfwSetWindowMonitor(
         self.handle,
         if (monitor) |m| m.handle else null,
-        @intCast(c_int, xpos),
-        @intCast(c_int, ypos),
-        @intCast(c_int, width),
-        @intCast(c_int, height),
-        if (refresh_rate) |refresh_rate_unwrapped| @intCast(c_int, refresh_rate_unwrapped) else glfw.dont_care,
+        @as(c_int, @intCast(xpos)),
+        @as(c_int, @intCast(ypos)),
+        @as(c_int, @intCast(width)),
+        @as(c_int, @intCast(height)),
+        if (refresh_rate) |refresh_rate_unwrapped| @as(c_int, @intCast(refresh_rate_unwrapped)) else glfw.dont_care,
     );
 }
 
@@ -1174,7 +1174,7 @@ pub inline fn setUserPointer(self: Window, pointer: ?*anyopaque) void {
 /// see also: window_userptr, glfw.Window.setUserPointer
 pub inline fn getUserPointer(self: Window, comptime T: type) ?*T {
     internal_debug.assertInitialized();
-    if (c.glfwGetWindowUserPointer(self.handle)) |user_pointer| return @ptrCast(?*T, @alignCast(@alignOf(T), user_pointer));
+    if (c.glfwGetWindowUserPointer(self.handle)) |user_pointer| return @as(?*T, @ptrCast(@alignCast(@alignOf(T), user_pointer)));
     return null;
 }
 
@@ -1206,8 +1206,8 @@ pub inline fn setPosCallback(self: Window, comptime callback: ?fn (window: Windo
             pub fn posCallbackWrapper(handle: ?*c.GLFWwindow, xpos: c_int, ypos: c_int) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     from(handle.?),
-                    @intCast(i32, xpos),
-                    @intCast(i32, ypos),
+                    @as(i32, @intCast(xpos)),
+                    @as(i32, @intCast(ypos)),
                 });
             }
         };
@@ -1239,8 +1239,8 @@ pub inline fn setSizeCallback(self: Window, comptime callback: ?fn (window: Wind
             pub fn sizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     from(handle.?),
-                    @intCast(i32, width),
-                    @intCast(i32, height),
+                    @as(i32, @intCast(width)),
+                    @as(i32, @intCast(height)),
                 });
             }
         };
@@ -1459,8 +1459,8 @@ pub inline fn setFramebufferSizeCallback(self: Window, comptime callback: ?fn (w
             pub fn framebufferSizeCallbackWrapper(handle: ?*c.GLFWwindow, width: c_int, height: c_int) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     from(handle.?),
-                    @intCast(u32, width),
-                    @intCast(u32, height),
+                    @as(u32, @intCast(width)),
+                    @as(u32, @intCast(height)),
                 });
             }
         };
@@ -1541,7 +1541,7 @@ pub inline fn setInputModeCursor(self: Window, value: InputModeCursor) void {
 
 /// Gets the current input mode of the cursor.
 pub inline fn getInputModeCursor(self: Window) InputModeCursor {
-    return @enumFromInt(InputModeCursor, self.getInputMode(InputMode.cursor));
+    return @as(InputModeCursor, @enumFromInt(self.getInputMode(InputMode.cursor)));
 }
 
 /// Sets the input mode of sticky keys, if enabled a key press will ensure that `glfw.Window.getKey`
@@ -1623,7 +1623,7 @@ pub inline fn getInputModeRawMouseMotion(self: Window) bool {
 pub inline fn getInputMode(self: Window, mode: InputMode) i32 {
     internal_debug.assertInitialized();
     const value = c.glfwGetInputMode(self.handle, @intFromEnum(mode));
-    return @intCast(i32, value);
+    return @as(i32, @intCast(value));
 }
 
 /// Sets an input option for the specified window.
@@ -1693,7 +1693,7 @@ pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) void {
 pub inline fn getKey(self: Window, key: Key) Action {
     internal_debug.assertInitialized();
     const state = c.glfwGetKey(self.handle, @intFromEnum(key));
-    return @enumFromInt(Action, state);
+    return @as(Action, @enumFromInt(state));
 }
 
 /// Returns the last reported state of a mouse button for the specified window.
@@ -1715,7 +1715,7 @@ pub inline fn getKey(self: Window, key: Key) Action {
 pub inline fn getMouseButton(self: Window, button: MouseButton) Action {
     internal_debug.assertInitialized();
     const state = c.glfwGetMouseButton(self.handle, @intFromEnum(button));
-    return @enumFromInt(Action, state);
+    return @as(Action, @enumFromInt(state));
 }
 
 pub const CursorPos = struct {
@@ -1848,9 +1848,9 @@ pub inline fn setKeyCallback(self: Window, comptime callback: ?fn (window: Windo
             pub fn keyCallbackWrapper(handle: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     from(handle.?),
-                    @enumFromInt(Key, key),
-                    @intCast(i32, scancode),
-                    @enumFromInt(Action, action),
+                    @as(Key, @enumFromInt(key)),
+                    @as(i32, @intCast(scancode)),
+                    @as(Action, @enumFromInt(action)),
                     Mods.fromInt(mods),
                 });
             }
@@ -1894,7 +1894,7 @@ pub inline fn setCharCallback(self: Window, comptime callback: ?fn (window: Wind
             pub fn charCallbackWrapper(handle: ?*c.GLFWwindow, codepoint: c_uint) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     from(handle.?),
-                    @intCast(u21, codepoint),
+                    @as(u21, @intCast(codepoint)),
                 });
             }
         };
@@ -1935,8 +1935,8 @@ pub inline fn setMouseButtonCallback(self: Window, comptime callback: ?fn (windo
             pub fn mouseButtonCallbackWrapper(handle: ?*c.GLFWwindow, button: c_int, action: c_int, mods: c_int) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     from(handle.?),
-                    @enumFromInt(MouseButton, button),
-                    @enumFromInt(Action, action),
+                    @as(MouseButton, @enumFromInt(button)),
+                    @as(Action, @enumFromInt(action)),
                     Mods.fromInt(mods),
                 });
             }
@@ -2087,7 +2087,7 @@ pub inline fn setDropCallback(self: Window, comptime callback: ?fn (window: Wind
             pub fn dropCallbackWrapper(handle: ?*c.GLFWwindow, path_count: c_int, paths: [*c][*c]const u8) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     from(handle.?),
-                    @ptrCast([*][*:0]const u8, paths)[0..@intCast(u32, path_count)],
+                    @as([*][*:0]const u8, @ptrCast(paths))[0..@as(u32, @intCast(path_count))],
                 });
             }
         };
@@ -2125,15 +2125,15 @@ inline fn hint(h: Hint, value: anytype) void {
 
     switch (value_type_info) {
         .Int, .ComptimeInt => {
-            c.glfwWindowHint(@intFromEnum(h), @intCast(c_int, value));
+            c.glfwWindowHint(@intFromEnum(h), @as(c_int, @intCast(value)));
         },
         .Bool => {
             const int_value = @intFromBool(value);
-            c.glfwWindowHint(@intFromEnum(h), @intCast(c_int, int_value));
+            c.glfwWindowHint(@intFromEnum(h), @as(c_int, @intCast(int_value)));
         },
         .Enum => {
             const int_value = @intFromEnum(value);
-            c.glfwWindowHint(@intFromEnum(h), @intCast(c_int, int_value));
+            c.glfwWindowHint(@intFromEnum(h), @as(c_int, @intCast(int_value)));
         },
         .Array => |arr_type| {
             if (arr_type.child != u8) {

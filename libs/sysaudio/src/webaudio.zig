@@ -163,7 +163,7 @@ pub const Player = struct {
     }
 
     fn resumeOnClick(args: js.Object, _: usize, captures: []js.Value) js.Value {
-        const self = @ptrFromInt(*Player, @intFromFloat(usize, captures[0].view(.num)));
+        const self = @as(*Player, @ptrFromInt(@as(usize, @intFromFloat(captures[0].view(.num)))));
         self.play() catch {};
 
         const document = js.global().get("document").view(.object);
@@ -177,7 +177,7 @@ pub const Player = struct {
     }
 
     fn audioProcessEvent(args: js.Object, _: usize, captures: []js.Value) js.Value {
-        const self = @ptrFromInt(*Player, @intFromFloat(usize, captures[0].view(.num)));
+        const self = @as(*Player, @ptrFromInt(@as(usize, @intFromFloat(captures[0].view(.num)))));
 
         const event = args.getIndex(0).view(.object);
         defer event.deinit();
@@ -219,7 +219,7 @@ pub const Player = struct {
     pub fn volume(self: Player) !f32 {
         const gain = self.gain_node.get("gain").view(.object);
         defer gain.deinit();
-        return @floatCast(f32, gain.get("value").view(.num));
+        return @as(f32, @floatCast(gain.get("value").view(.num)));
     }
 };
 

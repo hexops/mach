@@ -11,32 +11,32 @@ handle: c.GLFWvidmode,
 
 /// Returns the width of the video mode, in screen coordinates.
 pub inline fn getWidth(self: VideoMode) u32 {
-    return @intCast(u32, self.handle.width);
+    return @as(u32, @intCast(self.handle.width));
 }
 
 /// Returns the height of the video mode, in screen coordinates.
 pub inline fn getHeight(self: VideoMode) u32 {
-    return @intCast(u32, self.handle.height);
+    return @as(u32, @intCast(self.handle.height));
 }
 
 /// Returns the bit depth of the red channel of the video mode.
 pub inline fn getRedBits(self: VideoMode) u32 {
-    return @intCast(u32, self.handle.redBits);
+    return @as(u32, @intCast(self.handle.redBits));
 }
 
 /// Returns the bit depth of the green channel of the video mode.
 pub inline fn getGreenBits(self: VideoMode) u32 {
-    return @intCast(u32, self.handle.greenBits);
+    return @as(u32, @intCast(self.handle.greenBits));
 }
 
 /// Returns the bit depth of the blue channel of the video mode.
 pub inline fn getBlueBits(self: VideoMode) u32 {
-    return @intCast(u32, self.handle.blueBits);
+    return @as(u32, @intCast(self.handle.blueBits));
 }
 
 /// Returns the refresh rate of the video mode, in Hz.
 pub inline fn getRefreshRate(self: VideoMode) u32 {
-    return @intCast(u32, self.handle.refreshRate);
+    return @as(u32, @intCast(self.handle.refreshRate));
 }
 
 test "getters" {

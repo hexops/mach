@@ -9,11 +9,11 @@ pub const Direction = enum(u3) {
     bit = c.HB_DIRECTION_BTT,
 
     pub fn fromString(str: []const u8) Direction {
-        return @enumFromInt(Direction, c.hb_direction_from_string(str.ptr, @intCast(c_int, str.len)));
+        return @as(Direction, @enumFromInt(c.hb_direction_from_string(str.ptr, @as(c_int, @intCast(str.len)))));
     }
 
     pub fn toString(self: Direction) [:0]const u8 {
-        return std.mem.span(@ptrCast([*:0]const u8, c.hb_direction_to_string(@intFromEnum(self))));
+        return std.mem.span(@as([*:0]const u8, @ptrCast(c.hb_direction_to_string(@intFromEnum(self)))));
     }
 };
 
@@ -184,11 +184,11 @@ pub const Script = enum(u31) {
     invalid = c.HB_SCRIPT_INVALID,
 
     pub fn fromISO15924Tag(tag: Tag) Script {
-        return @enumFromInt(Script, c.hb_script_from_iso15924_tag(tag.handle));
+        return @as(Script, @enumFromInt(c.hb_script_from_iso15924_tag(tag.handle)));
     }
 
     pub fn fromString(str: []const u8) Script {
-        return @enumFromInt(Script, c.hb_script_from_string(str.ptr, @intCast(c_int, str.len)));
+        return @as(Script, @enumFromInt(c.hb_script_from_string(str.ptr, @as(c_int, @intCast(str.len)))));
     }
 
     pub fn toISO15924Tag(self: Script) Tag {
@@ -196,7 +196,7 @@ pub const Script = enum(u31) {
     }
 
     pub fn getHorizontalDirection(self: Script) Direction {
-        return @enumFromInt(Direction, c.hb_script_get_horizontal_direction(@intFromEnum(self)));
+        return @as(Direction, @enumFromInt(c.hb_script_get_horizontal_direction(@intFromEnum(self))));
     }
 };
 
@@ -205,12 +205,12 @@ pub const Language = struct {
 
     pub fn fromString(name: []const u8) Language {
         return .{
-            .handle = c.hb_language_from_string(name.ptr, @intCast(c_int, name.len)),
+            .handle = c.hb_language_from_string(name.ptr, @as(c_int, @intCast(name.len))),
         };
     }
 
     pub fn toString(self: Language) [:0]const u8 {
-        return std.mem.span(@ptrCast([*:0]const u8, c.hb_language_to_string(self.handle)));
+        return std.mem.span(@as([*:0]const u8, @ptrCast(c.hb_language_to_string(self.handle))));
     }
 
     pub fn getDefault() Language {
@@ -226,14 +226,14 @@ pub const Feature = extern struct {
 
     pub fn fromString(str: []const u8) ?Feature {
         var f: Feature = undefined;
-        return if (hb_feature_from_string(str.ptr, @intCast(c_int, str.len), &f) > 1)
+        return if (hb_feature_from_string(str.ptr, @as(c_int, @intCast(str.len)), &f) > 1)
             f
         else
             null;
     }
 
     pub fn toString(self: *Feature, buf: []u8) void {
-        hb_feature_to_string(self, buf.ptr, @intCast(c_uint, buf.len));
+        hb_feature_to_string(self, buf.ptr, @as(c_uint, @intCast(buf.len)));
     }
 };
 
@@ -243,14 +243,14 @@ pub const Variation = extern struct {
 
     pub fn fromString(str: []const u8) ?Variation {
         var v: Variation = undefined;
-        return if (hb_variation_from_string(str.ptr, @intCast(c_int, str.len), &v) > 1)
+        return if (hb_variation_from_string(str.ptr, @as(c_int, @intCast(str.len)), &v) > 1)
             v
         else
             null;
     }
 
     pub fn toString(self: *Variation, buf: []u8) void {
-        hb_variation_to_string(self, buf.ptr, @intCast(c_uint, buf.len));
+        hb_variation_to_string(self, buf.ptr, @as(c_uint, @intCast(buf.len)));
     }
 
     pub fn tag(self: Variation) Tag {
@@ -266,7 +266,7 @@ pub const Tag = struct {
     handle: u32,
 
     pub fn fromString(str: []const u8) Tag {
-        return .{ .handle = c.hb_tag_from_string(str.ptr, @intCast(c_int, str.len)) };
+        return .{ .handle = c.hb_tag_from_string(str.ptr, @as(c_int, @intCast(str.len))) };
     }
 
     pub fn toString(self: Tag) []const u8 {

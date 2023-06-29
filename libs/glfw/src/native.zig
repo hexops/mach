@@ -61,7 +61,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWin32Adapter(monitor: Monitor) [*:0]const u8 {
             internal_debug.assertInitialized();
-            if (native.glfwGetWin32Adapter(@ptrCast(*native.GLFWmonitor, monitor.handle))) |adapter| return adapter;
+            if (native.glfwGetWin32Adapter(@as(*native.GLFWmonitor, @ptrCast(monitor.handle)))) |adapter| return adapter;
             // `glfwGetWin32Adapter` returns `null` only for errors
             // but the only potential error is unreachable (NotInitialized)
             unreachable;
@@ -75,7 +75,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWin32Monitor(monitor: Monitor) [*:0]const u8 {
             internal_debug.assertInitialized();
-            if (native.glfwGetWin32Monitor(@ptrCast(*native.GLFWmonitor, monitor.handle))) |mon| return mon;
+            if (native.glfwGetWin32Monitor(@as(*native.GLFWmonitor, @ptrCast(monitor.handle)))) |mon| return mon;
             // `glfwGetWin32Monitor` returns `null` only for errors
             // but the only potential error is unreachable (NotInitialized)
             unreachable;
@@ -94,8 +94,8 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWin32Window(window: Window) std.os.windows.HWND {
             internal_debug.assertInitialized();
-            if (native.glfwGetWin32Window(@ptrCast(*native.GLFWwindow, window.handle))) |win|
-                return @ptrCast(std.os.windows.HWND, win);
+            if (native.glfwGetWin32Window(@as(*native.GLFWwindow, @ptrCast(window.handle)))) |win|
+                return @as(std.os.windows.HWND, @ptrCast(win));
             // `glfwGetWin32Window` returns `null` only for errors
             // but the only potential error is unreachable (NotInitialized)
             unreachable;
@@ -117,7 +117,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWGLContext(window: Window) ?std.os.windows.HGLRC {
             internal_debug.assertInitialized();
-            if (native.glfwGetWGLContext(@ptrCast(*native.GLFWwindow, window.handle))) |context| return context;
+            if (native.glfwGetWGLContext(@as(*native.GLFWwindow, @ptrCast(window.handle)))) |context| return context;
             return null;
         }
 
@@ -126,7 +126,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getCocoaMonitor(monitor: Monitor) u32 {
             internal_debug.assertInitialized();
-            const mon = native.glfwGetCocoaMonitor(@ptrCast(*native.GLFWmonitor, monitor.handle));
+            const mon = native.glfwGetCocoaMonitor(@as(*native.GLFWmonitor, @ptrCast(monitor.handle)));
             if (mon != native.kCGNullDirectDisplay) return mon;
             // `glfwGetCocoaMonitor` returns `kCGNullDirectDisplay` only for errors
             // but the only potential error is unreachable (NotInitialized)
@@ -138,7 +138,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getCocoaWindow(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
-            return native.glfwGetCocoaWindow(@ptrCast(*native.GLFWwindow, window.handle));
+            return native.glfwGetCocoaWindow(@as(*native.GLFWwindow, @ptrCast(window.handle)));
         }
 
         /// Returns the `NSWindow` of the specified window.
@@ -148,7 +148,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getNSGLContext(window: Window) u32 {
             internal_debug.assertInitialized();
-            return native.glfwGetNSGLContext(@ptrCast(*native.GLFWwindow, window.handle));
+            return native.glfwGetNSGLContext(@as(*native.GLFWwindow, @ptrCast(window.handle)));
         }
 
         /// Returns the `Display` used by GLFW.
@@ -156,7 +156,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getX11Display() *anyopaque {
             internal_debug.assertInitialized();
-            if (native.glfwGetX11Display()) |display| return @ptrCast(*anyopaque, display);
+            if (native.glfwGetX11Display()) |display| return @as(*anyopaque, @ptrCast(display));
             // `glfwGetX11Display` returns `null` only for errors
             // but the only potential error is unreachable (NotInitialized)
             unreachable;
@@ -167,7 +167,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getX11Adapter(monitor: Monitor) u32 {
             internal_debug.assertInitialized();
-            const adapter = native.glfwGetX11Adapter(@ptrCast(*native.GLFWMonitor, monitor.handle));
+            const adapter = native.glfwGetX11Adapter(@as(*native.GLFWMonitor, @ptrCast(monitor.handle)));
             if (adapter != 0) return adapter;
             // `glfwGetX11Adapter` returns `0` only for errors
             // but the only potential error is unreachable (NotInitialized)
@@ -179,7 +179,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getX11Monitor(monitor: Monitor) u32 {
             internal_debug.assertInitialized();
-            const mon = native.glfwGetX11Monitor(@ptrCast(*native.GLFWmonitor, monitor.handle));
+            const mon = native.glfwGetX11Monitor(@as(*native.GLFWmonitor, @ptrCast(monitor.handle)));
             if (mon != 0) return mon;
             // `glfwGetX11Monitor` returns `0` only for errors
             // but the only potential error is unreachable (NotInitialized)
@@ -191,8 +191,8 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getX11Window(window: Window) u32 {
             internal_debug.assertInitialized();
-            const win = native.glfwGetX11Window(@ptrCast(*native.GLFWwindow, window.handle));
-            if (win != 0) return @intCast(u32, win);
+            const win = native.glfwGetX11Window(@as(*native.GLFWwindow, @ptrCast(window.handle)));
+            if (win != 0) return @as(u32, @intCast(win));
             // `glfwGetX11Window` returns `0` only for errors
             // but the only potential error is unreachable (NotInitialized)
             unreachable;
@@ -234,7 +234,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getGLXContext(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
-            if (native.glfwGetGLXContext(@ptrCast(*native.GLFWwindow, window.handle))) |context| return @ptrCast(*anyopaque, context);
+            if (native.glfwGetGLXContext(@as(*native.GLFWwindow, @ptrCast(window.handle)))) |context| return @as(*anyopaque, @ptrCast(context));
             return null;
         }
 
@@ -246,8 +246,8 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getGLXWindow(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
-            const win = native.glfwGetGLXWindow(@ptrCast(*native.GLFWwindow, window.handle));
-            if (win != 0) return @ptrCast(*anyopaque, win);
+            const win = native.glfwGetGLXWindow(@as(*native.GLFWwindow, @ptrCast(window.handle)));
+            if (win != 0) return @as(*anyopaque, @ptrCast(win));
             return null;
         }
 
@@ -256,7 +256,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWaylandDisplay() *anyopaque {
             internal_debug.assertInitialized();
-            if (native.glfwGetWaylandDisplay()) |display| return @ptrCast(*anyopaque, display);
+            if (native.glfwGetWaylandDisplay()) |display| return @as(*anyopaque, @ptrCast(display));
             // `glfwGetWaylandDisplay` returns `null` only for errors
             // but the only potential error is unreachable (NotInitialized)
             unreachable;
@@ -267,7 +267,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWaylandMonitor(monitor: Monitor) *anyopaque {
             internal_debug.assertInitialized();
-            if (native.glfwGetWaylandMonitor(@ptrCast(*native.GLFWmonitor, monitor.handle))) |mon| return @ptrCast(*anyopaque, mon);
+            if (native.glfwGetWaylandMonitor(@as(*native.GLFWmonitor, @ptrCast(monitor.handle)))) |mon| return @as(*anyopaque, @ptrCast(mon));
             // `glfwGetWaylandMonitor` returns `null` only for errors
             // but the only potential error is unreachable (NotInitialized)
             unreachable;
@@ -278,7 +278,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getWaylandWindow(window: Window) *anyopaque {
             internal_debug.assertInitialized();
-            if (native.glfwGetWaylandWindow(@ptrCast(*native.GLFWwindow, window.handle))) |win| return @ptrCast(*anyopaque, win);
+            if (native.glfwGetWaylandWindow(@as(*native.GLFWwindow, @ptrCast(window.handle)))) |win| return @as(*anyopaque, @ptrCast(win));
             // `glfwGetWaylandWindow` returns `null` only for errors
             // but the only potential error is unreachable (NotInitialized)
             unreachable;
@@ -293,7 +293,7 @@ pub fn Native(comptime options: BackendOptions) type {
         pub fn getEGLDisplay() *anyopaque {
             internal_debug.assertInitialized();
             const display = native.glfwGetEGLDisplay();
-            if (display != native.EGL_NO_DISPLAY) return @ptrCast(*anyopaque, display);
+            if (display != native.EGL_NO_DISPLAY) return @as(*anyopaque, @ptrCast(display));
             // `glfwGetEGLDisplay` returns `EGL_NO_DISPLAY` only for errors
             // but the only potential error is unreachable (NotInitialized)
             unreachable;
@@ -307,8 +307,8 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety This function may be called from any thread. Access is not synchronized.
         pub fn getEGLContext(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
-            const context = native.glfwGetEGLContext(@ptrCast(*native.GLFWwindow, window.handle));
-            if (context != native.EGL_NO_CONTEXT) return @ptrCast(*anyopaque, context);
+            const context = native.glfwGetEGLContext(@as(*native.GLFWwindow, @ptrCast(window.handle)));
+            if (context != native.EGL_NO_CONTEXT) return @as(*anyopaque, @ptrCast(context));
             return null;
         }
 
@@ -319,8 +319,8 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety This function may be called from any thread. Access is not synchronized.
         pub fn getEGLSurface(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
-            const surface = native.glfwGetEGLSurface(@ptrCast(*native.GLFWwindow, window.handle));
-            if (surface != native.EGL_NO_SURFACE) return @ptrCast(*anyopaque, surface);
+            const surface = native.glfwGetEGLSurface(@as(*native.GLFWwindow, @ptrCast(window.handle)));
+            if (surface != native.EGL_NO_SURFACE) return @as(*anyopaque, @ptrCast(surface));
             return null;
         }
 
@@ -341,7 +341,7 @@ pub fn Native(comptime options: BackendOptions) type {
             internal_debug.assertInitialized();
             var buf: OSMesaColorBuffer = undefined;
             if (native.glfwGetOSMesaColorBuffer(
-                @ptrCast(*native.GLFWwindow, window.handle),
+                @as(*native.GLFWwindow, @ptrCast(window.handle)),
                 &buf.width,
                 &buf.height,
                 &buf.format,
@@ -367,7 +367,7 @@ pub fn Native(comptime options: BackendOptions) type {
             internal_debug.assertInitialized();
             var buf: OSMesaDepthBuffer = undefined;
             if (native.glfwGetOSMesaDepthBuffer(
-                @ptrCast(*native.GLFWwindow, window.handle),
+                @as(*native.GLFWwindow, @ptrCast(window.handle)),
                 &buf.width,
                 &buf.height,
                 &buf.bytes_per_value,
@@ -383,7 +383,7 @@ pub fn Native(comptime options: BackendOptions) type {
         /// thread_safety: This function may be called from any thread. Access is not synchronized.
         pub fn getOSMesaContext(window: Window) ?*anyopaque {
             internal_debug.assertInitialized();
-            if (native.glfwGetOSMesaContext(@ptrCast(*native.GLFWwindow, window.handle))) |context| return @ptrCast(*anyopaque, context);
+            if (native.glfwGetOSMesaContext(@as(*native.GLFWwindow, @ptrCast(window.handle)))) |context| return @as(*anyopaque, @ptrCast(context));
             return null;
         }
     };

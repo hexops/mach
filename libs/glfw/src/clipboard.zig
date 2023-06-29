@@ -42,7 +42,7 @@ pub inline fn setClipboardString(value: [*:0]const u8) void {
 /// see also: clipboard, glfwSetClipboardString
 pub inline fn getClipboardString() ?[:0]const u8 {
     internal_debug.assertInitialized();
-    if (c.glfwGetClipboardString(null)) |c_str| return std.mem.span(@ptrCast([*:0]const u8, c_str));
+    if (c.glfwGetClipboardString(null)) |c_str| return std.mem.span(@as([*:0]const u8, @ptrCast(c_str)));
     return null;
 }
 

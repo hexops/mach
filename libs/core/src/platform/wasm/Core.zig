@@ -31,10 +31,10 @@ pub const EventIterator = struct {
             const event_int = js.machEventShift();
             if (event_int == -1) return null;
 
-            const event_type = @enumFromInt(std.meta.Tag(Event), event_int);
+            const event_type = @as(std.meta.Tag(Event), @enumFromInt(event_int));
             return switch (event_type) {
                 .key_press, .key_repeat => blk: {
-                    const key = @enumFromInt(Key, js.machEventShift());
+                    const key = @as(Key, @enumFromInt(js.machEventShift()));
                     switch (key) {
                         .left_shift, .right_shift => self.key_mods.shift = true,
                         .left_control, .right_control => self.key_mods.control = true,
@@ -63,7 +63,7 @@ pub const EventIterator = struct {
                     continue;
                 },
                 .key_release => blk: {
-                    const key = @enumFromInt(Key, js.machEventShift());
+                    const key = @as(Key, @enumFromInt(js.machEventShift()));
                     switch (key) {
                         .left_shift, .right_shift => self.key_mods.shift = false,
                         .left_control, .right_control => self.key_mods.control = false,
@@ -83,8 +83,8 @@ pub const EventIterator = struct {
                     continue;
                 },
                 .mouse_motion => blk: {
-                    const x = @floatFromInt(f64, js.machEventShift());
-                    const y = @floatFromInt(f64, js.machEventShift());
+                    const x = @as(f64, @floatFromInt(js.machEventShift()));
+                    const y = @as(f64, @floatFromInt(js.machEventShift()));
                     self.last_cursor_position = .{
                         .x = x,
                         .y = y,
@@ -114,14 +114,14 @@ pub const EventIterator = struct {
                 },
                 .mouse_scroll => Event{
                     .mouse_scroll = .{
-                        .xoffset = @floatCast(f32, std.math.sign(js.machEventShiftFloat())),
-                        .yoffset = @floatCast(f32, std.math.sign(js.machEventShiftFloat())),
+                        .xoffset = @as(f32, @floatCast(std.math.sign(js.machEventShiftFloat()))),
+                        .yoffset = @as(f32, @floatCast(std.math.sign(js.machEventShiftFloat()))),
                     },
                 },
                 .framebuffer_resize => blk: {
-                    const width = @intCast(u32, js.machEventShift());
-                    const height = @intCast(u32, js.machEventShift());
-                    const pixel_ratio = @intCast(u32, js.machEventShift());
+                    const width = @as(u32, @intCast(js.machEventShift()));
+                    const height = @as(u32, @intCast(js.machEventShift()));
+                    const pixel_ratio = @as(u32, @intCast(js.machEventShift()));
                     break :blk Event{
                         .framebuffer_resize = .{
                             .width = width * pixel_ratio,
@@ -195,7 +195,7 @@ pub fn setDisplayMode(self: *Core, mode: DisplayMode, monitor: ?usize) void {
 }
 
 pub fn displayMode(self: *Core) DisplayMode {
-    return @enumFromInt(DisplayMode, js.machDisplayMode(self.id));
+    return @as(DisplayMode, @enumFromInt(js.machDisplayMode(self.id)));
 }
 
 pub fn setBorder(self: *Core, value: bool) void {
@@ -243,10 +243,10 @@ pub fn size(self: *Core) Size {
 pub fn setSizeLimit(self: *Core, limit: SizeLimit) void {
     js.machCanvasSetSizeLimit(
         self.id,
-        if (limit.min.width) |val| @intCast(i32, val) else -1,
-        if (limit.min.height) |val| @intCast(i32, val) else -1,
-        if (limit.max.width) |val| @intCast(i32, val) else -1,
-        if (limit.max.height) |val| @intCast(i32, val) else -1,
+        if (limit.min.width) |val| @as(i32, @intCast(val)) else -1,
+        if (limit.min.height) |val| @as(i32, @intCast(val)) else -1,
+        if (limit.max.width) |val| @as(i32, @intCast(val)) else -1,
+        if (limit.max.height) |val| @as(i32, @intCast(val)) else -1,
     );
 }
 
@@ -268,7 +268,7 @@ pub fn setCursorMode(self: *Core, mode: CursorMode) void {
 }
 
 pub fn cursorMode(self: *Core) CursorMode {
-    return @enumFromInt(CursorMode, js.machCursorMode(self.id));
+    return @as(CursorMode, @enumFromInt(js.machCursorMode(self.id)));
 }
 
 pub fn setCursorShape(self: *Core, shape: CursorShape) void {
@@ -276,7 +276,7 @@ pub fn setCursorShape(self: *Core, shape: CursorShape) void {
 }
 
 pub fn cursorShape(self: *Core) CursorShape {
-    return @enumFromInt(CursorShape, js.machCursorShape(self.id));
+    return @as(CursorShape, @enumFromInt(js.machCursorShape(self.id)));
 }
 
 pub fn adapter(_: *Core) *gpu.Adapter {

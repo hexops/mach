@@ -155,7 +155,7 @@ pub fn init(core: *Core, allocator: std.mem.Allocator, options: Options) !void {
 
     // Create a device with default limits/features.
     const gpu_device = response.adapter.createDevice(&.{
-        .required_features_count = if (options.required_features) |v| @intCast(u32, v.len) else 0,
+        .required_features_count = if (options.required_features) |v| @as(u32, @intCast(v.len)) else 0,
         .required_features = if (options.required_features) |v| @as(?[*]const gpu.FeatureName, v.ptr) else null,
         .required_limits = if (options.required_limits) |limits| @as(?*const gpu.RequiredLimits, &gpu.RequiredLimits{
             .limits = limits,
@@ -302,8 +302,8 @@ fn initCallbacks(self: *Core) void {
             const pf = (window.getUserPointer(UserPtr) orelse unreachable).self;
             pf.pushEvent(.{
                 .mouse_scroll = .{
-                    .xoffset = @floatCast(f32, xoffset),
-                    .yoffset = @floatCast(f32, yoffset),
+                    .xoffset = @as(f32, @floatCast(xoffset)),
+                    .yoffset = @as(f32, @floatCast(yoffset)),
                 },
             });
         }
@@ -419,8 +419,8 @@ pub fn setDisplayMode(self: *Core, mode: DisplayMode, monitor_index: ?usize) voi
             self.window.setAttrib(.floating, false);
             self.window.setMonitor(
                 null,
-                @intCast(i32, self.last_pos.x),
-                @intCast(i32, self.last_pos.y),
+                @as(i32, @intCast(self.last_pos.x)),
+                @as(i32, @intCast(self.last_pos.y)),
                 self.last_size.width,
                 self.last_size.height,
                 null,

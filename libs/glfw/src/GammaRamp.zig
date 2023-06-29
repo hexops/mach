@@ -54,7 +54,7 @@ pub inline fn toC(self: GammaRamp) c.GLFWgammaramp {
         .red = &self.red[0],
         .green = &self.green[0],
         .blue = &self.blue[0],
-        .size = @intCast(c_uint, self.red.len),
+        .size = @as(c_uint, @intCast(self.red.len)),
     };
 }
 

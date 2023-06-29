@@ -15,7 +15,7 @@ pub const ShapePlan = struct {
             face.handle,
             &props.cast(),
             if (features) |f| f.ptr else null,
-            if (features) |f| @intCast(c_uint, f.len) else 0,
+            if (features) |f| @as(c_uint, @intCast(f.len)) else 0,
             shapers,
         ).? };
     }
@@ -25,7 +25,7 @@ pub const ShapePlan = struct {
             face.handle,
             &props.cast(),
             if (features) |f| f.ptr else null,
-            if (features) |f| @intCast(c_uint, f.len) else 0,
+            if (features) |f| @as(c_uint, @intCast(f.len)) else 0,
             shapers,
         ).? };
     }
@@ -35,9 +35,9 @@ pub const ShapePlan = struct {
             face.handle,
             &props.cast(),
             if (features) |f| f.ptr else null,
-            if (features) |f| @intCast(c_uint, f.len) else 0,
+            if (features) |f| @as(c_uint, @intCast(f.len)) else 0,
             cords.ptr,
-            @intCast(c_uint, cords.len),
+            @as(c_uint, @intCast(cords.len)),
             shapers,
         ).? };
     }
@@ -47,9 +47,9 @@ pub const ShapePlan = struct {
             face.handle,
             &props.cast(),
             if (features) |f| f.ptr else null,
-            if (features) |f| @intCast(c_uint, f.len) else 0,
+            if (features) |f| @as(c_uint, @intCast(f.len)) else 0,
             cords.ptr,
-            @intCast(c_uint, cords.len),
+            @as(c_uint, @intCast(cords.len)),
             shapers,
         ).? };
     }
@@ -64,12 +64,12 @@ pub const ShapePlan = struct {
             font.handle,
             buffer.handle,
             if (features) |f| f.ptr else null,
-            if (features) |f| @intCast(c_uint, f.len) else 0,
+            if (features) |f| @as(c_uint, @intCast(f.len)) else 0,
         ) < 1) return error.ShapingFailed;
     }
 
     pub fn getShaper(self: ShapePlan) [:0]const u8 {
-        return std.mem.span(@ptrCast([*:0]const u8, c.hb_shape_plan_get_shaper(self.handle)));
+        return std.mem.span(@as([*:0]const u8, @ptrCast(c.hb_shape_plan_get_shaper(self.handle))));
     }
 };
 

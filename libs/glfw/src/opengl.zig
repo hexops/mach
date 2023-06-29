@@ -85,7 +85,7 @@ pub inline fn getCurrentContext() ?Window {
 /// see also: buffer_swap, glfwSwapBuffers
 pub inline fn swapInterval(interval: i32) void {
     internal_debug.assertInitialized();
-    c.glfwSwapInterval(@intCast(c_int, interval));
+    c.glfwSwapInterval(@as(c_int, @intCast(interval)));
 }
 
 /// Returns whether the specified extension is available.

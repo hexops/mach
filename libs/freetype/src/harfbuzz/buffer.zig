@@ -31,7 +31,7 @@ pub const GlyphInfo = extern struct {
     var2: u32,
 
     pub fn getFlags(self: GlyphInfo) GlyphFlags {
-        return @bitCast(GlyphFlags, hb_glyph_info_get_glyph_flags(&self));
+        return @as(GlyphFlags, @bitCast(hb_glyph_info_get_glyph_flags(&self)));
     }
 };
 
@@ -56,8 +56,8 @@ pub const SegmentProps = struct {
 
     pub fn from(c_struct: c.hb_segment_properties_t) SegmentProps {
         return .{
-            .direction = @enumFromInt(Direction, c_struct.direction),
-            .script = @enumFromInt(Script, c_struct.script),
+            .direction = @as(Direction, @enumFromInt(c_struct.direction)),
+            .script = @as(Script, @enumFromInt(c_struct.script)),
             .language = Language{ .handle = c_struct.language },
         };
     }
@@ -173,23 +173,23 @@ pub const Buffer = struct {
     }
 
     pub fn addCodepoints(self: Buffer, text: []const u32, item_offset: u32, item_length: ?u31) void {
-        c.hb_buffer_add_codepoints(self.handle, &text[0], @intCast(c_int, text.len), item_offset, if (item_length) |l| l else @intCast(c_int, text.len));
+        c.hb_buffer_add_codepoints(self.handle, &text[0], @as(c_int, @intCast(text.len)), item_offset, if (item_length) |l| l else @as(c_int, @intCast(text.len)));
     }
 
     pub fn addUTF32(self: Buffer, text: []const u32, item_offset: u32, item_length: ?u31) void {
-        c.hb_buffer_add_utf32(self.handle, &text[0], @intCast(c_int, text.len), item_offset, if (item_length) |l| l else @intCast(c_int, text.len));
+        c.hb_buffer_add_utf32(self.handle, &text[0], @as(c_int, @intCast(text.len)), item_offset, if (item_length) |l| l else @as(c_int, @intCast(text.len)));
     }
 
     pub fn addUTF16(self: Buffer, text: []const u16, item_offset: u32, item_length: ?u31) void {
-        c.hb_buffer_add_utf16(self.handle, &text[0], @intCast(c_int, text.len), item_offset, if (item_length) |l| l else @intCast(c_int, text.len));
+        c.hb_buffer_add_utf16(self.handle, &text[0], @as(c_int, @intCast(text.len)), item_offset, if (item_length) |l| l else @as(c_int, @intCast(text.len)));
     }
 
     pub fn addUTF8(self: Buffer, text: []const u8, item_offset: u32, item_length: ?u31) void {
-        c.hb_buffer_add_utf8(self.handle, &text[0], @intCast(c_int, text.len), item_offset, if (item_length) |l| l else @intCast(c_int, text.len));
+        c.hb_buffer_add_utf8(self.handle, &text[0], @as(c_int, @intCast(text.len)), item_offset, if (item_length) |l| l else @as(c_int, @intCast(text.len)));
     }
 
     pub fn addLatin1(self: Buffer, text: []const u8, item_offset: u32, item_length: ?u31) void {
-        c.hb_buffer_add_latin1(self.handle, &text[0], @intCast(c_int, text.len), item_offset, if (item_length) |l| l else @intCast(c_int, text.len));
+        c.hb_buffer_add_latin1(self.handle, &text[0], @as(c_int, @intCast(text.len)), item_offset, if (item_length) |l| l else @as(c_int, @intCast(text.len)));
     }
 
     pub fn append(self: Buffer, source: Buffer, start: u32, end: u32) void {
@@ -197,7 +197,7 @@ pub const Buffer = struct {
     }
 
     pub fn getContentType(self: Buffer) ContentType {
-        return @enumFromInt(ContentType, c.hb_buffer_get_content_type(self.handle));
+        return @as(ContentType, @enumFromInt(c.hb_buffer_get_content_type(self.handle)));
     }
 
     pub fn setContentType(self: Buffer, content_type: ContentType) void {
@@ -205,7 +205,7 @@ pub const Buffer = struct {
     }
 
     pub fn getDirection(self: Buffer) Direction {
-        return @enumFromInt(Direction, c.hb_buffer_get_direction(self.handle));
+        return @as(Direction, @enumFromInt(c.hb_buffer_get_direction(self.handle)));
     }
 
     pub fn setDirection(self: Buffer, direction: Direction) void {
@@ -213,7 +213,7 @@ pub const Buffer = struct {
     }
 
     pub fn getScript(self: Buffer) Script {
-        return @enumFromInt(Script, c.hb_buffer_get_script(self.handle));
+        return @as(Script, @enumFromInt(c.hb_buffer_get_script(self.handle)));
     }
 
     pub fn setScript(self: Buffer, script: Script) void {
@@ -229,15 +229,15 @@ pub const Buffer = struct {
     }
 
     pub fn getFlags(self: Buffer) Flags {
-        return @bitCast(Flags, c.hb_buffer_get_flags(self.handle));
+        return @as(Flags, @bitCast(c.hb_buffer_get_flags(self.handle)));
     }
 
     pub fn setFlags(self: Buffer, flags: Flags) void {
-        c.hb_buffer_set_flags(self.handle, @bitCast(u32, flags));
+        c.hb_buffer_set_flags(self.handle, @as(u32, @bitCast(flags)));
     }
 
     pub fn getClusterLevel(self: Buffer) ClusterLevel {
-        return @enumFromInt(ClusterLevel, c.hb_buffer_get_cluster_level(self.handle));
+        return @as(ClusterLevel, @enumFromInt(c.hb_buffer_get_cluster_level(self.handle)));
     }
 
     pub fn setClusterLevel(self: Buffer, level: ClusterLevel) void {
@@ -275,7 +275,7 @@ pub const Buffer = struct {
     pub fn getGlyphPositions(self: Buffer) ?[]Position {
         var length: u32 = 0;
         return if (hb_buffer_get_glyph_positions(self.handle, &length)) |positions|
-            @ptrCast([*]Position, positions)[0..length]
+            @as([*]Position, @ptrCast(positions))[0..length]
         else
             null;
     }
@@ -325,7 +325,7 @@ pub const Buffer = struct {
     }
 
     pub fn diff(self: Buffer, ref: Buffer, dottedcircle_glyph: u32, position_fuzz: u32) DiffFlags {
-        return @bitCast(DiffFlags, c.hb_buffer_diff(self.handle, ref.handle, dottedcircle_glyph, position_fuzz));
+        return @as(DiffFlags, @bitCast(c.hb_buffer_diff(self.handle, ref.handle, dottedcircle_glyph, position_fuzz)));
     }
 };
 

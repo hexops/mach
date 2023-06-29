@@ -84,7 +84,7 @@ pub const Bitmap = struct {
     }
 
     pub fn pixelMode(self: Bitmap) PixelMode {
-        return @enumFromInt(PixelMode, self.handle.pixel_mode);
+        return @as(PixelMode, @enumFromInt(self.handle.pixel_mode));
     }
 
     pub fn buffer(self: Bitmap) ?[]const u8 {
@@ -122,11 +122,11 @@ pub const Outline = struct {
     handle: *c.FT_Outline,
 
     pub fn numPoints(self: Outline) u15 {
-        return @intCast(u15, self.handle.*.n_points);
+        return @as(u15, @intCast(self.handle.*.n_points));
     }
 
     pub fn numContours(self: Outline) u15 {
-        return @intCast(u15, self.handle.*.n_contours);
+        return @as(u15, @intCast(self.handle.*.n_contours));
     }
 
     pub fn points(self: Outline) []const Vector {
@@ -134,7 +134,7 @@ pub const Outline = struct {
     }
 
     pub fn tags(self: Outline) []const u8 {
-        return self.handle.tags[0..@intCast(u15, self.handle.n_points)];
+        return self.handle.tags[0..@as(u15, @intCast(self.handle.n_points))];
     }
 
     pub fn contours(self: Outline) []const i16 {
@@ -142,7 +142,7 @@ pub const Outline = struct {
     }
 
     pub fn flags(self: Outline) Flags {
-        return @bitCast(Flags, self.handle.*.flags);
+        return @as(Flags, @bitCast(self.handle.*.flags));
     }
 
     pub fn copy(self: Outline) Error!Outline {
@@ -188,15 +188,15 @@ pub const Outline = struct {
     }
 
     pub fn orientation(self: Outline) Orientation {
-        return @enumFromInt(Orientation, c.FT_Outline_Get_Orientation(self.handle));
+        return @as(Orientation, @enumFromInt(c.FT_Outline_Get_Orientation(self.handle)));
     }
 
     pub fn getInsideBorder(self: Outline) Stroker.Border {
-        return @enumFromInt(Stroker.Border, c.FT_Outline_GetInsideBorder(self.handle));
+        return @as(Stroker.Border, @enumFromInt(c.FT_Outline_GetInsideBorder(self.handle)));
     }
 
     pub fn getOutsideBorder(self: Outline) Stroker.Border {
-        return @enumFromInt(Stroker.Border, c.FT_Outline_GetOutsideBorder(self.handle));
+        return @as(Stroker.Border, @enumFromInt(c.FT_Outline_GetOutsideBorder(self.handle)));
     }
 
     pub fn Funcs(comptime Context: type) type {
@@ -217,7 +217,7 @@ pub const Outline = struct {
             callbacks: Funcs(Context),
 
             fn getSelf(ptr: ?*anyopaque) *Self {
-                return @ptrCast(*Self, @alignCast(@alignOf(Self), ptr));
+                return @as(*Self, @ptrCast(@alignCast(@alignOf(Self), ptr)));
             }
 
             pub fn move_to(to: [*c]const c.FT_Vector, ctx: ?*anyopaque) callconv(.C) c_int {

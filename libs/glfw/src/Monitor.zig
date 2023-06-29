@@ -35,7 +35,7 @@ pub inline fn getPos(self: Monitor) Pos {
     var xpos: c_int = 0;
     var ypos: c_int = 0;
     c.glfwGetMonitorPos(self.handle, &xpos, &ypos);
-    return Pos{ .x = @intCast(u32, xpos), .y = @intCast(u32, ypos) };
+    return Pos{ .x = @as(u32, @intCast(xpos)), .y = @as(u32, @intCast(ypos)) };
 }
 
 /// The monitor workarea, in screen coordinates.
@@ -66,7 +66,7 @@ pub inline fn getWorkarea(self: Monitor) Workarea {
     var width: c_int = 0;
     var height: c_int = 0;
     c.glfwGetMonitorWorkarea(self.handle, &xpos, &ypos, &width, &height);
-    return Workarea{ .x = @intCast(u32, xpos), .y = @intCast(u32, ypos), .width = @intCast(u32, width), .height = @intCast(u32, height) };
+    return Workarea{ .x = @as(u32, @intCast(xpos)), .y = @as(u32, @intCast(ypos)), .width = @as(u32, @intCast(width)), .height = @as(u32, @intCast(height)) };
 }
 
 /// The physical size, in millimetres, of the display area of a monitor.
@@ -91,7 +91,7 @@ pub inline fn getPhysicalSize(self: Monitor) PhysicalSize {
     var width_mm: c_int = 0;
     var height_mm: c_int = 0;
     c.glfwGetMonitorPhysicalSize(self.handle, &width_mm, &height_mm);
-    return PhysicalSize{ .width_mm = @intCast(u32, width_mm), .height_mm = @intCast(u32, height_mm) };
+    return PhysicalSize{ .width_mm = @as(u32, @intCast(width_mm)), .height_mm = @as(u32, @intCast(height_mm)) };
 }
 
 /// The content scale for a monitor.
@@ -123,7 +123,7 @@ pub inline fn getContentScale(self: Monitor) ContentScale {
     var x_scale: f32 = 0;
     var y_scale: f32 = 0;
     c.glfwGetMonitorContentScale(self.handle, &x_scale, &y_scale);
-    return ContentScale{ .x_scale = @floatCast(f32, x_scale), .y_scale = @floatCast(f32, y_scale) };
+    return ContentScale{ .x_scale = @as(f32, @floatCast(x_scale)), .y_scale = @as(f32, @floatCast(y_scale)) };
 }
 
 /// Returns the name of the specified monitor.
@@ -140,7 +140,7 @@ pub inline fn getContentScale(self: Monitor) ContentScale {
 /// see also: monitor_properties
 pub inline fn getName(self: Monitor) [*:0]const u8 {
     internal_debug.assertInitialized();
-    if (c.glfwGetMonitorName(self.handle)) |name| return @ptrCast([*:0]const u8, name);
+    if (c.glfwGetMonitorName(self.handle)) |name| return @as([*:0]const u8, @ptrCast(name));
     // `glfwGetMonitorName` returns `null` only for errors, but the only error is unreachable
     // (NotInitialized)
     unreachable;
@@ -176,7 +176,7 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
     internal_debug.assertInitialized();
     const ptr = c.glfwGetMonitorUserPointer(self.handle);
     if (ptr == null) return null;
-    return @ptrCast(*T, @alignCast(@alignOf(T), ptr.?));
+    return @as(*T, @ptrCast(@alignCast(@alignOf(T), ptr.?)));
 }
 
 /// Returns the available video modes for the specified monitor.
@@ -200,10 +200,10 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) mem.Allocat
     internal_debug.assertInitialized();
     var count: c_int = 0;
     if (c.glfwGetVideoModes(self.handle, &count)) |modes| {
-        const slice = try allocator.alloc(VideoMode, @intCast(u32, count));
+        const slice = try allocator.alloc(VideoMode, @as(u32, @intCast(count)));
         var i: u32 = 0;
         while (i < count) : (i += 1) {
-            slice[i] = VideoMode{ .handle = @ptrCast([*c]const c.GLFWvidmode, modes)[i] };
+            slice[i] = VideoMode{ .handle = @as([*c]const c.GLFWvidmode, @ptrCast(modes))[i] };
         }
         return slice;
     }
@@ -325,10 +325,10 @@ pub inline fn getAll(allocator: mem.Allocator) mem.Allocator.Error![]Monitor {
     internal_debug.assertInitialized();
     var count: c_int = 0;
     if (c.glfwGetMonitors(&count)) |monitors| {
-        const slice = try allocator.alloc(Monitor, @intCast(u32, count));
+        const slice = try allocator.alloc(Monitor, @as(u32, @intCast(count)));
         var i: u32 = 0;
         while (i < count) : (i += 1) {
-            slice[i] = Monitor{ .handle = @ptrCast([*c]const ?*c.GLFWmonitor, monitors)[i].? };
+            slice[i] = Monitor{ .handle = @as([*c]const ?*c.GLFWmonitor, @ptrCast(monitors))[i].? };
         }
         return slice;
     }
@@ -387,7 +387,7 @@ pub inline fn setCallback(comptime callback: ?fn (monitor: Monitor, event: Event
             pub fn monitorCallbackWrapper(monitor: ?*c.GLFWmonitor, event: c_int) callconv(.C) void {
                 @call(.always_inline, user_callback, .{
                     Monitor{ .handle = monitor.? },
-                    @enumFromInt(Event, event),
+                    @as(Event, @enumFromInt(event)),
                 });
             }
         };

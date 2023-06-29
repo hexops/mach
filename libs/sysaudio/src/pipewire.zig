@@ -208,7 +208,7 @@ pub const Context = struct {
             c.PW_KEY_AUDIO_RATE,
             audio_rate.ptr,
 
-            @ptrFromInt(*allowzero u0, 0),
+            @as(*allowzero u0, @ptrFromInt(0)),
         );
 
         var player = try self.allocator.create(Player);
@@ -236,7 +236,7 @@ pub const Context = struct {
         };
         var info = c.spa_audio_info_raw{
             .format = c.SPA_AUDIO_FORMAT_F32,
-            .channels = @intCast(u32, device.channels.len),
+            .channels = @as(u32, @intCast(device.channels.len)),
             .rate = options.sample_rate,
             .flags = 0,
             .position = undefined,
@@ -289,7 +289,7 @@ pub const Player = struct {
         _ = old_state;
         _ = err;
 
-        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), self_opaque.?));
+        var self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), self_opaque.?)));
 
         if (state == c.PW_STREAM_STATE_STREAMING or state == c.PW_STREAM_STATE_ERROR) {
             lib.pw_thread_loop_signal(self.thread, false);
@@ -297,7 +297,7 @@ pub const Player = struct {
     }
 
     pub fn processCb(self_opaque: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), self_opaque.?));
+        var self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), self_opaque.?)));
 
         const buf = lib.pw_stream_dequeue_buffer(self.stream) orelse unreachable;
         if (buf.*.buffer.*.datas[0].data == null) return;
@@ -313,10 +313,10 @@ pub const Player = struct {
         const stride = self.format.frameSize(self.channels.len);
         const n_frames = @min(buf.*.requested, buf.*.buffer.*.datas[0].maxsize / stride);
         buf.*.buffer.*.datas[0].chunk.*.stride = stride;
-        buf.*.buffer.*.datas[0].chunk.*.size = @intCast(u32, n_frames * stride);
+        buf.*.buffer.*.datas[0].chunk.*.size = @as(u32, @intCast(n_frames * stride));
 
         for (self.channels, 0..) |*ch, i| {
-            ch.ptr = @ptrCast([*]u8, buf.*.buffer.*.datas[0].data.?) + self.format.frameSize(i);
+            ch.ptr = @as([*]u8, @ptrCast(buf.*.buffer.*.datas[0].data.?)) + self.format.frameSize(i);
         }
         self.writeFn(self.user_data, n_frames);
     }

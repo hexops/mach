@@ -54,24 +54,24 @@ pub const Glyph = struct {
 
     pub fn toBitmapGlyph(self: *Glyph, render_mode: RenderMode, origin: ?Vector) Error!BitmapGlyph {
         try intToError(c.FT_Glyph_To_Bitmap(&self.handle, @intFromEnum(render_mode), if (origin) |o| &o else null, 1));
-        return BitmapGlyph{ .handle = @ptrCast(c.FT_BitmapGlyph, self.handle) };
+        return BitmapGlyph{ .handle = @as(c.FT_BitmapGlyph, @ptrCast(self.handle)) };
     }
 
     pub fn copyBitmapGlyph(self: *Glyph, render_mode: RenderMode, origin: ?Vector) Error!BitmapGlyph {
         try intToError(c.FT_Glyph_To_Bitmap(&self.handle, @intFromEnum(render_mode), if (origin) |o| &o else null, 0));
-        return BitmapGlyph{ .handle = @ptrCast(c.FT_BitmapGlyph, self.handle) };
+        return BitmapGlyph{ .handle = @as(c.FT_BitmapGlyph, @ptrCast(self.handle)) };
     }
 
     pub fn castBitmapGlyph(self: Glyph) Error!BitmapGlyph {
-        return BitmapGlyph{ .handle = @ptrCast(c.FT_BitmapGlyph, self.handle) };
+        return BitmapGlyph{ .handle = @as(c.FT_BitmapGlyph, @ptrCast(self.handle)) };
     }
 
     pub fn castOutlineGlyph(self: Glyph) Error!OutlineGlyph {
-        return OutlineGlyph{ .handle = @ptrCast(c.FT_OutlineGlyph, self.handle) };
+        return OutlineGlyph{ .handle = @as(c.FT_OutlineGlyph, @ptrCast(self.handle)) };
     }
 
     pub fn castSvgGlyph(self: Glyph) Error!SvgGlyph {
-        return SvgGlyph{ .handle = @ptrCast(c.FT_SvgGlyph, self.handle) };
+        return SvgGlyph{ .handle = @as(c.FT_SvgGlyph, @ptrCast(self.handle)) };
     }
 
     pub fn stroke(self: *Glyph, stroker: Stroker) Error!void {
@@ -83,7 +83,7 @@ pub const Glyph = struct {
     }
 
     pub fn format(self: Glyph) GlyphFormat {
-        return @enumFromInt(GlyphFormat, self.handle.*.format);
+        return @as(GlyphFormat, @enumFromInt(self.handle.*.format));
     }
 
     pub fn advanceX(self: Glyph) isize {
@@ -99,7 +99,7 @@ const SvgGlyph = struct {
     handle: c.FT_SvgGlyph,
 
     pub fn deinit(self: SvgGlyph) void {
-        c.FT_Done_Glyph(@ptrCast(c.FT_Glyph, self.handle));
+        c.FT_Done_Glyph(@as(c.FT_Glyph, @ptrCast(self.handle)));
     }
 
     pub fn svgBuffer(self: SvgGlyph) []const u8 {
@@ -143,7 +143,7 @@ pub const BitmapGlyph = struct {
     handle: c.FT_BitmapGlyph,
 
     pub fn deinit(self: BitmapGlyph) void {
-        c.FT_Done_Glyph(@ptrCast(c.FT_Glyph, self.handle));
+        c.FT_Done_Glyph(@as(c.FT_Glyph, @ptrCast(self.handle)));
     }
 
     pub fn left(self: BitmapGlyph) i32 {
@@ -163,7 +163,7 @@ pub const OutlineGlyph = struct {
     handle: c.FT_OutlineGlyph,
 
     pub fn deinit(self: OutlineGlyph) void {
-        c.FT_Done_Glyph(@ptrCast(c.FT_Glyph, self.handle));
+        c.FT_Done_Glyph(@as(c.FT_Glyph, @ptrCast(self.handle)));
     }
 
     pub fn outline(self: OutlineGlyph) Outline {

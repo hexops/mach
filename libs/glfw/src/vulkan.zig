@@ -84,7 +84,7 @@ pub inline fn vulkanSupported() bool {
 pub inline fn getRequiredInstanceExtensions() ?[][*:0]const u8 {
     internal_debug.assertInitialized();
     var count: u32 = 0;
-    if (c.glfwGetRequiredInstanceExtensions(&count)) |extensions| return @ptrCast([*][*:0]const u8, extensions)[0..count];
+    if (c.glfwGetRequiredInstanceExtensions(&count)) |extensions| return @as([*][*:0]const u8, @ptrCast(extensions))[0..count];
     return null;
 }
 
@@ -128,7 +128,7 @@ pub const VKProc = *const fn () callconv(.C) void;
 /// @thread_safety This function may be called from any thread.
 pub fn getInstanceProcAddress(vk_instance: ?*anyopaque, proc_name: [*:0]const u8) callconv(.C) ?VKProc {
     internal_debug.assertInitialized();
-    if (c.glfwGetInstanceProcAddress(if (vk_instance) |v| @ptrCast(c.VkInstance, v) else null, proc_name)) |proc_address| return proc_address;
+    if (c.glfwGetInstanceProcAddress(if (vk_instance) |v| @as(c.VkInstance, @ptrCast(v)) else null, proc_name)) |proc_address| return proc_address;
     return null;
 }
 
@@ -165,8 +165,8 @@ pub inline fn getPhysicalDevicePresentationSupport(
 ) bool {
     internal_debug.assertInitialized();
     return c.glfwGetPhysicalDevicePresentationSupport(
-        @ptrCast(c.VkInstance, vk_instance),
-        @ptrCast(c.VkPhysicalDevice, vk_physical_device),
+        @as(c.VkInstance, @ptrCast(vk_instance)),
+        @as(c.VkPhysicalDevice, @ptrCast(vk_physical_device)),
         queue_family,
     ) == c.GLFW_TRUE;
 }
@@ -231,15 +231,15 @@ pub inline fn createWindowSurface(vk_instance: anytype, window: Window, vk_alloc
     // zig-vulkan uses enums to represent opaque pointers:
     // pub const Instance = enum(usize) { null_handle = 0, _ };
     const instance: c.VkInstance = switch (@typeInfo(@TypeOf(vk_instance))) {
-        .Enum => @ptrFromInt(c.VkInstance, @intFromEnum(vk_instance)),
-        else => @ptrCast(c.VkInstance, vk_instance),
+        .Enum => @as(c.VkInstance, @ptrFromInt(@intFromEnum(vk_instance))),
+        else => @as(c.VkInstance, @ptrCast(vk_instance)),
     };
 
     return c.glfwCreateWindowSurface(
         instance,
         window.handle,
-        if (vk_allocation_callbacks == null) null else @ptrCast(*const c.VkAllocationCallbacks, @alignCast(@alignOf(c.VkAllocationCallbacks), vk_allocation_callbacks)),
-        @ptrCast(*c.VkSurfaceKHR, @alignCast(@alignOf(c.VkSurfaceKHR), vk_surface_khr)),
+        if (vk_allocation_callbacks == null) null else @as(*const c.VkAllocationCallbacks, @ptrCast(@alignCast(@alignOf(c.VkAllocationCallbacks), vk_allocation_callbacks))),
+        @as(*c.VkSurfaceKHR, @ptrCast(@alignCast(@alignOf(c.VkSurfaceKHR), vk_surface_khr))),
     );
 }
 

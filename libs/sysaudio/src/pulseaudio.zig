@@ -192,12 +192,12 @@ pub const Context = struct {
     }
 
     fn subscribeOp(_: ?*c.pa_context, _: c.pa_subscription_event_type_t, _: u32, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
+        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), user_data.?)));
         self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
     }
 
     fn contextStateOp(ctx: ?*c.pa_context, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
+        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), user_data.?)));
 
         self.ctx_state = lib.pa_context_get_state(ctx);
         lib.pa_threaded_mainloop_signal(self.main_loop, 0);
@@ -255,7 +255,7 @@ pub const Context = struct {
     }
 
     fn serverInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_server_info, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
+        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), user_data.?)));
 
         defer lib.pa_threaded_mainloop_signal(self.main_loop, 0);
         self.default_sink = self.allocator.dupeZ(u8, std.mem.span(info.*.default_sink_name)) catch return;
@@ -266,7 +266,7 @@ pub const Context = struct {
     }
 
     fn sinkInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_sink_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
+        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), user_data.?)));
         if (eol != 0) {
             lib.pa_threaded_mainloop_signal(self.main_loop, 0);
             return;
@@ -276,7 +276,7 @@ pub const Context = struct {
     }
 
     fn sourceInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_source_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Context, @alignCast(@alignOf(*Context), user_data.?));
+        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), user_data.?)));
         if (eol != 0) {
             lib.pa_threaded_mainloop_signal(self.main_loop, 0);
             return;
@@ -301,8 +301,8 @@ pub const Context = struct {
             },
             .formats = available_formats,
             .sample_rate = .{
-                .min = @intCast(u24, info.*.sample_spec.rate),
-                .max = @intCast(u24, info.*.sample_spec.rate),
+                .min = @as(u24, @intCast(info.*.sample_spec.rate)),
+                .max = @as(u24, @intCast(info.*.sample_spec.rate)),
             },
             .id = id,
             .name = name,
@@ -329,7 +329,7 @@ pub const Context = struct {
         const sample_spec = c.pa_sample_spec{
             .format = toPAFormat(format),
             .rate = sample_rate,
-            .channels = @intCast(u5, device.channels.len),
+            .channels = @as(u5, @intCast(device.channels.len)),
         };
 
         const channel_map = try toPAChannelMap(device.channels);
@@ -397,7 +397,7 @@ pub const Context = struct {
     };
 
     fn streamStateOp(stream: ?*c.pa_stream, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*StreamStatus, @alignCast(@alignOf(*StreamStatus), user_data.?));
+        var self = @as(*StreamStatus, @ptrCast(@alignCast(@alignOf(*StreamStatus), user_data.?)));
 
         switch (lib.pa_stream_get_state(stream)) {
             c.PA_STREAM_UNCONNECTED,
@@ -456,14 +456,14 @@ pub const Player = struct {
     }
 
     fn playbackStreamWriteOp(_: ?*c.pa_stream, nbytes: usize, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), user_data.?));
+        var self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), user_data.?)));
 
         var frames_left = nbytes;
         if (lib.pa_stream_begin_write(
             self.stream,
-            @ptrCast(
+            @as(
                 [*c]?*anyopaque,
-                @alignCast(@alignOf([*c]?*anyopaque), &self.write_ptr),
+                @ptrCast(@alignCast(@alignOf([*c]?*anyopaque), &self.write_ptr)),
             ),
             &frames_left,
         ) != 0) {
@@ -519,7 +519,7 @@ pub const Player = struct {
 
         var cvolume: c.pa_cvolume = undefined;
         _ = lib.pa_cvolume_init(&cvolume);
-        _ = lib.pa_cvolume_set(&cvolume, @intCast(c_uint, self.channels.len), lib.pa_sw_volume_from_linear(vol));
+        _ = lib.pa_cvolume_set(&cvolume, @as(c_uint, @intCast(self.channels.len)), lib.pa_sw_volume_from_linear(vol));
 
         performOperation(
             self.main_loop,
@@ -534,7 +534,7 @@ pub const Player = struct {
     }
 
     fn successOp(_: ?*c.pa_context, success: c_int, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), user_data.?));
+        var self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), user_data.?)));
         if (success == 1)
             lib.pa_threaded_mainloop_signal(self.main_loop, 0);
     }
@@ -557,14 +557,14 @@ pub const Player = struct {
     }
 
     fn sinkInputInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_sink_input_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @ptrCast(*Player, @alignCast(@alignOf(*Player), user_data.?));
+        var self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), user_data.?)));
 
         if (eol != 0) {
             lib.pa_threaded_mainloop_signal(self.main_loop, 0);
             return;
         }
 
-        self.vol = @floatFromInt(f32, info.*.volume.values[0]) / @floatFromInt(f32, c.PA_VOLUME_NORM);
+        self.vol = @as(f32, @floatFromInt(info.*.volume.values[0])) / @as(f32, @floatFromInt(c.PA_VOLUME_NORM));
     }
 };
 
@@ -638,7 +638,7 @@ pub fn toPAFormat(format: main.Format) c.pa_sample_format_t {
 
 pub fn toPAChannelMap(channels: []const main.Channel) !c.pa_channel_map {
     var channel_map: c.pa_channel_map = undefined;
-    channel_map.channels = @intCast(u5, channels.len);
+    channel_map.channels = @as(u5, @intCast(channels.len));
     for (channels, 0..) |ch, i|
         channel_map.map[i] = try toPAChannelPos(ch.id);
     return channel_map;

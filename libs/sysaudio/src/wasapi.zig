@@ -43,7 +43,7 @@ pub const Context = struct {
                     null,
                     win32.CLSCTX_ALL,
                     win32.IID_IMMDeviceEnumerator,
-                    @ptrCast(*?*anyopaque, &enumerator),
+                    @as(*?*anyopaque, @ptrCast(&enumerator)),
                 );
                 switch (hr) {
                     win32.S_OK => {},
@@ -99,7 +99,7 @@ pub const Context = struct {
 
     fn queryInterfaceCB(self: *const win32.IUnknown, riid: ?*const win32.Guid, ppv: ?*?*anyopaque) callconv(std.os.windows.WINAPI) win32.HRESULT {
         if (riid.?.eql(win32.IID_IUnknown.*) or riid.?.eql(win32.IID_IMMNotificationClient.*)) {
-            ppv.?.* = @ptrFromInt(?*anyopaque, @intFromPtr(self));
+            ppv.?.* = @as(?*anyopaque, @ptrFromInt(@intFromPtr(self)));
             _ = self.AddRef();
             return win32.S_OK;
         } else {
@@ -266,16 +266,16 @@ pub const Context = struct {
                 win32.S_OK, win32.INPLACE_S_TRUNCATED => {},
                 else => return error.OpeningDevice,
             }
-            var wf = @ptrCast(
+            var wf = @as(
                 *win32.WAVEFORMATEXTENSIBLE,
-                variant.anon.anon.anon.blob.pBlobData,
+                @ptrCast(variant.anon.anon.anon.blob.pBlobData),
             );
             defer win32.CoTaskMemFree(variant.anon.anon.anon.blob.pBlobData);
 
             var device = main.Device{
                 .mode = blk: {
                     var endpoint: ?*win32.IMMEndpoint = null;
-                    hr = imm_device.?.QueryInterface(win32.IID_IMMEndpoint, @ptrCast(?*?*anyopaque, &endpoint));
+                    hr = imm_device.?.QueryInterface(win32.IID_IMMEndpoint, @as(?*?*anyopaque, @ptrCast(&endpoint)));
                     switch (hr) {
                         win32.S_OK => {},
                         win32.E_POINTER => unreachable,
@@ -308,12 +308,12 @@ pub const Context = struct {
                     break :blk try chn_arr.toOwnedSlice();
                 },
                 .sample_rate = .{
-                    .min = @intCast(u24, wf.Format.nSamplesPerSec),
-                    .max = @intCast(u24, wf.Format.nSamplesPerSec),
+                    .min = @as(u24, @intCast(wf.Format.nSamplesPerSec)),
+                    .max = @as(u24, @intCast(wf.Format.nSamplesPerSec)),
                 },
                 .formats = blk: {
                     var audio_client: ?*win32.IAudioClient = null;
-                    hr = imm_device.?.Activate(win32.IID_IAudioClient, win32.CLSCTX_ALL, null, @ptrCast(?*?*anyopaque, &audio_client));
+                    hr = imm_device.?.Activate(win32.IID_IAudioClient, win32.CLSCTX_ALL, null, @as(?*?*anyopaque, @ptrCast(&audio_client)));
                     switch (hr) {
                         win32.S_OK => {},
                         win32.E_POINTER => unreachable,
@@ -330,7 +330,7 @@ pub const Context = struct {
                         setWaveFormatFormat(wf, format);
                         if (audio_client.?.IsFormatSupported(
                             .SHARED,
-                            @ptrCast(?*const win32.WAVEFORMATEX, @alignCast(@alignOf(*win32.WAVEFORMATEX), wf)),
+                            @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(@alignOf(*win32.WAVEFORMATEX), wf))),
                             &closest_match,
                         ) == win32.S_OK) {
                             try fmt_arr.append(format);
@@ -448,9 +448,9 @@ pub const Context = struct {
 
         var audio_client: ?*win32.IAudioClient = null;
         var audio_client3: ?*win32.IAudioClient3 = null;
-        hr = imm_device.?.Activate(win32.IID_IAudioClient3, win32.CLSCTX_ALL, null, @ptrCast(?*?*anyopaque, &audio_client3));
+        hr = imm_device.?.Activate(win32.IID_IAudioClient3, win32.CLSCTX_ALL, null, @as(?*?*anyopaque, @ptrCast(&audio_client3)));
         if (hr == win32.S_OK) {
-            hr = audio_client3.?.QueryInterface(win32.IID_IAudioClient, @ptrCast(?*?*anyopaque, &audio_client));
+            hr = audio_client3.?.QueryInterface(win32.IID_IAudioClient, @as(?*?*anyopaque, @ptrCast(&audio_client)));
             switch (hr) {
                 win32.S_OK => {},
                 win32.E_NOINTERFACE => unreachable,
@@ -458,7 +458,7 @@ pub const Context = struct {
                 else => return error.OpeningDevice,
             }
         } else {
-            hr = imm_device.?.Activate(win32.IID_IAudioClient, win32.CLSCTX_ALL, null, @ptrCast(?*?*anyopaque, &audio_client));
+            hr = imm_device.?.Activate(win32.IID_IAudioClient, win32.CLSCTX_ALL, null, @as(?*?*anyopaque, @ptrCast(&audio_client)));
             switch (hr) {
                 win32.S_OK => {},
                 win32.E_POINTER => unreachable,
@@ -476,7 +476,7 @@ pub const Context = struct {
         const wave_format = win32.WAVEFORMATEXTENSIBLE{
             .Format = .{
                 .wFormatTag = win32.WAVE_FORMAT_EXTENSIBLE,
-                .nChannels = @intCast(u16, device.channels.len),
+                .nChannels = @as(u16, @intCast(device.channels.len)),
                 .nSamplesPerSec = sample_rate,
                 .nAvgBytesPerSec = sample_rate * format.frameSize(device.channels.len),
                 .nBlockAlign = format.frameSize(device.channels.len),
@@ -494,7 +494,7 @@ pub const Context = struct {
             hr = audio_client3.?.InitializeSharedAudioStream(
                 win32.AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
                 0, // TODO: use the advantage of AudioClient3
-                @ptrCast(?*const win32.WAVEFORMATEX, @alignCast(@alignOf(*win32.WAVEFORMATEX), &wave_format)),
+                @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(@alignOf(*win32.WAVEFORMATEX), &wave_format))),
                 null,
             );
             switch (hr) {
@@ -521,7 +521,7 @@ pub const Context = struct {
                 win32.AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
                 0,
                 0,
-                @ptrCast(?*const win32.WAVEFORMATEX, @alignCast(@alignOf(*win32.WAVEFORMATEX), &wave_format)),
+                @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(@alignOf(*win32.WAVEFORMATEX), &wave_format))),
                 null,
             );
             switch (hr) {
@@ -547,7 +547,7 @@ pub const Context = struct {
         }
 
         var render_client: ?*win32.IAudioRenderClient = null;
-        hr = audio_client.?.GetService(win32.IID_IAudioRenderClient, @ptrCast(?*?*anyopaque, &render_client));
+        hr = audio_client.?.GetService(win32.IID_IAudioRenderClient, @as(?*?*anyopaque, @ptrCast(&render_client)));
         switch (hr) {
             win32.S_OK => {},
             win32.E_POINTER => unreachable,
@@ -560,7 +560,7 @@ pub const Context = struct {
         }
 
         var simple_volume: ?*win32.ISimpleAudioVolume = null;
-        hr = audio_client.?.GetService(win32.IID_ISimpleAudioVolume, @ptrCast(?*?*anyopaque, &simple_volume));
+        hr = audio_client.?.GetService(win32.IID_ISimpleAudioVolume, @as(?*?*anyopaque, @ptrCast(&simple_volume)));
         switch (hr) {
             win32.S_OK => {},
             win32.E_POINTER => unreachable,
@@ -728,7 +728,7 @@ pub const Player = struct {
             const frames = buf_frames - padding_frames;
             if (frames > 0) {
                 var data: [*]u8 = undefined;
-                hr = self.render_client.?.GetBuffer(frames, @ptrCast(?*?*u8, &data));
+                hr = self.render_client.?.GetBuffer(frames, @as(?*?*u8, @ptrCast(&data)));
                 switch (hr) {
                     win32.S_OK => {},
                     win32.E_POINTER => unreachable,

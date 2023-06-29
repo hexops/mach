@@ -37,7 +37,7 @@ pub const Context = struct {
             } else {
                 inline for (std.meta.fields(Backend), 0..) |b, i| {
                     if (@typeInfo(
-                        std.meta.fieldInfo(backends.BackendContext, @enumFromInt(Backend, b.value)).type,
+                        std.meta.fieldInfo(backends.BackendContext, @as(Backend, @enumFromInt(b.value))).type,
                     ).Pointer.child.init(allocator, options)) |d| {
                         break :blk d;
                     } else |err| {
@@ -275,37 +275,37 @@ pub const Player = struct {
 fn unsignedToSigned(comptime T: type, sample: anytype) T {
     const half = 1 << (@bitSizeOf(@TypeOf(sample)) - 1);
     const trunc = @bitSizeOf(T) - @bitSizeOf(@TypeOf(sample));
-    return @intCast(T, sample -% half) << trunc;
+    return @as(T, @intCast(sample -% half)) << trunc;
 }
 
 fn unsignedToFloat(comptime T: type, sample: anytype) T {
     const max_int = std.math.maxInt(@TypeOf(sample)) + 1.0;
-    return (@floatFromInt(T, sample) - max_int) * 1.0 / max_int;
+    return (@as(T, @floatFromInt(sample)) - max_int) * 1.0 / max_int;
 }
 
 fn signedToSigned(comptime T: type, sample: anytype) T {
     const trunc = @bitSizeOf(@TypeOf(sample)) - @bitSizeOf(T);
-    return @intCast(T, sample >> trunc);
+    return @as(T, @intCast(sample >> trunc));
 }
 
 fn signedToUnsigned(comptime T: type, sample: anytype) T {
     const half = 1 << (@bitSizeOf(T) - 1);
     const trunc = @bitSizeOf(@TypeOf(sample)) - @bitSizeOf(T);
-    return @intCast(T, (sample >> trunc) + half);
+    return @as(T, @intCast((sample >> trunc) + half));
 }
 
 fn signedToFloat(comptime T: type, sample: anytype) T {
     const max_int = std.math.maxInt(@TypeOf(sample)) + 1.0;
-    return @floatFromInt(T, sample) * 1.0 / max_int;
+    return @as(T, @floatFromInt(sample)) * 1.0 / max_int;
 }
 
 fn floatToSigned(comptime T: type, sample: f64) T {
-    return @intFromFloat(T, sample * std.math.maxInt(T));
+    return @as(T, @intFromFloat(sample * std.math.maxInt(T)));
 }
 
 fn floatToUnsigned(comptime T: type, sample: f64) T {
     const half = 1 << @bitSizeOf(T) - 1;
-    return @intFromFloat(T, sample * (half - 1) + half);
+    return @as(T, @intFromFloat(sample * (half - 1) + half));
 }
 
 pub const Device = struct {
@@ -404,7 +404,7 @@ pub const Format = enum {
     }
 
     pub fn frameSize(self: Format, ch_count: usize) u8 {
-        return self.size() * @intCast(u5, ch_count);
+        return self.size() * @as(u5, @intCast(ch_count));
     }
 };
 

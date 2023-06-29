@@ -98,8 +98,8 @@ pub const CommandEncoder = opaque {
             command_encoder,
             buffer,
             buffer_offset_bytes,
-            @ptrCast([*]const u8, std.mem.sliceAsBytes(data_slice).ptr),
-            @intCast(u64, data_slice.len) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
+            @as([*]const u8, @ptrCast(std.mem.sliceAsBytes(data_slice).ptr)),
+            @as(u64, @intCast(data_slice.len)) * @sizeOf(std.meta.Elem(@TypeOf(data_slice))),
         );
     }
 

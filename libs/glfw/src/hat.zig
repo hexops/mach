@@ -26,12 +26,12 @@ pub const Hat = packed struct(u8) {
 
     pub inline fn toInt(self: Hat, comptime IntType: type) IntType {
         verifyIntType(IntType);
-        return @intCast(IntType, @bitCast(u8, self));
+        return @as(IntType, @intCast(@as(u8, @bitCast(self))));
     }
 
     pub inline fn fromInt(flags: anytype) Hat {
         verifyIntType(@TypeOf(flags));
-        return @bitCast(Hat, @intCast(u8, flags));
+        return @as(Hat, @bitCast(@as(u8, @intCast(flags))));
     }
 };
 
