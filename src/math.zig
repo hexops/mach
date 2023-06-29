@@ -131,6 +131,23 @@ pub const vec = struct {
     pub inline fn lerp(a: anytype, b: @TypeOf(a), amount: f32) @TypeOf(a) {
         return (a * splat(@TypeOf(a), 1.0 - amount)) + (b * splat(@TypeOf(a), amount));
     }
+
+    pub inline fn cross(a: Vec3, b: Vec3) Vec3 {
+        // I am using build in operators * and - of @Vector that work with SIMD if possible
+        // So I will first compute vector {y1*z2, z1*x2, x1*y2}
+        // And then compute vector {z1*y2, x1*z2, y1*x2} and then subtract them
+        // Equation is taken from: https://gamemath.com/book/vectors.html#cross_product
+
+        const v1 = Vec3{ a[1], a[2], a[0] };
+        const v2 = Vec3{ b[2], b[0], b[1] };
+        const sub1 = v1 * v2;
+
+        const _v1 = Vec3{ a[2], a[0], a[1] };
+        const _v2 = Vec3{ b[1], b[2], b[0] };
+        const sub2 = _v1 * _v2;
+
+        return sub1 - sub2;
+    }
 };
 
 test "vec.size" {
@@ -382,6 +399,41 @@ test "vec.lerp" {
         try expectEqual(lerp_to_mid[1], 0.5);
         try expectEqual(lerp_to_mid[2], 0.5);
         try expectEqual(lerp_to_mid[3], 0.5);
+    }
+}
+
+test "vec.cross" {
+    {
+        const a = Vec3{ 1, 3, 4 };
+        const b = Vec3{ 2, -5, 8 };
+        const cross = vec.cross(a, b);
+        try expectEqual(cross[0], 44);
+        try expectEqual(cross[1], 0);
+        try expectEqual(cross[2], -11);
+    }
+    {
+        const a = Vec3{ 1.0, 0.0, 0.0 };
+        const b = Vec3{ 0.0, 1.0, 0.0 };
+        const cross = vec.cross(a, b);
+        try expectEqual(cross[0], 0.0);
+        try expectEqual(cross[1], 0.0);
+        try expectEqual(cross[2], 1.0);
+    }
+    {
+        const a = Vec3{ 1.0, 0.0, 0.0 };
+        const b = Vec3{ 0.0, -1.0, 0.0 };
+        const cross = vec.cross(a, b);
+        try expectEqual(cross[0], 0.0);
+        try expectEqual(cross[1], 0.0);
+        try expectEqual(cross[2], -1.0);
+    }
+    {
+        const a = Vec3{ -3.0, 0.0, -2.0 };
+        const b = Vec3{ 5.0, -1.0, 2.0 };
+        const cross = vec.cross(a, b);
+        try expectEqual(cross[0], -2.0);
+        try expectEqual(cross[1], -4.0);
+        try expectEqual(cross[2], 3.0);
     }
 }
 
