@@ -120,7 +120,11 @@ pub const Device = opaque {
                     status,
                     compute_pipeline,
                     message,
+<<<<<<< Updated upstream
                     if (Context == void) {} else @as(Context, @ptrCast(@alignCast(@alignOf(Context), userdata))),
+=======
+                    if (Context == void) {} else @as(Context, @ptrCast(@alignCast(userdata))),
+>>>>>>> Stashed changes
                 );
             }
         };
@@ -179,7 +183,7 @@ pub const Device = opaque {
                 userdata: ?*anyopaque,
             ) callconv(.C) void {
                 callback(
-                    if (Context == void) {} else @as(Context, @ptrCast(@alignCast(@alignOf(Context), userdata))),
+                    if (Context == void) {} else @as(Context, @ptrCast(@alignCast(userdata))),
                     status,
                     pipeline,
                     message,
