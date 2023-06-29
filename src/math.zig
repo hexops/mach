@@ -150,6 +150,14 @@ pub const vec = struct {
 
         return sub1 - sub2;
     }
+
+    /// Calculates the dot product between vector a and b and returns scalar.
+    pub inline fn dot(a: anytype, b: @TypeOf(a)) f32 {
+        switch (@TypeOf(a)) {
+            Vec2, Vec3, Vec4 => return @reduce(.Add, a * b),
+            else => @compileError("Expected vector, found '" ++ @typeName(@TypeOf(a)) ++ "'"),
+        }
+    }
 };
 
 test "vec.size" {
@@ -436,6 +444,34 @@ test "vec.cross" {
         try expectEqual(cross[0], -2.0);
         try expectEqual(cross[1], -4.0);
         try expectEqual(cross[2], 3.0);
+    }
+}
+
+test "vec.dot" {
+    {
+        const a = Vec2{ -1, 2 };
+        const b = Vec2{ 4, 5 };
+        const dot = vec.dot(a, b);
+        try expectEqual(dot, 6);
+    }
+    {
+        const a = Vec3{ -1.0, 2.0, 3.0 };
+        const b = Vec3{ 4.0, 5.0, 6.0 };
+        const dot = vec.dot(a, b);
+        try expectEqual(dot, 24.0);
+    }
+    {
+        const a = Vec4{ -1.0, 2.0, 3.0, -2.0 };
+        const b = Vec4{ 4.0, 5.0, 6.0, 2.0 };
+        const dot = vec.dot(a, b);
+        try expectEqual(dot, 20.0);
+    }
+
+    {
+        const a = Vec4{ 0, 0, 0, 0 };
+        const b = Vec4{ 0, 0, 0, 0 };
+        const dot = vec.dot(a, b);
+        try expectEqual(dot, 0.0);
     }
 }
 
