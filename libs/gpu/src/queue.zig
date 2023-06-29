@@ -45,7 +45,7 @@ pub const Queue = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn cCallback(status: WorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void {
-                callback(if (Context == void) {} else @as(Context, @ptrCast(@alignCast(@alignOf(std.meta.Child(Context)), userdata))), status);
+                callback(if (Context == void) {} else @as(Context, @ptrCast(@alignCast(userdata))), status);
             }
         };
         Impl.queueOnSubmittedWorkDone(queue, signal_value, Helper.cCallback, if (Context == void) null else context);
