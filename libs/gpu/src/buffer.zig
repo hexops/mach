@@ -102,7 +102,7 @@ pub const Buffer = opaque {
             offset_bytes,
             size + size % 4,
         );
-        return if (data) |d| @as([*]const T, @ptrCast(@alignCast(@alignOf(T), d)))[0..len] else null;
+        return if (data) |d| @as([*]const T, @ptrCast(@alignCast(d)))[0..len] else null;
     }
 
     /// Default `offset_bytes`: 0
@@ -119,7 +119,7 @@ pub const Buffer = opaque {
             offset_bytes,
             size + size % 4,
         );
-        return if (data) |d| @as([*]T, @ptrCast(@alignCast(@alignOf(T), d)))[0..len] else null;
+        return if (data) |d| @as([*]T, @ptrCast(@alignCast(d)))[0..len] else null;
     }
 
     pub inline fn getSize(buffer: *Buffer) u64 {
@@ -141,7 +141,7 @@ pub const Buffer = opaque {
         const Context = @TypeOf(context);
         const Helper = struct {
             pub fn cCallback(status: MapAsyncStatus, userdata: ?*anyopaque) callconv(.C) void {
-                callback(if (Context == void) {} else @as(Context, @ptrCast(@alignCast(@alignOf(std.meta.Child(Context)), userdata))), status);
+                callback(if (Context == void) {} else @as(Context, @ptrCast(@alignCast(userdata))), status);
             }
         };
         Impl.bufferMapAsync(buffer, mode, offset, size, Helper.cCallback, if (Context == void) null else context);
