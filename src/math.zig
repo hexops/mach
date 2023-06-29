@@ -132,6 +132,8 @@ pub const vec = struct {
         return (a * splat(@TypeOf(a), 1.0 - amount)) + (b * splat(@TypeOf(a), amount));
     }
 
+    /// Calculates the cross product between vector a and b. This can be done only in 3D
+    /// and required inputs are Vec3.
     pub inline fn cross(a: Vec3, b: Vec3) Vec3 {
         // I am using build in operators * and - of @Vector that work with SIMD if possible
         // So I will first compute vector {y1*z2, z1*x2, x1*y2}
