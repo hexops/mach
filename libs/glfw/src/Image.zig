@@ -48,8 +48,8 @@ pub inline fn init(allocator: mem.Allocator, width: u32, height: u32, pixel_data
 /// The returned memory is valid for as long as the GLFW C memory is valid.
 pub inline fn fromC(native: c.GLFWimage, pixel_data_len: usize) Image {
     return Image{
-        .width = @intCast(u32, native.width),
-        .height = @intCast(u32, native.height),
+        .width = @intCast(native.width),
+        .height = @intCast(native.height),
         .pixels = native.pixels[0..pixel_data_len],
         .owned = false,
     };
@@ -60,8 +60,8 @@ pub inline fn fromC(native: c.GLFWimage, pixel_data_len: usize) Image {
 /// The returned memory is valid for as long as the Zig memory is valid.
 pub inline fn toC(self: Image) c.GLFWimage {
     return c.GLFWimage{
-        .width = @intCast(c_int, self.width),
-        .height = @intCast(c_int, self.height),
+        .width = @intCast(self.width),
+        .height = @intCast(self.height),
         .pixels = &self.pixels[0],
     };
 }
