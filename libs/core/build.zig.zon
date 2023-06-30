@@ -7,8 +7,8 @@
             .hash = "12208b30f1d9c229d1e64483354610207c9aa06350a46558560b818d597800ed86e0",
         },
         .mach_gamemode = .{
-            .url = "https://github.com/hexops/mach-gamemode/archive/f45da1bc6eabe6a241c685ff749d96f51481e499.tar.gz",
-            .hash = "12207b569b733c63cb3eca478347d3ae45674f2f2b084dd144f67c82662e46b86024",
+            .url = "https://github.com/hexops/mach-gamemode/archive/6e71d19d7eecbf0230e5c445dbe9281e45393245.tar.gz",
+            .hash = "1220ff812193615e03375a342a7c8a52f368eab219bceab3039de1915f9c945f2a66",
         },
     },
 }
