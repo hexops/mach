@@ -289,7 +289,7 @@ pub const Player = struct {
         _ = old_state;
         _ = err;
 
-        var self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), self_opaque.?)));
+        var self = @as(*Player, @ptrCast(@alignCast(self_opaque.?)));
 
         if (state == c.PW_STREAM_STATE_STREAMING or state == c.PW_STREAM_STATE_ERROR) {
             lib.pw_thread_loop_signal(self.thread, false);
@@ -297,7 +297,7 @@ pub const Player = struct {
     }
 
     pub fn processCb(self_opaque: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), self_opaque.?)));
+        var self = @as(*Player, @ptrCast(@alignCast(self_opaque.?)));
 
         const buf = lib.pw_stream_dequeue_buffer(self.stream) orelse unreachable;
         if (buf.*.buffer.*.datas[0].data == null) return;

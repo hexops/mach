@@ -192,12 +192,12 @@ pub const Context = struct {
     }
 
     fn subscribeOp(_: ?*c.pa_context, _: c.pa_subscription_event_type_t, _: u32, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), user_data.?)));
+        var self = @as(*Context, @ptrCast(@alignCast(user_data.?)));
         self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
     }
 
     fn contextStateOp(ctx: ?*c.pa_context, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), user_data.?)));
+        var self = @as(*Context, @ptrCast(@alignCast(user_data.?)));
 
         self.ctx_state = lib.pa_context_get_state(ctx);
         lib.pa_threaded_mainloop_signal(self.main_loop, 0);
@@ -255,7 +255,7 @@ pub const Context = struct {
     }
 
     fn serverInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_server_info, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), user_data.?)));
+        var self = @as(*Context, @ptrCast(@alignCast(user_data.?)));
 
         defer lib.pa_threaded_mainloop_signal(self.main_loop, 0);
         self.default_sink = self.allocator.dupeZ(u8, std.mem.span(info.*.default_sink_name)) catch return;
@@ -266,7 +266,7 @@ pub const Context = struct {
     }
 
     fn sinkInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_sink_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), user_data.?)));
+        var self = @as(*Context, @ptrCast(@alignCast(user_data.?)));
         if (eol != 0) {
             lib.pa_threaded_mainloop_signal(self.main_loop, 0);
             return;
@@ -276,7 +276,7 @@ pub const Context = struct {
     }
 
     fn sourceInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_source_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), user_data.?)));
+        var self = @as(*Context, @ptrCast(@alignCast(user_data.?)));
         if (eol != 0) {
             lib.pa_threaded_mainloop_signal(self.main_loop, 0);
             return;
@@ -397,7 +397,7 @@ pub const Context = struct {
     };
 
     fn streamStateOp(stream: ?*c.pa_stream, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @as(*StreamStatus, @ptrCast(@alignCast(@alignOf(*StreamStatus), user_data.?)));
+        var self = @as(*StreamStatus, @ptrCast(@alignCast(user_data.?)));
 
         switch (lib.pa_stream_get_state(stream)) {
             c.PA_STREAM_UNCONNECTED,
@@ -456,14 +456,14 @@ pub const Player = struct {
     }
 
     fn playbackStreamWriteOp(_: ?*c.pa_stream, nbytes: usize, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), user_data.?)));
+        var self = @as(*Player, @ptrCast(@alignCast(user_data.?)));
 
         var frames_left = nbytes;
         if (lib.pa_stream_begin_write(
             self.stream,
             @as(
                 [*c]?*anyopaque,
-                @ptrCast(@alignCast(@alignOf([*c]?*anyopaque), &self.write_ptr)),
+                @ptrCast(@alignCast(&self.write_ptr)),
             ),
             &frames_left,
         ) != 0) {
@@ -534,7 +534,7 @@ pub const Player = struct {
     }
 
     fn successOp(_: ?*c.pa_context, success: c_int, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), user_data.?)));
+        var self = @as(*Player, @ptrCast(@alignCast(user_data.?)));
         if (success == 1)
             lib.pa_threaded_mainloop_signal(self.main_loop, 0);
     }
@@ -557,7 +557,7 @@ pub const Player = struct {
     }
 
     fn sinkInputInfoOp(_: ?*c.pa_context, info: [*c]const c.pa_sink_input_info, eol: c_int, user_data: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), user_data.?)));
+        var self = @as(*Player, @ptrCast(@alignCast(user_data.?)));
 
         if (eol != 0) {
             lib.pa_threaded_mainloop_signal(self.main_loop, 0);

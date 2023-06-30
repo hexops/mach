@@ -174,18 +174,18 @@ pub const Context = struct {
     }
 
     fn sampleRateCallback(_: c.jack_nframes_t, arg: ?*anyopaque) callconv(.C) c_int {
-        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), arg.?)));
+        var self = @as(*Context, @ptrCast(@alignCast(arg.?)));
         self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
         return 0;
     }
 
     fn portRegistrationCallback(_: c.jack_port_id_t, _: c_int, arg: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), arg.?)));
+        var self = @as(*Context, @ptrCast(@alignCast(arg.?)));
         self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
     }
 
     fn portRenameCalllback(_: c.jack_port_id_t, _: [*c]const u8, _: [*c]const u8, arg: ?*anyopaque) callconv(.C) void {
-        var self = @as(*Context, @ptrCast(@alignCast(@alignOf(*Context), arg.?)));
+        var self = @as(*Context, @ptrCast(@alignCast(arg.?)));
         self.watcher.?.deviceChangeFn(self.watcher.?.user_data);
     }
 
@@ -266,7 +266,7 @@ pub const Player = struct {
     }
 
     fn processCallback(n_frames: c.jack_nframes_t, self_opaque: ?*anyopaque) callconv(.C) c_int {
-        const self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), self_opaque.?)));
+        const self = @as(*Player, @ptrCast(@alignCast(self_opaque.?)));
 
         for (self.channels, 0..) |*ch, i| {
             ch.*.ptr = @as([*]u8, @ptrCast(lib.jack_port_get_buffer(self.ports[i], n_frames)));

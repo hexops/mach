@@ -334,7 +334,7 @@ pub const Player = struct {
         _ = bus_number;
         _ = frames_left;
 
-        const self = @as(*Player, @ptrCast(@alignCast(@alignOf(*Player), self_opaque.?)));
+        const self = @as(*Player, @ptrCast(@alignCast(self_opaque.?)));
 
         for (self.channels, 0..) |*ch, i| {
             ch.ptr = @as([*]u8, @ptrCast(buf.*.mBuffers[0].mData.?)) + self.format.frameSize(i);

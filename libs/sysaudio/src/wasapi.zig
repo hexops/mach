@@ -330,7 +330,7 @@ pub const Context = struct {
                         setWaveFormatFormat(wf, format);
                         if (audio_client.?.IsFormatSupported(
                             .SHARED,
-                            @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(@alignOf(*win32.WAVEFORMATEX), wf))),
+                            @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(wf))),
                             &closest_match,
                         ) == win32.S_OK) {
                             try fmt_arr.append(format);
@@ -494,7 +494,7 @@ pub const Context = struct {
             hr = audio_client3.?.InitializeSharedAudioStream(
                 win32.AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
                 0, // TODO: use the advantage of AudioClient3
-                @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(@alignOf(*win32.WAVEFORMATEX), &wave_format))),
+                @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(&wave_format))),
                 null,
             );
             switch (hr) {
@@ -521,7 +521,7 @@ pub const Context = struct {
                 win32.AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
                 0,
                 0,
-                @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(@alignOf(*win32.WAVEFORMATEX), &wave_format))),
+                @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(&wave_format))),
                 null,
             );
             switch (hr) {
