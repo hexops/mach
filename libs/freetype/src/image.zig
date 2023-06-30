@@ -217,7 +217,7 @@ pub const Outline = struct {
             callbacks: Funcs(Context),
 
             fn getSelf(ptr: ?*anyopaque) *Self {
-                return @as(*Self, @ptrCast(@alignCast(@alignOf(Self), ptr)));
+                return @as(*Self, @ptrCast(@alignCast(ptr)));
             }
 
             pub fn move_to(to: [*c]const c.FT_Vector, ctx: ?*anyopaque) callconv(.C) c_int {
