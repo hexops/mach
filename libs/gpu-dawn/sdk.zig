@@ -62,6 +62,9 @@ pub fn Sdk(comptime deps: anytype) type {
         pub fn link(b: *Build, step: *std.build.CompileStep, options: Options) !void {
             const opt = options.detectDefaults(step.target_info.target);
 
+            // TODO(build-system): pass system SDK options through
+            deps.system_sdk.include(b, step, .{});
+
             try if (options.from_source)
                 linkFromSource(b, step, opt)
             else
@@ -268,7 +271,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 b.allocator.free(include_dir);
             }
 
-            deps.system_sdk.include(b, step, .{});
             step.addLibraryPath(target_cache_dir);
             step.linkSystemLibraryName("dawn");
             step.linkLibCpp();
@@ -739,6 +741,9 @@ pub fn Sdk(comptime deps: anytype) type {
             // then this macro will not be defined even if `defineCMacro` was also called!
             lib.defineCMacro("__kernel_ptr_semantics", "");
 
+            lib.defineCMacro("_HRESULT_DEFINED", "");
+            lib.defineCMacro("HRESULT", "long");
+
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try appendDawnEnableBackendTypeFlags(&flags, options);
             try flags.appendSlice(&.{
@@ -759,6 +764,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 "-DTINT_BUILD_MSL_WRITER=1",
                 "-DTINT_BUILD_HLSL_WRITER=1",
                 "-DTINT_BUILD_GLSL_WRITER=1",
+                "-DDAWN_NO_WINDOWS_UI",
 
                 include("libs/dawn/"),
                 include("libs/dawn/include/tint"),
@@ -814,6 +820,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
                 try appendLangScannedSources(b, lib, .{
                     .rel_dirs = &.{
+                        "libs/dawn/src/dawn/native/d3d/",
                         "libs/dawn/src/dawn/native/d3d12/",
                     },
                     .flags = flags.items,
