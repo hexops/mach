@@ -81,9 +81,15 @@ pub const RenderPassTimestampWrite = extern struct {
 };
 
 pub const RequestAdapterOptions = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
+    pub const NextInChain = extern union {
+        generic: ?*const ChainedStruct,
+        dawn_toggles_descriptor: *const dawn.TogglesDescriptor,
+    };
+
+    next_in_chain: NextInChain = .{ .generic = null },
     compatible_surface: ?*Surface = null,
     power_preference: PowerPreference = .undefined,
+    backend_type: BackendType = .undefined,
     force_fallback_adapter: bool = false,
     compatibility_mode: bool = false,
 };
@@ -149,6 +155,7 @@ pub const RenderPassDescriptor = extern struct {
 pub const AlphaMode = enum(u32) { premultiplied = 0x00000000, unpremultiplied = 0x00000001, opaq = 0x00000002 };
 
 pub const BackendType = enum(u32) {
+    undefined,
     null,
     webgpu,
     d3d11,
@@ -160,6 +167,7 @@ pub const BackendType = enum(u32) {
 
     pub fn name(t: BackendType) []const u8 {
         return switch (t) {
+            .undef => "Undefined",
             .null => "Null",
             .webgpu => "WebGPU",
             .d3d11 => "D3D11",
@@ -279,6 +287,7 @@ pub const FeatureName = enum(u32) {
     implicit_device_synchronization = 0x000003EF,
     surface_capabilities = 0x000003F0,
     transient_attachments = 0x000003F1,
+    msaa_render_to_single_sampled = 0x000003F2,
 };
 
 pub const FilterMode = enum(u32) {
@@ -391,6 +400,10 @@ pub const SType = enum(u32) {
     dawn_buffer_descriptor_error_info_from_wire_client = 0x000003EF,
     dawn_toggles_descriptor = 0x000003F0,
     dawn_shader_module_spirv_options_descriptor = 0x000003F1,
+    request_adapter_options_luid = 0x000003F2,
+    request_adapter_options_get_gl_proc = 0x000003F3,
+    dawn_multisample_state_render_to_single_sampled = 0x000003F4,
+    dawn_render_pass_color_attachment_render_to_single_sampled = 0x000003F5,
 };
 
 pub const StencilOperation = enum(u32) {
@@ -565,6 +578,7 @@ pub const Limits = extern struct {
     max_texture_dimension_3d: u32 = limit_u32_undef,
     max_texture_array_layers: u32 = limit_u32_undef,
     max_bind_groups: u32 = limit_u32_undef,
+    max_bind_groups_plus_vertex_buffers: u32 = limit_u32_undef,
     max_bindings_per_bind_group: u32 = limit_u32_undef,
     max_dynamic_uniform_buffers_per_pipeline_layout: u32 = limit_u32_undef,
     max_dynamic_storage_buffers_per_pipeline_layout: u32 = limit_u32_undef,
@@ -636,7 +650,12 @@ pub const CopyTextureForBrowserOptions = extern struct {
 };
 
 pub const MultisampleState = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
+    pub const NextInChain = extern union {
+        generic: ?*const ChainedStruct,
+        dawn_multisample_state_render_to_single_sampled: *const dawn.MultisampleStateRenderToSingleSampled,
+    };
+
+    next_in_chain: NextInChain = .{ .generic = null },
     count: u32 = 1,
     mask: u32 = 0xFFFFFFFF,
     alpha_to_coverage_enabled: bool = false,
@@ -764,6 +783,12 @@ pub const ProgrammableStageDescriptor = extern struct {
 };
 
 pub const RenderPassColorAttachment = extern struct {
+    pub const NextInChain = extern union {
+        generic: ?*const ChainedStruct,
+        dawn_render_pass_color_attachment_render_to_single_sampled: *const dawn.RenderPassColorAttachmentRenderToSingleSampled,
+    };
+
+    next_in_chain: NextInChain = .{ .generic = null },
     view: ?*TextureView = null,
     resolve_target: ?*TextureView = null,
     load_op: LoadOp,

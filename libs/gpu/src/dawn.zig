@@ -14,6 +14,16 @@ pub const EncoderInternalUsageDescriptor = extern struct {
     use_internal_usages: bool = false,
 };
 
+pub const MultisampleStateRenderToSingleSampled = extern struct {
+    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_multisample_state_render_to_single_sampled },
+    enabled: bool = false,
+};
+
+pub const RenderPassColorAttachmentRenderToSingleSampled = extern struct {
+    chain: ChainedStruct = .{ .next = null, .s_type = .dawn_render_pass_color_attachment_render_to_single_sampled },
+    implicit_sample_count: u32 = 1,
+};
+
 pub const TextureInternalUsageDescriptor = extern struct {
     chain: ChainedStruct = .{ .next = null, .s_type = .dawn_texture_internal_usage_descriptor },
     internal_usage: Texture.UsageFlags = Texture.UsageFlags.none,
