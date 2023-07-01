@@ -69,7 +69,7 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn linkFromSource(b: *Build, step: *std.build.CompileStep, options: Options) !void {
-            try ensureGitRepoCloned(b.allocator, "https://github.com/hexops/dawn", "generated-2023-06-18.1687119009", sdkPath("/libs/dawn"));
+            try ensureGitRepoCloned(b.allocator, "https://github.com/hexops/dawn", "generated-2023-06-30.1688174725", sdkPath("/libs/dawn"));
 
             // branch: mach
             try ensureGitRepoCloned(b.allocator, "https://github.com/hexops/DirectXShaderCompiler", "cff9a6f0b7f961748b822e1d313a7205dfdecf9d", sdkPath("/libs/DirectXShaderCompiler"));
