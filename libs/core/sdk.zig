@@ -209,7 +209,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 if (app.res_dirs) |res_dirs| {
                     for (res_dirs) |res| {
                         const install_res = app.b.addInstallDirectory(.{
-                            .source_dir = res,
+                            .source_dir = .{ .path = res },
                             .install_dir = app.getInstallStep().?.dest_dir,
                             .install_subdir = std.fs.path.basename(res),
                             .exclude_extensions = &.{},

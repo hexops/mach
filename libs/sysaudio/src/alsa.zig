@@ -273,7 +273,7 @@ pub const Context = struct {
                     var i: usize = 0;
                     var evt: *inotify_event = undefined;
                     while (i < buf.len) : (i += @sizeOf(inotify_event) + evt.len) {
-                        evt = @as(*inotify_event, @ptrCast(@alignCast(4, buf[i..])));
+                        evt = @as(*inotify_event, @ptrCast(@alignCast(buf[i..])));
                         const evt_name = @as([*]u8, @ptrCast(buf[i..]))[@sizeOf(inotify_event) .. @sizeOf(inotify_event) + 8];
 
                         if (evt.mask & std.os.linux.IN.ISDIR != 0 or !std.mem.startsWith(u8, evt_name, "pcm"))
