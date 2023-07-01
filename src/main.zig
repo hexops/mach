@@ -15,7 +15,6 @@ pub const gfx2d = struct {
     pub const Sprite2D = @import("gfx2d/Sprite2D.zig");
 };
 pub const math = @import("math.zig");
-pub const ResourceManager = @import("resource/ResourceManager.zig");
 
 // Engine exports
 pub const App = @import("engine.zig").App;
@@ -24,7 +23,6 @@ pub const Module = @import("engine.zig").Module;
 const std = @import("std");
 
 test {
-    std.testing.refAllDeclsRecursive(ResourceManager);
     std.testing.refAllDeclsRecursive(gfx);
     _ = ecs;
     _ = earcut;
