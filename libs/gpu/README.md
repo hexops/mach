@@ -217,7 +217,6 @@ The rules for translating `webgpu.h` are as follows:
   * `error` -> `err`
   * `type` -> `typ`
   * `opaque` -> `opaq`
-* Undefined in Zig commonly means _undefined memory_. WebGPU however uses _undefined_ as terminology to indicate something was not _specified_, as the optional _none value_, which Zig represents as _null_. Since _null_ is a reserved keyword in Zig, we rename all WebGPU _undefined_ terminology to "_unspecified_" instead.
 * Constant names map using a few simple rules, but it's easiest to describe them with some concrete examples:
   * `RG11B10Ufloat -> rg11_b10_ufloat`
   * `Depth24PlusStencil8 -> depth24_plus_stencil8`
@@ -230,6 +229,3 @@ The rules for translating `webgpu.h` are as follows:
 * Regarding _"undefined"_ terminology:
   * In Zig, _undefined_ usually means _undefined memory_, _undefined behavior_, etc.
   * In WebGPU, _undefined_ commonly refers to JS-style undefined: _an optional value that was not specified_
-  * Zig refers to optional values not specified as _null_, but _null_ is a reserved keyword and so can't be used.
-  * We could use "_none_", but "BindingType none" and "BindingType not specified" clearly have non-equal meanings.
-  * As a result of all this, we translate _"undefined"_ in WebGPU to "undef" in Zig: it has no overlap with the reserved _undefined_ keyword, and distinguishes its meaning.

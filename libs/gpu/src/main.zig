@@ -44,11 +44,11 @@ pub inline fn getProcAddress(_device: *device.Device, proc_name: [*:0]const u8) 
     return Impl.getProcAddress(_device, proc_name);
 }
 
-pub const array_layer_count_undef = 0xffffffff;
-pub const copy_stride_undef = 0xffffffff;
-pub const limit_u32_undef = 0xffffffff;
-pub const limit_u64_undef = 0xffffffffffffffff;
-pub const mip_level_count_undef = 0xffffffff;
+pub const array_layer_count_undefined = 0xffffffff;
+pub const copy_stride_undefined = 0xffffffff;
+pub const limit_u32_undefined = 0xffffffff;
+pub const limit_u64_undefined = 0xffffffffffffffff;
+pub const mip_level_count_undefined = 0xffffffff;
 pub const whole_map_size = std.math.maxInt(usize);
 pub const whole_size = 0xffffffffffffffff;
 
@@ -167,7 +167,7 @@ pub const BackendType = enum(u32) {
 
     pub fn name(t: BackendType) []const u8 {
         return switch (t) {
-            .undef => "Undefined",
+            .undefined => "Undefined",
             .null => "Null",
             .webgpu => "WebGPU",
             .d3d11 => "D3D11",
@@ -573,38 +573,38 @@ pub const Extent3D = extern struct {
 };
 
 pub const Limits = extern struct {
-    max_texture_dimension_1d: u32 = limit_u32_undef,
-    max_texture_dimension_2d: u32 = limit_u32_undef,
-    max_texture_dimension_3d: u32 = limit_u32_undef,
-    max_texture_array_layers: u32 = limit_u32_undef,
-    max_bind_groups: u32 = limit_u32_undef,
-    max_bind_groups_plus_vertex_buffers: u32 = limit_u32_undef,
-    max_bindings_per_bind_group: u32 = limit_u32_undef,
-    max_dynamic_uniform_buffers_per_pipeline_layout: u32 = limit_u32_undef,
-    max_dynamic_storage_buffers_per_pipeline_layout: u32 = limit_u32_undef,
-    max_sampled_textures_per_shader_stage: u32 = limit_u32_undef,
-    max_samplers_per_shader_stage: u32 = limit_u32_undef,
-    max_storage_buffers_per_shader_stage: u32 = limit_u32_undef,
-    max_storage_textures_per_shader_stage: u32 = limit_u32_undef,
-    max_uniform_buffers_per_shader_stage: u32 = limit_u32_undef,
-    max_uniform_buffer_binding_size: u64 = limit_u64_undef,
-    max_storage_buffer_binding_size: u64 = limit_u64_undef,
-    min_uniform_buffer_offset_alignment: u32 = limit_u32_undef,
-    min_storage_buffer_offset_alignment: u32 = limit_u32_undef,
-    max_vertex_buffers: u32 = limit_u32_undef,
-    max_buffer_size: u64 = limit_u64_undef,
-    max_vertex_attributes: u32 = limit_u32_undef,
-    max_vertex_buffer_array_stride: u32 = limit_u32_undef,
-    max_inter_stage_shader_components: u32 = limit_u32_undef,
-    max_inter_stage_shader_variables: u32 = limit_u32_undef,
-    max_color_attachments: u32 = limit_u32_undef,
-    max_color_attachment_bytes_per_sample: u32 = limit_u32_undef,
-    max_compute_workgroup_storage_size: u32 = limit_u32_undef,
-    max_compute_invocations_per_workgroup: u32 = limit_u32_undef,
-    max_compute_workgroup_size_x: u32 = limit_u32_undef,
-    max_compute_workgroup_size_y: u32 = limit_u32_undef,
-    max_compute_workgroup_size_z: u32 = limit_u32_undef,
-    max_compute_workgroups_per_dimension: u32 = limit_u32_undef,
+    max_texture_dimension_1d: u32 = limit_u32_undefined,
+    max_texture_dimension_2d: u32 = limit_u32_undefined,
+    max_texture_dimension_3d: u32 = limit_u32_undefined,
+    max_texture_array_layers: u32 = limit_u32_undefined,
+    max_bind_groups: u32 = limit_u32_undefined,
+    max_bind_groups_plus_vertex_buffers: u32 = limit_u32_undefined,
+    max_bindings_per_bind_group: u32 = limit_u32_undefined,
+    max_dynamic_uniform_buffers_per_pipeline_layout: u32 = limit_u32_undefined,
+    max_dynamic_storage_buffers_per_pipeline_layout: u32 = limit_u32_undefined,
+    max_sampled_textures_per_shader_stage: u32 = limit_u32_undefined,
+    max_samplers_per_shader_stage: u32 = limit_u32_undefined,
+    max_storage_buffers_per_shader_stage: u32 = limit_u32_undefined,
+    max_storage_textures_per_shader_stage: u32 = limit_u32_undefined,
+    max_uniform_buffers_per_shader_stage: u32 = limit_u32_undefined,
+    max_uniform_buffer_binding_size: u64 = limit_u64_undefined,
+    max_storage_buffer_binding_size: u64 = limit_u64_undefined,
+    min_uniform_buffer_offset_alignment: u32 = limit_u32_undefined,
+    min_storage_buffer_offset_alignment: u32 = limit_u32_undefined,
+    max_vertex_buffers: u32 = limit_u32_undefined,
+    max_buffer_size: u64 = limit_u64_undefined,
+    max_vertex_attributes: u32 = limit_u32_undefined,
+    max_vertex_buffer_array_stride: u32 = limit_u32_undefined,
+    max_inter_stage_shader_components: u32 = limit_u32_undefined,
+    max_inter_stage_shader_variables: u32 = limit_u32_undefined,
+    max_color_attachments: u32 = limit_u32_undefined,
+    max_color_attachment_bytes_per_sample: u32 = limit_u32_undefined,
+    max_compute_workgroup_storage_size: u32 = limit_u32_undefined,
+    max_compute_invocations_per_workgroup: u32 = limit_u32_undefined,
+    max_compute_workgroup_size_x: u32 = limit_u32_undefined,
+    max_compute_workgroup_size_y: u32 = limit_u32_undefined,
+    max_compute_workgroup_size_z: u32 = limit_u32_undefined,
+    max_compute_workgroups_per_dimension: u32 = limit_u32_undefined,
 };
 
 pub const Origin2D = extern struct {
@@ -695,7 +695,7 @@ pub const StorageTextureBindingLayout = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     access: StorageTextureAccess = .undefined,
     format: Texture.Format = .undefined,
-    view_dimension: TextureView.Dimension = .dimension_undef,
+    view_dimension: TextureView.Dimension = .dimension_undefined,
 };
 
 pub const VertexAttribute = extern struct {

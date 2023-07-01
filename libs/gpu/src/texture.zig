@@ -156,15 +156,15 @@ pub const Texture = opaque {
     pub const BindingLayout = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         sample_type: SampleType = .undefined,
-        view_dimension: TextureView.Dimension = .dimension_undef,
+        view_dimension: TextureView.Dimension = .dimension_undefined,
         multisampled: bool = false,
     };
 
     pub const DataLayout = extern struct {
         next_in_chain: ?*const ChainedStruct = null,
         offset: u64 = 0,
-        bytes_per_row: u32 = types.copy_stride_undef,
-        rows_per_image: u32 = types.copy_stride_undef,
+        bytes_per_row: u32 = types.copy_stride_undefined,
+        rows_per_image: u32 = types.copy_stride_undefined,
     };
 
     pub const Descriptor = extern struct {
