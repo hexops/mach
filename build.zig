@@ -33,10 +33,6 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
         .target = target,
         .optimize = optimize,
     });
-    const mach_model3d = b.dependency("mach_model3d", .{
-        .target = target,
-        .optimize = optimize,
-    });
 
     _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
@@ -44,7 +40,6 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
             .{ .name = "core", .module = core.module(b) },
             .{ .name = "ecs", .module = mach_ecs.module("mach-ecs") },
             .{ .name = "earcut", .module = mach_earcut.module("mach-earcut") },
-            .{ .name = "model3d", .module = mach_model3d.module("mach-model3d") },
             .{ .name = "sysaudio", .module = sysaudio.module(b, optimize, target) },
         },
     });
@@ -152,7 +147,6 @@ pub const App = struct {
 
     core: core.App,
     use_freetype: ?[]const u8 = null,
-    use_model3d: bool = false,
 
     pub const InitError = core.App.InitError;
     pub const LinkError = core.App.LinkError;
@@ -171,7 +165,6 @@ pub const App = struct {
             /// If set, freetype will be linked and can be imported using this name.
             // TODO(build-system): name is currently not used / always "freetype"
             use_freetype: ?[]const u8 = null,
-            use_model3d: bool = false,
         },
     ) InitError!App {
         var deps = std.ArrayList(std.build.ModuleDependency).init(b.allocator);
@@ -196,7 +189,6 @@ pub const App = struct {
             .step = app.step,
             .platform = app.platform,
             .use_freetype = options.use_freetype,
-            .use_model3d = options.use_model3d,
         };
     }
 
@@ -204,13 +196,6 @@ pub const App = struct {
         try app.core.link(options.core);
         sysaudio.link(app.b, app.step, options.sysaudio);
         if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype);
-        if (app.use_model3d) {
-            const mach_model3d = app.b.dependency("mach_model3d", .{
-                .target = app.step.target,
-                .optimize = app.step.optimize,
-            });
-            app.step.linkLibrary(mach_model3d.artifact("mach-model3d"));
-        }
     }
 
     pub fn install(app: *const App) void {
