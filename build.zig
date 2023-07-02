@@ -4,7 +4,6 @@ const system_sdk = @import("libs/glfw/system_sdk.zig");
 const glfw = @import("libs/glfw/build.zig");
 const freetype = @import("libs/freetype/build.zig");
 const basisu = @import("libs/basisu/build.zig");
-const model3d = @import("libs/model3d/build.zig");
 pub const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
     .glfw_include_dir = sdkPath("/libs/glfw/upstream/glfw/include"),
     .system_sdk = system_sdk,
@@ -26,11 +25,15 @@ var _module: ?*std.build.Module = null;
 pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.Module {
     if (_module) |m| return m;
 
-    const ecs_dep = b.dependency("mach_ecs", .{
+    const mach_ecs = b.dependency("mach_ecs", .{
         .target = target,
         .optimize = optimize,
     });
-    const earcut_dep = b.dependency("mach_earcut", .{
+    const mach_earcut = b.dependency("mach_earcut", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const mach_model3d = b.dependency("mach_model3d", .{
         .target = target,
         .optimize = optimize,
     });
@@ -39,9 +42,10 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
         .source_file = .{ .path = sdkPath("/src/main.zig") },
         .dependencies = &.{
             .{ .name = "core", .module = core.module(b) },
-            .{ .name = "ecs", .module = ecs_dep.module("mach-ecs") },
+            .{ .name = "ecs", .module = mach_ecs.module("mach-ecs") },
+            .{ .name = "earcut", .module = mach_earcut.module("mach-earcut") },
+            .{ .name = "model3d", .module = mach_model3d.module("mach-model3d") },
             .{ .name = "sysaudio", .module = sysaudio.module(b, optimize, target) },
-            .{ .name = "earcut", .module = earcut_dep.module("mach-earcut") },
         },
     });
     return _module.?;
@@ -85,21 +89,18 @@ pub fn build(b: *std.Build) !void {
         const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
         const basisu_test_step = b.step("test-basisu", "Run Basis-Universal library tests");
         const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
-        const model3d_test_step = b.step("test-model3d", "Run Model3D library tests");
         const mach_test_step = b.step("test-mach", "Run Engine library tests");
 
         core_test_step.dependOn(&(try core.testStep(b, optimize, target)).step);
         freetype_test_step.dependOn(&freetype.testStep(b, optimize, target).step);
         basisu_test_step.dependOn(&basisu.testStep(b, optimize, target).step);
         sysaudio_test_step.dependOn(&sysaudio.testStep(b, optimize, target).step);
-        model3d_test_step.dependOn(&model3d.testStep(b, optimize, target).step);
         mach_test_step.dependOn(&testStep(b, optimize, target).step);
 
         all_tests_step.dependOn(core_test_step);
         all_tests_step.dependOn(basisu_test_step);
         all_tests_step.dependOn(freetype_test_step);
         all_tests_step.dependOn(sysaudio_test_step);
-        all_tests_step.dependOn(model3d_test_step);
         all_tests_step.dependOn(mach_test_step);
 
         const shaderexp_app = try App.init(
@@ -204,7 +205,11 @@ pub const App = struct {
         sysaudio.link(app.b, app.step, options.sysaudio);
         if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype);
         if (app.use_model3d) {
-            model3d.link(app.b, app.step, app.step.target);
+            const mach_model3d = app.b.dependency("mach_model3d", .{
+                .target = app.step.target,
+                .optimize = app.step.optimize,
+            });
+            app.step.linkLibrary(mach_model3d.artifact("mach-model3d"));
         }
     }
 

@@ -1,3 +1,2 @@
 * text=auto eol=lf
 upstream/** linguist-vendored
-libs/model3d/src/c/** linguist-vendored

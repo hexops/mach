@@ -58,7 +58,6 @@ push_subrepo 'freetype'
 push_subrepo 'glfw'
 push_subrepo 'gpu'
 push_subrepo 'gpu-dawn'
-push_subrepo 'model3d'
 push_subrepo 'sysaudio'
 
 rm -rf staging-clean
