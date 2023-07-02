@@ -82,34 +82,26 @@ pub fn Sdk(comptime deps: anytype) type {
             step.addIncludePath(sdkPath("/src/dawn"));
 
             if (options.separate_libs) {
-                const lib_mach_dawn_native = try buildLibMachDawnNative(b, step, options);
-                step.linkLibrary(lib_mach_dawn_native);
-
                 const lib_dawn_common = try buildLibDawnCommon(b, step, options);
-                step.linkLibrary(lib_dawn_common);
-
                 const lib_dawn_platform = try buildLibDawnPlatform(b, step, options);
-                step.linkLibrary(lib_dawn_platform);
-
-                // dawn-native
                 const lib_abseil_cpp = try buildLibAbseilCpp(b, step, options);
-                step.linkLibrary(lib_abseil_cpp);
                 const lib_dawn_native = try buildLibDawnNative(b, step, options);
+                const lib_dawn_wire = try buildLibDawnWire(b, step, options);
+                const lib_spirv_tools = try buildLibSPIRVTools(b, step, options);
+                const lib_tint = try buildLibTint(b, step, options);
+
+                step.linkLibrary(lib_dawn_common);
+                step.linkLibrary(lib_dawn_platform);
+                step.linkLibrary(lib_abseil_cpp);
                 step.linkLibrary(lib_dawn_native);
+                step.linkLibrary(lib_dawn_wire);
+                step.linkLibrary(lib_spirv_tools);
+                step.linkLibrary(lib_tint);
 
                 if (options.d3d12.?) {
                     const lib_dxcompiler = try buildLibDxcompiler(b, step, options);
                     step.linkLibrary(lib_dxcompiler);
                 }
-
-                const lib_dawn_wire = try buildLibDawnWire(b, step, options);
-                step.linkLibrary(lib_dawn_wire);
-
-                const lib_spirv_tools = try buildLibSPIRVTools(b, step, options);
-                step.linkLibrary(lib_spirv_tools);
-
-                const lib_tint = try buildLibTint(b, step, options);
-                step.linkLibrary(lib_tint);
                 return;
             }
 
@@ -118,12 +110,8 @@ pub fn Sdk(comptime deps: anytype) type {
                 .target = step.target,
                 .optimize = if (options.debug) .Debug else .ReleaseFast,
             });
-            lib_dawn.linkLibCpp();
-            if (options.install_libs)
-                b.installArtifact(lib_dawn);
             step.linkLibrary(lib_dawn);
 
-            _ = try buildLibMachDawnNative(b, lib_dawn, options);
             _ = try buildLibDawnCommon(b, lib_dawn, options);
             _ = try buildLibDawnPlatform(b, lib_dawn, options);
             _ = try buildLibAbseilCpp(b, lib_dawn, options);
@@ -278,23 +266,14 @@ pub fn Sdk(comptime deps: anytype) type {
             step.addIncludePath(include_dir);
             step.addIncludePath(sdkPath("/src/dawn"));
 
-            if (isLinuxDesktopLike(step.target_info.target.os.tag)) {
-                step.linkSystemLibraryName("X11");
-            }
-            if (options.metal.?) {
-                step.linkFramework("Metal");
-                step.linkFramework("CoreFoundation");
-                step.linkFramework("CoreGraphics");
-                step.linkFramework("Foundation");
-                step.linkFramework("IOKit");
-                step.linkFramework("IOSurface");
-                step.linkFramework("QuartzCore");
-                step.linkSystemLibraryName("objc");
-            }
-            if (options.d3d12.?) {
-                step.linkSystemLibraryName("ole32");
-                step.linkSystemLibraryName("dxguid");
-            }
+            linkLibDawnCommonDependencies(b, step, options);
+            linkLibDawnPlatformDependencies(b, step, options);
+            linkLibDawnNativeDependencies(b, step, options);
+            linkLibTintDependencies(b, step, options);
+            linkLibSPIRVToolsDependencies(b, step, options);
+            linkLibAbseilCppDependencies(b, step, options);
+            linkLibDawnWireDependencies(b, step, options);
+            linkLibDxcompilerDependencies(b, step, options);
         }
 
         pub fn ensureBinaryDownloaded(
@@ -561,52 +540,25 @@ pub fn Sdk(comptime deps: anytype) type {
             }
         }
 
-        fn buildLibMachDawnNative(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-            const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary(.{
-                    .name = "dawn-native-mach",
-                    .target = step.target,
-                    .optimize = if (options.debug) .Debug else .ReleaseFast,
-                });
-                separate_lib.linkLibCpp();
-                if (options.install_libs)
-                    b.installArtifact(separate_lib);
-                break :blk separate_lib;
-            };
-
-            var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
-            try appendFlags(step, &cpp_flags, options.debug, true);
-            try appendDawnEnableBackendTypeFlags(&cpp_flags, options);
-            try cpp_flags.appendSlice(&.{
-                "-I" ++ deps.glfw_include_dir,
-                include("libs/dawn/out/Debug/gen/include"),
-                include("libs/dawn/out/Debug/gen/src"),
-                include("libs/dawn/include"),
-                include("libs/dawn/src"),
-            });
-            if (step.target_info.target.os.tag == .windows) {
-                try cpp_flags.appendSlice(&.{
-                    "-D_DEBUG",
-                    "-D_MT",
-                    "-D_DLL",
-                });
+        fn linkLibDawnCommonDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = options;
+            step.linkLibCpp();
+            deps.system_sdk.include(b, step, .{});
+            if (step.target_info.target.os.tag == .macos) {
+                step.linkSystemLibraryName("objc");
+                step.linkFramework("Foundation");
             }
-            return lib;
         }
 
         // Builds common sources; derived from src/common/BUILD.gn
         fn buildLibDawnCommon(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-            const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary(.{
-                    .name = "dawn-common",
-                    .target = step.target,
-                    .optimize = if (options.debug) .Debug else .ReleaseFast,
-                });
-                separate_lib.linkLibCpp();
-                if (options.install_libs)
-                    b.installArtifact(separate_lib);
-                break :blk separate_lib;
-            };
+            const lib = if (!options.separate_libs) step else b.addStaticLibrary(.{
+                .name = "dawn-common",
+                .target = step.target,
+                .optimize = if (options.debug) .Debug else .ReleaseFast,
+            });
+            if (options.install_libs) b.installArtifact(lib);
+            linkLibDawnCommonDependencies(b, lib, options);
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
@@ -631,8 +583,6 @@ pub fn Sdk(comptime deps: anytype) type {
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
             if (step.target_info.target.os.tag == .macos) {
                 // TODO(build-system): pass system SDK options through
-                deps.system_sdk.include(b, lib, .{});
-                lib.linkFramework("Foundation");
                 const abs_path = sdkPath("/libs/dawn/src/dawn/common/SystemUtils_mac.mm");
                 try cpp_sources.append(abs_path);
             }
@@ -648,19 +598,21 @@ pub fn Sdk(comptime deps: anytype) type {
             return lib;
         }
 
+        fn linkLibDawnPlatformDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = options;
+            step.linkLibCpp();
+            deps.system_sdk.include(b, step, .{});
+        }
+
         // Build dawn platform sources; derived from src/dawn/platform/BUILD.gn
         fn buildLibDawnPlatform(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-            const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary(.{
-                    .name = "dawn-platform",
-                    .target = step.target,
-                    .optimize = if (options.debug) .Debug else .ReleaseFast,
-                });
-                separate_lib.linkLibCpp();
-                if (options.install_libs)
-                    b.installArtifact(separate_lib);
-                break :blk separate_lib;
-            };
+            const lib = if (!options.separate_libs) step else b.addStaticLibrary(.{
+                .name = "dawn-platform",
+                .target = step.target,
+                .optimize = if (options.debug) .Debug else .ReleaseFast,
+            });
+            if (options.install_libs) b.installArtifact(lib);
+            linkLibDawnPlatformDependencies(b, lib, options);
 
             var cpp_flags = std.ArrayList([]const u8).init(b.allocator);
             try appendFlags(step, &cpp_flags, options.debug, true);
@@ -721,20 +673,37 @@ pub fn Sdk(comptime deps: anytype) type {
             "-DNOMINMAX",
         };
 
+        fn linkLibDawnNativeDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            step.linkLibCpp();
+            deps.system_sdk.include(b, step, .{});
+            if (options.d3d12.?) {
+                step.linkSystemLibraryName("dxgi");
+                step.linkSystemLibraryName("dxguid");
+            }
+            if (options.metal.?) {
+                step.linkSystemLibraryName("objc");
+                step.linkFramework("Metal");
+                step.linkFramework("CoreGraphics");
+                step.linkFramework("Foundation");
+                step.linkFramework("IOKit");
+                step.linkFramework("IOSurface");
+                step.linkFramework("QuartzCore");
+            }
+            const tag = step.target_info.target.os.tag;
+            if (isLinuxDesktopLike(tag)) {
+                step.linkSystemLibraryName("X11");
+            }
+        }
+
         // Builds dawn native sources; derived from src/dawn/native/BUILD.gn
         fn buildLibDawnNative(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-            const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary(.{
-                    .name = "dawn-native",
-                    .target = step.target,
-                    .optimize = if (options.debug) .Debug else .ReleaseFast,
-                });
-                separate_lib.linkLibCpp();
-                if (options.install_libs)
-                    b.installArtifact(separate_lib);
-                break :blk separate_lib;
-            };
-            deps.system_sdk.include(b, lib, .{});
+            const lib = if (!options.separate_libs) step else b.addStaticLibrary(.{
+                .name = "dawn-native",
+                .target = step.target,
+                .optimize = if (options.debug) .Debug else .ReleaseFast,
+            });
+            if (options.install_libs) b.installArtifact(lib);
+            linkLibDawnNativeDependencies(b, lib, options);
 
             // MacOS: this must be defined for system-sdk-13.3 and older.
             // Critically, this MUST NOT be included as a -D__kernel_ptr_semantics flag. If it is,
@@ -808,9 +777,6 @@ pub fn Sdk(comptime deps: anytype) type {
 
             var cpp_sources = std.ArrayList([]const u8).init(b.allocator);
             if (options.d3d12.?) {
-                lib.linkSystemLibraryName("dxgi");
-                lib.linkSystemLibraryName("dxguid");
-
                 inline for ([_][]const u8{
                     "src/dawn/mingw_helpers.cpp",
                 }) |path| {
@@ -828,13 +794,6 @@ pub fn Sdk(comptime deps: anytype) type {
                 });
             }
             if (options.metal.?) {
-                lib.linkFramework("Metal");
-                lib.linkFramework("CoreGraphics");
-                lib.linkFramework("Foundation");
-                lib.linkFramework("IOKit");
-                lib.linkFramework("IOSurface");
-                lib.linkFramework("QuartzCore");
-
                 try appendLangScannedSources(b, lib, .{
                     .objc = true,
                     .rel_dirs = &.{
@@ -848,7 +807,6 @@ pub fn Sdk(comptime deps: anytype) type {
 
             const tag = step.target_info.target.os.tag;
             if (isLinuxDesktopLike(tag)) {
-                lib.linkSystemLibraryName("X11");
                 inline for ([_][]const u8{
                     "src/dawn/native/XlibXcbFunctions.cpp",
                 }) |path| {
@@ -1013,19 +971,21 @@ pub fn Sdk(comptime deps: anytype) type {
             return lib;
         }
 
+        fn linkLibTintDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = options;
+            step.linkLibCpp();
+            deps.system_sdk.include(b, step, .{});
+        }
+
         // Builds tint sources; derived from src/tint/BUILD.gn
         fn buildLibTint(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-            const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary(.{
-                    .name = "tint",
-                    .target = step.target,
-                    .optimize = if (options.debug) .Debug else .ReleaseFast,
-                });
-                separate_lib.linkLibCpp();
-                if (options.install_libs)
-                    b.installArtifact(separate_lib);
-                break :blk separate_lib;
-            };
+            const lib = if (!options.separate_libs) step else b.addStaticLibrary(.{
+                .name = "tint",
+                .target = step.target,
+                .optimize = if (options.debug) .Debug else .ReleaseFast,
+            });
+            if (options.install_libs) b.installArtifact(lib);
+            linkLibTintDependencies(b, lib, options);
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
@@ -1178,19 +1138,21 @@ pub fn Sdk(comptime deps: anytype) type {
             return lib;
         }
 
+        fn linkLibSPIRVToolsDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = options;
+            step.linkLibCpp();
+            deps.system_sdk.include(b, step, .{});
+        }
+
         // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
         fn buildLibSPIRVTools(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-            const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary(.{
-                    .name = "spirv-tools",
-                    .target = step.target,
-                    .optimize = if (options.debug) .Debug else .ReleaseFast,
-                });
-                separate_lib.linkLibCpp();
-                if (options.install_libs)
-                    b.installArtifact(separate_lib);
-                break :blk separate_lib;
-            };
+            const lib = if (!options.separate_libs) step else b.addStaticLibrary(.{
+                .name = "spirv-tools",
+                .target = step.target,
+                .optimize = if (options.debug) .Debug else .ReleaseFast,
+            });
+            if (options.install_libs) b.installArtifact(lib);
+            linkLibSPIRVToolsDependencies(b, lib, options);
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
@@ -1242,6 +1204,18 @@ pub fn Sdk(comptime deps: anytype) type {
             return lib;
         }
 
+        fn linkLibAbseilCppDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = options;
+            step.linkLibCpp();
+            deps.system_sdk.include(b, step, .{});
+            const target = step.target_info.target;
+            if (target.os.tag == .macos) {
+                step.linkSystemLibraryName("objc");
+                step.linkFramework("CoreFoundation");
+            }
+            if (target.os.tag == .windows) step.linkSystemLibraryName("bcrypt");
+        }
+
         // Builds third_party/abseil sources; derived from:
         //
         // ```
@@ -1249,22 +1223,15 @@ pub fn Sdk(comptime deps: anytype) type {
         // ```
         //
         fn buildLibAbseilCpp(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-            const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary(.{
-                    .name = "abseil-cpp-common",
-                    .target = step.target,
-                    .optimize = if (options.debug) .Debug else .ReleaseFast,
-                });
-                separate_lib.linkLibCpp();
-                if (options.install_libs)
-                    b.installArtifact(separate_lib);
-                break :blk separate_lib;
-            };
-            deps.system_sdk.include(b, lib, .{});
+            const lib = if (!options.separate_libs) step else b.addStaticLibrary(.{
+                .name = "abseil",
+                .target = step.target,
+                .optimize = if (options.debug) .Debug else .ReleaseFast,
+            });
+            if (options.install_libs) b.installArtifact(lib);
+            linkLibAbseilCppDependencies(b, lib, options);
 
             const target = step.target_info.target;
-            if (target.os.tag == .macos) lib.linkFramework("CoreFoundation");
-            if (target.os.tag == .windows) lib.linkSystemLibraryName("bcrypt");
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
@@ -1315,19 +1282,21 @@ pub fn Sdk(comptime deps: anytype) type {
             return lib;
         }
 
+        fn linkLibDawnWireDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = options;
+            step.linkLibCpp();
+            deps.system_sdk.include(b, step, .{});
+        }
+
         // Buids dawn wire sources; derived from src/dawn/wire/BUILD.gn
         fn buildLibDawnWire(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-            const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary(.{
-                    .name = "dawn-wire",
-                    .target = step.target,
-                    .optimize = if (options.debug) .Debug else .ReleaseFast,
-                });
-                separate_lib.linkLibCpp();
-                if (options.install_libs)
-                    b.installArtifact(separate_lib);
-                break :blk separate_lib;
-            };
+            const lib = if (!options.separate_libs) step else b.addStaticLibrary(.{
+                .name = "dawn-wire",
+                .target = step.target,
+                .optimize = if (options.debug) .Debug else .ReleaseFast,
+            });
+            if (options.install_libs) b.installArtifact(lib);
+            linkLibDawnWireDependencies(b, lib, options);
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
@@ -1353,26 +1322,26 @@ pub fn Sdk(comptime deps: anytype) type {
             return lib;
         }
 
+        fn linkLibDxcompilerDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            step.linkLibCpp();
+            deps.system_sdk.include(b, step, .{});
+            if (options.d3d12.?) {
+                step.linkSystemLibraryName("oleaut32");
+                step.linkSystemLibraryName("ole32");
+                step.linkSystemLibraryName("dbghelp");
+                step.linkSystemLibraryName("dxguid");
+            }
+        }
+
         // Buids dxcompiler sources; derived from libs/DirectXShaderCompiler/CMakeLists.txt
         fn buildLibDxcompiler(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-            const lib = if (!options.separate_libs) step else blk: {
-                const separate_lib = b.addStaticLibrary(.{
-                    .name = "dxcompiler",
-                    .target = step.target,
-                    .optimize = if (options.debug) .Debug else .ReleaseFast,
-                });
-                separate_lib.linkLibCpp();
-                if (options.install_libs)
-                    b.installArtifact(separate_lib);
-                break :blk separate_lib;
-            };
-            deps.system_sdk.include(b, lib, .{});
-
-            lib.linkSystemLibraryName("oleaut32");
-            lib.linkSystemLibraryName("ole32");
-            lib.linkSystemLibraryName("dbghelp");
-            lib.linkSystemLibraryName("dxguid");
-            lib.linkLibCpp();
+            const lib = if (!options.separate_libs) step else b.addStaticLibrary(.{
+                .name = "dxcompiler",
+                .target = step.target,
+                .optimize = if (options.debug) .Debug else .ReleaseFast,
+            });
+            if (options.install_libs) b.installArtifact(lib);
+            linkLibDxcompilerDependencies(b, lib, options);
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
