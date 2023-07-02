@@ -3,7 +3,6 @@ const builtin = @import("builtin");
 const system_sdk = @import("libs/glfw/system_sdk.zig");
 const glfw = @import("libs/glfw/build.zig");
 const freetype = @import("libs/freetype/build.zig");
-const basisu = @import("libs/basisu/build.zig");
 pub const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
     .glfw_include_dir = sdkPath("/libs/glfw/upstream/glfw/include"),
     .system_sdk = system_sdk,
@@ -33,6 +32,10 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
         .target = target,
         .optimize = optimize,
     });
+    const mach_basisu = b.dependency("mach_basisu", .{
+        .target = target,
+        .optimize = optimize,
+    });
 
     _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
@@ -41,6 +44,7 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
             .{ .name = "ecs", .module = mach_ecs.module("mach-ecs") },
             .{ .name = "earcut", .module = mach_earcut.module("mach-earcut") },
             .{ .name = "sysaudio", .module = sysaudio.module(b, optimize, target) },
+            .{ .name = "basisu", .module = mach_basisu.module("mach-basisu") },
         },
     });
     return _module.?;
@@ -82,18 +86,15 @@ pub fn build(b: *std.Build) !void {
         const all_tests_step = b.step("test", "Run library tests");
         const core_test_step = b.step("test-core", "Run Core library tests");
         const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
-        const basisu_test_step = b.step("test-basisu", "Run Basis-Universal library tests");
         const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
         const mach_test_step = b.step("test-mach", "Run Engine library tests");
 
         core_test_step.dependOn(&(try core.testStep(b, optimize, target)).step);
         freetype_test_step.dependOn(&freetype.testStep(b, optimize, target).step);
-        basisu_test_step.dependOn(&basisu.testStep(b, optimize, target).step);
         sysaudio_test_step.dependOn(&sysaudio.testStep(b, optimize, target).step);
         mach_test_step.dependOn(&testStep(b, optimize, target).step);
 
         all_tests_step.dependOn(core_test_step);
-        all_tests_step.dependOn(basisu_test_step);
         all_tests_step.dependOn(freetype_test_step);
         all_tests_step.dependOn(sysaudio_test_step);
         all_tests_step.dependOn(mach_test_step);
@@ -196,6 +197,12 @@ pub const App = struct {
         try app.core.link(options.core);
         sysaudio.link(app.b, app.step, options.sysaudio);
         if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype);
+
+        const mach_basisu = app.b.dependency("mach_basisu", .{
+            .target = app.step.target,
+            .optimize = app.step.optimize,
+        });
+        app.step.linkLibrary(mach_basisu.artifact("mach-basisu"));
     }
 
     pub fn install(app: *const App) void {

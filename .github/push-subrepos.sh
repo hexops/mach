@@ -52,7 +52,6 @@ push_subrepo() {
 rm -rf staging-clean/ staging/
 git clone https://github.com/hexops/mach staging-clean
 
-push_subrepo 'basisu'
 push_subrepo 'core'
 push_subrepo 'freetype'
 push_subrepo 'glfw'
