@@ -77,21 +77,23 @@ pub fn module(b: *std.Build) *std.build.Module {
     return _module.?;
 }
 
-pub const LinkError = error{FailedToLinkGPU} || BuildError;
-pub fn link(b: *Build, step: *std.build.CompileStep, options: Options) LinkError!void {
+pub fn link(b: *Build, step: *std.build.CompileStep, options: Options) !void {
+    if (options.shared) step.defineCMacro("GLFW_DLL", null);
     const lib = try buildLibrary(b, step.optimize, step.target, options);
     step.linkLibrary(lib);
     addGLFWIncludes(step);
-    if (options.shared) {
-        step.defineCMacro("GLFW_DLL", null);
-        system_sdk.include(b, step, options.system_sdk);
-    } else {
-        linkGLFWDependencies(b, step, options);
+    linkGLFWDependencies(b, step, options);
+    if (step.target_info.target.os.tag != .windows) system_sdk.include(b, step, options.system_sdk);
+    if (step.target_info.target.os.tag == .windows) {
+        step.linkLibrary(b.dependency("direct3d_headers", .{
+            .target = step.target,
+            .optimize = step.optimize,
+        }).artifact("direct3d-headers"));
+        @import("direct3d_headers").addLibraryPath(step);
     }
 }
 
-pub const BuildError = error{CannotEnsureDependency} || std.mem.Allocator.Error;
-fn buildLibrary(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget, options: Options) BuildError!*std.build.CompileStep {
+fn buildLibrary(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget, options: Options) !*std.build.CompileStep {
     // TODO(build-system): https://github.com/hexops/mach/issues/229#issuecomment-1100958939
     ensureDependencySubmodule(b.allocator, "upstream") catch return error.CannotEnsureDependency;
 
@@ -161,7 +163,7 @@ fn addGLFWSources(b: *Build, lib: *std.build.CompileStep, options: Options) std.
 
 fn linkGLFWDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
     step.linkLibC();
-    system_sdk.include(b, step, options.system_sdk);
+    if (step.target_info.target.os.tag != .windows) system_sdk.include(b, step, options.system_sdk);
     switch (step.target_info.target.os.tag) {
         .windows => {
             step.linkSystemLibraryName("gdi32");
