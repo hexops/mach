@@ -48,12 +48,16 @@ pub fn Sdk(comptime deps: anytype) type {
         pub fn link(b: *std.Build, step: *std.build.CompileStep, options: Options) void {
             if (step.target.toTarget().cpu.arch != .wasm32) {
                 // TODO(build-system): pass system SDK options through
-                deps.system_sdk.include(b, step, .{});
+                if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
                 if (step.target.toTarget().isDarwin()) {
                     step.linkFramework("AudioToolbox");
                     step.linkFramework("CoreFoundation");
                     step.linkFramework("CoreAudio");
                 } else if (step.target.toTarget().os.tag == .linux) {
+                    step.linkLibrary(b.dependency("linux_audio_headers", .{
+                        .target = step.target,
+                        .optimize = step.optimize,
+                    }).artifact("linux-audio-headers"));
                     step.addCSourceFile(sdkPath("/src/pipewire/sysaudio.c"), &.{"-std=gnu99"});
                     step.linkLibC();
                 }
