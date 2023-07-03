@@ -4,9 +4,6 @@ pub fn Sdk(comptime deps: anytype) type {
     return struct {
         pub const Options = struct {
             install_libs: bool = false,
-
-            /// System SDK options.
-            system_sdk: deps.system_sdk.Options = .{},
         };
 
         var _module: ?*std.build.Module = null;
@@ -47,9 +44,17 @@ pub fn Sdk(comptime deps: anytype) type {
 
         pub fn link(b: *std.Build, step: *std.build.CompileStep, options: Options) void {
             if (step.target.toTarget().cpu.arch != .wasm32) {
-                // TODO(build-system): pass system SDK options through
-                if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
                 if (step.target.toTarget().isDarwin()) {
+                    // TODO(build-system): This cannot be imported with the Zig package manager
+                    // error: TarUnsupportedFileType
+                    //
+                    // step.linkLibrary(b.dependency("xcode_frameworks", .{
+                    //     .target = step.target,
+                    //     .optimize = step.optimize,
+                    // }).artifact("xcode-frameworks"));
+                    // @import("xcode_frameworks").addPaths(step);
+                    deps.xcode_frameworks.addPaths(step);
+
                     step.linkFramework("AudioToolbox");
                     step.linkFramework("CoreFoundation");
                     step.linkFramework("CoreAudio");

@@ -1,12 +1,13 @@
 const std = @import("std");
 const sysaudio_sdk = @import("sdk.zig");
-const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
 
 pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
     const sysaudio = sysaudio_sdk.Sdk(.{
-        .system_sdk = system_sdk,
+        // TODO(build-system): This cannot be imported with the Zig package manager
+        // error: TarUnsupportedFileType
+        .xcode_frameworks = @import("libs/xcode-frameworks//build.zig"),
     });
 
     const test_step = b.step("test", "Run library tests");
