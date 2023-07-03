@@ -149,9 +149,6 @@ pub const App = struct {
     core: core.App,
     use_freetype: ?[]const u8 = null,
 
-    pub const InitError = core.App.InitError;
-    pub const LinkError = core.App.LinkError;
-
     pub fn init(
         b: *std.Build,
         options: struct {
@@ -167,7 +164,7 @@ pub const App = struct {
             // TODO(build-system): name is currently not used / always "freetype"
             use_freetype: ?[]const u8 = null,
         },
-    ) InitError!App {
+    ) !App {
         var deps = std.ArrayList(std.build.ModuleDependency).init(b.allocator);
         if (options.deps) |v| try deps.appendSlice(v);
         try deps.append(.{ .name = "mach", .module = module(b, options.optimize, options.target) });
@@ -193,7 +190,7 @@ pub const App = struct {
         };
     }
 
-    pub fn link(app: *const App, options: Options) LinkError!void {
+    pub fn link(app: *const App, options: Options) !void {
         try app.core.link(options.core);
         sysaudio.link(app.b, app.step, options.sysaudio);
         if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype);

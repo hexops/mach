@@ -91,9 +91,6 @@ pub fn Sdk(comptime deps: anytype) type {
 
             const web_install_dir = std.build.InstallDir{ .custom = "www" };
 
-            pub const InitError = error{OutOfMemory} || std.zig.system.NativeTargetInfo.DetectError;
-            pub const LinkError = deps.glfw.LinkError;
-
             pub const Platform = enum {
                 native,
                 web,
@@ -115,7 +112,7 @@ pub fn Sdk(comptime deps: anytype) type {
                     res_dirs: ?[]const []const u8 = null,
                     watch_paths: ?[]const []const u8 = null,
                 },
-            ) InitError!App {
+            ) !App {
                 const target = (try std.zig.system.NativeTargetInfo.detect(options.target)).target;
                 const platform = Platform.fromTarget(target);
 
@@ -179,7 +176,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 };
             }
 
-            pub fn link(app: *const App, options: Options) LinkError!void {
+            pub fn link(app: *const App, options: Options) !void {
                 if (app.platform != .web) {
                     try deps.glfw.link(app.b, app.step, options.glfw_options);
                     deps.gpu.link(app.b, app.step, options.gpuOptions()) catch return error.FailedToLinkGPU;
