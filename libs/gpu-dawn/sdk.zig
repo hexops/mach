@@ -63,7 +63,7 @@ pub fn Sdk(comptime deps: anytype) type {
             const opt = options.detectDefaults(step.target_info.target);
 
             // TODO(build-system): pass system SDK options through
-            if (step.target_info.target.os.tag != .windows) deps.system_sdk.include(b, step, .{});
+            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
             if (step.target_info.target.os.tag == .windows) @import("direct3d_headers").addLibraryPath(step);
 
             try if (options.from_source)
@@ -544,7 +544,7 @@ pub fn Sdk(comptime deps: anytype) type {
         fn linkLibDawnCommonDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag != .windows) deps.system_sdk.include(b, step, .{});
+            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
             if (step.target_info.target.os.tag == .macos) {
                 step.linkSystemLibraryName("objc");
                 step.linkFramework("Foundation");
@@ -602,7 +602,7 @@ pub fn Sdk(comptime deps: anytype) type {
         fn linkLibDawnPlatformDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag != .windows) deps.system_sdk.include(b, step, .{});
+            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
         }
 
         // Build dawn platform sources; derived from src/dawn/platform/BUILD.gn
@@ -676,7 +676,7 @@ pub fn Sdk(comptime deps: anytype) type {
 
         fn linkLibDawnNativeDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
             step.linkLibCpp();
-            if (step.target_info.target.os.tag != .windows) deps.system_sdk.include(b, step, .{});
+            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
             if (options.d3d12.?) {
                 step.linkLibrary(b.dependency("direct3d_headers", .{
                     .target = step.target,
@@ -977,7 +977,7 @@ pub fn Sdk(comptime deps: anytype) type {
         fn linkLibTintDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag != .windows) deps.system_sdk.include(b, step, .{});
+            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
         }
 
         // Builds tint sources; derived from src/tint/BUILD.gn
@@ -1144,7 +1144,7 @@ pub fn Sdk(comptime deps: anytype) type {
         fn linkLibSPIRVToolsDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag != .windows) deps.system_sdk.include(b, step, .{});
+            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
         }
 
         // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
@@ -1210,7 +1210,7 @@ pub fn Sdk(comptime deps: anytype) type {
         fn linkLibAbseilCppDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag != .windows) deps.system_sdk.include(b, step, .{});
+            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
             const target = step.target_info.target;
             if (target.os.tag == .macos) {
                 step.linkSystemLibraryName("objc");
@@ -1288,7 +1288,7 @@ pub fn Sdk(comptime deps: anytype) type {
         fn linkLibDawnWireDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag != .windows) deps.system_sdk.include(b, step, .{});
+            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
         }
 
         // Buids dawn wire sources; derived from src/dawn/wire/BUILD.gn
