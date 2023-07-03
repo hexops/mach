@@ -15,3 +15,6 @@
 [submodule "glfw/upstream"]
 	path = libs/glfw/upstream
 	url = https://github.com/hexops-graveyard/glfw
+[submodule "libs/sysaudio/libs/xcode-frameworks"]
+	path = libs/sysaudio/libs/xcode-frameworks
+	url = https://github.com/hexops/xcode-frameworks
