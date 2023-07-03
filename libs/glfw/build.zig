@@ -83,14 +83,7 @@ pub fn link(b: *Build, step: *std.build.CompileStep, options: Options) !void {
     step.linkLibrary(lib);
     addGLFWIncludes(step);
     linkGLFWDependencies(b, step, options);
-    if (step.target_info.target.os.tag != .windows) system_sdk.include(b, step, options.system_sdk);
-    if (step.target_info.target.os.tag == .windows) {
-        step.linkLibrary(b.dependency("direct3d_headers", .{
-            .target = step.target,
-            .optimize = step.optimize,
-        }).artifact("direct3d-headers"));
-        @import("direct3d_headers").addLibraryPath(step);
-    }
+    if (step.target_info.target.os.tag == .macos) system_sdk.include(b, step, options.system_sdk);
 }
 
 fn buildLibrary(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget, options: Options) !*std.build.CompileStep {
@@ -117,7 +110,6 @@ fn buildLibrary(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
 
 fn addGLFWIncludes(step: *std.build.CompileStep) void {
     step.addIncludePath(sdkPath("/upstream/glfw/include"));
-    step.addIncludePath(sdkPath("/upstream/vulkan_headers/include"));
     step.addIncludePath(sdkPath("/src"));
 }
 
@@ -162,8 +154,35 @@ fn addGLFWSources(b: *Build, lib: *std.build.CompileStep, options: Options) std.
 }
 
 fn linkGLFWDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+    if (step.target_info.target.os.tag == .windows) {
+        step.linkLibrary(b.dependency("direct3d_headers", .{
+            .target = step.target,
+            .optimize = step.optimize,
+        }).artifact("direct3d-headers"));
+    }
+    if (options.x11) {
+        step.linkLibrary(b.dependency("x11_headers", .{
+            .target = step.target,
+            .optimize = step.optimize,
+        }).artifact("x11-headers"));
+    }
+    if (options.vulkan) {
+        step.linkLibrary(b.dependency("vulkan_headers", .{
+            .target = step.target,
+            .optimize = step.optimize,
+        }).artifact("vulkan-headers"));
+    }
+    if (options.wayland) {
+        step.defineCMacro("WL_MARSHAL_FLAG_DESTROY", null);
+        step.linkLibrary(b.dependency("wayland_headers", .{
+            .target = step.target,
+            .optimize = step.optimize,
+        }).artifact("wayland-headers"));
+    }
+    if (step.target_info.target.os.tag == .windows) @import("direct3d_headers").addLibraryPath(step);
+
     step.linkLibC();
-    if (step.target_info.target.os.tag != .windows) system_sdk.include(b, step, options.system_sdk);
+    if (step.target_info.target.os.tag == .macos) system_sdk.include(b, step, options.system_sdk);
     switch (step.target_info.target.os.tag) {
         .windows => {
             step.linkSystemLibraryName("gdi32");
