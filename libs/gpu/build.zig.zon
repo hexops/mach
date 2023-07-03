@@ -6,5 +6,17 @@
             .url = "https://github.com/hexops/direct3d-headers/archive/773dce3f079eecdccc7c71d1318a0741649d568b.tar.gz",
             .hash = "12200d2155216c5eb5f111282cd355b5433cad6a68fd040294e695149cba329f7c12",
         },
+        .vulkan_headers = .{
+            .url = "https://github.com/hexops/vulkan-headers/archive/e1b061ff624531e82a7daea5dbd56c07e08bf0be.tar.gz",
+            .hash = "12204967f9d07fda3af6a21d6ab71fb832da2186176c530a7a14aa96043537399e6b",
+        },
+        .wayland_headers = .{
+            .url = "https://github.com/hexops/wayland-headers/archive/7bf46f3d60edab2171643ff85770c392ef62704d.tar.gz",
+            .hash = "1220689912c40c0880b094f748199c490810d4fa4c58ce1ef9058ce97f46ee28496a",
+        },
+        .x11_headers = .{
+            .url = "https://github.com/hexops/x11-headers/archive/1db4df130531c6889df664541bc62161510b9189.tar.gz",
+            .hash = "12208b3ccaec785e9344472c08bada6137d60666f0d52fc8cf62aae4251056db7737",
+        },
     },
 }
