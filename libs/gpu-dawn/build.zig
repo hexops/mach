@@ -26,7 +26,7 @@ pub fn build(b: *Build) !void {
         .optimize = optimize,
     });
     try gpu_dawn.link(b, example, options);
-    try glfw.link(b, example, .{ .system_sdk = .{ .set_sysroot = false } });
+    try glfw.link(b, example, .{});
     example.addModule("glfw", glfw.module(b));
     b.installArtifact(example);
 }
