@@ -28,11 +28,7 @@ jobs:
         uses: actions/checkout@v2
       - name: test
         run: zig build test
-        env:
-          AGREE: true
       - name: build
         run: zig build
-        env:
-          AGREE: true
       - name: build (WASM)
         run: zig build -Dtarget=wasm32-freestanding-none

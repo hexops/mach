@@ -58,9 +58,5 @@ jobs:
           git clone https://github.com/hexops/mach-glfw libs/mach-glfw
           git clone https://github.com/hexops/mach-gpu-dawn libs/mach-gpu-dawn
           zig build
-        env:
-          AGREE: true
       - name: test
         run: zig build test
-        env:
-          AGREE: true
