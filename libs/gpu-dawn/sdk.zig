@@ -62,9 +62,18 @@ pub fn Sdk(comptime deps: anytype) type {
         pub fn link(b: *Build, step: *std.build.CompileStep, options: Options) !void {
             const opt = options.detectDefaults(step.target_info.target);
 
-            // TODO(build-system): pass system SDK options through
-            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
             if (step.target_info.target.os.tag == .windows) @import("direct3d_headers").addLibraryPath(step);
+            if (step.target_info.target.os.tag == .macos) {
+                // TODO(build-system): This cannot be imported with the Zig package manager
+                // error: TarUnsupportedFileType
+                //
+                // step.linkLibrary(b.dependency("xcode_frameworks", .{
+                //     .target = step.target,
+                //     .optimize = step.optimize,
+                // }).artifact("xcode-frameworks"));
+                // @import("xcode_frameworks").addPaths(step);
+                deps.xcode_frameworks.addPaths(step);
+            }
 
             try if (options.from_source)
                 linkFromSource(b, step, opt)
@@ -542,10 +551,20 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn linkLibDawnCommonDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = b;
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
             if (step.target_info.target.os.tag == .macos) {
+                // TODO(build-system): This cannot be imported with the Zig package manager
+                // error: TarUnsupportedFileType
+                //
+                // step.linkLibrary(b.dependency("xcode_frameworks", .{
+                //     .target = step.target,
+                //     .optimize = step.optimize,
+                // }).artifact("xcode-frameworks"));
+                // @import("xcode_frameworks").addPaths(step);
+                deps.xcode_frameworks.addPaths(step);
+
                 step.linkSystemLibraryName("objc");
                 step.linkFramework("Foundation");
             }
@@ -560,6 +579,11 @@ pub fn Sdk(comptime deps: anytype) type {
             });
             if (options.install_libs) b.installArtifact(lib);
             linkLibDawnCommonDependencies(b, lib, options);
+
+            if (lib.target_info.target.os.tag == .linux) lib.linkLibrary(b.dependency("x11_headers", .{
+                .target = lib.target,
+                .optimize = lib.optimize,
+            }).artifact("x11-headers"));
 
             var flags = std.ArrayList([]const u8).init(b.allocator);
             try flags.appendSlice(&.{
@@ -600,9 +624,9 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn linkLibDawnPlatformDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = b;
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
         }
 
         // Build dawn platform sources; derived from src/dawn/platform/BUILD.gn
@@ -676,7 +700,6 @@ pub fn Sdk(comptime deps: anytype) type {
 
         fn linkLibDawnNativeDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
             step.linkLibCpp();
-            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
             if (options.d3d12.?) {
                 step.linkLibrary(b.dependency("direct3d_headers", .{
                     .target = step.target,
@@ -684,6 +707,16 @@ pub fn Sdk(comptime deps: anytype) type {
                 }).artifact("direct3d-headers"));
             }
             if (options.metal.?) {
+                // TODO(build-system): This cannot be imported with the Zig package manager
+                // error: TarUnsupportedFileType
+                //
+                // step.linkLibrary(b.dependency("xcode_frameworks", .{
+                //     .target = step.target,
+                //     .optimize = step.optimize,
+                // }).artifact("xcode-frameworks"));
+                // @import("xcode_frameworks").addPaths(step);
+                deps.xcode_frameworks.addPaths(step);
+
                 step.linkSystemLibraryName("objc");
                 step.linkFramework("Metal");
                 step.linkFramework("CoreGraphics");
@@ -707,6 +740,15 @@ pub fn Sdk(comptime deps: anytype) type {
             });
             if (options.install_libs) b.installArtifact(lib);
             linkLibDawnNativeDependencies(b, lib, options);
+
+            if (options.vulkan.?) lib.linkLibrary(b.dependency("vulkan_headers", .{
+                .target = lib.target,
+                .optimize = lib.optimize,
+            }).artifact("vulkan-headers"));
+            if (lib.target_info.target.os.tag == .linux) lib.linkLibrary(b.dependency("x11_headers", .{
+                .target = lib.target,
+                .optimize = lib.optimize,
+            }).artifact("x11-headers"));
 
             // MacOS: this must be defined for system-sdk-13.3 and older.
             // Critically, this MUST NOT be included as a -D__kernel_ptr_semantics flag. If it is,
@@ -975,9 +1017,9 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn linkLibTintDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = b;
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
         }
 
         // Builds tint sources; derived from src/tint/BUILD.gn
@@ -1142,9 +1184,9 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn linkLibSPIRVToolsDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = b;
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
         }
 
         // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
@@ -1208,11 +1250,21 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn linkLibAbseilCppDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = b;
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
             const target = step.target_info.target;
             if (target.os.tag == .macos) {
+                // TODO(build-system): This cannot be imported with the Zig package manager
+                // error: TarUnsupportedFileType
+                //
+                // step.linkLibrary(b.dependency("xcode_frameworks", .{
+                //     .target = step.target,
+                //     .optimize = step.optimize,
+                // }).artifact("xcode-frameworks"));
+                // @import("xcode_frameworks").addPaths(step);
+                deps.xcode_frameworks.addPaths(step);
+
                 step.linkSystemLibraryName("objc");
                 step.linkFramework("CoreFoundation");
             }
@@ -1286,9 +1338,9 @@ pub fn Sdk(comptime deps: anytype) type {
         }
 
         fn linkLibDawnWireDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
+            _ = b;
             _ = options;
             step.linkLibCpp();
-            if (step.target_info.target.os.tag == .macos) deps.system_sdk.include(b, step, .{});
         }
 
         // Buids dawn wire sources; derived from src/dawn/wire/BUILD.gn
