@@ -42,5 +42,9 @@
             .url = "https://github.com/hexops/x11-headers/archive/99af89c7bfdc7db503f3a7003571f8e81bcd09f3.tar.gz",
             .hash = "1220e6bd3186841c1da38d862d52ba88dec9633d24f409eda27627321937419a0ddb",
         },
+        .linux_audio_headers = .{
+            .url = "https://github.com/hexops/linux-audio-headers/archive/d643d20f87e621b4cae1b04a2a112a881334e8b9.tar.gz",
+            .hash = "1220cac816e759824c7f70b6ffd0e6852a33d943b763349421657fd0d8de0587f667",
+        },
     },
 }
