@@ -23,9 +23,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Setup Zig
         run: |
-          sudo apt install xz-utils libasound2-dev
+          sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       # - name: x86_64-linux -> x86_64-linux-musl
       #   if: matrix.project == 'libs/freetype' || matrix.project == 'libs/glfw'
@@ -52,6 +54,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Setup Zig
         run: |
           $ProgressPreference = 'SilentlyContinue'
@@ -69,6 +73,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Setup Zig
         run: |
           brew uninstall --ignore-dependencies libx11 # https://github.com/ziglang/zig/issues/11066
