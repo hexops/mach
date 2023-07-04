@@ -8,6 +8,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Setup Zig
         run: |
           sudo apt install xz-utils
@@ -24,6 +26,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Setup Zig
         run: |
           $ProgressPreference = 'SilentlyContinue'
@@ -43,6 +47,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Setup Zig
         run: |
           brew install xz
