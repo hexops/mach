@@ -18,6 +18,8 @@ jobs:
           rm -rf $GITHUB_WORKSPACE && mkdir $GITHUB_WORKSPACE
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
