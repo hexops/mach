@@ -1,15 +1,15 @@
 const std = @import("std");
 const Build = std.Build;
 const glfw = @import("libs/mach-glfw/build.zig");
-const system_sdk = @import("libs/mach-glfw/system_sdk.zig");
 const gpu_dawn_sdk = @import("sdk.zig");
 
 pub fn build(b: *Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
     const gpu_dawn = gpu_dawn_sdk.Sdk(.{
-        .glfw_include_dir = "libs/mach-glfw/upstream/glfw/include",
-        .system_sdk = system_sdk,
+        // TODO(build-system): This cannot be imported with the Zig package manager
+        // error: TarUnsupportedFileType
+        .xcode_frameworks = @import("libs/xcode-frameworks/build.zig"),
     });
 
     const options = gpu_dawn.Options{
