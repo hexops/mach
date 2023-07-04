@@ -17,7 +17,7 @@ jobs:
           submodules: 'true'
       - name: Setup Zig
         run: |
-          sudo apt install xz-utils
+          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
@@ -40,7 +40,7 @@ jobs:
           submodules: 'true'
       - name: Setup Zig
         run: |
-          sudo apt install xz-utils
+          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
@@ -63,7 +63,7 @@ jobs:
           submodules: 'true'
       - name: Setup Zig
         run: |
-          sudo apt install xz-utils
+          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
@@ -86,7 +86,7 @@ jobs:
           submodules: 'true'
       - name: Setup Zig
         run: |
-          sudo apt install xz-utils
+          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
@@ -109,7 +109,7 @@ jobs:
           submodules: 'true'
       - name: Setup Zig
         run: |
-          sudo apt install xz-utils
+          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
@@ -132,7 +132,7 @@ jobs:
           submodules: 'true'
       - name: Setup Zig
         run: |
-          sudo apt install xz-utils
+          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
@@ -155,7 +155,7 @@ jobs:
           submodules: 'true'
       - name: Setup Zig
         run: |
-          sudo apt install xz-utils
+          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
@@ -178,7 +178,7 @@ jobs:
           submodules: 'true'
       - name: Setup Zig
         run: |
-          sudo apt install xz-utils
+          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
         run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
