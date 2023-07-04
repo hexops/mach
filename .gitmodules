@@ -18,3 +18,6 @@
 [submodule "libs/sysaudio/libs/xcode-frameworks"]
 	path = libs/sysaudio/libs/xcode-frameworks
 	url = https://github.com/hexops/xcode-frameworks
+[submodule "libs/gpu-dawn/libs/xcode-frameworks"]
+	path = libs/gpu-dawn/libs/xcode-frameworks
+	url = https://github.com/hexops/xcode-frameworks
