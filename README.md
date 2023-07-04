@@ -37,7 +37,6 @@ Mach has many libraries you can use for game development in Zig - **you don't ha
 - [mach-glfw](https://github.com/hexops/mach-glfw): Ziggified GLFW bindings with 100% API coverage
 - [mach-freetype](https://github.com/hexops/mach-freetype): Ziggified Freetype 2 & HarfBuzz bindings
 - [mach-gpu-dawn](https://github.com/hexops/mach-gpu-dawn): Google's Dawn WebGPU implementation, cross-compiled with Zig into a single static library
-- [mach-system-sdk](https://github.com/hexops/mach-system-sdk): More libraries for cross-compilation with Zig
 
 ## Join the community
 

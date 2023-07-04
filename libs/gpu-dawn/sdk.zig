@@ -750,7 +750,7 @@ pub fn Sdk(comptime deps: anytype) type {
                 .optimize = lib.optimize,
             }).artifact("x11-headers"));
 
-            // MacOS: this must be defined for system-sdk-13.3 and older.
+            // MacOS: this must be defined for macOS 13.3 and older.
             // Critically, this MUST NOT be included as a -D__kernel_ptr_semantics flag. If it is,
             // then this macro will not be defined even if `defineCMacro` was also called!
             lib.defineCMacro("__kernel_ptr_semantics", "");
