@@ -1,19 +1,23 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const glfw = @import("libs/glfw/build.zig");
 const freetype = @import("libs/freetype/build.zig");
-pub const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
+const glfw = @import("libs/glfw/sdk.zig").Sdk(.{
     // TODO(build-system): This cannot be imported with the Zig package manager
     // error: TarUnsupportedFileType
-    .xcode_frameworks = @import("libs/mach-gpu-dawn/libs/xcode-frameworks/build.zig"),
-});
-const gpu = @import("libs/gpu/sdk.zig").Sdk(.{
-    .gpu_dawn = gpu_dawn,
+    .xcode_frameworks = @import("libs/gpu-dawn/libs/xcode-frameworks/build.zig"),
 });
 const sysaudio = @import("libs/sysaudio/sdk.zig").Sdk(.{
     // TODO(build-system): This cannot be imported with the Zig package manager
     // error: TarUnsupportedFileType
-    .xcode_frameworks = @import("libs/mach-gpu-dawn/libs/xcode-frameworks/build.zig"),
+    .xcode_frameworks = @import("libs/gpu-dawn/libs/xcode-frameworks/build.zig"),
+});
+pub const gpu_dawn = @import("libs/gpu-dawn/sdk.zig").Sdk(.{
+    // TODO(build-system): This cannot be imported with the Zig package manager
+    // error: TarUnsupportedFileType
+    .xcode_frameworks = @import("libs/gpu-dawn/libs/xcode-frameworks/build.zig"),
+});
+const gpu = @import("libs/gpu/sdk.zig").Sdk(.{
+    .gpu_dawn = gpu_dawn,
 });
 const core = @import("libs/core/sdk.zig").Sdk(.{
     .gpu = gpu,
