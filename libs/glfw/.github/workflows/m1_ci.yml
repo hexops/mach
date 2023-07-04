@@ -21,6 +21,8 @@ jobs:
           rm -rf $GITHUB_WORKSPACE && mkdir $GITHUB_WORKSPACE
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: test
         run: zig build test
       - name: aarch64-macos -> x86_64-macos
