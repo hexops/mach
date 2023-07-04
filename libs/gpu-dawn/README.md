@@ -20,7 +20,7 @@ git clone https://github.com/hexops/mach-gpu-dawn
 cd mach-gpu-dawn
 
 rm -rf libs/mach-glfw
-git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
 
 zig build
 ```

@@ -21,7 +21,7 @@ jobs:
         with:
           submodules: 'true'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
         run: zig build install -Dtarget=aarch64-macos
       - name: upload (debug)

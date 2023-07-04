@@ -20,7 +20,7 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
         run: zig build install -Dtarget=x86_64-linux-gnu
       - name: upload (debug)
@@ -43,7 +43,7 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
         run: zig build install -Doptimize=ReleaseFast -Dtarget=x86_64-linux-gnu
       - name: upload (release-fast)
@@ -66,7 +66,7 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
         run: zig build install -Dtarget=x86_64-linux-musl
       - name: upload (debug)
@@ -89,7 +89,7 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
         run: zig build install -Doptimize=ReleaseFast -Dtarget=x86_64-linux-musl
       - name: upload (release-fast)
@@ -112,7 +112,7 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
         run: zig build install -Dtarget=aarch64-linux-gnu
       - name: upload (debug)
@@ -135,7 +135,7 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
         run: zig build install -Doptimize=ReleaseFast -Dtarget=aarch64-linux-gnu
       - name: upload (release-fast)
@@ -158,7 +158,7 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
         run: zig build install -Dtarget=aarch64-linux-musl
       - name: upload (debug)
@@ -181,7 +181,7 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
         run: zig build install -Doptimize=ReleaseFast -Dtarget=aarch64-linux-musl
       - name: upload (release-fast)
@@ -207,7 +207,7 @@ jobs:
           7z x zig.zip
           Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.11.0-dev.3883+7166407d8\"
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
         run: zig build install -Dtarget=x86_64-windows-gnu
       - name: upload (debug)
@@ -235,7 +235,7 @@ jobs:
           7z x zig.zip
           Add-Content $env:GITHUB_PATH "C:\zig-windows-x86_64-0.11.0-dev.3883+7166407d8\"
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
         run: zig build install -Dtarget=x86_64-windows-gnu -Doptimize=ReleaseFast
       - name: upload (release-fast)
@@ -261,7 +261,7 @@ jobs:
           brew install xz
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
         run: zig build install -Dtarget=x86_64-macos
       - name: upload (debug)
@@ -285,7 +285,7 @@ jobs:
           brew install xz
           sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (release-fast)
         run: zig build install -Doptimize=ReleaseFast -Dtarget=x86_64-macos
       - name: upload (release-fast)

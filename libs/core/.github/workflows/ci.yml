@@ -19,9 +19,9 @@ jobs:
           rm -rf libs/mach-glfw
           rm -rf libs/mach-gpu
           rm -rf libs/mach-gpu-dawn
-          git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+          git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
           git clone https://github.com/hexops/mach-gpu libs/mach-gpu
-          git clone https://github.com/hexops/mach-gpu-dawn libs/mach-gpu-dawn
+          git clone --recursive https://github.com/hexops/mach-gpu-dawn libs/mach-gpu-dawn
           zig build
       - name: launch xvfb
         run: Xvfb :99 -screen 0 1680x720x24 > /dev/null 2>&1 &
@@ -49,9 +49,9 @@ jobs:
           Remove-Item -Recurse -Force libs/mach-glfw
           Remove-Item -Recurse -Force libs/mach-gpu
           Remove-Item -Recurse -Force libs/mach-gpu-dawn
-          git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+          git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
           git clone https://github.com/hexops/mach-gpu libs/mach-gpu
-          git clone https://github.com/hexops/mach-gpu-dawn libs/mach-gpu-dawn
+          git clone --recursive https://github.com/hexops/mach-gpu-dawn libs/mach-gpu-dawn
           zig build
       - name: test
         run: zig build test
@@ -71,9 +71,9 @@ jobs:
           rm -rf libs/mach-glfw
           rm -rf libs/mach-gpu
           rm -rf libs/mach-gpu-dawn
-          git clone https://github.com/hexops/mach-glfw libs/mach-glfw
+          git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
           git clone https://github.com/hexops/mach-gpu libs/mach-gpu
-          git clone https://github.com/hexops/mach-gpu-dawn libs/mach-gpu-dawn
+          git clone --recursive https://github.com/hexops/mach-gpu-dawn libs/mach-gpu-dawn
           zig build
       - name: test
         run: zig build test
