@@ -16,6 +16,8 @@ pub const gfx2d = struct {
 };
 pub const math = @import("math.zig");
 
+pub const Atlas = @import("atlas/Atlas.zig");
+
 // Engine exports
 pub const App = @import("engine.zig").App;
 pub const Module = @import("engine.zig").Module;
@@ -24,6 +26,7 @@ const std = @import("std");
 
 test {
     std.testing.refAllDeclsRecursive(gfx);
+    std.testing.refAllDeclsRecursive(Atlas);
     _ = ecs;
     _ = earcut;
 }
