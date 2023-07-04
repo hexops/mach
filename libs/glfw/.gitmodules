@@ -1,3 +1,6 @@
 [submodule "libs/xcode-frameworks"]
 	path = libs/xcode-frameworks
 	url = https://github.com/hexops/xcode-frameworks
+[submodule "upstream"]
+	path = upstream
+	url = https://github.com/hexops-graveyard/glfw
