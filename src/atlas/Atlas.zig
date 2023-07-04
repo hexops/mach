@@ -82,6 +82,27 @@ pub const Region = extern struct {
     y: u32,
     width: u32,
     height: u32,
+
+    pub const UV = extern struct {
+        x: f32,
+        y: f32,
+        width: f32,
+        height: f32,
+    };
+
+    pub inline fn calculateUV(r: Region, size: u32) UV {
+        var uv = UV{
+            .x = @floatFromInt(r.x),
+            .y = @floatFromInt(r.y),
+            .width = @floatFromInt(r.width),
+            .height = @floatFromInt(r.height),
+        };
+        uv.x /= @floatFromInt(size);
+        uv.y /= @floatFromInt(size);
+        uv.width /= @floatFromInt(size);
+        uv.height /= @floatFromInt(size);
+        return uv;
+    }
 };
 
 pub fn init(alloc: Allocator, size: u32, format: Format) !Atlas {
