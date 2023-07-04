@@ -15,8 +15,8 @@
             .hash = "1220689912c40c0880b094f748199c490810d4fa4c58ce1ef9058ce97f46ee28496a",
         },
         .x11_headers = .{
-            .url = "https://github.com/hexops/x11-headers/archive/1db4df130531c6889df664541bc62161510b9189.tar.gz",
-            .hash = "12208b3ccaec785e9344472c08bada6137d60666f0d52fc8cf62aae4251056db7737",
+            .url = "https://github.com/hexops/x11-headers/archive/99af89c7bfdc7db503f3a7003571f8e81bcd09f3.tar.gz",
+            .hash = "1220e6bd3186841c1da38d862d52ba88dec9633d24f409eda27627321937419a0ddb",
         },
     },
 }
