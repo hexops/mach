@@ -1,6 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const glfw = @import("libs/mach-glfw/build.zig");
+const glfw = @import("mach_glfw");
 const gpu_dawn = @import("libs/mach-gpu-dawn/build.zig");
 const gpu = @import("libs/mach-gpu/build.zig").Sdk(.{
     .gpu_dawn = gpu_dawn,

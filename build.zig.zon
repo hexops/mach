@@ -30,6 +30,10 @@
             .url = "https://github.com/hexops/mach-sysaudio/archive/bc03624694ddf3a7d348efdeccf82404eb019236.tar.gz",
             .hash = "12203830507ce345848f27ffd27369e726c35ce115edb66f9ba9ee524d8a46c0a87a",
         },
+        .mach_glfw = .{
+            .url = "https://github.com/hexops/mach-glfw/archive/98418ac4dc7d21ffbfebdee8045473fa2e35d528.tar.gz",
+            .hash = "1220d685dabe227073aa11a8b7bb9eecfc8cbe5a08e128c23c173c2baddf8da9258e",
+        },
         .direct3d_headers = .{
             .url = "https://github.com/hexops/direct3d-headers/archive/773dce3f079eecdccc7c71d1318a0741649d568b.tar.gz",
             .hash = "12200d2155216c5eb5f111282cd355b5433cad6a68fd040294e695149cba329f7c12",

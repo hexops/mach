@@ -42,19 +42,29 @@ A minimal Vulkan example can be found in the [mach-glfw-vulkan-example](https://
 
 ## Getting started
 
-### Adding dependency (using Git)
+### Adding dependency
 
-In a `libs` subdirectory of the root of your project:
+Create a `build.zig.zon` file in your project (replace `$LATEST_COMMIT` with the latest commit hash):
 
-```sh
-git clone https://github.com/hexops/mach-glfw
+```
+.{
+    .name = "mypkg",
+    .version = "0.1.0",
+    .dependencies = .{
+        .mach_glfw = .{
+            .url = "https://github.com/hexops/mach-glfw/archive/$LATEST_COMMIT.tar.gz",
+        },
+    },
+}
 ```
 
-Then in your `build.zig` add:
+Run `zig build` in your project, and the compiler instruct you to add a `.hash = "..."` field next to `.url`.
+
+Then use the dependency in your `build.zig`:
 
 ```zig
 ...
-const glfw = @import("libs/mach-glfw/build.zig");
+const glfw = @import("mach_glfw");
 
 pub fn build(b: *Build) !void {
     ...
@@ -62,37 +72,6 @@ pub fn build(b: *Build) !void {
     try glfw.link(b, exe, .{});
 }
 ```
-
-<details>
-<summary>
-
-### (optional) Adding dependency using Gyro
-
-</summary>
-
-```sh
-gyro add --src github hexops/mach-glfw --root src/main.zig --alias glfw
-gyro add --build_dep --src github hexops/mach-glfw --root build.zig --alias build-glfw
-```
-
-Then in your `build.zig` add:
-
-```zig
-...
-const pkgs = @import("deps.zig").pkgs;
-const glfw = @import("build-glfw");
-
-pub fn build(b: *Build) !void {
-    ...
-
-    exe.addModule("glfw", pkgs.glfw);
-    try glfw.link(b, exe, .{});
-}
-```
-
-**Note: You should use `gyro build` instead of `zig build` to use gyro**
-
-</details>
 
 # Next steps
 

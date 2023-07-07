@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const freetype = @import("libs/freetype/build.zig");
-const glfw = @import("libs/glfw/build.zig");
+const glfw = @import("mach_glfw");
 const sysaudio = @import("mach_sysaudio");
 pub const gpu_dawn = @import("libs/gpu-dawn/build.zig"); // TODO(build-system): make this private
 const gpu = @import("libs/gpu/build.zig").Sdk(.{

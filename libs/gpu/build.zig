@@ -3,7 +3,7 @@ const std = @import("std");
 pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
-    const glfw = @import("libs/mach-glfw/build.zig");
+    const glfw = @import("mach_glfw");
     const gpu_dawn = @import("libs/mach-gpu-dawn/build.zig");
     const gpu = Sdk(.{
         .gpu_dawn = gpu_dawn,
