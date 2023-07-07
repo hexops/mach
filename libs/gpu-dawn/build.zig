@@ -1639,11 +1639,40 @@ fn sdkPath(comptime suffix: []const u8) []const u8 {
 const xcode_frameworks = struct {
     pub fn addPaths(b: *std.Build, step: *std.build.CompileStep) void {
         // branch: mach
-        ensureGitRepoCloned(b.allocator, "https://github.com/hexops/xcode-frameworks", "723aa55e9752c8c6c25d3413722b5fe13d72ac4f", "zig-cache/xcode_frameworks") catch |err| @panic(@errorName(err));
+        xcodeEnsureGitRepoCloned(b.allocator, "https://github.com/hexops/xcode-frameworks", "723aa55e9752c8c6c25d3413722b5fe13d72ac4f", "zig-cache/xcode_frameworks") catch |err| @panic(@errorName(err));
 
         step.addFrameworkPath("zig-cache/xcode_frameworks/Frameworks");
         step.addSystemIncludePath("zig-cache/xcode_frameworks/include");
         step.addLibraryPath("zig-cache/xcode_frameworks/lib");
+    }
+
+    fn xcodeEnsureGitRepoCloned(allocator: std.mem.Allocator, clone_url: []const u8, revision: []const u8, rel_dir: []const u8) !void {
+        if (isEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES") or isEnvVarTruthy(allocator, "NO_ENSURE_GIT")) {
+            return;
+        }
+
+        ensureGit(allocator);
+
+        if (std.fs.cwd().realpathAlloc(allocator, rel_dir)) |dir| {
+            const current_revision = try getCurrentGitRevision(allocator, dir);
+            if (!std.mem.eql(u8, current_revision, revision)) {
+                // Reset to the desired revision
+                exec(allocator, &[_][]const u8{ "git", "fetch" }, dir) catch |err| std.debug.print("warning: failed to 'git fetch' in {s}: {s}\n", .{ dir, @errorName(err) });
+                try exec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, dir);
+                try exec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
+            }
+            return;
+        } else |err| return switch (err) {
+            error.FileNotFound => {
+                std.log.info("cloning required dependency..\ngit clone {s} {s}..\n", .{ clone_url, rel_dir });
+
+                try exec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", clone_url, rel_dir }, xcodeSdkPath("/"));
+                try exec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, rel_dir);
+                try exec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, rel_dir);
+                return;
+            },
+            else => err,
+        };
     }
 
     fn xcodeSdkPath(comptime suffix: []const u8) []const u8 {
