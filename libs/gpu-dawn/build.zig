@@ -1,6 +1,6 @@
 const std = @import("std");
 const Build = std.Build;
-const glfw = @import("libs/mach-glfw/sdk.zig").Sdk(.{
+const glfw = @import("libs/mach-glfw/build.zig").Sdk(.{
     // TODO(build-system): This cannot be imported with the Zig package manager
     // error: TarUnsupportedFileType
     .xcode_frameworks = @import("libs/xcode-frameworks/build.zig"),
