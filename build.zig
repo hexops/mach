@@ -85,21 +85,8 @@ pub fn build(b: *std.Build) !void {
         const app_run_step = b.step("run", "Run Mach Engine Application");
         app_run_step.dependOn(&app_run_cmd.step);
 
-        const all_tests_step = b.step("test", "Run library tests");
-        const core_test_step = b.step("test-core", "Run Core library tests");
-        const freetype_test_step = b.step("test-freetype", "Run Freetype library tests");
-        const sysaudio_test_step = b.step("test-sysaudio", "Run sysaudio library tests");
-        const mach_test_step = b.step("test-mach", "Run Engine library tests");
-
-        core_test_step.dependOn(&(try core.testStep(b, optimize, target)).step);
-        freetype_test_step.dependOn(&freetype.testStep(b, optimize, target).step);
-        sysaudio_test_step.dependOn(&sysaudio.testStep(b, optimize, target).step);
-        mach_test_step.dependOn(&testStep(b, optimize, target).step);
-
-        all_tests_step.dependOn(core_test_step);
-        all_tests_step.dependOn(freetype_test_step);
-        all_tests_step.dependOn(sysaudio_test_step);
-        all_tests_step.dependOn(mach_test_step);
+        const tests_step = b.step("test", "Run tests");
+        tests_step.dependOn(&testStep(b, optimize, target).step);
 
         const shaderexp_app = try App.init(
             b,
