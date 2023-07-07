@@ -16,7 +16,7 @@ pub const gpu_dawn = @import("libs/gpu-dawn/build.zig").Sdk(.{
     // error: TarUnsupportedFileType
     .xcode_frameworks = @import("libs/gpu-dawn/libs/xcode-frameworks/build.zig"),
 });
-const gpu = @import("libs/gpu/sdk.zig").Sdk(.{
+const gpu = @import("libs/gpu/build.zig").Sdk(.{
     .gpu_dawn = gpu_dawn,
 });
 const core = @import("libs/core/sdk.zig").Sdk(.{
