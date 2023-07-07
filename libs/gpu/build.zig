@@ -4,7 +4,7 @@ const glfw = @import("libs/mach-glfw/build.zig").Sdk(.{
     // error: TarUnsupportedFileType
     .xcode_frameworks = @import("libs/mach-gpu-dawn/libs/xcode-frameworks/build.zig"),
 });
-const gpu_dawn_sdk = @import("libs/mach-gpu-dawn/sdk.zig");
+const gpu_dawn_sdk = @import("libs/mach-gpu-dawn/build.zig");
 const gpu_sdk = @import("sdk.zig");
 
 pub fn build(b: *std.Build) !void {
