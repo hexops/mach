@@ -6,7 +6,7 @@ const glfw = @import("libs/glfw/sdk.zig").Sdk(.{
     // error: TarUnsupportedFileType
     .xcode_frameworks = @import("libs/gpu-dawn/libs/xcode-frameworks/build.zig"),
 });
-const sysaudio = @import("libs/sysaudio/sdk.zig").Sdk(.{
+const sysaudio = @import("libs/sysaudio/build.zig").Sdk(.{
     // TODO(build-system): This cannot be imported with the Zig package manager
     // error: TarUnsupportedFileType
     .xcode_frameworks = @import("libs/gpu-dawn/libs/xcode-frameworks/build.zig"),
