@@ -18,5 +18,9 @@
             .url = "https://github.com/hexops/x11-headers/archive/99af89c7bfdc7db503f3a7003571f8e81bcd09f3.tar.gz",
             .hash = "1220e6bd3186841c1da38d862d52ba88dec9633d24f409eda27627321937419a0ddb",
         },
+        .glfw = .{
+            .url = "https://github.com/hexops/glfw/archive/49c21c3d2fcaf9799b593f5320ce8e598a692c74.tar.gz",
+            .hash = "12200a907165afc4c099d4d19e2f7ce9923a72116006d8f5f5af3a9a071fa66171d2",
+        },
     },
 }

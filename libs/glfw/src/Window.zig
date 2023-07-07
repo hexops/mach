@@ -50,6 +50,8 @@ const Hint = enum(c_int) {
     transparent_framebuffer = c.GLFW_TRANSPARENT_FRAMEBUFFER,
     focus_on_show = c.GLFW_FOCUS_ON_SHOW,
     mouse_passthrough = c.GLFW_MOUSE_PASSTHROUGH,
+    position_x = c.GLFW_POSITION_X,
+    position_y = c.GLFW_POSITION_Y,
     scale_to_monitor = c.GLFW_SCALE_TO_MONITOR,
 
     /// Framebuffer hints
@@ -112,6 +114,9 @@ const Hint = enum(c_int) {
 
     /// Windows specific
     win32_keyboard_menu = c.GLFW_WIN32_KEYBOARD_MENU,
+
+    /// Allows specification of the Wayland app_id.
+    wayland_app_id = c.GLFW_WAYLAND_APP_ID,
 };
 
 /// Window hints
@@ -128,6 +133,9 @@ pub const Hints = struct {
     transparent_framebuffer: bool = false,
     focus_on_show: bool = true,
     mouse_passthrough: bool = false,
+    position_x: c_int = @intFromEnum(Position.any),
+    position_y: c_int = @intFromEnum(Position.any),
+
     scale_to_monitor: bool = false,
 
     /// Framebuffer hints
@@ -194,6 +202,9 @@ pub const Hints = struct {
     /// Windows specific
     win32_keyboard_menu: bool = false,
 
+    /// Allows specification of the Wayland app_id.
+    wayland_app_id: [:0]const u8 = "",
+
     pub const PositiveCInt = std.math.IntFittingRange(0, std.math.maxInt(c_int));
 
     pub const ClientAPI = enum(c_int) {
@@ -226,6 +237,18 @@ pub const Hints = struct {
         opengl_core_profile = c.GLFW_OPENGL_CORE_PROFILE,
     };
 
+    pub const Position = enum(c_int) {
+        /// By default, newly created windows use the placement recommended by the window system,
+        ///
+        /// To create the window at a specific position, make it initially invisible using the
+        /// Window.Hint.visible hint, set its Window.Hint.position and then Window.hide() it.
+        ///
+        /// To create the window at a specific position, set the Window.Hint.position_x and
+        /// Window.Hint.position_y hints before creation. To restore the default behavior, set
+        /// either or both hints back to Window.Hints.Position.any
+        any = @bitCast(c.GLFW_ANY_POSITION),
+    };
+
     fn set(hints: Hints) void {
         internal_debug.assertInitialized();
         inline for (comptime std.meta.fieldNames(Hint)) |field_name| {
@@ -241,6 +264,7 @@ pub const Hints = struct {
                 ContextRobustness,
                 ContextReleaseBehavior,
                 OpenGLProfile,
+                Position,
                 => c.glfwWindowHint(hint_tag, @intFromEnum(hint_value)),
 
                 [:0]const u8 => c.glfwWindowHintString(hint_tag, hint_value.ptr),
@@ -820,8 +844,8 @@ pub inline fn setOpacity(self: Window, opacity: f32) void {
 /// This function iconifies (minimizes) the specified window if it was previously restored. If the
 /// window is already iconified, this function does nothing.
 ///
-/// If the specified window is a full screen window, the original monitor resolution is restored
-/// until the window is restored.
+/// If the specified window is a full screen window, GLFW restores the original video mode of the
+/// monitor. The window's desired video mode is set again when the window is restored.
 ///
 /// Possible errors include glfw.ErrorCode.PlatformError.
 ///
@@ -841,8 +865,8 @@ pub inline fn iconify(self: Window) void {
 /// This function restores the specified window if it was previously iconified (minimized) or
 /// maximized. If the window is already restored, this function does nothing.
 ///
-/// If the specified window is a full screen window, the resolution chosen for the window is
-/// restored on the selected monitor.
+/// If the specified window is an iconified full screen window, its desired video mode is set
+/// again for its monitor when the window is restored.
 ///
 /// Possible errors include glfw.ErrorCode.PlatformError.
 ///
@@ -1104,6 +1128,9 @@ pub const Attrib = enum(c_int) {
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
+/// wayland: The Wayland protocol provides no way to check whether a window is iconified, so
+/// glfw.Window.Attrib.iconified always returns `false`.
+///
 /// see also: window_attribs, glfw.Window.setAttrib
 pub inline fn getAttrib(self: Window, attrib: Attrib) i32 {
     internal_debug.assertInitialized();
@@ -1125,8 +1152,8 @@ pub inline fn getAttrib(self: Window, attrib: Attrib) i32 {
 ///
 /// @param[in] attrib A supported window attribute.
 ///
-/// Possible errors include glfw.ErrorCode.InvalidEnum, glfw.ErrorCode.InvalidValue and
-/// glfw.ErrorCode.PlatformError.
+/// Possible errors include glfw.ErrorCode.InvalidEnum, glfw.ErrorCode.InvalidValue,
+/// glfw.ErrorCode.PlatformError, glfw.ErrorCode.FeatureUnavailable
 ///
 /// Calling glfw.Window.getAttrib will always return the latest
 /// value, even if that value is ignored by the current mode of the window.
@@ -1527,6 +1554,9 @@ pub const InputModeCursor = enum(c_int) {
     /// Hides and grabs the cursor, providing virtual and unlimited cursor movement. This is useful
     /// for implementing for example 3D camera controls.
     disabled = c.GLFW_CURSOR_DISABLED,
+
+    /// Makes the cursor visible but confines it to the content area of the window.
+    captured = c.GLFW_CURSOR_CAPTURED,
 };
 
 /// Sets the input mode of the cursor, whether it should behave normally, be hidden, or grabbed.
@@ -1669,8 +1699,9 @@ pub inline fn setInputMode(self: Window, mode: InputMode, value: anytype) void {
 /// Returns the last reported press state of a keyboard key for the specified window.
 ///
 /// This function returns the last press state reported for the specified key to the specified
-/// window. The returned state is one of `true` (pressed) or `false` (released). The higher-level
-/// action `glfw.Action.repeat` is only reported to the key callback.
+/// window. The returned state is one of `true` (pressed) or `false` (released).
+///
+/// * `glfw.Action.repeat` is only reported to the key callback.
 ///
 /// If the `glfw.sticky_keys` input mode is enabled, this function returns `glfw.Action.press` the
 /// first time you call it for a key that was pressed, even if that key has already been released.
@@ -1773,7 +1804,7 @@ pub inline fn getCursorPos(self: Window) CursorPos {
 /// @param[in] xpos The desired x-coordinate, relative to the left edge of the content area.
 /// @param[in] ypos The desired y-coordinate, relative to the top edge of the content area.
 ///
-/// Possible errors include glfw.ErrorCode.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError, glfw.ErrorCode.FeatureUnavailable.
 ///
 /// wayland: This function will only work when the cursor mode is `glfw.cursor_disabled`, otherwise
 /// it will do nothing.

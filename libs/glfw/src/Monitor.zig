@@ -186,7 +186,7 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
 /// then by resolution area (the product of width and height), then resolution width and finally
 /// by refresh rate.
 ///
-/// Possible errors include glfw.ErrorCode.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError, glfw.ErrorCode.FeatureUnavailable.
 /// Returns null in the event of an error.
 ///
 /// The returned slice memory is owned by the caller.
@@ -194,7 +194,10 @@ pub inline fn getUserPointer(self: Monitor, comptime T: type) ?*T {
 /// @thread_safety This function must only be called from the main thread.
 ///
 /// see also: monitor_modes, glfw.Monitor.getVideoMode
-//
+///
+/// wayland: Gamma handling is privileged protocol, this function will thus never be implemented and
+/// emits glfw.ErrorCode.FeatureUnavailable
+///
 /// TODO(glfw): rewrite this to not require any allocation.
 pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) mem.Allocator.Error!?[]VideoMode {
     internal_debug.assertInitialized();
@@ -216,10 +219,13 @@ pub inline fn getVideoModes(self: Monitor, allocator: mem.Allocator) mem.Allocat
 /// full screen window for that monitor, the return value will depend on whether that window is
 /// iconified.
 ///
-/// Possible errors include glfw.ErrorCode.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError, glfw.ErrorCode.FeatureUnavailable.
 /// Additionally returns null in the event of an error.
 ///
 /// @thread_safety This function must only be called from the main thread.
+///
+/// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
+/// and will thus never be implemented and emits glfw.ErrorCode.FeatureUnavailable
 ///
 /// see also: monitor_modes, glfw.Monitor.getVideoModes
 pub inline fn getVideoMode(self: Monitor) ?VideoMode {
@@ -239,10 +245,10 @@ pub inline fn getVideoMode(self: Monitor) ?VideoMode {
 ///
 /// For gamma correct rendering with OpenGL or OpenGL ES, see the glfw.srgb_capable hint.
 ///
-/// Possible errors include glfw.ErrorCode.InvalidValue and glfw.ErrorCode.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError, glfw.ErrorCode.FeatureUnavailable.
 ///
-/// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
-/// and emits glfw.ErrorCode.PlatformError.
+/// wayland: Gamma handling is privileged protocol, this function will thus never be implemented and
+/// emits glfw.ErrorCode.FeatureUnavailable
 ///
 /// @thread_safety This function must only be called from the main thread.
 ///
@@ -265,8 +271,7 @@ pub inline fn setGamma(self: Monitor, gamma: f32) void {
 /// Additionally returns null in the event of an error.
 ///
 /// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
-/// and returns glfw.ErrorCode.PlatformError.
-/// TODO: Is the documentation obsolete? On wayland the error returned is FeatureUnavailable
+/// and returns glfw.ErrorCode.FeatureUnavailable.
 ///
 /// The returned gamma ramp is `.owned = true` by GLFW, and is valid until the monitor is
 /// disconnected, this function is called again, or `glfw.terminate()` is called.
@@ -292,13 +297,13 @@ pub inline fn getGammaRamp(self: Monitor) ?GammaRamp {
 ///
 /// For gamma correct rendering with OpenGL or OpenGL ES, see the glfw.srgb_capable hint.
 ///
-/// Possible errors include glfw.ErrorCode.PlatformError.
+/// Possible errors include glfw.ErrorCode.PlatformError, glfw.ErrorCode.FeatureUnavailable.
 ///
 /// The size of the specified gamma ramp should match the size of the current ramp for that
 /// monitor. On win32, the gamma ramp size must be 256.
 ///
 /// wayland: Gamma handling is a privileged protocol, this function will thus never be implemented
-/// and emits glfw.ErrorCode.PlatformError.
+/// and returns glfw.ErrorCode.FeatureUnavailable.
 ///
 /// @pointer_lifetime The specified gamma ramp is copied before this function returns.
 ///

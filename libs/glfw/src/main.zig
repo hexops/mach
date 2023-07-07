@@ -225,6 +225,11 @@ const InitHint = enum(c_int) {
 
     /// X11 specific init hint.
     x11_xcb_vulkan_surface = c.GLFW_X11_XCB_VULKAN_SURFACE,
+
+    /// Wayland specific init hint.
+    ///
+    /// Possible values are `WaylandLibdecorInitHint` enums.
+    wayland_libdecor = c.GLFW_WAYLAND_LIBDECOR,
 };
 
 /// Angle platform type hints for glfw.InitHint.angle_platform_type
@@ -236,6 +241,16 @@ pub const AnglePlatformType = enum(c_int) {
     d3d11 = c.GLFW_ANGLE_PLATFORM_TYPE_D3D11,
     vulkan = c.GLFW_ANGLE_PLATFORM_TYPE_VULKAN,
     metal = c.GLFW_ANGLE_PLATFORM_TYPE_METAL,
+};
+
+/// Wayland libdecor hints for glfw.InitHint.wayland_libdecor
+///
+/// libdecor is important for GNOME, since GNOME does not implement server side decorations on
+/// wayland. libdecor is loaded dynamically at runtime, so in general enabling it is always
+/// safe to do. It is enabled by default.
+pub const WaylandLibdecorInitHint = enum(c_int) {
+    wayland_prefer_libdecor = c.GLFW_WAYLAND_PREFER_LIBDECOR,
+    wayland_disable_libdecor = c.GLFW_WAYLAND_DISABLE_LIBDECOR,
 };
 
 /// Platform type hints for glfw.InitHint.platform
