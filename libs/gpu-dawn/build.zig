@@ -4,7 +4,7 @@ const Build = std.Build;
 pub fn build(b: *Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
-    const glfw = @import("libs/mach-glfw/build.zig");
+    const glfw = @import("mach_glfw");
     const options = Options{
         .install_libs = true,
         .from_source = true,
@@ -572,7 +572,6 @@ pub fn appendFlags(step: *std.build.CompileStep, flags: *std.ArrayList([]const u
 }
 
 fn linkLibDawnCommonDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
-    _ = b;
     _ = options;
     step.linkLibCpp();
     if (step.target_info.target.os.tag == .macos) {
@@ -1271,7 +1270,6 @@ fn buildLibSPIRVTools(b: *Build, step: *std.build.CompileStep, options: Options)
 }
 
 fn linkLibAbseilCppDependencies(b: *Build, step: *std.build.CompileStep, options: Options) void {
-    _ = b;
     _ = options;
     step.linkLibCpp();
     const target = step.target_info.target;
@@ -1654,77 +1652,5 @@ const xcode_frameworks = struct {
             const root_dir = std.fs.path.dirname(@src().file) orelse ".";
             break :blk root_dir ++ suffix;
         };
-    }
-
-    fn ensureGitRepoCloned(allocator: std.mem.Allocator, clone_url: []const u8, revision: []const u8, rel_dir: []const u8) !void {
-        if (isEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES") or isEnvVarTruthy(allocator, "NO_ENSURE_GIT")) {
-            return;
-        }
-
-        ensureGit(allocator);
-
-        if (std.fs.cwd().realpathAlloc(allocator, rel_dir)) |dir| {
-            const current_revision = try getCurrentGitRevision(allocator, dir);
-            if (!std.mem.eql(u8, current_revision, revision)) {
-                // Reset to the desired revision
-                exec(allocator, &[_][]const u8{ "git", "fetch" }, dir) catch |err| std.debug.print("warning: failed to 'git fetch' in {s}: {s}\n", .{ dir, @errorName(err) });
-                try exec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, dir);
-                try exec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
-            }
-            return;
-        } else |err| return switch (err) {
-            error.FileNotFound => {
-                std.log.info("cloning required dependency..\ngit clone {s} {s}..\n", .{ clone_url, rel_dir });
-
-                try exec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", clone_url, rel_dir }, xcodeSdkPath("/"));
-                try exec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, rel_dir);
-                try exec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, rel_dir);
-                return;
-            },
-            else => err,
-        };
-    }
-
-    fn exec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
-        var child = std.ChildProcess.init(argv, allocator);
-        child.cwd = cwd;
-        _ = try child.spawnAndWait();
-    }
-
-    fn getCurrentGitRevision(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
-        const result = try std.ChildProcess.exec(.{ .allocator = allocator, .argv = &.{ "git", "rev-parse", "HEAD" }, .cwd = cwd });
-        allocator.free(result.stderr);
-        if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
-        return result.stdout;
-    }
-
-    fn ensureGit(allocator: std.mem.Allocator) void {
-        const argv = &[_][]const u8{ "git", "--version" };
-        const result = std.ChildProcess.exec(.{
-            .allocator = allocator,
-            .argv = argv,
-            .cwd = ".",
-        }) catch { // e.g. FileNotFound
-            std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
-            std.process.exit(1);
-        };
-        defer {
-            allocator.free(result.stderr);
-            allocator.free(result.stdout);
-        }
-        if (result.term.Exited != 0) {
-            std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
-            std.process.exit(1);
-        }
-    }
-
-    fn isEnvVarTruthy(allocator: std.mem.Allocator, name: []const u8) bool {
-        if (std.process.getEnvVarOwned(allocator, name)) |truthy| {
-            defer allocator.free(truthy);
-            if (std.mem.eql(u8, truthy, "true")) return true;
-            return false;
-        } else |_| {
-            return false;
-        }
     }
 };
