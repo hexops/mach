@@ -1,11 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const freetype = @import("libs/freetype/build.zig");
-const glfw = @import("libs/glfw/build.zig").Sdk(.{
-    // TODO(build-system): This cannot be imported with the Zig package manager
-    // error: TarUnsupportedFileType
-    .xcode_frameworks = @import("libs/gpu-dawn/libs/xcode-frameworks/build.zig"),
-});
+const glfw = @import("libs/glfw/build.zig");
 const sysaudio = @import("mach_sysaudio");
 pub const gpu_dawn = @import("libs/gpu-dawn/build.zig").Sdk(.{
     // TODO(build-system): This cannot be imported with the Zig package manager

@@ -54,11 +54,7 @@ Then in your `build.zig` add:
 
 ```zig
 ...
-const glfw = @import("libs/mach-glfw/build.zig").Sdk(.{
-    // TODO(build-system): This cannot be imported with the Zig package manager
-    // error: TarUnsupportedFileType
-    .xcode_frameworks = @import("libs/mach-glfw/libs/xcode-frameworks/build.zig"),
-});
+const glfw = @import("libs/mach-glfw/build.zig");
 
 pub fn build(b: *Build) !void {
     ...

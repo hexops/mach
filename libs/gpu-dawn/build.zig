@@ -4,11 +4,7 @@ const Build = std.Build;
 pub fn build(b: *Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
-    const glfw = @import("libs/mach-glfw/build.zig").Sdk(.{
-        // TODO(build-system): This cannot be imported with the Zig package manager
-        // error: TarUnsupportedFileType
-        .xcode_frameworks = @import("libs/xcode-frameworks/build.zig"),
-    });
+    const glfw = @import("libs/mach-glfw/build.zig");
     const gpu_dawn = Sdk(.{
         // TODO(build-system): This cannot be imported with the Zig package manager
         // error: TarUnsupportedFileType
