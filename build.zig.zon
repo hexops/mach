@@ -27,12 +27,12 @@
             .hash = "1220ead8a15f606d6f0f853fe401460dfe18811e3d5d1aa7e808be825e44f17f0dc3",
         },
         .mach_sysaudio = .{
-            .url = "https://github.com/hexops/mach-sysaudio/archive/c1be33d8523a40d0b7608df326716a44a081fdf6.tar.gz",
-            .hash = "12201e2a52d1ffcef3dd3fefb4cd8128bb1a69336cc4c71f3604ba3f0b52dce703b4",
+            .url = "https://github.com/hexops/mach-sysaudio/archive/b5bf8a612b5b538b81c17a632ef0dc7d6d9b32ca.tar.gz",
+            .hash = "1220b52bfeee934e5b4863123fc702cdce84b6c5bec7a00ac1b4ccd91504f006b7f6",
         },
         .mach_glfw = .{
-            .url = "https://github.com/hexops/mach-glfw/archive/9b3373b9b23db2741aa4eee6a129eb20cc15c3da.tar.gz",
-            .hash = "12209eedef9eb731a7995d0dc0d2ab1fff90c03f4fdac61546d669bb6a4df1169969",
+            .url = "https://github.com/hexops/mach-glfw/archive/ddb1cf1cb712fd60fc7f8d14e8f84925e557562a.tar.gz",
+            .hash = "122034c6b14f8c4ee65bc99efc673c4d71661ad8bb52a485da9b623ec6b8cd9ab8e9",
         },
         .direct3d_headers = .{
             .url = "https://github.com/hexops/direct3d-headers/archive/773dce3f079eecdccc7c71d1318a0741649d568b.tar.gz",
