@@ -19,7 +19,7 @@ pub const gpu_dawn = @import("libs/gpu-dawn/build.zig").Sdk(.{
 const gpu = @import("libs/gpu/build.zig").Sdk(.{
     .gpu_dawn = gpu_dawn,
 });
-const core = @import("libs/core/sdk.zig").Sdk(.{
+const core = @import("libs/core/build.zig").Sdk(.{
     .gpu = gpu,
     .gpu_dawn = gpu_dawn,
     .glfw = glfw,
