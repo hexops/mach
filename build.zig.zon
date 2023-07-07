@@ -26,6 +26,10 @@
             .url = "https://github.com/hexops/mach-basisu/archive/831de64fe2d7933d6418440f8558444ca32eeca5.tar.gz",
             .hash = "1220ead8a15f606d6f0f853fe401460dfe18811e3d5d1aa7e808be825e44f17f0dc3",
         },
+        .mach_sysaudio = .{
+            .url = "https://github.com/hexops/mach-sysaudio/archive/bc03624694ddf3a7d348efdeccf82404eb019236.tar.gz",
+            .hash = "12203830507ce345848f27ffd27369e726c35ce115edb66f9ba9ee524d8a46c0a87a",
+        },
         .direct3d_headers = .{
             .url = "https://github.com/hexops/direct3d-headers/archive/773dce3f079eecdccc7c71d1318a0741649d568b.tar.gz",
             .hash = "12200d2155216c5eb5f111282cd355b5433cad6a68fd040294e695149cba329f7c12",
