@@ -1639,7 +1639,7 @@ fn sdkPath(comptime suffix: []const u8) []const u8 {
 const xcode_frameworks = struct {
     pub fn addPaths(b: *std.Build, step: *std.build.CompileStep) void {
         // branch: mach
-        xEnsureGitRepoCloned(b.allocator, "https://github.com/hexops/xcode-frameworks", "723aa55e9752c8c6c25d3413722b5fe13d72ac4f", "zig-cache/xcode_frameworks") catch |err| @panic(@errorName(err));
+        xEnsureGitRepoCloned(b.allocator, "https://github.com/hexops/xcode-frameworks", "723aa55e9752c8c6c25d3413722b5fe13d72ac4f", xSdkPath("/zig-cache/xcode_frameworks")) catch |err| @panic(@errorName(err));
 
         step.addFrameworkPath("zig-cache/xcode_frameworks/Frameworks");
         step.addSystemIncludePath("zig-cache/xcode_frameworks/include");
@@ -1653,7 +1653,7 @@ const xcode_frameworks = struct {
 
         xEnsureGit(allocator);
 
-        if (std.fs.cwd().openDir(dir, .{})) |_| {
+        if (std.fs.openDirAbsolute(dir, .{})) |_| {
             const current_revision = try xGetCurrentGitRevision(allocator, dir);
             if (!std.mem.eql(u8, current_revision, revision)) {
                 // Reset to the desired revision
@@ -1716,5 +1716,13 @@ const xcode_frameworks = struct {
         } else |_| {
             return false;
         }
+    }
+
+    fn xSdkPath(comptime suffix: []const u8) []const u8 {
+        if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+        return comptime blk: {
+            const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+            break :blk root_dir ++ suffix;
+        };
     }
 };
