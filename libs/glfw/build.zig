@@ -277,64 +277,56 @@ fn sdkPath(comptime suffix: []const u8) []const u8 {
 const xcode_frameworks = struct {
     pub fn addPaths(b: *std.Build, step: *std.build.CompileStep) void {
         // branch: mach
-        ensureGitRepoCloned(b.allocator, "https://github.com/hexops/xcode-frameworks", "723aa55e9752c8c6c25d3413722b5fe13d72ac4f", "zig-cache/xcode_frameworks") catch |err| @panic(@errorName(err));
+        xEnsureGitRepoCloned(b.allocator, "https://github.com/hexops/xcode-frameworks", "723aa55e9752c8c6c25d3413722b5fe13d72ac4f", "zig-cache/xcode_frameworks") catch |err| @panic(@errorName(err));
 
         step.addFrameworkPath("zig-cache/xcode_frameworks/Frameworks");
         step.addSystemIncludePath("zig-cache/xcode_frameworks/include");
         step.addLibraryPath("zig-cache/xcode_frameworks/lib");
     }
 
-    fn xcodeSdkPath(comptime suffix: []const u8) []const u8 {
-        if (suffix[0] != '/') @compileError("suffix must be an absolute path");
-        return comptime blk: {
-            const root_dir = std.fs.path.dirname(@src().file) orelse ".";
-            break :blk root_dir ++ suffix;
-        };
-    }
-
-    fn ensureGitRepoCloned(allocator: std.mem.Allocator, clone_url: []const u8, revision: []const u8, rel_dir: []const u8) !void {
-        if (isEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES") or isEnvVarTruthy(allocator, "NO_ENSURE_GIT")) {
+    fn xEnsureGitRepoCloned(allocator: std.mem.Allocator, clone_url: []const u8, revision: []const u8, dir: []const u8) !void {
+        if (xIsEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES") or xIsEnvVarTruthy(allocator, "NO_ENSURE_GIT")) {
             return;
         }
 
-        ensureGit(allocator);
+        xEnsureGit(allocator);
 
-        if (std.fs.cwd().realpathAlloc(allocator, rel_dir)) |dir| {
-            const current_revision = try getCurrentGitRevision(allocator, dir);
+        if (std.fs.cwd().openDir(dir, .{})) |_| {
+            const current_revision = try xGetCurrentGitRevision(allocator, dir);
             if (!std.mem.eql(u8, current_revision, revision)) {
                 // Reset to the desired revision
-                exec(allocator, &[_][]const u8{ "git", "fetch" }, dir) catch |err| std.debug.print("warning: failed to 'git fetch' in {s}: {s}\n", .{ dir, @errorName(err) });
-                try exec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, dir);
-                try exec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
+                xExec(allocator, &[_][]const u8{ "git", "fetch" }, dir) catch |err| std.debug.print("warning: failed to 'git fetch' in {s}: {s}\n", .{ dir, @errorName(err) });
+                try xExec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, dir);
+                try xExec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
             }
             return;
         } else |err| return switch (err) {
             error.FileNotFound => {
-                std.log.info("cloning required dependency..\ngit clone {s} {s}..\n", .{ clone_url, rel_dir });
+                std.log.info("cloning required dependency..\ngit clone {s} {s}..\n", .{ clone_url, dir });
 
-                try exec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", clone_url, rel_dir }, xcodeSdkPath("/"));
-                try exec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, rel_dir);
-                try exec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, rel_dir);
+                try xExec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", clone_url, dir }, ".");
+                try xExec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, dir);
+                try xExec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
                 return;
             },
             else => err,
         };
     }
 
-    fn exec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
+    fn xExec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
         var child = std.ChildProcess.init(argv, allocator);
         child.cwd = cwd;
         _ = try child.spawnAndWait();
     }
 
-    fn getCurrentGitRevision(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
+    fn xGetCurrentGitRevision(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
         const result = try std.ChildProcess.exec(.{ .allocator = allocator, .argv = &.{ "git", "rev-parse", "HEAD" }, .cwd = cwd });
         allocator.free(result.stderr);
         if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
         return result.stdout;
     }
 
-    fn ensureGit(allocator: std.mem.Allocator) void {
+    fn xEnsureGit(allocator: std.mem.Allocator) void {
         const argv = &[_][]const u8{ "git", "--version" };
         const result = std.ChildProcess.exec(.{
             .allocator = allocator,
@@ -354,7 +346,7 @@ const xcode_frameworks = struct {
         }
     }
 
-    fn isEnvVarTruthy(allocator: std.mem.Allocator, name: []const u8) bool {
+    fn xIsEnvVarTruthy(allocator: std.mem.Allocator, name: []const u8) bool {
         if (std.process.getEnvVarOwned(allocator, name)) |truthy| {
             defer allocator.free(truthy);
             if (std.mem.eql(u8, truthy, "true")) return true;
