@@ -6,84 +6,73 @@ pub fn build(b: *Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
 
-    const test_step = b.step("test", "Run library tests");
+    _ = b.addModule("mach-glfw", .{
+        .source_file = .{ .path = "src/main.zig" },
+    });
 
+    const lib = b.addStaticLibrary(.{
+        .name = "mach-glfw",
+        .root_source_file = .{ .path = "stub.c" },
+        .target = target,
+        .optimize = optimize,
+    });
+    lib.linkLibrary(b.dependency("glfw", .{
+        .target = lib.target,
+        .optimize = lib.optimize,
+    }).artifact("glfw"));
+    lib.linkLibrary(b.dependency("vulkan_headers", .{
+        .target = lib.target,
+        .optimize = lib.optimize,
+    }).artifact("vulkan-headers"));
+    if (lib.target_info.target.os.tag == .macos) {
+        // TODO(build-system): This cannot be imported with the Zig package manager
+        // error: TarUnsupportedFileType
+        //
+        // lib.linkLibrary(b.dependency("xcode_frameworks", .{
+        //     .target = lib.target,
+        //     .optimize = lib.optimize,
+        // }).artifact("xcode-frameworks"));
+        // @import("xcode_frameworks").addPaths(lib);
+        xcode_frameworks.addPaths(b, lib);
+    }
+    b.installArtifact(lib);
+
+    const test_step = b.step("test", "Run library tests");
     const main_tests = b.addTest(.{
         .name = "glfw-tests",
-        .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+        .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
 
-    try link(b, main_tests, .{});
+    main_tests.linkLibrary(lib);
+    // TODO(build-system): linking the library above doesn't seem to transitively carry over the
+    // headers for dependencies already linked to `lib`, so we have to add them ourselves:
+    {
+        main_tests.linkLibrary(b.dependency("glfw", .{
+            .target = main_tests.target,
+            .optimize = main_tests.optimize,
+        }).artifact("glfw"));
+        main_tests.linkLibrary(b.dependency("vulkan_headers", .{
+            .target = main_tests.target,
+            .optimize = main_tests.optimize,
+        }).artifact("vulkan-headers"));
+        if (main_tests.target_info.target.os.tag == .macos) {
+            // TODO(build-system): This cannot be imported with the Zig package manager
+            // error: TarUnsupportedFileType
+            //
+            // main_tests.linkLibrary(b.dependency("xcode_frameworks", .{
+            //     .target = main_tests.target,
+            //     .optimize = main_tests.optimize,
+            // }).artifact("xcode-frameworks"));
+            // @import("xcode_frameworks").addPaths(main_tests);
+            xcode_frameworks.addPaths(b, main_tests);
+        }
+    }
+
     b.installArtifact(main_tests);
 
     test_step.dependOn(&b.addRunArtifact(main_tests).step);
-}
-
-pub const Options = struct {
-    /// Not supported on macOS.
-    vulkan: bool = true,
-
-    /// Only respected on macOS.
-    metal: bool = true,
-
-    /// Deprecated on macOS.
-    opengl: bool = false,
-
-    /// Not supported on macOS. GLES v3.2 only, currently.
-    gles: bool = false,
-
-    /// Only respected on Linux.
-    x11: bool = true,
-
-    /// Only respected on Linux.
-    wayland: bool = true,
-
-    install_libs: bool = false,
-};
-
-var _module: ?*std.build.Module = null;
-
-pub fn module(b: *std.Build) *std.build.Module {
-    if (_module) |m| return m;
-    _module = b.createModule(.{
-        .source_file = .{ .path = sdkPath("/src/main.zig") },
-    });
-    return _module.?;
-}
-
-pub fn link(b: *Build, step: *std.build.CompileStep, options: Options) !void {
-    _ = options;
-    step.linkLibrary(b.dependency("glfw", .{
-        .target = step.target,
-        .optimize = step.optimize,
-    }).artifact("glfw"));
-
-    step.linkLibrary(b.dependency("vulkan_headers", .{
-        .target = step.target,
-        .optimize = step.optimize,
-    }).artifact("vulkan-headers"));
-
-    if (step.target_info.target.os.tag == .macos) {
-        // TODO(build-system): This cannot be imported with the Zig package manager
-        // error: TarUnsupportedFileType
-        //
-        // step.linkLibrary(b.dependency("xcode_frameworks", .{
-        //     .target = step.target,
-        //     .optimize = step.optimize,
-        // }).artifact("xcode-frameworks"));
-        // @import("xcode_frameworks").addPaths(step);
-        xcode_frameworks.addPaths(b, step);
-    }
-}
-
-fn sdkPath(comptime suffix: []const u8) []const u8 {
-    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
-    return comptime blk: {
-        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
-        break :blk root_dir ++ suffix;
-    };
 }
 
 // TODO(build-system): This is a workaround that we copy anywhere xcode_frameworks needs to be used.
