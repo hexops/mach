@@ -7,11 +7,7 @@ pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&(try testStep(b, optimize, target)).step);
-    test_step.dependOn(&(try testStepShared(b, optimize, target)).step);
-}
 
-pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) !*std.build.RunStep {
     const main_tests = b.addTest(.{
         .name = "glfw-tests",
         .root_source_file = .{ .path = sdkPath("/src/main.zig") },
@@ -21,20 +17,8 @@ pub fn testStep(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
 
     try link(b, main_tests, .{});
     b.installArtifact(main_tests);
-    return b.addRunArtifact(main_tests);
-}
 
-pub fn testStepShared(b: *Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) !*std.build.RunStep {
-    const main_tests = b.addTest(.{
-        .name = "glfw-tests-shared",
-        .root_source_file = .{ .path = sdkPath("/src/main.zig") },
-        .target = target,
-        .optimize = optimize,
-    });
-
-    try link(b, main_tests, .{ .shared = true });
-    b.installArtifact(main_tests);
-    return b.addRunArtifact(main_tests);
+    test_step.dependOn(&b.addRunArtifact(main_tests).step);
 }
 
 pub const Options = struct {
@@ -55,9 +39,6 @@ pub const Options = struct {
 
     /// Only respected on Linux.
     wayland: bool = true,
-
-    /// Build and link GLFW as a shared library.
-    shared: bool = false,
 
     install_libs: bool = false,
 };
