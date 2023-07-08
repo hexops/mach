@@ -42,9 +42,13 @@ pub fn build(b: *std.Build) !void {
         .optimize = example.optimize,
     }).artifact("vulkan-headers"));
     example.linkLibrary(b.dependency("x11_headers", .{
-        .target = target,
-        .optimize = optimize,
+        .target = example.target,
+        .optimize = example.optimize,
     }).artifact("x11-headers"));
+    example.linkLibrary(b.dependency("wayland_headers", .{
+        .target = example.target,
+        .optimize = example.optimize,
+    }).artifact("wayland-headers"));
 
     b.installArtifact(example);
 
