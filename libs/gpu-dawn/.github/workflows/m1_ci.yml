@@ -12,16 +12,8 @@ jobs:
       run:
         shell: "/usr/bin/arch -arch arm64e /bin/bash --noprofile --norc -eo pipefail {0}"
     steps:
-      - name: Clean repository submodules
-        # See https://github.com/actions/checkout/issues/385
-        run: |
-          rm -rf $GITHUB_WORKSPACE && mkdir $GITHUB_WORKSPACE
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          submodules: 'true'
-      - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
       - name: install (debug)
         run: zig build install -Dtarget=aarch64-macos
       - name: upload (debug)
