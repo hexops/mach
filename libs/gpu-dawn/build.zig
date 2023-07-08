@@ -601,8 +601,7 @@ fn linkLibDawnCommonDependencies(b: *Build, step: *std.build.CompileStep, option
 
 // Builds common sources; derived from src/common/BUILD.gn
 fn buildLibDawnCommon(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-    const lib = if (!options.separate_libs) step
-    else if (options.shared_libs) b.addSharedLibrary(.{
+    const lib = if (!options.separate_libs) step else if (options.shared_libs) b.addSharedLibrary(.{
         .name = "dawn-common",
         .target = step.target,
         .optimize = if (options.debug) .Debug else .ReleaseFast,
@@ -665,8 +664,7 @@ fn linkLibDawnPlatformDependencies(b: *Build, step: *std.build.CompileStep, opti
 
 // Build dawn platform sources; derived from src/dawn/platform/BUILD.gn
 fn buildLibDawnPlatform(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-    const lib = if (!options.separate_libs) step
-    else if (options.shared_libs) b.addSharedLibrary(.{
+    const lib = if (!options.separate_libs) step else if (options.shared_libs) b.addSharedLibrary(.{
         .name = "dawn-platform",
         .target = step.target,
         .optimize = if (options.debug) .Debug else .ReleaseFast,
@@ -772,8 +770,7 @@ fn linkLibDawnNativeDependencies(b: *Build, step: *std.build.CompileStep, option
 
 // Builds dawn native sources; derived from src/dawn/native/BUILD.gn
 fn buildLibDawnNative(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-    const lib = if (!options.separate_libs) step
-    else if (options.shared_libs) b.addSharedLibrary(.{
+    const lib = if (!options.separate_libs) step else if (options.shared_libs) b.addSharedLibrary(.{
         .name = "dawn-native",
         .target = step.target,
         .optimize = if (options.debug) .Debug else .ReleaseFast,
@@ -841,7 +838,14 @@ fn buildLibDawnNative(b: *Build, step: *std.build.CompileStep, options: Options)
             "libs/dawn/src/dawn/native/stream/",
         },
         .flags = flags.items,
-        .excluding_contains = &.{
+        .excluding_contains = if (options.shared_libs) &.{
+            "test",
+            "benchmark",
+            "mock",
+            "SpirvValidation.cpp",
+            "XlibXcbFunctions.cpp",
+            "dawn_proc.c",
+        } else &.{
             "test",
             "benchmark",
             "mock",
@@ -1043,8 +1047,7 @@ fn linkLibTintDependencies(b: *Build, step: *std.build.CompileStep, options: Opt
 
 // Builds tint sources; derived from src/tint/BUILD.gn
 fn buildLibTint(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-    const lib = if (!options.separate_libs) step
-    else if (options.shared_libs) b.addSharedLibrary(.{
+    const lib = if (!options.separate_libs) step else if (options.shared_libs) b.addSharedLibrary(.{
         .name = "tint",
         .target = step.target,
         .optimize = if (options.debug) .Debug else .ReleaseFast,
@@ -1215,8 +1218,7 @@ fn linkLibSPIRVToolsDependencies(b: *Build, step: *std.build.CompileStep, option
 
 // Builds third_party/vulkan-deps/spirv-tools sources; derived from third_party/vulkan-deps/spirv-tools/src/BUILD.gn
 fn buildLibSPIRVTools(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-    const lib = if (!options.separate_libs) step
-    else if (options.shared_libs) b.addSharedLibrary(.{
+    const lib = if (!options.separate_libs) step else if (options.shared_libs) b.addSharedLibrary(.{
         .name = "spirv-tools",
         .target = step.target,
         .optimize = if (options.debug) .Debug else .ReleaseFast,
@@ -1306,8 +1308,7 @@ fn linkLibAbseilCppDependencies(b: *Build, step: *std.build.CompileStep, options
 // ```
 //
 fn buildLibAbseilCpp(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-    const lib = if (!options.separate_libs) step
-    else if (options.shared_libs) b.addSharedLibrary(.{
+    const lib = if (!options.separate_libs) step else if (options.shared_libs) b.addSharedLibrary(.{
         .name = "abseil",
         .target = step.target,
         .optimize = if (options.debug) .Debug else .ReleaseFast,
@@ -1378,8 +1379,7 @@ fn linkLibDawnWireDependencies(b: *Build, step: *std.build.CompileStep, options:
 
 // Buids dawn wire sources; derived from src/dawn/wire/BUILD.gn
 fn buildLibDawnWire(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-    const lib = if (!options.separate_libs) step
-    else if (options.shared_libs) b.addSharedLibrary(.{
+    const lib = if (!options.separate_libs) step else if (options.shared_libs) b.addSharedLibrary(.{
         .name = "dawn-wire",
         .target = step.target,
         .optimize = if (options.debug) .Debug else .ReleaseFast,
@@ -1431,8 +1431,7 @@ fn linkLibDxcompilerDependencies(b: *Build, step: *std.build.CompileStep, option
 
 // Buids dxcompiler sources; derived from libs/DirectXShaderCompiler/CMakeLists.txt
 fn buildLibDxcompiler(b: *Build, step: *std.build.CompileStep, options: Options) !*std.build.CompileStep {
-    const lib = if (!options.separate_libs) step
-    else if (options.shared_libs) b.addSharedLibrary(.{
+    const lib = if (!options.separate_libs) step else if (options.shared_libs) b.addSharedLibrary(.{
         .name = "dxcompiler",
         .target = step.target,
         .optimize = if (options.debug) .Debug else .ReleaseFast,
