@@ -3,8 +3,8 @@
     .version = "0.2.0",
     .dependencies = .{
         .mach_glfw = .{
-            .url = "https://github.com/hexops/mach-glfw/archive/ddb1cf1cb712fd60fc7f8d14e8f84925e557562a.tar.gz",
-            .hash = "122034c6b14f8c4ee65bc99efc673c4d71661ad8bb52a485da9b623ec6b8cd9ab8e9",
+            .url = "https://github.com/hexops/mach-glfw/archive/b119c63dd77764eeafe758d54accd0329821a729.tar.gz",
+            .hash = "1220fb0fb65621a4fc7406e4f74a87a0c60208f8a257cd7ca4e20da0925f875e70d0",
         },
         .glfw = .{
             .url = "https://github.com/hexops/glfw/archive/49c21c3d2fcaf9799b593f5320ce8e598a692c74.tar.gz",

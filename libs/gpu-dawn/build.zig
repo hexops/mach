@@ -4,7 +4,6 @@ const Build = std.Build;
 pub fn build(b: *Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
-    const glfw = @import("mach_glfw");
     const options = Options{
         .install_libs = true,
         .from_source = true,
@@ -19,8 +18,14 @@ pub fn build(b: *Build) !void {
         .optimize = optimize,
     });
     try link(b, example, options);
-    try glfw.link(b, example, .{});
-    example.addModule("glfw", glfw.module(b));
+
+    const glfw_dep = b.dependency("mach_glfw", .{
+        .target = example.target,
+        .optimize = example.optimize,
+    });
+    example.linkLibrary(glfw_dep.artifact("mach-glfw"));
+    example.addModule("mach-glfw", glfw_dep.module("mach-glfw"));
+
     b.installArtifact(example);
 }
 
