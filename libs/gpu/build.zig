@@ -41,6 +41,10 @@ pub fn build(b: *std.Build) !void {
         .target = example.target,
         .optimize = example.optimize,
     }).artifact("vulkan-headers"));
+    example.linkLibrary(b.dependency("x11_headers", .{
+        .target = target,
+        .optimize = optimize,
+    }).artifact("x11-headers"));
 
     b.installArtifact(example);
 
