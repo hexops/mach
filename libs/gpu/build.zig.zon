@@ -3,12 +3,12 @@
     .version = "0.2.0",
     .dependencies = .{
         .mach_glfw = .{
-            .url = "https://github.com/hexops/mach-glfw/archive/b119c63dd77764eeafe758d54accd0329821a729.tar.gz",
-            .hash = "1220fb0fb65621a4fc7406e4f74a87a0c60208f8a257cd7ca4e20da0925f875e70d0",
+            .url = "https://github.com/hexops/mach-glfw/archive/cfb49aa47d7785bc9d06df79f528b1a778d826da.tar.gz",
+            .hash = "1220f1c6ee8bcf8c7ef5cbabaac8e11a2e1492881bfce532f9fe15ff8de17e29512a",
         },
         .glfw = .{
-            .url = "https://github.com/hexops/glfw/archive/49c21c3d2fcaf9799b593f5320ce8e598a692c74.tar.gz",
-            .hash = "12200a907165afc4c099d4d19e2f7ce9923a72116006d8f5f5af3a9a071fa66171d2",
+            .url = "https://github.com/hexops/glfw/archive/06bd1276fb05c8bc999e104cf21c76788386f263.tar.gz",
+            .hash = "1220c4155e5e573bc39731e6e459cff44fb4a9c5fcf9087b5890a03cc349587d36ab",
         },
         .direct3d_headers = .{
             .url = "https://github.com/hexops/direct3d-headers/archive/773dce3f079eecdccc7c71d1318a0741649d568b.tar.gz",
