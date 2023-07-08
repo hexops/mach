@@ -21,3 +21,6 @@
 [submodule "libs/glfw/libs/xcode-frameworks"]
 	path = libs/glfw/libs/xcode-frameworks
 	url = https://github.com/hexops/xcode-frameworks
+[submodule "libs/gpu/libs/mach-gpu-dawn"]
+	path = libs/gpu/libs/mach-gpu-dawn
+	url = https://github.com/hexops/mach-gpu-dawn

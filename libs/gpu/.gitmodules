@@ -1,0 +1,4 @@
+[submodule "libs/mach-gpu-dawn"]
+       path = libs/mach-gpu-dawn
+       url = https://github.com/hexops/mach-gpu-dawn
+
