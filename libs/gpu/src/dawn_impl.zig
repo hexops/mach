@@ -119,7 +119,7 @@ pub const Interface = struct {
     }
 
     pub inline fn bufferGetMapState(buffer: *gpu.Buffer) gpu.Buffer.MapState {
-        return procs.bufferGetMapState.?(@as(c.WGPUBuffer, @ptrCast(buffer)));
+        return @enumFromInt(procs.bufferGetMapState.?(@as(c.WGPUBuffer, @ptrCast(buffer))));
     }
 
     // TODO: dawn: return value not marked as nullable in dawn.json but in fact is.
