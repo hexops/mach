@@ -1,13 +1,13 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const freetype = @import("libs/freetype/build.zig");
+const freetype = @import("libs/mach-freetype/build.zig");
 const glfw = @import("mach_glfw");
 const sysaudio = @import("mach_sysaudio");
-pub const gpu_dawn = @import("libs/gpu-dawn/build.zig"); // TODO(build-system): make this private
-const gpu = @import("libs/gpu/build.zig").Sdk(.{
+pub const gpu_dawn = @import("libs/mach-gpu-dawn/build.zig"); // TODO(build-system): make this private
+const gpu = @import("libs/mach-gpu/build.zig").Sdk(.{
     .gpu_dawn = gpu_dawn,
 });
-const core = @import("libs/core/build.zig").Sdk(.{
+const core = @import("libs/mach-core/build.zig").Sdk(.{
     .gpu = gpu,
     .gpu_dawn = gpu_dawn,
     .glfw = glfw,
@@ -34,7 +34,7 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
     _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
         .dependencies = &.{
-            .{ .name = "core", .module = core.module(b) },
+            .{ .name = "core", .module = core.module(b, optimize, target) },
             .{ .name = "ecs", .module = mach_ecs.module("mach-ecs") },
             .{ .name = "earcut", .module = mach_earcut.module("mach-earcut") },
             .{ .name = "sysaudio", .module = sysaudio.module(b, optimize, target) },

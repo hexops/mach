@@ -24,3 +24,15 @@
 [submodule "libs/gpu/libs/mach-gpu-dawn"]
 	path = libs/gpu/libs/mach-gpu-dawn
 	url = https://github.com/hexops/mach-gpu-dawn
+[submodule "libs/mach-gpu"]
+	path = libs/mach-gpu
+	url = https://github.com/hexops/mach-gpu
+[submodule "libs/mach-gpu-dawn"]
+	path = libs/mach-gpu-dawn
+	url = https://github.com/hexops/mach-gpu-dawn
+[submodule "libs/mach-freetype"]
+	path = libs/mach-freetype
+	url = https://github.com/hexops/mach-freetype
+[submodule "libs/mach-core"]
+	path = libs/mach-core
+	url = https://github.com/hexops/mach-core
