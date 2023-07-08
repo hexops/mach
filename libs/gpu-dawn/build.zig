@@ -4,6 +4,7 @@ const Build = std.Build;
 pub fn build(b: *Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
+
     const options = Options{
         .install_libs = true,
         .from_source = true,
@@ -63,7 +64,7 @@ pub const Options = struct {
     install_libs: bool = false,
 
     /// The binary release version to use from https://github.com/hexops/mach-gpu-dawn/releases
-            binary_version: []const u8 = "release-ac4e82f",
+    binary_version: []const u8 = "release-ac4e82f",
 
     /// Detects the default options to use for the given target.
     pub fn detectDefaults(self: Options, target: std.Target) Options {
