@@ -51,52 +51,53 @@ jobs:
         env:
           RELEASE_NAME: x86_64-linux-gnu_release-fast
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  x86_64-linux-musl_debug:
-    runs-on: ubuntu-latest
-    # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
-    # to the branch.
-    if: github.event.workflow_run.conclusion == 'success' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: 'true'
-      - name: Setup Zig
-        run: |
-          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
-      - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
-      - name: install (debug)
-        run: zig build install -Dtarget=x86_64-linux-musl
-      - name: upload (debug)
-        run: ./dev/upload-release.sh
-        env:
-          RELEASE_NAME: x86_64-linux-musl_debug
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  x86_64-linux-musl_release-fast:
-    runs-on: ubuntu-latest
-    # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
-    # to the branch.
-    if: github.event.workflow_run.conclusion == 'success' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: 'true'
-      - name: Setup Zig
-        run: |
-          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
-      - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
-      - name: install (release-fast)
-        run: zig build install -Doptimize=ReleaseFast -Dtarget=x86_64-linux-musl
-      - name: upload (release-fast)
-        run: ./dev/upload-release.sh
-        env:
-          RELEASE_NAME: x86_64-linux-musl_release-fast
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # TODO(libx11) https://github.com/hexops/mach/issues/845
+  # x86_64-linux-musl_debug:
+  #   runs-on: ubuntu-latest
+  #   # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
+  #   # to the branch.
+  #   if: github.event.workflow_run.conclusion == 'success' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       with:
+  #         submodules: 'true'
+  #     - name: Setup Zig
+  #       run: |
+  #         sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
+  #         sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+  #     - name: Clone mach-glfw
+  #       run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
+  #     - name: install (debug)
+  #       run: zig build install -Dtarget=x86_64-linux-musl
+  #     - name: upload (debug)
+  #       run: ./dev/upload-release.sh
+  #       env:
+  #         RELEASE_NAME: x86_64-linux-musl_debug
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # x86_64-linux-musl_release-fast:
+  #   runs-on: ubuntu-latest
+  #   # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
+  #   # to the branch.
+  #   if: github.event.workflow_run.conclusion == 'success' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       with:
+  #         submodules: 'true'
+  #     - name: Setup Zig
+  #       run: |
+  #         sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
+  #         sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+  #     - name: Clone mach-glfw
+  #       run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
+  #     - name: install (release-fast)
+  #       run: zig build install -Doptimize=ReleaseFast -Dtarget=x86_64-linux-musl
+  #     - name: upload (release-fast)
+  #       run: ./dev/upload-release.sh
+  #       env:
+  #         RELEASE_NAME: x86_64-linux-musl_release-fast
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   aarch64-linux-gnu_debug:
     runs-on: ubuntu-latest
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
@@ -143,52 +144,53 @@ jobs:
         env:
           RELEASE_NAME: aarch64-linux-gnu_release-fast
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  aarch64-linux-musl_debug:
-    runs-on: ubuntu-latest
-    # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
-    # to the branch.
-    if: github.event.workflow_run.conclusion == 'success' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: 'true'
-      - name: Setup Zig
-        run: |
-          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
-      - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
-      - name: install (debug)
-        run: zig build install -Dtarget=aarch64-linux-musl
-      - name: upload (debug)
-        run: ./dev/upload-release.sh
-        env:
-          RELEASE_NAME: aarch64-linux-musl_debug
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  aarch64-linux-musl_release-fast:
-    runs-on: ubuntu-latest
-    # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
-    # to the branch.
-    if: github.event.workflow_run.conclusion == 'success' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: 'true'
-      - name: Setup Zig
-        run: |
-          sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
-      - name: Clone mach-glfw
-        run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
-      - name: install (release-fast)
-        run: zig build install -Doptimize=ReleaseFast -Dtarget=aarch64-linux-musl
-      - name: upload (release-fast)
-        run: ./dev/upload-release.sh
-        env:
-          RELEASE_NAME: aarch64-linux-musl_release-fast
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # TODO(libx11) https://github.com/hexops/mach/issues/845
+  # aarch64-linux-musl_debug:
+  #   runs-on: ubuntu-latest
+  #   # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
+  #   # to the branch.
+  #   if: github.event.workflow_run.conclusion == 'success' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       with:
+  #         submodules: 'true'
+  #     - name: Setup Zig
+  #       run: |
+  #         sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
+  #         sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+  #     - name: Clone mach-glfw
+  #       run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
+  #     - name: install (debug)
+  #       run: zig build install -Dtarget=aarch64-linux-musl
+  #     - name: upload (debug)
+  #       run: ./dev/upload-release.sh
+  #       env:
+  #         RELEASE_NAME: aarch64-linux-musl_debug
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # aarch64-linux-musl_release-fast:
+  #   runs-on: ubuntu-latest
+  #   # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
+  #   # to the branch.
+  #   if: github.event.workflow_run.conclusion == 'success' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       with:
+  #         submodules: 'true'
+  #     - name: Setup Zig
+  #       run: |
+  #         sudo apt install xz-utils libx11-dev # TODO(libx11) https://github.com/hexops/mach/issues/845
+  #         sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.11.0-dev.3883+7166407d8.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+  #     - name: Clone mach-glfw
+  #       run: rm libs/mach-glfw && git clone --recursive https://github.com/hexops/mach-glfw libs/mach-glfw
+  #     - name: install (release-fast)
+  #       run: zig build install -Doptimize=ReleaseFast -Dtarget=aarch64-linux-musl
+  #     - name: upload (release-fast)
+  #       run: ./dev/upload-release.sh
+  #       env:
+  #         RELEASE_NAME: aarch64-linux-musl_release-fast
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   x86_64-windows-gnu_debug:
     runs-on: windows-latest
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
