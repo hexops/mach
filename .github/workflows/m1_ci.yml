@@ -27,7 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          submodules: 'true'
+          submodules: 'recursive'
       - name: test
         run: zig build test
       - name: build

@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          submodules: 'true'
+          submodules: 'recursive'
       - name: Setup Zig
         run: |
           sudo apt install xz-utils
@@ -55,7 +55,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          submodules: 'true'
+          submodules: 'recursive'
       - name: Setup Zig
         run: |
           $ProgressPreference = 'SilentlyContinue'
@@ -74,7 +74,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          submodules: 'true'
+          submodules: 'recursive'
       - name: Setup Zig
         run: |
           brew uninstall --ignore-dependencies libx11 # https://github.com/ziglang/zig/issues/11066
