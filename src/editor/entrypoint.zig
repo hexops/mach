@@ -24,6 +24,11 @@ pub fn Main() !void {
         var steps = std.ArrayList([]const u8).init(allocator);
         var build_args = std.ArrayList([]const u8).init(allocator);
 
+        if (std.mem.eql(u8, args[arg_i], "help") or std.mem.eql(u8, args[arg_i], "--help") or std.mem.eql(u8, args[arg_i], "-h")) {
+            try printHelp(.build);
+            std.os.exit(1);
+        }
+
         while (arg_i < args.len) : (arg_i += 1) {
             if (argOption("-zig-path")) |value| {
                 builder.zig_path = value;
@@ -74,7 +79,7 @@ pub fn Main() !void {
         builder.zig_build_args = try build_args.toOwnedSlice();
 
         return builder.run();
-    } else if (std.mem.eql(u8, args[arg_i], "help")) {
+    } else if (std.mem.eql(u8, args[arg_i], "help") or std.mem.eql(u8, args[arg_i], "--help") or std.mem.eql(u8, args[arg_i], "-h")) {
         arg_i += 1;
         var subcommand = SubCommand.help;
 
