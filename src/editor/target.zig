@@ -1,5 +1,5 @@
 const std = @import("std");
-const allocator = @import("root").allocator;
+const allocator = @import("entrypoint.zig").allocator;
 
 pub const Target = enum {
     @"linux-x86_64",

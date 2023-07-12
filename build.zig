@@ -63,7 +63,7 @@ pub fn build(b: *std.Build) !void {
     if (target.getCpuArch() != .wasm32) {
         const app = b.addExecutable(.{
             .name = "mach",
-            .root_source_file = .{ .path = "app/main.zig" },
+            .root_source_file = .{ .path = "src/mach.zig" },
             .version = .{ .major = 0, .minor = 1, .patch = 0 },
             .optimize = optimize,
             .target = target,

@@ -10,7 +10,7 @@ var arg_i: usize = 1;
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 pub const allocator = gpa.allocator();
 
-pub fn main() !void {
+pub fn Main() !void {
     defer _ = gpa.deinit();
 
     args = try std.process.argsAlloc(allocator);

@@ -2,7 +2,7 @@ const std = @import("std");
 const mime_map = @import("Builder/mime.zig").mime_map;
 const Target = @import("target.zig").Target;
 const OptimizeMode = std.builtin.OptimizeMode;
-const allocator = @import("root").allocator;
+const allocator = @import("entrypoint.zig").allocator;
 
 const Builder = @This();
 
