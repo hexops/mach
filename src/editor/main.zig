@@ -1,7 +1,21 @@
+//! The 'mach' CLI and engine editor
+
+// Check that the user's app matches the required interface.
+comptime {
+    if (!@import("builtin").is_test) @import("core").AppInterface(@import("app"));
+}
+
 const std = @import("std");
 const builtin = @import("builtin");
+
+const App = @import("app").App;
+const core = @import("core");
+const gpu = core.gpu;
+
 const Builder = @import("Builder.zig");
 const Target = @import("target.zig").Target;
+
+pub const GPUInterface = gpu.dawn.Interface;
 
 const default_zig_path = "zig";
 
@@ -10,13 +24,24 @@ var arg_i: usize = 1;
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 pub const allocator = gpa.allocator();
 
-pub fn Main() !void {
+pub fn main() !void {
     defer _ = gpa.deinit();
 
     args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
-    if (args.len == 1) return;
+    if (args.len == 1) {
+        gpu.Impl.init();
+        _ = gpu.Export(GPUInterface);
+
+        var app: App = undefined;
+        try app.init();
+        defer app.deinit();
+
+        while (true) {
+            if (try app.update()) return;
+        }
+    }
 
     if (std.mem.eql(u8, args[arg_i], "build")) {
         arg_i += 1;

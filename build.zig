@@ -61,45 +61,30 @@ pub fn build(b: *std.Build) !void {
     const options = Options{ .core = .{ .gpu_dawn_options = gpu_dawn_options } };
 
     if (target.getCpuArch() != .wasm32) {
-        const app = b.addExecutable(.{
-            .name = "mach",
-            .root_source_file = .{ .path = "src/mach.zig" },
-            .version = .{ .major = 0, .minor = 1, .patch = 0 },
-            .optimize = optimize,
-            .target = target,
-        });
-        app.addModule("mach", module(b, optimize, target));
-        if (app.target.getOsTag() == .windows) app.linkLibC();
-        b.installArtifact(app);
-
-        const app_run_cmd = b.addRunArtifact(app);
-        if (b.args) |args| app_run_cmd.addArgs(args);
-        const app_run_step = b.step("run", "Run Mach Engine Application");
-        app_run_step.dependOn(&app_run_cmd.step);
-
         const tests_step = b.step("test", "Run tests");
         tests_step.dependOn(&testStep(b, optimize, target).step);
 
-        const shaderexp_app = try App.init(
+        const editor = try App.init(
             b,
             .{
-                .name = "shaderexp",
-                .src = "shaderexp/main.zig",
+                .name = "mach",
+                .src = "src/editor/app.zig",
+                .custom_entrypoint = "src/editor/main.zig",
                 .target = target,
                 .optimize = optimize,
             },
         );
-        try shaderexp_app.link(options);
-        shaderexp_app.install();
+        try editor.link(options);
+        editor.install();
 
-        const shaderexp_install_step = b.step("shaderexp", "Install shaderexp");
-        shaderexp_install_step.dependOn(&shaderexp_app.getInstallStep().?.step);
-        const shaderexp_run_cmd = shaderexp_app.addRunArtifact();
-        shaderexp_run_cmd.step.dependOn(shaderexp_install_step);
+        const editor_install_step = b.step("editor", "Install editor");
+        editor_install_step.dependOn(&editor.getInstallStep().?.step);
+        const editor_run_cmd = editor.addRunArtifact();
+        editor_run_cmd.step.dependOn(editor_install_step);
 
-        const shaderexp_run_step = b.step("run-shaderexp", "Run shaderexp");
-        shaderexp_run_step.dependOn(&shaderexp_run_cmd.step);
-        b.getInstallStep().dependOn(shaderexp_install_step);
+        const editor_run_step = b.step("run", "Run the editor");
+        editor_run_step.dependOn(&editor_run_cmd.step);
+        b.getInstallStep().dependOn(editor_install_step);
     }
 
     const compile_all = b.step("compile-all", "Compile Mach");
@@ -137,6 +122,7 @@ pub const App = struct {
             src: []const u8,
             target: std.zig.CrossTarget,
             optimize: std.builtin.OptimizeMode,
+            custom_entrypoint: ?[]const u8 = null,
             deps: ?[]const std.build.ModuleDependency = null,
             res_dirs: ?[]const []const u8 = null,
             watch_paths: ?[]const []const u8 = null,
@@ -157,6 +143,7 @@ pub const App = struct {
             .src = options.src,
             .target = options.target,
             .optimize = options.optimize,
+            .custom_entrypoint = options.custom_entrypoint,
             .deps = deps.items,
             .res_dirs = options.res_dirs,
             .watch_paths = options.watch_paths,

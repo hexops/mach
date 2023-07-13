@@ -24,13 +24,13 @@ fragment_shader_code: [:0]const u8,
 last_mtime: i128,
 
 pub fn init(app: *App) !void {
-    try app.core.init(allocator, .{ .title = "shaderexp" });
+    try app.core.init(allocator, .{ .title = "Mach editor" });
 
     var fragment_file: std.fs.File = undefined;
     var last_mtime: i128 = undefined;
 
     // TODO: there is no guarantee we are in the mach project root
-    if (std.fs.cwd().openFile("shaderexp/frag.wgsl", .{ .mode = .read_only })) |file| {
+    if (std.fs.cwd().openFile("src/editor/frag.wgsl", .{ .mode = .read_only })) |file| {
         fragment_file = file;
         if (file.stat()) |stat| {
             last_mtime = stat.mtime;
