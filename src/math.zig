@@ -491,25 +491,6 @@ pub const mat = struct {
         } else @compileError("Expected matrix, found '" ++ @typeName(T) ++ "'");
     }
 
-    pub inline fn set2dMatrix(data: []const f32) Mat3x3 {
-        std.debug.assert(data.len == 9);
-        return .{
-            data[0], data[1], data[2], 0,
-            data[3], data[4], data[5], 0,
-            data[6], data[7], data[8], 0,
-        };
-    }
-
-    pub inline fn set3dMatrix(data: []const f32) Mat4x4 {
-        std.debug.assert(data.len == 16);
-        return .{
-            data[0],  data[1],  data[2],  data[3],
-            data[4],  data[5],  data[6],  data[7],
-            data[8],  data[9],  data[10], data[11],
-            data[12], data[13], data[14], data[15],
-        };
-    }
-
     /// Constructs an orthographic projection matrix; an orthogonal transformation matrix which
     /// transforms from the given left, right, bottom, and top dimensions into -1 +1 in x and y,
     /// and 0 to +1 in z.
@@ -1168,39 +1149,39 @@ test "mat.mul" {
 
         const R_yz = mat.mul(R_y, R_z);
         // This values are calculated by hand with help of matrix calculator: https://matrix.reshish.com/multCalculation.php
-        const expected_R_yz = mat.set3dMatrix(&[_]f32{
+        const expected_R_yz = Mat4x4{
             -0.43938504177070496278, -0.8191520442889918, -0.36868782649461236545, 0,
             0.62750687159713312638,  -0.573576436351046,  0.52654078451836329713,  0,
             -0.6427876096865394,     0,                   0.766044443118978,       0,
             0,                       0,                   0,                       1,
-        });
+        };
         try expect(mat.equalsApproximately(R_yz, expected_R_yz, tolerance));
 
         const R_xyz = mat.mul(R_x, R_yz);
-        const expected_R_xyz = mat.set3dMatrix(&[_]f32{
+        const expected_R_xyz = Mat4x4{
             -0.439385041770705,  -0.52506256666891627986, -0.72886904595489960019, 0,
             0.6275068715971331,  -0.76000215715133560834, 0.16920947734596765363,  0,
             -0.6427876096865394, -0.383022221559489,      0.66341394816893832989,  0,
             0,                   0,                       0,                       1,
-        });
+        };
         try expect(mat.equalsApproximately(R_xyz, expected_R_xyz, tolerance));
 
         const SR = mat.mul(S, R_xyz);
-        const expected_SR = mat.set3dMatrix(&[_]f32{
+        const expected_SR = Mat4x4{
             -1.318155125312115,  -0.5250625666689163, 3.6443452297744985,  0,
             1.8825206147913993,  -0.7600021571513356, -0.8460473867298382, 0,
             -1.9283628290596182, -0.383022221559489,  -3.3170697408446915, 0,
             0,                   0,                   0,                   1,
-        });
+        };
         try expect(mat.equalsApproximately(SR, expected_SR, tolerance));
 
         const TSR = mat.mul(T, SR);
-        const expected_TSR = mat.set3dMatrix(&[_]f32{
+        const expected_TSR = Mat4x4{
             -1.318155125312115,  -0.5250625666689163, 3.6443452297744985,  0,
             1.8825206147913993,  -0.7600021571513356, -0.8460473867298382, 0,
             -1.9283628290596182, -0.383022221559489,  -3.3170697408446914, 0,
             1,                   2,                   -3,                  1,
-        });
+        };
 
         try expect(mat.equalsApproximately(TSR, expected_TSR, tolerance));
     }
