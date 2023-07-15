@@ -43,6 +43,10 @@ const expect = std.testing.expect;
 const expectEqual = std.testing.expectEqual;
 const expectApproxEqAbs = std.testing.expectApproxEqAbs;
 
+pub const float = struct {
+    pub const equals = std.math.approxEqAbs;
+};
+
 pub const Vec2 = @Vector(2, f32);
 pub const Vec3 = @Vector(3, f32);
 pub const Vec4 = @Vector(4, f32);
@@ -656,75 +660,39 @@ pub const mat = struct {
         } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
     }
 
-    /// Check if two matrices are exactly equal. For approximate comparison use `equalsApproximately()`
-    pub inline fn equals(a: anytype, b: @TypeOf(a)) bool {
-        return if (@TypeOf(a) == Mat3x3) {
-            return a[0] == b[0] and
-                a[1] == b[1] and
-                a[2] == b[2] and
-                a[3] == b[3] and
-                a[4] == b[4] and
-                a[5] == b[5] and
-                a[6] == b[6] and
-                a[7] == b[7] and
-                a[8] == b[8] and
-                a[9] == b[9] and
-                a[10] == b[10] and
-                a[11] == b[11];
-        } else if (@TypeOf(a) == Mat4x4) {
-            return a[0] == b[0] and
-                a[1] == b[1] and
-                a[2] == b[2] and
-                a[3] == b[3] and
-                a[4] == b[4] and
-                a[5] == b[5] and
-                a[6] == b[6] and
-                a[7] == b[7] and
-                a[8] == b[8] and
-                a[9] == b[9] and
-                a[10] == b[10] and
-                a[11] == b[11] and
-                a[12] == b[12] and
-                a[13] == b[13] and
-                a[14] == b[14] and
-                a[15] == b[15];
-        } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
-    }
-
-    const approxEqAbs = std.math.approxEqAbs;
     /// Check if two matrices are approximate equal. Returns true if the absolute difference between
     /// each element in matrix them is less or equal than the specified tolerance.
-    pub inline fn equalsApproximately(a: anytype, b: @TypeOf(a), tolerance: f32) bool {
+    pub inline fn equals(a: anytype, b: @TypeOf(a), tolerance: f32) bool {
         return if (@TypeOf(a) == Mat3x3) {
-            return approxEqAbs(f32, a[0], b[0], tolerance) and
-                approxEqAbs(f32, a[1], b[1], tolerance) and
-                approxEqAbs(f32, a[2], b[2], tolerance) and
-                approxEqAbs(f32, a[3], b[3], tolerance) and
-                approxEqAbs(f32, a[4], b[4], tolerance) and
-                approxEqAbs(f32, a[5], b[5], tolerance) and
-                approxEqAbs(f32, a[6], b[6], tolerance) and
-                approxEqAbs(f32, a[7], b[7], tolerance) and
-                approxEqAbs(f32, a[8], b[8], tolerance) and
-                approxEqAbs(f32, a[9], b[9], tolerance) and
-                approxEqAbs(f32, a[10], b[10], tolerance) and
-                approxEqAbs(f32, a[11], b[11], tolerance);
+            return float.equals(f32, a[0], b[0], tolerance) and
+                float.equals(f32, a[1], b[1], tolerance) and
+                float.equals(f32, a[2], b[2], tolerance) and
+                float.equals(f32, a[3], b[3], tolerance) and
+                float.equals(f32, a[4], b[4], tolerance) and
+                float.equals(f32, a[5], b[5], tolerance) and
+                float.equals(f32, a[6], b[6], tolerance) and
+                float.equals(f32, a[7], b[7], tolerance) and
+                float.equals(f32, a[8], b[8], tolerance) and
+                float.equals(f32, a[9], b[9], tolerance) and
+                float.equals(f32, a[10], b[10], tolerance) and
+                float.equals(f32, a[11], b[11], tolerance);
         } else if (@TypeOf(a) == Mat4x4) {
-            return approxEqAbs(f32, a[0], b[0], tolerance) and
-                approxEqAbs(f32, a[1], b[1], tolerance) and
-                approxEqAbs(f32, a[2], b[2], tolerance) and
-                approxEqAbs(f32, a[3], b[3], tolerance) and
-                approxEqAbs(f32, a[4], b[4], tolerance) and
-                approxEqAbs(f32, a[5], b[5], tolerance) and
-                approxEqAbs(f32, a[6], b[6], tolerance) and
-                approxEqAbs(f32, a[7], b[7], tolerance) and
-                approxEqAbs(f32, a[8], b[8], tolerance) and
-                approxEqAbs(f32, a[9], b[9], tolerance) and
-                approxEqAbs(f32, a[10], b[10], tolerance) and
-                approxEqAbs(f32, a[11], b[11], tolerance) and
-                approxEqAbs(f32, a[12], b[12], tolerance) and
-                approxEqAbs(f32, a[13], b[13], tolerance) and
-                approxEqAbs(f32, a[14], b[14], tolerance) and
-                approxEqAbs(f32, a[15], b[15], tolerance);
+            return float.equals(f32, a[0], b[0], tolerance) and
+                float.equals(f32, a[1], b[1], tolerance) and
+                float.equals(f32, a[2], b[2], tolerance) and
+                float.equals(f32, a[3], b[3], tolerance) and
+                float.equals(f32, a[4], b[4], tolerance) and
+                float.equals(f32, a[5], b[5], tolerance) and
+                float.equals(f32, a[6], b[6], tolerance) and
+                float.equals(f32, a[7], b[7], tolerance) and
+                float.equals(f32, a[8], b[8], tolerance) and
+                float.equals(f32, a[9], b[9], tolerance) and
+                float.equals(f32, a[10], b[10], tolerance) and
+                float.equals(f32, a[11], b[11], tolerance) and
+                float.equals(f32, a[12], b[12], tolerance) and
+                float.equals(f32, a[13], b[13], tolerance) and
+                float.equals(f32, a[14], b[14], tolerance) and
+                float.equals(f32, a[15], b[15], tolerance);
         } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
     }
 
@@ -1155,7 +1123,7 @@ test "mat.mul" {
             -0.6427876096865394,     0,                   0.766044443118978,       0,
             0,                       0,                   0,                       1,
         };
-        try expect(mat.equalsApproximately(R_yz, expected_R_yz, tolerance));
+        try expect(mat.equals(R_yz, expected_R_yz, tolerance));
 
         const R_xyz = mat.mul(R_x, R_yz);
         const expected_R_xyz = Mat4x4{
@@ -1164,7 +1132,7 @@ test "mat.mul" {
             -0.6427876096865394, -0.383022221559489,      0.66341394816893832989,  0,
             0,                   0,                       0,                       1,
         };
-        try expect(mat.equalsApproximately(R_xyz, expected_R_xyz, tolerance));
+        try expect(mat.equals(R_xyz, expected_R_xyz, tolerance));
 
         const SR = mat.mul(S, R_xyz);
         const expected_SR = Mat4x4{
@@ -1173,7 +1141,7 @@ test "mat.mul" {
             -1.9283628290596182, -0.383022221559489,  -3.3170697408446915, 0,
             0,                   0,                   0,                   1,
         };
-        try expect(mat.equalsApproximately(SR, expected_SR, tolerance));
+        try expect(mat.equals(SR, expected_SR, tolerance));
 
         const TSR = mat.mul(T, SR);
         const expected_TSR = Mat4x4{
@@ -1183,6 +1151,6 @@ test "mat.mul" {
             1,                   2,                   -3,                  1,
         };
 
-        try expect(mat.equalsApproximately(TSR, expected_TSR, tolerance));
+        try expect(mat.equals(TSR, expected_TSR, tolerance));
     }
 }
