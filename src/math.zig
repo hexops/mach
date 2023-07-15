@@ -242,14 +242,14 @@ test "vec.normalize" {
         try expectApproxEqAbs(normalized[3], result[3], 1e-7);
     }
 
-    //NOTE: This test ensures that zero vector is also normalized to zero vector with help of divisor
+    // This test ensures that zero vector is also normalized to zero vector with help of divisor
     {
         const v = Vec2{ 0, 0 };
         const normalized = vec.normalize(v, near_zero_value);
         try expect(normalized[0] == 0 and normalized[1] == 0);
     }
 
-    //NOTE: This test should work but I am getting error:
+    // TODO: This test should work but I am getting error:
     // 'test.vec.normalize' failed: expected -nan, found -nan
     // {
     //     const v = Vec2{ 0, 0 };
@@ -262,7 +262,7 @@ test "vec.normalize" {
     //     // try std.testing.expectApproxEqAbs(normalized[1], -NaN, 0.00000001);
     // }
 
-    //NOTE: This two test show how for small values if we add divisor we get different normalized vectors
+    // These two tests show how for small values if we add divisor we get different normalized vectors
     {
         const v = Vec2{ near_zero_value, near_zero_value };
         const normalized = vec.normalize(v, near_zero_value);
@@ -819,27 +819,27 @@ test "mat.identity" {
     }
 }
 
-test "mat.orto" {
-    const orto_mat = mat.ortho(-2, 2, -2, 3, 10, 110);
+test "mat.ortho" {
+    const ortho_mat = mat.ortho(-2, 2, -2, 3, 10, 110);
 
     // Computed Values
-    try expectEqual(orto_mat[0], 0.5);
-    try expectEqual(orto_mat[4 + 1], 0.4);
-    try expectEqual(orto_mat[4 * 2 + 2], -0.01);
-    try expectEqual(orto_mat[4 * 3 + 0], 0);
-    try expectEqual(orto_mat[4 * 3 + 1], -0.2);
-    try expectEqual(orto_mat[4 * 3 + 2], -0.1);
+    try expectEqual(ortho_mat[0], 0.5);
+    try expectEqual(ortho_mat[4 + 1], 0.4);
+    try expectEqual(ortho_mat[4 * 2 + 2], -0.01);
+    try expectEqual(ortho_mat[4 * 3 + 0], 0);
+    try expectEqual(ortho_mat[4 * 3 + 1], -0.2);
+    try expectEqual(ortho_mat[4 * 3 + 2], -0.1);
 
-    // Constant values, which should not change but we still check for completness
+    // Constant values, which should not change but we still check for completeness
     const zero_value_indexes = [_]u8{
         1,     2,         3,
         4,     4 + 2,     4 + 3,
         4 * 2, 4 * 2 + 1, 4 * 2 + 3,
     };
     for (zero_value_indexes) |index| {
-        try expectEqual(orto_mat[index], 0);
+        try expectEqual(ortho_mat[index], 0);
     }
-    try expectEqual(orto_mat[4 * 3 + 3], 1);
+    try expectEqual(ortho_mat[4 * 3 + 3], 1);
 }
 
 test "mat.translate2d" {
@@ -850,7 +850,7 @@ test "mat.translate2d" {
     try expectEqual(translation_mat[4 * 2], v[0]);
     try expectEqual(translation_mat[4 * 2 + 1], v[1]);
 
-    // Constant values, which should not change but we still check for completness
+    // Constant values, which should not change but we still check for completeness
     const zero_value_indexes = [_]u8{
         1,         2,     3,
         4,         4 + 2, 4 + 3,
@@ -873,7 +873,7 @@ test "mat.translate3d" {
     try expectEqual(translation_mat[4 * 3 + 1], v[1]);
     try expectEqual(translation_mat[4 * 3 + 2], v[2]);
 
-    // Constant values, which should not change but we still check for completness
+    // Constant values, which should not change but we still check for completeness
     const zero_value_indexes = [_]u8{
         1,     2,         3,
         4,     4 + 2,     4 + 3,
@@ -912,7 +912,7 @@ test "mat.scale2d" {
     try expectEqual(scale_mat[0], v[0]);
     try expectEqual(scale_mat[4 * 1 + 1], v[1]);
 
-    // Constant values, which should not change but we still check for completness
+    // Constant values, which should not change but we still check for completeness
     const zero_value_indexes = [_]u8{
         1,     2,         3,
         4,     4 + 2,     4 + 3,
@@ -933,7 +933,7 @@ test "mat.scale3d" {
     try expectEqual(scale_mat[4 * 1 + 1], v[1]);
     try expectEqual(scale_mat[4 * 2 + 2], v[2]);
 
-    // Constant values, which should not change but we still check for completness
+    // Constant values, which should not change but we still check for completeness
     const zero_value_indexes = [_]u8{
         1,     2,         3,
         4,     4 + 2,     4 + 3,
@@ -948,7 +948,7 @@ test "mat.scale3d" {
 
 const degreesToRadians = std.math.degreesToRadians;
 
-// NOTE: Maybe reconsider based on feedback to join all test for rotation into one test as only
+// TODO: Maybe reconsider based on feedback to join all test for rotation into one test as only
 //       location of values change. And create some kind of struct that will hold this indexes and
 //       coresponding values
 test "mat.rotateX" {
@@ -1167,7 +1167,7 @@ test "mat.mul" {
         const R_z = mat.rotateZ(degreesToRadians(f32, r[2]));
 
         const R_yz = mat.mul(R_y, R_z);
-        // NOTE: This values are calculated by hand with help of matrix calculator: https://matrix.reshish.com/multCalculation.php
+        // This values are calculated by hand with help of matrix calculator: https://matrix.reshish.com/multCalculation.php
         const expected_R_yz = mat.set3dMatrix(&[_]f32{
             -0.43938504177070496278, -0.8191520442889918, -0.36868782649461236545, 0,
             0.62750687159713312638,  -0.573576436351046,  0.52654078451836329713,  0,
