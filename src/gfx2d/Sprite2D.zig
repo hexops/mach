@@ -70,8 +70,8 @@ pub fn machSprite2DInit(adapter: anytype) !void {
     // Create a sampler with linear filtering for smooth interpolation.
     const queue = device.getQueue();
     const texture_sampler = device.createSampler(&.{
-        .mag_filter = .linear,
-        .min_filter = .linear,
+        .mag_filter = .nearest,
+        .min_filter = .nearest,
     });
 
     const sprite_buffer_cap = 1024 * 128; // TODO: allow user to specify preallocation

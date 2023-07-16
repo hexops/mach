@@ -98,5 +98,5 @@ fn frag_main(
   if (c.a <= 0.0) {
     discard;
   }
-  return vec4<f32>(0.3, 0.2, 0.5, 1.0);
+  return c;
 }
