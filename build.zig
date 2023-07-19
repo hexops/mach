@@ -163,11 +163,14 @@ pub const App = struct {
         sysaudio.link(app.b, app.step, options.sysaudio);
         if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype);
 
-        const mach_basisu = app.b.dependency("mach_basisu", .{
-            .target = app.step.target,
-            .optimize = app.step.optimize,
-        });
-        app.step.linkLibrary(mach_basisu.artifact("mach-basisu"));
+        // TODO: basisu support in wasm
+        if (app.platform != .web) {
+            const mach_basisu = app.b.dependency("mach_basisu", .{
+                .target = app.step.target,
+                .optimize = app.step.optimize,
+            });
+            app.step.linkLibrary(mach_basisu.artifact("mach-basisu"));
+        }
     }
 
     pub fn install(app: *const App) void {
