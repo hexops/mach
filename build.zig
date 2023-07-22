@@ -45,7 +45,6 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
 }
 
 pub const Options = struct {
-    core: core.Options = .{},
     sysaudio: sysaudio.Options = .{},
     freetype: freetype.Options = .{},
 };
@@ -54,11 +53,7 @@ pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
 
-    const gpu_dawn_options = gpu_dawn.Options{
-        .from_source = b.option(bool, "dawn-from-source", "Build Dawn from source") orelse false,
-        .debug = b.option(bool, "dawn-debug", "Use a debug build of Dawn") orelse false,
-    };
-    const options = Options{ .core = .{ .gpu_dawn_options = gpu_dawn_options } };
+    const options = Options{};
 
     if (target.getCpuArch() != .wasm32) {
         const tests_step = b.step("test", "Run tests");
@@ -75,20 +70,13 @@ pub fn build(b: *std.Build) !void {
             },
         );
         try editor.link(options);
-        editor.install();
 
         const editor_install_step = b.step("editor", "Install editor");
-        editor_install_step.dependOn(&editor.getInstallStep().?.step);
-        const editor_run_cmd = editor.addRunArtifact();
-        editor_run_cmd.step.dependOn(editor_install_step);
+        editor_install_step.dependOn(&editor.install.step);
 
         const editor_run_step = b.step("run", "Run the editor");
-        editor_run_step.dependOn(&editor_run_cmd.step);
-        b.getInstallStep().dependOn(editor_install_step);
+        editor_run_step.dependOn(&editor.run.step);
     }
-
-    const compile_all = b.step("compile-all", "Compile Mach");
-    compile_all.dependOn(b.getInstallStep());
 }
 
 fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
@@ -109,7 +97,9 @@ fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
 pub const App = struct {
     b: *std.Build,
     name: []const u8,
-    step: *std.build.CompileStep,
+    compile: *std.build.Step.Compile,
+    install: *std.build.Step.InstallArtifact,
+    run: *std.build.Step.Run,
     platform: core.App.Platform,
 
     core: core.App,
@@ -152,37 +142,26 @@ pub const App = struct {
             .core = app,
             .b = app.b,
             .name = app.name,
-            .step = app.step,
+            .compile = app.compile,
+            .install = app.install,
+            .run = app.run,
             .platform = app.platform,
             .use_freetype = options.use_freetype,
         };
     }
 
     pub fn link(app: *const App, options: Options) !void {
-        try app.core.link(options.core);
-        sysaudio.link(app.b, app.step, options.sysaudio);
-        if (app.use_freetype) |_| freetype.link(app.b, app.step, options.freetype);
+        sysaudio.link(app.b, app.compile, options.sysaudio);
+        if (app.use_freetype) |_| freetype.link(app.b, app.compile, options.freetype);
 
         // TODO: basisu support in wasm
         if (app.platform != .web) {
             const mach_basisu = app.b.dependency("mach_basisu", .{
-                .target = app.step.target,
-                .optimize = app.step.optimize,
+                .target = app.compile.target,
+                .optimize = app.compile.optimize,
             });
-            app.step.linkLibrary(mach_basisu.artifact("mach-basisu"));
+            app.compile.linkLibrary(mach_basisu.artifact("mach-basisu"));
         }
-    }
-
-    pub fn install(app: *const App) void {
-        app.core.install();
-    }
-
-    pub fn addRunArtifact(app: *const App) *std.build.RunStep {
-        return app.core.addRunArtifact();
-    }
-
-    pub fn getInstallStep(app: *const App) ?*std.build.InstallArtifactStep {
-        return app.core.getInstallStep();
     }
 };
 
