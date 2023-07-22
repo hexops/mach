@@ -74,7 +74,7 @@ pub const vec = struct {
     /// // v.x == 1337, v.y == 1337, v.z == 1337
     /// ```
     pub inline fn splat(comptime V: type, scalar: f32) V {
-        return @splat(size(V), scalar);
+        return @splat(scalar);
     }
 
     /// Computes the squared length of the vector. Faster than `len()`
