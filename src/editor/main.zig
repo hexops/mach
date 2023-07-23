@@ -45,6 +45,7 @@ pub fn main() !void {
 
     if (std.mem.eql(u8, args[arg_i], "build")) {
         arg_i += 1;
+
         var builder = Builder{};
         var steps = std.ArrayList([]const u8).init(allocator);
         var build_args = std.ArrayList([]const u8).init(allocator);
@@ -102,7 +103,6 @@ pub fn main() !void {
 
         builder.steps = try steps.toOwnedSlice();
         builder.zig_build_args = try build_args.toOwnedSlice();
-
         return builder.run();
     } else if (std.mem.eql(u8, args[arg_i], "help") or std.mem.eql(u8, args[arg_i], "--help") or std.mem.eql(u8, args[arg_i], "-h")) {
         arg_i += 1;

@@ -27,7 +27,7 @@ pub const Target = enum {
             std.meta.stringToEnum(Target, str) orelse return null;
     }
 
-    pub fn toZigTriple(self: Target) ![]const u8 {
+    pub fn toZigTriple(self: Target, allocator2: std.mem.Allocator) ![]const u8 {
         const zig_target = std.zig.CrossTarget{
             .cpu_arch = switch (self) {
                 .@"linux-x86_64",
@@ -47,6 +47,6 @@ pub const Target = enum {
                 .wasm32 => .freestanding,
             },
         };
-        return zig_target.zigTriple(allocator);
+        return zig_target.zigTriple(allocator2);
     }
 };

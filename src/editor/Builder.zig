@@ -24,7 +24,7 @@ listen_port: u16 = 1717,
 subscribers: std.ArrayListUnmanaged(std.net.Stream) = .{},
 watch_paths: ?[][]const u8 = null,
 mtimes: std.AutoHashMapUnmanaged(std.fs.File.INode, i128) = .{},
-@"formated-www/index.html": []const u8 = undefined,
+www_index_html: []const u8 = undefined,
 
 const Status = union(enum) {
     building,
@@ -33,7 +33,15 @@ const Status = union(enum) {
     compile_error: []const u8,
 };
 
+fn deinit(self: *Builder) void {
+    allocator.free(self.steps);
+    allocator.free(self.zig_build_args);
+    if (self.watch_paths) |wp| allocator.free(wp);
+}
+
 pub fn run(self: *Builder) !void {
+    defer self.deinit();
+
     var child = try self.runZigBuild(.Inherit);
     switch (try child.wait()) {
         .Exited => |code| {
@@ -62,7 +70,7 @@ pub fn run(self: *Builder) !void {
             std.os.exit(1);
         }
 
-        self.@"formated-www/index.html" = try std.fmt.allocPrint(
+        self.www_index_html = try std.fmt.allocPrint(
             allocator,
             @"www/index.html",
             .{
@@ -94,23 +102,20 @@ pub fn run(self: *Builder) !void {
 }
 
 fn runZigBuild(self: Builder, stderr_behavior: std.process.Child.StdIo) !std.process.Child {
-    var args_arena = std.heap.ArenaAllocator.init(allocator);
-    defer args_arena.deinit();
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    const arena_allocator = arena.allocator();
 
-    const args = try self.buildArgs(args_arena.allocator());
-
-    var child = std.process.Child.init(args, allocator);
+    const args = try self.buildArgs(arena_allocator);
+    var child = std.process.Child.init(args, arena_allocator);
     child.stderr_behavior = stderr_behavior;
-
     try child.spawn();
-
     return child;
 }
 
 fn buildArgs(self: Builder, arena: std.mem.Allocator) ![]const []const u8 {
     var argv = std.ArrayList([]const u8).init(arena);
     try argv.ensureTotalCapacity(self.steps.len + self.zig_build_args.len + 6);
-
     argv.appendAssumeCapacity(try arena.dupe(u8, self.zig_path));
     argv.appendAssumeCapacity("build");
 
@@ -122,7 +127,7 @@ fn buildArgs(self: Builder, arena: std.mem.Allocator) ![]const []const u8 {
     argv.appendAssumeCapacity("on");
     argv.appendAssumeCapacity(try std.fmt.allocPrint(arena, "-Doptimize={s}", .{@tagName(self.optimize)}));
     if (self.target) |target| {
-        argv.appendAssumeCapacity(try std.fmt.allocPrint(arena, "-Dtarget={s}", .{try target.toZigTriple()}));
+        argv.appendAssumeCapacity(try std.fmt.allocPrint(arena, "-Dtarget={s}", .{try target.toZigTriple(arena)}));
     }
 
     for (self.zig_build_args) |arg| {
@@ -140,7 +145,7 @@ fn watch(self: *Builder) void {
 const path_handlers = std.ComptimeStringMap(*const fn (*Builder, std.net.Stream) void, .{
     .{ "/", struct {
         fn h(self: *Builder, stream: std.net.Stream) void {
-            sendData(stream, .ok, .close, mime_map.get(".html").?, self.@"formated-www/index.html");
+            sendData(stream, .ok, .close, mime_map.get(".html").?, self.www_index_html);
         }
     }.h },
     .{ "/notify", struct {
