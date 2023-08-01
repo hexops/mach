@@ -1,6 +1,5 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const freetype = @import("libs/mach-freetype/build.zig");
 const glfw = @import("mach_glfw");
 const sysaudio = @import("mach_sysaudio");
 pub const gpu_dawn = @import("libs/mach-gpu-dawn/build.zig"); // TODO(build-system): make this private
@@ -44,10 +43,7 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
     return _module.?;
 }
 
-pub const Options = struct {
-    sysaudio: sysaudio.Options = .{},
-    freetype: freetype.Options = .{},
-};
+pub const Options = struct { sysaudio: sysaudio.Options = .{} };
 
 pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
@@ -126,7 +122,10 @@ pub const App = struct {
         if (options.deps) |v| try deps.appendSlice(v);
         try deps.append(.{ .name = "mach", .module = module(b, options.optimize, options.target) });
         try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(b, options.optimize, options.target) });
-        if (options.use_freetype) |_| try deps.append(.{ .name = "freetype", .module = freetype.module(b) });
+        if (options.use_freetype) |name| {
+            const freetype_dep = b.dependency("mach_freetype", .{ .target = options.target, .optimize = options.optimize });
+            try deps.append(.{ .name = name, .module = freetype_dep.module("mach-freetype") });
+        }
 
         const app = try core.App.init(b, .{
             .name = options.name,
@@ -152,7 +151,6 @@ pub const App = struct {
 
     pub fn link(app: *const App, options: Options) !void {
         sysaudio.link(app.b, app.compile, options.sysaudio);
-        if (app.use_freetype) |_| freetype.link(app.b, app.compile, options.freetype);
 
         // TODO: basisu support in wasm
         if (app.platform != .web) {
