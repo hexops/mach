@@ -123,8 +123,8 @@ pub const App = struct {
         try deps.append(.{ .name = "mach", .module = module(b, options.optimize, options.target) });
         try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(b, options.optimize, options.target) });
         if (options.use_freetype) |name| {
-            const freetype_dep = b.dependency("mach_freetype", .{ .target = options.target, .optimize = options.optimize });
-            try deps.append(.{ .name = name, .module = freetype_dep.module("mach-freetype") });
+            const mach_freetype_dep = b.dependency("mach_freetype", .{ .target = options.target, .optimize = options.optimize });
+            try deps.append(.{ .name = name, .module = mach_freetype_dep.module("mach-freetype") });
         }
 
         const app = try core.App.init(b, .{
@@ -158,7 +158,13 @@ pub const App = struct {
                 .target = app.compile.target,
                 .optimize = app.compile.optimize,
             });
+            const harfbuzz_dep = app.b.dependency("harfbuzz", .{
+                .target = app.compile.target,
+                .optimize = app.compile.optimize,
+                .enable_freetype = true,
+            });
             app.compile.linkLibrary(mach_basisu.artifact("mach-basisu"));
+            app.compile.linkLibrary(harfbuzz_dep.artifact("harfbuzz"));
         }
     }
 };

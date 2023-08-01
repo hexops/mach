@@ -38,6 +38,14 @@
             .url = "https://pkg.machengine.org/mach-freetype/1f064ee503c6fbc25585a08e29e97977a39967ee.tar.gz",
             .hash = "1220d25639a4f634e294a83787bbd70088f4d1fd03d840ca3cda2d2e76c1765ecebb",
         },
+        .harfbuzz = .{
+            .url = "https://pkg.machengine.org/harfbuzz/b2b05db76bf1bdc36114fae3c4d2d6a6cc37672b.tar.gz",
+            .hash = "122091fd50873c798922f94af3b3806625c4f9d78918db0b19535074f657af6e7635",
+        },
+        .freetype = .{
+            .url = "https://pkg.machengine.org/freetype/f966f8117fdef886a04b84ced45801bf8add5c69.tar.gz",
+            .hash = "1220d8459bdcc6914e698acb582f6aca34b70a5b30bdd665cdcd969087c98e08a99a",
+        },
         .glfw = .{
             .url = "https://pkg.machengine.org/glfw/0e4cdba4216c6def0423462a2f21fef80683d56d.tar.gz",
             .hash = "1220a0b036095c2c54af347c86514ed9dab431299f0140b0e434ed119f85a976c32b",
