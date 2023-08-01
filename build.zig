@@ -158,7 +158,7 @@ pub const App = struct {
                 .target = app.compile.target,
                 .optimize = app.compile.optimize,
             });
-            const harfbuzz_dep = app.b.dependency("harfbuzz", .{
+            const harfbuzz_dep = app.b.dependency("mach_freetype.harfbuzz", .{
                 .target = app.compile.target,
                 .optimize = app.compile.optimize,
                 .enable_freetype = true,
