@@ -34,6 +34,10 @@
             .url = "https://pkg.machengine.org/mach-glfw/8e78e0175951117213ea65fec32fd61f2e39f4ea.tar.gz",
             .hash = "12202c9e56ab6822cf9a16f1b5c15ff17ba17c67c1ec12aa77bc2313dfe9d3c235ec",
         },
+        .mach_freetype = .{
+            .url = "https://pkg.machengine.org/mach-freetype/1f064ee503c6fbc25585a08e29e97977a39967ee.tar.gz",
+            .hash = "1220d25639a4f634e294a83787bbd70088f4d1fd03d840ca3cda2d2e76c1765ecebb",
+        },
         .glfw = .{
             .url = "https://pkg.machengine.org/glfw/0e4cdba4216c6def0423462a2f21fef80683d56d.tar.gz",
             .hash = "1220a0b036095c2c54af347c86514ed9dab431299f0140b0e434ed119f85a976c32b",

@@ -9,9 +9,6 @@
 	shallow = true
 	branch = "mach"
 
-[submodule "freetype/upstream"]
-	path = libs/freetype/upstream
-	url = https://github.com/hexops-graveyard/freetype
 [submodule "glfw/upstream"]
 	path = libs/glfw/upstream
 	url = https://github.com/hexops-graveyard/glfw
@@ -30,9 +27,6 @@
 [submodule "libs/mach-gpu-dawn"]
 	path = libs/mach-gpu-dawn
 	url = https://github.com/hexops/mach-gpu-dawn
-[submodule "libs/mach-freetype"]
-	path = libs/mach-freetype
-	url = https://github.com/hexops/mach-freetype
 [submodule "libs/mach-core"]
 	path = libs/mach-core
 	url = https://github.com/hexops/mach-core
