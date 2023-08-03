@@ -77,12 +77,12 @@ Mach is still early stages, so far we have support for building from the followi
 
 Mach works with the new self-hosted Zig compiler only. This means you'll need to use the latest Zig nightly version.
 
-Currently we test using `0.11.0-dev.3947+89396ff02`. Newer is generally better, but you can download this version here:
+Currently we test using `0.11.0-dev.4407+4d7dd1689`. Newer is generally better, but you can download this version here:
 
-- **linux-x86_64**: https://pkg.machengine.org/zig/zig-linux-x86_64-0.11.0-dev.3947+89396ff02.tar.xz
-- **windows-x86_64**: https://pkg.machengine.org/zig/zig-windows-x86_64-0.11.0-dev.3947+89396ff02.zip
-- **macos-x86_64** (Intel): https://pkg.machengine.org/zig/zig-macos-x86_64-0.11.0-dev.3947+89396ff02.tar.xz
-- **macos-aarch64** (Apple Silicon): https://pkg.machengine.org/zig/zig-macos-aarch64-0.11.0-dev.3947+89396ff02.tar.xz
+- **linux-x86_64**: https://pkg.machengine.org/zig/zig-linux-x86_64-0.11.0-dev.4407+4d7dd1689.tar.xz
+- **windows-x86_64**: https://pkg.machengine.org/zig/zig-windows-x86_64-0.11.0-dev.4407+4d7dd1689.zip
+- **macos-x86_64** (Intel): https://pkg.machengine.org/zig/zig-macos-x86_64-0.11.0-dev.4407+4d7dd1689.tar.xz
+- **macos-aarch64** (Apple Silicon): https://pkg.machengine.org/zig/zig-macos-aarch64-0.11.0-dev.4407+4d7dd1689.tar.xz
 
 ## Contributing
 

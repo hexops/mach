@@ -28,7 +28,7 @@ jobs:
       - name: Setup Zig
         run: |
           sudo apt install xz-utils
-          sudo sh -c 'wget -c https://pkg.machengine.org/zig/zig-linux-x86_64-0.11.0-dev.3947+89396ff02.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://pkg.machengine.org/zig/zig-linux-x86_64-0.11.0-dev.4407+4d7dd1689.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       # - name: x86_64-linux -> x86_64-linux-musl
       #   if: matrix.project == 'libs/freetype' || matrix.project == 'libs/glfw'
       #   run: zig build -Dtarget=x86_64-linux-musl
@@ -59,10 +59,10 @@ jobs:
       - name: Setup Zig
         run: |
           $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri 'https://pkg.machengine.org/zig/zig-windows-x86_64-0.11.0-dev.3947+89396ff02.zip' -OutFile 'C:\zig.zip'
+          Invoke-WebRequest -Uri 'https://pkg.machengine.org/zig/zig-windows-x86_64-0.11.0-dev.4407+4d7dd1689.zip' -OutFile 'C:\zig.zip'
           cd C:\
           7z x zig.zip
-          Add-Content $env:GITHUB_PATH 'C:\zig-windows-x86_64-0.11.0-dev.3947+89396ff02\'
+          Add-Content $env:GITHUB_PATH 'C:\zig-windows-x86_64-0.11.0-dev.4407+4d7dd1689\'
       - name: test
         run: zig build test
   x86_64-macos:
@@ -79,6 +79,6 @@ jobs:
         run: |
           brew uninstall --ignore-dependencies libx11 # https://github.com/ziglang/zig/issues/11066
           brew install xz
-          sudo sh -c 'wget -c https://pkg.machengine.org/zig/zig-macos-x86_64-0.11.0-dev.3947+89396ff02.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://pkg.machengine.org/zig/zig-macos-x86_64-0.11.0-dev.4407+4d7dd1689.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: test
         run: zig build test
