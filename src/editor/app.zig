@@ -1,8 +1,10 @@
 const std = @import("std");
 const mach = @import("mach");
+const core = mach.core;
 const gpu = mach.gpu;
 
-pub const App = @This();
+pub const name = .editor;
+pub const App = mach.App(.{ mach.Module, @This() });
 
 const UniformBufferObject = struct {
     resolution: @Vector(2, f32),
@@ -12,7 +14,6 @@ const UniformBufferObject = struct {
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();
 
-core: mach.Core,
 timer: mach.Timer,
 pipeline: *gpu.RenderPipeline,
 queue: *gpu.Queue,
@@ -23,8 +24,10 @@ fragment_shader_file: std.fs.File,
 fragment_shader_code: [:0]const u8,
 last_mtime: i128,
 
-pub fn init(app: *App) !void {
-    try app.core.init(allocator, .{ .title = "Mach editor" });
+pub fn init(adapter: anytype) !void {
+    var editor = adapter.mod(.editor).state();
+
+    core.setTitle("Mach editor");
 
     var fragment_file: std.fs.File = undefined;
     var last_mtime: i128 = undefined;
@@ -44,19 +47,19 @@ pub fn init(app: *App) !void {
     }
     var code = try fragment_file.readToEndAllocOptions(allocator, std.math.maxInt(u16), null, 1, 0);
 
-    const queue = app.core.device().getQueue();
+    const queue = core.device.getQueue();
 
     // We need a bgl to bind the UniformBufferObject, but it is also needed for creating
     // the RenderPipeline, so we pass it to recreatePipeline as a pointer
     var bgl: *gpu.BindGroupLayout = undefined;
-    const pipeline = recreatePipeline(&app.core, code, &bgl);
+    const pipeline = recreatePipeline(code, &bgl);
 
-    const uniform_buffer = app.core.device().createBuffer(&.{
+    const uniform_buffer = core.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(UniformBufferObject),
         .mapped_at_creation = false,
     });
-    const bind_group = app.core.device().createBindGroup(
+    const bind_group = core.device.createBindGroup(
         &gpu.BindGroup.Descriptor.init(.{
             .layout = bgl,
             .entries = &.{
@@ -65,59 +68,61 @@ pub fn init(app: *App) !void {
         }),
     );
 
-    app.timer = try mach.Timer.start();
+    editor.timer = try mach.Timer.start();
 
-    app.pipeline = pipeline;
-    app.queue = queue;
-    app.uniform_buffer = uniform_buffer;
-    app.bind_group = bind_group;
+    editor.pipeline = pipeline;
+    editor.queue = queue;
+    editor.uniform_buffer = uniform_buffer;
+    editor.bind_group = bind_group;
 
-    app.fragment_shader_file = fragment_file;
-    app.fragment_shader_code = code;
-    app.last_mtime = last_mtime;
+    editor.fragment_shader_file = fragment_file;
+    editor.fragment_shader_code = code;
+    editor.last_mtime = last_mtime;
 
     bgl.release();
 }
 
-pub fn deinit(app: *App) void {
+pub fn deinit(adapter: anytype) !void {
+    var editor = adapter.mod(.editor).state();
     defer _ = gpa.deinit();
-    defer app.core.deinit();
 
-    app.fragment_shader_file.close();
-    allocator.free(app.fragment_shader_code);
+    editor.fragment_shader_file.close();
+    allocator.free(editor.fragment_shader_code);
 
-    app.uniform_buffer.release();
-    app.bind_group.release();
+    editor.uniform_buffer.release();
+    editor.bind_group.release();
 }
 
-pub fn update(app: *App) !bool {
-    var iter = app.core.pollEvents();
+pub fn tick(adapter: anytype) !void {
+    var editor = adapter.mod(.editor).state();
+
+    var iter = core.pollEvents();
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| {
-                if (ev.key == .space) return true;
+                if (ev.key == .space) return adapter.send(.machExit);
             },
-            .close => return true,
+            .close => return adapter.send(.machExit),
             else => {},
         }
     }
 
-    if (app.fragment_shader_file.stat()) |stat| {
-        if (app.last_mtime < stat.mtime) {
+    if (editor.fragment_shader_file.stat()) |stat| {
+        if (editor.last_mtime < stat.mtime) {
             std.log.info("The fragment shader has been changed", .{});
-            app.last_mtime = stat.mtime;
-            app.fragment_shader_file.seekTo(0) catch unreachable;
-            app.fragment_shader_code = app.fragment_shader_file.readToEndAllocOptions(allocator, std.math.maxInt(u32), null, 1, 0) catch |err| {
+            editor.last_mtime = stat.mtime;
+            editor.fragment_shader_file.seekTo(0) catch unreachable;
+            editor.fragment_shader_code = editor.fragment_shader_file.readToEndAllocOptions(allocator, std.math.maxInt(u32), null, 1, 0) catch |err| {
                 std.log.err("Err: {}", .{err});
-                return true;
+                return adapter.send(.machExit);
             };
-            app.pipeline = recreatePipeline(&app.core, app.fragment_shader_code, null);
+            editor.pipeline = recreatePipeline(editor.fragment_shader_code, null);
         }
     } else |err| {
         std.log.err("Something went wrong when attempting to stat file: {}\n", .{err});
     }
 
-    const back_buffer_view = app.core.swapChain().getCurrentTextureView().?;
+    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .clear_value = std.mem.zeroes(gpu.Color),
@@ -125,21 +130,21 @@ pub fn update(app: *App) !bool {
         .store_op = .store,
     };
 
-    const encoder = app.core.device().createCommandEncoder(null);
+    const encoder = core.device.createCommandEncoder(null);
     const render_pass_info = gpu.RenderPassDescriptor.init(.{
         .color_attachments = &.{color_attachment},
     });
 
-    const time = app.timer.read() / @as(f32, std.time.ns_per_s);
+    const time = editor.timer.read() / @as(f32, std.time.ns_per_s);
     const ubo = UniformBufferObject{
-        .resolution = .{ @as(f32, @floatFromInt(app.core.descriptor().width)), @as(f32, @floatFromInt(app.core.descriptor().height)) },
+        .resolution = .{ @as(f32, @floatFromInt(core.descriptor.width)), @as(f32, @floatFromInt(core.descriptor.height)) },
         .time = time,
     };
-    encoder.writeBuffer(app.uniform_buffer, 0, &[_]UniformBufferObject{ubo});
+    encoder.writeBuffer(editor.uniform_buffer, 0, &[_]UniformBufferObject{ubo});
 
     const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setPipeline(app.pipeline);
-    pass.setBindGroup(0, app.bind_group, &.{0});
+    pass.setPipeline(editor.pipeline);
+    pass.setBindGroup(0, editor.bind_group, &.{0});
     pass.draw(3, 1, 0, 0);
     pass.end();
     pass.release();
@@ -147,25 +152,23 @@ pub fn update(app: *App) !bool {
     var command = encoder.finish(null);
     encoder.release();
 
-    app.queue.submit(&[_]*gpu.CommandBuffer{command});
+    editor.queue.submit(&[_]*gpu.CommandBuffer{command});
     command.release();
-    app.core.swapChain().present();
+    core.swap_chain.present();
     back_buffer_view.release();
-
-    return false;
 }
 
-fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?**gpu.BindGroupLayout) *gpu.RenderPipeline {
-    const vs_module = core.device().createShaderModuleWGSL("vert.wgsl", @embedFile("vert.wgsl"));
+fn recreatePipeline(fragment_shader_code: [:0]const u8, bgl: ?**gpu.BindGroupLayout) *gpu.RenderPipeline {
+    const vs_module = core.device.createShaderModuleWGSL("vert.wgsl", @embedFile("vert.wgsl"));
     defer vs_module.release();
 
     // Check wether the fragment shader code compiled successfully, if not
     // print the validation layer error and show a black screen
-    core.device().pushErrorScope(.validation);
-    var fs_module = core.device().createShaderModuleWGSL("fragment shader", fragment_shader_code);
+    core.device.pushErrorScope(.validation);
+    var fs_module = core.device.createShaderModuleWGSL("fragment shader", fragment_shader_code);
     var error_occurred: bool = false;
     // popErrorScope() returns always true, (unless maybe it fails to capture the error scope?)
-    _ = core.device().popErrorScope(&error_occurred, struct {
+    _ = core.device.popErrorScope(&error_occurred, struct {
         inline fn callback(ctx: *bool, typ: gpu.ErrorType, message: [*:0]const u8) void {
             if (typ != .no_error) {
                 std.debug.print("🔴🔴🔴🔴:\n{s}\n", .{message});
@@ -174,7 +177,7 @@ fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?
         }
     }.callback);
     if (error_occurred) {
-        fs_module = core.device().createShaderModuleWGSL(
+        fs_module = core.device.createShaderModuleWGSL(
             "black_screen_frag.wgsl",
             @embedFile("black_screen_frag.wgsl"),
         );
@@ -183,7 +186,7 @@ fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?
 
     const blend = gpu.BlendState{};
     const color_target = gpu.ColorTargetState{
-        .format = core.descriptor().format,
+        .format = core.descriptor.format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
@@ -195,7 +198,7 @@ fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?
 
     const bgle = gpu.BindGroupLayout.Entry.buffer(0, .{ .fragment = true }, .uniform, true, 0);
     // bgl is needed outside, for the creation of the uniform_buffer in main
-    const bgl_tmp = core.device().createBindGroupLayout(&gpu.BindGroupLayout.Descriptor.init(.{
+    const bgl_tmp = core.device.createBindGroupLayout(&gpu.BindGroupLayout.Descriptor.init(.{
         .entries = &.{bgle},
     }));
     defer {
@@ -208,7 +211,7 @@ fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?
     }
 
     const bind_group_layouts = [_]*gpu.BindGroupLayout{bgl_tmp};
-    const pipeline_layout = core.device().createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
+    const pipeline_layout = core.device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
         .bind_group_layouts = &bind_group_layouts,
     }));
     defer pipeline_layout.release();
@@ -224,10 +227,10 @@ fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?
 
     // Create the render pipeline. Even if the shader compilation succeeded, this could fail if the
     // shader is missing a `main` entrypoint.
-    core.device().pushErrorScope(.validation);
-    const pipeline = core.device().createRenderPipeline(&pipeline_descriptor);
+    core.device.pushErrorScope(.validation);
+    const pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
     // popErrorScope() returns always true, (unless maybe it fails to capture the error scope?)
-    _ = core.device().popErrorScope(&error_occurred, struct {
+    _ = core.device.popErrorScope(&error_occurred, struct {
         inline fn callback(ctx: *bool, typ: gpu.ErrorType, message: [*:0]const u8) void {
             if (typ != .no_error) {
                 std.debug.print("🔴🔴🔴🔴:\n{s}\n", .{message});
@@ -237,7 +240,7 @@ fn recreatePipeline(core: *mach.Core, fragment_shader_code: [:0]const u8, bgl: ?
     }.callback);
     if (error_occurred) {
         // Retry with black_screen_frag which we know will work.
-        return recreatePipeline(core, @embedFile("black_screen_frag.wgsl"), bgl);
+        return recreatePipeline(@embedFile("black_screen_frag.wgsl"), bgl);
     }
     return pipeline;
 }

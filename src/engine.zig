@@ -1,6 +1,5 @@
-const Core = @import("core").Core;
+const core = @import("core");
 const gpu = @import("core").gpu;
-
 const std = @import("std");
 const ecs = @import("ecs");
 
@@ -9,8 +8,6 @@ const allocator = gpa.allocator();
 
 /// The main Mach engine ECS module.
 pub const Module = struct {
-    _core: Core,
-    core: *Core,
     device: *gpu.Device,
     exit: bool,
 
@@ -19,32 +16,22 @@ pub const Module = struct {
     pub fn machInit(adapter: anytype) !void {
         var mach = adapter.mod(.mach);
 
-        mach.initState(.{
-            ._core = undefined,
-            .core = undefined,
-            .device = undefined,
-            .exit = false,
-        });
+        core.allocator = allocator;
+        try core.init(.{});
+        mach.state().exit = false;
 
-        var state = mach.state();
-        try state._core.init(allocator, .{});
-        state.core = &state._core;
-        state.device = state.core.device();
         try adapter.send(.init);
     }
 
     pub fn machDeinit(adapter: anytype) !void {
         try adapter.send(.deinit);
-
-        var state = adapter.mod(.mach).state();
-        state.core.deinit();
+        core.deinit();
         adapter.deinit();
         _ = gpa.deinit();
     }
 
     pub fn machExit(adapter: anytype) !void {
         try adapter.send(.exit);
-
         var state = adapter.mod(.mach).state();
         state.exit = true;
     }

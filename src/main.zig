@@ -1,8 +1,7 @@
-const core = @import("core");
+pub const core = @import("core");
 pub const GPUInterface = core.GPUInterface;
 pub const scope_levels = core.scope_levels;
 pub const log_level = core.log_level;
-pub const Core = core.Core;
 pub const Timer = core.Timer;
 pub const gpu = core.gpu;
 
