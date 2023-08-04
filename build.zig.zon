@@ -51,8 +51,8 @@
             .hash = "12206a15305a16421a986cbaf98d3c839c86a77c78a3bb2b570cea49aee7bb37ce2d",
         },
         .mach_freetype = .{
-            .url = "https://pkg.machengine.org/mach-freetype/3397f5d6c500195a4c2cc1a6b56da9364e1cfa19.tar.gz",
-            .hash = "1220c306279594f5c2ebc7530c4468bf0b1f374de97e8cfc4fb90e3a9d4326214ac6",
+            .url = "https://pkg.machengine.org/mach-freetype/594ce4a7f09dced26101d9fb14068f1eb757b00a.tar.gz",
+            .hash = "122061c6e87e535e82d4d262c59a522875f865418bd5a50ada6e61a28ec1cc7f69a8",
         },
         .harfbuzz = .{
             .url = "https://pkg.machengine.org/harfbuzz/67b985c93eae7ab8b1a024b2b4249b4fc2ae2756.tar.gz",
