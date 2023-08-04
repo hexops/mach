@@ -9,21 +9,26 @@ const gpu = @import("mach_gpu").Sdk(.{
 const core = @import("mach_core");
 
 pub var mach_glfw_import_path: []const u8 = "mach_core.mach_gpu.mach_gpu_dawn.mach_glfw";
+pub var mach_ecs_import_path: []const u8 = "mach_ecs";
+pub var mach_earcut_import_path: []const u8 = "mach_ecs";
+pub var mach_basisu_import_path: []const u8 = "mach_basisu";
+pub var harfbuzz_import_path: []const u8 = "mach_freetype.harfbuzz";
+pub var mach_freetype_import_path: []const u8 = "mach_freetype";
 
 var _module: ?*std.build.Module = null;
 
 pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.Module {
     if (_module) |m| return m;
 
-    const mach_ecs = b.dependency("mach_ecs", .{
+    const mach_ecs = b.dependency(mach_ecs_import_path, .{
         .target = target,
         .optimize = optimize,
     });
-    const mach_earcut = b.dependency("mach_earcut", .{
+    const mach_earcut = b.dependency(mach_earcut_import_path, .{
         .target = target,
         .optimize = optimize,
     });
-    const mach_basisu = b.dependency("mach_basisu", .{
+    const mach_basisu = b.dependency(mach_basisu_import_path, .{
         .target = target,
         .optimize = optimize,
     });
@@ -122,7 +127,7 @@ pub const App = struct {
         try deps.append(.{ .name = "mach", .module = module(b, options.optimize, options.target) });
         try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(b, options.optimize, options.target) });
         if (options.use_freetype) |name| {
-            const mach_freetype_dep = b.dependency("mach_freetype", .{ .target = options.target, .optimize = options.optimize });
+            const mach_freetype_dep = b.dependency(mach_freetype_import_path, .{ .target = options.target, .optimize = options.optimize });
             try deps.append(.{ .name = name, .module = mach_freetype_dep.module("mach-freetype") });
         }
 
@@ -154,11 +159,11 @@ pub const App = struct {
 
         // TODO: basisu support in wasm
         if (app.platform != .web) {
-            const mach_basisu = app.b.dependency("mach_basisu", .{
+            const mach_basisu = app.b.dependency(mach_basisu_import_path, .{
                 .target = app.compile.target,
                 .optimize = app.compile.optimize,
             });
-            const harfbuzz_dep = app.b.dependency("mach_freetype.harfbuzz", .{
+            const harfbuzz_dep = app.b.dependency(harfbuzz_import_path, .{
                 .target = app.compile.target,
                 .optimize = app.compile.optimize,
                 .enable_freetype = true,
