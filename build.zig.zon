@@ -27,12 +27,12 @@
             .hash = "12200b014b68d5f35243ea86a92cd76950f6f459b388c40ea0c8172f4e0f1236042b",
         },
         .mach_basisu = .{
-            .url = "https://pkg.machengine.org/mach-basisu/1fdbcbf7d2dc9ad21a38b1093d0a4b452f5933ab.tar.gz",
-            .hash = "1220df29a44d4801f6dc62134d13672b2c5197900feb8363aa2794a4e50baccc0fc1",
+            .url = "https://pkg.machengine.org/mach-basisu/1dac12fffee96af962aece3c3d746c84e1b2c662.tar.gz",
+            .hash = "122022ddc271e5dca752ddcf543adb7f61f53505dc2886253b06eb219fd7b71317b9",
         },
         .basisu = .{
-            .url = "https://pkg.machengine.org/basisu/5c2b212d1308bc8875e8332684055df6f902b125.tar.gz",
-            .hash = "1220c5413221ed267bb6f4f1e7eaadacb61d966ac4d33079deb588a81161efaeded0",
+            .url = "https://pkg.machengine.org/basisu/de74bd8cbf917f859cb61aafa0e4a128ec4718ab.tar.gz",
+            .hash = "122099b6de5a409198710ade9c1daa7b8b62fdd043edf22dc7187b6e737b05a49b48",
         },
         .mach_sysaudio = .{
             .url = "https://pkg.machengine.org/mach-sysaudio/8f7b1b2eb80c46708dcf965f1edbbafab140bc0e.tar.gz",
