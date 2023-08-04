@@ -2,15 +2,13 @@ const std = @import("std");
 const builtin = @import("builtin");
 const glfw = @import("mach_glfw");
 const sysaudio = @import("mach_sysaudio");
-pub const gpu_dawn = @import("libs/mach-gpu-dawn/build.zig"); // TODO(build-system): make this private
-const gpu = @import("libs/mach-gpu/build.zig").Sdk(.{
+const gpu_dawn = @import("mach_gpu_dawn");
+const gpu = @import("mach_gpu").Sdk(.{
     .gpu_dawn = gpu_dawn,
 });
-const core = @import("libs/mach-core/build.zig").Sdk(.{
-    .gpu = gpu,
-    .gpu_dawn = gpu_dawn,
-    .glfw = glfw,
-});
+const core = @import("mach_core");
+
+pub var mach_glfw_import_path: []const u8 = "mach_core.mach_gpu.mach_gpu_dawn.mach_glfw";
 
 var _module: ?*std.build.Module = null;
 
@@ -30,6 +28,7 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
         .optimize = optimize,
     });
 
+    core.mach_glfw_import_path = mach_glfw_import_path;
     _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
         .dependencies = &.{
@@ -127,6 +126,7 @@ pub const App = struct {
             try deps.append(.{ .name = name, .module = mach_freetype_dep.module("mach-freetype") });
         }
 
+        core.mach_glfw_import_path = mach_glfw_import_path;
         const app = try core.App.init(b, .{
             .name = options.name,
             .src = options.src,
