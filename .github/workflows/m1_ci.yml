@@ -20,14 +20,8 @@ jobs:
       run:
         shell: '/usr/bin/arch -arch arm64e /bin/bash --noprofile --norc -eo pipefail {0}'
     steps:
-      - name: Clean repository submodules
-        # See https://github.com/actions/checkout/issues/385
-        run: |
-          rm -rf $GITHUB_WORKSPACE && mkdir $GITHUB_WORKSPACE
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
       - name: test
         run: zig build test
       - name: build
