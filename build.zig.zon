@@ -27,8 +27,12 @@
             .hash = "12200b014b68d5f35243ea86a92cd76950f6f459b388c40ea0c8172f4e0f1236042b",
         },
         .mach_basisu = .{
-            .url = "https://pkg.machengine.org/mach-basisu/b884f5d0fcbee15d634ae412978357752faa2c4c.tar.gz",
-            .hash = "1220c0492bcafda98273c5fae8b79f3f273a1d183ea3749c2d48d68a5fc5a06b1169",
+            .url = "https://pkg.machengine.org/mach-basisu/1fdbcbf7d2dc9ad21a38b1093d0a4b452f5933ab.tar.gz",
+            .hash = "1220df29a44d4801f6dc62134d13672b2c5197900feb8363aa2794a4e50baccc0fc1",
+        },
+        .basisu = .{
+            .url = "https://pkg.machengine.org/basisu/5c2b212d1308bc8875e8332684055df6f902b125.tar.gz",
+            .hash = "1220c5413221ed267bb6f4f1e7eaadacb61d966ac4d33079deb588a81161efaeded0",
         },
         .mach_sysaudio = .{
             .url = "https://pkg.machengine.org/mach-sysaudio/8f7b1b2eb80c46708dcf965f1edbbafab140bc0e.tar.gz",
@@ -39,12 +43,12 @@
             .hash = "1220faea5c7ad024a4c14a8612e8cef93021a0cc83301a7d5cd13a3e581aeb6ac805",
         },
         .mach_gpu_dawn = .{
-            .url = "https://pkg.machengine.org/mach-gpu-dawn/ce6213fd0ce4fdff3754aeaa9bce7e28d239e30d.tar.gz",
-            .hash = "1220f314c12c284ec1693e262cc1af5004847ae47fdcbfe89baa0960a6ddb30017b5",
+            .url = "https://pkg.machengine.org/mach-gpu-dawn/91f17bc9cdc6c27a6624b6a9c01000b7054d699d.tar.gz",
+            .hash = "122030c4729839935ec273aad21850943c9dd5e7fcae7353c0b2c25ef4b396780604",
         },
         .mach_glfw = .{
-            .url = "https://pkg.machengine.org/mach-glfw/581ae553193dd3a37b55e27c08a6d3b0420c0b9d.tar.gz",
-            .hash = "12203e6a095b6361bf214900fe2e1acae7c8c93a41c0996fa2a7cf13aaa0ccac6334",
+            .url = "https://pkg.machengine.org/mach-glfw/b250f2c068e91d8a5bf10975d53a8ca2cb8e2066.tar.gz",
+            .hash = "12206a15305a16421a986cbaf98d3c839c86a77c78a3bb2b570cea49aee7bb37ce2d",
         },
         .mach_freetype = .{
             .url = "https://pkg.machengine.org/mach-freetype/3397f5d6c500195a4c2cc1a6b56da9364e1cfa19.tar.gz",

@@ -159,16 +159,12 @@ pub const App = struct {
 
         // TODO: basisu support in wasm
         if (app.platform != .web) {
-            const mach_basisu = app.b.dependency(mach_basisu_import_path, .{
-                .target = app.compile.target,
-                .optimize = app.compile.optimize,
-            });
             const harfbuzz_dep = app.b.dependency(harfbuzz_import_path, .{
                 .target = app.compile.target,
                 .optimize = app.compile.optimize,
                 .enable_freetype = true,
             });
-            app.compile.linkLibrary(mach_basisu.artifact("mach-basisu"));
+            app.compile.linkLibrary(@import("mach_basisu").lib(app.b, app.compile.optimize, app.compile.target));
             app.compile.linkLibrary(harfbuzz_dep.artifact("harfbuzz"));
         }
     }
