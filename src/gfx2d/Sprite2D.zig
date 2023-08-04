@@ -1,6 +1,6 @@
 const std = @import("std");
-const core_mod = @import("core");
-const gpu = core_mod.gpu;
+const core = @import("core");
+const gpu = core.gpu;
 const ecs = @import("ecs");
 
 const math = @import("../math.zig");
@@ -58,7 +58,6 @@ const Uniforms = extern struct {
 pub fn machSprite2DInit(adapter: anytype) !void {
     var mach = adapter.mod(.mach);
     var sprite2d = adapter.mod(.mach_sprite2d);
-    const core = mach.state().core;
     const device = mach.state().device;
 
     const uniform_buffer = device.createBuffer(&.{
@@ -120,7 +119,7 @@ pub fn machSprite2DInit(adapter: anytype) !void {
     const shader_module = device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
     const blend = gpu.BlendState{};
     const color_target = gpu.ColorTargetState{
-        .format = core.descriptor().format,
+        .format = core.descriptor.format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
@@ -176,11 +175,10 @@ pub fn deinit(adapter: anytype) !void {
 pub fn tick(adapter: anytype) !void {
     var mach = adapter.mod(.mach);
     var sprite2d = adapter.mod(.mach_sprite2d);
-    const core = mach.state().core;
     const device = mach.state().device;
 
     // Begin our render pass
-    const back_buffer_view = core.swapChain().getCurrentTextureView().?;
+    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .clear_value = gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 },
@@ -255,6 +253,6 @@ pub fn tick(adapter: anytype) !void {
 
     sprite2d.state().queue.submit(&[_]*gpu.CommandBuffer{command});
     command.release();
-    core.swapChain().present();
+    core.swap_chain.present();
     back_buffer_view.release();
 }
