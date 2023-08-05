@@ -50,18 +50,6 @@
             .url = "https://pkg.machengine.org/mach-glfw/7d88e72be5f1bc3f8c5ade51688a66569d76b003.tar.gz",
             .hash = "122092560b504d5a3145e712bb318340ae4d400ae7672bdf69f37771601d4327ded9",
         },
-        .mach_freetype = .{
-            .url = "https://pkg.machengine.org/mach-freetype/0ef1d26cbf099283097688b25b4ec0f514d70713.tar.gz",
-            .hash = "1220102f6273c0ba18265dad8e1f63771573a50dec4289ec91d60828d7610bb8f6e9",
-        },
-        .harfbuzz = .{
-            .url = "https://pkg.machengine.org/harfbuzz/eca6471a9c3f958eda7c22b0acbf7c1cf25345be.tar.gz",
-            .hash = "12201ef4e5bbbf6396056fee3441b75549cc1c1d1e1cff1a8db0da41c6127594a7f1",
-        },
-        .freetype = .{
-            .url = "https://pkg.machengine.org/freetype/0d07a5d4669d69ab555ff5c7f4b497e2a5e8f5f7.tar.gz",
-            .hash = "1220c0389507231e24aafa3a02033be0b6a1a2bf7dd058727d3e15bbbadb05f02300",
-        },
         .glfw = .{
             .url = "https://pkg.machengine.org/glfw/b2f564195804b86f62efb33d48daa046f1d8ca43.tar.gz",
             .hash = "122084cd0c37822d43ad4d72c1cfdc9d83e7066b52536812c367b95d165811c1c134",

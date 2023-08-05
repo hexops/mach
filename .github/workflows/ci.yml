@@ -28,7 +28,6 @@ jobs:
           sudo apt install xz-utils
           sudo sh -c 'wget -c https://pkg.machengine.org/zig/zig-linux-x86_64-0.11.0-dev.4410+76f7b40e1.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       # - name: x86_64-linux -> x86_64-linux-musl
-      #   if: matrix.project == 'libs/freetype' || matrix.project == 'libs/glfw'
       #   run: zig build -Dtarget=x86_64-linux-musl
       - name: x86_64-linux -> x86_64-macos
         run: zig build -Dtarget=x86_64-macos
