@@ -2,18 +2,12 @@ const std = @import("std");
 const builtin = @import("builtin");
 const glfw = @import("mach_glfw");
 const sysaudio = @import("mach_sysaudio");
-const gpu_dawn = @import("mach_gpu_dawn");
-const gpu = @import("mach_gpu").Sdk(.{
-    .gpu_dawn = gpu_dawn,
-});
 const core = @import("mach_core");
 
 pub var mach_glfw_import_path: []const u8 = "mach_core.mach_gpu.mach_gpu_dawn.mach_glfw";
 pub var mach_ecs_import_path: []const u8 = "mach_ecs";
 pub var mach_earcut_import_path: []const u8 = "mach_earcut";
 pub var mach_basisu_import_path: []const u8 = "mach_basisu";
-pub var harfbuzz_import_path: []const u8 = "mach_freetype.harfbuzz";
-pub var mach_freetype_import_path: []const u8 = "mach_freetype";
 
 var _module: ?*std.build.Module = null;
 
@@ -101,9 +95,7 @@ pub const App = struct {
     install: *std.build.Step.InstallArtifact,
     run: *std.build.Step.Run,
     platform: core.App.Platform,
-
     core: core.App,
-    use_freetype: ?[]const u8 = null,
 
     pub fn init(
         b: *std.Build,
@@ -116,20 +108,12 @@ pub const App = struct {
             deps: ?[]const std.build.ModuleDependency = null,
             res_dirs: ?[]const []const u8 = null,
             watch_paths: ?[]const []const u8 = null,
-
-            /// If set, freetype will be linked and can be imported using this name.
-            // TODO(build-system): name is currently not used / always "freetype"
-            use_freetype: ?[]const u8 = null,
         },
     ) !App {
         var deps = std.ArrayList(std.build.ModuleDependency).init(b.allocator);
         if (options.deps) |v| try deps.appendSlice(v);
         try deps.append(.{ .name = "mach", .module = module(b, options.optimize, options.target) });
         try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(b, options.optimize, options.target) });
-        if (options.use_freetype) |name| {
-            const mach_freetype_dep = b.dependency(mach_freetype_import_path, .{ .target = options.target, .optimize = options.optimize });
-            try deps.append(.{ .name = name, .module = mach_freetype_dep.module("mach-freetype") });
-        }
 
         core.mach_glfw_import_path = mach_glfw_import_path;
         const app = try core.App.init(b, .{
@@ -150,7 +134,6 @@ pub const App = struct {
             .install = app.install,
             .run = app.run,
             .platform = app.platform,
-            .use_freetype = options.use_freetype,
         };
     }
 
@@ -159,13 +142,7 @@ pub const App = struct {
 
         // TODO: basisu support in wasm
         if (app.platform != .web) {
-            const harfbuzz_dep = app.b.dependency(harfbuzz_import_path, .{
-                .target = app.compile.target,
-                .optimize = app.compile.optimize,
-                .enable_freetype = true,
-            });
             app.compile.linkLibrary(@import("mach_basisu").lib(app.b, app.compile.optimize, app.compile.target));
-            app.compile.linkLibrary(harfbuzz_dep.artifact("harfbuzz"));
         }
     }
 };
