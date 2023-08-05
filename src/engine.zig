@@ -18,6 +18,7 @@ pub const Module = struct {
 
         core.allocator = allocator;
         try core.init(.{});
+        mach.state().device = core.device;
         mach.state().exit = false;
 
         try adapter.send(.init);
