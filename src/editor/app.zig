@@ -57,7 +57,7 @@ pub fn init(adapter: anytype) !void {
     const uniform_buffer = core.device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(UniformBufferObject),
-        .mapped_at_creation = false,
+        .mapped_at_creation = .false,
     });
     const bind_group = core.device.createBindGroup(
         &gpu.BindGroup.Descriptor.init(.{

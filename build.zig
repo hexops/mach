@@ -41,13 +41,9 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
     return _module.?;
 }
 
-pub const Options = struct { sysaudio: sysaudio.Options = .{} };
-
 pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
-
-    const options = Options{};
 
     if (target.getCpuArch() != .wasm32) {
         const tests_step = b.step("test", "Run tests");
@@ -63,7 +59,7 @@ pub fn build(b: *std.Build) !void {
                 .optimize = optimize,
             },
         );
-        try editor.link(options);
+        try editor.link();
 
         const editor_install_step = b.step("editor", "Install editor");
         editor_install_step.dependOn(&editor.install.step);
@@ -137,8 +133,8 @@ pub const App = struct {
         };
     }
 
-    pub fn link(app: *const App, options: Options) !void {
-        sysaudio.link(app.b, app.compile, options.sysaudio);
+    pub fn link(app: *const App) !void {
+        sysaudio.link(app.b, app.compile);
 
         // TODO: basisu support in wasm
         if (app.platform != .web) {
