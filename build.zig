@@ -4,7 +4,7 @@ const glfw = @import("mach_glfw");
 const sysaudio = @import("mach_sysaudio");
 const core = @import("mach_core");
 
-pub var mach_glfw_import_path: []const u8 = "mach_core.mach_gpu.mach_gpu_dawn.mach_glfw";
+pub var mach_glfw_import_path: []const u8 = "mach_core.mach_glfw";
 pub var mach_ecs_import_path: []const u8 = "mach_ecs";
 pub var mach_earcut_import_path: []const u8 = "mach_earcut";
 pub var mach_basisu_import_path: []const u8 = "mach_basisu";

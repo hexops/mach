@@ -11,8 +11,8 @@
             .hash = "122002e17bd4f06d8c7c43d18fd9ff3e03b83a11be5967734c01e2a7a67f871ec8ea",
         },
         .mach_core = .{
-            .url = "https://pkg.machengine.org/mach-core/5dde266d4fb0549ee75a88d5c996bc4bd14ce49d.tar.gz",
-            .hash = "1220b3f9b56abc44819b907f3c70814bf9ea9c01ee12ea87285745eb2686f62533e4",
+            .url = "https://pkg.machengine.org/mach-core/f180def8d6fea24ef10b1a118819dfb613841fb7.tar.gz",
+            .hash = "122067f8d2a74126f3815236f1f668458ea1c3ebd4c0c3a5c26ac04e888966036abb",
         },
         .mach_sysjs = .{
             .url = "https://pkg.machengine.org/mach-sysjs/cd011058993f39a3ab473921ff51e0eda5635f99.tar.gz",
@@ -39,8 +39,8 @@
             .hash = "1220124035f1aa321495c09fe9c6b243f2651b04088bfeddd5e223a7a4e1d8b48678",
         },
         .mach_gpu = .{
-            .url = "https://pkg.machengine.org/mach-gpu/64ac3e8f5dcde3f5b5580a471bdfbc1037c779da.tar.gz",
-            .hash = "122066fe5c09a0a811ae388b5d7147c65134d43d786fc3289fcea44891217d2e955a",
+            .url = "https://pkg.machengine.org/mach-gpu/a86af86591827a2b779cd8eb52835929394912a4.tar.gz",
+            .hash = "12208531803f37e906974a4a4bd58b81200ae313f46f62f6384c91a32601b0a07eb6",
         },
         .mach_gpu_dawn = .{
             .url = "https://pkg.machengine.org/mach-gpu-dawn/5d463ceb63246b3b73070c774465c67dd657e045.tar.gz",
