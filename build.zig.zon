@@ -27,32 +27,32 @@
             .hash = "1220bf73f0d4fd5f17eb52413b51b7d3246c8c009e7ecb05af15a77bd6bd7b4a0064",
         },
         .mach_basisu = .{
-            .url = "https://pkg.machengine.org/mach-basisu/bc3883bd7801a174bfa32fd94da754f3475a07e5.tar.gz",
-            .hash = "12207ed960ac8003c7418b5380c23fa63e7ee1005a0f5ce370e7e7e7370aee6a264c",
+            .url = "https://pkg.machengine.org/mach-basisu/ecc3a38fff1f48a96828714d9df4ca1d6662aafe.tar.gz",
+            .hash = "1220f8838e4e1e1a0f1dcc00046065c46d9ae9927852584a0eb2a8b769f7d22088a3",
         },
         .basisu = .{
             .url = "https://pkg.machengine.org/basisu/466d366ade2910ea578ce8ec8639ee0895ad593d.tar.gz",
             .hash = "1220e4878b1173691126ee984f0a152fb1f75e392accba6e87b064ce8da432e4650f",
         },
         .mach_sysaudio = .{
-            .url = "https://pkg.machengine.org/mach-sysaudio/8e9a8ae6553ad397d2d95b56886db6083611b1b5.tar.gz",
-            .hash = "1220ebdb7fcd6e29dbe6aa5ac62444fa40983c3dc19fb6a5af4f898e7ed90bde98f6",
+            .url = "https://pkg.machengine.org/mach-sysaudio/2e186c3b2c48149f4407f2f5cfb5492a0a163b42.tar.gz",
+            .hash = "1220124035f1aa321495c09fe9c6b243f2651b04088bfeddd5e223a7a4e1d8b48678",
         },
         .mach_gpu = .{
             .url = "https://pkg.machengine.org/mach-gpu/b7f5cabadaf87af8c74ce8ca8594036fb7716999.tar.gz",
             .hash = "122070771bf97d70dbdf2c9028f34351b1dc1dde9e25c23444bccc98a68170bbbaaa",
         },
         .mach_gpu_dawn = .{
-            .url = "https://pkg.machengine.org/mach-gpu-dawn/6b49322fdd8590cb9c6e1cc90e52a38fba08c402.tar.gz",
-            .hash = "1220a08e24d0c1d7a8df0f21e470ac5a63df5693e00dc3f6db0606300116a5899bd7",
+            .url = "https://pkg.machengine.org/mach-gpu-dawn/5d463ceb63246b3b73070c774465c67dd657e045.tar.gz",
+            .hash = "12205cd22eb1e26ea16e973fe57fb297535246d64454e3ccae8a39783c97ea488a83",
         },
         .mach_glfw = .{
-            .url = "https://pkg.machengine.org/mach-glfw/23f41c638585b571c86a7e7ae54410068aec4bd0.tar.gz",
-            .hash = "1220bcea77815a96c81c044641e358b076fb79646785a6170ad1e6b7109b0e6f2524",
+            .url = "https://pkg.machengine.org/mach-glfw/f01927b9dea188d3401ceaf6fce882d530bb254a.tar.gz",
+            .hash = "12206eb5b21f5758204cf45b01eb134ee27308463e3c8b232821e060f38ad325ef53",
         },
         .glfw = .{
-            .url = "https://pkg.machengine.org/glfw/b58903a759b8f8111a44eb18118e6440b6cc26b6.tar.gz",
-            .hash = "1220d62af03d3879f1a2b51ff5bcc8156a73b6312bceeba1069b0d66faf47418a992",
+            .url = "https://pkg.machengine.org/glfw/bad964824403ba34c935a90013024957dae795aa.tar.gz",
+            .hash = "1220fe0763e9722d56d3f93f8740e077fccf338d9697f08239d79a1ee27ae5833e62",
         },
         .direct3d_headers = .{
             .url = "https://pkg.machengine.org/direct3d-headers/c02ba4ba3f9473560e41487090ee6bfbbc44c75b.tar.gz",
