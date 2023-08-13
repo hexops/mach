@@ -11,8 +11,8 @@
             .hash = "122002e17bd4f06d8c7c43d18fd9ff3e03b83a11be5967734c01e2a7a67f871ec8ea",
         },
         .mach_core = .{
-            .url = "https://pkg.machengine.org/mach-core/0f9d506ddfb0e29fb8535e00efbb9a3301ba1c39.tar.gz",
-            .hash = "122096913f0ebead3209db0aaae08863981f7ac1c7c25bb5e395cc4f0dfbf355b5c4",
+            .url = "https://pkg.machengine.org/mach-core/5dde266d4fb0549ee75a88d5c996bc4bd14ce49d.tar.gz",
+            .hash = "1220b3f9b56abc44819b907f3c70814bf9ea9c01ee12ea87285745eb2686f62533e4",
         },
         .mach_sysjs = .{
             .url = "https://pkg.machengine.org/mach-sysjs/cd011058993f39a3ab473921ff51e0eda5635f99.tar.gz",
@@ -39,16 +39,16 @@
             .hash = "1220124035f1aa321495c09fe9c6b243f2651b04088bfeddd5e223a7a4e1d8b48678",
         },
         .mach_gpu = .{
-            .url = "https://pkg.machengine.org/mach-gpu/b7f5cabadaf87af8c74ce8ca8594036fb7716999.tar.gz",
-            .hash = "122070771bf97d70dbdf2c9028f34351b1dc1dde9e25c23444bccc98a68170bbbaaa",
+            .url = "https://pkg.machengine.org/mach-gpu/64ac3e8f5dcde3f5b5580a471bdfbc1037c779da.tar.gz",
+            .hash = "122066fe5c09a0a811ae388b5d7147c65134d43d786fc3289fcea44891217d2e955a",
         },
         .mach_gpu_dawn = .{
             .url = "https://pkg.machengine.org/mach-gpu-dawn/5d463ceb63246b3b73070c774465c67dd657e045.tar.gz",
             .hash = "12205cd22eb1e26ea16e973fe57fb297535246d64454e3ccae8a39783c97ea488a83",
         },
         .mach_glfw = .{
-            .url = "https://pkg.machengine.org/mach-glfw/f01927b9dea188d3401ceaf6fce882d530bb254a.tar.gz",
-            .hash = "12206eb5b21f5758204cf45b01eb134ee27308463e3c8b232821e060f38ad325ef53",
+            .url = "https://pkg.machengine.org/mach-glfw/58a16012c33b047b9468cccb53ecd95835456121.tar.gz",
+            .hash = "1220dcf8c006b5bd91bb55c732eac6d95afe16247058f31348e1e2e071dfca7923db",
         },
         .glfw = .{
             .url = "https://pkg.machengine.org/glfw/bad964824403ba34c935a90013024957dae795aa.tar.gz",
