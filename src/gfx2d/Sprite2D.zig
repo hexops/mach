@@ -63,7 +63,7 @@ pub fn machSprite2DInit(adapter: anytype) !void {
     const uniform_buffer = device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(Uniforms),
-        .mapped_at_creation = false,
+        .mapped_at_creation = .false,
     });
 
     // Create a sampler with linear filtering for smooth interpolation.
@@ -77,17 +77,17 @@ pub fn machSprite2DInit(adapter: anytype) !void {
     const sprite_transforms = device.createBuffer(&.{
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(Mat4x4) * sprite_buffer_cap,
-        .mapped_at_creation = false,
+        .mapped_at_creation = .false,
     });
     const sprite_uv_transforms = device.createBuffer(&.{
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(Mat3x3) * sprite_buffer_cap,
-        .mapped_at_creation = false,
+        .mapped_at_creation = .false,
     });
     const sprite_sizes = device.createBuffer(&.{
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(Vec2) * sprite_buffer_cap,
-        .mapped_at_creation = false,
+        .mapped_at_creation = .false,
     });
 
     const bind_group_layout = device.createBindGroupLayout(
