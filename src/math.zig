@@ -34,8 +34,8 @@
 //!
 //! ## Additional reading
 //!
-//! * [Coordinate system explainer](https://machengine.org/next/engine/math/coordinate-system/)
-//! * [Matrix storage explainer](https://machengine.org/next/engine/math/matrix-storage/)
+//! * [Coordinate system explainer](https://machengine.org/engine/math/coordinate-system/)
+//! * [Matrix storage explainer](https://machengine.org/engine/math/matrix-storage/)
 //!
 
 const std = @import("std");
