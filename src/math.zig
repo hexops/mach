@@ -1154,3 +1154,18 @@ test "mat.mul" {
         try expect(mat.equals(TSR, expected_TSR, tolerance));
     }
 }
+
+test "gpu_compatibility" {
+    // https://www.w3.org/TR/WGSL/#alignment-and-size
+    try expectEqual(8, @sizeOf(Vec2));
+    try expectEqual(16, @sizeOf(Vec3)); // WGSL SizeOf 12
+    try expectEqual(16, @sizeOf(Vec4));
+    try expectEqual(64, @sizeOf(Mat3x3)); // TODO: bug: expected 48
+    try expectEqual(64, @sizeOf(Mat4x4));
+
+    try expectEqual(8, @alignOf(Vec2));
+    try expectEqual(16, @alignOf(Vec3));
+    try expectEqual(16, @alignOf(Vec4));
+    try expectEqual(64, @alignOf(Mat3x3)); // TODO: bug: expected 16
+    try expectEqual(64, @alignOf(Mat4x4)); // TODO: bug: expected 16
+}
