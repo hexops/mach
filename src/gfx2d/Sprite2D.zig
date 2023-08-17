@@ -93,10 +93,10 @@ pub fn machSprite2DInit(adapter: anytype) !void {
     const bind_group_layout = device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor.init(.{
             .entries = &.{
-                gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0),
-                gpu.BindGroupLayout.Entry.buffer(1, .{ .vertex = true }, .read_only_storage, true, 0),
-                gpu.BindGroupLayout.Entry.buffer(2, .{ .vertex = true }, .read_only_storage, true, 0),
-                gpu.BindGroupLayout.Entry.buffer(3, .{ .vertex = true }, .read_only_storage, true, 0),
+                gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, false, 0),
+                gpu.BindGroupLayout.Entry.buffer(1, .{ .vertex = true }, .read_only_storage, false, 0),
+                gpu.BindGroupLayout.Entry.buffer(2, .{ .vertex = true }, .read_only_storage, false, 0),
+                gpu.BindGroupLayout.Entry.buffer(3, .{ .vertex = true }, .read_only_storage, false, 0),
                 gpu.BindGroupLayout.Entry.sampler(4, .{ .fragment = true }, .filtering),
                 gpu.BindGroupLayout.Entry.texture(5, .{ .fragment = true }, .float, .dimension_2d, false),
             },
@@ -243,7 +243,7 @@ pub fn tick(adapter: anytype) !void {
     const pass = encoder.beginRenderPass(&render_pass_info);
     pass.setPipeline(sprite2d.state().pipeline);
     // TODO: remove dynamic offsets?
-    pass.setBindGroup(0, sprite2d.state().bind_group, &.{ 0, 0, 0, 0 });
+    pass.setBindGroup(0, sprite2d.state().bind_group, &.{});
     pass.draw(total_vertices, 1, 0, 0);
     pass.end();
     pass.release();
