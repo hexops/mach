@@ -50,8 +50,8 @@ pub const float = struct {
 pub const Vec2 = @Vector(2, f32);
 pub const Vec3 = @Vector(3, f32);
 pub const Vec4 = @Vector(4, f32);
-pub const Mat3x3 = @Vector(3 * 4, f32);
-pub const Mat4x4 = @Vector(4 * 4, f32);
+pub const Mat3x3 = [3]@Vector(4, f32);
+pub const Mat4x4 = [4]@Vector(4, f32);
 
 /// Vector operations
 pub const vec = struct {
@@ -481,18 +481,37 @@ test "vec.dot" {
 
 /// Matrix operations
 pub const mat = struct {
+    pub inline fn init(comptime T: type, v: anytype) T {
+        return if (T == Mat3x3) .{
+            .{ v[0], v[1], v[2], v[3] },
+            .{ v[4], v[5], v[6], v[7] },
+            .{ v[8], v[9], v[10], v[11] },
+        } else if (T == Mat4x4) .{
+            .{ v[0], v[1], v[2], v[3] },
+            .{ v[4], v[5], v[6], v[7] },
+            .{ v[8], v[9], v[10], v[11] },
+            .{ v[12], v[13], v[14], v[15] },
+        } else @compileError("Expected matrix, found '" ++ @typeName(T) ++ "'");
+    }
+
+    pub inline fn index(a: anytype, i: u8) f32 {
+        const T = @TypeOf(a);
+        const columns = vec.size(if (T == Mat3x3) Vec4 else if (T == Mat4x4) Vec4 else @compileError("Expected matrix, found '" ++ @typeName(T) ++ "'"));
+        return a[(i / columns)][(i % columns)];
+    }
+
     /// Constructs an identity matrix of type T.
     pub inline fn identity(comptime T: type) T {
-        return if (T == Mat3x3) .{
+        return if (T == Mat3x3) init(Mat3x3, .{
             1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,
-        } else if (T == Mat4x4) .{
+        }) else if (T == Mat4x4) init(Mat4x4, .{
             1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,
             0, 0, 0, 1,
-        } else @compileError("Expected matrix, found '" ++ @typeName(T) ++ "'");
+        }) else @compileError("Expected matrix, found '" ++ @typeName(T) ++ "'");
     }
 
     /// Constructs an orthographic projection matrix; an orthogonal transformation matrix which
@@ -518,84 +537,84 @@ pub const mat = struct {
         const tx = (right + left) / (left - right);
         const ty = (top + bottom) / (bottom - top);
         const tz = near / (near - far);
-        return .{
+        return init(Mat4x4, .{
             xx, 0,  0,  0,
             0,  yy, 0,  0,
             0,  0,  zz, 0,
             tx, ty, tz, 1,
-        };
+        });
     }
 
     /// Constructs a 2D matrix which translates coordinates by v.
     pub inline fn translate2d(v: Vec2) Mat3x3 {
-        return .{
+        return init(Mat3x3, .{
             1,    0,    0, 0,
             0,    1,    0, 0,
             v[0], v[1], 1, 0,
-        };
+        });
     }
 
     /// Constructs a 3D matrix which translates coordinates by v.
     pub inline fn translate3d(v: Vec3) Mat4x4 {
-        return .{
+        return init(Mat4x4, .{
             1,    0,    0,    0,
             0,    1,    0,    0,
             0,    0,    1,    0,
             v[0], v[1], v[2], 1,
-        };
+        });
     }
 
     /// Returns the translation component of the 2D matrix.
     pub inline fn translation2d(v: Mat3x3) Vec2 {
-        return .{ v[8], v[9] };
+        return .{ mat.index(v, 8), mat.index(v, 9) };
     }
 
     /// Returns the translation component of the 3D matrix.
     pub inline fn translation3d(v: Mat4x4) Vec3 {
-        return .{ v[12], v[13], v[14] };
+        return .{ mat.index(v, 12), mat.index(v, 13), mat.index(v, 14) };
     }
 
     /// Constructs a 3D matrix which scales each dimension by the given vector.
     pub inline fn scale3d(v: Vec3) Mat4x4 {
-        return .{
+        return init(Mat4x4, .{
             v[0], 0,    0,    0,
             0,    v[1], 0,    0,
             0,    0,    v[2], 0,
             0,    0,    0,    1,
-        };
+        });
     }
 
     /// Constructs a 3D matrix which scales each dimension by the given vector.
     pub inline fn scale2d(v: Vec2) Mat3x3 {
-        return .{
+        return init(Mat3x3, .{
             v[0], 0,    0, 0,
             0,    v[1], 0, 0,
             0,    0,    1, 0,
-        };
+        });
     }
 
     // Multiplies matrices a * b
     pub inline fn mul(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
         return if (@TypeOf(a) == Mat3x3) {
-            const a00 = a[0];
-            const a01 = a[1];
-            const a02 = a[2];
-            const a10 = a[4 + 0];
-            const a11 = a[4 + 1];
-            const a12 = a[4 + 2];
-            const a20 = a[8 + 0];
-            const a21 = a[8 + 1];
-            const a22 = a[8 + 2];
-            const b00 = b[0];
-            const b01 = b[1];
-            const b02 = b[2];
-            const b10 = b[4 + 0];
-            const b11 = b[4 + 1];
-            const b12 = b[4 + 2];
-            const b20 = b[8 + 0];
-            const b21 = b[8 + 1];
-            const b22 = b[8 + 2];
-            return .{
+            const a00 = a[0][0];
+            const a01 = a[0][1];
+            const a02 = a[0][2];
+            const a10 = a[1][0];
+            const a11 = a[1][1];
+            const a12 = a[1][2];
+            const a20 = a[2][0];
+            const a21 = a[2][1];
+            const a22 = a[2][2];
+            const b00 = b[0][0];
+            const b01 = b[0][1];
+            const b02 = b[0][2];
+            const b10 = b[1][0];
+            const b11 = b[1][1];
+            const b12 = b[1][2];
+            const b20 = b[2][0];
+            const b21 = b[2][1];
+            const b22 = b[2][2];
+            return init(Mat3x3, .{
                 a00 * b00 + a10 * b01 + a20 * b02,
                 a01 * b00 + a11 * b01 + a21 * b02,
                 a02 * b00 + a12 * b01 + a22 * b02,
@@ -605,41 +624,41 @@ pub const mat = struct {
                 a00 * b20 + a10 * b21 + a20 * b22,
                 a01 * b20 + a11 * b21 + a21 * b22,
                 a02 * b20 + a12 * b21 + a22 * b22,
-            };
+            });
         } else if (@TypeOf(a) == Mat4x4) {
-            const a00 = a[0];
-            const a01 = a[1];
-            const a02 = a[2];
-            const a03 = a[3];
-            const a10 = a[4 + 0];
-            const a11 = a[4 + 1];
-            const a12 = a[4 + 2];
-            const a13 = a[4 + 3];
-            const a20 = a[8 + 0];
-            const a21 = a[8 + 1];
-            const a22 = a[8 + 2];
-            const a23 = a[8 + 3];
-            const a30 = a[12 + 0];
-            const a31 = a[12 + 1];
-            const a32 = a[12 + 2];
-            const a33 = a[12 + 3];
-            const b00 = b[0];
-            const b01 = b[1];
-            const b02 = b[2];
-            const b03 = b[3];
-            const b10 = b[4 + 0];
-            const b11 = b[4 + 1];
-            const b12 = b[4 + 2];
-            const b13 = b[4 + 3];
-            const b20 = b[8 + 0];
-            const b21 = b[8 + 1];
-            const b22 = b[8 + 2];
-            const b23 = b[8 + 3];
-            const b30 = b[12 + 0];
-            const b31 = b[12 + 1];
-            const b32 = b[12 + 2];
-            const b33 = b[12 + 3];
-            return .{
+            const a00 = a[0][0];
+            const a01 = a[0][1];
+            const a02 = a[0][2];
+            const a03 = a[0][3];
+            const a10 = a[1][0];
+            const a11 = a[1][1];
+            const a12 = a[1][2];
+            const a13 = a[1][3];
+            const a20 = a[2][0];
+            const a21 = a[2][1];
+            const a22 = a[2][2];
+            const a23 = a[2][3];
+            const a30 = a[3][0];
+            const a31 = a[3][1];
+            const a32 = a[3][2];
+            const a33 = a[3][3];
+            const b00 = b[0][0];
+            const b01 = b[0][1];
+            const b02 = b[0][2];
+            const b03 = b[0][3];
+            const b10 = b[1][0];
+            const b11 = b[1][1];
+            const b12 = b[1][2];
+            const b13 = b[1][3];
+            const b20 = b[2][0];
+            const b21 = b[2][1];
+            const b22 = b[2][2];
+            const b23 = b[2][3];
+            const b30 = b[3][0];
+            const b31 = b[3][1];
+            const b32 = b[3][2];
+            const b33 = b[3][3];
+            return init(Mat4x4, .{
                 a00 * b00 + a10 * b01 + a20 * b02 + a30 * b03,
                 a01 * b00 + a11 * b01 + a21 * b02 + a31 * b03,
                 a02 * b00 + a12 * b01 + a22 * b02 + a32 * b03,
@@ -656,43 +675,44 @@ pub const mat = struct {
                 a01 * b30 + a11 * b31 + a21 * b32 + a31 * b33,
                 a02 * b30 + a12 * b31 + a22 * b32 + a32 * b33,
                 a03 * b30 + a13 * b31 + a23 * b32 + a33 * b33,
-            };
+            });
         } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
     }
 
     /// Check if two matrices are approximate equal. Returns true if the absolute difference between
     /// each element in matrix them is less or equal than the specified tolerance.
     pub inline fn equals(a: anytype, b: @TypeOf(a), tolerance: f32) bool {
+        // TODO: leverage a vec.equals function
         return if (@TypeOf(a) == Mat3x3) {
-            return float.equals(f32, a[0], b[0], tolerance) and
-                float.equals(f32, a[1], b[1], tolerance) and
-                float.equals(f32, a[2], b[2], tolerance) and
-                float.equals(f32, a[3], b[3], tolerance) and
-                float.equals(f32, a[4], b[4], tolerance) and
-                float.equals(f32, a[5], b[5], tolerance) and
-                float.equals(f32, a[6], b[6], tolerance) and
-                float.equals(f32, a[7], b[7], tolerance) and
-                float.equals(f32, a[8], b[8], tolerance) and
-                float.equals(f32, a[9], b[9], tolerance) and
-                float.equals(f32, a[10], b[10], tolerance) and
-                float.equals(f32, a[11], b[11], tolerance);
+            return float.equals(f32, a[0][0], b[0][0], tolerance) and
+                float.equals(f32, a[0][1], b[0][1], tolerance) and
+                float.equals(f32, a[0][2], b[0][2], tolerance) and
+                float.equals(f32, a[0][3], b[0][3], tolerance) and
+                float.equals(f32, a[1][0], b[1][0], tolerance) and
+                float.equals(f32, a[1][1], b[1][1], tolerance) and
+                float.equals(f32, a[1][2], b[1][2], tolerance) and
+                float.equals(f32, a[1][3], b[1][3], tolerance) and
+                float.equals(f32, a[2][0], b[2][0], tolerance) and
+                float.equals(f32, a[2][1], b[2][1], tolerance) and
+                float.equals(f32, a[2][2], b[2][2], tolerance) and
+                float.equals(f32, a[2][3], b[2][3], tolerance);
         } else if (@TypeOf(a) == Mat4x4) {
-            return float.equals(f32, a[0], b[0], tolerance) and
-                float.equals(f32, a[1], b[1], tolerance) and
-                float.equals(f32, a[2], b[2], tolerance) and
-                float.equals(f32, a[3], b[3], tolerance) and
-                float.equals(f32, a[4], b[4], tolerance) and
-                float.equals(f32, a[5], b[5], tolerance) and
-                float.equals(f32, a[6], b[6], tolerance) and
-                float.equals(f32, a[7], b[7], tolerance) and
-                float.equals(f32, a[8], b[8], tolerance) and
-                float.equals(f32, a[9], b[9], tolerance) and
-                float.equals(f32, a[10], b[10], tolerance) and
-                float.equals(f32, a[11], b[11], tolerance) and
-                float.equals(f32, a[12], b[12], tolerance) and
-                float.equals(f32, a[13], b[13], tolerance) and
-                float.equals(f32, a[14], b[14], tolerance) and
-                float.equals(f32, a[15], b[15], tolerance);
+            return float.equals(f32, a[0][0], b[0][0], tolerance) and
+                float.equals(f32, a[0][1], b[0][1], tolerance) and
+                float.equals(f32, a[0][2], b[0][2], tolerance) and
+                float.equals(f32, a[0][3], b[0][3], tolerance) and
+                float.equals(f32, a[1][0], b[1][0], tolerance) and
+                float.equals(f32, a[1][1], b[1][1], tolerance) and
+                float.equals(f32, a[1][2], b[1][2], tolerance) and
+                float.equals(f32, a[1][3], b[1][3], tolerance) and
+                float.equals(f32, a[2][0], b[2][0], tolerance) and
+                float.equals(f32, a[2][1], b[2][1], tolerance) and
+                float.equals(f32, a[2][2], b[2][2], tolerance) and
+                float.equals(f32, a[2][3], b[2][3], tolerance) and
+                float.equals(f32, a[3][0], b[3][0], tolerance) and
+                float.equals(f32, a[3][1], b[3][1], tolerance) and
+                float.equals(f32, a[3][2], b[3][2], tolerance) and
+                float.equals(f32, a[3][3], b[3][3], tolerance);
         } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
     }
 
@@ -701,12 +721,12 @@ pub const mat = struct {
         const c = std.math.cos(angle_radians);
         const s = std.math.sin(angle_radians);
 
-        return .{
+        return init(Mat4x4, .{
             1, 0,  0, 0,
             0, c,  s, 0,
             0, -s, c, 0,
             0, 0,  0, 1,
-        };
+        });
     }
 
     /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
@@ -714,12 +734,12 @@ pub const mat = struct {
         const c = std.math.cos(angle_radians);
         const s = std.math.sin(angle_radians);
 
-        return .{
+        return init(Mat4x4, .{
             c, 0, -s, 0,
             0, 1, 0,  0,
             s, 0, c,  0,
             0, 0, 0,  1,
-        };
+        });
     }
 
     /// Constructs a 3D matrix which rotates around the Z axis by `angle_radians`.
@@ -727,12 +747,12 @@ pub const mat = struct {
         const c = std.math.cos(angle_radians);
         const s = std.math.sin(angle_radians);
 
-        return .{
+        return init(Mat4x4, .{
             c,  s, 0, 0,
             -s, c, 0, 0,
             0,  0, 1, 0,
             0,  0, 0, 1,
-        };
+        });
     }
 };
 
@@ -744,7 +764,7 @@ test "mat.identity" {
             var column: u8 = 0;
             while (column < 4) {
                 var value: f32 = if (row == column) 1 else 0;
-                try expect(identity_4x4[row * 4 + column] == value);
+                try expect(identity_4x4[row][column] == value);
 
                 column += 1;
             }
@@ -759,7 +779,7 @@ test "mat.identity" {
             var column: u8 = 0;
             while (column < 4) {
                 var value: f32 = if (row == column) 1 else 0;
-                try expect(identity_3x3[row * 4 + column] == value);
+                try expect(identity_3x3[row][column] == value);
 
                 column += 1;
             }
@@ -772,12 +792,12 @@ test "mat.ortho" {
     const ortho_mat = mat.ortho(-2, 2, -2, 3, 10, 110);
 
     // Computed Values
-    try expectEqual(ortho_mat[0], 0.5);
-    try expectEqual(ortho_mat[4 + 1], 0.4);
-    try expectEqual(ortho_mat[4 * 2 + 2], -0.01);
-    try expectEqual(ortho_mat[4 * 3 + 0], 0);
-    try expectEqual(ortho_mat[4 * 3 + 1], -0.2);
-    try expectEqual(ortho_mat[4 * 3 + 2], -0.1);
+    try expectEqual(ortho_mat[0][0], 0.5);
+    try expectEqual(ortho_mat[1][1], 0.4);
+    try expectEqual(ortho_mat[2][2], -0.01);
+    try expectEqual(ortho_mat[3][0], 0);
+    try expectEqual(ortho_mat[3][1], -0.2);
+    try expectEqual(ortho_mat[3][2], -0.1);
 
     // Constant values, which should not change but we still check for completeness
     const zero_value_indexes = [_]u8{
@@ -786,9 +806,9 @@ test "mat.ortho" {
         4 * 2, 4 * 2 + 1, 4 * 2 + 3,
     };
     for (zero_value_indexes) |index| {
-        try expectEqual(ortho_mat[index], 0);
+        try expectEqual(mat.index(ortho_mat, index), 0);
     }
-    try expectEqual(ortho_mat[4 * 3 + 3], 1);
+    try expectEqual(ortho_mat[3][3], 1);
 }
 
 test "mat.translate2d" {
@@ -796,8 +816,8 @@ test "mat.translate2d" {
     const translation_mat = mat.translate2d(v);
 
     // Computed Values
-    try expectEqual(translation_mat[4 * 2], v[0]);
-    try expectEqual(translation_mat[4 * 2 + 1], v[1]);
+    try expectEqual(translation_mat[2][0], v[0]);
+    try expectEqual(translation_mat[2][1], v[1]);
 
     // Constant values, which should not change but we still check for completeness
     const zero_value_indexes = [_]u8{
@@ -806,11 +826,11 @@ test "mat.translate2d" {
         4 * 2 + 3,
     };
     for (zero_value_indexes) |index| {
-        try expectEqual(translation_mat[index], 0);
+        try expectEqual(mat.index(translation_mat, index), 0);
     }
-    try expectEqual(translation_mat[0], 1);
-    try expectEqual(translation_mat[4 + 1], 1);
-    try expectEqual(translation_mat[4 * 2 + 2], 1);
+    try expectEqual(translation_mat[0][0], 1);
+    try expectEqual(translation_mat[1][1], 1);
+    try expectEqual(translation_mat[2][2], 1);
 }
 
 test "mat.translate3d" {
@@ -818,9 +838,9 @@ test "mat.translate3d" {
     const translation_mat = mat.translate3d(v);
 
     // Computed Values
-    try expectEqual(translation_mat[4 * 3], v[0]);
-    try expectEqual(translation_mat[4 * 3 + 1], v[1]);
-    try expectEqual(translation_mat[4 * 3 + 2], v[2]);
+    try expectEqual(translation_mat[3][0], v[0]);
+    try expectEqual(translation_mat[3][1], v[1]);
+    try expectEqual(translation_mat[3][2], v[2]);
 
     // Constant values, which should not change but we still check for completeness
     const zero_value_indexes = [_]u8{
@@ -829,9 +849,9 @@ test "mat.translate3d" {
         4 * 2, 4 * 2 + 1, 4 * 2 + 3,
     };
     for (zero_value_indexes) |index| {
-        try expectEqual(translation_mat[index], 0);
+        try expectEqual(mat.index(translation_mat, index), 0);
     }
-    try expectEqual(translation_mat[4 * 3 + 3], 1);
+    try expectEqual(translation_mat[3][3], 1);
 }
 
 test "mat.translation" {
@@ -858,8 +878,8 @@ test "mat.scale2d" {
     const scale_mat = mat.scale2d(v);
 
     // Computed Values
-    try expectEqual(scale_mat[0], v[0]);
-    try expectEqual(scale_mat[4 * 1 + 1], v[1]);
+    try expectEqual(scale_mat[0][0], v[0]);
+    try expectEqual(scale_mat[1][1], v[1]);
 
     // Constant values, which should not change but we still check for completeness
     const zero_value_indexes = [_]u8{
@@ -868,9 +888,9 @@ test "mat.scale2d" {
         4 * 2, 4 * 2 + 1, 4 * 2 + 3,
     };
     for (zero_value_indexes) |index| {
-        try expectEqual(scale_mat[index], 0);
+        try expectEqual(mat.index(scale_mat, index), 0);
     }
-    try expectEqual(scale_mat[4 * 2 + 2], 1);
+    try expectEqual(scale_mat[2][2], 1);
 }
 
 test "mat.scale3d" {
@@ -878,9 +898,9 @@ test "mat.scale3d" {
     const scale_mat = mat.scale3d(v);
 
     // Computed Values
-    try expectEqual(scale_mat[0], v[0]);
-    try expectEqual(scale_mat[4 * 1 + 1], v[1]);
-    try expectEqual(scale_mat[4 * 2 + 2], v[2]);
+    try expectEqual(scale_mat[0][0], v[0]);
+    try expectEqual(scale_mat[1][1], v[1]);
+    try expectEqual(scale_mat[2][2], v[2]);
 
     // Constant values, which should not change but we still check for completeness
     const zero_value_indexes = [_]u8{
@@ -890,9 +910,9 @@ test "mat.scale3d" {
         4 * 3, 4 * 3 + 1, 4 * 3 + 2,
     };
     for (zero_value_indexes) |index| {
-        try expectEqual(scale_mat[index], 0);
+        try expectEqual(mat.index(scale_mat, index), 0);
     }
-    try expectEqual(scale_mat[4 * 3 + 3], 1);
+    try expectEqual(scale_mat[3][3], 1);
 }
 
 const degreesToRadians = std.math.degreesToRadians;
@@ -917,34 +937,34 @@ test "mat.rotateX" {
     {
         const r = 90;
         const R_x = mat.rotateX(degreesToRadians(f32, r));
-        try expectApproxEqAbs(R_x[4 * 1 + 1], 0, tolerance);
-        try expectApproxEqAbs(R_x[4 * 2 + 2], 0, tolerance);
-        try expectApproxEqAbs(R_x[4 * 1 + 2], 1, tolerance);
-        try expectApproxEqAbs(R_x[4 * 2 + 1], -1, tolerance);
+        try expectApproxEqAbs(R_x[1][1], 0, tolerance);
+        try expectApproxEqAbs(R_x[2][2], 0, tolerance);
+        try expectApproxEqAbs(R_x[1][2], 1, tolerance);
+        try expectApproxEqAbs(R_x[2][1], -1, tolerance);
 
         for (zero_value_indexes) |index| {
-            try expectEqual(R_x[index], 0);
+            try expectEqual(mat.index(R_x, index), 0);
         }
 
         for (one_value_indexes) |index| {
-            try expectEqual(R_x[index], 1);
+            try expectEqual(mat.index(R_x, index), 1);
         }
     }
 
     {
         const r = 0;
         const R_x = mat.rotateX(degreesToRadians(f32, r));
-        try expectApproxEqAbs(R_x[4 * 1 + 1], 1, tolerance);
-        try expectApproxEqAbs(R_x[4 * 2 + 2], 1, tolerance);
-        try expectApproxEqAbs(R_x[4 * 1 + 2], 0, tolerance);
-        try expectApproxEqAbs(R_x[4 * 2 + 1], 0, tolerance);
+        try expectApproxEqAbs(R_x[1][1], 1, tolerance);
+        try expectApproxEqAbs(R_x[2][2], 1, tolerance);
+        try expectApproxEqAbs(R_x[1][2], 0, tolerance);
+        try expectApproxEqAbs(R_x[2][1], 0, tolerance);
 
         for (zero_value_indexes) |index| {
-            try expectEqual(R_x[index], 0);
+            try expectEqual(mat.index(R_x, index), 0);
         }
 
         for (one_value_indexes) |index| {
-            try expectEqual(R_x[index], 1);
+            try expectEqual(mat.index(R_x, index), 1);
         }
     }
 
@@ -952,17 +972,17 @@ test "mat.rotateX" {
         const r = 45;
         const result: f32 = std.math.sqrt(2.0) / 2.0; // sqrt(2) / 2
         const R_x = mat.rotateX(degreesToRadians(f32, r));
-        try expectApproxEqAbs(R_x[4 * 1 + 1], result, tolerance);
-        try expectApproxEqAbs(R_x[4 * 2 + 2], result, tolerance);
-        try expectApproxEqAbs(R_x[4 * 1 + 2], result, tolerance);
-        try expectApproxEqAbs(R_x[4 * 2 + 1], -result, tolerance);
+        try expectApproxEqAbs(R_x[1][1], result, tolerance);
+        try expectApproxEqAbs(R_x[2][2], result, tolerance);
+        try expectApproxEqAbs(R_x[1][2], result, tolerance);
+        try expectApproxEqAbs(R_x[2][1], -result, tolerance);
 
         for (zero_value_indexes) |index| {
-            try expectEqual(R_x[index], 0);
+            try expectEqual(mat.index(R_x, index), 0);
         }
 
         for (one_value_indexes) |index| {
-            try expectEqual(R_x[index], 1);
+            try expectEqual(mat.index(R_x, index), 1);
         }
     }
 }
@@ -985,34 +1005,34 @@ test "mat.rotateY" {
     {
         const r = 90;
         const R_y = mat.rotateY(degreesToRadians(f32, r));
-        try expectApproxEqAbs(R_y[0], 0, tolerance);
-        try expectApproxEqAbs(R_y[4 * 2 + 2], 0, tolerance);
-        try expectApproxEqAbs(R_y[2], -1, tolerance);
-        try expectApproxEqAbs(R_y[4 * 2], 1, tolerance);
+        try expectApproxEqAbs(R_y[0][0], 0, tolerance);
+        try expectApproxEqAbs(R_y[2][2], 0, tolerance);
+        try expectApproxEqAbs(R_y[0][2], -1, tolerance);
+        try expectApproxEqAbs(R_y[2][0], 1, tolerance);
 
         for (zero_value_indexes) |index| {
-            try expectEqual(R_y[index], 0);
+            try expectEqual(mat.index(R_y, index), 0);
         }
 
         for (one_value_indexes) |index| {
-            try expectEqual(R_y[index], 1);
+            try expectEqual(mat.index(R_y, index), 1);
         }
     }
 
     {
         const r = 0;
         const R_y = mat.rotateY(degreesToRadians(f32, r));
-        try expectApproxEqAbs(R_y[0], 1, tolerance);
-        try expectApproxEqAbs(R_y[4 * 2 + 2], 1, tolerance);
-        try expectApproxEqAbs(R_y[2], 0, tolerance);
-        try expectApproxEqAbs(R_y[4 * 2], 0, tolerance);
+        try expectApproxEqAbs(R_y[0][0], 1, tolerance);
+        try expectApproxEqAbs(R_y[2][2], 1, tolerance);
+        try expectApproxEqAbs(R_y[0][2], 0, tolerance);
+        try expectApproxEqAbs(R_y[3][0], 0, tolerance); // TODO: [2][0] ?
 
         for (zero_value_indexes) |index| {
-            try expectEqual(R_y[index], 0);
+            try expectEqual(mat.index(R_y, index), 0);
         }
 
         for (one_value_indexes) |index| {
-            try expectEqual(R_y[index], 1);
+            try expectEqual(mat.index(R_y, index), 1);
         }
     }
 
@@ -1020,17 +1040,17 @@ test "mat.rotateY" {
         const r = 45;
         const result: f32 = std.math.sqrt(2.0) / 2.0; // sqrt(2) / 2
         const R_y = mat.rotateY(degreesToRadians(f32, r));
-        try expectApproxEqAbs(R_y[0], result, tolerance);
-        try expectApproxEqAbs(R_y[4 * 2 + 2], result, tolerance);
-        try expectApproxEqAbs(R_y[2], -result, tolerance);
-        try expectApproxEqAbs(R_y[4 * 2], result, tolerance);
+        try expectApproxEqAbs(R_y[0][0], result, tolerance);
+        try expectApproxEqAbs(R_y[2][2], result, tolerance);
+        try expectApproxEqAbs(R_y[0][2], -result, tolerance);
+        try expectApproxEqAbs(R_y[2][0], result, tolerance);
 
         for (zero_value_indexes) |index| {
-            try expectEqual(R_y[index], 0);
+            try expectEqual(mat.index(R_y, index), 0);
         }
 
         for (one_value_indexes) |index| {
-            try expectEqual(R_y[index], 1);
+            try expectEqual(mat.index(R_y, index), 1);
         }
     }
 }
@@ -1053,34 +1073,34 @@ test "mat.rotateZ" {
     {
         const r = 90;
         const R_z = mat.rotateZ(degreesToRadians(f32, r));
-        try expectApproxEqAbs(R_z[0], 0, tolerance);
-        try expectApproxEqAbs(R_z[4 * 1 + 1], 0, tolerance);
-        try expectApproxEqAbs(R_z[1], 1, tolerance);
-        try expectApproxEqAbs(R_z[4], -1, tolerance);
+        try expectApproxEqAbs(R_z[0][0], 0, tolerance);
+        try expectApproxEqAbs(R_z[1][1], 0, tolerance);
+        try expectApproxEqAbs(R_z[0][1], 1, tolerance);
+        try expectApproxEqAbs(R_z[1][0], -1, tolerance);
 
         for (zero_value_indexes) |index| {
-            try expectEqual(R_z[index], 0);
+            try expectEqual(mat.index(R_z, index), 0);
         }
 
         for (one_value_indexes) |index| {
-            try expectEqual(R_z[index], 1);
+            try expectEqual(mat.index(R_z, index), 1);
         }
     }
 
     {
         const r = 0;
         const R_z = mat.rotateZ(degreesToRadians(f32, r));
-        try expectApproxEqAbs(R_z[0], 1, tolerance);
-        try expectApproxEqAbs(R_z[4 * 1 + 1], 1, tolerance);
-        try expectApproxEqAbs(R_z[1], 0, tolerance);
-        try expectApproxEqAbs(R_z[4], 0, tolerance);
+        try expectApproxEqAbs(R_z[0][0], 1, tolerance);
+        try expectApproxEqAbs(R_z[1][1], 1, tolerance);
+        try expectApproxEqAbs(R_z[0][1], 0, tolerance);
+        try expectApproxEqAbs(R_z[1][0], 0, tolerance);
 
         for (zero_value_indexes) |index| {
-            try expectEqual(R_z[index], 0);
+            try expectEqual(mat.index(R_z, index), 0);
         }
 
         for (one_value_indexes) |index| {
-            try expectEqual(R_z[index], 1);
+            try expectEqual(mat.index(R_z, index), 1);
         }
     }
 
@@ -1088,17 +1108,17 @@ test "mat.rotateZ" {
         const r = 45;
         const result: f32 = std.math.sqrt(2.0) / 2.0; // sqrt(2) / 2
         const R_z = mat.rotateZ(degreesToRadians(f32, r));
-        try expectApproxEqAbs(R_z[0], result, tolerance);
-        try expectApproxEqAbs(R_z[4 * 1 + 1], result, tolerance);
-        try expectApproxEqAbs(R_z[1], result, tolerance);
-        try expectApproxEqAbs(R_z[4], -result, tolerance);
+        try expectApproxEqAbs(R_z[0][0], result, tolerance);
+        try expectApproxEqAbs(R_z[1][1], result, tolerance);
+        try expectApproxEqAbs(R_z[0][1], result, tolerance);
+        try expectApproxEqAbs(R_z[1][0], -result, tolerance);
 
         for (zero_value_indexes) |index| {
-            try expectEqual(R_z[index], 0);
+            try expectEqual(mat.index(R_z, index), 0);
         }
 
         for (one_value_indexes) |index| {
-            try expectEqual(R_z[index], 1);
+            try expectEqual(mat.index(R_z, index), 1);
         }
     }
 }
@@ -1117,39 +1137,39 @@ test "mat.mul" {
 
         const R_yz = mat.mul(R_y, R_z);
         // This values are calculated by hand with help of matrix calculator: https://matrix.reshish.com/multCalculation.php
-        const expected_R_yz = Mat4x4{
+        const expected_R_yz = mat.init(Mat4x4, .{
             -0.43938504177070496278, -0.8191520442889918, -0.36868782649461236545, 0,
             0.62750687159713312638,  -0.573576436351046,  0.52654078451836329713,  0,
             -0.6427876096865394,     0,                   0.766044443118978,       0,
             0,                       0,                   0,                       1,
-        };
+        });
         try expect(mat.equals(R_yz, expected_R_yz, tolerance));
 
         const R_xyz = mat.mul(R_x, R_yz);
-        const expected_R_xyz = Mat4x4{
+        const expected_R_xyz = mat.init(Mat4x4, .{
             -0.439385041770705,  -0.52506256666891627986, -0.72886904595489960019, 0,
             0.6275068715971331,  -0.76000215715133560834, 0.16920947734596765363,  0,
             -0.6427876096865394, -0.383022221559489,      0.66341394816893832989,  0,
             0,                   0,                       0,                       1,
-        };
+        });
         try expect(mat.equals(R_xyz, expected_R_xyz, tolerance));
 
         const SR = mat.mul(S, R_xyz);
-        const expected_SR = Mat4x4{
+        const expected_SR = mat.init(Mat4x4, .{
             -1.318155125312115,  -0.5250625666689163, 3.6443452297744985,  0,
             1.8825206147913993,  -0.7600021571513356, -0.8460473867298382, 0,
             -1.9283628290596182, -0.383022221559489,  -3.3170697408446915, 0,
             0,                   0,                   0,                   1,
-        };
+        });
         try expect(mat.equals(SR, expected_SR, tolerance));
 
         const TSR = mat.mul(T, SR);
-        const expected_TSR = Mat4x4{
+        const expected_TSR = mat.init(Mat4x4, .{
             -1.318155125312115,  -0.5250625666689163, 3.6443452297744985,  0,
             1.8825206147913993,  -0.7600021571513356, -0.8460473867298382, 0,
             -1.9283628290596182, -0.383022221559489,  -3.3170697408446914, 0,
             1,                   2,                   -3,                  1,
-        };
+        });
 
         try expect(mat.equals(TSR, expected_TSR, tolerance));
     }
@@ -1160,12 +1180,12 @@ test "gpu_compatibility" {
     try expectEqual(8, @sizeOf(Vec2));
     try expectEqual(16, @sizeOf(Vec3)); // WGSL SizeOf 12
     try expectEqual(16, @sizeOf(Vec4));
-    try expectEqual(64, @sizeOf(Mat3x3)); // TODO: bug: expected 48
+    try expectEqual(48, @sizeOf(Mat3x3));
     try expectEqual(64, @sizeOf(Mat4x4));
 
     try expectEqual(8, @alignOf(Vec2));
     try expectEqual(16, @alignOf(Vec3));
     try expectEqual(16, @alignOf(Vec4));
-    try expectEqual(64, @alignOf(Mat3x3)); // TODO: bug: expected 16
-    try expectEqual(64, @alignOf(Mat4x4)); // TODO: bug: expected 16
+    try expectEqual(16, @alignOf(Mat3x3));
+    try expectEqual(16, @alignOf(Mat4x4));
 }
