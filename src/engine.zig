@@ -13,47 +13,61 @@ pub const Module = struct {
 
     pub const name = .mach;
 
-    pub fn machInit(adapter: anytype) !void {
-        var mach = adapter.mod(.mach);
+    pub fn machInit(eng: *Engine) !void {
+        var mach = eng.mod(.mach);
 
         core.allocator = allocator;
         try core.init(.{});
         mach.state().device = core.device;
         mach.state().exit = false;
 
-        try adapter.send(.init);
+        try eng.send(.init);
     }
 
-    pub fn machDeinit(adapter: anytype) !void {
-        try adapter.send(.deinit);
+    pub fn machDeinit(eng: *Engine) !void {
+        try eng.send(.deinit);
         core.deinit();
-        adapter.deinit();
+        eng.deinit();
         _ = gpa.deinit();
     }
 
-    pub fn machExit(adapter: anytype) !void {
-        try adapter.send(.exit);
-        var state = adapter.mod(.mach).state();
+    pub fn machExit(eng: *Engine) !void {
+        try eng.send(.exit);
+        var state = eng.mod(.mach).state();
         state.exit = true;
     }
 };
 
-pub fn App(comptime modules: anytype) type {
-    return struct {
-        engine: ecs.World(modules),
+pub const App = struct {
+    engine: Engine,
 
-        pub fn init(app: *@This()) !void {
-            app.* = .{ .engine = try ecs.World(modules).init(allocator) };
-            try app.engine.send(.machInit);
-        }
+    pub fn init(app: *@This()) !void {
+        app.* = .{ .engine = try Engine.init(allocator) };
+        try app.engine.send(.machInit);
+    }
 
-        pub fn deinit(app: *@This()) void {
-            try app.engine.send(.machDeinit);
-        }
+    pub fn deinit(app: *@This()) void {
+        try app.engine.send(.machDeinit);
+    }
 
-        pub fn update(app: *@This()) !bool {
-            try app.engine.send(.tick);
-            return app.engine.mod(.mach).state().exit;
-        }
-    };
+    pub fn update(app: *@This()) !bool {
+        try app.engine.send(.tick);
+        return app.engine.mod(.mach).state().exit;
+    }
+};
+
+pub const Engine = ecs.World(modules());
+
+fn Modules() type {
+    if (!@hasDecl(@import("root"), "modules")) {
+        @compileError("expected `pub const modules = .{};` in root file");
+    }
+    return @TypeOf(@import("root").modules);
+}
+
+fn modules() Modules() {
+    if (!@hasDecl(@import("root"), "modules")) {
+        @compileError("expected `pub const modules = .{};` in root file");
+    }
+    return @import("root").modules;
 }

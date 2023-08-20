@@ -20,6 +20,7 @@ pub const Atlas = @import("atlas/Atlas.zig");
 // Engine exports
 pub const App = @import("engine.zig").App;
 pub const Module = @import("engine.zig").Module;
+pub const Engine = @import("engine.zig").Engine;
 
 const std = @import("std");
 

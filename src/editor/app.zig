@@ -4,7 +4,8 @@ const core = mach.core;
 const gpu = mach.gpu;
 
 pub const name = .editor;
-pub const App = mach.App(.{ mach.Module, @This() });
+pub const modules = .{ mach.Module, @This() };
+pub const App = mach.App;
 
 const UniformBufferObject = struct {
     resolution: @Vector(2, f32),
@@ -24,8 +25,8 @@ fragment_shader_file: std.fs.File,
 fragment_shader_code: [:0]const u8,
 last_mtime: i128,
 
-pub fn init(adapter: anytype) !void {
-    var editor = adapter.mod(.editor).state();
+pub fn init(eng: *mach.Engine) !void {
+    var editor = eng.mod(.editor).state();
 
     core.setTitle("Mach editor");
 
@@ -82,8 +83,8 @@ pub fn init(adapter: anytype) !void {
     bgl.release();
 }
 
-pub fn deinit(adapter: anytype) !void {
-    var editor = adapter.mod(.editor).state();
+pub fn deinit(eng: *mach.Engine) !void {
+    var editor = eng.mod(.editor).state();
     defer _ = gpa.deinit();
 
     editor.fragment_shader_file.close();
@@ -93,16 +94,16 @@ pub fn deinit(adapter: anytype) !void {
     editor.bind_group.release();
 }
 
-pub fn tick(adapter: anytype) !void {
-    var editor = adapter.mod(.editor).state();
+pub fn tick(eng: *mach.Engine) !void {
+    var editor = eng.mod(.editor).state();
 
     var iter = core.pollEvents();
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| {
-                if (ev.key == .space) return adapter.send(.machExit);
+                if (ev.key == .space) return eng.send(.machExit);
             },
-            .close => return adapter.send(.machExit),
+            .close => return eng.send(.machExit),
             else => {},
         }
     }
@@ -114,7 +115,7 @@ pub fn tick(adapter: anytype) !void {
             editor.fragment_shader_file.seekTo(0) catch unreachable;
             editor.fragment_shader_code = editor.fragment_shader_file.readToEndAllocOptions(allocator, std.math.maxInt(u32), null, 1, 0) catch |err| {
                 std.log.err("Err: {}", .{err});
-                return adapter.send(.machExit);
+                return eng.send(.machExit);
             };
             editor.pipeline = recreatePipeline(editor.fragment_shader_code, null);
         }

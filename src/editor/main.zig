@@ -8,6 +8,8 @@ comptime {
 const std = @import("std");
 const builtin = @import("builtin");
 
+// Forward "app" declarations into our namespace, such that @import("root").foo works as expected.
+pub usingnamespace @import("app");
 const App = @import("app").App;
 const core = @import("core");
 const gpu = core.gpu;
