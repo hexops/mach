@@ -25,23 +25,20 @@ texture_size: Vec2,
 
 pub const name = .mach_sprite2d;
 
-pub const components = .{
-    // TODO: these cannot be doc comments /// because this is a tuple, not a struct. Maybe it should
-    // be a struct with decls?
+pub const components = struct {
+    /// The sprite model transformation matrix. A sprite is measured in pixel units, starting from
+    /// (0, 0) at the top-left corner and extending to the size of the sprite. By default, the world
+    /// origin (0, 0) lives at the center of the window.
+    ///
+    /// Example: in a 500px by 500px window, a sprite located at (0, 0) with size (250, 250) will
+    /// cover the top-right hand corner of the window.
+    pub const transform = Mat4x4;
 
-    // The sprite model transformation matrix. A sprite is measured in pixel units, starting from
-    // (0, 0) at the top-left corner and extending to the size of the sprite. By default, the world
-    // origin (0, 0) lives at the center of the window.
-    //
-    // Example: in a 500px by 500px window, a sprite located at (0, 0) with size (250, 250) will
-    // cover the top-right hand corner of the window.
-    .transform = Mat4x4,
+    /// UV coordinate transformation matrix describing top-left corner / origin of sprite, in pixels.
+    pub const uv_transform = Mat3x3;
 
-    // UV coordinate transformation matrix describing top-left corner / origin of sprite, in pixels.
-    .uv_transform = Mat3x3,
-
-    // The size of the sprite, in pixels.
-    .size = Vec2,
+    /// The size of the sprite, in pixels.
+    pub const size = Vec2;
 };
 
 const Uniforms = extern struct {
