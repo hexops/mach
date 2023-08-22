@@ -54,9 +54,9 @@ const Uniforms = extern struct {
 };
 
 pub fn machSprite2DInit(eng: *Engine) !void {
-    var mach = eng.mod(.mach);
-    var sprite2d = eng.mod(.mach_sprite2d);
-    const device = mach.state().device;
+    var mach = &eng.mod.mach;
+    var sprite2d = &eng.mod.mach_sprite2d;
+    const device = mach.state.device;
 
     const uniform_buffer = device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
@@ -109,7 +109,7 @@ pub fn machSprite2DInit(eng: *Engine) !void {
                 gpu.BindGroup.Entry.buffer(2, sprite_uv_transforms, 0, @sizeOf(Mat3x3) * sprite_buffer_cap),
                 gpu.BindGroup.Entry.buffer(3, sprite_sizes, 0, @sizeOf(Vec2) * sprite_buffer_cap),
                 gpu.BindGroup.Entry.sampler(4, texture_sampler),
-                gpu.BindGroup.Entry.textureView(5, sprite2d.state().texture.createView(&gpu.TextureView.Descriptor{})),
+                gpu.BindGroup.Entry.textureView(5, sprite2d.state.texture.createView(&gpu.TextureView.Descriptor{})),
             },
         }),
     );
@@ -149,31 +149,31 @@ pub fn machSprite2DInit(eng: *Engine) !void {
         .sprite_uv_transforms = sprite_uv_transforms,
         .sprite_sizes = sprite_sizes,
         .texture_size = Vec2{
-            @as(f32, @floatFromInt(sprite2d.state().texture.getWidth())),
-            @as(f32, @floatFromInt(sprite2d.state().texture.getHeight())),
+            @as(f32, @floatFromInt(sprite2d.state.texture.getWidth())),
+            @as(f32, @floatFromInt(sprite2d.state.texture.getHeight())),
         },
-        .texture = sprite2d.state().texture,
+        .texture = sprite2d.state.texture,
     });
     shader_module.release();
 }
 
 pub fn deinit(eng: *Engine) !void {
-    var sprite2d = eng.mod(.mach_sprite2d);
+    var sprite2d = &eng.mod.mach_sprite2d;
 
-    sprite2d.state().texture.release();
-    sprite2d.state().pipeline.release();
-    sprite2d.state().queue.release();
-    sprite2d.state().bind_group.release();
-    sprite2d.state().uniform_buffer.release();
-    sprite2d.state().sprite_transforms.release();
-    sprite2d.state().sprite_uv_transforms.release();
-    sprite2d.state().sprite_sizes.release();
+    sprite2d.state.texture.release();
+    sprite2d.state.pipeline.release();
+    sprite2d.state.queue.release();
+    sprite2d.state.bind_group.release();
+    sprite2d.state.uniform_buffer.release();
+    sprite2d.state.sprite_transforms.release();
+    sprite2d.state.sprite_uv_transforms.release();
+    sprite2d.state.sprite_sizes.release();
 }
 
 pub fn tick(eng: *Engine) !void {
-    var mach = eng.mod(.mach);
-    var sprite2d = eng.mod(.mach_sprite2d);
-    const device = mach.state().device;
+    var mach = &eng.mod.mach;
+    var sprite2d = &eng.mod.mach_sprite2d;
+    const device = mach.state.device;
 
     // Begin our render pass
     const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
@@ -200,9 +200,9 @@ pub fn tick(eng: *Engine) !void {
     );
     const uniforms = Uniforms{
         .view_projection = ortho,
-        .texture_size = sprite2d.state().texture_size,
+        .texture_size = sprite2d.state.texture_size,
     };
-    encoder.writeBuffer(sprite2d.state().uniform_buffer, 0, &[_]Uniforms{uniforms});
+    encoder.writeBuffer(sprite2d.state.uniform_buffer, 0, &[_]Uniforms{uniforms});
 
     // Synchronize entity data into our GPU sprite buffer
     var archetypes_iter = eng.entities.query(.{ .all = &.{
@@ -232,16 +232,16 @@ pub fn tick(eng: *Engine) !void {
     }
     const total_vertices = @as(u32, @intCast(sprite_sizes.items.len * 6));
     if (sprite_transforms.items.len > 0) {
-        encoder.writeBuffer(sprite2d.state().sprite_transforms, 0, sprite_transforms.items);
-        encoder.writeBuffer(sprite2d.state().sprite_uv_transforms, 0, sprite_uv_transforms.items);
-        encoder.writeBuffer(sprite2d.state().sprite_sizes, 0, sprite_sizes.items);
+        encoder.writeBuffer(sprite2d.state.sprite_transforms, 0, sprite_transforms.items);
+        encoder.writeBuffer(sprite2d.state.sprite_uv_transforms, 0, sprite_uv_transforms.items);
+        encoder.writeBuffer(sprite2d.state.sprite_sizes, 0, sprite_sizes.items);
     }
 
     // Draw the sprite batch
     const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setPipeline(sprite2d.state().pipeline);
+    pass.setPipeline(sprite2d.state.pipeline);
     // TODO: remove dynamic offsets?
-    pass.setBindGroup(0, sprite2d.state().bind_group, &.{});
+    pass.setBindGroup(0, sprite2d.state.bind_group, &.{});
     pass.draw(total_vertices, 1, 0, 0);
     pass.end();
     pass.release();
@@ -249,7 +249,7 @@ pub fn tick(eng: *Engine) !void {
     var command = encoder.finish(null);
     encoder.release();
 
-    sprite2d.state().queue.submit(&[_]*gpu.CommandBuffer{command});
+    sprite2d.state.queue.submit(&[_]*gpu.CommandBuffer{command});
     command.release();
     core.swap_chain.present();
     back_buffer_view.release();
