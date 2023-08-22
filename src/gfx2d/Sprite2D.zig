@@ -140,7 +140,7 @@ pub fn machSprite2DInit(eng: *Engine) !void {
         },
     };
 
-    sprite2d.initState(.{
+    sprite2d.state = .{
         .pipeline = device.createRenderPipeline(&pipeline_descriptor),
         .queue = queue,
         .bind_group = bind_group,
@@ -153,7 +153,7 @@ pub fn machSprite2DInit(eng: *Engine) !void {
             @as(f32, @floatFromInt(sprite2d.state.texture.getHeight())),
         },
         .texture = sprite2d.state.texture,
-    });
+    };
     shader_module.release();
 }
 
