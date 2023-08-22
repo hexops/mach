@@ -14,12 +14,10 @@ pub const Module = struct {
     pub const name = .mach;
 
     pub fn machInit(eng: *Engine) !void {
-        var mach = eng.mod(.mach);
-
         core.allocator = allocator;
         try core.init(.{});
-        mach.state().device = core.device;
-        mach.state().exit = false;
+        eng.mod.mach.state.device = core.device;
+        eng.mod.mach.state.exit = false;
 
         try eng.send(.init);
     }
@@ -33,7 +31,7 @@ pub const Module = struct {
 
     pub fn machExit(eng: *Engine) !void {
         try eng.send(.exit);
-        var state = eng.mod(.mach).state();
+        var state = eng.mod.mach.state;
         state.exit = true;
     }
 };
@@ -52,7 +50,7 @@ pub const App = struct {
 
     pub fn update(app: *@This()) !bool {
         try app.engine.send(.tick);
-        return app.engine.mod(.mach).state().exit;
+        return app.engine.mod.mach.state.exit;
     }
 };
 

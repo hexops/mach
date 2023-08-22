@@ -3,8 +3,8 @@
     .version = "0.2.0",
     .dependencies = .{
         .mach_ecs = .{
-            .url = "https://pkg.machengine.org/mach-ecs/9a1cef80e63b5a1c7b247b4310ec701a2b2bc301.tar.gz",
-            .hash = "12205e755f35ddb42a7e12e7152a387c9c0ec7b0f4bee9a5055f5cb00da4f3cb1e91",
+            .url = "https://pkg.machengine.org/mach-ecs/1dd04dd54df9609a6c3cf4aa631fd6f41799f091.tar.gz",
+            .hash = "122028c2e519d4da34f20b27edf56620bcf627c6bf8b2b5f85a9922c25fe775cc9ce",
         },
         .mach_earcut = .{
             .url = "https://pkg.machengine.org/mach-earcut/12b86c8b4732300fb991efc07939482ebe808b93.tar.gz",

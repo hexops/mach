@@ -26,7 +26,7 @@ fragment_shader_code: [:0]const u8,
 last_mtime: i128,
 
 pub fn init(eng: *mach.Engine) !void {
-    var editor = eng.mod(.editor).state();
+    const editor = &eng.mod.editor.state;
 
     core.setTitle("Mach editor");
 
@@ -84,7 +84,7 @@ pub fn init(eng: *mach.Engine) !void {
 }
 
 pub fn deinit(eng: *mach.Engine) !void {
-    var editor = eng.mod(.editor).state();
+    const editor = &eng.mod.editor.state;
     defer _ = gpa.deinit();
 
     editor.fragment_shader_file.close();
@@ -95,7 +95,7 @@ pub fn deinit(eng: *mach.Engine) !void {
 }
 
 pub fn tick(eng: *mach.Engine) !void {
-    var editor = eng.mod(.editor).state();
+    const editor = &eng.mod.editor.state;
 
     var iter = core.pollEvents();
     while (iter.next()) |event| {
