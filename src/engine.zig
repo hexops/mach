@@ -31,8 +31,7 @@ pub const Module = struct {
 
     pub fn machExit(eng: *Engine) !void {
         try eng.send(.exit);
-        var state = eng.mod.mach.state;
-        state.exit = true;
+        eng.mod.mach.state.exit = true;
     }
 };
 
