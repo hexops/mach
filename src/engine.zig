@@ -7,53 +7,53 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();
 
 /// The main Mach engine ECS module.
-pub const Module = struct {
+pub const Engine = struct {
     device: *gpu.Device,
     exit: bool,
 
-    pub const name = .mach;
+    pub const name = .engine;
 
-    pub fn machInit(eng: *Engine) !void {
+    pub fn engineInit(world: *World) !void {
         core.allocator = allocator;
         try core.init(.{});
-        eng.mod.mach.state.device = core.device;
-        eng.mod.mach.state.exit = false;
+        world.mod.engine.state.device = core.device;
+        world.mod.engine.state.exit = false;
 
-        try eng.send(.init);
+        try world.send(.init);
     }
 
-    pub fn machDeinit(eng: *Engine) !void {
-        try eng.send(.deinit);
+    pub fn engineDeinit(world: *World) !void {
+        try world.send(.deinit);
         core.deinit();
-        eng.deinit();
+        world.deinit();
         _ = gpa.deinit();
     }
 
-    pub fn machExit(eng: *Engine) !void {
-        try eng.send(.exit);
-        eng.mod.mach.state.exit = true;
+    pub fn engineExit(world: *World) !void {
+        try world.send(.exit);
+        world.mod.engine.state.exit = true;
     }
 };
 
 pub const App = struct {
-    engine: Engine,
+    world: World,
 
     pub fn init(app: *@This()) !void {
-        app.* = .{ .engine = try Engine.init(allocator) };
-        try app.engine.send(.machInit);
+        app.* = .{ .world = try World.init(allocator) };
+        try app.world.send(.engineInit);
     }
 
     pub fn deinit(app: *@This()) void {
-        try app.engine.send(.machDeinit);
+        try app.world.send(.engineDeinit);
     }
 
     pub fn update(app: *@This()) !bool {
-        try app.engine.send(.tick);
-        return app.engine.mod.mach.state.exit;
+        try app.world.send(.tick);
+        return app.world.mod.engine.state.exit;
     }
 };
 
-pub const Engine = ecs.World(modules());
+pub const World = ecs.World(modules());
 
 fn Modules() type {
     if (!@hasDecl(@import("root"), "modules")) {
