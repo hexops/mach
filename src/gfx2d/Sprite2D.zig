@@ -3,6 +3,7 @@ const core = @import("core");
 const gpu = core.gpu;
 const ecs = @import("ecs");
 const Engine = @import("../engine.zig").Engine;
+const mach = @import("../main.zig");
 
 const math = @import("../math.zig");
 const mat = math.mat;
@@ -24,7 +25,7 @@ sprite_uv_transforms: *gpu.Buffer,
 sprite_sizes: *gpu.Buffer,
 texture_size: Vec2,
 
-pub const name = .mach_sprite2d;
+pub const name = .engine_sprite2d;
 
 pub const components = struct {
     /// The sprite model transformation matrix. A sprite is measured in pixel units, starting from
@@ -53,10 +54,11 @@ const Uniforms = extern struct {
     texture_size: Vec2 align(16),
 };
 
-pub fn machSprite2DInit(eng: *Engine) !void {
-    var mach = &eng.mod.mach;
-    var sprite2d = &eng.mod.mach_sprite2d;
-    const device = mach.state.device;
+pub fn engineSprite2dInit(
+    engine: *mach.Mod(.engine),
+    sprite2d: *mach.Mod(.engine_sprite2d),
+) !void {
+    const device = engine.state.device;
 
     const uniform_buffer = device.createBuffer(&.{
         .usage = .{ .copy_dst = true, .uniform = true },
@@ -157,9 +159,7 @@ pub fn machSprite2DInit(eng: *Engine) !void {
     shader_module.release();
 }
 
-pub fn deinit(eng: *Engine) !void {
-    var sprite2d = &eng.mod.mach_sprite2d;
-
+pub fn deinit(sprite2d: *mach.Mod(.engine_sprite2d)) !void {
     sprite2d.state.texture.release();
     sprite2d.state.pipeline.release();
     sprite2d.state.queue.release();
@@ -170,10 +170,11 @@ pub fn deinit(eng: *Engine) !void {
     sprite2d.state.sprite_sizes.release();
 }
 
-pub fn tick(eng: *Engine) !void {
-    var mach = &eng.mod.mach;
-    var sprite2d = &eng.mod.mach_sprite2d;
-    const device = mach.state.device;
+pub fn tick(
+    engine: *mach.Mod(.engine),
+    sprite2d: *mach.Mod(.engine_sprite2d),
+) !void {
+    const device = engine.state.device;
 
     // Begin our render pass
     const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
@@ -205,8 +206,8 @@ pub fn tick(eng: *Engine) !void {
     encoder.writeBuffer(sprite2d.state.uniform_buffer, 0, &[_]Uniforms{uniforms});
 
     // Synchronize entity data into our GPU sprite buffer
-    var archetypes_iter = eng.entities.query(.{ .all = &.{
-        .{ .mach_sprite2d = &.{
+    var archetypes_iter = engine.entities.query(.{ .all = &.{
+        .{ .engine_sprite2d = &.{
             .uv_transform,
             .transform,
             .size,
@@ -214,20 +215,20 @@ pub fn tick(eng: *Engine) !void {
     } });
 
     // TODO: eliminate these
-    var sprite_transforms = try std.ArrayListUnmanaged(Mat4x4).initCapacity(eng.allocator, 1000);
-    defer sprite_transforms.deinit(eng.allocator);
-    var sprite_uv_transforms = try std.ArrayListUnmanaged(Mat3x3).initCapacity(eng.allocator, 1000);
-    defer sprite_uv_transforms.deinit(eng.allocator);
-    var sprite_sizes = try std.ArrayListUnmanaged(Vec2).initCapacity(eng.allocator, 1000);
-    defer sprite_sizes.deinit(eng.allocator);
+    var sprite_transforms = try std.ArrayListUnmanaged(Mat4x4).initCapacity(engine.allocator, 1000);
+    defer sprite_transforms.deinit(engine.allocator);
+    var sprite_uv_transforms = try std.ArrayListUnmanaged(Mat3x3).initCapacity(engine.allocator, 1000);
+    defer sprite_uv_transforms.deinit(engine.allocator);
+    var sprite_sizes = try std.ArrayListUnmanaged(Vec2).initCapacity(engine.allocator, 1000);
+    defer sprite_sizes.deinit(engine.allocator);
     while (archetypes_iter.next()) |archetype| {
-        var transforms = archetype.slice(.mach_sprite2d, .transform);
-        var uv_transforms = archetype.slice(.mach_sprite2d, .uv_transform);
-        var sizes = archetype.slice(.mach_sprite2d, .size);
+        var transforms = archetype.slice(.engine_sprite2d, .transform);
+        var uv_transforms = archetype.slice(.engine_sprite2d, .uv_transform);
+        var sizes = archetype.slice(.engine_sprite2d, .size);
         for (transforms, uv_transforms, sizes) |transform, uv_transform, size| {
-            try sprite_transforms.append(eng.allocator, transform);
-            try sprite_uv_transforms.append(eng.allocator, uv_transform);
-            try sprite_sizes.append(eng.allocator, size);
+            try sprite_transforms.append(engine.allocator, transform);
+            try sprite_uv_transforms.append(engine.allocator, uv_transform);
+            try sprite_sizes.append(engine.allocator, size);
         }
     }
     const total_vertices = @as(u32, @intCast(sprite_sizes.items.len * 6));
