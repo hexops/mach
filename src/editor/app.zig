@@ -4,7 +4,7 @@ const core = mach.core;
 const gpu = mach.gpu;
 
 pub const name = .editor;
-pub const modules = .{ mach.Module, @This() };
+pub const modules = .{ mach.Engine, @This() };
 pub const App = mach.App;
 
 const UniformBufferObject = struct {
@@ -25,9 +25,7 @@ fragment_shader_file: std.fs.File,
 fragment_shader_code: [:0]const u8,
 last_mtime: i128,
 
-pub fn init(eng: *mach.Engine) !void {
-    const editor = &eng.mod.editor.state;
-
+pub fn init(editor: *mach.Mod(.editor)) !void {
     core.setTitle("Mach editor");
 
     var fragment_file: std.fs.File = undefined;
@@ -69,55 +67,55 @@ pub fn init(eng: *mach.Engine) !void {
         }),
     );
 
-    editor.timer = try mach.Timer.start();
+    editor.state.timer = try mach.Timer.start();
 
-    editor.pipeline = pipeline;
-    editor.queue = queue;
-    editor.uniform_buffer = uniform_buffer;
-    editor.bind_group = bind_group;
+    editor.state.pipeline = pipeline;
+    editor.state.queue = queue;
+    editor.state.uniform_buffer = uniform_buffer;
+    editor.state.bind_group = bind_group;
 
-    editor.fragment_shader_file = fragment_file;
-    editor.fragment_shader_code = code;
-    editor.last_mtime = last_mtime;
+    editor.state.fragment_shader_file = fragment_file;
+    editor.state.fragment_shader_code = code;
+    editor.state.last_mtime = last_mtime;
 
     bgl.release();
 }
 
-pub fn deinit(eng: *mach.Engine) !void {
-    const editor = &eng.mod.editor.state;
+pub fn deinit(editor: *mach.Mod(.editor)) !void {
     defer _ = gpa.deinit();
 
-    editor.fragment_shader_file.close();
-    allocator.free(editor.fragment_shader_code);
+    editor.state.fragment_shader_file.close();
+    allocator.free(editor.state.fragment_shader_code);
 
-    editor.uniform_buffer.release();
-    editor.bind_group.release();
+    editor.state.uniform_buffer.release();
+    editor.state.bind_group.release();
 }
 
-pub fn tick(eng: *mach.Engine) !void {
-    const editor = &eng.mod.editor.state;
-
+pub fn tick(
+    engine: *mach.Mod(.engine),
+    editor: *mach.Mod(.editor),
+) !void {
     var iter = core.pollEvents();
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| {
-                if (ev.key == .space) return eng.send(.machExit);
+                if (ev.key == .space) return engine.send(.exit, .{});
             },
-            .close => return eng.send(.machExit),
+            .close => return engine.send(.exit, .{}),
             else => {},
         }
     }
 
-    if (editor.fragment_shader_file.stat()) |stat| {
-        if (editor.last_mtime < stat.mtime) {
+    if (editor.state.fragment_shader_file.stat()) |stat| {
+        if (editor.state.last_mtime < stat.mtime) {
             std.log.info("The fragment shader has been changed", .{});
-            editor.last_mtime = stat.mtime;
-            editor.fragment_shader_file.seekTo(0) catch unreachable;
-            editor.fragment_shader_code = editor.fragment_shader_file.readToEndAllocOptions(allocator, std.math.maxInt(u32), null, 1, 0) catch |err| {
+            editor.state.last_mtime = stat.mtime;
+            editor.state.fragment_shader_file.seekTo(0) catch unreachable;
+            editor.state.fragment_shader_code = editor.state.fragment_shader_file.readToEndAllocOptions(allocator, std.math.maxInt(u32), null, 1, 0) catch |err| {
                 std.log.err("Err: {}", .{err});
-                return eng.send(.machExit);
+                return engine.send(.exit, .{});
             };
-            editor.pipeline = recreatePipeline(editor.fragment_shader_code, null);
+            editor.state.pipeline = recreatePipeline(editor.state.fragment_shader_code, null);
         }
     } else |err| {
         std.log.err("Something went wrong when attempting to stat file: {}\n", .{err});
@@ -136,16 +134,16 @@ pub fn tick(eng: *mach.Engine) !void {
         .color_attachments = &.{color_attachment},
     });
 
-    const time = editor.timer.read() / @as(f32, std.time.ns_per_s);
+    const time = editor.state.timer.read() / @as(f32, std.time.ns_per_s);
     const ubo = UniformBufferObject{
         .resolution = .{ @as(f32, @floatFromInt(core.descriptor.width)), @as(f32, @floatFromInt(core.descriptor.height)) },
         .time = time,
     };
-    encoder.writeBuffer(editor.uniform_buffer, 0, &[_]UniformBufferObject{ubo});
+    encoder.writeBuffer(editor.state.uniform_buffer, 0, &[_]UniformBufferObject{ubo});
 
     const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setPipeline(editor.pipeline);
-    pass.setBindGroup(0, editor.bind_group, &.{0});
+    pass.setPipeline(editor.state.pipeline);
+    pass.setBindGroup(0, editor.state.bind_group, &.{0});
     pass.draw(3, 1, 0, 0);
     pass.end();
     pass.release();
@@ -153,7 +151,7 @@ pub fn tick(eng: *mach.Engine) !void {
     var command = encoder.finish(null);
     encoder.release();
 
-    editor.queue.submit(&[_]*gpu.CommandBuffer{command});
+    editor.state.queue.submit(&[_]*gpu.CommandBuffer{command});
     command.release();
     core.swap_chain.present();
     back_buffer_view.release();
