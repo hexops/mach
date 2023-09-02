@@ -117,7 +117,18 @@ pub fn engineSprite2dInit(
     );
 
     const shader_module = device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
-    const blend = gpu.BlendState{};
+    const blend = gpu.BlendState{
+        .color = .{
+            .operation = .add,
+            .src_factor = .src_alpha,
+            .dst_factor = .one_minus_src_alpha,
+        },
+        .alpha = .{
+            .operation = .add,
+            .src_factor = .one,
+            .dst_factor = .zero,
+        },
+    };
     const color_target = gpu.ColorTargetState{
         .format = core.descriptor.format,
         .blend = &blend,
