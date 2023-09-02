@@ -19,18 +19,18 @@ pub const Engine = struct {
         world.mod.engine.state.device = core.device;
         world.mod.engine.state.exit = false;
 
-        try world.send(.init);
+        try world.send(.init, .{});
     }
 
     pub fn engineDeinit(world: *World) !void {
-        try world.send(.deinit);
+        try world.send(.deinit, .{});
         core.deinit();
         world.deinit();
         _ = gpa.deinit();
     }
 
     pub fn engineExit(world: *World) !void {
-        try world.send(.exit);
+        try world.send(.exit, .{});
         world.mod.engine.state.exit = true;
     }
 };
@@ -40,15 +40,15 @@ pub const App = struct {
 
     pub fn init(app: *@This()) !void {
         app.* = .{ .world = try World.init(allocator) };
-        try app.world.send(.engineInit);
+        try app.world.send(.engineInit, .{});
     }
 
     pub fn deinit(app: *@This()) void {
-        try app.world.send(.engineDeinit);
+        try app.world.send(.engineDeinit, .{});
     }
 
     pub fn update(app: *@This()) !bool {
-        try app.world.send(.tick);
+        try app.world.send(.tick, .{});
         return app.world.mod.engine.state.exit;
     }
 };
