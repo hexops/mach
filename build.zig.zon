@@ -3,16 +3,16 @@
     .version = "0.2.0",
     .dependencies = .{
         .mach_ecs = .{
-            .url = "https://pkg.machengine.org/mach-ecs/1dd04dd54df9609a6c3cf4aa631fd6f41799f091.tar.gz",
-            .hash = "122028c2e519d4da34f20b27edf56620bcf627c6bf8b2b5f85a9922c25fe775cc9ce",
+            .url = "https://pkg.machengine.org/mach-ecs/78bdd36bd4fc1824ddb4d2d7d9d24bf8ea85f13d.tar.gz",
+            .hash = "12207b5b52568304ecbb109ba7d9d2ea0d72cc8ef155eb103056311cf61f4a2fd331",
         },
         .mach_earcut = .{
             .url = "https://pkg.machengine.org/mach-earcut/12b86c8b4732300fb991efc07939482ebe808b93.tar.gz",
             .hash = "122002e17bd4f06d8c7c43d18fd9ff3e03b83a11be5967734c01e2a7a67f871ec8ea",
         },
         .mach_core = .{
-            .url = "https://pkg.machengine.org/mach-core/5b2d146a7fb0e8055c1cb092ea8e23ec4f557e87.tar.gz",
-            .hash = "12200586f6858dbf340c41b7a621ad470d5d920dac90b1301946e0e562219f769ba2",
+            .url = "https://pkg.machengine.org/mach-core/50930539c32630b8054ecd48b443c7e336780da4.tar.gz",
+            .hash = "1220ba12e6551303fea8350006ec6a5b5fa73006a8b79061c8e26862fdd929ca31f0",
         },
         .mach_sysjs = .{
             .url = "https://pkg.machengine.org/mach-sysjs/cd011058993f39a3ab473921ff51e0eda5635f99.tar.gz",
