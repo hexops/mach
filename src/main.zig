@@ -13,7 +13,7 @@ pub const gfx = @import("gfx/util.zig");
 pub const gfx2d = struct {
     pub const Sprite2D = @import("gfx2d/Sprite2D.zig");
 };
-pub const math = @import("math.zig");
+pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
 
 pub const Atlas = @import("atlas/Atlas.zig");

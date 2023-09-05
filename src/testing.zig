@@ -116,6 +116,27 @@ fn Expect(comptime T: type) type {
     const is_vec4 = T == math.Vec4 or T == math.Vec4h or T == math.Vec4d;
     if (is_vec2 or is_vec3 or is_vec4) return ExpectVecMat(T);
 
+    // TODO(testing): TODO(math): handle Mat, []Vec, []Mat without generic equality below.
+    // We can look at how std.testing handles slices, e.g. we should have equal or better output than
+    // what generic equality below gets us:
+    //
+    // ```
+    // ============ expected this output: =============  len: 4 (0x4)
+    //
+    // [0]: math.vec.Vec(4,f32){ .v = { 1.0e+00, 0.0e+00, 0.0e+00, 0.0e+00 } }
+    // [1]: math.vec.Vec(4,f32){ .v = { 0.0e+00, 1.0e+00, 0.0e+00, 0.0e+00 } }
+    // [2]: math.vec.Vec(4,f32){ .v = { 0.0e+00, 0.0e+00, 1.0e+00, 0.0e+00 } }
+    // [3]: math.vec.Vec(4,f32){ .v = { 0.0e+00, 0.0e+00, 0.0e+00, 1.0e+00 } }
+    //
+    // ============= instead found this: ==============  len: 4 (0x4)
+    //
+    // [0]: math.vec.Vec(4,f32){ .v = { 1.0e+00, 0.0e+00, 0.0e+00, 0.0e+00 } }
+    // [1]: math.vec.Vec(4,f32){ .v = { 0.0e+00, 1.0e+00, 0.0e+00, 0.0e+00 } }
+    // [2]: math.vec.Vec(4,f32){ .v = { 0.0e+00, 0.0e+00, 1.0e+00, 0.0e+00 } }
+    // [3]: math.vec.Vec(4,f32){ .v = { 0.0e+00, 0.0e+00, 1.0e+00, 1.0e+00 } }
+    // ```
+    //
+
     // Generic equality
     return struct {
         expected: T,
