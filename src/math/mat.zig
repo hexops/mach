@@ -377,7 +377,7 @@ test "mat4x4_ident" {
             math.Vec4.init(1, 0, 0, 0),
             math.Vec4.init(0, 1, 0, 0),
             math.Vec4.init(0, 0, 1, 0),
-            math.Vec4.init(0, 0, 1, 1),
+            math.Vec4.init(0, 0, 0, 1),
         },
     });
 }

@@ -5,7 +5,7 @@ const ecs = @import("ecs");
 const Engine = @import("../engine.zig").Engine;
 const mach = @import("../main.zig");
 
-const math = @import("../math.zig");
+const math = mach.math;
 const mat = math.mat;
 const Vec2 = math.Vec2;
 const Vec3 = math.Vec3;
