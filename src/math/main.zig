@@ -114,7 +114,12 @@ pub const nan_f64 = std.math.nan(f64);
 // needed.
 
 pub const sqrt = std.math.sqrt;
+pub const sin = std.math.sin;
+pub const cos = std.math.cos;
 pub const isNan = std.math.isNan;
+pub const pi = std.math.pi;
+pub const clamp = std.math.clamp;
+pub const log10 = std.math.log10;
 
 /// 2/sqrt(π)
 pub const two_sqrtpi = std.math.two_sqrtpi;
