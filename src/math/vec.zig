@@ -106,24 +106,24 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
 
         /// Scalar addition
         pub inline fn addScalar(a: VecN, s: Scalar) VecN {
-            return .{ .v = a.v + VecN.splat(s) };
+            return .{ .v = a.v + VecN.splat(s).v };
         }
 
         /// Scalar subtraction
         pub inline fn subScalar(a: VecN, s: Scalar) VecN {
-            return .{ .v = a.v - VecN.splat(s) };
+            return .{ .v = a.v - VecN.splat(s).v };
         }
 
         /// Scalar division
         pub inline fn divScalar(a: VecN, s: Scalar) VecN {
-            return .{ .v = a.v / VecN.splat(s) };
+            return .{ .v = a.v / VecN.splat(s).v };
         }
 
         /// Scalar multiplication.
         ///
         /// See .dot() for the dot product
         pub inline fn mulScalar(a: VecN, s: Scalar) VecN {
-            return .{ .v = a.v * VecN.splat(s) };
+            return .{ .v = a.v * VecN.splat(s).v };
         }
 
         /// Returns a vector with all components set to the `scalar` value:
@@ -192,7 +192,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
         /// a.lerp(b, 1.0) == b
         /// ```
         pub inline fn lerp(a: VecN, b: VecN, amount: Scalar) VecN {
-            return a.mulScalar(1.0 - amount) + b.mulScalar(amount);
+            return a.mulScalar(1.0 - amount).add(b.mulScalar(amount));
         }
 
         /// Calculates the dot product between vector a and b and returns scalar.
