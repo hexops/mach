@@ -126,6 +126,26 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
             return .{ .v = a.v * VecN.splat(s).v };
         }
 
+        /// Element-wise a < b
+        pub inline fn less(a: VecN, b: Scalar) bool {
+            return a.v < b.v;
+        }
+
+        /// Element-wise a <= b
+        pub inline fn lessEq(a: VecN, b: Scalar) bool {
+            return a.v <= b.v;
+        }
+
+        /// Element-wise a > b
+        pub inline fn greater(a: VecN, b: Scalar) bool {
+            return a.v > b.v;
+        }
+
+        /// Element-wise a >= b
+        pub inline fn greaterEq(a: VecN, b: Scalar) bool {
+            return a.v >= b.v;
+        }
+
         /// Returns a vector with all components set to the `scalar` value:
         ///
         /// ```
