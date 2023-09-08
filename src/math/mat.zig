@@ -10,7 +10,7 @@ pub fn Mat(
     comptime n_rows: usize,
     comptime Vector: type,
 ) type {
-    return struct {
+    return extern struct {
         v: [cols]Vec,
 
         /// The number of columns, e.g. Mat3x4.cols == 3

@@ -5,7 +5,7 @@ const testing = mach.testing;
 const math = mach.math;
 
 pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
-    return struct {
+    return extern struct {
         v: Vector,
 
         /// The vector dimension size, e.g. Vec3.n == 3
