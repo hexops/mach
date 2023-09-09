@@ -135,6 +135,39 @@ pub fn Mat(
                 pub inline fn translateScalar(scalar: Vec.T) Matrix {
                     return translate(Vec.splat(scalar));
                 }
+
+                /// Constructs an orthographic projection matrix; an orthogonal transformation matrix
+                /// which transforms from the given left, right, bottom, and top dimensions into
+                /// `(-1, +1)` in `(x, y)`, and `(0, +1)` in `z`.
+                ///
+                /// The near/far parameters denotes the depth (z coordinate) of the near/far clipping
+                /// plane.
+                ///
+                /// Returns an orthographic projection matrix.
+                // TODO: needs tests
+                pub inline fn ortho(
+                    /// The sides of the near clipping plane viewport
+                    left: f32,
+                    right: f32,
+                    bottom: f32,
+                    top: f32,
+                    /// The depth (z coordinate) of the near/far clipping plane.
+                    near: f32,
+                    far: f32,
+                ) Matrix {
+                    const xx = 2 / (right - left);
+                    const yy = 2 / (top - bottom);
+                    const zz = 1 / (near - far);
+                    const tx = (right + left) / (left - right);
+                    const ty = (top + bottom) / (bottom - top);
+                    const tz = near / (near - far);
+                    return init(
+                        RowVec.init(xx, 0, 0, 0),
+                        RowVec.init(0, yy, 0, 0),
+                        RowVec.init(0, 0, zz, 0),
+                        RowVec.init(tx, ty, tz, 1),
+                    );
+                }
             },
             else => @compileError("Expected Mat3x3, Mat4x4 found '" ++ @typeName(Matrix) ++ "'"),
         };
@@ -142,37 +175,6 @@ pub fn Mat(
         // TODO: the below code was correct in our old implementation, it just needs to be updated
         // to work with this new Mat approach, swapping f32 for the generic T float type, moving 3x3
         // and 4x4 specific functions into the mixin above, writing new tests, etc.
-
-        // /// Constructs an orthographic projection matrix; an orthogonal transformation matrix which
-        // /// transforms from the given left, right, bottom, and top dimensions into -1 +1 in x and y,
-        // /// and 0 to +1 in z.
-        // ///
-        // /// The near/far parameters denotes the depth (z coordinate) of the near/far clipping plane.
-        // ///
-        // /// Returns an orthographic projection matrix.
-        // pub inline fn ortho(
-        //     /// The sides of the near clipping plane viewport
-        //     left: f32,
-        //     right: f32,
-        //     bottom: f32,
-        //     top: f32,
-        //     /// The depth (z coordinate) of the near/far clipping plane.
-        //     near: f32,
-        //     far: f32,
-        // ) Mat4x4 {
-        //     const xx = 2 / (right - left);
-        //     const yy = 2 / (top - bottom);
-        //     const zz = 1 / (near - far);
-        //     const tx = (right + left) / (left - right);
-        //     const ty = (top + bottom) / (bottom - top);
-        //     const tz = near / (near - far);
-        //     return init(Mat4x4, .{
-        //         xx, 0,  0,  0,
-        //         0,  yy, 0,  0,
-        //         0,  0,  zz, 0,
-        //         tx, ty, tz, 1,
-        //     });
-        // }
 
         // /// Returns the translation component of the 2D matrix.
         // pub inline fn translation2d(v: Mat3x3) Vec2 {
