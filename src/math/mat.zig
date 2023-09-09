@@ -11,6 +11,22 @@ pub fn Mat(
     comptime Vector: type,
 ) type {
     return extern struct {
+        /// The column vectors of the matrix.
+        ///
+        /// Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
+        /// The translation vector is stored in contiguous memory elements 12, 13, 14:
+        ///
+        /// ```
+        /// [4]Vec4{
+        ///     vec4( 1,  0,  0,  0),
+        ///     vec4( 0,  1,  0,  0),
+        ///     vec4( 0,  0,  1,  0),
+        ///     vec4(tx, ty, tz, tw),
+        /// }
+        /// ```
+        ///
+        /// Use the init() constructor to write code which visually matches the same layout as you'd
+        /// see used in scientific / maths communities.
         v: [cols]Vec,
 
         /// The number of columns, e.g. Mat3x4.cols == 3
@@ -48,104 +64,142 @@ pub fn Mat(
 
         pub usingnamespace switch (Matrix) {
             inline math.Mat3x3, math.Mat3x3h, math.Mat3x3d => struct {
-                pub inline fn init(
-                    col0: RowVec,
-                    col1: RowVec,
-                    col2: RowVec,
-                ) Matrix {
+                /// Constructs a 3x3 matrix with the given rows. For example to write a translation
+                /// matrix like in the left part of this equation:
+                ///
+                /// ```
+                /// |1 0 tx| |x  |   |x+z*tx|
+                /// |0 1 ty| |y  | = |y+z*ty|
+                /// |0 0 tz| |z=1|   |tz    |
+                /// ```
+                ///
+                /// You would write it with the same visual layout:
+                ///
+                /// ```
+                /// const m = Mat3x3.init(
+                ///     vec4(1, 0, tx),
+                ///     vec4(0, 1, ty),
+                ///     vec4(0, 0, tz),
+                /// );
+                /// ```
+                ///
+                /// Note that Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
+                pub inline fn init(r0: RowVec, r1: RowVec, r2: RowVec) Matrix {
                     return .{ .v = [_]Vec{
-                        Vec.init(col0.x(), col0.y(), col0.z(), 1),
-                        Vec.init(col1.x(), col1.y(), col1.z(), 1),
-                        Vec.init(col2.x(), col2.y(), col2.z(), 1),
+                        Vec.init(r0.x(), r1.x(), r2.x(), 1),
+                        Vec.init(r0.y(), r1.y(), r2.y(), 1),
+                        Vec.init(r0.z(), r1.z(), r2.z(), 1),
                     } };
                 }
 
                 /// Constructs a 2D matrix which scales each dimension by the given vector.
                 // TODO: needs tests
-                pub inline fn scale(v: math.Vec2) Matrix {
+                pub inline fn scale(s: math.Vec2) Matrix {
                     return init(
-                        RowVec.init(v.x(), 0, 0, 1),
-                        RowVec.init(0, v.y(), 0, 1),
-                        RowVec.init(0, 0, 1, 1),
+                        RowVec.init(s.x(), 0, 0),
+                        RowVec.init(0, s.y(), 0),
+                        RowVec.init(0, 0, 1),
                     );
                 }
 
                 /// Constructs a 2D matrix which scales each dimension by the given scalar.
                 // TODO: needs tests
-                pub inline fn scaleScalar(scalar: Vec.T) Matrix {
-                    return scale(Vec.splat(scalar));
+                pub inline fn scaleScalar(t: Vec.T) Matrix {
+                    return scale(Vec.splat(t));
                 }
 
                 /// Constructs a 2D matrix which translates coordinates by the given vector.
                 // TODO: needs tests
-                pub inline fn translate(v: math.Vec2) Matrix {
+                pub inline fn translate(t: math.Vec2) Matrix {
                     return init(
-                        RowVec.init(1, 0, 0),
-                        RowVec.init(0, 1, 0),
-                        RowVec.init(v.x(), v.y(), 1),
+                        RowVec.init(1, 0, t.x()),
+                        RowVec.init(0, 1, t.y()),
+                        RowVec.init(0, 0, 1),
                     );
                 }
 
                 /// Constructs a 2D matrix which translates coordinates by the given scalar.
                 // TODO: needs tests
-                pub inline fn translateScalar(scalar: Vec.T) Matrix {
-                    return translate(Vec.splat(scalar));
+                pub inline fn translateScalar(t: Vec.T) Matrix {
+                    return translate(Vec.splat(t));
                 }
 
                 /// Returns the translation component of the matrix.
                 // TODO: needs tests
-                pub inline fn translation(v: Matrix) math.Vec2 {
-                    return math.Vec2.init(v.v[2].x(), v.v[2].y());
+                pub inline fn translation(t: Matrix) math.Vec2 {
+                    return math.Vec2.init(t.v[2].x(), t.v[2].y());
                 }
             },
             inline math.Mat4x4, math.Mat4x4h, math.Mat4x4d => struct {
-                pub inline fn init(col0: Vec, col1: Vec, col2: Vec, col3: Vec) Matrix {
-                    return .{ .v = [_]RowVec{
-                        col0,
-                        col1,
-                        col2,
-                        col3,
+                /// Constructs a 4x4 matrix with the given rows. For example to write a translation
+                /// matrix like in the left part of this equation:
+                ///
+                /// ```
+                /// |1 0 0 tx| |x  |   |x+w*tx|
+                /// |0 1 0 ty| |y  | = |y+w*ty|
+                /// |0 0 1 tz| |z  |   |z+w*tz|
+                /// |0 0 0 tw| |w=1|   |tw    |
+                /// ```
+                ///
+                /// You would write it with the same visual layout:
+                ///
+                /// ```
+                /// const m = Mat4x4.init(
+                ///     vec4(1, 0, 0, tx),
+                ///     vec4(0, 1, 0, ty),
+                ///     vec4(0, 0, 1, tz),
+                ///     vec4(0, 0, 0, tw),
+                /// );
+                /// ```
+                ///
+                /// Note that Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
+                pub inline fn init(r0: Vec, r1: RowVec, r2: RowVec, r3: RowVec) Matrix {
+                    return .{ .v = [_]Vec{
+                        Vec.init(r0.x(), r1.x(), r2.x(), r3.x()),
+                        Vec.init(r0.y(), r1.y(), r2.y(), r3.y()),
+                        Vec.init(r0.z(), r1.z(), r2.z(), r3.z()),
+                        Vec.init(r0.w(), r1.w(), r2.w(), r3.w()),
                     } };
                 }
 
                 /// Constructs a 3D matrix which scales each dimension by the given vector.
                 // TODO: needs tests
-                pub inline fn scale(v: math.Vec3) Matrix {
+                pub inline fn scale(s: math.Vec3) Matrix {
                     return init(
-                        RowVec.init(v.x(), 0, 0, 0),
-                        RowVec.init(0, v.y(), 0, 0),
-                        RowVec.init(0, 0, v.z(), 0),
-                        RowVec.init(0, 0, 0, 1),
+                        Vec.init(s.x(), 0, 0, 0),
+                        Vec.init(0, s.y(), 0, 0),
+                        Vec.init(0, 0, s.z(), 0),
+                        Vec.init(0, 0, 0, 1),
                     );
                 }
 
                 /// Constructs a 3D matrix which scales each dimension by the given scalar.
                 // TODO: needs tests
-                pub inline fn scaleScalar(scalar: Vec.T) Matrix {
-                    return scale(Vec.splat(scalar));
+                pub inline fn scaleScalar(s: Vec.T) Matrix {
+                    return scale(Vec.splat(s));
                 }
 
                 /// Constructs a 3D matrix which translates coordinates by the given vector.
                 // TODO: needs tests
-                pub inline fn translate(v: math.Vec3) Matrix {
+                pub inline fn translate(t: math.Vec3) Matrix {
                     return init(
-                        RowVec.init(1, 0, 0, 0),
-                        RowVec.init(0, 1, 0, 0),
-                        RowVec.init(0, 0, 1, 0),
-                        RowVec.init(v.x(), v.y(), v.z(), 1),
+                        RowVec.init(1, 0, 0, t.x()),
+                        RowVec.init(0, 1, 0, t.y()),
+                        RowVec.init(0, 0, 1, t.z()),
+                        RowVec.init(0, 0, 0, 1),
                     );
                 }
 
                 /// Constructs a 3D matrix which translates coordinates by the given scalar.
                 // TODO: needs tests
-                pub inline fn translateScalar(scalar: Vec.T) Matrix {
-                    return translate(Vec.splat(scalar));
+                pub inline fn translateScalar(t: Vec.T) Matrix {
+                    return translate(Vec.splat(t));
                 }
 
                 /// Returns the translation component of the matrix.
                 // TODO: needs tests
-                pub inline fn translation(v: Matrix) math.Vec3 {
-                    return math.Vec3.init(v.v[3].x(), v.v[3].y(), v.v[3].z());
+                pub inline fn translation(t: Matrix) math.Vec3 {
+                    return math.Vec3.init(t.v[3].x(), t.v[3].y(), t.v[3].z());
                 }
 
                 /// Constructs an orthographic projection matrix; an orthogonal transformation matrix
@@ -174,10 +228,10 @@ pub fn Mat(
                     const ty = (top + bottom) / (bottom - top);
                     const tz = near / (near - far);
                     return init(
-                        RowVec.init(xx, 0, 0, 0),
-                        RowVec.init(0, yy, 0, 0),
-                        RowVec.init(0, 0, zz, 0),
-                        RowVec.init(tx, ty, tz, 1),
+                        RowVec.init(xx, 0, 0, tx),
+                        RowVec.init(0, yy, 0, ty),
+                        RowVec.init(0, 0, zz, tz),
+                        RowVec.init(0, 0, 0, 1),
                     );
                 }
             },
@@ -381,14 +435,14 @@ test "n" {
 
 test "init" {
     try testing.expect(math.Mat3x3, math.mat3x3(
-        math.vec3(1, 2, 3),
-        math.vec3(4, 5, 6),
-        math.vec3(7, 8, 9),
+        math.vec3(1, 0, 1337),
+        math.vec3(0, 1, 7331),
+        math.vec3(0, 0, 1),
     )).eql(math.Mat3x3{
         .v = [_]math.Vec4{
-            math.Vec4.init(1, 2, 3, 1),
-            math.Vec4.init(4, 5, 6, 1),
-            math.Vec4.init(7, 8, 9, 1),
+            math.Vec4.init(1, 0, 0, 1),
+            math.Vec4.init(0, 1, 0, 1),
+            math.Vec4.init(1337, 7331, 1, 1),
         },
     });
 }
