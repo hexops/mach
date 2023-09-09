@@ -59,6 +59,23 @@ pub fn Mat(
                         Vec.init(col2.x(), col2.y(), col2.z(), 1),
                     } };
                 }
+
+                /// Constructs a 3D matrix which scales each dimension by the given vector.
+                // TODO: needs tests
+                pub inline fn scale(v: Vec) Matrix {
+                    return init(
+                        Vec.init(v.x(), 0, 0, 0),
+                        Vec.init(0, v.y(), 0, 0),
+                        Vec.init(0, 0, v.z(), 0),
+                        Vec.init(0, 0, 0, 1),
+                    );
+                }
+
+                /// Constructs a 3D matrix which scales each dimension by the given scalar.
+                // TODO: needs tests
+                pub inline fn scaleScalar(scalar: Vec.T) Matrix {
+                    return scale(Vec.splat(scalar));
+                }
             },
             inline math.Mat4x4, math.Mat4x4h, math.Mat4x4d => struct {
                 pub inline fn init(col0: Vec, col1: Vec, col2: Vec, col3: Vec) Matrix {
@@ -68,6 +85,22 @@ pub fn Mat(
                         col2,
                         col3,
                     } };
+                }
+
+                /// Constructs a 2D matrix which scales each dimension by the given vector.
+                // TODO: needs tests
+                pub inline fn scale(v: Vec) Matrix {
+                    return init(
+                        Vec.init(v.x(), 0, 0, 1),
+                        Vec.init(0, v.y(), 0, 1),
+                        Vec.init(0, 0, 1, 1),
+                    );
+                }
+
+                /// Constructs a 2D matrix which scales each dimension by the given scalar.
+                // TODO: needs tests
+                pub inline fn scaleScalar(scalar: Vec.T) Matrix {
+                    return scale(Vec.splat(scalar));
                 }
             },
             else => @compileError("Expected Mat3x3, Mat4x4 found '" ++ @typeName(Matrix) ++ "'"),
@@ -135,25 +168,6 @@ pub fn Mat(
         // /// Returns the translation component of the 3D matrix.
         // pub inline fn translation3d(v: Mat4x4) Vec3 {
         //     return .{ mat.index(v, 12), mat.index(v, 13), mat.index(v, 14) };
-        // }
-
-        // /// Constructs a 3D matrix which scales each dimension by the given vector.
-        // pub inline fn scale3d(v: Vec3) Mat4x4 {
-        //     return init(Mat4x4, .{
-        //         v[0], 0,    0,    0,
-        //         0,    v[1], 0,    0,
-        //         0,    0,    v[2], 0,
-        //         0,    0,    0,    1,
-        //     });
-        // }
-
-        // /// Constructs a 3D matrix which scales each dimension by the given vector.
-        // pub inline fn scale2d(v: Vec2) Mat3x3 {
-        //     return init(Mat3x3, .{
-        //         v[0], 0,    0, 0,
-        //         0,    v[1], 0, 0,
-        //         0,    0,    1, 0,
-        //     });
         // }
 
         // // Multiplies matrices a * b
@@ -468,48 +482,6 @@ test "mat4x4_ident" {
 //         try expectEqual(result[1], v[1]);
 //         try expectEqual(result[2], v[2]);
 //     }
-// }
-
-// test "mat.scale2d" {
-//     const v = Vec2{ 1.0, -2.5 };
-//     const scale_mat = mat.scale2d(v);
-
-//     // Computed Values
-//     try expectEqual(scale_mat[0][0], v[0]);
-//     try expectEqual(scale_mat[1][1], v[1]);
-
-//     // Constant values, which should not change but we still check for completeness
-//     const zero_value_indexes = [_]u8{
-//         1,     2,         3,
-//         4,     4 + 2,     4 + 3,
-//         4 * 2, 4 * 2 + 1, 4 * 2 + 3,
-//     };
-//     for (zero_value_indexes) |index| {
-//         try expectEqual(mat.index(scale_mat, index), 0);
-//     }
-//     try expectEqual(scale_mat[2][2], 1);
-// }
-
-// test "mat.scale3d" {
-//     const v = Vec3{ 1.0, -2.5, 0.001 };
-//     const scale_mat = mat.scale3d(v);
-
-//     // Computed Values
-//     try expectEqual(scale_mat[0][0], v[0]);
-//     try expectEqual(scale_mat[1][1], v[1]);
-//     try expectEqual(scale_mat[2][2], v[2]);
-
-//     // Constant values, which should not change but we still check for completeness
-//     const zero_value_indexes = [_]u8{
-//         1,     2,         3,
-//         4,     4 + 2,     4 + 3,
-//         4 * 2, 4 * 2 + 1, 4 * 2 + 3,
-//         4 * 3, 4 * 3 + 1, 4 * 3 + 2,
-//     };
-//     for (zero_value_indexes) |index| {
-//         try expectEqual(mat.index(scale_mat, index), 0);
-//     }
-//     try expectEqual(scale_mat[3][3], 1);
 // }
 
 // const degreesToRadians = std.math.degreesToRadians;
