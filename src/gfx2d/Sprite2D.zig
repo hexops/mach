@@ -6,7 +6,7 @@ const Engine = @import("../engine.zig").Engine;
 const mach = @import("../main.zig");
 
 const math = mach.math;
-const mat = math.mat;
+const vec2 = math.vec2;
 const Vec2 = math.Vec2;
 const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
@@ -161,10 +161,10 @@ pub fn engineSprite2dInit(
         .sprite_transforms = sprite_transforms,
         .sprite_uv_transforms = sprite_uv_transforms,
         .sprite_sizes = sprite_sizes,
-        .texture_size = Vec2{
+        .texture_size = vec2(
             @as(f32, @floatFromInt(sprite2d.state.texture.getWidth())),
             @as(f32, @floatFromInt(sprite2d.state.texture.getHeight())),
-        },
+        ),
         .texture = sprite2d.state.texture,
     };
     shader_module.release();
@@ -202,7 +202,7 @@ pub fn tick(
     });
 
     // Update uniform buffer
-    const ortho = mat.ortho(
+    const ortho = Mat4x4.ortho(
         -@as(f32, @floatFromInt(core.size().width)) / 2,
         @as(f32, @floatFromInt(core.size().width)) / 2,
         -@as(f32, @floatFromInt(core.size().height)) / 2,
