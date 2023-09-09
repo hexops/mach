@@ -124,7 +124,7 @@ pub fn Mat(
                 /// Constructs a 2D matrix which scales each dimension by the given scalar.
                 // TODO: needs tests
                 pub inline fn scaleScalar(t: Vec.T) Matrix {
-                    return scale(Vec.splat(t));
+                    return scale(math.Vec2.splat(t));
                 }
 
                 /// Constructs a 2D matrix which translates coordinates by the given vector.
@@ -140,7 +140,7 @@ pub fn Mat(
                 /// Constructs a 2D matrix which translates coordinates by the given scalar.
                 // TODO: needs tests
                 pub inline fn translateScalar(t: Vec.T) Matrix {
-                    return translate(Vec.splat(t));
+                    return translate(math.Vec2.splat(t));
                 }
 
                 /// Returns the translation component of the matrix.
@@ -215,7 +215,7 @@ pub fn Mat(
                 /// Constructs a 3D matrix which scales each dimension by the given scalar.
                 // TODO: needs tests
                 pub inline fn scaleScalar(s: Vec.T) Matrix {
-                    return scale(Vec.splat(s));
+                    return scale(math.Vec3.splat(s));
                 }
 
                 /// Constructs a 3D matrix which translates coordinates by the given vector.
@@ -232,7 +232,7 @@ pub fn Mat(
                 /// Constructs a 3D matrix which translates coordinates by the given scalar.
                 // TODO: needs tests
                 pub inline fn translateScalar(t: Vec.T) Matrix {
-                    return translate(Vec.splat(t));
+                    return translate(math.Vec3.splat(t));
                 }
 
                 /// Returns the translation component of the matrix.
