@@ -92,6 +92,16 @@ pub fn Mat(
                     } };
                 }
 
+                /// Returns the row `i` of the matrix.
+                pub inline fn row(m: Matrix, i: usize) RowVec {
+                    return RowVec.init(m.v[0].v[i], m.v[1].v[i], m.v[2].v[i]);
+                }
+
+                /// Returns the column `i` of the matrix.
+                pub inline fn col(m: Matrix, i: usize) RowVec {
+                    return RowVec.init(m.v[i].v[0], m.v[i].v[1], m.v[i].v[2]);
+                }
+
                 /// Constructs a 2D matrix which scales each dimension by the given vector.
                 // TODO: needs tests
                 pub inline fn scale(s: math.Vec2) Matrix {
@@ -160,6 +170,16 @@ pub fn Mat(
                         Vec.init(r0.z(), r1.z(), r2.z(), r3.z()),
                         Vec.init(r0.w(), r1.w(), r2.w(), r3.w()),
                     } };
+                }
+
+                /// Returns the row `i` of the matrix.
+                pub inline fn row(m: Matrix, i: usize) RowVec {
+                    return RowVec.init(m.v[0].v[i], m.v[1].v[i], m.v[2].v[i], m.v[3].v[i]);
+                }
+
+                /// Returns the column `i` of the matrix.
+                pub inline fn col(m: Matrix, i: usize) RowVec {
+                    return RowVec.init(m.v[i].v[0], m.v[i].v[1], m.v[i].v[2], m.v[i].v[3]);
                 }
 
                 /// Constructs a 3D matrix which scales each dimension by the given vector.
@@ -466,6 +486,54 @@ test "mat4x4_ident" {
             math.Vec4.init(0, 0, 0, 1),
         },
     });
+}
+
+test "Mat3x3_row" {
+    const m = math.Mat3x3.init(
+        math.vec3(0, 1, 2),
+        math.vec3(3, 4, 5),
+        math.vec3(6, 7, 8),
+    );
+    try testing.expect(math.Vec3, math.vec3(0, 1, 2)).eql(m.row(0));
+    try testing.expect(math.Vec3, math.vec3(3, 4, 5)).eql(m.row(1));
+    try testing.expect(math.Vec3, math.vec3(6, 7, 8)).eql(m.row(@TypeOf(m).rows - 1));
+}
+
+test "Mat3x3_col" {
+    const m = math.Mat3x3.init(
+        math.vec3(0, 1, 2),
+        math.vec3(3, 4, 5),
+        math.vec3(6, 7, 8),
+    );
+    try testing.expect(math.Vec3, math.vec3(0, 3, 6)).eql(m.col(0));
+    try testing.expect(math.Vec3, math.vec3(1, 4, 7)).eql(m.col(1));
+    try testing.expect(math.Vec3, math.vec3(2, 5, 8)).eql(m.col(@TypeOf(m).cols - 1));
+}
+
+test "Mat4x4_row" {
+    const m = math.Mat4x4.init(
+        math.vec4(0, 1, 2, 3),
+        math.vec4(4, 5, 6, 7),
+        math.vec4(8, 9, 10, 11),
+        math.vec4(12, 13, 14, 15),
+    );
+    try testing.expect(math.Vec4, math.vec4(0, 1, 2, 3)).eql(m.row(0));
+    try testing.expect(math.Vec4, math.vec4(4, 5, 6, 7)).eql(m.row(1));
+    try testing.expect(math.Vec4, math.vec4(8, 9, 10, 11)).eql(m.row(2));
+    try testing.expect(math.Vec4, math.vec4(12, 13, 14, 15)).eql(m.row(@TypeOf(m).rows - 1));
+}
+
+test "Mat4x4_col" {
+    const m = math.Mat4x4.init(
+        math.vec4(0, 1, 2, 3),
+        math.vec4(4, 5, 6, 7),
+        math.vec4(8, 9, 10, 11),
+        math.vec4(12, 13, 14, 15),
+    );
+    try testing.expect(math.Vec4, math.vec4(0, 4, 8, 12)).eql(m.col(0));
+    try testing.expect(math.Vec4, math.vec4(1, 5, 9, 13)).eql(m.col(1));
+    try testing.expect(math.Vec4, math.vec4(2, 6, 10, 14)).eql(m.col(2));
+    try testing.expect(math.Vec4, math.vec4(3, 7, 11, 15)).eql(m.col(@TypeOf(m).cols - 1));
 }
 
 // TODO(math): the tests below violate our styleguide (https://machengine.org/about/style/) we
