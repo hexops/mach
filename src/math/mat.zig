@@ -60,14 +60,56 @@ pub fn Mat(
                     } };
                 }
 
+                /// Constructs a 2D matrix which scales each dimension by the given vector.
+                // TODO: needs tests
+                pub inline fn scale(v: math.Vec2) Matrix {
+                    return init(
+                        RowVec.init(v.x(), 0, 0, 1),
+                        RowVec.init(0, v.y(), 0, 1),
+                        RowVec.init(0, 0, 1, 1),
+                    );
+                }
+
+                /// Constructs a 2D matrix which scales each dimension by the given scalar.
+                // TODO: needs tests
+                pub inline fn scaleScalar(scalar: Vec.T) Matrix {
+                    return scale(Vec.splat(scalar));
+                }
+
+                /// Constructs a 2D matrix which translates coordinates by the given vector.
+                // TODO: needs tests
+                pub inline fn translate(v: math.Vec2) Matrix {
+                    return init(
+                        RowVec.init(1, 0, 0),
+                        RowVec.init(0, 1, 0),
+                        RowVec.init(v.x(), v.y(), 1),
+                    );
+                }
+
+                /// Constructs a 2D matrix which translates coordinates by the given scalar.
+                // TODO: needs tests
+                pub inline fn translateScalar(scalar: Vec.T) Matrix {
+                    return translate(Vec.splat(scalar));
+                }
+            },
+            inline math.Mat4x4, math.Mat4x4h, math.Mat4x4d => struct {
+                pub inline fn init(col0: Vec, col1: Vec, col2: Vec, col3: Vec) Matrix {
+                    return .{ .v = [_]RowVec{
+                        col0,
+                        col1,
+                        col2,
+                        col3,
+                    } };
+                }
+
                 /// Constructs a 3D matrix which scales each dimension by the given vector.
                 // TODO: needs tests
-                pub inline fn scale(v: Vec) Matrix {
+                pub inline fn scale(v: math.Vec3) Matrix {
                     return init(
-                        Vec.init(v.x(), 0, 0, 0),
-                        Vec.init(0, v.y(), 0, 0),
-                        Vec.init(0, 0, v.z(), 0),
-                        Vec.init(0, 0, 0, 1),
+                        RowVec.init(v.x(), 0, 0, 0),
+                        RowVec.init(0, v.y(), 0, 0),
+                        RowVec.init(0, 0, v.z(), 0),
+                        RowVec.init(0, 0, 0, 1),
                     );
                 }
 
@@ -76,31 +118,22 @@ pub fn Mat(
                 pub inline fn scaleScalar(scalar: Vec.T) Matrix {
                     return scale(Vec.splat(scalar));
                 }
-            },
-            inline math.Mat4x4, math.Mat4x4h, math.Mat4x4d => struct {
-                pub inline fn init(col0: Vec, col1: Vec, col2: Vec, col3: Vec) Matrix {
-                    return .{ .v = [_]Vec{
-                        col0,
-                        col1,
-                        col2,
-                        col3,
-                    } };
-                }
 
-                /// Constructs a 2D matrix which scales each dimension by the given vector.
+                /// Constructs a 3D matrix which translates coordinates by the given vector.
                 // TODO: needs tests
-                pub inline fn scale(v: Vec) Matrix {
+                pub inline fn translate(v: math.Vec3) Matrix {
                     return init(
-                        Vec.init(v.x(), 0, 0, 1),
-                        Vec.init(0, v.y(), 0, 1),
-                        Vec.init(0, 0, 1, 1),
+                        RowVec.init(1, 0, 0, 0),
+                        RowVec.init(0, 1, 0, 0),
+                        RowVec.init(0, 0, 1, 0),
+                        RowVec.init(v.x(), v.y(), v.z(), 1),
                     );
                 }
 
-                /// Constructs a 2D matrix which scales each dimension by the given scalar.
+                /// Constructs a 3D matrix which translates coordinates by the given scalar.
                 // TODO: needs tests
-                pub inline fn scaleScalar(scalar: Vec.T) Matrix {
-                    return scale(Vec.splat(scalar));
+                pub inline fn translateScalar(scalar: Vec.T) Matrix {
+                    return translate(Vec.splat(scalar));
                 }
             },
             else => @compileError("Expected Mat3x3, Mat4x4 found '" ++ @typeName(Matrix) ++ "'"),
@@ -138,25 +171,6 @@ pub fn Mat(
         //         0,  yy, 0,  0,
         //         0,  0,  zz, 0,
         //         tx, ty, tz, 1,
-        //     });
-        // }
-
-        // /// Constructs a 2D matrix which translates coordinates by v.
-        // pub inline fn translate2d(v: Vec2) Mat3x3 {
-        //     return init(Mat3x3, .{
-        //         1,    0,    0, 0,
-        //         0,    1,    0, 0,
-        //         v[0], v[1], 1, 0,
-        //     });
-        // }
-
-        // /// Constructs a 3D matrix which translates coordinates by v.
-        // pub inline fn translate3d(v: Vec3) Mat4x4 {
-        //     return init(Mat4x4, .{
-        //         1,    0,    0,    0,
-        //         0,    1,    0,    0,
-        //         0,    0,    1,    0,
-        //         v[0], v[1], v[2], 1,
         //     });
         // }
 
@@ -420,49 +434,6 @@ test "mat4x4_ident" {
 //         try expectEqual(mat.index(ortho_mat, index), 0);
 //     }
 //     try expectEqual(ortho_mat[3][3], 1);
-// }
-
-// test "mat.translate2d" {
-//     const v = Vec2{ 1.0, -2.5 };
-//     const translation_mat = mat.translate2d(v);
-
-//     // Computed Values
-//     try expectEqual(translation_mat[2][0], v[0]);
-//     try expectEqual(translation_mat[2][1], v[1]);
-
-//     // Constant values, which should not change but we still check for completeness
-//     const zero_value_indexes = [_]u8{
-//         1,         2,     3,
-//         4,         4 + 2, 4 + 3,
-//         4 * 2 + 3,
-//     };
-//     for (zero_value_indexes) |index| {
-//         try expectEqual(mat.index(translation_mat, index), 0);
-//     }
-//     try expectEqual(translation_mat[0][0], 1);
-//     try expectEqual(translation_mat[1][1], 1);
-//     try expectEqual(translation_mat[2][2], 1);
-// }
-
-// test "mat.translate3d" {
-//     const v = Vec3{ 1.0, -2.5, 0.001 };
-//     const translation_mat = mat.translate3d(v);
-
-//     // Computed Values
-//     try expectEqual(translation_mat[3][0], v[0]);
-//     try expectEqual(translation_mat[3][1], v[1]);
-//     try expectEqual(translation_mat[3][2], v[2]);
-
-//     // Constant values, which should not change but we still check for completeness
-//     const zero_value_indexes = [_]u8{
-//         1,     2,         3,
-//         4,     4 + 2,     4 + 3,
-//         4 * 2, 4 * 2 + 1, 4 * 2 + 3,
-//     };
-//     for (zero_value_indexes) |index| {
-//         try expectEqual(mat.index(translation_mat, index), 0);
-//     }
-//     try expectEqual(translation_mat[3][3], 1);
 // }
 
 // test "mat.translation" {
