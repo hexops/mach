@@ -91,6 +91,12 @@ pub fn Mat(
                 pub inline fn translateScalar(scalar: Vec.T) Matrix {
                     return translate(Vec.splat(scalar));
                 }
+
+                /// Returns the translation component of the matrix.
+                // TODO: needs tests
+                pub inline fn translation(v: Matrix) math.Vec2 {
+                    return math.Vec2.init(v.v[2].x(), v.v[2].y());
+                }
             },
             inline math.Mat4x4, math.Mat4x4h, math.Mat4x4d => struct {
                 pub inline fn init(col0: Vec, col1: Vec, col2: Vec, col3: Vec) Matrix {
@@ -136,6 +142,12 @@ pub fn Mat(
                     return translate(Vec.splat(scalar));
                 }
 
+                /// Returns the translation component of the matrix.
+                // TODO: needs tests
+                pub inline fn translation(v: Matrix) math.Vec3 {
+                    return math.Vec3.init(v.v[3].x(), v.v[3].y(), v.v[3].z());
+                }
+
                 /// Constructs an orthographic projection matrix; an orthogonal transformation matrix
                 /// which transforms from the given left, right, bottom, and top dimensions into
                 /// `(-1, +1)` in `(x, y)`, and `(0, +1)` in `z`.
@@ -175,16 +187,6 @@ pub fn Mat(
         // TODO: the below code was correct in our old implementation, it just needs to be updated
         // to work with this new Mat approach, swapping f32 for the generic T float type, moving 3x3
         // and 4x4 specific functions into the mixin above, writing new tests, etc.
-
-        // /// Returns the translation component of the 2D matrix.
-        // pub inline fn translation2d(v: Mat3x3) Vec2 {
-        //     return .{ mat.index(v, 8), mat.index(v, 9) };
-        // }
-
-        // /// Returns the translation component of the 3D matrix.
-        // pub inline fn translation3d(v: Mat4x4) Vec3 {
-        //     return .{ mat.index(v, 12), mat.index(v, 13), mat.index(v, 14) };
-        // }
 
         // // Multiplies matrices a * b
         // pub inline fn mul(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
@@ -436,25 +438,6 @@ test "mat4x4_ident" {
 //         try expectEqual(mat.index(ortho_mat, index), 0);
 //     }
 //     try expectEqual(ortho_mat[3][3], 1);
-// }
-
-// test "mat.translation" {
-//     {
-//         const v = Vec2{ 1.0, -2.5 };
-//         const translation_mat = mat.translate2d(v);
-//         const result = mat.translation2d(translation_mat);
-//         try expectEqual(result[0], v[0]);
-//         try expectEqual(result[1], v[1]);
-//     }
-
-//     {
-//         const v = Vec3{ 1.0, -2.5, 0.001 };
-//         const translation_mat = mat.translate3d(v);
-//         const result = mat.translation3d(translation_mat);
-//         try expectEqual(result[0], v[0]);
-//         try expectEqual(result[1], v[1]);
-//         try expectEqual(result[2], v[2]);
-//     }
 // }
 
 // const degreesToRadians = std.math.degreesToRadians;
