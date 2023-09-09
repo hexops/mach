@@ -120,6 +120,8 @@ pub const isNan = std.math.isNan;
 pub const pi = std.math.pi;
 pub const clamp = std.math.clamp;
 pub const log10 = std.math.log10;
+pub const degreesToRadians = std.math.degreesToRadians;
+pub const radiansToDegrees = std.math.radiansToDegrees;
 
 /// 2/sqrt(π)
 pub const two_sqrtpi = std.math.two_sqrtpi;

@@ -241,6 +241,42 @@ pub fn Mat(
                     return math.Vec3.init(t.v[3].x(), t.v[3].y(), t.v[3].z());
                 }
 
+                /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
+                pub inline fn rotateX(angle_radians: f32) Matrix {
+                    const c = std.math.cos(angle_radians);
+                    const s = std.math.sin(angle_radians);
+                    return Matrix.init(
+                        RowVec.init(1, 0, 0, 0),
+                        RowVec.init(0, c, -s, 0),
+                        RowVec.init(0, s, c, 0),
+                        RowVec.init(0, 0, 0, 1),
+                    );
+                }
+
+                /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
+                pub inline fn rotateY(angle_radians: f32) Matrix {
+                    const c = std.math.cos(angle_radians);
+                    const s = std.math.sin(angle_radians);
+                    return Matrix.init(
+                        RowVec.init(c, 0, s, 0),
+                        RowVec.init(0, 1, 0, 0),
+                        RowVec.init(-s, 0, c, 0),
+                        RowVec.init(0, 0, 0, 1),
+                    );
+                }
+
+                /// Constructs a 3D matrix which rotates around the Z axis by `angle_radians`.
+                pub inline fn rotateZ(angle_radians: f32) Matrix {
+                    const c = std.math.cos(angle_radians);
+                    const s = std.math.sin(angle_radians);
+                    return Matrix.init(
+                        RowVec.init(c, -s, 0, 0),
+                        RowVec.init(s, c, 0, 0),
+                        RowVec.init(0, 0, 1, 0),
+                        RowVec.init(0, 0, 0, 1),
+                    );
+                }
+
                 /// Constructs an orthographic projection matrix; an orthogonal transformation matrix
                 /// which transforms from the given left, right, bottom, and top dimensions into
                 /// `(-1, +1)` in `(x, y)`, and `(0, +1)` in `z`.
@@ -332,45 +368,6 @@ pub fn Mat(
         //             float.equals(f32, a[3][2], b[3][2], tolerance) and
         //             float.equals(f32, a[3][3], b[3][3], tolerance);
         //     } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
-        // }
-
-        // /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
-        // pub inline fn rotateX(angle_radians: f32) Mat4x4 {
-        //     const c = std.math.cos(angle_radians);
-        //     const s = std.math.sin(angle_radians);
-
-        //     return init(Mat4x4, .{
-        //         1, 0,  0, 0,
-        //         0, c,  s, 0,
-        //         0, -s, c, 0,
-        //         0, 0,  0, 1,
-        //     });
-        // }
-
-        // /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
-        // pub inline fn rotateY(angle_radians: f32) Mat4x4 {
-        //     const c = std.math.cos(angle_radians);
-        //     const s = std.math.sin(angle_radians);
-
-        //     return init(Mat4x4, .{
-        //         c, 0, -s, 0,
-        //         0, 1, 0,  0,
-        //         s, 0, c,  0,
-        //         0, 0, 0,  1,
-        //     });
-        // }
-
-        // /// Constructs a 3D matrix which rotates around the Z axis by `angle_radians`.
-        // pub inline fn rotateZ(angle_radians: f32) Mat4x4 {
-        //     const c = std.math.cos(angle_radians);
-        //     const s = std.math.sin(angle_radians);
-
-        //     return init(Mat4x4, .{
-        //         c,  s, 0, 0,
-        //         -s, c, 0, 0,
-        //         0,  0, 1, 0,
-        //         0,  0, 0, 1,
-        //     });
         // }
     };
 }
@@ -537,212 +534,4 @@ test "Mat4x4_transpose" {
 //         try expectEqual(mat.index(ortho_mat, index), 0);
 //     }
 //     try expectEqual(ortho_mat[3][3], 1);
-// }
-
-// const degreesToRadians = std.math.degreesToRadians;
-
-// // TODO: Maybe reconsider based on feedback to join all test for rotation into one test as only
-// //       location of values change. And create some kind of struct that will hold this indexes and
-// //       coresponding values
-// test "mat.rotateX" {
-//     const zero_value_indexes = [_]u8{
-//         1,         2,     3,
-//         4,         4 + 3, 4 * 2,
-//         4 * 2 + 3, 4 * 3, 4 * 3 + 1,
-//         4 * 3 + 2,
-//     };
-
-//     const one_value_indexes = [_]u8{
-//         0, 4 * 3 + 3,
-//     };
-
-//     const tolerance = 1e-7;
-
-//     {
-//         const r = 90;
-//         const R_x = mat.rotateX(degreesToRadians(f32, r));
-//         try expectApproxEqAbs(R_x[1][1], 0, tolerance);
-//         try expectApproxEqAbs(R_x[2][2], 0, tolerance);
-//         try expectApproxEqAbs(R_x[1][2], 1, tolerance);
-//         try expectApproxEqAbs(R_x[2][1], -1, tolerance);
-
-//         for (zero_value_indexes) |index| {
-//             try expectEqual(mat.index(R_x, index), 0);
-//         }
-
-//         for (one_value_indexes) |index| {
-//             try expectEqual(mat.index(R_x, index), 1);
-//         }
-//     }
-
-//     {
-//         const r = 0;
-//         const R_x = mat.rotateX(degreesToRadians(f32, r));
-//         try expectApproxEqAbs(R_x[1][1], 1, tolerance);
-//         try expectApproxEqAbs(R_x[2][2], 1, tolerance);
-//         try expectApproxEqAbs(R_x[1][2], 0, tolerance);
-//         try expectApproxEqAbs(R_x[2][1], 0, tolerance);
-
-//         for (zero_value_indexes) |index| {
-//             try expectEqual(mat.index(R_x, index), 0);
-//         }
-
-//         for (one_value_indexes) |index| {
-//             try expectEqual(mat.index(R_x, index), 1);
-//         }
-//     }
-
-//     {
-//         const r = 45;
-//         const result: f32 = std.math.sqrt(2.0) / 2.0; // sqrt(2) / 2
-//         const R_x = mat.rotateX(degreesToRadians(f32, r));
-//         try expectApproxEqAbs(R_x[1][1], result, tolerance);
-//         try expectApproxEqAbs(R_x[2][2], result, tolerance);
-//         try expectApproxEqAbs(R_x[1][2], result, tolerance);
-//         try expectApproxEqAbs(R_x[2][1], -result, tolerance);
-
-//         for (zero_value_indexes) |index| {
-//             try expectEqual(mat.index(R_x, index), 0);
-//         }
-
-//         for (one_value_indexes) |index| {
-//             try expectEqual(mat.index(R_x, index), 1);
-//         }
-//     }
-// }
-
-// test "mat.rotateY" {
-//     const zero_value_indexes = [_]u8{
-//         1,         3,
-//         4,         4 + 2,
-//         4 + 3,     4 * 2 + 1,
-//         4 * 2 + 3, 4 * 3,
-//         4 * 3 + 1, 4 * 3 + 2,
-//     };
-
-//     const one_value_indexes = [_]u8{
-//         4 + 1, 4 * 3 + 3,
-//     };
-
-//     const tolerance = 1e-7;
-
-//     {
-//         const r = 90;
-//         const R_y = mat.rotateY(degreesToRadians(f32, r));
-//         try expectApproxEqAbs(R_y[0][0], 0, tolerance);
-//         try expectApproxEqAbs(R_y[2][2], 0, tolerance);
-//         try expectApproxEqAbs(R_y[0][2], -1, tolerance);
-//         try expectApproxEqAbs(R_y[2][0], 1, tolerance);
-
-//         for (zero_value_indexes) |index| {
-//             try expectEqual(mat.index(R_y, index), 0);
-//         }
-
-//         for (one_value_indexes) |index| {
-//             try expectEqual(mat.index(R_y, index), 1);
-//         }
-//     }
-
-//     {
-//         const r = 0;
-//         const R_y = mat.rotateY(degreesToRadians(f32, r));
-//         try expectApproxEqAbs(R_y[0][0], 1, tolerance);
-//         try expectApproxEqAbs(R_y[2][2], 1, tolerance);
-//         try expectApproxEqAbs(R_y[0][2], 0, tolerance);
-//         try expectApproxEqAbs(R_y[3][0], 0, tolerance); // TODO: [2][0] ?
-
-//         for (zero_value_indexes) |index| {
-//             try expectEqual(mat.index(R_y, index), 0);
-//         }
-
-//         for (one_value_indexes) |index| {
-//             try expectEqual(mat.index(R_y, index), 1);
-//         }
-//     }
-
-//     {
-//         const r = 45;
-//         const result: f32 = std.math.sqrt(2.0) / 2.0; // sqrt(2) / 2
-//         const R_y = mat.rotateY(degreesToRadians(f32, r));
-//         try expectApproxEqAbs(R_y[0][0], result, tolerance);
-//         try expectApproxEqAbs(R_y[2][2], result, tolerance);
-//         try expectApproxEqAbs(R_y[0][2], -result, tolerance);
-//         try expectApproxEqAbs(R_y[2][0], result, tolerance);
-
-//         for (zero_value_indexes) |index| {
-//             try expectEqual(mat.index(R_y, index), 0);
-//         }
-
-//         for (one_value_indexes) |index| {
-//             try expectEqual(mat.index(R_y, index), 1);
-//         }
-//     }
-// }
-
-// test "mat.rotateZ" {
-//     const zero_value_indexes = [_]u8{
-//         2,         3,
-//         4 + 2,     4 + 3,
-//         4 * 2,     4 * 2 + 1,
-//         4 * 2 + 3, 4 * 3,
-//         4 * 3 + 1, 4 * 3 + 2,
-//     };
-
-//     const one_value_indexes = [_]u8{
-//         4 * 2 + 2, 4 * 3 + 3,
-//     };
-
-//     const tolerance = 1e-7;
-
-//     {
-//         const r = 90;
-//         const R_z = mat.rotateZ(degreesToRadians(f32, r));
-//         try expectApproxEqAbs(R_z[0][0], 0, tolerance);
-//         try expectApproxEqAbs(R_z[1][1], 0, tolerance);
-//         try expectApproxEqAbs(R_z[0][1], 1, tolerance);
-//         try expectApproxEqAbs(R_z[1][0], -1, tolerance);
-
-//         for (zero_value_indexes) |index| {
-//             try expectEqual(mat.index(R_z, index), 0);
-//         }
-
-//         for (one_value_indexes) |index| {
-//             try expectEqual(mat.index(R_z, index), 1);
-//         }
-//     }
-
-//     {
-//         const r = 0;
-//         const R_z = mat.rotateZ(degreesToRadians(f32, r));
-//         try expectApproxEqAbs(R_z[0][0], 1, tolerance);
-//         try expectApproxEqAbs(R_z[1][1], 1, tolerance);
-//         try expectApproxEqAbs(R_z[0][1], 0, tolerance);
-//         try expectApproxEqAbs(R_z[1][0], 0, tolerance);
-
-//         for (zero_value_indexes) |index| {
-//             try expectEqual(mat.index(R_z, index), 0);
-//         }
-
-//         for (one_value_indexes) |index| {
-//             try expectEqual(mat.index(R_z, index), 1);
-//         }
-//     }
-
-//     {
-//         const r = 45;
-//         const result: f32 = std.math.sqrt(2.0) / 2.0; // sqrt(2) / 2
-//         const R_z = mat.rotateZ(degreesToRadians(f32, r));
-//         try expectApproxEqAbs(R_z[0][0], result, tolerance);
-//         try expectApproxEqAbs(R_z[1][1], result, tolerance);
-//         try expectApproxEqAbs(R_z[0][1], result, tolerance);
-//         try expectApproxEqAbs(R_z[1][0], -result, tolerance);
-
-//         for (zero_value_indexes) |index| {
-//             try expectEqual(mat.index(R_z, index), 0);
-//         }
-
-//         for (one_value_indexes) |index| {
-//             try expectEqual(mat.index(R_z, index), 1);
-//         }
-//     }
 // }
