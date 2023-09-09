@@ -102,6 +102,15 @@ pub fn Mat(
                     return RowVec.init(m.v[i].v[0], m.v[i].v[1], m.v[i].v[2]);
                 }
 
+                /// Transposes the matrix.
+                pub inline fn transpose(m: Matrix) Matrix {
+                    return .{ .v = [_]Vec{
+                        Vec.init(m.v[0].v[0], m.v[1].v[0], m.v[2].v[0], 1),
+                        Vec.init(m.v[0].v[1], m.v[1].v[1], m.v[2].v[1], 1),
+                        Vec.init(m.v[0].v[2], m.v[1].v[2], m.v[2].v[2], 1),
+                    } };
+                }
+
                 /// Constructs a 2D matrix which scales each dimension by the given vector.
                 // TODO: needs tests
                 pub inline fn scale(s: math.Vec2) Matrix {
@@ -163,7 +172,7 @@ pub fn Mat(
                 /// ```
                 ///
                 /// Note that Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
-                pub inline fn init(r0: Vec, r1: RowVec, r2: RowVec, r3: RowVec) Matrix {
+                pub inline fn init(r0: RowVec, r1: RowVec, r2: RowVec, r3: RowVec) Matrix {
                     return .{ .v = [_]Vec{
                         Vec.init(r0.x(), r1.x(), r2.x(), r3.x()),
                         Vec.init(r0.y(), r1.y(), r2.y(), r3.y()),
@@ -180,6 +189,16 @@ pub fn Mat(
                 /// Returns the column `i` of the matrix.
                 pub inline fn col(m: Matrix, i: usize) RowVec {
                     return RowVec.init(m.v[i].v[0], m.v[i].v[1], m.v[i].v[2], m.v[i].v[3]);
+                }
+
+                /// Transposes the matrix.
+                pub inline fn transpose(m: Matrix) Matrix {
+                    return .{ .v = [_]Vec{
+                        Vec.init(m.v[0].v[0], m.v[1].v[0], m.v[2].v[0], m.v[3].v[0]),
+                        Vec.init(m.v[0].v[1], m.v[1].v[1], m.v[2].v[1], m.v[3].v[1]),
+                        Vec.init(m.v[0].v[2], m.v[1].v[2], m.v[2].v[2], m.v[3].v[2]),
+                        Vec.init(m.v[0].v[3], m.v[1].v[3], m.v[2].v[3], m.v[3].v[3]),
+                    } };
                 }
 
                 /// Constructs a 3D matrix which scales each dimension by the given vector.
@@ -534,6 +553,34 @@ test "Mat4x4_col" {
     try testing.expect(math.Vec4, math.vec4(1, 5, 9, 13)).eql(m.col(1));
     try testing.expect(math.Vec4, math.vec4(2, 6, 10, 14)).eql(m.col(2));
     try testing.expect(math.Vec4, math.vec4(3, 7, 11, 15)).eql(m.col(@TypeOf(m).cols - 1));
+}
+
+test "Mat3x3_transpose" {
+    const m = math.Mat3x3.init(
+        math.vec3(0, 1, 2),
+        math.vec3(3, 4, 5),
+        math.vec3(6, 7, 8),
+    );
+    try testing.expect(math.Mat3x3, math.Mat3x3.init(
+        math.vec3(0, 3, 6),
+        math.vec3(1, 4, 7),
+        math.vec3(2, 5, 8),
+    )).eql(m.transpose());
+}
+
+test "Mat4x4_transpose" {
+    const m = math.Mat4x4.init(
+        math.vec4(0, 1, 2, 3),
+        math.vec4(4, 5, 6, 7),
+        math.vec4(8, 9, 10, 11),
+        math.vec4(12, 13, 14, 15),
+    );
+    try testing.expect(math.Mat4x4, math.Mat4x4.init(
+        math.vec4(0, 4, 8, 12),
+        math.vec4(1, 5, 9, 13),
+        math.vec4(2, 6, 10, 14),
+        math.vec4(3, 7, 11, 15),
+    )).eql(m.transpose());
 }
 
 // TODO(math): the tests below violate our styleguide (https://machengine.org/about/style/) we
