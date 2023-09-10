@@ -41,6 +41,11 @@ pub const components = struct {
 
     /// The size of the sprite, in pixels.
     pub const size = Vec2;
+
+    /// The ID of the pipeline this sprite belongs to. By default, zero.
+    ///
+    /// This determines which shader, textures, etc. are used for rendering the sprite.
+    pub const pipeline = u8;
 };
 
 const Uniforms = extern struct {
@@ -181,6 +186,49 @@ pub fn deinit(sprite2d: *mach.Mod(.engine_sprite2d)) !void {
     sprite2d.state.sprite_sizes.release();
 }
 
+pub fn engineSprite2dUpdated(
+    engine: *mach.Mod(.engine),
+    sprite2d: *mach.Mod(.engine_sprite2d),
+    pipeline: u32,
+) !void {
+    _ = pipeline;
+    const device = engine.state.device;
+
+    // TODO: make sure these entities only belong to the given pipeline
+    // we need a better tagging mechanism
+    var archetypes_iter = engine.entities.query(.{ .all = &.{
+        .{ .engine_sprite2d = &.{
+            .uv_transform,
+            .transform,
+            .size,
+            .pipeline,
+        } },
+    } });
+
+    const encoder = device.createCommandEncoder(null);
+    var transforms_offset: usize = 0;
+    var uv_transforms_offset: usize = 0;
+    var sizes_offset: usize = 0;
+    while (archetypes_iter.next()) |archetype| {
+        var transforms = archetype.slice(.engine_sprite2d, .transform);
+        var uv_transforms = archetype.slice(.engine_sprite2d, .uv_transform);
+        var sizes = archetype.slice(.engine_sprite2d, .size);
+
+        encoder.writeBuffer(sprite2d.state.sprite_transforms, transforms_offset, transforms);
+        encoder.writeBuffer(sprite2d.state.sprite_uv_transforms, uv_transforms_offset, uv_transforms);
+        encoder.writeBuffer(sprite2d.state.sprite_sizes, sizes_offset, sizes);
+
+        transforms_offset += transforms.len;
+        uv_transforms_offset += uv_transforms.len;
+        sizes_offset += sizes.len;
+    }
+
+    var command = encoder.finish(null);
+    encoder.release();
+    sprite2d.state.queue.submit(&[_]*gpu.CommandBuffer{command});
+    command.release();
+}
+
 pub fn tick(
     engine: *mach.Mod(.engine),
     sprite2d: *mach.Mod(.engine_sprite2d),
@@ -216,37 +264,18 @@ pub fn tick(
     };
     encoder.writeBuffer(sprite2d.state.uniform_buffer, 0, &[_]Uniforms{uniforms});
 
-    // Synchronize entity data into our GPU sprite buffer
+    // Calculate number of vertices
+    // TODO: eliminate this
+    var total_vertices: u32 = 0;
     var archetypes_iter = engine.entities.query(.{ .all = &.{
         .{ .engine_sprite2d = &.{
-            .uv_transform,
-            .transform,
-            .size,
+            .pipeline,
         } },
     } });
-
-    // TODO: eliminate these
-    var sprite_transforms = try std.ArrayListUnmanaged(Mat4x4).initCapacity(engine.allocator, 1000);
-    defer sprite_transforms.deinit(engine.allocator);
-    var sprite_uv_transforms = try std.ArrayListUnmanaged(Mat3x3).initCapacity(engine.allocator, 1000);
-    defer sprite_uv_transforms.deinit(engine.allocator);
-    var sprite_sizes = try std.ArrayListUnmanaged(Vec2).initCapacity(engine.allocator, 1000);
-    defer sprite_sizes.deinit(engine.allocator);
     while (archetypes_iter.next()) |archetype| {
-        var transforms = archetype.slice(.engine_sprite2d, .transform);
-        var uv_transforms = archetype.slice(.engine_sprite2d, .uv_transform);
-        var sizes = archetype.slice(.engine_sprite2d, .size);
-        for (transforms, uv_transforms, sizes) |transform, uv_transform, size| {
-            try sprite_transforms.append(engine.allocator, transform);
-            try sprite_uv_transforms.append(engine.allocator, uv_transform);
-            try sprite_sizes.append(engine.allocator, size);
-        }
-    }
-    const total_vertices = @as(u32, @intCast(sprite_sizes.items.len * 6));
-    if (sprite_transforms.items.len > 0) {
-        encoder.writeBuffer(sprite2d.state.sprite_transforms, 0, sprite_transforms.items);
-        encoder.writeBuffer(sprite2d.state.sprite_uv_transforms, 0, sprite_uv_transforms.items);
-        encoder.writeBuffer(sprite2d.state.sprite_sizes, 0, sprite_sizes.items);
+        total_vertices += 6;
+        var pipelines = archetype.slice(.engine_sprite2d, .pipeline);
+        for (pipelines) |_| total_vertices += 6;
     }
 
     // Draw the sprite batch
