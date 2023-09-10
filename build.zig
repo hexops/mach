@@ -66,6 +66,14 @@ pub fn build(b: *std.Build) !void {
 
         const editor_run_step = b.step("run", "Run the editor");
         editor_run_step.dependOn(&editor.run.step);
+
+        const install_docs = b.addInstallDirectory(.{
+            .source_dir = editor.compile.getEmittedDocs(),
+            .install_dir = .prefix, // default build output prefix, ./zig-out
+            .install_subdir = "docs",
+        });
+        const docs_step = b.step("docs", "Generate API docs");
+        docs_step.dependOn(&install_docs.step);
     }
 }
 
