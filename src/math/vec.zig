@@ -24,10 +24,10 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 pub inline fn init(xs: Scalar, ys: Scalar) VecN {
                     return .{ .v = .{ xs, ys } };
                 }
-                pub inline fn x(v: VecN) Scalar {
+                pub inline fn x(v: *const VecN) Scalar {
                     return v.v[0];
                 }
-                pub inline fn y(v: VecN) Scalar {
+                pub inline fn y(v: *const VecN) Scalar {
                     return v.v[1];
                 }
             },
@@ -35,27 +35,27 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar) VecN {
                     return .{ .v = .{ xs, ys, zs } };
                 }
-                pub inline fn x(v: VecN) Scalar {
+                pub inline fn x(v: *const VecN) Scalar {
                     return v.v[0];
                 }
-                pub inline fn y(v: VecN) Scalar {
+                pub inline fn y(v: *const VecN) Scalar {
                     return v.v[1];
                 }
-                pub inline fn z(v: VecN) Scalar {
+                pub inline fn z(v: *const VecN) Scalar {
                     return v.v[2];
                 }
 
                 // TODO(math): come up with a better strategy for swizzling?
-                pub inline fn yzw(v: VecN) VecN {
+                pub inline fn yzw(v: *const VecN) VecN {
                     return VecN.init(v.y(), v.z(), v.w());
                 }
-                pub inline fn zxy(v: VecN) VecN {
+                pub inline fn zxy(v: *const VecN) VecN {
                     return VecN.init(v.z(), v.x(), v.y());
                 }
 
                 /// Calculates the cross product between vector a and b. This can be done only in 3D
                 /// and required inputs are Vec3.
-                pub inline fn cross(a: VecN, b: VecN) VecN {
+                pub inline fn cross(a: *const VecN, b: *const VecN) VecN {
                     // https://gamemath.com/book/vectors.html#cross_product
                     const s1 = a.yzx().mul(b.zxy());
                     const s2 = a.zxy().mul(b.yzx());
@@ -66,16 +66,16 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar, ws: Scalar) VecN {
                     return .{ .v = .{ xs, ys, zs, ws } };
                 }
-                pub inline fn x(v: VecN) Scalar {
+                pub inline fn x(v: *const VecN) Scalar {
                     return v.v[0];
                 }
-                pub inline fn y(v: VecN) Scalar {
+                pub inline fn y(v: *const VecN) Scalar {
                     return v.v[1];
                 }
-                pub inline fn z(v: VecN) Scalar {
+                pub inline fn z(v: *const VecN) Scalar {
                     return v.v[2];
                 }
-                pub inline fn w(v: VecN) Scalar {
+                pub inline fn w(v: *const VecN) Scalar {
                     return v.v[3];
                 }
             },
@@ -83,66 +83,66 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
         };
 
         /// Element-wise addition
-        pub inline fn add(a: VecN, b: VecN) VecN {
+        pub inline fn add(a: *const VecN, b: *const VecN) VecN {
             return .{ .v = a.v + b.v };
         }
 
         /// Element-wise subtraction
-        pub inline fn sub(a: VecN, b: VecN) VecN {
+        pub inline fn sub(a: *const VecN, b: *const VecN) VecN {
             return .{ .v = a.v - b.v };
         }
 
         /// Element-wise division
-        pub inline fn div(a: VecN, b: VecN) VecN {
+        pub inline fn div(a: *const VecN, b: *const VecN) VecN {
             return .{ .v = a.v / b.v };
         }
 
         /// Element-wise multiplication.
         ///
         /// See also .cross()
-        pub inline fn mul(a: VecN, b: VecN) VecN {
+        pub inline fn mul(a: *const VecN, b: *const VecN) VecN {
             return .{ .v = a.v * b.v };
         }
 
         /// Scalar addition
-        pub inline fn addScalar(a: VecN, s: Scalar) VecN {
+        pub inline fn addScalar(a: *const VecN, s: Scalar) VecN {
             return .{ .v = a.v + VecN.splat(s).v };
         }
 
         /// Scalar subtraction
-        pub inline fn subScalar(a: VecN, s: Scalar) VecN {
+        pub inline fn subScalar(a: *const VecN, s: Scalar) VecN {
             return .{ .v = a.v - VecN.splat(s).v };
         }
 
         /// Scalar division
-        pub inline fn divScalar(a: VecN, s: Scalar) VecN {
+        pub inline fn divScalar(a: *const VecN, s: Scalar) VecN {
             return .{ .v = a.v / VecN.splat(s).v };
         }
 
         /// Scalar multiplication.
         ///
         /// See .dot() for the dot product
-        pub inline fn mulScalar(a: VecN, s: Scalar) VecN {
+        pub inline fn mulScalar(a: *const VecN, s: Scalar) VecN {
             return .{ .v = a.v * VecN.splat(s).v };
         }
 
         /// Element-wise a < b
-        pub inline fn less(a: VecN, b: Scalar) bool {
+        pub inline fn less(a: *const VecN, b: Scalar) bool {
             return a.v < b.v;
         }
 
         /// Element-wise a <= b
-        pub inline fn lessEq(a: VecN, b: Scalar) bool {
+        pub inline fn lessEq(a: *const VecN, b: Scalar) bool {
             return a.v <= b.v;
         }
 
         /// Element-wise a > b
-        pub inline fn greater(a: VecN, b: Scalar) bool {
+        pub inline fn greater(a: *const VecN, b: Scalar) bool {
             return a.v > b.v;
         }
 
         /// Element-wise a >= b
-        pub inline fn greaterEq(a: VecN, b: Scalar) bool {
+        pub inline fn greaterEq(a: *const VecN, b: Scalar) bool {
             return a.v >= b.v;
         }
 
@@ -157,7 +157,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
         }
 
         /// Computes the squared length of the vector. Faster than `len()`
-        pub inline fn len2(v: VecN) Scalar {
+        pub inline fn len2(v: *const VecN) Scalar {
             return switch (VecN.n) {
                 inline 2 => (v.x() * v.x()) + (v.y() * v.y()),
                 inline 3 => (v.x() * v.x()) + (v.y() * v.y()) + (v.z() * v.z()),
@@ -167,7 +167,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
         }
 
         /// Computes the length of the vector.
-        pub inline fn len(v: VecN) Scalar {
+        pub inline fn len(v: *const VecN) Scalar {
             return math.sqrt(len2(v));
         }
 
@@ -179,8 +179,8 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
         /// ```
         /// math.vec3(1.0, 2.0, 3.0).normalize(v, 0.00000001);
         /// ```
-        pub inline fn normalize(v: VecN, d0: Scalar) VecN {
-            return v.div(VecN.splat(v.len() + d0));
+        pub inline fn normalize(v: *const VecN, d0: Scalar) VecN {
+            return v.div(&VecN.splat(v.len() + d0));
         }
 
         /// Returns the normalized direction vector from points a and b.
@@ -191,17 +191,17 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
         /// ```
         /// var v = a_point.dir(b_point, 0.0000001);
         /// ```
-        pub inline fn dir(a: VecN, b: VecN, d0: Scalar) VecN {
+        pub inline fn dir(a: *const VecN, b: *const VecN, d0: Scalar) VecN {
             return b.sub(a).normalize(d0);
         }
 
         /// Calculates the squared distance between points a and b. Faster than `dist()`.
-        pub inline fn dist2(a: VecN, b: VecN) Scalar {
+        pub inline fn dist2(a: *const VecN, b: *const VecN) Scalar {
             return b.sub(a).len2();
         }
 
         /// Calculates the distance between points a and b.
-        pub inline fn dist(a: VecN, b: VecN) Scalar {
+        pub inline fn dist(a: *const VecN, b: *const VecN) Scalar {
             return math.sqrt(a.dist2(b));
         }
 
@@ -211,12 +211,12 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
         /// a.lerp(b, 0.0) == a
         /// a.lerp(b, 1.0) == b
         /// ```
-        pub inline fn lerp(a: VecN, b: VecN, amount: Scalar) VecN {
+        pub inline fn lerp(a: *const VecN, b: *const VecN, amount: Scalar) VecN {
             return a.mulScalar(1.0 - amount).add(b.mulScalar(amount));
         }
 
         /// Calculates the dot product between vector a and b and returns scalar.
-        pub inline fn dot(a: VecN, b: VecN) Scalar {
+        pub inline fn dot(a: *const VecN, b: *const VecN) Scalar {
             return .{ .v = @reduce(.Add, a.v * b.v) };
         }
     };
@@ -304,14 +304,14 @@ test "normalize_no_nan" {
 
 // TODO(math): add basic tests for these:
 //
-// pub inline fn add(a: VecN, b: VecN) VecN {
-// pub inline fn sub(a: VecN, b: VecN) VecN {
-// pub inline fn div(a: VecN, b: VecN) VecN {
-// pub inline fn mul(a: VecN, b: VecN) VecN {
-// pub inline fn addScalar(a: VecN, s: Scalar) VecN {
-// pub inline fn subScalar(a: VecN, s: Scalar) VecN {
-// pub inline fn divScalar(a: VecN, s: Scalar) VecN {
-// pub inline fn mulScalar(a: VecN, s: Scalar) VecN {
+// pub inline fn add(a: *const VecN, b: *const VecN) VecN {
+// pub inline fn sub(a: *const VecN, b: *const VecN) VecN {
+// pub inline fn div(a: *const VecN, b: *const VecN) VecN {
+// pub inline fn mul(a: *const VecN, b: *const VecN) VecN {
+// pub inline fn addScalar(a: *const VecN, s: Scalar) VecN {
+// pub inline fn subScalar(a: *const VecN, s: Scalar) VecN {
+// pub inline fn divScalar(a: *const VecN, s: Scalar) VecN {
+// pub inline fn mulScalar(a: *const VecN, s: Scalar) VecN {
 
 // TODO(math): the tests below violate our styleguide (https://machengine.org/about/style/) we
 // should write new tests loosely based on them:

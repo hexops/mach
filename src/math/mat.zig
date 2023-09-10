@@ -49,15 +49,15 @@ pub fn Mat(
         /// Identity matrix
         pub const ident = switch (Matrix) {
             inline math.Mat3x3, math.Mat3x3h, math.Mat3x3d => Matrix.init(
-                RowVec.init(1, 0, 0),
-                RowVec.init(0, 1, 0),
-                RowVec.init(0, 0, 1),
+                &RowVec.init(1, 0, 0),
+                &RowVec.init(0, 1, 0),
+                &RowVec.init(0, 0, 1),
             ),
             inline math.Mat4x4, math.Mat4x4h, math.Mat4x4d => Matrix.init(
-                Vec.init(1, 0, 0, 0),
-                Vec.init(0, 1, 0, 0),
-                Vec.init(0, 0, 1, 0),
-                Vec.init(0, 0, 0, 1),
+                &Vec.init(1, 0, 0, 0),
+                &Vec.init(0, 1, 0, 0),
+                &Vec.init(0, 0, 1, 0),
+                &Vec.init(0, 0, 0, 1),
             ),
             else => @compileError("Expected Mat3x3, Mat4x4 found '" ++ @typeName(Matrix) ++ "'"),
         };
@@ -84,7 +84,7 @@ pub fn Mat(
                 /// ```
                 ///
                 /// Note that Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
-                pub inline fn init(r0: RowVec, r1: RowVec, r2: RowVec) Matrix {
+                pub inline fn init(r0: *const RowVec, r1: *const RowVec, r2: *const RowVec) Matrix {
                     return .{ .v = [_]Vec{
                         Vec.init(r0.x(), r1.x(), r2.x(), 1),
                         Vec.init(r0.y(), r1.y(), r2.y(), 1),
@@ -93,17 +93,21 @@ pub fn Mat(
                 }
 
                 /// Returns the row `i` of the matrix.
-                pub inline fn row(m: Matrix, i: usize) RowVec {
-                    return RowVec.init(m.v[0].v[i], m.v[1].v[i], m.v[2].v[i]);
+                pub inline fn row(m: *const Matrix, i: usize) RowVec {
+                    // Note: we inline RowVec.init manually here as it is faster in debug builds.
+                    // return RowVec.init(m.v[0].v[i], m.v[1].v[i], m.v[2].v[i]);
+                    return .{ .v = .{ m.v[0].v[i], m.v[1].v[i], m.v[2].v[i] } };
                 }
 
                 /// Returns the column `i` of the matrix.
-                pub inline fn col(m: Matrix, i: usize) RowVec {
-                    return RowVec.init(m.v[i].v[0], m.v[i].v[1], m.v[i].v[2]);
+                pub inline fn col(m: *const Matrix, i: usize) RowVec {
+                    // Note: we inline RowVec.init manually here as it is faster in debug builds.
+                    // return RowVec.init(m.v[i].v[0], m.v[i].v[1], m.v[i].v[2]);
+                    return .{ .v = .{ m.v[i].v[0], m.v[i].v[1], m.v[i].v[2] } };
                 }
 
                 /// Transposes the matrix.
-                pub inline fn transpose(m: Matrix) Matrix {
+                pub inline fn transpose(m: *const Matrix) Matrix {
                     return .{ .v = [_]Vec{
                         Vec.init(m.v[0].v[0], m.v[1].v[0], m.v[2].v[0], 1),
                         Vec.init(m.v[0].v[1], m.v[1].v[1], m.v[2].v[1], 1),
@@ -115,9 +119,9 @@ pub fn Mat(
                 // TODO: needs tests
                 pub inline fn scale(s: math.Vec2) Matrix {
                     return init(
-                        RowVec.init(s.x(), 0, 0),
-                        RowVec.init(0, s.y(), 0),
-                        RowVec.init(0, 0, 1),
+                        &RowVec.init(s.x(), 0, 0),
+                        &RowVec.init(0, s.y(), 0),
+                        &RowVec.init(0, 0, 1),
                     );
                 }
 
@@ -131,9 +135,9 @@ pub fn Mat(
                 // TODO: needs tests
                 pub inline fn translate(t: math.Vec2) Matrix {
                     return init(
-                        RowVec.init(1, 0, t.x()),
-                        RowVec.init(0, 1, t.y()),
-                        RowVec.init(0, 0, 1),
+                        &RowVec.init(1, 0, t.x()),
+                        &RowVec.init(0, 1, t.y()),
+                        &RowVec.init(0, 0, 1),
                     );
                 }
 
@@ -164,15 +168,15 @@ pub fn Mat(
                 ///
                 /// ```
                 /// const m = Mat4x4.init(
-                ///     vec4(1, 0, 0, tx),
-                ///     vec4(0, 1, 0, ty),
-                ///     vec4(0, 0, 1, tz),
-                ///     vec4(0, 0, 0, tw),
+                ///     &vec4(1, 0, 0, tx),
+                ///     &vec4(0, 1, 0, ty),
+                ///     &vec4(0, 0, 1, tz),
+                ///     &vec4(0, 0, 0, tw),
                 /// );
                 /// ```
                 ///
                 /// Note that Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
-                pub inline fn init(r0: RowVec, r1: RowVec, r2: RowVec, r3: RowVec) Matrix {
+                pub inline fn init(r0: *const RowVec, r1: *const RowVec, r2: *const RowVec, r3: *const RowVec) Matrix {
                     return .{ .v = [_]Vec{
                         Vec.init(r0.x(), r1.x(), r2.x(), r3.x()),
                         Vec.init(r0.y(), r1.y(), r2.y(), r3.y()),
@@ -182,17 +186,17 @@ pub fn Mat(
                 }
 
                 /// Returns the row `i` of the matrix.
-                pub inline fn row(m: Matrix, i: usize) RowVec {
-                    return RowVec.init(m.v[0].v[i], m.v[1].v[i], m.v[2].v[i], m.v[3].v[i]);
+                pub inline fn row(m: *const Matrix, i: usize) RowVec {
+                    return RowVec{ .v = RowVec.Vector{ m.v[0].v[i], m.v[1].v[i], m.v[2].v[i], m.v[3].v[i] } };
                 }
 
                 /// Returns the column `i` of the matrix.
-                pub inline fn col(m: Matrix, i: usize) RowVec {
-                    return RowVec.init(m.v[i].v[0], m.v[i].v[1], m.v[i].v[2], m.v[i].v[3]);
+                pub inline fn col(m: *const Matrix, i: usize) RowVec {
+                    return RowVec{ .v = RowVec.Vector{ m.v[i].v[0], m.v[i].v[1], m.v[i].v[2], m.v[i].v[3] } };
                 }
 
                 /// Transposes the matrix.
-                pub inline fn transpose(m: Matrix) Matrix {
+                pub inline fn transpose(m: *const Matrix) Matrix {
                     return .{ .v = [_]Vec{
                         Vec.init(m.v[0].v[0], m.v[1].v[0], m.v[2].v[0], m.v[3].v[0]),
                         Vec.init(m.v[0].v[1], m.v[1].v[1], m.v[2].v[1], m.v[3].v[1]),
@@ -205,10 +209,10 @@ pub fn Mat(
                 // TODO: needs tests
                 pub inline fn scale(s: math.Vec3) Matrix {
                     return init(
-                        Vec.init(s.x(), 0, 0, 0),
-                        Vec.init(0, s.y(), 0, 0),
-                        Vec.init(0, 0, s.z(), 0),
-                        Vec.init(0, 0, 0, 1),
+                        &RowVec.init(s.x(), 0, 0, 0),
+                        &RowVec.init(0, s.y(), 0, 0),
+                        &RowVec.init(0, 0, s.z(), 0),
+                        &RowVec.init(0, 0, 0, 1),
                     );
                 }
 
@@ -222,10 +226,10 @@ pub fn Mat(
                 // TODO: needs tests
                 pub inline fn translate(t: math.Vec3) Matrix {
                     return init(
-                        RowVec.init(1, 0, 0, t.x()),
-                        RowVec.init(0, 1, 0, t.y()),
-                        RowVec.init(0, 0, 1, t.z()),
-                        RowVec.init(0, 0, 0, 1),
+                        &RowVec.init(1, 0, 0, t.x()),
+                        &RowVec.init(0, 1, 0, t.y()),
+                        &RowVec.init(0, 0, 1, t.z()),
+                        &RowVec.init(0, 0, 0, 1),
                     );
                 }
 
@@ -237,7 +241,7 @@ pub fn Mat(
 
                 /// Returns the translation component of the matrix.
                 // TODO: needs tests
-                pub inline fn translation(t: Matrix) math.Vec3 {
+                pub inline fn translation(t: *const Matrix) math.Vec3 {
                     return math.Vec3.init(t.v[3].x(), t.v[3].y(), t.v[3].z());
                 }
 
@@ -246,10 +250,10 @@ pub fn Mat(
                     const c = std.math.cos(angle_radians);
                     const s = std.math.sin(angle_radians);
                     return Matrix.init(
-                        RowVec.init(1, 0, 0, 0),
-                        RowVec.init(0, c, -s, 0),
-                        RowVec.init(0, s, c, 0),
-                        RowVec.init(0, 0, 0, 1),
+                        &RowVec.init(1, 0, 0, 0),
+                        &RowVec.init(0, c, -s, 0),
+                        &RowVec.init(0, s, c, 0),
+                        &RowVec.init(0, 0, 0, 1),
                     );
                 }
 
@@ -258,10 +262,10 @@ pub fn Mat(
                     const c = std.math.cos(angle_radians);
                     const s = std.math.sin(angle_radians);
                     return Matrix.init(
-                        RowVec.init(c, 0, s, 0),
-                        RowVec.init(0, 1, 0, 0),
-                        RowVec.init(-s, 0, c, 0),
-                        RowVec.init(0, 0, 0, 1),
+                        &RowVec.init(c, 0, s, 0),
+                        &RowVec.init(0, 1, 0, 0),
+                        &RowVec.init(-s, 0, c, 0),
+                        &RowVec.init(0, 0, 0, 1),
                     );
                 }
 
@@ -270,10 +274,10 @@ pub fn Mat(
                     const c = std.math.cos(angle_radians);
                     const s = std.math.sin(angle_radians);
                     return Matrix.init(
-                        RowVec.init(c, -s, 0, 0),
-                        RowVec.init(s, c, 0, 0),
-                        RowVec.init(0, 0, 1, 0),
-                        RowVec.init(0, 0, 0, 1),
+                        &RowVec.init(c, -s, 0, 0),
+                        &RowVec.init(s, c, 0, 0),
+                        &RowVec.init(0, 0, 1, 0),
+                        &RowVec.init(0, 0, 0, 1),
                     );
                 }
 
@@ -303,10 +307,10 @@ pub fn Mat(
                     const ty = (top + bottom) / (bottom - top);
                     const tz = near / (near - far);
                     return init(
-                        RowVec.init(xx, 0, 0, tx),
-                        RowVec.init(0, yy, 0, ty),
-                        RowVec.init(0, 0, zz, tz),
-                        RowVec.init(0, 0, 0, 1),
+                        &RowVec.init(xx, 0, 0, tx),
+                        &RowVec.init(0, yy, 0, ty),
+                        &RowVec.init(0, 0, zz, tz),
+                        &RowVec.init(0, 0, 0, 1),
                     );
                 }
             },
@@ -315,13 +319,18 @@ pub fn Mat(
 
         /// Matrix multiplication a*b
         // TODO: needs tests
-        pub fn mul(a: Matrix, b: Matrix) Matrix {
+        pub inline fn mul(a: *const Matrix, b: *const Matrix) Matrix {
+            @setEvalBranchQuota(10000);
             var result: Matrix = undefined;
             inline for (0..Matrix.rows) |row| {
                 inline for (0..Matrix.cols) |col| {
                     var sum: RowVec.T = 0.0;
                     inline for (0..RowVec.n) |i| {
-                        sum += a.row(row).mul(b.col(col)).v[i];
+                        // Note: we directly access rows/columns below as it is much faster **in
+                        // debug builds**, instead of using these helpers:
+                        //
+                        // sum += a.row(row).mul(&b.col(col)).v[i];
+                        sum += a.v[i].v[row] * b.v[col].v[i];
                     }
                     result.v[col].v[row] = sum;
                 }
@@ -401,9 +410,9 @@ test "n" {
 
 test "init" {
     try testing.expect(math.Mat3x3, math.mat3x3(
-        math.vec3(1, 0, 1337),
-        math.vec3(0, 1, 7331),
-        math.vec3(0, 0, 1),
+        &math.vec3(1, 0, 1337),
+        &math.vec3(0, 1, 7331),
+        &math.vec3(0, 0, 1),
     )).eql(math.Mat3x3{
         .v = [_]math.Vec4{
             math.Vec4.init(1, 0, 0, 1),
@@ -436,9 +445,9 @@ test "mat4x4_ident" {
 
 test "Mat3x3_row" {
     const m = math.Mat3x3.init(
-        math.vec3(0, 1, 2),
-        math.vec3(3, 4, 5),
-        math.vec3(6, 7, 8),
+        &math.vec3(0, 1, 2),
+        &math.vec3(3, 4, 5),
+        &math.vec3(6, 7, 8),
     );
     try testing.expect(math.Vec3, math.vec3(0, 1, 2)).eql(m.row(0));
     try testing.expect(math.Vec3, math.vec3(3, 4, 5)).eql(m.row(1));
@@ -447,9 +456,9 @@ test "Mat3x3_row" {
 
 test "Mat3x3_col" {
     const m = math.Mat3x3.init(
-        math.vec3(0, 1, 2),
-        math.vec3(3, 4, 5),
-        math.vec3(6, 7, 8),
+        &math.vec3(0, 1, 2),
+        &math.vec3(3, 4, 5),
+        &math.vec3(6, 7, 8),
     );
     try testing.expect(math.Vec3, math.vec3(0, 3, 6)).eql(m.col(0));
     try testing.expect(math.Vec3, math.vec3(1, 4, 7)).eql(m.col(1));
@@ -458,10 +467,10 @@ test "Mat3x3_col" {
 
 test "Mat4x4_row" {
     const m = math.Mat4x4.init(
-        math.vec4(0, 1, 2, 3),
-        math.vec4(4, 5, 6, 7),
-        math.vec4(8, 9, 10, 11),
-        math.vec4(12, 13, 14, 15),
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
     );
     try testing.expect(math.Vec4, math.vec4(0, 1, 2, 3)).eql(m.row(0));
     try testing.expect(math.Vec4, math.vec4(4, 5, 6, 7)).eql(m.row(1));
@@ -471,10 +480,10 @@ test "Mat4x4_row" {
 
 test "Mat4x4_col" {
     const m = math.Mat4x4.init(
-        math.vec4(0, 1, 2, 3),
-        math.vec4(4, 5, 6, 7),
-        math.vec4(8, 9, 10, 11),
-        math.vec4(12, 13, 14, 15),
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
     );
     try testing.expect(math.Vec4, math.vec4(0, 4, 8, 12)).eql(m.col(0));
     try testing.expect(math.Vec4, math.vec4(1, 5, 9, 13)).eql(m.col(1));
@@ -484,29 +493,29 @@ test "Mat4x4_col" {
 
 test "Mat3x3_transpose" {
     const m = math.Mat3x3.init(
-        math.vec3(0, 1, 2),
-        math.vec3(3, 4, 5),
-        math.vec3(6, 7, 8),
+        &math.vec3(0, 1, 2),
+        &math.vec3(3, 4, 5),
+        &math.vec3(6, 7, 8),
     );
     try testing.expect(math.Mat3x3, math.Mat3x3.init(
-        math.vec3(0, 3, 6),
-        math.vec3(1, 4, 7),
-        math.vec3(2, 5, 8),
+        &math.vec3(0, 3, 6),
+        &math.vec3(1, 4, 7),
+        &math.vec3(2, 5, 8),
     )).eql(m.transpose());
 }
 
 test "Mat4x4_transpose" {
     const m = math.Mat4x4.init(
-        math.vec4(0, 1, 2, 3),
-        math.vec4(4, 5, 6, 7),
-        math.vec4(8, 9, 10, 11),
-        math.vec4(12, 13, 14, 15),
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
     );
     try testing.expect(math.Mat4x4, math.Mat4x4.init(
-        math.vec4(0, 4, 8, 12),
-        math.vec4(1, 5, 9, 13),
-        math.vec4(2, 6, 10, 14),
-        math.vec4(3, 7, 11, 15),
+        &math.vec4(0, 4, 8, 12),
+        &math.vec4(1, 5, 9, 13),
+        &math.vec4(2, 6, 10, 14),
+        &math.vec4(3, 7, 11, 15),
     )).eql(m.transpose());
 }
 
