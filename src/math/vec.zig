@@ -212,7 +212,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
         /// a.lerp(b, 1.0) == b
         /// ```
         pub inline fn lerp(a: *const VecN, b: *const VecN, amount: Scalar) VecN {
-            return a.mulScalar(1.0 - amount).add(b.mulScalar(amount));
+            return a.mulScalar(1.0 - amount).add(&b.mulScalar(amount));
         }
 
         /// Calculates the dot product between vector a and b and returns scalar.
