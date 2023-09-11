@@ -31,7 +31,7 @@ struct Uniforms {
 @group(0) @binding(3) var<storage, read> sprite_sizes: array<vec2<f32>>;
 
 @vertex
-fn vertex_main(
+fn vertMain(
   @builtin(vertex_index) VertexIndex : u32
 ) -> VertexOutput {
   // Our vertex shader will be called six times per sprite (2 triangles make up a sprite, so six
@@ -91,7 +91,7 @@ fn vertex_main(
 @group(0) @binding(5) var spriteTexture: texture_2d<f32>;
 
 @fragment
-fn frag_main(
+fn fragMain(
   @location(0) fragUV: vec2<f32>
 ) -> @location(0) vec4<f32> {
   var c = textureSample(spriteTexture, spriteSampler, fragUV);
