@@ -65,6 +65,20 @@ const Pipeline = struct {
     uv_transforms: *gpu.Buffer,
     sizes: *gpu.Buffer,
 
+    pub fn reference(p: *Pipeline) void {
+        p.render.reference();
+        p.texture_sampler.reference();
+        p.texture.reference();
+        if (p.texture2) |tex| tex.reference();
+        if (p.texture3) |tex| tex.reference();
+        if (p.texture4) |tex| tex.reference();
+        p.bind_group.reference();
+        p.uniforms.reference();
+        p.transforms.reference();
+        p.uv_transforms.reference();
+        p.sizes.reference();
+    }
+
     pub fn deinit(p: *Pipeline) void {
         p.render.release();
         p.texture_sampler.release();
@@ -128,7 +142,7 @@ pub fn engineSprite2dInitPipeline(
     }
 
     // Storage buffers
-    const sprite_buffer_cap = 1024 * 256; // TODO: allow user to specify preallocation
+    const sprite_buffer_cap = 1024 * 512; // TODO: allow user to specify preallocation
     const transforms = device.createBuffer(&.{
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(Mat4x4) * sprite_buffer_cap,
@@ -252,6 +266,7 @@ pub fn engineSprite2dInitPipeline(
         .uv_transforms = uv_transforms,
         .sizes = sizes,
     };
+    pipeline.value_ptr.reference();
 }
 
 pub fn deinit(sprite2d: *mach.Mod(.engine_sprite2d)) !void {
