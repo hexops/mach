@@ -303,6 +303,35 @@ pub fn Mat(
                         &RowVec.init(0, 0, 0, 1),
                     );
                 }
+
+                /// Constructs a perspective projection matrix; a perspective transformation matrix
+                /// which transforms from eye space to clip space.
+                ///
+                /// The field of view angle `fovy` is the vertical angle in radians.
+                /// The `aspect` ratio is the ratio of the width to the height of the viewport.
+                /// The `near` and `far` parameters denote the depth (z coordinate) of the near and far clipping planes.
+                ///
+                /// Returns a perspective projection matrix.
+                pub inline fn perspective(
+                    /// The field of view angle in the y direction, in radians.
+                    fovy: f32,
+                    /// The aspect ratio of the viewport's width to its height.
+                    aspect: f32,
+                    /// The depth (z coordinate) of the near clipping plane.
+                    near: f32,
+                    /// The depth (z coordinate) of the far clipping plane.
+                    far: f32,
+                ) Matrix {
+                    const f = 1.0 / std.math.tan(fovy / 2.0);
+                    const zz = (near + far) / (near - far);
+                    const zw = (2.0 * near * far) / (near - far);
+                    return init(
+                        &RowVec.init(f / aspect, 0, 0, 0),
+                        &RowVec.init(0, f, 0, 0),
+                        &RowVec.init(0, 0, zz, -1),
+                        &RowVec.init(0, 0, zw, 0),
+                    );
+                }
             },
             else => @compileError("Expected Mat3x3, Mat4x4 found '" ++ @typeName(Matrix) ++ "'"),
         };
@@ -595,28 +624,15 @@ test "Mat4x4_translation" {
     try testing.expect(math.Vec3, math.vec3(2, 3, 4)).eql(m.translation());
 }
 
-// TODO(math): the tests below violate our styleguide (https://machengine.org/about/style/) we
-// should write new tests loosely based on them:
+test "Mat4x4_perspective" {
+    const fov_radians = std.math.pi / 2.0; // Field of view in radians
+    const aspect_ratio = 16.0 / 9.0; // Aspect ratio
+    const near = 0.1; // Near clipping plane
+    const far = 100.0; // Far clipping plane
 
-// test "mat.ortho" {
-//     const ortho_mat = mat.ortho(-2, 2, -2, 3, 10, 110);
+    const m = math.Mat4x4.perspective(fov_radians, aspect_ratio, near, far);
 
-//     // Computed Values
-//     try expectEqual(ortho_mat[0][0], 0.5);
-//     try expectEqual(ortho_mat[1][1], 0.4);
-//     try expectEqual(ortho_mat[2][2], -0.01);
-//     try expectEqual(ortho_mat[3][0], 0);
-//     try expectEqual(ortho_mat[3][1], -0.2);
-//     try expectEqual(ortho_mat[3][2], -0.1);
+    const expected = math.Mat4x4.init(&math.vec4(1.0 / (aspect_ratio * std.math.tan(fov_radians / 2.0)), 0.0, 0.0, 0.0), &math.vec4(0.0, 1.0 / std.math.tan(fov_radians / 2.0), 0.0, 0.0), &math.vec4(0.0, 0.0, -(far + near) / (far - near), -1.0), &math.vec4(0.0, 0.0, -(2.0 * far * near) / (far - near), 0.0));
 
-//     // Constant values, which should not change but we still check for completeness
-//     const zero_value_indexes = [_]u8{
-//         1,     2,         3,
-//         4,     4 + 2,     4 + 3,
-//         4 * 2, 4 * 2 + 1, 4 * 2 + 3,
-//     };
-//     for (zero_value_indexes) |index| {
-//         try expectEqual(mat.index(ortho_mat, index), 0);
-//     }
-//     try expectEqual(ortho_mat[3][3], 1);
-// }
+    try testing.expect(math.Mat4x4, expected).eql(m);
+}
