@@ -27,7 +27,7 @@ pub fn Quat(comptime Scalar: type) type {
             const halfAngle = angle * 0.5;
             const s = std.math.sin(halfAngle);
 
-            return init(s * axis[0], s * axis[1], s * axis[2], std.math.cos(halfAngle));
+            return init(s * axis.x(), s * axis.y(), s * axis.z(), std.math.cos(halfAngle));
         }
     };
 }
@@ -46,7 +46,10 @@ test "init" {
 
 test "fromAxisAngle" {
     const expected = math.Quat.init(0.383, 0.0, 0.0, 0.924); // Expected values for a 45-degree rotation around the x-axis
-    const actual = math.Quat.fromAxisAngle(math.Axis{ .x = 1.0 }, 0.785398); // 45 degrees in radians (π/4) around the x-axis
+    const actual = math.Quat.fromAxisAngle(math.vec3(1, 0, 0), 0.785398); // 45 degrees in radians (π/4) around the x-axis
 
-    try testing.expect(math.Quat, actual).eql(expected);
+    try testing.expect(f32, actual.v.x()).eqlApprox(expected.v.x(), 0.001);
+    try testing.expect(f32, actual.v.y()).eqlApprox(expected.v.y(), 0.001);
+    try testing.expect(f32, actual.v.z()).eqlApprox(expected.v.z(), 0.001);
+    try testing.expect(f32, actual.v.w()).eqlApprox(expected.v.w(), 0.001);
 }
