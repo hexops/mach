@@ -293,25 +293,17 @@ test "init" {
 
 test "inverse" {
     const q = math.Quat.init(1.0, 2.0, 3.0, 4.0);
-    const expected = math.Quat.init(-0.0333333, -0.0666667, -0.1, 0.1333333);
+    const expected = math.Quat.init(-0.1 / 3.0, -0.1 / 3.0 * 2.0, -0.1, 1.0 / 7.5);
     const actual = q.inverse();
-    std.log.debug("actual: {any}", .{actual});
-    std.log.debug("expected: {any}", .{expected});
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "fromAxisAngle" {
     const expected = math.Quat.identity().rotateX(math.pi / 4.0);
     const actual = math.Quat.fromAxisAngle(math.vec3(1, 0, 0), math.pi / 4.0); // 45 degrees in radians (π/4) around the x-axis
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "angleBetween" {
@@ -327,10 +319,7 @@ test "mul" {
     const expected = math.Quat.identity();
     const actual = math.Quat.mul(&a, &b);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "add" {
@@ -339,10 +328,7 @@ test "add" {
     const expected = math.Quat.init(6.0, 8.0, 10.0, 12.0);
     const actual = math.Quat.add(&a, &b);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "sub" {
@@ -351,10 +337,7 @@ test "sub" {
     const expected = math.Quat.init(-4.0, -4.0, -4.0, -4.0);
     const actual = math.Quat.sub(&a, &b);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "mulScalar" {
@@ -362,10 +345,7 @@ test "mulScalar" {
     const expected = math.Quat.init(2.0, 4.0, 6.0, 8.0);
     const actual = math.Quat.mulScalar(&q, 2.0);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "divScalar" {
@@ -373,40 +353,28 @@ test "divScalar" {
     const expected = math.Quat.init(0.5, 1.0, 1.5, 2.0);
     const actual = math.Quat.divScalar(&q, 2.0);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "rotateX" {
     const expected = math.Quat.fromAxisAngle(math.vec3(1, 0, 0), math.pi / 4.0);
     const actual = math.Quat.identity().rotateX(math.pi / 4.0);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "rotateY" {
     const expected = math.Quat.fromAxisAngle(math.vec3(0, 1, 0), math.pi / 4.0);
     const actual = math.Quat.identity().rotateY(math.pi / 4.0);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "rotateZ" {
     const expected = math.Quat.fromAxisAngle(math.vec3(0, 0, 1), math.pi / 4.0);
     const actual = math.Quat.identity().rotateZ(math.pi / 4.0);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "slerp" {
@@ -415,10 +383,7 @@ test "slerp" {
     const expected = math.Quat.init(3.0, 4.0, 5.0, 6.0);
     const actual = math.Quat.slerp(&a, &b, 0.5);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "conjugate" {
@@ -426,29 +391,22 @@ test "conjugate" {
     const expected = math.Quat.init(-1.0, -2.0, -3.0, 4.0);
     const actual = math.Quat.conjugate(&q);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "fromMat4" {
     const m = math.Mat4x4.rotateX(math.pi / 4.0);
     const q = math.Quat.fromMat(math.Mat4x4, &m);
+    const expected = math.Quat.identity().rotateX(math.pi / 4.0);
 
-    try testing.expect(f32, q.v.x()).eqlApprox(0.383, 0.001);
-    try testing.expect(f32, q.v.y()).eqlApprox(0.0, 0.001);
-    try testing.expect(f32, q.v.z()).eqlApprox(0.0, 0.001);
-    try testing.expect(f32, q.v.w()).eqlApprox(0.924, 0.001);
+    try testing.expect(math.Vec4, expected.v).eql(q.v);
 }
 
 test "fromEuler" {
     const q = math.Quat.fromEuler(math.pi / 4.0, 0.0, 0.0);
+    const expected = math.Quat.identity().rotateX(math.pi / 4.0);
 
-    try testing.expect(f32, q.v.x()).eqlApprox(0.383, 0.001);
-    try testing.expect(f32, q.v.y()).eqlApprox(0.0, 0.001);
-    try testing.expect(f32, q.v.z()).eqlApprox(0.0, 0.001);
-    try testing.expect(f32, q.v.w()).eqlApprox(0.924, 0.001);
+    try testing.expect(math.Vec4, expected.v).eql(q.v);
 }
 
 test "dot" {
@@ -457,7 +415,7 @@ test "dot" {
     const expected = 70.0;
     const actual = math.Quat.dot(&a, &b);
 
-    try testing.expect(f32, actual).eqlApprox(expected, 0.001);
+    try testing.expect(f32, actual).eql(expected);
 }
 
 test "lerp" {
@@ -466,10 +424,7 @@ test "lerp" {
     const expected = math.Quat.init(3.0, 4.0, 5.0, 6.0);
     const actual = math.Quat.lerp(&a, &b, 0.5);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
 
 test "len2" {
@@ -477,7 +432,7 @@ test "len2" {
     const expected = 30.0;
     const actual = math.Quat.len2(&q);
 
-    try testing.expect(f32, actual).eqlApprox(expected, 0.001);
+    try testing.expect(f32, actual).eql(expected);
 }
 
 test "len" {
@@ -485,7 +440,7 @@ test "len" {
     const expected = 5.0;
     const actual = math.Quat.len(&q);
 
-    try testing.expect(f32, actual).eqlApprox(expected, 0.001);
+    try testing.expect(f32, actual).eql(expected);
 }
 
 test "normalize" {
@@ -493,8 +448,5 @@ test "normalize" {
     const expected = math.Quat.init(0.0, 0.0, 0.6, 0.8);
     const actual = math.Quat.normalize(&q);
 
-    try testing.expect(f32, actual.v.x()).eql(expected.v.x());
-    try testing.expect(f32, actual.v.y()).eql(expected.v.y());
-    try testing.expect(f32, actual.v.z()).eql(expected.v.z());
-    try testing.expect(f32, actual.v.w()).eql(expected.v.w());
+    try testing.expect(math.Vec4, expected.v).eql(actual.v);
 }
