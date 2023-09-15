@@ -31,8 +31,7 @@ pub fn Quat(comptime Scalar: type) type {
 
         /// Returns the inverse of the quaternion.
         pub inline fn inverse(q: *const Quat(T)) Quat(T) {
-            const len2 = q.v.len2();
-            const s = 1 / len2;
+            const s = 1 / q.len2();
             return init(-q.v.x() * s, -q.v.y() * s, -q.v.z() * s, q.v.w() * s);
         }
 
@@ -67,6 +66,26 @@ pub fn Quat(comptime Scalar: type) type {
             const w = aw * bw - ax * bx - ay * by - az * bz;
 
             return init(x, y, z, w);
+        }
+
+        /// Adds two quaternions
+        pub inline fn add(a: *const Quat(T), b: *const Quat(T)) Quat(T) {
+            return init(a.v.x() + b.v.x(), a.v.y() + b.v.y(), a.v.z() + b.v.z(), a.v.w() + b.v.w());
+        }
+
+        /// Subtracts two quaternions
+        pub inline fn sub(a: *const Quat(T), b: *const Quat(T)) Quat(T) {
+            return init(a.v.x() - b.v.x(), a.v.y() - b.v.y(), a.v.z() - b.v.z(), a.v.w() - b.v.w());
+        }
+
+        /// Multiplies a Quaternion by a scalar
+        pub inline fn mulScalar(q: *const Quat(T), s: T) Quat(T) {
+            return init(q.v.x() * s, q.v.y() * s, q.v.z() * s, q.v.w() * s);
+        }
+
+        /// Divides a Quaternion by a scalar
+        pub inline fn divScalar(q: *const Quat(T), s: T) Quat(T) {
+            return init(q.v.x() / s, q.v.y() / s, q.v.z() / s, q.v.w() / s);
         }
 
         /// Rotates the give quaternion by the given angle, around the x-axis.
@@ -138,7 +157,7 @@ pub fn Quat(comptime Scalar: type) type {
             var scale0: T = 0.0;
             var scale1: T = 0.0;
 
-            if (1.0 - cosOmega > math.eps_f32) {
+            if (1.0 - cosOmega > math.eps(T)) {
                 const omega = std.math.acos(cosOmega);
                 const sinOmega = std.math.sin(omega);
                 scale0 = std.math.sin((1.0 - t) * omega) / sinOmega;
@@ -211,6 +230,42 @@ pub fn Quat(comptime Scalar: type) type {
 
             return init(sx * cy * cz + cx * sy * sz, cx * sy * cz - sx * cy * sz, cx * cy * sz + sx * sy * cz, cx * cy * cz - sx * sy * sz);
         }
+
+        /// Returns the dot product of two quaternions.
+        pub inline fn dot(a: *const Quat(T), b: *const Quat(T)) T {
+            return a.v.x() * b.v.x() + a.v.y() * b.v.y() + a.v.z() * b.v.z() + a.v.w() * b.v.w();
+        }
+
+        /// Linearly interpolates between two quaternions.
+        pub inline fn lerp(a: *const Quat(T), b: *const Quat(T), t: T) Quat(T) {
+            return init(a.v.x() + t * (b.v.x() - a.v.x()), a.v.y() + t * (b.v.y() - a.v.y()), a.v.z() + t * (b.v.z() - a.v.z()), a.v.w() + t * (b.v.w() - a.v.w()));
+        }
+
+        /// Computes the squared length of a given quaternion.
+        pub inline fn len2(q: *const Quat(T)) T {
+            return q.v.x() * q.v.x() + q.v.y() * q.v.y() + q.v.z() * q.v.z() + q.v.w() * q.v.w();
+        }
+
+        /// Computes the length of a given quaternion.
+        pub inline fn len(q: *const Quat(T)) T {
+            return std.math.sqrt(q.v.x() * q.v.x() + q.v.y() * q.v.y() + q.v.z() * q.v.z() + q.v.w() * q.v.w());
+        }
+
+        /// Computes the normalized version of a given quaternion.
+        pub inline fn normalize(q: *const Quat(T)) Quat(T) {
+            const q0 = q.v.x();
+            const q1 = q.v.y();
+            const q2 = q.v.z();
+            const q3 = q.v.w();
+
+            const length = std.math.sqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+
+            if (length > 0.00001) {
+                return init(q0 / length, q1 / length, q2 / length, q3 / length);
+            } else {
+                return init(0, 0, 0, 0);
+            }
+        }
     };
 }
 
@@ -259,6 +314,52 @@ test "mul" {
     const b = a.inverse();
     const expected = math.Quat.identity();
     const actual = math.Quat.mul(&a, &b);
+
+    try testing.expect(f32, actual.v.x()).eqlApprox(expected.v.x(), 0.001);
+    try testing.expect(f32, actual.v.y()).eqlApprox(expected.v.y(), 0.001);
+    try testing.expect(f32, actual.v.z()).eqlApprox(expected.v.z(), 0.001);
+    try testing.expect(f32, actual.v.w()).eqlApprox(expected.v.w(), 0.001);
+}
+
+test "add" {
+    const a = math.Quat.init(1.0, 2.0, 3.0, 4.0);
+    const b = math.Quat.init(5.0, 6.0, 7.0, 8.0);
+    const expected = math.Quat.init(6.0, 8.0, 10.0, 12.0);
+    const actual = math.Quat.add(&a, &b);
+
+    try testing.expect(f32, actual.v.x()).eqlApprox(expected.v.x(), 0.001);
+    try testing.expect(f32, actual.v.y()).eqlApprox(expected.v.y(), 0.001);
+    try testing.expect(f32, actual.v.z()).eqlApprox(expected.v.z(), 0.001);
+    try testing.expect(f32, actual.v.w()).eqlApprox(expected.v.w(), 0.001);
+}
+
+test "sub" {
+    const a = math.Quat.init(1.0, 2.0, 3.0, 4.0);
+    const b = math.Quat.init(5.0, 6.0, 7.0, 8.0);
+    const expected = math.Quat.init(-4.0, -4.0, -4.0, -4.0);
+    const actual = math.Quat.sub(&a, &b);
+
+    try testing.expect(f32, actual.v.x()).eqlApprox(expected.v.x(), 0.001);
+    try testing.expect(f32, actual.v.y()).eqlApprox(expected.v.y(), 0.001);
+    try testing.expect(f32, actual.v.z()).eqlApprox(expected.v.z(), 0.001);
+    try testing.expect(f32, actual.v.w()).eqlApprox(expected.v.w(), 0.001);
+}
+
+test "mulScalar" {
+    const q = math.Quat.init(1.0, 2.0, 3.0, 4.0);
+    const expected = math.Quat.init(2.0, 4.0, 6.0, 8.0);
+    const actual = math.Quat.mulScalar(&q, 2.0);
+
+    try testing.expect(f32, actual.v.x()).eqlApprox(expected.v.x(), 0.001);
+    try testing.expect(f32, actual.v.y()).eqlApprox(expected.v.y(), 0.001);
+    try testing.expect(f32, actual.v.z()).eqlApprox(expected.v.z(), 0.001);
+    try testing.expect(f32, actual.v.w()).eqlApprox(expected.v.w(), 0.001);
+}
+
+test "divScalar" {
+    const q = math.Quat.init(1.0, 2.0, 3.0, 4.0);
+    const expected = math.Quat.init(0.5, 1.0, 1.5, 2.0);
+    const actual = math.Quat.divScalar(&q, 2.0);
 
     try testing.expect(f32, actual.v.x()).eqlApprox(expected.v.x(), 0.001);
     try testing.expect(f32, actual.v.y()).eqlApprox(expected.v.y(), 0.001);
@@ -339,4 +440,52 @@ test "fromEuler" {
     try testing.expect(f32, q.v.y()).eqlApprox(0.0, 0.001);
     try testing.expect(f32, q.v.z()).eqlApprox(0.0, 0.001);
     try testing.expect(f32, q.v.w()).eqlApprox(0.924, 0.001);
+}
+
+test "dot" {
+    const a = math.Quat.init(1.0, 2.0, 3.0, 4.0);
+    const b = math.Quat.init(5.0, 6.0, 7.0, 8.0);
+    const expected = 70.0;
+    const actual = math.Quat.dot(&a, &b);
+
+    try testing.expect(f32, actual).eqlApprox(expected, 0.001);
+}
+
+test "lerp" {
+    const a = math.Quat.init(1.0, 2.0, 3.0, 4.0);
+    const b = math.Quat.init(5.0, 6.0, 7.0, 8.0);
+    const expected = math.Quat.init(3.0, 4.0, 5.0, 6.0);
+    const actual = math.Quat.lerp(&a, &b, 0.5);
+
+    try testing.expect(f32, actual.v.x()).eqlApprox(expected.v.x(), 0.001);
+    try testing.expect(f32, actual.v.y()).eqlApprox(expected.v.y(), 0.001);
+    try testing.expect(f32, actual.v.z()).eqlApprox(expected.v.z(), 0.001);
+    try testing.expect(f32, actual.v.w()).eqlApprox(expected.v.w(), 0.001);
+}
+
+test "len2" {
+    const q = math.Quat.init(1.0, 2.0, 3.0, 4.0);
+    const expected = 30.0;
+    const actual = math.Quat.len2(&q);
+
+    try testing.expect(f32, actual).eqlApprox(expected, 0.001);
+}
+
+test "len" {
+    const q = math.Quat.init(0.0, 0.0, 3.0, 4.0);
+    const expected = 5.0;
+    const actual = math.Quat.len(&q);
+
+    try testing.expect(f32, actual).eqlApprox(expected, 0.001);
+}
+
+test "normalize" {
+    const q = math.Quat.init(0.0, 0.0, 3.0, 4.0);
+    const expected = math.Quat.init(0.0, 0.0, 0.6, 0.8);
+    const actual = math.Quat.normalize(&q);
+
+    try testing.expect(f32, actual.v.x()).eqlApprox(expected.v.x(), 0.001);
+    try testing.expect(f32, actual.v.y()).eqlApprox(expected.v.y(), 0.001);
+    try testing.expect(f32, actual.v.z()).eqlApprox(expected.v.z(), 0.001);
+    try testing.expect(f32, actual.v.w()).eqlApprox(expected.v.w(), 0.001);
 }
