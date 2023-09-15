@@ -12,18 +12,8 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
-/// Public state
-texture: *gpu.Texture,
-
 /// Internal state
-pipeline: *gpu.RenderPipeline,
-queue: *gpu.Queue,
-bind_group: *gpu.BindGroup,
-uniform_buffer: *gpu.Buffer,
-sprite_transforms: *gpu.Buffer,
-sprite_uv_transforms: *gpu.Buffer,
-sprite_sizes: *gpu.Buffer,
-texture_size: Vec2,
+pipelines: std.AutoArrayHashMapUnmanaged(u32, Pipeline),
 
 pub const name = .engine_sprite2d;
 
@@ -41,6 +31,11 @@ pub const components = struct {
 
     /// The size of the sprite, in pixels.
     pub const size = Vec2;
+
+    /// The ID of the pipeline this sprite belongs to. By default, zero.
+    ///
+    /// This determines which shader, textures, etc. are used for rendering the sprite.
+    pub const pipeline = u8;
 };
 
 const Uniforms = extern struct {
@@ -54,43 +49,126 @@ const Uniforms = extern struct {
     texture_size: Vec2 align(16),
 };
 
+const Pipeline = struct {
+    render: *gpu.RenderPipeline,
+    texture_sampler: *gpu.Sampler,
+    texture: *gpu.Texture,
+    texture2: ?*gpu.Texture,
+    texture3: ?*gpu.Texture,
+    texture4: ?*gpu.Texture,
+    bind_group: *gpu.BindGroup,
+    uniforms: *gpu.Buffer,
+
+    // Storage buffers
+    num_sprites: u32,
+    transforms: *gpu.Buffer,
+    uv_transforms: *gpu.Buffer,
+    sizes: *gpu.Buffer,
+
+    pub fn reference(p: *Pipeline) void {
+        p.render.reference();
+        p.texture_sampler.reference();
+        p.texture.reference();
+        if (p.texture2) |tex| tex.reference();
+        if (p.texture3) |tex| tex.reference();
+        if (p.texture4) |tex| tex.reference();
+        p.bind_group.reference();
+        p.uniforms.reference();
+        p.transforms.reference();
+        p.uv_transforms.reference();
+        p.sizes.reference();
+    }
+
+    pub fn deinit(p: *Pipeline) void {
+        p.render.release();
+        p.texture_sampler.release();
+        p.texture.release();
+        if (p.texture2) |tex| tex.release();
+        if (p.texture3) |tex| tex.release();
+        if (p.texture4) |tex| tex.release();
+        p.bind_group.release();
+        p.uniforms.release();
+        p.transforms.release();
+        p.uv_transforms.release();
+        p.sizes.release();
+    }
+};
+
+pub const PipelineOptions = struct {
+    pipeline: u32,
+
+    /// Shader program to use when rendering.
+    shader: ?*gpu.ShaderModule = null,
+
+    /// Whether to use linear (blurry) or nearest (pixelated) upscaling/downscaling.
+    texture_sampler: ?*gpu.Sampler = null,
+
+    /// Textures to use when rendering. The default shader can handle one texture.
+    texture: *gpu.Texture,
+    texture2: ?*gpu.Texture = null,
+    texture3: ?*gpu.Texture = null,
+    texture4: ?*gpu.Texture = null,
+
+    /// Alpha and color blending options.
+    blend_state: ?gpu.BlendState = null,
+
+    /// Pipeline overrides, these can be used to e.g. pass additional things to your shader program.
+    bind_group_layout: ?*gpu.BindGroupLayout = null,
+    bind_group: ?*gpu.BindGroup = null,
+    color_target_state: ?gpu.ColorTargetState = null,
+    fragment_state: ?gpu.FragmentState = null,
+    pipeline_layout: ?*gpu.PipelineLayout = null,
+};
+
 pub fn engineSprite2dInit(
+    sprite2d: *mach.Mod(.engine_sprite2d),
+) !void {
+    sprite2d.state = .{
+        // TODO: struct default value initializers don't work
+        .pipelines = .{},
+    };
+}
+
+pub fn engineSprite2dInitPipeline(
     engine: *mach.Mod(.engine),
     sprite2d: *mach.Mod(.engine_sprite2d),
+    opt: PipelineOptions,
 ) !void {
     const device = engine.state.device;
 
-    const uniform_buffer = device.createBuffer(&.{
-        .usage = .{ .copy_dst = true, .uniform = true },
-        .size = @sizeOf(Uniforms),
-        .mapped_at_creation = .false,
-    });
+    const pipeline = try sprite2d.state.pipelines.getOrPut(engine.allocator, opt.pipeline);
+    if (pipeline.found_existing) {
+        pipeline.value_ptr.*.deinit();
+    }
 
-    // Create a sampler with linear filtering for smooth interpolation.
-    const queue = device.getQueue();
-    const texture_sampler = device.createSampler(&.{
-        .mag_filter = .nearest,
-        .min_filter = .nearest,
-    });
-
-    const sprite_buffer_cap = 1024 * 256; // TODO: allow user to specify preallocation
-    const sprite_transforms = device.createBuffer(&.{
+    // Storage buffers
+    const sprite_buffer_cap = 1024 * 512; // TODO: allow user to specify preallocation
+    const transforms = device.createBuffer(&.{
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(Mat4x4) * sprite_buffer_cap,
         .mapped_at_creation = .false,
     });
-    const sprite_uv_transforms = device.createBuffer(&.{
+    const uv_transforms = device.createBuffer(&.{
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(Mat3x3) * sprite_buffer_cap,
         .mapped_at_creation = .false,
     });
-    const sprite_sizes = device.createBuffer(&.{
+    const sizes = device.createBuffer(&.{
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(Vec2) * sprite_buffer_cap,
         .mapped_at_creation = .false,
     });
 
-    const bind_group_layout = device.createBindGroupLayout(
+    const texture_sampler = opt.texture_sampler orelse device.createSampler(&.{
+        .mag_filter = .nearest,
+        .min_filter = .nearest,
+    });
+    const uniforms = device.createBuffer(&.{
+        .usage = .{ .copy_dst = true, .uniform = true },
+        .size = @sizeOf(Uniforms),
+        .mapped_at_creation = .false,
+    });
+    const bind_group_layout = opt.bind_group_layout orelse device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor.init(.{
             .entries = &.{
                 gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, false, 0),
@@ -99,25 +177,41 @@ pub fn engineSprite2dInit(
                 gpu.BindGroupLayout.Entry.buffer(3, .{ .vertex = true }, .read_only_storage, false, 0),
                 gpu.BindGroupLayout.Entry.sampler(4, .{ .fragment = true }, .filtering),
                 gpu.BindGroupLayout.Entry.texture(5, .{ .fragment = true }, .float, .dimension_2d, false),
+                gpu.BindGroupLayout.Entry.texture(6, .{ .fragment = true }, .float, .dimension_2d, false),
+                gpu.BindGroupLayout.Entry.texture(7, .{ .fragment = true }, .float, .dimension_2d, false),
+                gpu.BindGroupLayout.Entry.texture(8, .{ .fragment = true }, .float, .dimension_2d, false),
             },
         }),
     );
-    var bind_group = device.createBindGroup(
+    defer bind_group_layout.release();
+
+    const texture_view = opt.texture.createView(&gpu.TextureView.Descriptor{});
+    const texture2_view = if (opt.texture2) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
+    const texture3_view = if (opt.texture3) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
+    const texture4_view = if (opt.texture4) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
+    defer texture_view.release();
+    defer texture2_view.release();
+    defer texture3_view.release();
+    defer texture4_view.release();
+
+    const bind_group = opt.bind_group orelse device.createBindGroup(
         &gpu.BindGroup.Descriptor.init(.{
             .layout = bind_group_layout,
             .entries = &.{
-                gpu.BindGroup.Entry.buffer(0, uniform_buffer, 0, @sizeOf(Uniforms)),
-                gpu.BindGroup.Entry.buffer(1, sprite_transforms, 0, @sizeOf(Mat4x4) * sprite_buffer_cap),
-                gpu.BindGroup.Entry.buffer(2, sprite_uv_transforms, 0, @sizeOf(Mat3x3) * sprite_buffer_cap),
-                gpu.BindGroup.Entry.buffer(3, sprite_sizes, 0, @sizeOf(Vec2) * sprite_buffer_cap),
+                gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms)),
+                gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(Mat4x4) * sprite_buffer_cap),
+                gpu.BindGroup.Entry.buffer(2, uv_transforms, 0, @sizeOf(Mat3x3) * sprite_buffer_cap),
+                gpu.BindGroup.Entry.buffer(3, sizes, 0, @sizeOf(Vec2) * sprite_buffer_cap),
                 gpu.BindGroup.Entry.sampler(4, texture_sampler),
-                gpu.BindGroup.Entry.textureView(5, sprite2d.state.texture.createView(&gpu.TextureView.Descriptor{})),
+                gpu.BindGroup.Entry.textureView(5, texture_view),
+                gpu.BindGroup.Entry.textureView(6, texture2_view),
+                gpu.BindGroup.Entry.textureView(7, texture3_view),
+                gpu.BindGroup.Entry.textureView(8, texture4_view),
             },
         }),
     );
 
-    const shader_module = device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
-    const blend = gpu.BlendState{
+    const blend_state = opt.blend_state orelse gpu.BlendState{
         .color = .{
             .operation = .add,
             .src_factor = .src_alpha,
@@ -129,77 +223,112 @@ pub fn engineSprite2dInit(
             .dst_factor = .zero,
         },
     };
-    const color_target = gpu.ColorTargetState{
+
+    const shader_module = opt.shader orelse device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
+    defer shader_module.release();
+
+    const color_target = opt.color_target_state orelse gpu.ColorTargetState{
         .format = core.descriptor.format,
-        .blend = &blend,
+        .blend = &blend_state,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
-    const fragment = gpu.FragmentState.init(.{
+    const fragment = opt.fragment_state orelse gpu.FragmentState.init(.{
         .module = shader_module,
-        .entry_point = "frag_main",
+        .entry_point = "fragMain",
         .targets = &.{color_target},
     });
 
     const bind_group_layouts = [_]*gpu.BindGroupLayout{bind_group_layout};
-    const pipeline_layout = device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
+    const pipeline_layout = opt.pipeline_layout orelse device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
         .bind_group_layouts = &bind_group_layouts,
     }));
-    const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
+    defer pipeline_layout.release();
+    const render = device.createRenderPipeline(&gpu.RenderPipeline.Descriptor{
         .fragment = &fragment,
         .layout = pipeline_layout,
         .vertex = gpu.VertexState{
             .module = shader_module,
-            .entry_point = "vertex_main",
+            .entry_point = "vertMain",
         },
-    };
+    });
 
-    sprite2d.state = .{
-        .pipeline = device.createRenderPipeline(&pipeline_descriptor),
-        .queue = queue,
+    pipeline.value_ptr.* = Pipeline{
+        .render = render,
+        .texture_sampler = texture_sampler,
+        .texture = opt.texture,
+        .texture2 = opt.texture2,
+        .texture3 = opt.texture3,
+        .texture4 = opt.texture4,
         .bind_group = bind_group,
-        .uniform_buffer = uniform_buffer,
-        .sprite_transforms = sprite_transforms,
-        .sprite_uv_transforms = sprite_uv_transforms,
-        .sprite_sizes = sprite_sizes,
-        .texture_size = vec2(
-            @as(f32, @floatFromInt(sprite2d.state.texture.getWidth())),
-            @as(f32, @floatFromInt(sprite2d.state.texture.getHeight())),
-        ),
-        .texture = sprite2d.state.texture,
+        .uniforms = uniforms,
+        .num_sprites = 0,
+        .transforms = transforms,
+        .uv_transforms = uv_transforms,
+        .sizes = sizes,
     };
-    shader_module.release();
+    pipeline.value_ptr.reference();
 }
 
 pub fn deinit(sprite2d: *mach.Mod(.engine_sprite2d)) !void {
-    sprite2d.state.texture.release();
-    sprite2d.state.pipeline.release();
-    sprite2d.state.queue.release();
-    sprite2d.state.bind_group.release();
-    sprite2d.state.uniform_buffer.release();
-    sprite2d.state.sprite_transforms.release();
-    sprite2d.state.sprite_uv_transforms.release();
-    sprite2d.state.sprite_sizes.release();
+    for (sprite2d.state.pipelines.entries.items(.value)) |*pipeline| pipeline.deinit();
+    sprite2d.state.pipelines.deinit(sprite2d.allocator);
 }
 
-pub fn tick(
+pub fn engineSprite2dUpdated(
     engine: *mach.Mod(.engine),
     sprite2d: *mach.Mod(.engine_sprite2d),
+    pipeline_id: u32,
 ) !void {
+    const pipeline = sprite2d.state.pipelines.getPtr(pipeline_id).?;
     const device = engine.state.device;
 
-    // Begin our render pass
-    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
-    const color_attachment = gpu.RenderPassColorAttachment{
-        .view = back_buffer_view,
-        .clear_value = gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 },
-        .load_op = .clear,
-        .store_op = .store,
-    };
+    // TODO: make sure these entities only belong to the given pipeline
+    // we need a better tagging mechanism
+    var archetypes_iter = engine.entities.query(.{ .all = &.{
+        .{ .engine_sprite2d = &.{
+            .uv_transform,
+            .transform,
+            .size,
+            .pipeline,
+        } },
+    } });
 
     const encoder = device.createCommandEncoder(null);
-    const render_pass_info = gpu.RenderPassDescriptor.init(.{
-        .color_attachments = &.{color_attachment},
-    });
+    defer encoder.release();
+
+    pipeline.num_sprites = 0;
+    var transforms_offset: usize = 0;
+    var uv_transforms_offset: usize = 0;
+    var sizes_offset: usize = 0;
+    while (archetypes_iter.next()) |archetype| {
+        var transforms = archetype.slice(.engine_sprite2d, .transform);
+        var uv_transforms = archetype.slice(.engine_sprite2d, .uv_transform);
+        var sizes = archetype.slice(.engine_sprite2d, .size);
+
+        // TODO: confirm the lifetime of these slices is OK for writeBuffer, how long do they need
+        // to live?
+        encoder.writeBuffer(pipeline.transforms, transforms_offset, transforms);
+        encoder.writeBuffer(pipeline.uv_transforms, uv_transforms_offset, uv_transforms);
+        encoder.writeBuffer(pipeline.sizes, sizes_offset, sizes);
+
+        transforms_offset += transforms.len;
+        uv_transforms_offset += uv_transforms.len;
+        sizes_offset += sizes.len;
+        pipeline.num_sprites += @intCast(transforms.len);
+    }
+
+    var command = encoder.finish(null);
+    defer command.release();
+
+    engine.state.queue.submit(&[_]*gpu.CommandBuffer{command});
+}
+
+pub fn engineSprite2dPreRender(
+    engine: *mach.Mod(.engine),
+    sprite2d: *mach.Mod(.engine_sprite2d),
+    pipeline_id: u32,
+) !void {
+    const pipeline = sprite2d.state.pipelines.get(pipeline_id).?;
 
     // Update uniform buffer
     const ortho = Mat4x4.ortho(
@@ -212,57 +341,28 @@ pub fn tick(
     );
     const uniforms = Uniforms{
         .view_projection = ortho,
-        .texture_size = sprite2d.state.texture_size,
+        // TODO: dimensions of other textures, number of textures present
+        .texture_size = vec2(
+            @as(f32, @floatFromInt(pipeline.texture.getWidth())),
+            @as(f32, @floatFromInt(pipeline.texture.getHeight())),
+        ),
     };
-    encoder.writeBuffer(sprite2d.state.uniform_buffer, 0, &[_]Uniforms{uniforms});
 
-    // Synchronize entity data into our GPU sprite buffer
-    var archetypes_iter = engine.entities.query(.{ .all = &.{
-        .{ .engine_sprite2d = &.{
-            .uv_transform,
-            .transform,
-            .size,
-        } },
-    } });
+    engine.state.encoder.writeBuffer(pipeline.uniforms, 0, &[_]Uniforms{uniforms});
+}
 
-    // TODO: eliminate these
-    var sprite_transforms = try std.ArrayListUnmanaged(Mat4x4).initCapacity(engine.allocator, 1000);
-    defer sprite_transforms.deinit(engine.allocator);
-    var sprite_uv_transforms = try std.ArrayListUnmanaged(Mat3x3).initCapacity(engine.allocator, 1000);
-    defer sprite_uv_transforms.deinit(engine.allocator);
-    var sprite_sizes = try std.ArrayListUnmanaged(Vec2).initCapacity(engine.allocator, 1000);
-    defer sprite_sizes.deinit(engine.allocator);
-    while (archetypes_iter.next()) |archetype| {
-        var transforms = archetype.slice(.engine_sprite2d, .transform);
-        var uv_transforms = archetype.slice(.engine_sprite2d, .uv_transform);
-        var sizes = archetype.slice(.engine_sprite2d, .size);
-        for (transforms, uv_transforms, sizes) |transform, uv_transform, size| {
-            try sprite_transforms.append(engine.allocator, transform);
-            try sprite_uv_transforms.append(engine.allocator, uv_transform);
-            try sprite_sizes.append(engine.allocator, size);
-        }
-    }
-    const total_vertices = @as(u32, @intCast(sprite_sizes.items.len * 6));
-    if (sprite_transforms.items.len > 0) {
-        encoder.writeBuffer(sprite2d.state.sprite_transforms, 0, sprite_transforms.items);
-        encoder.writeBuffer(sprite2d.state.sprite_uv_transforms, 0, sprite_uv_transforms.items);
-        encoder.writeBuffer(sprite2d.state.sprite_sizes, 0, sprite_sizes.items);
-    }
+pub fn engineSprite2dRender(
+    engine: *mach.Mod(.engine),
+    sprite2d: *mach.Mod(.engine_sprite2d),
+    pipeline_id: u32,
+) !void {
+    const pipeline = sprite2d.state.pipelines.get(pipeline_id).?;
 
     // Draw the sprite batch
-    const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setPipeline(sprite2d.state.pipeline);
+    const pass = engine.state.pass;
+    const total_vertices = pipeline.num_sprites * 6;
+    pass.setPipeline(pipeline.render);
     // TODO: remove dynamic offsets?
-    pass.setBindGroup(0, sprite2d.state.bind_group, &.{});
+    pass.setBindGroup(0, pipeline.bind_group, &.{});
     pass.draw(total_vertices, 1, 0, 0);
-    pass.end();
-    pass.release();
-
-    var command = encoder.finish(null);
-    encoder.release();
-
-    sprite2d.state.queue.submit(&[_]*gpu.CommandBuffer{command});
-    command.release();
-    core.swap_chain.present();
-    back_buffer_view.release();
 }
