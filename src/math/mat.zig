@@ -116,7 +116,6 @@ pub fn Mat(
                 }
 
                 /// Constructs a 2D matrix which scales each dimension by the given vector.
-                // TODO: needs tests
                 pub inline fn scale(s: math.Vec2) Matrix {
                     return init(
                         &RowVec.init(s.x(), 0, 0),
@@ -126,13 +125,11 @@ pub fn Mat(
                 }
 
                 /// Constructs a 2D matrix which scales each dimension by the given scalar.
-                // TODO: needs tests
                 pub inline fn scaleScalar(t: Vec.T) Matrix {
                     return scale(math.Vec2.splat(t));
                 }
 
                 /// Constructs a 2D matrix which translates coordinates by the given vector.
-                // TODO: needs tests
                 pub inline fn translate(t: math.Vec2) Matrix {
                     return init(
                         &RowVec.init(1, 0, t.x()),
@@ -142,13 +139,11 @@ pub fn Mat(
                 }
 
                 /// Constructs a 2D matrix which translates coordinates by the given scalar.
-                // TODO: needs tests
                 pub inline fn translateScalar(t: Vec.T) Matrix {
                     return translate(math.Vec2.splat(t));
                 }
 
                 /// Returns the translation component of the matrix.
-                // TODO: needs tests
                 pub inline fn translation(t: Matrix) math.Vec2 {
                     return math.Vec2.init(t.v[2].x(), t.v[2].y());
                 }
@@ -206,7 +201,6 @@ pub fn Mat(
                 }
 
                 /// Constructs a 3D matrix which scales each dimension by the given vector.
-                // TODO: needs tests
                 pub inline fn scale(s: math.Vec3) Matrix {
                     return init(
                         &RowVec.init(s.x(), 0, 0, 0),
@@ -217,13 +211,11 @@ pub fn Mat(
                 }
 
                 /// Constructs a 3D matrix which scales each dimension by the given scalar.
-                // TODO: needs tests
                 pub inline fn scaleScalar(s: Vec.T) Matrix {
                     return scale(math.Vec3.splat(s));
                 }
 
                 /// Constructs a 3D matrix which translates coordinates by the given vector.
-                // TODO: needs tests
                 pub inline fn translate(t: math.Vec3) Matrix {
                     return init(
                         &RowVec.init(1, 0, 0, t.x()),
@@ -234,13 +226,11 @@ pub fn Mat(
                 }
 
                 /// Constructs a 3D matrix which translates coordinates by the given scalar.
-                // TODO: needs tests
                 pub inline fn translateScalar(t: Vec.T) Matrix {
                     return translate(math.Vec3.splat(t));
                 }
 
                 /// Returns the translation component of the matrix.
-                // TODO: needs tests
                 pub inline fn translation(t: *const Matrix) math.Vec3 {
                     return math.Vec3.init(t.v[3].x(), t.v[3].y(), t.v[3].z());
                 }
@@ -517,6 +507,92 @@ test "Mat4x4_transpose" {
         &math.vec4(2, 6, 10, 14),
         &math.vec4(3, 7, 11, 15),
     )).eql(m.transpose());
+}
+
+test "Mat3x3_scale" {
+    const m = math.Mat3x3.scale(math.vec2(2, 3));
+    try testing.expect(math.Mat3x3, math.Mat3x3.init(
+        &math.vec3(2, 0, 0),
+        &math.vec3(0, 3, 0),
+        &math.vec3(0, 0, 1),
+    )).eql(m);
+}
+
+test "Mat3x3_scaleScalar" {
+    const m = math.Mat3x3.scaleScalar(2);
+    try testing.expect(math.Mat3x3, math.Mat3x3.init(
+        &math.vec3(2, 0, 0),
+        &math.vec3(0, 2, 0),
+        &math.vec3(0, 0, 1),
+    )).eql(m);
+}
+
+test "Mat4x4_scale" {
+    const m = math.Mat4x4.scale(math.vec3(2, 3, 4));
+    try testing.expect(math.Mat4x4, math.Mat4x4.init(
+        &math.vec4(2, 0, 0, 0),
+        &math.vec4(0, 3, 0, 0),
+        &math.vec4(0, 0, 4, 0),
+        &math.vec4(0, 0, 0, 1),
+    )).eql(m);
+}
+
+test "Mat4x4_scaleScalar" {
+    const m = math.Mat4x4.scaleScalar(2);
+    try testing.expect(math.Mat4x4, math.Mat4x4.init(
+        &math.vec4(2, 0, 0, 0),
+        &math.vec4(0, 2, 0, 0),
+        &math.vec4(0, 0, 2, 0),
+        &math.vec4(0, 0, 0, 1),
+    )).eql(m);
+}
+
+test "Mat3x3_translate" {
+    const m = math.Mat3x3.translate(math.vec2(2, 3));
+    try testing.expect(math.Mat3x3, math.Mat3x3.init(
+        &math.vec3(1, 0, 2),
+        &math.vec3(0, 1, 3),
+        &math.vec3(0, 0, 1),
+    )).eql(m);
+}
+
+test "Mat4x4_translate" {
+    const m = math.Mat4x4.translate(math.vec3(2, 3, 4));
+    try testing.expect(math.Mat4x4, math.Mat4x4.init(
+        &math.vec4(1, 0, 0, 2),
+        &math.vec4(0, 1, 0, 3),
+        &math.vec4(0, 0, 1, 4),
+        &math.vec4(0, 0, 0, 1),
+    )).eql(m);
+}
+
+test "Mat3x3_translateScalar" {
+    const m = math.Mat3x3.translateScalar(2);
+    try testing.expect(math.Mat3x3, math.Mat3x3.init(
+        &math.vec3(1, 0, 2),
+        &math.vec3(0, 1, 2),
+        &math.vec3(0, 0, 1),
+    )).eql(m);
+}
+
+test "Mat4x4_translateScalar" {
+    const m = math.Mat4x4.translateScalar(2);
+    try testing.expect(math.Mat4x4, math.Mat4x4.init(
+        &math.vec4(1, 0, 0, 2),
+        &math.vec4(0, 1, 0, 2),
+        &math.vec4(0, 0, 1, 2),
+        &math.vec4(0, 0, 0, 1),
+    )).eql(m);
+}
+
+test "Mat3x3_translation" {
+    const m = math.Mat3x3.translate(math.vec2(2, 3));
+    try testing.expect(math.Vec2, math.vec2(2, 3)).eql(m.translation());
+}
+
+test "Mat4x4_translation" {
+    const m = math.Mat4x4.translate(math.vec3(2, 3, 4));
+    try testing.expect(math.Vec3, math.vec3(2, 3, 4)).eql(m.translation());
 }
 
 // TODO(math): the tests below violate our styleguide (https://machengine.org/about/style/) we
