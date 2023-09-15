@@ -217,7 +217,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
 
         /// Calculates the dot product between vector a and b and returns scalar.
         pub inline fn dot(a: *const VecN, b: *const VecN) Scalar {
-            return .{ .v = @reduce(.Add, a.v * b.v) };
+            return @reduce(.Add, a.v * b.v);
         }
     };
 }
