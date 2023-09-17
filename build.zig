@@ -4,37 +4,39 @@ const glfw = @import("mach_glfw");
 const sysaudio = @import("mach_sysaudio");
 const core = @import("mach_core");
 
-pub var mach_glfw_import_path: []const u8 = "mach_core.mach_glfw";
-pub var mach_ecs_import_path: []const u8 = "mach_ecs";
-pub var mach_earcut_import_path: []const u8 = "mach_earcut";
-pub var mach_basisu_import_path: []const u8 = "mach_basisu";
-
 var _module: ?*std.build.Module = null;
 
 pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.Module {
     if (_module) |m| return m;
 
-    const mach_ecs = b.dependency(mach_ecs_import_path, .{
+    const mach_core = b.dependency("mach_core", .{
         .target = target,
         .optimize = optimize,
     });
-    const mach_earcut = b.dependency(mach_earcut_import_path, .{
+    const mach_sysaudio = b.dependency("mach_sysaudio", .{
         .target = target,
         .optimize = optimize,
     });
-    const mach_basisu = b.dependency(mach_basisu_import_path, .{
+    const mach_ecs = b.dependency("mach_ecs", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const mach_earcut = b.dependency("mach_earcut", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const mach_basisu = b.dependency("mach_basisu", .{
         .target = target,
         .optimize = optimize,
     });
 
-    core.mach_glfw_import_path = mach_glfw_import_path;
     _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
         .dependencies = &.{
-            .{ .name = "core", .module = core.module(b, optimize, target) },
+            .{ .name = "core", .module = core.module(mach_core.builder, optimize, target) },
             .{ .name = "ecs", .module = mach_ecs.module("mach-ecs") },
             .{ .name = "earcut", .module = mach_earcut.module("mach-earcut") },
-            .{ .name = "sysaudio", .module = sysaudio.module(b, optimize, target) },
+            .{ .name = "sysaudio", .module = sysaudio.module(mach_sysaudio.builder, optimize, target) },
             .{ .name = "basisu", .module = mach_basisu.module("mach-basisu") },
         },
     });
@@ -109,9 +111,12 @@ pub const App = struct {
         var deps = std.ArrayList(std.build.ModuleDependency).init(b.allocator);
         if (options.deps) |v| try deps.appendSlice(v);
         try deps.append(.{ .name = "mach", .module = module(b, options.optimize, options.target) });
-        try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(b, options.optimize, options.target) });
+        const mach_sysaudio = b.dependency("mach_sysaudio", .{
+            .target = options.target,
+            .optimize = options.optimize,
+        });
+        try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(mach_sysaudio.builder, options.optimize, options.target) });
 
-        core.mach_glfw_import_path = mach_glfw_import_path;
         const app = try core.App.init(b, .{
             .name = options.name,
             .src = options.src,
@@ -134,11 +139,17 @@ pub const App = struct {
     }
 
     pub fn link(app: *const App) !void {
-        sysaudio.link(app.b, app.compile);
+        sysaudio.link(app.b.dependency("mach_sysaudio", .{
+            .target = app.compile.target,
+            .optimize = app.compile.optimize,
+        }).builder, app.compile);
 
         // TODO: basisu support in wasm
         if (app.platform != .web) {
-            app.compile.linkLibrary(@import("mach_basisu").lib(app.b, app.compile.optimize, app.compile.target));
+            app.compile.linkLibrary(app.b.dependency("mach_basisu", .{
+                .target = app.compile.target,
+                .optimize = app.compile.optimize,
+            }).artifact("mach-basisu"));
         }
     }
 };
