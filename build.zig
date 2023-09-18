@@ -117,7 +117,11 @@ pub const App = struct {
         });
         try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(mach_sysaudio.builder, options.optimize, options.target) });
 
-        const app = try core.App.init(b, .{
+        const mach_core = b.dependency("mach_core", .{
+            .target = options.target,
+            .optimize = options.optimize,
+        });
+        const app = try core.App.init(b, mach_core.builder, .{
             .name = options.name,
             .src = options.src,
             .target = options.target,
