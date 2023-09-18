@@ -89,6 +89,7 @@ fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.C
 
 pub const App = struct {
     b: *std.Build,
+    mach_builder: *std.Build,
     name: []const u8,
     compile: *std.build.Step.Compile,
     install: *std.build.Step.InstallArtifact,
@@ -140,6 +141,7 @@ pub const App = struct {
         return .{
             .core = app,
             .b = app.b,
+            .mach_builder = mach_builder,
             .name = app.name,
             .compile = app.compile,
             .install = app.install,
@@ -149,14 +151,14 @@ pub const App = struct {
     }
 
     pub fn link(app: *const App) !void {
-        sysaudio.link(app.b.dependency("mach_sysaudio", .{
+        sysaudio.link(app.mach_builder.dependency("mach_sysaudio", .{
             .target = app.compile.target,
             .optimize = app.compile.optimize,
         }).builder, app.compile);
 
         // TODO: basisu support in wasm
         if (app.platform != .web) {
-            app.compile.linkLibrary(app.b.dependency("mach_basisu", .{
+            app.compile.linkLibrary(app.mach_builder.dependency("mach_basisu", .{
                 .target = app.compile.target,
                 .optimize = app.compile.optimize,
             }).artifact("mach-basisu"));
