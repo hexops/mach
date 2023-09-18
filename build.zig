@@ -59,6 +59,7 @@ pub fn build(b: *std.Build) !void {
                 .custom_entrypoint = "src/editor/main.zig",
                 .target = target,
                 .optimize = optimize,
+                .mach_builder = b,
             },
         );
         try editor.link();
@@ -96,7 +97,7 @@ pub const App = struct {
     core: core.App,
 
     pub fn init(
-        b: *std.Build,
+        app_builder: *std.Build,
         options: struct {
             name: []const u8,
             src: []const u8,
@@ -106,22 +107,27 @@ pub const App = struct {
             deps: ?[]const std.build.ModuleDependency = null,
             res_dirs: ?[]const []const u8 = null,
             watch_paths: ?[]const []const u8 = null,
+            mach_builder: ?*std.Build = null,
         },
     ) !App {
-        var deps = std.ArrayList(std.build.ModuleDependency).init(b.allocator);
+        const mach_builder = options.mach_builder orelse app_builder.dependency("mach", .{
+            .target = options.target,
+            .optimize = options.optimize,
+        }).builder;
+        var deps = std.ArrayList(std.build.ModuleDependency).init(app_builder.allocator);
         if (options.deps) |v| try deps.appendSlice(v);
-        try deps.append(.{ .name = "mach", .module = module(b, options.optimize, options.target) });
-        const mach_sysaudio = b.dependency("mach_sysaudio", .{
+        try deps.append(.{ .name = "mach", .module = module(mach_builder, options.optimize, options.target) });
+        const mach_sysaudio = mach_builder.dependency("mach_sysaudio", .{
             .target = options.target,
             .optimize = options.optimize,
         });
         try deps.append(.{ .name = "sysaudio", .module = sysaudio.module(mach_sysaudio.builder, options.optimize, options.target) });
 
-        const mach_core = b.dependency("mach_core", .{
+        const mach_core = mach_builder.dependency("mach_core", .{
             .target = options.target,
             .optimize = options.optimize,
         });
-        const app = try core.App.init(b, mach_core.builder, .{
+        const app = try core.App.init(app_builder, mach_core.builder, .{
             .name = options.name,
             .src = options.src,
             .target = options.target,
