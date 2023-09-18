@@ -18,6 +18,11 @@ pipelines: std.AutoArrayHashMapUnmanaged(u32, Pipeline),
 pub const name = .engine_sprite2d;
 
 pub const components = struct {
+    /// The ID of the pipeline this sprite belongs to. By default, zero.
+    ///
+    /// This determines which shader, textures, etc. are used for rendering the sprite.
+    pub const pipeline = u8;
+
     /// The sprite model transformation matrix. A sprite is measured in pixel units, starting from
     /// (0, 0) at the top-left corner and extending to the size of the sprite. By default, the world
     /// origin (0, 0) lives at the center of the window.
@@ -31,11 +36,6 @@ pub const components = struct {
 
     /// The size of the sprite, in pixels.
     pub const size = Vec2;
-
-    /// The ID of the pipeline this sprite belongs to. By default, zero.
-    ///
-    /// This determines which shader, textures, etc. are used for rendering the sprite.
-    pub const pipeline = u8;
 };
 
 const Uniforms = extern struct {
@@ -224,7 +224,7 @@ pub fn engineSprite2dInitPipeline(
         },
     };
 
-    const shader_module = opt.shader orelse device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
+    const shader_module = opt.shader orelse device.createShaderModuleWGSL("sprite2d.wgsl", @embedFile("sprite2d.wgsl"));
     defer shader_module.release();
 
     const color_target = opt.color_target_state orelse gpu.ColorTargetState{
