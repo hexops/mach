@@ -50,25 +50,6 @@ pub fn build(b: *std.Build) !void {
     if (target.getCpuArch() != .wasm32) {
         const tests_step = b.step("test", "Run tests");
         tests_step.dependOn(&testStep(b, optimize, target).step);
-
-        const editor = try App.init(
-            b,
-            .{
-                .name = "mach",
-                .src = "src/editor/app.zig",
-                .custom_entrypoint = "src/editor/main.zig",
-                .target = target,
-                .optimize = optimize,
-                .mach_builder = b,
-            },
-        );
-        try editor.link();
-
-        const editor_install_step = b.step("editor", "Install editor");
-        editor_install_step.dependOn(&editor.install.step);
-
-        const editor_run_step = b.step("run", "Run the editor");
-        editor_run_step.dependOn(&editor.run.step);
     }
 }
 
