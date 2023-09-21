@@ -48,24 +48,24 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
 
     if (target.getCpuArch() != .wasm32) {
-        const tests_step = b.step("test", "Run tests");
-        tests_step.dependOn(&testStep(b, optimize, target).step);
-    }
-}
+        // Creates a step for unit testing. This only builds the test executable
+        // but does not run it.
+        const unit_tests = b.addTest(.{
+            .root_source_file = .{ .path = "src/main.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        var iter = module(b, optimize, target).dependencies.iterator();
+        while (iter.next()) |e| {
+            unit_tests.addModule(e.key_ptr.*, e.value_ptr.*);
+        }
 
-fn testStep(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig.CrossTarget) *std.build.RunStep {
-    const main_tests = b.addTest(.{
-        .name = "mach-tests",
-        .root_source_file = .{ .path = "src/main.zig" },
-        .target = target,
-        .optimize = optimize,
-    });
-    var iter = module(b, optimize, target).dependencies.iterator();
-    while (iter.next()) |e| {
-        main_tests.addModule(e.key_ptr.*, e.value_ptr.*);
+        // Exposes a `test` step to the `zig build --help` menu, providing a way for the user to
+        // request running the unit tests.
+        const run_unit_tests = b.addRunArtifact(unit_tests);
+        const test_step = b.step("test", "Run unit tests");
+        test_step.dependOn(&run_unit_tests.step);
     }
-    b.installArtifact(main_tests);
-    return b.addRunArtifact(main_tests);
 }
 
 pub const App = struct {
