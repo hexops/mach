@@ -8,7 +8,6 @@ pub const gpu = core.gpu;
 pub const sysjs = @import("sysjs");
 pub const ecs = @import("ecs");
 pub const sysaudio = @import("sysaudio");
-pub const earcut = @import("earcut");
 pub const gfx = @import("gfx/util.zig");
 pub const gfx2d = struct {
     pub const Sprite2D = @import("gfx2d/Sprite2D.zig");
@@ -36,5 +35,4 @@ test {
     std.testing.refAllDeclsRecursive(Atlas);
     std.testing.refAllDeclsRecursive(math);
     _ = ecs;
-    _ = earcut;
 }

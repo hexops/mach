@@ -21,10 +21,6 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
         .target = target,
         .optimize = optimize,
     });
-    const mach_earcut = b.dependency("mach_earcut", .{
-        .target = target,
-        .optimize = optimize,
-    });
     const mach_basisu = b.dependency("mach_basisu", .{
         .target = target,
         .optimize = optimize,
@@ -39,7 +35,6 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
         .dependencies = &.{
             .{ .name = "core", .module = core.module(mach_core.builder, optimize, target) },
             .{ .name = "ecs", .module = mach_ecs.module("mach-ecs") },
-            .{ .name = "earcut", .module = mach_earcut.module("mach-earcut") },
             .{ .name = "sysaudio", .module = sysaudio.module(mach_sysaudio.builder, optimize, target) },
             .{ .name = "basisu", .module = mach_basisu.module("mach-basisu") },
             .{ .name = "mach-freetype", .module = mach_freetype.module("mach-freetype") },
