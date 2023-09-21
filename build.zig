@@ -29,6 +29,10 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
         .target = target,
         .optimize = optimize,
     });
+    const mach_freetype = b.dependency("mach_freetype", .{
+        .target = target,
+        .optimize = optimize,
+    });
 
     _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
@@ -38,6 +42,8 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
             .{ .name = "earcut", .module = mach_earcut.module("mach-earcut") },
             .{ .name = "sysaudio", .module = sysaudio.module(mach_sysaudio.builder, optimize, target) },
             .{ .name = "basisu", .module = mach_basisu.module("mach-basisu") },
+            .{ .name = "mach-freetype", .module = mach_freetype.module("mach-freetype") },
+            .{ .name = "mach-harfbuzz", .module = mach_freetype.module("mach-harfbuzz") },
         },
     });
     return _module.?;
@@ -144,6 +150,13 @@ pub const App = struct {
                 .optimize = app.compile.optimize,
             }).artifact("mach-basisu"));
         }
+
+        const mach_freetype_dep = app.b.dependency("mach_freetype", .{
+            .target = app.compile.target,
+            .optimize = app.compile.optimize,
+        });
+        @import("mach_freetype").linkFreetype(mach_freetype_dep.builder, app.compile);
+        @import("mach_freetype").linkHarfbuzz(mach_freetype_dep.builder, app.compile);
     }
 };
 

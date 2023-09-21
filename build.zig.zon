@@ -22,5 +22,9 @@
             .url = "https://pkg.machengine.org/mach-sysaudio/a9bf13c14e05648e00745f5782883f4111eaeed4.tar.gz",
             .hash = "12206935288305365fe8bc46e0e30191f1119fca96632a5f93ca95ceb978b13bdb33",
         },
+        .mach_freetype = .{
+            .url = "https://pkg.machengine.org/mach-freetype/92773615e2480c0a6f561748f2ba1180376bbb68.tar.gz",
+            .hash = "12205a6057fe43a4940c6db304449ebf3e98ff15d0eec05b75f621d7616c2e7d7f2c",
+        },
     },
 }
