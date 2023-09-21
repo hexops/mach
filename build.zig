@@ -33,10 +33,10 @@ pub fn module(b: *std.Build, optimize: std.builtin.OptimizeMode, target: std.zig
     _module = b.createModule(.{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
         .dependencies = &.{
-            .{ .name = "core", .module = core.module(mach_core.builder, optimize, target) },
-            .{ .name = "ecs", .module = mach_ecs.module("mach-ecs") },
-            .{ .name = "sysaudio", .module = sysaudio.module(mach_sysaudio.builder, optimize, target) },
-            .{ .name = "basisu", .module = mach_basisu.module("mach-basisu") },
+            .{ .name = "mach-core", .module = core.module(mach_core.builder, optimize, target) },
+            .{ .name = "mach-ecs", .module = mach_ecs.module("mach-ecs") },
+            .{ .name = "mach-sysaudio", .module = sysaudio.module(mach_sysaudio.builder, optimize, target) },
+            .{ .name = "mach-basisu", .module = mach_basisu.module("mach-basisu") },
             .{ .name = "mach-freetype", .module = mach_freetype.module("mach-freetype") },
             .{ .name = "mach-harfbuzz", .module = mach_freetype.module("mach-harfbuzz") },
         },

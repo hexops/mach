@@ -1,7 +1,7 @@
-const core = @import("core");
-const gpu = @import("core").gpu;
+const core = @import("mach-core");
+const gpu = @import("mach-core").gpu;
 const std = @import("std");
-const ecs = @import("ecs");
+const ecs = @import("mach-ecs");
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();

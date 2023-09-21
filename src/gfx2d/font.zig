@@ -1,5 +1,4 @@
 const math = @import("../main.zig").math;
-const harfbuzz = @import("mach-harfbuzz");
 const std = @import("std");
 
 /// An interface that can render Unicode codepoints into glyphs.

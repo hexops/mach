@@ -1,4 +1,4 @@
-pub const core = @import("core");
+pub const core = @import("mach-core");
 pub const GPUInterface = core.GPUInterface;
 pub const scope_levels = core.scope_levels;
 pub const log_level = core.log_level;
@@ -6,8 +6,8 @@ pub const Timer = core.Timer;
 pub const gpu = core.gpu;
 
 pub const sysjs = @import("sysjs");
-pub const ecs = @import("ecs");
-pub const sysaudio = @import("sysaudio");
+pub const ecs = @import("mach-ecs");
+pub const sysaudio = @import("mach-sysaudio");
 pub const gfx = @import("gfx/util.zig");
 pub const gfx2d = struct {
     pub const Sprite2D = @import("gfx2d/Sprite2D.zig");
