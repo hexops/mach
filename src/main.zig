@@ -12,6 +12,11 @@ pub const earcut = @import("earcut");
 pub const gfx = @import("gfx/util.zig");
 pub const gfx2d = struct {
     pub const Sprite2D = @import("gfx2d/Sprite2D.zig");
+    pub const Text2D = @import("gfx2d/Text2D.zig");
+    pub const FontRenderer = @import("gfx2d/font.zig").FontRenderer;
+    pub const RGBA32 = @import("gfx2d/font.zig").RGBA32;
+    pub const Glyph = @import("gfx2d/font.zig").Glyph;
+    pub const GlyphMetrics = @import("gfx2d/font.zig").GlyphMetrics;
 };
 pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
