@@ -15,7 +15,7 @@ const Mat4x4 = math.Mat4x4;
 /// Internal state
 pipelines: std.AutoArrayHashMapUnmanaged(u32, Pipeline),
 
-pub const name = .engine_sprite2d;
+pub const name = .mach_gfx_sprite;
 
 pub const components = struct {
     /// The ID of the pipeline this sprite belongs to. By default, zero.
@@ -120,23 +120,23 @@ pub const PipelineOptions = struct {
     pipeline_layout: ?*gpu.PipelineLayout = null,
 };
 
-pub fn engineSprite2dInit(
-    sprite2d: *mach.Mod(.engine_sprite2d),
+pub fn machGfxSpriteInit(
+    sprite_mod: *mach.Mod(.mach_gfx_sprite),
 ) !void {
-    sprite2d.state = .{
+    sprite_mod.state = .{
         // TODO: struct default value initializers don't work
         .pipelines = .{},
     };
 }
 
-pub fn engineSprite2dInitPipeline(
+pub fn machGfxSpriteInitPipeline(
     engine: *mach.Mod(.engine),
-    sprite2d: *mach.Mod(.engine_sprite2d),
+    sprite_mod: *mach.Mod(.mach_gfx_sprite),
     opt: PipelineOptions,
 ) !void {
     const device = engine.state.device;
 
-    const pipeline = try sprite2d.state.pipelines.getOrPut(engine.allocator, opt.pipeline);
+    const pipeline = try sprite_mod.state.pipelines.getOrPut(engine.allocator, opt.pipeline);
     if (pipeline.found_existing) {
         pipeline.value_ptr.*.deinit();
     }
@@ -224,7 +224,7 @@ pub fn engineSprite2dInitPipeline(
         },
     };
 
-    const shader_module = opt.shader orelse device.createShaderModuleWGSL("sprite2d.wgsl", @embedFile("sprite2d.wgsl"));
+    const shader_module = opt.shader orelse device.createShaderModuleWGSL("sprite.wgsl", @embedFile("sprite.wgsl"));
     defer shader_module.release();
 
     const color_target = opt.color_target_state orelse gpu.ColorTargetState{
@@ -269,23 +269,23 @@ pub fn engineSprite2dInitPipeline(
     pipeline.value_ptr.reference();
 }
 
-pub fn deinit(sprite2d: *mach.Mod(.engine_sprite2d)) !void {
-    for (sprite2d.state.pipelines.entries.items(.value)) |*pipeline| pipeline.deinit();
-    sprite2d.state.pipelines.deinit(sprite2d.allocator);
+pub fn deinit(sprite_mod: *mach.Mod(.mach_gfx_sprite)) !void {
+    for (sprite_mod.state.pipelines.entries.items(.value)) |*pipeline| pipeline.deinit();
+    sprite_mod.state.pipelines.deinit(sprite_mod.allocator);
 }
 
-pub fn engineSprite2dUpdated(
+pub fn machGfxSpriteUpdated(
     engine: *mach.Mod(.engine),
-    sprite2d: *mach.Mod(.engine_sprite2d),
+    sprite_mod: *mach.Mod(.mach_gfx_sprite),
     pipeline_id: u32,
 ) !void {
-    const pipeline = sprite2d.state.pipelines.getPtr(pipeline_id).?;
+    const pipeline = sprite_mod.state.pipelines.getPtr(pipeline_id).?;
     const device = engine.state.device;
 
     // TODO: make sure these entities only belong to the given pipeline
     // we need a better tagging mechanism
     var archetypes_iter = engine.entities.query(.{ .all = &.{
-        .{ .engine_sprite2d = &.{
+        .{ .mach_gfx_sprite = &.{
             .uv_transform,
             .transform,
             .size,
@@ -301,9 +301,9 @@ pub fn engineSprite2dUpdated(
     var uv_transforms_offset: usize = 0;
     var sizes_offset: usize = 0;
     while (archetypes_iter.next()) |archetype| {
-        var transforms = archetype.slice(.engine_sprite2d, .transform);
-        var uv_transforms = archetype.slice(.engine_sprite2d, .uv_transform);
-        var sizes = archetype.slice(.engine_sprite2d, .size);
+        var transforms = archetype.slice(.mach_gfx_sprite, .transform);
+        var uv_transforms = archetype.slice(.mach_gfx_sprite, .uv_transform);
+        var sizes = archetype.slice(.mach_gfx_sprite, .size);
 
         // TODO: confirm the lifetime of these slices is OK for writeBuffer, how long do they need
         // to live?
@@ -323,12 +323,12 @@ pub fn engineSprite2dUpdated(
     engine.state.queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
-pub fn engineSprite2dPreRender(
+pub fn machGfxSpritePreRender(
     engine: *mach.Mod(.engine),
-    sprite2d: *mach.Mod(.engine_sprite2d),
+    sprite_mod: *mach.Mod(.mach_gfx_sprite),
     pipeline_id: u32,
 ) !void {
-    const pipeline = sprite2d.state.pipelines.get(pipeline_id).?;
+    const pipeline = sprite_mod.state.pipelines.get(pipeline_id).?;
 
     // Update uniform buffer
     const ortho = Mat4x4.ortho(
@@ -351,12 +351,12 @@ pub fn engineSprite2dPreRender(
     engine.state.encoder.writeBuffer(pipeline.uniforms, 0, &[_]Uniforms{uniforms});
 }
 
-pub fn engineSprite2dRender(
+pub fn machGfxSpriteRender(
     engine: *mach.Mod(.engine),
-    sprite2d: *mach.Mod(.engine_sprite2d),
+    sprite_mod: *mach.Mod(.mach_gfx_sprite),
     pipeline_id: u32,
 ) !void {
-    const pipeline = sprite2d.state.pipelines.get(pipeline_id).?;
+    const pipeline = sprite_mod.state.pipelines.get(pipeline_id).?;
 
     // Draw the sprite batch
     const pass = engine.state.pass;

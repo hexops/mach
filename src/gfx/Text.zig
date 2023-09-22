@@ -17,7 +17,7 @@ const Mat4x4 = math.Mat4x4;
 /// Internal state
 pipelines: std.AutoArrayHashMapUnmanaged(u32, Pipeline),
 
-pub const name = .engine_text2d;
+pub const name = .mach_gfx_text;
 
 /// Converts points to pixels. e.g. a 12pt font size `12.0 * points_to_pixels == 16.0`
 pub const points_to_pixels = 4.0 / 3.0;
@@ -160,23 +160,23 @@ pub const PipelineOptions = struct {
     pipeline_layout: ?*gpu.PipelineLayout = null,
 };
 
-pub fn engineText2dInit(
-    text2d: *mach.Mod(.engine_text2d),
+pub fn machGfxTextInit(
+    text_mod: *mach.Mod(.mach_gfx_text),
 ) !void {
-    text2d.state = .{
+    text_mod.state = .{
         // TODO: struct default value initializers don't work
         .pipelines = .{},
     };
 }
 
-pub fn engineText2dInitPipeline(
+pub fn machGfxTextInitPipeline(
     engine: *mach.Mod(.engine),
-    text2d: *mach.Mod(.engine_text2d),
+    text_mod: *mach.Mod(.mach_gfx_text),
     opt: PipelineOptions,
 ) !void {
     const device = engine.state.device;
 
-    const pipeline = try text2d.state.pipelines.getOrPut(engine.allocator, opt.pipeline);
+    const pipeline = try text_mod.state.pipelines.getOrPut(engine.allocator, opt.pipeline);
     if (pipeline.found_existing) {
         pipeline.value_ptr.*.deinit(engine.allocator);
     }
@@ -282,7 +282,7 @@ pub fn engineText2dInitPipeline(
         },
     };
 
-    const shader_module = opt.shader orelse device.createShaderModuleWGSL("text2d.wgsl", @embedFile("text2d.wgsl"));
+    const shader_module = opt.shader orelse device.createShaderModuleWGSL("text.wgsl", @embedFile("text.wgsl"));
     defer shader_module.release();
 
     const color_target = opt.color_target_state orelse gpu.ColorTargetState{
@@ -329,23 +329,23 @@ pub fn engineText2dInitPipeline(
     pipeline.value_ptr.reference();
 }
 
-pub fn deinit(text2d: *mach.Mod(.engine_text2d)) !void {
-    for (text2d.state.pipelines.entries.items(.value)) |*pipeline| pipeline.deinit(text2d.allocator);
-    text2d.state.pipelines.deinit(text2d.allocator);
+pub fn deinit(text_mod: *mach.Mod(.mach_gfx_text)) !void {
+    for (text_mod.state.pipelines.entries.items(.value)) |*pipeline| pipeline.deinit(text_mod.allocator);
+    text_mod.state.pipelines.deinit(text_mod.allocator);
 }
 
-pub fn engineText2dUpdated(
+pub fn machGfxTextUpdated(
     engine: *mach.Mod(.engine),
-    text2d: *mach.Mod(.engine_text2d),
+    text_mod: *mach.Mod(.mach_gfx_text),
     pipeline_id: u32,
 ) !void {
-    const pipeline = text2d.state.pipelines.getPtr(pipeline_id).?;
+    const pipeline = text_mod.state.pipelines.getPtr(pipeline_id).?;
     const device = engine.state.device;
 
     // TODO: make sure these entities only belong to the given pipeline
     // we need a better tagging mechanism
     var archetypes_iter = engine.entities.query(.{ .all = &.{
-        .{ .engine_text2d = &.{
+        .{ .mach_gfx_text = &.{
             .pipeline,
             .transform,
             .text,
@@ -365,8 +365,8 @@ pub fn engineText2dUpdated(
     var colors_offset: usize = 0;
     var texture_update = false;
     while (archetypes_iter.next()) |archetype| {
-        var transforms = archetype.slice(.engine_text2d, .transform);
-        var colors = archetype.slice(.engine_text2d, .color);
+        var transforms = archetype.slice(.mach_gfx_text, .transform);
+        var colors = archetype.slice(.mach_gfx_text, .color);
 
         // TODO: confirm the lifetime of these slices is OK for writeBuffer, how long do they need
         // to live?
@@ -381,9 +381,9 @@ pub fn engineText2dUpdated(
         // TODO: this is very expensive and shouldn't be done here, should be done only on detected
         // text change.
         const px_density = 2.0;
-        var fonts = archetype.slice(.engine_text2d, .font);
-        var font_sizes = archetype.slice(.engine_text2d, .font_size);
-        var texts = archetype.slice(.engine_text2d, .text);
+        var fonts = archetype.slice(.mach_gfx_text, .font);
+        var font_sizes = archetype.slice(.mach_gfx_text, .font_size);
+        var texts = archetype.slice(.mach_gfx_text, .text);
         for (fonts, font_sizes, texts) |font, font_size, text| {
             var offset_x: f32 = 0.0;
             var offset_y: f32 = 0.0;
@@ -476,12 +476,12 @@ pub fn engineText2dUpdated(
     engine.state.queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
-pub fn engineText2dPreRender(
+pub fn machGfxTextPreRender(
     engine: *mach.Mod(.engine),
-    text2d: *mach.Mod(.engine_text2d),
+    text_mod: *mach.Mod(.mach_gfx_text),
     pipeline_id: u32,
 ) !void {
-    const pipeline = text2d.state.pipelines.get(pipeline_id).?;
+    const pipeline = text_mod.state.pipelines.get(pipeline_id).?;
 
     // Update uniform buffer
     const ortho = Mat4x4.ortho(
@@ -504,12 +504,12 @@ pub fn engineText2dPreRender(
     engine.state.encoder.writeBuffer(pipeline.uniforms, 0, &[_]Uniforms{uniforms});
 }
 
-pub fn engineText2dRender(
+pub fn machGfxTextRender(
     engine: *mach.Mod(.engine),
-    text2d: *mach.Mod(.engine_text2d),
+    text_mod: *mach.Mod(.mach_gfx_text),
     pipeline_id: u32,
 ) !void {
-    const pipeline = text2d.state.pipelines.get(pipeline_id).?;
+    const pipeline = text_mod.state.pipelines.get(pipeline_id).?;
 
     // Draw the text batch
     const pass = engine.state.pass;
