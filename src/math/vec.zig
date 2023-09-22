@@ -219,6 +219,96 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
         pub inline fn dot(a: *const VecN, b: *const VecN) Scalar {
             return @reduce(.Add, a.v * b.v);
         }
+
+        // Returns a new vector with the max values of two vectors
+        pub inline fn max(a: *const VecN, b: *const VecN) VecN {
+            return switch (VecN.n) {
+                inline 2 => VecN.init(
+                    @max(a.x(), b.x()),
+                    @max(a.y(), b.y()),
+                ),
+                inline 3 => VecN.init(
+                    @max(a.x(), b.x()),
+                    @max(a.y(), b.y()),
+                    @max(a.z(), b.z()),
+                ),
+                inline 4 => VecN.init(
+                    @max(a.x(), b.x()),
+                    @max(a.y(), b.y()),
+                    @max(a.z(), b.z()),
+                    @max(a.w(), b.w()),
+                ),
+                else => @compileError("Expected Vec2, Vec3, Vec4, found '" ++ @typeName(VecN) ++ "'"),
+            };
+        }
+
+        // Returns a new vector with the min values of two vectors
+        pub inline fn min(a: *const VecN, b: *const VecN) VecN {
+            return switch (VecN.n) {
+                inline 2 => VecN.init(
+                    @min(a.x(), b.x()),
+                    @min(a.y(), b.y()),
+                ),
+                inline 3 => VecN.init(
+                    @min(a.x(), b.x()),
+                    @min(a.y(), b.y()),
+                    @min(a.z(), b.z()),
+                ),
+                inline 4 => VecN.init(
+                    @min(a.x(), b.x()),
+                    @min(a.y(), b.y()),
+                    @min(a.z(), b.z()),
+                    @min(a.w(), b.w()),
+                ),
+                else => @compileError("Expected Vec2, Vec3, Vec4, found '" ++ @typeName(VecN) ++ "'"),
+            };
+        }
+
+        // Returns the inverse of a given vector
+        pub inline fn inverse(a: *const VecN) VecN {
+            return switch (VecN.n) {
+                inline 2 => .{ .v = (math.vec2(1, 1).v / a.v) },
+                inline 3 => .{ .v = (math.vec3(1, 1, 1).v / a.v) },
+                inline 4 => .{ .v = (math.vec4(1, 1, 1, 1).v / a.v) },
+                else => @compileError("Expected Vec2, Vec3, Vec4, found '" ++ @typeName(VecN) ++ "'"),
+            };
+        }
+
+        // Negates a given vector
+        pub inline fn negate(a: *const VecN) VecN {
+            return switch (VecN.n) {
+                inline 2 => .{ .v = math.vec2(-1, -1).v * a.v },
+                inline 3 => .{ .v = math.vec3(-1, -1, -1).v * a.v },
+                inline 4 => .{ .v = math.vec4(-1, -1, -1, -1).v * a.v },
+                else => @compileError("Expected Vec2, Vec3, Vec4, found '" ++ @typeName(VecN) ++ "'"),
+            };
+        }
+
+        // Returns the largest scalar of two vectors
+        pub inline fn maxScalar(a: *const VecN, b: *const VecN) Scalar {
+            var max_scalar: Scalar = a.v[0];
+            inline for (0..VecN.n) |i| {
+                if (a.v[i] > max_scalar)
+                    max_scalar = a.v[i];
+                if (b.v[i] > max_scalar)
+                    max_scalar = b.v[i];
+            }
+
+            return max_scalar;
+        }
+
+        // Returns the smallest scalar of two vectors
+        pub inline fn minScalar(a: *const VecN, b: *const VecN) Scalar {
+            var min_scalar: Scalar = a.v[0];
+            inline for (0..VecN.n) |i| {
+                if (a.v[i] < min_scalar)
+                    min_scalar = a.v[i];
+                if (b.v[i] < min_scalar)
+                    min_scalar = b.v[i];
+            }
+
+            return min_scalar;
+        }
     };
 }
 
