@@ -392,6 +392,126 @@ test "normalize_no_nan" {
     try testing.expect(math.Vec2, math.vec2(0, 0)).eqlBinary(normalized);
 }
 
+test "max_vec2" {
+    const a: math.Vec2 = math.vec2(92, 0);
+    const b: math.Vec2 = math.vec2(100, -1);
+    try testing.expect(
+        math.Vec2,
+        math.vec2(100, 0),
+    ).eql(math.Vec2.max(&a, &b));
+}
+
+test "max_vec3" {
+    const a: math.Vec3 = math.vec3(92, 0, -2);
+    const b: math.Vec3 = math.vec3(100, -1, -1);
+    try testing.expect(
+        math.Vec3,
+        math.vec3(100, 0, -1),
+    ).eql(math.Vec3.max(&a, &b));
+}
+
+test "max_vec4" {
+    const a: math.Vec4 = math.vec4(92, 0, -2, 5);
+    const b: math.Vec4 = math.vec4(100, -1, -1, 3);
+    try testing.expect(
+        math.Vec4,
+        math.vec4(100, 0, -1, 5),
+    ).eql(math.Vec4.max(&a, &b));
+}
+
+test "min_vec2" {
+    const a: math.Vec2 = math.vec2(92, 0);
+    const b: math.Vec2 = math.vec2(100, -1);
+    try testing.expect(
+        math.Vec2,
+        math.vec2(92, -1),
+    ).eql(math.Vec2.min(&a, &b));
+}
+
+test "min_vec3" {
+    const a: math.Vec3 = math.vec3(92, 0, -2);
+    const b: math.Vec3 = math.vec3(100, -1, -1);
+    try testing.expect(
+        math.Vec3,
+        math.vec3(92, -1, -2),
+    ).eql(math.Vec3.min(&a, &b));
+}
+
+test "min_vec4" {
+    const a: math.Vec4 = math.vec4(92, 0, -2, 5);
+    const b: math.Vec4 = math.vec4(100, -1, -1, 3);
+    try testing.expect(
+        math.Vec4,
+        math.vec4(92, -1, -2, 3),
+    ).eql(math.Vec4.min(&a, &b));
+}
+
+test "inverse_vec2" {
+    const a: math.Vec2 = math.vec2(5, 4);
+    try testing.expect(
+        math.Vec2,
+        math.vec2(0.2, 0.25),
+    ).eql(math.Vec2.inverse(&a));
+}
+
+test "inverse_vec3" {
+    const a: math.Vec3 = math.vec3(5, 4, -2);
+    try testing.expect(
+        math.Vec3,
+        math.vec3(0.2, 0.25, -0.5),
+    ).eql(math.Vec3.inverse(&a));
+}
+
+test "inverse_vec4" {
+    const a: math.Vec4 = math.vec4(5, 4, -2, 3);
+    try testing.expect(
+        math.Vec4,
+        math.vec4(0.2, 0.25, -0.5, 0.333333333),
+    ).eql(math.Vec4.inverse(&a));
+}
+
+test "negate_vec2" {
+    const a: math.Vec2 = math.vec2(9, 0.25);
+    try testing.expect(
+        math.Vec2,
+        math.vec2(-9, -0.25),
+    ).eql(math.Vec2.negate(&a));
+}
+
+test "negate_vec3" {
+    const a: math.Vec3 = math.vec3(9, 0.25, 23.8);
+    try testing.expect(
+        math.Vec3,
+        math.vec3(-9, -0.25, -23.8),
+    ).eql(math.Vec3.negate(&a));
+}
+
+test "negate_vec4" {
+    const a: math.Vec4 = math.vec4(9, 0.25, 23.8, -1.2);
+    try testing.expect(
+        math.Vec4,
+        math.vec4(-9, -0.25, -23.8, 1.2),
+    ).eql(math.Vec4.negate(&a));
+}
+
+test "maxScalar" {
+    const a: math.Vec4 = math.vec4(0, 24, -20, 4);
+    const b: math.Vec4 = math.vec4(5, -35, 72, 12);
+    const c: math.Vec4 = math.vec4(16, 2, 93, -182);
+
+    try testing.expect(f32, 72).eql(math.Vec4.maxScalar(&a, &b));
+    try testing.expect(f32, 93).eql(math.Vec4.maxScalar(&b, &c));
+}
+
+test "minScalar" {
+    const a: math.Vec4 = math.vec4(0, 24, -20, 4);
+    const b: math.Vec4 = math.vec4(5, -35, 72, 12);
+    const c: math.Vec4 = math.vec4(16, 2, 81, -182);
+
+    try testing.expect(f32, -35).eql(math.Vec4.minScalar(&a, &b));
+    try testing.expect(f32, -182).eql(math.Vec4.minScalar(&b, &c));
+}
+
 // TODO(math): add basic tests for these:
 //
 // pub inline fn add(a: *const VecN, b: *const VecN) VecN {
