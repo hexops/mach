@@ -512,16 +512,167 @@ test "minScalar" {
     try testing.expect(f32, -182).eql(math.Vec4.minScalar(&b, &c));
 }
 
-// TODO(math): add basic tests for these:
-//
-// pub inline fn add(a: *const VecN, b: *const VecN) VecN {
-// pub inline fn sub(a: *const VecN, b: *const VecN) VecN {
-// pub inline fn div(a: *const VecN, b: *const VecN) VecN {
-// pub inline fn mul(a: *const VecN, b: *const VecN) VecN {
-// pub inline fn addScalar(a: *const VecN, s: Scalar) VecN {
-// pub inline fn subScalar(a: *const VecN, s: Scalar) VecN {
-// pub inline fn divScalar(a: *const VecN, s: Scalar) VecN {
-// pub inline fn mulScalar(a: *const VecN, s: Scalar) VecN {
+test "add_vec2" {
+    const a: math.Vec2 = math.vec2(4, 1);
+    const b: math.Vec2 = math.vec2(3, 4);
+    try testing.expect(math.Vec2, math.vec2(7, 5)).eql(a.add(&b));
+}
+
+test "add_vec3" {
+    const a: math.Vec3 = math.vec3(5, 12, 9.2);
+    const b: math.Vec3 = math.vec3(7.5, 920, 11);
+    try testing.expect(math.Vec3, math.vec3(12.5, 932, 20.2)).eql(a.add(&b));
+}
+
+test "add_vec4" {
+    const a: math.Vec4 = math.vec4(1280, 910, 926.25, 1000);
+    const b: math.Vec4 = math.vec4(20, 1090, 2.25, 2100);
+    try testing.expect(math.Vec4, math.vec4(1300, 2000, 928.5, 3100))
+        .eql(a.add(&b));
+}
+
+test "sub_vec2" {
+    const a: math.Vec2 = math.vec2(19, 1);
+    const b: math.Vec2 = math.vec2(3, 1);
+    try testing.expect(math.Vec2, math.vec2(16, 0)).eql(a.sub(&b));
+}
+
+test "sub_vec3" {
+    const a: math.Vec3 = math.vec3(7.5, 220, 13);
+    const b: math.Vec3 = math.vec3(2, 9, 6);
+    try testing.expect(math.Vec3, math.vec3(5.5, 211, 7)).eql(a.sub(&b));
+}
+
+test "sub_vec4" {
+    const a: math.Vec4 = math.vec4(2023, 7, 2, 7);
+    const b: math.Vec4 = math.vec4(-2, -2, -5, -3);
+    try testing.expect(math.Vec4, math.vec4(2025, 9, 7, 10))
+        .eql(a.sub(&b));
+}
+
+test "div_vec2" {
+    const a: math.Vec2 = math.vec2(1, 2.8);
+    const b: math.Vec2 = math.vec2(2, 4);
+    try testing.expect(math.Vec2, math.vec2(0.5, 0.7)).eql(a.div(&b));
+}
+
+test "div_vec3" {
+    const a: math.Vec3 = math.vec3(21, 144, 1);
+    const b: math.Vec3 = math.vec3(3, 12, 3);
+    try testing.expect(math.Vec3, math.vec3(7, 12, 0.3333333))
+        .eql(a.div(&b));
+}
+
+test "div_vec4" {
+    const a: math.Vec4 = math.vec4(1024, 512, 29, 3);
+    const b: math.Vec4 = math.vec4(2, 2, 2, 10);
+    try testing.expect(math.Vec4, math.vec4(512, 256, 14.5, 0.3))
+        .eql(a.div(&b));
+}
+
+test "mul_vec2" {
+    const a: math.Vec2 = math.vec2(29, 900);
+    const b: math.Vec2 = math.vec2(29, 2.2);
+    try testing.expect(math.Vec2, math.vec2(841, 1980)).eql(a.mul(&b));
+}
+
+test "mul_vec3" {
+    const a: math.Vec3 = math.vec3(3.72, 9.217, 9);
+    const b: math.Vec3 = math.vec3(2.1, 3.3, 9);
+    try testing.expect(math.Vec3, math.vec3(7.812, 30.4161, 81))
+        .eql(a.mul(&b));
+}
+
+test "mul_vec4" {
+    const a: math.Vec4 = math.vec4(3.72, 9.217, 9, 21);
+    const b: math.Vec4 = math.vec4(2.1, 3.3, 9, 15);
+    try testing.expect(math.Vec4, math.vec4(7.812, 30.4161, 81, 315))
+        .eql(a.mul(&b));
+}
+
+test "addScalar_vec2" {
+    const a: math.Vec2 = math.vec2(92, 78);
+    const s: f32 = 13;
+    try testing.expect(math.Vec2, math.vec2(105, 91))
+        .eql(a.addScalar(s));
+}
+
+test "addScalar_vec3" {
+    const a: math.Vec3 = math.vec3(92, 78, 120);
+    const s: f32 = 13;
+    try testing.expect(math.Vec3, math.vec3(105, 91, 133))
+        .eql(a.addScalar(s));
+}
+
+test "addScalar_vec4" {
+    const a: math.Vec4 = math.vec4(92, 78, 120, 111);
+    const s: f32 = 13;
+    try testing.expect(math.Vec4, math.vec4(105, 91, 133, 124))
+        .eql(a.addScalar(s));
+}
+
+test "subScalar_vec2" {
+    const a: math.Vec2 = math.vec2(1000.1, 3);
+    const s: f32 = 1;
+    try testing.expect(math.Vec2, math.vec2(999.1, 2))
+        .eql(a.subScalar(s));
+}
+
+test "subScalar_vec3" {
+    const a: math.Vec3 = math.vec3(1000.1, 3, 5);
+    const s: f32 = 1;
+    try testing.expect(math.Vec3, math.vec3(999.1, 2, 4))
+        .eql(a.subScalar(s));
+}
+
+test "subScalar_vec4" {
+    const a: math.Vec4 = math.vec4(1000.1, 3, 5, 38);
+    const s: f32 = 1;
+    try testing.expect(math.Vec4, math.vec4(999.1, 2, 4, 37))
+        .eql(a.subScalar(s));
+}
+
+test "divScalar_vec2" {
+    const a: math.Vec2 = math.vec2(13, 15);
+    const s: f32 = 2;
+    try testing.expect(math.Vec2, math.vec2(6.5, 7.5))
+        .eql(a.divScalar(s));
+}
+
+test "divScalar_vec3" {
+    const a: math.Vec3 = math.vec3(13, 15, 12);
+    const s: f32 = 2;
+    try testing.expect(math.Vec3, math.vec3(6.5, 7.5, 6))
+        .eql(a.divScalar(s));
+}
+
+test "divScalar_vec4" {
+    const a: math.Vec4 = math.vec4(13, 15, 12, 29);
+    const s: f32 = 2;
+    try testing.expect(math.Vec4, math.vec4(6.5, 7.5, 6, 14.5))
+        .eql(a.divScalar(s));
+}
+
+test "mulScalar_vec2" {
+    const a: math.Vec2 = math.vec2(10, 125);
+    const s: f32 = 5;
+    try testing.expect(math.Vec2, math.vec2(50, 625))
+        .eql(a.mulScalar(s));
+}
+
+test "mulScalar_vec3" {
+    const a: math.Vec3 = math.vec3(10, 125, 3);
+    const s: f32 = 5;
+    try testing.expect(math.Vec3, math.vec3(50, 625, 15))
+        .eql(a.mulScalar(s));
+}
+
+test "mulScalar_vec4" {
+    const a: math.Vec4 = math.vec4(10, 125, 3, 27);
+    const s: f32 = 5;
+    try testing.expect(math.Vec4, math.vec4(50, 625, 15, 135))
+        .eql(a.mulScalar(s));
+}
 
 // TODO(math): the tests below violate our styleguide (https://machengine.org/about/style/) we
 // should write new tests loosely based on them:
