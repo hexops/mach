@@ -4,6 +4,7 @@ const mach = @import("../main.zig");
 const testing = mach.testing;
 const math = mach.math;
 
+pub const VecComponent = enum { x, y, z, w };
 pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
     return extern struct {
         v: Vector,
