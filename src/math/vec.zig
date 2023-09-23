@@ -674,202 +674,173 @@ test "mulScalar_vec4" {
         .eql(a.mulScalar(s));
 }
 
-// TODO(math): the tests below violate our styleguide (https://machengine.org/about/style/) we
-// should write new tests loosely based on them:
+test "dir_zero_vec2" {
+    const near_zero_value = 1e-8;
+    const a: math.Vec2 = math.vec2(0, 0);
+    const b: math.Vec2 = math.vec2(0, 0);
+    try testing.expect(math.Vec2, math.vec2(0, 0))
+        .eql(a.dir(&b, near_zero_value));
+}
 
-// test "vec.dir" {
-//     const near_zero_value = 1e-8;
+test "dir_zero_vec3" {
+    const near_zero_value = 1e-8;
+    const a: math.Vec3 = math.vec3(0, 0, 0);
+    const b: math.Vec3 = math.vec3(0, 0, 0);
+    try testing.expect(math.Vec3, math.vec3(0, 0, 0))
+        .eql(a.dir(&b, near_zero_value));
+}
 
-//     {
-//         const a = Vec2{ 0, 0 };
-//         const b = Vec2{ 0, 0 };
-//         const d = vec.dir(a, b, near_zero_value);
-//         try expect(d[0] == 0 and d[1] == 0);
-//     }
+test "dir_zero_vec4" {
+    const near_zero_value = 1e-8;
+    const a: math.Vec4 = math.vec4(0, 0, 0, 0);
+    const b: math.Vec4 = math.vec4(0, 0, 0, 0);
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0, 0))
+        .eql(a.dir(&b, near_zero_value));
+}
 
-//     {
-//         const a = Vec2{ 1, 2 };
-//         const b = Vec2{ 1, 2 };
-//         const d = vec.dir(a, b, near_zero_value);
-//         try expect(d[0] == 0 and d[1] == 0);
-//     }
+test "dir_vec2" {
+    const a: math.Vec2 = math.vec2(1, 2);
+    const b: math.Vec2 = math.vec2(3, 4);
+    try testing.expect(math.Vec2, math.vec2(std.math.sqrt1_2, std.math.sqrt1_2))
+        .eql(a.dir(&b, 0));
+}
 
-//     {
-//         const a = Vec2{ 1, 2 };
-//         const b = Vec2{ 3, 4 };
-//         const d = vec.dir(a, b, 0);
-//         const result = std.math.sqrt1_2; // 1 / sqrt(2)
-//         try expect(d[0] == result and d[1] == result);
-//     }
+test "dir_vec3" {
+    const a: math.Vec3 = math.vec3(1, -1, 0);
+    const b: math.Vec3 = math.vec3(0, 1, 1);
 
-//     {
-//         const a = Vec2{ 1, 2 };
-//         const b = Vec2{ -1, -2 };
-//         const d = vec.dir(a, b, 0);
-//         const result = -0.44721359549995793928; // 1 / sqrt(5)
-//         try expectApproxEqAbs(d[0], result, near_zero_value);
-//         try expectApproxEqAbs(d[1], 2 * result, near_zero_value);
-//     }
+    const result_x = -0.40824829046386301637; // -1 / sqrt(6)
+    const result_y = 0.81649658092772603273; // sqrt(2/3)
+    const result_z = -result_x; // 1 / sqrt(6)
 
-//     {
-//         const a = Vec3{ 1, -1, 0 };
-//         const b = Vec3{ 0, 1, 1 };
-//         const d = vec.dir(a, b, 0);
+    try testing.expect(math.Vec3, math.vec3(result_x, result_y, result_z))
+        .eql(a.dir(&b, 0));
+}
 
-//         const result_3 = 0.40824829046386301637; // 1 / sqrt(6)
-//         const result_1 = -result_3; // -1 / sqrt(6)
-//         const result_2 = 0.81649658092772603273; // sqrt(2/3)
-//         try expectApproxEqAbs(d[0], result_1, 1e-7);
-//         try expectApproxEqAbs(d[1], result_2, 1e-7);
-//         try expectApproxEqAbs(d[2], result_3, 1e-7);
-//     }
-// }
+test "dist_zero_vec2" {
+    const a: math.Vec2 = math.vec2(0, 0);
+    const b: math.Vec2 = math.vec2(0, 0);
+    try testing.expect(f32, 0).eql(a.dist(&b));
+}
 
-// test "vec.dist2" {
-//     {
-//         const a = Vec4{ 0, 0, 0, 0 };
-//         const b = Vec4{ 0, 0, 0, 0 };
-//         try expect(vec.dist2(a, b) == 0);
-//     }
+test "dist_zero_vec3" {
+    const a: math.Vec3 = math.vec3(0, 0, 0);
+    const b: math.Vec3 = math.vec3(0, 0, 0);
+    try testing.expect(f32, 0).eql(a.dist(&b));
+}
 
-//     {
-//         const a = Vec2{ 1, 1 };
-//         try expect(vec.dist2(a, a) == 0);
-//     }
+test "dist_zero_vec4" {
+    const a: math.Vec4 = math.vec4(0, 0, 0, 0);
+    const b: math.Vec4 = math.vec4(0, 0, 0, 0);
+    try testing.expect(f32, 0).eql(a.dist(&b));
+}
 
-//     {
-//         const a = Vec2{ 1, 2 };
-//         const b = Vec2{ 3, 4 };
-//         try expect(vec.dist2(a, b) == 8);
-//     }
+test "dist_vec2" {
+    const a: math.Vec2 = math.vec2(1.5, 2.25);
+    const b: math.Vec2 = math.vec2(1.44, -9.33);
+    try testing.expect(f64, 11.5802)
+        .eqlApprox(a.dist(&b), 1e-4);
+}
 
-//     {
-//         const a = Vec3{ -1, -2, -3 };
-//         const b = Vec3{ 3, 2, 1 };
-//         try expect(vec.dist2(a, b) == 48);
-//     }
+test "dist_vec3" {
+    const a: math.Vec3 = math.vec3(1.5, 2.25, 3.33);
+    const b: math.Vec3 = math.vec3(1.44, -9.33, 7.25);
+    try testing.expect(f64, 12.2256)
+        .eqlApprox(a.dist(&b), 1e-4);
+}
 
-//     {
-//         const a = Vec4{ 1.5, 2.25, 3.33, 4.44 };
-//         const b = Vec4{ 1.44, -9.33, 7.25, -0.5 };
-//         try expectApproxEqAbs(vec.dist2(a, b), 173.87, 1e-8);
-//     }
-// }
+test "dist_vec4" {
+    const a: math.Vec4 = math.vec4(1.5, 2.25, 3.33, 4.44);
+    const b: math.Vec4 = math.vec4(1.44, -9.33, 7.25, -0.5);
+    try testing.expect(f64, 13.186)
+        .eqlApprox(a.dist(&b), 1e-4);
+}
 
-// test "vec.dist" {
-//     {
-//         const a = Vec4{ 0, 0, 0, 0 };
-//         const b = Vec4{ 0, 0, 0, 0 };
-//         try expect(vec.dist(a, b) == 0);
-//     }
+test "dist2_zero_vec2" {
+    const a: math.Vec2 = math.vec2(0, 0);
+    const b: math.Vec2 = math.vec2(0, 0);
+    try testing.expect(f32, 0).eql(a.dist2(&b));
+}
 
-//     {
-//         const a = Vec2{ 1, 1 };
-//         try expect(vec.dist(a, a) == 0);
-//     }
+test "dist2_zero_vec3" {
+    const a: math.Vec3 = math.vec3(0, 0, 0);
+    const b: math.Vec3 = math.vec3(0, 0, 0);
+    try testing.expect(f32, 0).eql(a.dist2(&b));
+}
 
-//     {
-//         const a = Vec2{ 1, 2 };
-//         const b = Vec2{ 4, 6 };
-//         try expectEqual(vec.dist(a, b), 5);
-//     }
+test "dist2_zero_vec4" {
+    const a: math.Vec4 = math.vec4(0, 0, 0, 0);
+    const b: math.Vec4 = math.vec4(0, 0, 0, 0);
+    try testing.expect(f32, 0).eql(a.dist2(&b));
+}
 
-//     {
-//         const a = Vec3{ -1, -2, -3 };
-//         const b = Vec3{ 3, 2, -1 };
-//         try expect(vec.dist(a, b) == 6);
-//     }
+test "dist2_vec2" {
+    const a: math.Vec2 = math.vec2(1.5, 2.25);
+    const b: math.Vec2 = math.vec2(1.44, -9.33);
+    try testing.expect(f64, 134.10103204).eqlApprox(a.dist2(&b), 1e-2);
+}
 
-//     {
-//         const a = Vec4{ 1.5, 2.25, 3.33, 4.44 };
-//         const b = Vec4{ 1.44, -9.33, 7.25, -0.5 };
-//         try expectApproxEqAbs(vec.dist(a, b), 13.18597740025364975978, 1e-8);
-//     }
-// }
+test "dist2_vec3" {
+    const a: math.Vec3 = math.vec3(1.5, 2.25, 3.33);
+    const b: math.Vec3 = math.vec3(1.44, -9.33, 7.25);
+    try testing.expect(f64, 149.46529536).eqlApprox(a.dist2(&b), 1e-2);
+}
 
-// test "vec.lerp" {
-//     {
-//         const a = Vec4{ 1, 1, 1, 1 };
-//         const b = Vec4{ 0, 0, 0, 0 };
-//         const lerp_to_a = vec.lerp(a, b, 0.0);
-//         try expectEqual(lerp_to_a[0], a[0]);
-//         try expectEqual(lerp_to_a[1], a[1]);
-//         try expectEqual(lerp_to_a[2], a[2]);
-//         try expectEqual(lerp_to_a[3], a[3]);
+test "dist2_vec4" {
+    const a: math.Vec4 = math.vec4(1.5, 2.25, 3.33, 4.44);
+    const b: math.Vec4 = math.vec4(1.44, -9.33, 7.25, -0.5);
+    try testing.expect(f64, 173.870596).eqlApprox(a.dist2(&b), 1e-3);
+}
 
-//         const lerp_to_b = vec.lerp(a, b, 1.0);
-//         try expectEqual(lerp_to_b[0], b[0]);
-//         try expectEqual(lerp_to_b[1], b[1]);
-//         try expectEqual(lerp_to_b[2], b[2]);
-//         try expectEqual(lerp_to_b[3], b[3]);
+test "lerp_zero_vec2" {
+    const a: math.Vec2 = math.vec2(1, 1);
+    const b: math.Vec2 = math.vec2(0, 0);
+    try testing.expect(math.Vec2, math.vec2(1, 1)).eql(a.lerp(&b, 0));
+}
 
-//         const lerp_to_mid = vec.lerp(a, b, 0.5);
-//         try expectEqual(lerp_to_mid[0], 0.5);
-//         try expectEqual(lerp_to_mid[1], 0.5);
-//         try expectEqual(lerp_to_mid[2], 0.5);
-//         try expectEqual(lerp_to_mid[3], 0.5);
-//     }
-// }
+test "lerp_zero_vec3" {
+    const a: math.Vec3 = math.vec3(1, 1, 1);
+    const b: math.Vec3 = math.vec3(0, 0, 0);
+    try testing.expect(math.Vec3, math.vec3(1, 1, 1)).eql(a.lerp(&b, 0));
+}
 
-// test "vec.cross" {
-//     {
-//         const a = Vec3{ 1, 3, 4 };
-//         const b = Vec3{ 2, -5, 8 };
-//         const cross = vec.cross(a, b);
-//         try expectEqual(cross[0], 44);
-//         try expectEqual(cross[1], 0);
-//         try expectEqual(cross[2], -11);
-//     }
-//     {
-//         const a = Vec3{ 1.0, 0.0, 0.0 };
-//         const b = Vec3{ 0.0, 1.0, 0.0 };
-//         const cross = vec.cross(a, b);
-//         try expectEqual(cross[0], 0.0);
-//         try expectEqual(cross[1], 0.0);
-//         try expectEqual(cross[2], 1.0);
-//     }
-//     {
-//         const a = Vec3{ 1.0, 0.0, 0.0 };
-//         const b = Vec3{ 0.0, -1.0, 0.0 };
-//         const cross = vec.cross(a, b);
-//         try expectEqual(cross[0], 0.0);
-//         try expectEqual(cross[1], 0.0);
-//         try expectEqual(cross[2], -1.0);
-//     }
-//     {
-//         const a = Vec3{ -3.0, 0.0, -2.0 };
-//         const b = Vec3{ 5.0, -1.0, 2.0 };
-//         const cross = vec.cross(a, b);
-//         try expectEqual(cross[0], -2.0);
-//         try expectEqual(cross[1], -4.0);
-//         try expectEqual(cross[2], 3.0);
-//     }
-// }
+test "lerp_zero_vec4" {
+    const a: math.Vec4 = math.vec4(1, 1, 1, 1);
+    const b: math.Vec4 = math.vec4(0, 0, 0, 0);
+    try testing.expect(math.Vec4, math.vec4(1, 1, 1, 1)).eql(a.lerp(&b, 0));
+}
 
-// test "vec.dot" {
-//     {
-//         const a = Vec2{ -1, 2 };
-//         const b = Vec2{ 4, 5 };
-//         const dot = vec.dot(a, b);
-//         try expectEqual(dot, 6);
-//     }
-//     {
-//         const a = Vec3{ -1.0, 2.0, 3.0 };
-//         const b = Vec3{ 4.0, 5.0, 6.0 };
-//         const dot = vec.dot(a, b);
-//         try expectEqual(dot, 24.0);
-//     }
-//     {
-//         const a = Vec4{ -1.0, 2.0, 3.0, -2.0 };
-//         const b = Vec4{ 4.0, 5.0, 6.0, 2.0 };
-//         const dot = vec.dot(a, b);
-//         try expectEqual(dot, 20.0);
-//     }
+test "cross" {
+    const a: math.Vec3 = math.vec3(1, 3, 4);
+    const b: math.Vec3 = math.vec3(2, -5, 8);
+    try testing.expect(math.Vec3, math.vec3(44, 0, -11))
+        .eql(a.cross(&b));
 
-//     {
-//         const a = Vec4{ 0, 0, 0, 0 };
-//         const b = Vec4{ 0, 0, 0, 0 };
-//         const dot = vec.dot(a, b);
-//         try expectEqual(dot, 0.0);
-//     }
-// }
+    const c: math.Vec3 = math.vec3(1.0, 0.0, 0.0);
+    const d: math.Vec3 = math.vec3(0.0, 1.0, 0.0);
+    try testing.expect(math.Vec3, math.vec3(0.0, 0.0, 1.0))
+        .eql(c.cross(&d));
+
+    const e: math.Vec3 = math.vec3(-3.0, 0.0, -2.0);
+    const f: math.Vec3 = math.vec3(5.0, -1.0, 2.0);
+    try testing.expect(math.Vec3, math.vec3(-2.0, -4.0, 3.0))
+        .eql(e.cross(&f));
+}
+
+test "dot_vec2" {
+    const a: math.Vec2 = math.vec2(-1, 2);
+    const b: math.Vec2 = math.vec2(4, 5);
+    try testing.expect(f32, 6).eql(a.dot(&b));
+}
+
+test "dot_vec3" {
+    const a: math.Vec3 = math.vec3(-1, 2, 3);
+    const b: math.Vec3 = math.vec3(4, 5, 6);
+    try testing.expect(f32, 24).eql(a.dot(&b));
+}
+
+test "dot_vec4" {
+    const a: math.Vec4 = math.vec4(-1, 2, 3, -2);
+    const b: math.Vec4 = math.vec4(4, 5, 6, 2);
+    try testing.expect(f32, 20).eql(a.dot(&b));
+}
