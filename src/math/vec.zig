@@ -46,8 +46,8 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
 
                 // TODO(math): come up with a better strategy for swizzling?
-                pub inline fn yzw(v: *const VecN) VecN {
-                    return VecN.init(v.y(), v.z(), v.w());
+                pub inline fn yzx(v: *const VecN) VecN {
+                    return VecN.init(v.y(), v.z(), v.x());
                 }
                 pub inline fn zxy(v: *const VecN) VecN {
                     return VecN.init(v.z(), v.x(), v.y());
