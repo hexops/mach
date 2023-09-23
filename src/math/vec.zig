@@ -57,9 +57,9 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 /// and required inputs are Vec3.
                 pub inline fn cross(a: *const VecN, b: *const VecN) VecN {
                     // https://gamemath.com/book/vectors.html#cross_product
-                    const s1 = a.yzx().mul(b.zxy());
-                    const s2 = a.zxy().mul(b.yzx());
-                    return s1.sub(s2);
+                    const s1 = a.yzx().mul(&b.zxy());
+                    const s2 = a.zxy().mul(&b.yzx());
+                    return s1.sub(&s2);
                 }
             },
             inline 4 => struct {
