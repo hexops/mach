@@ -5,6 +5,7 @@ const testing = mach.testing;
 const math = mach.math;
 
 pub const VecComponent = enum { x, y, z, w };
+
 pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
     return extern struct {
         v: Vector,
@@ -46,20 +47,27 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                     return v.v[2];
                 }
 
-                // TODO(math): come up with a better strategy for swizzling?
-                pub inline fn yzx(v: *const VecN) VecN {
-                    return VecN.init(v.y(), v.z(), v.x());
-                }
-                pub inline fn zxy(v: *const VecN) VecN {
-                    return VecN.init(v.z(), v.x(), v.y());
+                pub inline fn swizzle(
+                    v: *const VecN,
+                    xc: VecComponent,
+                    yc: VecComponent,
+                    zc: VecComponent,
+                ) VecN {
+                    return .{ .v = @shuffle(VecN.T, v.v, undefined, [3]T{
+                        @intFromEnum(xc),
+                        @intFromEnum(yc),
+                        @intFromEnum(zc),
+                    }) };
                 }
 
-                /// Calculates the cross product between vector a and b. This can be done only in 3D
-                /// and required inputs are Vec3.
+                /// Calculates the cross product between vector a and b.
+                /// This can be done only in 3D and required inputs are Vec3.
                 pub inline fn cross(a: *const VecN, b: *const VecN) VecN {
                     // https://gamemath.com/book/vectors.html#cross_product
-                    const s1 = a.yzx().mul(&b.zxy());
-                    const s2 = a.zxy().mul(&b.yzx());
+                    const s1 = a.swizzle(.y, .z, .x)
+                        .mul(&b.swizzle(.z, .x, .y));
+                    const s2 = a.swizzle(.z, .x, .y)
+                        .mul(&b.swizzle(.y, .z, .x));
                     return s1.sub(&s2);
                 }
             },
