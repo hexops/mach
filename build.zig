@@ -120,11 +120,11 @@ pub const App = struct {
         });
         try deps.append(.{ .name = "mach-sysaudio", .module = mach_sysaudio_dep.module("mach-sysaudio") });
 
-        const mach_core = mach_builder.dependency("mach_core", .{
+        const mach_core_dep = mach_builder.dependency("mach_core", .{
             .target = options.target,
             .optimize = options.optimize,
         });
-        const app = try core.App.init(app_builder, mach_core.builder, .{
+        const app = try core.App.init(app_builder, mach_core_dep.builder, .{
             .name = options.name,
             .src = options.src,
             .target = options.target,
@@ -133,6 +133,7 @@ pub const App = struct {
             .deps = deps.items,
             .res_dirs = options.res_dirs,
             .watch_paths = options.watch_paths,
+            .mach_core_mod = mach_core_dep.module("mach-core"),
         });
         return .{
             .core = app,
