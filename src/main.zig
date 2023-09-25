@@ -1,13 +1,10 @@
 // Core re-exports
 pub const core = @import("mach-core");
-pub const GPUInterface = core.GPUInterface;
 pub const Timer = core.Timer;
-pub const scope_levels = core.scope_levels;
-pub const log_level = core.log_level;
 
 // Mach packages
 pub const gpu = core.gpu;
-pub const sysjs = @import("sysjs");
+pub const sysjs = @import("mach-sysjs");
 pub const ecs = @import("mach-ecs");
 pub const sysaudio = @import("mach-sysaudio");
 

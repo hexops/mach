@@ -11,20 +11,24 @@
             .hash = "12204dbf4f71c675479fd59ded257644bd48decf045464f0105a72b632f56be3b4de",
         },
         .mach_core = .{
-            .url = "https://pkg.machengine.org/mach-core/9243a331a3eb0d4ba97aec7f793e60f1cf90bd8b.tar.gz",
-            .hash = "12206e93994d37b3ce5c790e391736130f2a26bec06eca01ca51ab08a6d8105ab7f9",
+            .url = "https://pkg.machengine.org/mach-core/d2b382d9698fc621d912ba1c693fe484d8e2178a.tar.gz",
+            .hash = "1220c90fcb6a12a9659f4971e12ec53db017eb082abd3ebf4d1b8f703412c84228ae",
         },
         .mach_basisu = .{
             .url = "https://pkg.machengine.org/mach-basisu/fe2f30a9a9662db2d12bc978b50158d4e74ec0d8.tar.gz",
             .hash = "1220c36c6c5491e78f0ca3f857080551cb90480b6e2028d6636409a907d6dfa49df2",
         },
         .mach_sysaudio = .{
-            .url = "https://pkg.machengine.org/mach-sysaudio/a9bf13c14e05648e00745f5782883f4111eaeed4.tar.gz",
-            .hash = "12206935288305365fe8bc46e0e30191f1119fca96632a5f93ca95ceb978b13bdb33",
+            .url = "https://pkg.machengine.org/mach-sysaudio/381b3815caef1f631d64360cc51525adf638189c.tar.gz",
+            .hash = "12205e0f7e775161606bd55c92eb4244c69cb7072ee5d8205e50300048cbf1f6dc5c",
         },
         .mach_freetype = .{
             .url = "https://pkg.machengine.org/mach-freetype/92773615e2480c0a6f561748f2ba1180376bbb68.tar.gz",
             .hash = "12205a6057fe43a4940c6db304449ebf3e98ff15d0eec05b75f621d7616c2e7d7f2c",
+        },
+        .mach_sysjs = .{
+            .url = "https://pkg.machengine.org/mach-sysjs/bafd6c9b8fd5e7be1e8e24cfbd156703d6026aa8.tar.gz",
+            .hash = "1220187935c4c5d4cf824927df28e858dcd06cb864bb5d6be4cd349d2836abb4aec4",
         },
     },
 }
