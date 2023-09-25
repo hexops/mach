@@ -9,7 +9,6 @@ pub const ecs = @import("mach-ecs");
 pub const sysaudio = @import("mach-sysaudio");
 
 // Mach standard library
-pub const Atlas = @import("atlas/Atlas.zig");
 pub const gfx = @import("gfx/main.zig");
 pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");

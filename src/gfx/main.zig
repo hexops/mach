@@ -1,5 +1,6 @@
 pub const util = @import("util.zig");
 pub const Sprite = @import("Sprite.zig");
+pub const Atlas = @import("atlas/Atlas.zig");
 pub const Text = @import("Text.zig");
 pub const FontRenderer = @import("font.zig").FontRenderer;
 pub const RGBA32 = @import("font.zig").RGBA32;
