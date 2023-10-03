@@ -53,6 +53,7 @@ pub const Vec4 = vec.Vec(4, f32);
 pub const Quat = q.Quat(f32);
 pub const Mat3x3 = mat.Mat(3, 3, Vec4);
 pub const Mat4x4 = mat.Mat(4, 4, Vec4);
+pub const Ray = ray.Ray(Vec3);
 
 /// Half-precision f16 types
 pub const Vec2h = vec.Vec(2, f16);
@@ -61,6 +62,7 @@ pub const Vec4h = vec.Vec(4, f16);
 pub const Quath = q.Quat(f16);
 pub const Mat3x3h = mat.Mat(3, 3, Vec4h);
 pub const Mat4x4h = mat.Mat(4, 4, Vec4h);
+pub const Rayh = ray.Ray(Vec3h);
 
 /// Double-precision f64 types
 pub const Vec2d = vec.Vec(2, f64);
@@ -69,6 +71,7 @@ pub const Vec4d = vec.Vec(4, f64);
 pub const Quatd = q.Quat(f64);
 pub const Mat3x3d = mat.Mat(3, 3, Vec4d);
 pub const Mat4x4d = mat.Mat(4, 4, Vec4d);
+pub const Rayd = ray.Ray(Vec3d);
 
 /// Standard f32 precision initializers
 pub const vec2 = Vec2.init;
@@ -93,10 +96,6 @@ pub const vec4d = Vec4d.init;
 pub const quatd = Quatd.init;
 pub const mat3x3d = Mat3x3d.init;
 pub const mat4x4d = Mat4x4d.init;
-
-// Rays in 3 dimensional space
-pub const Ray = ray.Ray;
-pub const RayHit = ray.RayHit;
 
 test {
     testing.refAllDeclsRecursive(@This());
