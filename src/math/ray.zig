@@ -5,7 +5,20 @@ const testing = mach.testing;
 const math = mach.math;
 const vec = @import("vec.zig");
 
-fn maxDim(v: math.Vec3) u32 {
+// Determine the fallback precision for valid floating point precisions
+// our Ray computations can have. Will return twice the input precision
+fn floatFallbackPrecision(comptime float_precision: type) type {
+    switch (float_precision) {
+        f16 => return f32,
+        f32 => return f64,
+        f64 => return f128,
+        else => @compileError("Expected f16, f32, f64, found '" ++
+            @typeName(float_precision) ++ "'"),
+    }
+}
+
+// Determine the 3D vector dimension with the largest scalar value
+fn maxDim(v: math.Vec3) u8 {
     if (v.v[0] > v.v[1]) {
         if (v.v[0] > v.v[2]) {
             return 0;
