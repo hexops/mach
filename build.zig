@@ -34,6 +34,7 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
     });
+    const font_assets_dep = b.dependency("font_assets", .{});
 
     const module = b.addModule("mach", .{
         .source_file = .{ .path = sdkPath("/src/main.zig") },
@@ -45,6 +46,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "mach-freetype", .module = mach_freetype_dep.module("mach-freetype") },
             .{ .name = "mach-harfbuzz", .module = mach_freetype_dep.module("mach-harfbuzz") },
             .{ .name = "mach-sysjs", .module = mach_sysjs_dep.module("mach-sysjs") },
+            .{ .name = "font-assets", .module = font_assets_dep.module("font-assets") },
         },
     });
 
@@ -60,6 +62,10 @@ pub fn build(b: *std.Build) !void {
         while (iter.next()) |e| {
             unit_tests.addModule(e.key_ptr.*, e.value_ptr.*);
         }
+
+        // TODO: move link into a helper function shared between tests in App
+        @import("mach_freetype").linkFreetype(mach_freetype_dep.builder, unit_tests);
+        @import("mach_freetype").linkHarfbuzz(mach_freetype_dep.builder, unit_tests);
 
         // Exposes a `test` step to the `zig build --help` menu, providing a way for the user to
         // request running the unit tests.

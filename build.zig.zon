@@ -30,5 +30,9 @@
             .url = "https://pkg.machengine.org/mach-sysjs/bafd6c9b8fd5e7be1e8e24cfbd156703d6026aa8.tar.gz",
             .hash = "1220187935c4c5d4cf824927df28e858dcd06cb864bb5d6be4cd349d2836abb4aec4",
         },
+        .font_assets = .{
+            .url = "https://github.com/hexops/font-assets/archive/7b44dbabe209d574bb9400b6b31737d072afe9f8.tar.gz",
+            .hash = "122022d40902e7a5776995b5c46625a38617f4dc2eb30755df979f64f7a429bae5db",
+        },
     },
 }

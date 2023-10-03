@@ -30,6 +30,5 @@ test {
     _ = gfx;
     _ = math;
     _ = testing;
-    std.testing.refAllDeclsRecursive(Atlas);
     std.testing.refAllDeclsRecursive(math);
 }
