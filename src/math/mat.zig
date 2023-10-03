@@ -675,7 +675,7 @@ test "Mat3x3_mulVec_vec3" {
     try testing.expect(math.Vec3, expected).eql(m);
 }
 
-test "Mat4x4_mulVec_ve4" {
+test "Mat4x4_mulVec_vec4" {
     const v = math.vec4(2, 5, 1, 8);
     const mat = math.Mat4x4.init(
         &math.vec4(1, 0, 2, 0),
