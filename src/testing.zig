@@ -206,6 +206,7 @@ test {
     testing.refAllDeclsRecursive(Expect(mach.math.Vec2h));
     testing.refAllDeclsRecursive(Expect(mach.math.Vec3));
     testing.refAllDeclsRecursive(Expect(mach.math.Vec4d));
+    testing.refAllDeclsRecursive(Expect(mach.math.Ray));
     // testing.refAllDeclsRecursive(Expect(mach.math.Mat4h));
     // testing.refAllDeclsRecursive(Expect(mach.math.Mat4));
     // testing.refAllDeclsRecursive(Expect(mach.math.Mat4d));

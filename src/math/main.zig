@@ -44,6 +44,7 @@ const testing = std.testing;
 const vec = @import("vec.zig");
 const mat = @import("mat.zig");
 const q = @import("quat.zig");
+const ray = @import("ray.zig");
 
 /// Standard f32 precision types
 pub const Vec2 = vec.Vec(2, f32);
@@ -92,6 +93,10 @@ pub const vec4d = Vec4d.init;
 pub const quatd = Quatd.init;
 pub const mat3x3d = Mat3x3d.init;
 pub const mat4x4d = Mat4x4d.init;
+
+// Rays in 3 dimensional space
+pub const Ray = ray.Ray;
+pub const RayHit = ray.RayHit;
 
 test {
     testing.refAllDeclsRecursive(@This());
