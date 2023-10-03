@@ -360,7 +360,7 @@ pub fn Mat(
             return result;
         }
 
-        /// Matrix - Vector multiplicatino: Mat * Vec
+        /// Matrix * Vector multiplication
         pub inline fn mulVec(a: *const Matrix, b: *const ColVec) ColVec {
             var result = [_]ColVec.T{0}**ColVec.n;
             inline for (0..Matrix.rows) |row| {
