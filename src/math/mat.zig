@@ -44,6 +44,9 @@ pub fn Mat(
         /// The Vec type corresponding to the number of rows, e.g. Mat3x3.RowVec == Vec3
         pub const RowVec = vec.Vec(rows, T);
 
+        /// The Vec type corresponding to the numebr of cols, e.g. Mat3x4.ColVec = Vec4
+        pub const ColVec = vec.Vec(cols, T);
+
         const Matrix = @This();
 
         /// Identity matrix
@@ -357,6 +360,19 @@ pub fn Mat(
             return result;
         }
 
+        /// Matrix - Vector multiplicatino: Mat * Vec
+        pub inline fn mulVec(a: *const Matrix, b: *const ColVec) ColVec {
+            var result = [_]ColVec.T{0}**ColVec.n;
+            inline for (0..Matrix.rows) |row| {
+                inline for (0..ColVec.n) |i| {
+                    result[i] += a.v[row].v[i] * b.v[row];
+                }
+            }
+            return vec.Vec(ColVec.n, ColVec.T){
+                .v = result
+            };
+        }
+
         // TODO: the below code was correct in our old implementation, it just needs to be updated
         // to work with this new Mat approach, swapping f32 for the generic T float type, moving 3x3
         // and 4x4 specific functions into the mixin above, writing new tests, etc.
@@ -635,4 +651,40 @@ test "Mat4x4_perspective" {
     const expected = math.Mat4x4.init(&math.vec4(1.0 / (aspect_ratio * std.math.tan(fov_radians / 2.0)), 0.0, 0.0, 0.0), &math.vec4(0.0, 1.0 / std.math.tan(fov_radians / 2.0), 0.0, 0.0), &math.vec4(0.0, 0.0, -(far + near) / (far - near), -1.0), &math.vec4(0.0, 0.0, -(2.0 * far * near) / (far - near), 0.0));
 
     try testing.expect(math.Mat4x4, expected).eql(m);
+}
+
+test "Mat3x3_mulVec_vec3_ident" {
+    const v = math.Vec3.splat(1);
+    const ident = math.Mat3x3.ident;
+    const expected = v;
+    var m = math.Mat3x3.mulVec(&ident, &v);
+
+    try testing.expect(math.Vec3, expected).eql(m);
+}
+
+test "Mat3x3_mulVec_vec3" {
+    const v = math.Vec3.splat(1);
+    const mat = math.Mat3x3.init(
+        &math.vec3(2, 0, 0),
+        &math.vec3(0, 2, 0),
+        &math.vec3(0, 0, 3),
+    );
+
+    const m = math.Mat3x3.mulVec(&mat, &v);
+    const expected = math.vec3(2,2,3);
+    try testing.expect(math.Vec3, expected).eql(m);
+}
+
+test "Mat4x4_mulVec_ve4" {
+    const v = math.vec4(2, 5, 1, 8);
+    const mat = math.Mat4x4.init(
+        &math.vec4(1, 0, 2, 0),
+        &math.vec4(0, 3, 0, 4),
+        &math.vec4(0, 0, 5, 0),
+        &math.vec4(6, 0, 0, 7),
+    );
+
+    const m = math.Mat4x4.mulVec(&mat, &v);
+    const expected = math.vec4(4, 47, 5, 68);
+    try testing.expect(math.Vec4, expected).eql(m);
 }
