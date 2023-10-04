@@ -361,15 +361,16 @@ pub fn Mat(
         }
 
         /// Matrix * Vector multiplication
-        pub inline fn mulVec(a: *const Matrix, b: *const ColVec) ColVec {
-            var result = [_]ColVec.T{0} ** ColVec.n;
+        pub inline fn mulVec(matrix: *const Matrix, vector: *const ColVec) ColVec {
+            var result = [_]ColVec.T{0}**ColVec.n;
             inline for (0..Matrix.rows) |row| {
                 inline for (0..ColVec.n) |i| {
-                    result[i] += a.v[row].v[i] * b.v[row];
+                    result[i] += matrix.v[row].v[i] * vector.v[row];
                 }
             }
             return vec.Vec(ColVec.n, ColVec.T){ .v = result };
         }
+
 
         // TODO: the below code was correct in our old implementation, it just needs to be updated
         // to work with this new Mat approach, swapping f32 for the generic T float type, moving 3x3
@@ -686,3 +687,6 @@ test "Mat4x4_mulVec_vec4" {
     const expected = math.vec4(4, 47, 5, 68);
     try testing.expect(math.Vec4, expected).eql(m);
 }
+
+
+
