@@ -83,7 +83,13 @@ const Glyph = extern struct {
     text_index: u32,
 };
 
-const RegionMap = std.AutoArrayHashMapUnmanaged(u21, mach.Atlas.Region);
+const GlyphDetail = struct {
+    codepoint: u21 = 0,
+    font: FontRenderer,
+    // Auto Hashing doesn't work for floats, so we bitcast to integer.
+    size: u32,
+};
+const RegionMap = std.AutoArrayHashMapUnmanaged(u21, GlyphDetail);
 
 const Pipeline = struct {
     render: *gpu.RenderPipeline,
@@ -388,10 +394,15 @@ pub fn machGfxTextUpdated(
             var offset_x: f32 = 0.0;
             var offset_y: f32 = 0.0;
             var utf8 = (try std.unicode.Utf8View.init(text)).iterator();
+            var glyph_detail = GlyphDetail{
+                .font = font,
+                .size = @bitCast(font_size),
+            };
             while (utf8.nextCodepoint()) |codepoint| {
                 const m = try font.measure(codepoint, font_size * px_density);
+                glyph_detail.codepoint = codepoint;
                 if (codepoint != '\n') {
-                    var region = try pipeline.regions.getOrPut(engine.allocator, codepoint);
+                    var region = try pipeline.regions.getOrPut(engine.allocator, glyph_detail);
                     if (!region.found_existing) {
                         const glyph = try font.render(codepoint, font_size * px_density);
 
