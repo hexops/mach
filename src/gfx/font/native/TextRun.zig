@@ -7,14 +7,14 @@ const Glyph = @import("../main.zig").Glyph;
 
 const TextRun = @This();
 
-font_size_px: u32 = 16.0,
+font_size_px: f32 = 16.0,
 px_density: u8 = 1,
 
 // Internal / private fields.
 buffer: harfbuzz.Buffer,
 index: usize = 0,
 infos: []harfbuzz.GlyphInfo = undefined,
-positions: []harfbuzz.GlyphPosition = undefined,
+positions: []harfbuzz.Position = undefined,
 
 pub fn init() anyerror!TextRun {
     return TextRun{
@@ -32,7 +32,7 @@ pub fn next(s: *TextRun) ?Glyph {
     const pos = s.positions[s.index];
     s.index += 1;
     return Glyph{
-        .glyph_index = @intCast(info.codepoint),
+        .glyph_index = info.codepoint,
         // TODO: should we expose this? Is there a browser equivalent? do we need it?
         // .var1 = @intCast(info.var1),
         // .var2 = @intCast(info.var2),

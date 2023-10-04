@@ -1,3 +1,4 @@
+const std = @import("std");
 const mach = @import("../../main.zig");
 const testing = mach.testing;
 const math = mach.math;
@@ -16,12 +17,13 @@ pub const TextRun = TextRunInterface(if (@import("builtin").cpu.arch == .wasm32)
 fn FontInterface(comptime T: type) type {
     assertDecl(T, "initBytes", fn (font_bytes: []const u8) anyerror!T);
     assertDecl(T, "shape", fn (f: *const T, r: *TextRun) anyerror!void);
-    assertDecl(T, "deinit", fn (*const T) void);
+    assertDecl(T, "render", fn (f: *T, allocator: std.mem.Allocator, glyph_index: u32, opt: RenderOptions) anyerror!RenderedGlyph);
+    assertDecl(T, "deinit", fn (*T, allocator: std.mem.Allocator) void);
     return T;
 }
 
 fn TextRunInterface(comptime T: type) type {
-    assertField(T, "font_size_px", u32);
+    assertField(T, "font_size_px", f32);
     assertField(T, "px_density", u8);
     assertDecl(T, "init", fn () anyerror!T);
     assertDecl(T, "addText", fn (s: *const T, []const u8) void);
@@ -47,7 +49,7 @@ fn assertField(comptime T: anytype, comptime name: []const u8, comptime Field: t
 pub const px_per_pt = 4.0 / 3.0;
 
 pub const Glyph = struct {
-    glyph_index: u21,
+    glyph_index: u32,
     cluster: u32,
     advance: Vec2,
     offset: Vec2,
@@ -65,14 +67,31 @@ pub const Glyph = struct {
     // }
 };
 
+pub const RGBA32 = extern struct {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+};
+
+pub const RenderOptions = struct {
+    font_size_px: f32,
+};
+
+pub const RenderedGlyph = struct {
+    bitmap: ?[]const RGBA32,
+    width: u32,
+    height: u32,
+};
+
 test {
-    const std = @import("std");
     std.testing.refAllDeclsRecursive(@This());
 
     // Load a font
+    const allocator = std.testing.allocator;
     const font_bytes = @import("font-assets").fira_sans_regular_ttf;
-    const font = try Font.initBytes(font_bytes);
-    defer font.deinit();
+    var font = try Font.initBytes(font_bytes);
+    defer font.deinit(allocator);
 
     // Create a text shaper
     var run = try TextRun.init();
@@ -84,6 +103,10 @@ test {
     const text = "h👩‍🚀️ello world!";
     run.addText(text);
     try font.shape(&run);
+
+    // Test rendering the first glyph
+    const rendered = try font.render(allocator, 176, .{ .font_size_px = run.font_size_px });
+    _ = rendered;
 
     // TODO: https://github.com/hexops/mach/issues/1048
     // TODO: https://github.com/hexops/mach/issues/1049

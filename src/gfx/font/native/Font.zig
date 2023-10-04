@@ -3,6 +3,9 @@ const ft = @import("mach-freetype");
 const harfbuzz = @import("mach-harfbuzz");
 const TextRun = @import("TextRun.zig");
 const px_per_pt = @import("../main.zig").px_per_pt;
+const RenderedGlyph = @import("../main.zig").RenderedGlyph;
+const RenderOptions = @import("../main.zig").RenderOptions;
+const RGBA32 = @import("../main.zig").RGBA32;
 
 const Font = @This();
 
@@ -11,6 +14,7 @@ var freetype_ready: bool = false;
 var freetype: ft.Library = undefined;
 
 face: ft.Face,
+bitmap: std.ArrayListUnmanaged(RGBA32) = .{},
 
 pub fn initFreetype() !void {
     freetype_ready_mu.lock();
@@ -40,8 +44,9 @@ pub fn shape(f: *const Font, r: *TextRun) anyerror!void {
     const hb_font = harfbuzz.Font.init(hb_face);
     defer hb_font.deinit();
 
-    const font_size_pt = @as(f32, @floatFromInt(r.font_size_px)) / px_per_pt;
-    hb_font.setScale(@as(i32, @intFromFloat(font_size_pt)) * 256, @as(i32, @intFromFloat(font_size_pt)) * 256);
+    const font_size_pt = r.font_size_px / px_per_pt;
+    const font_size_pt_frac: i32 = @intFromFloat(font_size_pt * 256.0);
+    hb_font.setScale(font_size_pt_frac, font_size_pt_frac);
     hb_font.setPTEM(font_size_pt);
 
     // TODO: optionally pass shaping features?
@@ -52,6 +57,53 @@ pub fn shape(f: *const Font, r: *TextRun) anyerror!void {
     r.positions = r.buffer.getGlyphPositions() orelse return error.OutOfMemory;
 }
 
-pub fn deinit(f: *const Font) void {
+pub fn render(f: *Font, allocator: std.mem.Allocator, glyph_index: u32, opt: RenderOptions) anyerror!RenderedGlyph {
+    // TODO: DPI configuration
+    const dpi = 72;
+    const font_size_pt = opt.font_size_px / px_per_pt;
+    const font_size_pt_frac: i32 = @intFromFloat(font_size_pt * 64.0);
+    f.face.setCharSize(font_size_pt_frac, font_size_pt_frac, dpi, dpi) catch return error.RenderError;
+    f.face.loadGlyph(glyph_index, .{ .render = true }) catch return error.RenderError;
+
+    const glyph = f.face.glyph();
+    const glyph_bitmap = glyph.bitmap();
+    const buffer = glyph_bitmap.buffer();
+    const width = glyph_bitmap.width();
+    const height = glyph_bitmap.rows();
+    const margin = 1;
+
+    if (buffer == null) return RenderedGlyph{
+        .bitmap = null,
+        .width = width + (margin * 2),
+        .height = height + (margin * 2),
+    };
+
+    // Add 1 pixel padding to texture to avoid bleeding over other textures. This is part of the
+    // render() API contract.
+    f.bitmap.clearRetainingCapacity();
+    const num_pixels = (width + (margin * 2)) * (height + (margin * 2));
+    // TODO: handle OOM here
+    f.bitmap.ensureTotalCapacity(allocator, num_pixels) catch return error.RenderError;
+    f.bitmap.resize(allocator, num_pixels) catch return error.RenderError;
+    for (f.bitmap.items, 0..) |*data, i| {
+        const x = i % (width + (margin * 2));
+        const y = i / (width + (margin * 2));
+        if (x < margin or x > (width + margin) or y < margin or y > (height + margin)) {
+            data.* = RGBA32{ .r = 0, .g = 0, .b = 0, .a = 0 };
+        } else {
+            const alpha = buffer.?[((y - margin) * width + (x - margin)) % buffer.?.len];
+            data.* = RGBA32{ .r = 0, .g = 0, .b = 0, .a = alpha };
+        }
+    }
+
+    return RenderedGlyph{
+        .bitmap = f.bitmap.items,
+        .width = width + (margin * 2),
+        .height = height + (margin * 2),
+    };
+}
+
+pub fn deinit(f: *Font, allocator: std.mem.Allocator) void {
     f.face.deinit();
+    f.bitmap.deinit(allocator);
 }
