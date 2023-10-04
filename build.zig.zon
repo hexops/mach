@@ -3,28 +3,28 @@
     .version = "0.2.0",
     .dependencies = .{
         .mach_ecs = .{
-            .url = "https://pkg.machengine.org/mach-ecs/6ea8fd072545f9a6ed414c5805d54ff0408c787f.tar.gz",
-            .hash = "1220f1cd79dfa8a5a4f407b7fa91bc2a82362d4cb0f5b0397828813d42d0c8864460",
+            .url = "https://pkg.machengine.org/mach-ecs/760661cdf6cee6b69cc77cc18d655f7e9448955b.tar.gz",
+            .hash = "1220bdde5183853e71b5ad975b5f2d74169f2eec34cee0afe2e16fff614e609f28be",
         },
         .mach_earcut = .{
-            .url = "https://pkg.machengine.org/mach-earcut/a287c2fc6453d90fa59c5dd81fa28cf3d8c44aef.tar.gz",
-            .hash = "12204dbf4f71c675479fd59ded257644bd48decf045464f0105a72b632f56be3b4de",
+            .url = "https://pkg.machengine.org/mach-earcut/c07b7ca5609d07e40ad157454fc172b2ccefbdad.tar.gz",
+            .hash = "1220859d716fb2e649fdf4014394984172b5043a1b4cadf78b71bf3c2af5713fba5e",
         },
         .mach_core = .{
-            .url = "https://pkg.machengine.org/mach-core/d2b382d9698fc621d912ba1c693fe484d8e2178a.tar.gz",
-            .hash = "1220c90fcb6a12a9659f4971e12ec53db017eb082abd3ebf4d1b8f703412c84228ae",
+            .url = "https://pkg.machengine.org/mach-core/dd59cfe44eef3e958b89005f81f8d366f8863f41.tar.gz",
+            .hash = "122078450d7afd222b0e12380fee415b65a71bc51b49107d9238b517392cfcdc463b",
         },
         .mach_basisu = .{
-            .url = "https://pkg.machengine.org/mach-basisu/fe2f30a9a9662db2d12bc978b50158d4e74ec0d8.tar.gz",
-            .hash = "1220c36c6c5491e78f0ca3f857080551cb90480b6e2028d6636409a907d6dfa49df2",
+            .url = "https://pkg.machengine.org/mach-basisu/70855b0b6cc12278834c214e81338a1c0651b6d9.tar.gz",
+            .hash = "12201913a55b028f0f5f050e00bc8a1624ad714c46a80cf3c730f1ee32683e203f6f",
         },
         .mach_sysaudio = .{
-            .url = "https://pkg.machengine.org/mach-sysaudio/381b3815caef1f631d64360cc51525adf638189c.tar.gz",
-            .hash = "12205e0f7e775161606bd55c92eb4244c69cb7072ee5d8205e50300048cbf1f6dc5c",
+            .url = "https://pkg.machengine.org/mach-sysaudio/dba8539d9e9467d0c7e7bbdba2626a893c096f76.tar.gz",
+            .hash = "1220f55cd76ff3e6051878681ef15ddb845bd1cf9d201295346f8e9dac06e4077a94",
         },
         .mach_freetype = .{
-            .url = "https://pkg.machengine.org/mach-freetype/92773615e2480c0a6f561748f2ba1180376bbb68.tar.gz",
-            .hash = "12205a6057fe43a4940c6db304449ebf3e98ff15d0eec05b75f621d7616c2e7d7f2c",
+            .url = "https://pkg.machengine.org/mach-freetype/0c1ac284bfd290ebc852f8ce896ed26faadd3e50.tar.gz",
+            .hash = "1220aa14a76ebc753e99fe410706162d7953640a94e593de082d211a57330c272ea1",
         },
         .mach_sysjs = .{
             .url = "https://pkg.machengine.org/mach-sysjs/bafd6c9b8fd5e7be1e8e24cfbd156703d6026aa8.tar.gz",
