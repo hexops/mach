@@ -92,10 +92,6 @@ pub fn Ray(comptime Vec3P: type) type {
                     const b: @Vector(3, P) = vb.v - ray.origin.v;
                     const c: @Vector(3, P) = vc.v - ray.origin.v;
 
-                    //const a: Vec3P = va.sub(&ray.origin);
-                    //const b: Vec3P = vb.sub(&ray.origin);
-                    //const c: Vec3P = vc.sub(&ray.origin);
-
                     const ax: P = a[kx] - sx * a[kz];
                     const ay: P = a[ky] - sy * a[kz];
                     const bx: P = b[kx] - sx * b[kz];
