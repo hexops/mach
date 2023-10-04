@@ -3,6 +3,7 @@ const std = @import("std");
 const mach = @import("../main.zig");
 const testing = mach.testing;
 const math = mach.math;
+const mat = @import("mat.zig");
 
 pub const VecComponent = enum { x, y, z, w };
 
@@ -70,6 +71,20 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                         .mul(&b.swizzle(.y, .z, .x));
                     return s1.sub(&s2);
                 }
+
+                /// Vector * Matrix multiplication
+                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(4, T) )) VecN{
+                    var result = [_]VecN.T{0}**3;
+                    inline for (0..3) |i|{
+                        inline for (0..3) |j|{
+                            result[i] += vector.v[j] * matrix.v[i].v[j];
+                        }
+                    }
+                    return .{
+                        .v = result
+                    };
+                }
+
             },
             inline 4 => struct {
                 pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar, ws: Scalar) VecN {
@@ -86,6 +101,19 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
                 pub inline fn w(v: *const VecN) Scalar {
                     return v.v[3];
+                }
+
+                /// Vector * Matrix multiplication
+                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(4, 4, Vec(4, T) )) VecN{
+                    var result = [_]VecN.T{0}**4;
+                    inline for (0..4) |i|{
+                        inline for (0..4) |j|{
+                            result[i] += vector.v[j] * matrix.v[i].v[j];
+                        }
+                    }
+                    return .{
+                        .v = result
+                    };
                 }
             },
             else => @compileError("Expected Vec2, Vec3, Vec4, found '" ++ @typeName(VecN) ++ "'"),
@@ -318,6 +346,8 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
 
             return min_scalar;
         }
+
+       
     };
 }
 
@@ -852,4 +882,31 @@ test "dot_vec4" {
     const a: math.Vec4 = math.vec4(-1, 2, 3, -2);
     const b: math.Vec4 = math.vec4(4, 5, 6, 2);
     try testing.expect(f32, 20).eql(a.dot(&b));
+}
+
+test "Mat3x3_mulMat" {
+    const matrix = math.Mat3x3.init(
+        &math.vec3(2, 2, 2),
+        &math.vec3(3, 4, 3),
+        &math.vec3(1, 1, 2),
+    );
+    const v = math.vec3(1, 2, 0);
+
+    const m = math.Vec3.mulMat(&v, &matrix);
+    const expected = math.vec3(8, 10, 8);
+    try testing.expect(math.Vec3, expected).eql(m);
+}
+
+test "Mat4x4_mulMat" {
+    const matrix = math.Mat4x4.init(
+        &math.vec4(2, 2, 2, 1),
+        &math.vec4(3, 4, 3, 0),
+        &math.vec4(1, 1, 2, 2),
+        &math.vec4(1, 1, 2, 2),
+    );
+    const v = math.vec4(1, 2, 0, -1);
+
+    const m = math.Vec4.mulMat(&v, &matrix);
+    const expected = math.vec4(7, 9, 6, -1);
+    try testing.expect(math.Vec4, expected).eql(m);
 }
