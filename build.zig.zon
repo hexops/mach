@@ -23,8 +23,8 @@
             .hash = "1220f55cd76ff3e6051878681ef15ddb845bd1cf9d201295346f8e9dac06e4077a94",
         },
         .mach_freetype = .{
-            .url = "https://pkg.machengine.org/mach-freetype/0c1ac284bfd290ebc852f8ce896ed26faadd3e50.tar.gz",
-            .hash = "1220aa14a76ebc753e99fe410706162d7953640a94e593de082d211a57330c272ea1",
+            .url = "https://pkg.machengine.org/mach-freetype/7dd97f088455fddda6832851082f68670b36c426.tar.gz",
+            .hash = "12209950df2c606a03f5246dce72b3338ffd7314221b20e55df38f8b76676cb9ba13",
         },
         .mach_sysjs = .{
             .url = "https://pkg.machengine.org/mach-sysjs/bafd6c9b8fd5e7be1e8e24cfbd156703d6026aa8.tar.gz",
