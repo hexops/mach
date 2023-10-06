@@ -36,16 +36,18 @@ pub fn shape(f: *const Font, r: *TextRun) anyerror!void {
     // Guess text segment properties.
     r.buffer.guessSegmentProps();
     // TODO: Optionally override specific text segment properties?
-    // buffer.setDirection(.ltr);
-    // buffer.setScript(.latin);
-    // buffer.setLanguage(harfbuzz.Language.fromString("en"));
+    // r.buffer.setDirection(.ltr);
+    // r.buffer.setScript(.latin);
+    // r.buffer.setLanguage(harfbuzz.Language.fromString("en"));
+
+    const font_size_pt = r.font_size_px / px_per_pt;
+    const font_size_pt_frac: i32 = @intFromFloat(font_size_pt * 64.0);
+    f.face.setCharSize(font_size_pt_frac, font_size_pt_frac, 0, 0) catch return error.RenderError;
 
     const hb_face = harfbuzz.Face.fromFreetypeFace(f.face);
     const hb_font = harfbuzz.Font.init(hb_face);
     defer hb_font.deinit();
 
-    const font_size_pt = r.font_size_px / px_per_pt;
-    const font_size_pt_frac: i32 = @intFromFloat(font_size_pt * 256.0);
     hb_font.setScale(font_size_pt_frac, font_size_pt_frac);
     hb_font.setPTEM(font_size_pt);
 
@@ -55,14 +57,20 @@ pub fn shape(f: *const Font, r: *TextRun) anyerror!void {
     r.index = 0;
     r.infos = r.buffer.getGlyphInfos();
     r.positions = r.buffer.getGlyphPositions() orelse return error.OutOfMemory;
+
+    for (r.positions, r.infos) |*pos, info| {
+        const glyph_index = info.codepoint;
+        f.face.loadGlyph(glyph_index, .{ .render = false }) catch return error.RenderError;
+        const glyph = f.face.glyph();
+        const metrics = glyph.metrics();
+        pos.*.x_offset += @intCast(metrics.horiBearingX);
+        pos.*.y_offset += @intCast(metrics.horiBearingY);
+        // TODO: use vertBearingX / vertBearingY for vertical layouts
+    }
 }
 
 pub fn render(f: *Font, allocator: std.mem.Allocator, glyph_index: u32, opt: RenderOptions) anyerror!RenderedGlyph {
-    // TODO: DPI configuration
-    const dpi = 72;
-    const font_size_pt = opt.font_size_px / px_per_pt;
-    const font_size_pt_frac: i32 = @intFromFloat(font_size_pt * 64.0);
-    f.face.setCharSize(font_size_pt_frac, font_size_pt_frac, dpi, dpi) catch return error.RenderError;
+    _ = opt;
     f.face.loadGlyph(glyph_index, .{ .render = true }) catch return error.RenderError;
 
     const glyph = f.face.glyph();

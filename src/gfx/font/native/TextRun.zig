@@ -14,7 +14,7 @@ px_density: u8 = 1,
 buffer: harfbuzz.Buffer,
 index: usize = 0,
 infos: []harfbuzz.GlyphInfo = undefined,
-positions: []harfbuzz.Position = undefined,
+positions: []harfbuzz.GlyphPosition = undefined,
 
 pub fn init() anyerror!TextRun {
     return TextRun{
@@ -37,8 +37,8 @@ pub fn next(s: *TextRun) ?Glyph {
         // .var1 = @intCast(info.var1),
         // .var2 = @intCast(info.var2),
         .cluster = info.cluster,
-        .advance = vec2(@floatFromInt(pos.x_advance), @floatFromInt(pos.y_advance)).div(&Vec2.splat(256.0)),
-        .offset = vec2(@floatFromInt(pos.x_offset), @floatFromInt(pos.y_offset)).div(&Vec2.splat(256.0)),
+        .advance = vec2(@floatFromInt(pos.x_advance), @floatFromInt(pos.y_advance)).div(&Vec2.splat(64.0)),
+        .offset = vec2(@floatFromInt(pos.x_offset), @floatFromInt(pos.y_offset)).div(&Vec2.splat(64.0)),
     };
 }
 
