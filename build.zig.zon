@@ -23,16 +23,16 @@
             .hash = "1220f55cd76ff3e6051878681ef15ddb845bd1cf9d201295346f8e9dac06e4077a94",
         },
         .mach_freetype = .{
-            .url = "https://pkg.machengine.org/mach-freetype/7dd97f088455fddda6832851082f68670b36c426.tar.gz",
-            .hash = "12209950df2c606a03f5246dce72b3338ffd7314221b20e55df38f8b76676cb9ba13",
+            .url = "https://pkg.machengine.org/mach-freetype/90b353a9425067010ae5e924dc845e5e5045dab7.tar.gz",
+            .hash = "12200d064703408a8c4a5734dac089a07c228d94a2ea19f3d2b5a07c2c97f1ca46dc",
         },
         .mach_sysjs = .{
             .url = "https://pkg.machengine.org/mach-sysjs/bafd6c9b8fd5e7be1e8e24cfbd156703d6026aa8.tar.gz",
             .hash = "1220187935c4c5d4cf824927df28e858dcd06cb864bb5d6be4cd349d2836abb4aec4",
         },
         .font_assets = .{
-            .url = "https://github.com/hexops/font-assets/archive/7b44dbabe209d574bb9400b6b31737d072afe9f8.tar.gz",
-            .hash = "122022d40902e7a5776995b5c46625a38617f4dc2eb30755df979f64f7a429bae5db",
+            .url = "https://github.com/hexops/font-assets/archive/f8359b36a486fd9d476a50419d199902fc49f545.tar.gz",
+            .hash = "12209a354b69085b8c5d6c89678e13275abfbae554887982ee0232cc188f9ea96005",
         },
     },
 }
