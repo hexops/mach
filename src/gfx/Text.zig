@@ -1,10 +1,10 @@
 const std = @import("std");
-const core = @import("mach-core");
-const gpu = core.gpu;
-const ecs = @import("mach-ecs");
-const Engine = @import("../engine.zig").Engine;
-const FontRenderer = @import("font.zig").FontRenderer;
 const mach = @import("../main.zig");
+const core = mach.core;
+const gpu = mach.gpu;
+const ecs = mach.ecs;
+const Engine = mach.Engine;
+const gfx = mach.gfx;
 
 const math = mach.math;
 const vec2 = math.vec2;
@@ -48,7 +48,7 @@ pub const components = struct {
     pub const text = []const u8;
 
     /// The font to be rendered.
-    pub const font = FontRenderer;
+    pub const font_name = []const u8;
 
     /// Font size in pixels. To convert from points to pixels, multiply by `points_to_pixels`.
     pub const font_size = f32;
@@ -83,19 +83,18 @@ const Glyph = extern struct {
     text_index: u32,
 };
 
-const GlyphDetail = struct {
-    codepoint: u21 = 0,
-    font: FontRenderer,
+const GlyphKey = struct {
+    index: u32,
     // Auto Hashing doesn't work for floats, so we bitcast to integer.
     size: u32,
 };
-const RegionMap = std.AutoArrayHashMapUnmanaged(u21, GlyphDetail);
+const RegionMap = std.AutoArrayHashMapUnmanaged(GlyphKey, gfx.Atlas.Region);
 
 const Pipeline = struct {
     render: *gpu.RenderPipeline,
     texture_sampler: *gpu.Sampler,
     texture: *gpu.Texture,
-    texture_atlas: mach.Atlas,
+    texture_atlas: gfx.Atlas,
     texture2: ?*gpu.Texture,
     texture3: ?*gpu.Texture,
     texture4: ?*gpu.Texture,
@@ -198,7 +197,7 @@ pub fn machGfxTextInitPipeline(
             .render_attachment = true,
         },
     });
-    const texture_atlas = try mach.Atlas.init(
+    const texture_atlas = try gfx.Atlas.init(
         engine.allocator,
         img_size.width,
         .rgba,
@@ -355,7 +354,7 @@ pub fn machGfxTextUpdated(
             .pipeline,
             .transform,
             .text,
-            .font,
+            .font_name,
             .font_size,
             .color,
         } },
@@ -387,27 +386,44 @@ pub fn machGfxTextUpdated(
         // TODO: this is very expensive and shouldn't be done here, should be done only on detected
         // text change.
         const px_density = 2.0;
-        var fonts = archetype.slice(.mach_gfx_text, .font);
+        var font_names = archetype.slice(.mach_gfx_text, .font_name);
         var font_sizes = archetype.slice(.mach_gfx_text, .font_size);
         var texts = archetype.slice(.mach_gfx_text, .text);
-        for (fonts, font_sizes, texts) |font, font_size, text| {
-            var offset_x: f32 = 0.0;
-            var offset_y: f32 = 0.0;
-            var utf8 = (try std.unicode.Utf8View.init(text)).iterator();
-            var glyph_detail = GlyphDetail{
-                .font = font,
-                .size = @bitCast(font_size),
-            };
-            while (utf8.nextCodepoint()) |codepoint| {
-                const m = try font.measure(codepoint, font_size * px_density);
-                glyph_detail.codepoint = codepoint;
-                if (codepoint != '\n') {
-                    var region = try pipeline.regions.getOrPut(engine.allocator, glyph_detail);
-                    if (!region.found_existing) {
-                        const glyph = try font.render(codepoint, font_size * px_density);
+        for (font_names, font_sizes, texts) |font_name, font_size, text| {
+            _ = font_name;
+            var origin_x: f32 = 0.0;
+            var origin_y: f32 = 0.0;
 
-                        if (glyph.bitmap) |bitmap| {
-                            var glyph_atlas_region = try pipeline.texture_atlas.reserve(engine.allocator, glyph.width, glyph.height);
+            // Load a font
+            // TODO: resolve font by name, not hard-code
+            const font_bytes = @import("font-assets").fira_sans_regular_ttf;
+            var font = try gfx.Font.initBytes(font_bytes);
+            defer font.deinit(engine.allocator);
+
+            // Create a text shaper
+            var run = try gfx.TextRun.init();
+            run.font_size_px = font_size;
+            run.px_density = 2; // TODO
+
+            defer run.deinit();
+
+            run.addText(text);
+            try font.shape(&run);
+
+            while (run.next()) |glyph| {
+                const codepoint = text[glyph.cluster];
+                // TODO: use flags(?) to detect newline, or at least something more reliable?
+                if (codepoint != '\n') {
+                    var region = try pipeline.regions.getOrPut(engine.allocator, .{
+                        .index = glyph.glyph_index,
+                        .size = @bitCast(font_size),
+                    });
+                    if (!region.found_existing) {
+                        const rendered_glyph = try font.render(engine.allocator, glyph.glyph_index, .{
+                            .font_size_px = run.font_size_px,
+                        });
+                        if (rendered_glyph.bitmap) |bitmap| {
+                            var glyph_atlas_region = try pipeline.texture_atlas.reserve(engine.allocator, rendered_glyph.width, rendered_glyph.height);
                             pipeline.texture_atlas.set(glyph_atlas_region, @as([*]const u8, @ptrCast(bitmap.ptr))[0 .. bitmap.len * 4]);
                             texture_update = true;
 
@@ -421,7 +437,7 @@ pub fn machGfxTextUpdated(
                             region.value_ptr.* = glyph_atlas_region;
                         } else {
                             // whitespace
-                            region.value_ptr.* = mach.Atlas.Region{
+                            region.value_ptr.* = gfx.Atlas.Region{
                                 .width = 0,
                                 .height = 0,
                                 .x = 0,
@@ -430,41 +446,33 @@ pub fn machGfxTextUpdated(
                         }
                     }
 
-                    // Note: render(font_size) and render(font_size*px_density) is not equal in
-                    // m.size.x() and m.size.x()*px_density, because font rendering may handle rounding
-                    // differently. We always work in native pixels, and then convert to virtual pixels
-                    // right before display in order to keep everything accurate.
-                    //
-                    // Also note that e.g. font_size*px_density may result in a different horizontal
-                    // bearing than font_size with horizontal bearing * 2.0. These subtleties are
-                    // important and decided by the font itself.
                     const r = region.value_ptr.*;
-                    std.debug.assert(r.width == @as(u32, @intFromFloat(m.size.x())));
-                    std.debug.assert(r.height == @as(u32, @intFromFloat(m.size.y())));
-
+                    const size = vec2(@floatFromInt(r.width), @floatFromInt(r.height));
                     try glyphs.append(engine.allocator, .{
                         .pos = vec2(
-                            offset_x + m.bearing_horizontal.x(),
-                            offset_y - (m.size.y() - m.bearing_horizontal.y()),
+                            origin_x + glyph.offset.x(),
+                            origin_y - (size.y() - glyph.offset.y()),
                         ).divScalar(px_density),
-                        .size = m.size.divScalar(px_density),
+                        .size = size.divScalar(px_density),
                         .text_index = 0,
                         .uv_pos = vec2(@floatFromInt(r.x), @floatFromInt(r.y)),
                     });
                     pipeline.num_glyphs += 1;
                 }
+
                 if (codepoint == '\n') {
-                    offset_x = 0;
-                    offset_y -= m.advance.y();
+                    origin_x = 0;
+                    origin_y -= font_size;
                 } else {
-                    offset_x += m.advance.x();
+                    origin_x += glyph.advance.x();
                 }
             }
         }
     }
 
-    encoder.writeBuffer(pipeline.glyphs, 0, glyphs.items);
-    glyphs.deinit(engine.allocator);
+    // TODO: could writeBuffer check for zero?
+    if (glyphs.items.len > 0) encoder.writeBuffer(pipeline.glyphs, 0, glyphs.items);
+    defer glyphs.deinit(engine.allocator);
     if (texture_update) {
         // rgba32_pixels
         // TODO: use proper texture dimensions here

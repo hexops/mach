@@ -362,15 +362,13 @@ pub fn Mat(
 
         /// Matrix * Vector multiplication
         pub inline fn mulVec(a: *const Matrix, b: *const ColVec) ColVec {
-            var result = [_]ColVec.T{0}**ColVec.n;
+            var result = [_]ColVec.T{0} ** ColVec.n;
             inline for (0..Matrix.rows) |row| {
                 inline for (0..ColVec.n) |i| {
                     result[i] += a.v[row].v[i] * b.v[row];
                 }
             }
-            return vec.Vec(ColVec.n, ColVec.T){
-                .v = result
-            };
+            return vec.Vec(ColVec.n, ColVec.T){ .v = result };
         }
 
         // TODO: the below code was correct in our old implementation, it just needs to be updated
@@ -671,7 +669,7 @@ test "Mat3x3_mulVec_vec3" {
     );
 
     const m = math.Mat3x3.mulVec(&mat, &v);
-    const expected = math.vec3(2,2,3);
+    const expected = math.vec3(2, 2, 3);
     try testing.expect(math.Vec3, expected).eql(m);
 }
 

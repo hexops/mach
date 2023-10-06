@@ -1,14 +1,11 @@
 pub const util = @import("util.zig"); // TODO: banish 2-level deep namespaces
-pub const Sprite = @import("Sprite.zig");
 pub const Atlas = @import("atlas/Atlas.zig");
+
+// ECS modules
+pub const Sprite = @import("Sprite.zig");
 pub const Text = @import("Text.zig");
 
-// TODO: integrate font rendering
-// pub const RGBA32 = @import("font.zig").RGBA32;
-// pub const FontRenderer = @import("font.zig").FontRenderer;
-// pub const Glyph = @import("font.zig").Glyph;
-// pub const GlyphMetrics = @import("font.zig").GlyphMetrics;
-
+// Fonts
 pub const Font = @import("font/main.zig").Font;
 pub const TextRun = @import("font/main.zig").TextRun;
 pub const Glyph = @import("font/main.zig").Glyph;
