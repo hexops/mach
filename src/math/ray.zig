@@ -5,18 +5,6 @@ const testing = mach.testing;
 const math = mach.math;
 const vec = @import("vec.zig");
 
-// Determine the fallback precision for valid floating point precisions
-// our Ray computations can have. Will return twice the input precision
-fn floatFallbackPrecision(comptime float_precision: type) type {
-    switch (float_precision) {
-        f16 => return f32,
-        f32 => return f64,
-        f64 => return f128,
-        else => @compileError("Expected f16, f32, f64, found '" ++
-            @typeName(float_precision) ++ "'"),
-    }
-}
-
 // Determine the 3D vector dimension with the largest scalar value
 fn maxDim(v: math.Vec3) u8 {
     if (v.v[0] > v.v[1]) {
@@ -34,12 +22,18 @@ fn maxDim(v: math.Vec3) u8 {
 
 // A Ray in three-dimensional space
 pub fn Ray(comptime Vec3P: type) type {
-    // Floating precision, will be either f16, f32, or f64
+    // Floating point precision, will be either f16, f32, or f64
     const P: type = Vec3P.T;
 
-    // Fallback floating point precision to scale fallback according to
-    // input precision
-    const PP: type = floatFallbackPrecision(P);
+    // Adaptive scaling of the fallback precision for the ray-triangle
+    // intersection implementation.
+    const PP: type = switch (P) {
+        f16 => f32,
+        f32 => f64,
+        f64 => f128,
+        else => @compileError("Expected f16, f32, f64, found '" ++
+            @typeName(P) ++ "'"),
+    };
 
     return extern struct {
         origin: Vec3P,
