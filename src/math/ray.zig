@@ -59,7 +59,9 @@ pub fn Ray(comptime Vec3P: type) type {
                 /// Check for collision of a ray and a triangle in 3D space.
                 /// Triangle winding, which determines front- and backface of
                 /// the given triangle, matters if backface culling is to be
-                /// enabled. Without backface culling it does not matter.
+                /// enabled. Without backface culling it does not matter for
+                /// hit detection, however the barycentric coordinates will
+                /// be negative in case of a backface hit.
                 /// On hit, will return a RayHit which contains distance t
                 /// and barycentric coordinates.
                 pub inline fn triangleIntersect(
