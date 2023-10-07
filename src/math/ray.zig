@@ -20,13 +20,21 @@ pub fn Ray(comptime Vec3P: type) type {
             @typeName(P) ++ "'"),
     };
 
+    const Vec4P = switch (Vec3P) {
+        math.Vec3 => math.Vec4,
+        math.Vec3h => math.Vec4h,
+        math.Vec3d => math.Vec4d,
+        else => @compileError("Expected Vec3, Vec3h, Vec3d, found '" ++
+            @typeName(Vec3P) ++ "'"),
+    };
+
     return extern struct {
         origin: Vec3P,
         direction: Vec3P,
 
         /// A ray hit for which xyz represent the barycentric coordinates
         /// and w represents hit distance t
-        pub const Hit = math.Vec4;
+        pub const Hit = Vec4P;
 
         pub usingnamespace switch (Vec3P) {
             math.Vec3, math.Vec3h, math.Vec3d => struct {
@@ -55,17 +63,17 @@ pub fn Ray(comptime Vec3P: type) type {
                 /// On hit, will return a RayHit which contains distance t
                 /// and barycentric coordinates.
                 pub inline fn triangleIntersect(
-                    ray: *const math.Ray,
+                    ray: *const Ray(Vec3P),
                     va: *const Vec3P,
                     vb: *const Vec3P,
                     vc: *const Vec3P,
                     backface_culling: bool,
                 ) ?Hit {
-                    var kz: u8 = maxDim(math.vec3(
+                    var kz: u8 = maxDim([3]P{
                         @abs(ray.direction.v[0]),
                         @abs(ray.direction.v[1]),
                         @abs(ray.direction.v[2]),
-                    ));
+                    });
                     var kx: u8 = kz + 1;
                     if (kx == 3)
                         kx = 0;
@@ -132,18 +140,19 @@ pub fn Ray(comptime Vec3P: type) type {
                     if (det == 0.0)
                         return null; // no hit
 
-                    // Calculate scaled z-coordinates of vertices and use them to calculate
-                    // the hit distance
+                    // Calculate scaled z-coordinates of vertices and use them
+                    // to calculate the hit distance
                     const az: P = sz * a[kz];
                     const bz: P = sz * b[kz];
                     const cz: P = sz * c[kz];
                     var t: P = u * az + v * bz + w * cz;
 
-                    // hit.t counts as a previous hit for backface culling, in which
-                    // case triangle behind will no longer be considered a hit
-                    // Since Ray.Hit is represented by a Vec4, t is the last element
-                    // of that vector
-                    var hit: Hit = math.vec4(
+                    // hit.t counts as a previous hit for backface culling,
+                    // in which case triangle behind will no longer be
+                    // considered a hit.
+                    // Since Ray.Hit is represented by a Vec4, t is the last
+                    // element of that vector
+                    var hit: Hit = Vec4P.init(
                         undefined,
                         undefined,
                         undefined,
