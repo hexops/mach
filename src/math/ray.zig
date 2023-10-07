@@ -5,21 +5,6 @@ const testing = mach.testing;
 const math = mach.math;
 const vec = @import("vec.zig");
 
-// Determine the 3D vector dimension with the largest scalar value
-fn maxDim(v: math.Vec3) u8 {
-    if (v.v[0] > v.v[1]) {
-        if (v.v[0] > v.v[2]) {
-            return 0;
-        } else {
-            return 2;
-        }
-    } else if (v.v[1] > v.v[2]) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
 // A Ray in three-dimensional space
 pub fn Ray(comptime Vec3P: type) type {
     // Floating point precision, will be either f16, f32, or f64
@@ -45,6 +30,22 @@ pub fn Ray(comptime Vec3P: type) type {
 
         pub usingnamespace switch (Vec3P) {
             math.Vec3, math.Vec3h, math.Vec3d => struct {
+                // Determine the 3D vector dimension with the largest scalar
+                // value
+                fn maxDim(v: [3]P) u8 {
+                    if (v[0] > v[1]) {
+                        if (v[0] > v[2]) {
+                            return 0;
+                        } else {
+                            return 2;
+                        }
+                    } else if (v[1] > v[2]) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                }
+
                 // Algorithm based on:
                 // https://www.jcgt.org/published/0002/01/05/
                 /// Check for collision of a ray and a triangle in 3D space.
