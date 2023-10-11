@@ -99,6 +99,14 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 pub inline fn w(v: *const VecN) Scalar {
                     return v.v[3];
                 }
+                pub inline fn divW(v: *const VecN) VecN {
+                    return .{ .v = .{
+                        v.v[0] / v.v[3],
+                        v.v[1] / v.v[3],
+                        v.v[2] / v.v[3],
+                        1.0,
+                    } };
+                }
 
                 /// Vector * Matrix multiplication
                 pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(4, 4, Vec(4, T))) VecN {

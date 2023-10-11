@@ -307,27 +307,41 @@ pub fn Mat(
                     );
                 }
 
-                /// Constructs a perspective projection matrix; a perspective transformation matrix
-                /// which transforms from eye space to clip space.
+                /// Computes a perspective transformation matrix given the angular height of the
+                /// frustum, the aspect ratio, and the near and far clipping planes.
                 ///
-                /// The field of view angle `fovy` is the vertical angle in radians.
-                /// The `aspect` ratio is the ratio of the width to the height of the viewport.
-                /// The `near` and `far` parameters denote the depth (z coordinate) of the near and far clipping planes.
+                /// The arguments define a frustum extending in the negative z direction. The given
+                /// angle is the vertical angle of the frustum, and the horizontal angle is
+                /// determined to produce the given aspect ratio.
                 ///
-                /// Returns a perspective projection matrix.
+                /// The matrix generated sends the viewing frustum (eye space) to the unit box (clip
+                /// space), which is assumed to extend from -1 to 1 in the x and y dimensions, and
+                /// from 0 to 1 in the z dimension.
+                ///
+                /// Note that WebGPU uses [0, 1] for clipping space, while e.g. OpenGL uses [-1, +1]
                 pub inline fn perspective(
-                    /// The field of view angle in the y direction, in radians.
-                    fovy: f32,
-                    /// The aspect ratio of the viewport's width to its height.
+                    /// The field of view angle in the y direction, in radians. i.e. the camera angle
+                    /// from top to bottom.
+                    fov_y: f32,
+                    /// The aspect ratio of the viewport (width / height.)
                     aspect: f32,
-                    /// The depth (z coordinate) of the near clipping plane.
+                    /// The distance along the nagative z-axis of the near clipping plane.
                     near: f32,
-                    /// The depth (z coordinate) of the far clipping plane.
+                    /// The distance along the nagative z-axis of the far clipping plane.
+                    /// May be math.inf(f32)
                     far: f32,
                 ) Matrix {
-                    const f = 1.0 / math.tan(fovy / 2.0);
-                    const zz = (near + far) / (near - far);
-                    const zw = (2.0 * near * far) / (near - far);
+                    const f = math.tan(math.pi * 0.5 - 0.5 * fov_y);
+                    var zz: f32 = undefined;
+                    var zw: f32 = undefined;
+                    if (math.isInf(far)) {
+                        zz = -1;
+                        zw = -near;
+                    } else {
+                        const range_inv = 1.0 / (near - far);
+                        zz = far * range_inv;
+                        zw = far * near * range_inv;
+                    }
                     return init(
                         &RowVec.init(f / aspect, 0, 0, 0),
                         &RowVec.init(0, f, 0, 0),
@@ -639,16 +653,16 @@ test "Mat4x4_translation" {
 }
 
 test "Mat4x4_perspective" {
-    const fov_radians = math.pi / 2.0; // Field of view in radians
-    const aspect_ratio = 16.0 / 9.0; // Aspect ratio
-    const near = 0.1; // Near clipping plane
-    const far = 100.0; // Far clipping plane
+    const fov_radians = math.pi / 4.0;
+    const aspect_ratio = 2;
+    const near = 0.1;
+    const far = 10.0;
 
     const m = math.Mat4x4.perspective(fov_radians, aspect_ratio, near, far);
 
-    const expected = math.Mat4x4.init(&math.vec4(1.0 / (aspect_ratio * math.tan(fov_radians / 2.0)), 0.0, 0.0, 0.0), &math.vec4(0.0, 1.0 / math.tan(fov_radians / 2.0), 0.0, 0.0), &math.vec4(0.0, 0.0, -(far + near) / (far - near), -1.0), &math.vec4(0.0, 0.0, -(2.0 * far * near) / (far - near), 0.0));
-
-    try testing.expect(math.Mat4x4, expected).eql(m);
+    // Demonstrate that clip space is [0, 1]
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0, 1.0)).eql(math.vec4(0, 0, -near, 1).mulMat(&m).divW());
+    try testing.expect(math.Vec4, math.vec4(0, 0, 1, 1.0)).eql(math.vec4(0, 0, -far, 1).mulMat(&m).divW());
 }
 
 test "Mat3x3_mulVec_vec3_ident" {

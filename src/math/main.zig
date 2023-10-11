@@ -123,6 +123,7 @@ pub const cos = std.math.cos;
 pub const acos = std.math.acos;
 pub const tan = std.math.tan;
 pub const isNan = std.math.isNan;
+pub const isInf = std.math.isInf;
 pub const inf = std.math.inf;
 pub const pi = std.math.pi;
 pub const clamp = std.math.clamp;
