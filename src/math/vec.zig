@@ -73,18 +73,15 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
 
                 /// Vector * Matrix multiplication
-                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(4, T) )) VecN{
-                    var result = [_]VecN.T{0}**3;
-                    inline for (0..3) |i|{
-                        inline for (0..3) |j|{
+                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(4, T))) VecN {
+                    var result = [_]VecN.T{0} ** 3;
+                    inline for (0..3) |i| {
+                        inline for (0..3) |j| {
                             result[i] += vector.v[j] * matrix.v[i].v[j];
                         }
                     }
-                    return .{
-                        .v = result
-                    };
+                    return .{ .v = result };
                 }
-
             },
             inline 4 => struct {
                 pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar, ws: Scalar) VecN {
@@ -104,16 +101,14 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
 
                 /// Vector * Matrix multiplication
-                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(4, 4, Vec(4, T) )) VecN{
-                    var result = [_]VecN.T{0}**4;
-                    inline for (0..4) |i|{
-                        inline for (0..4) |j|{
+                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(4, 4, Vec(4, T))) VecN {
+                    var result = [_]VecN.T{0} ** 4;
+                    inline for (0..4) |i| {
+                        inline for (0..4) |j| {
                             result[i] += vector.v[j] * matrix.v[i].v[j];
                         }
                     }
-                    return .{
-                        .v = result
-                    };
+                    return .{ .v = result };
                 }
             },
             else => @compileError("Expected Vec2, Vec3, Vec4, found '" ++ @typeName(VecN) ++ "'"),
@@ -346,8 +341,6 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
 
             return min_scalar;
         }
-
-       
     };
 }
 
@@ -415,7 +408,7 @@ test "normalize_example" {
 
 test "normalize_accuracy" {
     const normalized = math.vec2(1, 1).normalize(0);
-    const norm_val = std.math.sqrt1_2; // 1 / sqrt(2)
+    const norm_val = math.sqrt1_2; // 1 / sqrt(2)
     try testing.expect(math.Vec2, math.Vec2.splat(norm_val)).eql(normalized);
 }
 
@@ -740,7 +733,7 @@ test "dir_zero_vec4" {
 test "dir_vec2" {
     const a: math.Vec2 = math.vec2(1, 2);
     const b: math.Vec2 = math.vec2(3, 4);
-    try testing.expect(math.Vec2, math.vec2(std.math.sqrt1_2, std.math.sqrt1_2))
+    try testing.expect(math.Vec2, math.vec2(math.sqrt1_2, math.sqrt1_2))
         .eql(a.dir(&b, 0));
 }
 

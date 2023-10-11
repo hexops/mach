@@ -240,8 +240,8 @@ pub fn Mat(
 
                 /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
                 pub inline fn rotateX(angle_radians: f32) Matrix {
-                    const c = std.math.cos(angle_radians);
-                    const s = std.math.sin(angle_radians);
+                    const c = math.cos(angle_radians);
+                    const s = math.sin(angle_radians);
                     return Matrix.init(
                         &RowVec.init(1, 0, 0, 0),
                         &RowVec.init(0, c, -s, 0),
@@ -252,8 +252,8 @@ pub fn Mat(
 
                 /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
                 pub inline fn rotateY(angle_radians: f32) Matrix {
-                    const c = std.math.cos(angle_radians);
-                    const s = std.math.sin(angle_radians);
+                    const c = math.cos(angle_radians);
+                    const s = math.sin(angle_radians);
                     return Matrix.init(
                         &RowVec.init(c, 0, s, 0),
                         &RowVec.init(0, 1, 0, 0),
@@ -264,8 +264,8 @@ pub fn Mat(
 
                 /// Constructs a 3D matrix which rotates around the Z axis by `angle_radians`.
                 pub inline fn rotateZ(angle_radians: f32) Matrix {
-                    const c = std.math.cos(angle_radians);
-                    const s = std.math.sin(angle_radians);
+                    const c = math.cos(angle_radians);
+                    const s = math.sin(angle_radians);
                     return Matrix.init(
                         &RowVec.init(c, -s, 0, 0),
                         &RowVec.init(s, c, 0, 0),
@@ -325,7 +325,7 @@ pub fn Mat(
                     /// The depth (z coordinate) of the far clipping plane.
                     far: f32,
                 ) Matrix {
-                    const f = 1.0 / std.math.tan(fovy / 2.0);
+                    const f = 1.0 / math.tan(fovy / 2.0);
                     const zz = (near + far) / (near - far);
                     const zw = (2.0 * near * far) / (near - far);
                     return init(
@@ -362,7 +362,7 @@ pub fn Mat(
 
         /// Matrix * Vector multiplication
         pub inline fn mulVec(matrix: *const Matrix, vector: *const ColVec) ColVec {
-            var result = [_]ColVec.T{0}**ColVec.n;
+            var result = [_]ColVec.T{0} ** ColVec.n;
             inline for (0..Matrix.rows) |row| {
                 inline for (0..ColVec.n) |i| {
                     result[i] += matrix.v[row].v[i] * vector.v[row];
@@ -370,7 +370,6 @@ pub fn Mat(
             }
             return vec.Vec(ColVec.n, ColVec.T){ .v = result };
         }
-
 
         // TODO: the below code was correct in our old implementation, it just needs to be updated
         // to work with this new Mat approach, swapping f32 for the generic T float type, moving 3x3
@@ -640,14 +639,14 @@ test "Mat4x4_translation" {
 }
 
 test "Mat4x4_perspective" {
-    const fov_radians = std.math.pi / 2.0; // Field of view in radians
+    const fov_radians = math.pi / 2.0; // Field of view in radians
     const aspect_ratio = 16.0 / 9.0; // Aspect ratio
     const near = 0.1; // Near clipping plane
     const far = 100.0; // Far clipping plane
 
     const m = math.Mat4x4.perspective(fov_radians, aspect_ratio, near, far);
 
-    const expected = math.Mat4x4.init(&math.vec4(1.0 / (aspect_ratio * std.math.tan(fov_radians / 2.0)), 0.0, 0.0, 0.0), &math.vec4(0.0, 1.0 / std.math.tan(fov_radians / 2.0), 0.0, 0.0), &math.vec4(0.0, 0.0, -(far + near) / (far - near), -1.0), &math.vec4(0.0, 0.0, -(2.0 * far * near) / (far - near), 0.0));
+    const expected = math.Mat4x4.init(&math.vec4(1.0 / (aspect_ratio * math.tan(fov_radians / 2.0)), 0.0, 0.0, 0.0), &math.vec4(0.0, 1.0 / math.tan(fov_radians / 2.0), 0.0, 0.0), &math.vec4(0.0, 0.0, -(far + near) / (far - near), -1.0), &math.vec4(0.0, 0.0, -(2.0 * far * near) / (far - near), 0.0));
 
     try testing.expect(math.Mat4x4, expected).eql(m);
 }
@@ -687,6 +686,3 @@ test "Mat4x4_mulVec_vec4" {
     const expected = math.vec4(4, 47, 5, 68);
     try testing.expect(math.Vec4, expected).eql(m);
 }
-
-
-
