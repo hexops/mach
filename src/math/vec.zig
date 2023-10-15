@@ -931,6 +931,6 @@ test "Mat4x4_mulMat" {
 test "mulQuat" {
     const up = math.vec3(0, 1, 0);
     const id = math.Quat.identity();
-    const rot = math.Quat.rotateZ(&id, 90);
+    const rot = math.Quat.rotateZ(&id, -std.math.pi / 2.0);
     try testing.expect(math.Vec3, math.vec3(1, 0, 0)).eql(up.mulQuat(&rot));
 }
