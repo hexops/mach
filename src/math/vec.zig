@@ -96,14 +96,14 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                     const vy = v.y();
                     const vz = v.z();
 
-                    const uvX = qy * vz - qz * vy;
-                    const uvY = qz * vx - qx * vz;
-                    const uvZ = qx * vy - qy * vx;
+                    const uv_x = qy * vz - qz * vy;
+                    const uv_y = qz * vx - qx * vz;
+                    const uv_z = qx * vy - qy * vx;
 
                     return math.vec3(
-                        vx + uvX * w2 + (qy * uvZ - qz * uvY) * 2,
-                        vy + uvY * w2 + (qz * uvX - qx * uvZ) * 2,
-                        vz + uvZ * w2 + (qz * uvY - qy * uvX) * 2,
+                        vx + uv_x * w2 + (qy * uv_z - qz * uv_y) * 2,
+                        vy + uv_y * w2 + (qz * uv_x - qx * uv_z) * 2,
+                        vz + uv_z * w2 + (qz * uv_y - qy * uv_x) * 2,
                     );
                 }
             },
