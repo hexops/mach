@@ -78,6 +78,7 @@ pub const Engine = struct {
 
         var command = engine.state.encoder.finish(null);
         defer command.release();
+        engine.state.encoder.release();
         engine.state.queue.submit(&[_]*gpu.CommandBuffer{command});
 
         // Prepare for next pass
