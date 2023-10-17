@@ -340,7 +340,6 @@ pub fn Mat(
         };
 
         /// Matrix multiplication a*b
-        // TODO: needs tests
         pub inline fn mul(a: *const Matrix, b: *const Matrix) Matrix {
             @setEvalBranchQuota(10000);
             var result: Matrix = undefined;
@@ -685,4 +684,49 @@ test "Mat4x4_mulVec_vec4" {
     const m = math.Mat4x4.mulVec(&mat, &v);
     const expected = math.vec4(4, 47, 5, 68);
     try testing.expect(math.Vec4, expected).eql(m);
+}
+
+test "Mat3x3_mul" {
+    const a = math.Mat3x3.init(
+        &math.vec3(4, 2, -3),
+        &math.vec3(7, 9, -8),
+        &math.vec3(-1, 8, -8),
+    );
+    const b = math.Mat3x3.init(
+        &math.vec3(5, -7, -8),
+        &math.vec3(6, -3, 2),
+        &math.vec3(-3, -4, 4),
+    );
+    const c = math.Mat3x3.mul(&a, &b);
+
+    const expected = math.Mat3x3.init(
+        &math.vec3(41, -22, -40),
+        &math.vec3(113, -44, -70),
+        &math.vec3(67, 15, -8),
+    );
+    try testing.expect(math.Mat3x3, expected).eql(c);
+}
+
+test "Mat4x4_mul" {
+    const a = math.Mat4x4.init(
+        &math.vec4(10, -5, 6, -2),
+        &math.vec4(0, -1, 0, 9),
+        &math.vec4(-1, 6, -4, 8),
+        &math.vec4(9, -8, -6, -10),
+    );
+    const b = math.Mat4x4.init(
+        &math.vec4(7, -7, -3, -8),
+        &math.vec4(1, -1, -7, -2),
+        &math.vec4(-10, 2, 2, -2),
+        &math.vec4(10, -7, 7, 1),
+    );
+    const c = math.Mat4x4.mul(&a, &b);
+
+    const expected = math.Mat4x4.init(
+        &math.vec4(-15, -39, 3, -84),
+        &math.vec4(89, -62, 70, 11),
+        &math.vec4(119, -63, 9, 12),
+        &math.vec4(15, 3, -53, -54),
+    );
+    try testing.expect(math.Mat4x4, expected).eql(c);
 }
