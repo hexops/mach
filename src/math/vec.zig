@@ -73,18 +73,15 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
 
                 /// Vector * Matrix multiplication
-                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(4, T) )) VecN{
-                    var result = [_]VecN.T{0}**3;
-                    inline for (0..3) |i|{
-                        inline for (0..3) |j|{
+                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(4, T))) VecN {
+                    var result = [_]VecN.T{0} ** 3;
+                    inline for (0..3) |i| {
+                        inline for (0..3) |j| {
                             result[i] += vector.v[j] * matrix.v[i].v[j];
                         }
                     }
-                    return .{
-                        .v = result
-                    };
+                    return .{ .v = result };
                 }
-
             },
             inline 4 => struct {
                 pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar, ws: Scalar) VecN {
@@ -104,16 +101,14 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
 
                 /// Vector * Matrix multiplication
-                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(4, 4, Vec(4, T) )) VecN{
-                    var result = [_]VecN.T{0}**4;
-                    inline for (0..4) |i|{
-                        inline for (0..4) |j|{
+                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(4, 4, Vec(4, T))) VecN {
+                    var result = [_]VecN.T{0} ** 4;
+                    inline for (0..4) |i| {
+                        inline for (0..4) |j| {
                             result[i] += vector.v[j] * matrix.v[i].v[j];
                         }
                     }
-                    return .{
-                        .v = result
-                    };
+                    return .{ .v = result };
                 }
             },
             else => @compileError("Expected Vec2, Vec3, Vec4, found '" ++ @typeName(VecN) ++ "'"),
@@ -346,8 +341,6 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
 
             return min_scalar;
         }
-
-       
     };
 }
 

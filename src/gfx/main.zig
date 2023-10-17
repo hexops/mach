@@ -9,6 +9,9 @@ pub const Text = @import("Text.zig");
 pub const Font = @import("font/main.zig").Font;
 pub const TextRun = @import("font/main.zig").TextRun;
 pub const Glyph = @import("font/main.zig").Glyph;
+pub const px_per_pt = @import("font/main.zig").px_per_pt;
+pub const font_weight_normal = 400;
+pub const font_weight_bold = 700;
 
 test {
     const std = @import("std");

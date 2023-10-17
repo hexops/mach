@@ -11,6 +11,7 @@ const vec2 = math.vec2;
 const Vec2 = math.Vec2;
 const Vec3 = math.Vec3;
 const Vec4 = math.Vec4;
+const vec4 = math.vec4;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
@@ -19,14 +20,6 @@ pipelines: std.AutoArrayHashMapUnmanaged(u32, Pipeline),
 
 pub const name = .mach_gfx_text;
 
-/// Converts points to pixels. e.g. a 12pt font size `12.0 * points_to_pixels == 16.0`
-pub const points_to_pixels = 4.0 / 3.0;
-
-// TODO: italics/bold
-//
-// TODO: should users use multiple text entities for different italic/bold/color regions, or should
-// we handle that internally?
-//
 // TODO: better/proper text layout, shaping
 //
 // TODO: integrate freetype integration
@@ -44,18 +37,30 @@ pub const components = struct {
     /// origin (0, 0) lives at the center of the window.
     pub const transform = Mat4x4;
 
+    /// Segments of text to render.
+    pub const text = []const Segment;
+};
+
+pub const Segment = struct {
     /// A string of UTF-8 encoded text.
-    pub const text = []const u8;
+    string: []const u8,
 
-    /// The font to be rendered.
-    pub const font_name = []const u8;
+    /// Which style this text should use.
+    style: *const Style,
+};
 
-    /// Font size in pixels. To convert from points to pixels, multiply by `points_to_pixels`.
-    pub const font_size = f32;
+pub const Style = struct {
+    /// The desired font to render text with.
+    font_name: []const u8, // TODO: ship a default font
 
-    /// Text color.
-    // TODO: actually respect color
-    pub const color = Vec4;
+    /// Font size in pixels.
+    font_size: f32 = 12 * mach.gfx.px_per_pt, // 12pt
+
+    font_weight: u16 = mach.gfx.font_weight_normal,
+
+    italic: bool = false,
+
+    color: Vec4 = vec4(0, 0, 0, 1.0),
 };
 
 const Uniforms = extern struct {
@@ -354,9 +359,6 @@ pub fn machGfxTextUpdated(
             .pipeline,
             .transform,
             .text,
-            .font_name,
-            .font_size,
-            .color,
         } },
     } });
 
@@ -367,104 +369,105 @@ pub fn machGfxTextUpdated(
     pipeline.num_glyphs = 0;
     var glyphs = std.ArrayListUnmanaged(Glyph){};
     var transforms_offset: usize = 0;
-    var colors_offset: usize = 0;
+    // var colors_offset: usize = 0;
     var texture_update = false;
     while (archetypes_iter.next()) |archetype| {
         var transforms = archetype.slice(.mach_gfx_text, .transform);
-        var colors = archetype.slice(.mach_gfx_text, .color);
+        // var colors = archetype.slice(.mach_gfx_text, .color);
 
         // TODO: confirm the lifetime of these slices is OK for writeBuffer, how long do they need
         // to live?
         encoder.writeBuffer(pipeline.transforms, transforms_offset, transforms);
-        encoder.writeBuffer(pipeline.colors, colors_offset, colors);
+        // encoder.writeBuffer(pipeline.colors, colors_offset, colors);
 
         transforms_offset += transforms.len;
-        colors_offset += colors.len;
+        // colors_offset += colors.len;
         pipeline.num_texts += @intCast(transforms.len);
 
         // Render texts
         // TODO: this is very expensive and shouldn't be done here, should be done only on detected
         // text change.
         const px_density = 2.0;
-        var font_names = archetype.slice(.mach_gfx_text, .font_name);
-        var font_sizes = archetype.slice(.mach_gfx_text, .font_size);
+        // var font_names = archetype.slice(.mach_gfx_text, .font_name);
+        // var font_sizes = archetype.slice(.mach_gfx_text, .font_size);
         var texts = archetype.slice(.mach_gfx_text, .text);
-        for (font_names, font_sizes, texts) |font_name, font_size, text| {
-            _ = font_name;
+        for (texts) |text| {
             var origin_x: f32 = 0.0;
             var origin_y: f32 = 0.0;
 
-            // Load a font
-            // TODO: resolve font by name, not hard-code
-            const font_bytes = @import("font-assets").fira_sans_regular_ttf;
-            var font = try gfx.Font.initBytes(font_bytes);
-            defer font.deinit(engine.allocator);
+            for (text) |segment| {
+                // Load a font
+                // TODO: resolve font by name, not hard-code
+                const font_bytes = @import("font-assets").fira_sans_regular_ttf;
+                var font = try gfx.Font.initBytes(font_bytes);
+                defer font.deinit(engine.allocator);
 
-            // Create a text shaper
-            var run = try gfx.TextRun.init();
-            run.font_size_px = font_size;
-            run.px_density = 2; // TODO
+                // Create a text shaper
+                var run = try gfx.TextRun.init();
+                run.font_size_px = segment.style.font_size;
+                run.px_density = 2; // TODO
 
-            defer run.deinit();
+                defer run.deinit();
 
-            run.addText(text);
-            try font.shape(&run);
+                run.addText(segment.string);
+                try font.shape(&run);
 
-            while (run.next()) |glyph| {
-                const codepoint = text[glyph.cluster];
-                // TODO: use flags(?) to detect newline, or at least something more reliable?
-                if (codepoint != '\n') {
-                    var region = try pipeline.regions.getOrPut(engine.allocator, .{
-                        .index = glyph.glyph_index,
-                        .size = @bitCast(font_size),
-                    });
-                    if (!region.found_existing) {
-                        const rendered_glyph = try font.render(engine.allocator, glyph.glyph_index, .{
-                            .font_size_px = run.font_size_px,
+                while (run.next()) |glyph| {
+                    const codepoint = segment.string[glyph.cluster];
+                    // TODO: use flags(?) to detect newline, or at least something more reliable?
+                    if (codepoint != '\n') {
+                        var region = try pipeline.regions.getOrPut(engine.allocator, .{
+                            .index = glyph.glyph_index,
+                            .size = @bitCast(segment.style.font_size),
                         });
-                        if (rendered_glyph.bitmap) |bitmap| {
-                            var glyph_atlas_region = try pipeline.texture_atlas.reserve(engine.allocator, rendered_glyph.width, rendered_glyph.height);
-                            pipeline.texture_atlas.set(glyph_atlas_region, @as([*]const u8, @ptrCast(bitmap.ptr))[0 .. bitmap.len * 4]);
-                            texture_update = true;
+                        if (!region.found_existing) {
+                            const rendered_glyph = try font.render(engine.allocator, glyph.glyph_index, .{
+                                .font_size_px = run.font_size_px,
+                            });
+                            if (rendered_glyph.bitmap) |bitmap| {
+                                var glyph_atlas_region = try pipeline.texture_atlas.reserve(engine.allocator, rendered_glyph.width, rendered_glyph.height);
+                                pipeline.texture_atlas.set(glyph_atlas_region, @as([*]const u8, @ptrCast(bitmap.ptr))[0 .. bitmap.len * 4]);
+                                texture_update = true;
 
-                            // Exclude the 1px blank space margin when describing the region of the texture
-                            // that actually represents the glyph.
-                            const margin = 1;
-                            glyph_atlas_region.x += margin;
-                            glyph_atlas_region.y += margin;
-                            glyph_atlas_region.width -= margin * 2;
-                            glyph_atlas_region.height -= margin * 2;
-                            region.value_ptr.* = glyph_atlas_region;
-                        } else {
-                            // whitespace
-                            region.value_ptr.* = gfx.Atlas.Region{
-                                .width = 0,
-                                .height = 0,
-                                .x = 0,
-                                .y = 0,
-                            };
+                                // Exclude the 1px blank space margin when describing the region of the texture
+                                // that actually represents the glyph.
+                                const margin = 1;
+                                glyph_atlas_region.x += margin;
+                                glyph_atlas_region.y += margin;
+                                glyph_atlas_region.width -= margin * 2;
+                                glyph_atlas_region.height -= margin * 2;
+                                region.value_ptr.* = glyph_atlas_region;
+                            } else {
+                                // whitespace
+                                region.value_ptr.* = gfx.Atlas.Region{
+                                    .width = 0,
+                                    .height = 0,
+                                    .x = 0,
+                                    .y = 0,
+                                };
+                            }
                         }
+
+                        const r = region.value_ptr.*;
+                        const size = vec2(@floatFromInt(r.width), @floatFromInt(r.height));
+                        try glyphs.append(engine.allocator, .{
+                            .pos = vec2(
+                                origin_x + glyph.offset.x(),
+                                origin_y - (size.y() - glyph.offset.y()),
+                            ).divScalar(px_density),
+                            .size = size.divScalar(px_density),
+                            .text_index = 0,
+                            .uv_pos = vec2(@floatFromInt(r.x), @floatFromInt(r.y)),
+                        });
+                        pipeline.num_glyphs += 1;
                     }
 
-                    const r = region.value_ptr.*;
-                    const size = vec2(@floatFromInt(r.width), @floatFromInt(r.height));
-                    try glyphs.append(engine.allocator, .{
-                        .pos = vec2(
-                            origin_x + glyph.offset.x(),
-                            origin_y - (size.y() - glyph.offset.y()),
-                        ).divScalar(px_density),
-                        .size = size.divScalar(px_density),
-                        .text_index = 0,
-                        .uv_pos = vec2(@floatFromInt(r.x), @floatFromInt(r.y)),
-                    });
-                    pipeline.num_glyphs += 1;
-                }
-
-                if (codepoint == '\n') {
-                    origin_x = 0;
-                    origin_y -= font_size;
-                } else {
-                    origin_x += glyph.advance.x();
+                    if (codepoint == '\n') {
+                        origin_x = 0;
+                        origin_y -= segment.style.font_size;
+                    } else {
+                        origin_x += glyph.advance.x();
+                    }
                 }
             }
         }
