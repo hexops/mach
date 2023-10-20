@@ -51,7 +51,7 @@ pub const Vec2 = vec.Vec(2, f32);
 pub const Vec3 = vec.Vec(3, f32);
 pub const Vec4 = vec.Vec(4, f32);
 pub const Quat = q.Quat(f32);
-pub const Mat3x3 = mat.Mat(3, 3, Vec4);
+pub const Mat3x3 = mat.Mat(3, 3, Vec3);
 pub const Mat4x4 = mat.Mat(4, 4, Vec4);
 pub const Ray = ray.Ray(Vec3);
 
@@ -60,7 +60,7 @@ pub const Vec2h = vec.Vec(2, f16);
 pub const Vec3h = vec.Vec(3, f16);
 pub const Vec4h = vec.Vec(4, f16);
 pub const Quath = q.Quat(f16);
-pub const Mat3x3h = mat.Mat(3, 3, Vec4h);
+pub const Mat3x3h = mat.Mat(3, 3, Vec3h);
 pub const Mat4x4h = mat.Mat(4, 4, Vec4h);
 pub const Rayh = ray.Ray(Vec3h);
 
@@ -69,7 +69,7 @@ pub const Vec2d = vec.Vec(2, f64);
 pub const Vec3d = vec.Vec(3, f64);
 pub const Vec4d = vec.Vec(4, f64);
 pub const Quatd = q.Quat(f64);
-pub const Mat3x3d = mat.Mat(3, 3, Vec4d);
+pub const Mat3x3d = mat.Mat(3, 3, Vec3d);
 pub const Mat4x4d = mat.Mat(4, 4, Vec4d);
 pub const Rayd = ray.Ray(Vec3d);
 

@@ -38,7 +38,7 @@ pub fn Mat(
         /// The scalar type of this matrix, e.g. Mat3x3.T == f32
         pub const T = Vector.T;
 
-        /// The underlying Vec type, e.g. Mat3x3.Vec == Vec4
+        /// The underlying Vec type, e.g. Mat3x3.Vec == Vec3
         pub const Vec = Vector;
 
         /// The Vec type corresponding to the number of rows, e.g. Mat3x3.RowVec == Vec3
@@ -80,18 +80,18 @@ pub fn Mat(
                 ///
                 /// ```
                 /// const m = Mat3x3.init(
-                ///     vec4(1, 0, tx),
-                ///     vec4(0, 1, ty),
-                ///     vec4(0, 0, tz),
+                ///     vec3(1, 0, tx),
+                ///     vec3(0, 1, ty),
+                ///     vec3(0, 0, tz),
                 /// );
                 /// ```
                 ///
                 /// Note that Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
                 pub inline fn init(r0: *const RowVec, r1: *const RowVec, r2: *const RowVec) Matrix {
                     return .{ .v = [_]Vec{
-                        Vec.init(r0.x(), r1.x(), r2.x(), 1),
-                        Vec.init(r0.y(), r1.y(), r2.y(), 1),
-                        Vec.init(r0.z(), r1.z(), r2.z(), 1),
+                        Vec.init(r0.x(), r1.x(), r2.x()),
+                        Vec.init(r0.y(), r1.y(), r2.y()),
+                        Vec.init(r0.z(), r1.z(), r2.z()),
                     } };
                 }
 
@@ -112,9 +112,9 @@ pub fn Mat(
                 /// Transposes the matrix.
                 pub inline fn transpose(m: *const Matrix) Matrix {
                     return .{ .v = [_]Vec{
-                        Vec.init(m.v[0].v[0], m.v[1].v[0], m.v[2].v[0], 1),
-                        Vec.init(m.v[0].v[1], m.v[1].v[1], m.v[2].v[1], 1),
-                        Vec.init(m.v[0].v[2], m.v[1].v[2], m.v[2].v[2], 1),
+                        Vec.init(m.v[0].v[0], m.v[1].v[0], m.v[2].v[0]),
+                        Vec.init(m.v[0].v[1], m.v[1].v[1], m.v[2].v[1]),
+                        Vec.init(m.v[0].v[2], m.v[1].v[2], m.v[2].v[2]),
                     } };
                 }
 
@@ -436,8 +436,8 @@ test "zero_struct_overhead" {
 test "n" {
     try testing.expect(usize, 3).eql(math.Mat3x3.cols);
     try testing.expect(usize, 3).eql(math.Mat3x3.rows);
-    try testing.expect(type, math.Vec4).eql(math.Mat3x3.Vec);
-    try testing.expect(usize, 4).eql(math.Mat3x3.Vec.n);
+    try testing.expect(type, math.Vec3).eql(math.Mat3x3.Vec);
+    try testing.expect(usize, 3).eql(math.Mat3x3.Vec.n);
 }
 
 test "init" {
@@ -446,20 +446,20 @@ test "init" {
         &math.vec3(0, 1, 7331),
         &math.vec3(0, 0, 1),
     )).eql(math.Mat3x3{
-        .v = [_]math.Vec4{
-            math.Vec4.init(1, 0, 0, 1),
-            math.Vec4.init(0, 1, 0, 1),
-            math.Vec4.init(1337, 7331, 1, 1),
+        .v = [_]math.Vec3{
+            math.Vec3.init(1, 0, 0),
+            math.Vec3.init(0, 1, 0),
+            math.Vec3.init(1337, 7331, 1),
         },
     });
 }
 
 test "mat3x3_ident" {
     try testing.expect(math.Mat3x3, math.Mat3x3.ident).eql(math.Mat3x3{
-        .v = [_]math.Vec4{
-            math.Vec4.init(1, 0, 0, 1),
-            math.Vec4.init(0, 1, 0, 1),
-            math.Vec4.init(0, 0, 1, 1),
+        .v = [_]math.Vec3{
+            math.Vec3.init(1, 0, 0),
+            math.Vec3.init(0, 1, 0),
+            math.Vec3.init(0, 0, 1),
         },
     });
 }
