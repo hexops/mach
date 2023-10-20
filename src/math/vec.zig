@@ -29,7 +29,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
                 pub inline fn fromInt(xs: anytype, ys: anytype) VecN {
                     return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys) } };
-                } 
+                }
                 pub inline fn x(v: *const VecN) Scalar {
                     return v.v[0];
                 }
@@ -43,7 +43,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
                 pub inline fn fromInt(xs: anytype, ys: anytype, zs: anytype) VecN {
                     return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys), @floatFromInt(zs) } };
-                } 
+                }
                 pub inline fn x(v: *const VecN) Scalar {
                     return v.v[0];
                 }
@@ -79,7 +79,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
 
                 /// Vector * Matrix multiplication
-                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(4, T))) VecN {
+                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(3, T))) VecN {
                     var result = [_]VecN.T{0} ** 3;
                     inline for (0..3) |i| {
                         inline for (0..3) |j| {
@@ -95,7 +95,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
                 pub inline fn fromInt(xs: anytype, ys: anytype, zs: anytype, ws: anytype) VecN {
                     return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys), @floatFromInt(zs), @floatFromInt(ws) } };
-                } 
+                }
                 pub inline fn x(v: *const VecN) Scalar {
                     return v.v[0];
                 }
