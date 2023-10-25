@@ -12,23 +12,23 @@
     },
     .dependencies = .{
         .mach_ecs = .{
-            .url = "https://pkg.machengine.org/mach-ecs/92da47f04787c55ee60c75baff7213b901c00869.tar.gz",
-            .hash = "12200135fbfe68931ab6949a59373a9a47115076b1dffdb00355d5399e68dac4459f",
+            .url = "https://pkg.machengine.org/mach-ecs/46fbc9175a70a8cc983b88f911aa076b625e0fb2.tar.gz",
+            .hash = "1220acdc7bdb09425ccdd92bb906c4e30e3391c95ab15049c946c98cc6643a7ad250",
         },
         .mach_core = .{
-            .url = "https://pkg.machengine.org/mach-core/331ce61cb8c075be6d7c46e49da8ccbd5967d9b7.tar.gz",
-            .hash = "12203bdeb8af9b1da2a521beafb51e3657e1c4f49b058cdd114f607b75dbb95ad306",
+            .url = "https://pkg.machengine.org/mach-core/6c58d3d0d397b452bd85b498cd1572abb6c7f4db.tar.gz",
+            .hash = "1220339322bc4ccca890abbead5110a260bb221e8bcecf3a1e98604129acae689b95",
         },
         .mach_basisu = .{
-            .url = "https://pkg.machengine.org/mach-basisu/bbf97fb70a17575ca1d6089c16a0a0b1882d7553.tar.gz",
+            .url = "https://pkg.machengine.org/mach-basisu/30897f45e8d2d58ac90f1e8fbe15ceabe2127adb.tar.gz",
             .hash = "1220db419f993fe9204580f761f8d805a9cb07fa910f182899089ad0f4873bfd8b49",
         },
         .mach_sysaudio = .{
-            .url = "https://pkg.machengine.org/mach-sysaudio/12e9801f9686655466fd5dba5cbab2e22da32bfc.tar.gz",
-            .hash = "1220bb517fe471189559106415e8eb7c785547e404d38f365dd112d2c264c2166fd6",
+            .url = "https://pkg.machengine.org/mach-sysaudio/ec0d3e4a9f053163b4b99ca96d10fd1912563b55.tar.gz",
+            .hash = "1220a547d08517c7be1b3b0fd2806a399cb71d4189ab5a794f58570af215adc3903a",
         },
         .mach_freetype = .{
-            .url = "https://pkg.machengine.org/mach-freetype/f152278c6ccc6dcf6dcf4308bbe027a7598ffe63.tar.gz",
+            .url = "https://pkg.machengine.org/mach-freetype/a6d971285dfe731e49f82e81c81da2b7f5c6a442.tar.gz",
             .hash = "1220e0de43cacb583b8f9efddcbe359398cfca17a39e265b56c8f2a10314eb8f7a5f",
         },
         .mach_sysjs = .{
