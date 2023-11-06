@@ -7,12 +7,17 @@ const Vec2 = math.Vec2;
 
 pub const Font = FontInterface(if (@import("builtin").cpu.arch == .wasm32) {
     @panic("TODO: implement wasm/Font.zig");
-} else @import("native/Font.zig"));
+} else switch (@import("builtin").os.tag) {
+    .windows => @import("windows/Font.zig"),
+    else => @import("native/Font.zig"),
+});
 
 pub const TextRun = TextRunInterface(if (@import("builtin").cpu.arch == .wasm32)
 {
     @panic("TODO: implement wasm/TextRun.zig");
-} else @import("native/TextRun.zig"));
+} else switch (@import("builtin").os.tag) {
+    else => @import("native/TextRun.zig"),
+});
 
 fn FontInterface(comptime T: type) type {
     assertDecl(T, "initBytes", fn (font_bytes: []const u8) anyerror!T);
