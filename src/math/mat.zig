@@ -274,67 +274,42 @@ pub fn Mat(
                     );
                 }
 
-                /// Constructs an orthographic projection matrix; an orthogonal transformation matrix
-                /// which transforms from the given left, right, bottom, and top dimensions into
-                /// `(-1, +1)` in `(x, y)`, and `(0, +1)` in `z`.
-                ///
-                /// The near/far parameters denotes the depth (z coordinate) of the near/far clipping
-                /// plane.
-                ///
-                /// Returns an orthographic projection matrix.
-                // TODO: needs tests
-                pub inline fn ortho(
-                    /// The sides of the near clipping plane viewport
-                    left: f32,
-                    right: f32,
-                    bottom: f32,
-                    top: f32,
-                    /// The depth (z coordinate) of the near/far clipping plane.
-                    near: f32,
-                    far: f32,
-                ) Matrix {
-                    const xx = 2 / (right - left);
-                    const yy = 2 / (top - bottom);
-                    const zz = 1 / (near - far);
-                    const tx = (right + left) / (left - right);
-                    const ty = (top + bottom) / (bottom - top);
-                    const tz = near / (near - far);
-                    return init(
-                        &RowVec.init(xx, 0, 0, tx),
-                        &RowVec.init(0, yy, 0, ty),
-                        &RowVec.init(0, 0, zz, tz),
-                        &RowVec.init(0, 0, 0, 1),
-                    );
-                }
+                // TODO: mandate negative-Z https://github.com/hexops/mach/issues/1103
+                // /// Constructs an orthographic projection matrix; an orthogonal transformation matrix
+                // /// which transforms from the given left, right, bottom, and top dimensions into
+                // /// `(-1, +1)` in `(x, y)`, and `(0, +1)` in `z`.
+                // ///
+                // /// The near/far parameters denotes the depth (z coordinate) of the near/far clipping
+                // /// plane.
+                // ///
+                // /// Returns an orthographic projection matrix.
+                // // TODO: needs tests
+                // pub inline fn ortho(
+                //     /// The sides of the near clipping plane viewport
+                //     left: f32,
+                //     right: f32,
+                //     bottom: f32,
+                //     top: f32,
+                //     /// The depth (z coordinate) of the near/far clipping plane.
+                //     near: f32,
+                //     far: f32,
+                // ) Matrix {
+                //     const xx = 2 / (right - left);
+                //     const yy = 2 / (top - bottom);
+                //     const zz = 1 / (near - far);
+                //     const tx = (right + left) / (left - right);
+                //     const ty = (top + bottom) / (bottom - top);
+                //     const tz = near / (near - far);
+                //     return init(
+                //         &RowVec.init(xx, 0, 0, tx),
+                //         &RowVec.init(0, yy, 0, ty),
+                //         &RowVec.init(0, 0, zz, tz),
+                //         &RowVec.init(0, 0, 0, 1),
+                //     );
+                // }
 
-                /// Constructs a perspective projection matrix; a perspective transformation matrix
-                /// which transforms from eye space to clip space.
-                ///
-                /// The field of view angle `fovy` is the vertical angle in radians.
-                /// The `aspect` ratio is the ratio of the width to the height of the viewport.
-                /// The `near` and `far` parameters denote the depth (z coordinate) of the near and far clipping planes.
-                ///
-                /// Returns a perspective projection matrix.
-                pub inline fn perspective(
-                    /// The field of view angle in the y direction, in radians.
-                    fovy: f32,
-                    /// The aspect ratio of the viewport's width to its height.
-                    aspect: f32,
-                    /// The depth (z coordinate) of the near clipping plane.
-                    near: f32,
-                    /// The depth (z coordinate) of the far clipping plane.
-                    far: f32,
-                ) Matrix {
-                    const f = 1.0 / std.math.tan(fovy / 2.0);
-                    const zz = (near + far) / (near - far);
-                    const zw = (2.0 * near * far) / (near - far);
-                    return init(
-                        &RowVec.init(f / aspect, 0, 0, 0),
-                        &RowVec.init(0, f, 0, 0),
-                        &RowVec.init(0, 0, zz, -1),
-                        &RowVec.init(0, 0, zw, 0),
-                    );
-                }
+                // TODO: add perspective projection matrix
+
             },
             else => @compileError("Expected Mat3x3, Mat4x4 found '" ++ @typeName(Matrix) ++ "'"),
         };
