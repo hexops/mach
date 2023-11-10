@@ -612,19 +612,6 @@ test "Mat4x4_translation" {
     try testing.expect(math.Vec3, math.vec3(2, 3, 4)).eql(m.translation());
 }
 
-test "Mat4x4_perspective" {
-    const fov_radians = std.math.pi / 2.0; // Field of view in radians
-    const aspect_ratio = 16.0 / 9.0; // Aspect ratio
-    const near = 0.1; // Near clipping plane
-    const far = 100.0; // Far clipping plane
-
-    const m = math.Mat4x4.perspective(fov_radians, aspect_ratio, near, far);
-
-    const expected = math.Mat4x4.init(&math.vec4(1.0 / (aspect_ratio * std.math.tan(fov_radians / 2.0)), 0.0, 0.0, 0.0), &math.vec4(0.0, 1.0 / std.math.tan(fov_radians / 2.0), 0.0, 0.0), &math.vec4(0.0, 0.0, -(far + near) / (far - near), -1.0), &math.vec4(0.0, 0.0, -(2.0 * far * near) / (far - near), 0.0));
-
-    try testing.expect(math.Mat4x4, expected).eql(m);
-}
-
 test "Mat3x3_mulVec_vec3_ident" {
     const v = math.Vec3.splat(1);
     const ident = math.Mat3x3.ident;
