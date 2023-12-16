@@ -28,6 +28,9 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 pub inline fn init(xs: Scalar, ys: Scalar) VecN {
                     return .{ .v = .{ xs, ys } };
                 }
+                pub inline fn fromInt(xs: anytype, ys: anytype) VecN {
+                    return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys) } };
+                }
                 pub inline fn x(v: *const VecN) Scalar {
                     return v.v[0];
                 }
@@ -38,6 +41,9 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
             inline 3 => struct {
                 pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar) VecN {
                     return .{ .v = .{ xs, ys, zs } };
+                }
+                pub inline fn fromInt(xs: anytype, ys: anytype, zs: anytype) VecN {
+                    return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys), @floatFromInt(zs) } };
                 }
                 pub inline fn x(v: *const VecN) Scalar {
                     return v.v[0];
@@ -74,7 +80,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                 }
 
                 /// Vector * Matrix multiplication
-                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(4, T))) VecN {
+                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(3, T))) VecN {
                     var result = [_]VecN.T{0} ** 3;
                     inline for (0..3) |i| {
                         inline for (0..3) |j| {
@@ -110,6 +116,9 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
             inline 4 => struct {
                 pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar, ws: Scalar) VecN {
                     return .{ .v = .{ xs, ys, zs, ws } };
+                }
+                pub inline fn fromInt(xs: anytype, ys: anytype, zs: anytype, ws: anytype) VecN {
+                    return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys), @floatFromInt(zs), @floatFromInt(ws) } };
                 }
                 pub inline fn x(v: *const VecN) Scalar {
                     return v.v[0];
@@ -933,4 +942,41 @@ test "mulQuat" {
     const id = math.Quat.identity();
     const rot = math.Quat.rotateZ(&id, -std.math.pi / 2.0);
     try testing.expect(math.Vec3, math.vec3(1, 0, 0)).eql(up.mulQuat(&rot));
+}
+
+test "Vec2_fromInt" {
+    const x: i8 = 0;
+    const y: i32 = 1;
+    const v = math.vec2FromInt(x, y);
+    const expected = math.vec2(0, 1);
+    try testing.expect(math.Vec2, expected).eql(v);
+}
+
+test "Vec3_fromInt" {
+    const x: i8 = 0;
+    const y: i32 = 1;
+    const z: i64 = 2;
+    const v = math.vec3FromInt(x, y, z);
+    const expected = math.vec3(0, 1, 2);
+    try testing.expect(math.Vec3, expected).eql(v);
+}
+
+test "Vec4_fromInt" {
+    const x: i8 = 0;
+    const y: i32 = 1;
+    const z: i64 = 2;
+    const w: i128 = 3;
+    const v = math.vec4FromInt(x, y, z, w);
+    const expected = math.vec4(0, 1, 2, 3);
+    try testing.expect(math.Vec4, expected).eql(v);
+}
+
+test "Vec4d_fromInt" {
+    const x: i8 = 0;
+    const y: i32 = 1;
+    const z: i64 = 2;
+    const w: i128 = 3;
+    const v = math.vec4dFromInt(x, y, z, w);
+    const expected = math.vec4d(0, 1, 2, 3);
+    try testing.expect(math.Vec4d, expected).eql(v);
 }

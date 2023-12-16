@@ -1,38 +1,43 @@
 .{
     .name = "mach",
     .version = "0.2.0",
+    .paths = .{
+        "src",
+        "build.zig",
+        "build.zig.zon",
+        "LICENSE",
+        "LICENSE-APACHE",
+        "LICENSE-MIT",
+        "README.md",
+    },
     .dependencies = .{
         .mach_ecs = .{
-            .url = "https://pkg.machengine.org/mach-ecs/760661cdf6cee6b69cc77cc18d655f7e9448955b.tar.gz",
-            .hash = "1220bdde5183853e71b5ad975b5f2d74169f2eec34cee0afe2e16fff614e609f28be",
-        },
-        .mach_earcut = .{
-            .url = "https://pkg.machengine.org/mach-earcut/c07b7ca5609d07e40ad157454fc172b2ccefbdad.tar.gz",
-            .hash = "1220859d716fb2e649fdf4014394984172b5043a1b4cadf78b71bf3c2af5713fba5e",
+            .url = "https://pkg.machengine.org/mach-ecs/46fbc9175a70a8cc983b88f911aa076b625e0fb2.tar.gz",
+            .hash = "1220acdc7bdb09425ccdd92bb906c4e30e3391c95ab15049c946c98cc6643a7ad250",
         },
         .mach_core = .{
-            .url = "https://pkg.machengine.org/mach-core/dd59cfe44eef3e958b89005f81f8d366f8863f41.tar.gz",
-            .hash = "122078450d7afd222b0e12380fee415b65a71bc51b49107d9238b517392cfcdc463b",
+            .url = "https://pkg.machengine.org/mach-core/cce02fb96ca787378289c5855b381f0ca9f3e090.tar.gz",
+            .hash = "122096b39d9266d275b780df4d63b1afe6e9a3726f19766baf74b34af3f092532cd3",
         },
         .mach_basisu = .{
-            .url = "https://pkg.machengine.org/mach-basisu/70855b0b6cc12278834c214e81338a1c0651b6d9.tar.gz",
-            .hash = "12201913a55b028f0f5f050e00bc8a1624ad714c46a80cf3c730f1ee32683e203f6f",
+            .url = "https://pkg.machengine.org/mach-basisu/30897f45e8d2d58ac90f1e8fbe15ceabe2127adb.tar.gz",
+            .hash = "1220db419f993fe9204580f761f8d805a9cb07fa910f182899089ad0f4873bfd8b49",
         },
         .mach_sysaudio = .{
-            .url = "https://pkg.machengine.org/mach-sysaudio/dba8539d9e9467d0c7e7bbdba2626a893c096f76.tar.gz",
-            .hash = "1220f55cd76ff3e6051878681ef15ddb845bd1cf9d201295346f8e9dac06e4077a94",
+            .url = "https://pkg.machengine.org/mach-sysaudio/ec0d3e4a9f053163b4b99ca96d10fd1912563b55.tar.gz",
+            .hash = "1220a547d08517c7be1b3b0fd2806a399cb71d4189ab5a794f58570af215adc3903a",
         },
         .mach_freetype = .{
-            .url = "https://pkg.machengine.org/mach-freetype/90b353a9425067010ae5e924dc845e5e5045dab7.tar.gz",
-            .hash = "12200d064703408a8c4a5734dac089a07c228d94a2ea19f3d2b5a07c2c97f1ca46dc",
+            .url = "https://pkg.machengine.org/mach-freetype/a6d971285dfe731e49f82e81c81da2b7f5c6a442.tar.gz",
+            .hash = "1220e0de43cacb583b8f9efddcbe359398cfca17a39e265b56c8f2a10314eb8f7a5f",
         },
         .mach_sysjs = .{
             .url = "https://pkg.machengine.org/mach-sysjs/bafd6c9b8fd5e7be1e8e24cfbd156703d6026aa8.tar.gz",
             .hash = "1220187935c4c5d4cf824927df28e858dcd06cb864bb5d6be4cd349d2836abb4aec4",
         },
         .font_assets = .{
-            .url = "https://github.com/hexops/font-assets/archive/f8359b36a486fd9d476a50419d199902fc49f545.tar.gz",
-            .hash = "12209a354b69085b8c5d6c89678e13275abfbae554887982ee0232cc188f9ea96005",
+            .url = "https://github.com/hexops/font-assets/archive/4c6ed096d705fb98f811f010ca1237a260c88617.tar.gz",
+            .hash = "122008070b460fcb5d513362fd9ee21cda3e8984920ca4239f6190cedda1ea2b8de8",
         },
     },
 }

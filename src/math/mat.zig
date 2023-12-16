@@ -38,7 +38,7 @@ pub fn Mat(
         /// The scalar type of this matrix, e.g. Mat3x3.T == f32
         pub const T = Vector.T;
 
-        /// The underlying Vec type, e.g. Mat3x3.Vec == Vec4
+        /// The underlying Vec type, e.g. Mat3x3.Vec == Vec3
         pub const Vec = Vector;
 
         /// The Vec type corresponding to the number of rows, e.g. Mat3x3.RowVec == Vec3
@@ -80,18 +80,18 @@ pub fn Mat(
                 ///
                 /// ```
                 /// const m = Mat3x3.init(
-                ///     vec4(1, 0, tx),
-                ///     vec4(0, 1, ty),
-                ///     vec4(0, 0, tz),
+                ///     vec3(1, 0, tx),
+                ///     vec3(0, 1, ty),
+                ///     vec3(0, 0, tz),
                 /// );
                 /// ```
                 ///
                 /// Note that Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
                 pub inline fn init(r0: *const RowVec, r1: *const RowVec, r2: *const RowVec) Matrix {
                     return .{ .v = [_]Vec{
-                        Vec.init(r0.x(), r1.x(), r2.x(), 1),
-                        Vec.init(r0.y(), r1.y(), r2.y(), 1),
-                        Vec.init(r0.z(), r1.z(), r2.z(), 1),
+                        Vec.init(r0.x(), r1.x(), r2.x()),
+                        Vec.init(r0.y(), r1.y(), r2.y()),
+                        Vec.init(r0.z(), r1.z(), r2.z()),
                     } };
                 }
 
@@ -112,9 +112,9 @@ pub fn Mat(
                 /// Transposes the matrix.
                 pub inline fn transpose(m: *const Matrix) Matrix {
                     return .{ .v = [_]Vec{
-                        Vec.init(m.v[0].v[0], m.v[1].v[0], m.v[2].v[0], 1),
-                        Vec.init(m.v[0].v[1], m.v[1].v[1], m.v[2].v[1], 1),
-                        Vec.init(m.v[0].v[2], m.v[1].v[2], m.v[2].v[2], 1),
+                        Vec.init(m.v[0].v[0], m.v[1].v[0], m.v[2].v[0]),
+                        Vec.init(m.v[0].v[1], m.v[1].v[1], m.v[2].v[1]),
+                        Vec.init(m.v[0].v[2], m.v[1].v[2], m.v[2].v[2]),
                     } };
                 }
 
@@ -274,73 +274,47 @@ pub fn Mat(
                     );
                 }
 
-                /// Constructs an orthographic projection matrix; an orthogonal transformation matrix
-                /// which transforms from the given left, right, bottom, and top dimensions into
-                /// `(-1, +1)` in `(x, y)`, and `(0, +1)` in `z`.
-                ///
-                /// The near/far parameters denotes the depth (z coordinate) of the near/far clipping
-                /// plane.
-                ///
-                /// Returns an orthographic projection matrix.
-                // TODO: needs tests
-                pub inline fn ortho(
-                    /// The sides of the near clipping plane viewport
-                    left: f32,
-                    right: f32,
-                    bottom: f32,
-                    top: f32,
-                    /// The depth (z coordinate) of the near/far clipping plane.
-                    near: f32,
-                    far: f32,
-                ) Matrix {
-                    const xx = 2 / (right - left);
-                    const yy = 2 / (top - bottom);
-                    const zz = 1 / (near - far);
-                    const tx = (right + left) / (left - right);
-                    const ty = (top + bottom) / (bottom - top);
-                    const tz = near / (near - far);
-                    return init(
-                        &RowVec.init(xx, 0, 0, tx),
-                        &RowVec.init(0, yy, 0, ty),
-                        &RowVec.init(0, 0, zz, tz),
-                        &RowVec.init(0, 0, 0, 1),
-                    );
-                }
+                // TODO: mandate negative-Z https://github.com/hexops/mach/issues/1103
+                // /// Constructs an orthographic projection matrix; an orthogonal transformation matrix
+                // /// which transforms from the given left, right, bottom, and top dimensions into
+                // /// `(-1, +1)` in `(x, y)`, and `(0, +1)` in `z`.
+                // ///
+                // /// The near/far parameters denotes the depth (z coordinate) of the near/far clipping
+                // /// plane.
+                // ///
+                // /// Returns an orthographic projection matrix.
+                // // TODO: needs tests
+                // pub inline fn ortho(
+                //     /// The sides of the near clipping plane viewport
+                //     left: f32,
+                //     right: f32,
+                //     bottom: f32,
+                //     top: f32,
+                //     /// The depth (z coordinate) of the near/far clipping plane.
+                //     near: f32,
+                //     far: f32,
+                // ) Matrix {
+                //     const xx = 2 / (right - left);
+                //     const yy = 2 / (top - bottom);
+                //     const zz = 1 / (near - far);
+                //     const tx = (right + left) / (left - right);
+                //     const ty = (top + bottom) / (bottom - top);
+                //     const tz = near / (near - far);
+                //     return init(
+                //         &RowVec.init(xx, 0, 0, tx),
+                //         &RowVec.init(0, yy, 0, ty),
+                //         &RowVec.init(0, 0, zz, tz),
+                //         &RowVec.init(0, 0, 0, 1),
+                //     );
+                // }
 
-                /// Constructs a perspective projection matrix; a perspective transformation matrix
-                /// which transforms from eye space to clip space.
-                ///
-                /// The field of view angle `fovy` is the vertical angle in radians.
-                /// The `aspect` ratio is the ratio of the width to the height of the viewport.
-                /// The `near` and `far` parameters denote the depth (z coordinate) of the near and far clipping planes.
-                ///
-                /// Returns a perspective projection matrix.
-                pub inline fn perspective(
-                    /// The field of view angle in the y direction, in radians.
-                    fovy: f32,
-                    /// The aspect ratio of the viewport's width to its height.
-                    aspect: f32,
-                    /// The depth (z coordinate) of the near clipping plane.
-                    near: f32,
-                    /// The depth (z coordinate) of the far clipping plane.
-                    far: f32,
-                ) Matrix {
-                    const f = 1.0 / std.math.tan(fovy / 2.0);
-                    const zz = (near + far) / (near - far);
-                    const zw = (2.0 * near * far) / (near - far);
-                    return init(
-                        &RowVec.init(f / aspect, 0, 0, 0),
-                        &RowVec.init(0, f, 0, 0),
-                        &RowVec.init(0, 0, zz, -1),
-                        &RowVec.init(0, 0, zw, 0),
-                    );
-                }
+                // TODO: add perspective projection matrix
+
             },
             else => @compileError("Expected Mat3x3, Mat4x4 found '" ++ @typeName(Matrix) ++ "'"),
         };
 
         /// Matrix multiplication a*b
-        // TODO: needs tests
         pub inline fn mul(a: *const Matrix, b: *const Matrix) Matrix {
             @setEvalBranchQuota(10000);
             var result: Matrix = undefined;
@@ -437,8 +411,8 @@ test "zero_struct_overhead" {
 test "n" {
     try testing.expect(usize, 3).eql(math.Mat3x3.cols);
     try testing.expect(usize, 3).eql(math.Mat3x3.rows);
-    try testing.expect(type, math.Vec4).eql(math.Mat3x3.Vec);
-    try testing.expect(usize, 4).eql(math.Mat3x3.Vec.n);
+    try testing.expect(type, math.Vec3).eql(math.Mat3x3.Vec);
+    try testing.expect(usize, 3).eql(math.Mat3x3.Vec.n);
 }
 
 test "init" {
@@ -447,20 +421,20 @@ test "init" {
         &math.vec3(0, 1, 7331),
         &math.vec3(0, 0, 1),
     )).eql(math.Mat3x3{
-        .v = [_]math.Vec4{
-            math.Vec4.init(1, 0, 0, 1),
-            math.Vec4.init(0, 1, 0, 1),
-            math.Vec4.init(1337, 7331, 1, 1),
+        .v = [_]math.Vec3{
+            math.Vec3.init(1, 0, 0),
+            math.Vec3.init(0, 1, 0),
+            math.Vec3.init(1337, 7331, 1),
         },
     });
 }
 
 test "mat3x3_ident" {
     try testing.expect(math.Mat3x3, math.Mat3x3.ident).eql(math.Mat3x3{
-        .v = [_]math.Vec4{
-            math.Vec4.init(1, 0, 0, 1),
-            math.Vec4.init(0, 1, 0, 1),
-            math.Vec4.init(0, 0, 1, 1),
+        .v = [_]math.Vec3{
+            math.Vec3.init(1, 0, 0),
+            math.Vec3.init(0, 1, 0),
+            math.Vec3.init(0, 0, 1),
         },
     });
 }
@@ -638,19 +612,6 @@ test "Mat4x4_translation" {
     try testing.expect(math.Vec3, math.vec3(2, 3, 4)).eql(m.translation());
 }
 
-test "Mat4x4_perspective" {
-    const fov_radians = std.math.pi / 2.0; // Field of view in radians
-    const aspect_ratio = 16.0 / 9.0; // Aspect ratio
-    const near = 0.1; // Near clipping plane
-    const far = 100.0; // Far clipping plane
-
-    const m = math.Mat4x4.perspective(fov_radians, aspect_ratio, near, far);
-
-    const expected = math.Mat4x4.init(&math.vec4(1.0 / (aspect_ratio * std.math.tan(fov_radians / 2.0)), 0.0, 0.0, 0.0), &math.vec4(0.0, 1.0 / std.math.tan(fov_radians / 2.0), 0.0, 0.0), &math.vec4(0.0, 0.0, -(far + near) / (far - near), -1.0), &math.vec4(0.0, 0.0, -(2.0 * far * near) / (far - near), 0.0));
-
-    try testing.expect(math.Mat4x4, expected).eql(m);
-}
-
 test "Mat3x3_mulVec_vec3_ident" {
     const v = math.Vec3.splat(1);
     const ident = math.Mat3x3.ident;
@@ -685,4 +646,49 @@ test "Mat4x4_mulVec_vec4" {
     const m = math.Mat4x4.mulVec(&mat, &v);
     const expected = math.vec4(4, 47, 5, 68);
     try testing.expect(math.Vec4, expected).eql(m);
+}
+
+test "Mat3x3_mul" {
+    const a = math.Mat3x3.init(
+        &math.vec3(4, 2, -3),
+        &math.vec3(7, 9, -8),
+        &math.vec3(-1, 8, -8),
+    );
+    const b = math.Mat3x3.init(
+        &math.vec3(5, -7, -8),
+        &math.vec3(6, -3, 2),
+        &math.vec3(-3, -4, 4),
+    );
+    const c = math.Mat3x3.mul(&a, &b);
+
+    const expected = math.Mat3x3.init(
+        &math.vec3(41, -22, -40),
+        &math.vec3(113, -44, -70),
+        &math.vec3(67, 15, -8),
+    );
+    try testing.expect(math.Mat3x3, expected).eql(c);
+}
+
+test "Mat4x4_mul" {
+    const a = math.Mat4x4.init(
+        &math.vec4(10, -5, 6, -2),
+        &math.vec4(0, -1, 0, 9),
+        &math.vec4(-1, 6, -4, 8),
+        &math.vec4(9, -8, -6, -10),
+    );
+    const b = math.Mat4x4.init(
+        &math.vec4(7, -7, -3, -8),
+        &math.vec4(1, -1, -7, -2),
+        &math.vec4(-10, 2, 2, -2),
+        &math.vec4(10, -7, 7, 1),
+    );
+    const c = math.Mat4x4.mul(&a, &b);
+
+    const expected = math.Mat4x4.init(
+        &math.vec4(-15, -39, 3, -84),
+        &math.vec4(89, -62, 70, 11),
+        &math.vec4(119, -63, 9, 12),
+        &math.vec4(15, 3, -53, -54),
+    );
+    try testing.expect(math.Mat4x4, expected).eql(c);
 }
