@@ -4,6 +4,7 @@ const mach = @import("../main.zig");
 const testing = mach.testing;
 const math = mach.math;
 const mat = @import("mat.zig");
+const quat = @import("quat.zig");
 
 pub const VecComponent = enum { x, y, z, w };
 
@@ -87,6 +88,29 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
                         }
                     }
                     return .{ .v = result };
+                }
+
+                /// Vector * Quat multiplication
+                /// https://github.com/greggman/wgpu-matrix/blob/main/src/vec3-impl.ts#L718
+                pub inline fn mulQuat(v: *const VecN, q: *const quat.Quat(Scalar)) VecN {
+                    const qx = q.v.x();
+                    const qy = q.v.y();
+                    const qz = q.v.z();
+                    const w2 = q.v.w() * 2;
+
+                    const vx = v.x();
+                    const vy = v.y();
+                    const vz = v.z();
+
+                    const uv_x = qy * vz - qz * vy;
+                    const uv_y = qz * vx - qx * vz;
+                    const uv_z = qx * vy - qy * vx;
+
+                    return math.vec3(
+                        vx + uv_x * w2 + (qy * uv_z - qz * uv_y) * 2,
+                        vy + uv_y * w2 + (qz * uv_x - qx * uv_z) * 2,
+                        vz + uv_z * w2 + (qz * uv_y - qy * uv_x) * 2,
+                    );
                 }
             },
             inline 4 => struct {
@@ -911,6 +935,13 @@ test "Mat4x4_mulMat" {
     const m = math.Vec4.mulMat(&v, &matrix);
     const expected = math.vec4(7, 9, 6, -1);
     try testing.expect(math.Vec4, expected).eql(m);
+}
+
+test "mulQuat" {
+    const up = math.vec3(0, 1, 0);
+    const id = math.Quat.identity();
+    const rot = math.Quat.rotateZ(&id, -std.math.pi / 2.0);
+    try testing.expect(math.Vec3, math.vec3(1, 0, 0)).eql(up.mulQuat(&rot));
 }
 
 test "Vec2_fromInt" {
