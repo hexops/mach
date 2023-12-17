@@ -15,6 +15,7 @@ pub const Engine = struct {
     encoder: *gpu.CommandEncoder,
 
     pub const name = .engine;
+    pub const Mod = World.Mod(@This());
 
     pub const local = struct {
         pub fn init(world: *World) !void {
@@ -33,7 +34,7 @@ pub const Engine = struct {
 
         pub fn deinit(
             world: *World,
-            engine: *World.Mod(.engine),
+            engine: *Mod,
         ) !void {
             // TODO: this triggers a device loss error, which we should handle correctly
             // engine.state.device.release();
@@ -51,7 +52,7 @@ pub const Engine = struct {
         }
 
         pub fn beginPass(
-            engine: *World.Mod(.engine),
+            engine: *Mod,
             clear_color: gpu.Color,
         ) !void {
             const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
@@ -72,7 +73,7 @@ pub const Engine = struct {
         }
 
         pub fn endPass(
-            engine: *World.Mod(.engine),
+            engine: *Mod,
         ) !void {
             // End this pass
             engine.state.pass.end();

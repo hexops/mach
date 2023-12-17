@@ -16,6 +16,7 @@ const Mat4x4 = math.Mat4x4;
 pipelines: std.AutoArrayHashMapUnmanaged(u32, Pipeline),
 
 pub const name = .mach_gfx_sprite;
+pub const Mod = mach.Mod(@This());
 
 pub const components = struct {
     /// The ID of the pipeline this sprite belongs to. By default, zero.
@@ -120,14 +121,14 @@ pub const PipelineOptions = struct {
     pipeline_layout: ?*gpu.PipelineLayout = null,
 };
 
-pub fn deinit(sprite_mod: *mach.Mod(.mach_gfx_sprite)) !void {
+pub fn deinit(sprite_mod: *Mod) !void {
     for (sprite_mod.state.pipelines.entries.items(.value)) |*pipeline| pipeline.deinit();
     sprite_mod.state.pipelines.deinit(sprite_mod.allocator);
 }
 
 pub const local = struct {
     pub fn init(
-        sprite_mod: *mach.Mod(.mach_gfx_sprite),
+        sprite_mod: *Mod,
     ) !void {
         sprite_mod.state = .{
             // TODO: struct default value initializers don't work
@@ -136,8 +137,8 @@ pub const local = struct {
     }
 
     pub fn initPipeline(
-        engine: *mach.Mod(.engine),
-        sprite_mod: *mach.Mod(.mach_gfx_sprite),
+        engine: *Engine.Mod,
+        sprite_mod: *Mod,
         opt: PipelineOptions,
     ) !void {
         const device = engine.state.device;
@@ -276,8 +277,8 @@ pub const local = struct {
     }
 
     pub fn updated(
-        engine: *mach.Mod(.engine),
-        sprite_mod: *mach.Mod(.mach_gfx_sprite),
+        engine: *Engine.Mod,
+        sprite_mod: *Mod,
         pipeline_id: u32,
     ) !void {
         const pipeline = sprite_mod.state.pipelines.getPtr(pipeline_id).?;
@@ -325,8 +326,8 @@ pub const local = struct {
     }
 
     pub fn preRender(
-        engine: *mach.Mod(.engine),
-        sprite_mod: *mach.Mod(.mach_gfx_sprite),
+        engine: *Engine.Mod,
+        sprite_mod: *Mod,
         pipeline_id: u32,
     ) !void {
         const pipeline = sprite_mod.state.pipelines.get(pipeline_id).?;
@@ -353,8 +354,8 @@ pub const local = struct {
     }
 
     pub fn render(
-        engine: *mach.Mod(.engine),
-        sprite_mod: *mach.Mod(.mach_gfx_sprite),
+        engine: *Engine.Mod,
+        sprite_mod: *Mod,
         pipeline_id: u32,
     ) !void {
         const pipeline = sprite_mod.state.pipelines.get(pipeline_id).?;

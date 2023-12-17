@@ -19,6 +19,7 @@ const Mat4x4 = math.Mat4x4;
 pipelines: std.AutoArrayHashMapUnmanaged(u32, Pipeline),
 
 pub const name = .mach_gfx_text;
+pub const Mod = mach.Mod(@This());
 
 // TODO: better/proper text layout, shaping
 //
@@ -170,14 +171,14 @@ pub const PipelineOptions = struct {
     pipeline_layout: ?*gpu.PipelineLayout = null,
 };
 
-pub fn deinit(text_mod: *mach.Mod(.mach_gfx_text)) !void {
+pub fn deinit(text_mod: *Mod) !void {
     for (text_mod.state.pipelines.entries.items(.value)) |*pipeline| pipeline.deinit(text_mod.allocator);
     text_mod.state.pipelines.deinit(text_mod.allocator);
 }
 
 pub const local = struct {
     pub fn init(
-        text_mod: *mach.Mod(.mach_gfx_text),
+        text_mod: *Mod,
     ) !void {
         text_mod.state = .{
             // TODO: struct default value initializers don't work
@@ -186,8 +187,8 @@ pub const local = struct {
     }
 
     pub fn initPipeline(
-        engine: *mach.Mod(.engine),
-        text_mod: *mach.Mod(.mach_gfx_text),
+        engine: *Engine.Mod,
+        text_mod: *Mod,
         opt: PipelineOptions,
     ) !void {
         const device = engine.state.device;
@@ -346,8 +347,8 @@ pub const local = struct {
     }
 
     pub fn updated(
-        engine: *mach.Mod(.engine),
-        text_mod: *mach.Mod(.mach_gfx_text),
+        engine: *Engine.Mod,
+        text_mod: *Mod,
         pipeline_id: u32,
     ) !void {
         const pipeline = text_mod.state.pipelines.getPtr(pipeline_id).?;
@@ -500,8 +501,8 @@ pub const local = struct {
     }
 
     pub fn preRender(
-        engine: *mach.Mod(.engine),
-        text_mod: *mach.Mod(.mach_gfx_text),
+        engine: *Engine.Mod,
+        text_mod: *Mod,
         pipeline_id: u32,
     ) !void {
         const pipeline = text_mod.state.pipelines.get(pipeline_id).?;
@@ -528,8 +529,8 @@ pub const local = struct {
     }
 
     pub fn render(
-        engine: *mach.Mod(.engine),
-        text_mod: *mach.Mod(.mach_gfx_text),
+        engine: *Engine.Mod,
+        text_mod: *Mod,
         pipeline_id: u32,
     ) !void {
         const pipeline = text_mod.state.pipelines.get(pipeline_id).?;
