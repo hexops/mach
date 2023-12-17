@@ -12,8 +12,8 @@
     },
     .dependencies = .{
         .mach_ecs = .{
-            .url = "https://pkg.machengine.org/mach-ecs/46fbc9175a70a8cc983b88f911aa076b625e0fb2.tar.gz",
-            .hash = "1220acdc7bdb09425ccdd92bb906c4e30e3391c95ab15049c946c98cc6643a7ad250",
+            .url = "https://pkg.machengine.org/mach-ecs/ef06fb647353356eff080ad3ec337e028b492d41.tar.gz",
+            .hash = "1220014851adb37d191430ac371cc467e0e0eb633b84b856c7a37e41a3149dea7ce8",
         },
         .mach_core = .{
             .url = "https://pkg.machengine.org/mach-core/cce02fb96ca787378289c5855b381f0ca9f3e090.tar.gz",
