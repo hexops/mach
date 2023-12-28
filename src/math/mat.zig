@@ -51,6 +51,10 @@ pub fn Mat(
 
         /// Identity matrix
         pub const ident = switch (Matrix) {
+            inline math.Mat2x2, math.Mat2x2h, math.Mat2x2d => Matrix.init(
+                &RowVec.init(1, 0),
+                &RowVec.init(0, 1),
+            ),
             inline math.Mat3x3, math.Mat3x3h, math.Mat3x3d => Matrix.init(
                 &RowVec.init(1, 0, 0),
                 &RowVec.init(0, 1, 0),
@@ -66,6 +70,70 @@ pub fn Mat(
         };
 
         pub usingnamespace switch (Matrix) {
+            inline math.Mat2x2, math.Mat2x2h, math.Mat2x2d => struct {
+                /// Constructs a 2x2 matrix with the given rows. For example to write a translation
+                /// matrix like in the left part of this equation:
+                ///
+                /// ```
+                /// |1 tx| |x  |   |x+y*tx|
+                /// |0 ty| |y=1| = |ty    |
+                /// ```
+                ///
+                /// You would write it with the same visual layout:
+                ///
+                /// ```
+                /// const m = Mat2x2.init(
+                ///     vec3(1, tx),
+                ///     vec3(0, ty),
+                /// );
+                /// ```
+                ///
+                /// Note that Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
+                pub inline fn init(r0: *const RowVec, r1: *const RowVec) Matrix {
+                    return .{ .v = [_]Vec{
+                        Vec.init(r0.x(), r1.x()),
+                        Vec.init(r0.y(), r1.y()),
+                    } };
+                }
+
+                /// Returns the row `i` of the matrix.
+                pub inline fn row(m: *const Matrix, i: usize) RowVec {
+                    // Note: we inline RowVec.init manually here as it is faster in debug builds.
+                    // return RowVec.init(m.v[0].v[i], m.v[1].v[i]);
+                    return .{ .v = .{ m.v[0].v[i], m.v[1].v[i] } };
+                }
+
+                /// Returns the column `i` of the matrix.
+                pub inline fn col(m: *const Matrix, i: usize) RowVec {
+                    // Note: we inline RowVec.init manually here as it is faster in debug builds.
+                    // return RowVec.init(m.v[i].v[0], m.v[i].v[1]);
+                    return .{ .v = .{ m.v[i].v[0], m.v[i].v[1] } };
+                }
+
+                /// Transposes the matrix.
+                pub inline fn transpose(m: *const Matrix) Matrix {
+                    return .{ .v = [_]Vec{
+                        Vec.init(m.v[0].v[0], m.v[1].v[0]),
+                        Vec.init(m.v[0].v[1], m.v[1].v[1]),
+                    } };
+                }
+
+                /// Constructs a 1D matrix which scales each dimension by the given scalar.
+                pub inline fn scaleScalar(t: Vec.T) Matrix {
+                    return init(
+                        &RowVec.init(t, 0),
+                        &RowVec.init(0, 1),
+                    );
+                }
+
+                /// Constructs a 1D matrix which translates coordinates by the given scalar.
+                pub inline fn translateScalar(t: Vec.T) Matrix {
+                    return init(
+                        &RowVec.init(1, t),
+                        &RowVec.init(0, 1),
+                    );
+                }
+            },
             inline math.Mat3x3, math.Mat3x3h, math.Mat3x3d => struct {
                 /// Constructs a 3x3 matrix with the given rows. For example to write a translation
                 /// matrix like in the left part of this equation:
@@ -390,21 +458,26 @@ pub fn Mat(
 
 test "gpu_compatibility" {
     // https://www.w3.org/TR/WGSL/#alignment-and-size
+    try testing.expect(usize, 16).eql(@sizeOf(math.Mat2x2));
     try testing.expect(usize, 48).eql(@sizeOf(math.Mat3x3));
     try testing.expect(usize, 64).eql(@sizeOf(math.Mat4x4));
 
+    try testing.expect(usize, 8).eql(@sizeOf(math.Mat2x2h));
     try testing.expect(usize, 24).eql(@sizeOf(math.Mat3x3h));
     try testing.expect(usize, 32).eql(@sizeOf(math.Mat4x4h));
 
-    try testing.expect(usize, 48 * 2).eql(@sizeOf(math.Mat3x3d)); // speculative
-    try testing.expect(usize, 64 * 2).eql(@sizeOf(math.Mat4x4d)); // speculative
+    try testing.expect(usize, 32).eql(@sizeOf(math.Mat2x2d)); // speculative
+    try testing.expect(usize, 96).eql(@sizeOf(math.Mat3x3d)); // speculative
+    try testing.expect(usize, 128).eql(@sizeOf(math.Mat4x4d)); // speculative
 }
 
 test "zero_struct_overhead" {
-    // Proof that using e.g. [3]Vec4 is equal to [3]@Vector(4, f32)
-    try testing.expect(usize, @alignOf([3]@Vector(4, f32))).eql(@alignOf(math.Mat3x3));
+    // Proof that using e.g. [3]Vec3 is equal to [3]@Vector(3, f32)
+    try testing.expect(usize, @alignOf([2]@Vector(2, f32))).eql(@alignOf(math.Mat2x2));
+    try testing.expect(usize, @alignOf([3]@Vector(3, f32))).eql(@alignOf(math.Mat3x3));
     try testing.expect(usize, @alignOf([4]@Vector(4, f32))).eql(@alignOf(math.Mat4x4));
-    try testing.expect(usize, @sizeOf([3]@Vector(4, f32))).eql(@sizeOf(math.Mat3x3));
+    try testing.expect(usize, @sizeOf([2]@Vector(2, f32))).eql(@sizeOf(math.Mat2x2));
+    try testing.expect(usize, @sizeOf([3]@Vector(3, f32))).eql(@sizeOf(math.Mat3x3));
     try testing.expect(usize, @sizeOf([4]@Vector(4, f32))).eql(@sizeOf(math.Mat4x4));
 }
 
@@ -429,7 +502,16 @@ test "init" {
     });
 }
 
-test "mat3x3_ident" {
+test "Mat2x2_ident" {
+    try testing.expect(math.Mat2x2, math.Mat2x2.ident).eql(math.Mat2x2{
+        .v = [_]math.Vec2{
+            math.Vec2.init(1, 0),
+            math.Vec2.init(0, 1),
+        },
+    });
+}
+
+test "Mat3x3_ident" {
     try testing.expect(math.Mat3x3, math.Mat3x3.ident).eql(math.Mat3x3{
         .v = [_]math.Vec3{
             math.Vec3.init(1, 0, 0),
@@ -439,7 +521,7 @@ test "mat3x3_ident" {
     });
 }
 
-test "mat4x4_ident" {
+test "Mat4x4_ident" {
     try testing.expect(math.Mat4x4, math.Mat4x4.ident).eql(math.Mat4x4{
         .v = [_]math.Vec4{
             math.Vec4.init(1, 0, 0, 0),
@@ -448,6 +530,24 @@ test "mat4x4_ident" {
             math.Vec4.init(0, 0, 0, 1),
         },
     });
+}
+
+test "Mat2x2_row" {
+    const m = math.Mat2x2.init(
+        &math.vec2(0, 1),
+        &math.vec2(2, 3),
+    );
+    try testing.expect(math.Vec2, math.vec2(0, 1)).eql(m.row(0));
+    try testing.expect(math.Vec2, math.vec2(2, 3)).eql(m.row(@TypeOf(m).rows - 1));
+}
+
+test "Mat2x2_col" {
+    const m = math.Mat2x2.init(
+        &math.vec2(0, 1),
+        &math.vec2(2, 3),
+    );
+    try testing.expect(math.Vec2, math.vec2(0, 2)).eql(m.col(0));
+    try testing.expect(math.Vec2, math.vec2(1, 3)).eql(m.col(@TypeOf(m).cols - 1));
 }
 
 test "Mat3x3_row" {
@@ -498,6 +598,17 @@ test "Mat4x4_col" {
     try testing.expect(math.Vec4, math.vec4(3, 7, 11, 15)).eql(m.col(@TypeOf(m).cols - 1));
 }
 
+test "Mat2x2_transpose" {
+    const m = math.Mat2x2.init(
+        &math.vec2(0, 1),
+        &math.vec2(2, 3),
+    );
+    try testing.expect(math.Mat2x2, math.Mat2x2.init(
+        &math.vec2(0, 2),
+        &math.vec2(1, 3),
+    )).eql(m.transpose());
+}
+
 test "Mat3x3_transpose" {
     const m = math.Mat3x3.init(
         &math.vec3(0, 1, 2),
@@ -524,6 +635,14 @@ test "Mat4x4_transpose" {
         &math.vec4(2, 6, 10, 14),
         &math.vec4(3, 7, 11, 15),
     )).eql(m.transpose());
+}
+
+test "Mat2x2_scaleScalar" {
+    const m = math.Mat2x2.scaleScalar(2);
+    try testing.expect(math.Mat2x2, math.Mat2x2.init(
+        &math.vec2(2, 0),
+        &math.vec2(0, 1),
+    )).eql(m);
 }
 
 test "Mat3x3_scale" {
@@ -592,6 +711,14 @@ test "Mat3x3_translateScalar" {
     )).eql(m);
 }
 
+test "Mat2x2_translateScalar" {
+    const m = math.Mat2x2.translateScalar(2);
+    try testing.expect(math.Mat2x2, math.Mat2x2.init(
+        &math.vec2(1, 2),
+        &math.vec2(0, 1),
+    )).eql(m);
+}
+
 test "Mat4x4_translateScalar" {
     const m = math.Mat4x4.translateScalar(2);
     try testing.expect(math.Mat4x4, math.Mat4x4.init(
@@ -610,6 +737,27 @@ test "Mat3x3_translation" {
 test "Mat4x4_translation" {
     const m = math.Mat4x4.translate(math.vec3(2, 3, 4));
     try testing.expect(math.Vec3, math.vec3(2, 3, 4)).eql(m.translation());
+}
+
+test "Mat2x2_mulVec_vec2_ident" {
+    const v = math.Vec2.splat(1);
+    const ident = math.Mat2x2.ident;
+    const expected = v;
+    var m = math.Mat2x2.mulVec(&ident, &v);
+
+    try testing.expect(math.Vec2, expected).eql(m);
+}
+
+test "Mat2x2_mulVec_vec2" {
+    const v = math.Vec2.splat(1);
+    const mat = math.Mat2x2.init(
+        &math.vec2(2, 0),
+        &math.vec2(0, 2),
+    );
+
+    const m = math.Mat2x2.mulVec(&mat, &v);
+    const expected = math.vec2(2, 2);
+    try testing.expect(math.Vec2, expected).eql(m);
 }
 
 test "Mat3x3_mulVec_vec3_ident" {
@@ -646,6 +794,24 @@ test "Mat4x4_mulVec_vec4" {
     const m = math.Mat4x4.mulVec(&mat, &v);
     const expected = math.vec4(4, 47, 5, 68);
     try testing.expect(math.Vec4, expected).eql(m);
+}
+
+test "Mat2x2_mul" {
+    const a = math.Mat2x2.init(
+        &math.vec2(4, 2),
+        &math.vec2(7, 9),
+    );
+    const b = math.Mat2x2.init(
+        &math.vec2(5, -7),
+        &math.vec2(6, -3),
+    );
+    const c = math.Mat2x2.mul(&a, &b);
+
+    const expected = math.Mat2x2.init(
+        &math.vec2(32, -34),
+        &math.vec2(89, -76),
+    );
+    try testing.expect(math.Mat2x2, expected).eql(c);
 }
 
 test "Mat3x3_mul" {
