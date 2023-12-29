@@ -377,6 +377,40 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
     };
 }
 
+test "equals_vec2" {
+    const a: math.Vec2 = math.vec2(92, 103);
+    const b: math.Vec2 = math.vec2(92, 103);
+    const c: math.Vec2 = math.vec2(92, 103.2);
+
+    try testing.expect(bool, true).eql(a.equals(&b));
+    try testing.expect(bool, false).eql(a.equals(&c));
+}
+
+test "equals_vec3" {
+    const a: math.Vec3 = math.vec3(92, 103, 576);
+    const b: math.Vec3 = math.vec3(92, 103, 576);
+    const c: math.Vec3 = math.vec3(92.009, 103.2, 578);
+
+    try testing.expect(bool, true).eql(a.equals(&b));
+    try testing.expect(bool, false).eql(a.equals(&c));
+}
+
+test "equalsApprox_vec2" {
+    const a: math.Vec2 = math.vec2(92.92837, 103.54682);
+    const b: math.Vec2 = math.vec2(92.92998, 103.54791);
+
+    try testing.expect(bool, true).eql(a.equalsApprox(&b, 1e-2));
+    try testing.expect(bool, false).eql(a.equalsApprox(&b, 1e-3));
+}
+
+test "equalsApprox_vec3" {
+    const a: math.Vec3 = math.vec3(92.92837, 103.54682, 256.9);
+    const b: math.Vec3 = math.vec3(92.92998, 103.54791, 256.9);
+
+    try testing.expect(bool, true).eql(a.equalsApprox(&b, 1e-2));
+    try testing.expect(bool, false).eql(a.equalsApprox(&b, 1e-3));
+}
+
 test "gpu_compatibility" {
     // https://www.w3.org/TR/WGSL/#alignment-and-size
     try testing.expect(usize, 8).eql(@sizeOf(math.Vec2)); // WGSL AlignOf 8, SizeOf 8
