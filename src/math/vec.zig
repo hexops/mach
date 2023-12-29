@@ -374,6 +374,24 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
 
             return min_scalar;
         }
+
+        /// Checks for approximate (tolerence) equality between two vectors
+        /// of the same type and dimensions
+        pub inline fn equalsApprox(a: *const VecN, b: *const VecN, tolerance: T) bool {
+            var i: usize = 0;
+            while (i < VecN.n) : (i += 1) {
+                if (!math.eql(T, a.v[i], b.v[i], tolerance)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// Checks for approximate (absolute epsilon tolerence) equality
+        /// between two vectors of the same type and dimensions
+        pub inline fn equals(a: *const VecN, b: *const VecN) bool {
+            return a.equalsApprox(b, math.eps(T));
+        }
     };
 }
 
