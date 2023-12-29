@@ -76,7 +76,6 @@ pub fn Ray(comptime Vec3P: type) type {
                         @abs(ray.direction.v[1]),
                         @abs(ray.direction.v[2]),
                     });
-                    std.debug.assert(ray.direction.v[kz] != 0.0);
                     if (ray.direction.v[kz] == 0.0) {
                         return null;
                     }
@@ -356,4 +355,23 @@ test "triangleIntersect_precise_frontface_bc_hit_f64" {
     try testing.expect(f64, expected_v).eqlApprox(result.v[1], 1e-4);
     try testing.expect(f64, expected_w).eqlApprox(result.v[2], 1e-4);
     try testing.expect(f64, expected_t).eqlApprox(result.v[3], 1e-2);
+}
+
+test "triangleIntersect_ray_no_direction" {
+    const a: math.Vec3 = math.vec3(0, 0, 0);
+    const b: math.Vec3 = math.vec3(1, 0, 0);
+    const c: math.Vec3 = math.vec3(0, 1, 0);
+    const ray: math.Ray = math.Ray{
+        .origin = math.vec3(0.1, 0.1, 1),
+        .direction = math.vec3(0.0, 0.0, 0.0),
+    };
+
+    const result = ray.triangleIntersect(
+        &a,
+        &b,
+        &c,
+        true,
+    );
+
+    try testing.expect(?math.Ray.Hit, null).eql(result);
 }
