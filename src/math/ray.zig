@@ -49,9 +49,10 @@ pub fn Ray(comptime Vec3P: type) type {
                         }
                     } else if (v[1] > v[2]) {
                         return 1;
-                    } else {
-                        return 0;
+                    } else if (v[2] > v[0]) {
+                        return 2;
                     }
+                    return 0;
                 }
 
                 // Algorithm based on:
@@ -76,6 +77,9 @@ pub fn Ray(comptime Vec3P: type) type {
                         @abs(ray.direction.v[1]),
                         @abs(ray.direction.v[2]),
                     });
+                    if (ray.direction.v[kz] == 0.0) {
+                        return null;
+                    }
                     var kx: u8 = kz + 1;
                     if (kx == 3)
                         kx = 0;
@@ -348,6 +352,101 @@ test "triangleIntersect_precise_frontface_bc_hit_f64" {
     const expected_u: f64 = 0.56102;
     const expected_v: f64 = 0.33136;
     const expected_w: f64 = 0.10761;
+    try testing.expect(f64, expected_u).eqlApprox(result.v[0], 1e-4);
+    try testing.expect(f64, expected_v).eqlApprox(result.v[1], 1e-4);
+    try testing.expect(f64, expected_w).eqlApprox(result.v[2], 1e-4);
+    try testing.expect(f64, expected_t).eqlApprox(result.v[3], 1e-2);
+}
+
+test "triangleIntersect_ray_no_direction" {
+    const a: math.Vec3 = math.vec3(0, 0, 0);
+    const b: math.Vec3 = math.vec3(1, 0, 0);
+    const c: math.Vec3 = math.vec3(0, 1, 0);
+    const ray: math.Ray = math.Ray{
+        .origin = math.vec3(0.1, 0.1, 1),
+        .direction = math.vec3(0.0, 0.0, 0.0),
+    };
+
+    const result = ray.triangleIntersect(
+        &a,
+        &b,
+        &c,
+        true,
+    );
+
+    try testing.expect(?math.Ray.Hit, null).eql(result);
+}
+
+test "triangleIntersect_ray_no_x_y_direction" {
+    const a: math.Vec3 = math.vec3(-1, 1, 0);
+    const b: math.Vec3 = math.vec3(-1, -1, 0);
+    const c: math.Vec3 = math.vec3(1, -1, 0);
+    const ray: math.Ray = math.Ray{
+        .origin = math.vec3(0.0, 0.0, 1),
+        .direction = math.vec3(0.0, 0.0, -1),
+    };
+
+    const result = ray.triangleIntersect(
+        &a,
+        &b,
+        &c,
+        true,
+    ).?;
+
+    const expected_t: f64 = 1;
+    const expected_u: f64 = 0.3333;
+    const expected_v: f64 = 0.3333;
+    const expected_w: f64 = 0.3333;
+    try testing.expect(f64, expected_u).eqlApprox(result.v[0], 1e-4);
+    try testing.expect(f64, expected_v).eqlApprox(result.v[1], 1e-4);
+    try testing.expect(f64, expected_w).eqlApprox(result.v[2], 1e-4);
+    try testing.expect(f64, expected_t).eqlApprox(result.v[3], 1e-2);
+}
+
+test "triangleIntersect_ray_no_y_z_direction" {
+    const a: math.Vec3 = math.vec3(0, -1, 1);
+    const b: math.Vec3 = math.vec3(0, -1, -1);
+    const c: math.Vec3 = math.vec3(0, 1, -1);
+    const ray: math.Ray = math.Ray{
+        .origin = math.vec3(1, 0.0, 0.0),
+        .direction = math.vec3(-1, 0.0, 0.0),
+    };
+
+    const result = ray.triangleIntersect(
+        &a,
+        &b,
+        &c,
+        true,
+    ).?;
+    const expected_t: f64 = 1;
+    const expected_u: f64 = 0.3333;
+    const expected_v: f64 = 0.3333;
+    const expected_w: f64 = 0.3333;
+    try testing.expect(f64, expected_u).eqlApprox(result.v[0], 1e-4);
+    try testing.expect(f64, expected_v).eqlApprox(result.v[1], 1e-4);
+    try testing.expect(f64, expected_w).eqlApprox(result.v[2], 1e-4);
+    try testing.expect(f64, expected_t).eqlApprox(result.v[3], 1e-2);
+}
+
+test "triangleIntersect_ray_no_x_z_direction" {
+    const a: math.Vec3 = math.vec3(-1, 0, 1);
+    const b: math.Vec3 = math.vec3(-1, 0, -1);
+    const c: math.Vec3 = math.vec3(1, 0, -1);
+    const ray: math.Ray = math.Ray{
+        .origin = math.vec3(0.0, -1.0, 0.0),
+        .direction = math.vec3(0.0, 1.0, 0.0),
+    };
+
+    const result = ray.triangleIntersect(
+        &a,
+        &b,
+        &c,
+        true,
+    ).?;
+    const expected_t: f64 = 1;
+    const expected_u: f64 = 0.3333;
+    const expected_v: f64 = 0.3333;
+    const expected_w: f64 = 0.3333;
     try testing.expect(f64, expected_u).eqlApprox(result.v[0], 1e-4);
     try testing.expect(f64, expected_v).eqlApprox(result.v[1], 1e-4);
     try testing.expect(f64, expected_w).eqlApprox(result.v[2], 1e-4);
