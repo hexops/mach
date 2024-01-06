@@ -15,7 +15,12 @@ fn ExpectFloat(comptime T: type) type {
 
         /// Approximate (absolute tolerance) equality
         pub fn eqlApprox(e: *const @This(), actual: T, tolerance: T) !void {
-            try testing.expectApproxEqAbs(e.expected, actual, tolerance);
+            // Note: testing.expectApproxEqAbs does the same thing, but does not print floating
+            // point values as decimal (prefers scientific notation)
+            if (!math.eql(T, e.expected, actual, tolerance)) {
+                std.debug.print("actual float {d}, expected {d} (not within absolute epsilon tolerance {d})\n", .{ actual, e.expected, tolerance });
+                return error.TestExpectEqualEps;
+            }
         }
 
         /// Bitwise equality
@@ -41,7 +46,8 @@ fn ExpectVector(comptime T: type) type {
             var i: usize = 0;
             while (i < len) : (i += 1) {
                 if (!math.eql(Elem, e.expected[i], actual[i], tolerance)) {
-                    std.debug.print("vector[{}] actual {}, not within absolute tolerance {} of expected {}\n", .{ i, actual[i], tolerance, e.expected[i] });
+                    std.debug.print("actual vector {d}, expected {d} (not within absolute epsilon tolerance {d})\n", .{ actual, e.expected, tolerance });
+                    std.debug.print("actual vector[{}] = {d}, expected {d} (not within absolute epsilon tolerance {d})\n", .{ i, actual[i], e.expected[i], tolerance });
                     return error.TestExpectEqualEps;
                 }
             }
@@ -68,7 +74,8 @@ fn ExpectVecMat(comptime T: type) type {
             var i: usize = 0;
             while (i < T.n) : (i += 1) {
                 if (!math.eql(T.T, e.expected.v[i], actual.v[i], tolerance)) {
-                    std.debug.print("vector[{}] actual {}, not within absolute tolerance {} of expected {}\n", .{ i, actual.v[i], tolerance, e.expected.v[i] });
+                    std.debug.print("actual vector {d}, expected {d} (not within absolute epsilon tolerance {d})\n", .{ actual.v, e.expected.v, tolerance });
+                    std.debug.print("actual vector[{}] = {d}, expected {d} (not within absolute epsilon tolerance {d})\n", .{ i, actual.v[i], e.expected.v[i], tolerance });
                     return error.TestExpectEqualEps;
                 }
             }
