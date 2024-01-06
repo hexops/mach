@@ -374,7 +374,7 @@ pub const local = struct {
         // var colors_offset: usize = 0;
         var texture_update = false;
         while (archetypes_iter.next()) |archetype| {
-            var transforms = archetype.slice(.mach_gfx_text, .transform);
+            const transforms = archetype.slice(.mach_gfx_text, .transform);
             // var colors = archetype.slice(.mach_gfx_text, .color);
 
             // TODO: confirm the lifetime of these slices is OK for writeBuffer, how long do they need
@@ -392,7 +392,7 @@ pub const local = struct {
             const px_density = 2.0;
             // var font_names = archetype.slice(.mach_gfx_text, .font_name);
             // var font_sizes = archetype.slice(.mach_gfx_text, .font_size);
-            var texts = archetype.slice(.mach_gfx_text, .text);
+            const texts = archetype.slice(.mach_gfx_text, .text);
             for (texts) |text| {
                 var origin_x: f32 = 0.0;
                 var origin_y: f32 = 0.0;
@@ -418,7 +418,7 @@ pub const local = struct {
                         const codepoint = segment.string[glyph.cluster];
                         // TODO: use flags(?) to detect newline, or at least something more reliable?
                         if (codepoint != '\n') {
-                            var region = try pipeline.regions.getOrPut(engine.allocator, .{
+                            const region = try pipeline.regions.getOrPut(engine.allocator, .{
                                 .index = glyph.glyph_index,
                                 .size = @bitCast(segment.style.font_size),
                             });
@@ -508,16 +508,16 @@ pub const local = struct {
         const pipeline = text_mod.state.pipelines.get(pipeline_id).?;
 
         // Update uniform buffer
-        const ortho = Mat4x4.ortho(
-            -@as(f32, @floatFromInt(core.size().width)) / 2,
-            @as(f32, @floatFromInt(core.size().width)) / 2,
-            -@as(f32, @floatFromInt(core.size().height)) / 2,
-            @as(f32, @floatFromInt(core.size().height)) / 2,
-            -0.1,
-            100000,
-        );
+        const proj = Mat4x4.projection2D(.{
+            .left = -@as(f32, @floatFromInt(core.size().width)) / 2,
+            .right = @as(f32, @floatFromInt(core.size().width)) / 2,
+            .bottom = -@as(f32, @floatFromInt(core.size().height)) / 2,
+            .top = @as(f32, @floatFromInt(core.size().height)) / 2,
+            .near = -0.1,
+            .far = 100000,
+        });
         const uniforms = Uniforms{
-            .view_projection = ortho,
+            .view_projection = proj,
             // TODO: dimensions of other textures, number of textures present
             .texture_size = vec2(
                 @as(f32, @floatFromInt(pipeline.texture.getWidth())),

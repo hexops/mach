@@ -303,9 +303,9 @@ pub const local = struct {
         var uv_transforms_offset: usize = 0;
         var sizes_offset: usize = 0;
         while (archetypes_iter.next()) |archetype| {
-            var transforms = archetype.slice(.mach_gfx_sprite, .transform);
-            var uv_transforms = archetype.slice(.mach_gfx_sprite, .uv_transform);
-            var sizes = archetype.slice(.mach_gfx_sprite, .size);
+            const transforms = archetype.slice(.mach_gfx_sprite, .transform);
+            const uv_transforms = archetype.slice(.mach_gfx_sprite, .uv_transform);
+            const sizes = archetype.slice(.mach_gfx_sprite, .size);
 
             // TODO: confirm the lifetime of these slices is OK for writeBuffer, how long do they need
             // to live?
@@ -333,16 +333,16 @@ pub const local = struct {
         const pipeline = sprite_mod.state.pipelines.get(pipeline_id).?;
 
         // Update uniform buffer
-        const ortho = Mat4x4.ortho(
-            -@as(f32, @floatFromInt(core.size().width)) / 2,
-            @as(f32, @floatFromInt(core.size().width)) / 2,
-            -@as(f32, @floatFromInt(core.size().height)) / 2,
-            @as(f32, @floatFromInt(core.size().height)) / 2,
-            -0.1,
-            100000,
-        );
+        const proj = Mat4x4.projection2D(.{
+            .left = -@as(f32, @floatFromInt(core.size().width)) / 2,
+            .right = @as(f32, @floatFromInt(core.size().width)) / 2,
+            .bottom = -@as(f32, @floatFromInt(core.size().height)) / 2,
+            .top = @as(f32, @floatFromInt(core.size().height)) / 2,
+            .near = -0.1,
+            .far = 100000,
+        });
         const uniforms = Uniforms{
-            .view_projection = ortho,
+            .view_projection = proj,
             // TODO: dimensions of other textures, number of textures present
             .texture_size = vec2(
                 @as(f32, @floatFromInt(pipeline.texture.getWidth())),
