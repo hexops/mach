@@ -132,10 +132,12 @@ pub const nan_f64 = std.math.nan(f64);
 // need to do this and instead can just import mach.math - we add to this list of re-exports as
 // needed.
 
+pub const inf = std.math.inf;
 pub const sqrt = std.math.sqrt;
 pub const sin = std.math.sin;
 pub const cos = std.math.cos;
 pub const isNan = std.math.isNan;
+pub const isInf = std.math.isInf;
 pub const pi = std.math.pi;
 pub const clamp = std.math.clamp;
 pub const log10 = std.math.log10;
