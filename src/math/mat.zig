@@ -342,42 +342,51 @@ pub fn Mat(
                     );
                 }
 
-                // TODO: mandate negative-Z https://github.com/hexops/mach/issues/1103
-                // /// Constructs an orthographic projection matrix; an orthogonal transformation matrix
-                // /// which transforms from the given left, right, bottom, and top dimensions into
-                // /// `(-1, +1)` in `(x, y)`, and `(0, +1)` in `z`.
-                // ///
-                // /// The near/far parameters denotes the depth (z coordinate) of the near/far clipping
-                // /// plane.
-                // ///
-                // /// Returns an orthographic projection matrix.
-                // // TODO: needs tests
-                // pub inline fn ortho(
-                //     /// The sides of the near clipping plane viewport
-                //     left: f32,
-                //     right: f32,
-                //     bottom: f32,
-                //     top: f32,
-                //     /// The depth (z coordinate) of the near/far clipping plane.
-                //     near: f32,
-                //     far: f32,
-                // ) Matrix {
-                //     const xx = 2 / (right - left);
-                //     const yy = 2 / (top - bottom);
-                //     const zz = 1 / (near - far);
-                //     const tx = (right + left) / (left - right);
-                //     const ty = (top + bottom) / (bottom - top);
-                //     const tz = near / (near - far);
-                //     return init(
-                //         &RowVec.init(xx, 0, 0, tx),
-                //         &RowVec.init(0, yy, 0, ty),
-                //         &RowVec.init(0, 0, zz, tz),
-                //         &RowVec.init(0, 0, 0, 1),
-                //     );
-                // }
-
-                // TODO: add perspective projection matrix
-
+                /// Constructs a 2D projection matrix, aka. an orthographic projection matrix.
+                ///
+                /// First, a cuboid is defined with the parameters:
+                ///
+                /// * (right - left) defining the distance between the left and right faces of the cube
+                /// * (top - bottom) defining the distance between the top and bottom faces of the cube
+                /// * (near - far) defining the distance between the back (near) and front (far) faces of the cube
+                ///
+                /// We then need to construct a projection matrix which converts points in that
+                /// cuboid's space into clip space:
+                ///
+                /// https://machengine.org/engine/math/traversing-coordinate-systems/#view---clip-space
+                ///
+                /// Normally, in sysgpu/webgpu the depth buffer of floating point values would
+                /// have the range [0, 1] representing [near, far], i.e. a pixel very close to the
+                /// viewer would have a depth value of 0.0, and a pixel very far from the viewer
+                /// would have a depth value of 1.0. But this is an ineffective use of floating
+                /// point precision, a better approach is a reversed depth buffer:
+                ///
+                /// * https://webgpu.github.io/webgpu-samples/samples/reversedZ
+                /// * https://developer.nvidia.com/content/depth-precision-visualized
+                ///
+                /// Mach mandates the use of a reversed depth buffer, so the returned transformation
+                /// matrix maps to near=1 and far=0.
+                pub inline fn projection2D(v: struct {
+                    left: f32,
+                    right: f32,
+                    bottom: f32,
+                    top: f32,
+                    near: f32,
+                    far: f32,
+                }) Matrix {
+                    var p = Matrix.ident;
+                    p = p.mul(&Matrix.translate(math.vec3(
+                        (v.right + v.left) / (v.left - v.right), // translate X so that the middle of (left, right) maps to x=0 in clip space
+                        (v.top + v.bottom) / (v.bottom - v.top), // translate Y so that the middle of (bottom, top) maps to y=0 in clip space
+                        v.near / (v.near - v.far), // translate Z so that far maps to z=0
+                    )));
+                    p = p.mul(&Matrix.scale(math.vec3(
+                        2 / (v.right - v.left), // scale X so that [left, right] has a 2 unit range, e.g. [-1, +1]
+                        2 / (v.top - v.bottom), // scale Y so that [bottom, top] has a 2 unit range, e.g. [-1, +1]
+                        1 / (v.near - v.far), // scale Z so that [near, far] has a 1 unit range, e.g. [0, -1]
+                    )));
+                    return p;
+                }
             },
             else => @compileError("Expected Mat3x3, Mat4x4 found '" ++ @typeName(Matrix) ++ "'"),
         };
@@ -764,7 +773,7 @@ test "Mat3x3_mulVec_vec3_ident" {
     const v = math.Vec3.splat(1);
     const ident = math.Mat3x3.ident;
     const expected = v;
-    var m = math.Mat3x3.mulVec(&ident, &v);
+    const m = math.Mat3x3.mulVec(&ident, &v);
 
     try testing.expect(math.Vec3, expected).eql(m);
 }
@@ -857,4 +866,130 @@ test "Mat4x4_mul" {
         &math.vec4(15, 3, -53, -54),
     );
     try testing.expect(math.Mat4x4, expected).eql(c);
+}
+
+test "projection2D_xy_centered" {
+    const v = .{
+        .left = -400,
+        .right = 400,
+        .bottom = -200,
+        .top = 200,
+        .near = 0,
+        .far = 100,
+    };
+    const m = math.Mat4x4.projection2D(v);
+
+    // Calculate some reference points
+    const width = v.right - v.left;
+    const height = v.top - v.bottom;
+    const width_mid = v.left + (width / 2.0);
+    const height_mid = v.bottom + (height / 2.0);
+    try testing.expect(f32, 800).eql(width);
+    try testing.expect(f32, 400).eql(height);
+    try testing.expect(f32, 0).eql(width_mid);
+    try testing.expect(f32, 0).eql(height_mid);
+
+    // Probe some points on the X axis from beyond the left face, all the way to beyond the right face.
+    try testing.expect(math.Vec4, math.vec4(-2, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.left - (width / 2), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(-1, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.left, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(-0.5, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.left + (width / 4.0), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0.5, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.right - (width / 4.0), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(1, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.right, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(2, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.right + (width / 2), height_mid, 0, 1)));
+
+    // Probe some points on the Y axis from beyond the bottom face, all the way to beyond the top face.
+    try testing.expect(math.Vec4, math.vec4(0, -2, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom - (height / 2), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -1, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -0.5, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom + (height / 4.0), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0.5, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top - (height / 4.0), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 1, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 2, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top + (height / 2), 0, 1)));
+}
+
+test "projection2D_xy_offcenter" {
+    const v = .{
+        .left = 100,
+        .right = 500,
+        .bottom = 100,
+        .top = 500,
+        .near = 0,
+        .far = 100,
+    };
+    const m = math.Mat4x4.projection2D(v);
+
+    // Calculate some reference points
+    const width = v.right - v.left;
+    const height = v.top - v.bottom;
+    const width_mid = v.left + (width / 2.0);
+    const height_mid = v.bottom + (height / 2.0);
+    try testing.expect(f32, 400).eql(width);
+    try testing.expect(f32, 400).eql(height);
+    try testing.expect(f32, 300).eql(width_mid);
+    try testing.expect(f32, 300).eql(height_mid);
+
+    // Probe some points on the X axis from beyond the left face, all the way to beyond the right face.
+    try testing.expect(math.Vec4, math.vec4(-2, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.left - (width / 2), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(-1, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.left, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(-0.5, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.left + (width / 4.0), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0.5, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.right - (width / 4.0), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(1, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.right, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(2, 0, 0, 1)).eql(m.mulVec(&math.vec4(v.right + (width / 2), height_mid, 0, 1)));
+
+    // Probe some points on the Y axis from beyond the bottom face, all the way to beyond the top face.
+    try testing.expect(math.Vec4, math.vec4(0, -2, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom - (height / 2), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -1, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -0.5, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom + (height / 4.0), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0.5, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top - (height / 4.0), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 1, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 2, 0, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top + (height / 2), 0, 1)));
+}
+
+test "projection2D_z" {
+    const m = math.Mat4x4.projection2D(.{
+        // Set x=0 and y=0 as centers, so we can specify 0 centers in our testing.expects below
+        .left = -400,
+        .right = 400,
+        .bottom = -200,
+        .top = 200,
+
+        // Choose some near/far plane values that we can easily test against
+        // We'll have [near, far] == [-100, 100] == [0, 1]
+        .near = -100,
+        .far = 100,
+    });
+
+    // Probe some points on the Z axis from the near plane, all the way to the far plane.
+    try testing.expect(math.Vec4, math.vec4(0, 0, 1, 1)).eql(m.mulVec(&math.vec4(0, 0, -100, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0.75, 1)).eql(m.mulVec(&math.vec4(0, 0, -50, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0.5, 1)).eql(m.mulVec(&math.vec4(0, 0, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0.25, 1)).eql(m.mulVec(&math.vec4(0, 0, 50, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0, 1)).eql(m.mulVec(&math.vec4(0, 0, 100, 1)));
+
+    // Probe some points outside the near/far planes
+    try testing.expect(math.Vec4, math.vec4(0, 0, 2, 1)).eql(m.mulVec(&math.vec4(0, 0, -100 - 200, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, -1, 1)).eql(m.mulVec(&math.vec4(0, 0, 100 + 200, 1)));
+}
+
+test "projection2D_model_to_clip_space" {
+    const model = math.Mat4x4.ident;
+    const view = math.Mat4x4.ident;
+    const proj = math.Mat4x4.projection2D(.{
+        .left = -50,
+        .right = 50,
+        .bottom = -50,
+        .top = 50,
+        .near = 0,
+        .far = 100,
+    });
+    const mvp = model.mul(&view).mul(&proj);
+
+    try testing.expect(math.Vec4, math.vec4(0, 0, 0, 1)).eql(mvp.mulVec(&math.vec4(0, 0, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, -0.5, 1)).eql(mvp.mulVec(&math.vec4(0, 0, 50, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -1, 0, 1)).eql(mvp.mul(&math.Mat4x4.rotateX(math.degreesToRadians(f32, 90))).mulVec(&math.vec4(0, 0, 50, 1)));
+    try testing.expect(math.Vec4, math.vec4(1, 0, 0, 1)).eql(mvp.mul(&math.Mat4x4.rotateY(math.degreesToRadians(f32, 90))).mulVec(&math.vec4(0, 0, 50, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0, -0.5, 1)).eql(mvp.mul(&math.Mat4x4.rotateZ(math.degreesToRadians(f32, 90))).mulVec(&math.vec4(0, 0, 50, 1)));
 }
