@@ -8,12 +8,12 @@ fn ExpectFloat(comptime T: type) type {
     return struct {
         expected: T,
 
-        /// Approximate (absolute epsilon tolerence) equality
+        /// Approximate (absolute epsilon tolerance) equality
         pub fn eql(e: *const @This(), actual: T) !void {
             try e.eqlApprox(actual, math.eps(T));
         }
 
-        /// Approximate (tolerence) equality
+        /// Approximate (absolute tolerance) equality
         pub fn eqlApprox(e: *const @This(), actual: T, tolerance: T) !void {
             try testing.expectApproxEqAbs(e.expected, actual, tolerance);
         }
@@ -31,12 +31,12 @@ fn ExpectVector(comptime T: type) type {
     return struct {
         expected: T,
 
-        /// Approximate (absolute epsilon tolerence) equality
+        /// Approximate (absolute epsilon tolerance) equality
         pub fn eql(e: *const @This(), actual: T) !void {
             try e.eqlApprox(actual, math.eps(Elem));
         }
 
-        /// Approximate (tolerence) equality
+        /// Approximate (absolute tolerance) equality
         pub fn eqlApprox(e: *const @This(), actual: T, tolerance: Elem) !void {
             var i: usize = 0;
             while (i < len) : (i += 1) {
@@ -58,12 +58,12 @@ fn ExpectVecMat(comptime T: type) type {
     return struct {
         expected: T,
 
-        /// Approximate (absolute epsilon tolerence) equality
+        /// Approximate (absolute epsilon tolerance) equality
         pub fn eql(e: *const @This(), actual: T) !void {
             try e.eqlApprox(actual, math.eps(T.T));
         }
 
-        /// Approximate (tolerence) equality
+        /// Approximate (absolute tolerance) equality
         pub fn eqlApprox(e: *const @This(), actual: T, tolerance: T.T) !void {
             var i: usize = 0;
             while (i < T.n) : (i += 1) {
@@ -155,7 +155,7 @@ fn Expect(comptime T: type) type {
 /// Floats, mach.math.Vec, and mach.math.Mat types support:
 ///
 /// * `.eql(v)` (epsilon equality)
-/// * `.eqlApprox(v, tolerence)` (specific tolerence equality)
+/// * `.eqlApprox(v, tolerance)` (specific tolerance equality)
 /// * `.eqlBinary(v)` binary equality
 ///
 /// All other types support only `.eql(v)` binary equality.

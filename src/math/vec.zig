@@ -374,7 +374,59 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
 
             return min_scalar;
         }
+
+        /// Checks for approximate (absolute tolerance) equality between two vectors
+        /// of the same type and dimensions
+        pub inline fn eqlApprox(a: *const VecN, b: *const VecN, tolerance: T) bool {
+            var i: usize = 0;
+            while (i < VecN.n) : (i += 1) {
+                if (!math.eql(T, a.v[i], b.v[i], tolerance)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// Checks for approximate (absolute epsilon tolerance) equality
+        /// between two vectors of the same type and dimensions
+        pub inline fn eql(a: *const VecN, b: *const VecN) bool {
+            return a.eqlApprox(b, math.eps(T));
+        }
     };
+}
+
+test "eql_vec2" {
+    const a: math.Vec2 = math.vec2(92, 103);
+    const b: math.Vec2 = math.vec2(92, 103);
+    const c: math.Vec2 = math.vec2(92, 103.2);
+
+    try testing.expect(bool, true).eql(a.eql(&b));
+    try testing.expect(bool, false).eql(a.eql(&c));
+}
+
+test "eql_vec3" {
+    const a: math.Vec3 = math.vec3(92, 103, 576);
+    const b: math.Vec3 = math.vec3(92, 103, 576);
+    const c: math.Vec3 = math.vec3(92.009, 103.2, 578);
+
+    try testing.expect(bool, true).eql(a.eql(&b));
+    try testing.expect(bool, false).eql(a.eql(&c));
+}
+
+test "eqlApprox_vec2" {
+    const a: math.Vec2 = math.vec2(92.92837, 103.54682);
+    const b: math.Vec2 = math.vec2(92.92998, 103.54791);
+
+    try testing.expect(bool, true).eql(a.eqlApprox(&b, 1e-2));
+    try testing.expect(bool, false).eql(a.eqlApprox(&b, 1e-3));
+}
+
+test "eqlApprox_vec3" {
+    const a: math.Vec3 = math.vec3(92.92837, 103.54682, 256.9);
+    const b: math.Vec3 = math.vec3(92.92998, 103.54791, 256.9);
+
+    try testing.expect(bool, true).eql(a.eqlApprox(&b, 1e-2));
+    try testing.expect(bool, false).eql(a.eqlApprox(&b, 1e-3));
 }
 
 test "gpu_compatibility" {
