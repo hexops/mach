@@ -26,6 +26,7 @@ You may have been linked to this issue because you sent a pull request to update
 * [ ] The mach-core build.zig version check has been updated: https://github.com/hexops/mach-core/blob/main/build.zig#L222-L227
 * [ ] The mach-glfw build.zig version check has been updated: https://github.com/hexops/mach-glfw/blob/main/build.zig
 * [ ] https://machengine.org/about/zig-version has been updated
+* [ ] A [new issue](https://github.com/hexops/mach/issues/new?assignees=slimsag&labels=all%2C+zig-update&projects=&template=dev_zig_nomination.md&title=all%3A+nominate+Zig+YYYY.MM) has been filed for the next nomination.
 * [ ] A #progress announcement has been made:
 
 > We've just finished updating to the new nominated Zig version 2024.01 (0.12.0-dev.2059+42389cb9c). We encourage you to update your projects to that Zig version now. :)
