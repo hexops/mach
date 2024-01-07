@@ -16,7 +16,7 @@ You may have been linked to this issue because you sent a pull request to update
 ## Update process
 
 * [ ] It is time to begin (see date in issue title, we aim to begin this checklist between the 1st-4th of that month.)
-* [ ] The [_Nomination history_](https://machengine.org/about/nominated-zig/#nomination-history) has a new section for the latest nightly Zig version at [ziglang.org/download](https://ziglang.org/download/).
+* [ ] The [_Nomination history_](https://machengine.org/about/nominated-zig/#nomination-history) has a new section for the latest nightly Zig version at [ziglang.org/download](https://ziglang.org/download/), with a warning at the top `**IN-PROGRESS:** This version is currently being nominated, see [the tracking issue](https://github.com/hexops/mach/issues/1135) for details. Once everything looks good, the new Zig version is confirmed to be working with Mach, we will declare success, close the issue, and remove this in-progress warning.`.
 * [ ] #general Discord message: `Beginning the process of nominating a new Zig version! (you should wait to upgrade until we've updated everything to confirm it works) $GITHUB_ISSUE`
 * [ ] #wrench automation has created pull requests to update the Zig version used in CI of all our projects.
 * [ ] "First-order projects" below (which have zero build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
@@ -26,6 +26,7 @@ You may have been linked to this issue because you sent a pull request to update
 * [ ] The mach-core build.zig version check has been updated: https://github.com/hexops/mach-core/blob/main/build.zig#L222-L227
 * [ ] The mach-glfw build.zig version check has been updated: https://github.com/hexops/mach-glfw/blob/main/build.zig
 * [ ] https://machengine.org/about/zig-version has been updated
+* [ ] The `**IN-PROGRESS**` warning in the _Nomination history_ has been removed.
 * [ ] A [new issue](https://github.com/hexops/mach/issues/new?assignees=slimsag&labels=all%2C+zig-update&projects=&template=dev_zig_nomination.md&title=all%3A+nominate+Zig+YYYY.MM) has been filed for the next nomination.
 * [ ] A #progress announcement has been made:
 
