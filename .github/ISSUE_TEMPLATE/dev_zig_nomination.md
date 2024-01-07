@@ -2,7 +2,7 @@
 name: (dev) Zig version update
 about: The process we follow to perform a Zig version update
 title: 'all: nominate Zig YYYY.MM'
-labels: ''
+labels: all, zig-update
 assignees: 'slimsag'
 
 ---
