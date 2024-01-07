@@ -1,0 +1,10 @@
+---
+name: Bug
+about: Report a bug
+title: '<project>: <the problem>'
+labels: ''
+assignees: ''
+
+---
+
+Before filing an issue, please make sure you're using a supported Zig version: https://machengine.org/about/zig-version
