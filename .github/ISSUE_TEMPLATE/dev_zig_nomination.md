@@ -52,15 +52,13 @@ These projects have zero `build.zig.zon` dependencies, we update them first - an
 * [ ] xcode-frameworks
 * [ ] basisu
 * [ ] vulkan-zig-generated
-* [ ] directx-headers (TODO: missing in wrench)
-* [ ] direct3d-headers (TODO: desire to prune this dependency)
+* [ ] directx-headers
+* [ ] direct3d-headers
 * [ ] opus
 * [ ] flac
 * [ ] ogg
 * [ ] mach-core-example-assets
 * [ ] font-assets
-
-TODO: community maintained projects that need to be marked as such and/or moved out of mach project: mach-glfw-opengl-example, mach-glfw-vulkan-example
 
 ## Second-order projects
 
@@ -70,13 +68,13 @@ These projects have dependencies on other projects. They may only be updated if 
   * mach-core
 * [ ] mach-editor, which depends on:
   * mach
-  * mach-sysgpu (TODO: desire to prune this dependency)
-  * spirv-cross (TODO: desire to prune this dependency)
-  * spirv-tools (TODO: desire to prune this dependency)
+  * mach-sysgpu
+  * spirv-cross
+  * spirv-tools
 * [ ] mach-examples, which depends on:
-  * zigimg (TODO: desire to prune this dependency)
+  * zigimg
   * mach
-  * mach-freetype (TODO: desire to prune this dependency)
+  * mach-freetype
 * [ ] mach, which depends on:
   * .zigversion
   * build.zig version check
@@ -103,7 +101,6 @@ These projects have dependencies on other projects. They may only be updated if 
   * vulkan-headers
   * x11-headers
 * [ ] mach-dxcompiler, which depends on:
-  * TODO^^^ missing in wrench
   * directx-headers
 * [ ] mach-basisu, which depends on:
   * basisu
@@ -114,11 +111,10 @@ These projects have dependencies on other projects. They may only be updated if 
 * [ ] mach-glfw, which depends on:
   * glfw
 * [ ] mach-sysgpu, which depends on:
-  * TODO^^^ wrong name `mach-dusk` entry in Wrench
   * vulkan-zig-generated
-  * mach-gpu (TODO: probably not needed?)
+  * mach-gpu
   * mach-objc
-  * direct3d-headers (TODO: replace with directx-headers)
+  * direct3d-headers
   * opengl-headers
   * xcode-frameworks
 * [ ] mach-sysaudio, which depends on:
