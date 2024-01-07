@@ -43,6 +43,7 @@ These projects have zero `build.zig.zon` dependencies, we update them first - an
 * [ ] mach-sysjs
 * [ ] mach-objc-generator
 * [ ] fastfilter
+* [ ] spirv-cross
 * [ ] brotli
 * [ ] wayland-headers
 * [ ] x11-headers
@@ -64,6 +65,8 @@ These projects have zero `build.zig.zon` dependencies, we update them first - an
 
 These projects have dependencies on other projects. They may only be updated if all their dependencies have been updated first.
 
+* [ ] spirv-tools, which depends on:
+  * External package https://github.com/KhronosGroup/SPIRV-Headers 
 * [ ] mach-core-starter-project, which depends on:
   * mach-core
 * [ ] mach-editor, which depends on:
