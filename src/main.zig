@@ -10,6 +10,7 @@ pub const sysaudio = @import("mach-sysaudio");
 
 // Mach standard library
 pub const gfx = @import("gfx/main.zig");
+pub const Audio = @import("Audio.zig");
 pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
 
