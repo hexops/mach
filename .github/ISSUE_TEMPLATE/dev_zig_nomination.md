@@ -65,21 +65,73 @@ These projects have zero `build.zig.zon` dependencies, we update them first - an
 
 ## Second-order projects
 
-These projects have dependencies on other projects. They may only be updated if all their dependencies have been updated first.
+## Second-order projects
+
+These projects have dependencies on other projects. We update them in the exact order below, top-to-bottom.
 
 * [ ] spirv-tools, which depends on:
   * External package https://github.com/KhronosGroup/SPIRV-Headers 
+* [ ] freetype, which depends on:
+  * brotli
+* [ ] opusfile, which depends on:
+  * opus
+  * ogg
+* [ ] harfbuzz, which depends on:
+  * freetype
+  * brotli
+* [ ] glfw, which depends on:
+  * xcode-frameworks
+  * vulkan-headers
+  * wayland-headers
+  * x11-headers
+* [ ] mach-basisu, which depends on:
+  * basisu
+* [ ] mach-objc, which depends on:
+  * xcode-frameworks
+* [ ] mach-flac, which depends on:
+  * flac
+  * mach-sysaudio
+  * linux-audio-headers
+* [ ] mach-sysaudio, which depends on:
+  * mach-sysjs
+  * linux-audio-headers
+  * xcode-frameworks
+* [ ] mach-opus, which depends on:
+  * opusfile
+  * mach-sysaudio
+  * linux-audio-headers
+* [ ] mach-dxcompiler, which depends on:
+  * directx-headers
+* [ ] mach-glfw, which depends on:
+  * glfw
+* [ ] mach-freetype, which depends on:
+  * freetype
+  * harfbuzz
+  * font-assets
+* [ ] mach-gpu-dawn, which depends on:
+  * xcode-frameworks
+  * direct3d-headers
+  * vulkan-headers
+  * x11-headers
+* [ ] mach-gpu, which depends on:
+  * mach-glfw
+  * mach-gpu-dawn
+* [ ] mach-sysgpu, which depends on:
+  * vulkan-zig-generated
+  * mach-gpu
+  * mach-objc
+  * direct3d-headers
+  * opengl-headers
+  * xcode-frameworks
+* [ ] mach-core, which depends on:
+  * build.zig version check
+  * mach-core-example-assets
+  * mach-gamemode
+  * mach-sysgpu
+  * mach-gpu
+  * mach-glfw
 * [ ] mach-core-starter-project, which depends on:
   * mach-core
-* [ ] mach-editor, which depends on:
-  * mach
-  * mach-sysgpu
-  * spirv-cross
-  * spirv-tools
-* [ ] mach-examples, which depends on:
-  * zigimg
-  * mach
-  * mach-freetype
 * [ ] mach, which depends on:
   * .zigversion
   * build.zig version check
@@ -90,62 +142,12 @@ These projects have dependencies on other projects. They may only be updated if 
   * mach-freetype
   * mach-sysjs
   * font-assets
-* [ ] mach-core, which depends on:
-  * build.zig version check
-  * mach-core-example-assets
-  * mach-gamemode
+* [ ] mach-examples, which depends on:
+  * zigimg
+  * mach
+  * mach-freetype
+* [ ] mach-editor, which depends on:
+  * mach
   * mach-sysgpu
-  * mach-gpu
-  * mach-glfw
-* [ ] mach-gpu, which depends on:
-  * mach-glfw
-  * mach-gpu-dawn
-* [ ] mach-gpu-dawn, which depends on:
-  * xcode-frameworks
-  * direct3d-headers
-  * vulkan-headers
-  * x11-headers
-* [ ] mach-dxcompiler, which depends on:
-  * directx-headers
-* [ ] mach-basisu, which depends on:
-  * basisu
-* [ ] mach-freetype, which depends on:
-  * freetype
-  * harfbuzz
-  * font-assets
-* [ ] mach-glfw, which depends on:
-  * glfw
-* [ ] mach-sysgpu, which depends on:
-  * vulkan-zig-generated
-  * mach-gpu
-  * mach-objc
-  * direct3d-headers
-  * opengl-headers
-  * xcode-frameworks
-* [ ] mach-sysaudio, which depends on:
-  * mach-sysjs
-  * linux-audio-headers
-  * xcode-frameworks
-* [ ] mach-objc, which depends on:
-  * xcode-frameworks
-* [ ] mach-opus, which depends on:
-  * opusfile
-  * mach-sysaudio
-  * linux-audio-headers
-* [ ] mach-flac, which depends on:
-  * flac
-  * mach-sysaudio
-  * linux-audio-headers
-* [ ] harfbuzz, which depends on:
-  * freetype
-  * brotli
-* [ ] freetype, which depends on:
-  * brotli
-* [ ] glfw, which depends on:
-  * xcode-frameworks
-  * vulkan-headers
-  * wayland-headers
-  * x11-headers
-* [ ] opusfile, which depends on:
-  * opus
-  * ogg
+  * spirv-cross
+  * spirv-tools
