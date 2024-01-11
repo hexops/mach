@@ -17,7 +17,7 @@ You may have been linked to this issue because you sent a pull request to update
 
 * [ ] It is time to begin (see date in issue title, we aim to begin this checklist between the 1st-4th of that month.)
 * [ ] In `machengine.org` repository `static/zig` folder, `wrench script nominate-zig-index-update nominate 2024.1.0-mach-wip` has been ran and the [`index.json`](https://machengine.org/zig/index.json) has been updated.
-* [ ] #wrench automation (`!wrench schedule-now update-zig-version`) has created new pull requests to update the Zig version used in CI of all our projects, and it matches index.json.
+* [ ] #wrench automation (`!wrench script-all rebuild` then `!wrench schedule-now update-zig-version`) has created new pull requests to update the Zig version used in CI of all our projects, and it matches index.json.
 * [ ] The [_Nomination history_](https://machengine.org/about/nominated-zig/#nomination-history) has a new section for the latest nightly Zig version which Wrench used in its PRs, with a warning at the top `**IN-PROGRESS:** This version is currently being nominated, see [the tracking issue](https://github.com/hexops/mach/issues/1135) for details. Once everything looks good, the new Zig version is confirmed to be working with Mach, we will declare success, close the issue, and remove this in-progress warning.`.
 * [ ] #general Discord message: `Beginning the process of nominating a new Zig version! (you should wait to upgrade until we've updated everything to confirm it works) $GITHUB_ISSUE`
 * [ ] "First-order projects" below (which have zero build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
