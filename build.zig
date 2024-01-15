@@ -4,7 +4,7 @@ const glfw = @import("mach_glfw");
 const sysaudio = @import("mach_sysaudio");
 const core = @import("mach_core");
 
-var _module: ?*std.build.Module = null;
+var _module: ?*std.Build.Module = null;
 
 pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
@@ -86,9 +86,9 @@ pub const App = struct {
     b: *std.Build,
     mach_builder: *std.Build,
     name: []const u8,
-    compile: *std.build.Step.Compile,
-    install: *std.build.Step.InstallArtifact,
-    run: *std.build.Step.Run,
+    compile: *std.Build.Step.Compile,
+    install: *std.Build.Step.InstallArtifact,
+    run: *std.Build.Step.Run,
     platform: core.App.Platform,
     core: core.App,
 
@@ -97,14 +97,14 @@ pub const App = struct {
         options: struct {
             name: []const u8,
             src: []const u8,
-            target: std.zig.CrossTarget,
+            target: std.Build.ResolvedTarget,
             optimize: std.builtin.OptimizeMode,
             custom_entrypoint: ?[]const u8 = null,
-            deps: ?[]const std.build.ModuleDependency = null,
+            deps: ?[]const std.Build.Module.Import = null,
             res_dirs: ?[]const []const u8 = null,
             watch_paths: ?[]const []const u8 = null,
             mach_builder: ?*std.Build = null,
-            mach_mod: ?*std.build.Module = null,
+            mach_mod: ?*std.Build.Module = null,
         },
     ) !App {
         const mach_builder = options.mach_builder orelse app_builder.dependency("mach", .{
@@ -116,7 +116,7 @@ pub const App = struct {
             .optimize = options.optimize,
         }).module("mach");
 
-        var deps = std.ArrayList(std.build.ModuleDependency).init(app_builder.allocator);
+        var deps = std.ArrayList(std.Build.Module.Import).init(app_builder.allocator);
         if (options.deps) |v| try deps.appendSlice(v);
         try deps.append(.{ .name = "mach", .module = mach_mod });
         const mach_sysaudio_dep = mach_builder.dependency("mach_sysaudio", .{
@@ -153,25 +153,15 @@ pub const App = struct {
     }
 
     pub fn link(app: *const App) !void {
-        sysaudio.link(app.mach_builder.dependency("mach_sysaudio", .{
-            .target = app.compile.target,
-            .optimize = app.compile.optimize,
-        }).builder, app.compile);
+        sysaudio.addPaths(app.compile);
 
         // TODO: basisu support in wasm
         if (app.platform != .web) {
             app.compile.linkLibrary(app.mach_builder.dependency("mach_basisu", .{
-                .target = app.compile.target,
-                .optimize = app.compile.optimize,
+                .target = app.compile.root_module.resolved_target.?,
+                .optimize = app.compile.root_module.optimize.?,
             }).artifact("mach-basisu"));
         }
-
-        const mach_freetype_dep = app.b.dependency("mach_freetype", .{
-            .target = app.compile.target,
-            .optimize = app.compile.optimize,
-        });
-        @import("mach_freetype").linkFreetype(mach_freetype_dep.builder, app.compile);
-        @import("mach_freetype").linkHarfbuzz(mach_freetype_dep.builder, app.compile);
     }
 };
 
