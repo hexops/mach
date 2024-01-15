@@ -752,7 +752,7 @@ test "Mat2x2_mulVec_vec2_ident" {
     const v = math.Vec2.splat(1);
     const ident = math.Mat2x2.ident;
     const expected = v;
-    var m = math.Mat2x2.mulVec(&ident, &v);
+    const m = math.Mat2x2.mulVec(&ident, &v);
 
     try testing.expect(math.Vec2, expected).eql(m);
 }

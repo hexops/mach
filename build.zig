@@ -37,8 +37,8 @@ pub fn build(b: *std.Build) !void {
     const font_assets_dep = b.dependency("font_assets", .{});
 
     const module = b.addModule("mach", .{
-        .source_file = .{ .path = sdkPath("/src/main.zig") },
-        .dependencies = &.{
+        .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+        .imports = &.{
             .{ .name = "mach-core", .module = mach_core_dep.module("mach-core") },
             .{ .name = "mach-ecs", .module = mach_ecs_dep.module("mach-ecs") },
             .{ .name = "mach-sysaudio", .module = mach_sysaudio_dep.module("mach-sysaudio") },
@@ -50,7 +50,7 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
-    if (target.getCpuArch() != .wasm32) {
+    if (target.result.cpu.arch != .wasm32) {
         // Creates a step for unit testing. This only builds the test executable
         // but does not run it.
         const unit_tests = b.addTest(.{
@@ -58,14 +58,10 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
-        var iter = module.dependencies.iterator();
+        var iter = module.import_table.iterator();
         while (iter.next()) |e| {
-            unit_tests.addModule(e.key_ptr.*, e.value_ptr.*);
+            unit_tests.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
         }
-
-        // TODO: move link into a helper function shared between tests in App
-        @import("mach_freetype").linkFreetype(mach_freetype_dep.builder, unit_tests);
-        @import("mach_freetype").linkHarfbuzz(mach_freetype_dep.builder, unit_tests);
 
         // Exposes a `test` step to the `zig build --help` menu, providing a way for the user to
         // request running the unit tests.
@@ -73,13 +69,16 @@ pub fn build(b: *std.Build) !void {
         const test_step = b.step("test", "Run unit tests");
         test_step.dependOn(&run_unit_tests.step);
 
-        const install_docs = b.addInstallDirectory(.{
-            .source_dir = unit_tests.getEmittedDocs(),
-            .install_dir = .prefix, // default build output prefix, ./zig-out
-            .install_subdir = "docs",
-        });
-        const docs_step = b.step("docs", "Generate API docs");
-        docs_step.dependOn(&install_docs.step);
+        // TODO: autodoc segfaults the build if we have this enabled
+        // https://github.com/hexops/mach/issues/1145
+        //
+        // const install_docs = b.addInstallDirectory(.{
+        //     .source_dir = unit_tests.getEmittedDocs(),
+        //     .install_dir = .prefix, // default build output prefix, ./zig-out
+        //     .install_subdir = "docs",
+        // });
+        // const docs_step = b.step("docs", "Generate API docs");
+        // docs_step.dependOn(&install_docs.step);
     }
 }
 

@@ -72,7 +72,7 @@ pub fn Ray(comptime Vec3P: type) type {
                     vc: *const Vec3P,
                     backface_culling: bool,
                 ) ?Hit {
-                    var kz: u8 = maxDim([3]P{
+                    const kz: u8 = maxDim([3]P{
                         @abs(ray.direction.v[0]),
                         @abs(ray.direction.v[1]),
                         @abs(ray.direction.v[2]),
@@ -110,25 +110,25 @@ pub fn Ray(comptime Vec3P: type) type {
 
                     var u: P = cx * by - cy * bx;
                     var v: P = ax * cy - ay * cx;
-                    var w: P = bx * ay - by * ax;
+                    const w: P = bx * ay - by * ax;
 
                     // Double precision fallback
                     if (u == 0.0 or v == 0.0 or w == 0.0) {
                         const cxby: PP = @as(PP, @floatCast(cx)) *
                             @as(PP, @floatCast(by));
-                        var cybx: PP = @as(PP, @floatCast(cy)) *
+                        const cybx: PP = @as(PP, @floatCast(cy)) *
                             @as(PP, @floatCast(bx));
                         u = @floatCast(cxby - cybx);
 
-                        var axcy: PP = @as(PP, @floatCast(ax)) *
+                        const axcy: PP = @as(PP, @floatCast(ax)) *
                             @as(PP, @floatCast(cy));
-                        var aycx: PP = @as(PP, @floatCast(ay)) *
+                        const aycx: PP = @as(PP, @floatCast(ay)) *
                             @as(PP, @floatCast(cx));
                         v = @floatCast(axcy - aycx);
 
-                        var bxay: PP = @as(PP, @floatCast(bx)) *
+                        const bxay: PP = @as(PP, @floatCast(bx)) *
                             @as(PP, @floatCast(ay));
-                        var byax: PP = @as(PP, @floatCast(by)) *
+                        const byax: PP = @as(PP, @floatCast(by)) *
                             @as(PP, @floatCast(ax));
                         v = @floatCast(bxay - byax);
                     }
