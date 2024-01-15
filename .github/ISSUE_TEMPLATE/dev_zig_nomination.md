@@ -17,24 +17,29 @@ You may have been linked to this issue because you sent a pull request to update
 
 * [ ] It is time to begin (see date in issue title, we aim to begin this checklist between the 1st-4th of that month.)
 * [ ] In `machengine.org` repository `static/zig` folder, `wrench script nominate-zig-index-update nominate 2024.1.0-mach-wip` has been ran and the [`index.json`](https://machengine.org/zig/index.json) has been updated.
-* [ ] #wrench automation (`!wrench script-all rebuild` then `!wrench schedule-now update-zig-version`) has created new pull requests to update the Zig version used in CI of all our projects, and it matches index.json.
+* [ ] #wrench automation (`!wrench schedule-now update-zig-version`) has created new pull requests to update the Zig version used in CI of all our projects, and it matches index.json.
 * [ ] The [_Nomination history_](https://machengine.org/about/nominated-zig/#nomination-history) has a new section for the latest nightly Zig version which Wrench used in its PRs, with a warning at the top `**IN-PROGRESS:** This version is currently being nominated, see [the tracking issue](https://github.com/hexops/mach/issues/1135) for details. Once everything looks good, the new Zig version is confirmed to be working with Mach, we will declare success, close the issue, and remove this in-progress warning.`.
 * [ ] #general Discord message: `Beginning the process of nominating a new Zig version! (you should wait to upgrade until we've updated everything to confirm it works) $GITHUB_ISSUE`
 * [ ] #wrench automation (`!wrench script-all install-zig`) has updated the Zig version used by self-hosted GitHub actions runners. TODO this needs some work.
 * [ ] "First-order projects" below (which have zero build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
 * [ ] "Second-order projects" below (which have build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
+* [ ] The mach-glfw build.zig version check has been updated: https://github.com/hexops/mach-glfw/blob/main/build.zig
+* [ ] The mach-core build.zig version check has been updated: https://github.com/hexops/mach-core/blob/main/build.zig#L222-L227
+* [ ] https://machengine.org/core/migrations/ has a new entry for Core users looking to update, or changes are not needed.
 * [ ] The `.zigversion` file https://github.com/hexops/mach/blob/main/.zigversion has been updated.
 * [ ] The mach build.zig version check has been updated: https://github.com/hexops/mach/blob/main/build.zig#L187-L192
-* [ ] The mach-core build.zig version check has been updated: https://github.com/hexops/mach-core/blob/main/build.zig#L222-L227
-* [ ] The mach-glfw build.zig version check has been updated: https://github.com/hexops/mach-glfw/blob/main/build.zig
 * [ ] https://machengine.org/about/zig-version has been updated
 * [ ] In `machengine.org` repository `static/zig` folder, `wrench script nominate-zig-index-update finalize 2024.1.0-mach-wip` has been ran and the [`index.json`](https://machengine.org/zig/index.json) has had `-wip` removed and the `mach-latest` entry has been updated.
 * [ ] The `**IN-PROGRESS**` warning in the _Nomination history_ has been removed.
 * [ ] A [new issue](https://github.com/hexops/mach/issues/new?assignees=slimsag&labels=all%2C+zig-update&projects=&template=dev_zig_nomination.md&title=all%3A+nominate+Zig+YYYY.MM) has been filed for the next nomination.
 * [ ] A #progress announcement has been made:
 
-> We've just finished updating to the new nominated Zig version 2024.01 (0.12.0-dev.2059+42389cb9c). We encourage you to update your projects to that Zig version now. :)
-> $GITHUB_ISSUE
+> We've just finalized nominating and updating to Zig 2024.1.0-mach. We encourage you to update your projects to that Zig version now. :)
+>
+> * Get the new Zig version: https://machengine.org/about/nominated-zig/#202410-mach
+> * Update your mach-core project: https://machengine.org/core/migrations/#mach-core-updated-to-zig-202410-mach-2024-01-14
+> * Tips on upgrading your own Zig code: https://github.com/hexops/mach/issues/1135#issuecomment-1891175749
+> * Nomination tracking issue: $GITHUB_ISSUE
 
 ## First-order projects
 
@@ -66,12 +71,12 @@ These projects have zero `build.zig.zon` dependencies, we update them first - an
 
 ## Second-order projects
 
-## Second-order projects
-
 These projects have dependencies on other projects. We update them in the exact order below, top-to-bottom.
 
 * [ ] spirv-tools, which depends on:
   * External package https://github.com/KhronosGroup/SPIRV-Headers 
+* [ ] opusenc, which depends on:
+  * opus
 * [ ] freetype, which depends on:
   * brotli
 * [ ] opusfile, which depends on:
@@ -85,30 +90,30 @@ These projects have dependencies on other projects. We update them in the exact 
   * vulkan-headers
   * wayland-headers
   * x11-headers
+* [ ] mach-glfw, which depends on:
+  * glfw
+* [ ] mach-dxcompiler, which depends on:
 * [ ] mach-basisu, which depends on:
   * basisu
 * [ ] mach-objc, which depends on:
+  * xcode-frameworks
+* [ ] mach-freetype, which depends on:
+  * freetype
+  * harfbuzz
+  * font-assets
+* [ ] mach-sysaudio, which depends on:
+  * mach-sysjs
+  * linux-audio-headers
   * xcode-frameworks
 * [ ] mach-flac, which depends on:
   * flac
   * mach-sysaudio
   * linux-audio-headers
-* [ ] mach-sysaudio, which depends on:
-  * mach-sysjs
-  * linux-audio-headers
-  * xcode-frameworks
 * [ ] mach-opus, which depends on:
   * opusfile
+  * opusenc 
   * mach-sysaudio
   * linux-audio-headers
-* [ ] mach-dxcompiler, which depends on:
-  * directx-headers
-* [ ] mach-glfw, which depends on:
-  * glfw
-* [ ] mach-freetype, which depends on:
-  * freetype
-  * harfbuzz
-  * font-assets
 * [ ] mach-gpu-dawn, which depends on:
   * xcode-frameworks
   * direct3d-headers
