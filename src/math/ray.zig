@@ -1,5 +1,3 @@
-const std = @import("std");
-
 const mach = @import("../main.zig");
 const testing = mach.testing;
 const math = mach.math;
@@ -162,7 +160,7 @@ pub fn Ray(comptime Vec3P: type) type {
                         undefined,
                         undefined,
                         undefined,
-                        std.math.inf(f32),
+                        math.inf(f32),
                     );
 
                     if (backface_culling) {

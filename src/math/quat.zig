@@ -1,5 +1,3 @@
-const std = @import("std");
-
 const mach = @import("../main.zig");
 const testing = mach.testing;
 const math = mach.math;
@@ -38,15 +36,15 @@ pub fn Quat(comptime Scalar: type) type {
         /// Creates a Quaternion based on the given `axis` and `angle`, and returns it.
         pub inline fn fromAxisAngle(axis: Axis, angle: T) Quat(T) {
             const halfAngle = angle * 0.5;
-            const s = std.math.sin(halfAngle);
+            const s = math.sin(halfAngle);
 
-            return init(s * axis.x(), s * axis.y(), s * axis.z(), std.math.cos(halfAngle));
+            return init(s * axis.x(), s * axis.y(), s * axis.z(), math.cos(halfAngle));
         }
 
         /// Calculates the angle between two given quaternions.
         pub inline fn angleBetween(a: *const Quat(T), b: *const Quat(T)) T {
             const d = Vec.dot(&a.v, &b.v);
-            return std.math.acos(2 * d * d - 1);
+            return math.acos(2 * d * d - 1);
         }
 
         /// Multiplies two quaternions
@@ -97,8 +95,8 @@ pub fn Quat(comptime Scalar: type) type {
             const qz = q.v.z();
             const qw = q.v.w();
 
-            const bx = std.math.sin(halfAngle);
-            const bw = std.math.cos(halfAngle);
+            const bx = math.sin(halfAngle);
+            const bw = math.cos(halfAngle);
 
             return init(qx * bw + qw * bx, qy * bw + qz * bx, qz * bw - qy * bx, qw * bw - qx * bx);
         }
@@ -112,8 +110,8 @@ pub fn Quat(comptime Scalar: type) type {
             const qz = q.v.z();
             const qw = q.v.w();
 
-            const by = std.math.sin(halfAngle);
-            const bw = std.math.cos(halfAngle);
+            const by = math.sin(halfAngle);
+            const bw = math.cos(halfAngle);
 
             return init(qx * bw - qz * by, qy * bw + qw * by, qz * bw + qx * by, qw * bw - qy * by);
         }
@@ -127,8 +125,8 @@ pub fn Quat(comptime Scalar: type) type {
             const qz = q.v.z();
             const qw = q.v.w();
 
-            const bz = std.math.sin(halfAngle);
-            const bw = std.math.cos(halfAngle);
+            const bz = math.sin(halfAngle);
+            const bw = math.cos(halfAngle);
 
             return init(qx * bw - qy * bz, qy * bw + qx * bz, qz * bw + qw * bz, qw * bw - qz * bz);
         }
@@ -158,10 +156,10 @@ pub fn Quat(comptime Scalar: type) type {
             var scale1: T = 0.0;
 
             if (1.0 - cosOmega > math.eps(T)) {
-                const omega = std.math.acos(cosOmega);
-                const sinOmega = std.math.sin(omega);
-                scale0 = std.math.sin((1.0 - t) * omega) / sinOmega;
-                scale1 = std.math.sin(t * omega) / sinOmega;
+                const omega = math.acos(cosOmega);
+                const sinOmega = math.sin(omega);
+                scale0 = math.sin((1.0 - t) * omega) / sinOmega;
+                scale1 = math.sin(t * omega) / sinOmega;
             } else {
                 scale0 = 1.0 - t;
                 scale1 = t;
@@ -181,7 +179,7 @@ pub fn Quat(comptime Scalar: type) type {
             const trace = m.v[0].v[0] + m.v[1].v[1] + m.v[2].v[2];
 
             if (trace > 0) {
-                const root = std.math.sqrt(trace + 1.0);
+                const root = math.sqrt(trace + 1.0);
                 dst.v.v[3] = 0.5 * root;
                 const rootInv = 0.5 / root;
 
@@ -202,7 +200,7 @@ pub fn Quat(comptime Scalar: type) type {
                 const j = (i + 1) % 3;
                 const k = (i + 2) % 3;
 
-                const root = std.math.sqrt(m.v[i].v[i] - m.v[j].v[j] - m.v[k].v[k] + 1.0);
+                const root = math.sqrt(m.v[i].v[i] - m.v[j].v[j] - m.v[k].v[k] + 1.0);
                 dst.v.v[i] = 0.5 * root;
 
                 const rootInv = 0.5 / root;
@@ -221,12 +219,12 @@ pub fn Quat(comptime Scalar: type) type {
             const yHalf = y * 0.5;
             const zHalf = z * 0.5;
 
-            const sx = std.math.sin(xHalf);
-            const cx = std.math.cos(xHalf);
-            const sy = std.math.sin(yHalf);
-            const cy = std.math.cos(yHalf);
-            const sz = std.math.sin(zHalf);
-            const cz = std.math.cos(zHalf);
+            const sx = math.sin(xHalf);
+            const cx = math.cos(xHalf);
+            const sy = math.sin(yHalf);
+            const cy = math.cos(yHalf);
+            const sz = math.sin(zHalf);
+            const cz = math.cos(zHalf);
 
             const xRet = sx * cy * cz + cx * sy * sz;
             const yRet = cx * sy * cz - sx * cy * sz;
@@ -258,7 +256,7 @@ pub fn Quat(comptime Scalar: type) type {
 
         /// Computes the length of a given quaternion.
         pub inline fn len(q: *const Quat(T)) T {
-            return std.math.sqrt(q.v.x() * q.v.x() + q.v.y() * q.v.y() + q.v.z() * q.v.z() + q.v.w() * q.v.w());
+            return math.sqrt(q.v.x() * q.v.x() + q.v.y() * q.v.y() + q.v.z() * q.v.z() + q.v.w() * q.v.w());
         }
 
         /// Computes the normalized version of a given quaternion.
@@ -268,7 +266,7 @@ pub fn Quat(comptime Scalar: type) type {
             const q2 = q.v.z();
             const q3 = q.v.w();
 
-            const length = std.math.sqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+            const length = math.sqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
 
             if (length > 0.00001) {
                 return init(q0 / length, q1 / length, q2 / length, q3 / length);

@@ -20,6 +20,9 @@ const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
 const testing = std.testing;
 
+const mach = @import("../../main.zig");
+const math = mach.math;
+
 const log = std.log.scoped(.atlas);
 
 /// Data is the raw texture data.
@@ -145,7 +148,7 @@ pub fn reserve(self: *Atlas, alloc: Allocator, width: u32, height: u32) !Region 
 
     // Find the location in our nodes list to insert the new node for this region.
     const best_idx: usize = best_idx: {
-        var best_height: u32 = std.math.maxInt(u32);
+        var best_height: u32 = math.maxInt(u32);
         var best_width: u32 = best_height;
         var chosen: ?usize = null;
 

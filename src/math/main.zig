@@ -136,6 +136,7 @@ pub const inf = std.math.inf;
 pub const sqrt = std.math.sqrt;
 pub const sin = std.math.sin;
 pub const cos = std.math.cos;
+pub const acos = std.math.acos;
 pub const isNan = std.math.isNan;
 pub const isInf = std.math.isInf;
 pub const pi = std.math.pi;
@@ -143,6 +144,7 @@ pub const clamp = std.math.clamp;
 pub const log10 = std.math.log10;
 pub const degreesToRadians = std.math.degreesToRadians;
 pub const radiansToDegrees = std.math.radiansToDegrees;
+pub const maxInt = std.math.maxInt;
 
 /// 2/sqrt(π)
 pub const two_sqrtpi = std.math.two_sqrtpi;

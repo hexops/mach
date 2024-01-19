@@ -493,7 +493,7 @@ test "normalize_example" {
 
 test "normalize_accuracy" {
     const normalized = math.vec2(1, 1).normalize(0);
-    const norm_val = std.math.sqrt1_2; // 1 / sqrt(2)
+    const norm_val = math.sqrt1_2; // 1 / sqrt(2)
     try testing.expect(math.Vec2, math.Vec2.splat(norm_val)).eql(normalized);
 }
 
@@ -818,7 +818,7 @@ test "dir_zero_vec4" {
 test "dir_vec2" {
     const a: math.Vec2 = math.vec2(1, 2);
     const b: math.Vec2 = math.vec2(3, 4);
-    try testing.expect(math.Vec2, math.vec2(std.math.sqrt1_2, std.math.sqrt1_2))
+    try testing.expect(math.Vec2, math.vec2(math.sqrt1_2, math.sqrt1_2))
         .eql(a.dir(&b, 0));
 }
 
@@ -992,7 +992,7 @@ test "Mat4x4_mulMat" {
 test "mulQuat" {
     const up = math.vec3(0, 1, 0);
     const id = math.Quat.identity();
-    const rot = math.Quat.rotateZ(&id, -std.math.pi / 2.0);
+    const rot = math.Quat.rotateZ(&id, -math.pi / 2.0);
     try testing.expect(math.Vec3, math.vec3(1, 0, 0)).eql(up.mulQuat(&rot));
 }
 

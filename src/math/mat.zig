@@ -1,5 +1,3 @@
-const std = @import("std");
-
 const mach = @import("../main.zig");
 const testing = mach.testing;
 const math = mach.math;
@@ -308,8 +306,8 @@ pub fn Mat(
 
                 /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
                 pub inline fn rotateX(angle_radians: f32) Matrix {
-                    const c = std.math.cos(angle_radians);
-                    const s = std.math.sin(angle_radians);
+                    const c = math.cos(angle_radians);
+                    const s = math.sin(angle_radians);
                     return Matrix.init(
                         &RowVec.init(1, 0, 0, 0),
                         &RowVec.init(0, c, -s, 0),
@@ -320,8 +318,8 @@ pub fn Mat(
 
                 /// Constructs a 3D matrix which rotates around the X axis by `angle_radians`.
                 pub inline fn rotateY(angle_radians: f32) Matrix {
-                    const c = std.math.cos(angle_radians);
-                    const s = std.math.sin(angle_radians);
+                    const c = math.cos(angle_radians);
+                    const s = math.sin(angle_radians);
                     return Matrix.init(
                         &RowVec.init(c, 0, s, 0),
                         &RowVec.init(0, 1, 0, 0),
@@ -332,8 +330,8 @@ pub fn Mat(
 
                 /// Constructs a 3D matrix which rotates around the Z axis by `angle_radians`.
                 pub inline fn rotateZ(angle_radians: f32) Matrix {
-                    const c = std.math.cos(angle_radians);
-                    const s = std.math.sin(angle_radians);
+                    const c = math.cos(angle_radians);
+                    const s = math.sin(angle_radians);
                     return Matrix.init(
                         &RowVec.init(c, -s, 0, 0),
                         &RowVec.init(s, c, 0, 0),

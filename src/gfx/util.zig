@@ -1,4 +1,6 @@
 const std = @import("std");
+const mach = @import("../main.zig");
+const math = mach.math;
 
 /// Vertex writer manages the placement of vertices by tracking which are unique. If a duplicate vertex is added
 /// with `put`, only it's index will be written to the index buffer.
@@ -10,7 +12,7 @@ pub fn VertexWriter(comptime VertexType: type, comptime IndexType: type) type {
             next_sparse: IndexType = null_index,
         };
 
-        const null_index: IndexType = std.math.maxInt(IndexType);
+        const null_index: IndexType = math.maxInt(IndexType);
 
         vertices: []VertexType,
         indices: []IndexType,
