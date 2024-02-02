@@ -153,8 +153,6 @@ pub const App = struct {
     }
 
     pub fn link(app: *const App) !void {
-        sysaudio.addPaths(app.compile);
-
         // TODO: basisu support in wasm
         if (app.platform != .web) {
             app.compile.linkLibrary(app.mach_builder.dependency("mach_basisu", .{

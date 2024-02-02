@@ -12,24 +12,24 @@
     },
     .dependencies = .{
         .mach_ecs = .{
-            .url = "https://pkg.machengine.org/mach-ecs/2b921e55de07c3554a5490fca29738104ab07b37.tar.gz",
-            .hash = "1220a5785894922edb70e84f5e00917defbffc64ee16e88cc8fdb3ccf68c9b244a5d",
+            .url = "https://pkg.machengine.org/mach-ecs/83a3ed801008a976dd79e10068157b02c3b76a36.tar.gz",
+            .hash = "1220ed76b7395bfca9519ae58e7aa1c4ee94abc7e65b35a076f91d9c4ffa50de27e6",
         },
         .mach_core = .{
-            .url = "https://pkg.machengine.org/mach-core/370bc1504cebaffcda5ed1ae9915fd2ac6778479.tar.gz",
-            .hash = "12205da1ecba58ba8c9ca65dbf75e32f42fde0490d34a98596ae72d4d3db81659dc5",
+            .url = "https://pkg.machengine.org/mach-core/6a62bcc90e0d072d632788a6575d77942bd09a19.tar.gz",
+            .hash = "12209d39954fcda0be158461c10f64d14d5c7d097bd6d26785b332d75ffefa7dd7a0",
         },
         .mach_basisu = .{
             .url = "https://pkg.machengine.org/mach-basisu/5a68105a5e503c7183aab481b7ec6ae16b996943.tar.gz",
             .hash = "12204098c8d8d15a687068a3c0b15fe95d20f8fe074531e34e78f9dfe518cf86a67c",
         },
         .mach_sysaudio = .{
-            .url = "https://pkg.machengine.org/mach-sysaudio/8e4d73150af291d63a5390b157552ce0bbcd4a1d.tar.gz",
-            .hash = "12206c2ca0378bbc54721553e8167c037325e95e2791379fbe0e245a34334679dc90",
+            .url = "https://pkg.machengine.org/mach-sysaudio/ce8ab30dd300b822224d14997c58c06520b642c9.tar.gz",
+            .hash = "12203f0d4afc83bae8571434ff48a459732c15c9542df13e0a97baedc73212d355a1",
         },
         .mach_freetype = .{
-            .url = "https://pkg.machengine.org/mach-freetype/7546a906b6c4b308b98d36264dfbe32ca24ae579.tar.gz",
-            .hash = "12205faaaaf547019f0763ac620af77fff2728b8eb4222b62120ee224ce53392cf31",
+            .url = "https://pkg.machengine.org/mach-freetype/dc4a5d8ce14f8678f35bdaf197303091e22b1f27.tar.gz",
+            .hash = "122070070dd2c402d94c279d64d4a4d154691ad49f46fa2c24ed7c6e4e4f5c531477",
         },
         .mach_sysjs = .{
             .url = "https://pkg.machengine.org/mach-sysjs/eeef024f79beae189b7a4ed85e64ed076e76d538.tar.gz",
