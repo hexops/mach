@@ -129,6 +129,8 @@ These projects have dependencies on other projects. We update them in the exact 
   * direct3d-headers
   * opengl-headers
   * xcode-frameworks
+  * spirv-cross
+  * spirv-tools
 * [ ] mach-core, which depends on:
   * build.zig version check
   * mach-core-example-assets
