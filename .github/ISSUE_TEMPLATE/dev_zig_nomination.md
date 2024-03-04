@@ -45,7 +45,6 @@ You may have been linked to this issue because you sent a pull request to update
 
 These projects have zero `build.zig.zon` dependencies, we update them first - and in any order.
 
-* [ ] mach-gamemode
 * [ ] mach-model3d
 * [ ] mach-sysjs
 * [ ] mach-objc-generator
@@ -133,7 +132,6 @@ These projects have dependencies on other projects. We update them in the exact 
 * [ ] mach-core, which depends on:
   * build.zig version check
   * mach-core-example-assets
-  * mach-gamemode
   * mach-sysgpu
   * mach-gpu
   * mach-glfw
