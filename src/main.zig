@@ -5,10 +5,10 @@ pub const Timer = core.Timer;
 // Mach packages
 pub const gpu = core.gpu;
 pub const sysjs = @import("mach-sysjs");
-pub const ecs = @import("mach-ecs");
 pub const sysaudio = @import("mach-sysaudio");
 
 // Mach standard library
+pub const ecs = @import("ecs/main.zig");
 pub const gfx = @import("gfx/main.zig");
 pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
@@ -25,10 +25,10 @@ test {
     // std.testing.refAllDeclsRecursive(@This());
     _ = core;
     _ = gpu;
-    _ = ecs;
     _ = sysaudio;
     _ = gfx;
     _ = math;
     _ = testing;
+    std.testing.refAllDeclsRecursive(ecs);
     std.testing.refAllDeclsRecursive(math);
 }
