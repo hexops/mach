@@ -9,6 +9,7 @@ pub const sysaudio = @import("mach-sysaudio");
 
 // Mach standard library
 pub const ecs = @import("ecs/main.zig");
+pub const gamemode = @import("gamemode.zig");
 pub const gfx = @import("gfx/main.zig");
 pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
@@ -30,5 +31,6 @@ test {
     _ = math;
     _ = testing;
     std.testing.refAllDeclsRecursive(ecs);
+    std.testing.refAllDeclsRecursive(gamemode);
     std.testing.refAllDeclsRecursive(math);
 }
