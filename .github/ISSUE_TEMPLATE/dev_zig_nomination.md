@@ -45,7 +45,6 @@ You may have been linked to this issue because you sent a pull request to update
 
 These projects have zero `build.zig.zon` dependencies, we update them first - and in any order.
 
-* [ ] mach-ecs
 * [ ] mach-gamemode
 * [ ] mach-model3d
 * [ ] mach-sysjs
@@ -143,7 +142,6 @@ These projects have dependencies on other projects. We update them in the exact 
 * [ ] mach, which depends on:
   * .zigversion
   * build.zig version check
-  * mach-ecs
   * mach-core
   * mach-basisu
   * mach-sysaudio

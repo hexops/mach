@@ -11,10 +11,6 @@
         "README.md",
     },
     .dependencies = .{
-        .mach_ecs = .{
-            .url = "https://pkg.machengine.org/mach-ecs/83a3ed801008a976dd79e10068157b02c3b76a36.tar.gz",
-            .hash = "1220ed76b7395bfca9519ae58e7aa1c4ee94abc7e65b35a076f91d9c4ffa50de27e6",
-        },
         .mach_core = .{
             .url = "https://pkg.machengine.org/mach-core/6a62bcc90e0d072d632788a6575d77942bd09a19.tar.gz",
             .hash = "12209d39954fcda0be158461c10f64d14d5c7d097bd6d26785b332d75ffefa7dd7a0",

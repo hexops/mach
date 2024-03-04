@@ -18,10 +18,6 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
     });
-    const mach_ecs_dep = b.dependency("mach_ecs", .{
-        .target = target,
-        .optimize = optimize,
-    });
     const mach_basisu_dep = b.dependency("mach_basisu", .{
         .target = target,
         .optimize = optimize,
@@ -40,7 +36,6 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = .{ .path = sdkPath("/src/main.zig") },
         .imports = &.{
             .{ .name = "mach-core", .module = mach_core_dep.module("mach-core") },
-            .{ .name = "mach-ecs", .module = mach_ecs_dep.module("mach-ecs") },
             .{ .name = "mach-sysaudio", .module = mach_sysaudio_dep.module("mach-sysaudio") },
             .{ .name = "mach-basisu", .module = mach_basisu_dep.module("mach-basisu") },
             .{ .name = "mach-freetype", .module = mach_freetype_dep.module("mach-freetype") },

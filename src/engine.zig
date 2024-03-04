@@ -1,7 +1,7 @@
 const core = @import("mach-core");
 const gpu = @import("mach-core").gpu;
 const std = @import("std");
-const ecs = @import("mach-ecs");
+const ecs = @import("../main.zig").ecs;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();
