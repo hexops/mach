@@ -216,7 +216,7 @@ pub fn build(b: *std.Build) !void {
             // externally):
             //
             // module.addCSourceFile(.{
-            //     .file = .{ .path = "src/pipewire/sysaudio.c" },
+            //     .file = .{ .path = "src/sysaudio/pipewire/sysaudio.c" },
             //     .flags = &.{"-std=gnu99"},
             // });
             //
@@ -230,7 +230,7 @@ pub fn build(b: *std.Build) !void {
             });
             lib.linkLibC();
             lib.addCSourceFile(.{
-                .file = .{ .path = "src/pipewire/sysaudio.c" },
+                .file = .{ .path = "src/sysaudio/pipewire/sysaudio.c" },
                 .flags = &.{"-std=gnu99"},
             });
             lib.linkLibrary(linux_audio_headers_dep.artifact("linux-audio-headers"));
