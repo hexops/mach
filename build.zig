@@ -58,6 +58,9 @@ pub fn build(b: *std.Build) !void {
     });
     module.addImport("build-options", build_options.createModule());
     if (want_mach) {
+        // Linux gamemode requires libc.
+        if (target.result.os.tag == .linux) module.link_libc = true;
+
         // TODO(Zig 2024.03): use b.lazyDependency
         const mach_core_dep = b.dependency("mach_core", .{
             .target = target,

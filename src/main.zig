@@ -1,4 +1,5 @@
 const build_options = @import("build-options");
+const builtin = @import("builtin");
 
 // Core re-exports
 pub const core = if (build_options.want_core) @import("mach-core") else struct {};
@@ -8,7 +9,8 @@ pub const sysjs = if (build_options.want_core) @import("mach-sysjs") else struct
 
 // Mach standard library
 pub const ecs = @import("ecs/main.zig");
-pub const gamemode = @import("gamemode.zig");
+// gamemode requires libc on linux
+pub const gamemode = if (builtin.os.tag != .linux or builtin.link_libc) @import("gamemode.zig");
 pub const gfx = if (build_options.want_mach) @import("gfx/main.zig") else struct {};
 pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
