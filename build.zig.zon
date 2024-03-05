@@ -11,10 +11,6 @@
         "README.md",
     },
     .dependencies = .{
-        .mach_core = .{
-            .url = "https://pkg.machengine.org/mach-core/6a62bcc90e0d072d632788a6575d77942bd09a19.tar.gz",
-            .hash = "12209d39954fcda0be158461c10f64d14d5c7d097bd6d26785b332d75ffefa7dd7a0",
-        },
         .mach_basisu = .{
             .url = "https://pkg.machengine.org/mach-basisu/5a68105a5e503c7183aab481b7ec6ae16b996943.tar.gz",
             .hash = "12204098c8d8d15a687068a3c0b15fe95d20f8fe074531e34e78f9dfe518cf86a67c",
@@ -62,6 +58,30 @@
         .spirv_tools = .{
             .url = "https://pkg.machengine.org/SPIRV-Tools/23092f85a721e5297f0f704d95bbd263d5a7a771.tar.gz",
             .hash = "1220ec815dfda171b5bf65f6078932d79e034508e9ecef51be660f6a89cc7c70aef9",
+        },
+        .mach_gpu = .{
+            .url = "https://pkg.machengine.org/mach-gpu/47244d1e216284a3389bd42af431f59f39a8f67e.tar.gz",
+            .hash = "1220e77a3e8386f57f73685026e43a17385ec8b3fb6e9873c9c793defd30651cfa09",
+        },
+        .mach_glfw = .{
+            .url = "https://pkg.machengine.org/mach-glfw/63da35e57c3695a787b927e69e4140eb74ffc234.tar.gz",
+            .hash = "1220fda87b59df6353864651cdd3943f1159d8d517a45cd67bed493fe6c0a0c78c17",
+        },
+        .x11_headers = .{
+            .url = "https://pkg.machengine.org/x11-headers/39d69153febf15537a33b425c57a3831e4a0ab2a.tar.gz",
+            .hash = "1220e83ec1e5addab76d30aad3adbbb02ee44fef30d90425c898670e48b495e42027",
+        },
+        .wayland_headers = .{
+            .url = "https://pkg.machengine.org/wayland-headers/7be286aec43c92bf3a88dad33fe63ce05c65aa28.tar.gz",
+            .hash = "1220228ca2235b82b3cf5d58995e34ac862afd18f1390c09b69a03f2a5ec06ff7701",
+        },
+        .mach_core_example_assets = .{
+            .url = "https://pkg.machengine.org/mach-core-example-assets/4beb172383b0012b256a26c59bf7bb97426436b8.tar.gz",
+            .hash = "122038828e74ad3854361cefbceab0a1d7c2db80c9864772693b8b47ebc6c82d3ccb",
+        },
+        .mach_model3d = .{
+            .url = "https://pkg.machengine.org/mach-model3d/04a493eb6c1a46b7f06f862b5e4d6bfcebad4cb5.tar.gz",
+            .hash = "12204725f8a000dc5e27e5d7e68dc2d26a9db904639f18e8866d5d540edae629d149",
         },
     },
 }

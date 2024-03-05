@@ -1,9 +1,9 @@
 const std = @import("std");
-const core = @import("mach-core");
-const gpu = core.gpu;
-const ecs = @import("../main.zig").ecs;
-const Engine = @import("../engine.zig").Engine;
 const mach = @import("../main.zig");
+const core = mach.core;
+const gpu = mach.core.gpu;
+const ecs = mach.ecs;
+const Engine = mach.Engine;
 
 const math = mach.math;
 const vec2 = math.vec2;

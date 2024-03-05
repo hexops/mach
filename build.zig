@@ -1,7 +1,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const glfw = @import("mach_glfw");
-const core = @import("mach_core");
+const gpu = @import("mach_gpu");
+const sysgpu = @import("mach_sysgpu");
 
 pub const SysgpuBackend = enum {
     default,
@@ -49,8 +50,9 @@ pub fn build(b: *std.Build) !void {
     const sysaudio_deps = b.option(bool, "sysaudio", "build sysaudio specifically");
     const sysgpu_deps = b.option(bool, "sysgpu", "build sysgpu specifically");
     const sysgpu_backend = b.option(SysgpuBackend, "sysgpu_backend", "sysgpu API backend") orelse .default;
+    const core_platform = b.option(CoreApp.Platform, "core_platform", "mach core platform to use") orelse CoreApp.Platform.fromTarget(target.result);
 
-    const want_mach = core_deps != null or sysaudio_deps != null or sysgpu_deps != null;
+    const want_mach = core_deps == null and sysaudio_deps == null and sysgpu_deps == null;
     const want_core = want_mach or (core_deps orelse false);
     const want_sysaudio = want_mach or (sysaudio_deps orelse false);
     const want_sysgpu = want_mach or want_core or (sysgpu_deps orelse false);
@@ -61,9 +63,10 @@ pub fn build(b: *std.Build) !void {
     build_options.addOption(bool, "want_sysaudio", want_sysaudio);
     build_options.addOption(bool, "want_sysgpu", want_sysgpu);
     build_options.addOption(SysgpuBackend, "sysgpu_backend", sysgpu_backend);
+    build_options.addOption(CoreApp.Platform, "core_platform", core_platform);
 
     const module = b.addModule("mach", .{
-        .root_source_file = .{ .path = sdkPath("/src/main.zig") },
+        .root_source_file = .{ .path = "src/main.zig" },
         .optimize = optimize,
         .target = target,
     });
@@ -73,10 +76,6 @@ pub fn build(b: *std.Build) !void {
         if (target.result.os.tag == .linux) module.link_libc = true;
 
         // TODO(Zig 2024.03): use b.lazyDependency
-        const mach_core_dep = b.dependency("mach_core", .{
-            .target = target,
-            .optimize = optimize,
-        });
         const mach_basisu_dep = b.dependency("mach_basisu", .{
             .target = target,
             .optimize = optimize,
@@ -91,12 +90,44 @@ pub fn build(b: *std.Build) !void {
         });
         const font_assets_dep = b.dependency("font_assets", .{});
 
-        module.addImport("mach-core", mach_core_dep.module("mach-core"));
         module.addImport("mach-basisu", mach_basisu_dep.module("mach-basisu"));
         module.addImport("mach-freetype", mach_freetype_dep.module("mach-freetype"));
         module.addImport("mach-harfbuzz", mach_freetype_dep.module("mach-harfbuzz"));
         module.addImport("mach-sysjs", mach_sysjs_dep.module("mach-sysjs"));
         module.addImport("font-assets", font_assets_dep.module("font-assets"));
+    }
+    if (want_core) {
+        const mach_gpu_dep = b.dependency("mach_gpu", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        module.addImport("mach-gpu", mach_gpu_dep.module("mach-gpu"));
+
+        if (target.result.cpu.arch == .wasm32) {
+            const sysjs_dep = b.dependency("mach_sysjs", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            module.addImport("mach-sysjs", sysjs_dep.module("mach-sysjs"));
+        } else {
+            const mach_glfw_dep = b.dependency("mach_glfw", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            const x11_headers_dep = b.dependency("x11_headers", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            const wayland_headers_dep = b.dependency("wayland_headers", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            module.addImport("mach-glfw", mach_glfw_dep.module("mach-glfw"));
+            module.linkLibrary(x11_headers_dep.artifact("x11-headers"));
+            module.linkLibrary(wayland_headers_dep.artifact("wayland-headers"));
+            module.addCSourceFile(.{ .file = .{ .path = "src/core/platform/wayland/wayland.c" } });
+        }
+        try buildCoreExamples(b, optimize, target, module, core_platform);
     }
     if (want_sysaudio) {
         // Can build sysaudio examples if desired, then.
@@ -228,17 +259,6 @@ pub fn build(b: *std.Build) !void {
         const test_step = b.step("test", "Run unit tests");
         test_step.dependOn(&run_unit_tests.step);
 
-        // TODO: autodoc segfaults the build if we have this enabled
-        // https://github.com/hexops/mach/issues/1145
-        //
-        // const install_docs = b.addInstallDirectory(.{
-        //     .source_dir = unit_tests.getEmittedDocs(),
-        //     .install_dir = .prefix, // default build output prefix, ./zig-out
-        //     .install_subdir = "docs",
-        // });
-        // const docs_step = b.step("docs", "Generate API docs");
-        // docs_step.dependOn(&install_docs.step);
-
         if (want_sysgpu) linkSysgpu(b, &unit_tests.root_module);
     }
 }
@@ -250,8 +270,8 @@ pub const App = struct {
     compile: *std.Build.Step.Compile,
     install: *std.Build.Step.InstallArtifact,
     run: *std.Build.Step.Run,
-    platform: core.App.Platform,
-    core: core.App,
+    platform: CoreApp.Platform,
+    core: CoreApp,
 
     pub fn init(
         app_builder: *std.Build,
@@ -281,11 +301,7 @@ pub const App = struct {
         if (options.deps) |v| try deps.appendSlice(v);
         try deps.append(.{ .name = "mach", .module = mach_mod });
 
-        const mach_core_dep = mach_builder.dependency("mach_core", .{
-            .target = options.target,
-            .optimize = options.optimize,
-        });
-        const app = try core.App.init(app_builder, mach_core_dep.builder, .{
+        const app = try CoreApp.init(app_builder, mach_builder.builder, .{
             .name = options.name,
             .src = options.src,
             .target = options.target,
@@ -294,7 +310,7 @@ pub const App = struct {
             .deps = deps.items,
             .res_dirs = options.res_dirs,
             .watch_paths = options.watch_paths,
-            .mach_core_mod = mach_core_dep.module("mach-core"),
+            .mach_mod = mach_mod,
         });
         return .{
             .core = app,
@@ -319,6 +335,154 @@ pub const App = struct {
         }
     }
 };
+
+pub const CoreApp = struct {
+    b: *std.Build,
+    name: []const u8,
+    compile: *std.Build.Step.Compile,
+    install: *std.Build.Step.InstallArtifact,
+    run: *std.Build.Step.Run,
+    platform: Platform,
+    res_dirs: ?[]const []const u8,
+    watch_paths: ?[]const []const u8,
+
+    pub const Platform = enum {
+        glfw,
+        x11,
+        wayland,
+        web,
+
+        pub fn fromTarget(target: std.Target) Platform {
+            if (target.cpu.arch == .wasm32) return .web;
+            return .glfw;
+        }
+    };
+
+    pub fn init(
+        app_builder: *std.Build,
+        core_builder: *std.Build,
+        options: struct {
+            name: []const u8,
+            src: []const u8,
+            target: std.Build.ResolvedTarget,
+            optimize: std.builtin.OptimizeMode,
+            custom_entrypoint: ?[]const u8 = null,
+            deps: ?[]const std.Build.Module.Import = null,
+            res_dirs: ?[]const []const u8 = null,
+            watch_paths: ?[]const []const u8 = null,
+            mach_mod: ?*std.Build.Module = null,
+            platform: ?Platform,
+        },
+    ) !CoreApp {
+        const target = options.target.result;
+        const platform = options.platform orelse Platform.fromTarget(target);
+
+        var imports = std.ArrayList(std.Build.Module.Import).init(app_builder.allocator);
+
+        const mach_mod = options.mach_mod orelse app_builder.dependency("mach", .{
+            .target = options.target,
+            .optimize = options.optimize,
+        }).module("mach");
+        try imports.append(.{
+            .name = "mach",
+            .module = mach_mod,
+        });
+
+        if (options.deps) |app_deps| try imports.appendSlice(app_deps);
+
+        const app_module = app_builder.createModule(.{
+            .root_source_file = .{ .path = options.src },
+            .imports = try imports.toOwnedSlice(),
+        });
+
+        // Tell mach about the chosen platform
+        const platform_options = app_builder.addOptions();
+        platform_options.addOption(Platform, "platform", platform);
+        mach_mod.addOptions("platform_options", platform_options);
+
+        const compile = blk: {
+            if (platform == .web) {
+                // wasm libraries should go into zig-out/www/
+                app_builder.lib_dir = app_builder.fmt("{s}/www", .{app_builder.install_path});
+
+                const lib = app_builder.addStaticLibrary(.{
+                    .name = options.name,
+                    .root_source_file = .{ .path = options.custom_entrypoint orelse sdkPath("/src/core/platform/wasm/entrypoint.zig") },
+                    .target = options.target,
+                    .optimize = options.optimize,
+                });
+                lib.rdynamic = true;
+
+                break :blk lib;
+            } else {
+                const exe = app_builder.addExecutable(.{
+                    .name = options.name,
+                    .root_source_file = .{ .path = options.custom_entrypoint orelse sdkPath("/src/core/platform/native_entrypoint.zig") },
+                    .target = options.target,
+                    .optimize = options.optimize,
+                });
+                // TODO(core): figure out why we need to disable LTO: https://github.com/hexops/mach/issues/597
+                exe.want_lto = false;
+
+                break :blk exe;
+            }
+        };
+
+        compile.root_module.addImport("mach", mach_mod);
+        compile.root_module.addImport("app", app_module);
+
+        // Installation step
+        app_builder.installArtifact(compile);
+        const install = app_builder.addInstallArtifact(compile, .{});
+        if (options.res_dirs) |res_dirs| {
+            for (res_dirs) |res| {
+                const install_res = app_builder.addInstallDirectory(.{
+                    .source_dir = .{ .path = res },
+                    .install_dir = install.dest_dir.?,
+                    .install_subdir = std.fs.path.basename(res),
+                    .exclude_extensions = &.{},
+                });
+                install.step.dependOn(&install_res.step);
+            }
+        }
+        if (platform == .web) {
+            inline for (.{ sdkPath("/src/core/platform/wasm/mach.js"), @import("mach_sysjs").getJSPath() }) |js| {
+                const install_js = app_builder.addInstallFileWithDir(
+                    .{ .path = js },
+                    std.Build.InstallDir{ .custom = "www" },
+                    std.fs.path.basename(js),
+                );
+                install.step.dependOn(&install_js.step);
+            }
+        }
+
+        // Link dependencies
+        if (platform != .web) {
+            link(core_builder, compile, &compile.root_module);
+        }
+
+        const run = app_builder.addRunArtifact(compile);
+        run.step.dependOn(&install.step);
+        return .{
+            .b = app_builder,
+            .compile = compile,
+            .install = install,
+            .run = run,
+            .name = options.name,
+            .platform = platform,
+            .res_dirs = options.res_dirs,
+            .watch_paths = options.watch_paths,
+        };
+    }
+};
+
+// TODO(sysgpu): remove this once we switch to sysgpu fully
+pub fn link(core_builder: *std.Build, step: *std.Build.Step.Compile, mod: *std.Build.Module) void {
+    gpu.link(core_builder.dependency("mach_gpu", .{
+        .target = step.root_module.resolved_target orelse core_builder.host,
+        .optimize = step.root_module.optimize.?,
+    }).builder, step, mod, .{}) catch unreachable;
+}
 
 fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
     module.link_libc = true;
@@ -375,3 +539,249 @@ comptime {
         @compileError(std.fmt.comptimePrint("unsupported Zig version ({}). Required Zig version 2024.1.0-mach: https://machengine.org/about/nominated-zig/#202410-mach", .{builtin.zig_version}));
     }
 }
+
+fn buildCoreExamples(
+    b: *std.Build,
+    optimize: std.builtin.OptimizeMode,
+    target: std.Build.ResolvedTarget,
+    mach_mod: *std.Build.Module,
+    platform: CoreApp.Platform,
+) !void {
+    try ensureDependencies(b.allocator);
+
+    const Dependency = enum {
+        zigimg,
+        model3d,
+        assets,
+
+        pub fn dependency(
+            dep: @This(),
+            b2: *std.Build,
+            target2: std.Build.ResolvedTarget,
+            optimize2: std.builtin.OptimizeMode,
+        ) std.Build.Module.Import {
+            const path = switch (dep) {
+                .zigimg => "src/core/examples/libs/zigimg/zigimg.zig",
+                .assets => return std.Build.Module.Import{
+                    .name = "assets",
+                    .module = b2.dependency("mach_core_example_assets", .{
+                        .target = target2,
+                        .optimize = optimize2,
+                    }).module("mach-core-example-assets"),
+                },
+                .model3d => return std.Build.Module.Import{
+                    .name = "model3d",
+                    .module = b2.dependency("mach_model3d", .{
+                        .target = target2,
+                        .optimize = optimize2,
+                    }).module("mach-model3d"),
+                },
+            };
+            return std.Build.Module.Import{
+                .name = @tagName(dep),
+                .module = b2.createModule(.{ .root_source_file = .{ .path = path } }),
+            };
+        }
+    };
+
+    inline for ([_]struct {
+        name: []const u8,
+        deps: []const Dependency = &.{},
+        std_platform_only: bool = false,
+        sysgpu: bool = false,
+    }{
+        .{ .name = "wasm-test" },
+        .{ .name = "triangle" },
+        .{ .name = "triangle-msaa" },
+        .{ .name = "clear-color" },
+        .{ .name = "procedural-primitives" },
+        .{ .name = "boids" },
+        .{ .name = "rotating-cube" },
+        .{ .name = "pixel-post-process" },
+        .{ .name = "two-cubes" },
+        .{ .name = "instanced-cube" },
+        .{ .name = "gen-texture-light" },
+        .{ .name = "fractal-cube" },
+        .{ .name = "map-async" },
+        .{ .name = "rgb-quad" },
+        .{
+            .name = "pbr-basic",
+            .deps = &.{ .model3d, .assets },
+            .std_platform_only = true,
+        },
+        .{
+            .name = "deferred-rendering",
+            .deps = &.{ .model3d, .assets },
+            .std_platform_only = true,
+        },
+        .{ .name = "textured-cube", .deps = &.{ .zigimg, .assets } },
+        .{ .name = "textured-quad", .deps = &.{ .zigimg, .assets } },
+        .{ .name = "sprite2d", .deps = &.{ .zigimg, .assets } },
+        .{ .name = "image", .deps = &.{ .zigimg, .assets } },
+        .{ .name = "image-blur", .deps = &.{ .zigimg, .assets } },
+        .{ .name = "cubemap", .deps = &.{ .zigimg, .assets } },
+
+        // sysgpu
+        .{ .name = "boids", .sysgpu = true },
+        .{ .name = "clear-color", .sysgpu = true },
+        .{ .name = "cubemap", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "deferred-rendering", .deps = &.{ .model3d, .assets }, .std_platform_only = true, .sysgpu = true },
+        .{ .name = "fractal-cube", .sysgpu = true },
+        .{ .name = "gen-texture-light", .sysgpu = true },
+        .{ .name = "image-blur", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "instanced-cube", .sysgpu = true },
+        .{ .name = "map-async", .sysgpu = true },
+        .{ .name = "pbr-basic", .deps = &.{ .model3d, .assets }, .std_platform_only = true, .sysgpu = true },
+        .{ .name = "pixel-post-process", .sysgpu = true },
+        .{ .name = "procedural-primitives", .sysgpu = true },
+        .{ .name = "rotating-cube", .sysgpu = true },
+        .{ .name = "sprite2d", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "image", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "textured-cube", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "textured-quad", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "triangle", .sysgpu = true },
+        .{ .name = "triangle-msaa", .sysgpu = true },
+        .{ .name = "two-cubes", .sysgpu = true },
+        .{ .name = "rgb-quad", .sysgpu = true },
+    }) |example| {
+        // FIXME: this is workaround for a problem that some examples
+        // (having the std_platform_only=true field) as well as zigimg
+        // uses IO and depends on gpu-dawn which is not supported
+        // in freestanding environments. So break out of this loop
+        // as soon as any such examples is found. This does means that any
+        // example which works on wasm should be placed before those who dont.
+        if (example.std_platform_only)
+            if (target.result.cpu.arch == .wasm32)
+                break;
+
+        var deps = std.ArrayList(std.Build.Module.Import).init(b.allocator);
+        try deps.append(std.Build.Module.Import{
+            .name = "zmath",
+            .module = b.createModule(.{
+                .root_source_file = .{ .path = "src/core/examples/zmath.zig" },
+            }),
+        });
+        for (example.deps) |d| try deps.append(d.dependency(b, target, optimize));
+        const cmd_name = if (example.sysgpu) "sysgpu-" ++ example.name else example.name;
+        const app = try CoreApp.init(
+            b,
+            b,
+            .{
+                .name = "core-" ++ cmd_name,
+                .src = if (example.sysgpu)
+                    "src/core/examples/sysgpu/" ++ example.name ++ "/main.zig"
+                else
+                    "src/core/examples/" ++ example.name ++ "/main.zig",
+                .target = target,
+                .optimize = optimize,
+                .deps = deps.items,
+                .watch_paths = if (example.sysgpu)
+                    &.{"src/core/examples/sysgpu/" ++ example.name}
+                else
+                    &.{"src/core/examples/" ++ example.name},
+                .mach_mod = mach_mod,
+                .platform = platform,
+            },
+        );
+
+        for (example.deps) |dep| switch (dep) {
+            .model3d => app.compile.linkLibrary(b.dependency("mach_model3d", .{
+                .target = target,
+                .optimize = optimize,
+            }).artifact("mach-model3d")),
+            else => {},
+        };
+
+        const install_step = b.step("core-" ++ cmd_name, "Install core-" ++ cmd_name);
+        install_step.dependOn(&app.install.step);
+        b.getInstallStep().dependOn(install_step);
+
+        const run_step = b.step("run-core-" ++ cmd_name, "Run core-" ++ cmd_name);
+        run_step.dependOn(&app.run.step);
+    }
+}
+
+// TODO(Zig 2024.03): use b.lazyDependency
+fn ensureDependencies(allocator: std.mem.Allocator) !void {
+    try optional_dependency.ensureGitRepoCloned(
+        allocator,
+        "https://github.com/slimsag/zigimg",
+        "ad6ad042662856f55a4d67499f1c4606c9951031",
+        sdkPath("/src/core/examples/libs/zigimg"),
+    );
+}
+
+// TODO(Zig 2024.03): use b.lazyDependency
+const optional_dependency = struct {
+    fn ensureGitRepoCloned(allocator: std.mem.Allocator, clone_url: []const u8, revision: []const u8, dir: []const u8) !void {
+        if (xIsEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES") or xIsEnvVarTruthy(allocator, "NO_ENSURE_GIT")) {
+            return;
+        }
+
+        xEnsureGit(allocator);
+
+        if (std.fs.openDirAbsolute(dir, .{})) |_| {
+            const current_revision = try xGetCurrentGitRevision(allocator, dir);
+            if (!std.mem.eql(u8, current_revision, revision)) {
+                // Reset to the desired revision
+                xExec(allocator, &[_][]const u8{ "git", "fetch" }, dir) catch |err| std.debug.print("warning: failed to 'git fetch' in {s}: {s}\n", .{ dir, @errorName(err) });
+                try xExec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, dir);
+                try xExec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
+            }
+            return;
+        } else |err| return switch (err) {
+            error.FileNotFound => {
+                std.log.info("cloning required dependency..\ngit clone {s} {s}..\n", .{ clone_url, dir });
+
+                try xExec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", clone_url, dir }, ".");
+                try xExec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, dir);
+                try xExec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
+                return;
+            },
+            else => err,
+        };
+    }
+
+    fn xExec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
+        var child = std.ChildProcess.init(argv, allocator);
+        child.cwd = cwd;
+        _ = try child.spawnAndWait();
+    }
+
+    fn xGetCurrentGitRevision(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
+        const result = try std.ChildProcess.run(.{ .allocator = allocator, .argv = &.{ "git", "rev-parse", "HEAD" }, .cwd = cwd });
+        allocator.free(result.stderr);
+        if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
+        return result.stdout;
+    }
+
+    fn xEnsureGit(allocator: std.mem.Allocator) void {
+        const argv = &[_][]const u8{ "git", "--version" };
+        const result = std.ChildProcess.run(.{
+            .allocator = allocator,
+            .argv = argv,
+            .cwd = ".",
+        }) catch { // e.g. FileNotFound
+            std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
+            std.process.exit(1);
+        };
+        defer {
+            allocator.free(result.stderr);
+            allocator.free(result.stdout);
+        }
+        if (result.term.Exited != 0) {
+            std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
+            std.process.exit(1);
+        }
+    }
+
+    fn xIsEnvVarTruthy(allocator: std.mem.Allocator, name: []const u8) bool {
+        if (std.process.getEnvVarOwned(allocator, name)) |truthy| {
+            defer allocator.free(truthy);
+            if (std.mem.eql(u8, truthy, "true")) return true;
+            return false;
+        } else |_| {
+            return false;
+        }
+    }
+};
