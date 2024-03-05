@@ -76,23 +76,25 @@ pub fn build(b: *std.Build) !void {
         if (target.result.os.tag == .linux) module.link_libc = true;
 
         // TODO(Zig 2024.03): use b.lazyDependency
-        const mach_basisu_dep = b.dependency("mach_basisu", .{
-            .target = target,
-            .optimize = optimize,
-        });
-        const mach_freetype_dep = b.dependency("mach_freetype", .{
-            .target = target,
-            .optimize = optimize,
-        });
+        if (target.result.cpu.arch != .wasm32) {
+            const mach_basisu_dep = b.dependency("mach_basisu", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            const mach_freetype_dep = b.dependency("mach_freetype", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            module.addImport("mach-basisu", mach_basisu_dep.module("mach-basisu"));
+            module.addImport("mach-freetype", mach_freetype_dep.module("mach-freetype"));
+            module.addImport("mach-harfbuzz", mach_freetype_dep.module("mach-harfbuzz"));
+        }
         const mach_sysjs_dep = b.dependency("mach_sysjs", .{
             .target = target,
             .optimize = optimize,
         });
         const font_assets_dep = b.dependency("font_assets", .{});
 
-        module.addImport("mach-basisu", mach_basisu_dep.module("mach-basisu"));
-        module.addImport("mach-freetype", mach_freetype_dep.module("mach-freetype"));
-        module.addImport("mach-harfbuzz", mach_freetype_dep.module("mach-harfbuzz"));
         module.addImport("mach-sysjs", mach_sysjs_dep.module("mach-sysjs"));
         module.addImport("font-assets", font_assets_dep.module("font-assets"));
     }
@@ -131,43 +133,43 @@ pub fn build(b: *std.Build) !void {
     }
     if (want_sysaudio) {
         // Can build sysaudio examples if desired, then.
-        inline for ([_][]const u8{
-            "sine",
-            "record",
-        }) |example| {
-            const example_exe = b.addExecutable(.{
-                .name = "sysaudio-" ++ example,
-                .root_source_file = .{ .path = "src/sysaudio/examples/" ++ example ++ ".zig" },
+        if (target.result.cpu.arch != .wasm32) {
+            inline for ([_][]const u8{
+                "sine",
+                "record",
+            }) |example| {
+                const example_exe = b.addExecutable(.{
+                    .name = "sysaudio-" ++ example,
+                    .root_source_file = .{ .path = "src/sysaudio/examples/" ++ example ++ ".zig" },
+                    .target = target,
+                    .optimize = optimize,
+                });
+                example_exe.root_module.addImport("mach", module);
+                addPaths(&example_exe.root_module);
+                b.installArtifact(example_exe);
+
+                const example_compile_step = b.step("sysaudio-" ++ example, "Compile 'sysaudio-" ++ example ++ "' example");
+                example_compile_step.dependOn(b.getInstallStep());
+
+                const example_run_cmd = b.addRunArtifact(example_exe);
+                example_run_cmd.step.dependOn(b.getInstallStep());
+                if (b.args) |args| example_run_cmd.addArgs(args);
+
+                const example_run_step = b.step("run-sysaudio-" ++ example, "Run '" ++ example ++ "' example");
+                example_run_step.dependOn(&example_run_cmd.step);
+            }
+            const mach_objc_dep = b.dependency("mach_objc", .{
                 .target = target,
                 .optimize = optimize,
             });
-            example_exe.root_module.addImport("mach", module);
-            addPaths(&example_exe.root_module);
-            b.installArtifact(example_exe);
-
-            const example_compile_step = b.step("sysaudio-" ++ example, "Compile 'sysaudio-" ++ example ++ "' example");
-            example_compile_step.dependOn(b.getInstallStep());
-
-            const example_run_cmd = b.addRunArtifact(example_exe);
-            example_run_cmd.step.dependOn(b.getInstallStep());
-            if (b.args) |args| example_run_cmd.addArgs(args);
-
-            const example_run_step = b.step("run-sysaudio-" ++ example, "Run '" ++ example ++ "' example");
-            example_run_step.dependOn(&example_run_cmd.step);
+            module.addImport("objc", mach_objc_dep.module("mach-objc"));
+        } else {
+            const mach_sysjs_dep = b.dependency("mach_sysjs", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            module.addImport("sysjs", mach_sysjs_dep.module("mach-sysjs"));
         }
-
-        // Add sysaudio dependencies to the module.
-        // TODO(Zig 2024.03): use b.lazyDependency
-        const mach_sysjs_dep = b.dependency("mach_sysjs", .{
-            .target = target,
-            .optimize = optimize,
-        });
-        const mach_objc_dep = b.dependency("mach_objc", .{
-            .target = target,
-            .optimize = optimize,
-        });
-        module.addImport("sysjs", mach_sysjs_dep.module("mach-sysjs"));
-        module.addImport("objc", mach_objc_dep.module("mach-objc"));
 
         if (target.result.isDarwin()) {
             // Transitive dependencies, explicit linkage of these works around
@@ -485,9 +487,9 @@ pub fn link(core_builder: *std.Build, step: *std.Build.Step.Compile, mod: *std.B
 }
 
 fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
-    module.link_libc = true;
-
-    const target = module.resolved_target.?.result;
+    const resolved_target = module.resolved_target orelse b.host;
+    const target = resolved_target.result;
+    if (target.cpu.arch != .wasm32) module.link_libc = true;
     if (target.isDarwin()) {
         module.linkSystemLibrary("objc", .{});
         module.linkFramework("AppKit", .{});
@@ -501,24 +503,25 @@ fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
         module.linkSystemLibrary("d3dcompiler_47", .{});
         module.linkSystemLibrary("opengl32", .{});
         module.linkLibrary(b.dependency("direct3d_headers", .{
-            .target = module.resolved_target orelse b.host,
+            .target = resolved_target,
             .optimize = module.optimize.?,
         }).artifact("direct3d-headers"));
         @import("direct3d_headers").addLibraryPathToModule(module);
         module.linkLibrary(b.dependency("opengl_headers", .{
-            .target = module.resolved_target orelse b.host,
+            .target = resolved_target,
             .optimize = module.optimize.?,
         }).artifact("opengl-headers"));
     }
-
-    module.linkLibrary(b.dependency("spirv_cross", .{
-        .target = module.resolved_target orelse b.host,
-        .optimize = module.optimize.?,
-    }).artifact("spirv-cross"));
-    module.linkLibrary(b.dependency("spirv_tools", .{
-        .target = module.resolved_target orelse b.host,
-        .optimize = module.optimize.?,
-    }).artifact("spirv-opt"));
+    if (target.cpu.arch != .wasm32) {
+        module.linkLibrary(b.dependency("spirv_cross", .{
+            .target = resolved_target,
+            .optimize = module.optimize.?,
+        }).artifact("spirv-cross"));
+        module.linkLibrary(b.dependency("spirv_tools", .{
+            .target = resolved_target,
+            .optimize = module.optimize.?,
+        }).artifact("spirv-opt"));
+    }
 }
 
 pub fn addPaths(mod: *std.Build.Module) void {

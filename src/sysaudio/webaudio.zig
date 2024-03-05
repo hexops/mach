@@ -51,7 +51,7 @@ pub const Context = struct {
     pub fn refresh(ctx: *Context) !void {
         for (ctx.devices_info.list.items) |d|
             freeDevice(ctx.allocator, d);
-        ctx.devices_info.clear(ctx.allocator);
+        ctx.devices_info.clear();
 
         try ctx.devices_info.list.append(ctx.allocator, default_playback);
         ctx.devices_info.list.items[0].channels = try ctx.allocator.alloc(main.ChannelPosition, 2);
