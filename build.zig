@@ -1,49 +1,173 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const glfw = @import("mach_glfw");
-const sysaudio = @import("mach_sysaudio");
 const core = @import("mach_core");
 
-var _module: ?*std.Build.Module = null;
-
+/// Examples:
+///
+/// `zig build` -> builds all of Mach
+/// `zig build test` -> runs all tests
+///
+/// ## (optional) minimal dependency fetching
+///
+/// By default, all Mach dependencies will be added to the build. If you only depend on a specific
+/// part of Mach, then you can opt to have only the dependencies you need fetched as part of the
+/// build:
+///
+/// ```
+/// b.dependency("mach", .{
+///   .target = target,
+///   .optimize = optimize,
+///   .core = true,
+///   .sysaudio = true,
+/// });
+/// ```
+///
+/// The presense of `.core = true` and `.sysaudio = true` indicate Mach should add the dependencies
+/// required by `@import("mach").core` and `@import("mach").sysaudio` to the build. You can use this
+/// option with the following:
+///
+/// * core (also implies sysgpu)
+/// * sysaudio
+/// * sysgpu
+///
+/// Note that Zig's dead code elimination and, more importantly, lazy code evaluation means that
+/// you really only pay for the parts of `@import("mach")` that you use/reference.
 pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
+    const core_deps = b.option(bool, "core", "build core specifically");
+    const sysaudio_deps = b.option(bool, "sysaudio", "build sysaudio specifically");
+    const sysgpu_deps = b.option(bool, "sysgpu", "build sysgpu specifically");
 
-    const mach_core_dep = b.dependency("mach_core", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const mach_sysaudio_dep = b.dependency("mach_sysaudio", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const mach_basisu_dep = b.dependency("mach_basisu", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const mach_freetype_dep = b.dependency("mach_freetype", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const mach_sysjs_dep = b.dependency("mach_sysjs", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const font_assets_dep = b.dependency("font_assets", .{});
+    const want_mach = core_deps != null or sysaudio_deps != null or sysgpu_deps != null;
+    const want_core = want_mach or (core_deps orelse false);
+    const want_sysaudio = want_mach or (sysaudio_deps orelse false);
+    const want_sysgpu = want_mach or (sysgpu_deps orelse false);
+
+    const build_options = b.addOptions();
+    build_options.addOption(bool, "want_mach", want_mach);
+    build_options.addOption(bool, "want_core", want_core);
+    build_options.addOption(bool, "want_sysaudio", want_sysaudio);
+    build_options.addOption(bool, "want_sysgpu", want_sysgpu);
 
     const module = b.addModule("mach", .{
         .root_source_file = .{ .path = sdkPath("/src/main.zig") },
-        .imports = &.{
-            .{ .name = "mach-core", .module = mach_core_dep.module("mach-core") },
-            .{ .name = "mach-sysaudio", .module = mach_sysaudio_dep.module("mach-sysaudio") },
-            .{ .name = "mach-basisu", .module = mach_basisu_dep.module("mach-basisu") },
-            .{ .name = "mach-freetype", .module = mach_freetype_dep.module("mach-freetype") },
-            .{ .name = "mach-harfbuzz", .module = mach_freetype_dep.module("mach-harfbuzz") },
-            .{ .name = "mach-sysjs", .module = mach_sysjs_dep.module("mach-sysjs") },
-            .{ .name = "font-assets", .module = font_assets_dep.module("font-assets") },
-        },
+        .optimize = optimize,
+        .target = target,
     });
+    module.addImport("build-options", build_options.createModule());
+    if (want_mach) {
+        // TODO(Zig 2024.03): use b.lazyDependency
+        const mach_core_dep = b.dependency("mach_core", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        const mach_basisu_dep = b.dependency("mach_basisu", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        const mach_freetype_dep = b.dependency("mach_freetype", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        const mach_sysjs_dep = b.dependency("mach_sysjs", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        const font_assets_dep = b.dependency("font_assets", .{});
+
+        module.addImport("mach-core", mach_core_dep.module("mach-core"));
+        module.addImport("mach-basisu", mach_basisu_dep.module("mach-basisu"));
+        module.addImport("mach-freetype", mach_freetype_dep.module("mach-freetype"));
+        module.addImport("mach-harfbuzz", mach_freetype_dep.module("mach-harfbuzz"));
+        module.addImport("mach-sysjs", mach_sysjs_dep.module("mach-sysjs"));
+        module.addImport("font-assets", font_assets_dep.module("font-assets"));
+    }
+    if (want_sysaudio) {
+        // Can build sysaudio examples if desired, then.
+        inline for ([_][]const u8{
+            "sine",
+            "record",
+        }) |example| {
+            const example_exe = b.addExecutable(.{
+                .name = "sysaudio-" ++ example,
+                .root_source_file = .{ .path = "src/sysaudio/examples/" ++ example ++ ".zig" },
+                .target = target,
+                .optimize = optimize,
+            });
+            example_exe.root_module.addImport("mach", module);
+            addPaths(&example_exe.root_module);
+            b.installArtifact(example_exe);
+
+            const example_compile_step = b.step("sysaudio-" ++ example, "Compile 'sysaudio-" ++ example ++ "' example");
+            example_compile_step.dependOn(b.getInstallStep());
+
+            const example_run_cmd = b.addRunArtifact(example_exe);
+            example_run_cmd.step.dependOn(b.getInstallStep());
+            if (b.args) |args| example_run_cmd.addArgs(args);
+
+            const example_run_step = b.step("run-sysaudio-" ++ example, "Run '" ++ example ++ "' example");
+            example_run_step.dependOn(&example_run_cmd.step);
+        }
+
+        // Add sysaudio dependencies to the module.
+        // TODO(Zig 2024.03): use b.lazyDependency
+        const mach_sysjs_dep = b.dependency("mach_sysjs", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        const mach_objc_dep = b.dependency("mach_objc", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        module.addImport("sysjs", mach_sysjs_dep.module("mach-sysjs"));
+        module.addImport("objc", mach_objc_dep.module("mach-objc"));
+
+        if (target.result.isDarwin()) {
+            // Transitive dependencies, explicit linkage of these works around
+            // ziglang/zig#17130
+            module.linkSystemLibrary("objc", .{});
+
+            // Direct dependencies
+            module.linkFramework("AudioToolbox", .{});
+            module.linkFramework("CoreFoundation", .{});
+            module.linkFramework("CoreAudio", .{});
+        }
+        if (target.result.os.tag == .linux) {
+            // TODO(Zig 2024.03): use b.lazyDependency
+            const linux_audio_headers_dep = b.dependency("linux_audio_headers", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            module.link_libc = true;
+            module.linkLibrary(linux_audio_headers_dep.artifact("linux-audio-headers"));
+
+            // TODO: for some reason this is not functional, a Zig bug (only when using this Zig package
+            // externally):
+            //
+            // module.addCSourceFile(.{
+            //     .file = .{ .path = "src/pipewire/sysaudio.c" },
+            //     .flags = &.{"-std=gnu99"},
+            // });
+            //
+            // error: unable to check cache: stat file '/Volumes/data/hexops/mach-flac/zig-cache//Volumes/data/hexops/mach-flac/src/pipewire/sysaudio.c' failed: FileNotFound
+            //
+            // So instead we do this:
+            const lib = b.addStaticLibrary(.{
+                .name = "sysaudio-pipewire",
+                .target = target,
+                .optimize = optimize,
+            });
+            lib.linkLibC();
+            lib.addCSourceFile(.{
+                .file = .{ .path = "src/pipewire/sysaudio.c" },
+                .flags = &.{"-std=gnu99"},
+            });
+            lib.linkLibrary(linux_audio_headers_dep.artifact("linux-audio-headers"));
+            module.linkLibrary(lib);
+        }
+    }
 
     if (target.result.cpu.arch != .wasm32) {
         // Creates a step for unit testing. This only builds the test executable
@@ -57,6 +181,7 @@ pub fn build(b: *std.Build) !void {
         while (iter.next()) |e| {
             unit_tests.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
         }
+        addPaths(&unit_tests.root_module);
 
         // Exposes a `test` step to the `zig build --help` menu, providing a way for the user to
         // request running the unit tests.
@@ -114,11 +239,6 @@ pub const App = struct {
         var deps = std.ArrayList(std.Build.Module.Import).init(app_builder.allocator);
         if (options.deps) |v| try deps.appendSlice(v);
         try deps.append(.{ .name = "mach", .module = mach_mod });
-        const mach_sysaudio_dep = mach_builder.dependency("mach_sysaudio", .{
-            .target = options.target,
-            .optimize = options.optimize,
-        });
-        try deps.append(.{ .name = "mach-sysaudio", .module = mach_sysaudio_dep.module("mach-sysaudio") });
 
         const mach_core_dep = mach_builder.dependency("mach_core", .{
             .target = options.target,
@@ -154,9 +274,14 @@ pub const App = struct {
                 .target = app.compile.root_module.resolved_target.?,
                 .optimize = app.compile.root_module.optimize.?,
             }).artifact("mach-basisu"));
+            addPaths(app.compile);
         }
     }
 };
+
+pub fn addPaths(mod: *std.Build.Module) void {
+    if (mod.resolved_target.?.result.isDarwin()) @import("xcode_frameworks").addPaths(mod);
+}
 
 fn sdkPath(comptime suffix: []const u8) []const u8 {
     if (suffix[0] != '/') @compileError("suffix must be an absolute path");

@@ -1,18 +1,19 @@
-// Core re-exports
-pub const core = @import("mach-core");
-pub const Timer = core.Timer;
+const build_options = @import("build-options");
 
-// Mach packages
-pub const gpu = core.gpu;
-pub const sysjs = @import("mach-sysjs");
-pub const sysaudio = @import("mach-sysaudio");
+// Core re-exports
+pub const core = if (build_options.want_core) @import("mach-core") else struct {};
+pub const Timer = if (build_options.want_core) core.Timer else struct {};
+pub const gpu = if (build_options.want_core) core.gpu else struct {};
+pub const sysjs = if (build_options.want_core) @import("mach-sysjs") else struct {};
 
 // Mach standard library
 pub const ecs = @import("ecs/main.zig");
 pub const gamemode = @import("gamemode.zig");
-pub const gfx = @import("gfx/main.zig");
+pub const gfx = if (build_options.want_mach) @import("gfx/main.zig") else struct {};
 pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
+
+pub const sysaudio = if (build_options.want_sysaudio) @import("sysaudio/main.zig") else struct {};
 
 // Engine exports
 pub const App = @import("engine.zig").App;
