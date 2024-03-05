@@ -127,7 +127,27 @@ pub fn build(b: *std.Build) !void {
             module.addImport("mach-glfw", mach_glfw_dep.module("mach-glfw"));
             module.linkLibrary(x11_headers_dep.artifact("x11-headers"));
             module.linkLibrary(wayland_headers_dep.artifact("wayland-headers"));
-            module.addCSourceFile(.{ .file = .{ .path = "src/core/platform/wayland/wayland.c" } });
+
+            // TODO: for some reason this is not functional, a Zig bug (only when using this Zig package
+            // externally):
+            //
+            // module.addCSourceFile(.{ .file = .{ .path = sdkPath("src/core/platform/wayland/wayland.c" } });
+            //
+            // error: unable to check cache: stat file '/Volumes/data/hexops/mach-core-starter-project/zig-cache//Volumes/data/hexops/mach-core-starter-project/src/core/platform/wayland/wayland.c' failed: FileNotFound
+            //
+            // So instead we do this:
+            const lib = b.addStaticLibrary(.{
+                .name = "core-wayland",
+                .target = target,
+                .optimize = optimize,
+            });
+            lib.addCSourceFile(.{
+                .file = .{ .path = "src/core/platform/wayland/wayland.c" },
+            });
+            lib.linkLibC();
+            lib.linkLibrary(x11_headers_dep.artifact("x11-headers"));
+            lib.linkLibrary(wayland_headers_dep.artifact("wayland-headers"));
+            module.linkLibrary(lib);
         }
         try buildCoreExamples(b, optimize, target, module, core_platform);
     }
