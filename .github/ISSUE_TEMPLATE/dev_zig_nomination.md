@@ -120,19 +120,9 @@ These projects have dependencies on other projects. We update them in the exact 
 * [ ] mach-gpu, which depends on:
   * mach-glfw
   * mach-gpu-dawn
-* [ ] mach-sysgpu, which depends on:
-  * vulkan-zig-generated
-  * mach-gpu
-  * mach-objc
-  * direct3d-headers
-  * opengl-headers
-  * xcode-frameworks
-  * spirv-cross
-  * spirv-tools
 * [ ] mach-core, which depends on:
   * build.zig version check
   * mach-core-example-assets
-  * mach-sysgpu
   * mach-gpu
   * mach-glfw
 * [ ] mach-core-starter-project, which depends on:

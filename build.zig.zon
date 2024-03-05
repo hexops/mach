@@ -43,5 +43,25 @@
             .url = "https://pkg.machengine.org/mach-objc/2b2a698e7f019e1599edb3eda4a974fa1fb07483.tar.gz",
             .hash = "1220d708af437c2076d1a0482ac745b3c4507f4f41cc9f248ee78a3c297c41ee7c33",
         },
+        .vulkan_zig_generated = .{
+            .url = "https://pkg.machengine.org/vulkan-zig-generated/378bed4e37007cef95b46ad9fadd6e192827ebba.tar.gz",
+            .hash = "1220ccb48181cb849b64363142b78182161b3662959d81a2463df009612011fa5043",
+        },
+        .direct3d_headers = .{
+            .url = "https://pkg.machengine.org/direct3d-headers/74e2cdaf3a7f9485155bd22ea8e6bc5442d3cddb.tar.gz",
+            .hash = "1220d3db004f3ae6ed6e4ad00e59e1b88c4090a152ea19c21ce6e4ead5b702c980e2",
+        },
+        .opengl_headers = .{
+            .url = "https://pkg.machengine.org/opengl-headers/5e816d785ebe841506542b2a2ea95aa8ec943fbf.tar.gz",
+            .hash = "122039881e49baf86d75f6089ba126cbabc32f162fb2a27c1ee3ae906823b1f67d29",
+        },
+        .spirv_cross = .{
+            .url = "https://pkg.machengine.org/SPIRV-Cross/9866e847a3b01633db38458b1b7429750802a250.tar.gz",
+            .hash = "1220922b722e291ae7f432b3a144863d76bd01e7d1f0f05ca883f3e09e48306103aa",
+        },
+        .spirv_tools = .{
+            .url = "https://pkg.machengine.org/SPIRV-Tools/23092f85a721e5297f0f704d95bbd263d5a7a771.tar.gz",
+            .hash = "1220ec815dfda171b5bf65f6078932d79e034508e9ecef51be660f6a89cc7c70aef9",
+        },
     },
 }

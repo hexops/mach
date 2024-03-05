@@ -53,6 +53,14 @@ jobs:
         run: zig build -Dsysgpu test
       - name: test (specific deps only)
         run: zig build -Dcore -Dsysaudio -Dsysgpu test
+      - name: 'sysgpu: validate spirv code generation'
+        run: |
+          wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
+          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list http://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
+          sudo apt update
+          sudo apt install vulkan-sdk spirv-tools
+      - name: 'sysgpu: validate spirv output'
+        run: bash ./src/sysgpu/tools/validate_spirv.sh
   x86_64-windows:
     runs-on: windows-latest
     # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push
