@@ -19,10 +19,6 @@
             .url = "https://pkg.machengine.org/mach-basisu/5a68105a5e503c7183aab481b7ec6ae16b996943.tar.gz",
             .hash = "12204098c8d8d15a687068a3c0b15fe95d20f8fe074531e34e78f9dfe518cf86a67c",
         },
-        .mach_sysaudio = .{
-            .url = "https://pkg.machengine.org/mach-sysaudio/ce8ab30dd300b822224d14997c58c06520b642c9.tar.gz",
-            .hash = "12203f0d4afc83bae8571434ff48a459732c15c9542df13e0a97baedc73212d355a1",
-        },
         .mach_freetype = .{
             .url = "https://pkg.machengine.org/mach-freetype/dc4a5d8ce14f8678f35bdaf197303091e22b1f27.tar.gz",
             .hash = "122070070dd2c402d94c279d64d4a4d154691ad49f46fa2c24ed7c6e4e4f5c531477",
@@ -34,6 +30,18 @@
         .font_assets = .{
             .url = "https://github.com/hexops/font-assets/archive/6b43c160451e8fa5c64620ffb614929feacf2f5d.tar.gz",
             .hash = "12202039304f0603a9706105788e450fd4f901c3e20eca28a52a2173879b14c606c7",
+        },
+        .linux_audio_headers = .{
+            .url = "https://pkg.machengine.org/linux-audio-headers/302c41dc4ab5fa292c3062e9e0d26c7f62652740.tar.gz",
+            .hash = "1220dc84528a0e298467bec65ab158426306961f08e7555eab9eef684ef126893689",
+        },
+        .xcode_frameworks = .{
+            .url = "https://pkg.machengine.org/xcode-frameworks/e7c2abbe28efbb5ae7f04e6c1ac6578a6d75bb67.tar.gz",
+            .hash = "1220432df3c74dc28bd6cc299e5c8317bc65a95219e6ebf40450c157d8c7a3ac54c0",
+        },
+        .mach_objc = .{
+            .url = "https://pkg.machengine.org/mach-objc/2b2a698e7f019e1599edb3eda4a974fa1fb07483.tar.gz",
+            .hash = "1220d708af437c2076d1a0482ac745b3c4507f4f41cc9f248ee78a3c297c41ee7c33",
         },
     },
 }
