@@ -1331,7 +1331,7 @@ fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!
 }
 
 fn initLinuxGamemode() bool {
-    const gamemode = @import("mach-gamemode");
+    const gamemode = @import("../../../main.zig").gamemode;
     gamemode.start();
     if (!gamemode.isActive()) return false;
     log.info("gamemode: activated", .{});
@@ -1339,7 +1339,7 @@ fn initLinuxGamemode() bool {
 }
 
 fn deinitLinuxGamemode() void {
-    const gamemode = @import("mach-gamemode");
+    const gamemode = @import("../../../main.zig").gamemode;
     gamemode.stop();
 }
 
