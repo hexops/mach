@@ -175,6 +175,8 @@ pub fn build(b: *std.Build) !void {
             // Transitive dependencies, explicit linkage of these works around
             // ziglang/zig#17130
             module.linkSystemLibrary("objc", .{});
+            module.linkFramework("CoreImage", .{});
+            module.linkFramework("CoreVideo", .{});
 
             // Direct dependencies
             module.linkFramework("AudioToolbox", .{});
