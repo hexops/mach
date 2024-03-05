@@ -375,7 +375,7 @@ pub const CoreApp = struct {
             res_dirs: ?[]const []const u8 = null,
             watch_paths: ?[]const []const u8 = null,
             mach_mod: ?*std.Build.Module = null,
-            platform: ?Platform,
+            platform: ?Platform = null,
         },
     ) !CoreApp {
         const target = options.target.result;
