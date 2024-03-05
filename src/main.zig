@@ -1,7 +1,7 @@
 const build_options = @import("build-options");
 const builtin = @import("builtin");
 
-// Core re-exports
+// Core
 pub const core = if (build_options.want_core) @import("mach-core") else struct {};
 pub const Timer = if (build_options.want_core) core.Timer else struct {};
 pub const gpu = if (build_options.want_core) core.gpu else struct {};
@@ -16,6 +16,7 @@ pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
 
 pub const sysaudio = if (build_options.want_sysaudio) @import("sysaudio/main.zig") else struct {};
+pub const sysgpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig") else struct {};
 
 // Engine exports
 pub const App = @import("engine.zig").App;
@@ -30,6 +31,7 @@ test {
     _ = core;
     _ = gpu;
     _ = sysaudio;
+    _ = sysgpu;
     _ = gfx;
     _ = math;
     _ = testing;

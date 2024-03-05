@@ -3,6 +3,15 @@ const builtin = @import("builtin");
 const glfw = @import("mach_glfw");
 const core = @import("mach_core");
 
+pub const SysgpuBackend = enum {
+    default,
+    webgpu,
+    d3d12,
+    metal,
+    vulkan,
+    opengl,
+};
+
 /// Examples:
 ///
 /// `zig build` -> builds all of Mach
@@ -39,17 +48,19 @@ pub fn build(b: *std.Build) !void {
     const core_deps = b.option(bool, "core", "build core specifically");
     const sysaudio_deps = b.option(bool, "sysaudio", "build sysaudio specifically");
     const sysgpu_deps = b.option(bool, "sysgpu", "build sysgpu specifically");
+    const sysgpu_backend = b.option(SysgpuBackend, "sysgpu_backend", "sysgpu API backend") orelse .default;
 
     const want_mach = core_deps != null or sysaudio_deps != null or sysgpu_deps != null;
     const want_core = want_mach or (core_deps orelse false);
     const want_sysaudio = want_mach or (sysaudio_deps orelse false);
-    const want_sysgpu = want_mach or (sysgpu_deps orelse false);
+    const want_sysgpu = want_mach or want_core or (sysgpu_deps orelse false);
 
     const build_options = b.addOptions();
     build_options.addOption(bool, "want_mach", want_mach);
     build_options.addOption(bool, "want_core", want_core);
     build_options.addOption(bool, "want_sysaudio", want_sysaudio);
     build_options.addOption(bool, "want_sysgpu", want_sysgpu);
+    build_options.addOption(SysgpuBackend, "sysgpu_backend", sysgpu_backend);
 
     const module = b.addModule("mach", .{
         .root_source_file = .{ .path = sdkPath("/src/main.zig") },
@@ -171,6 +182,31 @@ pub fn build(b: *std.Build) !void {
             module.linkLibrary(lib);
         }
     }
+    if (want_sysgpu) {
+        // TODO(Zig 2024.03): use b.lazyDependency
+        const vulkan_dep = b.dependency("vulkan_zig_generated", .{});
+        const mach_objc_dep = b.dependency("mach_objc", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        module.addImport("vulkan", vulkan_dep.module("vulkan-zig-generated"));
+        module.addImport("objc", mach_objc_dep.module("mach-objc"));
+        linkSysgpu(b, module);
+
+        const lib = b.addStaticLibrary(.{
+            .name = "mach-sysgpu",
+            .root_source_file = b.addWriteFiles().add("empty.c", ""),
+            .target = target,
+            .optimize = optimize,
+        });
+        var iter = module.import_table.iterator();
+        while (iter.next()) |e| {
+            lib.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
+        }
+        linkSysgpu(b, &lib.root_module);
+        addPaths(&lib.root_module);
+        b.installArtifact(lib);
+    }
 
     if (target.result.cpu.arch != .wasm32) {
         // Creates a step for unit testing. This only builds the test executable
@@ -202,6 +238,8 @@ pub fn build(b: *std.Build) !void {
         // });
         // const docs_step = b.step("docs", "Generate API docs");
         // docs_step.dependOn(&install_docs.step);
+
+        if (want_sysgpu) linkSysgpu(b, &unit_tests.root_module);
     }
 }
 
@@ -281,6 +319,43 @@ pub const App = struct {
         }
     }
 };
+
+fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
+    module.link_libc = true;
+
+    const target = module.resolved_target.?.result;
+    if (target.isDarwin()) {
+        module.linkSystemLibrary("objc", .{});
+        module.linkFramework("AppKit", .{});
+        module.linkFramework("CoreGraphics", .{});
+        module.linkFramework("Foundation", .{});
+        module.linkFramework("Metal", .{});
+        module.linkFramework("QuartzCore", .{});
+    }
+    if (target.os.tag == .windows) {
+        module.linkSystemLibrary("d3d12", .{});
+        module.linkSystemLibrary("d3dcompiler_47", .{});
+        module.linkSystemLibrary("opengl32", .{});
+        module.linkLibrary(b.dependency("direct3d_headers", .{
+            .target = module.resolved_target orelse b.host,
+            .optimize = module.optimize.?,
+        }).artifact("direct3d-headers"));
+        @import("direct3d_headers").addLibraryPathToModule(module);
+        module.linkLibrary(b.dependency("opengl_headers", .{
+            .target = module.resolved_target orelse b.host,
+            .optimize = module.optimize.?,
+        }).artifact("opengl-headers"));
+    }
+
+    module.linkLibrary(b.dependency("spirv_cross", .{
+        .target = module.resolved_target orelse b.host,
+        .optimize = module.optimize.?,
+    }).artifact("spirv-cross"));
+    module.linkLibrary(b.dependency("spirv_tools", .{
+        .target = module.resolved_target orelse b.host,
+        .optimize = module.optimize.?,
+    }).artifact("spirv-opt"));
+}
 
 pub fn addPaths(mod: *std.Build.Module) void {
     if (mod.resolved_target.?.result.isDarwin()) @import("xcode_frameworks").addPaths(mod);
