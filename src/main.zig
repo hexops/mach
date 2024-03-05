@@ -2,7 +2,7 @@ const build_options = @import("build-options");
 const builtin = @import("builtin");
 
 // Core
-pub const core = if (build_options.want_core) @import("mach-core") else struct {};
+pub const core = if (build_options.want_core) @import("core/main.zig") else struct {};
 pub const Timer = if (build_options.want_core) core.Timer else struct {};
 pub const gpu = if (build_options.want_core) core.gpu else struct {};
 pub const sysjs = if (build_options.want_core) @import("mach-sysjs") else struct {};

@@ -142,6 +142,5 @@ These projects have dependencies on other projects. We update them in the exact 
   * mach-freetype
 * [ ] mach-editor, which depends on:
   * mach
-  * mach-sysgpu
   * spirv-cross
   * spirv-tools
