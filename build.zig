@@ -97,6 +97,8 @@ pub fn build(b: *std.Build) !void {
 
         module.addImport("mach-sysjs", mach_sysjs_dep.module("mach-sysjs"));
         module.addImport("font-assets", font_assets_dep.module("font-assets"));
+
+        try buildExamples(b, optimize, target, module);
     }
     if (want_core) {
         const mach_gpu_dep = b.dependency("mach_gpu", .{
@@ -325,7 +327,7 @@ pub const App = struct {
         if (options.deps) |v| try deps.appendSlice(v);
         try deps.append(.{ .name = "mach", .module = mach_mod });
 
-        const app = try CoreApp.init(app_builder, mach_builder.builder, .{
+        const app = try CoreApp.init(app_builder, mach_builder, .{
             .name = options.name,
             .src = options.src,
             .target = options.target,
@@ -355,7 +357,7 @@ pub const App = struct {
                 .target = app.compile.root_module.resolved_target.?,
                 .optimize = app.compile.root_module.optimize.?,
             }).artifact("mach-basisu"));
-            addPaths(app.compile);
+            addPaths(&app.compile.root_module);
         }
     }
 };
@@ -384,7 +386,7 @@ pub const CoreApp = struct {
 
     pub fn init(
         app_builder: *std.Build,
-        core_builder: *std.Build,
+        mach_builder: *std.Build,
         options: struct {
             name: []const u8,
             src: []const u8,
@@ -482,7 +484,7 @@ pub const CoreApp = struct {
 
         // Link dependencies
         if (platform != .web) {
-            link(core_builder, compile, &compile.root_module);
+            link(mach_builder, compile, &compile.root_module);
         }
 
         const run = app_builder.addRunArtifact(compile);
@@ -501,9 +503,9 @@ pub const CoreApp = struct {
 };
 
 // TODO(sysgpu): remove this once we switch to sysgpu fully
-pub fn link(core_builder: *std.Build, step: *std.Build.Step.Compile, mod: *std.Build.Module) void {
-    gpu.link(core_builder.dependency("mach_gpu", .{
-        .target = step.root_module.resolved_target orelse core_builder.host,
+pub fn link(mach_builder: *std.Build, step: *std.Build.Step.Compile, mod: *std.Build.Module) void {
+    gpu.link(mach_builder.dependency("mach_gpu", .{
+        .target = step.root_module.resolved_target orelse mach_builder.host,
         .optimize = step.root_module.optimize.?,
     }).builder, step, mod, .{}) catch unreachable;
 }
@@ -565,6 +567,128 @@ comptime {
     }
 }
 
+fn buildExamples(
+    b: *std.Build,
+    optimize: std.builtin.OptimizeMode,
+    target: std.Build.ResolvedTarget,
+    mach_mod: *std.Build.Module,
+) !void {
+    try ensureDependencies(b.allocator);
+
+    const Dependency = enum {
+        assets,
+        model3d,
+        freetype,
+        zigimg,
+
+        pub fn dependency(
+            dep: @This(),
+            b2: *std.Build,
+            target2: std.Build.ResolvedTarget,
+            optimize2: std.builtin.OptimizeMode,
+        ) std.Build.Module.Import {
+            const path = switch (dep) {
+                .zigimg => "src/core/examples/libs/zigimg/zigimg.zig",
+                .assets => return std.Build.Module.Import{
+                    .name = "assets",
+                    .module = b2.dependency("mach_example_assets", .{
+                        .target = target2,
+                        .optimize = optimize2,
+                    }).module("mach-example-assets"),
+                },
+                .model3d => return std.Build.Module.Import{
+                    .name = "model3d",
+                    .module = b2.dependency("mach_model3d", .{
+                        .target = target2,
+                        .optimize = optimize2,
+                    }).module("mach-model3d"),
+                },
+                .freetype => return std.Build.Module.Import{
+                    .name = "freetype",
+                    .module = b2.dependency("mach_freetype", .{
+                        .target = target2,
+                        .optimize = optimize2,
+                    }).module("mach-freetype"),
+                },
+            };
+            return std.Build.Module.Import{
+                .name = @tagName(dep),
+                .module = b2.createModule(.{ .root_source_file = .{ .path = path } }),
+            };
+        }
+    };
+
+    inline for ([_]struct {
+        name: []const u8,
+        deps: []const Dependency = &.{},
+        std_platform_only: bool = false,
+        has_assets: bool = false,
+    }{
+        .{ .name = "sysaudio", .deps = &.{} },
+        .{
+            .name = "gkurve",
+            .deps = &.{ .zigimg, .freetype, .assets },
+            .std_platform_only = true,
+        },
+        .{ .name = "custom-renderer", .deps = &.{} },
+        .{
+            .name = "sprite",
+            .deps = &.{ .zigimg, .assets },
+        },
+        .{
+            .name = "text",
+            .deps = &.{ .freetype, .assets },
+        },
+        .{
+            .name = "glyphs",
+            .deps = &.{ .freetype, .assets },
+        },
+    }) |example| {
+        // FIXME: this is workaround for a problem that some examples
+        // (having the std_platform_only=true field) as well as zigimg
+        // uses IO and depends on gpu-dawn which is not supported
+        // in freestanding environments. So break out of this loop
+        // as soon as any such examples is found. This does means that any
+        // example which works on wasm should be placed before those who dont.
+        if (example.std_platform_only)
+            if (target.result.cpu.arch == .wasm32)
+                break;
+
+        var deps = std.ArrayList(std.Build.Module.Import).init(b.allocator);
+        for (example.deps) |d| try deps.append(d.dependency(b, target, optimize));
+        const app = try App.init(
+            b,
+            .{
+                .name = example.name,
+                .src = "examples/" ++ example.name ++ "/main.zig",
+                .target = target,
+                .optimize = optimize,
+                .deps = deps.items,
+                .res_dirs = if (example.has_assets) &.{example.name ++ "/assets"} else null,
+                .watch_paths = &.{"examples/" ++ example.name},
+                .mach_builder = b,
+                .mach_mod = mach_mod,
+            },
+        );
+
+        try app.link();
+
+        for (example.deps) |dep| switch (dep) {
+            .model3d => app.compile.linkLibrary(b.dependency("mach_model3d", .{
+                .target = target,
+                .optimize = optimize,
+            }).artifact("mach-model3d")),
+            else => {},
+        };
+
+        const compile_step = b.step(example.name, "Compile " ++ example.name);
+        compile_step.dependOn(&app.install.step);
+
+        const run_step = b.step("run-" ++ example.name, "Run " ++ example.name);
+        run_step.dependOn(&app.run.step);
+    }
+}
+
 fn buildCoreExamples(
     b: *std.Build,
     optimize: std.builtin.OptimizeMode,
@@ -589,10 +713,10 @@ fn buildCoreExamples(
                 .zigimg => "src/core/examples/libs/zigimg/zigimg.zig",
                 .assets => return std.Build.Module.Import{
                     .name = "assets",
-                    .module = b2.dependency("mach_core_example_assets", .{
+                    .module = b2.dependency("mach_example_assets", .{
                         .target = target2,
                         .optimize = optimize2,
-                    }).module("mach-core-example-assets"),
+                    }).module("mach-example-assets"),
                 },
                 .model3d => return std.Build.Module.Import{
                     .name = "model3d",

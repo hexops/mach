@@ -75,9 +75,9 @@
             .url = "https://pkg.machengine.org/wayland-headers/7be286aec43c92bf3a88dad33fe63ce05c65aa28.tar.gz",
             .hash = "1220228ca2235b82b3cf5d58995e34ac862afd18f1390c09b69a03f2a5ec06ff7701",
         },
-        .mach_core_example_assets = .{
-            .url = "https://pkg.machengine.org/mach-core-example-assets/4beb172383b0012b256a26c59bf7bb97426436b8.tar.gz",
-            .hash = "122038828e74ad3854361cefbceab0a1d7c2db80c9864772693b8b47ebc6c82d3ccb",
+        .mach_example_assets = .{
+            .url = "https://pkg.machengine.org/mach-example-assets/6a3d4e9224b095fcbdffb093d995c5b9a229fe33.tar.gz",
+            .hash = "12206ef714c72a3e934990e5fbe7160824c5bad0a917a42cdd5ba31f7c85142f18d6",
         },
         .mach_model3d = .{
             .url = "https://pkg.machengine.org/mach-model3d/04a493eb6c1a46b7f06f862b5e4d6bfcebad4cb5.tar.gz",
