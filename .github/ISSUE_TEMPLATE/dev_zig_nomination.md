@@ -64,7 +64,7 @@ These projects have zero `build.zig.zon` dependencies, we update them first - an
 * [ ] opus
 * [ ] flac
 * [ ] ogg
-* [ ] mach-core-example-assets
+* [ ] mach-example-assets
 * [ ] font-assets
 
 ## Second-order projects
@@ -72,7 +72,7 @@ These projects have zero `build.zig.zon` dependencies, we update them first - an
 These projects have dependencies on other projects. We update them in the exact order below, top-to-bottom.
 
 * [ ] spirv-tools, which depends on:
-  * External package https://github.com/KhronosGroup/SPIRV-Headers 
+  * External package https://github.com/KhronosGroup/SPIRV-Headers
 * [ ] opusenc, which depends on:
   * opus
 * [ ] freetype, which depends on:
@@ -99,10 +99,6 @@ These projects have dependencies on other projects. We update them in the exact 
   * freetype
   * harfbuzz
   * font-assets
-* [ ] mach-sysaudio, which depends on:
-  * mach-sysjs
-  * linux-audio-headers
-  * xcode-frameworks
 * [ ] mach-flac, which depends on:
   * flac
   * mach-sysaudio
@@ -120,26 +116,29 @@ These projects have dependencies on other projects. We update them in the exact 
 * [ ] mach-gpu, which depends on:
   * mach-glfw
   * mach-gpu-dawn
-* [ ] mach-core, which depends on:
-  * build.zig version check
-  * mach-core-example-assets
-  * mach-gpu
-  * mach-glfw
 * [ ] mach-core-starter-project, which depends on:
   * mach-core
 * [ ] mach, which depends on:
   * .zigversion
   * build.zig version check
-  * mach-core
   * mach-basisu
-  * mach-sysaudio
   * mach-freetype
-  * mach-sysjs
   * font-assets
-* [ ] mach-examples, which depends on:
-  * zigimg
-  * mach
-  * mach-freetype
+  * mach-sysjs
+  * mach-gpu
+  * mach-glfw
+  * mach-objc
+  * mach-example-assets
+  * mach-model3d
+  * spirv-cross
+  * spirv-tools
+  * xcode-frameworks
+  * vulkan-zig-generated
+  * direct3d-headers
+  * opengl-headers
+  * x11-headers
+  * linux-audio-headers
+  * wayland-headers
 * [ ] mach-editor, which depends on:
   * mach
   * spirv-cross
