@@ -24,7 +24,6 @@ You may have been linked to this issue because you sent a pull request to update
 * [ ] "First-order projects" below (which have zero build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
 * [ ] "Second-order projects" below (which have build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
 * [ ] The mach-glfw build.zig version check has been updated: https://github.com/hexops/mach-glfw/blob/main/build.zig
-* [ ] The mach-core build.zig version check has been updated: https://github.com/hexops/mach-core/blob/main/build.zig#L222-L227
 * [ ] https://machengine.org/core/migrations/ has a new entry for Core users looking to update, or changes are not needed.
 * [ ] The `.zigversion` file https://github.com/hexops/mach/blob/main/.zigversion has been updated.
 * [ ] The mach build.zig version check has been updated: https://github.com/hexops/mach/blob/main/build.zig#L187-L192
@@ -117,7 +116,7 @@ These projects have dependencies on other projects. We update them in the exact 
   * mach-glfw
   * mach-gpu-dawn
 * [ ] mach-core-starter-project, which depends on:
-  * mach-core
+  * mach
 * [ ] mach, which depends on:
   * .zigversion
   * build.zig version check
