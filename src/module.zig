@@ -1,10 +1,10 @@
 const std = @import("std");
 const testing = std.testing;
-const StructField = std.builtin.Type.StructField;
 
-const EntityID = @import("entities.zig").EntityID;
+// TODO: eliminate dependency on ECS here.
+const EntityID = @import("ecs/entities.zig").EntityID;
 
-/// Verifies that T matches the expected layout of an ECS module
+/// Verifies that T matches the basic layout of a mach.Module
 pub fn Module(comptime T: type) type {
     if (@typeInfo(T) != .Struct) @compileError("Module must be a struct type. Found:" ++ @typeName(T));
     if (!@hasDecl(T, "name")) @compileError("Module must have `pub const name = .foobar;`");
@@ -16,7 +16,7 @@ pub fn Module(comptime T: type) type {
 }
 
 fn NamespacedComponents(comptime modules: anytype) type {
-    var fields: []const StructField = &[0]StructField{};
+    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     inline for (modules) |M| {
         const components = if (@hasDecl(M, "components")) M.components else struct {};
         fields = fields ++ [_]std.builtin.Type.StructField{.{
@@ -51,7 +51,7 @@ fn NamespacedComponents(comptime modules: anytype) type {
 }
 
 fn NamespacedState(comptime modules: anytype) type {
-    var fields: []const StructField = &[0]StructField{};
+    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     inline for (modules) |M| {
         const state_fields = std.meta.fields(M);
         const State = if (state_fields.len > 0) @Type(.{

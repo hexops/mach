@@ -12,14 +12,13 @@
 //!
 
 const std = @import("std");
+const mach = @import("../main.zig");
 const testing = std.testing;
 
 pub const EntityID = @import("entities.zig").EntityID;
 pub const Entities = @import("entities.zig").Entities;
 pub const Archetype = @import("Archetype.zig");
 
-pub const Module = @import("modules.zig").Module;
-pub const Modules = @import("modules.zig").Modules;
 pub const World = @import("systems.zig").World;
 
 // TODO:
@@ -36,7 +35,6 @@ test "inclusion" {
     std.testing.refAllDeclsRecursive(@import("query.zig"));
     std.testing.refAllDeclsRecursive(@import("StringTable.zig"));
     std.testing.refAllDeclsRecursive(@import("systems.zig"));
-    std.testing.refAllDeclsRecursive(@import("modules.zig"));
 }
 
 test "example" {
@@ -44,7 +42,7 @@ test "example" {
 
     comptime var Renderer = type;
     comptime var Physics = type;
-    Physics = Module(struct {
+    Physics = mach.Module(struct {
         pointer: u8,
 
         pub const name = .physics;
@@ -57,7 +55,7 @@ test "example" {
         }
     });
 
-    Renderer = Module(struct {
+    Renderer = mach.Module(struct {
         pub const name = .renderer;
         pub const components = struct {
             pub const id = u16;
