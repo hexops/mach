@@ -2,13 +2,13 @@ const std = @import("std");
 const mem = std.mem;
 const StructField = std.builtin.Type.StructField;
 
+const mach = @import("../main.zig");
 const Entities = @import("entities.zig").Entities;
-const Modules = @import("modules.zig").Modules;
 const EntityID = @import("entities.zig").EntityID;
 const comp = @import("comptime.zig");
 
 pub fn World(comptime mods: anytype) type {
-    const modules = Modules(mods);
+    const modules = mach.Modules(mods);
 
     return struct {
         allocator: mem.Allocator,
