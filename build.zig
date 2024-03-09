@@ -537,14 +537,15 @@ fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
         }).artifact("opengl-headers"));
     }
     if (target.cpu.arch != .wasm32) {
-        module.linkLibrary(b.dependency("spirv_cross", .{
-            .target = resolved_target,
-            .optimize = module.optimize.?,
-        }).artifact("spirv-cross"));
-        module.linkLibrary(b.dependency("spirv_tools", .{
-            .target = resolved_target,
-            .optimize = module.optimize.?,
-        }).artifact("spirv-opt"));
+        // TODO: spirv-cross / spirv-tools support
+        // module.linkLibrary(b.dependency("spirv_cross", .{
+        //     .target = resolved_target,
+        //     .optimize = module.optimize.?,
+        // }).artifact("spirv-cross"));
+        // module.linkLibrary(b.dependency("spirv_tools", .{
+        //     .target = resolved_target,
+        //     .optimize = module.optimize.?,
+        // }).artifact("spirv-opt"));
     }
 }
 
@@ -855,7 +856,7 @@ fn ensureDependencies(allocator: std.mem.Allocator) !void {
     try optional_dependency.ensureGitRepoCloned(
         allocator,
         "https://github.com/slimsag/zigimg",
-        "ad6ad042662856f55a4d67499f1c4606c9951031",
+        "19a49a7e44fb4b1c22341dfbd6566019de742055",
         sdkPath("/src/core/examples/libs/zigimg"),
     );
 }

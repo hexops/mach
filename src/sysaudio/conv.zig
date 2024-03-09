@@ -83,7 +83,7 @@ pub fn signedToSigned(
     dst: []DestType,
 ) void {
     // TODO: Uncomment this (zig crashes)
-    // if (std.simd.suggestVectorSize(SrcType)) |_| {
+    // if (std.simd.suggestVectorLength(SrcType)) |_| {
     //     signedToSignedSIMD(SrcType, src, DestType, dst);
     // } else {
     signedToSignedScalar(SrcType, src, DestType, dst);
@@ -135,7 +135,7 @@ pub fn signedToSignedSIMD(
     comptime DestType: type,
     dst: []DestType,
 ) void {
-    const vec_size = std.simd.suggestVectorSize(SrcType).?;
+    const vec_size = std.simd.suggestVectorLength(SrcType).?;
     const VecSrc = @Vector(vec_size, SrcType);
     const VecDst = @Vector(vec_size, DestType);
     const trunc = @bitSizeOf(SrcType) - @bitSizeOf(DestType);
@@ -162,7 +162,7 @@ pub fn signedToFloat(
     comptime DestType: type,
     dst: []DestType,
 ) void {
-    if (std.simd.suggestVectorSize(SrcType)) |_| {
+    if (std.simd.suggestVectorLength(SrcType)) |_| {
         signedToFloatSIMD(SrcType, src, DestType, dst);
     } else {
         signedToFloatScalar(SrcType, src, DestType, dst);
@@ -202,7 +202,7 @@ pub fn signedToFloatSIMD(
     comptime DestType: type,
     dst: []DestType,
 ) void {
-    const vec_size = std.simd.suggestVectorSize(SrcType).?;
+    const vec_size = std.simd.suggestVectorLength(SrcType).?;
     const VecSrc = @Vector(vec_size, SrcType);
     const VecDst = @Vector(vec_size, DestType);
     const div_by_max: VecDst = @splat(1.0 / @as(comptime_float, maxInt(SrcType) + 1));
@@ -229,7 +229,7 @@ pub fn floatToUnsigned(
     comptime DestType: type,
     dst: []DestType,
 ) void {
-    if (std.simd.suggestVectorSize(SrcType)) |_| {
+    if (std.simd.suggestVectorLength(SrcType)) |_| {
         floatToUnsignedSIMD(SrcType, src, DestType, dst);
     } else {
         floatToUnsignedScalar(SrcType, src, DestType, dst);
@@ -260,7 +260,7 @@ pub fn floatToUnsignedSIMD(
     comptime DestType: type,
     dst: []DestType,
 ) void {
-    const vec_size = std.simd.suggestVectorSize(SrcType).?;
+    const vec_size = std.simd.suggestVectorLength(SrcType).?;
     const VecSrc = @Vector(vec_size, SrcType);
     const VecDst = @Vector(vec_size, DestType);
     const half: VecSrc = @splat(maxInt(DestType) / 2);
@@ -288,7 +288,7 @@ pub fn floatToSigned(
     comptime DestType: type,
     dst: []DestType,
 ) void {
-    if (std.simd.suggestVectorSize(SrcType)) |_| {
+    if (std.simd.suggestVectorLength(SrcType)) |_| {
         floatToSignedSIMD(SrcType, src, DestType, dst);
     } else {
         floatToSignedScalar(SrcType, src, DestType, dst);
@@ -327,7 +327,7 @@ pub fn floatToSignedSIMD(
     comptime DestType: type,
     dst: []DestType,
 ) void {
-    const vec_size = std.simd.suggestVectorSize(SrcType).?;
+    const vec_size = std.simd.suggestVectorLength(SrcType).?;
     const VecSrc = @Vector(vec_size, SrcType);
     const VecDst = @Vector(vec_size, DestType);
     const max: VecSrc = @splat(maxInt(DestType) + 1);
