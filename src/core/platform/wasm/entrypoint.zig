@@ -31,8 +31,8 @@ export fn wasmDeinit() void {
 
 // Define std_options.logFn if the user did not in their "app" main.zig
 pub usingnamespace if (@hasDecl(App, "std_options")) struct {} else struct {
-    pub const std_options = struct {
-        pub const logFn = core.defaultLog;
+    pub const std_options = std.Options{
+        .logFn = core.defaultLog,
     };
 };
 
