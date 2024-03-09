@@ -4,7 +4,7 @@ const testing = std.testing;
 // TODO: eliminate dependency on ECS here.
 const EntityID = @import("ecs/entities.zig").EntityID;
 
-/// Verifies that T matches the basic layout of a mach.Module
+/// Verifies that T matches the basic layout of a Mach module
 pub fn Module(comptime T: type) type {
     if (@typeInfo(T) != .Struct) @compileError("Module must be a struct type. Found:" ++ @typeName(T));
     if (!@hasDecl(T, "name")) @compileError("Module must have `pub const name = .foobar;`");
@@ -13,6 +13,18 @@ pub fn Module(comptime T: type) type {
         if (@typeInfo(T.components) != .Struct) @compileError("Module.components must be `pub const components = struct { ... };`, found type:" ++ @typeName(T.components));
     }
     return T;
+}
+
+/// Verifies that the given list of module structs `.{Foo, Bar}` satisfy `Module(M)`.
+pub fn Modules(comptime mods: anytype) type {
+    inline for (mods) |M| _ = Module(M);
+    return struct {
+        pub const modules = mods;
+
+        pub const components = NamespacedComponents(mods){};
+
+        pub const State = NamespacedState(mods);
+    };
 }
 
 fn NamespacedComponents(comptime modules: anytype) type {
@@ -80,18 +92,7 @@ fn NamespacedState(comptime modules: anytype) type {
     });
 }
 
-pub fn Modules(comptime mods: anytype) type {
-    inline for (mods) |M| _ = Module(M);
-    return struct {
-        pub const modules = mods;
-
-        pub const components = NamespacedComponents(mods){};
-
-        pub const State = NamespacedState(mods);
-    };
-}
-
-test "module" {
+test Module {
     _ = Module(struct {
         // Physics module state
         pointer: usize,
@@ -111,7 +112,7 @@ test "module" {
     });
 }
 
-test "modules" {
+test Modules {
     const Physics = Module(struct {
         // Physics module state
         pointer: usize,
