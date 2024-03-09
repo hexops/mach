@@ -279,6 +279,9 @@ pub fn build(b: *std.Build) !void {
         }
         addPaths(&unit_tests.root_module);
 
+        // Linux gamemode requires libc.
+        if (target.result.os.tag == .linux) unit_tests.root_module.link_libc = true;
+
         // Exposes a `test` step to the `zig build --help` menu, providing a way for the user to
         // request running the unit tests.
         const run_unit_tests = b.addRunArtifact(unit_tests);

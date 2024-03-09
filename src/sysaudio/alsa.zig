@@ -132,7 +132,7 @@ pub const Context = struct {
                     };
                     errdefer std.os.inotify_rm_watch(notify_fd, notify_wd);
 
-                    const notify_pipe_fd = std.os.pipe2(std.os.O.NONBLOCK) catch |err| switch (err) {
+                    const notify_pipe_fd = std.os.pipe2(.{ .NONBLOCK = true }) catch |err| switch (err) {
                         error.ProcessFdQuotaExceeded,
                         error.SystemFdQuotaExceeded,
                         => return error.SystemResources,

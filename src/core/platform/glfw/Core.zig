@@ -1317,7 +1317,7 @@ fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
 }
 
 /// Check if gamemode should be activated
-fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8 }!bool {
+fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidUtf8, InvalidWtf8 }!bool {
     const use_gamemode = std.process.getEnvVarOwned(
         allocator,
         "MACH_USE_GAMEMODE",
