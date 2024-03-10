@@ -40,6 +40,7 @@ pub fn Modules(comptime mods: anytype) type {
             _ = allocator;
         }
 
+        // Call global event handler with the specified name in all modules
         inline fn call(event_name: EventName(mods), args: anytype) void {
             switch (event_name) {
                 inline else => |name| {
@@ -53,6 +54,28 @@ pub fn Modules(comptime mods: anytype) type {
                                 else => {},
                             }
                         }
+                    }
+                },
+            }
+        }
+
+        // Call local event handler with the specified name in the specified module
+        inline fn callLocal(module_name: ModuleName(mods), event_name: EventName(mods), args: anytype) void {
+            switch (module_name) {
+                inline else => |mod_name| {
+                    switch (event_name) {
+                        inline else => |ev_name| {
+                            const M = @field(NamespacedModules(@This().modules){}, @tagName(mod_name));
+                            if (@hasDecl(M.local, @tagName(ev_name))) {
+                                const handler = @field(M.local, @tagName(ev_name));
+                                switch (@typeInfo(@TypeOf(handler))) {
+                                    .Fn => {
+                                        callHandler(handler, args);
+                                    },
+                                    else => {},
+                                }
+                            }
+                        },
                     }
                 },
             }
@@ -115,6 +138,43 @@ fn EventName(comptime mods: anytype) type {
     });
 }
 
+/// enum describing every possible comptime-known module name
+fn ModuleName(comptime mods: anytype) type {
+    var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
+    for (mods, 0..) |M, i| {
+        enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(M.name), .value = i }};
+    }
+    return @Type(.{
+        .Enum = .{
+            .tag_type = std.math.IntFittingRange(0, enum_fields.len - 1),
+            .fields = enum_fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+            .is_exhaustive = true,
+        },
+    });
+}
+
+fn NamespacedModules(comptime modules: anytype) type {
+    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
+    inline for (modules) |M| {
+        fields = fields ++ [_]std.builtin.Type.StructField{.{
+            .name = @tagName(M.name),
+            .type = type,
+            .default_value = &M,
+            .is_comptime = true,
+            .alignment = @alignOf(@TypeOf(M)),
+        }};
+    }
+    return @Type(.{
+        .Struct = .{
+            .layout = .Auto,
+            .is_tuple = false,
+            .fields = fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+        },
+    });
+}
+// TODO: reconsider components concept
 fn NamespacedComponents(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     inline for (modules) |M| {
@@ -150,6 +210,7 @@ fn NamespacedComponents(comptime modules: anytype) type {
     });
 }
 
+// TODO: reconsider state concept
 fn NamespacedState(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     inline for (modules) |M| {
@@ -300,11 +361,36 @@ test EventName {
     try testing.expect([]const u8, "foobar").eql(info.fields[5].name);
 }
 
+test ModuleName {
+    const Physics = Module(struct {
+        pub const name = .engine_physics;
+    });
+    const Renderer = Module(struct {
+        pub const name = .engine_renderer;
+    });
+    const Sprite2D = Module(struct {
+        pub const name = .engine_sprite2d;
+    });
+    const Mods = Modules(.{
+        Physics,
+        Renderer,
+        Sprite2D,
+    });
+    const info = @typeInfo(ModuleName(Mods.modules)).Enum;
+
+    try testing.expect(type, u2).eql(info.tag_type);
+    try testing.expect(usize, 3).eql(info.fields.len);
+    try testing.expect([]const u8, "engine_physics").eql(info.fields[0].name);
+    try testing.expect([]const u8, "engine_renderer").eql(info.fields[1].name);
+    try testing.expect([]const u8, "engine_sprite2d").eql(info.fields[2].name);
+}
+
 test "event name calling" {
     // TODO: verify that event handlers error return signatures are correct
     const global = struct {
         var ticks: usize = 0;
         var physics_updates: usize = 0;
+        var physics_calc: usize = 0;
         var renderer_updates: usize = 0;
     };
     const Physics = Module(struct {
@@ -319,10 +405,14 @@ test "event name calling" {
             pub fn update() void {
                 global.physics_updates += 1;
             }
+
+            pub fn calc() void {
+                global.physics_calc += 1;
+            }
         };
     });
     const Renderer = Module(struct {
-        pub const name = .engine_physics;
+        pub const name = .engine_renderer;
         pub const components = struct {};
 
         pub fn tick() void {
@@ -346,7 +436,7 @@ test "event name calling" {
     @TypeOf(modules).call(.tick, .{});
     try testing.expect(usize, 2).eql(global.ticks);
 
-    // Check we can use .call() with a runtime-known value.
+    // Check we can use .call() with a runtime-known event name.
     const alloc = try testing.allocator.create(u3);
     defer testing.allocator.destroy(alloc);
     const E = EventName(@TypeOf(modules).modules);
@@ -356,11 +446,41 @@ test "event name calling" {
     @TypeOf(modules).call(event_name, .{});
     try testing.expect(usize, 4).eql(global.ticks);
 
-    // Now check call() with a valid enum, but not a valid global event handler
+    // Check call() behavior with a valid event name enum, but not a valid global event handler name
     alloc.* = @intFromEnum(@as(E, .update));
     event_name = @as(E, @enumFromInt(alloc.*));
     @TypeOf(modules).call(event_name, .{});
     try testing.expect(usize, 4).eql(global.ticks);
     try testing.expect(usize, 0).eql(global.physics_updates);
     try testing.expect(usize, 0).eql(global.renderer_updates);
+
+    // Check we can use .callLocal() with a runtime-known event and module name.
+    const m_alloc = try testing.allocator.create(u3);
+    defer testing.allocator.destroy(m_alloc);
+    const M = ModuleName(@TypeOf(modules).modules);
+    m_alloc.* = @intFromEnum(@as(M, .engine_renderer));
+    alloc.* = @intFromEnum(@as(E, .update));
+    var module_name = @as(M, @enumFromInt(m_alloc.*));
+    @TypeOf(modules).callLocal(module_name, event_name, .{});
+    @TypeOf(modules).callLocal(module_name, event_name, .{});
+    try testing.expect(usize, 4).eql(global.ticks);
+    try testing.expect(usize, 0).eql(global.physics_updates);
+    try testing.expect(usize, 2).eql(global.renderer_updates);
+
+    m_alloc.* = @intFromEnum(@as(M, .engine_physics));
+    alloc.* = @intFromEnum(@as(E, .update));
+    module_name = @as(M, @enumFromInt(m_alloc.*));
+    event_name = @as(E, @enumFromInt(alloc.*));
+    @TypeOf(modules).callLocal(module_name, event_name, .{});
+    try testing.expect(usize, 1).eql(global.physics_updates);
+
+    m_alloc.* = @intFromEnum(@as(M, .engine_physics));
+    alloc.* = @intFromEnum(@as(E, .calc));
+    module_name = @as(M, @enumFromInt(m_alloc.*));
+    event_name = @as(E, @enumFromInt(alloc.*));
+    @TypeOf(modules).callLocal(module_name, event_name, .{});
+    try testing.expect(usize, 4).eql(global.ticks);
+    try testing.expect(usize, 1).eql(global.physics_calc);
+    try testing.expect(usize, 1).eql(global.physics_updates);
+    try testing.expect(usize, 2).eql(global.renderer_updates);
 }
