@@ -91,7 +91,7 @@ fn ExpectVecMat(comptime T: type) type {
 fn ExpectComptime(comptime T: type) type {
     return struct {
         expected: T,
-        pub fn eql(comptime e: *const @This(), comptime actual: T) !void {
+        pub fn eql(e: *const @This(), actual: T) !void {
             try testing.expectEqual(e.expected, actual);
         }
     };
@@ -101,11 +101,11 @@ fn ExpectBytes(comptime T: type) type {
     return struct {
         expected: T,
 
-        pub fn eql(comptime e: *const @This(), comptime actual: T) !void {
+        pub fn eql(e: *const @This(), actual: T) !void {
             try testing.expectEqualStrings(e.expected, actual);
         }
 
-        pub fn eqlBinary(comptime e: *const @This(), comptime actual: T) !void {
+        pub fn eqlBinary(e: *const @This(), actual: T) !void {
             try testing.expectEqual(e.expected, actual);
         }
     };
