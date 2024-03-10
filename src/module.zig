@@ -1,3 +1,4 @@
+const builtin = @import("builtin");
 const std = @import("std");
 const testing = std.testing;
 
@@ -15,15 +16,29 @@ pub fn Module(comptime T: type) type {
     return T;
 }
 
-/// Verifies that the given list of module structs `.{Foo, Bar}` satisfy `Module(M)`.
+// Manages comptime .{A, B, C} modules and runtime modules.
 pub fn Modules(comptime mods: anytype) type {
+    // Verify that each module is valid.
     inline for (mods) |M| _ = Module(M);
+
     return struct {
+        /// Comptime modules
         pub const modules = mods;
 
         pub const components = NamespacedComponents(mods){};
-
         pub const State = NamespacedState(mods);
+
+        // TODO: add runtime module support
+
+        pub fn init(m: *@This(), allocator: std.mem.Allocator) !void {
+            m.* = .{};
+            _ = allocator;
+        }
+
+        pub fn deinit(m: *@This(), allocator: std.mem.Allocator) void {
+            _ = m;
+            _ = allocator;
+        }
     };
 }
 
@@ -92,6 +107,10 @@ fn NamespacedState(comptime modules: anytype) type {
     });
 }
 
+test {
+    testing.refAllDeclsRecursive(@This());
+}
+
 test Module {
     _ = Module(struct {
         // Physics module state
@@ -106,9 +125,7 @@ test Module {
             pub const location = @Vector(3, f32);
         };
 
-        pub fn tick(adapter: anytype) void {
-            _ = adapter;
-        }
+        pub fn tick() !void {}
     });
 }
 
@@ -126,9 +143,7 @@ test Modules {
             pub const location = @Vector(3, f32);
         };
 
-        pub fn tick(adapter: anytype) void {
-            _ = adapter;
-        }
+        pub fn tick() !void {}
     });
 
     const Renderer = Module(struct {
@@ -137,31 +152,28 @@ test Modules {
         /// Renderer module components
         pub const components = struct {};
 
-        pub fn tick(adapter: anytype) void {
-            _ = adapter;
-        }
+        pub fn tick() !void {}
     });
 
     const Sprite2D = Module(struct {
         pub const name = .engine_sprite2d;
     });
 
-    const modules = Modules(.{
+    var modules: Modules(.{
         Physics,
         Renderer,
         Sprite2D,
-    });
-    testing.refAllDeclsRecursive(modules);
+    }) = undefined;
+    try modules.init(testing.allocator);
+    defer modules.deinit(testing.allocator);
     testing.refAllDeclsRecursive(Physics);
     testing.refAllDeclsRecursive(Renderer);
     testing.refAllDeclsRecursive(Sprite2D);
 
     // access namespaced components
-    try testing.expectEqual(Physics.components.location, modules.components.engine_physics.location);
-    try testing.expectEqual(Renderer.components, modules.components.engine_renderer);
+    try testing.expectEqual(Physics.components.location, @TypeOf(modules).components.engine_physics.location);
+    try testing.expectEqual(Renderer.components, @TypeOf(modules).components.engine_renderer);
 
     // implicitly generated
-    _ = modules.components.entity.id;
-
-    Physics.tick(null);
+    _ = @TypeOf(modules).components.entity.id;
 }
