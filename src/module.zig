@@ -30,14 +30,78 @@ pub fn Modules(comptime mods: anytype) type {
 
         // TODO: add runtime module support
 
+        pub const ModuleID = u32;
+        pub const EventID = u32;
+
+        const Event = struct {
+            module_name: ?ModuleID,
+            event_name: EventID,
+            args_slice: []u8,
+        };
+        const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
+
+        events_mu: std.Thread.RwLock = .{},
+        args_queue: std.ArrayListUnmanaged(u8) = .{},
+        events: EventQueue,
+
         pub fn init(m: *@This(), allocator: std.mem.Allocator) !void {
-            m.* = .{};
-            _ = allocator;
+            // TODO: custom event queue allocation sizes
+            m.* = .{
+                .args_queue = try std.ArrayListUnmanaged(u8).initCapacity(allocator, 8 * 1024 * 1024),
+                .events = EventQueue.init(allocator),
+            };
+            errdefer m.args_queue.deinit(allocator);
+            errdefer m.events.deinit();
+            try m.events.ensureTotalCapacity(1024);
         }
 
         pub fn deinit(m: *@This(), allocator: std.mem.Allocator) void {
-            _ = m;
-            _ = allocator;
+            m.args_queue.deinit(allocator);
+            m.events.deinit();
+        }
+
+        // TODO: API variation for global/local events, rather than `null` parameter
+
+        // Send a module-specific or global event, using comptime-known module and event names.
+        pub fn send(m: *@This(), module_name: ?ModuleName(mods), event_name: EventName(mods), args: anytype) void {
+            // TODO: debugging
+            m.sendDynamic(if (module_name) |v| @intFromEnum(v) else null, @intFromEnum(event_name), args);
+        }
+
+        // Send a module-specific or global event, using runtime-known module and event names.
+        pub fn sendDynamic(m: *@This(), module_name: ?ModuleID, event_name: EventID, args: anytype) void {
+            // TODO: debugging
+            m.events_mu.lock();
+            defer m.events_mu.unlock();
+
+            const args_bytes = std.mem.asBytes(&args);
+            m.args_queue.appendSliceAssumeCapacity(args_bytes);
+
+            m.events.writeItemAssumeCapacity(.{
+                .module_name = module_name,
+                .event_name = event_name,
+                .args_slice = m.args_queue.items[m.args_queue.items.len - args_bytes.len .. args_bytes.len],
+            });
+        }
+
+        pub fn dispatch(m: *@This()) void {
+            // TODO: optimize to reduce send contention
+            // TODO: parallel / multi-threaded dispatch
+            // TODO: PGO
+            m.events_mu.lock();
+            defer m.events_mu.unlock();
+
+            while (m.events.readItem()) |ev| {
+                _ = ev.args_slice; // TODO: dispatch arguments
+                if (ev.module_name) |module_name| {
+                    // TODO: dispatch arguments
+                    @This().callLocal(@enumFromInt(module_name), @enumFromInt(ev.event_name), .{});
+                } else {
+                    // TODO: dispatch arguments
+                    @This().call(@enumFromInt(ev.event_name), .{});
+                }
+            }
+            m.args_queue.clearRetainingCapacity();
         }
 
         // Call global event handler with the specified name in all modules
@@ -154,6 +218,7 @@ fn ModuleName(comptime mods: anytype) type {
     });
 }
 
+/// Struct like .{.foo = FooMod, .bar = BarMod}
 fn NamespacedModules(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     inline for (modules) |M| {
@@ -174,6 +239,7 @@ fn NamespacedModules(comptime modules: anytype) type {
         },
     });
 }
+
 // TODO: reconsider components concept
 fn NamespacedComponents(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
@@ -483,4 +549,71 @@ test "event name calling" {
     try testing.expect(usize, 1).eql(global.physics_calc);
     try testing.expect(usize, 1).eql(global.physics_updates);
     try testing.expect(usize, 2).eql(global.renderer_updates);
+}
+
+test "dispatch" {
+    const global = struct {
+        var ticks: usize = 0;
+        var physics_updates: usize = 0;
+        var physics_calc: usize = 0;
+        var renderer_updates: usize = 0;
+    };
+    const Physics = Module(struct {
+        pub const name = .engine_physics;
+        pub const components = struct {};
+
+        pub fn tick() void {
+            global.ticks += 1;
+        }
+
+        pub const local = struct {
+            pub fn update() void {
+                global.physics_updates += 1;
+            }
+
+            pub fn calc() void {
+                global.physics_calc += 1;
+            }
+        };
+    });
+    const Renderer = Module(struct {
+        pub const name = .engine_renderer;
+        pub const components = struct {};
+
+        pub fn tick() void {
+            global.ticks += 1;
+        }
+
+        pub const local = struct {
+            pub fn update() void {
+                global.renderer_updates += 1;
+            }
+        };
+    });
+
+    var modules: Modules(.{
+        Physics,
+        Renderer,
+    }) = undefined;
+    try modules.init(testing.allocator);
+    defer modules.deinit(testing.allocator);
+
+    // Global events
+    modules.send(null, .tick, .{});
+    try testing.expect(usize, 0).eql(global.ticks);
+    modules.dispatch();
+    try testing.expect(usize, 2).eql(global.ticks);
+    modules.send(null, .tick, .{});
+    modules.dispatch();
+    try testing.expect(usize, 4).eql(global.ticks);
+
+    // Local events
+    modules.send(.engine_renderer, .update, .{});
+    modules.dispatch();
+    try testing.expect(usize, 1).eql(global.renderer_updates);
+    modules.send(.engine_physics, .update, .{});
+    modules.send(.engine_physics, .calc, .{});
+    modules.dispatch();
+    try testing.expect(usize, 1).eql(global.physics_updates);
+    try testing.expect(usize, 1).eql(global.physics_calc);
 }
