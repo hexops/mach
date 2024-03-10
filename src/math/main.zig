@@ -23,8 +23,8 @@
 //! ## Coordinate system (+Y up, left-handed)
 //!
 //! * Normalized Device coordinates: +Y up; (-1, -1) is at the bottom-left corner.
-//! * Framebuffer coordinates: +Y down; (0, 0) is at the top-left corner.
-//! * Texture coordinates:     +Y down; (0, 0) is at the top-left corner.
+//! * Framebuffer coordinates:       +Y down; (0, 0) is at the top-left corner.
+//! * Texture coordinates:           +Y down; (0, 0) is at the top-left corner.
 //!
 //! This coordinate system is consistent with WebGPU, Metal, DirectX, and Unity (NDC only.)
 //!
@@ -45,6 +45,9 @@ const vec = @import("vec.zig");
 const mat = @import("mat.zig");
 const q = @import("quat.zig");
 const ray = @import("ray.zig");
+
+/// Public namespaces
+pub const collision = @import("collision.zig");
 
 /// Standard f32 precision types
 pub const Vec2 = vec.Vec(2, f32);
