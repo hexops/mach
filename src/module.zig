@@ -16,6 +16,13 @@ pub fn Module(comptime T: type) type {
     return T;
 }
 
+// TODO: implement serialization constraints
+// For now this exists just to indicate things that we expect will be required to be serializable in
+// the future.
+fn Serializable(comptime T: type) type {
+    return T;
+}
+
 // Manages comptime .{A, B, C} modules and runtime modules.
 pub fn Modules(comptime mods: anytype) type {
     // Verify that each module is valid.
@@ -60,16 +67,33 @@ pub fn Modules(comptime mods: anytype) type {
             m.events.deinit();
         }
 
-        // TODO: API variation for global/local events, rather than `null` parameter
-
-        // Send a module-specific or global event, using comptime-known module and event names.
-        pub fn send(m: *@This(), module_name: ?ModuleName(mods), event_name: EventName(mods), args: anytype) void {
-            // TODO: debugging
-            m.sendDynamic(if (module_name) |v| @intFromEnum(v) else null, @intFromEnum(event_name), args);
+        // Send a global event
+        pub fn send(m: *@This(), event_name: EventName(mods), args: anytype) void {
+            // TODO: comptime safety/debugging
+            m.sendInternal(null, @intFromEnum(event_name), args);
         }
 
-        // Send a module-specific or global event, using runtime-known module and event names.
-        pub fn sendDynamic(m: *@This(), module_name: ?ModuleID, event_name: EventID, args: anytype) void {
+        // Send an event to a specific module
+        pub fn sendToModule(m: *@This(), module_name: ModuleName(mods), event_name: EventName(mods), args: anytype) void {
+            // TODO: comptime safety/debugging
+            m.sendInternal(@intFromEnum(module_name), @intFromEnum(event_name), args);
+        }
+
+        // Send a global event, using a dynamic (not known to the compiled program) event name.
+        pub fn sendDynamic(m: *@This(), event_name: EventID, args: anytype) void {
+            // TODO: runtime safety/debugging
+            m.sendInternal(null, event_name, args);
+        }
+
+        // Send an event to a specific module, using a dynamic (not known to the compiled program) module and event name.
+        pub fn sendToModuleDynamic(m: *@This(), module_name: ModuleID, event_name: EventID, args: anytype) void {
+            // TODO: runtime safety/debugging
+            m.sendInternal(module_name, event_name, args);
+        }
+
+        fn sendInternal(m: *@This(), module_name: ?ModuleID, event_name: EventID, args: anytype) void {
+            _ = Serializable(@TypeOf(args));
+
             // TODO: debugging
             m.events_mu.lock();
             defer m.events_mu.unlock();
@@ -598,21 +622,28 @@ test "dispatch" {
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
 
+    const E = EventName(@TypeOf(modules).modules);
+    const M = ModuleName(@TypeOf(modules).modules);
+
     // Global events
-    modules.send(null, .tick, .{});
+    modules.send(.tick, .{});
     try testing.expect(usize, 0).eql(global.ticks);
     modules.dispatch();
     try testing.expect(usize, 2).eql(global.ticks);
-    modules.send(null, .tick, .{});
+    modules.sendDynamic(@intFromEnum(@as(E, .tick)), .{});
     modules.dispatch();
     try testing.expect(usize, 4).eql(global.ticks);
 
     // Local events
-    modules.send(.engine_renderer, .update, .{});
+    modules.sendToModule(.engine_renderer, .update, .{});
     modules.dispatch();
     try testing.expect(usize, 1).eql(global.renderer_updates);
-    modules.send(.engine_physics, .update, .{});
-    modules.send(.engine_physics, .calc, .{});
+    modules.sendToModule(.engine_physics, .update, .{});
+    modules.sendToModuleDynamic(
+        @intFromEnum(@as(M, .engine_physics)),
+        @intFromEnum(@as(E, .calc)),
+        .{},
+    );
     modules.dispatch();
     try testing.expect(usize, 1).eql(global.physics_updates);
     try testing.expect(usize, 1).eql(global.physics_calc);
