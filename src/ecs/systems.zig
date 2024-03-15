@@ -8,7 +8,8 @@ const EntityID = @import("entities.zig").EntityID;
 const comp = @import("comptime.zig");
 
 pub fn World(comptime mods: anytype) type {
-    const modules = mach.Modules(mods);
+    const Injectable = struct {}; // TODO
+    const modules = mach.Modules(mods, Injectable);
 
     return struct {
         allocator: mem.Allocator,
