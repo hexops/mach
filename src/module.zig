@@ -295,6 +295,38 @@ fn UninjectedArgsTuple(comptime Function: type, comptime Injectable: type) type 
     return std.meta.Tuple(std_args);
 }
 
+/// enum describing every possible comptime-known global event name
+fn GlobalEvent(comptime mods: anytype) type {
+    var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
+    var i: u32 = 0;
+    for (mods) |M| {
+        // Global event handlers
+        for (@typeInfo(M).Struct.decls) |decl| {
+            switch (@typeInfo(@TypeOf(@field(M, decl.name)))) {
+                .Fn => {
+                    const exists_already = blk2: {
+                        for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, decl.name)) break :blk2 true;
+                        break :blk2 false;
+                    };
+                    if (!exists_already) {
+                        enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = decl.name, .value = i }};
+                        i += 1;
+                    }
+                },
+                else => {},
+            }
+        }
+    }
+    return @Type(.{
+        .Enum = .{
+            .tag_type = std.math.IntFittingRange(0, enum_fields.len - 1),
+            .fields = enum_fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+            .is_exhaustive = true,
+        },
+    });
+}
+
 /// enum describing every possible comptime-known event name
 fn EventName(comptime mods: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
@@ -571,6 +603,13 @@ test EventName {
     try testing.expect([]const u8, "bam").eql(info.fields[3].name);
     try testing.expect([]const u8, "tick").eql(info.fields[4].name);
     try testing.expect([]const u8, "foobar").eql(info.fields[5].name);
+
+    const global_info = @typeInfo(GlobalEvent(Mods.modules)).Enum;
+    try testing.expect(type, u2).eql(global_info.tag_type);
+    try testing.expect(usize, 3).eql(global_info.fields.len);
+    try testing.expect([]const u8, "foo").eql(global_info.fields[0].name);
+    try testing.expect([]const u8, "bar").eql(global_info.fields[1].name);
+    try testing.expect([]const u8, "tick").eql(global_info.fields[2].name);
 }
 
 test ModuleName {
