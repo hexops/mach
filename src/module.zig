@@ -81,26 +81,22 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
 
         /// Returns an args tuple representing the standard, uninjected, arguments which the given
         /// global event handler requires.
-        ///
-        /// If the returned type would differ from EventArgs, a compile-time error will occur.
-        ///
-        /// If no module currently has a global event handler of this name, then its argument type
-        /// is currently undefined and assumed to be EventArgs.
-        fn Args(comptime EventArgs: type, event_name: EventName(mods)) type {
+        fn Args(event_name: EventName(mods)) type {
             inline for (modules) |M| {
+                // TODO: enforce any defined event handlers of the same name have the same argument types
                 if (@hasDecl(M, @tagName(event_name))) {
-                    switch (@typeInfo(@TypeOf(@field(M, @tagName(event_name))))) {
-                        .Fn => {
-                            const handler = @field(M, @tagName(event_name));
-                            // TODO: worth checking if the return type is == EventArgs here? Could
-                            // that lead to better UX?
-                            return UninjectedArgsTuple(@TypeOf(handler), Injectable);
+                    const Handler = switch (@typeInfo(@TypeOf(@field(M, @tagName(event_name))))) {
+                        .Fn => @TypeOf(@field(M, @tagName(event_name))),
+                        .Type => switch (@typeInfo(@field(M, @tagName(event_name)))) {
+                            .Fn => @field(M, @tagName(event_name)),
+                            else => continue,
                         },
-                        else => {},
-                    }
+                        else => continue,
+                    };
+                    return UninjectedArgsTuple(Handler, Injectable);
                 }
             }
-            return EventArgs;
+            @compileError("No global event handler " ++ @tagName(event_name) ++ " is defined in any module.");
         }
 
         /// Send a global event
@@ -108,8 +104,7 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
             m: *@This(),
             // TODO: is a variant of this function where event_name is not comptime known, but asserted to be a valid enum, useful?
             comptime event_name: EventName(mods),
-            comptime EventArgs: type,
-            args: Args(EventArgs, event_name),
+            args: Args(event_name),
         ) void {
             // TODO: comptime safety/debugging
             m.sendInternal(null, @intFromEnum(event_name), args);
@@ -157,7 +152,7 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
             m.events.writeItemAssumeCapacity(.{
                 .module_name = module_name,
                 .event_name = event_name,
-                .args_slice = m.args_queue.items[m.args_queue.items.len - args_bytes.len .. args_bytes.len],
+                .args_slice = m.args_queue.items[m.args_queue.items.len - args_bytes.len .. m.args_queue.items.len],
             });
         }
 
@@ -295,28 +290,34 @@ fn UninjectedArgsTuple(comptime Function: type, comptime Injectable: type) type 
     return std.meta.Tuple(std_args);
 }
 
-/// enum describing every possible comptime-known global event name
+/// enum describing every possible comptime-known global event name.
 fn GlobalEvent(comptime mods: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
     for (mods) |M| {
         // Global event handlers
         for (@typeInfo(M).Struct.decls) |decl| {
-            switch (@typeInfo(@TypeOf(@field(M, decl.name)))) {
-                .Fn => {
-                    const exists_already = blk2: {
-                        for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, decl.name)) break :blk2 true;
-                        break :blk2 false;
-                    };
-                    if (!exists_already) {
-                        enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = decl.name, .value = i }};
-                        i += 1;
-                    }
+            const is_event_handler = switch (@typeInfo(@TypeOf(@field(M, decl.name)))) {
+                .Fn => true,
+                .Type => switch (@typeInfo(@field(M, decl.name))) {
+                    .Fn => true,
+                    else => false,
                 },
-                else => {},
+                else => false,
+            };
+            if (is_event_handler) {
+                const exists_already = blk2: {
+                    for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, decl.name)) break :blk2 true;
+                    break :blk2 false;
+                };
+                if (!exists_already) {
+                    enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = decl.name, .value = i }};
+                    i += 1;
+                }
             }
         }
     }
+
     return @Type(.{
         .Enum = .{
             .tag_type = std.math.IntFittingRange(0, enum_fields.len - 1),
@@ -334,18 +335,23 @@ fn EventName(comptime mods: anytype) type {
     for (mods) |M| {
         // Global event handlers
         for (@typeInfo(M).Struct.decls) |decl| {
-            switch (@typeInfo(@TypeOf(@field(M, decl.name)))) {
-                .Fn => {
-                    const exists_already = blk2: {
-                        for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, decl.name)) break :blk2 true;
-                        break :blk2 false;
-                    };
-                    if (!exists_already) {
-                        enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = decl.name, .value = i }};
-                        i += 1;
-                    }
+            const is_event_handler = switch (@typeInfo(@TypeOf(@field(M, decl.name)))) {
+                .Fn => true,
+                .Type => switch (@typeInfo(@field(M, decl.name))) {
+                    .Fn => true,
+                    else => false,
                 },
-                else => {},
+                else => false,
+            };
+            if (is_event_handler) {
+                const exists_already = blk2: {
+                    for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, decl.name)) break :blk2 true;
+                    break :blk2 false;
+                };
+                if (!exists_already) {
+                    enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = decl.name, .value = i }};
+                    i += 1;
+                }
             }
         }
 
@@ -573,6 +579,9 @@ test EventName {
         pub const name = .engine_renderer;
         pub const components = struct {};
 
+        pub const fooUnused = fn (f32, i32) void;
+        pub const barUnused = fn (i32, f32) void;
+
         pub fn tick() !void {}
         pub fn foo() !void {} // same .foo name as .engine_physics.foo
         pub fn bar() !void {} // same .bar name as .engine_physics.bar
@@ -596,20 +605,24 @@ test EventName {
     const info = @typeInfo(EventName(Mods.modules)).Enum;
 
     try testing.expect(type, u3).eql(info.tag_type);
-    try testing.expect(usize, 6).eql(info.fields.len);
+    try testing.expect(usize, 8).eql(info.fields.len);
     try testing.expect([]const u8, "foo").eql(info.fields[0].name);
     try testing.expect([]const u8, "bar").eql(info.fields[1].name);
     try testing.expect([]const u8, "baz").eql(info.fields[2].name);
     try testing.expect([]const u8, "bam").eql(info.fields[3].name);
-    try testing.expect([]const u8, "tick").eql(info.fields[4].name);
-    try testing.expect([]const u8, "foobar").eql(info.fields[5].name);
+    try testing.expect([]const u8, "fooUnused").eql(info.fields[4].name);
+    try testing.expect([]const u8, "barUnused").eql(info.fields[5].name);
+    try testing.expect([]const u8, "tick").eql(info.fields[6].name);
+    try testing.expect([]const u8, "foobar").eql(info.fields[7].name);
 
     const global_info = @typeInfo(GlobalEvent(Mods.modules)).Enum;
-    try testing.expect(type, u2).eql(global_info.tag_type);
-    try testing.expect(usize, 3).eql(global_info.fields.len);
+    try testing.expect(type, u3).eql(global_info.tag_type);
+    try testing.expect(usize, 5).eql(global_info.fields.len);
     try testing.expect([]const u8, "foo").eql(global_info.fields[0].name);
     try testing.expect([]const u8, "bar").eql(global_info.fields[1].name);
-    try testing.expect([]const u8, "tick").eql(global_info.fields[2].name);
+    try testing.expect([]const u8, "fooUnused").eql(global_info.fields[2].name);
+    try testing.expect([]const u8, "barUnused").eql(global_info.fields[3].name);
+    try testing.expect([]const u8, "tick").eql(global_info.fields[4].name);
 }
 
 test ModuleName {
@@ -871,6 +884,8 @@ test "dispatch" {
         pub const name = .engine_renderer;
         pub const components = struct {};
 
+        pub const frameDone = fn (i32) void;
+
         pub fn tick() void {
             global.ticks += 1;
         }
@@ -902,7 +917,12 @@ test "dispatch" {
     const M = ModuleName(@TypeOf(modules).modules);
 
     // Global events
-    modules.send(.tick, struct {}, .{});
+    //
+    // The 2nd parameter (arguments to the tick event handler) is inferred based on the `pub fn tick`
+    // global event handler declaration within a module. It is required that all global event handlers
+    // of the same name have the same standard arguments, although they can start with different
+    // injected arguments.
+    modules.send(.tick, .{});
     try testing.expect(usize, 0).eql(global.ticks);
     modules.dispatch(.{&foo});
     try testing.expect(usize, 2).eql(global.ticks);
@@ -910,6 +930,11 @@ test "dispatch" {
     modules.sendDynamic(@intFromEnum(@as(E, .tick)), .{});
     modules.dispatch(.{&foo});
     try testing.expect(usize, 4).eql(global.ticks);
+
+    // Global events which are not handled by anyone yet can be written as `pub const fooBar = fn() void;`
+    // within a module, which allows pre-declaring that `fooBar` is a valid global event, and enables
+    // its arguments to be inferred still like this:
+    modules.send(.frameDone, .{1337});
 
     // Local events
     modules.sendToModule(.engine_renderer, .update, .{});
