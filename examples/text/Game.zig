@@ -87,11 +87,11 @@ pub fn init(
         },
     });
 
-    try text_mod.send(.init, .{});
-    try text_mod.send(.initPipeline, .{Text.PipelineOptions{
+    text_mod.send(.init, .{});
+    text_mod.send(.initPipeline, .{Text.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.default),
     }});
-    try text_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
+    text_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
 
     game.state = .{
         .timer = try mach.Timer.start(),
@@ -140,7 +140,7 @@ pub fn tick(
                     else => {},
                 }
             },
-            .close => try engine.send(.exit, .{}),
+            .close => engine.send(.exit, .{}),
             else => {},
         }
     }
@@ -212,16 +212,16 @@ pub fn tick(
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
     try text_mod.set(game.state.player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(player_pos)));
-    try text_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
+    text_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
 
     // Perform pre-render work
-    try text_mod.send(.preRender, .{@intFromEnum(Pipeline.default)});
+    text_mod.send(.preRender, .{@intFromEnum(Pipeline.default)});
 
     // Render a frame
-    try engine.send(.beginPass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
-    try text_mod.send(.render, .{@intFromEnum(Pipeline.default)});
-    try engine.send(.endPass, .{});
-    try engine.send(.present, .{}); // Present the frame
+    engine.send(.beginPass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
+    text_mod.send(.render, .{@intFromEnum(Pipeline.default)});
+    engine.send(.endPass, .{});
+    engine.send(.present, .{}); // Present the frame
 
     // Every second, update the window title with the FPS
     if (game.state.fps_timer.read() >= 1.0) {

@@ -87,7 +87,7 @@ pub fn tick(
                     else => {},
                 }
             },
-            .close => try engine.send(.exit, .{}),
+            .close => engine.send(.exit, .{}),
             else => {},
         }
     }
