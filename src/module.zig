@@ -157,7 +157,7 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
         }
 
         /// Dispatches pending events, invoking their event handlers.
-        pub fn dispatch(m: *@This(), injectable: Injectable) void {
+        pub fn dispatch(m: *@This(), injectable: Injectable) !void {
             // TODO: verify injectable arguments are valid, e.g. not comptime types
 
             // TODO: optimize to reduce send contention
@@ -166,20 +166,22 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
             m.events_mu.lock();
             defer m.events_mu.unlock();
 
+            // TODO: this is wrong
+            defer m.args_queue.clearRetainingCapacity();
+
             while (m.events.readItem()) |ev| {
                 if (ev.module_name) |module_name| {
                     // TODO: dispatch arguments
-                    @This().callLocal(@enumFromInt(module_name), @enumFromInt(ev.event_name), ev.args_slice, injectable);
+                    try @This().callLocal(@enumFromInt(module_name), @enumFromInt(ev.event_name), ev.args_slice, injectable);
                 } else {
                     // TODO: dispatch arguments
-                    @This().call(@enumFromInt(ev.event_name), ev.args_slice, injectable);
+                    try @This().call(@enumFromInt(ev.event_name), ev.args_slice, injectable);
                 }
             }
-            m.args_queue.clearRetainingCapacity();
         }
 
         /// Call global event handler with the specified name in all modules
-        inline fn call(event_name: EventName(mods), args: []u8, injectable: anytype) void {
+        inline fn call(event_name: EventName(mods), args: []u8, injectable: anytype) !void {
             switch (event_name) {
                 inline else => |name| {
                     inline for (modules) |M| {
@@ -187,7 +189,7 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
                             switch (@typeInfo(@TypeOf(@field(M, @tagName(name))))) {
                                 .Fn => {
                                     const handler = @field(M, @tagName(name));
-                                    callHandler(handler, args, injectable);
+                                    try callHandler(handler, args, injectable);
                                 },
                                 else => {},
                             }
@@ -198,7 +200,7 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
         }
 
         /// Call local event handler with the specified name in the specified module
-        inline fn callLocal(module_name: ModuleName(mods), event_name: EventName(mods), args: []u8, injectable: anytype) void {
+        inline fn callLocal(module_name: ModuleName(mods), event_name: EventName(mods), args: []u8, injectable: anytype) !void {
             // TODO: invert switch case for hypothetically better branch prediction
             switch (module_name) {
                 inline else => |mod_name| {
@@ -206,11 +208,11 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
                         inline else => |ev_name| {
                             const M = @field(NamespacedModules(@This().modules){}, @tagName(mod_name));
                             // TODO: no need for hasDecl, assertion should be event can be sent at send() time.
-                            if (@hasDecl(M.local, @tagName(ev_name))) {
+                            if (@hasDecl(M, "local") and @hasDecl(M.local, @tagName(ev_name))) {
                                 const handler = @field(M.local, @tagName(ev_name));
                                 switch (@typeInfo(@TypeOf(handler))) {
                                     .Fn => {
-                                        callHandler(handler, args, injectable);
+                                        try callHandler(handler, args, injectable);
                                     },
                                     else => {},
                                 }
@@ -222,11 +224,16 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
         }
 
         /// Invokes an event handler with optionally injected arguments.
-        inline fn callHandler(handler: anytype, args_data: []u8, injectable: Injectable) void {
-            const StdArgs = UninjectedArgsTuple(@TypeOf(handler), Injectable);
+        inline fn callHandler(handler: anytype, args_data: []u8, injectable: anytype) !void {
+            const Handler = @TypeOf(handler);
+            const StdArgs = UninjectedArgsTuple(Handler, @TypeOf(injectable));
             const std_args: *StdArgs = @alignCast(@ptrCast(args_data.ptr));
-            const args = injectArgs(@TypeOf(handler), Injectable, injectable, std_args.*);
-            @call(.auto, handler, args);
+            const args = injectArgs(Handler, @TypeOf(injectable), injectable, std_args.*);
+            const Ret = @typeInfo(Handler).Fn.return_type orelse void;
+            switch (@typeInfo(Ret)) {
+                .ErrorUnion => try @call(.auto, handler, args),
+                else => @call(.auto, handler, args),
+            }
         }
     };
 }
@@ -799,7 +806,7 @@ test "event name calling" {
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
 
-    @TypeOf(modules).call(.tick, &.{}, .{});
+    try @TypeOf(modules).call(.tick, &.{}, .{});
     try testing.expect(usize, 2).eql(global.ticks);
 
     // Check we can use .call() with a runtime-known event name.
@@ -809,13 +816,13 @@ test "event name calling" {
     alloc.* = @intFromEnum(@as(E, .tick));
 
     var event_name = @as(E, @enumFromInt(alloc.*));
-    @TypeOf(modules).call(event_name, &.{}, .{});
+    try @TypeOf(modules).call(event_name, &.{}, .{});
     try testing.expect(usize, 4).eql(global.ticks);
 
     // Check call() behavior with a valid event name enum, but not a valid global event handler name
     alloc.* = @intFromEnum(@as(E, .update));
     event_name = @as(E, @enumFromInt(alloc.*));
-    @TypeOf(modules).call(event_name, &.{}, .{});
+    try @TypeOf(modules).call(event_name, &.{}, .{});
     try testing.expect(usize, 4).eql(global.ticks);
     try testing.expect(usize, 0).eql(global.physics_updates);
     try testing.expect(usize, 0).eql(global.renderer_updates);
@@ -827,8 +834,8 @@ test "event name calling" {
     m_alloc.* = @intFromEnum(@as(M, .engine_renderer));
     alloc.* = @intFromEnum(@as(E, .update));
     var module_name = @as(M, @enumFromInt(m_alloc.*));
-    @TypeOf(modules).callLocal(module_name, event_name, &.{}, .{});
-    @TypeOf(modules).callLocal(module_name, event_name, &.{}, .{});
+    try @TypeOf(modules).callLocal(module_name, event_name, &.{}, .{});
+    try @TypeOf(modules).callLocal(module_name, event_name, &.{}, .{});
     try testing.expect(usize, 4).eql(global.ticks);
     try testing.expect(usize, 0).eql(global.physics_updates);
     try testing.expect(usize, 2).eql(global.renderer_updates);
@@ -837,14 +844,14 @@ test "event name calling" {
     alloc.* = @intFromEnum(@as(E, .update));
     module_name = @as(M, @enumFromInt(m_alloc.*));
     event_name = @as(E, @enumFromInt(alloc.*));
-    @TypeOf(modules).callLocal(module_name, event_name, &.{}, .{});
+    try @TypeOf(modules).callLocal(module_name, event_name, &.{}, .{});
     try testing.expect(usize, 1).eql(global.physics_updates);
 
     m_alloc.* = @intFromEnum(@as(M, .engine_physics));
     alloc.* = @intFromEnum(@as(E, .calc));
     module_name = @as(M, @enumFromInt(m_alloc.*));
     event_name = @as(E, @enumFromInt(alloc.*));
-    @TypeOf(modules).callLocal(module_name, event_name, &.{}, .{});
+    try @TypeOf(modules).callLocal(module_name, event_name, &.{}, .{});
     try testing.expect(usize, 4).eql(global.ticks);
     try testing.expect(usize, 1).eql(global.physics_calc);
     try testing.expect(usize, 1).eql(global.physics_updates);
@@ -924,11 +931,11 @@ test "dispatch" {
     // injected arguments.
     modules.send(.tick, .{});
     try testing.expect(usize, 0).eql(global.ticks);
-    modules.dispatch(.{&foo});
+    try modules.dispatch(.{&foo});
     try testing.expect(usize, 2).eql(global.ticks);
     // TODO: make sendDynamic take an args type to avoid footguns with comptime values, etc.
     modules.sendDynamic(@intFromEnum(@as(E, .tick)), .{});
-    modules.dispatch(.{&foo});
+    try modules.dispatch(.{&foo});
     try testing.expect(usize, 4).eql(global.ticks);
 
     // Global events which are not handled by anyone yet can be written as `pub const fooBar = fn() void;`
@@ -938,7 +945,7 @@ test "dispatch" {
 
     // Local events
     modules.sendToModule(.engine_renderer, .update, .{});
-    modules.dispatch(.{&foo});
+    try modules.dispatch(.{&foo});
     try testing.expect(usize, 1).eql(global.renderer_updates);
     modules.sendToModule(.engine_physics, .update, .{});
     modules.sendToModuleDynamic(
@@ -946,14 +953,14 @@ test "dispatch" {
         @intFromEnum(@as(E, .calc)),
         .{},
     );
-    modules.dispatch(.{&foo});
+    try modules.dispatch(.{&foo});
     try testing.expect(usize, 1).eql(global.physics_updates);
     try testing.expect(usize, 1).eql(global.physics_calc);
 
     // Local events
     modules.sendToModule(.engine_renderer, .basicArgs, .{ @as(u32, 1), @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
     modules.sendToModule(.engine_renderer, .injectedArgs, .{ @as(u32, 1), @as(u32, 2) });
-    modules.dispatch(.{&foo});
+    try modules.dispatch(.{&foo});
     try testing.expect(usize, 3).eql(global.basic_args_sum);
     try testing.expect(usize, 3).eql(foo.injected_args_sum);
 }
