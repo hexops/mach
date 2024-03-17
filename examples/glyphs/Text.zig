@@ -62,7 +62,7 @@ pub const local = struct {
         s.ft = try ft.Library.init();
         s.face = try s.ft.createFaceMemory(assets.roboto_medium_ttf, 0);
 
-        try text_mod.send(.prepare, .{&[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' }});
+        text_mod.send(.prepare, .{&[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' }});
     }
 
     pub fn prepare(
