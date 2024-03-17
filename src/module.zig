@@ -791,6 +791,9 @@ test "dispatch" {
     var foo = struct {
         injected_args_sum: usize = 0,
     }{};
+    const Minimal = Module(struct {
+        pub const name = .engine_minimal;
+    });
     const Physics = Module(struct {
         pub const name = .engine_physics;
         pub const components = struct {};
@@ -836,6 +839,7 @@ test "dispatch" {
 
     const injectable = .{&foo};
     var modules: Modules(.{
+        Minimal,
         Physics,
         Renderer,
     }, @TypeOf(injectable)) = undefined;
