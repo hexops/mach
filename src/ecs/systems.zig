@@ -13,18 +13,18 @@ pub fn World(comptime mods: anytype) type {
 
     return struct {
         allocator: mem.Allocator,
-        entities: Entities(modules.components),
+        entities: Entities(NamespacedComponents(mods){}),
         mod: Mods(),
 
         const Self = @This();
 
         pub fn Mod(comptime Module: anytype) type {
             const module_tag = Module.name;
-            const State = @TypeOf(@field(@as(modules.State, undefined), @tagName(module_tag)));
-            const components = @field(modules.components, @tagName(module_tag));
+            const State = @TypeOf(@field(@as(NamespacedState(mods), undefined), @tagName(module_tag)));
+            const components = @field(NamespacedComponents(mods){}, @tagName(module_tag));
             return struct {
                 state: State,
-                entities: *Entities(modules.components),
+                entities: *Entities(NamespacedComponents(mods){}),
                 allocator: mem.Allocator,
 
                 /// Sets the named component to the specified value for the given entity,
@@ -110,7 +110,7 @@ pub fn World(comptime mods: anytype) type {
         pub fn init(allocator: mem.Allocator) !Self {
             return Self{
                 .allocator = allocator,
-                .entities = try Entities(modules.components).init(allocator),
+                .entities = try Entities(NamespacedComponents(mods){}).init(allocator),
                 .mod = undefined,
             };
         }
@@ -198,4 +198,71 @@ pub fn World(comptime mods: anytype) type {
             }
         }
     };
+}
+
+// TODO: reconsider components concept
+fn NamespacedComponents(comptime modules: anytype) type {
+    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
+    inline for (modules) |M| {
+        const components = if (@hasDecl(M, "components")) M.components else struct {};
+        fields = fields ++ [_]std.builtin.Type.StructField{.{
+            .name = @tagName(M.name),
+            .type = type,
+            .default_value = &components,
+            .is_comptime = true,
+            .alignment = @alignOf(@TypeOf(components)),
+        }};
+    }
+
+    // Builtin components
+    const entity_components = struct {
+        pub const id = EntityID;
+    };
+    fields = fields ++ [_]std.builtin.Type.StructField{.{
+        .name = "entity",
+        .type = type,
+        .default_value = &entity_components,
+        .is_comptime = true,
+        .alignment = @alignOf(@TypeOf(entity_components)),
+    }};
+
+    return @Type(.{
+        .Struct = .{
+            .layout = .Auto,
+            .is_tuple = false,
+            .fields = fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+        },
+    });
+}
+
+// TODO: reconsider state concept
+fn NamespacedState(comptime modules: anytype) type {
+    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
+    inline for (modules) |M| {
+        const state_fields = std.meta.fields(M);
+        const State = if (state_fields.len > 0) @Type(.{
+            .Struct = .{
+                .layout = .Auto,
+                .is_tuple = false,
+                .fields = state_fields,
+                .decls = &[_]std.builtin.Type.Declaration{},
+            },
+        }) else struct {};
+        fields = fields ++ [_]std.builtin.Type.StructField{.{
+            .name = @tagName(M.name),
+            .type = State,
+            .default_value = null,
+            .is_comptime = false,
+            .alignment = @alignOf(State),
+        }};
+    }
+    return @Type(.{
+        .Struct = .{
+            .layout = .Auto,
+            .is_tuple = false,
+            .fields = fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+        },
+    });
 }
