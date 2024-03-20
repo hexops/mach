@@ -50,6 +50,7 @@ pub fn init(
     sprite_mod: *Sprite.Mod,
     text_mod: *Text.Mod,
     game: *Mod,
+    world: *mach.World,
 ) !void {
     // The Mach .core is where we set window options, etc.
     core.setTitle("gfx.Sprite example");
@@ -59,10 +60,12 @@ pub fn init(
 
     // Tell sprite_mod to use the texture
     sprite_mod.send(.init, .{});
+    world.dispatchNoError(); // TODO: no dispatch in user code
     sprite_mod.send(.initPipeline, .{Sprite.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.text),
         .texture = text_mod.state.texture,
     }});
+    world.dispatchNoError(); // TODO: no dispatch in user code
 
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `Sprite` module could have a 3D `.location` component with a different

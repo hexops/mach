@@ -23,7 +23,7 @@ fn Serializable(comptime T: type) type {
 }
 
 /// Manages comptime .{A, B, C} modules and runtime modules.
-pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
+pub fn Modules(comptime mods: anytype) type {
     // Verify that each module is valid.
     inline for (mods) |M| _ = Module(M);
 
@@ -66,12 +66,20 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
         /// Returns an args tuple representing the standard, uninjected, arguments which the given
         /// local event handler requires.
         fn LocalArgs(module_name: ModuleName(mods), event_name: EventName(mods)) type {
-            const M = @field(NamespacedModules(@This().modules){}, @tagName(module_name));
-            const handler = @field(M.local, @tagName(event_name));
-            switch (@typeInfo(@TypeOf(handler))) {
-                .Fn => return UninjectedArgsTuple(@TypeOf(handler), Injectable),
-                // Note: This means the module does have some other field by the same name, but it is not a function.
-                else => @compileError("Module " ++ @tagName(M.name) ++ " has no global event handler " ++ @tagName(event_name)),
+            inline for (modules) |M| {
+                if (M.name != module_name) continue;
+                if (!@hasDecl(M, "local")) @compileError("Module " ++ @tagName(module_name) ++ " has no `pub const local = struct { ... };` event handlers");
+                if (!@hasDecl(M.local, @tagName(event_name))) @compileError("Module " ++ @tagName(module_name) ++ ".local has no event handler named: " ++ @tagName(event_name));
+                const handler = @field(M.local, @tagName(event_name));
+                switch (@typeInfo(@TypeOf(handler))) {
+                    // TODO: passing std.meta.Tuple here instead of TupleHACK results in a compiler
+                    // segfault. The only difference is that TupleHACk does not produce a real tuple,
+                    // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
+                    .Fn => return UninjectedArgsTuple(TupleHACK, @TypeOf(handler)),
+                    // Note: This means the module does have some other field by the same name, but it is not a function.
+                    // TODO: allow pre-declarations
+                    else => @compileError("Module " ++ @tagName(module_name) ++ ".local." ++ @tagName(event_name) ++ " is not a function"),
+                }
             }
         }
 
@@ -89,7 +97,7 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
                         },
                         else => continue,
                     };
-                    return UninjectedArgsTuple(Handler, Injectable);
+                    return UninjectedArgsTuple(std.meta.Tuple, Handler);
                 }
             }
             @compileError("No global event handler " ++ @tagName(event_name) ++ " is defined in any module.");
@@ -144,7 +152,6 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
 
             const args_bytes = std.mem.asBytes(&args);
             m.args_queue.appendSliceAssumeCapacity(args_bytes);
-
             m.events.writeItemAssumeCapacity(.{
                 .module_name = module_name,
                 .event_name = event_name,
@@ -153,19 +160,28 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
         }
 
         /// Dispatches pending events, invoking their event handlers.
-        pub fn dispatch(m: *@This(), injectable: Injectable) !void {
+        pub fn dispatch(m: *@This(), injectable: anytype) !void {
             // TODO: verify injectable arguments are valid, e.g. not comptime types
 
             // TODO: optimize to reduce send contention
             // TODO: parallel / multi-threaded dispatch
             // TODO: PGO
-            m.events_mu.lock();
-            defer m.events_mu.unlock();
 
             // TODO: this is wrong
-            defer m.args_queue.clearRetainingCapacity();
+            defer {
+                m.events_mu.lock();
+                m.args_queue.clearRetainingCapacity();
+                m.events_mu.unlock();
+            }
 
-            while (m.events.readItem()) |ev| {
+            while (true) {
+                m.events_mu.lock();
+                const ev = m.events.readItem() orelse {
+                    m.events_mu.unlock();
+                    break;
+                };
+                m.events_mu.unlock();
+
                 if (ev.module_name) |module_name| {
                     // TODO: dispatch arguments
                     try @This().callLocal(@enumFromInt(module_name), @enumFromInt(ev.event_name), ev.args_slice, injectable);
@@ -222,7 +238,7 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
         /// Invokes an event handler with optionally injected arguments.
         inline fn callHandler(handler: anytype, args_data: []u8, injectable: anytype) !void {
             const Handler = @TypeOf(handler);
-            const StdArgs = UninjectedArgsTuple(Handler, @TypeOf(injectable));
+            const StdArgs = UninjectedArgsTuple(std.meta.Tuple, Handler);
             const std_args: *StdArgs = @alignCast(@ptrCast(args_data.ptr));
             const args = injectArgs(Handler, @TypeOf(injectable), injectable, std_args.*);
             const Ret = @typeInfo(Handler).Fn.return_type orelse void;
@@ -234,13 +250,43 @@ pub fn Modules(comptime mods: anytype, comptime Injectable: type) type {
     };
 }
 
+// TODO: see usage location
+fn TupleHACK(comptime types: []const type) type {
+    return CreateUniqueTupleHACK(types.len, types[0..types.len].*);
+}
+
+fn CreateUniqueTupleHACK(comptime N: comptime_int, comptime types: [N]type) type {
+    var tuple_fields: [types.len]std.builtin.Type.StructField = undefined;
+    inline for (types, 0..) |T, i| {
+        @setEvalBranchQuota(10_000);
+        var num_buf: [128]u8 = undefined;
+        tuple_fields[i] = .{
+            .name = std.fmt.bufPrintZ(&num_buf, "{d}", .{i}) catch unreachable,
+            .type = T,
+            .default_value = null,
+            .is_comptime = false,
+            .alignment = if (@sizeOf(T) > 0) @alignOf(T) else 0,
+        };
+    }
+
+    return @Type(.{
+        .Struct = .{
+            // .is_tuple = true,
+            .is_tuple = false,
+            .layout = .Auto,
+            .decls = &.{},
+            .fields = &tuple_fields,
+        },
+    });
+}
+
 // Given a function, its standard arguments and injectable arguments, performs injection and
 // returns the actual argument tuple which would be used to call the function.
 inline fn injectArgs(
     comptime Function: type,
     comptime Injectable: type,
     injectable_args: Injectable,
-    std_args: UninjectedArgsTuple(Function, Injectable),
+    std_args: UninjectedArgsTuple(std.meta.Tuple, Function),
 ) std.meta.ArgsTuple(Function) {
     var args: std.meta.ArgsTuple(Function) = undefined;
     comptime var std_args_index = 0;
@@ -270,7 +316,10 @@ inline fn injectArgs(
 
 // Given a function type, and an args tuple of injectable parameters, returns the set of function
 // parameters which would **not** be injected.
-fn UninjectedArgsTuple(comptime Function: type, comptime Injectable: type) type {
+fn UninjectedArgsTuple(
+    comptime Tuple: fn (comptime types: []const type) type,
+    comptime Function: type,
+) type {
     var std_args: []const type = &[0]type{};
     inline for (@typeInfo(std.meta.ArgsTuple(Function)).Struct.fields) |arg| {
         // Injected arguments always go first, then standard (non-injected) arguments.
@@ -278,19 +327,22 @@ fn UninjectedArgsTuple(comptime Function: type, comptime Injectable: type) type 
             std_args = std_args ++ [_]type{arg.type};
             continue;
         }
-        // Is this argument matching the type of an argument we could inject?
-        const injectable = blk: {
-            inline for (@typeInfo(Injectable).Struct.fields) |inject| {
-                if (inject.type == arg.type and @alignOf(inject.type) == arg.alignment) {
-                    break :blk true;
-                }
+        const is_injected = blk: {
+            switch (@typeInfo(arg.type)) {
+                .Struct => break :blk @hasDecl(arg.type, "IsInjectedArgument"),
+                .Pointer => {
+                    switch (@typeInfo(std.meta.Child(arg.type))) {
+                        .Struct => break :blk @hasDecl(std.meta.Child(arg.type), "IsInjectedArgument"),
+                        else => break :blk false,
+                    }
+                },
+                else => break :blk false,
             }
-            break :blk false;
         };
-        if (injectable) continue; // legitimate injected argument, ignore it
+        if (is_injected) continue; // legitimate injected argument, ignore it
         std_args = std_args ++ [_]type{arg.type};
     }
-    return std.meta.Tuple(std_args);
+    return Tuple(std_args);
 }
 
 /// enum describing every possible comptime-known global event name.
@@ -644,39 +696,37 @@ test injectArgs {
 }
 
 test UninjectedArgsTuple {
-    // Injected arguments should generally be *struct types to avoid conflicts with any user-passed
-    // parameters, though we do not require it - so we test with other types here.
-    const i32_ptr: *i32 = undefined;
-    const f32_ptr: *f32 = undefined;
-    const Foo = struct { foo: f32 };
-    const foo_ptr: *Foo = undefined;
+    const Foo = struct {
+        foo: f32,
+        pub const IsInjectedArgument = void;
+    };
 
     // No standard, no injected
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn () void, @TypeOf(.{})));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn () void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn () void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn () void));
 
     // Standard parameters only, no injected
-    TupleTester.assertTuple(.{i32}, UninjectedArgsTuple(fn (a: i32) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
-    TupleTester.assertTuple(.{ i32, f32 }, UninjectedArgsTuple(fn (a: i32, b: f32) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
+    TupleTester.assertTuple(.{i32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: i32) void));
+    TupleTester.assertTuple(.{ i32, f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: i32, b: f32) void));
 
     // Injected parameters only, no standard
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: *i32) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: *f32) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: *Foo) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: *f32, b: *Foo, c: *i32) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *i32) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *f32) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *f32, b: *Foo, c: *i32) void));
 
     // Once a standard parameter is encountered, all parameters after that are considered standard
     // and not injected.
-    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(fn (a: f32) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
-    TupleTester.assertTuple(.{ i32, *f32 }, UninjectedArgsTuple(fn (a: i32, b: *f32) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
-    TupleTester.assertTuple(.{ i32, *i32, *f32 }, UninjectedArgsTuple(fn (a: i32, b: *i32, c: *f32) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: f32) void));
+    TupleTester.assertTuple(.{ i32, *f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: i32, b: *f32) void));
+    TupleTester.assertTuple(.{ i32, *i32, *f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: i32, b: *i32, c: *f32) void));
 
     // First parameter (*f32) matches an injectable parameter type, so it is injected.
-    TupleTester.assertTuple(.{ i32, *i32, *f32 }, UninjectedArgsTuple(fn (a: *f32, b: i32, c: *i32, d: *f32) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
+    TupleTester.assertTuple(.{ i32, *i32, *f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: *f32, b: i32, c: *i32, d: *f32) void));
 
     // First parameter (*f32) matches an injectable parameter type, so it is injected. 2nd
     // parameter is not injectable, so all remaining parameters are not injected.
-    TupleTester.assertTuple(.{ i32, *Foo, *i32, *f32 }, UninjectedArgsTuple(fn (a: *f32, b: i32, c: *Foo, d: *i32, e: *f32) void, @TypeOf(.{ i32_ptr, f32_ptr, foo_ptr })));
+    TupleTester.assertTuple(.{ i32, *Foo, *i32, *f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: *f32, b: i32, c: *Foo, d: *i32, e: *f32) void));
 }
 
 test "event name calling" {

@@ -50,7 +50,7 @@ test "example" {
             pub const id = u32;
         };
 
-        pub fn tick(physics: *World(.{ Renderer, Physics }).Mod(Physics)) !void {
+        pub fn tick(physics: *World(.{ Renderer, Physics }).Mod(Physics)) void {
             _ = physics;
         }
     });
@@ -64,7 +64,7 @@ test "example" {
         pub fn tick(
             physics: *World(.{ Renderer, Physics }).Mod(Physics),
             renderer: *World(.{ Renderer, Physics }).Mod(Renderer),
-        ) !void {
+        ) void {
             _ = renderer;
             _ = physics;
         }
@@ -72,7 +72,8 @@ test "example" {
 
     //-------------------------------------------------------------------------
     // Create a world.
-    var world = try World(.{ Renderer, Physics }).init(allocator);
+    var world: World(.{ Renderer, Physics }) = undefined;
+    try world.init(allocator);
     defer world.deinit();
 
     // Initialize module state.
@@ -113,5 +114,6 @@ test "example" {
 
     //-------------------------------------------------------------------------
     // Send events to modules
-    try world.send(null, .tick, .{});
+    world.modules.send(.tick, .{});
+    try world.dispatch();
 }
