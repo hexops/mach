@@ -291,14 +291,8 @@ inline fn injectArgs(
     var args: std.meta.ArgsTuple(Function) = undefined;
     comptime var std_args_index = 0;
     outer: inline for (@typeInfo(std.meta.ArgsTuple(Function)).Struct.fields) |arg| {
-        // Injected arguments always go first, then standard (non-injected) arguments.
-        if (std_args_index > 0) {
-            @field(args, arg.name) = std_args[std_args_index];
-            std_args_index += 1;
-            continue;
-        }
-
-        // Is this argument matching the type of an argument we could inject?
+        // Is this a Struct or *Struct, with a `pub const IsInjectedArgument = void;` decl? If so,
+        // it is considered an injected argument.
         inline for (@typeInfo(Injectable).Struct.fields) |inject_field| {
             if (inject_field.type == arg.type and @alignOf(inject_field.type) == @alignOf(arg.type)) {
                 // Inject argument
@@ -322,11 +316,8 @@ fn UninjectedArgsTuple(
 ) type {
     var std_args: []const type = &[0]type{};
     inline for (@typeInfo(std.meta.ArgsTuple(Function)).Struct.fields) |arg| {
-        // Injected arguments always go first, then standard (non-injected) arguments.
-        if (std_args.len > 0) {
-            std_args = std_args ++ [_]type{arg.type};
-            continue;
-        }
+        // Is this a Struct or *Struct, with a `pub const IsInjectedArgument = void;` decl? If so,
+        // it is considered an injected argument.
         const is_injected = blk: {
             switch (@typeInfo(arg.type)) {
                 .Struct => break :blk @hasDecl(arg.type, "IsInjectedArgument"),
@@ -529,12 +520,11 @@ test Modules {
         pub const name = .engine_sprite2d;
     });
 
-    const Injectable = struct {};
     var modules: Modules(.{
         Physics,
         Renderer,
         Sprite2D,
-    }, Injectable) = undefined;
+    }) = undefined;
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
     testing.refAllDeclsRecursive(Physics);
@@ -577,12 +567,11 @@ test EventName {
         };
     });
 
-    const Injectable = struct {};
     const Mods = Modules(.{
         Physics,
         Renderer,
         Sprite2D,
-    }, Injectable);
+    });
     const info = @typeInfo(EventName(Mods.modules)).Enum;
 
     try testing.expect(type, u3).eql(info.tag_type);
@@ -616,12 +605,11 @@ test ModuleName {
     const Sprite2D = Module(struct {
         pub const name = .engine_sprite2d;
     });
-    const Injectable = struct {};
     const Mods = Modules(.{
         Physics,
         Renderer,
         Sprite2D,
-    }, Injectable);
+    });
     const info = @typeInfo(ModuleName(Mods.modules)).Enum;
 
     try testing.expect(type, u2).eql(info.tag_type);
@@ -631,6 +619,7 @@ test ModuleName {
     try testing.expect([]const u8, "engine_sprite2d").eql(info.fields[2].name);
 }
 
+// TODO: remove this in favor of testing.expect
 const TupleTester = struct {
     fn assertTypeEqual(comptime Expected: type, comptime Actual: type) void {
         if (Expected != Actual) @compileError("Expected type " ++ @typeName(Expected) ++ ", but got type " ++ @typeName(Actual));
@@ -655,17 +644,28 @@ const TupleTester = struct {
 test injectArgs {
     // Injected arguments should generally be *struct types to avoid conflicts with any user-passed
     // parameters, though we do not require it - so we test with other types here.
-    var i: i32 = 1234;
-    const i32_ptr: *i32 = &i;
-    var f: f32 = 0.1234;
-    const f32_ptr: *f32 = &f;
-    const Foo = struct { foo: f32 };
-    var foo: Foo = .{ .foo = 1234 };
-    const foo_ptr: *Foo = &foo;
+    const Foo = struct {
+        foo: f32,
+        pub const IsInjectedArgument = void;
+    };
+    const Bar = struct {
+        bar: i32,
+        pub const IsInjectedArgument = void;
+    };
+    const Baz = struct {
+        baz: bool,
+        pub const IsInjectedArgument = void;
+    };
+    var foo = Foo{ .foo = 0.1234 };
+    var bar = Bar{ .bar = 1234 };
+    var baz = Baz{ .baz = true };
+    const foo_ptr = &foo;
+    const bar_ptr = &bar;
+    const baz_ptr = &baz;
 
     // No standard, no injected
     try testing.expect(struct {}, .{}).eql(injectArgs(fn () void, @TypeOf(.{}), .{}, .{}));
-    const injectable = .{ i32_ptr, f32_ptr, foo_ptr };
+    const injectable = .{ foo_ptr, bar_ptr, baz_ptr };
     try testing.expect(struct {}, .{}).eql(injectArgs(fn () void, @TypeOf(injectable), injectable, .{}));
 
     // Standard parameters only, no injected
@@ -673,31 +673,32 @@ test injectArgs {
     try testing.expect(std.meta.Tuple(&.{ i32, f32 }), .{ 1, 0.5 }).eql(injectArgs(fn (a: i32, b: f32) void, @TypeOf(injectable), injectable, .{ 1, 0.5 }));
 
     // Injected parameters only, no standard
-    try testing.expect(std.meta.Tuple(&.{*i32}), .{i32_ptr}).eql(injectArgs(fn (a: *i32) void, @TypeOf(injectable), injectable, .{}));
-    try testing.expect(std.meta.Tuple(&.{*f32}), .{f32_ptr}).eql(injectArgs(fn (a: *f32) void, @TypeOf(injectable), injectable, .{}));
     try testing.expect(std.meta.Tuple(&.{*Foo}), .{foo_ptr}).eql(injectArgs(fn (a: *Foo) void, @TypeOf(injectable), injectable, .{}));
-    try testing.expect(std.meta.Tuple(&.{ *i32, *f32, *Foo }), .{ i32_ptr, f32_ptr, foo_ptr }).eql(injectArgs(fn (a: *i32, b: *f32, c: *Foo) void, @TypeOf(injectable), injectable, .{}));
+    try testing.expect(std.meta.Tuple(&.{ *Foo, *Bar }), .{ foo_ptr, bar_ptr }).eql(injectArgs(fn (a: *Foo, b: *Bar) void, @TypeOf(injectable), injectable, .{}));
+    try testing.expect(std.meta.Tuple(&.{ *Foo, *Bar, *Baz }), .{ foo_ptr, bar_ptr, baz_ptr }).eql(injectArgs(fn (a: *Foo, b: *Bar, c: *Baz) void, @TypeOf(injectable), injectable, .{}));
+    try testing.expect(std.meta.Tuple(&.{ *Bar, *Baz, *Foo }), .{ bar_ptr, baz_ptr, foo_ptr }).eql(injectArgs(fn (a: *Bar, b: *Baz, c: *Foo) void, @TypeOf(injectable), injectable, .{}));
+    try testing.expect(std.meta.Tuple(&.{ *Foo, *Foo, *Baz }), .{ foo_ptr, foo_ptr, baz_ptr }).eql(injectArgs(fn (a: *Foo, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{}));
 
-    // Once a standard parameter is encountered, all parameters after that are considered standard
-    // and not injected.
-    var my_f32: f32 = 0.1337;
-    var my_i32: i32 = 1337;
-    try testing.expect(std.meta.Tuple(&.{f32}), .{1234}).eql(injectArgs(fn (a: f32) void, @TypeOf(injectable), injectable, .{1234}));
-    try testing.expect(std.meta.Tuple(&.{ i32, *f32 }), .{ 1234, &my_f32 }).eql(injectArgs(fn (a: i32, b: *f32) void, @TypeOf(injectable), injectable, .{ 1234, &my_f32 }));
-    try testing.expect(std.meta.Tuple(&.{ i32, *i32, *f32 }), .{ 1234, &my_i32, &my_f32 }).eql(injectArgs(fn (a: i32, b: *i32, c: *f32) void, @TypeOf(injectable), injectable, .{ 1234, &my_i32, &my_f32 }));
+    // As long as the argument is a Struct or *Struct with an IsInjectedArgument decl, it is
+    // considered an injected argument.
+    // try testing.expect(std.meta.Tuple(&.{*const Foo}), .{foo_ptr}).eql(injectArgs(fn (a: *const Foo) void, @TypeOf(injectable), injectable, .{}));
+    const injectable2 = .{ foo, foo_ptr, bar_ptr, baz_ptr };
+    try testing.expect(std.meta.Tuple(&.{Foo}), .{foo_ptr.*}).eql(injectArgs(fn (a: Foo) void, @TypeOf(injectable2), injectable2, .{}));
 
-    // First parameter (*f32) matches an injectable parameter type, so it is injected.
-    try testing.expect(std.meta.Tuple(&.{ *f32, i32, *i32, *f32 }), .{ f32_ptr, 1234, &my_i32, &my_f32 }).eql(injectArgs(fn (a: *f32, b: i32, c: *i32, d: *f32) void, @TypeOf(injectable), injectable, .{ 1234, &my_i32, &my_f32 }));
-
-    // First parameter (*f32) matches an injectable parameter type, so it is injected. 2nd
-    // parameter is not injectable, so all remaining parameters are not injected.
-    var my_foo = foo;
-    try testing.expect(std.meta.Tuple(&.{ *f32, i32, *Foo, *i32, *f32 }), .{ f32_ptr, 1234, &my_foo, &my_i32, &my_f32 }).eql(injectArgs(fn (a: *f32, b: i32, c: *Foo, d: *i32, e: *f32) void, @TypeOf(injectable), injectable, .{ 1234, &my_foo, &my_i32, &my_f32 }));
+    // Order doesn't matter, injected arguments can be placed inbetween any standard arguments, etc.
+    try testing.expect(std.meta.Tuple(&.{ i32, *Foo, *Foo, *Baz }), .{ 1337, foo_ptr, foo_ptr, baz_ptr }).eql(injectArgs(fn (z: i32, a: *Foo, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{1337}));
+    try testing.expect(std.meta.Tuple(&.{ i32, *Foo, f32, *Foo, *Baz }), .{ 1337, foo_ptr, 1.337, foo_ptr, baz_ptr }).eql(injectArgs(fn (z: i32, a: *Foo, w: f32, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{ 1337, 1.337 }));
+    try testing.expect(std.meta.Tuple(&.{ i32, f32, *Foo, *Foo, *Baz }), .{ 1337, 1.337, foo_ptr, foo_ptr, baz_ptr }).eql(injectArgs(fn (z: i32, w: f32, a: *Foo, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{ 1337, 1.337 }));
+    try testing.expect(std.meta.Tuple(&.{ *Foo, *Foo, *Baz, i32, f32 }), .{ foo_ptr, foo_ptr, baz_ptr, 1337, 1.337 }).eql(injectArgs(fn (az: *Foo, b: *Foo, c: *Baz, z: i32, w: f32) void, @TypeOf(injectable), injectable, .{ 1337, 1.337 }));
 }
 
 test UninjectedArgsTuple {
     const Foo = struct {
         foo: f32,
+        pub const IsInjectedArgument = void;
+    };
+    const Bar = struct {
+        bar: bool,
         pub const IsInjectedArgument = void;
     };
 
@@ -710,23 +711,24 @@ test UninjectedArgsTuple {
     TupleTester.assertTuple(.{ i32, f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: i32, b: f32) void));
 
     // Injected parameters only, no standard
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *i32) void));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *f32) void));
     TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo) void));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *f32, b: *Foo, c: *i32) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Bar) void));
 
-    // Once a standard parameter is encountered, all parameters after that are considered standard
-    // and not injected.
-    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: f32) void));
-    TupleTester.assertTuple(.{ i32, *f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: i32, b: *f32) void));
-    TupleTester.assertTuple(.{ i32, *i32, *f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: i32, b: *i32, c: *f32) void));
+    // As long as the argument is a Struct or *Struct with an IsInjectedArgument decl, it is
+    // considered an injected argument.
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo, b: *Bar, c: Foo, d: Bar) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: Foo) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: Bar) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *const Foo) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *const Bar) void));
 
-    // First parameter (*f32) matches an injectable parameter type, so it is injected.
-    TupleTester.assertTuple(.{ i32, *i32, *f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: *f32, b: i32, c: *i32, d: *f32) void));
-
-    // First parameter (*f32) matches an injectable parameter type, so it is injected. 2nd
-    // parameter is not injectable, so all remaining parameters are not injected.
-    TupleTester.assertTuple(.{ i32, *Foo, *i32, *f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: *f32, b: i32, c: *Foo, d: *i32, e: *f32) void));
+    // Order doesn't matter, injected arguments can be placed inbetween any standard arguments, etc.
+    TupleTester.assertTuple(.{ f32, bool }, UninjectedArgsTuple(std.meta.Tuple, fn (i: f32, a: *Foo, k: bool, b: *Bar, c: Foo, d: Bar) void));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (i: f32, a: *Foo, b: *Bar, c: Foo, d: Bar) void));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo, i: f32, b: *Bar, c: Foo, d: Bar) void));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo, b: *Bar, i: f32, c: Foo, d: Bar) void));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo, b: *Bar, c: Foo, i: f32, d: Bar) void));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo, b: *Bar, c: Foo, d: Bar, i: f32) void));
 }
 
 test "event name calling" {
@@ -770,11 +772,10 @@ test "event name calling" {
         };
     });
 
-    const Injectable = struct {};
     var modules: Modules(.{
         Physics,
         Renderer,
-    }, Injectable) = undefined;
+    }) = undefined;
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
 
@@ -840,6 +841,8 @@ test "dispatch" {
     };
     var foo = struct {
         injected_args_sum: usize = 0,
+
+        pub const IsInjectedArgument = void;
     }{};
     const Minimal = Module(struct {
         pub const name = .engine_minimal;
@@ -887,12 +890,11 @@ test "dispatch" {
         };
     });
 
-    const injectable = .{&foo};
     var modules: Modules(.{
         Minimal,
         Physics,
         Renderer,
-    }, @TypeOf(injectable)) = undefined;
+    }) = undefined;
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
 
@@ -934,8 +936,8 @@ test "dispatch" {
     try testing.expect(usize, 1).eql(global.physics_calc);
 
     // Local events
-    modules.sendToModule(.engine_renderer, .basicArgs, .{ @as(u32, 1), @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
-    modules.sendToModule(.engine_renderer, .injectedArgs, .{ @as(u32, 1), @as(u32, 2) });
+    modules.sendToModule(.engine_renderer, .basicArgs, .{ .@"0" = @as(u32, 1), .@"1" = @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
+    modules.sendToModule(.engine_renderer, .injectedArgs, .{ .@"0" = @as(u32, 1), .@"1" = @as(u32, 2) });
     try modules.dispatch(.{&foo});
     try testing.expect(usize, 3).eql(global.basic_args_sum);
     try testing.expect(usize, 3).eql(foo.injected_args_sum);
