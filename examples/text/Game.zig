@@ -49,10 +49,51 @@ pub const Pipeline = enum(u32) {
 
 const upscale = 1.0;
 
+const style1 = Text.Style{
+    .font_name = "Roboto Medium", // TODO
+    .font_size = 48 * gfx.px_per_pt, // 48pt
+    .font_weight = gfx.font_weight_normal,
+    .italic = false,
+    .color = vec4(0.6, 1.0, 0.6, 1.0),
+};
+const style2 = blk: {
+    var v = style1;
+    v.italic = true;
+    break :blk v;
+};
+const style3 = blk: {
+    var v = style1;
+    v.font_weight = gfx.font_weight_bold;
+    break :blk v;
+};
+
+const segment1: []const @import("mach").gfx.Text.Segment = &.{
+    .{
+        .string = "Text but with spaces 😊\nand\n",
+        .style = &style1,
+    },
+    .{
+        .string = "italics\nand\n",
+        .style = &style2,
+    },
+    .{
+        .string = "bold\nand\n",
+        .style = &style3,
+    },
+};
+
+const segment2: []const @import("mach").gfx.Text.Segment = &.{
+    .{
+        .string = "!$?😊",
+        .style = &style1,
+    },
+};
+
 pub fn init(
     engine: *mach.Engine.Mod,
     text_mod: *Text.Mod,
     game: *Mod,
+    world: *mach.World,
 ) !void {
     // The Mach .core is where we set window options, etc.
     core.setTitle("gfx.Text example");
@@ -61,37 +102,13 @@ pub fn init(
     const player = try engine.newEntity();
     try text_mod.set(player, .pipeline, @intFromEnum(Pipeline.default));
     try text_mod.set(player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(vec3(0, 0, 0))));
-    const style1 = Text.Style{
-        .font_name = "Roboto Medium", // TODO
-        .font_size = 48 * gfx.px_per_pt, // 48pt
-        .font_weight = gfx.font_weight_normal,
-        .italic = false,
-        .color = vec4(0.6, 1.0, 0.6, 1.0),
-    };
-    var style2 = style1;
-    style2.italic = true;
-    var style3 = style1;
-    style3.font_weight = gfx.font_weight_bold;
-    try text_mod.set(player, .text, &.{
-        .{
-            .string = "Text but with spaces 😊\nand\n",
-            .style = &style1,
-        },
-        .{
-            .string = "italics\nand\n",
-            .style = &style2,
-        },
-        .{
-            .string = "bold\nand\n",
-            .style = &style3,
-        },
-    });
+    try text_mod.set(player, .text, segment1);
 
     text_mod.send(.init, .{});
     text_mod.send(.initPipeline, .{Text.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.default),
     }});
-    text_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
+    world.dispatchNoError(); // TODO: no dispatch in user code
 
     game.state = .{
         .timer = try mach.Timer.start(),
@@ -160,20 +177,7 @@ pub fn tick(
             const new_entity = try engine.newEntity();
             try text_mod.set(new_entity, .pipeline, @intFromEnum(Pipeline.default));
             try text_mod.set(new_entity, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(new_pos)));
-
-            const style1 = Text.Style{
-                .font_name = "Roboto Medium", // TODO
-                .font_size = 48 * gfx.px_per_pt, // 48pt
-                .font_weight = gfx.font_weight_normal,
-                .italic = false,
-                .color = vec4(0.6, 1.0, 0.6, 1.0),
-            };
-            try text_mod.set(new_entity, .text, &.{
-                .{
-                    .string = "!$?😊",
-                    .style = &style1,
-                },
-            });
+            try text_mod.set(new_entity, .text, segment2);
 
             game.state.texts += 1;
         }

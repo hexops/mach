@@ -18,6 +18,8 @@ pub const Engine = struct {
     pub const name = .engine;
     pub const Mod = World.Mod(@This());
 
+    pub const exit = fn () void;
+
     pub const local = struct {
         pub fn init(world: *World) !void {
             core.allocator = allocator;
@@ -30,32 +32,26 @@ pub const Engine = struct {
                 .label = "engine.state.encoder",
             });
 
-            try world.send(null, .init, .{});
+            world.modules.send(.init, .{});
         }
 
-        pub fn deinit(
-            world: *World,
-            engine: *Mod,
-        ) !void {
+        pub fn deinit(world: *World, engine: *Mod) void {
             // TODO: this triggers a device loss error, which we should handle correctly
             // engine.state.device.release();
             engine.state.queue.release();
-            try world.send(null, .deinit, .{});
+            world.modules.send(.deinit, .{});
             core.deinit();
             world.deinit();
             _ = gpa.deinit();
         }
 
         // Engine module's exit handler
-        pub fn exit(world: *World) !void {
-            try world.send(null, .exit, .{});
+        pub fn exit(world: *World) void {
+            world.modules.send(.exit, .{});
             world.mod.engine.state.exit = true;
         }
 
-        pub fn beginPass(
-            engine: *Mod,
-            clear_color: gpu.Color,
-        ) !void {
+        pub fn beginPass(engine: *Mod, clear_color: gpu.Color) void {
             const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
             defer back_buffer_view.release();
 
@@ -73,9 +69,7 @@ pub const Engine = struct {
             engine.state.pass = engine.state.encoder.beginRenderPass(&pass_info);
         }
 
-        pub fn endPass(
-            engine: *Mod,
-        ) !void {
+        pub fn endPass(engine: *Mod) void {
             // End this pass
             engine.state.pass.end();
             engine.state.pass.release();
@@ -91,7 +85,7 @@ pub const Engine = struct {
             });
         }
 
-        pub fn present() !void {
+        pub fn present() void {
             core.swap_chain.present();
         }
     };
@@ -101,16 +95,21 @@ pub const App = struct {
     world: World,
 
     pub fn init(app: *@This()) !void {
-        app.* = .{ .world = try World.init(allocator) };
-        try app.world.send(.engine, .init, .{});
+        app.* = .{ .world = undefined };
+        try app.world.init(allocator);
+        app.world.modules.sendToModule(.engine, .init, .{});
+        try app.world.dispatch();
     }
 
     pub fn deinit(app: *@This()) void {
-        try app.world.send(.engine, .deinit, .{});
+        app.world.modules.sendToModule(.engine, .deinit, .{});
     }
 
     pub fn update(app: *@This()) !bool {
-        try app.world.send(null, .tick, .{});
+        // TODO: better dispatch implementation
+        app.world.modules.send(.tick, .{});
+        try app.world.dispatch(); // dispatch .tick
+        try app.world.dispatch(); // dispatch any events produced by .tick
         return app.world.mod.engine.state.exit;
     }
 };
