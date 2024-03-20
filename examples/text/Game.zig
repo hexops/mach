@@ -27,6 +27,7 @@ frame_count: usize,
 texts: usize,
 rand: std.rand.DefaultPrng,
 time: f32,
+style1: mach.ecs.EntityID,
 
 const d0 = 0.000001;
 
@@ -49,45 +50,13 @@ pub const Pipeline = enum(u32) {
 
 const upscale = 1.0;
 
-const style1 = Text.Style{
-    .font_name = "Roboto Medium", // TODO
-    .font_size = 48 * gfx.px_per_pt, // 48pt
-    .font_weight = gfx.font_weight_normal,
-    .italic = false,
-    .color = vec4(0.6, 1.0, 0.6, 1.0),
-};
-const style2 = blk: {
-    var v = style1;
-    v.italic = true;
-    break :blk v;
-};
-const style3 = blk: {
-    var v = style1;
-    v.font_weight = gfx.font_weight_bold;
-    break :blk v;
+const text1: []const []const u8 = &.{
+    "Text but with spaces 😊\nand\n",
+    "italics\nand\n",
+    "bold\nand\n",
 };
 
-const segment1: []const @import("mach").gfx.Text.Segment = &.{
-    .{
-        .string = "Text but with spaces 😊\nand\n",
-        .style = &style1,
-    },
-    .{
-        .string = "italics\nand\n",
-        .style = &style2,
-    },
-    .{
-        .string = "bold\nand\n",
-        .style = &style3,
-    },
-};
-
-const segment2: []const @import("mach").gfx.Text.Segment = &.{
-    .{
-        .string = "!$?😊",
-        .style = &style1,
-    },
-};
+const text2: []const []const u8 = &.{"!$?😊"};
 
 pub fn init(
     engine: *mach.Engine.Mod,
@@ -98,11 +67,41 @@ pub fn init(
     // The Mach .core is where we set window options, etc.
     core.setTitle("gfx.Text example");
 
+    // TODO: a better way to initialize entities with default values
+    const style1 = try engine.newEntity();
+    try text_mod.set(style1, .font_name, "Roboto Medium"); // TODO
+    try text_mod.set(style1, .font_size, 48 * gfx.px_per_pt); // 48pt
+    try text_mod.set(style1, .font_weight, gfx.font_weight_normal);
+    try text_mod.set(style1, .italic, false);
+    try text_mod.set(style1, .color, vec4(0.6, 1.0, 0.6, 1.0));
+
+    const style2 = try engine.newEntity();
+    try text_mod.set(style2, .font_name, "Roboto Medium"); // TODO
+    try text_mod.set(style2, .font_size, 48 * gfx.px_per_pt); // 48pt
+    try text_mod.set(style2, .font_weight, gfx.font_weight_normal);
+    try text_mod.set(style2, .italic, true);
+    try text_mod.set(style2, .color, vec4(0.6, 1.0, 0.6, 1.0));
+
+    const style3 = try engine.newEntity();
+    try text_mod.set(style3, .font_name, "Roboto Medium"); // TODO
+    try text_mod.set(style3, .font_size, 48 * gfx.px_per_pt); // 48pt
+    try text_mod.set(style3, .font_weight, gfx.font_weight_bold);
+    try text_mod.set(style3, .italic, false);
+    try text_mod.set(style3, .color, vec4(0.6, 1.0, 0.6, 1.0));
+
     // Create some text
     const player = try engine.newEntity();
     try text_mod.set(player, .pipeline, @intFromEnum(Pipeline.default));
     try text_mod.set(player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(vec3(0, 0, 0))));
-    try text_mod.set(player, .text, segment1);
+
+    // TODO: better storage mechanism for this
+    // TODO: this is a leak
+    const styles = try engine.allocator.alloc(mach.ecs.EntityID, 3);
+    styles[0] = style1;
+    styles[1] = style2;
+    styles[2] = style3;
+    try text_mod.set(player, .text, text1);
+    try text_mod.set(player, .style, styles);
 
     text_mod.send(.init, .{});
     text_mod.send(.initPipeline, .{Text.PipelineOptions{
@@ -119,6 +118,7 @@ pub fn init(
         .texts = 0,
         .rand = std.rand.DefaultPrng.init(1337),
         .time = 0,
+        .style1 = style1,
     };
 }
 
@@ -177,7 +177,13 @@ pub fn tick(
             const new_entity = try engine.newEntity();
             try text_mod.set(new_entity, .pipeline, @intFromEnum(Pipeline.default));
             try text_mod.set(new_entity, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(new_pos)));
-            try text_mod.set(new_entity, .text, segment2);
+
+            // TODO: better storage mechanism for this
+            // TODO: this is a leak
+            const styles = try engine.allocator.alloc(mach.ecs.EntityID, 1);
+            styles[0] = game.state.style1;
+            try text_mod.set(new_entity, .text, text2);
+            try text_mod.set(new_entity, .style, styles);
 
             game.state.texts += 1;
         }

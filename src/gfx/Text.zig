@@ -38,30 +38,30 @@ pub const components = struct {
     /// origin (0, 0) lives at the center of the window.
     pub const transform = Mat4x4;
 
-    /// Segments of text to render.
-    pub const text = []const Segment;
-};
+    /// String segments of UTF-8 encoded text to render.
+    ///
+    /// Expected to match the length of the style component.
+    pub const text = []const []const u8;
 
-pub const Segment = struct {
-    /// A string of UTF-8 encoded text.
-    string: []const u8,
+    /// The style to apply to each segment of text.
+    ///
+    /// Expected to match the length of the text component.
+    pub const style = []const mach.ecs.EntityID;
 
-    /// Which style this text should use.
-    style: *const Style,
-};
+    /// Style component: desired font to render text with.
+    pub const font_name = []const u8; // TODO: ship a default font
 
-pub const Style = struct {
-    /// The desired font to render text with.
-    font_name: []const u8, // TODO: ship a default font
+    /// Style component: font size in pixels
+    pub const font_size = f32; // e.g. 12 * mach.gfx.px_per_pt // 12pt
 
-    /// Font size in pixels.
-    font_size: f32 = 12 * mach.gfx.px_per_pt, // 12pt
+    /// Style component: font weight
+    pub const font_weight = u16; // e.g. mach.gfx.font_weight_normal
 
-    font_weight: u16 = mach.gfx.font_weight_normal,
+    /// Style component: italic text
+    pub const italic = bool; // e.g. false
 
-    italic: bool = false,
-
-    color: Vec4 = vec4(0, 0, 0, 1.0),
+    /// Style component: fill color
+    pub const color = Vec4; // e.g. vec4(0, 0, 0, 1.0),
 };
 
 const Uniforms = extern struct {
@@ -371,11 +371,9 @@ pub const local = struct {
         pipeline.num_glyphs = 0;
         var glyphs = std.ArrayListUnmanaged(Glyph){};
         var transforms_offset: usize = 0;
-        // var colors_offset: usize = 0;
         var texture_update = false;
         while (archetypes_iter.next()) |archetype| {
             const transforms = archetype.slice(.mach_gfx_text, .transform);
-            // var colors = archetype.slice(.mach_gfx_text, .color);
 
             // TODO: confirm the lifetime of these slices is OK for writeBuffer, how long do they need
             // to live?
@@ -390,37 +388,46 @@ pub const local = struct {
             // TODO: this is very expensive and shouldn't be done here, should be done only on detected
             // text change.
             const px_density = 2.0;
-            // var font_names = archetype.slice(.mach_gfx_text, .font_name);
-            // var font_sizes = archetype.slice(.mach_gfx_text, .font_size);
-            const texts = archetype.slice(.mach_gfx_text, .text);
-            for (texts) |text| {
+            const segment_lists = archetype.slice(.mach_gfx_text, .text);
+            const style_lists = archetype.slice(.mach_gfx_text, .style);
+            for (segment_lists, style_lists) |segments, styles| {
                 var origin_x: f32 = 0.0;
                 var origin_y: f32 = 0.0;
 
-                for (text) |segment| {
+                for (segments, styles) |segment, style| {
                     // Load a font
-                    // TODO: resolve font by name, not hard-code
+                    const font_name = engine.entities.getComponent(style, .mach_gfx_text, .font_name).?;
+                    _ = font_name; // TODO: actually use font name
                     const font_bytes = @import("font-assets").fira_sans_regular_ttf;
                     var font = try gfx.Font.initBytes(font_bytes);
                     defer font.deinit(engine.allocator);
 
+                    const font_size = engine.entities.getComponent(style, .mach_gfx_text, .font_size).?;
+                    const font_weight = engine.entities.getComponent(style, .mach_gfx_text, .font_weight);
+                    const italic = engine.entities.getComponent(style, .mach_gfx_text, .italic);
+                    const color = engine.entities.getComponent(style, .mach_gfx_text, .color);
+                    // TODO: actually apply these
+                    _ = font_weight;
+                    _ = italic;
+                    _ = color;
+
                     // Create a text shaper
                     var run = try gfx.TextRun.init();
-                    run.font_size_px = segment.style.font_size;
+                    run.font_size_px = font_size;
                     run.px_density = 2; // TODO
 
                     defer run.deinit();
 
-                    run.addText(segment.string);
+                    run.addText(segment);
                     try font.shape(&run);
 
                     while (run.next()) |glyph| {
-                        const codepoint = segment.string[glyph.cluster];
+                        const codepoint = segment[glyph.cluster];
                         // TODO: use flags(?) to detect newline, or at least something more reliable?
                         if (codepoint != '\n') {
                             const region = try pipeline.regions.getOrPut(engine.allocator, .{
                                 .index = glyph.glyph_index,
-                                .size = @bitCast(segment.style.font_size),
+                                .size = @bitCast(font_size),
                             });
                             if (!region.found_existing) {
                                 const rendered_glyph = try font.render(engine.allocator, glyph.glyph_index, .{
@@ -466,7 +473,7 @@ pub const local = struct {
 
                         if (codepoint == '\n') {
                             origin_x = 0;
-                            origin_y -= segment.style.font_size;
+                            origin_y -= font_size;
                         } else {
                             origin_x += glyph.advance.x();
                         }
