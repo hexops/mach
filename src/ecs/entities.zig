@@ -315,6 +315,9 @@ pub fn Entities(comptime all_components: anytype) type {
 
                 const archetype_entry = try entities.archetypeOrPut(columns);
                 if (!archetype_entry.found_existing) {
+                    // Update prev_archetype pointer, as it would now be invalidated due to the allocation
+                    prev_archetype = &entities.archetypes.items[prev_archetype_idx];
+
                     archetype_entry.ptr.* = .{
                         .len = 0,
                         .capacity = 0,
@@ -412,6 +415,9 @@ pub fn Entities(comptime all_components: anytype) type {
 
                 const archetype_entry = try entities.archetypeOrPut(columns);
                 if (!archetype_entry.found_existing) {
+                    // Update prev_archetype pointer, as it would now be invalidated due to the allocation
+                    prev_archetype = &entities.archetypes.items[prev_archetype_idx];
+
                     archetype_entry.ptr.* = .{
                         .len = 0,
                         .capacity = 0,
@@ -492,6 +498,7 @@ pub fn Entities(comptime all_components: anytype) type {
 
             var archetype = entities.archetypeByID(entity);
             const ptr = entities.entities.get(entity).?;
+
             return archetype.get(ptr.row_index, name_id, Component);
         }
 
@@ -548,6 +555,9 @@ pub fn Entities(comptime all_components: anytype) type {
 
             const archetype_entry = try entities.archetypeOrPut(columns);
             if (!archetype_entry.found_existing) {
+                // Update prev_archetype pointer, as it would now be invalidated due to the allocation
+                prev_archetype = &entities.archetypes.items[prev_archetype_idx];
+
                 archetype_entry.ptr.* = .{
                     .len = 0,
                     .capacity = 0,
