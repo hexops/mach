@@ -68,13 +68,13 @@ pub fn World(comptime mods: anytype) type {
                     try world.entities.removeComponent(entity, module_tag, component_name);
                 }
 
-                pub inline fn send(m: *@This(), comptime event_name: anytype, args: anytype) void {
+                pub inline fn send(m: *@This(), comptime event_name: Modules.LocalEvent, args: anytype) void {
                     const mod_ptr: *Mods = @alignCast(@fieldParentPtr(Mods, @tagName(module_tag), m));
                     const world = @fieldParentPtr(WorldT, "mod", mod_ptr);
                     world.modules.sendToModule(module_tag, event_name, args);
                 }
 
-                pub inline fn sendGlobal(m: *@This(), event_name: Modules.GlobalEvent, args: anytype) void {
+                pub inline fn sendGlobal(m: *@This(), comptime event_name: Modules.GlobalEvent, args: anytype) void {
                     const mod_ptr: *Mods = @alignCast(@fieldParentPtr(Mods, @tagName(module_tag), m));
                     const world = @fieldParentPtr(WorldT, "mod", mod_ptr);
                     world.modules.send(event_name, args);
