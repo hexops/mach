@@ -41,6 +41,7 @@ pub fn Modules(comptime mods: anytype) type {
         pub const EventID = u32;
 
         pub const GlobalEvent = GlobalEventEnum(mods);
+        pub const LocalEvent = LocalEventEnum(mods);
 
         const Event = struct {
             module_name: ?ModuleID,
@@ -71,7 +72,7 @@ pub fn Modules(comptime mods: anytype) type {
 
         /// Returns an args tuple representing the standard, uninjected, arguments which the given
         /// local event handler requires.
-        fn LocalArgs(module_name: ModuleName(mods), event_name: LocalEventEnum(mods)) type {
+        fn LocalArgs(module_name: ModuleName(mods), event_name: LocalEvent) type {
             inline for (modules) |M| {
                 _ = Module(M); // Validate the module
                 if (M.name != module_name) continue;
@@ -143,7 +144,7 @@ pub fn Modules(comptime mods: anytype) type {
             m: *@This(),
             // TODO: is a variant of this function where module_name/event_name is not comptime known, but asserted to be a valid enum, useful?
             comptime module_name: ModuleName(mods),
-            comptime event_name: LocalEventEnum(mods),
+            comptime event_name: LocalEvent,
             args: LocalArgs(module_name, event_name),
         ) void {
             // TODO: comptime safety/debugging
@@ -242,7 +243,7 @@ pub fn Modules(comptime mods: anytype) type {
         }
 
         /// Call local event handler with the specified name in the specified module
-        inline fn callLocal(module_name: ModuleName(mods), event_name: LocalEventEnum(mods), args: []u8, injectable: anytype) !void {
+        inline fn callLocal(module_name: ModuleName(mods), event_name: LocalEvent, args: []u8, injectable: anytype) !void {
             if (@typeInfo(@TypeOf(event_name)).Enum.fields.len == 0) return;
             // TODO: invert switch case for hypothetically better branch prediction
             switch (module_name) {
@@ -405,7 +406,6 @@ fn LocalEventEnum(comptime mods: anytype) type {
 
 /// enum describing every possible comptime-known global event name
 fn GlobalEventEnum(comptime mods: anytype) type {
-    // Note: this function only accesses M.Events' .global name field. No other field is accessed
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
     for (mods) |M| {
@@ -640,7 +640,7 @@ test "event name" {
         Sprite2D,
     });
 
-    const locals = @typeInfo(LocalEventEnum(Mods.modules)).Enum;
+    const locals = @typeInfo(Mods.LocalEvent).Enum;
     try testing.expect(type, u1).eql(locals.tag_type);
     try testing.expect(usize, 2).eql(locals.fields.len);
     try testing.expect([]const u8, "baz").eql(locals.fields[0].name);
@@ -856,7 +856,7 @@ test "event name calling" {
     const alloc = try testing.allocator.create(u3);
     defer testing.allocator.destroy(alloc);
     const GE = @TypeOf(modules).GlobalEvent;
-    const LE = LocalEventEnum(@TypeOf(modules).modules);
+    const LE = @TypeOf(modules).LocalEvent;
     alloc.* = @intFromEnum(@as(GE, .tick));
 
     const global_event_name = @as(GE, @enumFromInt(alloc.*));
@@ -972,7 +972,7 @@ test "dispatch" {
     defer modules.deinit(testing.allocator);
 
     const GE = @TypeOf(modules).GlobalEvent;
-    const LE = LocalEventEnum(@TypeOf(modules).modules);
+    const LE = @TypeOf(modules).LocalEvent;
     const M = ModuleName(@TypeOf(modules).modules);
 
     // Global events
