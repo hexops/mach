@@ -108,8 +108,7 @@ fn init(
     try text_mod.set(player, .text, text1);
     try text_mod.set(player, .style, styles);
 
-    text_mod.send(.init, .{});
-    text_mod.send(.initPipeline, .{Text.PipelineOptions{
+    text_mod.send(.init_pipeline, .{Text.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.default),
     }});
     engine.dispatchNoError(); // TODO: no dispatch in user code
@@ -230,12 +229,12 @@ fn tick(
     text_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
 
     // Perform pre-render work
-    text_mod.send(.preRender, .{@intFromEnum(Pipeline.default)});
+    text_mod.send(.pre_render, .{@intFromEnum(Pipeline.default)});
 
     // Render a frame
-    engine.send(.beginPass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
+    engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
     text_mod.send(.render, .{@intFromEnum(Pipeline.default)});
-    engine.send(.endPass, .{});
+    engine.send(.end_pass, .{});
     engine.send(.present, .{}); // Present the frame
 
     // Every second, update the window title with the FPS

@@ -41,10 +41,10 @@ pub const components = struct {
 
 pub const events = .{
     .{ .global = .deinit, .handler = deinit },
-    .{ .local = .init, .handler = init },
-    .{ .local = .initPipeline, .handler = initPipeline },
+    .{ .global = .init, .handler = init },
+    .{ .local = .init_pipeline, .handler = initPipeline },
     .{ .local = .updated, .handler = updated },
-    .{ .local = .preRender, .handler = preRender },
+    .{ .local = .pre_render, .handler = preRender },
     .{ .local = .render, .handler = render },
 };
 
