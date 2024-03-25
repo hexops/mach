@@ -68,7 +68,6 @@ fn init(
     engine: *mach.Engine.Mod,
     text_mod: *Text.Mod,
     game: *Mod,
-    world: *mach.World,
 ) !void {
     // The Mach .core is where we set window options, etc.
     core.setTitle("gfx.Text example");
@@ -113,7 +112,7 @@ fn init(
     text_mod.send(.initPipeline, .{Text.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.default),
     }});
-    world.dispatchNoError(); // TODO: no dispatch in user code
+    engine.dispatchNoError(); // TODO: no dispatch in user code
 
     game.state = .{
         .timer = try mach.Timer.start(),
