@@ -64,6 +64,15 @@ pub const components = struct {
     pub const color = Vec4; // e.g. vec4(0, 0, 0, 1.0),
 };
 
+pub const events = .{
+    .{ .global = .deinit, .handler = deinit },
+    .{ .local = .init, .handler = init },
+    .{ .local = .initPipeline, .handler = initPipeline },
+    .{ .local = .updated, .handler = updated },
+    .{ .local = .preRender, .handler = preRender },
+    .{ .local = .render, .handler = render },
+};
+
 const Uniforms = extern struct {
     // WebGPU requires that the size of struct fields are multiples of 16
     // So we use align(16) and 'extern' to maintain field order
@@ -171,383 +180,381 @@ pub const PipelineOptions = struct {
     pipeline_layout: ?*gpu.PipelineLayout = null,
 };
 
-pub fn deinit(text_mod: *Mod) !void {
+fn deinit(text_mod: *Mod) !void {
     for (text_mod.state.pipelines.entries.items(.value)) |*pipeline| pipeline.deinit(text_mod.allocator);
     text_mod.state.pipelines.deinit(text_mod.allocator);
 }
 
-pub const local = struct {
-    pub fn init(
-        text_mod: *Mod,
-    ) !void {
-        text_mod.state = .{
-            // TODO: struct default value initializers don't work
-            .pipelines = .{},
-        };
+fn init(
+    text_mod: *Mod,
+) !void {
+    text_mod.state = .{
+        // TODO: struct default value initializers don't work
+        .pipelines = .{},
+    };
+}
+
+fn initPipeline(
+    engine: *Engine.Mod,
+    text_mod: *Mod,
+    opt: PipelineOptions,
+) !void {
+    const device = engine.state.device;
+
+    const pipeline = try text_mod.state.pipelines.getOrPut(engine.allocator, opt.pipeline);
+    if (pipeline.found_existing) {
+        pipeline.value_ptr.*.deinit(engine.allocator);
     }
 
-    pub fn initPipeline(
-        engine: *Engine.Mod,
-        text_mod: *Mod,
-        opt: PipelineOptions,
-    ) !void {
-        const device = engine.state.device;
+    // Prepare texture for the font atlas.
+    const img_size = gpu.Extent3D{ .width = 1024, .height = 1024 };
+    const texture = device.createTexture(&.{
+        .size = img_size,
+        .format = .rgba8_unorm,
+        .usage = .{
+            .texture_binding = true,
+            .copy_dst = true,
+            .render_attachment = true,
+        },
+    });
+    const texture_atlas = try gfx.Atlas.init(
+        engine.allocator,
+        img_size.width,
+        .rgba,
+    );
 
-        const pipeline = try text_mod.state.pipelines.getOrPut(engine.allocator, opt.pipeline);
-        if (pipeline.found_existing) {
-            pipeline.value_ptr.*.deinit(engine.allocator);
-        }
+    // Storage buffers
+    const buffer_cap = 1024 * 128; // TODO: allow user to specify preallocation
+    const glyph_buffer_cap = 1024 * 512; // TODO: allow user to specify preallocation
+    const transforms = device.createBuffer(&.{
+        .usage = .{ .storage = true, .copy_dst = true },
+        .size = @sizeOf(Mat4x4) * buffer_cap,
+        .mapped_at_creation = .false,
+    });
+    const colors = device.createBuffer(&.{
+        .usage = .{ .storage = true, .copy_dst = true },
+        .size = @sizeOf(Vec4) * buffer_cap,
+        .mapped_at_creation = .false,
+    });
+    const glyphs = device.createBuffer(&.{
+        .usage = .{ .storage = true, .copy_dst = true },
+        .size = @sizeOf(Glyph) * glyph_buffer_cap,
+        .mapped_at_creation = .false,
+    });
 
-        // Prepare texture for the font atlas.
-        const img_size = gpu.Extent3D{ .width = 1024, .height = 1024 };
-        const texture = device.createTexture(&.{
-            .size = img_size,
-            .format = .rgba8_unorm,
-            .usage = .{
-                .texture_binding = true,
-                .copy_dst = true,
-                .render_attachment = true,
+    const texture_sampler = opt.texture_sampler orelse device.createSampler(&.{
+        .mag_filter = .nearest,
+        .min_filter = .nearest,
+    });
+    const uniforms = device.createBuffer(&.{
+        .usage = .{ .copy_dst = true, .uniform = true },
+        .size = @sizeOf(Uniforms),
+        .mapped_at_creation = .false,
+    });
+    const bind_group_layout = opt.bind_group_layout orelse device.createBindGroupLayout(
+        &gpu.BindGroupLayout.Descriptor.init(.{
+            .entries = &.{
+                gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, false, 0),
+                gpu.BindGroupLayout.Entry.buffer(1, .{ .vertex = true }, .read_only_storage, false, 0),
+                gpu.BindGroupLayout.Entry.buffer(2, .{ .vertex = true }, .read_only_storage, false, 0),
+                gpu.BindGroupLayout.Entry.buffer(3, .{ .vertex = true }, .read_only_storage, false, 0),
+                gpu.BindGroupLayout.Entry.sampler(4, .{ .fragment = true }, .filtering),
+                gpu.BindGroupLayout.Entry.texture(5, .{ .fragment = true }, .float, .dimension_2d, false),
+                gpu.BindGroupLayout.Entry.texture(6, .{ .fragment = true }, .float, .dimension_2d, false),
+                gpu.BindGroupLayout.Entry.texture(7, .{ .fragment = true }, .float, .dimension_2d, false),
+                gpu.BindGroupLayout.Entry.texture(8, .{ .fragment = true }, .float, .dimension_2d, false),
             },
-        });
-        const texture_atlas = try gfx.Atlas.init(
-            engine.allocator,
-            img_size.width,
-            .rgba,
-        );
+        }),
+    );
+    defer bind_group_layout.release();
 
-        // Storage buffers
-        const buffer_cap = 1024 * 128; // TODO: allow user to specify preallocation
-        const glyph_buffer_cap = 1024 * 512; // TODO: allow user to specify preallocation
-        const transforms = device.createBuffer(&.{
-            .usage = .{ .storage = true, .copy_dst = true },
-            .size = @sizeOf(Mat4x4) * buffer_cap,
-            .mapped_at_creation = .false,
-        });
-        const colors = device.createBuffer(&.{
-            .usage = .{ .storage = true, .copy_dst = true },
-            .size = @sizeOf(Vec4) * buffer_cap,
-            .mapped_at_creation = .false,
-        });
-        const glyphs = device.createBuffer(&.{
-            .usage = .{ .storage = true, .copy_dst = true },
-            .size = @sizeOf(Glyph) * glyph_buffer_cap,
-            .mapped_at_creation = .false,
-        });
+    const texture_view = texture.createView(&gpu.TextureView.Descriptor{});
+    const texture2_view = if (opt.texture2) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
+    const texture3_view = if (opt.texture3) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
+    const texture4_view = if (opt.texture4) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
+    defer texture_view.release();
+    defer texture2_view.release();
+    defer texture3_view.release();
+    defer texture4_view.release();
 
-        const texture_sampler = opt.texture_sampler orelse device.createSampler(&.{
-            .mag_filter = .nearest,
-            .min_filter = .nearest,
-        });
-        const uniforms = device.createBuffer(&.{
-            .usage = .{ .copy_dst = true, .uniform = true },
-            .size = @sizeOf(Uniforms),
-            .mapped_at_creation = .false,
-        });
-        const bind_group_layout = opt.bind_group_layout orelse device.createBindGroupLayout(
-            &gpu.BindGroupLayout.Descriptor.init(.{
-                .entries = &.{
-                    gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, false, 0),
-                    gpu.BindGroupLayout.Entry.buffer(1, .{ .vertex = true }, .read_only_storage, false, 0),
-                    gpu.BindGroupLayout.Entry.buffer(2, .{ .vertex = true }, .read_only_storage, false, 0),
-                    gpu.BindGroupLayout.Entry.buffer(3, .{ .vertex = true }, .read_only_storage, false, 0),
-                    gpu.BindGroupLayout.Entry.sampler(4, .{ .fragment = true }, .filtering),
-                    gpu.BindGroupLayout.Entry.texture(5, .{ .fragment = true }, .float, .dimension_2d, false),
-                    gpu.BindGroupLayout.Entry.texture(6, .{ .fragment = true }, .float, .dimension_2d, false),
-                    gpu.BindGroupLayout.Entry.texture(7, .{ .fragment = true }, .float, .dimension_2d, false),
-                    gpu.BindGroupLayout.Entry.texture(8, .{ .fragment = true }, .float, .dimension_2d, false),
-                },
-            }),
-        );
-        defer bind_group_layout.release();
-
-        const texture_view = texture.createView(&gpu.TextureView.Descriptor{});
-        const texture2_view = if (opt.texture2) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
-        const texture3_view = if (opt.texture3) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
-        const texture4_view = if (opt.texture4) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
-        defer texture_view.release();
-        defer texture2_view.release();
-        defer texture3_view.release();
-        defer texture4_view.release();
-
-        const bind_group = opt.bind_group orelse device.createBindGroup(
-            &gpu.BindGroup.Descriptor.init(.{
-                .layout = bind_group_layout,
-                .entries = &.{
-                    gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms)),
-                    gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(Mat4x4) * buffer_cap),
-                    gpu.BindGroup.Entry.buffer(2, colors, 0, @sizeOf(Vec4) * buffer_cap),
-                    gpu.BindGroup.Entry.buffer(3, glyphs, 0, @sizeOf(Glyph) * glyph_buffer_cap),
-                    gpu.BindGroup.Entry.sampler(4, texture_sampler),
-                    gpu.BindGroup.Entry.textureView(5, texture_view),
-                    gpu.BindGroup.Entry.textureView(6, texture2_view),
-                    gpu.BindGroup.Entry.textureView(7, texture3_view),
-                    gpu.BindGroup.Entry.textureView(8, texture4_view),
-                },
-            }),
-        );
-
-        const blend_state = opt.blend_state orelse gpu.BlendState{
-            .color = .{
-                .operation = .add,
-                .src_factor = .src_alpha,
-                .dst_factor = .one_minus_src_alpha,
+    const bind_group = opt.bind_group orelse device.createBindGroup(
+        &gpu.BindGroup.Descriptor.init(.{
+            .layout = bind_group_layout,
+            .entries = &.{
+                gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms)),
+                gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(Mat4x4) * buffer_cap),
+                gpu.BindGroup.Entry.buffer(2, colors, 0, @sizeOf(Vec4) * buffer_cap),
+                gpu.BindGroup.Entry.buffer(3, glyphs, 0, @sizeOf(Glyph) * glyph_buffer_cap),
+                gpu.BindGroup.Entry.sampler(4, texture_sampler),
+                gpu.BindGroup.Entry.textureView(5, texture_view),
+                gpu.BindGroup.Entry.textureView(6, texture2_view),
+                gpu.BindGroup.Entry.textureView(7, texture3_view),
+                gpu.BindGroup.Entry.textureView(8, texture4_view),
             },
-            .alpha = .{
-                .operation = .add,
-                .src_factor = .one,
-                .dst_factor = .zero,
-            },
-        };
+        }),
+    );
 
-        const shader_module = opt.shader orelse device.createShaderModuleWGSL("text.wgsl", @embedFile("text.wgsl"));
-        defer shader_module.release();
+    const blend_state = opt.blend_state orelse gpu.BlendState{
+        .color = .{
+            .operation = .add,
+            .src_factor = .src_alpha,
+            .dst_factor = .one_minus_src_alpha,
+        },
+        .alpha = .{
+            .operation = .add,
+            .src_factor = .one,
+            .dst_factor = .zero,
+        },
+    };
 
-        const color_target = opt.color_target_state orelse gpu.ColorTargetState{
-            .format = core.descriptor.format,
-            .blend = &blend_state,
-            .write_mask = gpu.ColorWriteMaskFlags.all,
-        };
-        const fragment = opt.fragment_state orelse gpu.FragmentState.init(.{
+    const shader_module = opt.shader orelse device.createShaderModuleWGSL("text.wgsl", @embedFile("text.wgsl"));
+    defer shader_module.release();
+
+    const color_target = opt.color_target_state orelse gpu.ColorTargetState{
+        .format = core.descriptor.format,
+        .blend = &blend_state,
+        .write_mask = gpu.ColorWriteMaskFlags.all,
+    };
+    const fragment = opt.fragment_state orelse gpu.FragmentState.init(.{
+        .module = shader_module,
+        .entry_point = "fragMain",
+        .targets = &.{color_target},
+    });
+
+    const bind_group_layouts = [_]*gpu.BindGroupLayout{bind_group_layout};
+    const pipeline_layout = opt.pipeline_layout orelse device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
+        .bind_group_layouts = &bind_group_layouts,
+    }));
+    defer pipeline_layout.release();
+    const render_pipeline = device.createRenderPipeline(&gpu.RenderPipeline.Descriptor{
+        .fragment = &fragment,
+        .layout = pipeline_layout,
+        .vertex = gpu.VertexState{
             .module = shader_module,
-            .entry_point = "fragMain",
-            .targets = &.{color_target},
-        });
+            .entry_point = "vertMain",
+        },
+    });
 
-        const bind_group_layouts = [_]*gpu.BindGroupLayout{bind_group_layout};
-        const pipeline_layout = opt.pipeline_layout orelse device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
-            .bind_group_layouts = &bind_group_layouts,
-        }));
-        defer pipeline_layout.release();
-        const render_pipeline = device.createRenderPipeline(&gpu.RenderPipeline.Descriptor{
-            .fragment = &fragment,
-            .layout = pipeline_layout,
-            .vertex = gpu.VertexState{
-                .module = shader_module,
-                .entry_point = "vertMain",
-            },
-        });
+    pipeline.value_ptr.* = Pipeline{
+        .render = render_pipeline,
+        .texture_sampler = texture_sampler,
+        .texture = texture,
+        .texture_atlas = texture_atlas,
+        .texture2 = opt.texture2,
+        .texture3 = opt.texture3,
+        .texture4 = opt.texture4,
+        .bind_group = bind_group,
+        .uniforms = uniforms,
+        .num_texts = 0,
+        .num_glyphs = 0,
+        .transforms = transforms,
+        .colors = colors,
+        .glyphs = glyphs,
+    };
+    pipeline.value_ptr.reference();
+}
 
-        pipeline.value_ptr.* = Pipeline{
-            .render = render_pipeline,
-            .texture_sampler = texture_sampler,
-            .texture = texture,
-            .texture_atlas = texture_atlas,
-            .texture2 = opt.texture2,
-            .texture3 = opt.texture3,
-            .texture4 = opt.texture4,
-            .bind_group = bind_group,
-            .uniforms = uniforms,
-            .num_texts = 0,
-            .num_glyphs = 0,
-            .transforms = transforms,
-            .colors = colors,
-            .glyphs = glyphs,
-        };
-        pipeline.value_ptr.reference();
-    }
+fn updated(
+    engine: *Engine.Mod,
+    text_mod: *Mod,
+    pipeline_id: u32,
+) !void {
+    const pipeline = text_mod.state.pipelines.getPtr(pipeline_id).?;
+    const device = engine.state.device;
 
-    pub fn updated(
-        engine: *Engine.Mod,
-        text_mod: *Mod,
-        pipeline_id: u32,
-    ) !void {
-        const pipeline = text_mod.state.pipelines.getPtr(pipeline_id).?;
-        const device = engine.state.device;
+    // TODO: make sure these entities only belong to the given pipeline
+    // we need a better tagging mechanism
+    var archetypes_iter = engine.entities.query(.{ .all = &.{
+        .{ .mach_gfx_text = &.{
+            .pipeline,
+            .transform,
+            .text,
+        } },
+    } });
 
-        // TODO: make sure these entities only belong to the given pipeline
-        // we need a better tagging mechanism
-        var archetypes_iter = engine.entities.query(.{ .all = &.{
-            .{ .mach_gfx_text = &.{
-                .pipeline,
-                .transform,
-                .text,
-            } },
-        } });
+    const encoder = device.createCommandEncoder(null);
+    defer encoder.release();
 
-        const encoder = device.createCommandEncoder(null);
-        defer encoder.release();
+    pipeline.num_texts = 0;
+    pipeline.num_glyphs = 0;
+    var glyphs = std.ArrayListUnmanaged(Glyph){};
+    var transforms_offset: usize = 0;
+    var texture_update = false;
+    while (archetypes_iter.next()) |archetype| {
+        const transforms = archetype.slice(.mach_gfx_text, .transform);
 
-        pipeline.num_texts = 0;
-        pipeline.num_glyphs = 0;
-        var glyphs = std.ArrayListUnmanaged(Glyph){};
-        var transforms_offset: usize = 0;
-        var texture_update = false;
-        while (archetypes_iter.next()) |archetype| {
-            const transforms = archetype.slice(.mach_gfx_text, .transform);
+        // TODO: confirm the lifetime of these slices is OK for writeBuffer, how long do they need
+        // to live?
+        encoder.writeBuffer(pipeline.transforms, transforms_offset, transforms);
+        // encoder.writeBuffer(pipeline.colors, colors_offset, colors);
 
-            // TODO: confirm the lifetime of these slices is OK for writeBuffer, how long do they need
-            // to live?
-            encoder.writeBuffer(pipeline.transforms, transforms_offset, transforms);
-            // encoder.writeBuffer(pipeline.colors, colors_offset, colors);
+        transforms_offset += transforms.len;
+        // colors_offset += colors.len;
+        pipeline.num_texts += @intCast(transforms.len);
 
-            transforms_offset += transforms.len;
-            // colors_offset += colors.len;
-            pipeline.num_texts += @intCast(transforms.len);
+        // Render texts
+        // TODO: this is very expensive and shouldn't be done here, should be done only on detected
+        // text change.
+        const px_density = 2.0;
+        const segment_lists = archetype.slice(.mach_gfx_text, .text);
+        const style_lists = archetype.slice(.mach_gfx_text, .style);
+        for (segment_lists, style_lists) |segments, styles| {
+            var origin_x: f32 = 0.0;
+            var origin_y: f32 = 0.0;
 
-            // Render texts
-            // TODO: this is very expensive and shouldn't be done here, should be done only on detected
-            // text change.
-            const px_density = 2.0;
-            const segment_lists = archetype.slice(.mach_gfx_text, .text);
-            const style_lists = archetype.slice(.mach_gfx_text, .style);
-            for (segment_lists, style_lists) |segments, styles| {
-                var origin_x: f32 = 0.0;
-                var origin_y: f32 = 0.0;
+            for (segments, styles) |segment, style| {
+                // Load a font
+                const font_name = engine.entities.getComponent(style, .mach_gfx_text, .font_name).?;
+                _ = font_name; // TODO: actually use font name
+                const font_bytes = @import("font-assets").fira_sans_regular_ttf;
+                var font = try gfx.Font.initBytes(font_bytes);
+                defer font.deinit(engine.allocator);
 
-                for (segments, styles) |segment, style| {
-                    // Load a font
-                    const font_name = engine.entities.getComponent(style, .mach_gfx_text, .font_name).?;
-                    _ = font_name; // TODO: actually use font name
-                    const font_bytes = @import("font-assets").fira_sans_regular_ttf;
-                    var font = try gfx.Font.initBytes(font_bytes);
-                    defer font.deinit(engine.allocator);
+                const font_size = engine.entities.getComponent(style, .mach_gfx_text, .font_size).?;
+                const font_weight = engine.entities.getComponent(style, .mach_gfx_text, .font_weight);
+                const italic = engine.entities.getComponent(style, .mach_gfx_text, .italic);
+                const color = engine.entities.getComponent(style, .mach_gfx_text, .color);
+                // TODO: actually apply these
+                _ = font_weight;
+                _ = italic;
+                _ = color;
 
-                    const font_size = engine.entities.getComponent(style, .mach_gfx_text, .font_size).?;
-                    const font_weight = engine.entities.getComponent(style, .mach_gfx_text, .font_weight);
-                    const italic = engine.entities.getComponent(style, .mach_gfx_text, .italic);
-                    const color = engine.entities.getComponent(style, .mach_gfx_text, .color);
-                    // TODO: actually apply these
-                    _ = font_weight;
-                    _ = italic;
-                    _ = color;
+                // Create a text shaper
+                var run = try gfx.TextRun.init();
+                run.font_size_px = font_size;
+                run.px_density = 2; // TODO
 
-                    // Create a text shaper
-                    var run = try gfx.TextRun.init();
-                    run.font_size_px = font_size;
-                    run.px_density = 2; // TODO
+                defer run.deinit();
 
-                    defer run.deinit();
+                run.addText(segment);
+                try font.shape(&run);
 
-                    run.addText(segment);
-                    try font.shape(&run);
-
-                    while (run.next()) |glyph| {
-                        const codepoint = segment[glyph.cluster];
-                        // TODO: use flags(?) to detect newline, or at least something more reliable?
-                        if (codepoint != '\n') {
-                            const region = try pipeline.regions.getOrPut(engine.allocator, .{
-                                .index = glyph.glyph_index,
-                                .size = @bitCast(font_size),
+                while (run.next()) |glyph| {
+                    const codepoint = segment[glyph.cluster];
+                    // TODO: use flags(?) to detect newline, or at least something more reliable?
+                    if (codepoint != '\n') {
+                        const region = try pipeline.regions.getOrPut(engine.allocator, .{
+                            .index = glyph.glyph_index,
+                            .size = @bitCast(font_size),
+                        });
+                        if (!region.found_existing) {
+                            const rendered_glyph = try font.render(engine.allocator, glyph.glyph_index, .{
+                                .font_size_px = run.font_size_px,
                             });
-                            if (!region.found_existing) {
-                                const rendered_glyph = try font.render(engine.allocator, glyph.glyph_index, .{
-                                    .font_size_px = run.font_size_px,
-                                });
-                                if (rendered_glyph.bitmap) |bitmap| {
-                                    var glyph_atlas_region = try pipeline.texture_atlas.reserve(engine.allocator, rendered_glyph.width, rendered_glyph.height);
-                                    pipeline.texture_atlas.set(glyph_atlas_region, @as([*]const u8, @ptrCast(bitmap.ptr))[0 .. bitmap.len * 4]);
-                                    texture_update = true;
+                            if (rendered_glyph.bitmap) |bitmap| {
+                                var glyph_atlas_region = try pipeline.texture_atlas.reserve(engine.allocator, rendered_glyph.width, rendered_glyph.height);
+                                pipeline.texture_atlas.set(glyph_atlas_region, @as([*]const u8, @ptrCast(bitmap.ptr))[0 .. bitmap.len * 4]);
+                                texture_update = true;
 
-                                    // Exclude the 1px blank space margin when describing the region of the texture
-                                    // that actually represents the glyph.
-                                    const margin = 1;
-                                    glyph_atlas_region.x += margin;
-                                    glyph_atlas_region.y += margin;
-                                    glyph_atlas_region.width -= margin * 2;
-                                    glyph_atlas_region.height -= margin * 2;
-                                    region.value_ptr.* = glyph_atlas_region;
-                                } else {
-                                    // whitespace
-                                    region.value_ptr.* = gfx.Atlas.Region{
-                                        .width = 0,
-                                        .height = 0,
-                                        .x = 0,
-                                        .y = 0,
-                                    };
-                                }
+                                // Exclude the 1px blank space margin when describing the region of the texture
+                                // that actually represents the glyph.
+                                const margin = 1;
+                                glyph_atlas_region.x += margin;
+                                glyph_atlas_region.y += margin;
+                                glyph_atlas_region.width -= margin * 2;
+                                glyph_atlas_region.height -= margin * 2;
+                                region.value_ptr.* = glyph_atlas_region;
+                            } else {
+                                // whitespace
+                                region.value_ptr.* = gfx.Atlas.Region{
+                                    .width = 0,
+                                    .height = 0,
+                                    .x = 0,
+                                    .y = 0,
+                                };
                             }
-
-                            const r = region.value_ptr.*;
-                            const size = vec2(@floatFromInt(r.width), @floatFromInt(r.height));
-                            try glyphs.append(engine.allocator, .{
-                                .pos = vec2(
-                                    origin_x + glyph.offset.x(),
-                                    origin_y - (size.y() - glyph.offset.y()),
-                                ).divScalar(px_density),
-                                .size = size.divScalar(px_density),
-                                .text_index = 0,
-                                .uv_pos = vec2(@floatFromInt(r.x), @floatFromInt(r.y)),
-                            });
-                            pipeline.num_glyphs += 1;
                         }
 
-                        if (codepoint == '\n') {
-                            origin_x = 0;
-                            origin_y -= font_size;
-                        } else {
-                            origin_x += glyph.advance.x();
-                        }
+                        const r = region.value_ptr.*;
+                        const size = vec2(@floatFromInt(r.width), @floatFromInt(r.height));
+                        try glyphs.append(engine.allocator, .{
+                            .pos = vec2(
+                                origin_x + glyph.offset.x(),
+                                origin_y - (size.y() - glyph.offset.y()),
+                            ).divScalar(px_density),
+                            .size = size.divScalar(px_density),
+                            .text_index = 0,
+                            .uv_pos = vec2(@floatFromInt(r.x), @floatFromInt(r.y)),
+                        });
+                        pipeline.num_glyphs += 1;
+                    }
+
+                    if (codepoint == '\n') {
+                        origin_x = 0;
+                        origin_y -= font_size;
+                    } else {
+                        origin_x += glyph.advance.x();
                     }
                 }
             }
         }
-
-        // TODO: could writeBuffer check for zero?
-        if (glyphs.items.len > 0) encoder.writeBuffer(pipeline.glyphs, 0, glyphs.items);
-        defer glyphs.deinit(engine.allocator);
-        if (texture_update) {
-            // rgba32_pixels
-            // TODO: use proper texture dimensions here
-            const img_size = gpu.Extent3D{ .width = 1024, .height = 1024 };
-            const data_layout = gpu.Texture.DataLayout{
-                .bytes_per_row = @as(u32, @intCast(img_size.width * 4)),
-                .rows_per_image = @as(u32, @intCast(img_size.height)),
-            };
-            engine.state.queue.writeTexture(
-                &.{ .texture = pipeline.texture },
-                &data_layout,
-                &img_size,
-                pipeline.texture_atlas.data,
-            );
-        }
-
-        var command = encoder.finish(null);
-        defer command.release();
-
-        engine.state.queue.submit(&[_]*gpu.CommandBuffer{command});
     }
 
-    pub fn preRender(
-        engine: *Engine.Mod,
-        text_mod: *Mod,
-        pipeline_id: u32,
-    ) !void {
-        const pipeline = text_mod.state.pipelines.get(pipeline_id).?;
-
-        // Update uniform buffer
-        const proj = Mat4x4.projection2D(.{
-            .left = -@as(f32, @floatFromInt(core.size().width)) / 2,
-            .right = @as(f32, @floatFromInt(core.size().width)) / 2,
-            .bottom = -@as(f32, @floatFromInt(core.size().height)) / 2,
-            .top = @as(f32, @floatFromInt(core.size().height)) / 2,
-            .near = -0.1,
-            .far = 100000,
-        });
-        const uniforms = Uniforms{
-            .view_projection = proj,
-            // TODO: dimensions of other textures, number of textures present
-            .texture_size = vec2(
-                @as(f32, @floatFromInt(pipeline.texture.getWidth())),
-                @as(f32, @floatFromInt(pipeline.texture.getHeight())),
-            ),
+    // TODO: could writeBuffer check for zero?
+    if (glyphs.items.len > 0) encoder.writeBuffer(pipeline.glyphs, 0, glyphs.items);
+    defer glyphs.deinit(engine.allocator);
+    if (texture_update) {
+        // rgba32_pixels
+        // TODO: use proper texture dimensions here
+        const img_size = gpu.Extent3D{ .width = 1024, .height = 1024 };
+        const data_layout = gpu.Texture.DataLayout{
+            .bytes_per_row = @as(u32, @intCast(img_size.width * 4)),
+            .rows_per_image = @as(u32, @intCast(img_size.height)),
         };
-
-        engine.state.encoder.writeBuffer(pipeline.uniforms, 0, &[_]Uniforms{uniforms});
+        engine.state.queue.writeTexture(
+            &.{ .texture = pipeline.texture },
+            &data_layout,
+            &img_size,
+            pipeline.texture_atlas.data,
+        );
     }
 
-    pub fn render(
-        engine: *Engine.Mod,
-        text_mod: *Mod,
-        pipeline_id: u32,
-    ) !void {
-        const pipeline = text_mod.state.pipelines.get(pipeline_id).?;
+    var command = encoder.finish(null);
+    defer command.release();
 
-        // Draw the text batch
-        const pass = engine.state.pass;
-        const total_vertices = pipeline.num_glyphs * 6;
-        pass.setPipeline(pipeline.render);
-        // TODO: remove dynamic offsets?
-        pass.setBindGroup(0, pipeline.bind_group, &.{});
-        pass.draw(total_vertices, 1, 0, 0);
-    }
-};
+    engine.state.queue.submit(&[_]*gpu.CommandBuffer{command});
+}
+
+fn preRender(
+    engine: *Engine.Mod,
+    text_mod: *Mod,
+    pipeline_id: u32,
+) !void {
+    const pipeline = text_mod.state.pipelines.get(pipeline_id).?;
+
+    // Update uniform buffer
+    const proj = Mat4x4.projection2D(.{
+        .left = -@as(f32, @floatFromInt(core.size().width)) / 2,
+        .right = @as(f32, @floatFromInt(core.size().width)) / 2,
+        .bottom = -@as(f32, @floatFromInt(core.size().height)) / 2,
+        .top = @as(f32, @floatFromInt(core.size().height)) / 2,
+        .near = -0.1,
+        .far = 100000,
+    });
+    const uniforms = Uniforms{
+        .view_projection = proj,
+        // TODO: dimensions of other textures, number of textures present
+        .texture_size = vec2(
+            @as(f32, @floatFromInt(pipeline.texture.getWidth())),
+            @as(f32, @floatFromInt(pipeline.texture.getHeight())),
+        ),
+    };
+
+    engine.state.encoder.writeBuffer(pipeline.uniforms, 0, &[_]Uniforms{uniforms});
+}
+
+fn render(
+    engine: *Engine.Mod,
+    text_mod: *Mod,
+    pipeline_id: u32,
+) !void {
+    const pipeline = text_mod.state.pipelines.get(pipeline_id).?;
+
+    // Draw the text batch
+    const pass = engine.state.pass;
+    const total_vertices = pipeline.num_glyphs * 6;
+    pass.setPipeline(pipeline.render);
+    // TODO: remove dynamic offsets?
+    pass.setBindGroup(0, pipeline.bind_group, &.{});
+    pass.draw(total_vertices, 1, 0, 0);
+}

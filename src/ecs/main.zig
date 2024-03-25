@@ -40,39 +40,47 @@ test "inclusion" {
 test "example" {
     const allocator = testing.allocator;
 
-    comptime var Renderer = type;
-    comptime var Physics = type;
-    Physics = mach.Module(struct {
-        pointer: u8,
+    const root = struct {
+        pub const modules = .{ Renderer, Physics };
 
-        pub const name = .physics;
-        pub const components = struct {
-            pub const id = u32;
+        const Physics = struct {
+            pointer: u8,
+
+            pub const name = .physics;
+            pub const components = struct {
+                pub const id = u32;
+            };
+            pub const events = .{
+                .{ .global = .tick, .handler = tick },
+            };
+
+            fn tick(physics: *World(modules).Mod(Physics)) void {
+                _ = physics;
+            }
         };
 
-        pub fn tick(physics: *World(.{ Renderer, Physics }).Mod(Physics)) void {
-            _ = physics;
-        }
-    });
+        const Renderer = struct {
+            pub const name = .renderer;
+            pub const components = struct {
+                pub const id = u16;
+            };
+            pub const events = .{
+                .{ .global = .tick, .handler = tick },
+            };
 
-    Renderer = mach.Module(struct {
-        pub const name = .renderer;
-        pub const components = struct {
-            pub const id = u16;
+            fn tick(
+                physics: *World(modules).Mod(Physics),
+                renderer: *World(modules).Mod(Renderer),
+            ) void {
+                _ = renderer;
+                _ = physics;
+            }
         };
-
-        pub fn tick(
-            physics: *World(.{ Renderer, Physics }).Mod(Physics),
-            renderer: *World(.{ Renderer, Physics }).Mod(Renderer),
-        ) void {
-            _ = renderer;
-            _ = physics;
-        }
-    });
+    };
 
     //-------------------------------------------------------------------------
     // Create a world.
-    var world: World(.{ Renderer, Physics }) = undefined;
+    var world: World(root.modules) = undefined;
     try world.init(allocator);
     defer world.deinit();
 
