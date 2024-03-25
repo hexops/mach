@@ -25,6 +25,8 @@ pub const Engine = struct {
         .{ .local = .begin_pass, .handler = beginPass },
         .{ .local = .end_pass, .handler = endPass },
         .{ .local = .present, .handler = present },
+        .{ .global = .init, .handler = fn () void },
+        .{ .global = .deinit, .handler = fn () void },
         .{ .global = .tick, .handler = fn () void },
         .{ .global = .exit, .handler = fn () void },
     };
@@ -115,7 +117,7 @@ pub const App = struct {
 
     pub fn update(app: *@This()) !bool {
         // TODO: better dispatch implementation
-        app.world.modules.send(.tick, .{});
+        app.world.mod.engine.sendGlobal(.tick, .{});
         try app.world.dispatch(); // dispatch .tick
         try app.world.dispatch(); // dispatch any events produced by .tick
         return app.world.mod.engine.state.should_exit;

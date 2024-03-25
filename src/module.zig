@@ -89,7 +89,7 @@ pub fn Modules(comptime mods: anytype) type {
 
                 const Handler = switch (@typeInfo(@TypeOf(event.handler))) {
                     .Fn => @TypeOf(event.handler),
-                    .Type => |t| switch (@typeInfo(t)) {
+                    .Type => switch (@typeInfo(event.handler)) {
                         .Fn => event.handler,
                         else => unreachable,
                     },
@@ -106,39 +106,45 @@ pub fn Modules(comptime mods: anytype) type {
 
         /// Returns an args tuple representing the standard, uninjected, arguments which the given
         /// global event handler requires.
-        fn Args(event_name: GlobalEvent) type {
+        fn GlobalArgs(module_name: ModuleName(mods), event_name: GlobalEvent) type {
             inline for (modules) |M| {
                 _ = Module(M); // Validate the module
-
-                inline for (M.events) |event| {
-                    const Ev = @TypeOf(event);
-                    const name_tag = if (@hasField(Ev, "global")) event.global else continue;
-                    if (name_tag != event_name) continue;
-
-                    const Handler = switch (@typeInfo(@TypeOf(event.handler))) {
-                        .Fn => @TypeOf(event.handler),
-                        .Type => switch (@typeInfo(event.handler)) {
-                            .Fn => event.handler,
-                            else => unreachable,
-                        },
-                        else => unreachable,
-                    };
-
-                    // TODO: passing std.meta.Tuple here instead of TupleHACK results in a compiler
-                    // segfault. The only difference is that TupleHACk does not produce a real tuple,
-                    // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
-                    return UninjectedArgsTuple(TupleHACK, Handler);
-                }
+                if (M.name != module_name) continue;
+                return GlobalArgsM(M, event_name);
             }
-            @compileError("No global event handler ." ++ @tagName(event_name) ++ " is defined in any module.");
         }
 
-        /// Send a global event
-        pub fn send(
+        pub fn GlobalArgsM(comptime M: type, event_name: GlobalEvent) type {
+            _ = Module(M); // Validate the module
+            inline for (M.events) |event| {
+                const Ev = @TypeOf(event);
+                const name_tag = if (@hasField(Ev, "global")) event.global else continue;
+                if (name_tag != event_name) continue;
+
+                const Handler = switch (@typeInfo(@TypeOf(event.handler))) {
+                    .Fn => @TypeOf(event.handler),
+                    .Type => switch (@typeInfo(event.handler)) {
+                        .Fn => event.handler,
+                        else => unreachable,
+                    },
+                    else => unreachable,
+                };
+
+                // TODO: passing std.meta.Tuple here instead of TupleHACK results in a compiler
+                // segfault. The only difference is that TupleHACk does not produce a real tuple,
+                // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
+                return UninjectedArgsTuple(TupleHACK, Handler);
+            }
+            @compileError("mach: module ." ++ @tagName(M.name) ++ " has no .global event handler for ." ++ @tagName(event_name));
+        }
+
+        /// Send a global event which the specified module defines
+        pub fn sendGlobal(
             m: *@This(),
             // TODO: is a variant of this function where event_name is not comptime known, but asserted to be a valid enum, useful?
+            comptime module_name: ModuleName(mods),
             comptime event_name: GlobalEvent,
-            args: Args(event_name),
+            args: GlobalArgs(module_name, event_name),
         ) void {
             // TODO: comptime safety/debugging
             m.sendInternal(null, @intFromEnum(event_name), args);
@@ -986,7 +992,7 @@ test "dispatch" {
     // global event handler declaration within a module. It is required that all global event handlers
     // of the same name have the same standard arguments, although they can start with different
     // injected arguments.
-    modules.send(.tick, .{});
+    modules.sendGlobal(.tick, .{});
     try testing.expect(usize, 0).eql(global.ticks);
     try modules.dispatch(.{&foo});
     try testing.expect(usize, 2).eql(global.ticks);
@@ -998,7 +1004,7 @@ test "dispatch" {
     // Global events which are not handled by anyone yet can be written as `pub const fooBar = fn() void;`
     // within a module, which allows pre-declaring that `fooBar` is a valid global event, and enables
     // its arguments to be inferred still like this:
-    modules.send(.frame_done, .{ .@"0" = 1337 });
+    modules.sendGlobal(.frame_done, .{ .@"0" = 1337 });
 
     // Local events
     modules.sendToModule(.engine_renderer, .update, .{});
