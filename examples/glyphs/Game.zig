@@ -60,12 +60,11 @@ fn init(
     core.setTitle("gfx.Sprite example");
 
     // Tell sprite_mod to use the texture
-    engine.dispatchNoError(); // TODO: no dispatch in user code
     const texture = text_mod.state.texture;
-    sprite_mod.send(.init_pipeline, .{Sprite.PipelineOptions{
+    sprite_mod.send(.init_pipeline, .{ .@"0" = Sprite.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.text),
         .texture = texture,
-    }});
+    } });
 
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `Sprite` module could have a 3D `.location` component with a different
@@ -78,7 +77,7 @@ fn init(
     try sprite_mod.set(player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
     try sprite_mod.set(player, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
     try sprite_mod.set(player, .pipeline, @intFromEnum(Pipeline.text));
-    sprite_mod.send(.updated, .{@intFromEnum(Pipeline.text)});
+    sprite_mod.send(.updated, .{ .@"0" = @intFromEnum(Pipeline.text) });
 
     game.state = .{
         .timer = try mach.Timer.start(),
@@ -193,14 +192,14 @@ fn tick(
     );
     try sprite_mod.set(game.state.player, .transform, player_transform);
 
-    sprite_mod.send(.updated, .{@intFromEnum(Pipeline.text)});
+    sprite_mod.send(.updated, .{ .@"0" = @intFromEnum(Pipeline.text) });
 
     // Perform pre-render work
-    sprite_mod.send(.pre_render, .{@intFromEnum(Pipeline.text)});
+    sprite_mod.send(.pre_render, .{ .@"0" = @intFromEnum(Pipeline.text) });
 
     // Render a frame
-    engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
-    sprite_mod.send(.render, .{@intFromEnum(Pipeline.text)});
+    engine.send(.begin_pass, .{ .@"0" = gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 } });
+    sprite_mod.send(.render, .{ .@"0" = @intFromEnum(Pipeline.text) });
     engine.send(.end_pass, .{});
     engine.send(.present, .{}); // Present the frame
 
