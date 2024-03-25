@@ -77,7 +77,7 @@ pub fn World(comptime mods: anytype) type {
                 pub inline fn sendGlobal(m: *@This(), comptime event_name: Modules.GlobalEvent, args: anytype) void {
                     const mod_ptr: *Mods = @alignCast(@fieldParentPtr(Mods, @tagName(module_tag), m));
                     const world = @fieldParentPtr(WorldT, "mod", mod_ptr);
-                    world.modules.send(event_name, args);
+                    world.modules.sendGlobal(module_tag, event_name, args);
                 }
 
                 pub fn dispatchNoError(m: *@This()) void {
