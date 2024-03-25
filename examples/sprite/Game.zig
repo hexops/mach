@@ -68,8 +68,7 @@ fn init(
     try sprite_mod.set(player, .uv_transform, Mat3x3.translate(vec2(0, 0)));
     try sprite_mod.set(player, .pipeline, @intFromEnum(Pipeline.default));
 
-    sprite_mod.send(.init, .{});
-    sprite_mod.send(.initPipeline, .{Sprite.PipelineOptions{
+    sprite_mod.send(.init_pipeline, .{Sprite.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.default),
         .texture = try loadTexture(engine),
     }});
@@ -180,12 +179,12 @@ fn tick(
     sprite_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
 
     // Perform pre-render work
-    sprite_mod.send(.preRender, .{@intFromEnum(Pipeline.default)});
+    sprite_mod.send(.pre_render, .{@intFromEnum(Pipeline.default)});
 
     // Render a frame
-    engine.send(.beginPass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
+    engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
     sprite_mod.send(.render, .{@intFromEnum(Pipeline.default)});
-    engine.send(.endPass, .{});
+    engine.send(.end_pass, .{});
     engine.send(.present, .{}); // Present the frame
 
     // Every second, update the window title with the FPS

@@ -59,14 +59,10 @@ fn init(
     // The Mach .core is where we set window options, etc.
     core.setTitle("gfx.Sprite example");
 
-    // Initialize mach.gfx.Text module
-    text_mod.send(.init, .{});
-
     // Tell sprite_mod to use the texture
-    sprite_mod.send(.init, .{});
     engine.dispatchNoError(); // TODO: no dispatch in user code
     const texture = text_mod.state.texture;
-    sprite_mod.send(.initPipeline, .{Sprite.PipelineOptions{
+    sprite_mod.send(.init_pipeline, .{Sprite.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.text),
         .texture = texture,
     }});
@@ -200,12 +196,12 @@ fn tick(
     sprite_mod.send(.updated, .{@intFromEnum(Pipeline.text)});
 
     // Perform pre-render work
-    sprite_mod.send(.preRender, .{@intFromEnum(Pipeline.text)});
+    sprite_mod.send(.pre_render, .{@intFromEnum(Pipeline.text)});
 
     // Render a frame
-    engine.send(.beginPass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
+    engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
     sprite_mod.send(.render, .{@intFromEnum(Pipeline.text)});
-    engine.send(.endPass, .{});
+    engine.send(.end_pass, .{});
     engine.send(.present, .{}); // Present the frame
 
     // Every second, update the window title with the FPS
