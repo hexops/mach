@@ -6,6 +6,7 @@ const mach = @import("../main.zig");
 const Entities = @import("entities.zig").Entities;
 const EntityID = @import("entities.zig").EntityID;
 const comp = @import("comptime.zig");
+const Module = @import("../module.zig").Module;
 
 pub fn World(comptime mods: anytype) type {
     const StateT = NamespacedState(mods);
@@ -21,8 +22,8 @@ pub fn World(comptime mods: anytype) type {
         pub const IsInjectedArgument = void;
 
         const WorldT = @This();
-        pub fn Mod(comptime Module: anytype) type {
-            const module_tag = Module.name;
+        pub fn Mod(comptime M: anytype) type {
+            const module_tag = M.name;
             const State = @TypeOf(@field(@as(StateT, undefined), @tagName(module_tag)));
             const components = @field(ns_components, @tagName(module_tag));
             return struct {
@@ -212,6 +213,8 @@ fn NamespacedComponents(comptime modules: anytype) type {
 fn NamespacedState(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     inline for (modules) |M| {
+        // TODO: can't verify module here because it would introduce a dependency loop
+        // _ = Module(M);
         const state_fields = std.meta.fields(M);
         const State = if (state_fields.len > 0) @Type(.{
             .Struct = .{

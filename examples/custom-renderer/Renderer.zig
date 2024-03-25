@@ -26,13 +26,19 @@ pub const components = struct {
     pub const scale = f32;
 };
 
+pub const events = .{
+    .{ .global = .init, .handler = init },
+    .{ .global = .deinit, .handler = deinit },
+    .{ .global = .tick, .handler = tick },
+};
+
 // TODO: this shouldn't be a packed struct, it should be extern.
 const UniformBufferObject = packed struct {
     offset: Vec3.Vector,
     scale: f32,
 };
 
-pub fn init(
+fn init(
     engine: *mach.Engine.Mod,
     renderer: *Mod,
 ) !void {
@@ -97,7 +103,7 @@ pub fn init(
     shader_module.release();
 }
 
-pub fn deinit(
+fn deinit(
     renderer: *Mod,
 ) !void {
     renderer.state.pipeline.release();
@@ -106,7 +112,7 @@ pub fn deinit(
     renderer.state.uniform_buffer.release();
 }
 
-pub fn tick(
+fn tick(
     engine: *mach.Engine.Mod,
     renderer: *Mod,
 ) !void {

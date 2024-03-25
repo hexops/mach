@@ -44,6 +44,12 @@ const d0 = 0.000001;
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
+pub const events = .{
+    .{ .global = .init, .handler = init },
+    .{ .global = .deinit, .handler = deinit },
+    .{ .global = .tick, .handler = tick },
+};
+
 pub const Pipeline = enum(u32) {
     default,
 };
@@ -58,7 +64,7 @@ const text1: []const []const u8 = &.{
 
 const text2: []const []const u8 = &.{"!$?😊"};
 
-pub fn init(
+fn init(
     engine: *mach.Engine.Mod,
     text_mod: *Text.Mod,
     game: *Mod,
@@ -122,11 +128,11 @@ pub fn init(
     };
 }
 
-pub fn deinit(engine: *mach.Engine.Mod) !void {
+fn deinit(engine: *mach.Engine.Mod) !void {
     _ = engine;
 }
 
-pub fn tick(
+fn tick(
     engine: *mach.Engine.Mod,
     text_mod: *Text.Mod,
     game: *Mod,

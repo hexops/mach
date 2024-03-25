@@ -41,11 +41,16 @@ const d0 = 0.000001;
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
+pub const events = .{
+    .{ .global = .init, .handler = init },
+    .{ .global = .tick, .handler = tick },
+};
+
 pub const Pipeline = enum(u32) {
     default,
 };
 
-pub fn init(
+fn init(
     engine: *mach.Engine.Mod,
     sprite_mod: *Sprite.Mod,
     game: *Mod,
@@ -82,7 +87,7 @@ pub fn init(
     };
 }
 
-pub fn tick(
+fn tick(
     engine: *mach.Engine.Mod,
     sprite_mod: *Sprite.Mod,
     game: *Mod,

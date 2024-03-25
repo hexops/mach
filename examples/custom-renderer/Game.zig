@@ -20,6 +20,11 @@ pub const components = struct {
     pub const follower = void;
 };
 
+pub const events = .{
+    .{ .global = .init, .handler = init },
+    .{ .global = .tick, .handler = tick },
+};
+
 // Each module must have a globally unique name declared, it is impossible to use two modules with
 // the same name in a program. To avoid name conflicts, we follow naming conventions:
 //
@@ -33,7 +38,8 @@ pub const components = struct {
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
-pub fn init(
+// TODO(engine): remove need for returning an error here
+fn init(
     engine: *mach.Engine.Mod,
     renderer: *Renderer.Mod,
     game: *Mod,
@@ -56,7 +62,8 @@ pub fn init(
     };
 }
 
-pub fn tick(
+// TODO(engine): remove need for returning an error here
+fn tick(
     engine: *mach.Engine.Mod,
     renderer: *Renderer.Mod,
     game: *Mod,
