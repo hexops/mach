@@ -115,7 +115,11 @@ pub fn Modules(comptime mods: anytype) type {
                         },
                         else => unreachable,
                     };
-                    return UninjectedArgsTuple(std.meta.Tuple, Handler);
+
+                    // TODO: passing std.meta.Tuple here instead of TupleHACK results in a compiler
+                    // segfault. The only difference is that TupleHACk does not produce a real tuple,
+                    // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
+                    return UninjectedArgsTuple(TupleHACK, Handler);
                 }
             }
             @compileError("No global event handler ." ++ @tagName(event_name) ++ " is defined in any module.");
@@ -986,7 +990,7 @@ test "dispatch" {
     // Global events which are not handled by anyone yet can be written as `pub const fooBar = fn() void;`
     // within a module, which allows pre-declaring that `fooBar` is a valid global event, and enables
     // its arguments to be inferred still like this:
-    modules.send(.frame_done, .{1337});
+    modules.send(.frame_done, .{ .@"0" = 1337 });
 
     // Local events
     modules.sendToModule(.engine_renderer, .update, .{});

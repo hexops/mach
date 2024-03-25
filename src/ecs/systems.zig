@@ -19,8 +19,6 @@ pub fn World(comptime mods: anytype) type {
 
         const Modules = mach.Modules(mods);
 
-        pub const IsInjectedArgument = void;
-
         const WorldT = @This();
         pub fn Mod(comptime M: anytype) type {
             const module_tag = M.name;
@@ -76,6 +74,18 @@ pub fn World(comptime mods: anytype) type {
                     world.modules.sendToModule(module_tag, event_name, args);
                 }
 
+                pub inline fn sendGlobal(m: *@This(), comptime event_name: anytype, args: anytype) void {
+                    const mod_ptr: *Mods = @alignCast(@fieldParentPtr(Mods, @tagName(module_tag), m));
+                    const world = @fieldParentPtr(WorldT, "mod", mod_ptr);
+                    world.modules.send(event_name, args);
+                }
+
+                pub fn dispatchNoError(m: *@This()) void {
+                    const mod_ptr: *Mods = @alignCast(@fieldParentPtr(Mods, @tagName(module_tag), m));
+                    const world = @fieldParentPtr(WorldT, "mod", mod_ptr);
+                    world.modules.dispatch(world.injectable()) catch |err| @panic(@errorName(err));
+                }
+
                 /// Returns a new entity.
                 pub fn newEntity(m: *@This()) !EntityID {
                     const mod_ptr: *Mods = @alignCast(@fieldParentPtr(Mods, @tagName(module_tag), m));
@@ -115,7 +125,6 @@ pub fn World(comptime mods: anytype) type {
 
         const Injectable = blk: {
             var types: []const type = &[0]type{};
-            types = types ++ [_]type{*@This()};
             for (@typeInfo(Mods).Struct.fields) |field| {
                 const ModPtr = @TypeOf(@as(*field.type, undefined));
                 types = types ++ [_]type{ModPtr};
@@ -125,19 +134,14 @@ pub fn World(comptime mods: anytype) type {
         fn injectable(world: *@This()) Injectable {
             var v: Injectable = undefined;
             outer: inline for (@typeInfo(Injectable).Struct.fields) |field| {
-                if (field.type == *@This()) {
-                    @field(v, field.name) = world;
-                    continue :outer;
-                } else {
-                    inline for (@typeInfo(Mods).Struct.fields) |injectable_field| {
-                        if (*injectable_field.type == field.type) {
-                            @field(v, field.name) = &@field(world.mod, injectable_field.name);
+                inline for (@typeInfo(Mods).Struct.fields) |injectable_field| {
+                    if (*injectable_field.type == field.type) {
+                        @field(v, field.name) = &@field(world.mod, injectable_field.name);
 
-                            // TODO: better module initialization location
-                            @field(v, field.name).entities = &world.entities;
-                            @field(v, field.name).allocator = world.allocator;
-                            continue :outer;
-                        }
+                        // TODO: better module initialization location
+                        @field(v, field.name).entities = &world.entities;
+                        @field(v, field.name).allocator = world.allocator;
+                        continue :outer;
                     }
                 }
                 @compileError("failed to initialize Injectable field (this is a bug): " ++ field.name ++ " " ++ @typeName(field.type));
@@ -147,10 +151,6 @@ pub fn World(comptime mods: anytype) type {
 
         pub fn dispatch(world: *@This()) !void {
             try world.modules.dispatch(world.injectable());
-        }
-
-        pub fn dispatchNoError(world: *@This()) void {
-            world.modules.dispatch(world.injectable()) catch |err| @panic(@errorName(err));
         }
 
         pub fn init(world: *@This(), allocator: mem.Allocator) !void {

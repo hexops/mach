@@ -29,34 +29,31 @@ pub const Engine = struct {
         .{ .global = .exit, .handler = fn () void },
     };
 
-    fn init(world: *World) !void {
+    fn init(engine: *Mod) !void {
         core.allocator = allocator;
         try core.init(.{});
-        const state = &world.mod.engine.state;
+        const state = &engine.state;
         state.device = core.device;
         state.queue = core.device.getQueue();
         state.should_exit = false;
         state.encoder = state.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
             .label = "engine.state.encoder",
         });
-
-        world.modules.send(.init, .{});
+        engine.sendGlobal(.init, .{});
     }
 
-    fn deinit(world: *World, engine: *Mod) void {
+    fn deinit(engine: *Mod) void {
         // TODO: this triggers a device loss error, which we should handle correctly
         // engine.state.device.release();
         engine.state.queue.release();
-        world.modules.send(.deinit, .{});
+        engine.sendGlobal(.deinit, .{});
         core.deinit();
-        world.deinit();
-        _ = gpa.deinit();
     }
 
     // Engine module's exit handler
-    fn exit(world: *World) void {
-        world.modules.send(.exit, .{});
-        world.mod.engine.state.should_exit = true;
+    fn exit(engine: *Mod) void {
+        engine.sendGlobal(.exit, .{});
+        engine.state.should_exit = true;
     }
 
     fn beginPass(engine: *Mod, clear_color: gpu.Color) void {
@@ -110,6 +107,10 @@ pub const App = struct {
 
     pub fn deinit(app: *@This()) void {
         app.world.modules.sendToModule(.engine, .deinit, .{});
+        // TODO: improve error handling
+        app.world.dispatch() catch |err| @panic(@errorName(err)); // dispatch .deinit
+        app.world.deinit();
+        _ = gpa.deinit();
     }
 
     pub fn update(app: *@This()) !bool {
@@ -134,5 +135,7 @@ fn modules() Modules() {
     if (!@hasDecl(@import("root"), "modules")) {
         @compileError("expected `pub const modules = .{};` in root file");
     }
+    // TODO: verify modules (causes loop currently)
+    // _ = @import("module.zig").Modules(@import("root").modules);
     return @import("root").modules;
 }

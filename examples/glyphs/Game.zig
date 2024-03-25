@@ -55,7 +55,6 @@ fn init(
     sprite_mod: *Sprite.Mod,
     text_mod: *Text.Mod,
     game: *Mod,
-    world: *mach.World,
 ) !void {
     // The Mach .core is where we set window options, etc.
     core.setTitle("gfx.Sprite example");
@@ -65,17 +64,18 @@ fn init(
 
     // Tell sprite_mod to use the texture
     sprite_mod.send(.init, .{});
-    world.dispatchNoError(); // TODO: no dispatch in user code
+    engine.dispatchNoError(); // TODO: no dispatch in user code
+    const texture = text_mod.state.texture;
     sprite_mod.send(.initPipeline, .{Sprite.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.text),
-        .texture = text_mod.state.texture,
+        .texture = texture,
     }});
-    world.dispatchNoError(); // TODO: no dispatch in user code
 
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `Sprite` module could have a 3D `.location` component with a different
     // type than the `.physics2d` module's `.location` component if you desire.
 
+    engine.dispatchNoError(); // TODO: no dispatch in user code
     const r = text_mod.state.regions.get('?').?;
     const player = try engine.newEntity();
     try sprite_mod.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
