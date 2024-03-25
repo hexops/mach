@@ -40,6 +40,8 @@ pub fn Modules(comptime mods: anytype) type {
         pub const ModuleID = u32;
         pub const EventID = u32;
 
+        pub const GlobalEvent = GlobalEventEnum(mods);
+
         const Event = struct {
             module_name: ?ModuleID,
             event_name: EventID,
@@ -98,7 +100,7 @@ pub fn Modules(comptime mods: anytype) type {
 
         /// Returns an args tuple representing the standard, uninjected, arguments which the given
         /// global event handler requires.
-        fn Args(event_name: GlobalEventEnum(mods)) type {
+        fn Args(event_name: GlobalEvent) type {
             inline for (modules) |M| {
                 _ = Module(M); // Validate the module
 
@@ -129,7 +131,7 @@ pub fn Modules(comptime mods: anytype) type {
         pub fn send(
             m: *@This(),
             // TODO: is a variant of this function where event_name is not comptime known, but asserted to be a valid enum, useful?
-            comptime event_name: GlobalEventEnum(mods),
+            comptime event_name: GlobalEvent,
             args: Args(event_name),
         ) void {
             // TODO: comptime safety/debugging
@@ -215,7 +217,7 @@ pub fn Modules(comptime mods: anytype) type {
         }
 
         /// Call global event handler with the specified name in all modules
-        inline fn callGlobal(event_name: GlobalEventEnum(mods), args: []u8, injectable: anytype) !void {
+        inline fn callGlobal(event_name: GlobalEvent, args: []u8, injectable: anytype) !void {
             if (@typeInfo(@TypeOf(event_name)).Enum.fields.len == 0) return;
             switch (event_name) {
                 inline else => |ev_name| {
@@ -403,6 +405,7 @@ fn LocalEventEnum(comptime mods: anytype) type {
 
 /// enum describing every possible comptime-known global event name
 fn GlobalEventEnum(comptime mods: anytype) type {
+    // Note: this function only accesses M.Events' .global name field. No other field is accessed
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
     for (mods) |M| {
@@ -643,7 +646,7 @@ test "event name" {
     try testing.expect([]const u8, "baz").eql(locals.fields[0].name);
     try testing.expect([]const u8, "bam").eql(locals.fields[1].name);
 
-    const globals = @typeInfo(GlobalEventEnum(Mods.modules)).Enum;
+    const globals = @typeInfo(Mods.GlobalEvent).Enum;
     try testing.expect(type, u3).eql(globals.tag_type);
     try testing.expect(usize, 6).eql(globals.fields.len);
     try testing.expect([]const u8, "foo").eql(globals.fields[0].name);
@@ -852,7 +855,7 @@ test "event name calling" {
     // Check we can use .callGlobal() with a runtime-known event name.
     const alloc = try testing.allocator.create(u3);
     defer testing.allocator.destroy(alloc);
-    const GE = GlobalEventEnum(@TypeOf(modules).modules);
+    const GE = @TypeOf(modules).GlobalEvent;
     const LE = LocalEventEnum(@TypeOf(modules).modules);
     alloc.* = @intFromEnum(@as(GE, .tick));
 
@@ -968,7 +971,7 @@ test "dispatch" {
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
 
-    const GE = GlobalEventEnum(@TypeOf(modules).modules);
+    const GE = @TypeOf(modules).GlobalEvent;
     const LE = LocalEventEnum(@TypeOf(modules).modules);
     const M = ModuleName(@TypeOf(modules).modules);
 
