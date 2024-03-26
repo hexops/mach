@@ -16,8 +16,8 @@ direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
 spawn_timer: mach.Timer,
 
-pub const components = struct {
-    pub const follower = void;
+pub const components = .{
+    .{ .name = .follower, .type = void },
 };
 
 pub const events = .{

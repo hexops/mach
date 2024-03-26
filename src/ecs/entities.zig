@@ -281,12 +281,13 @@ pub fn Entities(comptime all_components: anytype) type {
         pub fn setComponent(
             entities: *Self,
             entity: EntityID,
+            // TODO: cleanup comptime
             comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.DeclEnum(@field(all_components, @tagName(namespace_name))),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
             component: @field(
                 @field(all_components, @tagName(namespace_name)),
                 @tagName(component_name),
-            ),
+            ).type,
         ) !void {
             const name_str = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             const name_id = try entities.component_names.indexOrPut(entities.allocator, name_str);
@@ -483,16 +484,19 @@ pub fn Entities(comptime all_components: anytype) type {
         pub fn getComponent(
             entities: *Self,
             entity: EntityID,
+            // TODO: cleanup comptime
             comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.DeclEnum(@field(all_components, @tagName(namespace_name))),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
         ) ?@field(
             @field(all_components, @tagName(namespace_name)),
             @tagName(component_name),
-        ) {
+        ).type {
+            // TODO: cleanup comptime
             const Component = comptime @field(
                 @field(all_components, @tagName(namespace_name)),
                 @tagName(component_name),
-            );
+            ).type;
+
             const name_str = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             const name_id = entities.component_names.index(name_str) orelse return null;
 
@@ -523,8 +527,9 @@ pub fn Entities(comptime all_components: anytype) type {
         pub fn removeComponent(
             entities: *Self,
             entity: EntityID,
+            // TODO: cleanup comptime
             comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.DeclEnum(@field(all_components, @tagName(namespace_name))),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
         ) !void {
             const name_str = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             const name_id = try entities.component_names.indexOrPut(entities.allocator, name_str);

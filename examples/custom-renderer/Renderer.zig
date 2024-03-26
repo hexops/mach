@@ -20,10 +20,10 @@ uniform_buffer: *gpu.Buffer,
 pub const name = .renderer;
 pub const Mod = mach.Mod(@This());
 
-pub const components = struct {
-    pub const location = Vec3;
-    pub const rotation = Vec3;
-    pub const scale = f32;
+pub const components = .{
+    .{ .name = .location, .type = Vec3 },
+    .{ .name = .rotation, .type = Vec3 },
+    .{ .name = .scale, .type = f32 },
 };
 
 pub const events = .{

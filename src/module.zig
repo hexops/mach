@@ -2,6 +2,8 @@ const builtin = @import("builtin");
 const std = @import("std");
 const testing = @import("testing.zig");
 
+const EntityID = @import("./ecs/entities.zig").EntityID;
+
 /// Verifies that M matches the basic layout of a Mach module
 pub fn Module(comptime M: type) type {
     if (@typeInfo(M) != .Struct) @compileError("mach: expected module struct, found: " ++ @typeName(M));
@@ -11,11 +13,7 @@ pub fn Module(comptime M: type) type {
     const prefix = "mach: module ." ++ @tagName(M.name) ++ " ";
     if (!@hasDecl(M, "events")) @compileError(prefix ++ "must have `pub const events = .{};`");
     validateEvents("mach: module ." ++ @tagName(M.name) ++ " ", M.events);
-
-    // TODO: move this to ecs
-    if (@hasDecl(M, "components")) {
-        if (@typeInfo(M.components) != .Struct) @compileError("Module.components must be `pub const components = struct { ... };`, found type:" ++ @typeName(M.components));
-    }
+    _ = MComponents(M);
     return M;
 }
 
@@ -461,6 +459,7 @@ fn ModuleName(comptime mods: anytype) type {
     });
 }
 
+// TODO: tests
 /// Struct like .{.foo = FooMod, .bar = BarMod}
 fn NamespacedModules(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
@@ -483,6 +482,7 @@ fn NamespacedModules(comptime modules: anytype) type {
     });
 }
 
+// TODO: tests
 fn validateEvents(comptime error_prefix: anytype, comptime events: anytype) void {
     if (@typeInfo(@TypeOf(events)) != .Struct or !@typeInfo(@TypeOf(events)).Struct.is_tuple) {
         @compileError(error_prefix ++ "expected a tuple of structs, found: " ++ @typeName(@TypeOf(events)));
@@ -525,6 +525,152 @@ fn validateEvents(comptime error_prefix: anytype, comptime events: anytype) void
     }
 }
 
+// TODO: tests
+/// Returns a struct type defining all module's components by module name, e.g.:
+///
+/// ```
+/// struct {
+///     builtin: struct {
+///         id: @TypeOf() = .{ .type = EntityID, .description = "Entity ID" },
+///     },
+///     physics: struct {
+///         location: @TypeOf() = .{ .type = Vec3, .description = null },
+///         rotation: @TypeOf() = .{ .type = Vec2, .description = "rotation component" },
+///     },
+///     renderer: struct {
+///         location: @TypeOf() = .{ .type = Vec2, .description = null },
+///     },
+/// }
+/// ```
+pub fn NamespacedComponents(comptime modules: anytype) type {
+    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
+    inline for (modules) |M| {
+        const MC = MComponents(M);
+        fields = fields ++ [_]std.builtin.Type.StructField{.{
+            .name = @tagName(M.name),
+            .type = MC,
+            .default_value = &MC{},
+            .is_comptime = true,
+            .alignment = @alignOf(MC),
+        }};
+    }
+
+    // Builtin components
+    // TODO: better method of injecting builtin module?
+    const BuiltinMC = MComponents(struct {
+        pub const name = .builtin;
+        pub const components = .{
+            .{ .name = .id, .type = EntityID, .description = "Entity ID" },
+        };
+    });
+    fields = fields ++ [_]std.builtin.Type.StructField{.{
+        .name = "entity",
+        .type = BuiltinMC,
+        .default_value = &BuiltinMC{},
+        .is_comptime = true,
+        .alignment = @alignOf(BuiltinMC),
+    }};
+
+    return @Type(.{
+        .Struct = .{
+            .layout = .Auto,
+            .is_tuple = false,
+            .fields = fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+        },
+    });
+}
+
+// TODO: tests
+/// Returns a struct type defining the module's components, e.g.:
+///
+/// ```
+/// struct {
+///     location: @TypeOf() = .{ .type = Vec3, .description = null },
+///     rotation: @TypeOf() = .{ .type = Vec2, .description = "rotation component" },
+/// }
+/// ```
+fn MComponents(comptime M: anytype) type {
+    const error_prefix = "mach: module ." ++ @tagName(M.name) ++ " .components ";
+    if (!@hasDecl(M, "components")) {
+        return struct {};
+    }
+    if (@typeInfo(@TypeOf(M.components)) != .Struct or !@typeInfo(@TypeOf(M.components)).Struct.is_tuple) {
+        @compileError(error_prefix ++ "expected a tuple of structs, found: " ++ @typeName(@TypeOf(M.components)));
+    }
+    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
+    inline for (M.components, 0..) |component, i| {
+        const Component = @TypeOf(component);
+        if (@typeInfo(Component) != .Struct) @compileError(std.fmt.comptimePrint(
+            error_prefix ++ "expected a tuple of structs, found tuple element ({}): {s}",
+            .{ i, @typeName(Component) },
+        ));
+
+        // Verify .name = .foo component name field
+        const name_tag = if (@hasField(Component, "name")) component.name else @compileError(std.fmt.comptimePrint(
+            error_prefix ++ "tuple element ({}) missing field `.name = .foo` (component name)",
+            .{i},
+        ));
+        if (@typeInfo(@TypeOf(name_tag)) != .EnumLiteral) @compileError(std.fmt.comptimePrint(
+            error_prefix ++ "tuple element ({}) expected field `.name = .foo`, found: {s}",
+            .{ i, @typeName(@TypeOf(name_tag)) },
+        ));
+
+        // Verify .type = Foo, field
+        if (!@hasField(Component, "type")) @compileError(std.fmt.comptimePrint(
+            error_prefix ++ "tuple element ({}) missing field `.type = Foo`",
+            .{i},
+        ));
+        if (@typeInfo(@TypeOf(component.type)) != .Type) @compileError(std.fmt.comptimePrint(
+            error_prefix ++ "tuple element ({}) expected field `.type = Foo`, found: {s}",
+            .{ i, @typeName(@TypeOf(component.type)) },
+        ));
+
+        const description = blk: {
+            if (@hasField(Component, "description")) {
+                if (!isString(@TypeOf(component.description))) @compileError(std.fmt.comptimePrint(
+                    error_prefix ++ "tuple element ({}) expected (optional) field `.description = \"foo\"`, found: {s}",
+                    .{ i, @typeName(@TypeOf(component.description)) },
+                ));
+                break :blk component.description;
+            } else break :blk null;
+        };
+
+        const NSComponent = struct {
+            type: type,
+            description: ?[]const u8,
+        };
+        const ns_component = NSComponent{ .type = component.type, .description = description };
+        fields = fields ++ [_]std.builtin.Type.StructField{.{
+            .name = @tagName(name_tag),
+            .type = NSComponent,
+            .default_value = &ns_component,
+            .is_comptime = true,
+            .alignment = @alignOf(NSComponent),
+        }};
+    }
+    return @Type(.{
+        .Struct = .{
+            .layout = .Auto,
+            .is_tuple = false,
+            .fields = fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+        },
+    });
+}
+
+// TODO: tests
+// TODO: stricter enforcement
+fn isString(comptime S: type) bool {
+    return switch (@typeInfo(S)) {
+        .Pointer => |p| switch (@typeInfo(p.child)) {
+            .Array => |a| a.child == u8,
+            else => false,
+        },
+        else => false,
+    };
+}
+
 test {
     testing.refAllDeclsRecursive(@This());
 }
@@ -538,9 +684,8 @@ test Module {
         pub const name = .engine_physics;
 
         /// Physics module components
-        pub const components = struct {
-            /// A location component
-            pub const location = @Vector(3, f32);
+        pub const components = .{
+            .{ .name = .location, .type = @Vector(3, f32), .description = "A location component" },
         };
 
         pub const events = .{
@@ -560,9 +705,8 @@ test Modules {
         pub const name = .engine_physics;
 
         /// Physics module components
-        pub const components = struct {
-            /// A location component
-            pub const location = @Vector(3, f32);
+        pub const components = .{
+            .{ .name = .location, .type = @Vector(3, f32), .description = "A location component" },
         };
 
         pub const events = .{
@@ -579,7 +723,7 @@ test Modules {
         };
 
         /// Renderer module components
-        pub const components = struct {};
+        pub const components = .{};
 
         fn tick() !void {}
     });
@@ -604,7 +748,7 @@ test Modules {
 test "event name" {
     const Physics = Module(struct {
         pub const name = .engine_physics;
-        pub const components = struct {};
+        pub const components = .{};
         pub const events = .{
             .{ .global = .foo, .handler = foo },
             .{ .global = .bar, .handler = bar },
@@ -620,7 +764,7 @@ test "event name" {
 
     const Renderer = Module(struct {
         pub const name = .engine_renderer;
-        pub const components = struct {};
+        pub const components = .{};
         pub const events = .{
             .{ .global = .foo_unused, .handler = fn (f32, i32) void },
             .{ .global = .bar_unused, .handler = fn (i32, f32) void },
@@ -817,7 +961,7 @@ test "event name calling" {
     };
     const Physics = Module(struct {
         pub const name = .engine_physics;
-        pub const components = struct {};
+        pub const components = .{};
         pub const events = .{
             .{ .global = .tick, .handler = tick },
             .{ .local = .update, .handler = update },
@@ -838,7 +982,7 @@ test "event name calling" {
     });
     const Renderer = Module(struct {
         pub const name = .engine_renderer;
-        pub const components = struct {};
+        pub const components = .{};
         pub const events = .{
             .{ .global = .tick, .handler = tick },
             .{ .local = .update, .handler = update },
@@ -925,7 +1069,7 @@ test "dispatch" {
     });
     const Physics = Module(struct {
         pub const name = .engine_physics;
-        pub const components = struct {};
+        pub const components = .{};
         pub const events = .{
             .{ .global = .tick, .handler = tick },
             .{ .local = .update, .handler = update },
@@ -946,7 +1090,7 @@ test "dispatch" {
     });
     const Renderer = Module(struct {
         pub const name = .engine_renderer;
-        pub const components = struct {};
+        pub const components = .{};
         pub const events = .{
             .{ .global = .tick, .handler = tick },
             .{ .global = .frame_done, .handler = fn (i32) void },

@@ -47,8 +47,8 @@ test "example" {
             pointer: u8,
 
             pub const name = .physics;
-            pub const components = struct {
-                pub const id = u32;
+            pub const components = .{
+                .{ .name = .id, .type = u32 },
             };
             pub const events = .{
                 .{ .global = .tick, .handler = tick },
@@ -61,8 +61,8 @@ test "example" {
 
         const Renderer = struct {
             pub const name = .renderer;
-            pub const components = struct {
-                pub const id = u16;
+            pub const components = .{
+                .{ .name = .ud, .type = u16 },
             };
             pub const events = .{
                 .{ .global = .tick, .handler = tick },

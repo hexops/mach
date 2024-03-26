@@ -7,6 +7,7 @@ const Entities = @import("entities.zig").Entities;
 const EntityID = @import("entities.zig").EntityID;
 const comp = @import("comptime.zig");
 const Module = @import("../module.zig").Module;
+const NamespacedComponents = @import("../module.zig").NamespacedComponents;
 
 pub fn World(comptime mods: anytype) type {
     const StateT = NamespacedState(mods);
@@ -37,8 +38,9 @@ pub fn World(comptime mods: anytype) type {
                 pub inline fn set(
                     m: *@This(),
                     entity: EntityID,
-                    comptime component_name: std.meta.DeclEnum(components),
-                    component: @field(components, @tagName(component_name)),
+                    // TODO: cleanup comptime
+                    comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
+                    component: @field(components, @tagName(component_name)).type,
                 ) !void {
                     const mod_ptr: *Mods = @alignCast(@fieldParentPtr(Mods, @tagName(module_tag), m));
                     const world = @fieldParentPtr(WorldT, "mod", mod_ptr);
@@ -50,8 +52,9 @@ pub fn World(comptime mods: anytype) type {
                 pub inline fn get(
                     m: *@This(),
                     entity: EntityID,
-                    comptime component_name: std.meta.DeclEnum(components),
-                ) ?@field(components, @tagName(component_name)) {
+                    // TODO: cleanup comptime
+                    comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
+                ) ?@field(components, @tagName(component_name)).type {
                     const mod_ptr: *Mods = @alignCast(@fieldParentPtr(Mods, @tagName(module_tag), m));
                     const world = @fieldParentPtr(WorldT, "mod", mod_ptr);
                     return world.entities.getComponent(entity, module_tag, component_name);
@@ -61,7 +64,8 @@ pub fn World(comptime mods: anytype) type {
                 pub inline fn remove(
                     m: *@This(),
                     entity: EntityID,
-                    comptime component_name: std.meta.DeclEnum(components),
+                    // TODO: cleanup comptime
+                    comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
                 ) !void {
                     const mod_ptr: *Mods = @alignCast(@fieldParentPtr(Mods, @tagName(module_tag), m));
                     const world = @fieldParentPtr(WorldT, "mod", mod_ptr);
@@ -80,6 +84,7 @@ pub fn World(comptime mods: anytype) type {
                     world.modules.sendGlobal(module_tag, event_name, args);
                 }
 
+                // TODO: eliminate this
                 pub fn dispatchNoError(m: *@This()) void {
                     const mod_ptr: *Mods = @alignCast(@fieldParentPtr(Mods, @tagName(module_tag), m));
                     const world = @fieldParentPtr(WorldT, "mod", mod_ptr);
@@ -171,42 +176,6 @@ pub fn World(comptime mods: anytype) type {
             world.modules.deinit(world.allocator);
         }
     };
-}
-
-// TODO: reconsider components concept
-fn NamespacedComponents(comptime modules: anytype) type {
-    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
-    inline for (modules) |M| {
-        const components = if (@hasDecl(M, "components")) M.components else struct {};
-        fields = fields ++ [_]std.builtin.Type.StructField{.{
-            .name = @tagName(M.name),
-            .type = type,
-            .default_value = &components,
-            .is_comptime = true,
-            .alignment = @alignOf(@TypeOf(components)),
-        }};
-    }
-
-    // Builtin components
-    const entity_components = struct {
-        pub const id = EntityID;
-    };
-    fields = fields ++ [_]std.builtin.Type.StructField{.{
-        .name = "entity",
-        .type = type,
-        .default_value = &entity_components,
-        .is_comptime = true,
-        .alignment = @alignOf(@TypeOf(entity_components)),
-    }};
-
-    return @Type(.{
-        .Struct = .{
-            .layout = .Auto,
-            .is_tuple = false,
-            .fields = fields,
-            .decls = &[_]std.builtin.Type.Declaration{},
-        },
-    });
 }
 
 // TODO: reconsider state concept
