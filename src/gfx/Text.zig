@@ -27,41 +27,55 @@ pub const Mod = mach.Mod(@This());
 //
 // TODO: allow user to specify projection matrix (3d-space flat text etc.)
 
-pub const components = struct {
-    /// The ID of the pipeline this text belongs to. By default, zero.
-    ///
-    /// This determines which shader, textures, etc. are used for rendering the text.
-    pub const pipeline = u8;
+pub const components = .{
+    .{ .name = .pipeline, .type = u8, .description = 
+    \\ The ID of the pipeline this text belongs to. By default, zero.
+    \\
+    \\ This determines which shader, textures, etc. are used for rendering the text.
+    },
 
-    /// The text model transformation matrix. Text is measured in pixel units, starting from
-    /// (0, 0) at the top-left corner and extending to the size of the text. By default, the world
-    /// origin (0, 0) lives at the center of the window.
-    pub const transform = Mat4x4;
+    .{ .name = .transform, .type = Mat4x4, .description = 
+    \\ The text model transformation matrix. Text is measured in pixel units, starting from
+    \\ (0, 0) at the top-left corner and extending to the size of the text. By default, the world
+    \\ origin (0, 0) lives at the center of the window.
+    },
 
-    /// String segments of UTF-8 encoded text to render.
-    ///
-    /// Expected to match the length of the style component.
-    pub const text = []const []const u8;
+    .{ .name = .text, .type = []const []const u8, .description = 
+    \\ String segments of UTF-8 encoded text to render.
+    \\
+    \\ Expected to match the length of the style component.
+    },
 
-    /// The style to apply to each segment of text.
-    ///
-    /// Expected to match the length of the text component.
-    pub const style = []const mach.ecs.EntityID;
+    .{ .name = .style, .type = []const mach.ecs.EntityID, .description = 
+    \\ The style to apply to each segment of text.
+    \\
+    \\ Expected to match the length of the text component.
+    },
 
-    /// Style component: desired font to render text with.
-    pub const font_name = []const u8; // TODO: ship a default font
+    // TODO: ship a default font
+    .{ .name = .font_name, .type = []const u8, .description = 
+    \\ Style component: desired font to render text with.
+    },
 
-    /// Style component: font size in pixels
-    pub const font_size = f32; // e.g. 12 * mach.gfx.px_per_pt // 12pt
+    // e.g. 12 * mach.gfx.px_per_pt // 12pt
+    .{ .name = .font_size, .type = f32, .description = 
+    \\ Style component: font size in pixels
+    },
 
-    /// Style component: font weight
-    pub const font_weight = u16; // e.g. mach.gfx.font_weight_normal
+    // e.g. mach.gfx.font_weight_normal
+    .{ .name = .font_weight, .type = u16, .description = 
+    \\ Style component: font weight
+    },
 
-    /// Style component: italic text
-    pub const italic = bool; // e.g. false
+    // e.g. false
+    .{ .name = .italic, .type = bool, .description = 
+    \\ Style component: italic text
+    },
 
-    /// Style component: fill color
-    pub const color = Vec4; // e.g. vec4(0, 0, 0, 1.0),
+    // e.g. vec4(0, 0, 0, 1.0)
+    .{ .name = .color, .type = Vec4, .description = 
+    \\ Style component: fill color
+    },
 };
 
 pub const events = .{

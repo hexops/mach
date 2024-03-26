@@ -18,25 +18,29 @@ pipelines: std.AutoArrayHashMapUnmanaged(u32, Pipeline),
 pub const name = .mach_gfx_sprite;
 pub const Mod = mach.Mod(@This());
 
-pub const components = struct {
-    /// The ID of the pipeline this sprite belongs to. By default, zero.
-    ///
-    /// This determines which shader, textures, etc. are used for rendering the sprite.
-    pub const pipeline = u8;
+pub const components = .{
+    .{ .name = .pipeline, .type = u8, .description = 
+    \\ The ID of the pipeline this sprite belongs to. By default, zero.
+    \\
+    \\ This determines which shader, textures, etc. are used for rendering the sprite.
+    },
 
-    /// The sprite model transformation matrix. A sprite is measured in pixel units, starting from
-    /// (0, 0) at the top-left corner and extending to the size of the sprite. By default, the world
-    /// origin (0, 0) lives at the center of the window.
-    ///
-    /// Example: in a 500px by 500px window, a sprite located at (0, 0) with size (250, 250) will
-    /// cover the top-right hand corner of the window.
-    pub const transform = Mat4x4;
+    .{ .name = .transform, .type = Mat4x4, .description = 
+    \\ The sprite model transformation matrix. A sprite is measured in pixel units, starting from
+    \\ (0, 0) at the top-left corner and extending to the size of the sprite. By default, the world
+    \\ origin (0, 0) lives at the center of the window.
+    \\
+    \\ Example: in a 500px by 500px window, a sprite located at (0, 0) with size (250, 250) will
+    \\ cover the top-right hand corner of the window.
+    },
 
-    /// UV coordinate transformation matrix describing top-left corner / origin of sprite, in pixels.
-    pub const uv_transform = Mat3x3;
+    .{ .name = .uv_transform, .type = Mat3x3, .description = 
+    \\ UV coordinate transformation matrix describing top-left corner / origin of sprite, in pixels.
+    },
 
-    /// The size of the sprite, in pixels.
-    pub const size = Vec2;
+    .{ .name = .size, .type = Vec2, .description = 
+    \\ The size of the sprite, in pixels.
+    },
 };
 
 pub const events = .{

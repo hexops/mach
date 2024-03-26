@@ -9,23 +9,27 @@ pub const QueryTag = enum {
 /// A complex query for entities matching a given criteria
 pub fn Query(comptime all_components: anytype) type {
     return union(QueryTag) {
+        // TODO: cleanup comptime
         /// Enum matching a namespace. e.g. `.game` or `.physics2d`
         pub const Namespace = std.meta.FieldEnum(@TypeOf(all_components));
 
+        // TODO: cleanup comptime
         /// Enum matching a component within a namespace
         /// e.g. `var a: Component(.physics2d) = .location`
         pub fn Component(comptime namespace: Namespace) type {
             const components = @field(all_components, @tagName(namespace));
-            if (@typeInfo(components).Struct.decls.len == 0) return enum {};
-            return std.meta.DeclEnum(components);
+            if (@typeInfo(@TypeOf(components)).Struct.fields.len == 0) return enum {};
+            return std.meta.FieldEnum(@TypeOf(components));
         }
 
+        // TODO: cleanup comptime
         /// Slice of enums matching a component within a namespace
         /// e.g. `&.{.location, .rotation}`
         pub fn ComponentList(comptime namespace: Namespace) type {
             return []const Component(namespace);
         }
 
+        // TODO: cleanup comptime
         /// Tagged union of namespaces matching lists of components
         /// e.g. `.physics2d = &.{ .location, .rotation }`
         pub const NamespaceComponent = T: {
