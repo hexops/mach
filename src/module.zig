@@ -992,7 +992,7 @@ test "dispatch" {
     // global event handler declaration within a module. It is required that all global event handlers
     // of the same name have the same standard arguments, although they can start with different
     // injected arguments.
-    modules.sendGlobal(.tick, .{});
+    modules.sendGlobal(.engine_renderer, .tick, .{});
     try testing.expect(usize, 0).eql(global.ticks);
     try modules.dispatch(.{&foo});
     try testing.expect(usize, 2).eql(global.ticks);
@@ -1004,7 +1004,7 @@ test "dispatch" {
     // Global events which are not handled by anyone yet can be written as `pub const fooBar = fn() void;`
     // within a module, which allows pre-declaring that `fooBar` is a valid global event, and enables
     // its arguments to be inferred still like this:
-    modules.sendGlobal(.frame_done, .{ .@"0" = 1337 });
+    modules.sendGlobal(.engine_renderer, .frame_done, .{ .@"0" = 1337 });
 
     // Local events
     modules.sendToModule(.engine_renderer, .update, .{});
