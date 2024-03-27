@@ -15,7 +15,7 @@ fn ModuleInterface(comptime M: type) type {
     if (!@hasDecl(M, "events")) @compileError(prefix ++ "must have `pub const events = .{};`");
     // TODO: re-enable this validation once module event handler arguments would not pose a type dependency loop
     // validateEvents("mach: module ." ++ @tagName(M.name) ++ " ", M.events);
-    _ = MComponentTypes(M);
+    _ = ComponentTypesM(M);
     return M;
 }
 
@@ -372,7 +372,7 @@ pub fn Module(
     comptime NSComponents: type,
 ) type {
     const module_tag = M.name;
-    const components = MComponentTypes(M){};
+    const components = ComponentTypesM(M){};
     return struct {
         state: M,
         entities: *Entities(NSComponents{}),
@@ -698,7 +698,7 @@ fn validateEvents(comptime error_prefix: anytype, comptime events: anytype) void
 pub fn ComponentTypesByName(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     inline for (modules) |M| {
-        const MC = MComponentTypes(M);
+        const MC = ComponentTypesM(M);
         fields = fields ++ [_]std.builtin.Type.StructField{.{
             .name = @tagName(M.name),
             .type = MC,
@@ -710,7 +710,7 @@ pub fn ComponentTypesByName(comptime modules: anytype) type {
 
     // Builtin components
     // TODO: better method of injecting builtin module?
-    const BuiltinMC = MComponentTypes(struct {
+    const BuiltinMC = ComponentTypesM(struct {
         pub const name = .builtin;
         pub const components = .{
             .{ .name = .id, .type = EntityID, .description = "Entity ID" },
@@ -743,7 +743,7 @@ pub fn ComponentTypesByName(comptime modules: anytype) type {
 ///     rotation: @TypeOf() = .{ .type = Vec2, .description = "rotation component" },
 /// }
 /// ```
-fn MComponentTypes(comptime M: anytype) type {
+fn ComponentTypesM(comptime M: anytype) type {
     const error_prefix = "mach: module ." ++ @tagName(M.name) ++ " .components ";
     if (!@hasDecl(M, "components")) {
         return struct {};
