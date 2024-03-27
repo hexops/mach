@@ -817,8 +817,7 @@ fn MComponents(comptime M: anytype) type {
 fn NamespacedState(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     inline for (modules) |M| {
-        // TODO: can't verify module here because it would introduce a dependency loop
-        // _ = ModuleInterface(M);
+        _ = ModuleInterface(M); // Validate the module
         const state_fields = std.meta.fields(M);
         const State = if (state_fields.len > 0) @Type(.{
             .Struct = .{
@@ -846,16 +845,35 @@ fn NamespacedState(comptime modules: anytype) type {
     });
 }
 
-// TODO: tests
-// TODO: stricter enforcement
 fn isString(comptime S: type) bool {
     return switch (@typeInfo(S)) {
-        .Pointer => |p| switch (@typeInfo(p.child)) {
-            .Array => |a| a.child == u8,
+        .Pointer => |p| switch (p.size) {
+            .Many, .Slice => p.child == u8,
+            .One => switch (@typeInfo(p.child)) {
+                .Array => |a| a.child == u8,
+                else => false,
+            },
             else => false,
         },
         else => false,
     };
+}
+
+test isString {
+    const x: [*:0]const u8 = "foobar";
+    const y: []const u8 = "foobar";
+    const z: *const [6:0]u8 = "foobar";
+    try testing.expect(bool, true).eql(isString(@TypeOf(x)));
+    try testing.expect(bool, true).eql(isString(@TypeOf(y)));
+    try testing.expect(bool, true).eql(isString(@TypeOf(z)));
+    try testing.expect(bool, true).eql(isString(@TypeOf("baz")));
+
+    const v0: []const u32 = undefined;
+    const v1: u32 = undefined;
+    const v2: *u8 = undefined;
+    try testing.expect(bool, false).eql(isString(@TypeOf(v0)));
+    try testing.expect(bool, false).eql(isString(@TypeOf(v1)));
+    try testing.expect(bool, false).eql(isString(@TypeOf(v2)));
 }
 
 test {
