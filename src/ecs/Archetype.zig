@@ -195,7 +195,7 @@ pub fn getDynamic(storage: *Archetype, row_index: u32, name: StringTable.Index, 
 
 /// Swap-removes the specified row with the last row in the table.
 pub fn remove(storage: *Archetype, row_index: u32) void {
-    if (storage.len > 1) {
+    if (storage.len > 1 and row_index != storage.len - 1) {
         for (storage.columns) |column| {
             const dstStart = column.size * row_index;
             const dst = column.values[dstStart .. dstStart + column.size];
