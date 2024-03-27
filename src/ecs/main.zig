@@ -62,7 +62,7 @@ test "example" {
         const Renderer = struct {
             pub const name = .renderer;
             pub const components = .{
-                .{ .name = .ud, .type = u16 },
+                .{ .name = .id, .type = u16 },
             };
             pub const events = .{
                 .{ .global = .tick, .handler = tick },
