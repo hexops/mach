@@ -322,6 +322,9 @@ pub fn Entities(comptime all_components: anytype) type {
                         .component_names = entities.component_names,
                         .hash = archetype_entry.hash,
                     };
+
+                    // Potential pointer invalidation if additional memory was required, reassigning prev pointer
+                    prev_archetype = &entities.archetypes.items[prev_archetype_idx];
                 } else {
                     entities.allocator.free(columns);
                 }
