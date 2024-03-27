@@ -8,10 +8,10 @@ const EntityID = @import("entities.zig").EntityID;
 const comp = @import("comptime.zig");
 const Module = @import("../module.zig").Module;
 const NamespacedComponents = @import("../module.zig").NamespacedComponents;
+const MComponents = @import("../module.zig").MComponents;
 
 pub fn World(comptime mods: anytype) type {
     const StateT = NamespacedState(mods);
-    const ns_components = NamespacedComponents(mods){};
     return struct {
         allocator: mem.Allocator,
         entities: Entities(NamespacedComponents(mods){}),
@@ -24,10 +24,10 @@ pub fn World(comptime mods: anytype) type {
         pub fn Mod(comptime M: anytype) type {
             const module_tag = M.name;
             const State = @TypeOf(@field(@as(StateT, undefined), @tagName(module_tag)));
-            const components = @field(ns_components, @tagName(module_tag));
+            const components = MComponents(M){};
             return struct {
                 state: State,
-                entities: *Entities(ns_components),
+                entities: *Entities(NamespacedComponents(mods){}),
                 allocator: mem.Allocator,
 
                 pub const IsInjectedArgument = void;
@@ -160,7 +160,7 @@ pub fn World(comptime mods: anytype) type {
 
         pub fn init(world: *@This(), allocator: mem.Allocator) !void {
             // TODO: switch Entities to stack allocation like Modules and World
-            var entities = try Entities(ns_components).init(allocator);
+            var entities = try Entities(NamespacedComponents(mods){}).init(allocator);
             errdefer entities.deinit();
             world.* = @This(){
                 .allocator = allocator,
