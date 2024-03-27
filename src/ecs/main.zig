@@ -19,7 +19,7 @@ pub const EntityID = @import("entities.zig").EntityID;
 pub const Entities = @import("entities.zig").Entities;
 pub const Archetype = @import("Archetype.zig");
 
-pub const World = @import("systems.zig").World;
+pub const Modules = @import("../module.zig").Modules;
 
 // TODO:
 // * Iteration
@@ -28,13 +28,12 @@ pub const World = @import("systems.zig").World;
 // * Multiple entities having one value
 // * Sparse storage?
 
-test "inclusion" {
+test {
     std.testing.refAllDeclsRecursive(@This());
     std.testing.refAllDeclsRecursive(@import("Archetype.zig"));
     std.testing.refAllDeclsRecursive(@import("entities.zig"));
     std.testing.refAllDeclsRecursive(@import("query.zig"));
     std.testing.refAllDeclsRecursive(@import("StringTable.zig"));
-    std.testing.refAllDeclsRecursive(@import("systems.zig"));
 }
 
 test "example" {
@@ -54,7 +53,7 @@ test "example" {
                 .{ .global = .tick, .handler = tick },
             };
 
-            fn tick(physics: *World(modules).Mod(Physics)) void {
+            fn tick(physics: *Modules(modules).Mod(Physics)) void {
                 _ = physics;
             }
         };
@@ -69,8 +68,8 @@ test "example" {
             };
 
             fn tick(
-                physics: *World(modules).Mod(Physics),
-                renderer: *World(modules).Mod(Renderer),
+                physics: *Modules(modules).Mod(Physics),
+                renderer: *Modules(modules).Mod(Renderer),
             ) void {
                 _ = renderer;
                 _ = physics;
@@ -80,9 +79,15 @@ test "example" {
 
     //-------------------------------------------------------------------------
     // Create a world.
-    var world: World(root.modules) = undefined;
+    var world: Modules(root.modules) = undefined;
     try world.init(allocator);
-    defer world.deinit();
+    defer world.deinit(allocator);
+
+    // TODO: better module initialization location
+    world.mod.physics.entities = &world.entities;
+    world.mod.physics.allocator = world.entities.allocator;
+    world.mod.renderer.entities = &world.entities;
+    world.mod.renderer.allocator = world.entities.allocator;
 
     // Initialize module state.
     var physics = &world.mod.physics;

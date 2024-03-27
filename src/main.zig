@@ -18,14 +18,11 @@ pub const testing = @import("testing.zig");
 pub const sysaudio = if (build_options.want_sysaudio) @import("sysaudio/main.zig") else struct {};
 pub const sysgpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig") else struct {};
 
-pub const Module = @import("module.zig").Module;
-pub const Modules = @import("module.zig").Modules;
-
 // Engine exports
 pub const App = @import("engine.zig").App;
 pub const Engine = @import("engine.zig").Engine;
-pub const World = @import("engine.zig").World;
-pub const Mod = World.Mod;
+pub const Modules = @import("engine.zig").Modules;
+pub const Mod = Modules.Mod;
 
 test {
     const std = @import("std");

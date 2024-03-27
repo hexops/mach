@@ -3,6 +3,7 @@ const mach = @import("main.zig");
 const core = mach.core;
 const gpu = mach.core.gpu;
 const ecs = mach.ecs;
+const module = @import("module.zig");
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();
@@ -16,7 +17,7 @@ pub const Engine = struct {
     encoder: *gpu.CommandEncoder,
 
     pub const name = .engine;
-    pub const Mod = World.Mod(@This());
+    pub const Mod = Modules.Mod(@This());
 
     pub const events = .{
         .{ .local = .init, .handler = init },
@@ -98,46 +99,35 @@ pub const Engine = struct {
 };
 
 pub const App = struct {
-    world: World,
+    modules: Modules,
 
     pub fn init(app: *@This()) !void {
-        app.* = .{ .world = undefined };
-        try app.world.init(allocator);
-        app.world.modules.sendToModule(.engine, .init, .{});
-        try app.world.dispatch();
+        app.* = .{ .modules = undefined };
+        try app.modules.init(allocator);
+        app.modules.sendToModule(.engine, .init, .{});
+        try app.modules.dispatch();
     }
 
     pub fn deinit(app: *@This()) void {
-        app.world.modules.sendToModule(.engine, .deinit, .{});
+        app.modules.sendToModule(.engine, .deinit, .{});
         // TODO: improve error handling
-        app.world.dispatch() catch |err| @panic(@errorName(err)); // dispatch .deinit
-        app.world.deinit();
+        app.modules.dispatch() catch |err| @panic(@errorName(err)); // dispatch .deinit
+        app.modules.deinit(gpa.allocator());
         _ = gpa.deinit();
     }
 
     pub fn update(app: *@This()) !bool {
         // TODO: better dispatch implementation
-        app.world.mod.engine.sendGlobal(.tick, .{});
-        try app.world.dispatch(); // dispatch .tick
-        try app.world.dispatch(); // dispatch any events produced by .tick
-        return app.world.mod.engine.state.should_exit;
+        app.modules.mod.engine.sendGlobal(.tick, .{});
+        try app.modules.dispatch(); // dispatch .tick
+        try app.modules.dispatch(); // dispatch any events produced by .tick
+        return app.modules.mod.engine.state.should_exit;
     }
 };
 
-pub const World = ecs.World(modules());
-
-fn Modules() type {
+pub const Modules = module.Modules(blk: {
     if (!@hasDecl(@import("root"), "modules")) {
         @compileError("expected `pub const modules = .{};` in root file");
     }
-    return @TypeOf(@import("root").modules);
-}
-
-fn modules() Modules() {
-    if (!@hasDecl(@import("root"), "modules")) {
-        @compileError("expected `pub const modules = .{};` in root file");
-    }
-    // TODO: verify modules (causes loop currently)
-    // _ = @import("module.zig").Modules(@import("root").modules);
-    return @import("root").modules;
-}
+    break :blk @import("root").modules;
+});
