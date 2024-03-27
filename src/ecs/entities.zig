@@ -7,6 +7,7 @@ const query_mod = @import("query.zig");
 const Archetype = @import("Archetype.zig");
 const StringTable = @import("StringTable.zig");
 const comp = @import("comptime.zig");
+const NamespacedComponents = @import("../module.zig").NamespacedComponents;
 
 /// An entity ID uniquely identifies an entity globally within an Entities set.
 pub const EntityID = u64;
@@ -749,16 +750,17 @@ test "example" {
 
     const Rotation = struct { degrees: f32 };
 
-    const all_components = .{
-        .entity = struct {
-            pub const id = EntityID;
+    const all_components = NamespacedComponents(.{
+        struct {
+            pub const name = .game;
+            pub const events = .{};
+            pub const components = .{
+                .{ .name = .name, .type = []const u8 },
+                .{ .name = .location, .type = Location },
+                .{ .name = .rotation, .type = Rotation },
+            };
         },
-        .game = struct {
-            pub const location = Location;
-            pub const name = []const u8;
-            pub const rotation = Rotation;
-        },
-    };
+    }){};
 
     //-------------------------------------------------------------------------
     // Create a world.
@@ -853,16 +855,17 @@ test "many entities" {
 
     const Rotation = struct { degrees: f32 };
 
-    const all_components = .{
-        .entity = struct {
-            pub const id = EntityID;
+    const all_components = NamespacedComponents(.{
+        struct {
+            pub const name = .game;
+            pub const events = .{};
+            pub const components = .{
+                .{ .name = .name, .type = []const u8 },
+                .{ .name = .location, .type = Location },
+                .{ .name = .rotation, .type = Rotation },
+            };
         },
-        .game = struct {
-            pub const location = Location;
-            pub const name = []const u8;
-            pub const rotation = Rotation;
-        },
-    };
+    }){};
 
     // Create many entities
     var world = try Entities(all_components).init(allocator);
