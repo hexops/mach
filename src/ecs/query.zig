@@ -1,6 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
-const NamespacedComponents = @import("../module.zig").NamespacedComponents;
+const ComponentTypesByName = @import("../module.zig").ComponentTypesByName;
 
 pub const QueryTag = enum {
     any,
@@ -70,7 +70,7 @@ test "query" {
 
     const Rotation = struct { degrees: f32 };
 
-    const all_components = NamespacedComponents(.{
+    const all_components = ComponentTypesByName(.{
         struct {
             pub const name = .game;
             pub const events = .{};
