@@ -590,7 +590,7 @@ pub fn NamespacedComponents(comptime modules: anytype) type {
 ///     rotation: @TypeOf() = .{ .type = Vec2, .description = "rotation component" },
 /// }
 /// ```
-fn MComponents(comptime M: anytype) type {
+pub fn MComponents(comptime M: anytype) type {
     const error_prefix = "mach: module ." ++ @tagName(M.name) ++ " .components ";
     if (!@hasDecl(M, "components")) {
         return struct {};
