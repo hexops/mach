@@ -298,11 +298,10 @@ pub fn Modules(comptime mods: anytype) type {
         /// Call local event handler with the specified name in the specified module
         inline fn callLocal(module_name: ModuleName(mods), event_name: LocalEvent, args: []u8, injectable: anytype) !void {
             if (@typeInfo(@TypeOf(event_name)).Enum.fields.len == 0) return;
-            // TODO: invert switch case for hypothetically better branch prediction
-            switch (module_name) {
-                inline else => |mod_name| {
-                    switch (event_name) {
-                        inline else => |ev_name| {
+            switch (event_name) {
+                inline else => |ev_name| {
+                    switch (module_name) {
+                        inline else => |mod_name| {
                             const M = @field(NamespacedModules(@This().modules){}, @tagName(mod_name));
                             _ = ModuleInterface(M); // Validate the module
 
