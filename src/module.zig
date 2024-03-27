@@ -64,9 +64,8 @@ pub fn Modules(comptime modules2: anytype) type {
         entities: Entities(component_types_by_name),
 
         pub fn Mod(comptime M: type) type {
-            const StateT = NamespacedState(ModulesT.modules);
             const NSComponents = ComponentTypesByName(ModulesT.modules);
-            return Module(M, ModulesT, StateT, NSComponents);
+            return Module(M, ModulesT, NSComponents);
         }
 
         pub fn init(m: *@This(), allocator: std.mem.Allocator) !void {
@@ -347,9 +346,8 @@ pub fn Modules(comptime modules2: anytype) type {
 pub fn ModsByName(comptime modules: anytype, comptime ModulesT: type) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     for (modules) |M| {
-        const StateT = NamespacedState(modules);
         const NSComponents = ComponentTypesByName(modules);
-        const Mod = Module(M, ModulesT, StateT, NSComponents);
+        const Mod = Module(M, ModulesT, NSComponents);
         fields = fields ++ [_]std.builtin.Type.StructField{.{
             .name = @tagName(M.name),
             .type = Mod,
@@ -371,14 +369,12 @@ pub fn ModsByName(comptime modules: anytype, comptime ModulesT: type) type {
 pub fn Module(
     comptime M: anytype,
     comptime ModulesT: type,
-    comptime StateT: type,
     comptime NSComponents: type,
 ) type {
     const module_tag = M.name;
-    const State = @TypeOf(@field(@as(StateT, undefined), @tagName(module_tag)));
     const components = MComponentTypes(M){};
     return struct {
-        state: State,
+        state: M,
         entities: *Entities(NSComponents{}),
         // TODO: eliminate this global allocator and/or rethink allocation strategies for modules
         allocator: std.mem.Allocator,
@@ -804,38 +800,6 @@ fn MComponentTypes(comptime M: anytype) type {
             .default_value = &ns_component,
             .is_comptime = true,
             .alignment = @alignOf(NSComponent),
-        }};
-    }
-    return @Type(.{
-        .Struct = .{
-            .layout = .Auto,
-            .is_tuple = false,
-            .fields = fields,
-            .decls = &[_]std.builtin.Type.Declaration{},
-        },
-    });
-}
-
-// TODO: reconsider state concept
-fn NamespacedState(comptime modules: anytype) type {
-    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
-    inline for (modules) |M| {
-        _ = ModuleInterface(M); // Validate the module
-        const state_fields = std.meta.fields(M);
-        const State = if (state_fields.len > 0) @Type(.{
-            .Struct = .{
-                .layout = .Auto,
-                .is_tuple = false,
-                .fields = state_fields,
-                .decls = &[_]std.builtin.Type.Declaration{},
-            },
-        }) else struct {};
-        fields = fields ++ [_]std.builtin.Type.StructField{.{
-            .name = @tagName(M.name),
-            .type = State,
-            .default_value = null,
-            .is_comptime = false,
-            .alignment = @alignOf(State),
         }};
     }
     return @Type(.{
