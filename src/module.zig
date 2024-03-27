@@ -43,6 +43,11 @@ pub fn Modules(comptime mods: anytype) type {
         pub const GlobalEvent = GlobalEventEnum(mods);
         pub const LocalEvent = LocalEventEnum(mods);
 
+        /// Enables looking up a component type by module name and component name.
+        /// e.g. @field(@field(ComponentTypesByName, "module_name"), "component_name")
+        pub const component_types_by_name = ComponentTypesByName(mods){};
+
+        const ModulesT = @This();
         const Event = struct {
             module_name: ?ModuleID,
             event_name: EventID,
@@ -50,24 +55,22 @@ pub fn Modules(comptime mods: anytype) type {
         };
         const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
 
-        const ModulesT = @This();
-
         events_mu: std.Thread.RwLock = .{},
         args_queue: std.ArrayListUnmanaged(u8) = .{},
         events: EventQueue,
         mod: ModsByName(mods, ModulesT),
-        // TODO: pass mods directly instead of NamespacedComponents?
-        entities: Entities(NamespacedComponents(mods){}),
+        // TODO: pass mods directly instead of ComponentTypesByName?
+        entities: Entities(component_types_by_name),
 
         pub fn Mod(comptime M: type) type {
             const StateT = NamespacedState(ModulesT.modules);
-            const NSComponents = NamespacedComponents(ModulesT.modules);
+            const NSComponents = ComponentTypesByName(ModulesT.modules);
             return Module(M, ModulesT, StateT, NSComponents);
         }
 
         pub fn init(m: *@This(), allocator: std.mem.Allocator) !void {
             // TODO: switch Entities to stack allocation like Modules is
-            var entities = try Entities(NamespacedComponents(mods){}).init(allocator);
+            var entities = try Entities(component_types_by_name).init(allocator);
             errdefer entities.deinit();
 
             // TODO: custom event queue allocation sizes
@@ -344,7 +347,7 @@ pub fn ModsByName(comptime mods: anytype, comptime ModulesT: type) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     for (mods) |M| {
         const StateT = NamespacedState(mods);
-        const NSComponents = NamespacedComponents(mods);
+        const NSComponents = ComponentTypesByName(mods);
         const Mod = Module(M, ModulesT, StateT, NSComponents);
         fields = fields ++ [_]std.builtin.Type.StructField{.{
             .name = @tagName(M.name),
@@ -695,7 +698,7 @@ fn validateEvents(comptime error_prefix: anytype, comptime events: anytype) void
 ///     },
 /// }
 /// ```
-pub fn NamespacedComponents(comptime modules: anytype) type {
+pub fn ComponentTypesByName(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     inline for (modules) |M| {
         const MC = MComponents(M);

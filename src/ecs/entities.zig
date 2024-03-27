@@ -7,7 +7,7 @@ const query_mod = @import("query.zig");
 const Archetype = @import("Archetype.zig");
 const StringTable = @import("StringTable.zig");
 const comp = @import("comptime.zig");
-const NamespacedComponents = @import("../module.zig").NamespacedComponents;
+const ComponentTypesByName = @import("../module.zig").ComponentTypesByName;
 
 /// An entity ID uniquely identifies an entity globally within an Entities set.
 pub const EntityID = u64;
@@ -750,7 +750,7 @@ test "example" {
 
     const Rotation = struct { degrees: f32 };
 
-    const all_components = NamespacedComponents(.{
+    const all_components = ComponentTypesByName(.{
         struct {
             pub const name = .game;
             pub const events = .{};
@@ -855,7 +855,7 @@ test "many entities" {
 
     const Rotation = struct { degrees: f32 };
 
-    const all_components = NamespacedComponents(.{
+    const all_components = ComponentTypesByName(.{
         struct {
             pub const name = .game;
             pub const events = .{};
