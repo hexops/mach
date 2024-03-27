@@ -16,8 +16,13 @@ direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
 spawn_timer: mach.Timer,
 
-pub const components = struct {
-    pub const follower = void;
+pub const components = .{
+    .{ .name = .follower, .type = void },
+};
+
+pub const events = .{
+    .{ .global = .init, .handler = init },
+    .{ .global = .tick, .handler = tick },
 };
 
 // Each module must have a globally unique name declared, it is impossible to use two modules with
@@ -33,7 +38,8 @@ pub const components = struct {
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
-pub fn init(
+// TODO(engine): remove need for returning an error here
+fn init(
     engine: *mach.Engine.Mod,
     renderer: *Renderer.Mod,
     game: *Mod,
@@ -56,7 +62,8 @@ pub fn init(
     };
 }
 
-pub fn tick(
+// TODO(engine): remove need for returning an error here
+fn tick(
     engine: *mach.Engine.Mod,
     renderer: *Renderer.Mod,
     game: *Mod,
@@ -87,7 +94,7 @@ pub fn tick(
                     else => {},
                 }
             },
-            .close => try engine.send(.exit, .{}),
+            .close => engine.send(.exit, .{}),
             else => {},
         }
     }

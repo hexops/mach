@@ -21,8 +21,8 @@ pub const sysgpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig") els
 // Engine exports
 pub const App = @import("engine.zig").App;
 pub const Engine = @import("engine.zig").Engine;
-pub const World = @import("engine.zig").World;
-pub const Mod = World.Mod;
+pub const Modules = @import("engine.zig").Modules;
+pub const Mod = Modules.Mod;
 
 test {
     const std = @import("std");
@@ -35,6 +35,7 @@ test {
     _ = gfx;
     _ = math;
     _ = testing;
+    std.testing.refAllDeclsRecursive(@import("module.zig"));
     std.testing.refAllDeclsRecursive(ecs);
     std.testing.refAllDeclsRecursive(gamemode);
     std.testing.refAllDeclsRecursive(math);

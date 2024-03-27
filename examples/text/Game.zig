@@ -27,6 +27,7 @@ frame_count: usize,
 texts: usize,
 rand: std.rand.DefaultPrng,
 time: f32,
+style1: mach.ecs.EntityID,
 
 const d0 = 0.000001;
 
@@ -43,13 +44,27 @@ const d0 = 0.000001;
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
+pub const events = .{
+    .{ .global = .init, .handler = init },
+    .{ .global = .deinit, .handler = deinit },
+    .{ .global = .tick, .handler = tick },
+};
+
 pub const Pipeline = enum(u32) {
     default,
 };
 
 const upscale = 1.0;
 
-pub fn init(
+const text1: []const []const u8 = &.{
+    "Text but with spaces 😊\nand\n",
+    "italics\nand\n",
+    "bold\nand\n",
+};
+
+const text2: []const []const u8 = &.{"!$?😊"};
+
+fn init(
     engine: *mach.Engine.Mod,
     text_mod: *Text.Mod,
     game: *Mod,
@@ -57,41 +72,46 @@ pub fn init(
     // The Mach .core is where we set window options, etc.
     core.setTitle("gfx.Text example");
 
+    // TODO: a better way to initialize entities with default values
+    const style1 = try engine.newEntity();
+    try text_mod.set(style1, .font_name, "Roboto Medium"); // TODO
+    try text_mod.set(style1, .font_size, 48 * gfx.px_per_pt); // 48pt
+    try text_mod.set(style1, .font_weight, gfx.font_weight_normal);
+    try text_mod.set(style1, .italic, false);
+    try text_mod.set(style1, .color, vec4(0.6, 1.0, 0.6, 1.0));
+
+    const style2 = try engine.newEntity();
+    try text_mod.set(style2, .font_name, "Roboto Medium"); // TODO
+    try text_mod.set(style2, .font_size, 48 * gfx.px_per_pt); // 48pt
+    try text_mod.set(style2, .font_weight, gfx.font_weight_normal);
+    try text_mod.set(style2, .italic, true);
+    try text_mod.set(style2, .color, vec4(0.6, 1.0, 0.6, 1.0));
+
+    const style3 = try engine.newEntity();
+    try text_mod.set(style3, .font_name, "Roboto Medium"); // TODO
+    try text_mod.set(style3, .font_size, 48 * gfx.px_per_pt); // 48pt
+    try text_mod.set(style3, .font_weight, gfx.font_weight_bold);
+    try text_mod.set(style3, .italic, false);
+    try text_mod.set(style3, .color, vec4(0.6, 1.0, 0.6, 1.0));
+
     // Create some text
     const player = try engine.newEntity();
     try text_mod.set(player, .pipeline, @intFromEnum(Pipeline.default));
     try text_mod.set(player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(vec3(0, 0, 0))));
-    const style1 = Text.Style{
-        .font_name = "Roboto Medium", // TODO
-        .font_size = 48 * gfx.px_per_pt, // 48pt
-        .font_weight = gfx.font_weight_normal,
-        .italic = false,
-        .color = vec4(0.6, 1.0, 0.6, 1.0),
-    };
-    var style2 = style1;
-    style2.italic = true;
-    var style3 = style1;
-    style3.font_weight = gfx.font_weight_bold;
-    try text_mod.set(player, .text, &.{
-        .{
-            .string = "Text but with spaces 😊\nand\n",
-            .style = &style1,
-        },
-        .{
-            .string = "italics\nand\n",
-            .style = &style2,
-        },
-        .{
-            .string = "bold\nand\n",
-            .style = &style3,
-        },
-    });
 
-    try text_mod.send(.init, .{});
-    try text_mod.send(.initPipeline, .{Text.PipelineOptions{
+    // TODO: better storage mechanism for this
+    // TODO: this is a leak
+    const styles = try engine.allocator.alloc(mach.ecs.EntityID, 3);
+    styles[0] = style1;
+    styles[1] = style2;
+    styles[2] = style3;
+    try text_mod.set(player, .text, text1);
+    try text_mod.set(player, .style, styles);
+
+    text_mod.send(.init_pipeline, .{ .@"0" = Text.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.default),
-    }});
-    try text_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
+    } });
+    engine.dispatchNoError(); // TODO: no dispatch in user code
 
     game.state = .{
         .timer = try mach.Timer.start(),
@@ -102,14 +122,15 @@ pub fn init(
         .texts = 0,
         .rand = std.rand.DefaultPrng.init(1337),
         .time = 0,
+        .style1 = style1,
     };
 }
 
-pub fn deinit(engine: *mach.Engine.Mod) !void {
+fn deinit(engine: *mach.Engine.Mod) !void {
     _ = engine;
 }
 
-pub fn tick(
+fn tick(
     engine: *mach.Engine.Mod,
     text_mod: *Text.Mod,
     game: *Mod,
@@ -140,7 +161,7 @@ pub fn tick(
                     else => {},
                 }
             },
-            .close => try engine.send(.exit, .{}),
+            .close => engine.send(.exit, .{}),
             else => {},
         }
     }
@@ -161,19 +182,12 @@ pub fn tick(
             try text_mod.set(new_entity, .pipeline, @intFromEnum(Pipeline.default));
             try text_mod.set(new_entity, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(new_pos)));
 
-            const style1 = Text.Style{
-                .font_name = "Roboto Medium", // TODO
-                .font_size = 48 * gfx.px_per_pt, // 48pt
-                .font_weight = gfx.font_weight_normal,
-                .italic = false,
-                .color = vec4(0.6, 1.0, 0.6, 1.0),
-            };
-            try text_mod.set(new_entity, .text, &.{
-                .{
-                    .string = "!$?😊",
-                    .style = &style1,
-                },
-            });
+            // TODO: better storage mechanism for this
+            // TODO: this is a leak
+            const styles = try engine.allocator.alloc(mach.ecs.EntityID, 1);
+            styles[0] = game.state.style1;
+            try text_mod.set(new_entity, .text, text2);
+            try text_mod.set(new_entity, .style, styles);
 
             game.state.texts += 1;
         }
@@ -212,16 +226,16 @@ pub fn tick(
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
     try text_mod.set(game.state.player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(player_pos)));
-    try text_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
+    text_mod.send(.updated, .{ .@"0" = @intFromEnum(Pipeline.default) });
 
     // Perform pre-render work
-    try text_mod.send(.preRender, .{@intFromEnum(Pipeline.default)});
+    text_mod.send(.pre_render, .{ .@"0" = @intFromEnum(Pipeline.default) });
 
     // Render a frame
-    try engine.send(.beginPass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
-    try text_mod.send(.render, .{@intFromEnum(Pipeline.default)});
-    try engine.send(.endPass, .{});
-    try engine.send(.present, .{}); // Present the frame
+    engine.send(.begin_pass, .{ .@"0" = gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 } });
+    text_mod.send(.render, .{ .@"0" = @intFromEnum(Pipeline.default) });
+    engine.send(.end_pass, .{});
+    engine.send(.present, .{}); // Present the frame
 
     // Every second, update the window title with the FPS
     if (game.state.fps_timer.read() >= 1.0) {

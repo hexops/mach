@@ -3,6 +3,7 @@ const mach = @import("main.zig");
 const core = mach.core;
 const gpu = mach.core.gpu;
 const ecs = mach.ecs;
+const module = @import("module.zig");
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();
@@ -11,122 +12,122 @@ const allocator = gpa.allocator();
 pub const Engine = struct {
     device: *gpu.Device,
     queue: *gpu.Queue,
-    exit: bool,
+    should_exit: bool,
     pass: *gpu.RenderPassEncoder,
     encoder: *gpu.CommandEncoder,
 
     pub const name = .engine;
-    pub const Mod = World.Mod(@This());
+    pub const Mod = Modules.Mod(@This());
 
-    pub const local = struct {
-        pub fn init(world: *World) !void {
-            core.allocator = allocator;
-            try core.init(.{});
-            const state = &world.mod.engine.state;
-            state.device = core.device;
-            state.queue = core.device.getQueue();
-            state.exit = false;
-            state.encoder = state.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
-                .label = "engine.state.encoder",
-            });
-
-            try world.send(null, .init, .{});
-        }
-
-        pub fn deinit(
-            world: *World,
-            engine: *Mod,
-        ) !void {
-            // TODO: this triggers a device loss error, which we should handle correctly
-            // engine.state.device.release();
-            engine.state.queue.release();
-            try world.send(null, .deinit, .{});
-            core.deinit();
-            world.deinit();
-            _ = gpa.deinit();
-        }
-
-        // Engine module's exit handler
-        pub fn exit(world: *World) !void {
-            try world.send(null, .exit, .{});
-            world.mod.engine.state.exit = true;
-        }
-
-        pub fn beginPass(
-            engine: *Mod,
-            clear_color: gpu.Color,
-        ) !void {
-            const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
-            defer back_buffer_view.release();
-
-            // TODO: expose options
-            const color_attachment = gpu.RenderPassColorAttachment{
-                .view = back_buffer_view,
-                .clear_value = clear_color,
-                .load_op = .clear,
-                .store_op = .store,
-            };
-            const pass_info = gpu.RenderPassDescriptor.init(.{
-                .color_attachments = &.{color_attachment},
-            });
-
-            engine.state.pass = engine.state.encoder.beginRenderPass(&pass_info);
-        }
-
-        pub fn endPass(
-            engine: *Mod,
-        ) !void {
-            // End this pass
-            engine.state.pass.end();
-            engine.state.pass.release();
-
-            var command = engine.state.encoder.finish(null);
-            defer command.release();
-            engine.state.encoder.release();
-            engine.state.queue.submit(&[_]*gpu.CommandBuffer{command});
-
-            // Prepare for next pass
-            engine.state.encoder = engine.state.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
-                .label = "engine.state.encoder",
-            });
-        }
-
-        pub fn present() !void {
-            core.swap_chain.present();
-        }
+    pub const events = .{
+        .{ .local = .init, .handler = init },
+        .{ .local = .deinit, .handler = deinit },
+        .{ .local = .exit, .handler = exit },
+        .{ .local = .begin_pass, .handler = beginPass },
+        .{ .local = .end_pass, .handler = endPass },
+        .{ .local = .present, .handler = present },
+        .{ .global = .init, .handler = fn () void },
+        .{ .global = .deinit, .handler = fn () void },
+        .{ .global = .tick, .handler = fn () void },
+        .{ .global = .exit, .handler = fn () void },
     };
+
+    fn init(engine: *Mod) !void {
+        core.allocator = allocator;
+        try core.init(.{});
+        const state = &engine.state;
+        state.device = core.device;
+        state.queue = core.device.getQueue();
+        state.should_exit = false;
+        state.encoder = state.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
+            .label = "engine.state.encoder",
+        });
+        engine.sendGlobal(.init, .{});
+    }
+
+    fn deinit(engine: *Mod) void {
+        // TODO: this triggers a device loss error, which we should handle correctly
+        // engine.state.device.release();
+        engine.state.queue.release();
+        engine.sendGlobal(.deinit, .{});
+        core.deinit();
+    }
+
+    // Engine module's exit handler
+    fn exit(engine: *Mod) void {
+        engine.sendGlobal(.exit, .{});
+        engine.state.should_exit = true;
+    }
+
+    fn beginPass(engine: *Mod, clear_color: gpu.Color) void {
+        const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
+        defer back_buffer_view.release();
+
+        // TODO: expose options
+        const color_attachment = gpu.RenderPassColorAttachment{
+            .view = back_buffer_view,
+            .clear_value = clear_color,
+            .load_op = .clear,
+            .store_op = .store,
+        };
+        const pass_info = gpu.RenderPassDescriptor.init(.{
+            .color_attachments = &.{color_attachment},
+        });
+
+        engine.state.pass = engine.state.encoder.beginRenderPass(&pass_info);
+    }
+
+    fn endPass(engine: *Mod) void {
+        // End this pass
+        engine.state.pass.end();
+        engine.state.pass.release();
+
+        var command = engine.state.encoder.finish(null);
+        defer command.release();
+        engine.state.encoder.release();
+        engine.state.queue.submit(&[_]*gpu.CommandBuffer{command});
+
+        // Prepare for next pass
+        engine.state.encoder = engine.state.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
+            .label = "engine.state.encoder",
+        });
+    }
+
+    fn present() void {
+        core.swap_chain.present();
+    }
 };
 
 pub const App = struct {
-    world: World,
+    modules: Modules,
 
     pub fn init(app: *@This()) !void {
-        app.* = .{ .world = try World.init(allocator) };
-        try app.world.send(.engine, .init, .{});
+        app.* = .{ .modules = undefined };
+        try app.modules.init(allocator);
+        app.modules.sendToModule(.engine, .init, .{});
+        try app.modules.dispatch();
     }
 
     pub fn deinit(app: *@This()) void {
-        try app.world.send(.engine, .deinit, .{});
+        app.modules.sendToModule(.engine, .deinit, .{});
+        // TODO: improve error handling
+        app.modules.dispatch() catch |err| @panic(@errorName(err)); // dispatch .deinit
+        app.modules.deinit(gpa.allocator());
+        _ = gpa.deinit();
     }
 
     pub fn update(app: *@This()) !bool {
-        try app.world.send(null, .tick, .{});
-        return app.world.mod.engine.state.exit;
+        // TODO: better dispatch implementation
+        app.modules.mod.engine.sendGlobal(.tick, .{});
+        try app.modules.dispatch(); // dispatch .tick
+        try app.modules.dispatch(); // dispatch any events produced by .tick
+        return app.modules.mod.engine.state.should_exit;
     }
 };
 
-pub const World = ecs.World(modules());
-
-fn Modules() type {
+pub const Modules = module.Modules(blk: {
     if (!@hasDecl(@import("root"), "modules")) {
         @compileError("expected `pub const modules = .{};` in root file");
     }
-    return @TypeOf(@import("root").modules);
-}
-
-fn modules() Modules() {
-    if (!@hasDecl(@import("root"), "modules")) {
-        @compileError("expected `pub const modules = .{};` in root file");
-    }
-    return @import("root").modules;
-}
+    break :blk @import("root").modules;
+});

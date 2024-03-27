@@ -42,16 +42,18 @@ pub fn ArchetypeSlicer(comptime all_components: anytype) type {
 
         pub fn slice(
             slicer: @This(),
+            // TODO: cleanup comptime
             comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.DeclEnum(@field(all_components, @tagName(namespace_name))),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
         ) []@field(
             @field(all_components, @tagName(namespace_name)),
             @tagName(component_name),
-        ) {
+        ).type {
+            // TODO: cleanup comptime
             const Type = @field(
                 @field(all_components, @tagName(namespace_name)),
                 @tagName(component_name),
-            );
+            ).type;
             if (namespace_name == .entity and component_name == .id) {
                 const name_id = slicer.archetype.component_names.index("id").?;
                 return slicer.archetype.getColumnValues(name_id, Type).?[0..slicer.archetype.len];

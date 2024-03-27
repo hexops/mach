@@ -40,12 +40,17 @@ const d0 = 0.000001;
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
+pub const events = .{
+    .{ .global = .init, .handler = init },
+    .{ .global = .tick, .handler = tick },
+};
+
 pub const Pipeline = enum(u32) {
     default,
     text,
 };
 
-pub fn init(
+fn init(
     engine: *mach.Engine.Mod,
     sprite_mod: *Sprite.Mod,
     text_mod: *Text.Mod,
@@ -54,27 +59,25 @@ pub fn init(
     // The Mach .core is where we set window options, etc.
     core.setTitle("gfx.Sprite example");
 
-    // Initialize mach.gfx.Text module
-    try text_mod.send(.init, .{});
-
     // Tell sprite_mod to use the texture
-    try sprite_mod.send(.init, .{});
-    try sprite_mod.send(.initPipeline, .{Sprite.PipelineOptions{
+    const texture = text_mod.state.texture;
+    sprite_mod.send(.init_pipeline, .{ .@"0" = Sprite.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.text),
-        .texture = text_mod.state.texture,
-    }});
+        .texture = texture,
+    } });
 
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `Sprite` module could have a 3D `.location` component with a different
     // type than the `.physics2d` module's `.location` component if you desire.
 
+    engine.dispatchNoError(); // TODO: no dispatch in user code
     const r = text_mod.state.regions.get('?').?;
     const player = try engine.newEntity();
     try sprite_mod.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
     try sprite_mod.set(player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
     try sprite_mod.set(player, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
     try sprite_mod.set(player, .pipeline, @intFromEnum(Pipeline.text));
-    try sprite_mod.send(.updated, .{@intFromEnum(Pipeline.text)});
+    sprite_mod.send(.updated, .{ .@"0" = @intFromEnum(Pipeline.text) });
 
     game.state = .{
         .timer = try mach.Timer.start(),
@@ -88,7 +91,7 @@ pub fn init(
     };
 }
 
-pub fn tick(
+fn tick(
     engine: *mach.Engine.Mod,
     sprite_mod: *Sprite.Mod,
     text_mod: *Text.Mod,
@@ -120,7 +123,7 @@ pub fn tick(
                     else => {},
                 }
             },
-            .close => try engine.send(.exit, .{}),
+            .close => engine.send(.exit, .{}),
             else => {},
         }
     }
@@ -189,16 +192,16 @@ pub fn tick(
     );
     try sprite_mod.set(game.state.player, .transform, player_transform);
 
-    try sprite_mod.send(.updated, .{@intFromEnum(Pipeline.text)});
+    sprite_mod.send(.updated, .{ .@"0" = @intFromEnum(Pipeline.text) });
 
     // Perform pre-render work
-    try sprite_mod.send(.preRender, .{@intFromEnum(Pipeline.text)});
+    sprite_mod.send(.pre_render, .{ .@"0" = @intFromEnum(Pipeline.text) });
 
     // Render a frame
-    try engine.send(.beginPass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
-    try sprite_mod.send(.render, .{@intFromEnum(Pipeline.text)});
-    try engine.send(.endPass, .{});
-    try engine.send(.present, .{}); // Present the frame
+    engine.send(.begin_pass, .{ .@"0" = gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 } });
+    sprite_mod.send(.render, .{ .@"0" = @intFromEnum(Pipeline.text) });
+    engine.send(.end_pass, .{});
+    engine.send(.present, .{}); // Present the frame
 
     // Every second, update the window title with the FPS
     if (game.state.fps_timer.read() >= 1.0) {

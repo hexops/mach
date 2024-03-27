@@ -20,10 +20,16 @@ uniform_buffer: *gpu.Buffer,
 pub const name = .renderer;
 pub const Mod = mach.Mod(@This());
 
-pub const components = struct {
-    pub const location = Vec3;
-    pub const rotation = Vec3;
-    pub const scale = f32;
+pub const components = .{
+    .{ .name = .location, .type = Vec3 },
+    .{ .name = .rotation, .type = Vec3 },
+    .{ .name = .scale, .type = f32 },
+};
+
+pub const events = .{
+    .{ .global = .init, .handler = init },
+    .{ .global = .deinit, .handler = deinit },
+    .{ .global = .tick, .handler = tick },
 };
 
 // TODO: this shouldn't be a packed struct, it should be extern.
@@ -32,7 +38,7 @@ const UniformBufferObject = packed struct {
     scale: f32,
 };
 
-pub fn init(
+fn init(
     engine: *mach.Engine.Mod,
     renderer: *Mod,
 ) !void {
@@ -97,7 +103,7 @@ pub fn init(
     shader_module.release();
 }
 
-pub fn deinit(
+fn deinit(
     renderer: *Mod,
 ) !void {
     renderer.state.pipeline.release();
@@ -106,7 +112,7 @@ pub fn deinit(
     renderer.state.uniform_buffer.release();
 }
 
-pub fn tick(
+fn tick(
     engine: *mach.Engine.Mod,
     renderer: *Mod,
 ) !void {

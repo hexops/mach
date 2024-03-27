@@ -12,15 +12,14 @@
 //!
 
 const std = @import("std");
+const mach = @import("../main.zig");
 const testing = std.testing;
 
 pub const EntityID = @import("entities.zig").EntityID;
 pub const Entities = @import("entities.zig").Entities;
 pub const Archetype = @import("Archetype.zig");
 
-pub const Module = @import("modules.zig").Module;
-pub const Modules = @import("modules.zig").Modules;
-pub const World = @import("systems.zig").World;
+pub const Modules = @import("../module.zig").Modules;
 
 // TODO:
 // * Iteration
@@ -29,53 +28,66 @@ pub const World = @import("systems.zig").World;
 // * Multiple entities having one value
 // * Sparse storage?
 
-test "inclusion" {
+test {
     std.testing.refAllDeclsRecursive(@This());
     std.testing.refAllDeclsRecursive(@import("Archetype.zig"));
     std.testing.refAllDeclsRecursive(@import("entities.zig"));
     std.testing.refAllDeclsRecursive(@import("query.zig"));
     std.testing.refAllDeclsRecursive(@import("StringTable.zig"));
-    std.testing.refAllDeclsRecursive(@import("systems.zig"));
-    std.testing.refAllDeclsRecursive(@import("modules.zig"));
 }
 
 test "example" {
     const allocator = testing.allocator;
 
-    comptime var Renderer = type;
-    comptime var Physics = type;
-    Physics = Module(struct {
-        pointer: u8,
+    const root = struct {
+        pub const modules = .{ Renderer, Physics };
 
-        pub const name = .physics;
-        pub const components = struct {
-            pub const id = u32;
+        const Physics = struct {
+            pointer: u8,
+
+            pub const name = .physics;
+            pub const components = .{
+                .{ .name = .id, .type = u32 },
+            };
+            pub const events = .{
+                .{ .global = .tick, .handler = tick },
+            };
+
+            fn tick(physics: *Modules(modules).Mod(Physics)) void {
+                _ = physics;
+            }
         };
 
-        pub fn tick(physics: *World(.{ Renderer, Physics }).Mod(Physics)) !void {
-            _ = physics;
-        }
-    });
+        const Renderer = struct {
+            pub const name = .renderer;
+            pub const components = .{
+                .{ .name = .id, .type = u16 },
+            };
+            pub const events = .{
+                .{ .global = .tick, .handler = tick },
+            };
 
-    Renderer = Module(struct {
-        pub const name = .renderer;
-        pub const components = struct {
-            pub const id = u16;
+            fn tick(
+                physics: *Modules(modules).Mod(Physics),
+                renderer: *Modules(modules).Mod(Renderer),
+            ) void {
+                _ = renderer;
+                _ = physics;
+            }
         };
-
-        pub fn tick(
-            physics: *World(.{ Renderer, Physics }).Mod(Physics),
-            renderer: *World(.{ Renderer, Physics }).Mod(Renderer),
-        ) !void {
-            _ = renderer;
-            _ = physics;
-        }
-    });
+    };
 
     //-------------------------------------------------------------------------
     // Create a world.
-    var world = try World(.{ Renderer, Physics }).init(allocator);
-    defer world.deinit();
+    var world: Modules(root.modules) = undefined;
+    try world.init(allocator);
+    defer world.deinit(allocator);
+
+    // TODO: better module initialization location
+    world.mod.physics.entities = &world.entities;
+    world.mod.physics.allocator = world.entities.allocator;
+    world.mod.renderer.entities = &world.entities;
+    world.mod.renderer.allocator = world.entities.allocator;
 
     // Initialize module state.
     var physics = &world.mod.physics;
@@ -115,5 +127,6 @@ test "example" {
 
     //-------------------------------------------------------------------------
     // Send events to modules
-    try world.send(null, .tick, .{});
+    world.mod.renderer.sendGlobal(.tick, .{});
+    try world.dispatch();
 }

@@ -7,6 +7,7 @@ const query_mod = @import("query.zig");
 const Archetype = @import("Archetype.zig");
 const StringTable = @import("StringTable.zig");
 const comp = @import("comptime.zig");
+const ComponentTypesByName = @import("../module.zig").ComponentTypesByName;
 
 /// An entity ID uniquely identifies an entity globally within an Entities set.
 pub const EntityID = u64;
@@ -281,12 +282,13 @@ pub fn Entities(comptime all_components: anytype) type {
         pub fn setComponent(
             entities: *Self,
             entity: EntityID,
+            // TODO: cleanup comptime
             comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.DeclEnum(@field(all_components, @tagName(namespace_name))),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
             component: @field(
                 @field(all_components, @tagName(namespace_name)),
                 @tagName(component_name),
-            ),
+            ).type,
         ) !void {
             const name_str = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             const name_id = try entities.component_names.indexOrPut(entities.allocator, name_str);
@@ -315,6 +317,9 @@ pub fn Entities(comptime all_components: anytype) type {
 
                 const archetype_entry = try entities.archetypeOrPut(columns);
                 if (!archetype_entry.found_existing) {
+                    // Update prev_archetype pointer, as it would now be invalidated due to the allocation
+                    prev_archetype = &entities.archetypes.items[prev_archetype_idx];
+
                     archetype_entry.ptr.* = .{
                         .len = 0,
                         .capacity = 0,
@@ -412,6 +417,9 @@ pub fn Entities(comptime all_components: anytype) type {
 
                 const archetype_entry = try entities.archetypeOrPut(columns);
                 if (!archetype_entry.found_existing) {
+                    // Update prev_archetype pointer, as it would now be invalidated due to the allocation
+                    prev_archetype = &entities.archetypes.items[prev_archetype_idx];
+
                     archetype_entry.ptr.* = .{
                         .len = 0,
                         .capacity = 0,
@@ -477,21 +485,25 @@ pub fn Entities(comptime all_components: anytype) type {
         pub fn getComponent(
             entities: *Self,
             entity: EntityID,
+            // TODO: cleanup comptime
             comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.DeclEnum(@field(all_components, @tagName(namespace_name))),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
         ) ?@field(
             @field(all_components, @tagName(namespace_name)),
             @tagName(component_name),
-        ) {
+        ).type {
+            // TODO: cleanup comptime
             const Component = comptime @field(
                 @field(all_components, @tagName(namespace_name)),
                 @tagName(component_name),
-            );
+            ).type;
+
             const name_str = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             const name_id = entities.component_names.index(name_str) orelse return null;
 
             var archetype = entities.archetypeByID(entity);
             const ptr = entities.entities.get(entity).?;
+
             return archetype.get(ptr.row_index, name_id, Component);
         }
 
@@ -516,8 +528,9 @@ pub fn Entities(comptime all_components: anytype) type {
         pub fn removeComponent(
             entities: *Self,
             entity: EntityID,
+            // TODO: cleanup comptime
             comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.DeclEnum(@field(all_components, @tagName(namespace_name))),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
         ) !void {
             const name_str = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             const name_id = try entities.component_names.indexOrPut(entities.allocator, name_str);
@@ -548,6 +561,9 @@ pub fn Entities(comptime all_components: anytype) type {
 
             const archetype_entry = try entities.archetypeOrPut(columns);
             if (!archetype_entry.found_existing) {
+                // Update prev_archetype pointer, as it would now be invalidated due to the allocation
+                prev_archetype = &entities.archetypes.items[prev_archetype_idx];
+
                 archetype_entry.ptr.* = .{
                     .len = 0,
                     .capacity = 0,
@@ -734,16 +750,17 @@ test "example" {
 
     const Rotation = struct { degrees: f32 };
 
-    const all_components = .{
-        .entity = struct {
-            pub const id = EntityID;
+    const all_components = ComponentTypesByName(.{
+        struct {
+            pub const name = .game;
+            pub const events = .{};
+            pub const components = .{
+                .{ .name = .name, .type = []const u8 },
+                .{ .name = .location, .type = Location },
+                .{ .name = .rotation, .type = Rotation },
+            };
         },
-        .game = struct {
-            pub const location = Location;
-            pub const name = []const u8;
-            pub const rotation = Rotation;
-        },
-    };
+    }){};
 
     //-------------------------------------------------------------------------
     // Create a world.
@@ -838,16 +855,17 @@ test "many entities" {
 
     const Rotation = struct { degrees: f32 };
 
-    const all_components = .{
-        .entity = struct {
-            pub const id = EntityID;
+    const all_components = ComponentTypesByName(.{
+        struct {
+            pub const name = .game;
+            pub const events = .{};
+            pub const components = .{
+                .{ .name = .name, .type = []const u8 },
+                .{ .name = .location, .type = Location },
+                .{ .name = .rotation, .type = Rotation },
+            };
         },
-        .game = struct {
-            pub const location = Location;
-            pub const name = []const u8;
-            pub const rotation = Rotation;
-        },
-    };
+    }){};
 
     // Create many entities
     var world = try Entities(all_components).init(allocator);

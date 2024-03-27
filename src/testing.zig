@@ -91,7 +91,7 @@ fn ExpectVecMat(comptime T: type) type {
 fn ExpectComptime(comptime T: type) type {
     return struct {
         expected: T,
-        pub fn eql(comptime e: *const @This(), comptime actual: T) !void {
+        pub fn eql(e: *const @This(), actual: T) !void {
             try testing.expectEqual(e.expected, actual);
         }
     };
@@ -101,11 +101,11 @@ fn ExpectBytes(comptime T: type) type {
     return struct {
         expected: T,
 
-        pub fn eql(comptime e: *const @This(), comptime actual: T) !void {
+        pub fn eql(e: *const @This(), actual: T) !void {
             try testing.expectEqualStrings(e.expected, actual);
         }
 
-        pub fn eqlBinary(comptime e: *const @This(), comptime actual: T) !void {
+        pub fn eqlBinary(e: *const @This(), actual: T) !void {
             try testing.expectEqual(e.expected, actual);
         }
     };
@@ -205,16 +205,19 @@ pub fn expect(comptime T: type, expected: T) Expect(T) {
     return Expect(T){ .expected = expected };
 }
 
+pub const allocator = testing.allocator;
+pub const refAllDeclsRecursive = testing.refAllDeclsRecursive;
+
 test {
-    testing.refAllDeclsRecursive(Expect(u32));
-    testing.refAllDeclsRecursive(Expect(f32));
-    testing.refAllDeclsRecursive(Expect([]const u8));
-    testing.refAllDeclsRecursive(Expect(@Vector(3, f32)));
-    testing.refAllDeclsRecursive(Expect(mach.math.Vec2h));
-    testing.refAllDeclsRecursive(Expect(mach.math.Vec3));
-    testing.refAllDeclsRecursive(Expect(mach.math.Vec4d));
-    testing.refAllDeclsRecursive(Expect(mach.math.Ray));
-    // testing.refAllDeclsRecursive(Expect(mach.math.Mat4h));
-    // testing.refAllDeclsRecursive(Expect(mach.math.Mat4));
-    // testing.refAllDeclsRecursive(Expect(mach.math.Mat4d));
+    refAllDeclsRecursive(Expect(u32));
+    refAllDeclsRecursive(Expect(f32));
+    refAllDeclsRecursive(Expect([]const u8));
+    refAllDeclsRecursive(Expect(@Vector(3, f32)));
+    refAllDeclsRecursive(Expect(mach.math.Vec2h));
+    refAllDeclsRecursive(Expect(mach.math.Vec3));
+    refAllDeclsRecursive(Expect(mach.math.Vec4d));
+    refAllDeclsRecursive(Expect(mach.math.Ray));
+    // refAllDeclsRecursive(Expect(mach.math.Mat4h));
+    // refAllDeclsRecursive(Expect(mach.math.Mat4));
+    // refAllDeclsRecursive(Expect(mach.math.Mat4d));
 }

@@ -41,11 +41,16 @@ const d0 = 0.000001;
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
+pub const events = .{
+    .{ .global = .init, .handler = init },
+    .{ .global = .tick, .handler = tick },
+};
+
 pub const Pipeline = enum(u32) {
     default,
 };
 
-pub fn init(
+fn init(
     engine: *mach.Engine.Mod,
     sprite_mod: *Sprite.Mod,
     game: *Mod,
@@ -63,12 +68,11 @@ pub fn init(
     try sprite_mod.set(player, .uv_transform, Mat3x3.translate(vec2(0, 0)));
     try sprite_mod.set(player, .pipeline, @intFromEnum(Pipeline.default));
 
-    try sprite_mod.send(.init, .{});
-    try sprite_mod.send(.initPipeline, .{Sprite.PipelineOptions{
+    sprite_mod.send(.init_pipeline, .{ .@"0" = Sprite.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.default),
         .texture = try loadTexture(engine),
-    }});
-    try sprite_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
+    } });
+    sprite_mod.send(.updated, .{ .@"0" = @intFromEnum(Pipeline.default) });
 
     game.state = .{
         .timer = try mach.Timer.start(),
@@ -82,7 +86,7 @@ pub fn init(
     };
 }
 
-pub fn tick(
+fn tick(
     engine: *mach.Engine.Mod,
     sprite_mod: *Sprite.Mod,
     game: *Mod,
@@ -113,7 +117,7 @@ pub fn tick(
                     else => {},
                 }
             },
-            .close => try engine.send(.exit, .{}),
+            .close => engine.send(.exit, .{}),
             else => {},
         }
     }
@@ -172,16 +176,16 @@ pub fn tick(
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
     try sprite_mod.set(game.state.player, .transform, Mat4x4.translate(player_pos));
-    try sprite_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
+    sprite_mod.send(.updated, .{ .@"0" = @intFromEnum(Pipeline.default) });
 
     // Perform pre-render work
-    try sprite_mod.send(.preRender, .{@intFromEnum(Pipeline.default)});
+    sprite_mod.send(.pre_render, .{ .@"0" = @intFromEnum(Pipeline.default) });
 
     // Render a frame
-    try engine.send(.beginPass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
-    try sprite_mod.send(.render, .{@intFromEnum(Pipeline.default)});
-    try engine.send(.endPass, .{});
-    try engine.send(.present, .{}); // Present the frame
+    engine.send(.begin_pass, .{ .@"0" = gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 } });
+    sprite_mod.send(.render, .{ .@"0" = @intFromEnum(Pipeline.default) });
+    engine.send(.end_pass, .{});
+    engine.send(.present, .{}); // Present the frame
 
     // Every second, update the window title with the FPS
     if (game.state.fps_timer.read() >= 1.0) {
