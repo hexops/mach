@@ -27,25 +27,26 @@ fn Serializable(comptime T: type) type {
 }
 
 /// Manages comptime .{A, B, C} modules and runtime modules.
-pub fn Modules(comptime mods: anytype) type {
+pub fn Modules(comptime modules2: anytype) type {
     // Verify that each module is valid.
-    inline for (mods) |M| _ = ModuleInterface(M);
+    inline for (modules2) |M| _ = ModuleInterface(M);
 
     return struct {
+        // TODO: avoid exposing this?
         /// Comptime modules
-        pub const modules = mods;
+        pub const modules = modules2;
 
         // TODO: add runtime module support
 
         pub const ModuleID = u32;
         pub const EventID = u32;
 
-        pub const GlobalEvent = GlobalEventEnum(mods);
-        pub const LocalEvent = LocalEventEnum(mods);
+        pub const GlobalEvent = GlobalEventEnum(modules);
+        pub const LocalEvent = LocalEventEnum(modules);
 
         /// Enables looking up a component type by module name and component name.
         /// e.g. @field(@field(ComponentTypesByName, "module_name"), "component_name")
-        pub const component_types_by_name = ComponentTypesByName(mods){};
+        pub const component_types_by_name = ComponentTypesByName(modules){};
 
         const ModulesT = @This();
         const Event = struct {
@@ -58,7 +59,7 @@ pub fn Modules(comptime mods: anytype) type {
         events_mu: std.Thread.RwLock = .{},
         args_queue: std.ArrayListUnmanaged(u8) = .{},
         events: EventQueue,
-        mod: ModsByName(mods, ModulesT),
+        mod: ModsByName(modules, ModulesT),
         // TODO: pass mods directly instead of ComponentTypesByName?
         entities: Entities(component_types_by_name),
 
@@ -93,7 +94,7 @@ pub fn Modules(comptime mods: anytype) type {
 
         /// Returns an args tuple representing the standard, uninjected, arguments which the given
         /// local event handler requires.
-        fn LocalArgs(module_name: ModuleName(mods), event_name: LocalEvent) type {
+        fn LocalArgs(module_name: ModuleName(modules), event_name: LocalEvent) type {
             inline for (modules) |M| {
                 _ = ModuleInterface(M); // Validate the module
                 if (M.name != module_name) continue;
@@ -127,7 +128,7 @@ pub fn Modules(comptime mods: anytype) type {
 
         /// Returns an args tuple representing the standard, uninjected, arguments which the given
         /// global event handler requires.
-        fn GlobalArgs(module_name: ModuleName(mods), event_name: GlobalEvent) type {
+        fn GlobalArgs(module_name: ModuleName(modules), event_name: GlobalEvent) type {
             inline for (modules) |M| {
                 _ = ModuleInterface(M); // Validate the module
                 if (M.name != module_name) continue;
@@ -163,7 +164,7 @@ pub fn Modules(comptime mods: anytype) type {
         pub fn sendGlobal(
             m: *@This(),
             // TODO: is a variant of this function where event_name is not comptime known, but asserted to be a valid enum, useful?
-            comptime module_name: ModuleName(mods),
+            comptime module_name: ModuleName(modules),
             comptime event_name: GlobalEvent,
             args: GlobalArgs(module_name, event_name),
         ) void {
@@ -175,7 +176,7 @@ pub fn Modules(comptime mods: anytype) type {
         pub fn sendToModule(
             m: *@This(),
             // TODO: is a variant of this function where module_name/event_name is not comptime known, but asserted to be a valid enum, useful?
-            comptime module_name: ModuleName(mods),
+            comptime module_name: ModuleName(modules),
             comptime event_name: LocalEvent,
             args: LocalArgs(module_name, event_name),
         ) void {
@@ -220,7 +221,7 @@ pub fn Modules(comptime mods: anytype) type {
         pub fn dispatch(m: *@This()) !void {
             const Injectable = comptime blk: {
                 var types: []const type = &[0]type{};
-                for (@typeInfo(ModsByName(mods, ModulesT)).Struct.fields) |field| {
+                for (@typeInfo(ModsByName(modules, ModulesT)).Struct.fields) |field| {
                     const ModPtr = @TypeOf(@as(*field.type, undefined));
                     types = types ++ [_]type{ModPtr};
                 }
@@ -228,7 +229,7 @@ pub fn Modules(comptime mods: anytype) type {
             };
             var injectable: Injectable = undefined;
             outer: inline for (@typeInfo(Injectable).Struct.fields) |field| {
-                inline for (@typeInfo(ModsByName(mods, ModulesT)).Struct.fields) |injectable_field| {
+                inline for (@typeInfo(ModsByName(modules, ModulesT)).Struct.fields) |injectable_field| {
                     if (*injectable_field.type == field.type) {
                         @field(injectable, field.name) = &@field(m.mod, injectable_field.name);
 
@@ -299,7 +300,7 @@ pub fn Modules(comptime mods: anytype) type {
         }
 
         /// Call local event handler with the specified name in the specified module
-        inline fn callLocal(module_name: ModuleName(mods), event_name: LocalEvent, args: []u8, injectable: anytype) !void {
+        inline fn callLocal(module_name: ModuleName(modules), event_name: LocalEvent, args: []u8, injectable: anytype) !void {
             if (@typeInfo(@TypeOf(event_name)).Enum.fields.len == 0) return;
             switch (event_name) {
                 inline else => |ev_name| {
@@ -343,11 +344,11 @@ pub fn Modules(comptime mods: anytype) type {
     };
 }
 
-pub fn ModsByName(comptime mods: anytype, comptime ModulesT: type) type {
+pub fn ModsByName(comptime modules: anytype, comptime ModulesT: type) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
-    for (mods) |M| {
-        const StateT = NamespacedState(mods);
-        const NSComponents = ComponentTypesByName(mods);
+    for (modules) |M| {
+        const StateT = NamespacedState(modules);
+        const NSComponents = ComponentTypesByName(modules);
         const Mod = Module(M, ModulesT, StateT, NSComponents);
         fields = fields ++ [_]std.builtin.Type.StructField{.{
             .name = @tagName(M.name),
@@ -539,10 +540,10 @@ fn UninjectedArgsTuple(
 }
 
 /// enum describing every possible comptime-known local event name
-fn LocalEventEnum(comptime mods: anytype) type {
+fn LocalEventEnum(comptime modules: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
-    for (mods) |M| {
+    for (modules) |M| {
         _ = ModuleInterface(M); // Validate the module
         inline for (M.events) |event| {
             const Event = @TypeOf(event);
@@ -569,10 +570,10 @@ fn LocalEventEnum(comptime mods: anytype) type {
 }
 
 /// enum describing every possible comptime-known global event name
-fn GlobalEventEnum(comptime mods: anytype) type {
+fn GlobalEventEnum(comptime modules: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
-    for (mods) |M| {
+    for (modules) |M| {
         _ = ModuleInterface(M); // Validate the module
         inline for (M.events) |event| {
             const Event = @TypeOf(event);
@@ -599,9 +600,9 @@ fn GlobalEventEnum(comptime mods: anytype) type {
 }
 
 /// enum describing every possible comptime-known module name
-fn ModuleName(comptime mods: anytype) type {
+fn ModuleName(comptime modules: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
-    for (mods, 0..) |M, i| {
+    for (modules, 0..) |M, i| {
         enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(M.name), .value = i }};
     }
     return @Type(.{
