@@ -101,30 +101,6 @@ pub fn Modules(comptime modules2: anytype) type {
             }
         }
 
-        pub fn LocalArgsM(comptime M: type, event_name: LocalEvent) type {
-            _ = ModuleInterface(M); // Validate the module
-            inline for (M.events) |event| {
-                const Ev = @TypeOf(event);
-                const name_tag = if (@hasField(Ev, "local")) event.local else continue;
-                if (name_tag != event_name) continue;
-
-                const Handler = switch (@typeInfo(@TypeOf(event.handler))) {
-                    .Fn => @TypeOf(event.handler),
-                    .Type => switch (@typeInfo(event.handler)) {
-                        .Fn => event.handler,
-                        else => unreachable,
-                    },
-                    else => unreachable,
-                };
-
-                // TODO: passing std.meta.Tuple here instead of TupleHACK results in a compiler
-                // segfault. The only difference is that TupleHACk does not produce a real tuple,
-                // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
-                return UninjectedArgsTuple(TupleHACK, Handler);
-            }
-            @compileError("mach: module ." ++ @tagName(M.name) ++ " has no .local event handler for ." ++ @tagName(event_name));
-        }
-
         /// Returns an args tuple representing the standard, uninjected, arguments which the given
         /// global event handler requires.
         fn GlobalArgs(module_name: ModuleName(modules), event_name: GlobalEvent) type {
@@ -133,30 +109,6 @@ pub fn Modules(comptime modules2: anytype) type {
                 if (M.name != module_name) continue;
                 return GlobalArgsM(M, event_name);
             }
-        }
-
-        pub fn GlobalArgsM(comptime M: type, event_name: GlobalEvent) type {
-            _ = ModuleInterface(M); // Validate the module
-            inline for (M.events) |event| {
-                const Ev = @TypeOf(event);
-                const name_tag = if (@hasField(Ev, "global")) event.global else continue;
-                if (name_tag != event_name) continue;
-
-                const Handler = switch (@typeInfo(@TypeOf(event.handler))) {
-                    .Fn => @TypeOf(event.handler),
-                    .Type => switch (@typeInfo(event.handler)) {
-                        .Fn => event.handler,
-                        else => unreachable,
-                    },
-                    else => unreachable,
-                };
-
-                // TODO: passing std.meta.Tuple here instead of TupleHACK results in a compiler
-                // segfault. The only difference is that TupleHACk does not produce a real tuple,
-                // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
-                return UninjectedArgsTuple(TupleHACK, Handler);
-            }
-            @compileError("mach: module ." ++ @tagName(M.name) ++ " has no .global event handler for ." ++ @tagName(event_name));
         }
 
         /// Send a global event which the specified module defines
@@ -425,14 +377,14 @@ pub fn Module(
             try m.entities.removeComponent(entity, module_tag, component_name);
         }
 
-        pub inline fn send(m: *@This(), comptime event_name: ModulesT.LocalEvent, args: ModulesT.LocalArgsM(M, event_name)) void {
+        pub inline fn send(m: *@This(), comptime event_name: ModulesT.LocalEvent, args: LocalArgsM(M, event_name)) void {
             const MByName = ModsByName(ModulesT.modules, ModulesT);
             const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
             const modules = @fieldParentPtr(ModulesT, "mod", mod_ptr);
             modules.sendToModule(module_tag, event_name, args);
         }
 
-        pub inline fn sendGlobal(m: *@This(), comptime event_name: ModulesT.GlobalEvent, args: ModulesT.GlobalArgsM(M, event_name)) void {
+        pub inline fn sendGlobal(m: *@This(), comptime event_name: ModulesT.GlobalEvent, args: GlobalArgsM(M, event_name)) void {
             const MByName = ModsByName(ModulesT.modules, ModulesT);
             const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
             const modules = @fieldParentPtr(ModulesT, "mod", mod_ptr);
@@ -533,6 +485,54 @@ fn UninjectedArgsTuple(
         std_args = std_args ++ [_]type{arg.type};
     }
     return Tuple(std_args);
+}
+
+pub fn LocalArgsM(comptime M: type, event_name: anytype) type {
+    _ = ModuleInterface(M); // Validate the module
+    inline for (M.events) |event| {
+        const Ev = @TypeOf(event);
+        const name_tag = if (@hasField(Ev, "local")) event.local else continue;
+        if (name_tag != event_name) continue;
+
+        const Handler = switch (@typeInfo(@TypeOf(event.handler))) {
+            .Fn => @TypeOf(event.handler),
+            .Type => switch (@typeInfo(event.handler)) {
+                .Fn => event.handler,
+                else => unreachable,
+            },
+            else => unreachable,
+        };
+
+        // TODO: passing std.meta.Tuple here instead of TupleHACK results in a compiler
+        // segfault. The only difference is that TupleHACk does not produce a real tuple,
+        // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
+        return UninjectedArgsTuple(TupleHACK, Handler);
+    }
+    @compileError("mach: module ." ++ @tagName(M.name) ++ " has no .local event handler for ." ++ @tagName(event_name));
+}
+
+pub fn GlobalArgsM(comptime M: type, event_name: anytype) type {
+    _ = ModuleInterface(M); // Validate the module
+    inline for (M.events) |event| {
+        const Ev = @TypeOf(event);
+        const name_tag = if (@hasField(Ev, "global")) event.global else continue;
+        if (name_tag != event_name) continue;
+
+        const Handler = switch (@typeInfo(@TypeOf(event.handler))) {
+            .Fn => @TypeOf(event.handler),
+            .Type => switch (@typeInfo(event.handler)) {
+                .Fn => event.handler,
+                else => unreachable,
+            },
+            else => unreachable,
+        };
+
+        // TODO: passing std.meta.Tuple here instead of TupleHACK results in a compiler
+        // segfault. The only difference is that TupleHACk does not produce a real tuple,
+        // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
+        return UninjectedArgsTuple(TupleHACK, Handler);
+    }
+    @compileError("mach: module ." ++ @tagName(M.name) ++ " has no .global event handler for ." ++ @tagName(event_name));
 }
 
 /// enum describing every possible comptime-known local event name
