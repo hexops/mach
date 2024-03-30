@@ -677,7 +677,25 @@ pub fn ArchetypeIterator(comptime all_components: anytype) type {
                     }
                     return true;
                 },
-                .any => @panic("TODO"),
+                .any => {
+                    for (iter.query.any) |namespace| {
+                        switch (namespace) {
+                            inline else => |components| {
+                                for (components) |component| {
+                                    if (@typeInfo(@TypeOf(component)).Enum.fields.len == 0) continue;
+                                    const name = switch (component) {
+                                        inline else => |c| std.fmt.bufPrint(&buf, "{s}.{s}", .{ @tagName(namespace), @tagName(c) }) catch break,
+                                    };
+                                    const name_id = iter.entities.componentName(name);
+                                    for (consideration.columns) |column| {
+                                        if (column.name == name_id) return true;
+                                    }
+                                }
+                            },
+                        }
+                    }
+                    return false;
+                },
             }
         }
     };
@@ -811,6 +829,25 @@ test "example" {
         try testing.expectEqual(@as(usize, 1), ids.len);
         try testing.expectEqual(player2, ids[0]);
     }
+
+    // Create 3rd player entity with no rotation or location
+    try world.setComponent(player1, .game, .location, .{}); // readd location for p1
+    const player3 = try world.new();
+    try world.setComponent(player3, .game, .name, "test3");
+    try testing.expect(world.getComponent(player3, .game, .location) == null);
+    try testing.expect(world.getComponent(player3, .game, .rotation) == null);
+    // Create a 4th player entity with both rotation and location
+    const player4 = try world.new();
+    try world.setComponent(player4, .game, .name, "test4");
+    try world.setComponent(player4, .game, .location, .{});
+    try world.setComponent(player4, .game, .rotation, .{ .degrees = 90 });
+    // Query for archetypes that have either a rotation or location
+    var iter_any = world.query(.{ .any = &.{.{ .game = &.{ .location, .rotation } }} });
+    var entity_count: usize = 0;
+    while (iter_any.next()) |archetype| {
+        entity_count += archetype.slice(.entity, .id).len;
+    }
+    try testing.expectEqual(@as(usize, 3), entity_count);
 
     // TODO: iterating components an entity has not currently supported.
 
