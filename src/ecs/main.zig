@@ -49,8 +49,8 @@ test "example" {
             pub const components = .{
                 .{ .name = .id, .type = u32 },
             };
-            pub const events = .{
-                .{ .global = .tick, .handler = tick },
+            pub const global_events = .{
+                .tick = .{ .handler = tick },
             };
 
             fn tick(physics: *Modules(modules).Mod(Physics)) void {
@@ -63,8 +63,8 @@ test "example" {
             pub const components = .{
                 .{ .name = .id, .type = u16 },
             };
-            pub const events = .{
-                .{ .global = .tick, .handler = tick },
+            pub const global_events = .{
+                .tick = .{ .handler = tick },
             };
 
             fn tick(

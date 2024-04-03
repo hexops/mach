@@ -78,13 +78,16 @@ pub const components = .{
     },
 };
 
-pub const events = .{
-    .{ .global = .deinit, .handler = deinit },
-    .{ .global = .init, .handler = init },
-    .{ .local = .init_pipeline, .handler = initPipeline },
-    .{ .local = .updated, .handler = updated },
-    .{ .local = .pre_render, .handler = preRender },
-    .{ .local = .render, .handler = render },
+pub const global_events = .{
+    .deinit = .{ .handler = deinit },
+    .init = .{ .handler = init },
+};
+
+pub const local_events = .{
+    .init_pipeline = .{ .handler = initPipeline },
+    .updated = .{ .handler = updated },
+    .pre_render = .{ .handler = preRender },
+    .render = .{ .handler = render },
 };
 
 const Uniforms = extern struct {

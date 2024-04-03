@@ -20,9 +20,9 @@ pub const components = .{
     .{ .name = .follower, .type = void },
 };
 
-pub const events = .{
-    .{ .global = .init, .handler = init },
-    .{ .global = .tick, .handler = tick },
+pub const global_events = .{
+    .init = .{ .handler = init },
+    .tick = .{ .handler = tick },
 };
 
 // Each module must have a globally unique name declared, it is impossible to use two modules with

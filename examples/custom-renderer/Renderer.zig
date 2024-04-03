@@ -26,10 +26,10 @@ pub const components = .{
     .{ .name = .scale, .type = f32 },
 };
 
-pub const events = .{
-    .{ .global = .init, .handler = init },
-    .{ .global = .deinit, .handler = deinit },
-    .{ .global = .tick, .handler = tick },
+pub const global_events = .{
+    .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
+    .tick = .{ .handler = tick },
 };
 
 // TODO: this shouldn't be a packed struct, it should be extern.

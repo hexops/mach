@@ -40,9 +40,9 @@ const d0 = 0.000001;
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
-pub const events = .{
-    .{ .global = .init, .handler = init },
-    .{ .global = .tick, .handler = tick },
+pub const global_events = .{
+    .init = .{ .handler = init },
+    .tick = .{ .handler = tick },
 };
 
 pub const Pipeline = enum(u32) {

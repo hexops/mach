@@ -8,10 +8,13 @@ const assets = @import("assets");
 pub const name = .game_text;
 pub const Mod = mach.Mod(@This());
 
-pub const events = .{
-    .{ .global = .deinit, .handler = deinit },
-    .{ .global = .init, .handler = init },
-    .{ .local = .prepare, .handler = prepare },
+pub const global_events = .{
+    .deinit = .{ .handler = deinit },
+    .init = .{ .handler = init },
+};
+
+pub const local_events = .{
+    .prepare = .{ .handler = prepare },
 };
 
 const RegionMap = std.AutoArrayHashMapUnmanaged(u21, mach.gfx.Atlas.Region);

@@ -19,17 +19,20 @@ pub const Engine = struct {
     pub const name = .engine;
     pub const Mod = Modules.Mod(@This());
 
-    pub const events = .{
-        .{ .local = .init, .handler = init },
-        .{ .local = .deinit, .handler = deinit },
-        .{ .local = .exit, .handler = exit },
-        .{ .local = .begin_pass, .handler = beginPass },
-        .{ .local = .end_pass, .handler = endPass },
-        .{ .local = .present, .handler = present },
-        .{ .global = .init, .handler = fn () void },
-        .{ .global = .deinit, .handler = fn () void },
-        .{ .global = .tick, .handler = fn () void },
-        .{ .global = .exit, .handler = fn () void },
+    pub const global_events = .{
+        .init = .{ .handler = fn () void },
+        .deinit = .{ .handler = fn () void },
+        .tick = .{ .handler = fn () void },
+        .exit = .{ .handler = fn () void },
+    };
+
+    pub const local_events = .{
+        .init = .{ .handler = init },
+        .deinit = .{ .handler = deinit },
+        .exit = .{ .handler = exit },
+        .begin_pass = .{ .handler = beginPass },
+        .end_pass = .{ .handler = endPass },
+        .present = .{ .handler = present },
     };
 
     fn init(engine: *Mod) !void {
