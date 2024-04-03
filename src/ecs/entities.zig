@@ -753,7 +753,6 @@ test "example" {
     const all_components = ComponentTypesByName(.{
         struct {
             pub const name = .game;
-            pub const events = .{};
             pub const components = .{
                 .{ .name = .name, .type = []const u8 },
                 .{ .name = .location, .type = Location },
@@ -858,7 +857,6 @@ test "many entities" {
     const all_components = ComponentTypesByName(.{
         struct {
             pub const name = .game;
-            pub const events = .{};
             pub const components = .{
                 .{ .name = .name, .type = []const u8 },
                 .{ .name = .location, .type = Location },

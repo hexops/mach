@@ -11,10 +11,9 @@ fn ModuleInterface(comptime M: type) type {
     if (!@hasDecl(M, "name")) @compileError("mach: module must have `pub const name = .foobar;`");
     if (@typeInfo(@TypeOf(M.name)) != .EnumLiteral) @compileError("mach: module must have `pub const name = .foobar;`, found type:" ++ @typeName(M.name));
 
-    const prefix = "mach: module ." ++ @tagName(M.name) ++ " ";
-    if (!@hasDecl(M, "events")) @compileError(prefix ++ "must have `pub const events = .{};`");
-    // TODO: re-enable this validation once module event handler arguments would not pose a type dependency loop
-    // validateEvents("mach: module ." ++ @tagName(M.name) ++ " ", M.events);
+    // TODO: enable once parameter dependency loop has been resolved
+    // if (@hasDecl(M, "global_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " global_events ", M.global_events);
+    // if (@hasDecl(M, "local_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " local_events ", M.global_events);
     _ = ComponentTypesM(M);
     return M;
 }
@@ -231,20 +230,20 @@ pub fn Modules(comptime modules2: anytype) type {
             switch (event_name) {
                 inline else => |ev_name| {
                     inline for (modules) |M| {
+                        // TODO: DRY with callLocal
                         _ = ModuleInterface(M); // Validate the module
-                        inline for (M.events) |event| {
-                            const Ev = @TypeOf(event);
-                            const name_tag = if (@hasField(Ev, "global")) event.global else continue;
-                            if (name_tag != ev_name) continue;
-                            switch (@typeInfo(@TypeOf(event.handler))) {
-                                .Fn => try callHandler(event.handler, args, injectable),
-                                .Type => switch (@typeInfo(event.handler)) {
-                                    .Fn => {}, // Pre-declaration of what args an event has, nothing to run.
-                                    else => unreachable,
-                                },
-                                else => unreachable,
-                            }
-                        }
+                        if (@hasDecl(M, "global_events")) inline for (@typeInfo(@TypeOf(M.global_events)).Struct.fields) |field| {
+                            comptime if (!std.mem.eql(u8, @tagName(ev_name), field.name)) continue;
+                            const handler = @field(M.global_events, @tagName(ev_name)).handler;
+                            if (@typeInfo(@TypeOf(handler)) == .Type) continue; // Pre-declaration of what args an event has, nothing to do.
+                            if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares global event .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
+                                @tagName(M.name),
+                                @tagName(ev_name),
+
+                                @typeName(@TypeOf(handler)),
+                            }));
+                            try callHandler(handler, args, injectable);
+                        };
                     }
                 },
             }
@@ -257,23 +256,20 @@ pub fn Modules(comptime modules2: anytype) type {
                 inline else => |ev_name| {
                     switch (module_name) {
                         inline else => |mod_name| {
+                            // TODO: DRY with callGlobal
                             const M = @field(NamespacedModules(@This().modules){}, @tagName(mod_name));
                             _ = ModuleInterface(M); // Validate the module
-
-                            inline for (M.events) |event| {
-                                const Ev = @TypeOf(event);
-                                const name_tag = if (@hasField(Ev, "local")) event.local else continue;
-                                if (name_tag != ev_name) continue;
-                                switch (@typeInfo(@TypeOf(event.handler))) {
-                                    .Fn => try callHandler(event.handler, args, injectable),
-                                    .Type => switch (@typeInfo(event.handler)) {
-                                        .Fn => {}, // Pre-declaration of what args an event has, nothing to run.
-                                        else => unreachable,
-                                    },
-                                    else => unreachable,
-                                }
-                                break;
-                            }
+                            if (@hasDecl(M, "local_events")) inline for (@typeInfo(@TypeOf(M.local_events)).Struct.fields) |field| {
+                                comptime if (!std.mem.eql(u8, @tagName(ev_name), field.name)) continue;
+                                const handler = @field(M.local_events, @tagName(ev_name)).handler;
+                                if (@typeInfo(@TypeOf(handler)) == .Type) continue; // Pre-declaration of what args an event has, nothing to do.
+                                if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares local event .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
+                                    @tagName(M.name),
+                                    @tagName(ev_name),
+                                    @typeName(@TypeOf(handler)),
+                                }));
+                                try callHandler(handler, args, injectable);
+                            };
                         },
                     }
                 },
@@ -487,18 +483,39 @@ fn UninjectedArgsTuple(
     return Tuple(std_args);
 }
 
-pub fn LocalArgsM(comptime M: type, event_name: anytype) type {
-    _ = ModuleInterface(M); // Validate the module
-    inline for (M.events) |event| {
-        const Ev = @TypeOf(event);
-        const name_tag = if (@hasField(Ev, "local")) event.local else continue;
-        if (name_tag != event_name) continue;
+// TODO: tests
+fn LocalArgsM(comptime M: type, event_name: anytype) type {
+    return ArgsM(M, event_name, "local");
+}
 
-        const Handler = switch (@typeInfo(@TypeOf(event.handler))) {
-            .Fn => @TypeOf(event.handler),
-            .Type => switch (@typeInfo(event.handler)) {
-                .Fn => event.handler,
-                else => unreachable,
+// TODO: tests
+fn GlobalArgsM(comptime M: type, event_name: anytype) type {
+    return ArgsM(M, event_name, "global");
+}
+
+fn ArgsM(comptime M: type, event_name: anytype, comptime which: anytype) type {
+    _ = ModuleInterface(M); // Validate the module
+    if (!@hasDecl(M, which ++ "_events")) return @TypeOf(.{});
+
+    const m_events = @field(M, which ++ "_events"); // M.local_events or M.global_events
+    inline for (@typeInfo(@TypeOf(m_events)).Struct.fields) |field| {
+        comptime if (!std.mem.eql(u8, field.name, @tagName(event_name))) continue;
+        if (!@hasField(@TypeOf(m_events), @tagName(event_name))) @compileError(std.fmt.comptimePrint("mach: module .{s} declares no {s} event .{s}", .{
+            @tagName(M.name),
+            which,
+            @tagName(event_name),
+        }));
+        const handler = @field(m_events, @tagName(event_name)).handler;
+        const Handler = switch (@typeInfo(@TypeOf(handler))) {
+            .Type => handler, // Pre-declaration of what args an event has
+            .Fn => blk: {
+                if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares {s} event .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
+                    @tagName(M.name),
+                    which,
+                    @tagName(event_name),
+                    @typeName(@TypeOf(handler)),
+                }));
+                break :blk @TypeOf(handler);
             },
             else => unreachable,
         };
@@ -508,52 +525,26 @@ pub fn LocalArgsM(comptime M: type, event_name: anytype) type {
         // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
         return UninjectedArgsTuple(TupleHACK, Handler);
     }
-    @compileError("mach: module ." ++ @tagName(M.name) ++ " has no .local event handler for ." ++ @tagName(event_name));
+    @compileError("mach: module ." ++ @tagName(M.name) ++ " has no " ++ which ++ " event handler for ." ++ @tagName(event_name));
 }
 
-pub fn GlobalArgsM(comptime M: type, event_name: anytype) type {
-    _ = ModuleInterface(M); // Validate the module
-    inline for (M.events) |event| {
-        const Ev = @TypeOf(event);
-        const name_tag = if (@hasField(Ev, "global")) event.global else continue;
-        if (name_tag != event_name) continue;
-
-        const Handler = switch (@typeInfo(@TypeOf(event.handler))) {
-            .Fn => @TypeOf(event.handler),
-            .Type => switch (@typeInfo(event.handler)) {
-                .Fn => event.handler,
-                else => unreachable,
-            },
-            else => unreachable,
-        };
-
-        // TODO: passing std.meta.Tuple here instead of TupleHACK results in a compiler
-        // segfault. The only difference is that TupleHACk does not produce a real tuple,
-        // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
-        return UninjectedArgsTuple(TupleHACK, Handler);
-    }
-    @compileError("mach: module ." ++ @tagName(M.name) ++ " has no .global event handler for ." ++ @tagName(event_name));
-}
-
+// TODO: DRY with GlobalEventEnum
 /// enum describing every possible comptime-known local event name
 fn LocalEventEnum(comptime modules: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
     for (modules) |M| {
         _ = ModuleInterface(M); // Validate the module
-        inline for (M.events) |event| {
-            const Event = @TypeOf(event);
-            const name_tag = if (@hasField(Event, "local")) event.local else continue;
-
+        if (@hasDecl(M, "local_events")) inline for (@typeInfo(@TypeOf(M.local_events)).Struct.fields) |field| {
             const exists_already = blk: {
-                for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, @tagName(name_tag))) break :blk true;
+                for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) break :blk true;
                 break :blk false;
             };
             if (!exists_already) {
-                enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(name_tag), .value = i }};
+                enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = field.name, .value = i }};
                 i += 1;
             }
-        }
+        };
     }
     return @Type(.{
         .Enum = .{
@@ -565,26 +556,76 @@ fn LocalEventEnum(comptime modules: anytype) type {
     });
 }
 
+// TODO: DRY with GlobalEventEnumM
+/// enum describing every possible comptime-known local event name
+fn LocalEventEnumM(comptime M: anytype) type {
+    var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
+    var i: u32 = 0;
+    _ = ModuleInterface(M); // Validate the module
+    if (@hasDecl(M, "local_events")) inline for (@typeInfo(@TypeOf(M.local_events)).Struct.fields) |field| {
+        const exists_already = blk: {
+            for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) break :blk true;
+            break :blk false;
+        };
+        if (!exists_already) {
+            enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = field.name, .value = i }};
+            i += 1;
+        }
+    };
+    return @Type(.{
+        .Enum = .{
+            .tag_type = if (enum_fields.len > 0) std.math.IntFittingRange(0, enum_fields.len - 1) else u0,
+            .fields = enum_fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+            .is_exhaustive = true,
+        },
+    });
+}
+
+// TODO: DRY with LocalEventEnum
 /// enum describing every possible comptime-known global event name
 fn GlobalEventEnum(comptime modules: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
     for (modules) |M| {
         _ = ModuleInterface(M); // Validate the module
-        inline for (M.events) |event| {
-            const Event = @TypeOf(event);
-            const name_tag = if (@hasField(Event, "global")) event.global else continue;
-
+        if (@hasDecl(M, "global_events")) inline for (@typeInfo(@TypeOf(M.global_events)).Struct.fields) |field| {
             const exists_already = blk: {
-                for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, @tagName(name_tag))) break :blk true;
+                for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) break :blk true;
                 break :blk false;
             };
             if (!exists_already) {
-                enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(name_tag), .value = i }};
+                enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = field.name, .value = i }};
                 i += 1;
             }
-        }
+        };
     }
+    return @Type(.{
+        .Enum = .{
+            .tag_type = if (enum_fields.len > 0) std.math.IntFittingRange(0, enum_fields.len - 1) else u0,
+            .fields = enum_fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+            .is_exhaustive = true,
+        },
+    });
+}
+
+// TODO: DRY with LocalEventEnumM
+/// enum describing every possible comptime-known global event name
+fn GlobalEventEnumM(comptime M: anytype) type {
+    var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
+    var i: u32 = 0;
+    _ = ModuleInterface(M); // Validate the module
+    if (@hasDecl(M, "global_events")) inline for (@typeInfo(@TypeOf(M.global_events)).Struct.fields) |field| {
+        const exists_already = blk: {
+            for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) break :blk true;
+            break :blk false;
+        };
+        if (!exists_already) {
+            enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = field.name, .value = i }};
+            i += 1;
+        }
+    };
     return @Type(.{
         .Enum = .{
             .tag_type = if (enum_fields.len > 0) std.math.IntFittingRange(0, enum_fields.len - 1) else u0,
@@ -636,31 +677,21 @@ fn NamespacedModules(comptime modules: anytype) type {
 
 // TODO: tests
 fn validateEvents(comptime error_prefix: anytype, comptime events: anytype) void {
-    if (@typeInfo(@TypeOf(events)) != .Struct or !@typeInfo(@TypeOf(events)).Struct.is_tuple) {
-        @compileError(error_prefix ++ "expected a tuple of structs, found: " ++ @typeName(@TypeOf(events)));
+    if (@typeInfo(@TypeOf(events)) != .Struct or @typeInfo(@TypeOf(events)).Struct.is_tuple) {
+        @compileError(error_prefix ++ "expected a struct .{}, found: " ++ @typeName(@TypeOf(events)));
     }
-    inline for (events, 0..) |event, i| {
-        const Event = @TypeOf(event);
+    inline for (@typeInfo(@TypeOf(events)).Struct.fields) |field| {
+        const Event = field.type;
         if (@typeInfo(Event) != .Struct) @compileError(std.fmt.comptimePrint(
-            error_prefix ++ "expected a tuple of structs, found tuple element ({}): {s}",
-            .{ i, @typeName(Event) },
+            error_prefix ++ "expected .{s} = .{{}}, found type: {s}",
+            .{ field.name, @typeName(Event) },
         ));
+        const event = @field(events, field.name);
 
-        // Verify .global = .foo, or .local = .foo, event handler name field
-        const name_tag = if (@hasField(Event, "global")) event.global else if (@hasField(Event, "local")) event.local else @compileError(std.fmt.comptimePrint(
-            error_prefix ++ "tuple element ({}) missing field `.global = .foo` or `.local = .foo` (event handler kind / name)",
-            .{i},
-        ));
-        const is_global = if (@hasField(Event, "global")) true else false;
-        if (@typeInfo(@TypeOf(name_tag)) != .EnumLiteral) @compileError(std.fmt.comptimePrint(
-            error_prefix ++ "tuple element ({}) expected field `.{s} = .foo`, found: {s}",
-            .{ i, if (is_global) "global" else "local", @typeName(@TypeOf(name_tag)) },
-        ));
-
-        // Verify .handler = fn, field
+        // Verify .handler field
         if (!@hasField(Event, "handler")) @compileError(std.fmt.comptimePrint(
-            error_prefix ++ "tuple element ({}) missing field `.handler = fn`",
-            .{i},
+            error_prefix ++ ".{s} missing field `.handler = fn` or `.handler = @TypeOf(fn)`",
+            .{field.name},
         ));
         const valid_handler_type = switch (@typeInfo(@TypeOf(event.handler))) {
             .Fn => true,
@@ -671,8 +702,8 @@ fn validateEvents(comptime error_prefix: anytype, comptime events: anytype) void
             else => false,
         };
         if (!valid_handler_type) @compileError(std.fmt.comptimePrint(
-            error_prefix ++ "tuple element ({}) expected field `.handler = fn`, found: {s}",
-            .{ i, @typeName(@TypeOf(event.handler)) },
+            error_prefix ++ ".{s} field .handler expected `.handler = fn` or `.handler = @TypeOf(fn)`, found found: {s}",
+            .{ field.name, @typeName(@TypeOf(event.handler)) },
         ));
     }
 }
@@ -860,8 +891,8 @@ test ModuleInterface {
             .{ .name = .location, .type = @Vector(3, f32), .description = "A location component" },
         };
 
-        pub const events = .{
-            .{ .global = .tick, .handler = tick },
+        pub const global_events = .{
+            .tick = .{ .handler = tick },
         };
 
         fn tick() !void {}
@@ -881,8 +912,8 @@ test Modules {
             .{ .name = .location, .type = @Vector(3, f32), .description = "A location component" },
         };
 
-        pub const events = .{
-            .{ .global = .tick, .handler = tick },
+        pub const global_events = .{
+            .tick = .{ .handler = tick },
         };
 
         fn tick() !void {}
@@ -890,8 +921,8 @@ test Modules {
 
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
-        pub const events = .{
-            .{ .global = .tick, .handler = tick },
+        pub const global_events = .{
+            .tick = .{ .handler = tick },
         };
 
         /// Renderer module components
@@ -902,7 +933,6 @@ test Modules {
 
     const Sprite2D = ModuleInterface(struct {
         pub const name = .engine_sprite2d;
-        pub const events = .{};
     });
 
     var modules: Modules(.{
@@ -921,11 +951,13 @@ test "event name" {
     const Physics = ModuleInterface(struct {
         pub const name = .engine_physics;
         pub const components = .{};
-        pub const events = .{
-            .{ .global = .foo, .handler = foo },
-            .{ .global = .bar, .handler = bar },
-            .{ .local = .baz, .handler = baz },
-            .{ .local = .bam, .handler = bam },
+        pub const global_events = .{
+            .foo = .{ .handler = foo },
+            .bar = .{ .handler = bar },
+        };
+        pub const local_events = .{
+            .baz = .{ .handler = baz },
+            .bam = .{ .handler = bam },
         };
 
         fn foo() !void {}
@@ -937,12 +969,12 @@ test "event name" {
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
         pub const components = .{};
-        pub const events = .{
-            .{ .global = .foo_unused, .handler = fn (f32, i32) void },
-            .{ .global = .bar_unused, .handler = fn (i32, f32) void },
-            .{ .global = .tick, .handler = tick },
-            .{ .global = .foo, .handler = foo },
-            .{ .global = .bar, .handler = bar },
+        pub const global_events = .{
+            .foo_unused = .{ .handler = fn (f32, i32) void },
+            .bar_unused = .{ .handler = fn (i32, f32) void },
+            .tick = .{ .handler = tick },
+            .foo = .{ .handler = foo },
+            .bar = .{ .handler = bar },
         };
 
         fn tick() !void {}
@@ -952,13 +984,13 @@ test "event name" {
 
     const Sprite2D = ModuleInterface(struct {
         pub const name = .engine_sprite2d;
-        pub const events = .{
-            .{ .global = .tick, .handler = tick },
-            .{ .global = .foobar, .handler = foobar },
+        pub const global_events = .{
+            .tick = .{ .handler = tick },
+            .foobar = .{ .handler = fooBar },
         };
 
         fn tick() void {} // same .tick as .engine_renderer.tick
-        fn foobar() void {}
+        fn fooBar() void {}
     });
 
     const Ms = Modules(.{
@@ -987,15 +1019,12 @@ test "event name" {
 test ModuleName {
     const Physics = ModuleInterface(struct {
         pub const name = .engine_physics;
-        pub const events = .{};
     });
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
-        pub const events = .{};
     });
     const Sprite2D = ModuleInterface(struct {
         pub const name = .engine_sprite2d;
-        pub const events = .{};
     });
     const Ms = Modules(.{
         Physics,
@@ -1134,10 +1163,12 @@ test "event name calling" {
     const Physics = ModuleInterface(struct {
         pub const name = .engine_physics;
         pub const components = .{};
-        pub const events = .{
-            .{ .global = .tick, .handler = tick },
-            .{ .local = .update, .handler = update },
-            .{ .local = .calc, .handler = calc },
+        pub const global_events = .{
+            .tick = .{ .handler = tick },
+        };
+        pub const local_events = .{
+            .update = .{ .handler = update },
+            .calc = .{ .handler = calc },
         };
 
         fn tick() void {
@@ -1155,9 +1186,11 @@ test "event name calling" {
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
         pub const components = .{};
-        pub const events = .{
-            .{ .global = .tick, .handler = tick },
-            .{ .local = .update, .handler = update },
+        pub const global_events = .{
+            .tick = .{ .handler = tick },
+        };
+        pub const local_events = .{
+            .update = .{ .handler = update },
         };
 
         fn tick() void {
@@ -1237,15 +1270,15 @@ test "dispatch" {
     }{};
     const Minimal = ModuleInterface(struct {
         pub const name = .engine_minimal;
-        pub const events = .{};
     });
     const Physics = ModuleInterface(struct {
         pub const name = .engine_physics;
-        pub const components = .{};
-        pub const events = .{
-            .{ .global = .tick, .handler = tick },
-            .{ .local = .update, .handler = update },
-            .{ .local = .calc, .handler = calc },
+        pub const global_events = .{
+            .tick = .{ .handler = tick },
+        };
+        pub const local_events = .{
+            .update = .{ .handler = update },
+            .calc = .{ .handler = calc },
         };
 
         fn tick() void {
@@ -1263,12 +1296,14 @@ test "dispatch" {
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
         pub const components = .{};
-        pub const events = .{
-            .{ .global = .tick, .handler = tick },
-            .{ .global = .frame_done, .handler = fn (i32) void },
-            .{ .local = .update, .handler = update },
-            .{ .local = .basic_args, .handler = basicArgs },
-            .{ .local = .injected_args, .handler = injectedArgs },
+        pub const global_events = .{
+            .tick = .{ .handler = tick },
+            .frame_done = .{ .handler = fn (i32) void },
+        };
+        pub const local_events = .{
+            .update = .{ .handler = update },
+            .basic_args = .{ .handler = basicArgs },
+            .injected_args = .{ .handler = injectedArgs },
         };
 
         pub const frameDone = fn (i32) void;

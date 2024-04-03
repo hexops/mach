@@ -73,14 +73,12 @@ test "query" {
     const all_components = ComponentTypesByName(.{
         struct {
             pub const name = .game;
-            pub const events = .{};
             pub const components = .{
                 .{ .name = .name, .type = []const u8 },
             };
         },
         struct {
             pub const name = .physics;
-            pub const events = .{};
             pub const components = .{
                 .{ .name = .location, .type = Location },
                 .{ .name = .rotation, .type = Rotation },
@@ -88,7 +86,6 @@ test "query" {
         },
         struct {
             pub const name = .renderer;
-            pub const events = .{};
         },
     }){};
 
