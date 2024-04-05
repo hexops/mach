@@ -24,7 +24,7 @@ pub const Engine = @import("engine.zig").Engine;
 pub const ModSet = @import("module.zig").ModSet;
 
 // TODO: perhaps this could be a comptime var rather than @import("root")?
-const modules = blk: {
+pub const modules = blk: {
     if (!@hasDecl(@import("root"), "modules")) {
         @compileError("expected `pub const modules = .{};` in root file");
     }

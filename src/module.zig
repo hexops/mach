@@ -26,15 +26,11 @@ fn Serializable(comptime T: type) type {
 }
 
 /// Manages comptime .{A, B, C} modules and runtime modules.
-pub fn Modules(comptime modules2: anytype) type {
+pub fn Modules(comptime modules: anytype) type {
     // Verify that each module is valid.
-    inline for (modules2) |M| _ = ModuleInterface(M);
+    inline for (modules) |M| _ = ModuleInterface(M);
 
     return struct {
-        // TODO: avoid exposing this?
-        /// Comptime modules
-        pub const modules = modules2;
-
         // TODO: add runtime module support
         pub const ModuleID = u32;
         pub const EventID = u32;
@@ -276,7 +272,7 @@ pub fn Modules(comptime modules2: anytype) type {
                     switch (module_name) {
                         inline else => |mod_name| {
                             // TODO: DRY with callGlobal
-                            const M = @field(NamespacedModules(@This().modules){}, @tagName(mod_name));
+                            const M = @field(NamespacedModules(modules){}, @tagName(mod_name));
                             _ = ModuleInterface(M); // Validate the module
                             if (@hasDecl(M, "local_events")) inline for (@typeInfo(@TypeOf(M.local_events)).Struct.fields) |field| {
                                 comptime if (!std.mem.eql(u8, @tagName(ev_name), field.name)) continue;
@@ -407,7 +403,7 @@ pub fn ModSet(comptime modules: anytype) type {
 
                 pub inline fn send(m: *@This(), comptime event_name: LocalEventEnumM(M), args: LocalArgsM(M, event_name)) void {
                     const ModulesT = Modules(modules);
-                    const MByName = ModsByName(ModulesT.modules);
+                    const MByName = ModsByName(modules);
                     const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
                     const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
                     mods.sendToModule(module_tag, event_name, args);
@@ -415,7 +411,7 @@ pub fn ModSet(comptime modules: anytype) type {
 
                 pub inline fn sendGlobal(m: *@This(), comptime event_name: GlobalEventEnumM(M), args: GlobalArgsM(M, event_name)) void {
                     const ModulesT = Modules(modules);
-                    const MByName = ModsByName(ModulesT.modules);
+                    const MByName = ModsByName(modules);
                     const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
                     const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
                     mods.sendGlobal(module_tag, event_name, args);
@@ -424,7 +420,7 @@ pub fn ModSet(comptime modules: anytype) type {
                 // TODO: eliminate this
                 pub fn dispatchNoError(m: *@This()) void {
                     const ModulesT = Modules(modules);
-                    const MByName = ModsByName(ModulesT.modules);
+                    const MByName = ModsByName(modules);
                     const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
                     const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
                     mods.dispatch() catch |err| @panic(@errorName(err));
@@ -1018,12 +1014,13 @@ test ModuleName {
     const Sprite2D = ModuleInterface(struct {
         pub const name = .engine_sprite2d;
     });
-    const Ms = Modules(.{
+    const modules = .{
         Physics,
         Renderer,
         Sprite2D,
-    });
-    const info = @typeInfo(ModuleName(Ms.modules)).Enum;
+    };
+    _ = Modules(modules);
+    const info = @typeInfo(ModuleName(modules)).Enum;
 
     try testing.expect(type, u2).eql(info.tag_type);
     try testing.expect(usize, 3).eql(info.fields.len);
@@ -1192,10 +1189,11 @@ test "event name calling" {
         }
     });
 
-    var modules: Modules(.{
+    const modules2 = .{
         Physics,
         Renderer,
-    }) = undefined;
+    };
+    var modules: Modules(modules2) = undefined;
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
 
@@ -1216,7 +1214,8 @@ test "event name calling" {
     // Check we can use .callLocal() with a runtime-known event and module name.
     const m_alloc = try testing.allocator.create(u3);
     defer testing.allocator.destroy(m_alloc);
-    const M = ModuleName(@TypeOf(modules).modules);
+    const M = ModuleName(modules2);
+
     m_alloc.* = @intFromEnum(@as(M, .engine_renderer));
     alloc.* = @intFromEnum(@as(LE, .update));
     var module_name = @as(M, @enumFromInt(m_alloc.*));
@@ -1314,17 +1313,18 @@ test "dispatch" {
         }
     });
 
-    var modules: Modules(.{
+    const modules2 = .{
         Minimal,
         Physics,
         Renderer,
-    }) = undefined;
+    };
+    var modules: Modules(modules2) = undefined;
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
 
     const GE = @TypeOf(modules).GlobalEvent;
     const LE = @TypeOf(modules).LocalEvent;
-    const M = ModuleName(@TypeOf(modules).modules);
+    const M = ModuleName(modules2);
 
     // Global events
     //
