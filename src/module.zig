@@ -299,7 +299,7 @@ pub fn Modules(comptime modules2: anytype) type {
         /// Invokes an event handler with optionally injected arguments.
         inline fn callHandler(handler: anytype, args_data: []u8, injectable: anytype) !void {
             const Handler = @TypeOf(handler);
-            const StdArgs = UninjectedArgsTuple(std.meta.Tuple, Handler);
+            const StdArgs = UninjectedArgsTuple(Handler);
             const std_args: *StdArgs = @alignCast(@ptrCast(args_data.ptr));
             const args = injectArgs(Handler, @TypeOf(injectable), injectable, std_args.*);
             const Ret = @typeInfo(Handler).Fn.return_type orelse void;
@@ -435,43 +435,13 @@ pub fn ModSet(comptime modules: anytype) type {
     };
 }
 
-// TODO: see usage location
-fn TupleHACK(comptime types: []const type) type {
-    return CreateUniqueTupleHACK(types.len, types[0..types.len].*);
-}
-
-fn CreateUniqueTupleHACK(comptime N: comptime_int, comptime types: [N]type) type {
-    var tuple_fields: [types.len]std.builtin.Type.StructField = undefined;
-    inline for (types, 0..) |T, i| {
-        @setEvalBranchQuota(10_000);
-        var num_buf: [128]u8 = undefined;
-        tuple_fields[i] = .{
-            .name = std.fmt.bufPrintZ(&num_buf, "{d}", .{i}) catch unreachable,
-            .type = T,
-            .default_value = null,
-            .is_comptime = false,
-            .alignment = if (@sizeOf(T) > 0) @alignOf(T) else 0,
-        };
-    }
-
-    return @Type(.{
-        .Struct = .{
-            // .is_tuple = true,
-            .is_tuple = false,
-            .layout = .Auto,
-            .decls = &.{},
-            .fields = &tuple_fields,
-        },
-    });
-}
-
 // Given a function, its standard arguments and injectable arguments, performs injection and
 // returns the actual argument tuple which would be used to call the function.
 inline fn injectArgs(
     comptime Function: type,
     comptime Injectable: type,
     injectable_args: Injectable,
-    std_args: UninjectedArgsTuple(std.meta.Tuple, Function),
+    std_args: UninjectedArgsTuple(Function),
 ) std.meta.ArgsTuple(Function) {
     var args: std.meta.ArgsTuple(Function) = undefined;
     comptime var std_args_index = 0;
@@ -495,10 +465,7 @@ inline fn injectArgs(
 
 // Given a function type, and an args tuple of injectable parameters, returns the set of function
 // parameters which would **not** be injected.
-fn UninjectedArgsTuple(
-    comptime Tuple: fn (comptime types: []const type) type,
-    comptime Function: type,
-) type {
+fn UninjectedArgsTuple(comptime Function: type) type {
     var std_args: []const type = &[0]type{};
     inline for (@typeInfo(std.meta.ArgsTuple(Function)).Struct.fields) |arg| {
         // Is this a Struct or *Struct, with a `pub const IsInjectedArgument = void;` decl? If so,
@@ -518,7 +485,7 @@ fn UninjectedArgsTuple(
         if (is_injected) continue; // legitimate injected argument, ignore it
         std_args = std_args ++ [_]type{arg.type};
     }
-    return Tuple(std_args);
+    return std.meta.Tuple(std_args);
 }
 
 // TODO: tests
@@ -557,11 +524,7 @@ fn ArgsM(comptime M: type, event_name: anytype, comptime which: anytype) type {
             },
             else => unreachable,
         };
-
-        // TODO: passing std.meta.Tuple here instead of TupleHACK results in a compiler
-        // segfault. The only difference is that TupleHACk does not produce a real tuple,
-        // `@Type(.{.Struct = .{ .is_tuple = false }})` instead of `.is_tuple = true`.
-        return UninjectedArgsTuple(TupleHACK, Handler);
+        return UninjectedArgsTuple(Handler);
     }
     @compileError("mach: module ." ++ @tagName(M.name) ++ " has no " ++ which ++ " event handler for ." ++ @tagName(event_name));
 }
@@ -1148,32 +1111,32 @@ test UninjectedArgsTuple {
     };
 
     // No standard, no injected
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn () void));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn () void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn () void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn () void));
 
     // Standard parameters only, no injected
-    TupleTester.assertTuple(.{i32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: i32) void));
-    TupleTester.assertTuple(.{ i32, f32 }, UninjectedArgsTuple(std.meta.Tuple, fn (a: i32, b: f32) void));
+    TupleTester.assertTuple(.{i32}, UninjectedArgsTuple(fn (a: i32) void));
+    TupleTester.assertTuple(.{ i32, f32 }, UninjectedArgsTuple(fn (a: i32, b: f32) void));
 
     // Injected parameters only, no standard
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo) void));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Bar) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: *Foo) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: *Bar) void));
 
     // As long as the argument is a Struct or *Struct with an IsInjectedArgument decl, it is
     // considered an injected argument.
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo, b: *Bar, c: Foo, d: Bar) void));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: Foo) void));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: Bar) void));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *const Foo) void));
-    TupleTester.assertTuple(.{}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *const Bar) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: *Foo, b: *Bar, c: Foo, d: Bar) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: Foo) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: Bar) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: *const Foo) void));
+    TupleTester.assertTuple(.{}, UninjectedArgsTuple(fn (a: *const Bar) void));
 
     // Order doesn't matter, injected arguments can be placed inbetween any standard arguments, etc.
-    TupleTester.assertTuple(.{ f32, bool }, UninjectedArgsTuple(std.meta.Tuple, fn (i: f32, a: *Foo, k: bool, b: *Bar, c: Foo, d: Bar) void));
-    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (i: f32, a: *Foo, b: *Bar, c: Foo, d: Bar) void));
-    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo, i: f32, b: *Bar, c: Foo, d: Bar) void));
-    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo, b: *Bar, i: f32, c: Foo, d: Bar) void));
-    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo, b: *Bar, c: Foo, i: f32, d: Bar) void));
-    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(std.meta.Tuple, fn (a: *Foo, b: *Bar, c: Foo, d: Bar, i: f32) void));
+    TupleTester.assertTuple(.{ f32, bool }, UninjectedArgsTuple(fn (i: f32, a: *Foo, k: bool, b: *Bar, c: Foo, d: Bar) void));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(fn (i: f32, a: *Foo, b: *Bar, c: Foo, d: Bar) void));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(fn (a: *Foo, i: f32, b: *Bar, c: Foo, d: Bar) void));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(fn (a: *Foo, b: *Bar, i: f32, c: Foo, d: Bar) void));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(fn (a: *Foo, b: *Bar, c: Foo, i: f32, d: Bar) void));
+    TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(fn (a: *Foo, b: *Bar, c: Foo, d: Bar, i: f32) void));
 }
 
 test "event name calling" {
@@ -1376,7 +1339,7 @@ test "dispatch" {
     // Global events which are not handled by anyone yet can be written as `pub const fooBar = fn() void;`
     // within a module, which allows pre-declaring that `fooBar` is a valid global event, and enables
     // its arguments to be inferred still like this:
-    modules.sendGlobal(.engine_renderer, .frame_done, .{ .@"0" = 1337 });
+    modules.sendGlobal(.engine_renderer, .frame_done, .{ 1337 });
 
     // Local events
     modules.sendToModule(.engine_renderer, .update, .{});
@@ -1393,8 +1356,8 @@ test "dispatch" {
     try testing.expect(usize, 1).eql(global.physics_calc);
 
     // Local events
-    modules.sendToModule(.engine_renderer, .basic_args, .{ .@"0" = @as(u32, 1), .@"1" = @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
-    modules.sendToModule(.engine_renderer, .injected_args, .{ .@"0" = @as(u32, 1), .@"1" = @as(u32, 2) });
+    modules.sendToModule(.engine_renderer, .basic_args, .{ @as(u32, 1), @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
+    modules.sendToModule(.engine_renderer, .injected_args, .{ @as(u32, 1), @as(u32, 2) });
     try modules.dispatchInternal(.{&foo});
     try testing.expect(usize, 3).eql(global.basic_args_sum);
     try testing.expect(usize, 3).eql(foo.injected_args_sum);

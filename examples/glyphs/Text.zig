@@ -70,7 +70,7 @@ fn init(
     s.ft = try ft.Library.init();
     s.face = try s.ft.createFaceMemory(assets.roboto_medium_ttf, 0);
 
-    text_mod.send(.prepare, .{ .@"0" = &[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' } });
+    text_mod.send(.prepare, .{ &[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' } });
 }
 
 fn prepare(
