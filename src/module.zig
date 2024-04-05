@@ -36,7 +36,6 @@ pub fn Modules(comptime modules2: anytype) type {
         pub const modules = modules2;
 
         // TODO: add runtime module support
-
         pub const ModuleID = u32;
         pub const EventID = u32;
 
@@ -706,6 +705,12 @@ fn validateEvents(comptime error_prefix: anytype, comptime events: anytype) void
             error_prefix ++ ".{s} field .handler expected `.handler = fn` or `.handler = @TypeOf(fn)`, found found: {s}",
             .{ field.name, @typeName(@TypeOf(event.handler)) },
         ));
+
+        switch (@typeInfo(@TypeOf(event.handler))) {
+            .Fn => _ = UninjectedArgsTuple(@TypeOf(event.handler)),
+            .Type => _ = UninjectedArgsTuple(event.handler),
+            else => unreachable,
+        }
     }
 }
 
@@ -1339,7 +1344,7 @@ test "dispatch" {
     // Global events which are not handled by anyone yet can be written as `pub const fooBar = fn() void;`
     // within a module, which allows pre-declaring that `fooBar` is a valid global event, and enables
     // its arguments to be inferred still like this:
-    modules.sendGlobal(.engine_renderer, .frame_done, .{ 1337 });
+    modules.sendGlobal(.engine_renderer, .frame_done, .{1337});
 
     // Local events
     modules.sendToModule(.engine_renderer, .update, .{});

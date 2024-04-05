@@ -68,11 +68,11 @@ fn init(
     try sprite_mod.set(player, .uv_transform, Mat3x3.translate(vec2(0, 0)));
     try sprite_mod.set(player, .pipeline, @intFromEnum(Pipeline.default));
 
-    sprite_mod.send(.init_pipeline, .{ Sprite.PipelineOptions{
+    sprite_mod.send(.init_pipeline, .{Sprite.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.default),
         .texture = try loadTexture(engine),
-    } });
-    sprite_mod.send(.updated, .{ @intFromEnum(Pipeline.default) });
+    }});
+    sprite_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
 
     game.state = .{
         .timer = try mach.Timer.start(),
@@ -176,14 +176,14 @@ fn tick(
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
     try sprite_mod.set(game.state.player, .transform, Mat4x4.translate(player_pos));
-    sprite_mod.send(.updated, .{ @intFromEnum(Pipeline.default) });
+    sprite_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
 
     // Perform pre-render work
-    sprite_mod.send(.pre_render, .{ @intFromEnum(Pipeline.default) });
+    sprite_mod.send(.pre_render, .{@intFromEnum(Pipeline.default)});
 
     // Render a frame
-    engine.send(.begin_pass, .{ gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 } });
-    sprite_mod.send(.render, .{ @intFromEnum(Pipeline.default) });
+    engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
+    sprite_mod.send(.render, .{@intFromEnum(Pipeline.default)});
     engine.send(.end_pass, .{});
     engine.send(.present, .{}); // Present the frame
 
