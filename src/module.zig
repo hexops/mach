@@ -744,7 +744,7 @@ pub fn ComponentTypesByName(comptime modules: anytype) type {
     const BuiltinMC = ComponentTypesM(struct {
         pub const name = .builtin;
         pub const components = .{
-            .{ .name = .id, .type = EntityID, .description = "Entity ID" },
+            .id = .{ .type = EntityID, .description = "Entity ID" },
         };
     });
     fields = fields ++ [_]std.builtin.Type.StructField{.{
@@ -779,42 +779,33 @@ fn ComponentTypesM(comptime M: anytype) type {
     if (!@hasDecl(M, "components")) {
         return struct {};
     }
-    if (@typeInfo(@TypeOf(M.components)) != .Struct or !@typeInfo(@TypeOf(M.components)).Struct.is_tuple) {
-        @compileError(error_prefix ++ "expected a tuple of structs, found: " ++ @typeName(@TypeOf(M.components)));
+    if (@typeInfo(@TypeOf(M.components)) != .Struct or @typeInfo(@TypeOf(M.components)).Struct.is_tuple) {
+        @compileError(error_prefix ++ "expected a struct .{}, found: " ++ @typeName(@TypeOf(M.components)));
     }
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
-    inline for (M.components, 0..) |component, i| {
-        const Component = @TypeOf(component);
+    inline for (@typeInfo(@TypeOf(M.components)).Struct.fields) |field| {
+        const Component = field.type;
         if (@typeInfo(Component) != .Struct) @compileError(std.fmt.comptimePrint(
-            error_prefix ++ "expected a tuple of structs, found tuple element ({}): {s}",
-            .{ i, @typeName(Component) },
+            error_prefix ++ "expected .{s} = .{{}}, found type: {s}",
+            .{ field.name, @typeName(Component) },
         ));
-
-        // Verify .name = .foo component name field
-        const name_tag = if (@hasField(Component, "name")) component.name else @compileError(std.fmt.comptimePrint(
-            error_prefix ++ "tuple element ({}) missing field `.name = .foo` (component name)",
-            .{i},
-        ));
-        if (@typeInfo(@TypeOf(name_tag)) != .EnumLiteral) @compileError(std.fmt.comptimePrint(
-            error_prefix ++ "tuple element ({}) expected field `.name = .foo`, found: {s}",
-            .{ i, @typeName(@TypeOf(name_tag)) },
-        ));
+        const component = @field(M.components, field.name);
 
         // Verify .type = Foo, field
         if (!@hasField(Component, "type")) @compileError(std.fmt.comptimePrint(
-            error_prefix ++ "tuple element ({}) missing field `.type = Foo`",
-            .{i},
+            error_prefix ++ ".{s} missing field `.type = T`",
+            .{field.name},
         ));
         if (@typeInfo(@TypeOf(component.type)) != .Type) @compileError(std.fmt.comptimePrint(
-            error_prefix ++ "tuple element ({}) expected field `.type = Foo`, found: {s}",
-            .{ i, @typeName(@TypeOf(component.type)) },
+            error_prefix ++ ".{s} expected field `.type = T`, found: {s}",
+            .{ field.name, @typeName(@TypeOf(component.type)) },
         ));
 
         const description = blk: {
             if (@hasField(Component, "description")) {
                 if (!isString(@TypeOf(component.description))) @compileError(std.fmt.comptimePrint(
-                    error_prefix ++ "tuple element ({}) expected (optional) field `.description = \"foo\"`, found: {s}",
-                    .{ i, @typeName(@TypeOf(component.description)) },
+                    error_prefix ++ ".{s} expected (optional) field `.description = \"foo\"`, found: {s}",
+                    .{ field.name, @typeName(@TypeOf(component.description)) },
                 ));
                 break :blk component.description;
             } else break :blk null;
@@ -826,7 +817,7 @@ fn ComponentTypesM(comptime M: anytype) type {
         };
         const ns_component = NSComponent{ .type = component.type, .description = description };
         fields = fields ++ [_]std.builtin.Type.StructField{.{
-            .name = @tagName(name_tag),
+            .name = field.name,
             .type = NSComponent,
             .default_value = &ns_component,
             .is_comptime = true,
@@ -888,7 +879,7 @@ test ModuleInterface {
 
         /// Physics module components
         pub const components = .{
-            .{ .name = .location, .type = @Vector(3, f32), .description = "A location component" },
+            .location = .{ .type = @Vector(3, f32), .description = "A location component" },
         };
 
         pub const global_events = .{
@@ -909,7 +900,7 @@ test Modules {
 
         /// Physics module components
         pub const components = .{
-            .{ .name = .location, .type = @Vector(3, f32), .description = "A location component" },
+            .location = .{ .type = @Vector(3, f32), .description = "A location component" },
         };
 
         pub const global_events = .{
@@ -924,9 +915,6 @@ test Modules {
         pub const global_events = .{
             .tick = .{ .handler = tick },
         };
-
-        /// Renderer module components
-        pub const components = .{};
 
         fn tick() !void {}
     });
@@ -950,7 +938,6 @@ test Modules {
 test "event name" {
     const Physics = ModuleInterface(struct {
         pub const name = .engine_physics;
-        pub const components = .{};
         pub const global_events = .{
             .foo = .{ .handler = foo },
             .bar = .{ .handler = bar },
@@ -968,7 +955,6 @@ test "event name" {
 
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
-        pub const components = .{};
         pub const global_events = .{
             .foo_unused = .{ .handler = fn (f32, i32) void },
             .bar_unused = .{ .handler = fn (i32, f32) void },
@@ -1162,7 +1148,6 @@ test "event name calling" {
     };
     const Physics = ModuleInterface(struct {
         pub const name = .engine_physics;
-        pub const components = .{};
         pub const global_events = .{
             .tick = .{ .handler = tick },
         };
@@ -1185,7 +1170,6 @@ test "event name calling" {
     });
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
-        pub const components = .{};
         pub const global_events = .{
             .tick = .{ .handler = tick },
         };
@@ -1295,7 +1279,6 @@ test "dispatch" {
     });
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
-        pub const components = .{};
         pub const global_events = .{
             .tick = .{ .handler = tick },
             .frame_done = .{ .handler = fn (i32) void },

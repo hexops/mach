@@ -74,14 +74,14 @@ test "query" {
         struct {
             pub const name = .game;
             pub const components = .{
-                .{ .name = .name, .type = []const u8 },
+                .name = .{ .type = []const u8 },
             };
         },
         struct {
             pub const name = .physics;
             pub const components = .{
-                .{ .name = .location, .type = Location },
-                .{ .name = .rotation, .type = Rotation },
+                .location = .{ .type = Location },
+                .rotation = .{ .type = Rotation },
             };
         },
         struct {
