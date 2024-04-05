@@ -161,9 +161,9 @@ pub fn setDynamic(storage: *Archetype, row_index: u32, name: StringTable.Index, 
     if (comp.is_debug) {
         // TODO: improve error messages
         assert(storage.len != 0 and storage.len >= row_index);
+        assert(storage.columnByName(name).?.type_id == type_id);
         assert(storage.columnByName(name).?.size == component.len);
         assert(storage.columnByName(name).?.alignment == alignment);
-        assert(storage.columnByName(name).?.type_id == type_id);
     }
 
     const values = storage.getColumnValuesRaw(name) orelse @panic("no such component");
