@@ -5,15 +5,15 @@ const testing = @import("testing.zig");
 const Entities = @import("ecs/entities.zig").Entities;
 const EntityID = @import("ecs/entities.zig").EntityID;
 
+// TODO: make sendToModule the default name for sending events? and sendGlobal always secondary? Or vice-versa?
+
 /// Verifies that M matches the basic layout of a Mach module
 fn ModuleInterface(comptime M: type) type {
     if (@typeInfo(M) != .Struct) @compileError("mach: expected module struct, found: " ++ @typeName(M));
     if (!@hasDecl(M, "name")) @compileError("mach: module must have `pub const name = .foobar;`");
     if (@typeInfo(@TypeOf(M.name)) != .EnumLiteral) @compileError("mach: module must have `pub const name = .foobar;`, found type:" ++ @typeName(M.name));
-
-    // TODO: enable once parameter dependency loop has been resolved
-    // if (@hasDecl(M, "global_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " global_events ", M.global_events);
-    // if (@hasDecl(M, "local_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " local_events ", M.global_events);
+    if (@hasDecl(M, "global_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " global_events ", M.global_events);
+    if (@hasDecl(M, "local_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " local_events ", M.global_events);
     _ = ComponentTypesM(M);
     return M;
 }
@@ -47,7 +47,6 @@ pub fn Modules(comptime modules2: anytype) type {
         /// e.g. @field(@field(ComponentTypesByName, "module_name"), "component_name")
         pub const component_types_by_name = ComponentTypesByName(modules){};
 
-        const ModulesT = @This();
         const Event = struct {
             module_name: ?ModuleID,
             event_name: EventID,
@@ -58,14 +57,9 @@ pub fn Modules(comptime modules2: anytype) type {
         events_mu: std.Thread.RwLock = .{},
         args_queue: std.ArrayListUnmanaged(u8) = .{},
         events: EventQueue,
-        mod: ModsByName(modules, ModulesT),
+        mod: ModsByName(modules),
         // TODO: pass mods directly instead of ComponentTypesByName?
         entities: Entities(component_types_by_name),
-
-        pub fn Mod(comptime M: type) type {
-            const NSComponents = ComponentTypesByName(ModulesT.modules);
-            return Module(M, ModulesT, NSComponents);
-        }
 
         pub fn init(m: *@This(), allocator: std.mem.Allocator) !void {
             // TODO: switch Entities to stack allocation like Modules is
@@ -110,16 +104,36 @@ pub fn Modules(comptime modules2: anytype) type {
             }
         }
 
+        fn moduleToGlobalEvent(
+            comptime M: type,
+            comptime EventEnumM: anytype,
+            comptime EventEnum: anytype,
+            comptime event_name: EventEnumM(M),
+        ) EventEnum(modules) {
+            for (@typeInfo(EventEnum(modules)).Enum.fields) |gfield| {
+                if (std.mem.eql(u8, @tagName(event_name), gfield.name)) {
+                    return @enumFromInt(gfield.value);
+                }
+            }
+            unreachable;
+        }
+
         /// Send a global event which the specified module defines
         pub fn sendGlobal(
             m: *@This(),
             // TODO: is a variant of this function where event_name is not comptime known, but asserted to be a valid enum, useful?
             comptime module_name: ModuleName(modules),
-            comptime event_name: GlobalEvent,
-            args: GlobalArgs(module_name, event_name),
+            comptime event_name: GlobalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).state)),
+            args: GlobalArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).state), event_name),
         ) void {
             // TODO: comptime safety/debugging
-            m.sendInternal(null, @intFromEnum(event_name), args);
+            const event_name_g: GlobalEvent = comptime moduleToGlobalEvent(
+                @TypeOf(@field(m.mod, @tagName(module_name)).state),
+                GlobalEventEnumM,
+                GlobalEventEnum,
+                event_name,
+            );
+            m.sendInternal(null, @intFromEnum(event_name_g), args);
         }
 
         /// Send an event to a specific module
@@ -127,11 +141,17 @@ pub fn Modules(comptime modules2: anytype) type {
             m: *@This(),
             // TODO: is a variant of this function where module_name/event_name is not comptime known, but asserted to be a valid enum, useful?
             comptime module_name: ModuleName(modules),
-            comptime event_name: LocalEvent,
-            args: LocalArgs(module_name, event_name),
+            comptime event_name: LocalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).state)),
+            args: LocalArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).state), event_name),
         ) void {
             // TODO: comptime safety/debugging
-            m.sendInternal(@intFromEnum(module_name), @intFromEnum(event_name), args);
+            const event_name_g: LocalEvent = comptime moduleToGlobalEvent(
+                @TypeOf(@field(m.mod, @tagName(module_name)).state),
+                LocalEventEnumM,
+                LocalEventEnum,
+                event_name,
+            );
+            m.sendInternal(@intFromEnum(module_name), @intFromEnum(event_name_g), args);
         }
 
         /// Send a global event, using a dynamic (not known to the compiled program) event name.
@@ -171,7 +191,7 @@ pub fn Modules(comptime modules2: anytype) type {
         pub fn dispatch(m: *@This()) !void {
             const Injectable = comptime blk: {
                 var types: []const type = &[0]type{};
-                for (@typeInfo(ModsByName(modules, ModulesT)).Struct.fields) |field| {
+                for (@typeInfo(ModsByName(modules)).Struct.fields) |field| {
                     const ModPtr = @TypeOf(@as(*field.type, undefined));
                     types = types ++ [_]type{ModPtr};
                 }
@@ -179,7 +199,7 @@ pub fn Modules(comptime modules2: anytype) type {
             };
             var injectable: Injectable = undefined;
             outer: inline for (@typeInfo(Injectable).Struct.fields) |field| {
-                inline for (@typeInfo(ModsByName(modules, ModulesT)).Struct.fields) |injectable_field| {
+                inline for (@typeInfo(ModsByName(modules)).Struct.fields) |injectable_field| {
                     if (*injectable_field.type == field.type) {
                         @field(injectable, field.name) = &@field(m.mod, injectable_field.name);
 
@@ -291,17 +311,16 @@ pub fn Modules(comptime modules2: anytype) type {
     };
 }
 
-pub fn ModsByName(comptime modules: anytype, comptime ModulesT: type) type {
+pub fn ModsByName(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     for (modules) |M| {
-        const NSComponents = ComponentTypesByName(modules);
-        const Mod = Module(M, ModulesT, NSComponents);
+        const ModT = ModSet(modules).Mod(M);
         fields = fields ++ [_]std.builtin.Type.StructField{.{
             .name = @tagName(M.name),
-            .type = Mod,
+            .type = ModT,
             .default_value = null,
             .is_comptime = false,
-            .alignment = @alignOf(Mod),
+            .alignment = @alignOf(ModT),
         }};
     }
     return @Type(.{
@@ -314,85 +333,104 @@ pub fn ModsByName(comptime modules: anytype, comptime ModulesT: type) type {
     });
 }
 
-pub fn Module(
-    comptime M: anytype,
-    comptime ModulesT: type,
-    comptime NSComponents: type,
-) type {
-    const module_tag = M.name;
-    const components = ComponentTypesM(M){};
+// Note: Modules() causes analysis of event handlers' function signatures, whose parameters include
+// references to ModSet(modules).Mod(). As a result, the type returned here may never invoke Modules()
+// or depend on its result. However, it can analyze the global set of modules on its own, since no
+// module's type should embed the result of Modules().
+//
+// In short, these calls are fine:
+//
+// Modules() -> ModSet()
+// Modules() -> ModSet() -> Mod()
+//
+// But these are never permissible:
+//
+// ModSet() -> Modules()
+// Mod() -> Modules()
+//
+pub fn ModSet(comptime modules: anytype) type {
+    const NSComponents = ComponentTypesByName(modules);
     return struct {
-        state: M,
-        entities: *Entities(NSComponents{}),
-        // TODO: eliminate this global allocator and/or rethink allocation strategies for modules
-        allocator: std.mem.Allocator,
+        pub fn Mod(comptime M: anytype) type {
+            const module_tag = M.name;
+            const components = ComponentTypesM(M){};
+            return struct {
+                state: M,
+                entities: *Entities(NSComponents{}),
+                // TODO: eliminate this global allocator and/or rethink allocation strategies for modules
+                allocator: std.mem.Allocator,
 
-        pub const IsInjectedArgument = void;
+                pub const IsInjectedArgument = void;
 
-        /// Returns a new entity.
-        pub fn newEntity(m: *@This()) !EntityID {
-            return m.entities.new();
-        }
+                /// Returns a new entity.
+                pub fn newEntity(m: *@This()) !EntityID {
+                    return m.entities.new();
+                }
 
-        /// Removes an entity.
-        pub fn removeEntity(m: *@This(), entity: EntityID) !void {
-            try m.entities.removeEntity(entity);
-        }
+                /// Removes an entity.
+                pub fn removeEntity(m: *@This(), entity: EntityID) !void {
+                    try m.entities.removeEntity(entity);
+                }
 
-        /// Sets the named component to the specified value for the given entity,
-        /// moving the entity from it's current archetype table to the new archetype
-        /// table if required.
-        pub inline fn set(
-            m: *@This(),
-            entity: EntityID,
-            // TODO: cleanup comptime
-            comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
-            component: @field(components, @tagName(component_name)).type,
-        ) !void {
-            try m.entities.setComponent(entity, module_tag, component_name, component);
-        }
+                /// Sets the named component to the specified value for the given entity,
+                /// moving the entity from it's current archetype table to the new archetype
+                /// table if required.
+                pub inline fn set(
+                    m: *@This(),
+                    entity: EntityID,
+                    // TODO: cleanup comptime
+                    comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
+                    component: @field(components, @tagName(component_name)).type,
+                ) !void {
+                    try m.entities.setComponent(entity, module_tag, component_name, component);
+                }
 
-        /// gets the named component of the given type (which must be correct, otherwise undefined
-        /// behavior will occur). Returns null if the component does not exist on the entity.
-        pub inline fn get(
-            m: *@This(),
-            entity: EntityID,
-            // TODO: cleanup comptime
-            comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
-        ) ?@field(components, @tagName(component_name)).type {
-            return m.entities.getComponent(entity, module_tag, component_name);
-        }
+                /// gets the named component of the given type (which must be correct, otherwise undefined
+                /// behavior will occur). Returns null if the component does not exist on the entity.
+                pub inline fn get(
+                    m: *@This(),
+                    entity: EntityID,
+                    // TODO: cleanup comptime
+                    comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
+                ) ?@field(components, @tagName(component_name)).type {
+                    return m.entities.getComponent(entity, module_tag, component_name);
+                }
 
-        /// Removes the named component from the entity, or noop if it doesn't have such a component.
-        pub inline fn remove(
-            m: *@This(),
-            entity: EntityID,
-            // TODO: cleanup comptime
-            comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
-        ) !void {
-            try m.entities.removeComponent(entity, module_tag, component_name);
-        }
+                /// Removes the named component from the entity, or noop if it doesn't have such a component.
+                pub inline fn remove(
+                    m: *@This(),
+                    entity: EntityID,
+                    // TODO: cleanup comptime
+                    comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
+                ) !void {
+                    try m.entities.removeComponent(entity, module_tag, component_name);
+                }
 
-        pub inline fn send(m: *@This(), comptime event_name: ModulesT.LocalEvent, args: LocalArgsM(M, event_name)) void {
-            const MByName = ModsByName(ModulesT.modules, ModulesT);
-            const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
-            const modules = @fieldParentPtr(ModulesT, "mod", mod_ptr);
-            modules.sendToModule(module_tag, event_name, args);
-        }
+                pub inline fn send(m: *@This(), comptime event_name: LocalEventEnumM(M), args: LocalArgsM(M, event_name)) void {
+                    const ModulesT = Modules(modules);
+                    const MByName = ModsByName(ModulesT.modules);
+                    const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
+                    const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
+                    mods.sendToModule(module_tag, event_name, args);
+                }
 
-        pub inline fn sendGlobal(m: *@This(), comptime event_name: ModulesT.GlobalEvent, args: GlobalArgsM(M, event_name)) void {
-            const MByName = ModsByName(ModulesT.modules, ModulesT);
-            const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
-            const modules = @fieldParentPtr(ModulesT, "mod", mod_ptr);
-            modules.sendGlobal(module_tag, event_name, args);
-        }
+                pub inline fn sendGlobal(m: *@This(), comptime event_name: GlobalEventEnumM(M), args: GlobalArgsM(M, event_name)) void {
+                    const ModulesT = Modules(modules);
+                    const MByName = ModsByName(ModulesT.modules);
+                    const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
+                    const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
+                    mods.sendGlobal(module_tag, event_name, args);
+                }
 
-        // TODO: eliminate this
-        pub fn dispatchNoError(m: *@This()) void {
-            const MByName = ModsByName(ModulesT.modules, ModulesT);
-            const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
-            const modules = @fieldParentPtr(ModulesT, "mod", mod_ptr);
-            modules.dispatch() catch |err| @panic(@errorName(err));
+                // TODO: eliminate this
+                pub fn dispatchNoError(m: *@This()) void {
+                    const ModulesT = Modules(modules);
+                    const MByName = ModsByName(ModulesT.modules);
+                    const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
+                    const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
+                    mods.dispatch() catch |err| @panic(@errorName(err));
+                }
+            };
         }
     };
 }

@@ -9,6 +9,7 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();
 
 /// The main Mach engine ECS module.
+// TODO: move this to Engine.zig
 pub const Engine = struct {
     device: *gpu.Device,
     queue: *gpu.Queue,
@@ -17,7 +18,7 @@ pub const Engine = struct {
     encoder: *gpu.CommandEncoder,
 
     pub const name = .engine;
-    pub const Mod = Modules.Mod(@This());
+    pub const Mod = mach.Mod(@This());
 
     pub const global_events = .{
         .init = .{ .handler = fn () void },
@@ -102,7 +103,7 @@ pub const Engine = struct {
 };
 
 pub const App = struct {
-    modules: Modules,
+    modules: mach.Modules,
 
     pub fn init(app: *@This()) !void {
         app.* = .{ .modules = undefined };
@@ -127,10 +128,3 @@ pub const App = struct {
         return app.modules.mod.engine.state.should_exit;
     }
 };
-
-pub const Modules = module.Modules(blk: {
-    if (!@hasDecl(@import("root"), "modules")) {
-        @compileError("expected `pub const modules = .{};` in root file");
-    }
-    break :blk @import("root").modules;
-});
