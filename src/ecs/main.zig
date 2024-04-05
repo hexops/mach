@@ -47,7 +47,7 @@ test "example" {
 
             pub const name = .physics;
             pub const components = .{
-                .{ .name = .id, .type = u32 },
+                .id = .{ .type = u32 },
             };
             pub const global_events = .{
                 .tick = .{ .handler = tick },
@@ -61,7 +61,7 @@ test "example" {
         const Renderer = struct {
             pub const name = .renderer;
             pub const components = .{
-                .{ .name = .id, .type = u16 },
+                .id = .{ .type = u16 },
             };
             pub const global_events = .{
                 .tick = .{ .handler = tick },

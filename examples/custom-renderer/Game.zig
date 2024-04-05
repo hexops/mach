@@ -17,7 +17,7 @@ spawning: bool = false,
 spawn_timer: mach.Timer,
 
 pub const components = .{
-    .{ .name = .follower, .type = void },
+    .follower = .{ .type = void },
 };
 
 pub const global_events = .{

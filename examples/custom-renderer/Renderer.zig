@@ -21,9 +21,9 @@ pub const name = .renderer;
 pub const Mod = mach.Mod(@This());
 
 pub const components = .{
-    .{ .name = .location, .type = Vec3 },
-    .{ .name = .rotation, .type = Vec3 },
-    .{ .name = .scale, .type = f32 },
+    .location = .{ .type = Vec3 },
+    .rotation = .{ .type = Vec3 },
+    .scale = .{ .type = f32 },
 };
 
 pub const global_events = .{

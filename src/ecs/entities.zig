@@ -754,9 +754,9 @@ test "example" {
         struct {
             pub const name = .game;
             pub const components = .{
-                .{ .name = .name, .type = []const u8 },
-                .{ .name = .location, .type = Location },
-                .{ .name = .rotation, .type = Rotation },
+                .name = .{ .type = []const u8 },
+                .location = .{ .type = Location },
+                .rotation = .{ .type = Rotation },
             };
         },
     }){};
@@ -858,9 +858,9 @@ test "many entities" {
         struct {
             pub const name = .game;
             pub const components = .{
-                .{ .name = .name, .type = []const u8 },
-                .{ .name = .location, .type = Location },
-                .{ .name = .rotation, .type = Rotation },
+                .name = .{ .type = []const u8 },
+                .location = .{ .type = Location },
+                .rotation = .{ .type = Rotation },
             };
         },
     }){};
