@@ -21,8 +21,17 @@ pub const sysgpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig") els
 // Engine exports
 pub const App = @import("engine.zig").App;
 pub const Engine = @import("engine.zig").Engine;
-pub const Modules = @import("engine.zig").Modules;
-pub const Mod = Modules.Mod;
+pub const ModSet = @import("module.zig").ModSet;
+
+// TODO: perhaps this could be a comptime var rather than @import("root")?
+const modules = blk: {
+    if (!@hasDecl(@import("root"), "modules")) {
+        @compileError("expected `pub const modules = .{};` in root file");
+    }
+    break :blk @import("root").modules;
+};
+pub const Modules = @import("module.zig").Modules(modules);
+pub const Mod = ModSet(modules).Mod;
 
 test {
     const std = @import("std");

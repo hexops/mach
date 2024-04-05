@@ -53,7 +53,7 @@ test "example" {
                 .tick = .{ .handler = tick },
             };
 
-            fn tick(physics: *Modules(modules).Mod(Physics)) void {
+            fn tick(physics: *mach.ModSet(modules).Mod(Physics)) void {
                 _ = physics;
             }
         };
@@ -68,8 +68,8 @@ test "example" {
             };
 
             fn tick(
-                physics: *Modules(modules).Mod(Physics),
-                renderer: *Modules(modules).Mod(Renderer),
+                physics: *mach.ModSet(modules).Mod(Physics),
+                renderer: *mach.ModSet(modules).Mod(Renderer),
             ) void {
                 _ = renderer;
                 _ = physics;
