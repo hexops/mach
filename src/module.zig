@@ -6,8 +6,6 @@ const Entities = @import("ecs/entities.zig").Entities;
 const EntityID = @import("ecs/entities.zig").EntityID;
 const is_debug = @import("ecs/comptime.zig").is_debug;
 
-// TODO: make sendToModule the default name for sending events? and sendGlobal always secondary? Or vice-versa?
-
 /// Verifies that M matches the basic layout of a Mach module
 fn ModuleInterface(comptime M: type) type {
     if (@typeInfo(M) != .Struct) @compileError("mach: expected module struct, found: " ++ @typeName(M));
@@ -144,7 +142,7 @@ pub fn Modules(comptime modules: anytype) type {
         }
 
         /// Send an event to a specific module
-        pub fn sendToModule(
+        pub fn send(
             m: *@This(),
             // TODO: is a variant of this function where module_name/event_name is not comptime known, but asserted to be a valid enum, useful?
             comptime module_name: ModuleName(modules),
@@ -172,7 +170,7 @@ pub fn Modules(comptime modules: anytype) type {
         }
 
         /// Send an event to a specific module, using a dynamic (not known to the compiled program) module and event name.
-        pub fn sendToModuleDynamic(m: *@This(), module_name: ModuleID, event_name: EventID, args: anytype) void {
+        pub fn sendDynamic(m: *@This(), module_name: ModuleID, event_name: EventID, args: anytype) void {
             // TODO: runtime safety/debugging
             // TODO: check args do not have obviously wrong things, like comptime values
             // TODO: if module_name and event_name are valid enums, can we type-check args at comptime?
@@ -442,7 +440,7 @@ pub fn ModSet(comptime modules: anytype) type {
                     const MByName = ModsByName(modules);
                     const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
                     const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
-                    mods.sendToModule(module_tag, event_name, args);
+                    mods.send(module_tag, event_name, args);
                 }
 
                 pub inline fn sendGlobal(m: *@This(), comptime event_name: GlobalEventEnumM(M), args: GlobalArgsM(M, event_name)) void {
@@ -1383,11 +1381,11 @@ test "dispatch" {
     modules.sendGlobal(.engine_renderer, .frame_done, .{1337});
 
     // Local events
-    modules.sendToModule(.engine_renderer, .update, .{});
+    modules.send(.engine_renderer, .update, .{});
     try modules.dispatchInternal(.{&foo});
     try testing.expect(usize, 1).eql(global.renderer_updates);
-    modules.sendToModule(.engine_physics, .update, .{});
-    modules.sendToModuleDynamic(
+    modules.send(.engine_physics, .update, .{});
+    modules.sendDynamic(
         @intFromEnum(@as(M, .engine_physics)),
         @intFromEnum(@as(LE, .calc)),
         .{},
@@ -1397,8 +1395,8 @@ test "dispatch" {
     try testing.expect(usize, 1).eql(global.physics_calc);
 
     // Local events
-    modules.sendToModule(.engine_renderer, .basic_args, .{ @as(u32, 1), @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
-    modules.sendToModule(.engine_renderer, .injected_args, .{ @as(u32, 1), @as(u32, 2) });
+    modules.send(.engine_renderer, .basic_args, .{ @as(u32, 1), @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
+    modules.send(.engine_renderer, .injected_args, .{ @as(u32, 1), @as(u32, 2) });
     try modules.dispatchInternal(.{&foo});
     try testing.expect(usize, 3).eql(global.basic_args_sum);
     try testing.expect(usize, 3).eql(foo.injected_args_sum);
