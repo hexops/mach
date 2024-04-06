@@ -108,7 +108,7 @@ fn tick(
                     else => {},
                 }
             },
-            .close => engine.send(.exit, .{}),
+            .close => engine.send(.exit, .{}), // Send an event telling the engine to exit the app
             else => {},
         }
     }
