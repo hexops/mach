@@ -116,7 +116,7 @@ test "example" {
     try testing.expectEqual(@as(usize, 1001), ids[0]);
 
     // TODO: can't write @as type here easily due to generic parameter, should be exposed
-    // ?comp.ArchetypeSlicer(all_components)
+    // ?Archetype.Slicer(all_components)
     try testing.expectEqual(iter.next(), null);
 
     //-------------------------------------------------------------------------
