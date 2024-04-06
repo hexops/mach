@@ -17,9 +17,9 @@ fn ModuleInterface(comptime M: type) type {
     return M;
 }
 
-// TODO: implement serialization constraints
-// For now this exists just to indicate things that we expect will be required to be serializable in
-// the future.
+/// TODO: implement serialization constraints
+/// For now this exists just to indicate things that we expect will be required to be serializable in
+/// the future.
 fn Serializable(comptime T: type) type {
     return T;
 }
@@ -108,7 +108,7 @@ pub fn Modules(comptime modules: anytype) type {
             }
         }
 
-        // TODO: docs
+        /// Converts an event enum for a single module, to an event enum for all modules.
         fn moduleToGlobalEvent(
             comptime M: type,
             comptime EventEnumM: anytype,
@@ -126,13 +126,13 @@ pub fn Modules(comptime modules: anytype) type {
             m: *@This(),
             // TODO: is a variant of this function where event_name is not comptime known, but asserted to be a valid enum, useful?
             comptime module_name: ModuleName(modules),
-            // TODO: cleanup comptime
+            // TODO(important): cleanup comptime
             comptime event_name: GlobalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
             args: GlobalArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).__state), event_name),
         ) void {
             // TODO: comptime safety/debugging
             const event_name_g: GlobalEvent = comptime moduleToGlobalEvent(
-                // TODO: cleanup comptime
+                // TODO(important): cleanup comptime
                 @TypeOf(@field(m.mod, @tagName(module_name)).__state),
                 GlobalEventEnumM,
                 GlobalEventEnum,
@@ -146,13 +146,13 @@ pub fn Modules(comptime modules: anytype) type {
             m: *@This(),
             // TODO: is a variant of this function where module_name/event_name is not comptime known, but asserted to be a valid enum, useful?
             comptime module_name: ModuleName(modules),
-            // TODO: cleanup comptime
+            // TODO(important): cleanup comptime
             comptime event_name: LocalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
             args: LocalArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).__state), event_name),
         ) void {
             // TODO: comptime safety/debugging
             const event_name_g: LocalEvent = comptime moduleToGlobalEvent(
-                // TODO: cleanup comptime
+                // TODO(important): cleanup comptime
                 @TypeOf(@field(m.mod, @tagName(module_name)).__state),
                 LocalEventEnumM,
                 LocalEventEnum,
@@ -162,10 +162,10 @@ pub fn Modules(comptime modules: anytype) type {
         }
 
         /// Send a global event, using a dynamic (not known to the compiled program) event name.
-        pub fn sendDynamic(m: *@This(), event_name: EventID, args: anytype) void {
+        pub fn sendGlobalDynamic(m: *@This(), event_name: EventID, args: anytype) void {
             // TODO: runtime safety/debugging
             // TODO: check args do not have obviously wrong things, like comptime values
-            // TODO: if module_name and event_name are valid enums, can we type-check args at comptime?
+            // TODO: if module_name and event_name are valid enums, can we type-check args at runtime?
             m.sendInternal(null, event_name, args);
         }
 
@@ -173,7 +173,7 @@ pub fn Modules(comptime modules: anytype) type {
         pub fn sendDynamic(m: *@This(), module_name: ModuleID, event_name: EventID, args: anytype) void {
             // TODO: runtime safety/debugging
             // TODO: check args do not have obviously wrong things, like comptime values
-            // TODO: if module_name and event_name are valid enums, can we type-check args at comptime?
+            // TODO: if module_name and event_name are valid enums, can we type-check args at runtime?
             m.sendInternal(module_name, event_name, args);
         }
 
@@ -218,13 +218,11 @@ pub fn Modules(comptime modules: anytype) type {
         }
 
         pub fn dispatchInternal(m: *@This(), injectable: anytype) !void {
-            // TODO: verify injectable arguments are valid, e.g. not comptime types
-
             // TODO: optimize to reduce send contention
             // TODO: parallel / multi-threaded dispatch
             // TODO: PGO
 
-            // TODO: this is wrong
+            // TODO(important): this is wrong
             defer {
                 m.events_mu.lock();
                 m.args_queue.clearRetainingCapacity();
@@ -253,7 +251,7 @@ pub fn Modules(comptime modules: anytype) type {
             switch (event_name) {
                 inline else => |ev_name| {
                     inline for (modules) |M| {
-                        // TODO: DRY with callLocal
+                        // TODO(important): DRY with callLocal
                         _ = ModuleInterface(M); // Validate the module
                         if (@hasDecl(M, "global_events")) inline for (@typeInfo(@TypeOf(M.global_events)).Struct.fields) |field| {
                             comptime if (!std.mem.eql(u8, @tagName(ev_name), field.name)) continue;
@@ -279,7 +277,7 @@ pub fn Modules(comptime modules: anytype) type {
                 inline else => |ev_name| {
                     switch (module_name) {
                         inline else => |mod_name| {
-                            // TODO: DRY with callGlobal
+                            // TODO(important): DRY with callGlobal
                             const M = @field(NamespacedModules(modules){}, @tagName(mod_name));
                             _ = ModuleInterface(M); // Validate the module
                             if (@hasDecl(M, "local_events")) inline for (@typeInfo(@TypeOf(M.local_events)).Struct.fields) |field| {
@@ -407,7 +405,7 @@ pub fn ModSet(comptime modules: anytype) type {
                 pub inline fn set(
                     m: *@This(),
                     entity: EntityID,
-                    // TODO: cleanup comptime
+                    // TODO(important): cleanup comptime
                     comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
                     component: @field(components, @tagName(component_name)).type,
                 ) !void {
@@ -419,7 +417,7 @@ pub fn ModSet(comptime modules: anytype) type {
                 pub inline fn get(
                     m: *@This(),
                     entity: EntityID,
-                    // TODO: cleanup comptime
+                    // TODO(important): cleanup comptime
                     comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
                 ) ?@field(components, @tagName(component_name)).type {
                     return m.entities.getComponent(entity, module_tag, component_name);
@@ -429,7 +427,7 @@ pub fn ModSet(comptime modules: anytype) type {
                 pub inline fn remove(
                     m: *@This(),
                     entity: EntityID,
-                    // TODO: cleanup comptime
+                    // TODO(important): cleanup comptime
                     comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
                 ) !void {
                     try m.entities.removeComponent(entity, module_tag, component_name);
@@ -451,7 +449,7 @@ pub fn ModSet(comptime modules: anytype) type {
                     mods.sendGlobal(module_tag, event_name, args);
                 }
 
-                // TODO: eliminate this
+                // TODO: important! eliminate this
                 pub fn dispatchNoError(m: *@This()) void {
                     const ModulesT = Modules(modules);
                     const MByName = ModsByName(modules);
@@ -558,7 +556,7 @@ fn ArgsM(comptime M: type, event_name: anytype, comptime which: anytype) type {
     @compileError("mach: module ." ++ @tagName(M.name) ++ " has no " ++ which ++ " event handler for ." ++ @tagName(event_name));
 }
 
-// TODO: DRY with GlobalEventEnum
+// TODO: important! DRY with GlobalEventEnum
 /// enum describing every possible comptime-known local event name
 fn LocalEventEnum(comptime modules: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
@@ -586,7 +584,7 @@ fn LocalEventEnum(comptime modules: anytype) type {
     });
 }
 
-// TODO: DRY with GlobalEventEnumM
+// TODO: important! DRY with GlobalEventEnumM
 /// enum describing every possible comptime-known local event name
 fn LocalEventEnumM(comptime M: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
@@ -612,7 +610,7 @@ fn LocalEventEnumM(comptime M: anytype) type {
     });
 }
 
-// TODO: DRY with LocalEventEnum
+// TODO: important! DRY with LocalEventEnum
 /// enum describing every possible comptime-known global event name
 fn GlobalEventEnum(comptime modules: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
@@ -640,7 +638,7 @@ fn GlobalEventEnum(comptime modules: anytype) type {
     });
 }
 
-// TODO: DRY with LocalEventEnumM
+// TODO: important! DRY with LocalEventEnumM
 /// enum describing every possible comptime-known global event name
 fn GlobalEventEnumM(comptime M: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
@@ -744,7 +742,6 @@ fn validateEvents(comptime error_prefix: anytype, comptime events: anytype) void
     }
 }
 
-// TODO: does it need to be pub?
 // TODO: tests
 /// Returns a struct type defining all module's components by module name, e.g.:
 ///
@@ -1176,7 +1173,6 @@ test UninjectedArgsTuple {
 }
 
 test "event name calling" {
-    // TODO: verify that event handlers error return signatures are correct
     const global = struct {
         var ticks: usize = 0;
         var physics_updates: usize = 0;
@@ -1371,7 +1367,7 @@ test "dispatch" {
     try modules.dispatchInternal(.{&foo});
     try testing.expect(usize, 2).eql(global.ticks);
     // TODO: make sendDynamic take an args type to avoid footguns with comptime values, etc.
-    modules.sendDynamic(@intFromEnum(@as(GE, .tick)), .{});
+    modules.sendDynamicGlobal(@intFromEnum(@as(GE, .tick)), .{});
     try modules.dispatchInternal(.{&foo});
     try testing.expect(usize, 4).eql(global.ticks);
 
