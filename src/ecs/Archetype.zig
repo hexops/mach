@@ -10,7 +10,6 @@ const testing = std.testing;
 const assert = std.debug.assert;
 const builtin = @import("builtin");
 const StringTable = @import("StringTable.zig");
-const comp = @import("comptime.zig");
 
 const Archetype = @This();
 
@@ -75,7 +74,7 @@ pub fn appendUndefined(storage: *Archetype, gpa: Allocator) !u32 {
 
 // TODO: comptime: missing a runtime variant of this function
 pub fn append(storage: *Archetype, gpa: Allocator, row: anytype) !u32 {
-    comp.debugAssertRowType(storage, row);
+    debugAssertRowType(storage, row);
 
     try storage.ensureUnusedCapacity(gpa, 1);
     assert(storage.len < storage.capacity);
@@ -130,7 +129,7 @@ pub fn setCapacity(storage: *Archetype, gpa: Allocator, new_capacity: usize) !vo
 // TODO: comptime: missing a runtime variant of this function
 /// Sets the entire row's values in the table.
 pub fn setRow(storage: *Archetype, row_index: u32, row: anytype) void {
-    comp.debugAssertRowType(storage, row);
+    debugAssertRowType(storage, row);
 
     const fields = std.meta.fields(@TypeOf(row));
     inline for (fields, 0..) |field, index| {
@@ -147,18 +146,18 @@ pub fn setRow(storage: *Archetype, row_index: u32, row: anytype) void {
 pub fn set(storage: *Archetype, row_index: u32, name: StringTable.Index, component: anytype) void {
     const ColumnType = @TypeOf(component);
     if (@sizeOf(ColumnType) == 0) return;
-    if (comp.is_debug) comp.debugAssertColumnType(storage, storage.columnByName(name).?, @TypeOf(component));
+    if (is_debug) debugAssertColumnType(storage, storage.columnByName(name).?, @TypeOf(component));
     storage.setDynamic(
         row_index,
         name,
         std.mem.asBytes(&component),
         @alignOf(@TypeOf(component)),
-        comp.typeId(@TypeOf(component)),
+        typeId(@TypeOf(component)),
     );
 }
 
 pub fn setDynamic(storage: *Archetype, row_index: u32, name: StringTable.Index, component: []const u8, alignment: u16, type_id: u32) void {
-    if (comp.is_debug) {
+    if (is_debug) {
         // TODO: improve error messages
         assert(storage.len != 0 and storage.len >= row_index);
         assert(storage.columnByName(name).?.type_id == type_id);
@@ -173,15 +172,15 @@ pub fn setDynamic(storage: *Archetype, row_index: u32, name: StringTable.Index, 
 
 pub fn get(storage: *Archetype, row_index: u32, name: StringTable.Index, comptime ColumnType: type) ?ColumnType {
     if (@sizeOf(ColumnType) == 0) return {};
-    if (comp.is_debug) comp.debugAssertColumnType(storage, storage.columnByName(name) orelse return null, ColumnType);
+    if (is_debug) debugAssertColumnType(storage, storage.columnByName(name) orelse return null, ColumnType);
 
-    const bytes = storage.getDynamic(row_index, name, @sizeOf(ColumnType), @alignOf(ColumnType), comp.typeId(ColumnType)) orelse return null;
+    const bytes = storage.getDynamic(row_index, name, @sizeOf(ColumnType), @alignOf(ColumnType), typeId(ColumnType)) orelse return null;
     return @as(*ColumnType, @alignCast(@ptrCast(bytes.ptr))).*;
 }
 
 pub fn getDynamic(storage: *Archetype, row_index: u32, name: StringTable.Index, size: u32, alignment: u16, type_id: u32) ?[]u8 {
     const values = storage.getColumnValuesRaw(name) orelse return null;
-    if (comp.is_debug) {
+    if (is_debug) {
         // TODO: improve error messages
         assert(storage.columnByName(name).?.size == size);
         assert(storage.columnByName(name).?.alignment == alignment);
@@ -222,7 +221,7 @@ pub fn hasComponent(storage: *Archetype, name: StringTable.Index) bool {
 
 pub fn getColumnValues(storage: *Archetype, name: StringTable.Index, comptime ColumnType: type) ?[]ColumnType {
     const values = storage.getColumnValuesRaw(name) orelse return null;
-    if (comp.is_debug) comp.debugAssertColumnType(storage, storage.columnByName(name).?, ColumnType);
+    if (is_debug) debugAssertColumnType(storage, storage.columnByName(name).?, ColumnType);
     var ptr = @as([*]ColumnType, @ptrCast(@alignCast(values.ptr)));
     const column_values = ptr[0..storage.capacity];
     return column_values;
@@ -238,4 +237,65 @@ pub inline fn columnByName(storage: *Archetype, name: StringTable.Index) ?*Colum
         if (column.name == name) return column;
     }
     return null;
+}
+
+pub const is_debug = builtin.mode == .Debug;
+
+/// Returns a unique comptime usize integer representing the type T. Value will change across
+/// different compilations.
+pub fn typeId(comptime T: type) u32 {
+    _ = T;
+    return @truncate(@intFromPtr(&struct {
+        var x: u8 = 0;
+    }.x));
+}
+
+/// Asserts that T matches the type of the column.
+pub inline fn debugAssertColumnType(storage: *Archetype, column: *Archetype.Column, comptime T: type) void {
+    if (is_debug) {
+        if (typeId(T) != column.type_id) std.debug.panic("unexpected type: {s} expected: {s}", .{
+            @typeName(T),
+            storage.component_names.string(column.name),
+        });
+    }
+}
+
+/// Asserts that a tuple `row` to be e.g. appended to an archetype has values that actually match
+/// all of the columns of the archetype table.
+pub inline fn debugAssertRowType(storage: *Archetype, row: anytype) void {
+    if (is_debug) {
+        inline for (std.meta.fields(@TypeOf(row)), 0..) |field, index| {
+            debugAssertColumnType(storage, &storage.columns[index], field.type);
+        }
+    }
+}
+
+// TODO: comptime refactor
+pub fn Slicer(comptime all_components: anytype) type {
+    return struct {
+        archetype: *Archetype,
+
+        pub fn slice(
+            slicer: @This(),
+            // TODO: cleanup comptime
+            comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
+        ) []@field(
+            @field(all_components, @tagName(namespace_name)),
+            @tagName(component_name),
+        ).type {
+            // TODO: cleanup comptime
+            const Type = @field(
+                @field(all_components, @tagName(namespace_name)),
+                @tagName(component_name),
+            ).type;
+            if (namespace_name == .entity and component_name == .id) {
+                const name_id = slicer.archetype.component_names.index("id").?;
+                return slicer.archetype.getColumnValues(name_id, Type).?[0..slicer.archetype.len];
+            }
+            const name = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
+            const name_id = slicer.archetype.component_names.index(name).?;
+            return slicer.archetype.getColumnValues(name_id, Type).?[0..slicer.archetype.len];
+        }
+    };
 }

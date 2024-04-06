@@ -6,7 +6,6 @@ const assert = std.debug.assert;
 const query_mod = @import("query.zig");
 const Archetype = @import("Archetype.zig");
 const StringTable = @import("StringTable.zig");
-const comp = @import("comptime.zig");
 const ComponentTypesByName = @import("../module.zig").ComponentTypesByName;
 
 /// An entity ID uniquely identifies an entity globally within an Entities set.
@@ -128,7 +127,7 @@ pub fn Entities(comptime all_components: anytype) type {
             const columns = try allocator.alloc(Archetype.Column, 1);
             columns[0] = .{
                 .name = entities.id_name,
-                .type_id = comp.typeId(EntityID),
+                .type_id = Archetype.typeId(EntityID),
                 .size = @sizeOf(EntityID),
                 .alignment = @alignOf(EntityID),
                 .values = undefined,
@@ -220,7 +219,7 @@ pub fn Entities(comptime all_components: anytype) type {
             const archetype_entry = try entities.archetypeOrPut(&.{
                 .{
                     .name = entities.id_name,
-                    .type_id = comp.typeId(EntityID),
+                    .type_id = Archetype.typeId(EntityID),
                     .size = @sizeOf(EntityID),
                     .alignment = @alignOf(EntityID),
                     .values = undefined,
@@ -308,7 +307,7 @@ pub fn Entities(comptime all_components: anytype) type {
                 }
                 columns[columns.len - 1] = .{
                     .name = name_id,
-                    .type_id = comp.typeId(@TypeOf(component)),
+                    .type_id = Archetype.typeId(@TypeOf(component)),
                     .size = @sizeOf(@TypeOf(component)),
                     .alignment = if (@sizeOf(@TypeOf(component)) == 0) 1 else @alignOf(@TypeOf(component)),
                     .values = undefined,
@@ -656,11 +655,11 @@ pub fn ArchetypeIterator(comptime all_components: anytype) type {
         }
 
         // TODO: all_components is a superset of queried items, not type-safe.
-        pub fn next(iter: *Self) ?comp.ArchetypeSlicer(all_components) {
+        pub fn next(iter: *Self) ?Archetype.Slicer(all_components) {
             while (iter.index < iter.entities.archetypes.items.len) {
                 const archetype = &iter.entities.archetypes.items[iter.index];
                 iter.index += 1;
-                if (iter.match(archetype)) return comp.ArchetypeSlicer(all_components){ .archetype = archetype };
+                if (iter.match(archetype)) return Archetype.Slicer(all_components){ .archetype = archetype };
             }
             return null;
         }

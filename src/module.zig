@@ -65,7 +65,7 @@ const testing = @import("testing.zig");
 
 const Entities = @import("ecs/entities.zig").Entities;
 const EntityID = @import("ecs/entities.zig").EntityID;
-const is_debug = @import("ecs/comptime.zig").is_debug;
+const is_debug = @import("ecs/Archetype.zig").is_debug;
 
 /// Verifies that M matches the basic layout of a Mach module
 fn ModuleInterface(comptime M: type) type {
