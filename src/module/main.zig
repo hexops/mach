@@ -1,16 +1,3 @@
-//! mach/ecs is an Entity component system implementation.
-//!
-//! ## Design principles:
-//!
-//! * Initially a 100% clean-room implementation, working from first-principles. Later informed by
-//!   research into how other ECS work, with advice from e.g. Bevy and Flecs authors at different
-//!   points (thank you!)
-//! * Solve the problems ECS solves, in a way that is natural to Zig and leverages Zig comptime.
-//! * Fast. Optimal for CPU caches, multi-threaded, leverage comptime as much as is reasonable.
-//! * Simple. Small API footprint, should be natural and fun - not like you're writing boilerplate.
-//! * Enable other libraries to provide tracing, editors, visualizers, profilers, etc.
-//!
-
 const std = @import("std");
 const mach = @import("../main.zig");
 const testing = std.testing;
@@ -18,15 +5,8 @@ const testing = std.testing;
 pub const EntityID = @import("entities.zig").EntityID;
 pub const Entities = @import("entities.zig").Entities;
 pub const Archetype = @import("Archetype.zig");
-
-pub const Modules = @import("../module.zig").Modules;
-
-// TODO:
-// * Iteration
-// * Querying
-// * Multi threading
-// * Multiple entities having one value
-// * Sparse storage?
+pub const ModSet = @import("module.zig").ModSet;
+pub const Modules = @import("module.zig").Modules;
 
 test {
     std.testing.refAllDeclsRecursive(@This());
@@ -36,7 +16,7 @@ test {
     std.testing.refAllDeclsRecursive(@import("StringTable.zig"));
 }
 
-test "example" {
+test "entities DB" {
     const allocator = testing.allocator;
 
     const root = struct {

@@ -6,7 +6,7 @@ const assert = std.debug.assert;
 const query_mod = @import("query.zig");
 const Archetype = @import("Archetype.zig");
 const StringTable = @import("StringTable.zig");
-const ComponentTypesByName = @import("../module.zig").ComponentTypesByName;
+const ComponentTypesByName = @import("module.zig").ComponentTypesByName;
 
 /// An entity ID uniquely identifies an entity globally within an Entities set.
 pub const EntityID = u64;

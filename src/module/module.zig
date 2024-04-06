@@ -61,11 +61,11 @@
 
 const builtin = @import("builtin");
 const std = @import("std");
-const testing = @import("testing.zig");
+const testing = @import("../testing.zig");
 
-const Entities = @import("ecs/entities.zig").Entities;
-const EntityID = @import("ecs/entities.zig").EntityID;
-const is_debug = @import("ecs/Archetype.zig").is_debug;
+const Entities = @import("entities.zig").Entities;
+const EntityID = @import("entities.zig").EntityID;
+const is_debug = @import("Archetype.zig").is_debug;
 
 /// Verifies that M matches the basic layout of a Mach module
 fn ModuleInterface(comptime M: type) type {

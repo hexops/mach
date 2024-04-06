@@ -5,7 +5,6 @@ const assets = @import("assets");
 const mach = @import("mach");
 const core = mach.core;
 const gpu = mach.gpu;
-const ecs = mach.ecs;
 const Sprite = mach.gfx.Sprite;
 const math = mach.math;
 
@@ -19,7 +18,7 @@ const Mat4x4 = math.Mat4x4;
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
 timer: mach.Timer,
-player: mach.ecs.EntityID,
+player: mach.EntityID,
 direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
 spawn_timer: mach.Timer,
