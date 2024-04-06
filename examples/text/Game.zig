@@ -1,3 +1,4 @@
+// TODO(important): review all code in this file in-depth
 const std = @import("std");
 const zigimg = @import("zigimg");
 const assets = @import("assets");
