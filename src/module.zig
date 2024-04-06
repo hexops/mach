@@ -1,3 +1,59 @@
+//! Module system
+//!
+//! ## Events
+//!
+//! Every piece of logic in a Mach module runs in response to an event.
+//!
+//! Events are used to schedule the execution order of event handlers. What we call event handlers
+//! are often called 'systems' in other game engines following ECS design patterns. Typically,
+//! other engines require that you express a specific order you'd like systems to execute in via
+//! e.g. a sorting integer.
+//!
+//! Mach's module system has only events and event handlers. In order to get system/event-handler B
+//! to run after A, A simply needs to send an event that module B defines an event handler for.
+//! These are simple functions, with some dependency injection.
+//!
+//! Event handlers are also a point-of-parallelism opportunity, i.e. depending on what event
+//! handlers do within their function body (whether it be adding/removing entities/components,
+//! sending events, or reading/writing module state), the event scheduler can determine which event
+//! handlers may be eligible for parallel execution without data races or non-deterministic behavior.
+//! Mach does not yet implement this today, but will in the future.
+//!
+//! Events are simply a name associated with a function, as well as some (simple data type) parameters
+//! that function may expect. They are however **high-level** communication between modules, i.e.
+//! scheduling the execution of functions which are generally expected to do a reasonable amount of
+//! work, since events are a dynamic dispatch point and not e.g. inline function calls.
+//!
+//! Events are also the foundation for:
+//!
+//! * Graphical editor integration, e.g. event names and parameters could be enumerated via an
+//!   external process to your program, allowing a graphical editor to craft and send events with
+//!   payloads to your program over e.g. a socket.
+//! * Debugging facilities - for example the entire program can be analyzed as a sequence of named
+//!   events being dispatched, showing you the execution of e.g. a frame. Or, events could be saved
+//!   to disk and replayed/inspected later.
+//! * Networking between modules - events could be serialized and sent over the network.
+//!
+//! ## Event arguments
+//!
+//! Event arguments should only be used to convey stateless information.
+//!
+//! Good use-cases for event arguments are typically ones where you would want a graphical editor
+//! to be able to convey to your program that something should be done, for example:
+//! * `.spawn_monsters` with an argument conveying the number of monsters to spawn.
+//! * `.set_entity_position` with an argument conveying what to set an entity's position to
+//!
+//! On the other hand, bad use-cases for event arguments tend to be stateful:
+//!
+//! * Anything involving pointers (which may be completely prohibited in the future)
+//! * `.render_players` with an argument conveying to render specific player entities, rather than
+//!   the event having no arguments and instead looking at which entities have a component/tag
+//!   indicating they should be rendered.
+//!
+//! These examples are bad because if these events' arguments were to be e.g. serialized and saved
+//! to disk, and then replayed later in a future execution of the program, you may find that the
+//! arguments no longer make sense in a replay of the program.
+
 const builtin = @import("builtin");
 const std = @import("std");
 const testing = @import("testing.zig");
