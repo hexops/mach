@@ -1,6 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
-const ComponentTypesByName = @import("../module.zig").ComponentTypesByName;
+const ComponentTypesByName = @import("module.zig").ComponentTypesByName;
 
 pub const QueryTag = enum {
     any,

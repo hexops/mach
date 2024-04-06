@@ -1,6 +1,5 @@
 const std = @import("std");
 const mach = @import("mach");
-const ecs = mach.ecs;
 const core = mach.core;
 const math = mach.math;
 const Renderer = @import("Renderer.zig");
@@ -12,7 +11,7 @@ const Vec3 = math.Vec3;
 
 // Global state for our game module.
 timer: mach.Timer,
-player: ecs.EntityID,
+player: mach.EntityID,
 direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
 spawn_timer: mach.Timer,

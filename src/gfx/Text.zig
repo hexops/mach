@@ -2,7 +2,6 @@ const std = @import("std");
 const mach = @import("../main.zig");
 const core = mach.core;
 const gpu = mach.gpu;
-const ecs = mach.ecs;
 const Engine = mach.Engine;
 const gfx = mach.gfx;
 
@@ -49,7 +48,7 @@ pub const components = .{
     \\ Expected to match the length of the style component.
     },
 
-    .style = .{ .type = []const mach.ecs.EntityID, .description = 
+    .style = .{ .type = []const mach.EntityID, .description = 
     \\ The style to apply to each segment of text.
     \\
     \\ Expected to match the length of the text component.

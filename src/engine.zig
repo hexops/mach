@@ -2,8 +2,6 @@ const std = @import("std");
 const mach = @import("main.zig");
 const core = mach.core;
 const gpu = mach.core.gpu;
-const ecs = mach.ecs;
-const module = @import("module.zig");
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();

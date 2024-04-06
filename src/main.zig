@@ -8,7 +8,6 @@ pub const gpu = if (build_options.want_core) core.gpu else struct {};
 pub const sysjs = if (build_options.want_core) @import("mach-sysjs") else struct {};
 
 // Mach standard library
-pub const ecs = @import("ecs/main.zig");
 // gamemode requires libc on linux
 pub const gamemode = if (builtin.os.tag != .linux or builtin.link_libc) @import("gamemode.zig");
 pub const gfx = if (build_options.want_mach) @import("gfx/main.zig") else struct {};
@@ -21,17 +20,19 @@ pub const sysgpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig") els
 // Engine exports
 pub const App = @import("engine.zig").App;
 pub const Engine = @import("engine.zig").Engine;
-pub const ModSet = @import("module.zig").ModSet;
 
-// TODO: perhaps this could be a comptime var rather than @import("root")?
+// Module system
+pub const ModSet = @import("module/main.zig").ModSet;
 pub const modules = blk: {
     if (!@hasDecl(@import("root"), "modules")) {
         @compileError("expected `pub const modules = .{};` in root file");
     }
     break :blk @import("root").modules;
 };
-pub const Modules = @import("module.zig").Modules(modules);
+pub const Modules = @import("module/main.zig").Modules(modules);
 pub const Mod = ModSet(modules).Mod;
+pub const EntityID = @import("module/main.zig").EntityID;
+pub const Archetype = @import("module/main.zig").Archetype;
 
 test {
     const std = @import("std");
@@ -44,8 +45,7 @@ test {
     _ = gfx;
     _ = math;
     _ = testing;
-    std.testing.refAllDeclsRecursive(@import("module.zig"));
-    std.testing.refAllDeclsRecursive(ecs);
+    std.testing.refAllDeclsRecursive(@import("module/main.zig"));
     std.testing.refAllDeclsRecursive(gamemode);
     std.testing.refAllDeclsRecursive(math);
 }

@@ -6,7 +6,6 @@ const mach = @import("mach");
 const core = mach.core;
 const gfx = mach.gfx;
 const gpu = mach.gpu;
-const ecs = mach.ecs;
 const Text = mach.gfx.Text;
 const math = mach.math;
 
@@ -21,7 +20,7 @@ const Mat4x4 = math.Mat4x4;
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
 timer: mach.Timer,
-player: mach.ecs.EntityID,
+player: mach.EntityID,
 direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
 spawn_timer: mach.Timer,
@@ -30,7 +29,7 @@ frame_count: usize,
 texts: usize,
 rand: std.rand.DefaultPrng,
 time: f32,
-style1: mach.ecs.EntityID,
+style1: mach.EntityID,
 allocator: std.mem.Allocator,
 
 const d0 = 0.000001;
@@ -106,7 +105,7 @@ fn init(
     // TODO: better storage mechanism for this
     // TODO: this is a leak
     const allocator = gpa.allocator();
-    const styles = try allocator.alloc(mach.ecs.EntityID, 3);
+    const styles = try allocator.alloc(mach.EntityID, 3);
     styles[0] = style1;
     styles[1] = style2;
     styles[2] = style3;
@@ -189,7 +188,7 @@ fn tick(
 
             // TODO: better storage mechanism for this
             // TODO: this is a leak
-            const styles = try game.state().allocator.alloc(mach.ecs.EntityID, 1);
+            const styles = try game.state().allocator.alloc(mach.EntityID, 1);
             styles[0] = game.state().style1;
             try text_mod.set(new_entity, .text, text2);
             try text_mod.set(new_entity, .style, styles);

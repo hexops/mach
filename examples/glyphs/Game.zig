@@ -3,7 +3,6 @@ const std = @import("std");
 const mach = @import("mach");
 const core = mach.core;
 const gpu = mach.gpu;
-const ecs = mach.ecs;
 const Sprite = mach.gfx.Sprite;
 const math = mach.math;
 const vec2 = math.vec2;
@@ -16,7 +15,7 @@ const Mat4x4 = math.Mat4x4;
 const Text = @import("Text.zig");
 
 timer: mach.Timer,
-player: mach.ecs.EntityID,
+player: mach.EntityID,
 direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
 spawn_timer: mach.Timer,
