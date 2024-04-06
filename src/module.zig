@@ -33,6 +33,11 @@
 //!   events being dispatched, showing you the execution of e.g. a frame. Or, events could be saved
 //!   to disk and replayed/inspected later.
 //! * Networking between modules - events could be serialized and sent over the network.
+//! * Loops executing at different frequencies - a 'loop' is simply events firing in a circular loop,
+//!   e.g. you could have multiple loops of events going at the same time, using an event as a
+//!   synchronization point:
+//!   * .render_begin -> wait for .physics_sync -> .game_tick -> .game_draw_frame -> .render_end -> .render_begin
+//!   * .physics_begin -> .poll_input -> .physics_calculate -> .physics_sync -> .physics_end -> .physics_begin
 //!
 //! ## Event arguments
 //!
@@ -1423,7 +1428,7 @@ test "dispatch" {
     try modules.dispatchInternal(.{&foo});
     try testing.expect(usize, 2).eql(global.ticks);
     // TODO: make sendDynamic take an args type to avoid footguns with comptime values, etc.
-    modules.sendDynamicGlobal(@intFromEnum(@as(GE, .tick)), .{});
+    modules.sendGlobalDynamic(@intFromEnum(@as(GE, .tick)), .{});
     try modules.dispatchInternal(.{&foo});
     try testing.expect(usize, 4).eql(global.ticks);
 
