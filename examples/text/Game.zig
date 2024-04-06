@@ -17,6 +17,8 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
 timer: mach.Timer,
 player: mach.ecs.EntityID,
 direction: Vec2 = vec2(0, 0),
@@ -28,6 +30,7 @@ texts: usize,
 rand: std.rand.DefaultPrng,
 time: f32,
 style1: mach.ecs.EntityID,
+allocator: std.mem.Allocator,
 
 const d0 = 0.000001;
 
@@ -101,7 +104,8 @@ fn init(
 
     // TODO: better storage mechanism for this
     // TODO: this is a leak
-    const styles = try engine.allocator.alloc(mach.ecs.EntityID, 3);
+    const allocator = gpa.allocator();
+    const styles = try allocator.alloc(mach.ecs.EntityID, 3);
     styles[0] = style1;
     styles[1] = style2;
     styles[2] = style3;
@@ -113,7 +117,7 @@ fn init(
     }});
     engine.dispatchNoError(); // TODO: no dispatch in user code
 
-    game.state = .{
+    game.init(.{
         .timer = try mach.Timer.start(),
         .spawn_timer = try mach.Timer.start(),
         .player = player,
@@ -123,7 +127,8 @@ fn init(
         .rand = std.rand.DefaultPrng.init(1337),
         .time = 0,
         .style1 = style1,
-    };
+        .allocator = allocator,
+    });
 }
 
 fn deinit(engine: *mach.Engine.Mod) !void {
@@ -137,8 +142,8 @@ fn tick(
 ) !void {
     // TODO(engine): event polling should occur in mach.Engine module and get fired as ECS events.
     var iter = core.pollEvents();
-    var direction = game.state.direction;
-    var spawning = game.state.spawning;
+    var direction = game.state().direction;
+    var spawning = game.state().spawning;
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| {
@@ -165,18 +170,18 @@ fn tick(
             else => {},
         }
     }
-    game.state.direction = direction;
-    game.state.spawning = spawning;
+    game.state().direction = direction;
+    game.state().spawning = spawning;
 
-    var player_transform = text_mod.get(game.state.player, .transform).?;
+    var player_transform = text_mod.get(game.state().player, .transform).?;
     var player_pos = player_transform.translation().divScalar(upscale);
-    if (spawning and game.state.spawn_timer.read() > 1.0 / 60.0) {
+    if (spawning and game.state().spawn_timer.read() > 1.0 / 60.0) {
         // Spawn new entities
-        _ = game.state.spawn_timer.lap();
+        _ = game.state().spawn_timer.lap();
         for (0..1) |_| {
             var new_pos = player_pos;
-            new_pos.v[0] += game.state.rand.random().floatNorm(f32) * 25;
-            new_pos.v[1] += game.state.rand.random().floatNorm(f32) * 25;
+            new_pos.v[0] += game.state().rand.random().floatNorm(f32) * 25;
+            new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 25;
 
             const new_entity = try engine.newEntity();
             try text_mod.set(new_entity, .pipeline, @intFromEnum(Pipeline.default));
@@ -184,17 +189,17 @@ fn tick(
 
             // TODO: better storage mechanism for this
             // TODO: this is a leak
-            const styles = try engine.allocator.alloc(mach.ecs.EntityID, 1);
-            styles[0] = game.state.style1;
+            const styles = try game.state().allocator.alloc(mach.ecs.EntityID, 1);
+            styles[0] = game.state().style1;
             try text_mod.set(new_entity, .text, text2);
             try text_mod.set(new_entity, .style, styles);
 
-            game.state.texts += 1;
+            game.state().texts += 1;
         }
     }
 
     // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = game.state.timer.lap();
+    const delta_time = game.state().timer.lap();
 
     // Rotate entities
     var archetypes_iter = engine.entities.query(.{ .all = &.{
@@ -211,8 +216,8 @@ fn tick(
             // transform = transform.mul(&Mat4x4.translate(location));
             var transform = Mat4x4.ident;
             transform = transform.mul(&Mat4x4.translate(location));
-            transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * game.state.time));
-            transform = transform.mul(&Mat4x4.scaleScalar(@min(math.cos(game.state.time / 2.0), 0.5)));
+            transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * game.state().time));
+            transform = transform.mul(&Mat4x4.scaleScalar(@min(math.cos(game.state().time / 2.0), 0.5)));
 
             // TODO: .set() API is substantially slower due to internals
             // try text_mod.set(id, .transform, transform);
@@ -225,7 +230,7 @@ fn tick(
     const speed = 200.0 / upscale;
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
-    try text_mod.set(game.state.player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(player_pos)));
+    try text_mod.set(game.state().player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(player_pos)));
     text_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
 
     // Perform pre-render work
@@ -238,11 +243,11 @@ fn tick(
     engine.send(.present, .{}); // Present the frame
 
     // Every second, update the window title with the FPS
-    if (game.state.fps_timer.read() >= 1.0) {
-        try core.printTitle("gfx.Text example [ FPS: {d} ] [ Texts: {d} ]", .{ game.state.frame_count, game.state.texts });
-        game.state.fps_timer.reset();
-        game.state.frame_count = 0;
+    if (game.state().fps_timer.read() >= 1.0) {
+        try core.printTitle("gfx.Text example [ FPS: {d} ] [ Texts: {d} ]", .{ game.state().frame_count, game.state().texts });
+        game.state().fps_timer.reset();
+        game.state().frame_count = 0;
     }
-    game.state.frame_count += 1;
-    game.state.time += delta_time;
+    game.state().frame_count += 1;
+    game.state().time += delta_time;
 }

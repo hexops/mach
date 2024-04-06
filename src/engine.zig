@@ -39,20 +39,23 @@ pub const Engine = struct {
     fn init(engine: *Mod) !void {
         core.allocator = allocator;
         try core.init(.{});
-        const state = &engine.state;
-        state.device = core.device;
-        state.queue = core.device.getQueue();
-        state.should_exit = false;
-        state.encoder = state.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
-            .label = "engine.state.encoder",
+        engine.init(.{
+            .device = core.device,
+            .queue = core.device.getQueue(),
+            .should_exit = false,
+            .pass = undefined,
+            .encoder = core.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
+                .label = "engine.state.encoder",
+            }),
         });
         engine.sendGlobal(.init, .{});
     }
 
     fn deinit(engine: *Mod) void {
+        const state = engine.state();
         // TODO: this triggers a device loss error, which we should handle correctly
-        // engine.state.device.release();
-        engine.state.queue.release();
+        // state.device.release();
+        state.queue.release();
         engine.sendGlobal(.deinit, .{});
         core.deinit();
     }
@@ -60,7 +63,8 @@ pub const Engine = struct {
     // Engine module's exit handler
     fn exit(engine: *Mod) void {
         engine.sendGlobal(.exit, .{});
-        engine.state.should_exit = true;
+        const state = engine.state();
+        state.should_exit = true;
     }
 
     fn beginPass(engine: *Mod, clear_color: gpu.Color) void {
@@ -78,21 +82,23 @@ pub const Engine = struct {
             .color_attachments = &.{color_attachment},
         });
 
-        engine.state.pass = engine.state.encoder.beginRenderPass(&pass_info);
+        const state = engine.state();
+        state.pass = state.encoder.beginRenderPass(&pass_info);
     }
 
     fn endPass(engine: *Mod) void {
+        const state = engine.state();
         // End this pass
-        engine.state.pass.end();
-        engine.state.pass.release();
+        state.pass.end();
+        state.pass.release();
 
-        var command = engine.state.encoder.finish(null);
+        var command = state.encoder.finish(null);
         defer command.release();
-        engine.state.encoder.release();
-        engine.state.queue.submit(&[_]*gpu.CommandBuffer{command});
+        state.encoder.release();
+        state.queue.submit(&[_]*gpu.CommandBuffer{command});
 
         // Prepare for next pass
-        engine.state.encoder = engine.state.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
+        state.encoder = state.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
             .label = "engine.state.encoder",
         });
     }
@@ -125,6 +131,6 @@ pub const App = struct {
         app.modules.mod.engine.sendGlobal(.tick, .{});
         try app.modules.dispatch(); // dispatch .tick
         try app.modules.dispatch(); // dispatch any events produced by .tick
-        return app.modules.mod.engine.state.should_exit;
+        return app.modules.mod.engine.state().should_exit;
     }
 };

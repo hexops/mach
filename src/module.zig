@@ -4,6 +4,7 @@ const testing = @import("testing.zig");
 
 const Entities = @import("ecs/entities.zig").Entities;
 const EntityID = @import("ecs/entities.zig").EntityID;
+const is_debug = @import("ecs/comptime.zig").is_debug;
 
 // TODO: make sendToModule the default name for sending events? and sendGlobal always secondary? Or vice-versa?
 
@@ -71,6 +72,16 @@ pub fn Modules(comptime modules: anytype) type {
             errdefer m.args_queue.deinit(allocator);
             errdefer m.events.deinit();
             try m.events.ensureTotalCapacity(1024);
+
+            // Default initialize m.mod
+            inline for (@typeInfo(@TypeOf(m.mod)).Struct.fields) |field| {
+                const Mod2 = @TypeOf(@field(m.mod, field.name));
+                @field(m.mod, field.name) = Mod2{
+                    .__is_initialized = false,
+                    .__state = undefined,
+                    .entities = &m.entities,
+                };
+            }
         }
 
         pub fn deinit(m: *@This(), allocator: std.mem.Allocator) void {
@@ -99,6 +110,7 @@ pub fn Modules(comptime modules: anytype) type {
             }
         }
 
+        // TODO: docs
         fn moduleToGlobalEvent(
             comptime M: type,
             comptime EventEnumM: anytype,
@@ -106,9 +118,7 @@ pub fn Modules(comptime modules: anytype) type {
             comptime event_name: EventEnumM(M),
         ) EventEnum(modules) {
             for (@typeInfo(EventEnum(modules)).Enum.fields) |gfield| {
-                if (std.mem.eql(u8, @tagName(event_name), gfield.name)) {
-                    return @enumFromInt(gfield.value);
-                }
+                if (std.mem.eql(u8, @tagName(event_name), gfield.name)) return @enumFromInt(gfield.value);
             }
             unreachable;
         }
@@ -118,12 +128,14 @@ pub fn Modules(comptime modules: anytype) type {
             m: *@This(),
             // TODO: is a variant of this function where event_name is not comptime known, but asserted to be a valid enum, useful?
             comptime module_name: ModuleName(modules),
-            comptime event_name: GlobalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).state)),
-            args: GlobalArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).state), event_name),
+            // TODO: cleanup comptime
+            comptime event_name: GlobalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
+            args: GlobalArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).__state), event_name),
         ) void {
             // TODO: comptime safety/debugging
             const event_name_g: GlobalEvent = comptime moduleToGlobalEvent(
-                @TypeOf(@field(m.mod, @tagName(module_name)).state),
+                // TODO: cleanup comptime
+                @TypeOf(@field(m.mod, @tagName(module_name)).__state),
                 GlobalEventEnumM,
                 GlobalEventEnum,
                 event_name,
@@ -136,12 +148,14 @@ pub fn Modules(comptime modules: anytype) type {
             m: *@This(),
             // TODO: is a variant of this function where module_name/event_name is not comptime known, but asserted to be a valid enum, useful?
             comptime module_name: ModuleName(modules),
-            comptime event_name: LocalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).state)),
-            args: LocalArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).state), event_name),
+            // TODO: cleanup comptime
+            comptime event_name: LocalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
+            args: LocalArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).__state), event_name),
         ) void {
             // TODO: comptime safety/debugging
             const event_name_g: LocalEvent = comptime moduleToGlobalEvent(
-                @TypeOf(@field(m.mod, @tagName(module_name)).state),
+                // TODO: cleanup comptime
+                @TypeOf(@field(m.mod, @tagName(module_name)).__state),
                 LocalEventEnumM,
                 LocalEventEnum,
                 event_name,
@@ -197,10 +211,6 @@ pub fn Modules(comptime modules: anytype) type {
                 inline for (@typeInfo(ModsByName(modules)).Struct.fields) |injectable_field| {
                     if (*injectable_field.type == field.type) {
                         @field(injectable, field.name) = &@field(m.mod, injectable_field.name);
-
-                        // TODO: better module initialization location
-                        @field(injectable, field.name).entities = &m.entities;
-                        @field(injectable, field.name).allocator = m.entities.allocator;
                         continue :outer;
                     }
                 }
@@ -344,26 +354,52 @@ pub fn ModsByName(comptime modules: anytype) type {
 // Mod() -> Modules()
 //
 pub fn ModSet(comptime modules: anytype) type {
-    const NSComponents = ComponentTypesByName(modules);
     return struct {
         pub fn Mod(comptime M: anytype) type {
             const module_tag = M.name;
             const components = ComponentTypesM(M){};
             return struct {
-                state: M,
-                entities: *Entities(NSComponents{}),
-                // TODO: eliminate this global allocator and/or rethink allocation strategies for modules
-                allocator: std.mem.Allocator,
+                entities: *Entities(ComponentTypesByName(modules){}),
+
+                /// Private/internal fields
+                __is_initialized: bool,
+                __state: M,
 
                 pub const IsInjectedArgument = void;
 
+                /// Initializes the module's state
+                pub inline fn init(m: *@This(), s: M) void {
+                    m.__state = s;
+                    m.__is_initialized = true;
+                }
+
+                /// Returns a mutable pointer to the module's state (literally the struct type of the module.)
+                ///
+                /// A panic will occur if m.init(M{}) was not called previously.
+                pub inline fn state(m: *@This()) *M {
+                    if (is_debug) if (!m.__is_initialized) @panic("mach: module ." ++ @tagName(M.name) ++ " state is not initialized, ensure foo_mod.init(.{}) is called!");
+                    return &m.__state;
+                }
+
+                /// Returns a read-only version of the module's state. If an event handler is
+                /// read-only (i.e. only ever reads state/components/entities), then its events can
+                /// be skipped during e.g. record-and-replay of events from disk.
+                ///
+                /// Only use this if the module state being serialized and deserialized after the
+                /// event handler runs would accurately reproduce the state of the event handler
+                /// being run.
+                pub inline fn stateReadOnly(m: *@This()) *const M {
+                    if (is_debug) if (!m.__is_initialized) @panic("mach: module ." ++ @tagName(M.name) ++ " state is not initialized, ensure mod.init(.{}) is called!");
+                    return &m.__state;
+                }
+
                 /// Returns a new entity.
-                pub fn newEntity(m: *@This()) !EntityID {
+                pub inline fn newEntity(m: *@This()) !EntityID {
                     return m.entities.new();
                 }
 
                 /// Removes an entity.
-                pub fn removeEntity(m: *@This(), entity: EntityID) !void {
+                pub inline fn removeEntity(m: *@This(), entity: EntityID) !void {
                     try m.entities.removeEntity(entity);
                 }
 

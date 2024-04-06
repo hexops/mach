@@ -83,17 +83,11 @@ test "example" {
     try world.init(allocator);
     defer world.deinit(allocator);
 
-    // TODO: better module initialization location
-    world.mod.physics.entities = &world.entities;
-    world.mod.physics.allocator = world.entities.allocator;
-    world.mod.renderer.entities = &world.entities;
-    world.mod.renderer.allocator = world.entities.allocator;
-
     // Initialize module state.
     var physics = &world.mod.physics;
     var renderer = &world.mod.renderer;
-    physics.state = .{ .pointer = 123 };
-    _ = physics.state.pointer; // == 123
+    physics.init(.{ .pointer = 123 });
+    _ = physics.state().pointer; // == 123
 
     const player1 = try physics.newEntity();
     const player2 = try physics.newEntity();

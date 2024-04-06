@@ -42,7 +42,7 @@ fn init(
     engine: *mach.Engine.Mod,
     renderer: *Mod,
 ) !void {
-    const device = engine.state.device;
+    const device = engine.state().device;
     const shader_module = device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
 
     // Fragment state
@@ -94,29 +94,29 @@ fn init(
         },
     };
 
-    renderer.state = .{
+    renderer.init(.{
         .pipeline = device.createRenderPipeline(&pipeline_descriptor),
         .queue = device.getQueue(),
         .bind_groups = bind_groups,
         .uniform_buffer = uniform_buffer,
-    };
+    });
     shader_module.release();
 }
 
 fn deinit(
     renderer: *Mod,
 ) !void {
-    renderer.state.pipeline.release();
-    renderer.state.queue.release();
-    for (renderer.state.bind_groups) |bind_group| bind_group.release();
-    renderer.state.uniform_buffer.release();
+    renderer.state().pipeline.release();
+    renderer.state().queue.release();
+    for (renderer.state().bind_groups) |bind_group| bind_group.release();
+    renderer.state().uniform_buffer.release();
 }
 
 fn tick(
     engine: *mach.Engine.Mod,
     renderer: *Mod,
 ) !void {
-    const device = engine.state.device;
+    const device = engine.state().device;
 
     // Begin our render pass
     const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
@@ -148,14 +148,14 @@ fn tick(
                 .offset = location.v,
                 .scale = scale,
             };
-            encoder.writeBuffer(renderer.state.uniform_buffer, uniform_offset * num_entities, &[_]UniformBufferObject{ubo});
+            encoder.writeBuffer(renderer.state().uniform_buffer, uniform_offset * num_entities, &[_]UniformBufferObject{ubo});
             num_entities += 1;
         }
     }
 
     const pass = encoder.beginRenderPass(&render_pass_info);
-    for (renderer.state.bind_groups[0..num_entities]) |bind_group| {
-        pass.setPipeline(renderer.state.pipeline);
+    for (renderer.state().bind_groups[0..num_entities]) |bind_group| {
+        pass.setPipeline(renderer.state().pipeline);
         pass.setBindGroup(0, bind_group, &.{0});
         pass.draw(3, 1, 0, 0);
     }
@@ -165,7 +165,7 @@ fn tick(
     var command = encoder.finish(null);
     encoder.release();
 
-    renderer.state.queue.submit(&[_]*gpu.CommandBuffer{command});
+    renderer.state().queue.submit(&[_]*gpu.CommandBuffer{command});
     command.release();
     core.swap_chain.present();
     back_buffer_view.release();

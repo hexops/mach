@@ -12,8 +12,11 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
 /// Internal state
-pipelines: std.AutoArrayHashMapUnmanaged(u32, Pipeline),
+pipelines: std.AutoArrayHashMapUnmanaged(u32, Pipeline) = .{},
+allocator: std.mem.Allocator,
 
 pub const name = .mach_gfx_sprite;
 pub const Mod = mach.Mod(@This());
@@ -137,18 +140,15 @@ pub const PipelineOptions = struct {
     pipeline_layout: ?*gpu.PipelineLayout = null,
 };
 
-fn deinit(sprite_mod: *Mod) !void {
-    for (sprite_mod.state.pipelines.entries.items(.value)) |*pipeline| pipeline.deinit();
-    sprite_mod.state.pipelines.deinit(sprite_mod.allocator);
+fn init(sprite_mod: *Mod) void {
+    sprite_mod.init(.{
+        .allocator = gpa.allocator(),
+    });
 }
 
-fn init(
-    sprite_mod: *Mod,
-) !void {
-    sprite_mod.state = .{
-        // TODO: struct default value initializers don't work
-        .pipelines = .{},
-    };
+fn deinit(sprite_mod: *Mod) !void {
+    for (sprite_mod.state().pipelines.entries.items(.value)) |*pipeline| pipeline.deinit();
+    sprite_mod.state().pipelines.deinit(sprite_mod.state().allocator);
 }
 
 fn initPipeline(
@@ -156,9 +156,9 @@ fn initPipeline(
     sprite_mod: *Mod,
     opt: PipelineOptions,
 ) !void {
-    const device = engine.state.device;
+    const device = engine.state().device;
 
-    const pipeline = try sprite_mod.state.pipelines.getOrPut(engine.allocator, opt.pipeline);
+    const pipeline = try sprite_mod.state().pipelines.getOrPut(sprite_mod.state().allocator, opt.pipeline);
     if (pipeline.found_existing) {
         pipeline.value_ptr.*.deinit();
     }
@@ -296,8 +296,8 @@ fn updated(
     sprite_mod: *Mod,
     pipeline_id: u32,
 ) !void {
-    const pipeline = sprite_mod.state.pipelines.getPtr(pipeline_id).?;
-    const device = engine.state.device;
+    const pipeline = sprite_mod.state().pipelines.getPtr(pipeline_id).?;
+    const device = engine.state().device;
 
     // TODO: make sure these entities only belong to the given pipeline
     // we need a better tagging mechanism
@@ -337,7 +337,7 @@ fn updated(
     var command = encoder.finish(null);
     defer command.release();
 
-    engine.state.queue.submit(&[_]*gpu.CommandBuffer{command});
+    engine.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
 fn preRender(
@@ -345,7 +345,7 @@ fn preRender(
     sprite_mod: *Mod,
     pipeline_id: u32,
 ) !void {
-    const pipeline = sprite_mod.state.pipelines.get(pipeline_id).?;
+    const pipeline = sprite_mod.state().pipelines.get(pipeline_id).?;
 
     // Update uniform buffer
     const proj = Mat4x4.projection2D(.{
@@ -365,7 +365,7 @@ fn preRender(
         ),
     };
 
-    engine.state.encoder.writeBuffer(pipeline.uniforms, 0, &[_]Uniforms{uniforms});
+    engine.state().encoder.writeBuffer(pipeline.uniforms, 0, &[_]Uniforms{uniforms});
 }
 
 fn render(
@@ -373,10 +373,10 @@ fn render(
     sprite_mod: *Mod,
     pipeline_id: u32,
 ) !void {
-    const pipeline = sprite_mod.state.pipelines.get(pipeline_id).?;
+    const pipeline = sprite_mod.state().pipelines.get(pipeline_id).?;
 
     // Draw the sprite batch
-    const pass = engine.state.pass;
+    const pass = engine.state().pass;
     const total_vertices = pipeline.num_sprites * 6;
     pass.setPipeline(pipeline.render);
     // TODO: remove dynamic offsets?
