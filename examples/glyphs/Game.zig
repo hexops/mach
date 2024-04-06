@@ -45,13 +45,16 @@ pub const global_events = .{
     .tick = .{ .handler = tick },
 };
 
+pub const local_events = .{
+    .after_sprite_init = .{ .handler = afterSpriteInit },
+};
+
 pub const Pipeline = enum(u32) {
     default,
     text,
 };
 
 fn init(
-    engine: *mach.Engine.Mod,
     sprite_mod: *Sprite.Mod,
     text_mod: *Text.Mod,
     game: *Mod,
@@ -66,11 +69,21 @@ fn init(
         .texture = texture,
     }});
 
+    // Run the rest of our init code after sprite_mod's .init_pipeline
+    // TODO(important): relying on this event ordering is not good
+    game.send(.after_sprite_init, .{});
+}
+
+fn afterSpriteInit(
+    engine: *mach.Engine.Mod,
+    sprite_mod: *Sprite.Mod,
+    text_mod: *Text.Mod,
+    game: *Mod,
+) !void {
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `Sprite` module could have a 3D `.location` component with a different
     // type than the `.physics2d` module's `.location` component if you desire.
 
-    engine.dispatchNoError(); // TODO: no dispatch in user code
     const r = text_mod.state().regions.get('?').?;
     const player = try engine.newEntity();
     try sprite_mod.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
@@ -201,7 +214,7 @@ fn tick(
     engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
     sprite_mod.send(.render, .{@intFromEnum(Pipeline.text)});
     engine.send(.end_pass, .{});
-    engine.send(.present, .{}); // Present the frame
+    engine.send(.frame_done, .{}); // Present the frame
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {

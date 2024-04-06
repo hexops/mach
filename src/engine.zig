@@ -33,7 +33,8 @@ pub const Engine = struct {
         .exit = .{ .handler = exit },
         .begin_pass = .{ .handler = beginPass },
         .end_pass = .{ .handler = endPass },
-        .present = .{ .handler = present },
+        .frame_done = .{ .handler = frameDone },
+        .tick_done = .{ .handler = fn () void },
     };
 
     fn init(engine: *Mod) !void {
@@ -103,8 +104,9 @@ pub const Engine = struct {
         });
     }
 
-    fn present() void {
+    fn frameDone(engine: *Mod) void {
         core.swap_chain.present();
+        engine.send(.tick_done, .{});
     }
 };
 
@@ -115,22 +117,26 @@ pub const App = struct {
         app.* = .{ .modules = undefined };
         try app.modules.init(allocator);
         app.modules.mod.engine.send(.init, .{});
-        try app.modules.dispatch();
+        try app.modules.dispatch(.{});
     }
 
-    pub fn deinit(app: *@This()) !void {
+    pub fn deinit(app: *@This()) void {
         app.modules.mod.engine.send(.deinit, .{});
-        // TODO: dispatch until no remaining events
-        try app.modules.dispatch(); // dispatch .deinit
+        // TODO: could it be worth enforcing that deinit dispatch cannot return errors at event handler level?
+        app.modules.dispatch(.{}) catch |err| std.debug.panic("mach: error during dispatching final .deinit event: {s}", .{@errorName(err)});
         app.modules.deinit(gpa.allocator());
         _ = gpa.deinit();
     }
 
     pub fn update(app: *@This()) !bool {
-        // TODO: better dispatch implementation
+        // Send .tick to anyone interested
         app.modules.mod.engine.sendGlobal(.tick, .{});
-        try app.modules.dispatch(); // dispatch .tick
-        try app.modules.dispatch(); // dispatch any events produced by .tick
+
+        // Wait until the .engine module sends a .tick_done event
+        try app.modules.dispatch(.{ .until = .{
+            .module_name = app.modules.moduleNameToID(.engine),
+            .local_event = app.modules.localEventToID(.engine, .tick_done),
+        } });
 
         return app.modules.mod.engine.state().should_exit;
     }

@@ -255,8 +255,38 @@ pub fn Modules(comptime modules: anytype) type {
             });
         }
 
+        // TODO: docs
+        pub fn moduleNameToID(m: *@This(), name: ModuleName(modules)) ModuleID {
+            _ = m;
+            return @intFromEnum(name);
+        }
+
+        // TODO: docs
+        pub fn localEventToID(
+            m: *@This(),
+            comptime module_name: ModuleName(modules),
+            // TODO(important): cleanup comptime
+            local_event: LocalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
+        ) EventID {
+            return @intFromEnum(local_event);
+        }
+
+        pub const DispatchOptions = struct {
+            /// If specified, instructs that dispatching should occur until the specified local
+            /// event has been dispatched.
+            ///
+            /// If null, dispatching occurs until the event queue is completely empty.
+            until: ?struct {
+                module_name: ModuleID,
+                local_event: EventID,
+            } = null,
+        };
+
         /// Dispatches pending events, invoking their event handlers.
-        pub fn dispatch(m: *@This()) !void {
+        pub fn dispatch(
+            m: *@This(),
+            options: DispatchOptions,
+        ) !void {
             const Injectable = comptime blk: {
                 var types: []const type = &[0]type{};
                 for (@typeInfo(ModsByName(modules)).Struct.fields) |field| {
@@ -275,32 +305,46 @@ pub fn Modules(comptime modules: anytype) type {
                 }
                 @compileError("failed to initialize Injectable field (this is a bug): " ++ field.name ++ " " ++ @typeName(field.type));
             }
-            return m.dispatchInternal(injectable);
+            return m.dispatchInternal(options, injectable);
         }
 
-        pub fn dispatchInternal(m: *@This(), injectable: anytype) !void {
+        pub fn dispatchInternal(
+            m: *@This(),
+            options: DispatchOptions,
+            injectable: anytype,
+        ) !void {
             // TODO: optimize to reduce send contention
             // TODO: parallel / multi-threaded dispatch
             // TODO: PGO
 
-            // TODO(important): this is wrong
-            defer {
-                m.events_mu.lock();
-                m.args_queue.clearRetainingCapacity();
-                m.events_mu.unlock();
-            }
-
+            var buf: [8 * 1024 * 1024]u8 = undefined;
             while (true) {
+                // Dequeue the next event
                 m.events_mu.lock();
-                const ev = m.events.readItem() orelse {
+                var ev = m.events.readItem() orelse {
                     m.events_mu.unlock();
-                    break;
+                    return;
                 };
+
+                // Pop the arguments off the stack, so we can release args_slice space.
+                // Otherwise when we release m.events_mu someone may add more events' arguments
+                // to the buffer which would make it tricky to find a good point-in-time to release
+                // argument buffer space.
+                @memcpy(buf[0..ev.args_slice.len], ev.args_slice);
+                ev.args_slice = buf[0..ev.args_slice.len];
+                m.args_queue.shrinkRetainingCapacity(m.args_queue.items.len - ev.args_slice.len);
                 m.events_mu.unlock();
 
                 if (ev.module_name) |module_name| {
+                    // Dispatch the local event
                     try @This().callLocal(@enumFromInt(module_name), @enumFromInt(ev.event_name), ev.args_slice, injectable);
+
+                    // If we only wanted to dispatch until this event, then return.
+                    if (options.until) |until| {
+                        if (until.module_name == module_name and until.local_event == ev.event_name) return;
+                    }
                 } else {
+                    // Dispatch the global event
                     try @This().callGlobal(@enumFromInt(ev.event_name), ev.args_slice, injectable);
                 }
             }
@@ -508,15 +552,6 @@ pub fn ModSet(comptime modules: anytype) type {
                     const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
                     const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
                     mods.sendGlobal(module_tag, event_name, args);
-                }
-
-                // TODO: important! eliminate this
-                pub fn dispatchNoError(m: *@This()) void {
-                    const ModulesT = Modules(modules);
-                    const MByName = ModsByName(modules);
-                    const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
-                    const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
-                    mods.dispatch() catch |err| @panic(@errorName(err));
                 }
             };
         }
@@ -1425,11 +1460,11 @@ test "dispatch" {
     // injected arguments.
     modules.sendGlobal(.engine_renderer, .tick, .{});
     try testing.expect(usize, 0).eql(global.ticks);
-    try modules.dispatchInternal(.{&foo});
+    try modules.dispatchInternal(.{}, .{&foo});
     try testing.expect(usize, 2).eql(global.ticks);
     // TODO: make sendDynamic take an args type to avoid footguns with comptime values, etc.
     modules.sendGlobalDynamic(@intFromEnum(@as(GE, .tick)), .{});
-    try modules.dispatchInternal(.{&foo});
+    try modules.dispatchInternal(.{}, .{&foo});
     try testing.expect(usize, 4).eql(global.ticks);
 
     // Global events which are not handled by anyone yet can be written as `pub const fooBar = fn() void;`
@@ -1439,7 +1474,7 @@ test "dispatch" {
 
     // Local events
     modules.send(.engine_renderer, .update, .{});
-    try modules.dispatchInternal(.{&foo});
+    try modules.dispatchInternal(.{}, .{&foo});
     try testing.expect(usize, 1).eql(global.renderer_updates);
     modules.send(.engine_physics, .update, .{});
     modules.sendDynamic(
@@ -1447,14 +1482,14 @@ test "dispatch" {
         @intFromEnum(@as(LE, .calc)),
         .{},
     );
-    try modules.dispatchInternal(.{&foo});
+    try modules.dispatchInternal(.{}, .{&foo});
     try testing.expect(usize, 1).eql(global.physics_updates);
     try testing.expect(usize, 1).eql(global.physics_calc);
 
     // Local events
     modules.send(.engine_renderer, .basic_args, .{ @as(u32, 1), @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
     modules.send(.engine_renderer, .injected_args, .{ @as(u32, 1), @as(u32, 2) });
-    try modules.dispatchInternal(.{&foo});
+    try modules.dispatchInternal(.{}, .{&foo});
     try testing.expect(usize, 3).eql(global.basic_args_sum);
     try testing.expect(usize, 3).eql(foo.injected_args_sum);
 }
