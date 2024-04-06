@@ -114,12 +114,12 @@ pub const App = struct {
     pub fn init(app: *@This()) !void {
         app.* = .{ .modules = undefined };
         try app.modules.init(allocator);
-        app.modules.sendToModule(.engine, .init, .{});
+        app.modules.send(.engine, .init, .{});
         try app.modules.dispatch();
     }
 
     pub fn deinit(app: *@This()) void {
-        app.modules.sendToModule(.engine, .deinit, .{});
+        app.modules.send(.engine, .deinit, .{});
         // TODO: improve error handling
         app.modules.dispatch() catch |err| @panic(@errorName(err)); // dispatch .deinit
         app.modules.deinit(gpa.allocator());
