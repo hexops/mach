@@ -1,3 +1,4 @@
+// TODO(important): review all code in this file in-depth
 const mach = @import("mach");
 const gpu = mach.gpu;
 const ecs = mach.ecs;

@@ -1,3 +1,5 @@
+// TODO(important): review all code in this file in-depth
+
 // Experimental ECS app example. Not yet ready for actual use.
 const mach = @import("mach");
 
