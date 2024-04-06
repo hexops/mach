@@ -122,5 +122,5 @@ test "example" {
     //-------------------------------------------------------------------------
     // Send events to modules
     world.mod.renderer.sendGlobal(.tick, .{});
-    try world.dispatch();
+    try world.dispatch(.{});
 }

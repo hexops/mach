@@ -190,7 +190,7 @@ fn tick(
     engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
     sprite_mod.send(.render, .{@intFromEnum(Pipeline.default)});
     engine.send(.end_pass, .{});
-    engine.send(.present, .{}); // Present the frame
+    engine.send(.frame_done, .{}); // Present the frame
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {
