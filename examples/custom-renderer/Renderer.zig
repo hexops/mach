@@ -33,9 +33,8 @@ pub const global_events = .{
     .tick = .{ .handler = tick },
 };
 
-// TODO(important): this shouldn't be a packed struct, it should be extern.
-const UniformBufferObject = packed struct {
-    offset: Vec3.Vector,
+const UniformBufferObject = extern struct {
+    offset: Vec3,
     scale: f32,
 };
 
@@ -146,7 +145,7 @@ fn tick(
             _ = id;
 
             const ubo = UniformBufferObject{
-                .offset = position.v,
+                .offset = position,
                 .scale = scale,
             };
             encoder.writeBuffer(renderer.state().uniform_buffer, uniform_offset * num_entities, &[_]UniformBufferObject{ubo});
