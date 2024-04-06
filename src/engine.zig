@@ -114,14 +114,14 @@ pub const App = struct {
     pub fn init(app: *@This()) !void {
         app.* = .{ .modules = undefined };
         try app.modules.init(allocator);
-        app.modules.send(.engine, .init, .{});
+        app.modules.mod.engine.send(.init, .{});
         try app.modules.dispatch();
     }
 
-    pub fn deinit(app: *@This()) void {
-        app.modules.send(.engine, .deinit, .{});
-        // TODO: improve error handling
-        app.modules.dispatch() catch |err| @panic(@errorName(err)); // dispatch .deinit
+    pub fn deinit(app: *@This()) !void {
+        app.modules.mod.engine.send(.deinit, .{});
+        // TODO: dispatch until no remaining events
+        try app.modules.dispatch(); // dispatch .deinit
         app.modules.deinit(gpa.allocator());
         _ = gpa.deinit();
     }
@@ -131,6 +131,7 @@ pub const App = struct {
         app.modules.mod.engine.sendGlobal(.tick, .{});
         try app.modules.dispatch(); // dispatch .tick
         try app.modules.dispatch(); // dispatch any events produced by .tick
+
         return app.modules.mod.engine.state().should_exit;
     }
 };
