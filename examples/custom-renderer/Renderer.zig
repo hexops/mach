@@ -1,3 +1,4 @@
+// TODO(important): docs
 const std = @import("std");
 
 const mach = @import("mach");
@@ -21,7 +22,7 @@ pub const name = .renderer;
 pub const Mod = mach.Mod(@This());
 
 pub const components = .{
-    .location = .{ .type = Vec3 },
+    .position = .{ .type = Vec3 },
     .rotation = .{ .type = Vec3 },
     .scale = .{ .type = f32 },
 };
@@ -32,7 +33,7 @@ pub const global_events = .{
     .tick = .{ .handler = tick },
 };
 
-// TODO: this shouldn't be a packed struct, it should be extern.
+// TODO(important): this shouldn't be a packed struct, it should be extern.
 const UniformBufferObject = packed struct {
     offset: Vec3.Vector,
     scale: f32,
@@ -134,18 +135,18 @@ fn tick(
 
     // Update uniform buffer
     var archetypes_iter = engine.entities.query(.{ .all = &.{
-        .{ .renderer = &.{ .location, .scale } },
+        .{ .renderer = &.{ .position, .scale } },
     } });
     var num_entities: usize = 0;
     while (archetypes_iter.next()) |archetype| {
         const ids = archetype.slice(.entity, .id);
-        const locations = archetype.slice(.renderer, .location);
+        const positions = archetype.slice(.renderer, .position);
         const scales = archetype.slice(.renderer, .scale);
-        for (ids, locations, scales) |id, location, scale| {
+        for (ids, positions, scales) |id, position, scale| {
             _ = id;
 
             const ubo = UniformBufferObject{
-                .offset = location.v,
+                .offset = position.v,
                 .scale = scale,
             };
             encoder.writeBuffer(renderer.state().uniform_buffer, uniform_offset * num_entities, &[_]UniformBufferObject{ubo});

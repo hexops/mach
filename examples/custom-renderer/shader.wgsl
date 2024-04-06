@@ -1,3 +1,4 @@
+// TODO(important): docs
 struct Uniform {
     pos: vec3<f32>,
 	scale: f32,
