@@ -19,28 +19,30 @@ pub const local_events = .{
 
 const RegionMap = std.AutoArrayHashMapUnmanaged(u21, mach.gfx.Atlas.Region);
 
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
 texture_atlas: mach.gfx.Atlas,
 texture: *gpu.Texture,
 ft: ft.Library,
 face: ft.Face,
 regions: RegionMap = .{},
+allocator: std.mem.Allocator,
 
-fn deinit(
-    engine: *mach.Engine.Mod,
-    text_mod: *Mod,
-) !void {
-    text_mod.state.texture_atlas.deinit(engine.allocator);
-    text_mod.state.texture.release();
-    text_mod.state.face.deinit();
-    text_mod.state.ft.deinit();
-    text_mod.state.regions.deinit(engine.allocator);
+fn deinit(text_mod: *Mod) !void {
+    const state = text_mod.state();
+    state.texture_atlas.deinit(text_mod.state().allocator);
+    state.texture.release();
+    state.face.deinit();
+    state.ft.deinit();
+    state.regions.deinit(state.allocator);
 }
 
 fn init(
     engine: *mach.Engine.Mod,
     text_mod: *Mod,
 ) !void {
-    const device = engine.state.device;
+    const device = engine.state().device;
+    const allocator = gpa.allocator();
 
     // rgba32_pixels
     const img_size = gpu.Extent3D{ .width = 1024, .height = 1024 };
@@ -56,19 +58,22 @@ fn init(
         },
     });
 
-    var s = &text_mod.state;
-    s.texture = texture;
-    s.texture_atlas = try mach.gfx.Atlas.init(
-        engine.allocator,
+    const texture_atlas = try mach.gfx.Atlas.init(
+        allocator,
         img_size.width,
         .rgba,
     );
 
-    // TODO: state fields' default values do not work
-    s.regions = .{};
+    const ft_lib = try ft.Library.init();
+    const face = try ft_lib.createFaceMemory(assets.roboto_medium_ttf, 0);
 
-    s.ft = try ft.Library.init();
-    s.face = try s.ft.createFaceMemory(assets.roboto_medium_ttf, 0);
+    text_mod.init(.{
+        .texture_atlas = texture_atlas,
+        .texture = texture,
+        .ft = ft_lib,
+        .face = face,
+        .allocator = allocator,
+    });
 
     text_mod.send(.prepare, .{&[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' }});
 }
@@ -78,9 +83,9 @@ fn prepare(
     text_mod: *Mod,
     codepoints: []const u21,
 ) !void {
-    const device = engine.state.device;
+    const device = engine.state().device;
     const queue = device.getQueue();
-    var s = &text_mod.state;
+    var s = text_mod.state();
 
     for (codepoints) |codepoint| {
         const font_size = 48 * 1;
@@ -95,8 +100,8 @@ fn prepare(
 
         // Add 1 pixel padding to texture to avoid bleeding over other textures
         const margin = 1;
-        const glyph_data = try engine.allocator.alloc([4]u8, (glyph_width + (margin * 2)) * (glyph_height + (margin * 2)));
-        defer engine.allocator.free(glyph_data);
+        const glyph_data = try s.allocator.alloc([4]u8, (glyph_width + (margin * 2)) * (glyph_height + (margin * 2)));
+        defer s.allocator.free(glyph_data);
         const glyph_buffer = glyph_bitmap.buffer().?;
         for (glyph_data, 0..) |*data, i| {
             const x = i % (glyph_width + (margin * 2));
@@ -108,7 +113,7 @@ fn prepare(
                 data.* = [4]u8{ 0, 0, 0, alpha };
             }
         }
-        var glyph_atlas_region = try s.texture_atlas.reserve(engine.allocator, glyph_width + (margin * 2), glyph_height + (margin * 2));
+        var glyph_atlas_region = try s.texture_atlas.reserve(s.allocator, glyph_width + (margin * 2), glyph_height + (margin * 2));
         s.texture_atlas.set(glyph_atlas_region, @as([*]const u8, @ptrCast(glyph_data.ptr))[0 .. glyph_data.len * 4]);
 
         glyph_atlas_region.x += margin;
@@ -116,7 +121,7 @@ fn prepare(
         glyph_atlas_region.width -= margin * 2;
         glyph_atlas_region.height -= margin * 2;
 
-        try s.regions.put(engine.allocator, codepoint, glyph_atlas_region);
+        try s.regions.put(s.allocator, codepoint, glyph_atlas_region);
         _ = metrics;
     }
 

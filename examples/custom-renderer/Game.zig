@@ -55,11 +55,11 @@ fn init(
     try renderer.set(player, .location, vec3(0, 0, 0));
     try renderer.set(player, .scale, 1.0);
 
-    game.state = .{
+    game.init(.{
         .timer = try mach.Timer.start(),
         .spawn_timer = try mach.Timer.start(),
         .player = player,
-    };
+    });
 }
 
 // TODO(engine): remove need for returning an error here
@@ -70,8 +70,8 @@ fn tick(
 ) !void {
     // TODO(engine): event polling should occur in mach.Engine module and get fired as ECS events.
     var iter = core.pollEvents();
-    var direction = game.state.direction;
-    var spawning = game.state.spawning;
+    var direction = game.state().direction;
+    var spawning = game.state().spawning;
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| {
@@ -98,14 +98,14 @@ fn tick(
             else => {},
         }
     }
-    game.state.direction = direction;
-    game.state.spawning = spawning;
+    game.state().direction = direction;
+    game.state().spawning = spawning;
 
-    var player_pos = renderer.get(game.state.player, .location).?;
-    if (spawning and game.state.spawn_timer.read() > 1.0 / 60.0) {
+    var player_pos = renderer.get(game.state().player, .location).?;
+    if (spawning and game.state().spawn_timer.read() > 1.0 / 60.0) {
         for (0..10) |_| {
             // Spawn a new follower entity
-            _ = game.state.spawn_timer.lap();
+            _ = game.state().spawn_timer.lap();
             const new_entity = try engine.newEntity();
             try game.set(new_entity, .follower, {});
             try renderer.set(new_entity, .location, player_pos);
@@ -114,7 +114,7 @@ fn tick(
     }
 
     // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = game.state.timer.lap();
+    const delta_time = game.state().timer.lap();
 
     // Move following entities closer to us.
     var archetypes_iter = engine.entities.query(.{ .all = &.{
@@ -165,5 +165,5 @@ fn tick(
     const speed = 1.0;
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
-    try renderer.set(game.state.player, .location, player_pos);
+    try renderer.set(game.state().player, .location, player_pos);
 }

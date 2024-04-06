@@ -60,7 +60,7 @@ fn init(
     core.setTitle("gfx.Sprite example");
 
     // Tell sprite_mod to use the texture
-    const texture = text_mod.state.texture;
+    const texture = text_mod.state().texture;
     sprite_mod.send(.init_pipeline, .{Sprite.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.text),
         .texture = texture,
@@ -71,7 +71,7 @@ fn init(
     // type than the `.physics2d` module's `.location` component if you desire.
 
     engine.dispatchNoError(); // TODO: no dispatch in user code
-    const r = text_mod.state.regions.get('?').?;
+    const r = text_mod.state().regions.get('?').?;
     const player = try engine.newEntity();
     try sprite_mod.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
     try sprite_mod.set(player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
@@ -79,7 +79,7 @@ fn init(
     try sprite_mod.set(player, .pipeline, @intFromEnum(Pipeline.text));
     sprite_mod.send(.updated, .{@intFromEnum(Pipeline.text)});
 
-    game.state = .{
+    game.init(.{
         .timer = try mach.Timer.start(),
         .spawn_timer = try mach.Timer.start(),
         .player = player,
@@ -88,7 +88,7 @@ fn init(
         .sprites = 0,
         .rand = std.rand.DefaultPrng.init(1337),
         .time = 0,
-    };
+    });
 }
 
 fn tick(
@@ -99,8 +99,8 @@ fn tick(
 ) !void {
     // TODO(engine): event polling should occur in mach.Engine module and get fired as ECS events.
     var iter = core.pollEvents();
-    var direction = game.state.direction;
-    var spawning = game.state.spawning;
+    var direction = game.state().direction;
+    var spawning = game.state().spawning;
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| {
@@ -127,33 +127,33 @@ fn tick(
             else => {},
         }
     }
-    game.state.direction = direction;
-    game.state.spawning = spawning;
+    game.state().direction = direction;
+    game.state().spawning = spawning;
 
-    var player_transform = sprite_mod.get(game.state.player, .transform).?;
+    var player_transform = sprite_mod.get(game.state().player, .transform).?;
     var player_pos = player_transform.translation();
-    if (!spawning and game.state.spawn_timer.read() > 1.0 / 60.0) {
+    if (!spawning and game.state().spawn_timer.read() > 1.0 / 60.0) {
         // Spawn new entities
-        _ = game.state.spawn_timer.lap();
+        _ = game.state().spawn_timer.lap();
         for (0..50) |_| {
             var new_pos = player_pos;
-            new_pos.v[0] += game.state.rand.random().floatNorm(f32) * 25;
-            new_pos.v[1] += game.state.rand.random().floatNorm(f32) * 25;
+            new_pos.v[0] += game.state().rand.random().floatNorm(f32) * 25;
+            new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 25;
 
-            const rand_index = game.state.rand.random().intRangeAtMost(usize, 0, text_mod.state.regions.count() - 1);
-            const r = text_mod.state.regions.entries.get(rand_index).value;
+            const rand_index = game.state().rand.random().intRangeAtMost(usize, 0, text_mod.state().regions.count() - 1);
+            const r = text_mod.state().regions.entries.get(rand_index).value;
 
             const new_entity = try engine.newEntity();
             try sprite_mod.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scaleScalar(0.3)));
             try sprite_mod.set(new_entity, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
             try sprite_mod.set(new_entity, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
             try sprite_mod.set(new_entity, .pipeline, @intFromEnum(Pipeline.text));
-            game.state.sprites += 1;
+            game.state().sprites += 1;
         }
     }
 
     // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = game.state.timer.lap();
+    const delta_time = game.state().timer.lap();
 
     // Animate entities
     var archetypes_iter = engine.entities.query(.{ .all = &.{
@@ -166,15 +166,15 @@ fn tick(
             var location = old_transform.translation();
             if (location.x() < -@as(f32, @floatFromInt(core.size().width)) / 1.5 or location.x() > @as(f32, @floatFromInt(core.size().width)) / 1.5 or location.y() < -@as(f32, @floatFromInt(core.size().height)) / 1.5 or location.y() > @as(f32, @floatFromInt(core.size().height)) / 1.5) {
                 try engine.entities.remove(id);
-                game.state.sprites -= 1;
+                game.state().sprites -= 1;
                 continue;
             }
 
             var transform = Mat4x4.ident;
             transform = transform.mul(&Mat4x4.scale(Vec3.splat(1.0 + (0.2 * delta_time))));
             transform = transform.mul(&Mat4x4.translate(location));
-            transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * game.state.time));
-            transform = transform.mul(&Mat4x4.scale(Vec3.splat(@max(math.cos(game.state.time / 2.0), 0.2))));
+            transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * game.state().time));
+            transform = transform.mul(&Mat4x4.scale(Vec3.splat(@max(math.cos(game.state().time / 2.0), 0.2))));
 
             // TODO: .set() API is substantially slower due to internals
             // try sprite_mod.set(id, .transform, transform);
@@ -190,7 +190,7 @@ fn tick(
     player_transform = Mat4x4.translate(player_pos).mul(
         &Mat4x4.scale(Vec3.splat(1.0)),
     );
-    try sprite_mod.set(game.state.player, .transform, player_transform);
+    try sprite_mod.set(game.state().player, .transform, player_transform);
 
     sprite_mod.send(.updated, .{@intFromEnum(Pipeline.text)});
 
@@ -204,11 +204,11 @@ fn tick(
     engine.send(.present, .{}); // Present the frame
 
     // Every second, update the window title with the FPS
-    if (game.state.fps_timer.read() >= 1.0) {
-        try core.printTitle("gfx.Sprite example [ FPS: {d} ] [ Sprites: {d} ]", .{ game.state.frame_count, game.state.sprites });
-        game.state.fps_timer.reset();
-        game.state.frame_count = 0;
+    if (game.state().fps_timer.read() >= 1.0) {
+        try core.printTitle("gfx.Sprite example [ FPS: {d} ] [ Sprites: {d} ]", .{ game.state().frame_count, game.state().sprites });
+        game.state().fps_timer.reset();
+        game.state().frame_count = 0;
     }
-    game.state.frame_count += 1;
-    game.state.time += delta_time;
+    game.state().frame_count += 1;
+    game.state().time += delta_time;
 }
