@@ -578,7 +578,10 @@ inline fn injectArgs(
                 continue :outer;
             }
         }
-        if (@typeInfo(arg.type) == .Pointer and @hasDecl(std.meta.Child(arg.type), "IsInjectedArgument")) {
+        if (@typeInfo(arg.type) == .Pointer and
+            @typeInfo(std.meta.Child(arg.type)) == .Struct and
+            @hasDecl(std.meta.Child(arg.type), "IsInjectedArgument"))
+        {
             // Argument is declared as injectable, but we do not have a value to inject for it.
             // This can be the case if e.g. a Mod() parameter is specified, but that module is
             // not registered.
