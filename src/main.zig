@@ -22,13 +22,13 @@ pub const App = @import("engine.zig").App;
 pub const Engine = @import("engine.zig").Engine;
 
 // Module system
-pub const ModSet = @import("module/main.zig").ModSet;
 pub const modules = blk: {
     if (!@hasDecl(@import("root"), "modules")) {
         @compileError("expected `pub const modules = .{};` in root file");
     }
     break :blk @import("root").modules;
 };
+pub const ModSet = @import("module/main.zig").ModSet;
 pub const Modules = @import("module/main.zig").Modules(modules);
 pub const Mod = ModSet(modules).Mod;
 pub const EntityID = @import("module/main.zig").EntityID;
