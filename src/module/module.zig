@@ -73,7 +73,7 @@ fn ModuleInterface(comptime M: type) type {
     if (!@hasDecl(M, "name")) @compileError("mach: module must have `pub const name = .foobar;`");
     if (@typeInfo(@TypeOf(M.name)) != .EnumLiteral) @compileError("mach: module must have `pub const name = .foobar;`, found type:" ++ @typeName(M.name));
     if (@hasDecl(M, "global_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " global_events ", M.global_events);
-    if (@hasDecl(M, "local_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " local_events ", M.global_events);
+    if (@hasDecl(M, "local_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " local_events ", M.local_events);
     _ = ComponentTypesM(M);
     return M;
 }
