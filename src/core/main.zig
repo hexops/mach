@@ -154,6 +154,7 @@ pub const Options = struct {
     power_preference: gpu.PowerPreference = .undefined,
     required_features: ?[]const gpu.FeatureName = null,
     required_limits: ?gpu.Limits = null,
+    swap_chain_usage: gpu.Texture.UsageFlags = .{ .render_attachment = true, },
 };
 
 pub fn init(options_in: Options) !void {
