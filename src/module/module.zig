@@ -368,7 +368,7 @@ pub fn Modules(comptime modules: anytype) type {
 
                                 @typeName(@TypeOf(handler)),
                             }));
-                            try callHandler(handler, args, injectable);
+                            try callHandler(handler, args, injectable, "." ++ @tagName(M.name) ++ "." ++ @tagName(ev_name));
                         };
                     }
                 },
@@ -394,7 +394,7 @@ pub fn Modules(comptime modules: anytype) type {
                                     @tagName(ev_name),
                                     @typeName(@TypeOf(handler)),
                                 }));
-                                try callHandler(handler, args, injectable);
+                                try callHandler(handler, args, injectable, @tagName(M.name) ++ "." ++ @tagName(ev_name));
                             };
                         },
                     }
@@ -403,11 +403,11 @@ pub fn Modules(comptime modules: anytype) type {
         }
 
         /// Invokes an event handler with optionally injected arguments.
-        inline fn callHandler(handler: anytype, args_data: []u8, injectable: anytype) !void {
+        inline fn callHandler(handler: anytype, args_data: []u8, injectable: anytype, comptime debug_name: anytype) !void {
             const Handler = @TypeOf(handler);
             const StdArgs = UninjectedArgsTuple(Handler);
             const std_args: *StdArgs = @alignCast(@ptrCast(args_data.ptr));
-            const args = injectArgs(Handler, @TypeOf(injectable), injectable, std_args.*);
+            const args = injectArgs(Handler, @TypeOf(injectable), injectable, std_args.*, debug_name);
             const Ret = @typeInfo(Handler).Fn.return_type orelse void;
             switch (@typeInfo(Ret)) {
                 .ErrorUnion => try @call(.auto, handler, args),
@@ -560,12 +560,7 @@ pub fn ModSet(comptime modules: anytype) type {
 
 // Given a function, its standard arguments and injectable arguments, performs injection and
 // returns the actual argument tuple which would be used to call the function.
-inline fn injectArgs(
-    comptime Function: type,
-    comptime Injectable: type,
-    injectable_args: Injectable,
-    std_args: UninjectedArgsTuple(Function),
-) std.meta.ArgsTuple(Function) {
+inline fn injectArgs(comptime Function: type, comptime Injectable: type, injectable_args: Injectable, std_args: UninjectedArgsTuple(Function), comptime debug_name: anytype) std.meta.ArgsTuple(Function) {
     var args: std.meta.ArgsTuple(Function) = undefined;
     comptime var std_args_index = 0;
     outer: inline for (@typeInfo(std.meta.ArgsTuple(Function)).Struct.fields) |arg| {
@@ -585,7 +580,7 @@ inline fn injectArgs(
             // Argument is declared as injectable, but we do not have a value to inject for it.
             // This can be the case if e.g. a Mod() parameter is specified, but that module is
             // not registered.
-            @compileError("mach: cannot inject argument of type: " ++ @typeName(arg.type) ++ " - is it registered in your program's top-level `pub const modules = .{};`?");
+            @compileError("mach: cannot inject argument of type: " ++ @typeName(arg.type) ++ " - is it registered in your program's top-level `pub const modules = .{};`? used by " ++ debug_name);
         }
 
         // First standard argument
@@ -1210,32 +1205,32 @@ test injectArgs {
     const baz_ptr = &baz;
 
     // No standard, no injected
-    try testing.expect(struct {}, .{}).eql(injectArgs(fn () void, @TypeOf(.{}), .{}, .{}));
+    try testing.expect(struct {}, .{}).eql(injectArgs(fn () void, @TypeOf(.{}), .{}, .{}, ""));
     const injectable = .{ foo_ptr, bar_ptr, baz_ptr };
-    try testing.expect(struct {}, .{}).eql(injectArgs(fn () void, @TypeOf(injectable), injectable, .{}));
+    try testing.expect(struct {}, .{}).eql(injectArgs(fn () void, @TypeOf(injectable), injectable, .{}, ""));
 
     // Standard parameters only, no injected
-    try testing.expect(std.meta.Tuple(&.{i32}), .{0}).eql(injectArgs(fn (a: i32) void, @TypeOf(injectable), injectable, .{0}));
-    try testing.expect(std.meta.Tuple(&.{ i32, f32 }), .{ 1, 0.5 }).eql(injectArgs(fn (a: i32, b: f32) void, @TypeOf(injectable), injectable, .{ 1, 0.5 }));
+    try testing.expect(std.meta.Tuple(&.{i32}), .{0}).eql(injectArgs(fn (a: i32) void, @TypeOf(injectable), injectable, .{0}, ""));
+    try testing.expect(std.meta.Tuple(&.{ i32, f32 }), .{ 1, 0.5 }).eql(injectArgs(fn (a: i32, b: f32) void, @TypeOf(injectable), injectable, .{ 1, 0.5 }, ""));
 
     // Injected parameters only, no standard
-    try testing.expect(std.meta.Tuple(&.{*Foo}), .{foo_ptr}).eql(injectArgs(fn (a: *Foo) void, @TypeOf(injectable), injectable, .{}));
-    try testing.expect(std.meta.Tuple(&.{ *Foo, *Bar }), .{ foo_ptr, bar_ptr }).eql(injectArgs(fn (a: *Foo, b: *Bar) void, @TypeOf(injectable), injectable, .{}));
-    try testing.expect(std.meta.Tuple(&.{ *Foo, *Bar, *Baz }), .{ foo_ptr, bar_ptr, baz_ptr }).eql(injectArgs(fn (a: *Foo, b: *Bar, c: *Baz) void, @TypeOf(injectable), injectable, .{}));
-    try testing.expect(std.meta.Tuple(&.{ *Bar, *Baz, *Foo }), .{ bar_ptr, baz_ptr, foo_ptr }).eql(injectArgs(fn (a: *Bar, b: *Baz, c: *Foo) void, @TypeOf(injectable), injectable, .{}));
-    try testing.expect(std.meta.Tuple(&.{ *Foo, *Foo, *Baz }), .{ foo_ptr, foo_ptr, baz_ptr }).eql(injectArgs(fn (a: *Foo, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{}));
+    try testing.expect(std.meta.Tuple(&.{*Foo}), .{foo_ptr}).eql(injectArgs(fn (a: *Foo) void, @TypeOf(injectable), injectable, .{}, ""));
+    try testing.expect(std.meta.Tuple(&.{ *Foo, *Bar }), .{ foo_ptr, bar_ptr }).eql(injectArgs(fn (a: *Foo, b: *Bar) void, @TypeOf(injectable), injectable, .{}, ""));
+    try testing.expect(std.meta.Tuple(&.{ *Foo, *Bar, *Baz }), .{ foo_ptr, bar_ptr, baz_ptr }).eql(injectArgs(fn (a: *Foo, b: *Bar, c: *Baz) void, @TypeOf(injectable), injectable, .{}, ""));
+    try testing.expect(std.meta.Tuple(&.{ *Bar, *Baz, *Foo }), .{ bar_ptr, baz_ptr, foo_ptr }).eql(injectArgs(fn (a: *Bar, b: *Baz, c: *Foo) void, @TypeOf(injectable), injectable, .{}, ""));
+    try testing.expect(std.meta.Tuple(&.{ *Foo, *Foo, *Baz }), .{ foo_ptr, foo_ptr, baz_ptr }).eql(injectArgs(fn (a: *Foo, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{}, ""));
 
     // As long as the argument is a Struct or *Struct with an IsInjectedArgument decl, it is
     // considered an injected argument.
-    // try testing.expect(std.meta.Tuple(&.{*const Foo}), .{foo_ptr}).eql(injectArgs(fn (a: *const Foo) void, @TypeOf(injectable), injectable, .{}));
+    // try testing.expect(std.meta.Tuple(&.{*const Foo}), .{foo_ptr}).eql(injectArgs(fn (a: *const Foo) void, @TypeOf(injectable), injectable, .{}, ""));
     const injectable2 = .{ foo, foo_ptr, bar_ptr, baz_ptr };
-    try testing.expect(std.meta.Tuple(&.{Foo}), .{foo_ptr.*}).eql(injectArgs(fn (a: Foo) void, @TypeOf(injectable2), injectable2, .{}));
+    try testing.expect(std.meta.Tuple(&.{Foo}), .{foo_ptr.*}).eql(injectArgs(fn (a: Foo) void, @TypeOf(injectable2), injectable2, .{}, ""));
 
     // Order doesn't matter, injected arguments can be placed inbetween any standard arguments, etc.
-    try testing.expect(std.meta.Tuple(&.{ i32, *Foo, *Foo, *Baz }), .{ 1337, foo_ptr, foo_ptr, baz_ptr }).eql(injectArgs(fn (z: i32, a: *Foo, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{1337}));
-    try testing.expect(std.meta.Tuple(&.{ i32, *Foo, f32, *Foo, *Baz }), .{ 1337, foo_ptr, 1.337, foo_ptr, baz_ptr }).eql(injectArgs(fn (z: i32, a: *Foo, w: f32, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{ 1337, 1.337 }));
-    try testing.expect(std.meta.Tuple(&.{ i32, f32, *Foo, *Foo, *Baz }), .{ 1337, 1.337, foo_ptr, foo_ptr, baz_ptr }).eql(injectArgs(fn (z: i32, w: f32, a: *Foo, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{ 1337, 1.337 }));
-    try testing.expect(std.meta.Tuple(&.{ *Foo, *Foo, *Baz, i32, f32 }), .{ foo_ptr, foo_ptr, baz_ptr, 1337, 1.337 }).eql(injectArgs(fn (az: *Foo, b: *Foo, c: *Baz, z: i32, w: f32) void, @TypeOf(injectable), injectable, .{ 1337, 1.337 }));
+    try testing.expect(std.meta.Tuple(&.{ i32, *Foo, *Foo, *Baz }), .{ 1337, foo_ptr, foo_ptr, baz_ptr }).eql(injectArgs(fn (z: i32, a: *Foo, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{1337}, ""));
+    try testing.expect(std.meta.Tuple(&.{ i32, *Foo, f32, *Foo, *Baz }), .{ 1337, foo_ptr, 1.337, foo_ptr, baz_ptr }).eql(injectArgs(fn (z: i32, a: *Foo, w: f32, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{ 1337, 1.337 }, ""));
+    try testing.expect(std.meta.Tuple(&.{ i32, f32, *Foo, *Foo, *Baz }), .{ 1337, 1.337, foo_ptr, foo_ptr, baz_ptr }).eql(injectArgs(fn (z: i32, w: f32, a: *Foo, b: *Foo, c: *Baz) void, @TypeOf(injectable), injectable, .{ 1337, 1.337 }, ""));
+    try testing.expect(std.meta.Tuple(&.{ *Foo, *Foo, *Baz, i32, f32 }), .{ foo_ptr, foo_ptr, baz_ptr, 1337, 1.337 }).eql(injectArgs(fn (az: *Foo, b: *Foo, c: *Baz, z: i32, w: f32) void, @TypeOf(injectable), injectable, .{ 1337, 1.337 }, ""));
 }
 
 test UninjectedArgsTuple {
