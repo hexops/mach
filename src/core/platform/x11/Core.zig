@@ -488,7 +488,7 @@ pub fn init(
 
     const swap_chain_desc = gpu.SwapChain.Descriptor{
         .label = "main swap chain",
-        .usage = .{ .render_attachment = true },
+        .usage = options.swap_chain_usage,
         .format = .bgra8_unorm,
         .width = @intCast(window_attrs.width),
         .height = @intCast(window_attrs.height),

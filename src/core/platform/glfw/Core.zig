@@ -256,7 +256,7 @@ pub fn init(
     const framebuffer_size = window.getFramebufferSize();
     const swap_chain_desc = gpu.SwapChain.Descriptor{
         .label = "main swap chain",
-        .usage = .{ .render_attachment = true },
+        .usage = options.swap_chain_usage,
         .format = .bgra8_unorm,
         .width = framebuffer_size.width,
         .height = framebuffer_size.height,
