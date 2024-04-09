@@ -51,6 +51,7 @@ max_refresh_rate: u32,
 
 // Mutable fields only used by main thread
 app_update_thread_started: bool = false,
+app_update_thread_frequency_started: bool = false,
 linux_gamemode: ?bool = null,
 cursors: [@typeInfo(CursorShape).Enum.fields.len]?glfw.Cursor,
 cursors_tried: [@typeInfo(CursorShape).Enum.fields.len]bool,
@@ -540,59 +541,65 @@ pub fn deinit(self: *Core) void {
     self.instance.release();
 }
 
+pub fn appUpdateThreadTick(self: *Core, app: anytype) bool {
+    if (!self.app_update_thread_frequency_started) {
+        self.app_update_thread_frequency_started = true;
+        self.frame.start() catch unreachable;
+    }
+    if (self.swap_chain_update.isSet()) blk: {
+        self.swap_chain_update.reset();
+
+        if (self.current_vsync_mode != self.last_vsync_mode) {
+            self.last_vsync_mode = self.current_vsync_mode;
+            switch (self.current_vsync_mode) {
+                .triple => self.frame.target = 2 * self.max_refresh_rate,
+                else => self.frame.target = 0,
+            }
+        }
+
+        const framebuffer_size = self.window.getFramebufferSize();
+        glfw.getErrorCode() catch break :blk;
+        if (framebuffer_size.width == 0 or framebuffer_size.height == 0) break :blk;
+
+        {
+            self.swap_chain_mu.lock();
+            defer self.swap_chain_mu.unlock();
+            mach_core.swap_chain.release();
+            self.swap_chain_desc.width = framebuffer_size.width;
+            self.swap_chain_desc.height = framebuffer_size.height;
+            self.swap_chain = self.gpu_device.createSwapChain(self.surface, &self.swap_chain_desc);
+
+            mach_core.swap_chain = self.swap_chain;
+            mach_core.descriptor = self.swap_chain_desc;
+        }
+
+        self.pushEvent(.{
+            .framebuffer_resize = .{
+                .width = framebuffer_size.width,
+                .height = framebuffer_size.height,
+            },
+        });
+    }
+
+    if (app.update() catch unreachable) {
+        self.done.set();
+
+        // Wake the main thread from any event handling, so there is not e.g. a one second delay
+        // in exiting the application.
+        glfw.postEmptyEvent();
+        return false;
+    }
+    self.gpu_device.tick();
+    self.gpu_device.machWaitForCommandsToBeScheduled();
+
+    self.frame.tick();
+    if (self.frame.delay_ns != 0) std.time.sleep(self.frame.delay_ns);
+    return true;
+}
+
 // Secondary app-update thread
 pub fn appUpdateThread(self: *Core, app: anytype) void {
-    self.frame.start() catch unreachable;
-    while (true) {
-        if (self.swap_chain_update.isSet()) blk: {
-            self.swap_chain_update.reset();
-
-            if (self.current_vsync_mode != self.last_vsync_mode) {
-                self.last_vsync_mode = self.current_vsync_mode;
-                switch (self.current_vsync_mode) {
-                    .triple => self.frame.target = 2 * self.max_refresh_rate,
-                    else => self.frame.target = 0,
-                }
-            }
-
-            const framebuffer_size = self.window.getFramebufferSize();
-            glfw.getErrorCode() catch break :blk;
-            if (framebuffer_size.width == 0 or framebuffer_size.height == 0) break :blk;
-
-            {
-                self.swap_chain_mu.lock();
-                defer self.swap_chain_mu.unlock();
-                mach_core.swap_chain.release();
-                self.swap_chain_desc.width = framebuffer_size.width;
-                self.swap_chain_desc.height = framebuffer_size.height;
-                self.swap_chain = self.gpu_device.createSwapChain(self.surface, &self.swap_chain_desc);
-
-                mach_core.swap_chain = self.swap_chain;
-                mach_core.descriptor = self.swap_chain_desc;
-            }
-
-            self.pushEvent(.{
-                .framebuffer_resize = .{
-                    .width = framebuffer_size.width,
-                    .height = framebuffer_size.height,
-                },
-            });
-        }
-
-        if (app.update() catch unreachable) {
-            self.done.set();
-
-            // Wake the main thread from any event handling, so there is not e.g. a one second delay
-            // in exiting the application.
-            glfw.postEmptyEvent();
-            return;
-        }
-        self.gpu_device.tick();
-        self.gpu_device.machWaitForCommandsToBeScheduled();
-
-        self.frame.tick();
-        if (self.frame.delay_ns != 0) std.time.sleep(self.frame.delay_ns);
-    }
+    while (self.appUpdateThreadTick(app)) {}
 }
 
 // Called on the main thread
