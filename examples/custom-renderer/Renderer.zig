@@ -3,7 +3,6 @@
 const std = @import("std");
 
 const mach = @import("mach");
-const core = mach.core;
 const gpu = mach.gpu;
 const math = mach.math;
 
@@ -40,16 +39,16 @@ const UniformBufferObject = extern struct {
 };
 
 fn init(
-    engine: *mach.Engine.Mod,
+    core: *mach.Core.Mod,
     renderer: *Mod,
 ) !void {
-    const device = engine.state().device;
+    const device = core.state().device;
     const shader_module = device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
 
     // Fragment state
     const blend = gpu.BlendState{};
     const color_target = gpu.ColorTargetState{
-        .format = core.descriptor.format,
+        .format = mach.core.descriptor.format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
@@ -114,13 +113,13 @@ fn deinit(
 }
 
 fn tick(
-    engine: *mach.Engine.Mod,
+    core: *mach.Core.Mod,
     renderer: *Mod,
 ) !void {
-    const device = engine.state().device;
+    const device = core.state().device;
 
     // Begin our render pass
-    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
     const color_attachment = gpu.RenderPassColorAttachment{
         .view = back_buffer_view,
         .clear_value = std.mem.zeroes(gpu.Color),
@@ -134,7 +133,7 @@ fn tick(
     });
 
     // Update uniform buffer
-    var archetypes_iter = engine.entities.query(.{ .all = &.{
+    var archetypes_iter = core.entities.query(.{ .all = &.{
         .{ .renderer = &.{ .position, .scale } },
     } });
     var num_entities: usize = 0;
@@ -168,6 +167,6 @@ fn tick(
 
     renderer.state().queue.submit(&[_]*gpu.CommandBuffer{command});
     command.release();
-    core.swap_chain.present();
+    mach.core.swap_chain.present();
     back_buffer_view.release();
 }

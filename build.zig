@@ -636,7 +636,7 @@ fn buildExamples(
             .std_platform_only = true,
         },
         .{ .name = "core-custom-entrypoint", .deps = &.{}, .use_module_api = true },
-        .{ .name = "custom-renderer", .deps = &.{} },
+        .{ .name = "custom-renderer", .deps = &.{}, .use_module_api = true },
         .{
             .name = "sprite",
             .deps = &.{ .zigimg, .assets },
