@@ -581,13 +581,16 @@ pub fn appUpdateThreadTick(self: *Core, app: anytype) bool {
         });
     }
 
-    if (app.update() catch unreachable) {
-        self.done.set();
+    const use_app = @typeInfo(@TypeOf(app)) == .Pointer;
+    if (use_app) {
+        if (app.update() catch unreachable) {
+            self.done.set();
 
-        // Wake the main thread from any event handling, so there is not e.g. a one second delay
-        // in exiting the application.
-        glfw.postEmptyEvent();
-        return false;
+            // Wake the main thread from any event handling, so there is not e.g. a one second delay
+            // in exiting the application.
+            glfw.postEmptyEvent();
+            return false;
+        }
     }
     self.gpu_device.tick();
     self.gpu_device.machWaitForCommandsToBeScheduled();
@@ -605,10 +608,13 @@ pub fn appUpdateThread(self: *Core, app: anytype) void {
 // Called on the main thread
 pub fn update(self: *Core, app: anytype) !bool {
     if (self.done.isSet()) return true;
-    if (!self.app_update_thread_started) {
-        self.app_update_thread_started = true;
-        const thread = try std.Thread.spawn(.{}, appUpdateThread, .{ self, app });
-        thread.detach();
+    const use_app = @typeInfo(@TypeOf(app)) == .Pointer;
+    if (use_app) {
+        if (!self.app_update_thread_started) {
+            self.app_update_thread_started = true;
+            const thread = try std.Thread.spawn(.{}, appUpdateThread, .{ self, app });
+            thread.detach();
+        }
     }
 
     if (self.state_update.isSet()) {
@@ -748,14 +754,18 @@ pub fn update(self: *Core, app: anytype) !bool {
         }
     }
 
-    const frequency_delay = @as(f32, @floatFromInt(self.input.delay_ns)) / @as(f32, @floatFromInt(std.time.ns_per_s));
-    glfw.waitEventsTimeout(frequency_delay);
+    if (use_app) {
+        const frequency_delay = @as(f32, @floatFromInt(self.input.delay_ns)) / @as(f32, @floatFromInt(std.time.ns_per_s));
+        glfw.waitEventsTimeout(frequency_delay);
 
-    if (@hasDecl(std.meta.Child(@TypeOf(app)), "updateMainThread")) {
-        if (app.updateMainThread() catch unreachable) {
-            self.done.set();
-            return true;
+        if (@hasDecl(std.meta.Child(@TypeOf(app)), "updateMainThread")) {
+            if (app.updateMainThread() catch unreachable) {
+                self.done.set();
+                return true;
+            }
         }
+    } else {
+        glfw.pollEvents();
     }
 
     glfw.getErrorCode() catch |err| switch (err) {
@@ -764,6 +774,8 @@ pub fn update(self: *Core, app: anytype) !bool {
         else => unreachable,
     };
     self.input.tick();
+
+    if (!use_app) return !self.appUpdateThreadTick(app);
     return false;
 }
 

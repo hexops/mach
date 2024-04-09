@@ -7,6 +7,30 @@ pub const Timer = @import("Timer.zig");
 const Frequency = @import("Frequency.zig");
 const platform = @import("platform.zig");
 
+const mach = @import("../main.zig");
+pub var mods: mach.Modules = undefined;
+
+pub fn initModule() !void {
+    // Initialize the global set of Mach modules used in the program.
+    try mods.init(std.heap.c_allocator);
+    mods.mod.mach_core.send(.init, .{});
+}
+
+/// Tick runs a single step of the main loop on the main OS thread.
+///
+/// Returns true if tick() should be called again, false if the application should exit.
+pub fn tick() !bool {
+    mods.mod.mach_core.send(.main_thread_tick, .{});
+
+    // Dispatch events until this .mach_core.main_thread_tick_done is sent
+    try mods.dispatch(.{ .until = .{
+        .module_name = mods.moduleNameToID(.mach_core),
+        .local_event = mods.localEventToID(.mach_core, .main_thread_tick_done),
+    } });
+
+    return !mods.mod.mach_core.state().should_exit;
+}
+
 /// Returns the error set that the function F returns.
 fn ErrorSet(comptime F: type) type {
     return @typeInfo(@typeInfo(F).Fn.return_type.?).ErrorUnion.error_set;

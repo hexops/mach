@@ -6,6 +6,7 @@ pub const core = if (build_options.want_core) @import("core/main.zig") else stru
 pub const Timer = if (build_options.want_core) core.Timer else struct {};
 pub const gpu = if (build_options.want_core) core.gpu else struct {};
 pub const sysjs = if (build_options.want_core) @import("mach-sysjs") else struct {};
+pub const Core = if (build_options.want_core) @import("Core.zig") else struct {};
 
 // Mach standard library
 // gamemode requires libc on linux
