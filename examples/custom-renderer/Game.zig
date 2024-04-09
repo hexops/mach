@@ -1,6 +1,5 @@
 const std = @import("std");
 const mach = @import("mach");
-const core = mach.core;
 const math = mach.math;
 const Renderer = @import("Renderer.zig");
 
@@ -44,16 +43,16 @@ fn init(
     // These are injected dependencies - as long as these modules were registered in the top-level
     // of the program we can have these types injected here, letting us work with other modules in
     // our program seamlessly and with a type-safe API:
-    engine: *mach.Engine.Mod,
+    core: *mach.Core.Mod,
     renderer: *Renderer.Mod,
     game: *Mod,
 ) !void {
     // The Mach .core is where we set window options, etc.
     // TODO(important): replace this API with something better
-    core.setTitle("Hello, ECS!");
+    mach.core.setTitle("Hello, ECS!");
 
     // Create our player entity.
-    const player = try engine.newEntity();
+    const player = try core.newEntity();
 
     // Give our player entity a .renderer.position and .renderer.scale component. Note that these
     // are defined by the Renderer module, so we use `renderer: *Renderer.Mod` to interact with
@@ -77,12 +76,12 @@ fn init(
 
 // TODO(important): remove need for returning an error here
 fn tick(
-    engine: *mach.Engine.Mod,
+    core: *mach.Core.Mod,
     renderer: *Renderer.Mod,
     game: *Mod,
 ) !void {
-    // TODO(important): event polling should occur in mach.Engine module and get fired as ECS event.
-    var iter = core.pollEvents();
+    // TODO(important): event polling should occur in mach.Core module and get fired as ECS event.
+    var iter = mach.core.pollEvents();
     var direction = game.state().direction;
     var spawning = game.state().spawning;
     while (iter.next()) |event| {
@@ -107,7 +106,7 @@ fn tick(
                     else => {},
                 }
             },
-            .close => engine.send(.exit, .{}), // Send an event telling the engine to exit the app
+            .close => core.send(.exit, .{}), // Send an event telling mach to exit the app
             else => {},
         }
     }
@@ -129,7 +128,7 @@ fn tick(
         _ = game.state().spawn_timer.lap(); // Reset the timer
         for (0..5) |_| {
             // Spawn a new entity at the same position as the player, but smaller in scale.
-            const new_entity = try engine.newEntity();
+            const new_entity = try core.newEntity();
             try renderer.set(new_entity, .position, player_pos);
             try renderer.set(new_entity, .scale, 1.0 / 6.0);
 
@@ -150,7 +149,7 @@ fn tick(
 
     // Query all the entities that have the .follower tag indicating they should follow the player.
     // TODO(important): better querying API
-    var archetypes_iter = engine.entities.query(.{ .all = &.{
+    var archetypes_iter = core.entities.query(.{ .all = &.{
         .{ .game = &.{.follower} },
     } });
     while (archetypes_iter.next()) |archetype| {
@@ -164,7 +163,7 @@ fn tick(
             const close_dist = 1.0 / 15.0;
             var avoidance = Vec3.splat(0);
             var avoidance_div: f32 = 1.0;
-            var archetypes_iter_2 = engine.entities.query(.{ .all = &.{
+            var archetypes_iter_2 = core.entities.query(.{ .all = &.{
                 .{ .game = &.{.follower} },
             } });
             while (archetypes_iter_2.next()) |archetype_2| {
