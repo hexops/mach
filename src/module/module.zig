@@ -69,13 +69,19 @@ const is_debug = @import("Archetype.zig").is_debug;
 
 /// Verifies that M matches the basic layout of a Mach module
 fn ModuleInterface(comptime M: type) type {
-    if (@typeInfo(M) != .Struct) @compileError("mach: expected module struct, found: " ++ @typeName(M));
-    if (!@hasDecl(M, "name")) @compileError("mach: module must have `pub const name = .foobar;`");
-    if (@typeInfo(@TypeOf(M.name)) != .EnumLiteral) @compileError("mach: module must have `pub const name = .foobar;`, found type:" ++ @typeName(M.name));
-    if (@hasDecl(M, "global_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " global_events ", M.global_events);
-    if (@hasDecl(M, "local_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " local_events ", M.local_events);
-    _ = ComponentTypesM(M);
+    validateModule(M, true);
     return M;
+}
+
+fn validateModule(comptime M: type, comptime events: bool) void {
+    if (@typeInfo(M) != .Struct) @compileError("mach: expected module struct, found: " ++ @typeName(M));
+    if (!@hasDecl(M, "name")) @compileError("mach: module must have `pub const name = .foobar;`: " ++ @typeName(M));
+    if (@typeInfo(@TypeOf(M.name)) != .EnumLiteral) @compileError("mach: module must have `pub const name = .foobar;`, found type:" ++ @typeName(M.name));
+    if (events) {
+        if (@hasDecl(M, "global_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " global_events ", M.global_events);
+        if (@hasDecl(M, "local_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " local_events ", M.local_events);
+        _ = ComponentTypesM(M);
+    }
 }
 
 /// TODO: implement serialization constraints
@@ -908,6 +914,7 @@ pub fn ComponentTypesByName(comptime modules: anytype) type {
 /// }
 /// ```
 fn ComponentTypesM(comptime M: anytype) type {
+    validateModule(M, false);
     const error_prefix = "mach: module ." ++ @tagName(M.name) ++ " .components ";
     if (!@hasDecl(M, "components")) {
         return struct {};
