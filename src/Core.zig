@@ -1,6 +1,9 @@
 const std = @import("std");
 const mach = @import("main.zig");
 
+// TODO(important): mach.core has a lot of standard Zig APIs, and some global variables, which are
+// part of its old API design. We should elevate them into this module instead.
+
 pub const name = .mach_core;
 
 pub const Mod = mach.Mod(@This());
