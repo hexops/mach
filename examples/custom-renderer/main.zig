@@ -11,8 +11,6 @@ pub const modules = .{
     Game,
 };
 
-pub const GPUInterface = mach.core.wgpu.dawn.Interface;
-
 // TODO: move this to a mach "entrypoint" zig module
 pub fn main() !void {
     // Initialize mach core
