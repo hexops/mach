@@ -339,13 +339,14 @@ pub fn convertTo(comptime SrcType: type, src: []const SrcType, dst_format: Forma
             f32 => conv.floatToSigned(SrcType, src, i16, @as([*]i16, @ptrCast(@alignCast(dst)))[0..dst_len]),
             else => unreachable,
         },
-        .i24 => switch (SrcType) {
-            i24 => @memcpy(@as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len], src),
-            u8 => conv.unsignedToSigned(SrcType, src, i24, @as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len]),
-            i8, i16, i32 => conv.signedToSigned(SrcType, src, i24, @as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len]),
-            f32 => conv.floatToSigned(SrcType, src, i24, @as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len]),
-            else => unreachable,
-        },
+        // TODO(i24)
+        // .i24 => switch (SrcType) {
+        //     i24 => @memcpy(@as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len], src),
+        //     u8 => conv.unsignedToSigned(SrcType, src, i24, @as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len]),
+        //     i8, i16, i32 => conv.signedToSigned(SrcType, src, i24, @as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len]),
+        //     f32 => conv.floatToSigned(SrcType, src, i24, @as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len]),
+        //     else => unreachable,
+        // },
         .i32 => switch (SrcType) {
             i32 => @memcpy(@as([*]i32, @ptrCast(@alignCast(dst)))[0..dst_len], src),
             u8 => conv.unsignedToSigned(SrcType, src, i32, @as([*]i32, @ptrCast(@alignCast(dst)))[0..dst_len]),
@@ -380,13 +381,14 @@ pub fn convertFrom(comptime DestType: type, dst: []DestType, src_format: Format,
             f32 => conv.signedToFloat(i16, @as([*]const i16, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
             else => unreachable,
         },
-        .i24 => switch (DestType) {
-            i24 => @memcpy(dst, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len]),
-            u8 => conv.signedToUnsigned(i24, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-            i8, i16, i32 => conv.signedToSigned(i24, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-            f32 => conv.signedToFloat(i24, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-            else => unreachable,
-        },
+        // TODO(i24)
+        // .i24 => switch (DestType) {
+        //     i24 => @memcpy(dst, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len]),
+        //     u8 => conv.signedToUnsigned(i24, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
+        //     i8, i16, i32 => conv.signedToSigned(i24, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
+        //     f32 => conv.signedToFloat(i24, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
+        //     else => unreachable,
+        // },
         .i32 => switch (DestType) {
             i32 => @memcpy(dst, @as([*]const i32, @ptrCast(@alignCast(src)))[0..src_len]),
             u8 => conv.signedToUnsigned(i32, @as([*]const i32, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
@@ -450,18 +452,20 @@ pub const ChannelPosition = enum {
     lfe,
 };
 
-pub const Format = enum(u3) {
-    u8 = 0,
-    i16 = 1,
-    i24 = 2,
-    i32 = 3,
-    f32 = 4,
+pub const Format = enum {
+    u8,
+    i16,
+    // TODO(i24): Uncomment when https://github.com/hexops/mach/issues/1152 is fixed
+    // i24 = 2,
+    i32,
+    f32,
 
     pub inline fn size(format: Format) u8 {
         return switch (format) {
             .u8 => 1,
             .i16 => 2,
-            .i24 => 3,
+            // TODO(i24)
+            // .i24 => 3,
             .i32, .f32 => 4,
         };
     }
@@ -470,7 +474,8 @@ pub const Format = enum(u3) {
         return switch (format) {
             .u8 => 1,
             .i16 => 2,
-            .i24 => 3,
+            // TODO(i24)
+            // .i24 => 3,
             .i32, .f32 => 4,
         };
     }
