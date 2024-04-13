@@ -1,8 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const glfw = @import("mach_glfw");
-const gpu = @import("mach_gpu");
-const sysgpu = @import("mach_sysgpu");
 
 pub const SysgpuBackend = enum {
     default,
@@ -101,12 +99,6 @@ pub fn build(b: *std.Build) !void {
         try buildExamples(b, optimize, target, module);
     }
     if (want_core) {
-        const mach_gpu_dep = b.dependency("mach_gpu", .{
-            .target = target,
-            .optimize = optimize,
-        });
-        module.addImport("mach-gpu", mach_gpu_dep.module("mach-gpu"));
-
         if (target.result.cpu.arch == .wasm32) {
             const sysjs_dep = b.dependency("mach_sysjs", .{
                 .target = target,
@@ -265,6 +257,37 @@ pub fn build(b: *std.Build) !void {
         b.installArtifact(lib);
     }
 
+    if (true) { // want_gpu
+        const gpu_dawn = @import("mach_gpu_dawn");
+        gpu_dawn.addPathsToModule(b, module, .{});
+        module.addIncludePath(.{ .path = sdkPath("/src/gpu") });
+
+        const example_exe = b.addExecutable(.{
+            .name = "dawn-gpu-hello-triangle",
+            .root_source_file = .{ .path = "src/gpu/example/main.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        example_exe.root_module.addImport("mach", module);
+        link(b, example_exe, &example_exe.root_module);
+
+        const mach_glfw_dep = b.dependency("mach_glfw", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        example_exe.root_module.addImport("mach-glfw", mach_glfw_dep.module("mach-glfw"));
+
+        const example_compile_step = b.step("dawn-gpu-hello-triangle", "Install 'dawn-gpu-hello-triangle'");
+        example_compile_step.dependOn(b.getInstallStep());
+
+        const example_run_cmd = b.addRunArtifact(example_exe);
+        example_run_cmd.step.dependOn(b.getInstallStep());
+        if (b.args) |args| example_run_cmd.addArgs(args);
+
+        const example_run_step = b.step("run-dawn-gpu-hello-triangle", "Run 'dawn-gpu-hello-triangle' example");
+        example_run_step.dependOn(&example_run_cmd.step);
+    }
+
     if (target.result.cpu.arch != .wasm32) {
         // Creates a step for unit testing. This only builds the test executable
         // but does not run it.
@@ -288,7 +311,7 @@ pub fn build(b: *std.Build) !void {
         const test_step = b.step("test", "Run unit tests");
         test_step.dependOn(&run_unit_tests.step);
 
-        if (want_sysgpu) linkSysgpu(b, &unit_tests.root_module);
+        if (want_sysgpu) linkSysgpu(b, &unit_tests.root_module) else link(b, unit_tests, &unit_tests.root_module);
     }
 }
 
@@ -507,10 +530,23 @@ pub const CoreApp = struct {
 
 // TODO(sysgpu): remove this once we switch to sysgpu fully
 pub fn link(mach_builder: *std.Build, step: *std.Build.Step.Compile, mod: *std.Build.Module) void {
-    gpu.link(mach_builder.dependency("mach_gpu", .{
-        .target = step.root_module.resolved_target orelse mach_builder.host,
-        .optimize = step.root_module.optimize.?,
-    }).builder, step, mod, .{}) catch unreachable;
+    const gpu_dawn = @import("mach_gpu_dawn");
+    const Options = struct {
+        gpu_dawn_options: gpu_dawn.Options = .{},
+    };
+    const options: Options = .{};
+
+    gpu_dawn.link(
+        mach_builder.dependency("mach_gpu_dawn", .{
+            .target = step.root_module.resolved_target.?,
+            .optimize = step.root_module.optimize.?,
+        }).builder,
+        step,
+        mod,
+        options.gpu_dawn_options,
+    );
+    step.addCSourceFile(.{ .file = .{ .path = sdkPath("/src/gpu/mach_dawn.cpp") }, .flags = &.{"-std=c++17"} });
+    step.addIncludePath(.{ .path = sdkPath("/src/gpu") });
 }
 
 fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
