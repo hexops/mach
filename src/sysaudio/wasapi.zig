@@ -383,7 +383,12 @@ pub const Context = struct {
 
     fn setWaveFormatFormat(wf: *win32.WAVEFORMATEXTENSIBLE, format: main.Format) void {
         switch (format) {
-            .u8, .i16, .i24, .i32 => {
+            .u8,
+            .i16,
+            // TODO(i24)
+            // .i24,
+            .i32,
+            => {
                 wf.SubFormat = win32.CLSID_KSDATAFORMAT_SUBTYPE_PCM.*;
             },
             .f32 => {
@@ -685,7 +690,8 @@ pub const Context = struct {
         return switch (format) {
             .u8,
             .i16,
-            .i24,
+            // TODO(i24)
+            // .i24,
             .i32,
             => win32.CLSID_KSDATAFORMAT_SUBTYPE_PCM.*,
             .f32 => win32.CLSID_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT.*,
