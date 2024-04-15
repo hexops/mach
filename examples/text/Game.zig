@@ -70,6 +70,7 @@ const text2: []const []const u8 = &.{"!$?😊"};
 fn init(
     engine: *mach.Engine.Mod,
     text_mod: *Text.Mod,
+    text_style: *gfx.TextStyle.Mod,
     game: *Mod,
 ) !void {
     // The Mach .core is where we set window options, etc.
@@ -77,25 +78,25 @@ fn init(
 
     // TODO: a better way to initialize entities with default values
     const style1 = try engine.newEntity();
-    try text_mod.set(style1, .font_name, "Roboto Medium"); // TODO
-    try text_mod.set(style1, .font_size, 48 * gfx.px_per_pt); // 48pt
-    try text_mod.set(style1, .font_weight, gfx.font_weight_normal);
-    try text_mod.set(style1, .italic, false);
-    try text_mod.set(style1, .color, vec4(0.6, 1.0, 0.6, 1.0));
+    try text_style.set(style1, .font_name, "Roboto Medium"); // TODO
+    try text_style.set(style1, .font_size, 48 * gfx.px_per_pt); // 48pt
+    try text_style.set(style1, .font_weight, gfx.font_weight_normal);
+    try text_style.set(style1, .italic, false);
+    try text_style.set(style1, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
     const style2 = try engine.newEntity();
-    try text_mod.set(style2, .font_name, "Roboto Medium"); // TODO
-    try text_mod.set(style2, .font_size, 48 * gfx.px_per_pt); // 48pt
-    try text_mod.set(style2, .font_weight, gfx.font_weight_normal);
-    try text_mod.set(style2, .italic, true);
-    try text_mod.set(style2, .color, vec4(0.6, 1.0, 0.6, 1.0));
+    try text_style.set(style2, .font_name, "Roboto Medium"); // TODO
+    try text_style.set(style2, .font_size, 48 * gfx.px_per_pt); // 48pt
+    try text_style.set(style2, .font_weight, gfx.font_weight_normal);
+    try text_style.set(style2, .italic, true);
+    try text_style.set(style2, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
     const style3 = try engine.newEntity();
-    try text_mod.set(style3, .font_name, "Roboto Medium"); // TODO
-    try text_mod.set(style3, .font_size, 48 * gfx.px_per_pt); // 48pt
-    try text_mod.set(style3, .font_weight, gfx.font_weight_bold);
-    try text_mod.set(style3, .italic, false);
-    try text_mod.set(style3, .color, vec4(0.6, 1.0, 0.6, 1.0));
+    try text_style.set(style3, .font_name, "Roboto Medium"); // TODO
+    try text_style.set(style3, .font_size, 48 * gfx.px_per_pt); // 48pt
+    try text_style.set(style3, .font_weight, gfx.font_weight_bold);
+    try text_style.set(style3, .italic, false);
+    try text_style.set(style3, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
     // Create some text
     const player = try engine.newEntity();

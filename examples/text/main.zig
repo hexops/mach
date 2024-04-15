@@ -10,6 +10,7 @@ const Game = @import("Game.zig");
 pub const modules = .{
     mach.Engine,
     mach.gfx.Text,
+    mach.gfx.TextStyle,
     Game,
 };
 

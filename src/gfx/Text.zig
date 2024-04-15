@@ -53,31 +53,6 @@ pub const components = .{
     \\
     \\ Expected to match the length of the text component.
     },
-
-    // TODO: ship a default font
-    .font_name = .{ .type = []const u8, .description = 
-    \\ Style component: desired font to render text with.
-    },
-
-    // e.g. 12 * mach.gfx.px_per_pt // 12pt
-    .font_size = .{ .type = f32, .description = 
-    \\ Style component: font size in pixels
-    },
-
-    // e.g. mach.gfx.font_weight_normal
-    .font_weight = .{ .type = u16, .description = 
-    \\ Style component: font weight
-    },
-
-    // e.g. false
-    .italic = .{ .type = bool, .description = 
-    \\ Style component: italic text
-    },
-
-    // e.g. vec4(0, 0, 0, 1.0)
-    .color = .{ .type = Vec4, .description = 
-    \\ Style component: fill color
-    },
 };
 
 pub const global_events = .{
@@ -420,16 +395,16 @@ fn updated(
 
             for (segments, styles) |segment, style| {
                 // Load a font
-                const font_name = engine.entities.getComponent(style, .mach_gfx_text, .font_name).?;
+                const font_name = engine.entities.getComponent(style, .mach_gfx_text_style, .font_name).?;
                 _ = font_name; // TODO: actually use font name
                 const font_bytes = @import("font-assets").fira_sans_regular_ttf;
                 var font = try gfx.Font.initBytes(font_bytes);
                 defer font.deinit(text_mod.state().allocator);
 
-                const font_size = engine.entities.getComponent(style, .mach_gfx_text, .font_size).?;
-                const font_weight = engine.entities.getComponent(style, .mach_gfx_text, .font_weight);
-                const italic = engine.entities.getComponent(style, .mach_gfx_text, .italic);
-                const color = engine.entities.getComponent(style, .mach_gfx_text, .color);
+                const font_size = engine.entities.getComponent(style, .mach_gfx_text_style, .font_size).?;
+                const font_weight = engine.entities.getComponent(style, .mach_gfx_text_style, .font_weight);
+                const italic = engine.entities.getComponent(style, .mach_gfx_text_style, .italic);
+                const color = engine.entities.getComponent(style, .mach_gfx_text_style, .color);
                 // TODO: actually apply these
                 _ = font_weight;
                 _ = italic;
