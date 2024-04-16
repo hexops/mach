@@ -32,7 +32,7 @@ pub const modules = blk: {
 pub const ModSet = @import("module/main.zig").ModSet;
 pub const Modules = @import("module/main.zig").Modules(modules);
 pub const Mod = ModSet(modules).Mod;
-pub const EntityID = @import("module/main.zig").EntityID;
+pub const EntityID = @import("module/main.zig").EntityID; // TODO: rename to just Entity?
 pub const Archetype = @import("module/main.zig").Archetype;
 
 test {

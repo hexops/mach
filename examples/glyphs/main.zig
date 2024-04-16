@@ -11,6 +11,7 @@ const Text = @import("Text.zig");
 pub const modules = .{
     mach.Engine,
     mach.gfx.Sprite,
+    mach.gfx.SpritePipeline,
     Text,
     Game,
 };

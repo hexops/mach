@@ -5,7 +5,7 @@ const assets = @import("assets");
 const mach = @import("mach");
 const core = mach.core;
 const gpu = mach.gpu;
-const Sprite = mach.gfx.Sprite;
+const gfx = mach.gfx;
 const math = mach.math;
 
 const vec2 = math.vec2;
@@ -28,6 +28,7 @@ sprites: usize,
 rand: std.rand.DefaultPrng,
 time: f32,
 allocator: std.mem.Allocator,
+pipeline: mach.EntityID,
 
 const d0 = 0.000001;
 
@@ -49,13 +50,10 @@ pub const global_events = .{
     .tick = .{ .handler = tick },
 };
 
-pub const Pipeline = enum(u32) {
-    default,
-};
-
 fn init(
     engine: *mach.Engine.Mod,
-    sprite_mod: *Sprite.Mod,
+    sprite_mod: *gfx.Sprite.Mod,
+    sprite_pipeline: *gfx.SpritePipeline.Mod,
     game: *Mod,
 ) !void {
     // The Mach .core is where we set window options, etc.
@@ -65,18 +63,19 @@ fn init(
     // namespace, e.g. the `.mach_gfx_sprite` module could have a 3D `.location` component with a different
     // type than the `.physics2d` module's `.location` component if you desire.
 
+    // Create a sprite rendering pipeline
+    const allocator = gpa.allocator();
+    const pipeline = try engine.newEntity();
+    try sprite_pipeline.set(pipeline, .texture, try loadTexture(engine, allocator));
+    sprite_pipeline.send(.update, .{});
+
+    // Create our player sprite
     const player = try engine.newEntity();
     try sprite_mod.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
     try sprite_mod.set(player, .size, vec2(32, 32));
     try sprite_mod.set(player, .uv_transform, Mat3x3.translate(vec2(0, 0)));
-    try sprite_mod.set(player, .pipeline, @intFromEnum(Pipeline.default));
-
-    const allocator = gpa.allocator();
-    sprite_mod.send(.init_pipeline, .{Sprite.PipelineOptions{
-        .pipeline = @intFromEnum(Pipeline.default),
-        .texture = try loadTexture(engine, allocator),
-    }});
-    sprite_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
+    try sprite_mod.set(player, .pipeline, pipeline);
+    sprite_mod.send(.update, .{});
 
     game.init(.{
         .timer = try mach.Timer.start(),
@@ -88,12 +87,14 @@ fn init(
         .rand = std.rand.DefaultPrng.init(1337),
         .time = 0,
         .allocator = allocator,
+        .pipeline = pipeline,
     });
 }
 
 fn tick(
     engine: *mach.Engine.Mod,
-    sprite_mod: *Sprite.Mod,
+    sprite_mod: *gfx.Sprite.Mod,
+    sprite_pipeline: *gfx.SpritePipeline.Mod,
     game: *Mod,
 ) !void {
     // TODO(engine): event polling should occur in mach.Engine module and get fired as ECS events.
@@ -143,7 +144,7 @@ fn tick(
             try sprite_mod.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scale(Vec3.splat(0.3))));
             try sprite_mod.set(new_entity, .size, vec2(32, 32));
             try sprite_mod.set(new_entity, .uv_transform, Mat3x3.translate(vec2(0, 0)));
-            try sprite_mod.set(new_entity, .pipeline, @intFromEnum(Pipeline.default));
+            try sprite_mod.set(new_entity, .pipeline, game.state().pipeline);
             game.state().sprites += 1;
         }
     }
@@ -181,14 +182,15 @@ fn tick(
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
     try sprite_mod.set(game.state().player, .transform, Mat4x4.translate(player_pos));
-    sprite_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
+    sprite_mod.send(.update, .{});
 
     // Perform pre-render work
-    sprite_mod.send(.pre_render, .{@intFromEnum(Pipeline.default)});
+    sprite_pipeline.send(.pre_render, .{});
 
     // Render a frame
     engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
-    sprite_mod.send(.render, .{@intFromEnum(Pipeline.default)});
+
+    sprite_pipeline.send(.render, .{});
     engine.send(.end_pass, .{});
     engine.send(.frame_done, .{}); // Present the frame
 

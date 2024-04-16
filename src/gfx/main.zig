@@ -3,6 +3,7 @@ pub const Atlas = @import("atlas/Atlas.zig");
 
 // ECS modules
 pub const Sprite = @import("Sprite.zig");
+pub const SpritePipeline = @import("SpritePipeline.zig");
 pub const Text = @import("Text.zig");
 pub const TextStyle = @import("TextStyle.zig");
 

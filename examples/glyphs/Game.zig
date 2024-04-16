@@ -3,7 +3,7 @@ const std = @import("std");
 const mach = @import("mach");
 const core = mach.core;
 const gpu = mach.gpu;
-const Sprite = mach.gfx.Sprite;
+const gfx = mach.gfx;
 const math = mach.math;
 const vec2 = math.vec2;
 const vec3 = math.vec3;
@@ -24,6 +24,7 @@ frame_count: usize,
 sprites: usize,
 rand: std.rand.DefaultPrng,
 time: f32,
+pipeline: mach.EntityID,
 
 const d0 = 0.000001;
 
@@ -49,48 +50,28 @@ pub const local_events = .{
     .after_sprite_init = .{ .handler = afterSpriteInit },
 };
 
-pub const Pipeline = enum(u32) {
-    default,
-    text,
-};
-
 fn init(
-    sprite_mod: *Sprite.Mod,
+    sprite_mod: *gfx.Sprite.Mod,
+    sprite_pipeline: *gfx.SpritePipeline.Mod,
     text_mod: *Text.Mod,
     game: *Mod,
 ) !void {
     // The Mach .core is where we set window options, etc.
     core.setTitle("gfx.Sprite example");
 
-    // Tell sprite_mod to use the texture
+    // Create a sprite rendering pipeline
     const texture = text_mod.state().texture;
-    sprite_mod.send(.init_pipeline, .{Sprite.PipelineOptions{
-        .pipeline = @intFromEnum(Pipeline.text),
-        .texture = texture,
-    }});
+    const pipeline = try sprite_pipeline.newEntity();
+    try sprite_pipeline.set(pipeline, .texture, texture);
+    sprite_pipeline.send(.update, .{});
 
-    // Run the rest of our init code after sprite_mod's .init_pipeline
-    // TODO(important): relying on this event ordering is not good
-    game.send(.after_sprite_init, .{});
-}
-
-fn afterSpriteInit(
-    engine: *mach.Engine.Mod,
-    sprite_mod: *Sprite.Mod,
-    text_mod: *Text.Mod,
-    game: *Mod,
-) !void {
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `Sprite` module could have a 3D `.location` component with a different
     // type than the `.physics2d` module's `.location` component if you desire.
 
-    const r = text_mod.state().regions.get('?').?;
-    const player = try engine.newEntity();
+    const player = try sprite_mod.newEntity();
     try sprite_mod.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
-    try sprite_mod.set(player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
-    try sprite_mod.set(player, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
-    try sprite_mod.set(player, .pipeline, @intFromEnum(Pipeline.text));
-    sprite_mod.send(.updated, .{@intFromEnum(Pipeline.text)});
+    try sprite_mod.set(player, .pipeline, pipeline);
 
     game.init(.{
         .timer = try mach.Timer.start(),
@@ -101,12 +82,32 @@ fn afterSpriteInit(
         .sprites = 0,
         .rand = std.rand.DefaultPrng.init(1337),
         .time = 0,
+        .pipeline = pipeline,
     });
+
+    // TODO(important): text module should not use global init, so that game can instruct it more clearly and then
+    // this after_init would be more clear. Also after_sprite_init should be renamed to after_text_init and the comment
+    // below is wrong:
+    //
+    // Run the rest of our init code after sprite_mod's .init_pipeline
+    game.send(.after_sprite_init, .{});
+}
+
+fn afterSpriteInit(
+    sprite_mod: *gfx.Sprite.Mod,
+    text_mod: *Text.Mod,
+    game: *Mod,
+) !void {
+    const r = text_mod.state().regions.get('?').?;
+    try sprite_mod.set(game.state().player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
+    try sprite_mod.set(game.state().player, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
+    sprite_mod.send(.update, .{});
 }
 
 fn tick(
     engine: *mach.Engine.Mod,
-    sprite_mod: *Sprite.Mod,
+    sprite_mod: *gfx.Sprite.Mod,
+    sprite_pipeline: *gfx.SpritePipeline.Mod,
     text_mod: *Text.Mod,
     game: *Mod,
 ) !void {
@@ -160,7 +161,7 @@ fn tick(
             try sprite_mod.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scaleScalar(0.3)));
             try sprite_mod.set(new_entity, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
             try sprite_mod.set(new_entity, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
-            try sprite_mod.set(new_entity, .pipeline, @intFromEnum(Pipeline.text));
+            try sprite_mod.set(new_entity, .pipeline, game.state().pipeline);
             game.state().sprites += 1;
         }
     }
@@ -204,15 +205,14 @@ fn tick(
         &Mat4x4.scale(Vec3.splat(1.0)),
     );
     try sprite_mod.set(game.state().player, .transform, player_transform);
-
-    sprite_mod.send(.updated, .{@intFromEnum(Pipeline.text)});
+    sprite_mod.send(.update, .{});
 
     // Perform pre-render work
-    sprite_mod.send(.pre_render, .{@intFromEnum(Pipeline.text)});
+    sprite_pipeline.send(.pre_render, .{});
 
     // Render a frame
     engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
-    sprite_mod.send(.render, .{@intFromEnum(Pipeline.text)});
+    sprite_pipeline.send(.render, .{});
     engine.send(.end_pass, .{});
     engine.send(.frame_done, .{}); // Present the frame
 
