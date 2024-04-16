@@ -47,10 +47,9 @@ pub fn Ray(comptime Vec3P: type) type {
                         }
                     } else if (v[1] > v[2]) {
                         return 1;
-                    } else if (v[2] > v[0]) {
+                    } else {
                         return 2;
                     }
-                    return 0;
                 }
 
                 // Algorithm based on:
