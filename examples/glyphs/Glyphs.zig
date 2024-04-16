@@ -5,15 +5,15 @@ const ft = @import("freetype");
 const std = @import("std");
 const assets = @import("assets");
 
-pub const name = .game_text;
+pub const name = .glyphs;
 pub const Mod = mach.Mod(@This());
 
 pub const global_events = .{
     .deinit = .{ .handler = deinit },
-    .init = .{ .handler = init },
 };
 
 pub const local_events = .{
+    .init = .{ .handler = init },
     .prepare = .{ .handler = prepare },
 };
 
@@ -28,9 +28,9 @@ face: ft.Face,
 regions: RegionMap = .{},
 allocator: std.mem.Allocator,
 
-fn deinit(text_mod: *Mod) !void {
-    const state = text_mod.state();
-    state.texture_atlas.deinit(text_mod.state().allocator);
+fn deinit(glyphs: *Mod) !void {
+    const state = glyphs.state();
+    state.texture_atlas.deinit(glyphs.state().allocator);
     state.texture.release();
     state.face.deinit();
     state.ft.deinit();
@@ -39,7 +39,7 @@ fn deinit(text_mod: *Mod) !void {
 
 fn init(
     engine: *mach.Engine.Mod,
-    text_mod: *Mod,
+    glyphs: *Mod,
 ) !void {
     const device = engine.state().device;
     const allocator = gpa.allocator();
@@ -67,25 +67,23 @@ fn init(
     const ft_lib = try ft.Library.init();
     const face = try ft_lib.createFaceMemory(assets.roboto_medium_ttf, 0);
 
-    text_mod.init(.{
+    glyphs.init(.{
         .texture_atlas = texture_atlas,
         .texture = texture,
         .ft = ft_lib,
         .face = face,
         .allocator = allocator,
     });
-
-    text_mod.send(.prepare, .{&[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' }});
 }
 
 fn prepare(
     engine: *mach.Engine.Mod,
-    text_mod: *Mod,
+    glyphs: *Mod,
     codepoints: []const u21,
 ) !void {
     const device = engine.state().device;
     const queue = device.getQueue();
-    var s = text_mod.state();
+    var s = glyphs.state();
 
     for (codepoints) |codepoint| {
         const font_size = 48 * 1;

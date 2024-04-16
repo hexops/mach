@@ -12,7 +12,7 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
-const Text = @import("Text.zig");
+const Glyphs = @import("Glyphs.zig");
 
 timer: mach.Timer,
 player: mach.EntityID,
@@ -47,20 +47,32 @@ pub const global_events = .{
 };
 
 pub const local_events = .{
-    .after_sprite_init = .{ .handler = afterSpriteInit },
+    .after_init = .{ .handler = afterInit },
 };
 
 fn init(
+    glyphs: *Glyphs.Mod,
+    game: *Mod,
+) !void {
+    // Prepare which glyphs we will render
+    glyphs.send(.init, .{});
+    glyphs.send(.prepare, .{&[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' }});
+
+    // Run our init code after glyphs module is initialized.
+    game.send(.after_init, .{});
+}
+
+fn afterInit(
     sprite_mod: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
-    text_mod: *Text.Mod,
+    glyphs: *Glyphs.Mod,
     game: *Mod,
 ) !void {
     // The Mach .core is where we set window options, etc.
     core.setTitle("gfx.Sprite example");
 
     // Create a sprite rendering pipeline
-    const texture = text_mod.state().texture;
+    const texture = glyphs.state().texture;
     const pipeline = try sprite_pipeline.newEntity();
     try sprite_pipeline.set(pipeline, .texture, texture);
     sprite_pipeline.send(.update, .{});
@@ -69,9 +81,13 @@ fn init(
     // namespace, e.g. the `Sprite` module could have a 3D `.location` component with a different
     // type than the `.physics2d` module's `.location` component if you desire.
 
+    const r = glyphs.state().regions.get('?').?;
     const player = try sprite_mod.newEntity();
     try sprite_mod.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
     try sprite_mod.set(player, .pipeline, pipeline);
+    try sprite_mod.set(player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
+    try sprite_mod.set(player, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
+    sprite_mod.send(.update, .{});
 
     game.init(.{
         .timer = try mach.Timer.start(),
@@ -84,31 +100,13 @@ fn init(
         .time = 0,
         .pipeline = pipeline,
     });
-
-    // TODO(important): text module should not use global init, so that game can instruct it more clearly and then
-    // this after_init would be more clear. Also after_sprite_init should be renamed to after_text_init and the comment
-    // below is wrong:
-    //
-    // Run the rest of our init code after sprite_mod's .init_pipeline
-    game.send(.after_sprite_init, .{});
-}
-
-fn afterSpriteInit(
-    sprite_mod: *gfx.Sprite.Mod,
-    text_mod: *Text.Mod,
-    game: *Mod,
-) !void {
-    const r = text_mod.state().regions.get('?').?;
-    try sprite_mod.set(game.state().player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
-    try sprite_mod.set(game.state().player, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
-    sprite_mod.send(.update, .{});
 }
 
 fn tick(
     engine: *mach.Engine.Mod,
     sprite_mod: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
-    text_mod: *Text.Mod,
+    glyphs: *Glyphs.Mod,
     game: *Mod,
 ) !void {
     // TODO(engine): event polling should occur in mach.Engine module and get fired as ECS events.
@@ -154,8 +152,8 @@ fn tick(
             new_pos.v[0] += game.state().rand.random().floatNorm(f32) * 25;
             new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 25;
 
-            const rand_index = game.state().rand.random().intRangeAtMost(usize, 0, text_mod.state().regions.count() - 1);
-            const r = text_mod.state().regions.entries.get(rand_index).value;
+            const rand_index = game.state().rand.random().intRangeAtMost(usize, 0, glyphs.state().regions.count() - 1);
+            const r = glyphs.state().regions.entries.get(rand_index).value;
 
             const new_entity = try engine.newEntity();
             try sprite_mod.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scaleScalar(0.3)));
