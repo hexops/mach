@@ -57,6 +57,9 @@ const Lib = struct {
     pa_cvolume_set: *const fn ([*c]c.pa_cvolume, c_uint, c.pa_volume_t) callconv(.C) [*c]c.pa_cvolume,
     pa_sw_volume_from_linear: *const fn (f64) callconv(.C) c.pa_volume_t,
 
+    pa_usec_to_bytes: *const fn (t: c.pa_usec_t, spec: [*c]const c.pa_sample_spec) usize,
+    pa_stream_get_sample_spec: *const fn (s: ?*c.pa_stream) [*c]const c.pa_sample_spec,
+
     pub fn load() !void {
         lib.handle = std.DynLib.openZ("libpulse.so") catch return error.LibraryNotFound;
         inline for (@typeInfo(Lib).Struct.fields[1..]) |field| {
@@ -311,9 +314,10 @@ pub const Context = struct {
         var status: StreamStatus = .{ .main_loop = ctx.main_loop, .status = .unknown };
         lib.pa_stream_set_state_callback(stream, streamStateOp, &status);
 
+        const buffer_len = lib.pa_usec_to_bytes(main.default_latency, lib.pa_stream_get_sample_spec(stream));
         const buf_attr = c.pa_buffer_attr{
             .maxlength = std.math.maxInt(u32),
-            .tlength = std.math.maxInt(u32),
+            .tlength = @intCast(buffer_len),
             .prebuf = 0,
             .minreq = std.math.maxInt(u32),
             .fragsize = std.math.maxInt(u32),
@@ -322,8 +326,7 @@ pub const Context = struct {
         const flags =
             c.PA_STREAM_START_CORKED |
             c.PA_STREAM_AUTO_TIMING_UPDATE |
-            c.PA_STREAM_INTERPOLATE_TIMING |
-            c.PA_STREAM_ADJUST_LATENCY;
+            c.PA_STREAM_INTERPOLATE_TIMING;
 
         if (lib.pa_stream_connect_playback(stream, device.id.ptr, &buf_attr, flags, null, null) != 0) {
             return error.OpeningDevice;
@@ -378,19 +381,19 @@ pub const Context = struct {
         var status: StreamStatus = .{ .main_loop = ctx.main_loop, .status = .unknown };
         lib.pa_stream_set_state_callback(stream, streamStateOp, &status);
 
+        const buffer_len = lib.pa_usec_to_bytes(main.default_latency, lib.pa_stream_get_sample_spec(stream));
         const buf_attr = c.pa_buffer_attr{
             .maxlength = std.math.maxInt(u32),
             .tlength = std.math.maxInt(u32),
-            .prebuf = 0,
+            .prebuf = std.math.maxInt(u32),
             .minreq = std.math.maxInt(u32),
-            .fragsize = std.math.maxInt(u32),
+            .fragsize = @intCast(buffer_len),
         };
 
         const flags =
             c.PA_STREAM_START_CORKED |
             c.PA_STREAM_AUTO_TIMING_UPDATE |
-            c.PA_STREAM_INTERPOLATE_TIMING |
-            c.PA_STREAM_ADJUST_LATENCY;
+            c.PA_STREAM_INTERPOLATE_TIMING;
 
         if (lib.pa_stream_connect_record(stream, device.id.ptr, &buf_attr, flags) != 0) {
             return error.OpeningDevice;
