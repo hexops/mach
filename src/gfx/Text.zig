@@ -23,12 +23,6 @@ allocator: std.mem.Allocator,
 pub const name = .mach_gfx_text;
 pub const Mod = mach.Mod(@This());
 
-// TODO: better/proper text layout, shaping
-//
-// TODO: integrate freetype integration
-//
-// TODO: allow user to specify projection matrix (3d-space flat text etc.)
-
 pub const components = .{
     .pipeline = .{ .type = u8, .description = 
     \\ The ID of the pipeline this text belongs to. By default, zero.
@@ -185,6 +179,7 @@ fn init(text_mod: *Mod) void {
     });
 }
 
+// TODO(text): no args
 fn initPipeline(
     engine: *Engine.Mod,
     text_mod: *Mod,
@@ -345,6 +340,7 @@ fn initPipeline(
     pipeline.value_ptr.reference();
 }
 
+// TODO(text): no args
 fn updated(
     engine: *Engine.Mod,
     text_mod: *Mod,
@@ -506,6 +502,7 @@ fn updated(
     engine.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
+// TODO(text): no args
 fn preRender(
     engine: *Engine.Mod,
     text_mod: *Mod,
@@ -534,6 +531,7 @@ fn preRender(
     engine.state().encoder.writeBuffer(pipeline.uniforms, 0, &[_]Uniforms{uniforms});
 }
 
+// TODO(text): no args
 fn render(
     engine: *Engine.Mod,
     text_mod: *Mod,

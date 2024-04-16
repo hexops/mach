@@ -34,4 +34,6 @@ pub const components = .{
     \\ Fill color
     \\ TODO(text): this is not currently implemented
     },
+
+    // TODO(text): allow user to specify projection matrix (3d-space flat text etc.)
 };
