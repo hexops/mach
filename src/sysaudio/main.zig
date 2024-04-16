@@ -7,7 +7,7 @@ const conv = @import("conv.zig");
 pub const Backend = backends.Backend;
 pub const Range = util.Range;
 
-pub const default_latency = 500 * std.time.us_per_ms; // μs
+pub const default_latency = 30 * std.time.us_per_ms; // μs
 pub const min_sample_rate = 8_000; // Hz
 pub const max_sample_rate = 5_644_800; // Hz
 

@@ -21,7 +21,8 @@ buffer: SampleBuffer = SampleBuffer.init(),
 mutex: std.Thread.Mutex = .{},
 cond: std.Thread.Condition = .{},
 
-pub const SampleBuffer = std.fifo.LinearFifo(f32, .{ .Static = 4096 });
+// This should be big enough for when backends expect a large output buffer
+pub const SampleBuffer = std.fifo.LinearFifo(f32, .{ .Static = 8 * 1024 });
 
 pub fn init(audio: *@This()) !void {
     audio.ctx = try sysaudio.Context.init(null, audio.allocator, .{});
