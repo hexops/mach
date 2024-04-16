@@ -67,6 +67,8 @@ const Entities = @import("entities.zig").Entities;
 const EntityID = @import("entities.zig").EntityID;
 const is_debug = @import("Archetype.zig").is_debug;
 
+const log = std.log.scoped(.mach);
+
 /// Verifies that M matches the basic layout of a Mach module
 fn ModuleInterface(comptime M: type) type {
     validateModule(M, true);
@@ -121,11 +123,24 @@ pub fn Modules(comptime modules: anytype) type {
         mod: ModsByName(modules),
         // TODO: pass mods directly instead of ComponentTypesByName?
         entities: Entities(component_types_by_name),
+        debug_trace: bool,
 
         pub fn init(m: *@This(), allocator: std.mem.Allocator) !void {
             // TODO: switch Entities to stack allocation like Modules is
             var entities = try Entities(component_types_by_name).init(allocator);
             errdefer entities.deinit();
+
+            const debug_trace_str = std.process.getEnvVarOwned(
+                allocator,
+                "MACH_DEBUG_TRACE",
+            ) catch |err| switch (err) {
+                error.EnvironmentVariableNotFound => null,
+                else => return err,
+            };
+            const debug_trace = if (debug_trace_str) |s| blk: {
+                defer allocator.free(s);
+                break :blk std.ascii.eqlIgnoreCase(s, "true");
+            } else false;
 
             // TODO: custom event queue allocation sizes
             m.* = .{
@@ -133,6 +148,7 @@ pub fn Modules(comptime modules: anytype) type {
                 .args_queue = try std.ArrayListUnmanaged(u8).initCapacity(allocator, 8 * 1024 * 1024),
                 .events = EventQueue.init(allocator),
                 .mod = undefined,
+                .debug_trace = debug_trace,
             };
             errdefer m.args_queue.deinit(allocator);
             errdefer m.events.deinit();
@@ -343,21 +359,20 @@ pub fn Modules(comptime modules: anytype) type {
 
                 if (ev.module_name) |module_name| {
                     // Dispatch the local event
-                    try @This().callLocal(@enumFromInt(module_name), @enumFromInt(ev.event_name), ev.args_slice, injectable);
+                    try m.callLocal(@enumFromInt(module_name), @enumFromInt(ev.event_name), ev.args_slice, injectable);
 
                     // If we only wanted to dispatch until this event, then return.
                     if (options.until) |until| {
                         if (until.module_name == module_name and until.local_event == ev.event_name) return;
                     }
                 } else {
-                    // Dispatch the global event
-                    try @This().callGlobal(@enumFromInt(ev.event_name), ev.args_slice, injectable);
+                    try m.callGlobal(@enumFromInt(ev.event_name), ev.args_slice, injectable);
                 }
             }
         }
 
         /// Call global event handler with the specified name in all modules
-        inline fn callGlobal(event_name: GlobalEvent, args: []u8, injectable: anytype) !void {
+        inline fn callGlobal(m: *@This(), event_name: GlobalEvent, args: []u8, injectable: anytype) !void {
             if (@typeInfo(@TypeOf(event_name)).Enum.fields.len == 0) return;
             switch (event_name) {
                 inline else => |ev_name| {
@@ -366,12 +381,15 @@ pub fn Modules(comptime modules: anytype) type {
                         _ = ModuleInterface(M); // Validate the module
                         if (@hasDecl(M, "global_events")) inline for (@typeInfo(@TypeOf(M.global_events)).Struct.fields) |field| {
                             comptime if (!std.mem.eql(u8, @tagName(ev_name), field.name)) continue;
+                            if (m.debug_trace) log.debug("trace(global): .{s}.{s}", .{
+                                @tagName(M.name),
+                                @tagName(ev_name),
+                            });
                             const handler = @field(M.global_events, @tagName(ev_name)).handler;
                             if (@typeInfo(@TypeOf(handler)) == .Type) continue; // Pre-declaration of what args an event has, nothing to do.
                             if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares global event .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
                                 @tagName(M.name),
                                 @tagName(ev_name),
-
                                 @typeName(@TypeOf(handler)),
                             }));
                             try callHandler(handler, args, injectable, "." ++ @tagName(M.name) ++ "." ++ @tagName(ev_name));
@@ -382,7 +400,7 @@ pub fn Modules(comptime modules: anytype) type {
         }
 
         /// Call local event handler with the specified name in the specified module
-        inline fn callLocal(module_name: ModuleName(modules), event_name: LocalEvent, args: []u8, injectable: anytype) !void {
+        inline fn callLocal(m: *@This(), module_name: ModuleName(modules), event_name: LocalEvent, args: []u8, injectable: anytype) !void {
             if (@typeInfo(@TypeOf(event_name)).Enum.fields.len == 0) return;
             switch (event_name) {
                 inline else => |ev_name| {
@@ -393,6 +411,11 @@ pub fn Modules(comptime modules: anytype) type {
                             _ = ModuleInterface(M); // Validate the module
                             if (@hasDecl(M, "local_events")) inline for (@typeInfo(@TypeOf(M.local_events)).Struct.fields) |field| {
                                 comptime if (!std.mem.eql(u8, @tagName(ev_name), field.name)) continue;
+                                if (m.debug_trace) log.debug("trace: .{s}.{s}", .{
+                                    @tagName(M.name),
+                                    @tagName(ev_name),
+                                });
+
                                 const handler = @field(M.local_events, @tagName(ev_name)).handler;
                                 if (@typeInfo(@TypeOf(handler)) == .Type) continue; // Pre-declaration of what args an event has, nothing to do.
                                 if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares local event .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
@@ -1334,7 +1357,7 @@ test "event name calling" {
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
 
-    try @TypeOf(modules).callGlobal(.tick, &.{}, .{});
+    try modules.callGlobal(.tick, &.{}, .{});
     try testing.expect(usize, 2).eql(global.ticks);
 
     // Check we can use .callGlobal() with a runtime-known event name.
@@ -1345,7 +1368,7 @@ test "event name calling" {
     alloc.* = @intFromEnum(@as(GE, .tick));
 
     const global_event_name = @as(GE, @enumFromInt(alloc.*));
-    try @TypeOf(modules).callGlobal(global_event_name, &.{}, .{});
+    try modules.callGlobal(global_event_name, &.{}, .{});
     try testing.expect(usize, 4).eql(global.ticks);
 
     // Check we can use .callLocal() with a runtime-known event and module name.
@@ -1357,8 +1380,8 @@ test "event name calling" {
     alloc.* = @intFromEnum(@as(LE, .update));
     var module_name = @as(M, @enumFromInt(m_alloc.*));
     var local_event_name = @as(LE, @enumFromInt(alloc.*));
-    try @TypeOf(modules).callLocal(module_name, local_event_name, &.{}, .{});
-    try @TypeOf(modules).callLocal(module_name, local_event_name, &.{}, .{});
+    try modules.callLocal(module_name, local_event_name, &.{}, .{});
+    try modules.callLocal(module_name, local_event_name, &.{}, .{});
     try testing.expect(usize, 4).eql(global.ticks);
     try testing.expect(usize, 0).eql(global.physics_updates);
     try testing.expect(usize, 2).eql(global.renderer_updates);
@@ -1367,14 +1390,14 @@ test "event name calling" {
     alloc.* = @intFromEnum(@as(LE, .update));
     module_name = @as(M, @enumFromInt(m_alloc.*));
     local_event_name = @as(LE, @enumFromInt(alloc.*));
-    try @TypeOf(modules).callLocal(module_name, local_event_name, &.{}, .{});
+    try modules.callLocal(module_name, local_event_name, &.{}, .{});
     try testing.expect(usize, 1).eql(global.physics_updates);
 
     m_alloc.* = @intFromEnum(@as(M, .engine_physics));
     alloc.* = @intFromEnum(@as(LE, .calc));
     module_name = @as(M, @enumFromInt(m_alloc.*));
     local_event_name = @as(LE, @enumFromInt(alloc.*));
-    try @TypeOf(modules).callLocal(module_name, local_event_name, &.{}, .{});
+    try modules.callLocal(module_name, local_event_name, &.{}, .{});
     try testing.expect(usize, 4).eql(global.ticks);
     try testing.expect(usize, 1).eql(global.physics_calc);
     try testing.expect(usize, 1).eql(global.physics_updates);
