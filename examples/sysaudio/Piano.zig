@@ -27,27 +27,22 @@ pub const global_events = .{
     .tick = .{ .handler = tick },
 };
 
-tones: std.AutoHashMapUnmanaged(mach.core.Key, mach.EntityID) = .{},
+pub const local_events = .{
+    .init = .{ .handler = init },
+    .tick = .{ .handler = tick },
+};
 
-fn init(audio: *mach.Audio.Mod, piano: *Mod) !void {
-    audio.init(.{ .allocator = gpa.allocator() });
-    try audio.state().init();
+fn init(audio: *mach.Audio.Mod, piano: *Mod) void {
+    // Initialize audio module
+    audio.send(.init, .{});
 
+    // Initialize piano module state
     piano.init(.{});
-    inline for (@typeInfo(mach.core.Key).Enum.fields) |field| {
-        const key: mach.core.Key = @enumFromInt(field.value);
-        const entity = try audio.newEntity();
-        try audio.set(entity, .samples, try fillTone(audio, key));
-        try audio.set(entity, .playing, false);
-        try audio.set(entity, .index, 0);
-        try piano.state().tones.put(gpa.allocator(), key, entity);
-    }
 }
 
-pub fn tick(
+fn tick(
     engine: *mach.Engine.Mod,
     audio: *mach.Audio.Mod,
-    piano: *Mod,
 ) !void {
     var iter = mach.core.pollEvents();
     while (iter.next()) |event| {
@@ -55,11 +50,15 @@ pub fn tick(
             .key_press => |ev| {
                 const vol = try audio.state().player.volume();
                 switch (ev.key) {
+                    // Arrow keys turn volume up/down
                     .down => try audio.state().player.setVolume(@max(0.0, vol - 0.1)),
                     .up => try audio.state().player.setVolume(@min(1.0, vol + 0.1)),
                     else => {
-                        const entity = piano.state().tones.get(ev.key).?;
+                        // Play a new sound
+                        const entity = try audio.newEntity();
+                        try audio.set(entity, .samples, try fillTone(audio, ev.key));
                         try audio.set(entity, .playing, true);
+                        try audio.set(entity, .index, 0);
                     },
                 }
             },
@@ -76,7 +75,7 @@ pub fn tick(
     back_buffer_view.release();
 }
 
-pub fn fillTone(audio: *mach.Audio.Mod, key: mach.core.Key) ![]const f32 {
+fn fillTone(audio: *mach.Audio.Mod, key: mach.core.Key) ![]const f32 {
     const frequency = keyToFrequency(key);
     const channels = audio.state().player.channels().len;
     const sample_rate: f32 = @floatFromInt(audio.state().player.sampleRate());
@@ -105,7 +104,7 @@ pub fn fillTone(audio: *mach.Audio.Mod, key: mach.core.Key) ![]const f32 {
     return samples;
 }
 
-pub fn keyToFrequency(key: mach.core.Key) f32 {
+fn keyToFrequency(key: mach.core.Key) f32 {
     // The frequencies here just come from a piano frequencies chart. You can google for them.
     return switch (key) {
         // First row of piano keys, the highest.
