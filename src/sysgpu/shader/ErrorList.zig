@@ -116,13 +116,17 @@ fn printCode(writer: anytype, term: std.io.tty.Config, source: []const u8, loc: 
 
     // location pointer
     const line_number_len = (std.math.log10(loc_extra.line) + 1) + 3;
-    try writer.writeByteNTimes(
-        ' ',
-        line_number_len + (loc_extra.col - 1),
-    );
+    if (line_number_len > loc_extra.col) {
+        try writer.writeByteNTimes(
+            ' ',
+            line_number_len + (loc_extra.col - 1),
+        );
+    }
     try term.setColor(writer, .bold);
     try term.setColor(writer, .green);
     try writer.writeByte('^');
-    try writer.writeByteNTimes('~', loc.end - loc.start - 1);
+    if (loc.end > loc.start) {
+        try writer.writeByteNTimes('~', loc.end - loc.start - 1);
+    }
     try writer.writeByte('\n');
 }
