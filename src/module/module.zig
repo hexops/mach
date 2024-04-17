@@ -339,6 +339,7 @@ pub fn Modules(comptime modules: anytype) type {
             // TODO: parallel / multi-threaded dispatch
             // TODO: PGO
 
+            // TODO(important): we may exceed stack space here, consider moving to heap.
             var buf: [8 * 1024 * 1024]u8 = undefined;
             while (true) {
                 // Dequeue the next event
@@ -530,7 +531,7 @@ pub fn ModSet(comptime modules: anytype) type {
 
                 /// Removes an entity.
                 pub inline fn removeEntity(m: *@This(), entity: EntityID) !void {
-                    try m.entities.removeEntity(entity);
+                    try m.entities.remove(entity);
                 }
 
                 /// Sets the named component to the specified value for the given entity,
