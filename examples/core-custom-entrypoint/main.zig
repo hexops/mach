@@ -1,12 +1,9 @@
-const std = @import("std");
-
 const mach = @import("mach");
-const Game = @import("Game.zig");
 
 // The global list of Mach modules registered for use in our application.
 pub const modules = .{
     mach.Core,
-    Game,
+    @import("Game.zig"),
 };
 
 pub fn main() !void {
