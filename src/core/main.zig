@@ -14,6 +14,12 @@ pub fn initModule() !void {
     // Initialize the global set of Mach modules used in the program.
     try mods.init(std.heap.c_allocator);
     mods.mod.mach_core.send(.init, .{});
+
+    // Dispatch events until this .mach_core.init_done is sent
+    try mods.dispatch(.{ .until = .{
+        .module_name = mods.moduleNameToID(.mach_core),
+        .local_event = mods.localEventToID(.mach_core, .init_done),
+    } });
 }
 
 /// Tick runs a single step of the main loop on the main OS thread.

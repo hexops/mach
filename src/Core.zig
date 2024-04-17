@@ -16,6 +16,7 @@ pub const global_events = .{
 
 pub const local_events = .{
     .init = .{ .handler = init },
+    .init_done = .{ .handler = fn () void },
 
     // TODO(important): need some way to tie event execution to a specific thread once we have a
     // multithreaded dispatch implementation
@@ -45,6 +46,7 @@ fn init(core: *Mod) !void {
     });
 
     core.sendGlobal(.init, .{});
+    core.send(.init_done, .{});
 }
 
 fn deinit(core: *Mod) void {
