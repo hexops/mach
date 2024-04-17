@@ -19,10 +19,6 @@ pub const testing = @import("testing.zig");
 pub const sysaudio = if (build_options.want_sysaudio) @import("sysaudio/main.zig") else struct {};
 pub const sysgpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig") else struct {};
 
-// Engine exports
-pub const App = @import("engine.zig").App;
-pub const Engine = @import("engine.zig").Engine;
-
 // Module system
 pub const modules = blk: {
     if (!@hasDecl(@import("root"), "modules")) {
