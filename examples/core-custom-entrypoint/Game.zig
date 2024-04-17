@@ -14,21 +14,27 @@ title_timer: mach.Timer,
 pipeline: *gpu.RenderPipeline,
 
 fn init(game: *Mod) !void {
+    // Create our shader module
     const shader_module = mach.core.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
     defer shader_module.release();
 
-    // Fragment state
+    // Blend state describes how rendered colors get blended
     const blend = gpu.BlendState{};
+
+    // Color target describes e.g. the pixel format of the window we are rendering to.
     const color_target = gpu.ColorTargetState{
         .format = mach.core.descriptor.format,
         .blend = &blend,
-        .write_mask = gpu.ColorWriteMaskFlags.all,
     };
+
+    // Fragment state describes which shader and entrypoint to use for rendering fragments.
     const fragment = gpu.FragmentState.init(.{
         .module = shader_module,
         .entry_point = "frag_main",
         .targets = &.{color_target},
     });
+
+    // Create our render pipeline that will ultimately get pixels onto the screen.
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
         .fragment = &fragment,
         .vertex = gpu.VertexState{
@@ -38,6 +44,7 @@ fn init(game: *Mod) !void {
     };
     const pipeline = mach.core.device.createRenderPipeline(&pipeline_descriptor);
 
+    // Store our render pipeline in our module's state, so we can access it later on.
     game.init(.{
         .title_timer = try mach.Timer.start(),
         .pipeline = pipeline,
@@ -63,32 +70,41 @@ fn tick(
         }
     }
 
-    const queue = mach.core.queue;
+    // Grab the back buffer of the swapchain
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
-    const color_attachment = gpu.RenderPassColorAttachment{
+    defer back_buffer_view.release();
+
+    // Create a command encoder
+    const encoder = mach.core.device.createCommandEncoder(null);
+    defer encoder.release();
+
+    // Begin render pass
+    const sky_blue_background = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
+    const color_attachments = [_]gpu.RenderPassColorAttachment{.{
         .view = back_buffer_view,
-        .clear_value = std.mem.zeroes(gpu.Color),
+        .clear_value = sky_blue_background,
         .load_op = .clear,
         .store_op = .store,
-    };
+    }};
+    const render_pass = encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+        .label = "main render pass",
+        .color_attachments = &color_attachments,
+    }));
 
-    const encoder = mach.core.device.createCommandEncoder(null);
-    const render_pass_info = gpu.RenderPassDescriptor.init(.{
-        .color_attachments = &.{color_attachment},
-    });
-    const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setPipeline(game.state().pipeline);
-    pass.draw(3, 1, 0, 0);
-    pass.end();
-    pass.release();
+    // Draw
+    render_pass.setPipeline(game.state().pipeline);
+    render_pass.draw(3, 1, 0, 0);
 
+    // Finish render pass
+    render_pass.end();
+
+    // Submit our commands to the queue
     var command = encoder.finish(null);
-    encoder.release();
+    defer command.release();
+    mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
 
-    queue.submit(&[_]*gpu.CommandBuffer{command});
-    command.release();
+    // Present the frame
     mach.core.swap_chain.present();
-    back_buffer_view.release();
 
     // update the window title every second
     if (game.state().title_timer.read() >= 1.0) {
