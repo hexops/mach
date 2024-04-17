@@ -69,7 +69,7 @@ const text2: []const []const u8 = &.{"!$?😊"};
 
 fn init(
     engine: *mach.Engine.Mod,
-    text_mod: *Text.Mod,
+    text: *Text.Mod,
     text_style: *gfx.TextStyle.Mod,
     game: *Mod,
 ) !void {
@@ -100,8 +100,8 @@ fn init(
 
     // Create some text
     const player = try engine.newEntity();
-    try text_mod.set(player, .pipeline, @intFromEnum(Pipeline.default));
-    try text_mod.set(player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(vec3(0, 0, 0))));
+    try text.set(player, .pipeline, @intFromEnum(Pipeline.default));
+    try text.set(player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(vec3(0, 0, 0))));
 
     // TODO: better storage mechanism for this
     // TODO: this is a leak
@@ -110,10 +110,10 @@ fn init(
     styles[0] = style1;
     styles[1] = style2;
     styles[2] = style3;
-    try text_mod.set(player, .text, text1);
-    try text_mod.set(player, .style, styles);
+    try text.set(player, .text, text1);
+    try text.set(player, .style, styles);
 
-    text_mod.send(.init_pipeline, .{Text.PipelineOptions{
+    text.send(.init_pipeline, .{Text.PipelineOptions{
         .pipeline = @intFromEnum(Pipeline.default),
     }});
 
@@ -137,7 +137,7 @@ fn deinit(engine: *mach.Engine.Mod) !void {
 
 fn tick(
     engine: *mach.Engine.Mod,
-    text_mod: *Text.Mod,
+    text: *Text.Mod,
     game: *Mod,
 ) !void {
     // TODO(engine): event polling should occur in mach.Engine module and get fired as ECS events.
@@ -173,7 +173,7 @@ fn tick(
     game.state().direction = direction;
     game.state().spawning = spawning;
 
-    var player_transform = text_mod.get(game.state().player, .transform).?;
+    var player_transform = text.get(game.state().player, .transform).?;
     var player_pos = player_transform.translation().divScalar(upscale);
     if (spawning and game.state().spawn_timer.read() > 1.0 / 60.0) {
         // Spawn new entities
@@ -184,15 +184,15 @@ fn tick(
             new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 25;
 
             const new_entity = try engine.newEntity();
-            try text_mod.set(new_entity, .pipeline, @intFromEnum(Pipeline.default));
-            try text_mod.set(new_entity, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(new_pos)));
+            try text.set(new_entity, .pipeline, @intFromEnum(Pipeline.default));
+            try text.set(new_entity, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(new_pos)));
 
             // TODO: better storage mechanism for this
             // TODO: this is a leak
             const styles = try game.state().allocator.alloc(mach.EntityID, 1);
             styles[0] = game.state().style1;
-            try text_mod.set(new_entity, .text, text2);
-            try text_mod.set(new_entity, .style, styles);
+            try text.set(new_entity, .text, text2);
+            try text.set(new_entity, .style, styles);
 
             game.state().texts += 1;
         }
@@ -220,7 +220,7 @@ fn tick(
             transform = transform.mul(&Mat4x4.scaleScalar(@min(math.cos(game.state().time / 2.0), 0.5)));
 
             // TODO: .set() API is substantially slower due to internals
-            // try text_mod.set(id, .transform, transform);
+            // try text.set(id, .transform, transform);
             old_transform.* = transform;
         }
     }
@@ -230,15 +230,15 @@ fn tick(
     const speed = 200.0 / upscale;
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
-    try text_mod.set(game.state().player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(player_pos)));
-    text_mod.send(.updated, .{@intFromEnum(Pipeline.default)});
+    try text.set(game.state().player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(player_pos)));
+    text.send(.updated, .{@intFromEnum(Pipeline.default)});
 
     // Perform pre-render work
-    text_mod.send(.pre_render, .{@intFromEnum(Pipeline.default)});
+    text.send(.pre_render, .{@intFromEnum(Pipeline.default)});
 
     // Render a frame
     engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
-    text_mod.send(.render, .{@intFromEnum(Pipeline.default)});
+    text.send(.render, .{@intFromEnum(Pipeline.default)});
     engine.send(.end_pass, .{});
     engine.send(.frame_done, .{}); // Present the frame
 

@@ -63,7 +63,7 @@ fn init(
 }
 
 fn afterInit(
-    sprite_mod: *gfx.Sprite.Mod,
+    sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     glyphs: *Glyphs.Mod,
     game: *Mod,
@@ -82,12 +82,12 @@ fn afterInit(
     // type than the `.physics2d` module's `.location` component if you desire.
 
     const r = glyphs.state().regions.get('?').?;
-    const player = try sprite_mod.newEntity();
-    try sprite_mod.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
-    try sprite_mod.set(player, .pipeline, pipeline);
-    try sprite_mod.set(player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
-    try sprite_mod.set(player, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
-    sprite_mod.send(.update, .{});
+    const player = try sprite.newEntity();
+    try sprite.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
+    try sprite.set(player, .pipeline, pipeline);
+    try sprite.set(player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
+    try sprite.set(player, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
+    sprite.send(.update, .{});
 
     game.init(.{
         .timer = try mach.Timer.start(),
@@ -104,7 +104,7 @@ fn afterInit(
 
 fn tick(
     engine: *mach.Engine.Mod,
-    sprite_mod: *gfx.Sprite.Mod,
+    sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     glyphs: *Glyphs.Mod,
     game: *Mod,
@@ -142,7 +142,7 @@ fn tick(
     game.state().direction = direction;
     game.state().spawning = spawning;
 
-    var player_transform = sprite_mod.get(game.state().player, .transform).?;
+    var player_transform = sprite.get(game.state().player, .transform).?;
     var player_pos = player_transform.translation();
     if (!spawning and game.state().spawn_timer.read() > 1.0 / 60.0) {
         // Spawn new entities
@@ -156,10 +156,10 @@ fn tick(
             const r = glyphs.state().regions.entries.get(rand_index).value;
 
             const new_entity = try engine.newEntity();
-            try sprite_mod.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scaleScalar(0.3)));
-            try sprite_mod.set(new_entity, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
-            try sprite_mod.set(new_entity, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
-            try sprite_mod.set(new_entity, .pipeline, game.state().pipeline);
+            try sprite.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scaleScalar(0.3)));
+            try sprite.set(new_entity, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
+            try sprite.set(new_entity, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
+            try sprite.set(new_entity, .pipeline, game.state().pipeline);
             game.state().sprites += 1;
         }
     }
@@ -189,7 +189,7 @@ fn tick(
             transform = transform.mul(&Mat4x4.scale(Vec3.splat(@max(math.cos(game.state().time / 2.0), 0.2))));
 
             // TODO: .set() API is substantially slower due to internals
-            // try sprite_mod.set(id, .transform, transform);
+            // try sprite.set(id, .transform, transform);
             old_transform.* = transform;
         }
     }
@@ -202,8 +202,8 @@ fn tick(
     player_transform = Mat4x4.translate(player_pos).mul(
         &Mat4x4.scale(Vec3.splat(1.0)),
     );
-    try sprite_mod.set(game.state().player, .transform, player_transform);
-    sprite_mod.send(.update, .{});
+    try sprite.set(game.state().player, .transform, player_transform);
+    sprite.send(.update, .{});
 
     // Perform pre-render work
     sprite_pipeline.send(.pre_render, .{});

@@ -44,7 +44,7 @@ pub const local_events = .{
     .update = .{ .handler = update },
 };
 
-fn update(engine: *Engine.Mod, sprite_mod: *Mod, sprite_pipeline: *gfx.SpritePipeline.Mod) !void {
+fn update(engine: *Engine.Mod, sprite: *Mod, sprite_pipeline: *gfx.SpritePipeline.Mod) !void {
     var archetypes_iter = sprite_pipeline.entities.query(.{ .all = &.{
         .{ .mach_gfx_sprite_pipeline = &.{
             .built,
@@ -54,14 +54,14 @@ fn update(engine: *Engine.Mod, sprite_mod: *Mod, sprite_pipeline: *gfx.SpritePip
         const ids = archetype.slice(.entity, .id);
         const built_pipelines = archetype.slice(.mach_gfx_sprite_pipeline, .built);
         for (ids, built_pipelines) |pipeline_id, *built| {
-            try updatePipeline(engine, sprite_mod, sprite_pipeline, pipeline_id, built);
+            try updatePipeline(engine, sprite, sprite_pipeline, pipeline_id, built);
         }
     }
 }
 
 fn updatePipeline(
     engine: *Engine.Mod,
-    sprite_mod: *Mod,
+    sprite: *Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     pipeline_id: mach.EntityID,
     built: *gfx.SpritePipeline.BuiltPipeline,
@@ -70,7 +70,7 @@ fn updatePipeline(
     const encoder = device.createCommandEncoder(null);
     defer encoder.release();
 
-    var archetypes_iter = sprite_mod.entities.query(.{ .all = &.{
+    var archetypes_iter = sprite.entities.query(.{ .all = &.{
         .{ .mach_gfx_sprite = &.{
             .uv_transform,
             .transform,

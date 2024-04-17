@@ -168,13 +168,13 @@ pub const PipelineOptions = struct {
     pipeline_layout: ?*gpu.PipelineLayout = null,
 };
 
-fn deinit(text_mod: *Mod) !void {
-    for (text_mod.state().pipelines.entries.items(.value)) |*pipeline| pipeline.deinit(text_mod.state().allocator);
-    text_mod.state().pipelines.deinit(text_mod.state().allocator);
+fn deinit(text: *Mod) !void {
+    for (text.state().pipelines.entries.items(.value)) |*pipeline| pipeline.deinit(text.state().allocator);
+    text.state().pipelines.deinit(text.state().allocator);
 }
 
-fn init(text_mod: *Mod) void {
-    text_mod.init(.{
+fn init(text: *Mod) void {
+    text.init(.{
         .allocator = gpa.allocator(),
     });
 }
@@ -182,14 +182,14 @@ fn init(text_mod: *Mod) void {
 // TODO(text): no args
 fn initPipeline(
     engine: *Engine.Mod,
-    text_mod: *Mod,
+    text: *Mod,
     opt: PipelineOptions,
 ) !void {
     const device = engine.state().device;
 
-    const pipeline = try text_mod.state().pipelines.getOrPut(text_mod.state().allocator, opt.pipeline);
+    const pipeline = try text.state().pipelines.getOrPut(text.state().allocator, opt.pipeline);
     if (pipeline.found_existing) {
-        pipeline.value_ptr.*.deinit(text_mod.state().allocator);
+        pipeline.value_ptr.*.deinit(text.state().allocator);
     }
 
     // Prepare texture for the font atlas.
@@ -204,7 +204,7 @@ fn initPipeline(
         },
     });
     const texture_atlas = try gfx.Atlas.init(
-        text_mod.state().allocator,
+        text.state().allocator,
         img_size.width,
         .rgba,
     );
@@ -343,10 +343,10 @@ fn initPipeline(
 // TODO(text): no args
 fn updated(
     engine: *Engine.Mod,
-    text_mod: *Mod,
+    text: *Mod,
     pipeline_id: u32,
 ) !void {
-    const pipeline = text_mod.state().pipelines.getPtr(pipeline_id).?;
+    const pipeline = text.state().pipelines.getPtr(pipeline_id).?;
     const device = engine.state().device;
 
     // TODO: make sure these entities only belong to the given pipeline
@@ -395,7 +395,7 @@ fn updated(
                 _ = font_name; // TODO: actually use font name
                 const font_bytes = @import("font-assets").fira_sans_regular_ttf;
                 var font = try gfx.Font.initBytes(font_bytes);
-                defer font.deinit(text_mod.state().allocator);
+                defer font.deinit(text.state().allocator);
 
                 const font_size = engine.entities.getComponent(style, .mach_gfx_text_style, .font_size).?;
                 const font_weight = engine.entities.getComponent(style, .mach_gfx_text_style, .font_weight);
@@ -420,16 +420,16 @@ fn updated(
                     const codepoint = segment[glyph.cluster];
                     // TODO: use flags(?) to detect newline, or at least something more reliable?
                     if (codepoint != '\n') {
-                        const region = try pipeline.regions.getOrPut(text_mod.state().allocator, .{
+                        const region = try pipeline.regions.getOrPut(text.state().allocator, .{
                             .index = glyph.glyph_index,
                             .size = @bitCast(font_size),
                         });
                         if (!region.found_existing) {
-                            const rendered_glyph = try font.render(text_mod.state().allocator, glyph.glyph_index, .{
+                            const rendered_glyph = try font.render(text.state().allocator, glyph.glyph_index, .{
                                 .font_size_px = run.font_size_px,
                             });
                             if (rendered_glyph.bitmap) |bitmap| {
-                                var glyph_atlas_region = try pipeline.texture_atlas.reserve(text_mod.state().allocator, rendered_glyph.width, rendered_glyph.height);
+                                var glyph_atlas_region = try pipeline.texture_atlas.reserve(text.state().allocator, rendered_glyph.width, rendered_glyph.height);
                                 pipeline.texture_atlas.set(glyph_atlas_region, @as([*]const u8, @ptrCast(bitmap.ptr))[0 .. bitmap.len * 4]);
                                 texture_update = true;
 
@@ -454,7 +454,7 @@ fn updated(
 
                         const r = region.value_ptr.*;
                         const size = vec2(@floatFromInt(r.width), @floatFromInt(r.height));
-                        try glyphs.append(text_mod.state().allocator, .{
+                        try glyphs.append(text.state().allocator, .{
                             .pos = vec2(
                                 origin_x + glyph.offset.x(),
                                 origin_y - (size.y() - glyph.offset.y()),
@@ -479,7 +479,7 @@ fn updated(
 
     // TODO: could writeBuffer check for zero?
     if (glyphs.items.len > 0) encoder.writeBuffer(pipeline.glyphs, 0, glyphs.items);
-    defer glyphs.deinit(text_mod.state().allocator);
+    defer glyphs.deinit(text.state().allocator);
     if (texture_update) {
         // rgba32_pixels
         // TODO: use proper texture dimensions here
@@ -505,10 +505,10 @@ fn updated(
 // TODO(text): no args
 fn preRender(
     engine: *Engine.Mod,
-    text_mod: *Mod,
+    text: *Mod,
     pipeline_id: u32,
 ) !void {
-    const pipeline = text_mod.state().pipelines.get(pipeline_id).?;
+    const pipeline = text.state().pipelines.get(pipeline_id).?;
 
     // Update uniform buffer
     const proj = Mat4x4.projection2D(.{
@@ -534,10 +534,10 @@ fn preRender(
 // TODO(text): no args
 fn render(
     engine: *Engine.Mod,
-    text_mod: *Mod,
+    text: *Mod,
     pipeline_id: u32,
 ) !void {
-    const pipeline = text_mod.state().pipelines.get(pipeline_id).?;
+    const pipeline = text.state().pipelines.get(pipeline_id).?;
 
     // Draw the text batch
     const pass = engine.state().pass;
