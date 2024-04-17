@@ -665,7 +665,7 @@ fn buildExamples(
         has_assets: bool = false,
         use_module_api: bool = false,
     }{
-        .{ .name = "sysaudio", .deps = &.{} },
+        .{ .name = "sysaudio", .deps = &.{}, .use_module_api = true },
         .{
             .name = "gkurve",
             .deps = &.{ .zigimg, .freetype, .assets },

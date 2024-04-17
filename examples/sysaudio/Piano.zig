@@ -25,11 +25,16 @@ pub const Mod = mach.Mod(@This());
 pub const global_events = .{
     .init = .{ .handler = init },
     .tick = .{ .handler = tick },
+    .audio_state_change = .{ .handler = audioStateChange },
 };
 
 pub const local_events = .{
     .init = .{ .handler = init },
     .tick = .{ .handler = tick },
+};
+
+pub const components = .{
+    .play_after = .{ .type = f32 },
 };
 
 fn init(audio: *mach.Audio.Mod, piano: *Mod) void {
@@ -40,9 +45,29 @@ fn init(audio: *mach.Audio.Mod, piano: *Mod) void {
     piano.init(.{});
 }
 
-fn tick(
-    engine: *mach.Engine.Mod,
+fn audioStateChange(
     audio: *mach.Audio.Mod,
+    which: mach.EntityID,
+    piano: *Mod,
+) !void {
+    if (audio.get(which, .playing) == false) {
+        if (piano.get(which, .play_after)) |frequency| {
+            // Play a new sound
+            const entity = try audio.newEntity();
+            try audio.set(entity, .samples, try fillTone(audio, frequency));
+            try audio.set(entity, .playing, true);
+            try audio.set(entity, .index, 0);
+        }
+
+        // Remove the entity for the old sound
+        try audio.removeEntity(which);
+    }
+}
+
+fn tick(
+    core: *mach.Core.Mod,
+    audio: *mach.Audio.Mod,
+    piano: *Mod,
 ) !void {
     var iter = mach.core.pollEvents();
     while (iter.next()) |event| {
@@ -56,18 +81,20 @@ fn tick(
                     else => {
                         // Play a new sound
                         const entity = try audio.newEntity();
-                        try audio.set(entity, .samples, try fillTone(audio, ev.key));
+                        try audio.set(entity, .samples, try fillTone(audio, keyToFrequency(ev.key)));
                         try audio.set(entity, .playing, true);
                         try audio.set(entity, .index, 0);
+
+                        // After that sound plays, we'll chain on another sound that is one semi-tone higher.
+                        const one_semi_tone_higher = keyToFrequency(ev.key) * math.pow(f32, 2.0, (1.0 / 12.0));
+                        try piano.set(entity, .play_after, one_semi_tone_higher);
                     },
                 }
             },
-            .close => engine.send(.exit, .{}),
+            .close => core.send(.exit, .{}),
             else => {},
         }
     }
-
-    audio.send(.render, .{});
 
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
 
@@ -75,8 +102,7 @@ fn tick(
     back_buffer_view.release();
 }
 
-fn fillTone(audio: *mach.Audio.Mod, key: mach.core.Key) ![]const f32 {
-    const frequency = keyToFrequency(key);
+fn fillTone(audio: *mach.Audio.Mod, frequency: f32) ![]const f32 {
     const channels = audio.state().player.channels().len;
     const sample_rate: f32 = @floatFromInt(audio.state().player.sampleRate());
     const duration: f32 = 1.5 * @as(f32, @floatFromInt(channels)) * sample_rate; // play the tone for 1.5s

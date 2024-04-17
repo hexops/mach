@@ -1,13 +1,17 @@
 const mach = @import("mach");
 
-const Piano = @import("Piano.zig");
-
-// The list of modules to be used in our application.
-// Our Piano itself is implemented in our own module called Piano.
+// The global list of Mach modules registered for use in our application.
 pub const modules = .{
-    mach.Engine,
+    mach.Core,
     mach.Audio,
-    Piano,
+    @import("Piano.zig"),
 };
 
-pub const App = mach.App;
+// TODO(important): use standard entrypoint instead
+pub fn main() !void {
+    // Initialize mach.Core
+    try mach.core.initModule();
+
+    // Main loop
+    while (try mach.core.tick()) {}
+}
