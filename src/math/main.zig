@@ -134,6 +134,7 @@ pub const nan_f64 = std.math.nan(f64);
 
 pub const inf = std.math.inf;
 pub const sqrt = std.math.sqrt;
+pub const pow = std.math.pow;
 pub const sin = std.math.sin;
 pub const cos = std.math.cos;
 pub const acos = std.math.acos;
