@@ -3,10 +3,8 @@ const std = @import("std");
 const zigimg = @import("zigimg");
 const assets = @import("assets");
 const mach = @import("mach");
-const core = mach.core;
 const gfx = mach.gfx;
 const gpu = mach.gpu;
-const Text = mach.gfx.Text;
 const math = mach.math;
 
 const vec2 = math.vec2;
@@ -26,35 +24,26 @@ spawning: bool = false,
 spawn_timer: mach.Timer,
 fps_timer: mach.Timer,
 frame_count: usize,
-texts: usize,
 rand: std.rand.DefaultPrng,
 time: f32,
 style1: mach.EntityID,
 allocator: std.mem.Allocator,
+pipeline: mach.EntityID,
+frame_encoder: *gpu.CommandEncoder = undefined,
+frame_render_pass: *gpu.RenderPassEncoder = undefined,
 
-const d0 = 0.000001;
-
-// Each module must have a globally unique name declared, it is impossible to use two modules with
-// the same name in a program. To avoid name conflicts, we follow naming conventions:
-//
-// 1. `.mach` and the `.mach_foobar` namespace is reserved for Mach itself and the modules it
-//    provides.
-// 2. Single-word names like `.game` are reserved for the application itself.
-// 3. Libraries which provide modules MUST be prefixed with an "owner" name, e.g. `.ziglibs_imgui`
-//    instead of `.imgui`. We encourage using e.g. your GitHub name, as these must be globally
-//    unique.
-//
+// Define the globally unique name of our module. You can use any name here, but keep in mind no
+// two modules in the program can have the same name.
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
 pub const global_events = .{
     .init = .{ .handler = init },
-    .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
 };
 
-pub const Pipeline = enum(u32) {
-    default,
+pub const local_events = .{
+    .end_frame = .{ .handler = endFrame },
 };
 
 const upscale = 1.0;
@@ -65,42 +54,49 @@ const text1: []const []const u8 = &.{
     "bold\nand\n",
 };
 
-const text2: []const []const u8 = &.{"!$?😊"};
+const text2: []const []const u8 = &.{"$!?😊"};
 
 fn init(
-    engine: *mach.Engine.Mod,
-    text: *Text.Mod,
+    core: *mach.Core.Mod,
+    text: *gfx.Text.Mod,
+    text_pipeline: *gfx.TextPipeline.Mod,
     text_style: *gfx.TextStyle.Mod,
     game: *Mod,
 ) !void {
     // The Mach .core is where we set window options, etc.
-    core.setTitle("gfx.Text example");
+    mach.core.setTitle("gfx.Text example");
 
     // TODO: a better way to initialize entities with default values
-    const style1 = try engine.newEntity();
+    // TODO(text): most of these style options are not respected yet.
+    const style1 = try core.newEntity();
     try text_style.set(style1, .font_name, "Roboto Medium"); // TODO
     try text_style.set(style1, .font_size, 48 * gfx.px_per_pt); // 48pt
     try text_style.set(style1, .font_weight, gfx.font_weight_normal);
     try text_style.set(style1, .italic, false);
     try text_style.set(style1, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
-    const style2 = try engine.newEntity();
+    const style2 = try core.newEntity();
     try text_style.set(style2, .font_name, "Roboto Medium"); // TODO
     try text_style.set(style2, .font_size, 48 * gfx.px_per_pt); // 48pt
     try text_style.set(style2, .font_weight, gfx.font_weight_normal);
     try text_style.set(style2, .italic, true);
     try text_style.set(style2, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
-    const style3 = try engine.newEntity();
+    const style3 = try core.newEntity();
     try text_style.set(style3, .font_name, "Roboto Medium"); // TODO
     try text_style.set(style3, .font_size, 48 * gfx.px_per_pt); // 48pt
     try text_style.set(style3, .font_weight, gfx.font_weight_bold);
     try text_style.set(style3, .italic, false);
     try text_style.set(style3, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
+    // Create a text rendering pipeline
+    const pipeline = try core.newEntity();
+    try text_pipeline.set(pipeline, .is_pipeline, {});
+    text_pipeline.send(.update, .{});
+
     // Create some text
-    const player = try engine.newEntity();
-    try text.set(player, .pipeline, @intFromEnum(Pipeline.default));
+    const player = try core.newEntity();
+    try text.set(player, .pipeline, pipeline);
     try text.set(player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(vec3(0, 0, 0))));
 
     // TODO: better storage mechanism for this
@@ -112,10 +108,7 @@ fn init(
     styles[2] = style3;
     try text.set(player, .text, text1);
     try text.set(player, .style, styles);
-
-    text.send(.init_pipeline, .{Text.PipelineOptions{
-        .pipeline = @intFromEnum(Pipeline.default),
-    }});
+    try text.set(player, .dirty, true);
 
     game.init(.{
         .timer = try mach.Timer.start(),
@@ -123,25 +116,22 @@ fn init(
         .player = player,
         .fps_timer = try mach.Timer.start(),
         .frame_count = 0,
-        .texts = 0,
         .rand = std.rand.DefaultPrng.init(1337),
         .time = 0,
         .style1 = style1,
         .allocator = allocator,
+        .pipeline = pipeline,
     });
 }
 
-fn deinit(engine: *mach.Engine.Mod) !void {
-    _ = engine;
-}
-
 fn tick(
-    engine: *mach.Engine.Mod,
-    text: *Text.Mod,
+    core: *mach.Core.Mod,
+    text: *gfx.Text.Mod,
+    text_pipeline: *gfx.TextPipeline.Mod,
     game: *Mod,
 ) !void {
-    // TODO(engine): event polling should occur in mach.Engine module and get fired as ECS events.
-    var iter = core.pollEvents();
+    // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
+    var iter = mach.core.pollEvents();
     var direction = game.state().direction;
     var spawning = game.state().spawning;
     while (iter.next()) |event| {
@@ -166,7 +156,7 @@ fn tick(
                     else => {},
                 }
             },
-            .close => engine.send(.exit, .{}),
+            .close => core.send(.exit, .{}),
             else => {},
         }
     }
@@ -175,16 +165,16 @@ fn tick(
 
     var player_transform = text.get(game.state().player, .transform).?;
     var player_pos = player_transform.translation().divScalar(upscale);
-    if (spawning and game.state().spawn_timer.read() > 1.0 / 60.0) {
+    if (spawning and game.state().spawn_timer.read() > (1.0 / 60.0)) {
         // Spawn new entities
         _ = game.state().spawn_timer.lap();
-        for (0..1) |_| {
+        for (0..10) |_| {
             var new_pos = player_pos;
-            new_pos.v[0] += game.state().rand.random().floatNorm(f32) * 25;
-            new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 25;
+            new_pos.v[0] += game.state().rand.random().floatNorm(f32) * 50;
+            new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 50;
 
-            const new_entity = try engine.newEntity();
-            try text.set(new_entity, .pipeline, @intFromEnum(Pipeline.default));
+            const new_entity = try core.newEntity();
+            try text.set(new_entity, .pipeline, game.state().pipeline);
             try text.set(new_entity, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(new_pos)));
 
             // TODO: better storage mechanism for this
@@ -193,8 +183,7 @@ fn tick(
             styles[0] = game.state().style1;
             try text.set(new_entity, .text, text2);
             try text.set(new_entity, .style, styles);
-
-            game.state().texts += 1;
+            try text.set(new_entity, .dirty, true);
         }
     }
 
@@ -202,7 +191,7 @@ fn tick(
     const delta_time = game.state().timer.lap();
 
     // Rotate entities
-    var archetypes_iter = engine.entities.query(.{ .all = &.{
+    var archetypes_iter = core.entities.query(.{ .all = &.{
         .{ .mach_gfx_text = &.{.transform} },
     } });
     while (archetypes_iter.next()) |archetype| {
@@ -231,23 +220,75 @@ fn tick(
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
     try text.set(game.state().player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(player_pos)));
-    text.send(.updated, .{@intFromEnum(Pipeline.default)});
+    try text.set(game.state().player, .dirty, true);
+    text.send(.update, .{});
 
     // Perform pre-render work
-    text.send(.pre_render, .{@intFromEnum(Pipeline.default)});
+    text_pipeline.send(.pre_render, .{});
 
-    // Render a frame
-    engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
-    text.send(.render, .{@intFromEnum(Pipeline.default)});
-    engine.send(.end_pass, .{});
-    engine.send(.frame_done, .{}); // Present the frame
+    // Create a command encoder for this frame
+    game.state().frame_encoder = mach.core.device.createCommandEncoder(null);
+
+    // Grab the back buffer of the swapchain
+    const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
+    defer back_buffer_view.release();
+
+    // Begin render pass
+    const sky_blue = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
+    const color_attachments = [_]gpu.RenderPassColorAttachment{.{
+        .view = back_buffer_view,
+        .clear_value = sky_blue,
+        .load_op = .clear,
+        .store_op = .store,
+    }};
+    game.state().frame_encoder = mach.core.device.createCommandEncoder(null);
+    game.state().frame_render_pass = game.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+        .label = "main render pass",
+        .color_attachments = &color_attachments,
+    }));
+
+    // Render our text batch
+    text_pipeline.state().render_pass = game.state().frame_render_pass;
+    text_pipeline.send(.render, .{});
+
+    // Finish the frame once rendering is done.
+    game.send(.end_frame, .{});
+
+    game.state().time += delta_time;
+}
+
+fn endFrame(game: *Mod, text: *gfx.Text.Mod) !void {
+    // Finish render pass
+    game.state().frame_render_pass.end();
+    var command = game.state().frame_encoder.finish(null);
+    game.state().frame_encoder.release();
+    defer command.release();
+    mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
+
+    // Present the frame
+    mach.core.swap_chain.present();
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {
-        try core.printTitle("gfx.Text example [ FPS: {d} ] [ Texts: {d} ]", .{ game.state().frame_count, game.state().texts });
+        // Gather some text rendering stats
+        var num_texts: u32 = 0;
+        var num_glyphs: usize = 0;
+        var archetypes_iter = text.entities.query(.{ .all = &.{
+            .{ .mach_gfx_text = &.{
+                .built,
+            } },
+        } });
+        while (archetypes_iter.next()) |archetype| {
+            const builts = archetype.slice(.mach_gfx_text, .built);
+            for (builts) |built| {
+                num_texts += 1;
+                num_glyphs += built.glyphs.items.len;
+            }
+        }
+
+        try mach.core.printTitle("gfx.Text example [ FPS: {d} ] [ Texts: {d} ] [ Glyphs: {d} ]", .{ game.state().frame_count, num_texts, num_glyphs });
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }
     game.state().frame_count += 1;
-    game.state().time += delta_time;
 }

@@ -1,25 +1,21 @@
 const std = @import("std");
 const mach = @import("../main.zig");
 
+const gfx = mach.gfx;
 const gpu = mach.gpu;
 const math = mach.math;
 
-pub const name = .mach_gfx_sprite_pipeline;
+pub const name = .mach_gfx_text_pipeline;
 pub const Mod = mach.Mod(@This());
 
 pub const components = .{
-    .texture = .{ .type = *gpu.Texture, .description = 
-    \\ Texture to use when rendering. The default shader can handle only one texture input.
-    \\ Must be specified for a pipeline entity to be valid.
+    .is_pipeline = .{ .type = void, .description = 
+    \\ Tag to indicate an entity represents a text pipeline.
     },
-
-    .texture2 = .{ .type = *gpu.Texture },
-    .texture3 = .{ .type = *gpu.Texture },
-    .texture4 = .{ .type = *gpu.Texture },
 
     .shader = .{ .type = *gpu.ShaderModule, .description = 
     \\ Shader program to use when rendering
-    \\ Defaults to sprite.wgsl
+    \\ Defaults to text.wgsl
     },
 
     .texture_sampler = .{ .type = *gpu.Sampler, .description = 
@@ -52,10 +48,15 @@ pub const components = .{
     \\ Override to enable custom pipeline layout.
     },
 
-    .num_sprites = .{ .type = u32, .description = 
-    \\ Number of sprites this pipeline will render.
-    \\ Read-only, updated as part of Sprite.update
+    .num_texts = .{ .type = u32, .description = 
+    \\ Number of texts this pipeline will render.
+    \\ Read-only, updated as part of Text.update
     },
+    .num_glyphs = .{ .type = u32, .description = 
+    \\ Number of glyphs this pipeline will render.
+    \\ Read-only, updated as part of Text.update
+    },
+
     .built = .{ .type = BuiltPipeline, .description = "internal" },
 };
 
@@ -76,131 +77,167 @@ const Uniforms = extern struct {
     /// The view * orthographic projection matrix
     view_projection: math.Mat4x4 align(16),
 
-    /// Total size of the sprite texture in pixels
+    /// Total size of the font atlas texture in pixels
     texture_size: math.Vec2 align(16),
 };
 
-const sprite_buffer_cap = 1024 * 512; // TODO(sprite): allow user to specify preallocation
+const texts_buffer_cap = 1024 * 512; // TODO(text): allow user to specify preallocation
 
-// TODO(sprite): eliminate these, see Sprite.updatePipeline for details on why these exist
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
+// TODO(text): eliminate these, see Text.updatePipeline for details on why these exist
 // currently.
-pub var cp_transforms: [sprite_buffer_cap]math.Mat4x4 = undefined;
-pub var cp_uv_transforms: [sprite_buffer_cap]math.Mat3x3 = undefined;
-pub var cp_sizes: [sprite_buffer_cap]math.Vec2 = undefined;
+pub var cp_transforms: [texts_buffer_cap]math.Mat4x4 = undefined;
+pub var cp_colors: [texts_buffer_cap]math.Vec4 = undefined;
+pub var cp_glyphs: [texts_buffer_cap]Glyph = undefined;
 
 /// Which render pass should be used during .render
 render_pass: ?*gpu.RenderPassEncoder = null,
+
+glyph_update_buffer: ?std.ArrayListUnmanaged(Glyph) = null,
+allocator: std.mem.Allocator,
+
+pub const Glyph = extern struct {
+    /// Position of this glyph (top-left corner.)
+    pos: math.Vec2,
+
+    /// Width of the glyph in pixels.
+    size: math.Vec2,
+
+    /// Normalized position of the top-left UV coordinate
+    uv_pos: math.Vec2,
+
+    /// Which text this glyph belongs to; this is the index for transforms[i], colors[i].
+    text_index: u32,
+};
+
+const GlyphKey = struct {
+    index: u32,
+    // Auto Hashing doesn't work for floats, so we bitcast to integer.
+    size: u32,
+};
+const RegionMap = std.AutoArrayHashMapUnmanaged(GlyphKey, gfx.Atlas.Region);
 
 pub const BuiltPipeline = struct {
     render: *gpu.RenderPipeline,
     texture_sampler: *gpu.Sampler,
     texture: *gpu.Texture,
-    texture2: ?*gpu.Texture,
-    texture3: ?*gpu.Texture,
-    texture4: ?*gpu.Texture,
     bind_group: *gpu.BindGroup,
     uniforms: *gpu.Buffer,
+    texture_atlas: gfx.Atlas,
+    regions: RegionMap = .{},
 
     // Storage buffers
     transforms: *gpu.Buffer,
-    uv_transforms: *gpu.Buffer,
-    sizes: *gpu.Buffer,
+    colors: *gpu.Buffer,
+    glyphs: *gpu.Buffer,
 
     pub fn reference(p: *BuiltPipeline) void {
         p.render.reference();
         p.texture_sampler.reference();
         p.texture.reference();
-        if (p.texture2) |tex| tex.reference();
-        if (p.texture3) |tex| tex.reference();
-        if (p.texture4) |tex| tex.reference();
         p.bind_group.reference();
         p.uniforms.reference();
         p.transforms.reference();
-        p.uv_transforms.reference();
-        p.sizes.reference();
+        p.colors.reference();
+        p.glyphs.reference();
     }
 
-    pub fn deinit(p: *BuiltPipeline) void {
+    pub fn deinit(p: *BuiltPipeline, allocator: std.mem.Allocator) void {
         p.render.release();
         p.texture_sampler.release();
         p.texture.release();
-        if (p.texture2) |tex| tex.release();
-        if (p.texture3) |tex| tex.release();
-        if (p.texture4) |tex| tex.release();
         p.bind_group.release();
         p.uniforms.release();
         p.transforms.release();
-        p.uv_transforms.release();
-        p.sizes.release();
+        p.colors.release();
+        p.glyphs.release();
+        p.texture_atlas.deinit(allocator);
+        p.regions.deinit(allocator);
     }
 };
 
-fn deinit(sprite_pipeline: *Mod) void {
-    var archetypes_iter = sprite_pipeline.entities.query(.{ .all = &.{
-        .{ .mach_gfx_sprite_pipeline = &.{
+fn deinit(text_pipeline: *Mod) void {
+    var archetypes_iter = text_pipeline.entities.query(.{ .all = &.{
+        .{ .mach_gfx_text_pipeline = &.{
             .built,
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
-        for (archetype.slice(.mach_gfx_sprite_pipeline, .built)) |*p| p.deinit();
+        for (archetype.slice(.mach_gfx_text_pipeline, .built)) |*p| p.deinit(text_pipeline.state().allocator);
     }
 }
 
-fn update(core: *mach.Core.Mod, sprite_pipeline: *Mod) !void {
-    sprite_pipeline.init(.{});
+fn update(core: *mach.Core.Mod, text_pipeline: *Mod) !void {
+    text_pipeline.init(.{
+        .allocator = gpa.allocator(),
+    });
 
-    // Destroy all sprite render pipelines. We will rebuild them all.
-    deinit(sprite_pipeline);
+    // Destroy all text render pipelines. We will rebuild them all.
+    deinit(text_pipeline);
 
-    var archetypes_iter = sprite_pipeline.entities.query(.{ .all = &.{
-        .{ .mach_gfx_sprite_pipeline = &.{
-            .texture,
+    var archetypes_iter = text_pipeline.entities.query(.{ .all = &.{
+        .{ .mach_gfx_text_pipeline = &.{
+            .is_pipeline,
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
         const ids = archetype.slice(.entity, .id);
-        const textures = archetype.slice(.mach_gfx_sprite_pipeline, .texture);
-
-        for (ids, textures) |pipeline_id, texture| {
-            try buildPipeline(core, sprite_pipeline, pipeline_id, texture);
+        for (ids) |pipeline_id| {
+            try buildPipeline(core, text_pipeline, pipeline_id);
         }
     }
 }
 
 fn buildPipeline(
     core: *mach.Core.Mod,
-    sprite_pipeline: *Mod,
+    text_pipeline: *Mod,
     pipeline_id: mach.EntityID,
-    texture: *gpu.Texture,
 ) !void {
-    const opt_texture2 = sprite_pipeline.get(pipeline_id, .texture2);
-    const opt_texture3 = sprite_pipeline.get(pipeline_id, .texture3);
-    const opt_texture4 = sprite_pipeline.get(pipeline_id, .texture4);
-    const opt_shader = sprite_pipeline.get(pipeline_id, .shader);
-    const opt_texture_sampler = sprite_pipeline.get(pipeline_id, .texture_sampler);
-    const opt_blend_state = sprite_pipeline.get(pipeline_id, .blend_state);
-    const opt_bind_group_layout = sprite_pipeline.get(pipeline_id, .bind_group_layout);
-    const opt_bind_group = sprite_pipeline.get(pipeline_id, .bind_group);
-    const opt_color_target_state = sprite_pipeline.get(pipeline_id, .color_target_state);
-    const opt_fragment_state = sprite_pipeline.get(pipeline_id, .fragment_state);
-    const opt_layout = sprite_pipeline.get(pipeline_id, .layout);
+    const opt_shader = text_pipeline.get(pipeline_id, .shader);
+    const opt_texture_sampler = text_pipeline.get(pipeline_id, .texture_sampler);
+    const opt_blend_state = text_pipeline.get(pipeline_id, .blend_state);
+    const opt_bind_group_layout = text_pipeline.get(pipeline_id, .bind_group_layout);
+    const opt_bind_group = text_pipeline.get(pipeline_id, .bind_group);
+    const opt_color_target_state = text_pipeline.get(pipeline_id, .color_target_state);
+    const opt_fragment_state = text_pipeline.get(pipeline_id, .fragment_state);
+    const opt_layout = text_pipeline.get(pipeline_id, .layout);
 
     const device = core.state().device;
+
+    // Prepare texture for the font atlas.
+    // TODO(text): dynamic texture re-allocation when not large enough
+    // TODO(text): better default allocation size
+    const img_size = gpu.Extent3D{ .width = 1024, .height = 1024 };
+    const texture = device.createTexture(&.{
+        .size = img_size,
+        .format = .rgba8_unorm,
+        .usage = .{
+            .texture_binding = true,
+            .copy_dst = true,
+            .render_attachment = true,
+        },
+    });
+    const texture_atlas = try gfx.Atlas.init(
+        text_pipeline.state().allocator,
+        img_size.width,
+        .rgba,
+    );
 
     // Storage buffers
     const transforms = device.createBuffer(&.{
         .usage = .{ .storage = true, .copy_dst = true },
-        .size = @sizeOf(math.Mat4x4) * sprite_buffer_cap,
+        .size = @sizeOf(math.Mat4x4) * texts_buffer_cap,
         .mapped_at_creation = .false,
     });
-    const uv_transforms = device.createBuffer(&.{
+    const colors = device.createBuffer(&.{
         .usage = .{ .storage = true, .copy_dst = true },
-        .size = @sizeOf(math.Mat3x3) * sprite_buffer_cap,
+        .size = @sizeOf(math.Vec4) * texts_buffer_cap,
         .mapped_at_creation = .false,
     });
-    const sizes = device.createBuffer(&.{
+    const glyphs = device.createBuffer(&.{
         .usage = .{ .storage = true, .copy_dst = true },
-        .size = @sizeOf(math.Vec2) * sprite_buffer_cap,
+        .size = @sizeOf(Glyph) * texts_buffer_cap,
         .mapped_at_creation = .false,
     });
 
@@ -222,36 +259,24 @@ fn buildPipeline(
                 gpu.BindGroupLayout.Entry.buffer(3, .{ .vertex = true }, .read_only_storage, false, 0),
                 gpu.BindGroupLayout.Entry.sampler(4, .{ .fragment = true }, .filtering),
                 gpu.BindGroupLayout.Entry.texture(5, .{ .fragment = true }, .float, .dimension_2d, false),
-                gpu.BindGroupLayout.Entry.texture(6, .{ .fragment = true }, .float, .dimension_2d, false),
-                gpu.BindGroupLayout.Entry.texture(7, .{ .fragment = true }, .float, .dimension_2d, false),
-                gpu.BindGroupLayout.Entry.texture(8, .{ .fragment = true }, .float, .dimension_2d, false),
             },
         }),
     );
     defer bind_group_layout.release();
 
     const texture_view = texture.createView(&gpu.TextureView.Descriptor{});
-    const texture2_view = if (opt_texture2) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
-    const texture3_view = if (opt_texture3) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
-    const texture4_view = if (opt_texture4) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
     defer texture_view.release();
-    defer texture2_view.release();
-    defer texture3_view.release();
-    defer texture4_view.release();
 
     const bind_group = opt_bind_group orelse device.createBindGroup(
         &gpu.BindGroup.Descriptor.init(.{
             .layout = bind_group_layout,
             .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms)),
-                gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(math.Mat4x4) * sprite_buffer_cap),
-                gpu.BindGroup.Entry.buffer(2, uv_transforms, 0, @sizeOf(math.Mat3x3) * sprite_buffer_cap),
-                gpu.BindGroup.Entry.buffer(3, sizes, 0, @sizeOf(math.Vec2) * sprite_buffer_cap),
+                gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(math.Mat4x4) * texts_buffer_cap),
+                gpu.BindGroup.Entry.buffer(2, colors, 0, @sizeOf(math.Vec4) * texts_buffer_cap),
+                gpu.BindGroup.Entry.buffer(3, glyphs, 0, @sizeOf(Glyph) * texts_buffer_cap),
                 gpu.BindGroup.Entry.sampler(4, texture_sampler),
                 gpu.BindGroup.Entry.textureView(5, texture_view),
-                gpu.BindGroup.Entry.textureView(6, texture2_view),
-                gpu.BindGroup.Entry.textureView(7, texture3_view),
-                gpu.BindGroup.Entry.textureView(8, texture4_view),
             },
         }),
     );
@@ -269,7 +294,7 @@ fn buildPipeline(
         },
     };
 
-    const shader_module = opt_shader orelse device.createShaderModuleWGSL("sprite.wgsl", @embedFile("sprite.wgsl"));
+    const shader_module = opt_shader orelse device.createShaderModuleWGSL("text.wgsl", @embedFile("text.wgsl"));
     defer shader_module.release();
 
     const color_target = opt_color_target_state orelse gpu.ColorTargetState{
@@ -301,36 +326,35 @@ fn buildPipeline(
         .render = render_pipeline,
         .texture_sampler = texture_sampler,
         .texture = texture,
-        .texture2 = opt_texture2,
-        .texture3 = opt_texture3,
-        .texture4 = opt_texture4,
         .bind_group = bind_group,
         .uniforms = uniforms,
         .transforms = transforms,
-        .uv_transforms = uv_transforms,
-        .sizes = sizes,
+        .colors = colors,
+        .glyphs = glyphs,
+        .texture_atlas = texture_atlas,
     };
     built.reference();
-    try sprite_pipeline.set(pipeline_id, .built, built);
-    try sprite_pipeline.set(pipeline_id, .num_sprites, 0);
+    try text_pipeline.set(pipeline_id, .built, built);
+    try text_pipeline.set(pipeline_id, .num_texts, 0);
+    try text_pipeline.set(pipeline_id, .num_glyphs, 0);
 }
 
-fn preRender(sprite_pipeline: *Mod) void {
+fn preRender(text_pipeline: *Mod) void {
     const encoder = mach.core.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
-        .label = "SpritePipeline.encoder",
+        .label = "TextPipeline.encoder",
     });
     defer encoder.release();
 
-    var archetypes_iter = sprite_pipeline.entities.query(.{ .all = &.{
-        .{ .mach_gfx_sprite_pipeline = &.{
+    var archetypes_iter = text_pipeline.entities.query(.{ .all = &.{
+        .{ .mach_gfx_text_pipeline = &.{
             .built,
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
-        const built_pipelines = archetype.slice(.mach_gfx_sprite_pipeline, .built);
+        const built_pipelines = archetype.slice(.mach_gfx_text_pipeline, .built);
         for (built_pipelines) |built| {
             // Create the projection matrix
-            // TODO(sprite): move this out of the hot codepath
+            // TODO(text): move this out of the hot codepath
             const proj = math.Mat4x4.projection2D(.{
                 .left = -@as(f32, @floatFromInt(mach.core.size().width)) / 2,
                 .right = @as(f32, @floatFromInt(mach.core.size().width)) / 2,
@@ -343,7 +367,7 @@ fn preRender(sprite_pipeline: *Mod) void {
             // Update uniform buffer
             const uniforms = Uniforms{
                 .view_projection = proj,
-                // TODO(sprite): dimensions of other textures, number of textures present
+                // TODO(text): dimensions of other textures, number of textures present
                 .texture_size = math.vec2(
                     @as(f32, @floatFromInt(built.texture.getWidth())),
                     @as(f32, @floatFromInt(built.texture.getHeight())),
@@ -358,24 +382,24 @@ fn preRender(sprite_pipeline: *Mod) void {
     mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
-fn render(sprite_pipeline: *Mod) !void {
-    const render_pass = if (sprite_pipeline.state().render_pass) |rp| rp else std.debug.panic("sprite_pipeline.state().render_pass must be specified", .{});
-    sprite_pipeline.state().render_pass = null;
+fn render(text_pipeline: *Mod) !void {
+    const render_pass = if (text_pipeline.state().render_pass) |rp| rp else std.debug.panic("text_pipeline.state().render_pass must be specified", .{});
+    text_pipeline.state().render_pass = null;
 
-    // TODO(sprite): need a way to specify order of rendering with multiple pipelines
-    var archetypes_iter = sprite_pipeline.entities.query(.{ .all = &.{
-        .{ .mach_gfx_sprite_pipeline = &.{
+    // TODO(text): need a way to specify order of rendering with multiple pipelines
+    var archetypes_iter = text_pipeline.entities.query(.{ .all = &.{
+        .{ .mach_gfx_text_pipeline = &.{
             .built,
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
         const ids = archetype.slice(.entity, .id);
-        const built_pipelines = archetype.slice(.mach_gfx_sprite_pipeline, .built);
+        const built_pipelines = archetype.slice(.mach_gfx_text_pipeline, .built);
         for (ids, built_pipelines) |pipeline_id, built| {
-            // Draw the sprite batch
-            const total_vertices = sprite_pipeline.get(pipeline_id, .num_sprites).? * 6;
+            // Draw the text batch
+            const total_vertices = text_pipeline.get(pipeline_id, .num_glyphs).? * 6;
             render_pass.setPipeline(built.render);
-            // TODO(sprite): remove dynamic offsets?
+            // TODO(text): remove dynamic offsets?
             render_pass.setBindGroup(0, built.bind_group, &.{});
             render_pass.draw(total_vertices, 1, 0, 0);
         }

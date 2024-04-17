@@ -663,11 +663,10 @@ fn buildExamples(
         deps: []const Dependency = &.{},
         std_platform_only: bool = false,
         has_assets: bool = false,
-        use_module_api: bool = false,
     }{
-        .{ .name = "sysaudio", .deps = &.{}, .use_module_api = true },
-        .{ .name = "core-custom-entrypoint", .deps = &.{}, .use_module_api = true },
-        .{ .name = "custom-renderer", .deps = &.{}, .use_module_api = true },
+        .{ .name = "sysaudio", .deps = &.{} },
+        .{ .name = "core-custom-entrypoint", .deps = &.{} },
+        .{ .name = "custom-renderer", .deps = &.{} },
         .{
             .name = "sprite",
             .deps = &.{ .zigimg, .assets },
@@ -691,61 +690,31 @@ fn buildExamples(
             if (target.result.cpu.arch == .wasm32)
                 break;
 
-        if (example.use_module_api) {
-            const exe = b.addExecutable(.{
-                .name = example.name,
-                .root_source_file = .{ .path = "examples/" ++ example.name ++ "/main.zig" },
-                .target = target,
-                .optimize = optimize,
-            });
-            exe.root_module.addImport("mach", mach_mod);
-            addPaths(&exe.root_module);
-            link(b, exe, &exe.root_module);
-            b.installArtifact(exe);
+        const exe = b.addExecutable(.{
+            .name = example.name,
+            .root_source_file = .{ .path = "examples/" ++ example.name ++ "/main.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        exe.root_module.addImport("mach", mach_mod);
+        addPaths(&exe.root_module);
+        link(b, exe, &exe.root_module);
+        b.installArtifact(exe);
 
-            const compile_step = b.step(example.name, "Compile " ++ example.name);
-            compile_step.dependOn(b.getInstallStep());
-
-            const run_cmd = b.addRunArtifact(exe);
-            run_cmd.step.dependOn(b.getInstallStep());
-            if (b.args) |args| run_cmd.addArgs(args);
-
-            const run_step = b.step("run-" ++ example.name, "Run " ++ example.name);
-            run_step.dependOn(&run_cmd.step);
-        } else {
-            var deps = std.ArrayList(std.Build.Module.Import).init(b.allocator);
-            for (example.deps) |d| try deps.append(d.dependency(b, target, optimize));
-            const app = try App.init(
-                b,
-                .{
-                    .name = example.name,
-                    .src = "examples/" ++ example.name ++ "/main.zig",
-                    .target = target,
-                    .optimize = optimize,
-                    .deps = deps.items,
-                    .res_dirs = if (example.has_assets) &.{example.name ++ "/assets"} else null,
-                    .watch_paths = &.{"examples/" ++ example.name},
-                    .mach_builder = b,
-                    .mach_mod = mach_mod,
-                },
-            );
-
-            try app.link();
-
-            for (example.deps) |dep| switch (dep) {
-                .model3d => app.compile.linkLibrary(b.dependency("mach_model3d", .{
-                    .target = target,
-                    .optimize = optimize,
-                }).artifact("mach-model3d")),
-                else => {},
-            };
-
-            const compile_step = b.step(example.name, "Compile " ++ example.name);
-            compile_step.dependOn(&app.install.step);
-
-            const run_step = b.step("run-" ++ example.name, "Run " ++ example.name);
-            run_step.dependOn(&app.run.step);
+        for (example.deps) |d| {
+            const dep = d.dependency(b, target, optimize);
+            exe.root_module.addImport(dep.name, dep.module);
         }
+
+        const compile_step = b.step(example.name, "Compile " ++ example.name);
+        compile_step.dependOn(b.getInstallStep());
+
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.step.dependOn(b.getInstallStep());
+        if (b.args) |args| run_cmd.addArgs(args);
+
+        const run_step = b.step("run-" ++ example.name, "Run " ++ example.name);
+        run_step.dependOn(&run_cmd.step);
     }
 }
 

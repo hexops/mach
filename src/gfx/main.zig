@@ -5,6 +5,7 @@ pub const Atlas = @import("atlas/Atlas.zig");
 pub const Sprite = @import("Sprite.zig");
 pub const SpritePipeline = @import("SpritePipeline.zig");
 pub const Text = @import("Text.zig");
+pub const TextPipeline = @import("TextPipeline.zig");
 pub const TextStyle = @import("TextStyle.zig");
 
 // Fonts

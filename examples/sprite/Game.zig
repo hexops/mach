@@ -3,7 +3,6 @@ const std = @import("std");
 const zigimg = @import("zigimg");
 const assets = @import("assets");
 const mach = @import("mach");
-const core = mach.core;
 const gpu = mach.gpu;
 const gfx = mach.gfx;
 const math = mach.math;
@@ -29,19 +28,11 @@ rand: std.rand.DefaultPrng,
 time: f32,
 allocator: std.mem.Allocator,
 pipeline: mach.EntityID,
+frame_encoder: *gpu.CommandEncoder = undefined,
+frame_render_pass: *gpu.RenderPassEncoder = undefined,
 
-const d0 = 0.000001;
-
-// Each module must have a globally unique name declared, it is impossible to use two modules with
-// the same name in a program. To avoid name conflicts, we follow naming conventions:
-//
-// 1. `.mach` and the `.mach_foobar` namespace is reserved for Mach itself and the modules it
-//    provides.
-// 2. Single-word names like `.game` are reserved for the application itself.
-// 3. Libraries which provide modules MUST be prefixed with an "owner" name, e.g. `.ziglibs_imgui`
-//    instead of `.imgui`. We encourage using e.g. your GitHub name, as these must be globally
-//    unique.
-//
+// Define the globally unique name of our module. You can use any name here, but keep in mind no
+// two modules in the program can have the same name.
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
@@ -50,14 +41,18 @@ pub const global_events = .{
     .tick = .{ .handler = tick },
 };
 
+pub const local_events = .{
+    .end_frame = .{ .handler = endFrame },
+};
+
 fn init(
-    engine: *mach.Engine.Mod,
+    core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     game: *Mod,
 ) !void {
     // The Mach .core is where we set window options, etc.
-    core.setTitle("gfx.Sprite example");
+    mach.core.setTitle("gfx.Sprite example");
 
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `.mach_gfx_sprite` module could have a 3D `.location` component with a different
@@ -65,12 +60,12 @@ fn init(
 
     // Create a sprite rendering pipeline
     const allocator = gpa.allocator();
-    const pipeline = try engine.newEntity();
-    try sprite_pipeline.set(pipeline, .texture, try loadTexture(engine, allocator));
+    const pipeline = try core.newEntity();
+    try sprite_pipeline.set(pipeline, .texture, try loadTexture(core, allocator));
     sprite_pipeline.send(.update, .{});
 
     // Create our player sprite
-    const player = try engine.newEntity();
+    const player = try core.newEntity();
     try sprite.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
     try sprite.set(player, .size, vec2(32, 32));
     try sprite.set(player, .uv_transform, Mat3x3.translate(vec2(0, 0)));
@@ -92,13 +87,13 @@ fn init(
 }
 
 fn tick(
-    engine: *mach.Engine.Mod,
+    core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     game: *Mod,
 ) !void {
-    // TODO(engine): event polling should occur in mach.Engine module and get fired as ECS events.
-    var iter = core.pollEvents();
+    // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
+    var iter = mach.core.pollEvents();
     var direction = game.state().direction;
     var spawning = game.state().spawning;
     while (iter.next()) |event| {
@@ -123,7 +118,7 @@ fn tick(
                     else => {},
                 }
             },
-            .close => engine.send(.exit, .{}),
+            .close => core.send(.exit, .{}),
             else => {},
         }
     }
@@ -140,7 +135,7 @@ fn tick(
             new_pos.v[0] += game.state().rand.random().floatNorm(f32) * 25;
             new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 25;
 
-            const new_entity = try engine.newEntity();
+            const new_entity = try core.newEntity();
             try sprite.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scale(Vec3.splat(0.3))));
             try sprite.set(new_entity, .size, vec2(32, 32));
             try sprite.set(new_entity, .uv_transform, Mat3x3.translate(vec2(0, 0)));
@@ -153,7 +148,7 @@ fn tick(
     const delta_time = game.state().timer.lap();
 
     // Rotate entities
-    var archetypes_iter = engine.entities.query(.{ .all = &.{
+    var archetypes_iter = core.entities.query(.{ .all = &.{
         .{ .mach_gfx_sprite = &.{.transform} },
     } });
     while (archetypes_iter.next()) |archetype| {
@@ -187,26 +182,60 @@ fn tick(
     // Perform pre-render work
     sprite_pipeline.send(.pre_render, .{});
 
-    // Render a frame
-    engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
+    // Create a command encoder for this frame
+    game.state().frame_encoder = mach.core.device.createCommandEncoder(null);
 
+    // Grab the back buffer of the swapchain
+    const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
+    defer back_buffer_view.release();
+
+    // Begin render pass
+    const sky_blue = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
+    const color_attachments = [_]gpu.RenderPassColorAttachment{.{
+        .view = back_buffer_view,
+        .clear_value = sky_blue,
+        .load_op = .clear,
+        .store_op = .store,
+    }};
+    game.state().frame_encoder = mach.core.device.createCommandEncoder(null);
+    game.state().frame_render_pass = game.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+        .label = "main render pass",
+        .color_attachments = &color_attachments,
+    }));
+
+    // Render our sprite batch
+    sprite_pipeline.state().render_pass = game.state().frame_render_pass;
     sprite_pipeline.send(.render, .{});
-    engine.send(.end_pass, .{});
-    engine.send(.frame_done, .{}); // Present the frame
+
+    // Finish the frame once rendering is done.
+    game.send(.end_frame, .{});
+
+    game.state().time += delta_time;
+}
+
+fn endFrame(game: *Mod) !void {
+    // Finish render pass
+    game.state().frame_render_pass.end();
+    var command = game.state().frame_encoder.finish(null);
+    game.state().frame_encoder.release();
+    defer command.release();
+    mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
+
+    // Present the frame
+    mach.core.swap_chain.present();
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {
-        try core.printTitle("gfx.Sprite example [ FPS: {d} ] [ Sprites: {d} ]", .{ game.state().frame_count, game.state().sprites });
+        try mach.core.printTitle("gfx.Sprite example [ FPS: {d} ] [ Sprites: {d} ]", .{ game.state().frame_count, game.state().sprites });
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }
     game.state().frame_count += 1;
-    game.state().time += delta_time;
 }
 
 // TODO: move this helper into gfx module
-fn loadTexture(engine: *mach.Engine.Mod, allocator: std.mem.Allocator) !*gpu.Texture {
-    const device = engine.state().device;
+fn loadTexture(core: *mach.Core.Mod, allocator: std.mem.Allocator) !*gpu.Texture {
+    const device = core.state().device;
     const queue = device.getQueue();
 
     // Load the image from memory

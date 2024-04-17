@@ -38,10 +38,10 @@ fn deinit(glyphs: *Mod) !void {
 }
 
 fn init(
-    engine: *mach.Engine.Mod,
+    core: *mach.Core.Mod,
     glyphs: *Mod,
 ) !void {
-    const device = engine.state().device;
+    const device = core.state().device;
     const allocator = gpa.allocator();
 
     // rgba32_pixels
@@ -77,11 +77,11 @@ fn init(
 }
 
 fn prepare(
-    engine: *mach.Engine.Mod,
+    core: *mach.Core.Mod,
     glyphs: *Mod,
     codepoints: []const u21,
 ) !void {
-    const device = engine.state().device;
+    const device = core.state().device;
     const queue = device.getQueue();
     var s = glyphs.state();
 

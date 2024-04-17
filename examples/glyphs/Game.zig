@@ -1,7 +1,6 @@
 // TODO(important): review all code in this file in-depth
 const std = @import("std");
 const mach = @import("mach");
-const core = mach.core;
 const gpu = mach.gpu;
 const gfx = mach.gfx;
 const math = mach.math;
@@ -25,19 +24,11 @@ sprites: usize,
 rand: std.rand.DefaultPrng,
 time: f32,
 pipeline: mach.EntityID,
+frame_encoder: *gpu.CommandEncoder = undefined,
+frame_render_pass: *gpu.RenderPassEncoder = undefined,
 
-const d0 = 0.000001;
-
-// Each module must have a globally unique name declared, it is impossible to use two modules with
-// the same name in a program. To avoid name conflicts, we follow naming conventions:
-//
-// 1. `.mach` and the `.mach_foobar` namespace is reserved for Mach itself and the modules it
-//    provides.
-// 2. Single-word names like `.game` are reserved for the application itself.
-// 3. Libraries which provide modules MUST be prefixed with an "owner" name, e.g. `.ziglibs_imgui`
-//    instead of `.imgui`. We encourage using e.g. your GitHub name, as these must be globally
-//    unique.
-//
+// Define the globally unique name of our module. You can use any name here, but keep in mind no
+// two modules in the program can have the same name.
 pub const name = .game;
 pub const Mod = mach.Mod(@This());
 
@@ -48,6 +39,7 @@ pub const global_events = .{
 
 pub const local_events = .{
     .after_init = .{ .handler = afterInit },
+    .end_frame = .{ .handler = endFrame },
 };
 
 fn init(
@@ -69,7 +61,7 @@ fn afterInit(
     game: *Mod,
 ) !void {
     // The Mach .core is where we set window options, etc.
-    core.setTitle("gfx.Sprite example");
+    mach.core.setTitle("gfx.Sprite example");
 
     // Create a sprite rendering pipeline
     const texture = glyphs.state().texture;
@@ -103,14 +95,14 @@ fn afterInit(
 }
 
 fn tick(
-    engine: *mach.Engine.Mod,
+    core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     glyphs: *Glyphs.Mod,
     game: *Mod,
 ) !void {
-    // TODO(engine): event polling should occur in mach.Engine module and get fired as ECS events.
-    var iter = core.pollEvents();
+    // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
+    var iter = mach.core.pollEvents();
     var direction = game.state().direction;
     var spawning = game.state().spawning;
     while (iter.next()) |event| {
@@ -135,7 +127,7 @@ fn tick(
                     else => {},
                 }
             },
-            .close => engine.send(.exit, .{}),
+            .close => core.send(.exit, .{}),
             else => {},
         }
     }
@@ -155,7 +147,7 @@ fn tick(
             const rand_index = game.state().rand.random().intRangeAtMost(usize, 0, glyphs.state().regions.count() - 1);
             const r = glyphs.state().regions.entries.get(rand_index).value;
 
-            const new_entity = try engine.newEntity();
+            const new_entity = try core.newEntity();
             try sprite.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scaleScalar(0.3)));
             try sprite.set(new_entity, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
             try sprite.set(new_entity, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
@@ -168,7 +160,7 @@ fn tick(
     const delta_time = game.state().timer.lap();
 
     // Animate entities
-    var archetypes_iter = engine.entities.query(.{ .all = &.{
+    var archetypes_iter = core.entities.query(.{ .all = &.{
         .{ .mach_gfx_sprite = &.{.transform} },
     } });
     while (archetypes_iter.next()) |archetype| {
@@ -176,8 +168,9 @@ fn tick(
         const transforms = archetype.slice(.mach_gfx_sprite, .transform);
         for (ids, transforms) |id, *old_transform| {
             var location = old_transform.translation();
-            if (location.x() < -@as(f32, @floatFromInt(core.size().width)) / 1.5 or location.x() > @as(f32, @floatFromInt(core.size().width)) / 1.5 or location.y() < -@as(f32, @floatFromInt(core.size().height)) / 1.5 or location.y() > @as(f32, @floatFromInt(core.size().height)) / 1.5) {
-                try engine.entities.remove(id);
+            // TODO: formatting
+            if (location.x() < -@as(f32, @floatFromInt(mach.core.size().width)) / 1.5 or location.x() > @as(f32, @floatFromInt(mach.core.size().width)) / 1.5 or location.y() < -@as(f32, @floatFromInt(mach.core.size().height)) / 1.5 or location.y() > @as(f32, @floatFromInt(mach.core.size().height)) / 1.5) {
+                try core.entities.remove(id);
                 game.state().sprites -= 1;
                 continue;
             }
@@ -208,18 +201,53 @@ fn tick(
     // Perform pre-render work
     sprite_pipeline.send(.pre_render, .{});
 
-    // Render a frame
-    engine.send(.begin_pass, .{gpu.Color{ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }});
+    // Create a command encoder for this frame
+    game.state().frame_encoder = mach.core.device.createCommandEncoder(null);
+
+    // Grab the back buffer of the swapchain
+    const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
+    defer back_buffer_view.release();
+
+    // Begin render pass
+    const sky_blue = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
+    const color_attachments = [_]gpu.RenderPassColorAttachment{.{
+        .view = back_buffer_view,
+        .clear_value = sky_blue,
+        .load_op = .clear,
+        .store_op = .store,
+    }};
+    game.state().frame_encoder = mach.core.device.createCommandEncoder(null);
+    game.state().frame_render_pass = game.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+        .label = "main render pass",
+        .color_attachments = &color_attachments,
+    }));
+
+    // Render our sprite batch
+    sprite_pipeline.state().render_pass = game.state().frame_render_pass;
     sprite_pipeline.send(.render, .{});
-    engine.send(.end_pass, .{});
-    engine.send(.frame_done, .{}); // Present the frame
+
+    // Finish the frame once rendering is done.
+    game.send(.end_frame, .{});
+
+    game.state().time += delta_time;
+}
+
+fn endFrame(game: *Mod) !void {
+    // Finish render pass
+    game.state().frame_render_pass.end();
+    var command = game.state().frame_encoder.finish(null);
+    game.state().frame_encoder.release();
+    defer command.release();
+    mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
+
+    // Present the frame
+    mach.core.swap_chain.present();
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {
-        try core.printTitle("gfx.Sprite example [ FPS: {d} ] [ Sprites: {d} ]", .{ game.state().frame_count, game.state().sprites });
+        try mach.core.printTitle("gfx.Sprite example [ FPS: {d} ] [ Sprites: {d} ]", .{ game.state().frame_count, game.state().sprites });
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }
     game.state().frame_count += 1;
-    game.state().time += delta_time;
 }
