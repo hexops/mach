@@ -107,7 +107,7 @@ fn audioTick(audio: *Mod) !void {
 
     // How many audio samples we will render ahead by
     const samples_per_ms = @as(f32, @floatFromInt(player.sampleRate())) / 1000.0;
-    const render_ahead: u32 = @as(u32, @intFromFloat(@trunc(audio.state().ms_render_ahead * samples_per_ms))) * @as(u32, @truncate(player.channels().len));
+    const render_ahead: u32 = @as(u32, @intFromFloat(@trunc(audio.state().ms_render_ahead * samples_per_ms))) * @as(u32, @intCast(player.channels().len));
 
     // Our goal is to ensure that we always have pre-rendered the number of samples the driver last
     // expected, expects, plus the play ahead amount.
@@ -122,10 +122,10 @@ fn audioTick(audio: *Mod) !void {
 
     // Ensure our f32 mixing buffer has enough space for the samples we will render right now.
     // This will allocate to grow but never shrink.
-    var mixing_buffer = if (audio.state().mixing_buffer) |b| b else blk: {
+    var mixing_buffer = if (audio.state().mixing_buffer) |*b| b else blk: {
         const b = try std.ArrayListUnmanaged(f32).initCapacity(allocator, render_num_samples);
         audio.state().mixing_buffer = b;
-        break :blk b;
+        break :blk &audio.state().mixing_buffer.?;
     };
     try mixing_buffer.resize(allocator, render_num_samples); // grows, but never shrinks
 
