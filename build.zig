@@ -666,11 +666,6 @@ fn buildExamples(
         use_module_api: bool = false,
     }{
         .{ .name = "sysaudio", .deps = &.{}, .use_module_api = true },
-        .{
-            .name = "gkurve",
-            .deps = &.{ .zigimg, .freetype, .assets },
-            .std_platform_only = true,
-        },
         .{ .name = "core-custom-entrypoint", .deps = &.{}, .use_module_api = true },
         .{ .name = "custom-renderer", .deps = &.{}, .use_module_api = true },
         .{
