@@ -847,12 +847,21 @@ fn getStride(spv: *SpirV, inst: InstIndex, direct: bool) u8 {
     };
 }
 
-fn getSize(spv: *SpirV, inst: InstIndex) u8 {
+fn getSize(spv: *SpirV, inst: InstIndex) u16 {
     return switch (spv.air.getInst(inst)) {
         inline .int, .float => |num| num.type.sizeBits() / 8,
         .array => |arr| return @intCast(spv.air.resolveInt(arr.len).? * spv.getSize(arr.elem_type)),
         .vector => |vec| return spv.getSize(vec.elem_type) * @intFromEnum(vec.size),
         .matrix => |mat| return @as(u8, @intCast(@intFromEnum(mat.cols))) * @intFromEnum(mat.rows) * spv.getSize(mat.elem_type),
+        .@"struct" => |strct| {
+            var size: u16 = 0;
+            const members = spv.air.refToList(strct.members);
+            for (members) |member| {
+                const member_ty = spv.air.getInst(member).struct_member.type;
+                size += spv.getSize(member_ty);
+            }
+            return size;
+        },
         else => unreachable, // TODO
     };
 }
@@ -1840,6 +1849,7 @@ fn emitUnaryIntrinsic(spv: *SpirV, section: *Section, unary: Inst.UnaryIntrinsic
         .sin => 13,
         .cos => 14,
         .tan => 15,
+        .sqrt => 31,
         .normalize => 69,
         .length => 66,
         .floor => 8,
