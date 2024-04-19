@@ -156,11 +156,11 @@ fn updatePipeline(
                 // TODO(text): respect these style parameters
                 const font_size = core.entities.getComponent(style, .mach_gfx_text_style, .font_size).?;
                 const font_weight = core.entities.getComponent(style, .mach_gfx_text_style, .font_weight);
-                _ = font_weight; // autofix
+                _ = font_weight;
                 const italic = core.entities.getComponent(style, .mach_gfx_text_style, .italic);
-                _ = italic; // autofix
+                _ = italic;
                 const color = core.entities.getComponent(style, .mach_gfx_text_style, .color);
-                _ = color; // autofix
+                _ = color;
 
                 // Create a text shaper
                 var run = try gfx.TextRun.init();
