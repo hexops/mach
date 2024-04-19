@@ -46,19 +46,22 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const core_deps = b.option(bool, "core", "build core specifically");
     const sysaudio_deps = b.option(bool, "sysaudio", "build sysaudio specifically");
+    const sysmidi_deps = b.option(bool, "sysmidi", "build sysmidi specifically");
     const sysgpu_deps = b.option(bool, "sysgpu", "build sysgpu specifically");
     const sysgpu_backend = b.option(SysgpuBackend, "sysgpu_backend", "sysgpu API backend") orelse .default;
     const core_platform = b.option(CoreApp.Platform, "core_platform", "mach core platform to use") orelse CoreApp.Platform.fromTarget(target.result);
 
     const want_mach = core_deps == null and sysaudio_deps == null and sysgpu_deps == null;
     const want_core = want_mach or (core_deps orelse false);
-    const want_sysaudio = want_mach or (sysaudio_deps orelse false);
+    const want_sysmidi = (want_mach or (sysmidi_deps orelse false)) and target.result.isDarwin(); // TODO(sysmidi): only supports macOS for now
+    const want_sysaudio = want_mach or want_sysmidi or (sysaudio_deps orelse false);
     const want_sysgpu = want_mach or want_core or (sysgpu_deps orelse false);
 
     const build_options = b.addOptions();
     build_options.addOption(bool, "want_mach", want_mach);
     build_options.addOption(bool, "want_core", want_core);
     build_options.addOption(bool, "want_sysaudio", want_sysaudio);
+    build_options.addOption(bool, "want_sysmidi", want_sysmidi);
     build_options.addOption(bool, "want_sysgpu", want_sysgpu);
     build_options.addOption(SysgpuBackend, "sysgpu_backend", sysgpu_backend);
     build_options.addOption(CoreApp.Platform, "core_platform", core_platform);
@@ -229,6 +232,53 @@ pub fn build(b: *std.Build) !void {
             });
             lib.linkLibrary(linux_audio_headers_dep.artifact("linux-audio-headers"));
             module.linkLibrary(lib);
+        }
+    }
+    if (want_sysmidi) {
+        // Can build sysmidi examples if desired, then.
+        if (target.result.cpu.arch != .wasm32) {
+            inline for ([_][]const u8{
+                "input",
+            }) |example| {
+                const example_exe = b.addExecutable(.{
+                    .name = "sysmidi-" ++ example,
+                    .root_source_file = .{ .path = "src/sysmidi/examples/" ++ example ++ ".zig" },
+                    .target = target,
+                    .optimize = optimize,
+                });
+                example_exe.root_module.addImport("mach", module);
+                addPaths(&example_exe.root_module);
+                b.installArtifact(example_exe);
+
+                const example_compile_step = b.step("sysmidi-" ++ example, "Compile 'sysmidi-" ++ example ++ "' example");
+                example_compile_step.dependOn(b.getInstallStep());
+
+                const example_run_cmd = b.addRunArtifact(example_exe);
+                example_run_cmd.step.dependOn(b.getInstallStep());
+                if (b.args) |args| example_run_cmd.addArgs(args);
+
+                const example_run_step = b.step("run-sysmidi-" ++ example, "Run '" ++ example ++ "' example");
+                example_run_step.dependOn(&example_run_cmd.step);
+            }
+            // TODO(Zig 2024.03): use b.lazyDependency
+
+            const mach_objc_dep = b.dependency("mach_objc", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            module.addImport("objc", mach_objc_dep.module("mach-objc"));
+        } else {
+            // TODO(Zig 2024.03): use b.lazyDependency
+            const mach_sysjs_dep = b.dependency("mach_sysjs", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            module.addImport("sysjs", mach_sysjs_dep.module("mach-sysjs"));
+        }
+
+        if (target.result.isDarwin()) {
+            module.linkFramework("CoreMIDI", .{});
+            module.linkFramework("CoreFoundation", .{});
         }
     }
     if (want_sysgpu) {
