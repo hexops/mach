@@ -44,16 +44,24 @@ pub const SysgpuBackend = enum {
 pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
-    const core_deps = b.option(bool, "core", "build core specifically");
-    const sysaudio_deps = b.option(bool, "sysaudio", "build sysaudio specifically");
-    const sysgpu_deps = b.option(bool, "sysgpu", "build sysgpu specifically");
+
     const sysgpu_backend = b.option(SysgpuBackend, "sysgpu_backend", "sysgpu API backend") orelse .default;
     const core_platform = b.option(CoreApp.Platform, "core_platform", "mach core platform to use") orelse CoreApp.Platform.fromTarget(target.result);
 
-    const want_mach = core_deps == null and sysaudio_deps == null and sysgpu_deps == null;
-    const want_core = want_mach or (core_deps orelse false);
-    const want_sysaudio = want_mach or (sysaudio_deps orelse false);
-    const want_sysgpu = want_mach or want_core or (sysgpu_deps orelse false);
+    const build_examples = b.option(bool, "examples", "build/install examples specifically");
+    const build_libs = b.option(bool, "libs", "build/install libraries specifically");
+    const build_mach = b.option(bool, "mach", "build mach specifically");
+    const build_core = b.option(bool, "core", "build core specifically");
+    const build_sysaudio = b.option(bool, "sysaudio", "build sysaudio specifically");
+    const build_sysgpu = b.option(bool, "sysgpu", "build sysgpu specifically");
+    const build_all = build_examples == null and build_libs == null and build_mach == null and build_core == null and build_sysaudio == null and build_sysgpu == null;
+
+    const want_examples = build_all or (build_examples orelse false);
+    const want_libs = build_all or (build_libs orelse false);
+    const want_mach = build_all or (build_mach orelse false);
+    const want_core = build_all or (build_core orelse false);
+    const want_sysaudio = build_all or (build_sysaudio orelse false);
+    const want_sysgpu = build_all or want_core or (build_sysgpu orelse false);
 
     const build_options = b.addOptions();
     build_options.addOption(bool, "want_mach", want_mach);
@@ -92,7 +100,7 @@ pub fn build(b: *std.Build) !void {
         }
         if (b.lazyDependency("font_assets", .{})) |dep| module.addImport("font-assets", dep.module("font-assets"));
 
-        try buildExamples(b, optimize, target, module);
+        if (want_examples) try buildExamples(b, optimize, target, module);
     }
     if (want_core) {
         if (target.result.cpu.arch != .wasm32) {
@@ -134,34 +142,36 @@ pub fn build(b: *std.Build) !void {
                 lib.linkLibrary(dep.artifact("wayland-headers"));
             }
         }
-        try buildCoreExamples(b, optimize, target, module, core_platform);
+        if (want_examples) try buildCoreExamples(b, optimize, target, module, core_platform);
     }
     if (want_sysaudio) {
         // Can build sysaudio examples if desired, then.
         if (target.result.cpu.arch != .wasm32) {
-            inline for ([_][]const u8{
-                "sine",
-                "record",
-            }) |example| {
-                const example_exe = b.addExecutable(.{
-                    .name = "sysaudio-" ++ example,
-                    .root_source_file = .{ .path = "src/sysaudio/examples/" ++ example ++ ".zig" },
-                    .target = target,
-                    .optimize = optimize,
-                });
-                example_exe.root_module.addImport("mach", module);
-                addPaths(&example_exe.root_module);
-                b.installArtifact(example_exe);
+            if (want_examples) {
+                inline for ([_][]const u8{
+                    "sine",
+                    "record",
+                }) |example| {
+                    const example_exe = b.addExecutable(.{
+                        .name = "sysaudio-" ++ example,
+                        .root_source_file = .{ .path = "src/sysaudio/examples/" ++ example ++ ".zig" },
+                        .target = target,
+                        .optimize = optimize,
+                    });
+                    example_exe.root_module.addImport("mach", module);
+                    addPaths(&example_exe.root_module);
+                    // b.installArtifact(example_exe);
 
-                const example_compile_step = b.step("sysaudio-" ++ example, "Compile 'sysaudio-" ++ example ++ "' example");
-                example_compile_step.dependOn(b.getInstallStep());
+                    const example_compile_step = b.step("sysaudio-" ++ example, "Compile 'sysaudio-" ++ example ++ "' example");
+                    example_compile_step.dependOn(b.getInstallStep());
 
-                const example_run_cmd = b.addRunArtifact(example_exe);
-                example_run_cmd.step.dependOn(b.getInstallStep());
-                if (b.args) |args| example_run_cmd.addArgs(args);
+                    const example_run_cmd = b.addRunArtifact(example_exe);
+                    example_run_cmd.step.dependOn(b.getInstallStep());
+                    if (b.args) |args| example_run_cmd.addArgs(args);
 
-                const example_run_step = b.step("run-sysaudio-" ++ example, "Run '" ++ example ++ "' example");
-                example_run_step.dependOn(&example_run_cmd.step);
+                    const example_run_step = b.step("run-sysaudio-" ++ example, "Run '" ++ example ++ "' example");
+                    example_run_step.dependOn(&example_run_cmd.step);
+                }
             }
             if (b.lazyDependency("mach_objc", .{
                 .target = target,
@@ -224,49 +234,59 @@ pub fn build(b: *std.Build) !void {
         })) |dep| module.addImport("objc", dep.module("mach-objc"));
         linkSysgpu(b, module);
 
-        const lib = b.addStaticLibrary(.{
-            .name = "mach-sysgpu",
-            .root_source_file = b.addWriteFiles().add("empty.c", ""),
-            .target = target,
-            .optimize = optimize,
-        });
-        var iter = module.import_table.iterator();
-        while (iter.next()) |e| {
-            lib.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
+        if (want_libs) {
+            const lib = b.addStaticLibrary(.{
+                .name = "mach-sysgpu",
+                .root_source_file = b.addWriteFiles().add("empty.c", ""),
+                .target = target,
+                .optimize = optimize,
+            });
+            var iter = module.import_table.iterator();
+            while (iter.next()) |e| {
+                lib.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
+            }
+            linkSysgpu(b, &lib.root_module);
+            addPaths(&lib.root_module);
+            b.installArtifact(lib);
         }
-        linkSysgpu(b, &lib.root_module);
-        addPaths(&lib.root_module);
-        b.installArtifact(lib);
     }
 
     if (true) { // want_gpu
-        const gpu_dawn = @import("mach_gpu_dawn");
-        gpu_dawn.addPathsToModule(b, module, .{});
-        module.addIncludePath(.{ .path = sdkPath("/src/gpu") });
-
-        const example_exe = b.addExecutable(.{
-            .name = "dawn-gpu-hello-triangle",
-            .root_source_file = .{ .path = "src/gpu/example/main.zig" },
+        if (b.lazyDependency("mach_gpu_dawn", .{
             .target = target,
             .optimize = optimize,
-        });
-        example_exe.root_module.addImport("mach", module);
-        link(b, example_exe, &example_exe.root_module);
+        })) |dep| {
+            _ = dep;
+            const gpu_dawn = @import("mach_gpu_dawn");
+            gpu_dawn.addPathsToModule(b, module, .{});
+            module.addIncludePath(.{ .path = sdkPath("/src/gpu") });
+        }
 
-        if (b.lazyDependency("mach_glfw", .{
-            .target = target,
-            .optimize = optimize,
-        })) |dep| example_exe.root_module.addImport("mach-glfw", dep.module("mach-glfw"));
+        if (want_examples) {
+            const example_exe = b.addExecutable(.{
+                .name = "dawn-gpu-hello-triangle",
+                .root_source_file = .{ .path = "src/gpu/example/main.zig" },
+                .target = target,
+                .optimize = optimize,
+            });
+            example_exe.root_module.addImport("mach", module);
+            link(b, example_exe, &example_exe.root_module);
 
-        const example_compile_step = b.step("dawn-gpu-hello-triangle", "Install 'dawn-gpu-hello-triangle'");
-        example_compile_step.dependOn(b.getInstallStep());
+            if (b.lazyDependency("mach_glfw", .{
+                .target = target,
+                .optimize = optimize,
+            })) |dep| example_exe.root_module.addImport("mach-glfw", dep.module("mach-glfw"));
 
-        const example_run_cmd = b.addRunArtifact(example_exe);
-        example_run_cmd.step.dependOn(b.getInstallStep());
-        if (b.args) |args| example_run_cmd.addArgs(args);
+            const example_compile_step = b.step("dawn-gpu-hello-triangle", "Install 'dawn-gpu-hello-triangle'");
+            example_compile_step.dependOn(b.getInstallStep());
 
-        const example_run_step = b.step("run-dawn-gpu-hello-triangle", "Run 'dawn-gpu-hello-triangle' example");
-        example_run_step.dependOn(&example_run_cmd.step);
+            const example_run_cmd = b.addRunArtifact(example_exe);
+            example_run_cmd.step.dependOn(b.getInstallStep());
+            if (b.args) |args| example_run_cmd.addArgs(args);
+
+            const example_run_step = b.step("run-dawn-gpu-hello-triangle", "Run 'dawn-gpu-hello-triangle' example");
+            example_run_step.dependOn(&example_run_cmd.step);
+        }
     }
 
     if (target.result.cpu.arch != .wasm32) {
@@ -441,23 +461,26 @@ pub const CoreApp = struct {
 pub fn link(mach_builder: *std.Build, step: *std.Build.Step.Compile, mod: *std.Build.Module) void {
     const target = mod.resolved_target.?.result;
     if (target.cpu.arch != .wasm32) {
-        const gpu_dawn = @import("mach_gpu_dawn");
-        const Options = struct {
-            gpu_dawn_options: gpu_dawn.Options = .{},
-        };
-        const options: Options = .{};
+        if (mach_builder.lazyDependency("mach_gpu_dawn", .{
+            .target = step.root_module.resolved_target.?,
+            .optimize = step.root_module.optimize.?,
+        })) |dep| {
+            _ = dep;
+            const gpu_dawn = @import("mach_gpu_dawn");
+            const Options = struct {
+                gpu_dawn_options: gpu_dawn.Options = .{},
+            };
+            const options: Options = .{};
 
-        gpu_dawn.link(
-            mach_builder.dependency("mach_gpu_dawn", .{
-                .target = step.root_module.resolved_target.?,
-                .optimize = step.root_module.optimize.?,
-            }).builder,
-            step,
-            mod,
-            options.gpu_dawn_options,
-        );
-        step.addCSourceFile(.{ .file = .{ .path = sdkPath("/src/gpu/mach_dawn.cpp") }, .flags = &.{"-std=c++17"} });
-        step.addIncludePath(.{ .path = sdkPath("/src/gpu") });
+            gpu_dawn.link(
+                mach_builder,
+                step,
+                mod,
+                options.gpu_dawn_options,
+            );
+            step.addCSourceFile(.{ .file = .{ .path = sdkPath("/src/gpu/mach_dawn.cpp") }, .flags = &.{"-std=c++17"} });
+            step.addIncludePath(.{ .path = sdkPath("/src/gpu") });
+        }
     }
 }
 
@@ -527,49 +550,11 @@ fn buildExamples(
     target: std.Build.ResolvedTarget,
     mach_mod: *std.Build.Module,
 ) !void {
-    try ensureDependencies(b.allocator);
-
     const Dependency = enum {
         assets,
         model3d,
         freetype,
         zigimg,
-
-        pub fn dependency(
-            dep: @This(),
-            b2: *std.Build,
-            target2: std.Build.ResolvedTarget,
-            optimize2: std.builtin.OptimizeMode,
-        ) std.Build.Module.Import {
-            const path = switch (dep) {
-                .zigimg => "src/core/examples/libs/zigimg/zigimg.zig",
-                .assets => return std.Build.Module.Import{
-                    .name = "assets",
-                    .module = b2.dependency("mach_example_assets", .{
-                        .target = target2,
-                        .optimize = optimize2,
-                    }).module("mach-example-assets"),
-                },
-                .model3d => return std.Build.Module.Import{
-                    .name = "model3d",
-                    .module = b2.dependency("mach_model3d", .{
-                        .target = target2,
-                        .optimize = optimize2,
-                    }).module("mach-model3d"),
-                },
-                .freetype => return std.Build.Module.Import{
-                    .name = "freetype",
-                    .module = b2.dependency("mach_freetype", .{
-                        .target = target2,
-                        .optimize = optimize2,
-                    }).module("mach-freetype"),
-                },
-            };
-            return std.Build.Module.Import{
-                .name = @tagName(dep),
-                .module = b2.createModule(.{ .root_source_file = .{ .path = path } }),
-            };
-        }
     };
 
     for ([_]struct {
@@ -607,8 +592,32 @@ fn buildExamples(
         b.installArtifact(exe);
 
         for (example.deps) |d| {
-            const dep = d.dependency(b, target, optimize);
-            exe.root_module.addImport(dep.name, dep.module);
+            switch (d) {
+                .assets => {
+                    if (b.lazyDependency("mach_example_assets", .{
+                        .target = target,
+                        .optimize = optimize,
+                    })) |dep| exe.root_module.addImport("assets", dep.module("mach-example-assets"));
+                },
+                .model3d => {
+                    if (b.lazyDependency("mach_model3d", .{
+                        .target = target,
+                        .optimize = optimize,
+                    })) |dep| exe.root_module.addImport("model3d", dep.module("mach-model3d"));
+                },
+                .freetype => {
+                    if (b.lazyDependency("mach_freetype", .{
+                        .target = target,
+                        .optimize = optimize,
+                    })) |dep| exe.root_module.addImport("freetype", dep.module("mach-freetype"));
+                },
+                .zigimg => {
+                    if (b.lazyDependency("zigimg", .{
+                        .target = target,
+                        .optimize = optimize,
+                    })) |dep| exe.root_module.addImport("zigimg", dep.module("zigimg"));
+                },
+            }
         }
 
         const compile_step = b.step(example.name, b.fmt("Compile {s}", .{example.name}));
@@ -630,41 +639,11 @@ fn buildCoreExamples(
     mach_mod: *std.Build.Module,
     platform: CoreApp.Platform,
 ) !void {
-    try ensureDependencies(b.allocator);
-
     const Dependency = enum {
         zigimg,
         model3d,
         assets,
-
-        pub fn dependency(
-            dep: @This(),
-            b2: *std.Build,
-            target2: std.Build.ResolvedTarget,
-            optimize2: std.builtin.OptimizeMode,
-        ) std.Build.Module.Import {
-            const path = switch (dep) {
-                .zigimg => "src/core/examples/libs/zigimg/zigimg.zig",
-                .assets => return std.Build.Module.Import{
-                    .name = "assets",
-                    .module = b2.dependency("mach_example_assets", .{
-                        .target = target2,
-                        .optimize = optimize2,
-                    }).module("mach-example-assets"),
-                },
-                .model3d => return std.Build.Module.Import{
-                    .name = "model3d",
-                    .module = b2.dependency("mach_model3d", .{
-                        .target = target2,
-                        .optimize = optimize2,
-                    }).module("mach-model3d"),
-                },
-            };
-            return std.Build.Module.Import{
-                .name = @tagName(dep),
-                .module = b2.createModule(.{ .root_source_file = .{ .path = path } }),
-            };
-        }
+        zmath,
     };
 
     inline for ([_]struct {
@@ -737,14 +716,6 @@ fn buildCoreExamples(
             if (target.result.cpu.arch == .wasm32)
                 break;
 
-        var deps = std.ArrayList(std.Build.Module.Import).init(b.allocator);
-        try deps.append(std.Build.Module.Import{
-            .name = "zmath",
-            .module = b.createModule(.{
-                .root_source_file = .{ .path = "src/core/examples/zmath.zig" },
-            }),
-        });
-        for (example.deps) |d| try deps.append(d.dependency(b, target, optimize));
         const cmd_name = if (example.sysgpu) "sysgpu-" ++ example.name else example.name;
         const app = try CoreApp.init(
             b,
@@ -757,7 +728,6 @@ fn buildCoreExamples(
                     "src/core/examples/" ++ example.name ++ "/main.zig",
                 .target = target,
                 .optimize = optimize,
-                .deps = deps.items,
                 .watch_paths = if (example.sysgpu)
                     &.{"src/core/examples/sysgpu/" ++ example.name}
                 else
@@ -767,13 +737,42 @@ fn buildCoreExamples(
             },
         );
 
-        for (example.deps) |dep| switch (dep) {
-            .model3d => if (b.lazyDependency("mach_model3d", .{
-                .target = target,
-                .optimize = optimize,
-            })) |d| app.compile.linkLibrary(d.artifact("mach-model3d")),
-            else => {},
-        };
+        // for (example.deps) |dep| switch (dep) {
+        //     .model3d => if (b.lazyDependency("mach_model3d", .{
+        //         .target = target,
+        //         .optimize = optimize,
+        //     })) |d| app.compile.linkLibrary(d.artifact("mach-model3d")),
+        //     else => {},
+        // };
+
+        for (example.deps) |d| {
+            switch (d) {
+                .zigimg => {
+                    if (b.lazyDependency("zigimg", .{
+                        .target = target,
+                        .optimize = optimize,
+                    })) |dep| app.compile.root_module.addImport("zigimg", dep.module("zigimg"));
+                },
+                .model3d => {
+                    if (b.lazyDependency("mach_model3d", .{
+                        .target = target,
+                        .optimize = optimize,
+                    })) |dep| app.compile.root_module.addImport("model3d", dep.module("mach-model3d"));
+                },
+                .assets => {
+                    if (b.lazyDependency("mach_example_assets", .{
+                        .target = target,
+                        .optimize = optimize,
+                    })) |dep| app.compile.root_module.addImport("assets", dep.module("mach-example-assets"));
+                },
+                .zmath => {
+                    const zmath = b.createModule(.{
+                        .root_source_file = .{ .path = "src/core/examples/zmath.zig" },
+                    });
+                    app.compile.root_module.addImport("zmath", zmath);
+                },
+            }
+        }
 
         const install_step = b.step("core-" ++ cmd_name, "Install core-" ++ cmd_name);
         install_step.dependOn(&app.install.step);
@@ -783,88 +782,3 @@ fn buildCoreExamples(
         run_step.dependOn(&app.run.step);
     }
 }
-
-// TODO(Zig 2024.03): use b.lazyDependency
-fn ensureDependencies(allocator: std.mem.Allocator) !void {
-    try optional_dependency.ensureGitRepoCloned(
-        allocator,
-        "https://github.com/slimsag/zigimg",
-        "19a49a7e44fb4b1c22341dfbd6566019de742055",
-        sdkPath("/src/core/examples/libs/zigimg"),
-    );
-}
-
-// TODO(Zig 2024.03): use b.lazyDependency
-const optional_dependency = struct {
-    fn ensureGitRepoCloned(allocator: std.mem.Allocator, clone_url: []const u8, revision: []const u8, dir: []const u8) !void {
-        if (xIsEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES") or xIsEnvVarTruthy(allocator, "NO_ENSURE_GIT")) {
-            return;
-        }
-
-        xEnsureGit(allocator);
-
-        if (std.fs.openDirAbsolute(dir, .{})) |_| {
-            const current_revision = try xGetCurrentGitRevision(allocator, dir);
-            if (!std.mem.eql(u8, current_revision, revision)) {
-                // Reset to the desired revision
-                xExec(allocator, &[_][]const u8{ "git", "fetch" }, dir) catch |err| std.debug.print("warning: failed to 'git fetch' in {s}: {s}\n", .{ dir, @errorName(err) });
-                try xExec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, dir);
-                try xExec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
-            }
-            return;
-        } else |err| return switch (err) {
-            error.FileNotFound => {
-                std.log.info("cloning required dependency..\ngit clone {s} {s}..\n", .{ clone_url, dir });
-
-                try xExec(allocator, &[_][]const u8{ "git", "clone", "-c", "core.longpaths=true", clone_url, dir }, ".");
-                try xExec(allocator, &[_][]const u8{ "git", "checkout", "--quiet", "--force", revision }, dir);
-                try xExec(allocator, &[_][]const u8{ "git", "submodule", "update", "--init", "--recursive" }, dir);
-                return;
-            },
-            else => err,
-        };
-    }
-
-    fn xExec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
-        var child = std.ChildProcess.init(argv, allocator);
-        child.cwd = cwd;
-        _ = try child.spawnAndWait();
-    }
-
-    fn xGetCurrentGitRevision(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
-        const result = try std.ChildProcess.run(.{ .allocator = allocator, .argv = &.{ "git", "rev-parse", "HEAD" }, .cwd = cwd });
-        allocator.free(result.stderr);
-        if (result.stdout.len > 0) return result.stdout[0 .. result.stdout.len - 1]; // trim newline
-        return result.stdout;
-    }
-
-    fn xEnsureGit(allocator: std.mem.Allocator) void {
-        const argv = &[_][]const u8{ "git", "--version" };
-        const result = std.ChildProcess.run(.{
-            .allocator = allocator,
-            .argv = argv,
-            .cwd = ".",
-        }) catch { // e.g. FileNotFound
-            std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
-            std.process.exit(1);
-        };
-        defer {
-            allocator.free(result.stderr);
-            allocator.free(result.stdout);
-        }
-        if (result.term.Exited != 0) {
-            std.log.err("mach: error: 'git --version' failed. Is git not installed?", .{});
-            std.process.exit(1);
-        }
-    }
-
-    fn xIsEnvVarTruthy(allocator: std.mem.Allocator, name: []const u8) bool {
-        if (std.process.getEnvVarOwned(allocator, name)) |truthy| {
-            defer allocator.free(truthy);
-            if (std.mem.eql(u8, truthy, "true")) return true;
-            return false;
-        } else |_| {
-            return false;
-        }
-    }
-};
