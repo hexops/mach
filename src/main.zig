@@ -17,6 +17,7 @@ pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
 
 pub const sysaudio = if (build_options.want_sysaudio) @import("sysaudio/main.zig") else struct {};
+pub const sysmidi = if (build_options.want_sysmidi) @import("sysmidi/main.zig") else struct {};
 pub const sysgpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig") else struct {};
 
 // Module system
@@ -47,6 +48,7 @@ test {
     _ = core;
     _ = gpu;
     _ = sysaudio;
+    _ = sysmidi;
     _ = sysgpu;
     _ = gfx;
     _ = math;
