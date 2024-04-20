@@ -70,6 +70,13 @@ pub fn build(b: *std.Build) !void {
     });
     module.addImport("build-options", build_options.createModule());
 
+    if ((want_mach or want_core or want_sysaudio) and target.result.cpu.arch == .wasm32) {
+        if (b.lazyDependency("mach_sysjs", .{
+            .target = target,
+            .optimize = optimize,
+        })) |dep| module.addImport("mach-sysjs", dep.module("mach-sysjs"));
+    }
+
     if (want_mach) {
         // Linux gamemode requires libc.
         if (target.result.os.tag == .linux) module.link_libc = true;
@@ -87,22 +94,12 @@ pub fn build(b: *std.Build) !void {
                 module.addImport("mach-harfbuzz", dep.module("mach-harfbuzz"));
             }
         }
-        if (b.lazyDependency("mach_sysjs", .{
-            .target = target,
-            .optimize = optimize,
-        })) |dep| module.addImport("mach-sysjs", dep.module("mach-sysjs"));
-
         if (b.lazyDependency("font_assets", .{})) |dep| module.addImport("font-assets", dep.module("font-assets"));
 
         try buildExamples(b, optimize, target, module);
     }
     if (want_core) {
-        if (target.result.cpu.arch == .wasm32) {
-            if (b.lazyDependency("mach_sysjs", .{
-                .target = target,
-                .optimize = optimize,
-            })) |dep| module.addImport("mach-sysjs", dep.module("mach-sysjs"));
-        } else {
+        if (target.result.cpu.arch != .wasm32) {
             // TODO: for some reason this is not functional, a Zig bug (only when using this Zig package
             // externally):
             //
@@ -174,11 +171,6 @@ pub fn build(b: *std.Build) !void {
                 .target = target,
                 .optimize = optimize,
             })) |dep| module.addImport("objc", dep.module("mach-objc"));
-        } else {
-            if (b.lazyDependency("mach_sysjs", .{
-                .target = target,
-                .optimize = optimize,
-            })) |dep| module.addImport("sysjs", dep.module("mach-sysjs"));
         }
 
         if (target.result.isDarwin()) {
