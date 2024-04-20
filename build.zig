@@ -320,6 +320,7 @@ pub fn build(b: *std.Build) !void {
 pub const CoreApp = struct {
     b: *std.Build,
     name: []const u8,
+    module: *std.Build.Module,
     compile: *std.Build.Step.Compile,
     install: *std.Build.Step.InstallArtifact,
     run: *std.Build.Step.Run,
@@ -446,6 +447,7 @@ pub const CoreApp = struct {
         run.step.dependOn(&install.step);
         return .{
             .b = app_builder,
+            .module = app_module,
             .compile = compile,
             .install = install,
             .run = run,
@@ -652,59 +654,59 @@ fn buildCoreExamples(
         std_platform_only: bool = false,
         sysgpu: bool = false,
     }{
-        .{ .name = "wasm-test" },
-        .{ .name = "triangle" },
-        .{ .name = "triangle-msaa" },
-        .{ .name = "clear-color" },
-        .{ .name = "procedural-primitives" },
-        .{ .name = "boids" },
-        .{ .name = "rotating-cube" },
-        .{ .name = "pixel-post-process" },
-        .{ .name = "two-cubes" },
-        .{ .name = "instanced-cube" },
-        .{ .name = "gen-texture-light" },
-        .{ .name = "fractal-cube" },
-        .{ .name = "map-async" },
-        .{ .name = "rgb-quad" },
+        .{ .name = "wasm-test", .deps = &.{.zmath} },
+        .{ .name = "triangle", .deps = &.{.zmath} },
+        .{ .name = "triangle-msaa", .deps = &.{.zmath} },
+        .{ .name = "clear-color", .deps = &.{.zmath} },
+        .{ .name = "procedural-primitives", .deps = &.{.zmath} },
+        .{ .name = "boids", .deps = &.{.zmath} },
+        .{ .name = "rotating-cube", .deps = &.{.zmath} },
+        .{ .name = "pixel-post-process", .deps = &.{.zmath} },
+        .{ .name = "two-cubes", .deps = &.{.zmath} },
+        .{ .name = "instanced-cube", .deps = &.{.zmath} },
+        .{ .name = "gen-texture-light", .deps = &.{.zmath} },
+        .{ .name = "fractal-cube", .deps = &.{.zmath} },
+        .{ .name = "map-async", .deps = &.{.zmath} },
+        .{ .name = "rgb-quad", .deps = &.{.zmath} },
         .{
             .name = "pbr-basic",
-            .deps = &.{ .model3d, .assets },
+            .deps = &.{ .zmath, .model3d, .assets },
             .std_platform_only = true,
         },
         .{
             .name = "deferred-rendering",
-            .deps = &.{ .model3d, .assets },
+            .deps = &.{ .zmath, .model3d, .assets },
             .std_platform_only = true,
         },
-        .{ .name = "textured-cube", .deps = &.{ .zigimg, .assets } },
-        .{ .name = "textured-quad", .deps = &.{ .zigimg, .assets } },
-        .{ .name = "sprite2d", .deps = &.{ .zigimg, .assets } },
-        .{ .name = "image", .deps = &.{ .zigimg, .assets } },
-        .{ .name = "image-blur", .deps = &.{ .zigimg, .assets } },
-        .{ .name = "cubemap", .deps = &.{ .zigimg, .assets } },
+        .{ .name = "textured-cube", .deps = &.{ .zmath, .zigimg, .assets } },
+        .{ .name = "textured-quad", .deps = &.{ .zmath, .zigimg, .assets } },
+        .{ .name = "sprite2d", .deps = &.{ .zmath, .zigimg, .assets } },
+        .{ .name = "image", .deps = &.{ .zmath, .zigimg, .assets } },
+        .{ .name = "image-blur", .deps = &.{ .zmath, .zigimg, .assets } },
+        .{ .name = "cubemap", .deps = &.{ .zmath, .zigimg, .assets } },
 
         // sysgpu
-        .{ .name = "boids", .sysgpu = true },
-        .{ .name = "clear-color", .sysgpu = true },
-        .{ .name = "cubemap", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "deferred-rendering", .deps = &.{ .model3d, .assets }, .std_platform_only = true, .sysgpu = true },
-        .{ .name = "fractal-cube", .sysgpu = true },
-        .{ .name = "gen-texture-light", .sysgpu = true },
-        .{ .name = "image-blur", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "instanced-cube", .sysgpu = true },
-        .{ .name = "map-async", .sysgpu = true },
-        .{ .name = "pbr-basic", .deps = &.{ .model3d, .assets }, .std_platform_only = true, .sysgpu = true },
-        .{ .name = "pixel-post-process", .sysgpu = true },
-        .{ .name = "procedural-primitives", .sysgpu = true },
-        .{ .name = "rotating-cube", .sysgpu = true },
-        .{ .name = "sprite2d", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "image", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "textured-cube", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "textured-quad", .deps = &.{ .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "triangle", .sysgpu = true },
-        .{ .name = "triangle-msaa", .sysgpu = true },
-        .{ .name = "two-cubes", .sysgpu = true },
-        .{ .name = "rgb-quad", .sysgpu = true },
+        .{ .name = "boids", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "clear-color", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "cubemap", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "deferred-rendering", .deps = &.{ .zmath, .model3d, .assets }, .std_platform_only = true, .sysgpu = true },
+        .{ .name = "fractal-cube", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "gen-texture-light", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "image-blur", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "instanced-cube", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "map-async", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "pbr-basic", .deps = &.{ .zmath, .model3d, .assets }, .std_platform_only = true, .sysgpu = true },
+        .{ .name = "pixel-post-process", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "procedural-primitives", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "rotating-cube", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "sprite2d", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "image", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "textured-cube", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "textured-quad", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
+        .{ .name = "triangle", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "triangle-msaa", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "two-cubes", .deps = &.{.zmath}, .sysgpu = true },
+        .{ .name = "rgb-quad", .deps = &.{.zmath}, .sysgpu = true },
     }) |example| {
         // FIXME: this is workaround for a problem that some examples
         // (having the std_platform_only=true field) as well as zigimg
@@ -737,39 +739,31 @@ fn buildCoreExamples(
             },
         );
 
-        // for (example.deps) |dep| switch (dep) {
-        //     .model3d => if (b.lazyDependency("mach_model3d", .{
-        //         .target = target,
-        //         .optimize = optimize,
-        //     })) |d| app.compile.linkLibrary(d.artifact("mach-model3d")),
-        //     else => {},
-        // };
-
         for (example.deps) |d| {
             switch (d) {
                 .zigimg => {
                     if (b.lazyDependency("zigimg", .{
                         .target = target,
                         .optimize = optimize,
-                    })) |dep| app.compile.root_module.addImport("zigimg", dep.module("zigimg"));
+                    })) |dep| app.module.addImport("zigimg", dep.module("zigimg"));
                 },
                 .model3d => {
                     if (b.lazyDependency("mach_model3d", .{
                         .target = target,
                         .optimize = optimize,
-                    })) |dep| app.compile.root_module.addImport("model3d", dep.module("mach-model3d"));
+                    })) |dep| app.module.addImport("model3d", dep.module("mach-model3d"));
                 },
                 .assets => {
                     if (b.lazyDependency("mach_example_assets", .{
                         .target = target,
                         .optimize = optimize,
-                    })) |dep| app.compile.root_module.addImport("assets", dep.module("mach-example-assets"));
+                    })) |dep| app.module.addImport("assets", dep.module("mach-example-assets"));
                 },
                 .zmath => {
                     const zmath = b.createModule(.{
                         .root_source_file = .{ .path = "src/core/examples/zmath.zig" },
                     });
-                    app.compile.root_module.addImport("zmath", zmath);
+                    app.module.addImport("zmath", zmath);
                 },
             }
         }
