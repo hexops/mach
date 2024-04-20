@@ -2,7 +2,7 @@ const std = @import("std");
 
 const mach = @import("mach");
 const core = mach.core;
-const gpu = core.gpu;
+const gpu = mach.gpu;
 
 const zm = @import("zmath");
 const Vertex = @import("cube_mesh.zig").Vertex;
@@ -24,10 +24,8 @@ bind_group2: *gpu.BindGroup,
 
 pub const App = @This();
 
-pub const mach_core_options = core.ComptimeOptions{
-    .use_wgpu = false,
-    .use_sysgpu = true,
-};
+// Use experimental sysgpu graphics API
+pub const use_sysgpu = true;
 
 pub fn init(app: *App) !void {
     try core.init(.{});

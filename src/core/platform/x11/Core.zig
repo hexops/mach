@@ -1,8 +1,9 @@
 const builtin = @import("builtin");
 const std = @import("std");
 const glfw = @import("mach-glfw");
+const mach = @import("../../../main.zig");
 const mach_core = @import("../../main.zig");
-const gpu = mach_core.gpu;
+const gpu = mach.gpu;
 const unicode = @import("unicode.zig");
 const Options = @import("../../main.zig").Options;
 const Event = @import("../../main.zig").Event;
@@ -299,11 +300,11 @@ pub fn init(
     input: *Frequency,
     options: Options,
 ) !void {
-    if (!@import("builtin").is_test and mach_core.options.use_wgpu) _ = mach_core.wgpu.Export(blk: {
+    if (!@import("builtin").is_test and !mach.use_sysgpu) _ = mach.wgpu.Export(blk: {
         if (@hasDecl(@import("root"), "GPUInterface")) break :blk @import("root").GPUInterface;
-        break :blk mach_core.wgpu.dawn.Interface;
+        break :blk mach.wgpu.dawn.Interface;
     });
-    if (!@import("builtin").is_test and mach_core.options.use_sysgpu) _ = mach_core.sysgpu.sysgpu.Export(@import("root").SYSGPUInterface);
+    if (!@import("builtin").is_test and mach.use_sysgpu) _ = mach.sysgpu.sysgpu.Export(@import("root").SYSGPUInterface);
 
     const libx11 = try LibX11.load();
     const libxcursor: ?LibXCursor = LibXCursor.load() catch |err| switch (err) {

@@ -8,14 +8,16 @@ pub usingnamespace @import("app");
 const App = @import("app").App;
 
 const std = @import("std");
-const core = @import("mach").core;
+
+const mach = @import("mach");
+const core = mach.core;
 
 pub usingnamespace if (!@hasDecl(App, "GPUInterface")) struct {
-    pub const GPUInterface = core.wgpu.dawn.Interface;
+    pub const GPUInterface = mach.wgpu.dawn.Interface;
 } else struct {};
 
 pub usingnamespace if (!@hasDecl(App, "SYSGPUInterface")) extern struct {
-    pub const SYSGPUInterface = core.sysgpu.Impl;
+    pub const SYSGPUInterface = mach.sysgpu.Impl;
 } else struct {};
 
 pub fn main() !void {
@@ -29,8 +31,8 @@ pub fn main() !void {
     core.allocator = gpa.allocator();
 
     // Initialize GPU implementation
-    if (comptime core.options.use_wgpu) try core.wgpu.Impl.init(core.allocator, .{});
-    if (comptime core.options.use_sysgpu) try core.sysgpu.Impl.init(core.allocator, .{});
+    if (comptime !mach.use_sysgpu) try mach.wgpu.Impl.init(core.allocator, .{});
+    if (comptime mach.use_sysgpu) try mach.sysgpu.Impl.init(core.allocator, .{});
 
     var app: App = undefined;
     try app.init();

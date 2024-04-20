@@ -4,7 +4,7 @@ const builtin = @import("builtin");
 // Core
 pub const core = if (build_options.want_core) @import("core/main.zig") else struct {};
 pub const Timer = if (build_options.want_core) core.Timer else struct {};
-pub const gpu = if (build_options.want_core) core.gpu else struct {};
+pub const wgpu = if (build_options.want_core) @import("gpu/main.zig") else struct {};
 pub const sysjs = if (build_options.want_core) @import("mach-sysjs") else struct {};
 pub const Core = if (build_options.want_core) @import("Core.zig") else struct {};
 
@@ -31,6 +31,14 @@ pub const Modules = @import("module/main.zig").Modules(modules);
 pub const Mod = ModSet(modules).Mod;
 pub const EntityID = @import("module/main.zig").EntityID; // TODO: rename to just Entity?
 pub const Archetype = @import("module/main.zig").Archetype;
+
+/// To use experimental sysgpu graphics API, you can write this in your main.zig:
+///
+/// ```
+/// pub const use_sysgpu = true;
+/// ```
+pub const use_sysgpu = if (@hasDecl(@import("root"), "use_sysgpu")) @import("root").use_sysgpu else false;
+pub const gpu = if (use_sysgpu) sysgpu.sysgpu else wgpu;
 
 test {
     const std = @import("std");

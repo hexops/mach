@@ -34,8 +34,8 @@ should_exit: bool = false,
 
 fn init(core: *Mod) !void {
     // Initialize GPU implementation
-    if (comptime mach.core.options.use_wgpu) try mach.core.wgpu.Impl.init(mach.core.allocator, .{});
-    if (comptime mach.core.options.use_sysgpu) try mach.core.sysgpu.Impl.init(mach.core.allocator, .{});
+    if (comptime !mach.use_sysgpu) try mach.wgpu.Impl.init(mach.core.allocator, .{});
+    if (comptime mach.use_sysgpu) try mach.sysgpu.Impl.init(mach.core.allocator, .{});
 
     mach.core.allocator = gpa.allocator(); // TODO: banish this global allocator
     try mach.core.init(.{});

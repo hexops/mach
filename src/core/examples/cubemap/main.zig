@@ -2,6 +2,7 @@ const std = @import("std");
 
 const mach = @import("mach");
 const core = mach.core;
+const gpu = mach.gpu;
 
 const zm = @import("zmath");
 const zigimg = @import("zigimg");

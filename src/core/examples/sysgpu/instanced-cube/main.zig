@@ -24,10 +24,8 @@ bind_group: *gpu.BindGroup,
 
 pub const App = @This();
 
-pub const mach_core_options = core.ComptimeOptions{
-    .use_wgpu = false,
-    .use_sysgpu = true,
-};
+// Use experimental sysgpu graphics API
+pub const use_sysgpu = true;
 
 pub fn init(app: *App) !void {
     try core.init(.{});

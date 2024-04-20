@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 const mach = @import("../../main.zig");
 const gamemode = mach.gamemode;
 const mach_core = mach.core;
-const gpu = mach_core.gpu;
+const gpu = mach.gpu;
 
 pub inline fn printUnhandledErrorCallback(_: void, ty: gpu.ErrorType, message: [*:0]const u8) void {
     switch (ty) {

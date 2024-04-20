@@ -22,10 +22,8 @@ img_size: gpu.Extent3D,
 
 pub const App = @This();
 
-pub const mach_core_options = core.ComptimeOptions{
-    .use_wgpu = false,
-    .use_sysgpu = true,
-};
+// Use experimental sysgpu graphics API
+pub const use_sysgpu = true;
 
 // Constants from the blur.wgsl shader
 const tile_dimension: u32 = 128;

@@ -44,30 +44,7 @@ fn ErrorSet(comptime F: type) type {
     return @typeInfo(@typeInfo(F).Fn.return_type.?).ErrorUnion.error_set;
 }
 
-/// Comptime options that you can configure in your main file by writing e.g.:
-///
-/// ```
-/// pub const mach_core_options = core.ComptimeOptions{
-///     .use_wgpu = true,
-///     .use_sysgpu = true,
-/// };
-/// ```
-pub const ComptimeOptions = struct {
-    /// Whether to use
-    use_wgpu: bool = true,
-
-    /// Whether or not to use the experimental sysgpu graphics API.
-    use_sysgpu: bool = false,
-};
-
-pub const options = if (@hasDecl(@import("root"), "mach_core_options"))
-    @import("root").mach_core_options
-else
-    ComptimeOptions{};
-
-pub const wgpu = @import("../gpu/main.zig");
-
-pub const gpu = if (options.use_sysgpu) sysgpu.sysgpu else wgpu;
+const gpu = if (mach.use_sysgpu) sysgpu.sysgpu else @import("../gpu/main.zig");
 
 pub fn AppInterface(comptime app_entry: anytype) void {
     if (!@hasDecl(app_entry, "App")) {

@@ -7,10 +7,8 @@ const gpu = mach.gpu;
 const zigimg = @import("zigimg");
 const assets = @import("assets");
 
-pub const mach_core_options = core.ComptimeOptions{
-    .use_wgpu = false,
-    .use_sysgpu = true,
-};
+// Use experimental sysgpu graphics API
+pub const use_sysgpu = true;
 
 title_timer: core.Timer,
 pipeline: *gpu.RenderPipeline,

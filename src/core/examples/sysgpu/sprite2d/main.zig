@@ -11,10 +11,8 @@ const json = std.json;
 
 pub const App = @This();
 
-pub const mach_core_options = core.ComptimeOptions{
-    .use_wgpu = false,
-    .use_sysgpu = true,
-};
+// Use experimental sysgpu graphics API
+pub const use_sysgpu = true;
 
 const speed = 2.0 * 100.0; // pixels per second
 

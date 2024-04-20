@@ -20,10 +20,8 @@ const vertices = @import("cube_mesh.zig").vertices;
 
 pub const App = @This();
 
-pub const mach_core_options = core.ComptimeOptions{
-    .use_wgpu = false,
-    .use_sysgpu = true,
-};
+// Use experimental sysgpu graphics API
+pub const use_sysgpu = true;
 
 const UniformBufferObject = struct {
     mat: zm.Mat,
