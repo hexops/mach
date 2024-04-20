@@ -11,10 +11,6 @@
         "README.md",
     },
     .dependencies = .{
-        .mach_basisu = .{
-            .url = "https://pkg.machengine.org/mach-basisu/aaad82fa4bca86bbfbd27cc00f5513eab6450fc7.tar.gz",
-            .hash = "1220de4e144f29578af4f6de708549c9330692571d7f9fe5a6acc50ce3c205169ac9",
-        },
         .mach_freetype = .{
             .url = "https://pkg.machengine.org/mach-freetype/100c7f65f654dbdcab7adc290d28ff6aab7b8d0c.tar.gz",
             .hash = "12201c1eb9856e133f66ae904ced3a965a53a2098104036cac91b90686cdd9ccb859",
