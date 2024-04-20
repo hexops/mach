@@ -82,10 +82,6 @@ pub fn build(b: *std.Build) !void {
         if (target.result.os.tag == .linux) module.link_libc = true;
 
         if (target.result.cpu.arch != .wasm32) {
-            if (b.lazyDependency("mach_basisu", .{
-                .target = target,
-                .optimize = optimize,
-            })) |dep| module.addImport("mach-basisu", dep.module("mach-basisu"));
             if (b.lazyDependency("mach_freetype", .{
                 .target = target,
                 .optimize = optimize,
