@@ -312,7 +312,7 @@ pub fn build(b: *std.Build) !void {
         const test_step = b.step("test", "Run unit tests");
         test_step.dependOn(&run_unit_tests.step);
 
-        if (want_sysgpu) linkSysgpu(b, &unit_tests.root_module) else link(b, unit_tests, &unit_tests.root_module);
+        if (want_sysgpu) linkSysgpu(b, &unit_tests.root_module);
     }
 }
 
