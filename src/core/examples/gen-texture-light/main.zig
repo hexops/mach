@@ -7,10 +7,12 @@
 // move camera with arrows or wasd
 
 const std = @import("std");
-const core = @import("mach").core;
-const gpu = core.gpu;
-const zm = @import("zmath");
 
+const mach = @import("mach");
+const core = mach.core;
+const gpu = mach.gpu;
+
+const zm = @import("zmath");
 const Vec = zm.Vec;
 const Mat = zm.Mat;
 const Quat = zm.Quat;

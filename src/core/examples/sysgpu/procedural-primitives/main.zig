@@ -1,6 +1,9 @@
 const std = @import("std");
-const core = @import("mach").core;
-const gpu = core.gpu;
+
+const mach = @import("mach");
+const core = mach.core;
+const gpu = mach.gpu;
+
 const renderer = @import("renderer.zig");
 
 pub const App = @This();

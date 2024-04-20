@@ -1,6 +1,8 @@
 const std = @import("std");
-const core = @import("mach").core;
-const gpu = core.gpu;
+
+const mach = @import("mach");
+const core = mach.core;
+
 const zm = @import("zmath");
 const zigimg = @import("zigimg");
 const Vertex = @import("cube_mesh.zig").Vertex;
