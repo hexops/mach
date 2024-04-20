@@ -12,15 +12,14 @@
     },
     .dependencies = .{
         .mach_freetype = .{
-            .url = "https://pkg.machengine.org/mach-freetype/100c7f65f654dbdcab7adc290d28ff6aab7b8d0c.tar.gz",
-            .hash = "12201c1eb9856e133f66ae904ced3a965a53a2098104036cac91b90686cdd9ccb859",
+            .url = "https://pkg.machengine.org/mach-freetype/309be0cf11a2f617d06ee5c5bb1a88d5197d8b46.tar.gz",
+            .hash = "1220fcebb0b1a4561f9d116182e30d0a91d2a556dad8564c8f425fd729556dedc7cf",
             .lazy = true,
         },
         .font_assets = .{
             .url = "https://github.com/hexops/font-assets/archive/7977df057e855140a207de49039114f1ab8e6c2d.tar.gz",
             .hash = "12208106eef051bc730bac17c2d10f7e42ea63b579b919480fec86b7c75a620c75d4",
-            // TODO(build): be able to mark this dependency as lazy
-            // .lazy = true,
+            .lazy = true,
         },
         .mach_sysjs = .{
             .url = "https://pkg.machengine.org/mach-sysjs/eeef024f79beae189b7a4ed85e64ed076e76d538.tar.gz",
