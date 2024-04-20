@@ -301,6 +301,7 @@ pub fn build(b: *std.Build) !void {
             unit_tests.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
         }
         addPaths(&unit_tests.root_module);
+        link(b, unit_tests, &unit_tests.root_module);
 
         // Linux gamemode requires libc.
         if (target.result.os.tag == .linux) unit_tests.root_module.link_libc = true;
