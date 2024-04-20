@@ -102,5 +102,6 @@ test "entities DB" {
     //-------------------------------------------------------------------------
     // Send events to modules
     world.mod.renderer.sendGlobal(.tick, .{});
-    try world.dispatch(.{});
+    var stack_space: [8 * 1024 * 1024]u8 = undefined;
+    try world.dispatch(&stack_space, .{});
 }

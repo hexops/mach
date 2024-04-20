@@ -10,13 +10,15 @@ const platform = @import("platform.zig");
 const mach = @import("../main.zig");
 pub var mods: mach.Modules = undefined;
 
+var stack_space: [8 * 1024 * 1024]u8 = undefined;
+
 pub fn initModule() !void {
     // Initialize the global set of Mach modules used in the program.
     try mods.init(std.heap.c_allocator);
     mods.mod.mach_core.send(.init, .{});
 
     // Dispatch events until this .mach_core.init_done is sent
-    try mods.dispatch(.{ .until = .{
+    try mods.dispatch(&stack_space, .{ .until = .{
         .module_name = mods.moduleNameToID(.mach_core),
         .local_event = mods.localEventToID(.mach_core, .init_done),
     } });
@@ -29,7 +31,7 @@ pub fn tick() !bool {
     mods.mod.mach_core.send(.main_thread_tick, .{});
 
     // Dispatch events until this .mach_core.main_thread_tick_done is sent
-    try mods.dispatch(.{ .until = .{
+    try mods.dispatch(&stack_space, .{ .until = .{
         .module_name = mods.moduleNameToID(.mach_core),
         .local_event = mods.localEventToID(.mach_core, .main_thread_tick_done),
     } });

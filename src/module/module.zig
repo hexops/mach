@@ -114,6 +114,7 @@ pub fn Modules(comptime modules: anytype) type {
             module_name: ?ModuleID,
             event_name: EventID,
             args_slice: []u8,
+            args_alignment: u32,
         };
         const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
 
@@ -142,9 +143,9 @@ pub fn Modules(comptime modules: anytype) type {
                 break :blk std.ascii.eqlIgnoreCase(s, "true");
             } else false;
 
-            // TODO: custom event queue allocation sizes
             m.* = .{
                 .entities = entities,
+                // TODO(module): better default allocations
                 .args_queue = try std.ArrayListUnmanaged(u8).initCapacity(allocator, 8 * 1024 * 1024),
                 .events = EventQueue.init(allocator),
                 .mod = undefined,
@@ -152,7 +153,7 @@ pub fn Modules(comptime modules: anytype) type {
             };
             errdefer m.args_queue.deinit(allocator);
             errdefer m.events.deinit();
-            try m.events.ensureTotalCapacity(1024);
+            try m.events.ensureTotalCapacity(1024); // TODO(module): better default allocations
 
             // Default initialize m.mod
             inline for (@typeInfo(@TypeOf(m.mod)).Struct.fields) |field| {
@@ -274,6 +275,7 @@ pub fn Modules(comptime modules: anytype) type {
                 .module_name = module_name,
                 .event_name = event_name,
                 .args_slice = m.args_queue.items[m.args_queue.items.len - args_bytes.len .. m.args_queue.items.len],
+                .args_alignment = @alignOf(@TypeOf(args)),
             });
         }
 
@@ -305,8 +307,12 @@ pub fn Modules(comptime modules: anytype) type {
         };
 
         /// Dispatches pending events, invoking their event handlers.
+        ///
+        /// Stack space must be large enough to fit the uninjected arguments of any event handler
+        /// which may be invoked, e.g. 8MB. It may be heap-allocated.
         pub fn dispatch(
             m: *@This(),
+            stack_space: []u8,
             options: DispatchOptions,
         ) !void {
             const Injectable = comptime blk: {
@@ -327,11 +333,12 @@ pub fn Modules(comptime modules: anytype) type {
                 }
                 @compileError("failed to initialize Injectable field (this is a bug): " ++ field.name ++ " " ++ @typeName(field.type));
             }
-            return m.dispatchInternal(options, injectable);
+            return m.dispatchInternal(stack_space, options, injectable);
         }
 
         pub fn dispatchInternal(
             m: *@This(),
+            stack_space: []u8,
             options: DispatchOptions,
             injectable: anytype,
         ) !void {
@@ -339,8 +346,6 @@ pub fn Modules(comptime modules: anytype) type {
             // TODO: parallel / multi-threaded dispatch
             // TODO: PGO
 
-            // TODO(important): we may exceed stack space here, consider moving to heap.
-            var buf: [8 * 1024 * 1024]u8 = undefined;
             while (true) {
                 // Dequeue the next event
                 m.events_mu.lock();
@@ -349,12 +354,16 @@ pub fn Modules(comptime modules: anytype) type {
                     return;
                 };
 
-                // Pop the arguments off the stack, so we can release args_slice space.
+                // Pop the arguments off the ev.args_slice stack, so we can release args_slice space.
                 // Otherwise when we release m.events_mu someone may add more events' arguments
                 // to the buffer which would make it tricky to find a good point-in-time to release
                 // argument buffer space.
-                @memcpy(buf[0..ev.args_slice.len], ev.args_slice);
-                ev.args_slice = buf[0..ev.args_slice.len];
+                const aligned_addr = std.mem.alignForward(usize, @intFromPtr(stack_space.ptr), ev.args_alignment);
+                const align_offset = aligned_addr - @intFromPtr(stack_space.ptr);
+
+                @memcpy(stack_space[align_offset .. align_offset + ev.args_slice.len], ev.args_slice);
+                ev.args_slice = stack_space[align_offset .. align_offset + ev.args_slice.len];
+
                 m.args_queue.shrinkRetainingCapacity(m.args_queue.items.len - ev.args_slice.len);
                 m.events_mu.unlock();
 
@@ -1428,6 +1437,7 @@ test "dispatch" {
         };
         pub const local_events = .{
             .update = .{ .handler = update },
+            .update_with_struct_arg = .{ .handler = updateWithStructArg },
             .calc = .{ .handler = calc },
         };
 
@@ -1436,6 +1446,15 @@ test "dispatch" {
         }
 
         fn update() void {
+            global.physics_updates += 1;
+        }
+
+        const MyStruct = extern struct {
+            x: [4]extern struct { x: @Vector(4, f32) } = undefined,
+            y: [4]extern struct { x: @Vector(4, f32) } = undefined,
+        };
+        fn updateWithStructArg(arg: MyStruct) void {
+            _ = arg;
             global.physics_updates += 1;
         }
 
@@ -1495,11 +1514,12 @@ test "dispatch" {
     // injected arguments.
     modules.sendGlobal(.engine_renderer, .tick, .{});
     try testing.expect(usize, 0).eql(global.ticks);
-    try modules.dispatchInternal(.{}, .{&foo});
+    var stack_space: [8 * 1024 * 1024]u8 = undefined;
+    try modules.dispatchInternal(&stack_space, .{}, .{&foo});
     try testing.expect(usize, 2).eql(global.ticks);
     // TODO: make sendDynamic take an args type to avoid footguns with comptime values, etc.
     modules.sendGlobalDynamic(@intFromEnum(@as(GE, .tick)), .{});
-    try modules.dispatchInternal(.{}, .{&foo});
+    try modules.dispatchInternal(&stack_space, .{}, .{&foo});
     try testing.expect(usize, 4).eql(global.ticks);
 
     // Global events which are not handled by anyone yet can be written as `pub const fooBar = fn() void;`
@@ -1509,22 +1529,23 @@ test "dispatch" {
 
     // Local events
     modules.send(.engine_renderer, .update, .{});
-    try modules.dispatchInternal(.{}, .{&foo});
+    try modules.dispatchInternal(&stack_space, .{}, .{&foo});
     try testing.expect(usize, 1).eql(global.renderer_updates);
     modules.send(.engine_physics, .update, .{});
+    modules.send(.engine_physics, .update_with_struct_arg, .{.{}});
     modules.sendDynamic(
         @intFromEnum(@as(M, .engine_physics)),
         @intFromEnum(@as(LE, .calc)),
         .{},
     );
-    try modules.dispatchInternal(.{}, .{&foo});
-    try testing.expect(usize, 1).eql(global.physics_updates);
+    try modules.dispatchInternal(&stack_space, .{}, .{&foo});
+    try testing.expect(usize, 2).eql(global.physics_updates);
     try testing.expect(usize, 1).eql(global.physics_calc);
 
     // Local events
     modules.send(.engine_renderer, .basic_args, .{ @as(u32, 1), @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
     modules.send(.engine_renderer, .injected_args, .{ @as(u32, 1), @as(u32, 2) });
-    try modules.dispatchInternal(.{}, .{&foo});
+    try modules.dispatchInternal(&stack_space, .{}, .{&foo});
     try testing.expect(usize, 3).eql(global.basic_args_sum);
     try testing.expect(usize, 3).eql(foo.injected_args_sum);
 }
