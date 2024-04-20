@@ -531,23 +531,26 @@ pub const CoreApp = struct {
 
 // TODO(sysgpu): remove this once we switch to sysgpu fully
 pub fn link(mach_builder: *std.Build, step: *std.Build.Step.Compile, mod: *std.Build.Module) void {
-    const gpu_dawn = @import("mach_gpu_dawn");
-    const Options = struct {
-        gpu_dawn_options: gpu_dawn.Options = .{},
-    };
-    const options: Options = .{};
+    const target = mod.resolved_target.?.result;
+    if (target.cpu.arch != .wasm32) {
+        const gpu_dawn = @import("mach_gpu_dawn");
+        const Options = struct {
+            gpu_dawn_options: gpu_dawn.Options = .{},
+        };
+        const options: Options = .{};
 
-    gpu_dawn.link(
-        mach_builder.dependency("mach_gpu_dawn", .{
-            .target = step.root_module.resolved_target.?,
-            .optimize = step.root_module.optimize.?,
-        }).builder,
-        step,
-        mod,
-        options.gpu_dawn_options,
-    );
-    step.addCSourceFile(.{ .file = .{ .path = sdkPath("/src/gpu/mach_dawn.cpp") }, .flags = &.{"-std=c++17"} });
-    step.addIncludePath(.{ .path = sdkPath("/src/gpu") });
+        gpu_dawn.link(
+            mach_builder.dependency("mach_gpu_dawn", .{
+                .target = step.root_module.resolved_target.?,
+                .optimize = step.root_module.optimize.?,
+            }).builder,
+            step,
+            mod,
+            options.gpu_dawn_options,
+        );
+        step.addCSourceFile(.{ .file = .{ .path = sdkPath("/src/gpu/mach_dawn.cpp") }, .flags = &.{"-std=c++17"} });
+        step.addIncludePath(.{ .path = sdkPath("/src/gpu") });
+    }
 }
 
 fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
@@ -659,10 +662,10 @@ fn buildExamples(
         }
     };
 
-    inline for ([_]struct {
+    for ([_]struct {
         name: []const u8,
         deps: []const Dependency = &.{},
-        std_platform_only: bool = false,
+        wasm: bool = false,
         has_assets: bool = false,
     }{
         .{ .name = "sysaudio", .deps = &.{} },
@@ -681,19 +684,10 @@ fn buildExamples(
             .deps = &.{ .freetype, .assets },
         },
     }) |example| {
-        // FIXME: this is workaround for a problem that some examples
-        // (having the std_platform_only=true field) as well as zigimg
-        // uses IO and depends on gpu-dawn which is not supported
-        // in freestanding environments. So break out of this loop
-        // as soon as any such examples is found. This does means that any
-        // example which works on wasm should be placed before those who dont.
-        if (example.std_platform_only)
-            if (target.result.cpu.arch == .wasm32)
-                break;
-
+        if (target.result.cpu.arch == .wasm32 and !example.wasm) continue;
         const exe = b.addExecutable(.{
             .name = example.name,
-            .root_source_file = .{ .path = "examples/" ++ example.name ++ "/main.zig" },
+            .root_source_file = .{ .path = b.fmt("examples/{s}/main.zig", .{example.name}) },
             .target = target,
             .optimize = optimize,
         });
@@ -707,14 +701,14 @@ fn buildExamples(
             exe.root_module.addImport(dep.name, dep.module);
         }
 
-        const compile_step = b.step(example.name, "Compile " ++ example.name);
+        const compile_step = b.step(example.name, b.fmt("Compile {s}", .{example.name}));
         compile_step.dependOn(b.getInstallStep());
 
         const run_cmd = b.addRunArtifact(exe);
         run_cmd.step.dependOn(b.getInstallStep());
         if (b.args) |args| run_cmd.addArgs(args);
 
-        const run_step = b.step("run-" ++ example.name, "Run " ++ example.name);
+        const run_step = b.step(b.fmt("run-{s}", .{example.name}), b.fmt("Run {s}", .{example.name}));
         run_step.dependOn(&run_cmd.step);
     }
 }
