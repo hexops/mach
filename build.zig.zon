@@ -21,12 +21,6 @@
             .hash = "12208106eef051bc730bac17c2d10f7e42ea63b579b919480fec86b7c75a620c75d4",
             .lazy = true,
         },
-        .mach_sysjs = .{
-            .url = "https://pkg.machengine.org/mach-sysjs/eeef024f79beae189b7a4ed85e64ed076e76d538.tar.gz",
-            .hash = "1220db6845ce34743ae2a1ab0222efc942496adde2736c20e3443d4fde4ef64b11b9",
-            // TODO(build): be able to mark this dependency as lazy
-            // .lazy = true,
-        },
         .mach_gpu_dawn = .{
             .url = "https://pkg.machengine.org/mach-gpu-dawn/cce4d19945ca6102162b0cbbc546648edb38dc41.tar.gz",
             .hash = "1220a6e3f4772fed665bb5b1792cf5cff8ac51af42a57ad8d276e394ae19f310a92e",
@@ -38,29 +32,15 @@
             .hash = "12205a32c8e6ca23c68191b1e95405d2bd5f8e3055cba1c8ce0738d673ef49aef913",
             .lazy = true,
         },
+        .mach_sysjs = .{
+            .url = "https://pkg.machengine.org/mach-sysjs/eeef024f79beae189b7a4ed85e64ed076e76d538.tar.gz",
+            .hash = "1220db6845ce34743ae2a1ab0222efc942496adde2736c20e3443d4fde4ef64b11b9",
+            // TODO(build): be able to mark this dependency as lazy
+            // .lazy = true,
+        },
         .mach_objc = .{
             .url = "https://pkg.machengine.org/mach-objc/a7c3483702998aa0e960a788b9f611389f17d402.tar.gz",
             .hash = "1220049052fca861248fa6fb8bc24ecdb038049be0a3b22352bebc40e4dc2d2c981b",
-            .lazy = true,
-        },
-        .mach_example_assets = .{
-            .url = "https://pkg.machengine.org/mach-example-assets/591715d872f4aa2d74e01447139c2000db0f7d96.tar.gz",
-            .hash = "12206ef714c72a3e934990e5fbe7160824c5bad0a917a42cdd5ba31f7c85142f18d6",
-            .lazy = true,
-        },
-        .mach_model3d = .{
-            .url = "https://pkg.machengine.org/mach-model3d/5d4dd54db2da123b38656d4574afaa4c04fd3838.tar.gz",
-            .hash = "1220c1c16fa17783379f773c291af3693b84744200099f1cf5c1ddb66c4fe88bcf3a",
-            .lazy = true,
-        },
-        .spirv_cross = .{
-            .url = "https://pkg.machengine.org/SPIRV-Cross/828af70fa8c20f9559eada5723ceb8a7b5999585.tar.gz",
-            .hash = "1220922b722e291ae7f432b3a144863d76bd01e7d1f0f05ca883f3e09e48306103aa",
-            .lazy = true,
-        },
-        .spirv_tools = .{
-            .url = "https://pkg.machengine.org/SPIRV-Tools/673bbbb2d1a8ed8740a91160a24c87caa14f80de.tar.gz",
-            .hash = "1220ec815dfda171b5bf65f6078932d79e034508e9ecef51be660f6a89cc7c70aef9",
             .lazy = true,
         },
         .xcode_frameworks = .{
@@ -68,11 +48,6 @@
             .hash = "122010c1a745ea06dee3012fbd3b311bd3d75ec39ded6bf566b36ebe3cd8da482347",
             // TODO(build): be able to mark this dependency as lazy
             // .lazy = true,
-        },
-        .vulkan_zig_generated = .{
-            .url = "https://pkg.machengine.org/vulkan-zig-generated/78b3c3838ffcb64d537b4af340c9d3fcc41944ce.tar.gz",
-            .hash = "1220c4a2a02e0bd81827225deea58b18f5ea9373cf932c073b977469e298eef1f54f",
-            .lazy = true,
         },
         .direct3d_headers = .{
             .url = "https://pkg.machengine.org/direct3d-headers/bc2fafe176dbd36bff6d1c036488c015bd4c0f7b.tar.gz",
@@ -85,9 +60,9 @@
             .hash = "122007972c24513e1478bba5b628f294c43a710437356f1a3194fe42e17a36e42a3a",
             .lazy = true,
         },
-        .x11_headers = .{
-            .url = "https://pkg.machengine.org/x11-headers/ad1c4891f70302c61ba956cfd565758dc1ca9d28.tar.gz",
-            .hash = "1220ce35d8f1556afd5bf4796a7899d459f9c628b989f247eaf6aa00fbad10a88c9f",
+        .vulkan_zig_generated = .{
+            .url = "https://pkg.machengine.org/vulkan-zig-generated/78b3c3838ffcb64d537b4af340c9d3fcc41944ce.tar.gz",
+            .hash = "1220c4a2a02e0bd81827225deea58b18f5ea9373cf932c073b977469e298eef1f54f",
             .lazy = true,
         },
         .linux_audio_headers = .{
@@ -100,9 +75,26 @@
             .hash = "12207decf58bee217ae9c5340a6852a62e7f5af9901bef9b1468d93e480798898285",
             .lazy = true,
         },
+        .x11_headers = .{
+            .url = "https://pkg.machengine.org/x11-headers/ad1c4891f70302c61ba956cfd565758dc1ca9d28.tar.gz",
+            .hash = "1220ce35d8f1556afd5bf4796a7899d459f9c628b989f247eaf6aa00fbad10a88c9f",
+            .lazy = true,
+        },
+
+        // Dependencies used by examples only
         .zigimg = .{
             .url = "https://github.com/slimsag/zigimg/archive/19a49a7e44fb4b1c22341dfbd6566019de742055.tar.gz",
             .hash = "1220ebfa8587cfd644995fc08e218dbb3ebd7344fb8e129ff02bc5a6d52a2325370d",
+            .lazy = true,
+        },
+        .mach_model3d = .{
+            .url = "https://pkg.machengine.org/mach-model3d/5d4dd54db2da123b38656d4574afaa4c04fd3838.tar.gz",
+            .hash = "1220c1c16fa17783379f773c291af3693b84744200099f1cf5c1ddb66c4fe88bcf3a",
+            .lazy = true,
+        },
+        .mach_example_assets = .{
+            .url = "https://pkg.machengine.org/mach-example-assets/591715d872f4aa2d74e01447139c2000db0f7d96.tar.gz",
+            .hash = "12206ef714c72a3e934990e5fbe7160824c5bad0a917a42cdd5ba31f7c85142f18d6",
             .lazy = true,
         },
     },
