@@ -565,21 +565,12 @@ fn buildExamples(
         wasm: bool = false,
         has_assets: bool = false,
     }{
-        .{ .name = "sysaudio", .deps = &.{} },
         .{ .name = "core-custom-entrypoint", .deps = &.{} },
         .{ .name = "custom-renderer", .deps = &.{} },
-        .{
-            .name = "sprite",
-            .deps = &.{ .zigimg, .assets },
-        },
-        .{
-            .name = "text",
-            .deps = &.{ .freetype, .assets },
-        },
-        .{
-            .name = "glyphs",
-            .deps = &.{ .freetype, .assets },
-        },
+        .{ .name = "glyphs", .deps = &.{ .freetype, .assets } },
+        .{ .name = "piano", .deps = &.{} },
+        .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
+        .{ .name = "text", .deps = &.{ .freetype, .assets } },
     }) |example| {
         if (target.result.cpu.arch == .wasm32 and !example.wasm) continue;
         const exe = b.addExecutable(.{
