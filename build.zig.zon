@@ -34,8 +34,8 @@
             // .lazy = true,
         },
         .mach_glfw = .{
-            .url = "https://pkg.machengine.org/mach-glfw/26e8af73d7d4fbdac3ff60492c44294fc0d139b7.tar.gz",
-            .hash = "12206b8eddf19167cc9ec83f353f97b8b9cdc2bc8c082fe33df6de11c1f00661bc8d",
+            .url = "https://pkg.machengine.org/mach-glfw/e57190c095097810980703aa26d4f0669a21dbab.tar.gz",
+            .hash = "12205a32c8e6ca23c68191b1e95405d2bd5f8e3055cba1c8ce0738d673ef49aef913",
             .lazy = true,
         },
         .mach_objc = .{
