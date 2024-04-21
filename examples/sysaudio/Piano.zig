@@ -37,12 +37,20 @@ pub const components = .{
     .play_after = .{ .type = f32 },
 };
 
+ghost_key_mode: bool = false,
+
 fn init(audio: *mach.Audio.Mod, piano: *Mod) void {
     // Initialize audio module
     audio.send(.init, .{});
 
     // Initialize piano module state
     piano.init(.{});
+
+    std.debug.print("controls:\n", .{});
+    std.debug.print("[typing]     Play piano noises\n", .{});
+    std.debug.print("[spacebar]   enable ghost-key mode (demonstrate seamless back-to-back sound playback)\n", .{});
+    std.debug.print("[arrow up]   increase volume 10%\n", .{});
+    std.debug.print("[arrow down] decrease volume 10%\n", .{});
 }
 
 fn audioStateChange(
@@ -75,9 +83,12 @@ fn tick(
             .key_press => |ev| {
                 const vol = try audio.state().player.volume();
                 switch (ev.key) {
-                    // Arrow keys turn volume up/down
+                    // Controls
+                    .space => piano.state().ghost_key_mode = !piano.state().ghost_key_mode,
                     .down => try audio.state().player.setVolume(@max(0.0, vol - 0.1)),
                     .up => try audio.state().player.setVolume(@min(1.0, vol + 0.1)),
+
+                    // Piano keys
                     else => {
                         // Play a new sound
                         const entity = try audio.newEntity();
@@ -85,9 +96,11 @@ fn tick(
                         try audio.set(entity, .playing, true);
                         try audio.set(entity, .index, 0);
 
-                        // After that sound plays, we'll chain on another sound that is one semi-tone higher.
-                        const one_semi_tone_higher = keyToFrequency(ev.key) * math.pow(f32, 2.0, (1.0 / 12.0));
-                        try piano.set(entity, .play_after, one_semi_tone_higher);
+                        if (piano.state().ghost_key_mode) {
+                            // After that sound plays, we'll chain on another sound that is one semi-tone higher.
+                            const one_semi_tone_higher = keyToFrequency(ev.key) * math.pow(f32, 2.0, (1.0 / 12.0));
+                            try piano.set(entity, .play_after, one_semi_tone_higher);
+                        }
                     },
                 }
             },
