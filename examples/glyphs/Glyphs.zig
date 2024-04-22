@@ -48,7 +48,9 @@ fn init(
     const img_size = gpu.Extent3D{ .width = 1024, .height = 1024 };
 
     // Create a GPU texture
+    const label = @tagName(name) ++ ".init";
     const texture = device.createTexture(&.{
+        .label = label,
         .size = img_size,
         .format = .rgba8_unorm,
         .usage = .{

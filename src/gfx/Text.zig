@@ -81,7 +81,8 @@ fn updatePipeline(
     built: *gfx.TextPipeline.BuiltPipeline,
 ) !void {
     const device = core.state().device;
-    const encoder = device.createCommandEncoder(null);
+    const label = @tagName(name) ++ ".updatePipeline";
+    const encoder = device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     const allocator = text_pipeline.state().allocator;
@@ -272,7 +273,7 @@ fn updatePipeline(
     }
 
     if (num_texts > 0 or glyphs.items.len > 0) {
-        var command = encoder.finish(null);
+        var command = encoder.finish(&.{ .label = label });
         defer command.release();
         core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
     }

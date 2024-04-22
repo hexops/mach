@@ -58,7 +58,9 @@ fn init(
         .targets = &.{color_target},
     });
 
+    const label = @tagName(name) ++ ".init";
     const uniform_buffer = device.createBuffer(&.{
+        .label = label ++ " uniform buffer",
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(UniformBufferObject) * uniform_offset * num_bind_groups,
         .mapped_at_creation = .false,
@@ -66,6 +68,7 @@ fn init(
     const bind_group_layout_entry = gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, true, 0);
     const bind_group_layout = device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor.init(.{
+            .label = label,
             .entries = &.{bind_group_layout_entry},
         }),
     );
@@ -73,6 +76,7 @@ fn init(
     for (bind_groups, 0..) |_, i| {
         bind_groups[i] = device.createBindGroup(
             &gpu.BindGroup.Descriptor.init(.{
+                .label = label,
                 .layout = bind_group_layout,
                 .entries = &.{
                     gpu.BindGroup.Entry.buffer(0, uniform_buffer, uniform_offset * i, @sizeOf(UniformBufferObject)),
@@ -83,9 +87,11 @@ fn init(
 
     const bind_group_layouts = [_]*gpu.BindGroupLayout{bind_group_layout};
     const pipeline_layout = device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
+        .label = label,
         .bind_group_layouts = &bind_group_layouts,
     }));
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
+        .label = label,
         .fragment = &fragment,
         .layout = pipeline_layout,
         .vertex = gpu.VertexState{
@@ -127,8 +133,10 @@ fn tick(
         .store_op = .store,
     };
 
-    const encoder = device.createCommandEncoder(null);
+    const label = @tagName(name) ++ ".tick";
+    const encoder = device.createCommandEncoder(&.{ .label = label });
     const render_pass_info = gpu.RenderPassDescriptor.init(.{
+        .label = label,
         .color_attachments = &.{color_attachment},
     });
 
@@ -162,7 +170,7 @@ fn tick(
     pass.end();
     pass.release();
 
-    var command = encoder.finish(null);
+    var command = encoder.finish(&.{ .label = label });
     encoder.release();
 
     renderer.state().queue.submit(&[_]*gpu.CommandBuffer{command});

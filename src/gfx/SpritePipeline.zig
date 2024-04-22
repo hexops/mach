@@ -186,35 +186,42 @@ fn buildPipeline(
     const opt_layout = sprite_pipeline.get(pipeline_id, .layout);
 
     const device = core.state().device;
+    const label = @tagName(name) ++ ".buildPipeline";
 
     // Storage buffers
     const transforms = device.createBuffer(&.{
+        .label = label ++ " transforms",
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(math.Mat4x4) * sprite_buffer_cap,
         .mapped_at_creation = .false,
     });
     const uv_transforms = device.createBuffer(&.{
+        .label = label ++ " uv_transforms",
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(math.Mat3x3) * sprite_buffer_cap,
         .mapped_at_creation = .false,
     });
     const sizes = device.createBuffer(&.{
+        .label = label ++ " sizes",
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(math.Vec2) * sprite_buffer_cap,
         .mapped_at_creation = .false,
     });
 
     const texture_sampler = opt_texture_sampler orelse device.createSampler(&.{
+        .label = label ++ " sampler",
         .mag_filter = .nearest,
         .min_filter = .nearest,
     });
     const uniforms = device.createBuffer(&.{
+        .label = label ++ " uniforms",
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(Uniforms),
         .mapped_at_creation = .false,
     });
     const bind_group_layout = opt_bind_group_layout orelse device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor.init(.{
+            .label = label,
             .entries = &.{
                 gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, false, 0),
                 gpu.BindGroupLayout.Entry.buffer(1, .{ .vertex = true }, .read_only_storage, false, 0),
@@ -230,10 +237,10 @@ fn buildPipeline(
     );
     defer bind_group_layout.release();
 
-    const texture_view = texture.createView(&gpu.TextureView.Descriptor{});
-    const texture2_view = if (opt_texture2) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
-    const texture3_view = if (opt_texture3) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
-    const texture4_view = if (opt_texture4) |tex| tex.createView(&gpu.TextureView.Descriptor{}) else texture_view;
+    const texture_view = texture.createView(&gpu.TextureView.Descriptor{ .label = label });
+    const texture2_view = if (opt_texture2) |tex| tex.createView(&gpu.TextureView.Descriptor{ .label = label }) else texture_view;
+    const texture3_view = if (opt_texture3) |tex| tex.createView(&gpu.TextureView.Descriptor{ .label = label }) else texture_view;
+    const texture4_view = if (opt_texture4) |tex| tex.createView(&gpu.TextureView.Descriptor{ .label = label }) else texture_view;
     defer texture_view.release();
     defer texture2_view.release();
     defer texture3_view.release();
@@ -241,6 +248,7 @@ fn buildPipeline(
 
     const bind_group = opt_bind_group orelse device.createBindGroup(
         &gpu.BindGroup.Descriptor.init(.{
+            .label = label,
             .layout = bind_group_layout,
             .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms)),
@@ -285,10 +293,12 @@ fn buildPipeline(
 
     const bind_group_layouts = [_]*gpu.BindGroupLayout{bind_group_layout};
     const pipeline_layout = opt_layout orelse device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
+        .label = label,
         .bind_group_layouts = &bind_group_layouts,
     }));
     defer pipeline_layout.release();
     const render_pipeline = device.createRenderPipeline(&gpu.RenderPipeline.Descriptor{
+        .label = label,
         .fragment = &fragment,
         .layout = pipeline_layout,
         .vertex = gpu.VertexState{
@@ -316,9 +326,8 @@ fn buildPipeline(
 }
 
 fn preRender(sprite_pipeline: *Mod) void {
-    const encoder = mach.core.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
-        .label = "SpritePipeline.encoder",
-    });
+    const label = @tagName(name) ++ ".preRender";
+    const encoder = mach.core.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     var archetypes_iter = sprite_pipeline.entities.query(.{ .all = &.{
@@ -353,7 +362,7 @@ fn preRender(sprite_pipeline: *Mod) void {
         }
     }
 
-    var command = encoder.finish(null);
+    var command = encoder.finish(&.{ .label = label });
     defer command.release();
     mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
 }

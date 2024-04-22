@@ -183,7 +183,8 @@ fn tick(
     sprite_pipeline.send(.pre_render, .{});
 
     // Create a command encoder for this frame
-    game.state().frame_encoder = mach.core.device.createCommandEncoder(null);
+    const label = @tagName(name) ++ ".tick";
+    game.state().frame_encoder = mach.core.device.createCommandEncoder(&.{ .label = label });
 
     // Grab the back buffer of the swapchain
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
@@ -197,9 +198,10 @@ fn tick(
         .load_op = .clear,
         .store_op = .store,
     }};
-    game.state().frame_encoder = mach.core.device.createCommandEncoder(null);
+    // TODO: can we eliminate this assignment
+    game.state().frame_encoder = mach.core.device.createCommandEncoder(&.{ .label = label });
     game.state().frame_render_pass = game.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
-        .label = "main render pass",
+        .label = label,
         .color_attachments = &color_attachments,
     }));
 
@@ -216,7 +218,8 @@ fn tick(
 fn endFrame(game: *Mod) !void {
     // Finish render pass
     game.state().frame_render_pass.end();
-    var command = game.state().frame_encoder.finish(null);
+    const label = @tagName(name) ++ ".endFrame";
+    var command = game.state().frame_encoder.finish(&.{ .label = label });
     game.state().frame_encoder.release();
     defer command.release();
     mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
@@ -244,7 +247,9 @@ fn loadTexture(core: *mach.Core.Mod, allocator: std.mem.Allocator) !*gpu.Texture
     const img_size = gpu.Extent3D{ .width = @as(u32, @intCast(img.width)), .height = @as(u32, @intCast(img.height)) };
 
     // Create a GPU texture
+    const label = @tagName(name) ++ ".loadTexture";
     const texture = device.createTexture(&.{
+        .label = label,
         .size = img_size,
         .format = .rgba8_unorm,
         .usage = .{

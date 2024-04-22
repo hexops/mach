@@ -208,8 +208,10 @@ fn buildPipeline(
     // Prepare texture for the font atlas.
     // TODO(text): dynamic texture re-allocation when not large enough
     // TODO(text): better default allocation size
+    const label = @tagName(name) ++ ".buildPipeline";
     const img_size = gpu.Extent3D{ .width = 1024, .height = 1024 };
     const texture = device.createTexture(&.{
+        .label = label,
         .size = img_size,
         .format = .rgba8_unorm,
         .usage = .{
@@ -226,32 +228,38 @@ fn buildPipeline(
 
     // Storage buffers
     const transforms = device.createBuffer(&.{
+        .label = label ++ " transforms",
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(math.Mat4x4) * texts_buffer_cap,
         .mapped_at_creation = .false,
     });
     const colors = device.createBuffer(&.{
+        .label = label ++ " colors",
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(math.Vec4) * texts_buffer_cap,
         .mapped_at_creation = .false,
     });
     const glyphs = device.createBuffer(&.{
+        .label = label ++ " glyphs",
         .usage = .{ .storage = true, .copy_dst = true },
         .size = @sizeOf(Glyph) * texts_buffer_cap,
         .mapped_at_creation = .false,
     });
 
     const texture_sampler = opt_texture_sampler orelse device.createSampler(&.{
+        .label = label ++ " sampler",
         .mag_filter = .nearest,
         .min_filter = .nearest,
     });
     const uniforms = device.createBuffer(&.{
+        .label = label ++ " uniforms",
         .usage = .{ .copy_dst = true, .uniform = true },
         .size = @sizeOf(Uniforms),
         .mapped_at_creation = .false,
     });
     const bind_group_layout = opt_bind_group_layout orelse device.createBindGroupLayout(
         &gpu.BindGroupLayout.Descriptor.init(.{
+            .label = label,
             .entries = &.{
                 gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, false, 0),
                 gpu.BindGroupLayout.Entry.buffer(1, .{ .vertex = true }, .read_only_storage, false, 0),
@@ -264,11 +272,12 @@ fn buildPipeline(
     );
     defer bind_group_layout.release();
 
-    const texture_view = texture.createView(&gpu.TextureView.Descriptor{});
+    const texture_view = texture.createView(&gpu.TextureView.Descriptor{ .label = label });
     defer texture_view.release();
 
     const bind_group = opt_bind_group orelse device.createBindGroup(
         &gpu.BindGroup.Descriptor.init(.{
+            .label = label,
             .layout = bind_group_layout,
             .entries = &.{
                 gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms)),
@@ -310,10 +319,12 @@ fn buildPipeline(
 
     const bind_group_layouts = [_]*gpu.BindGroupLayout{bind_group_layout};
     const pipeline_layout = opt_layout orelse device.createPipelineLayout(&gpu.PipelineLayout.Descriptor.init(.{
+        .label = label,
         .bind_group_layouts = &bind_group_layouts,
     }));
     defer pipeline_layout.release();
     const render_pipeline = device.createRenderPipeline(&gpu.RenderPipeline.Descriptor{
+        .label = label,
         .fragment = &fragment,
         .layout = pipeline_layout,
         .vertex = gpu.VertexState{
@@ -340,9 +351,8 @@ fn buildPipeline(
 }
 
 fn preRender(text_pipeline: *Mod) void {
-    const encoder = mach.core.device.createCommandEncoder(&gpu.CommandEncoder.Descriptor{
-        .label = "TextPipeline.encoder",
-    });
+    const label = @tagName(name) ++ ".preRender";
+    const encoder = mach.core.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     var archetypes_iter = text_pipeline.entities.query(.{ .all = &.{
@@ -377,7 +387,7 @@ fn preRender(text_pipeline: *Mod) void {
         }
     }
 
-    var command = encoder.finish(null);
+    var command = encoder.finish(&.{ .label = label });
     defer command.release();
     mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
 }

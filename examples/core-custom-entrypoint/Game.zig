@@ -35,7 +35,9 @@ fn init(game: *Mod) !void {
     });
 
     // Create our render pipeline that will ultimately get pixels onto the screen.
+    const label = @tagName(name) ++ ".init";
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
+        .label = label,
         .fragment = &fragment,
         .vertex = gpu.VertexState{
             .module = shader_module,
@@ -75,7 +77,8 @@ fn tick(
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const encoder = mach.core.device.createCommandEncoder(null);
+    const label = @tagName(name) ++ ".tick";
+    const encoder = mach.core.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     // Begin render pass
@@ -87,7 +90,7 @@ fn tick(
         .store_op = .store,
     }};
     const render_pass = encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
-        .label = "main render pass",
+        .label = label,
         .color_attachments = &color_attachments,
     }));
 
@@ -99,7 +102,7 @@ fn tick(
     render_pass.end();
 
     // Submit our commands to the queue
-    var command = encoder.finish(null);
+    var command = encoder.finish(&.{ .label = label });
     defer command.release();
     mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
 

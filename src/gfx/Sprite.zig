@@ -65,7 +65,8 @@ fn updatePipeline(
     built: *gfx.SpritePipeline.BuiltPipeline,
 ) !void {
     const device = core.state().device;
-    const encoder = device.createCommandEncoder(null);
+    const label = @tagName(name) ++ ".updatePipeline";
+    const encoder = device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     var archetypes_iter = sprite.entities.query(.{ .all = &.{
@@ -106,7 +107,7 @@ fn updatePipeline(
         encoder.writeBuffer(built.transforms, 0, gfx.SpritePipeline.cp_transforms[0..i]);
         encoder.writeBuffer(built.uv_transforms, 0, gfx.SpritePipeline.cp_uv_transforms[0..i]);
         encoder.writeBuffer(built.sizes, 0, gfx.SpritePipeline.cp_sizes[0..i]);
-        var command = encoder.finish(null);
+        var command = encoder.finish(&.{ .label = label });
         defer command.release();
         core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
     }
