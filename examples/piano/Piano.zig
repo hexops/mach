@@ -12,6 +12,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 
 const mach = @import("mach");
+const gpu = mach.gpu;
 const math = mach.math;
 const sysaudio = mach.sysaudio;
 
@@ -109,10 +110,40 @@ fn tick(
         }
     }
 
+    // Grab the back buffer of the swapchain
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
+    defer back_buffer_view.release();
 
-    mach.core.swap_chain.present();
-    back_buffer_view.release();
+    // Create a command encoder
+    const label = @tagName(name) ++ ".tick";
+    const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
+    defer encoder.release();
+
+    // Begin render pass
+    const sky_blue_background = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
+    const color_attachments = [_]gpu.RenderPassColorAttachment{.{
+        .view = back_buffer_view,
+        .clear_value = sky_blue_background,
+        .load_op = .clear,
+        .store_op = .store,
+    }};
+    const render_pass = encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+        .label = label,
+        .color_attachments = &color_attachments,
+    }));
+
+    // Draw nothing
+
+    // Finish render pass
+    render_pass.end();
+
+    // Submit our commands to the queue
+    var command = encoder.finish(&.{ .label = label });
+    defer command.release();
+    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
+
+    // Present the frame
+    core.send(.present_frame, .{});
 }
 
 fn fillTone(audio: *mach.Audio.Mod, frequency: f32) ![]const f32 {

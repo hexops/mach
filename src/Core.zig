@@ -19,6 +19,10 @@ pub const local_events = .{
     \\ Send this when window entities have been updated and you want the new values respected.
     },
 
+    .present_frame = .{ .handler = presentFrame, .description = 
+    \\ Send this when rendering has finished and the swapchain should be presented.
+    },
+
     .init = .{ .handler = init },
     .init_done = .{ .handler = fn () void },
 
@@ -49,7 +53,7 @@ pub const components = .{
 /// try mach.Core.printTitle(core_mod, core_mod.state().main_window, "Hello, {s}!", .{"Mach"});
 /// ```
 pub fn printTitle(
-    core: *mach.Core.Mod,
+    core: *Mod,
     window_id: mach.EntityID,
     comptime fmt: []const u8,
     args: anytype,
@@ -106,6 +110,13 @@ fn update(core: *Mod) !void {
     if (num_windows > 1) @panic("mach: Core currently only supports a single window");
 }
 
+fn presentFrame(core: *Mod) !void {
+    mach.core.swap_chain.present();
+
+    // Signal that mainThreadTick is done
+    core.send(.main_thread_tick_done, .{});
+}
+
 fn deinit(core: *Mod) void {
     core.state().queue.release();
     // TODO: this triggers a device loss error, which we should handle correctly
@@ -129,9 +140,6 @@ fn mainThreadTick(core: *Mod) !void {
 
     // Send .tick to anyone interested
     core.sendGlobal(.tick, .{});
-
-    // Signal that mainThreadTick is done
-    core.send(.main_thread_tick_done, .{});
 }
 
 fn exit(core: *Mod) void {

@@ -222,7 +222,7 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // Present the frame
-    mach.core.swap_chain.present();
+    core.send(.present_frame, .{});
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {

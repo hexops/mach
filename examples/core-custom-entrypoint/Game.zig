@@ -104,7 +104,7 @@ fn tick(core: *mach.Core.Mod, game: *Mod) !void {
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // Present the frame
-    mach.core.swap_chain.present();
+    core.send(.present_frame, .{});
 
     // update the window title every second
     if (game.state().title_timer.read() >= 1.0) {

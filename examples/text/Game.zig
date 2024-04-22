@@ -63,9 +63,6 @@ fn init(
     text_style: *gfx.TextStyle.Mod,
     game: *Mod,
 ) !void {
-    // The Mach .core is where we set window options, etc.
-    mach.core.setTitle("gfx.Text example");
-
     // TODO: a better way to initialize entities with default values
     // TODO(text): most of these style options are not respected yet.
     const style1 = try core.newEntity();
@@ -268,7 +265,7 @@ fn endFrame(game: *Mod, text: *gfx.Text.Mod, core: *mach.Core.Mod) !void {
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // Present the frame
-    mach.core.swap_chain.present();
+    core.send(.present_frame, .{});
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {
