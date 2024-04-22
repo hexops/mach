@@ -341,6 +341,7 @@ fn preRender(sprite_pipeline: *Mod, core: *mach.Core.Mod) void {
             // Create the projection matrix
             // TODO(sprite): move this out of the hot codepath
             const proj = math.Mat4x4.projection2D(.{
+                // TODO(Core)
                 .left = -@as(f32, @floatFromInt(mach.core.size().width)) / 2,
                 .right = @as(f32, @floatFromInt(mach.core.size().width)) / 2,
                 .bottom = -@as(f32, @floatFromInt(mach.core.size().height)) / 2,

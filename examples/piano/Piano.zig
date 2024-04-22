@@ -78,6 +78,7 @@ fn tick(
     audio: *mach.Audio.Mod,
     piano: *Mod,
 ) !void {
+    // TODO(Core)
     var iter = mach.core.pollEvents();
     while (iter.next()) |event| {
         switch (event) {
@@ -111,6 +112,7 @@ fn tick(
     }
 
     // Grab the back buffer of the swapchain
+    // TODO(Core)
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
@@ -174,6 +176,7 @@ fn fillTone(audio: *mach.Audio.Mod, frequency: f32) ![]const f32 {
     return samples;
 }
 
+// TODO(Core)
 fn keyToFrequency(key: mach.core.Key) f32 {
     // The frequencies here just come from a piano frequencies chart. You can google for them.
     return switch (key) {
