@@ -51,9 +51,6 @@ fn init(
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     game: *Mod,
 ) !void {
-    // The Mach .core is where we set window options, etc.
-    mach.core.setTitle("gfx.Sprite example");
-
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `.mach_gfx_sprite` module could have a 3D `.location` component with a different
     // type than the `.physics2d` module's `.location` component if you desire.
@@ -215,7 +212,7 @@ fn tick(
     game.state().time += delta_time;
 }
 
-fn endFrame(game: *Mod) !void {
+fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
     // Finish render pass
     game.state().frame_render_pass.end();
     const label = @tagName(name) ++ ".endFrame";
@@ -229,7 +226,13 @@ fn endFrame(game: *Mod) !void {
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {
-        try mach.core.printTitle("gfx.Sprite example [ FPS: {d} ] [ Sprites: {d} ]", .{ game.state().frame_count, game.state().sprites });
+        try mach.Core.printTitle(
+            core,
+            core.state().main_window,
+            "sprite [ FPS: {d} ] [ Sprites: {d} ]",
+            .{ game.state().frame_count, game.state().sprites },
+        );
+        core.send(.update, .{});
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }
