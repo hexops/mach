@@ -128,6 +128,7 @@ fn tick(
     game: *Mod,
 ) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
+    // TODO(Core)
     var iter = mach.core.pollEvents();
     var direction = game.state().direction;
     var spawning = game.state().spawning;
@@ -228,6 +229,7 @@ fn tick(
     game.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
 
     // Grab the back buffer of the swapchain
+    // TODO(Core)
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 

@@ -61,6 +61,7 @@ pub fn deinit(game: *Mod) void {
 // TODO(important): remove need for returning an error here
 fn tick(core: *mach.Core.Mod, game: *Mod) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS event.
+    // TODO(Core)
     var iter = mach.core.pollEvents();
     while (iter.next()) |event| {
         switch (event) {
@@ -70,6 +71,7 @@ fn tick(core: *mach.Core.Mod, game: *Mod) !void {
     }
 
     // Grab the back buffer of the swapchain
+    // TODO(Core)
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
@@ -119,6 +121,7 @@ fn updateWindowTitle(core: *mach.Core.Mod) !void {
         core.state().main_window,
         "core-custom-entrypoint [ {d}fps ] [ Input {d}hz ]",
         .{
+            // TODO(Core)
             mach.core.frameRate(),
             mach.core.inputRate(),
         },

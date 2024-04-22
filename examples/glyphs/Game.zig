@@ -96,6 +96,7 @@ fn tick(
     game: *Mod,
 ) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
+    // TODO(Core)
     var iter = mach.core.pollEvents();
     var direction = game.state().direction;
     var spawning = game.state().spawning;
@@ -163,6 +164,7 @@ fn tick(
         for (ids, transforms) |id, *old_transform| {
             var location = old_transform.translation();
             // TODO: formatting
+            // TODO(Core)
             if (location.x() < -@as(f32, @floatFromInt(mach.core.size().width)) / 1.5 or location.x() > @as(f32, @floatFromInt(mach.core.size().width)) / 1.5 or location.y() < -@as(f32, @floatFromInt(mach.core.size().height)) / 1.5 or location.y() > @as(f32, @floatFromInt(mach.core.size().height)) / 1.5) {
                 try core.entities.remove(id);
                 game.state().sprites -= 1;
@@ -200,6 +202,7 @@ fn tick(
     game.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
 
     // Grab the back buffer of the swapchain
+    // TODO(Core)
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 

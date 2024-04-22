@@ -77,6 +77,7 @@ fn tick(
     game: *Mod,
 ) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS event.
+    // TODO(Core)
     var iter = mach.core.pollEvents();
     var direction = game.state().direction;
     var spawning = game.state().spawning;

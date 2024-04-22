@@ -122,10 +122,8 @@ fn tick(
     core: *mach.Core.Mod,
     renderer: *Mod,
 ) !void {
-    const device = core.state().device;
-    _ = device; // autofix
-
     // Grab the back buffer of the swapchain
+    // TODO(Core)
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
