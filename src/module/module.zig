@@ -342,6 +342,7 @@ pub fn Modules(comptime modules: anytype) type {
             options: DispatchOptions,
             injectable: anytype,
         ) !void {
+            @setEvalBranchQuota(10000);
             // TODO: optimize to reduce send contention
             // TODO: parallel / multi-threaded dispatch
             // TODO: PGO

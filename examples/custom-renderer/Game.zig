@@ -47,10 +47,6 @@ fn init(
     renderer: *Renderer.Mod,
     game: *Mod,
 ) !void {
-    // The Mach .core is where we set window options, etc.
-    // TODO(important): replace this API with something better
-    mach.core.setTitle("Hello, ECS!");
-
     // Create our player entity.
     const player = try core.newEntity();
 

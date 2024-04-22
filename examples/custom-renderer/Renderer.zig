@@ -123,22 +123,29 @@ fn tick(
     renderer: *Mod,
 ) !void {
     const device = core.state().device;
+    _ = device; // autofix
 
-    // Begin our render pass
+    // Grab the back buffer of the swapchain
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
-    const color_attachment = gpu.RenderPassColorAttachment{
+    defer back_buffer_view.release();
+
+    // Create a command encoder
+    const label = @tagName(name) ++ ".tick";
+    const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
+    defer encoder.release();
+
+    // Begin render pass
+    const sky_blue_background = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
+    const color_attachments = [_]gpu.RenderPassColorAttachment{.{
         .view = back_buffer_view,
-        .clear_value = std.mem.zeroes(gpu.Color),
+        .clear_value = sky_blue_background,
         .load_op = .clear,
         .store_op = .store,
-    };
-
-    const label = @tagName(name) ++ ".tick";
-    const encoder = device.createCommandEncoder(&.{ .label = label });
-    const render_pass_info = gpu.RenderPassDescriptor.init(.{
+    }};
+    const render_pass = encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
         .label = label,
-        .color_attachments = &.{color_attachment},
-    });
+        .color_attachments = &color_attachments,
+    }));
 
     // Update uniform buffer
     var archetypes_iter = core.entities.query(.{ .all = &.{
@@ -161,20 +168,21 @@ fn tick(
         }
     }
 
-    const pass = encoder.beginRenderPass(&render_pass_info);
+    // Draw
     for (renderer.state().bind_groups[0..num_entities]) |bind_group| {
-        pass.setPipeline(renderer.state().pipeline);
-        pass.setBindGroup(0, bind_group, &.{0});
-        pass.draw(3, 1, 0, 0);
+        render_pass.setPipeline(renderer.state().pipeline);
+        render_pass.setBindGroup(0, bind_group, &.{0});
+        render_pass.draw(3, 1, 0, 0);
     }
-    pass.end();
-    pass.release();
 
+    // Finish render pass
+    render_pass.end();
+
+    // Submit our commands to the queue
     var command = encoder.finish(&.{ .label = label });
-    encoder.release();
+    defer command.release();
+    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
-    renderer.state().queue.submit(&[_]*gpu.CommandBuffer{command});
-    command.release();
-    mach.core.swap_chain.present();
-    back_buffer_view.release();
+    // Present the frame
+    core.send(.present_frame, .{});
 }
