@@ -13,9 +13,9 @@ pub const global_events = .{
 title_timer: mach.Timer,
 pipeline: *gpu.RenderPipeline,
 
-fn init(game: *Mod) !void {
+fn init(game: *Mod, core: *mach.Core.Mod) !void {
     // Create our shader module
-    const shader_module = mach.core.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
+    const shader_module = core.state().device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
     defer shader_module.release();
 
     // Blend state describes how rendered colors get blended
@@ -44,7 +44,7 @@ fn init(game: *Mod) !void {
             .entry_point = "vertex_main",
         },
     };
-    const pipeline = mach.core.device.createRenderPipeline(&pipeline_descriptor);
+    const pipeline = core.state().device.createRenderPipeline(&pipeline_descriptor);
 
     // Store our render pipeline in our module's state, so we can access it later on.
     game.init(.{
@@ -59,10 +59,7 @@ pub fn deinit(game: *Mod) void {
 }
 
 // TODO(important): remove need for returning an error here
-fn tick(
-    core: *mach.Core.Mod,
-    game: *Mod,
-) !void {
+fn tick(core: *mach.Core.Mod, game: *Mod) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS event.
     var iter = mach.core.pollEvents();
     while (iter.next()) |event| {
@@ -78,7 +75,7 @@ fn tick(
 
     // Create a command encoder
     const label = @tagName(name) ++ ".tick";
-    const encoder = mach.core.device.createCommandEncoder(&.{ .label = label });
+    const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     // Begin render pass
