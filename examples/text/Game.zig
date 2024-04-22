@@ -228,7 +228,7 @@ fn tick(
 
     // Create a command encoder for this frame
     const label = @tagName(name) ++ ".tick";
-    game.state().frame_encoder = mach.core.device.createCommandEncoder(&.{ .label = label });
+    game.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
 
     // Grab the back buffer of the swapchain
     const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
@@ -242,7 +242,7 @@ fn tick(
         .load_op = .clear,
         .store_op = .store,
     }};
-    game.state().frame_encoder = mach.core.device.createCommandEncoder(&.{ .label = label });
+    game.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     game.state().frame_render_pass = game.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
         .label = label,
         .color_attachments = &color_attachments,

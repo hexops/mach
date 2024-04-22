@@ -350,9 +350,9 @@ fn buildPipeline(
     try text_pipeline.set(pipeline_id, .num_glyphs, 0);
 }
 
-fn preRender(text_pipeline: *Mod) void {
+fn preRender(text_pipeline: *Mod, core: *mach.Core.Mod) void {
     const label = @tagName(name) ++ ".preRender";
-    const encoder = mach.core.device.createCommandEncoder(&.{ .label = label });
+    const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     var archetypes_iter = text_pipeline.entities.query(.{ .all = &.{

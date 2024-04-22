@@ -325,9 +325,9 @@ fn buildPipeline(
     try sprite_pipeline.set(pipeline_id, .num_sprites, 0);
 }
 
-fn preRender(sprite_pipeline: *Mod) void {
+fn preRender(sprite_pipeline: *Mod, core: *mach.Core.Mod) void {
     const label = @tagName(name) ++ ".preRender";
-    const encoder = mach.core.device.createCommandEncoder(&.{ .label = label });
+    const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     var archetypes_iter = sprite_pipeline.entities.query(.{ .all = &.{
