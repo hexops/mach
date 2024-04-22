@@ -51,7 +51,7 @@ fn init(game: *Mod, core: *mach.Core.Mod) !void {
         .title_timer = try mach.Timer.start(),
         .pipeline = pipeline,
     });
-    try updateWindowTitle();
+    try updateWindowTitle(core);
 }
 
 pub fn deinit(game: *Mod) void {
@@ -109,13 +109,19 @@ fn tick(core: *mach.Core.Mod, game: *Mod) !void {
     // update the window title every second
     if (game.state().title_timer.read() >= 1.0) {
         game.state().title_timer.reset();
-        try updateWindowTitle();
+        try updateWindowTitle(core);
     }
 }
 
-fn updateWindowTitle() !void {
-    try mach.core.printTitle("mach.Core - custom entrypoint [ {d}fps ] [ Input {d}hz ]", .{
-        mach.core.frameRate(),
-        mach.core.inputRate(),
-    });
+fn updateWindowTitle(core: *mach.Core.Mod) !void {
+    try mach.Core.printTitle(
+        core,
+        core.state().main_window,
+        "core-custom-entrypoint [ {d}fps ] [ Input {d}hz ]",
+        .{
+            mach.core.frameRate(),
+            mach.core.inputRate(),
+        },
+    );
+    core.send(.update, .{});
 }

@@ -258,7 +258,7 @@ fn tick(
     game.state().time += delta_time;
 }
 
-fn endFrame(game: *Mod, text: *gfx.Text.Mod) !void {
+fn endFrame(game: *Mod, text: *gfx.Text.Mod, core: *mach.Core.Mod) !void {
     // Finish render pass
     game.state().frame_render_pass.end();
     const label = @tagName(name) ++ ".tick";
@@ -288,7 +288,13 @@ fn endFrame(game: *Mod, text: *gfx.Text.Mod) !void {
             }
         }
 
-        try mach.core.printTitle("gfx.Text example [ FPS: {d} ] [ Texts: {d} ] [ Glyphs: {d} ]", .{ game.state().frame_count, num_texts, num_glyphs });
+        try mach.Core.printTitle(
+            core,
+            core.state().main_window,
+            "text [ FPS: {d} ] [ Texts: {d} ] [ Glyphs: {d} ]",
+            .{ game.state().frame_count, num_texts, num_glyphs },
+        );
+        core.send(.update, .{});
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }
