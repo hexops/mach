@@ -101,7 +101,7 @@ fn tick(core: *mach.Core.Mod, game: *Mod) !void {
     // Submit our commands to the queue
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
+    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // Present the frame
     mach.core.swap_chain.present();

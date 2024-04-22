@@ -235,7 +235,7 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
     var command = game.state().frame_encoder.finish(&.{ .label = label });
     game.state().frame_encoder.release();
     defer command.release();
-    mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
+    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // Present the frame
     mach.core.swap_chain.present();
