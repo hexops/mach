@@ -48,7 +48,7 @@ fn init(
     // Fragment state
     const blend = gpu.BlendState{};
     const color_target = gpu.ColorTargetState{
-        .format = mach.core.descriptor.format,
+        .format = core.get(core.state().main_window, .framebuffer_format).?,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };

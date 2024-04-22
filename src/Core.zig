@@ -1,5 +1,7 @@
 const std = @import("std");
+
 const mach = @import("main.zig");
+const gpu = mach.gpu;
 
 // TODO(important): mach.core has a lot of standard Zig APIs, and some global variables, which are
 // part of its old API design. We should elevate them into this module instead.
@@ -45,6 +47,18 @@ pub const components = .{
     \\ If setting this component yourself, ensure the buffer is allocated using core.state().allocator
     \\ as it will be freed for you as part of the .deinit event.
     },
+
+    .framebuffer_format = .{ .type = gpu.Texture.Format, .description = 
+    \\ The texture format of the framebuffer
+    },
+
+    .framebuffer_width = .{ .type = u32, .description = 
+    \\ The width of the framebuffer in texels
+    },
+
+    .framebuffer_height = .{ .type = u32, .description = 
+    \\ The width of the framebuffer in texels
+    },
 };
 
 /// Prints into the window title buffer using a format string and arguments. e.g.
@@ -78,11 +92,17 @@ fn init(core: *Mod) !void {
     mach.core.allocator = gpa.allocator(); // TODO: banish this global allocator
     try mach.core.init(.{});
 
+    // TODO(important): update this information upon framebuffer resize events
+    const main_window = try core.newEntity();
+    try core.set(main_window, .framebuffer_format, mach.core.descriptor.format);
+    try core.set(main_window, .framebuffer_width, mach.core.descriptor.width);
+    try core.set(main_window, .framebuffer_height, mach.core.descriptor.height);
+
     core.init(.{
         .allocator = mach.core.allocator,
         .device = mach.core.device,
         .queue = mach.core.device.getQueue(),
-        .main_window = try core.newEntity(),
+        .main_window = main_window,
     });
 
     core.sendGlobal(.init, .{});

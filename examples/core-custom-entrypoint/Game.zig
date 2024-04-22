@@ -23,7 +23,7 @@ fn init(game: *Mod, core: *mach.Core.Mod) !void {
 
     // Color target describes e.g. the pixel format of the window we are rendering to.
     const color_target = gpu.ColorTargetState{
-        .format = mach.core.descriptor.format,
+        .format = core.get(core.state().main_window, .framebuffer_format).?,
         .blend = &blend,
     };
 
