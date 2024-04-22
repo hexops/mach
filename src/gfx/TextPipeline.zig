@@ -389,7 +389,7 @@ fn preRender(text_pipeline: *Mod, core: *mach.Core.Mod) void {
 
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
+    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
 fn render(text_pipeline: *Mod) !void {

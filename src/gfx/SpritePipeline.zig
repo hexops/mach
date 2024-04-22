@@ -364,7 +364,7 @@ fn preRender(sprite_pipeline: *Mod, core: *mach.Core.Mod) void {
 
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    mach.core.queue.submit(&[_]*gpu.CommandBuffer{command});
+    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
 fn render(sprite_pipeline: *Mod) !void {
