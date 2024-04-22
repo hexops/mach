@@ -281,7 +281,7 @@ fn buildPipeline(
     defer shader_module.release();
 
     const color_target = opt_color_target_state orelse gpu.ColorTargetState{
-        .format = mach.core.descriptor.format,
+        .format = core.get(core.state().main_window, .framebuffer_format).?,
         .blend = &blend_state,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
