@@ -3,7 +3,7 @@ const mach = @import("mach");
 // The global list of Mach modules registered for use in our application.
 pub const modules = .{
     mach.Core,
-    @import("Game.zig"),
+    @import("App.zig"),
 };
 
 pub fn main() !void {

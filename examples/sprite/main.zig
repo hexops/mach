@@ -5,7 +5,7 @@ pub const modules = .{
     mach.Core,
     mach.gfx.Sprite,
     mach.gfx.SpritePipeline,
-    @import("Game.zig"),
+    @import("App.zig"),
 };
 
 // TODO(important): use standard entrypoint instead

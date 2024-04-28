@@ -30,7 +30,7 @@ pub const global_events = .{
 
 // Define the globally unique name of our module. You can use any name here, but keep in mind no
 // two modules in the program can have the same name.
-pub const name = .game;
+pub const name = .app;
 
 // The mach.Mod type corresponding to our module struct (this file.) This provides methods for
 // working with this module (e.g. sending events, working with its components, etc.)
@@ -147,7 +147,7 @@ fn tick(
     // Query all the entities that have the .follower tag indicating they should follow the player.
     // TODO(important): better querying API
     var archetypes_iter = core.entities.query(.{ .all = &.{
-        .{ .game = &.{.follower} },
+        .{ .app = &.{.follower} },
     } });
     while (archetypes_iter.next()) |archetype| {
         // Iterate the ID and position of each entity
@@ -161,7 +161,7 @@ fn tick(
             var avoidance = Vec3.splat(0);
             var avoidance_div: f32 = 1.0;
             var archetypes_iter_2 = core.entities.query(.{ .all = &.{
-                .{ .game = &.{.follower} },
+                .{ .app = &.{.follower} },
             } });
             while (archetypes_iter_2.next()) |archetype_2| {
                 const other_ids = archetype_2.slice(.entity, .id);

@@ -6,7 +6,7 @@ pub const modules = .{
     mach.gfx.Text,
     mach.gfx.TextPipeline,
     mach.gfx.TextStyle,
-    @import("Game.zig"),
+    @import("App.zig"),
 };
 
 // TODO(important): use standard entrypoint instead

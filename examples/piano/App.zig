@@ -20,7 +20,7 @@ pub const App = @This();
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
-pub const name = .piano;
+pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
 pub const global_events = .{

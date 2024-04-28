@@ -4,7 +4,7 @@ const mach = @import("mach");
 pub const modules = .{
     mach.Core,
     mach.Audio,
-    @import("Piano.zig"),
+    @import("App.zig"),
 };
 
 // TODO(important): use standard entrypoint instead
