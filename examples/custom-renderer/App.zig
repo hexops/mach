@@ -51,6 +51,8 @@ fn init(
     renderer: *Renderer.Mod,
     game: *Mod,
 ) !void {
+    renderer.send(.init, .{});
+
     // Create our player entity.
     const player = try core.newEntity();
 
@@ -198,4 +200,6 @@ fn tick(
             try renderer.set(id, .position, new_position);
         }
     }
+
+    renderer.send(.render_frame, .{});
 }
