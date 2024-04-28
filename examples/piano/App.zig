@@ -23,14 +23,11 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
-pub const global_events = .{
-    .audio_state_change = .{ .handler = audioStateChange },
-};
-
 pub const local_events = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
+    .audio_state_change = .{ .handler = audioStateChange },
 };
 
 pub const components = .{
@@ -39,12 +36,13 @@ pub const components = .{
 
 ghost_key_mode: bool = false,
 
-fn init(audio: *mach.Audio.Mod, piano: *Mod) void {
-    // Initialize audio module
-    audio.send(.init, .{});
+fn init(audio: *mach.Audio.Mod, app: *Mod) void {
+    // Initialize audio module, telling it to send our module's .audio_state_change event when an
+    // entity's sound stops playing
+    audio.send(.init, .{app.event(.audio_state_change)});
 
     // Initialize piano module state
-    piano.init(.{});
+    app.init(.{});
 
     std.debug.print("controls:\n", .{});
     std.debug.print("[typing]     Play piano noises\n", .{});
@@ -60,39 +58,56 @@ fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
 
 fn audioStateChange(
     audio: *mach.Audio.Mod,
-    which: mach.EntityID,
-    piano: *Mod,
+    app: *Mod,
 ) !void {
-    if (audio.get(which, .playing) == false) {
-        if (piano.get(which, .play_after)) |frequency| {
-            // Play a new sound
-            const entity = try audio.newEntity();
-            try audio.set(entity, .samples, try fillTone(audio, frequency));
-            try audio.set(entity, .playing, true);
-            try audio.set(entity, .index, 0);
-        }
+    // Find audio entities that are no longer playing
+    var archetypes_iter = audio.entities.query(.{ .all = &.{
+        .{ .mach_audio = &.{.playing} },
+    } });
+    while (archetypes_iter.next()) |archetype| {
+        for (
+            archetype.slice(.entity, .id),
+            archetype.slice(.mach_audio, .playing),
+        ) |id, playing| {
+            if (playing) continue;
 
-        // Remove the entity for the old sound
-        try audio.removeEntity(which);
+            if (app.get(id, .play_after)) |frequency| {
+                // Play a new sound
+                const entity = try audio.newEntity();
+                try audio.set(entity, .samples, try fillTone(audio, frequency));
+                try audio.set(entity, .playing, true);
+                try audio.set(entity, .index, 0);
+            }
+
+            // Remove the entity for the old sound
+            try audio.removeEntity(id);
+        }
     }
 }
 
 fn tick(
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
-    piano: *Mod,
+    app: *Mod,
 ) !void {
     // TODO(Core)
     var iter = mach.core.pollEvents();
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| {
-                const vol = try audio.state().player.volume();
                 switch (ev.key) {
                     // Controls
-                    .space => piano.state().ghost_key_mode = !piano.state().ghost_key_mode,
-                    .down => try audio.state().player.setVolume(@max(0.0, vol - 0.1)),
-                    .up => try audio.state().player.setVolume(@min(1.0, vol + 0.1)),
+                    .space => app.state().ghost_key_mode = !app.state().ghost_key_mode,
+                    .down => {
+                        const vol = math.clamp(try audio.state().player.volume() - 0.1, 0, 1);
+                        try audio.state().player.setVolume(vol);
+                        std.debug.print("[volume] {d:.0}%\n", .{vol * 100.0});
+                    },
+                    .up => {
+                        const vol = math.clamp(try audio.state().player.volume() + 0.1, 0, 1);
+                        try audio.state().player.setVolume(vol);
+                        std.debug.print("[volume] {d:.0}%\n", .{vol * 100.0});
+                    },
 
                     // Piano keys
                     else => {
@@ -102,10 +117,10 @@ fn tick(
                         try audio.set(entity, .playing, true);
                         try audio.set(entity, .index, 0);
 
-                        if (piano.state().ghost_key_mode) {
+                        if (app.state().ghost_key_mode) {
                             // After that sound plays, we'll chain on another sound that is one semi-tone higher.
                             const one_semi_tone_higher = keyToFrequency(ev.key) * math.pow(f32, 2.0, (1.0 / 12.0));
-                            try piano.set(entity, .play_after, one_semi_tone_higher);
+                            try app.set(entity, .play_after, one_semi_tone_higher);
                         }
                     },
                 }

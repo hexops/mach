@@ -32,6 +32,10 @@ pub const Mod = ModSet(modules).Mod;
 pub const EntityID = @import("module/main.zig").EntityID; // TODO: rename to just Entity?
 pub const Archetype = @import("module/main.zig").Archetype;
 
+pub const ModuleID = @import("module/main.zig").ModuleID;
+pub const EventID = @import("module/main.zig").EventID;
+pub const AnyEvent = @import("module/main.zig").AnyEvent;
+
 /// To use experimental sysgpu graphics API, you can write this in your main.zig:
 ///
 /// ```

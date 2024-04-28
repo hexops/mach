@@ -93,16 +93,21 @@ fn Serializable(comptime T: type) type {
     return T;
 }
 
+// TODO: add runtime module support
+pub const ModuleID = u32;
+pub const EventID = u32;
+
+pub const AnyEvent = struct {
+    module_id: ModuleID,
+    event_id: EventID,
+};
+
 /// Manages comptime .{A, B, C} modules and runtime modules.
 pub fn Modules(comptime modules: anytype) type {
     // Verify that each module is valid.
     inline for (modules) |M| _ = ModuleInterface(M);
 
     return struct {
-        // TODO: add runtime module support
-        pub const ModuleID = u32;
-        pub const EventID = u32;
-
         pub const GlobalEvent = GlobalEventEnum(modules);
         pub const LocalEvent = LocalEventEnum(modules);
 
@@ -592,6 +597,28 @@ pub fn ModSet(comptime modules: anytype) type {
                     const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
                     const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
                     mods.sendGlobal(module_tag, event_name, args);
+                }
+
+                pub inline fn event(_: *@This(), comptime event_name: LocalEventEnumM(M)) AnyEvent {
+                    const module_name_g: ModuleName(modules) = M.name;
+                    const event_name_g: Modules(modules).LocalEvent = comptime Modules(modules).moduleToGlobalEvent(
+                        M,
+                        LocalEventEnumM,
+                        LocalEventEnum,
+                        event_name,
+                    );
+                    return .{
+                        .module_id = @intFromEnum(module_name_g),
+                        .event_id = @intFromEnum(event_name_g),
+                    };
+                }
+
+                pub inline fn sendAnyEvent(m: *@This(), ev: AnyEvent) void {
+                    const ModulesT = Modules(modules);
+                    const MByName = ModsByName(modules);
+                    const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
+                    const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
+                    mods.sendDynamic(ev.module_id, ev.event_id, .{});
                 }
             };
         }
