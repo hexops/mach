@@ -25,6 +25,7 @@ pub const Mod = mach.Mod(@This());
 
 pub const global_events = .{
     .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
     .audio_state_change = .{ .handler = audioStateChange },
 };
@@ -52,6 +53,11 @@ fn init(audio: *mach.Audio.Mod, piano: *Mod) void {
     std.debug.print("[spacebar]   enable ghost-key mode (demonstrate seamless back-to-back sound playback)\n", .{});
     std.debug.print("[arrow up]   increase volume 10%\n", .{});
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
+}
+
+fn deinit(audio: *mach.Audio.Mod) void {
+    // Initialize audio module
+    audio.send(.deinit, .{});
 }
 
 fn audioStateChange(
