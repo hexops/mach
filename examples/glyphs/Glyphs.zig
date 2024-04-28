@@ -8,12 +8,9 @@ const assets = @import("assets");
 pub const name = .glyphs;
 pub const Mod = mach.Mod(@This());
 
-pub const global_events = .{
-    .deinit = .{ .handler = deinit },
-};
-
 pub const local_events = .{
     .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
     .prepare = .{ .handler = prepare },
 };
 

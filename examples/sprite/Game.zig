@@ -38,6 +38,7 @@ pub const Mod = mach.Mod(@This());
 
 pub const global_events = .{
     .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
 };
 
@@ -45,12 +46,20 @@ pub const local_events = .{
     .end_frame = .{ .handler = endFrame },
 };
 
+fn deinit(
+    sprite_pipeline: *gfx.SpritePipeline.Mod,
+) !void {
+    sprite_pipeline.send(.init, .{});
+}
+
 fn init(
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     game: *Mod,
 ) !void {
+    sprite_pipeline.send(.init, .{});
+
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `.mach_gfx_sprite` module could have a 3D `.location` component with a different
     // type than the `.physics2d` module's `.location` component if you desire.
