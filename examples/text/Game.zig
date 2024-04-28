@@ -39,6 +39,7 @@ pub const Mod = mach.Mod(@This());
 
 pub const global_events = .{
     .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
 };
 
@@ -56,6 +57,12 @@ const text1: []const []const u8 = &.{
 
 const text2: []const []const u8 = &.{"$!?😊"};
 
+fn deinit(
+    text_pipeline: *gfx.TextPipeline.Mod,
+) !void {
+    text_pipeline.send(.deinit, .{});
+}
+
 fn init(
     core: *mach.Core.Mod,
     text: *gfx.Text.Mod,
@@ -63,6 +70,8 @@ fn init(
     text_style: *gfx.TextStyle.Mod,
     game: *Mod,
 ) !void {
+    text_pipeline.send(.init, .{});
+
     // TODO: a better way to initialize entities with default values
     // TODO(text): most of these style options are not respected yet.
     const style1 = try core.newEntity();
