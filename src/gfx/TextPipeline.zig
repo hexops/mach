@@ -60,11 +60,9 @@ pub const components = .{
     .built = .{ .type = BuiltPipeline, .description = "internal" },
 };
 
-pub const global_events = .{
-    .deinit = .{ .handler = deinit },
-};
-
 pub const local_events = .{
+    .init = .{ .handler = fn () void },
+    .deinit = .{ .handler = deinit },
     .update = .{ .handler = update },
     .pre_render = .{ .handler = preRender },
     .render = .{ .handler = render },
