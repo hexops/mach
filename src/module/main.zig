@@ -7,6 +7,9 @@ pub const Entities = @import("entities.zig").Entities;
 pub const Archetype = @import("Archetype.zig");
 pub const ModSet = @import("module.zig").ModSet;
 pub const Modules = @import("module.zig").Modules;
+pub const ModuleID = @import("module.zig").ModuleID;
+pub const EventID = @import("module.zig").EventID;
+pub const AnyEvent = @import("module.zig").AnyEvent;
 
 test {
     std.testing.refAllDeclsRecursive(@This());

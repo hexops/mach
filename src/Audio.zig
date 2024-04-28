@@ -18,10 +18,6 @@ pub const local_events = .{
     .audio_tick = .{ .handler = audioTick },
 };
 
-pub const global_events = .{
-    .audio_state_change = .{ .handler = fn (mach.EntityID) void },
-};
-
 const log = std.log.scoped(name);
 
 // The number of milliseconds worth of audio to render ahead of time. The lower this number is, the
@@ -35,6 +31,7 @@ ms_render_ahead: f32 = 16,
 allocator: std.mem.Allocator,
 ctx: sysaudio.Context,
 player: sysaudio.Player,
+on_state_change: mach.AnyEvent,
 output_mu: std.Thread.Mutex = .{},
 output: SampleBuffer,
 mixing_buffer: ?std.ArrayListUnmanaged(f32) = null,
@@ -45,7 +42,7 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
 const SampleBuffer = std.fifo.LinearFifo(u8, .Dynamic);
 
-fn init(audio: *Mod) !void {
+fn init(audio: *Mod, on_state_change: mach.AnyEvent) !void {
     const allocator = gpa.allocator();
     const ctx = try sysaudio.Context.init(null, allocator, .{});
     try ctx.refresh();
@@ -71,6 +68,7 @@ fn init(audio: *Mod) !void {
         .allocator = allocator,
         .ctx = ctx,
         .player = player,
+        .on_state_change = on_state_change,
         .output = SampleBuffer.init(allocator),
         .debug = debug,
     });
@@ -133,6 +131,7 @@ fn audioTick(audio: *Mod) !void {
     // not undefined memory.
     @memset(mixing_buffer.items, 0);
 
+    var did_state_change = false;
     var max_samples: usize = 0;
     var archetypes_iter = audio.entities.query(.{ .all = &.{
         .{ .mach_audio = &.{ .samples, .playing, .index } },
@@ -151,7 +150,7 @@ fn audioTick(audio: *Mod) !void {
             max_samples = @max(max_samples, to_read);
             if (index + to_read >= samples.len) {
                 // No longer playing, we've read all samples
-                audio.sendGlobal(.audio_state_change, .{id});
+                did_state_change = true;
                 try audio.set(id, .playing, false);
                 try audio.set(id, .index, 0);
                 continue;
@@ -159,6 +158,7 @@ fn audioTick(audio: *Mod) !void {
             try audio.set(id, .index, index + to_read);
         }
     }
+    if (did_state_change) audio.sendAnyEvent(audio.state().on_state_change);
 
     // Write our rendered samples to the fifo, expanding its size as needed and converting our f32
     // samples to the format the driver expects.
