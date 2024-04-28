@@ -27,7 +27,7 @@ pub const components = .{
     .scale = .{ .type = f32 },
 };
 
-pub const global_events = .{
+pub const local_events = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },

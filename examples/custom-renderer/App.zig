@@ -22,10 +22,10 @@ pub const components = .{
     .follower = .{ .type = void },
 };
 
-// Global events that we will listen for.
-pub const global_events = .{
-    .init = .{ .handler = init }, // Event sent on app startup
-    .tick = .{ .handler = tick }, // Event sent on each frame
+pub const local_events = .{
+    .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
+    .tick = .{ .handler = tick },
 };
 
 // Define the globally unique name of our module. You can use any name here, but keep in mind no
@@ -37,6 +37,10 @@ pub const name = .app;
 //
 // Note that Mod.state() returns an instance of our module struct.
 pub const Mod = mach.Mod(@This());
+
+pub fn deinit(core: *mach.Core.Mod) void {
+    core.send(.deinit, .{});
+}
 
 // TODO(important): remove need for returning an error here
 fn init(

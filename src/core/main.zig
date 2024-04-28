@@ -15,7 +15,7 @@ var stack_space: [8 * 1024 * 1024]u8 = undefined;
 pub fn initModule() !void {
     // Initialize the global set of Mach modules used in the program.
     try mods.init(std.heap.c_allocator);
-    mods.mod.mach_core.send(.init, .{});
+    mods.send(.mach_core, .init, .{});
 
     // Dispatch events until this .mach_core.init_done is sent
     try mods.dispatch(&stack_space, .{ .until = .{
@@ -28,7 +28,7 @@ pub fn initModule() !void {
 ///
 /// Returns true if tick() should be called again, false if the application should exit.
 pub fn tick() !bool {
-    mods.mod.mach_core.send(.main_thread_tick, .{});
+    mods.send(.mach_core, .main_thread_tick, .{});
 
     // Dispatch events until this .mach_core.main_thread_tick_done is sent
     try mods.dispatch(&stack_space, .{ .until = .{

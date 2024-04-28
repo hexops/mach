@@ -36,20 +36,19 @@ frame_render_pass: *gpu.RenderPassEncoder = undefined,
 pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
-pub const global_events = .{
+pub const local_events = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
-};
-
-pub const local_events = .{
     .end_frame = .{ .handler = endFrame },
 };
 
 fn deinit(
+    core: *mach.Core.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
 ) !void {
     sprite_pipeline.send(.init, .{});
+    core.send(.deinit, .{});
 }
 
 fn init(

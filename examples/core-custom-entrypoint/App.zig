@@ -5,13 +5,19 @@ const gpu = mach.gpu;
 pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
-pub const global_events = .{
+pub const local_events = .{
     .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
 };
 
 title_timer: mach.Timer,
 pipeline: *gpu.RenderPipeline,
+
+pub fn deinit(core: *mach.Core.Mod, game: *Mod) void {
+    game.state().pipeline.release();
+    core.send(.deinit, .{});
+}
 
 fn init(game: *Mod, core: *mach.Core.Mod) !void {
     // Create our shader module
@@ -52,10 +58,6 @@ fn init(game: *Mod, core: *mach.Core.Mod) !void {
         .pipeline = pipeline,
     });
     try updateWindowTitle(core);
-}
-
-pub fn deinit(game: *Mod) void {
-    game.state().pipeline.release();
 }
 
 // TODO(important): remove need for returning an error here
