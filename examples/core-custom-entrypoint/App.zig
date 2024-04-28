@@ -2,7 +2,7 @@ const std = @import("std");
 const mach = @import("mach");
 const gpu = mach.gpu;
 
-pub const name = .game;
+pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
 pub const global_events = .{
