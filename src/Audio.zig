@@ -14,11 +14,11 @@ pub const components = .{
 
 pub const local_events = .{
     .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
     .audio_tick = .{ .handler = audioTick },
 };
 
 pub const global_events = .{
-    .deinit = .{ .handler = deinit },
     .audio_state_change = .{ .handler = fn (mach.EntityID) void },
 };
 
