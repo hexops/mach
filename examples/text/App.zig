@@ -34,16 +34,13 @@ frame_render_pass: *gpu.RenderPassEncoder = undefined,
 
 // Define the globally unique name of our module. You can use any name here, but keep in mind no
 // two modules in the program can have the same name.
-pub const name = .game;
+pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
-pub const global_events = .{
+pub const local_events = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
-};
-
-pub const local_events = .{
     .end_frame = .{ .handler = endFrame },
 };
 
@@ -58,9 +55,11 @@ const text1: []const []const u8 = &.{
 const text2: []const []const u8 = &.{"$!?😊"};
 
 fn deinit(
+    core: *mach.Core.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
 ) !void {
     text_pipeline.send(.deinit, .{});
+    core.send(.deinit, .{});
 }
 
 fn init(

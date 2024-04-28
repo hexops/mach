@@ -10,12 +10,6 @@ pub const name = .mach_core;
 
 pub const Mod = mach.Mod(@This());
 
-pub const global_events = .{
-    .init = .{ .handler = fn () void },
-    .deinit = .{ .handler = fn () void },
-    .tick = .{ .handler = fn () void },
-};
-
 pub const local_events = .{
     .update = .{ .handler = update, .description = 
     \\ Send this when window entities have been updated and you want the new values respected.
@@ -105,7 +99,7 @@ fn init(core: *Mod) !void {
         .main_window = main_window,
     });
 
-    core.sendGlobal(.init, .{});
+    mach.core.mods.send(.app, .init, .{});
     core.send(.init_done, .{});
 }
 
@@ -153,15 +147,14 @@ fn deinit(core: *Mod) void {
     }
 
     _ = gpa.deinit();
-}
-
-fn mainThreadTick(core: *Mod) !void {
-    _ = try mach.core.update(null);
-
-    // Send .tick to anyone interested
-    core.sendGlobal(.tick, .{});
-}
-
-fn exit(core: *Mod) void {
     core.state().should_exit = true;
+}
+
+fn mainThreadTick() !void {
+    _ = try mach.core.update(null);
+    mach.core.mods.send(.app, .tick, .{});
+}
+
+fn exit() void {
+    mach.core.mods.send(.app, .deinit, .{});
 }

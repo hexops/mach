@@ -24,14 +24,12 @@ pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
 pub const global_events = .{
-    .init = .{ .handler = init },
-    .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
     .audio_state_change = .{ .handler = audioStateChange },
 };
 
 pub const local_events = .{
     .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
 };
 
@@ -55,9 +53,9 @@ fn init(audio: *mach.Audio.Mod, piano: *Mod) void {
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
 }
 
-fn deinit(audio: *mach.Audio.Mod) void {
-    // Initialize audio module
+fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
     audio.send(.deinit, .{});
+    core.send(.deinit, .{});
 }
 
 fn audioStateChange(
