@@ -34,6 +34,7 @@ pub const Mod = mach.Mod(@This());
 
 pub const global_events = .{
     .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
 };
 
@@ -42,9 +43,16 @@ pub const local_events = .{
     .end_frame = .{ .handler = endFrame },
 };
 
-fn init(glyphs: *Glyphs.Mod, game: *Mod) !void {
-    // Prepare which glyphs we will render
+fn deinit(sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod) !void {
+    sprite_pipeline.send(.deinit, .{});
+    glyphs.send(.deinit, .{});
+}
+
+fn init(sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mod) !void {
+    sprite_pipeline.send(.init, .{});
     glyphs.send(.init, .{});
+
+    // Prepare which glyphs we will render
     glyphs.send(.prepare, .{&[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' }});
 
     // Run our init code after glyphs module is initialized.
