@@ -9,7 +9,10 @@ pub const Impl = blk: {
         break :blk StubInterface;
     } else {
         const root = @import("root");
-        if (!@hasDecl(root, "SYSGPUInterface")) @compileError("expected to find `pub const SYSGPUInterface = T;` in root file");
+
+        // Default to standard implementation of sysgpu.Interface if none was specified.
+        if (!@hasDecl(root, "SYSGPUInterface")) break :blk Interface(@import("../main.zig").Impl);
+
         _ = sysgpu.Interface(root.SYSGPUInterface); // verify the type
         break :blk root.SYSGPUInterface;
     }

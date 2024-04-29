@@ -137,11 +137,8 @@ pub fn init(
     input: *Frequency,
     options: Options,
 ) !void {
-    if (!@import("builtin").is_test and !mach.use_sysgpu) _ = mach.wgpu.Export(blk: {
-        if (@hasDecl(@import("root"), "GPUInterface")) break :blk @import("root").GPUInterface;
-        break :blk mach.wgpu.dawn.Interface;
-    });
-    if (!@import("builtin").is_test and mach.use_sysgpu) _ = mach.sysgpu.sysgpu.Export(@import("root").SYSGPUInterface);
+    if (!@import("builtin").is_test and !mach.use_sysgpu) _ = mach.wgpu.Export(mach.wgpu.Impl);
+    if (!@import("builtin").is_test and mach.use_sysgpu) _ = mach.sysgpu.sysgpu.Export(mach.sysgpu.Impl);
 
     const backend_type = try detectBackendType(allocator);
 
