@@ -10,7 +10,7 @@ pub const name = .mach_core;
 
 pub const Mod = mach.Mod(@This());
 
-pub const local_events = .{
+pub const events = .{
     .update = .{ .handler = update, .description = 
     \\ Send this when window entities have been updated and you want the new values respected.
     },

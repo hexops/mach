@@ -23,7 +23,7 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
-pub const local_events = .{
+pub const events = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
