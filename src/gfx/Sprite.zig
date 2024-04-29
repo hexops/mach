@@ -38,7 +38,7 @@ pub const components = .{
     },
 };
 
-pub const local_events = .{
+pub const events = .{
     .update = .{ .handler = update },
 };
 

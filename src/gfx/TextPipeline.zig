@@ -60,7 +60,7 @@ pub const components = .{
     .built = .{ .type = BuiltPipeline, .description = "internal" },
 };
 
-pub const local_events = .{
+pub const events = .{
     .init = .{ .handler = fn () void },
     .deinit = .{ .handler = deinit },
     .update = .{ .handler = update },

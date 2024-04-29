@@ -12,7 +12,7 @@ pub const components = .{
     .index = .{ .type = usize },
 };
 
-pub const local_events = .{
+pub const events = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .audio_tick = .{ .handler = audioTick },

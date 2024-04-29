@@ -81,7 +81,7 @@ fn validateModule(comptime M: type, comptime events: bool) void {
     if (@typeInfo(@TypeOf(M.name)) != .EnumLiteral) @compileError("mach: module must have `pub const name = .foobar;`, found type:" ++ @typeName(M.name));
     if (events) {
         if (@hasDecl(M, "global_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " global_events ", M.global_events);
-        if (@hasDecl(M, "local_events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " local_events ", M.local_events);
+        if (@hasDecl(M, "events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " events ", M.events);
         _ = ComponentTypesM(M);
     }
 }
@@ -425,14 +425,14 @@ pub fn Modules(comptime modules: anytype) type {
                             // TODO(important): DRY with callGlobal
                             const M = @field(NamespacedModules(modules){}, @tagName(mod_name));
                             _ = ModuleInterface(M); // Validate the module
-                            if (@hasDecl(M, "local_events")) inline for (@typeInfo(@TypeOf(M.local_events)).Struct.fields) |field| {
+                            if (@hasDecl(M, "events")) inline for (@typeInfo(@TypeOf(M.events)).Struct.fields) |field| {
                                 comptime if (!std.mem.eql(u8, @tagName(ev_name), field.name)) continue;
                                 if (m.debug_trace) log.debug("trace: .{s}.{s}", .{
                                     @tagName(M.name),
                                     @tagName(ev_name),
                                 });
 
-                                const handler = @field(M.local_events, @tagName(ev_name)).handler;
+                                const handler = @field(M.events, @tagName(ev_name)).handler;
                                 if (@typeInfo(@TypeOf(handler)) == .Type) continue; // Pre-declaration of what args an event has, nothing to do.
                                 if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares local event .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
                                     @tagName(M.name),
@@ -684,19 +684,19 @@ fn UninjectedArgsTuple(comptime Function: type) type {
 
 // TODO: tests
 fn LocalArgsM(comptime M: type, event_name: anytype) type {
-    return ArgsM(M, event_name, "local");
+    return ArgsM(M, event_name, "events");
 }
 
 // TODO: tests
 fn GlobalArgsM(comptime M: type, event_name: anytype) type {
-    return ArgsM(M, event_name, "global");
+    return ArgsM(M, event_name, "global_events");
 }
 
 fn ArgsM(comptime M: type, event_name: anytype, comptime which: anytype) type {
     _ = ModuleInterface(M); // Validate the module
-    if (!@hasDecl(M, which ++ "_events")) return @TypeOf(.{});
+    if (!@hasDecl(M, which)) return @TypeOf(.{});
 
-    const m_events = @field(M, which ++ "_events"); // M.local_events or M.global_events
+    const m_events = @field(M, which); // M.events or M.global_events
     inline for (@typeInfo(@TypeOf(m_events)).Struct.fields) |field| {
         comptime if (!std.mem.eql(u8, field.name, @tagName(event_name))) continue;
         if (!@hasField(@TypeOf(m_events), @tagName(event_name))) @compileError(std.fmt.comptimePrint("mach: module .{s} declares no {s} event .{s}", .{
@@ -730,7 +730,7 @@ fn LocalEventEnum(comptime modules: anytype) type {
     var i: u32 = 0;
     for (modules) |M| {
         _ = ModuleInterface(M); // Validate the module
-        if (@hasDecl(M, "local_events")) inline for (@typeInfo(@TypeOf(M.local_events)).Struct.fields) |field| {
+        if (@hasDecl(M, "events")) inline for (@typeInfo(@TypeOf(M.events)).Struct.fields) |field| {
             const exists_already = blk: {
                 for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) break :blk true;
                 break :blk false;
@@ -757,7 +757,7 @@ fn LocalEventEnumM(comptime M: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
     _ = ModuleInterface(M); // Validate the module
-    if (@hasDecl(M, "local_events")) inline for (@typeInfo(@TypeOf(M.local_events)).Struct.fields) |field| {
+    if (@hasDecl(M, "events")) inline for (@typeInfo(@TypeOf(M.events)).Struct.fields) |field| {
         const exists_already = blk: {
             for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) break :blk true;
             break :blk false;
@@ -1143,7 +1143,7 @@ test "event name" {
             .foo = .{ .handler = foo },
             .bar = .{ .handler = bar },
         };
-        pub const local_events = .{
+        pub const events = .{
             .baz = .{ .handler = baz },
             .bam = .{ .handler = bam },
         };
@@ -1352,7 +1352,7 @@ test "event name calling" {
         pub const global_events = .{
             .tick = .{ .handler = tick },
         };
-        pub const local_events = .{
+        pub const events = .{
             .update = .{ .handler = update },
             .calc = .{ .handler = calc },
         };
@@ -1374,7 +1374,7 @@ test "event name calling" {
         pub const global_events = .{
             .tick = .{ .handler = tick },
         };
-        pub const local_events = .{
+        pub const events = .{
             .update = .{ .handler = update },
         };
 
@@ -1463,7 +1463,7 @@ test "dispatch" {
         pub const global_events = .{
             .tick = .{ .handler = tick },
         };
-        pub const local_events = .{
+        pub const events = .{
             .update = .{ .handler = update },
             .update_with_struct_arg = .{ .handler = updateWithStructArg },
             .calc = .{ .handler = calc },
@@ -1496,7 +1496,7 @@ test "dispatch" {
             .tick = .{ .handler = tick },
             .frame_done = .{ .handler = fn (i32) void },
         };
-        pub const local_events = .{
+        pub const events = .{
             .update = .{ .handler = update },
             .basic_args = .{ .handler = basicArgs },
             .injected_args = .{ .handler = injectedArgs },

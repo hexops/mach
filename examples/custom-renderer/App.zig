@@ -22,7 +22,7 @@ pub const components = .{
     .follower = .{ .type = void },
 };
 
-pub const local_events = .{
+pub const events = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
