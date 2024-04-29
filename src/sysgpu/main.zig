@@ -1295,9 +1295,9 @@ pub const Impl = sysgpu.Interface(struct {
         @panic("unimplemented");
     }
 
-    pub inline fn textureGetHeight(texture: *sysgpu.Texture) u32 {
-        _ = texture;
-        @panic("unimplemented");
+    pub inline fn textureGetHeight(texture_raw: *sysgpu.Texture) u32 {
+        const texture: *impl.Texture = @ptrCast(@alignCast(texture_raw));
+        return texture.getHeight();
     }
 
     pub inline fn textureGetMipLevelCount(texture: *sysgpu.Texture) u32 {
@@ -1315,9 +1315,9 @@ pub const Impl = sysgpu.Interface(struct {
         @panic("unimplemented");
     }
 
-    pub inline fn textureGetWidth(texture: *sysgpu.Texture) u32 {
-        _ = texture;
-        @panic("unimplemented");
+    pub inline fn textureGetWidth(texture_raw: *sysgpu.Texture) u32 {
+        const texture: *impl.Texture = @ptrCast(@alignCast(texture_raw));
+        return texture.getHeight();
     }
 
     pub inline fn textureSetLabel(texture: *sysgpu.Texture, label: [*:0]const u8) void {

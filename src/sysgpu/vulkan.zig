@@ -1440,6 +1440,14 @@ pub const Texture = struct {
         allocator.destroy(texture);
     }
 
+    pub fn getWidth(texture: *Texture) u32 {
+        return texture.size.width;
+    }
+
+    pub fn getHeight(texture: *Texture) u32 {
+        return texture.size.height;
+    }
+
     pub fn createView(texture: *Texture, desc: *const sysgpu.TextureView.Descriptor) !*TextureView {
         return TextureView.init(texture, desc, texture.extent);
     }

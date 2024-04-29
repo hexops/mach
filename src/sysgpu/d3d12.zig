@@ -1728,6 +1728,14 @@ pub const Texture = struct {
         return TextureView.init(texture, desc);
     }
 
+    pub fn getWidth(texture: *Texture) u32 {
+        return texture.size.width;
+    }
+
+    pub fn getHeight(texture: *Texture) u32 {
+        return texture.size.height;
+    }
+
     // Internal
     pub fn calcSubresource(texture: *Texture, mip_level: u32, array_slice: u32) u32 {
         return mip_level + (array_slice * texture.mip_level_count);
