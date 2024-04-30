@@ -74,6 +74,8 @@ fn init(
         .spawn_timer = try mach.Timer.start(),
         .player = player,
     });
+
+    core.send(.start, .{});
 }
 
 // TODO(important): remove need for returning an error here

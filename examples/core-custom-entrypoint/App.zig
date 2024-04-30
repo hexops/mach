@@ -58,6 +58,8 @@ fn init(game: *Mod, core: *mach.Core.Mod) !void {
         .pipeline = pipeline,
     });
     try updateWindowTitle(core);
+
+    core.send(.start, .{});
 }
 
 // TODO(important): remove need for returning an error here

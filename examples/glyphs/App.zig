@@ -46,7 +46,7 @@ fn deinit(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs
     core.send(.deinit, .{});
 }
 
-fn init(sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mod) !void {
+fn init(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mod) !void {
     sprite_pipeline.send(.init, .{});
     glyphs.send(.init, .{});
 
@@ -55,6 +55,8 @@ fn init(sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mo
 
     // Run our init code after glyphs module is initialized.
     game.send(.after_init, .{});
+
+    core.send(.start, .{});
 }
 
 fn afterInit(

@@ -36,7 +36,7 @@ pub const components = .{
 
 ghost_key_mode: bool = false,
 
-fn init(audio: *mach.Audio.Mod, app: *Mod) void {
+fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) void {
     // Initialize audio module, telling it to send our module's .audio_state_change event when an
     // entity's sound stops playing
     audio.send(.init, .{app.event(.audio_state_change)});
@@ -49,6 +49,8 @@ fn init(audio: *mach.Audio.Mod, app: *Mod) void {
     std.debug.print("[spacebar]   enable ghost-key mode (demonstrate seamless back-to-back sound playback)\n", .{});
     std.debug.print("[arrow up]   increase volume 10%\n", .{});
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
+
+    core.send(.start, .{});
 }
 
 fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
