@@ -79,7 +79,10 @@ fn init(
                 .label = label,
                 .layout = bind_group_layout,
                 .entries = &.{
-                    gpu.BindGroup.Entry.buffer(0, uniform_buffer, uniform_offset * i, @sizeOf(UniformBufferObject)),
+                    if (mach.use_sysgpu)
+                        gpu.BindGroup.Entry.buffer(0, uniform_buffer, uniform_offset * i, @sizeOf(UniformBufferObject), @sizeOf(UniformBufferObject))
+                    else
+                        gpu.BindGroup.Entry.buffer(0, uniform_buffer, uniform_offset * i, @sizeOf(UniformBufferObject)),
                 },
             }),
         );

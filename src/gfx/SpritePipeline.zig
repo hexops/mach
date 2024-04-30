@@ -249,10 +249,22 @@ fn buildPipeline(
             .label = label,
             .layout = bind_group_layout,
             .entries = &.{
-                gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms)),
-                gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(math.Mat4x4) * sprite_buffer_cap),
-                gpu.BindGroup.Entry.buffer(2, uv_transforms, 0, @sizeOf(math.Mat3x3) * sprite_buffer_cap),
-                gpu.BindGroup.Entry.buffer(3, sizes, 0, @sizeOf(math.Vec2) * sprite_buffer_cap),
+                if (mach.use_sysgpu)
+                    gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms), @sizeOf(Uniforms))
+                else
+                    gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms)),
+                if (mach.use_sysgpu)
+                    gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(math.Mat4x4) * sprite_buffer_cap, @sizeOf(math.Mat4x4))
+                else
+                    gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(math.Mat4x4) * sprite_buffer_cap),
+                if (mach.use_sysgpu)
+                    gpu.BindGroup.Entry.buffer(2, uv_transforms, 0, @sizeOf(math.Mat3x3) * sprite_buffer_cap, @sizeOf(math.Mat3x3))
+                else
+                    gpu.BindGroup.Entry.buffer(2, uv_transforms, 0, @sizeOf(math.Mat3x3) * sprite_buffer_cap),
+                if (mach.use_sysgpu)
+                    gpu.BindGroup.Entry.buffer(3, sizes, 0, @sizeOf(math.Vec2) * sprite_buffer_cap, @sizeOf(math.Vec2))
+                else
+                    gpu.BindGroup.Entry.buffer(3, sizes, 0, @sizeOf(math.Vec2) * sprite_buffer_cap),
                 gpu.BindGroup.Entry.sampler(4, texture_sampler),
                 gpu.BindGroup.Entry.textureView(5, texture_view),
                 gpu.BindGroup.Entry.textureView(6, texture2_view),
@@ -261,6 +273,7 @@ fn buildPipeline(
             },
         }),
     );
+    defer bind_group.release();
 
     const blend_state = opt_blend_state orelse gpu.BlendState{
         .color = .{
