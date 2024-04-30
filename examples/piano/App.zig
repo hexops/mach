@@ -25,6 +25,7 @@ pub const Mod = mach.Mod(@This());
 
 pub const events = .{
     .init = .{ .handler = init },
+    .after_init = .{ .handler = afterInit },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
     .audio_state_change = .{ .handler = audioStateChange },
@@ -37,9 +38,8 @@ pub const components = .{
 ghost_key_mode: bool = false,
 
 fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) void {
-    // Initialize audio module, telling it to send our module's .audio_state_change event when an
-    // entity's sound stops playing
-    audio.send(.init, .{app.event(.audio_state_change)});
+    audio.send(.init, .{});
+    app.send(.after_init, .{});
 
     // Initialize piano module state
     app.init(.{});
@@ -51,6 +51,12 @@ fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) void {
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
 
     core.send(.start, .{});
+}
+
+fn afterInit(audio: *mach.Audio.Mod, app: *Mod) void {
+    // Configure the audio module to send our app's .audio_state_change event when an entity's sound
+    // finishes playing.
+    audio.state().on_state_change = app.event(.audio_state_change);
 }
 
 fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
