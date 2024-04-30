@@ -51,7 +51,7 @@ fn init(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: 
     glyphs.send(.init, .{});
 
     // Prepare which glyphs we will render
-    glyphs.send(.prepare, .{&[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' }});
+    glyphs.send(.prepare, .{});
 
     // Run our init code after glyphs module is initialized.
     game.send(.after_init, .{});
