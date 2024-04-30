@@ -75,15 +75,13 @@ fn init(
     });
 }
 
-fn prepare(
-    core: *mach.Core.Mod,
-    glyphs: *Mod,
-    codepoints: []const u21,
-) !void {
+fn prepare(core: *mach.Core.Mod, glyphs: *Mod) !void {
     const device = core.state().device;
     const queue = device.getQueue();
     var s = glyphs.state();
 
+    // Prepare which glyphs we will render
+    const codepoints: []const u21 = &[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' };
     for (codepoints) |codepoint| {
         const font_size = 48 * 1;
         try s.face.setCharSize(font_size * 64, 0, 50, 0);
