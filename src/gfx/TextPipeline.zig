@@ -130,17 +130,6 @@ pub const BuiltPipeline = struct {
     colors: *gpu.Buffer,
     glyphs: *gpu.Buffer,
 
-    pub fn reference(p: *BuiltPipeline) void {
-        p.render.reference();
-        p.texture_sampler.reference();
-        p.texture.reference();
-        p.bind_group.reference();
-        p.uniforms.reference();
-        p.transforms.reference();
-        p.colors.reference();
-        p.glyphs.reference();
-    }
-
     pub fn deinit(p: *BuiltPipeline, allocator: std.mem.Allocator) void {
         p.render.release();
         p.texture_sampler.release();
@@ -287,7 +276,6 @@ fn buildPipeline(
             },
         }),
     );
-    defer bind_group.release();
 
     const blend_state = opt_blend_state orelse gpu.BlendState{
         .color = .{
@@ -332,7 +320,7 @@ fn buildPipeline(
         },
     });
 
-    var built = BuiltPipeline{
+    const built = BuiltPipeline{
         .render = render_pipeline,
         .texture_sampler = texture_sampler,
         .texture = texture,
@@ -343,7 +331,6 @@ fn buildPipeline(
         .glyphs = glyphs,
         .texture_atlas = texture_atlas,
     };
-    built.reference();
     try text_pipeline.set(pipeline_id, .built, built);
     try text_pipeline.set(pipeline_id, .num_texts, 0);
     try text_pipeline.set(pipeline_id, .num_glyphs, 0);
