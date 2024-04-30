@@ -104,20 +104,6 @@ pub const BuiltPipeline = struct {
     uv_transforms: *gpu.Buffer,
     sizes: *gpu.Buffer,
 
-    pub fn reference(p: *BuiltPipeline) void {
-        p.render.reference();
-        p.texture_sampler.reference();
-        p.texture.reference();
-        if (p.texture2) |tex| tex.reference();
-        if (p.texture3) |tex| tex.reference();
-        if (p.texture4) |tex| tex.reference();
-        p.bind_group.reference();
-        p.uniforms.reference();
-        p.transforms.reference();
-        p.uv_transforms.reference();
-        p.sizes.reference();
-    }
-
     pub fn deinit(p: *BuiltPipeline) void {
         p.render.release();
         p.texture_sampler.release();
@@ -240,9 +226,6 @@ fn buildPipeline(
     const texture3_view = if (opt_texture3) |tex| tex.createView(&gpu.TextureView.Descriptor{ .label = label }) else texture_view;
     const texture4_view = if (opt_texture4) |tex| tex.createView(&gpu.TextureView.Descriptor{ .label = label }) else texture_view;
     defer texture_view.release();
-    defer texture2_view.release();
-    defer texture3_view.release();
-    defer texture4_view.release();
 
     const bind_group = opt_bind_group orelse device.createBindGroup(
         &gpu.BindGroup.Descriptor.init(.{
@@ -273,7 +256,6 @@ fn buildPipeline(
             },
         }),
     );
-    defer bind_group.release();
 
     const blend_state = opt_blend_state orelse gpu.BlendState{
         .color = .{
@@ -318,7 +300,7 @@ fn buildPipeline(
         },
     });
 
-    var built = BuiltPipeline{
+    const built = BuiltPipeline{
         .render = render_pipeline,
         .texture_sampler = texture_sampler,
         .texture = texture,
@@ -331,7 +313,6 @@ fn buildPipeline(
         .uv_transforms = uv_transforms,
         .sizes = sizes,
     };
-    built.reference();
     try sprite_pipeline.set(pipeline_id, .built, built);
     try sprite_pipeline.set(pipeline_id, .num_sprites, 0);
 }
