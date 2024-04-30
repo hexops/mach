@@ -287,6 +287,7 @@ fn buildPipeline(
             },
         }),
     );
+    defer bind_group.release();
 
     const blend_state = opt_blend_state orelse gpu.BlendState{
         .color = .{
