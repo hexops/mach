@@ -15,13 +15,8 @@ var stack_space: [8 * 1024 * 1024]u8 = undefined;
 pub fn initModule() !void {
     // Initialize the global set of Mach modules used in the program.
     try mods.init(std.heap.c_allocator);
-    mods.send(.mach_core, .init, .{});
 
-    // Dispatch events until this .mach_core.init_done is sent
-    try mods.dispatch(&stack_space, .{ .until = .{
-        .module_name = mods.moduleNameToID(.mach_core),
-        .local_event = mods.localEventToID(.mach_core, .init_done),
-    } });
+    mods.send(.mach_core, .init, .{});
 }
 
 /// Tick runs a single step of the main loop on the main OS thread.
@@ -36,7 +31,7 @@ pub fn tick() !bool {
         .local_event = mods.localEventToID(.mach_core, .main_thread_tick_done),
     } });
 
-    return !mods.mod.mach_core.state().should_exit;
+    return mods.mod.mach_core.state().run_state != .exited;
 }
 
 /// Returns the error set that the function F returns.

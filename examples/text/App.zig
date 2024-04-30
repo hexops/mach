@@ -127,6 +127,8 @@ fn init(
         .allocator = allocator,
         .pipeline = pipeline,
     });
+
+    core.send(.start, .{});
 }
 
 fn tick(

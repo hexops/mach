@@ -11,6 +11,10 @@ pub const name = .mach_core;
 pub const Mod = mach.Mod(@This());
 
 pub const events = .{
+    .start = .{ .handler = start, .description = 
+    \\ Send this once your app is initialized and ready for .app.tick events.
+    },
+
     .update = .{ .handler = update, .description = 
     \\ Send this when window entities have been updated and you want the new values respected.
     },
@@ -19,15 +23,24 @@ pub const events = .{
     \\ Send this when rendering has finished and the swapchain should be presented.
     },
 
-    .init = .{ .handler = init },
-    .init_done = .{ .handler = fn () void },
+    .exit = .{ .handler = exit, .description = 
+    \\ Send this when you would like to exit the application.
+    \\
+    \\ When the next .present_frame occurs, then .app.deinit will be sent giving your app a chance
+    \\ to deinitialize itself and .app.tick will no longer be sent. Once your app is done with
+    \\ deinitialization, you should send the final .mach_core.deinit event which will cause the
+    \\ application to finish.
+    },
+
+    .deinit = .{ .handler = deinit, .description = 
+    \\ Send this once your app is fully deinitialized and ready to exit for good.
+    },
 
     // TODO(important): need some way to tie event execution to a specific thread once we have a
     // multithreaded dispatch implementation
+    .init = .{ .handler = init },
     .main_thread_tick = .{ .handler = mainThreadTick },
     .main_thread_tick_done = .{ .handler = fn () void },
-    .deinit = .{ .handler = deinit },
-    .exit = .{ .handler = exit },
 };
 
 pub const components = .{
@@ -81,14 +94,25 @@ allocator: std.mem.Allocator,
 device: *mach.gpu.Device,
 queue: *mach.gpu.Queue,
 main_window: mach.EntityID,
-should_exit: bool = false,
+run_state: enum {
+    initialized,
+    running,
+    exiting,
+    deinitializing,
+    exited,
+} = .initialized,
+
+fn start(core: *Mod) !void {
+    core.state().run_state = .running;
+}
 
 fn init(core: *Mod) !void {
+    mach.core.allocator = gpa.allocator(); // TODO: banish this global allocator
+
     // Initialize GPU implementation
     if (comptime !mach.use_sysgpu) try mach.wgpu.Impl.init(mach.core.allocator, .{});
     if (comptime mach.use_sysgpu) try mach.sysgpu.Impl.init(mach.core.allocator, .{});
 
-    mach.core.allocator = gpa.allocator(); // TODO: banish this global allocator
     try mach.core.init(.{});
 
     // TODO(important): update this information upon framebuffer resize events
@@ -105,7 +129,6 @@ fn init(core: *Mod) !void {
     });
 
     mach.core.mods.send(.app, .init, .{});
-    core.send(.init_done, .{});
 }
 
 fn update(core: *Mod) !void {
@@ -130,16 +153,24 @@ fn update(core: *Mod) !void {
 }
 
 fn presentFrame(core: *Mod) !void {
-    mach.core.swap_chain.present();
+    switch (core.state().run_state) {
+        .running => {
+            mach.core.swap_chain.present();
 
-    // Signal that mainThreadTick is done
-    core.send(.main_thread_tick_done, .{});
+            // Signal that mainThreadTick is done
+            core.send(.main_thread_tick_done, .{});
+        },
+        .exiting => {
+            // Exit opportunity is here, deinitialize now
+            core.state().run_state = .deinitializing;
+            mach.core.mods.send(.app, .deinit, .{});
+        },
+        else => return,
+    }
 }
 
 fn deinit(core: *Mod) void {
     core.state().queue.release();
-    // TODO: this triggers a device loss error, which we should handle correctly
-    // core.state().device.release();
     mach.core.deinit();
 
     var archetypes_iter = core.entities.query(.{ .all = &.{
@@ -152,14 +183,18 @@ fn deinit(core: *Mod) void {
     }
 
     _ = gpa.deinit();
-    core.state().should_exit = true;
+    core.state().run_state = .exited;
+
+    // Signal that mainThreadTick is done
+    core.send(.main_thread_tick_done, .{});
 }
 
-fn mainThreadTick() !void {
+fn mainThreadTick(core: *Mod) !void {
+    if (core.state().run_state != .running) return;
     _ = try mach.core.update(null);
     mach.core.mods.send(.app, .tick, .{});
 }
 
-fn exit() void {
-    mach.core.mods.send(.app, .deinit, .{});
+fn exit(core: *Mod) void {
+    core.state().run_state = .exiting;
 }
