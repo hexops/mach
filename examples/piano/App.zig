@@ -162,6 +162,7 @@ fn tick(
         .label = label,
         .color_attachments = &color_attachments,
     }));
+    defer render_pass.release();
 
     // Draw nothing
 

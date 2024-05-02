@@ -222,8 +222,6 @@ fn tick(
         .load_op = .clear,
         .store_op = .store,
     }};
-    // TODO: can we eliminate this assignment
-    game.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     game.state().frame_render_pass = game.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
         .label = label,
         .color_attachments = &color_attachments,
@@ -244,9 +242,10 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
     game.state().frame_render_pass.end();
     const label = @tagName(name) ++ ".endFrame";
     var command = game.state().frame_encoder.finish(&.{ .label = label });
-    game.state().frame_encoder.release();
     defer command.release();
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
+    game.state().frame_encoder.release();
+    game.state().frame_render_pass.release();
 
     // Present the frame
     core.send(.present_frame, .{});

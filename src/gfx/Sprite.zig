@@ -107,6 +107,7 @@ fn updatePipeline(
         encoder.writeBuffer(built.transforms, 0, gfx.SpritePipeline.cp_transforms[0..i]);
         encoder.writeBuffer(built.uv_transforms, 0, gfx.SpritePipeline.cp_uv_transforms[0..i]);
         encoder.writeBuffer(built.sizes, 0, gfx.SpritePipeline.cp_sizes[0..i]);
+
         var command = encoder.finish(&.{ .label = label });
         defer command.release();
         core.state().queue.submit(&[_]*gpu.CommandBuffer{command});

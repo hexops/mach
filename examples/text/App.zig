@@ -251,7 +251,6 @@ fn tick(
         .load_op = .clear,
         .store_op = .store,
     }};
-    game.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     game.state().frame_render_pass = game.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
         .label = label,
         .color_attachments = &color_attachments,

@@ -38,7 +38,8 @@ pub const name = .app;
 // Note that Mod.state() returns an instance of our module struct.
 pub const Mod = mach.Mod(@This());
 
-pub fn deinit(core: *mach.Core.Mod) void {
+pub fn deinit(core: *mach.Core.Mod, renderer: *Renderer.Mod) void {
+    renderer.send(.deinit, .{});
     core.send(.deinit, .{});
 }
 
