@@ -76,8 +76,6 @@ fn init(
 }
 
 fn prepare(core: *mach.Core.Mod, glyphs: *Mod) !void {
-    const device = core.state().device;
-    const queue = device.getQueue();
     var s = glyphs.state();
 
     // Prepare which glyphs we will render
@@ -126,5 +124,5 @@ fn prepare(core: *mach.Core.Mod, glyphs: *Mod) !void {
         .bytes_per_row = @as(u32, @intCast(img_size.width * 4)),
         .rows_per_image = @as(u32, @intCast(img_size.height)),
     };
-    queue.writeTexture(&.{ .texture = s.texture }, &data_layout, &img_size, s.texture_atlas.data);
+    core.state().queue.writeTexture(&.{ .texture = s.texture }, &data_layout, &img_size, s.texture_atlas.data);
 }

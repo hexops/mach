@@ -60,7 +60,7 @@ pub const components = .{
 };
 
 pub const events = .{
-    .init = .{ .handler = fn () void },
+    .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .update = .{ .handler = update },
     .pre_render = .{ .handler = preRender },
@@ -119,6 +119,10 @@ pub const BuiltPipeline = struct {
     }
 };
 
+fn init(sprite_pipeline: *Mod) void {
+    sprite_pipeline.init(.{});
+}
+
 fn deinit(sprite_pipeline: *Mod) void {
     var archetypes_iter = sprite_pipeline.entities.query(.{ .all = &.{
         .{ .mach_gfx_sprite_pipeline = &.{
@@ -131,8 +135,6 @@ fn deinit(sprite_pipeline: *Mod) void {
 }
 
 fn update(core: *mach.Core.Mod, sprite_pipeline: *Mod) !void {
-    sprite_pipeline.init(.{});
-
     // Destroy all sprite render pipelines. We will rebuild them all.
     deinit(sprite_pipeline);
 

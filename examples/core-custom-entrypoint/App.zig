@@ -96,6 +96,7 @@ fn tick(core: *mach.Core.Mod, game: *Mod) !void {
         .label = label,
         .color_attachments = &color_attachments,
     }));
+    defer render_pass.release();
 
     // Draw
     render_pass.setPipeline(game.state().pipeline);
