@@ -59,9 +59,9 @@ pub fn build(b: *std.Build) !void {
     const want_examples = build_all or (build_examples orelse false);
     const want_libs = build_all or (build_libs orelse false);
     const want_mach = build_all or (build_mach orelse false);
-    const want_core = build_all or (build_core orelse false);
-    const want_sysaudio = build_all or (build_sysaudio orelse false);
-    const want_sysgpu = build_all or want_core or (build_sysgpu orelse false);
+    const want_core = build_all or want_mach or (build_core orelse false);
+    const want_sysaudio = build_all or want_mach or (build_sysaudio orelse false);
+    const want_sysgpu = build_all or want_mach or want_core or (build_sysgpu orelse false);
 
     const build_options = b.addOptions();
     build_options.addOption(bool, "want_mach", want_mach);
