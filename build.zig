@@ -270,7 +270,7 @@ pub fn build(b: *std.Build) !void {
                 .optimize = optimize,
             });
             example_exe.root_module.addImport("mach", module);
-            link(b, example_exe, &example_exe.root_module);
+            link(b, example_exe);
 
             if (b.lazyDependency("mach_glfw", .{
                 .target = target,
@@ -302,7 +302,7 @@ pub fn build(b: *std.Build) !void {
             unit_tests.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
         }
         addPaths(&unit_tests.root_module);
-        link(b, unit_tests, &unit_tests.root_module);
+        link(b, unit_tests);
 
         // Linux gamemode requires libc.
         if (target.result.os.tag == .linux) unit_tests.root_module.link_libc = true;
@@ -440,7 +440,7 @@ pub const CoreApp = struct {
 
         // Link dependencies
         if (platform != .web) {
-            link(mach_builder, compile, &compile.root_module);
+            link(mach_builder, compile);
         }
 
         const run = app_builder.addRunArtifact(compile);
@@ -460,29 +460,29 @@ pub const CoreApp = struct {
 };
 
 // TODO(sysgpu): remove this once we switch to sysgpu fully
-pub fn link(mach_builder: *std.Build, step: *std.Build.Step.Compile, mod: *std.Build.Module) void {
-    const target = mod.resolved_target.?.result;
-    if (target.cpu.arch != .wasm32) {
-        if (mach_builder.lazyDependency("mach_gpu_dawn", .{
-            .target = step.root_module.resolved_target.?,
-            .optimize = step.root_module.optimize.?,
-        })) |dep| {
-            _ = dep;
-            const gpu_dawn = @import("mach_gpu_dawn");
-            const Options = struct {
-                gpu_dawn_options: gpu_dawn.Options = .{},
-            };
-            const options: Options = .{};
+pub fn link(mach_builder: *std.Build, step: *std.Build.Step.Compile) void {
+    const target = step.root_module.resolved_target.?.result;
+    if (target.cpu.arch == .wasm32) return;
 
-            gpu_dawn.link(
-                mach_builder,
-                step,
-                mod,
-                options.gpu_dawn_options,
-            );
-            step.addCSourceFile(.{ .file = .{ .path = sdkPath("/src/gpu/mach_dawn.cpp") }, .flags = &.{"-std=c++17"} });
-            step.addIncludePath(.{ .path = sdkPath("/src/gpu") });
-        }
+    if (mach_builder.lazyDependency("mach_gpu_dawn", .{
+        .target = step.root_module.resolved_target.?,
+        .optimize = step.root_module.optimize.?,
+    })) |dep| {
+        _ = dep;
+        const gpu_dawn = @import("mach_gpu_dawn");
+        const Options = struct {
+            gpu_dawn_options: gpu_dawn.Options = .{},
+        };
+        const options: Options = .{};
+
+        gpu_dawn.link(
+            mach_builder,
+            step,
+            &step.root_module,
+            options.gpu_dawn_options,
+        );
+        step.addCSourceFile(.{ .file = .{ .path = sdkPath("/src/gpu/mach_dawn.cpp") }, .flags = &.{"-std=c++17"} });
+        step.addIncludePath(.{ .path = sdkPath("/src/gpu") });
     }
 }
 
@@ -583,7 +583,7 @@ fn buildExamples(
         });
         exe.root_module.addImport("mach", mach_mod);
         addPaths(&exe.root_module);
-        link(b, exe, &exe.root_module);
+        link(b, exe);
         b.installArtifact(exe);
 
         for (example.deps) |d| {
