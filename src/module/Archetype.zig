@@ -271,22 +271,22 @@ pub inline fn debugAssertRowType(storage: *Archetype, row: anytype) void {
 }
 
 // TODO: comptime refactor
-pub fn Slicer(comptime all_components: anytype) type {
+pub fn Slicer(comptime component_types_by_name: anytype) type {
     return struct {
         archetype: *Archetype,
 
         pub fn slice(
             slicer: @This(),
             // TODO: cleanup comptime
-            comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
+            comptime namespace_name: std.meta.FieldEnum(@TypeOf(component_types_by_name)),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(component_types_by_name, @tagName(namespace_name)))),
         ) []@field(
-            @field(all_components, @tagName(namespace_name)),
+            @field(component_types_by_name, @tagName(namespace_name)),
             @tagName(component_name),
         ).type {
             // TODO: cleanup comptime
             const Type = @field(
-                @field(all_components, @tagName(namespace_name)),
+                @field(component_types_by_name, @tagName(namespace_name)),
                 @tagName(component_name),
             ).type;
             if (namespace_name == .entity and component_name == .id) {

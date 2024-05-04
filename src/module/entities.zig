@@ -67,8 +67,8 @@ fn byTypeId(context: void, lhs: Archetype.Column, rhs: Archetype.Column) bool {
 ///   row index, enabling entities to "move" from one archetype table to another seamlessly and
 ///   making lookup by entity ID a few cheap array indexing operations.
 /// * ComponentStorage(T) is a column of data within a table for a single type of component `T`.
-pub fn Entities(comptime all_components: anytype) type {
-    // TODO: validate all_components is a namespaced component set in the form we expect
+pub fn Entities(comptime component_types_by_name: anytype) type {
+    // TODO: validate component_types_by_name is a namespaced component set in the form we expect
     return struct {
         allocator: Allocator,
 
@@ -105,7 +105,7 @@ pub fn Entities(comptime all_components: anytype) type {
         };
 
         /// A complex query for entities matching a given criteria
-        pub const Query = query_mod.Query(all_components);
+        pub const Query = query_mod.Query(component_types_by_name);
         pub const QueryTag = query_mod.QueryTag;
 
         pub fn init(allocator: Allocator) !Self {
@@ -282,10 +282,10 @@ pub fn Entities(comptime all_components: anytype) type {
             entities: *Self,
             entity: EntityID,
             // TODO: cleanup comptime
-            comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
+            comptime namespace_name: std.meta.FieldEnum(@TypeOf(component_types_by_name)),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(component_types_by_name, @tagName(namespace_name)))),
             component: @field(
-                @field(all_components, @tagName(namespace_name)),
+                @field(component_types_by_name, @tagName(namespace_name)),
                 @tagName(component_name),
             ).type,
         ) !void {
@@ -485,15 +485,15 @@ pub fn Entities(comptime all_components: anytype) type {
             entities: *Self,
             entity: EntityID,
             // TODO: cleanup comptime
-            comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
+            comptime namespace_name: std.meta.FieldEnum(@TypeOf(component_types_by_name)),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(component_types_by_name, @tagName(namespace_name)))),
         ) ?@field(
-            @field(all_components, @tagName(namespace_name)),
+            @field(component_types_by_name, @tagName(namespace_name)),
             @tagName(component_name),
         ).type {
             // TODO: cleanup comptime
             const Component = comptime @field(
-                @field(all_components, @tagName(namespace_name)),
+                @field(component_types_by_name, @tagName(namespace_name)),
                 @tagName(component_name),
             ).type;
 
@@ -528,8 +528,8 @@ pub fn Entities(comptime all_components: anytype) type {
             entities: *Self,
             entity: EntityID,
             // TODO: cleanup comptime
-            comptime namespace_name: std.meta.FieldEnum(@TypeOf(all_components)),
-            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(all_components, @tagName(namespace_name)))),
+            comptime namespace_name: std.meta.FieldEnum(@TypeOf(component_types_by_name)),
+            comptime component_name: std.meta.FieldEnum(@TypeOf(@field(component_types_by_name, @tagName(namespace_name)))),
         ) !void {
             const name_str = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             const name_id = try entities.component_names.indexOrPut(entities.allocator, name_str);
@@ -613,8 +613,8 @@ pub fn Entities(comptime all_components: anytype) type {
         pub fn query(
             entities: *Self,
             q: Query,
-        ) ArchetypeIterator(all_components) {
-            return ArchetypeIterator(all_components).init(entities, q);
+        ) ArchetypeIterator(component_types_by_name) {
+            return ArchetypeIterator(component_types_by_name).init(entities, q);
         }
 
         // TODO: queryDynamic
@@ -637,8 +637,8 @@ pub fn Entities(comptime all_components: anytype) type {
 }
 
 // TODO: move this type somewhere else
-pub fn ArchetypeIterator(comptime all_components: anytype) type {
-    const EntitiesT = Entities(all_components);
+pub fn ArchetypeIterator(comptime component_types_by_name: anytype) type {
+    const EntitiesT = Entities(component_types_by_name);
     return struct {
         entities: *EntitiesT,
         query: EntitiesT.Query,
@@ -654,12 +654,12 @@ pub fn ArchetypeIterator(comptime all_components: anytype) type {
             };
         }
 
-        // TODO: all_components is a superset of queried items, not type-safe.
-        pub fn next(iter: *Self) ?Archetype.Slicer(all_components) {
+        // TODO: component_types_by_name is a superset of queried items, not type-safe.
+        pub fn next(iter: *Self) ?Archetype.Slicer(component_types_by_name) {
             while (iter.index < iter.entities.archetypes.items.len) {
                 const archetype = &iter.entities.archetypes.items[iter.index];
                 iter.index += 1;
-                if (iter.match(archetype)) return Archetype.Slicer(all_components){ .archetype = archetype };
+                if (iter.match(archetype)) return Archetype.Slicer(component_types_by_name){ .archetype = archetype };
             }
             return null;
         }
@@ -749,7 +749,7 @@ test "example" {
 
     const Rotation = struct { degrees: f32 };
 
-    const all_components = ComponentTypesByName(.{
+    const component_types_by_name = ComponentTypesByName(.{
         struct {
             pub const name = .game;
             pub const components = .{
@@ -762,7 +762,7 @@ test "example" {
 
     //-------------------------------------------------------------------------
     // Create a world.
-    var world = try Entities(all_components).init(allocator);
+    var world = try Entities(component_types_by_name).init(allocator);
     defer world.deinit();
 
     //-------------------------------------------------------------------------
@@ -853,7 +853,7 @@ test "many entities" {
 
     const Rotation = struct { degrees: f32 };
 
-    const all_components = ComponentTypesByName(.{
+    const component_types_by_name = ComponentTypesByName(.{
         struct {
             pub const name = .game;
             pub const components = .{
@@ -865,7 +865,7 @@ test "many entities" {
     }){};
 
     // Create many entities
-    var world = try Entities(all_components).init(allocator);
+    var world = try Entities(component_types_by_name).init(allocator);
     defer world.deinit();
     for (0..8192) |_| {
         const player = try world.new();

@@ -8,17 +8,17 @@ pub const QueryTag = enum {
 };
 
 /// A complex query for entities matching a given criteria
-pub fn Query(comptime all_components: anytype) type {
+pub fn Query(comptime component_types_by_name: anytype) type {
     return union(QueryTag) {
         // TODO: cleanup comptime
         /// Enum matching a namespace. e.g. `.game` or `.physics2d`
-        pub const Namespace = std.meta.FieldEnum(@TypeOf(all_components));
+        pub const Namespace = std.meta.FieldEnum(@TypeOf(component_types_by_name));
 
         // TODO: cleanup comptime
         /// Enum matching a component within a namespace
         /// e.g. `var a: Component(.physics2d) = .location`
         pub fn Component(comptime namespace: Namespace) type {
-            const components = @field(all_components, @tagName(namespace));
+            const components = @field(component_types_by_name, @tagName(namespace));
             if (@typeInfo(@TypeOf(components)).Struct.fields.len == 0) return enum {};
             return std.meta.FieldEnum(@TypeOf(components));
         }
@@ -70,7 +70,7 @@ test "query" {
 
     const Rotation = struct { degrees: f32 };
 
-    const all_components = ComponentTypesByName(.{
+    const component_types_by_name = ComponentTypesByName(.{
         struct {
             pub const name = .game;
             pub const components = .{
@@ -89,7 +89,7 @@ test "query" {
         },
     }){};
 
-    const Q = Query(all_components);
+    const Q = Query(component_types_by_name);
 
     // Namespace type lets us select a single namespace.
     try testing.expectEqual(@as(Q.Namespace, .game), .game);
