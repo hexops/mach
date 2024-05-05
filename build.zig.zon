@@ -92,9 +92,14 @@
             .hash = "1220c1c16fa17783379f773c291af3693b84744200099f1cf5c1ddb66c4fe88bcf3a",
             .lazy = true,
         },
+        .mach_opus = .{
+            .url = "https://pkg.machengine.org/mach-opus/58a22201881d7639339f3c029d13a00bbfe005e2.tar.gz",
+            .hash = "1220821426e087874779f8d76a6bb74844aa3934648aad5b7331701e5f386791c51e",
+            .lazy = true,
+        },
         .mach_example_assets = .{
-            .url = "https://pkg.machengine.org/mach-example-assets/591715d872f4aa2d74e01447139c2000db0f7d96.tar.gz",
-            .hash = "12206ef714c72a3e934990e5fbe7160824c5bad0a917a42cdd5ba31f7c85142f18d6",
+            .url = "https://pkg.machengine.org/mach-example-assets/2200080af808e70fb20062c78c8e3e110605ac74.tar.gz",
+            .hash = "1220cb4b50aa4178b9b10a5e5628fc743abb2e3b264ce63c837c21b3b22a64dc3be2",
             .lazy = true,
         },
     },

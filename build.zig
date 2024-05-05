@@ -554,6 +554,7 @@ fn buildExamples(
 ) !void {
     const Dependency = enum {
         assets,
+        opus,
         model3d,
         freetype,
         zigimg,
@@ -569,6 +570,7 @@ fn buildExamples(
         .{ .name = "custom-renderer", .deps = &.{} },
         .{ .name = "glyphs", .deps = &.{ .freetype, .assets } },
         .{ .name = "piano", .deps = &.{} },
+        .{ .name = "play-opus", .deps = &.{ .opus, .assets } },
         .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
         .{ .name = "text", .deps = &.{ .freetype, .assets } },
     }) |example| {
@@ -591,6 +593,12 @@ fn buildExamples(
                         .target = target,
                         .optimize = optimize,
                     })) |dep| exe.root_module.addImport("assets", dep.module("mach-example-assets"));
+                },
+                .opus => {
+                    if (b.lazyDependency("mach_opus", .{
+                        .target = target,
+                        .optimize = optimize,
+                    })) |dep| exe.root_module.addImport("opus", dep.module("mach-opus"));
                 },
                 .model3d => {
                     if (b.lazyDependency("mach_model3d", .{
