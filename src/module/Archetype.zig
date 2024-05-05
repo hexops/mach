@@ -10,6 +10,7 @@ const testing = std.testing;
 const assert = std.debug.assert;
 const builtin = @import("builtin");
 const StringTable = @import("StringTable.zig");
+const ComponentTypesByName = @import("module.zig").ComponentTypesByName;
 
 const Archetype = @This();
 
@@ -271,7 +272,8 @@ pub inline fn debugAssertRowType(storage: *Archetype, row: anytype) void {
 }
 
 // TODO: comptime refactor
-pub fn Slicer(comptime component_types_by_name: anytype) type {
+pub fn Slicer(comptime modules: anytype) type {
+    const component_types_by_name = ComponentTypesByName(modules){};
     return struct {
         archetype: *Archetype,
 

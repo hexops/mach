@@ -8,7 +8,8 @@ pub const QueryTag = enum {
 };
 
 /// A complex query for entities matching a given criteria
-pub fn Query(comptime component_types_by_name: anytype) type {
+pub fn Query(comptime modules: anytype) type {
+    const component_types_by_name = ComponentTypesByName(modules){};
     return union(QueryTag) {
         // TODO: cleanup comptime
         /// Enum matching a namespace. e.g. `.game` or `.physics2d`
@@ -79,7 +80,7 @@ test "query" {
 
     const Rotation = struct { degrees: f32 };
 
-    const component_types_by_name = ComponentTypesByName(.{
+    const modules = .{
         struct {
             pub const name = .game;
             pub const components = .{
@@ -96,9 +97,9 @@ test "query" {
         struct {
             pub const name = .renderer;
         },
-    }){};
+    };
 
-    const Q = Query(component_types_by_name);
+    const Q = Query(modules);
 
     // Namespace type lets us select a single namespace.
     try testing.expectEqual(@as(Q.Namespace, .game), .game);

@@ -200,12 +200,12 @@ pub fn Modules(comptime modules: anytype) type {
         events: EventQueue,
         mod: ModsByName(modules),
         // TODO: pass mods directly instead of ComponentTypesByName?
-        entities: Entities(component_types_by_name),
+        entities: Entities(modules),
         debug_trace: bool,
 
         pub fn init(m: *@This(), allocator: std.mem.Allocator) !void {
             // TODO: switch Entities to stack allocation like Modules is
-            var entities = try Entities(component_types_by_name).init(allocator);
+            var entities = try Entities(modules).init(allocator);
             errdefer entities.deinit();
 
             const debug_trace_str = std.process.getEnvVarOwned(
@@ -577,7 +577,7 @@ pub fn ModSet(comptime modules: anytype) type {
             const module_tag = M.name;
             const components = ComponentTypesM(M){};
             return struct {
-                entities: *Entities(ComponentTypesByName(modules){}),
+                entities: *Entities(modules),
 
                 /// Private/internal fields
                 __is_initialized: bool,
