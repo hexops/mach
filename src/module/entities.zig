@@ -69,8 +69,8 @@ fn byTypeId(context: void, lhs: Archetype.Column, rhs: Archetype.Column) bool {
 ///   row index, enabling entities to "move" from one archetype table to another seamlessly and
 ///   making lookup by entity ID a few cheap array indexing operations.
 /// * ComponentStorage(T) is a column of data within a table for a single type of component `T`.
-pub fn Entities(comptime component_types_by_name: anytype) type {
-    // TODO: validate component_types_by_name is a namespaced component set in the form we expect
+pub fn Entities(comptime modules: anytype) type {
+    const component_types_by_name = ComponentTypesByName(modules){};
     return struct {
         allocator: Allocator,
 
@@ -107,7 +107,7 @@ pub fn Entities(comptime component_types_by_name: anytype) type {
         };
 
         /// A complex query for entities matching a given criteria
-        pub const Query = query_mod.Query(component_types_by_name);
+        pub const Query = query_mod.Query(modules);
         pub const QueryTag = query_mod.QueryTag;
 
         pub fn init(allocator: Allocator) !Self {
@@ -615,8 +615,8 @@ pub fn Entities(comptime component_types_by_name: anytype) type {
         pub fn query(
             entities: *Self,
             q: Query,
-        ) ArchetypeIterator(component_types_by_name) {
-            return ArchetypeIterator(component_types_by_name).init(entities, q);
+        ) ArchetypeIterator(modules) {
+            return ArchetypeIterator(modules).init(entities, q);
         }
 
         // TODO: queryDynamic
@@ -639,8 +639,8 @@ pub fn Entities(comptime component_types_by_name: anytype) type {
 }
 
 // TODO: move this type somewhere else
-pub fn ArchetypeIterator(comptime component_types_by_name: anytype) type {
-    const EntitiesT = Entities(component_types_by_name);
+pub fn ArchetypeIterator(comptime modules: anytype) type {
+    const EntitiesT = Entities(modules);
     return struct {
         entities: *EntitiesT,
         query: EntitiesT.Query,
@@ -657,11 +657,11 @@ pub fn ArchetypeIterator(comptime component_types_by_name: anytype) type {
         }
 
         // TODO: component_types_by_name is a superset of queried items, not type-safe.
-        pub fn next(iter: *Self) ?Archetype.Slicer(component_types_by_name) {
+        pub fn next(iter: *Self) ?Archetype.Slicer(modules) {
             while (iter.index < iter.entities.archetypes.items.len) {
                 const archetype = &iter.entities.archetypes.items[iter.index];
                 iter.index += 1;
-                if (iter.match(archetype)) return Archetype.Slicer(component_types_by_name){ .archetype = archetype };
+                if (iter.match(archetype)) return Archetype.Slicer(modules){ .archetype = archetype };
             }
             return null;
         }
@@ -701,9 +701,9 @@ pub fn ArchetypeIterator(comptime component_types_by_name: anytype) type {
 }
 
 test {
-    const modules = ComponentTypesByName(merge(.{
+    const modules = merge(.{
         builtin_modules,
-    })){};
+    });
     std.testing.refAllDeclsRecursive(Entities(modules));
 }
 
@@ -754,7 +754,7 @@ test "example" {
 
     const Rotation = struct { degrees: f32 };
 
-    const component_types_by_name = ComponentTypesByName(merge(.{
+    const modules = merge(.{
         builtin_modules,
         struct {
             pub const name = .game;
@@ -764,11 +764,11 @@ test "example" {
                 .rotation = .{ .type = Rotation },
             };
         },
-    })){};
+    });
 
     //-------------------------------------------------------------------------
     // Create a world.
-    var world = try Entities(component_types_by_name).init(allocator);
+    var world = try Entities(modules).init(allocator);
     defer world.deinit();
 
     //-------------------------------------------------------------------------
@@ -859,7 +859,7 @@ test "many entities" {
 
     const Rotation = struct { degrees: f32 };
 
-    const component_types_by_name = ComponentTypesByName(.{
+    const modules = .{
         struct {
             pub const name = .game;
             pub const components = .{
@@ -868,10 +868,10 @@ test "many entities" {
                 .rotation = .{ .type = Rotation },
             };
         },
-    }){};
+    };
 
     // Create many entities
-    var world = try Entities(component_types_by_name).init(allocator);
+    var world = try Entities(modules).init(allocator);
     defer world.deinit();
     for (0..8192) |_| {
         const player = try world.new();

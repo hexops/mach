@@ -112,7 +112,7 @@ test "entities DB" {
     try testing.expectEqual(@as(usize, 1001), ids[0]);
 
     // TODO: can't write @as type here easily due to generic parameter, should be exposed
-    // ?Archetype.Slicer(component_types_by_name)
+    // ?Archetype.Slicer(modules)
     try testing.expectEqual(iter.next(), null);
 
     //-------------------------------------------------------------------------
