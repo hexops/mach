@@ -8,6 +8,15 @@ pub const Text = @import("Text.zig");
 pub const TextPipeline = @import("TextPipeline.zig");
 pub const TextStyle = @import("TextStyle.zig");
 
+/// All Sprite rendering modules
+pub const sprite_modules = .{ Sprite, SpritePipeline };
+
+/// All Text rendering modules
+pub const text_modules = .{ Text, TextPipeline, TextStyle };
+
+/// All graphics modules
+pub const modules = .{ sprite_modules, text_modules };
+
 // Fonts
 pub const Font = @import("font/main.zig").Font;
 pub const TextRun = @import("font/main.zig").TextRun;

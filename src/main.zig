@@ -24,7 +24,10 @@ pub const modules = blk: {
     if (!@hasDecl(@import("root"), "modules")) {
         @compileError("expected `pub const modules = .{};` in root file");
     }
-    break :blk @import("root").modules;
+    break :blk merge(.{
+        builtin_modules,
+        @import("root").modules,
+    });
 };
 pub const ModSet = @import("module/main.zig").ModSet;
 pub const Modules = @import("module/main.zig").Modules(modules);
@@ -35,6 +38,9 @@ pub const Archetype = @import("module/main.zig").Archetype;
 pub const ModuleID = @import("module/main.zig").ModuleID;
 pub const EventID = @import("module/main.zig").EventID;
 pub const AnyEvent = @import("module/main.zig").AnyEvent;
+pub const merge = @import("module/main.zig").merge;
+pub const builtin_modules = @import("module/main.zig").builtin_modules;
+pub const EntityModule = @import("module/main.zig").EntityModule;
 
 /// To use experimental sysgpu graphics API, you can write this in your main.zig:
 ///

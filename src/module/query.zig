@@ -37,7 +37,7 @@ pub fn Query(comptime component_types_by_name: anytype) type {
             const namespaces = std.meta.fields(Namespace);
             var fields: [namespaces.len]std.builtin.Type.UnionField = undefined;
             for (namespaces, 0..) |namespace, i| {
-                const ns = std.meta.stringToEnum(Namespace, namespace.name).?;
+                const ns = stringToEnum(Namespace, namespace.name).?;
                 fields[i] = .{
                     .name = namespace.name,
                     .type = ComponentList(ns),
@@ -59,6 +59,15 @@ pub fn Query(comptime component_types_by_name: anytype) type {
         /// Matches all of these components
         all: []const NamespaceComponent,
     };
+}
+
+// TODO: cannot use std.meta.stringToEnum for some reason; an issue with its internal comptime map and u0 values
+pub fn stringToEnum(comptime T: type, str: []const u8) ?T {
+    inline for (@typeInfo(T).Enum.fields) |enumField| {
+        if (std.mem.eql(u8, str, enumField.name)) {
+            return @field(T, enumField.name);
+        }
+    }
 }
 
 test "query" {

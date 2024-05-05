@@ -10,6 +10,19 @@ pub const Modules = @import("module.zig").Modules;
 pub const ModuleID = @import("module.zig").ModuleID;
 pub const EventID = @import("module.zig").EventID;
 pub const AnyEvent = @import("module.zig").AnyEvent;
+pub const Merge = @import("module.zig").Merge;
+pub const merge = @import("module.zig").merge;
+
+pub const builtin_modules = .{EntityModule};
+
+/// Builtin .entity module
+pub const EntityModule = struct {
+    pub const name = .entity;
+
+    pub const components = .{
+        .id = .{ .type = EntityID, .description = "Entity ID" },
+    };
+};
 
 test {
     std.testing.refAllDeclsRecursive(@This());
@@ -23,7 +36,7 @@ test "entities DB" {
     const allocator = testing.allocator;
 
     const root = struct {
-        pub const modules = .{ Renderer, Physics };
+        pub const modules = merge(.{ builtin_modules, Renderer, Physics });
 
         const Physics = struct {
             pointer: u8,

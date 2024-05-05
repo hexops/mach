@@ -102,6 +102,78 @@ pub const AnyEvent = struct {
     event_id: EventID,
 };
 
+/// Type-returning variant of merge()
+pub fn Merge(comptime tuple: anytype) type {
+    if (@typeInfo(@TypeOf(tuple)) != .Struct or !@typeInfo(@TypeOf(tuple)).Struct.is_tuple) {
+        @compileError("Expected to find a tuple, found: " ++ @typeName(@TypeOf(tuple)));
+    }
+
+    var tuple_fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
+    loop: inline for (tuple) |elem| {
+        @setEvalBranchQuota(10_000);
+        if (@typeInfo(@TypeOf(elem)) == .Type and @typeInfo(elem) == .Struct) {
+            // Struct type
+            validateModule(elem, false);
+            for (tuple_fields) |field| if (@as(*const type, @ptrCast(field.default_value.?)).* == elem)
+                continue :loop;
+
+            var num_buf: [128]u8 = undefined;
+            tuple_fields = tuple_fields ++ [_]std.builtin.Type.StructField{.{
+                .name = std.fmt.bufPrintZ(&num_buf, "{d}", .{tuple_fields.len}) catch unreachable,
+                .type = type,
+                .default_value = &elem,
+                .is_comptime = false,
+                .alignment = if (@sizeOf(elem) > 0) @alignOf(elem) else 0,
+            }};
+        } else if (@typeInfo(@TypeOf(elem)) == .Struct and @typeInfo(@TypeOf(elem)).Struct.is_tuple) {
+            // Nested tuple
+            inline for (Merge(elem){}) |Nested| {
+                validateModule(Nested, false);
+                for (tuple_fields) |field| if (@as(*const type, @ptrCast(field.default_value.?)).* == Nested)
+                    continue :loop;
+
+                var num_buf: [128]u8 = undefined;
+                tuple_fields = tuple_fields ++ [_]std.builtin.Type.StructField{.{
+                    .name = std.fmt.bufPrintZ(&num_buf, "{d}", .{tuple_fields.len}) catch unreachable,
+                    .type = type,
+                    .default_value = &Nested,
+                    .is_comptime = false,
+                    .alignment = if (@sizeOf(Nested) > 0) @alignOf(Nested) else 0,
+                }};
+            }
+        } else {
+            @compileError("Expected to find a tuple or struct type, found: " ++ @typeName(@TypeOf(elem)));
+        }
+    }
+    return @Type(.{
+        .Struct = .{
+            .is_tuple = true,
+            .layout = .Auto,
+            .decls = &.{},
+            .fields = tuple_fields,
+        },
+    });
+}
+
+/// Given a tuple of module structs or module struct tuples:
+///
+/// ```
+/// .{
+///     .{ Baz, .{ Bar, Foo, .{ Fam } }, Bar },
+///     Foo,
+///     Bam,
+///     .{ Foo, Bam },
+/// }
+/// ```
+///
+/// Returns a single tuple type with the struct types deduplicated:
+///
+/// .{ Baz, Bar, Foo, Fam, Bar, Bam }
+///
+pub fn merge(comptime tuple: anytype) Merge(tuple) {
+    return Merge(tuple){};
+}
+
 /// Manages comptime .{A, B, C} modules and runtime modules.
 pub fn Modules(comptime modules: anytype) type {
     // Verify that each module is valid.
@@ -462,7 +534,7 @@ pub fn Modules(comptime modules: anytype) type {
     };
 }
 
-pub fn ModsByName(comptime modules: anytype) type {
+fn ModsByName(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     for (modules) |M| {
         const ModT = ModSet(modules).Mod(M);
@@ -647,6 +719,11 @@ inline fn injectArgs(comptime Function: type, comptime Injectable: type, injecta
             // Argument is declared as injectable, but we do not have a value to inject for it.
             // This can be the case if e.g. a Mod() parameter is specified, but that module is
             // not registered.
+            //
+            // TODO: we could make this error message less verbose, currently it reads e.g.
+            //
+            // src/module/module.zig:736:13: error: mach: cannot inject argument of type: *module.module.ModSet(.{Core, gfx.Sprite, gfx.SpritePipeline, App, Glyphs}).Mod(Core) - is it registered in your program's top-level `pub const modules = .{};`? used by mach_core.start
+            //
             @compileError("mach: cannot inject argument of type: " ++ @typeName(arg.type) ++ " - is it registered in your program's top-level `pub const modules = .{};`? used by " ++ debug_name);
         }
 
@@ -914,9 +991,6 @@ fn validateEvents(comptime error_prefix: anytype, comptime events: anytype) void
 ///
 /// ```
 /// struct {
-///     builtin: struct {
-///         id: @TypeOf() = .{ .type = EntityID, .description = "Entity ID" },
-///     },
 ///     physics: struct {
 ///         location: @TypeOf() = .{ .type = Vec3, .description = null },
 ///         rotation: @TypeOf() = .{ .type = Vec2, .description = "rotation component" },
@@ -938,23 +1012,6 @@ pub fn ComponentTypesByName(comptime modules: anytype) type {
             .alignment = @alignOf(MC),
         }};
     }
-
-    // Builtin components
-    // TODO: better method of injecting builtin module?
-    const BuiltinMC = ComponentTypesM(struct {
-        pub const name = .builtin;
-        pub const components = .{
-            .id = .{ .type = EntityID, .description = "Entity ID" },
-        };
-    });
-    fields = fields ++ [_]std.builtin.Type.StructField{.{
-        .name = "entity",
-        .type = BuiltinMC,
-        .default_value = &BuiltinMC{},
-        .is_comptime = true,
-        .alignment = @alignOf(BuiltinMC),
-    }};
-
     return @Type(.{
         .Struct = .{
             .layout = .Auto,
