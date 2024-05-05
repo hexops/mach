@@ -50,7 +50,8 @@ fn init(audio: *Mod, on_state_change: mach.AnyEvent) !void {
     // TODO(audio): let people handle these errors
     // TODO(audio): enable selecting non-default devices
     const device = ctx.defaultDevice(.playback) orelse return error.NoDeviceFound;
-    var player = try ctx.createPlayer(device, writeFn, .{ .user_data = audio });
+    var player = try ctx.createPlayer(device, writeFn, .{ .user_data = audio, .sample_rate = 48000 });
+    log.info("opened audio device: channels={} sample_rate={} format={s}", .{ player.channels().len, player.sampleRate(), @tagName(player.format()) });
 
     const debug_str = std.process.getEnvVarOwned(
         allocator,
