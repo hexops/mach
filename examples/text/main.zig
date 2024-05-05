@@ -3,9 +3,7 @@ const mach = @import("mach");
 // The global list of Mach modules registered for use in our application.
 pub const modules = .{
     mach.Core,
-    mach.gfx.Text,
-    mach.gfx.TextPipeline,
-    mach.gfx.TextStyle,
+    mach.gfx.text_modules,
     @import("App.zig"),
 };
 

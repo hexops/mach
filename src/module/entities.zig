@@ -7,6 +7,8 @@ const query_mod = @import("query.zig");
 const Archetype = @import("Archetype.zig");
 const StringTable = @import("StringTable.zig");
 const ComponentTypesByName = @import("module.zig").ComponentTypesByName;
+const merge = @import("main.zig").merge;
+const builtin_modules = @import("main.zig").builtin_modules;
 
 /// An entity ID uniquely identifies an entity globally within an Entities set.
 pub const EntityID = u64;
@@ -699,7 +701,10 @@ pub fn ArchetypeIterator(comptime component_types_by_name: anytype) type {
 }
 
 test {
-    std.testing.refAllDeclsRecursive(Entities(.{}));
+    const modules = ComponentTypesByName(merge(.{
+        builtin_modules,
+    })){};
+    std.testing.refAllDeclsRecursive(Entities(modules));
 }
 
 // TODO: require "one big registration of components" even when using dynamic API? Would alleviate
@@ -749,7 +754,8 @@ test "example" {
 
     const Rotation = struct { degrees: f32 };
 
-    const component_types_by_name = ComponentTypesByName(.{
+    const component_types_by_name = ComponentTypesByName(merge(.{
+        builtin_modules,
         struct {
             pub const name = .game;
             pub const components = .{
@@ -758,7 +764,7 @@ test "example" {
                 .rotation = .{ .type = Rotation },
             };
         },
-    }){};
+    })){};
 
     //-------------------------------------------------------------------------
     // Create a world.
