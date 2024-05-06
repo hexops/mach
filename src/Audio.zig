@@ -134,7 +134,7 @@ fn audioTick(audio: *Mod) !void {
     @memset(mixing_buffer.items, 0);
 
     var did_state_change = false;
-    var archetypes_iter = audio.entities.query(.{ .all = &.{
+    var archetypes_iter = audio.entities.queryDeprecated(.{ .all = &.{
         .{ .mach_audio = &.{ .samples, .channels, .playing, .index } },
     } });
     while (archetypes_iter.next()) |archetype| {

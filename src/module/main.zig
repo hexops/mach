@@ -96,7 +96,7 @@ test "entities DB" {
 
     //-------------------------------------------------------------------------
     // Querying
-    var iter = world.entities.query(.{ .all = &.{
+    var iter = world.entities.queryDeprecated(.{ .all = &.{
         .{ .physics = &.{.id} },
     } });
 

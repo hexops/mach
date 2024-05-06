@@ -132,7 +132,7 @@ fn init(core: *Mod) !void {
 }
 
 fn update(core: *Mod) !void {
-    var archetypes_iter = core.entities.query(.{ .all = &.{
+    var archetypes_iter = core.entities.queryDeprecated(.{ .all = &.{
         .{ .mach_core = &.{
             .title,
         } },
@@ -173,7 +173,7 @@ fn deinit(core: *Mod) void {
     core.state().queue.release();
     mach.core.deinit();
 
-    var archetypes_iter = core.entities.query(.{ .all = &.{
+    var archetypes_iter = core.entities.queryDeprecated(.{ .all = &.{
         .{ .mach_core = &.{
             .title,
         } },
