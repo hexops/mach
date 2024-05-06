@@ -8,6 +8,7 @@ pub const Mod = mach.Mod(@This());
 
 pub const components = .{
     .samples = .{ .type = []const f32 },
+    .channels = .{ .type = u8 },
     .playing = .{ .type = bool },
     .index = .{ .type = usize },
 };
@@ -35,7 +36,7 @@ on_state_change: mach.AnyEvent,
 output_mu: std.Thread.Mutex = .{},
 output: SampleBuffer,
 mixing_buffer: ?std.ArrayListUnmanaged(f32) = null,
-render_num_samples: usize = undefined,
+render_num_samples: usize = 0,
 debug: bool = false,
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -98,14 +99,15 @@ fn deinit(audio: *Mod) void {
 /// ahead is rather small and imperceivable to most humans.
 fn audioTick(audio: *Mod) !void {
     const allocator = audio.state().allocator;
-    var player = audio.state().player;
+    const player = &audio.state().player;
+    const player_channels: u8 = @intCast(player.channels().len);
 
     // How many samples the driver last expected us to produce.
     const driver_expects = audio.state().render_num_samples;
 
     // How many audio samples we will render ahead by
     const samples_per_ms = @as(f32, @floatFromInt(player.sampleRate())) / 1000.0;
-    const render_ahead: u32 = @as(u32, @intFromFloat(@trunc(audio.state().ms_render_ahead * samples_per_ms))) * @as(u32, @intCast(player.channels().len));
+    const render_ahead: u32 = @as(u32, @intFromFloat(@trunc(audio.state().ms_render_ahead * samples_per_ms))) * player_channels;
 
     // Our goal is to ensure that we always have pre-rendered the number of samples the driver last
     // expected, expects, plus the play ahead amount.
@@ -132,22 +134,32 @@ fn audioTick(audio: *Mod) !void {
     @memset(mixing_buffer.items, 0);
 
     var did_state_change = false;
-    var max_samples: usize = 0;
     var archetypes_iter = audio.entities.query(.{ .all = &.{
-        .{ .mach_audio = &.{ .samples, .playing, .index } },
+        .{ .mach_audio = &.{ .samples, .channels, .playing, .index } },
     } });
     while (archetypes_iter.next()) |archetype| {
         for (
             archetype.slice(.entity, .id),
             archetype.slice(.mach_audio, .samples),
+            archetype.slice(.mach_audio, .channels),
             archetype.slice(.mach_audio, .playing),
             archetype.slice(.mach_audio, .index),
-        ) |id, samples, playing, index| {
+        ) |id, samples, channels, playing, index| {
             if (!playing) continue;
 
-            const to_read = @min(samples.len - index, mixing_buffer.items.len);
-            mixSamples(mixing_buffer.items[0..to_read], samples[index..][0..to_read]);
-            max_samples = @max(max_samples, to_read);
+            const channels_diff = player_channels - channels + 1;
+            const to_read = @min(samples.len - index, mixing_buffer.items.len) / channels_diff;
+            if (channels == 1 and player_channels > 1) {
+                // Duplicate samples for mono sounds
+                var i: usize = 0;
+                for (samples[index..][0..to_read]) |sample| {
+                    mixSamplesDuplicate(mixing_buffer.items[i..][0..player_channels], sample);
+                    i += player_channels;
+                }
+            } else {
+                mixSamples(mixing_buffer.items[0..to_read], samples[index..][0..to_read]);
+            }
+
             if (index + to_read >= samples.len) {
                 // No longer playing, we've read all samples
                 did_state_change = true;
@@ -242,9 +254,23 @@ inline fn mixSamples(a: []f32, b: []const f32) void {
         }
     }
 
-    if (i < b.len) {
-        for (a[i..b.len], b[i..]) |*a_sample, b_sample| {
-            a_sample.* += b_sample;
+    for (a[i..b.len], b[i..]) |*a_sample, b_sample| {
+        a_sample.* += b_sample;
+    }
+}
+
+inline fn mixSamplesDuplicate(a: []f32, b: f32) void {
+    var i: usize = 0;
+
+    // use SIMD when available
+    if (vector_length) |vec_len| {
+        const vec_blocks_len = a.len - (a.len % vec_len);
+        while (i < vec_blocks_len) : (i += vec_len) {
+            a[i..][0..vec_len].* += @as(@Vector(vec_len, f32), @splat(b));
         }
+    }
+
+    for (a[i..]) |*a_sample| {
+        a_sample.* += b;
     }
 }

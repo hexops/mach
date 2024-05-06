@@ -6,7 +6,7 @@ const builtin = @import("builtin");
 
 const mach = @import("mach");
 const assets = @import("assets");
-const opus = @import("opus");
+const Opus = @import("opus");
 const gpu = mach.gpu;
 const math = mach.math;
 const sysaudio = mach.sysaudio;
@@ -29,7 +29,7 @@ pub const components = .{
     .is_bgm = .{ .type = void },
 };
 
-sfx: []const f32,
+sfx: Opus,
 
 fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) !void {
     // Initialize audio module, telling it to send our module's .audio_state_change event when an
@@ -40,17 +40,18 @@ fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) !void {
     const sfx_fbs = std.io.fixedBufferStream(assets.sfx.death);
 
     var sound_stream = std.io.StreamSource{ .const_buffer = bgm_fbs };
-    const bgm = try opus.decodeStream(gpa.allocator(), sound_stream);
+    const bgm = try Opus.decodeStream(gpa.allocator(), sound_stream);
 
     sound_stream = std.io.StreamSource{ .const_buffer = sfx_fbs };
-    const sfx = try opus.decodeStream(gpa.allocator(), sound_stream);
+    const sfx = try Opus.decodeStream(gpa.allocator(), sound_stream);
 
     // Initialize module state
-    app.init(.{ .sfx = sfx.samples });
+    app.init(.{ .sfx = sfx });
 
     const bgm_entity = try audio.newEntity();
     try app.set(bgm_entity, .is_bgm, {});
     try audio.set(bgm_entity, .samples, bgm.samples);
+    try audio.set(bgm_entity, .channels, bgm.channels);
     try audio.set(bgm_entity, .playing, true);
     try audio.set(bgm_entity, .index, 0);
 
@@ -115,7 +116,8 @@ fn tick(
                 else => {
                     // Play a new SFX
                     const entity = try audio.newEntity();
-                    try audio.set(entity, .samples, app.state().sfx);
+                    try audio.set(entity, .samples, app.state().sfx.samples);
+                    try audio.set(entity, .channels, app.state().sfx.channels);
                     try audio.set(entity, .index, 0);
                     try audio.set(entity, .playing, true);
                 },
