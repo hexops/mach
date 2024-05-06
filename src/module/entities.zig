@@ -885,11 +885,11 @@ test "example" {
 
     try world.setComponent(player1, .game, .is_monster, {});
     try testing.expectEqual(@as(?void, {}), world.getComponent(player1, .game, .is_monster));
-    try testing.expectEqual(@as(?void, {}), world.getComponent(player2, .game, .is_monster)); // BUG: this reports non-null when it should report null!
+    try testing.expectEqual(@as(?void, null), world.getComponent(player2, .game, .is_monster));
 
     try world.removeComponent(player1, .game, .is_monster);
-    try testing.expectEqual(@as(?void, {}), world.getComponent(player1, .game, .is_monster)); // BUG: this reports non-null when it should report null!
-    try testing.expectEqual(@as(?void, {}), world.getComponent(player2, .game, .is_monster)); // BUG: this reports non-null when it should report null!
+    try testing.expectEqual(@as(?void, null), world.getComponent(player1, .game, .is_monster));
+    try testing.expectEqual(@as(?void, null), world.getComponent(player2, .game, .is_monster));
 
     //-------------------------------------------------------------------------
     // Introspect things.
