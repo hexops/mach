@@ -838,6 +838,7 @@ test "example" {
             .name = .{ .type = []const u8 },
             .location = .{ .type = Location },
             .rotation = .{ .type = Rotation },
+            .is_monster = .{ .type = void },
         };
     };
 
@@ -877,12 +878,26 @@ test "example" {
     // try world.removeComponent(player1, .game, .location); // doesn't exist? no problem.
 
     //-------------------------------------------------------------------------
+    // Zero-size tags, these can be put on entities to indicate they are unique
+    // in some way. e.g. to indicate which entities are monsters, which you can
+    // then query
+    try testing.expectEqual(@as(?void, null), world.getComponent(player1, .game, .is_monster));
+
+    try world.setComponent(player1, .game, .is_monster, {});
+    try testing.expectEqual(@as(?void, {}), world.getComponent(player1, .game, .is_monster));
+    try testing.expectEqual(@as(?void, {}), world.getComponent(player2, .game, .is_monster)); // BUG: this reports non-null when it should report null!
+
+    try world.removeComponent(player1, .game, .is_monster);
+    try testing.expectEqual(@as(?void, {}), world.getComponent(player1, .game, .is_monster)); // BUG: this reports non-null when it should report null!
+    try testing.expectEqual(@as(?void, {}), world.getComponent(player2, .game, .is_monster)); // BUG: this reports non-null when it should report null!
+
+    //-------------------------------------------------------------------------
     // Introspect things.
     //
     // Archetype IDs, these are our "table names" - they're just hashes of all the component names
     // within the archetype table.
     const archetypes = world.archetypes.items;
-    try testing.expectEqual(@as(usize, 5), archetypes.len);
+    try testing.expectEqual(@as(usize, 6), archetypes.len);
     // TODO: better table names, based on columns
     // try testing.expectEqual(@as(u64, 0), archetypes[0].hash);
     // try testing.expectEqual(@as(u32, 4), archetypes[1].name);
@@ -895,6 +910,8 @@ test "example" {
     try testing.expectEqual(@as(usize, 0), archetypes[1].len);
     try testing.expectEqual(@as(usize, 0), archetypes[2].len);
     try testing.expectEqual(@as(usize, 1), archetypes[3].len);
+    try testing.expectEqual(@as(usize, 0), archetypes[4].len);
+    try testing.expectEqual(@as(usize, 0), archetypes[5].len);
 
     // Resolve archetype by entity ID and print column names
     const columns = world.archetypeByID(player2).columns;
