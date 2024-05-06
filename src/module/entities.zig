@@ -641,9 +641,13 @@ pub fn Entities(comptime modules: anytype) type {
                 /// Logical AND operator for query expressions
                 op_and: []const @This(),
 
-                /// Match a specific module component.
+                /// Match a specific module component, indicating it will only be read.
                 // TODO: add component name type and consider replacing StringTable approach with global enum
-                component: StringTable.Index,
+                const_component: StringTable.Index,
+
+                /// Match a specific module component, indicating it will be mutated.
+                // TODO: add component name type and consider replacing StringTable approach with global enum
+                mut_component: StringTable.Index,
 
                 pub fn match(q: @This(), archetype: *Archetype) bool {
                     switch (q) {
@@ -651,7 +655,7 @@ pub fn Entities(comptime modules: anytype) type {
                             for (qs) |and_q| if (!and_q.match(archetype)) return false;
                             return true;
                         },
-                        .component => |component_name| {
+                        .const_component, .mut_component => |component_name| {
                             for (archetype.columns) |column| if (column.name == component_name) return true;
                             return false;
                         },
@@ -933,8 +937,8 @@ test "example" {
     // Dynamic queries (e.g. issued from another programming language without comptime)
     var q = try world.queryDynamic(.{
         .op_and = &.{
-            .{ .component = world.componentName(EntityModule.name, .id) },
-            .{ .component = world.componentName(Game.name, .rotation) },
+            .{ .const_component = world.componentName(EntityModule.name, .id) },
+            .{ .const_component = world.componentName(Game.name, .rotation) },
         },
     });
     while (q.next()) |archtype| {
