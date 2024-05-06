@@ -83,6 +83,7 @@ fn audioStateChange(
                 // Play a new sound
                 const entity = try audio.newEntity();
                 try audio.set(entity, .samples, try fillTone(audio, frequency));
+                try audio.set(entity, .channels, @intCast(audio.state().player.channels().len));
                 try audio.set(entity, .playing, true);
                 try audio.set(entity, .index, 0);
             }
@@ -122,6 +123,7 @@ fn tick(
                         // Play a new sound
                         const entity = try audio.newEntity();
                         try audio.set(entity, .samples, try fillTone(audio, keyToFrequency(ev.key)));
+                        try audio.set(entity, .channels, @intCast(audio.state().player.channels().len));
                         try audio.set(entity, .playing, true);
                         try audio.set(entity, .index, 0);
 
