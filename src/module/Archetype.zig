@@ -292,7 +292,7 @@ pub fn Slicer(comptime modules: anytype) type {
                 @tagName(component_name),
             ).type;
             if (namespace_name == .entity and component_name == .id) {
-                const name_id = slicer.archetype.component_names.index("id").?;
+                const name_id = slicer.archetype.component_names.index("entity.id").?;
                 return slicer.archetype.getColumnValues(name_id, Type).?[0..slicer.archetype.len];
             }
             const name = @tagName(namespace_name) ++ "." ++ @tagName(component_name);

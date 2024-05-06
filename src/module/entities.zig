@@ -9,6 +9,11 @@ const StringTable = @import("StringTable.zig");
 const ComponentTypesByName = @import("module.zig").ComponentTypesByName;
 const merge = @import("main.zig").merge;
 const builtin_modules = @import("main.zig").builtin_modules;
+const EntityModule = @import("main.zig").EntityModule;
+const ModuleName = @import("module.zig").ModuleName;
+const ComponentNameM = @import("module.zig").ComponentNameM;
+const ComponentName = @import("module.zig").ComponentName;
+const ModsByName = @import("module.zig").ModsByName;
 
 /// An entity ID uniquely identifies an entity globally within an Entities set.
 pub const EntityID = u64;
@@ -92,6 +97,8 @@ pub fn Entities(comptime modules: anytype) type {
         component_names: *StringTable,
         id_name: StringTable.Index = 0,
 
+        active_queries: std.ArrayListUnmanaged(query2.State) = .{},
+
         const Self = @This();
 
         /// Points to where an entity is stored, specifically in which archetype table and in which row
@@ -124,7 +131,7 @@ pub fn Entities(comptime modules: anytype) type {
                 .component_names = component_names,
                 .buckets = buckets,
             };
-            entities.id_name = try entities.component_names.indexOrPut(allocator, "id");
+            entities.id_name = entities.componentName(EntityModule.name, .id);
 
             const columns = try allocator.alloc(Archetype.Column, 1);
             columns[0] = .{
@@ -153,6 +160,7 @@ pub fn Entities(comptime modules: anytype) type {
             entities.allocator.free(entities.buckets);
             for (entities.archetypes.items) |*archetype| archetype.deinit(entities.allocator);
             entities.archetypes.deinit(entities.allocator);
+            entities.active_queries.deinit(entities.allocator);
         }
 
         fn archetypeOrPut(
@@ -267,8 +275,16 @@ pub fn Entities(comptime modules: anytype) type {
         /// The set of components used is expected to be static for the lifetime of the Entities,
         /// and as such this function allocates component names but there is no way to release that
         /// memory until Entities.deinit() is called.
-        pub fn componentName(entities: *Self, name_str: []const u8) StringTable.Index {
+        pub fn componentNameString(entities: *Self, name_str: []const u8) StringTable.Index {
             return entities.component_names.indexOrPut(entities.allocator, name_str) catch @panic("TODO: implement stateful OOM");
+        }
+
+        pub fn componentName(
+            entities: *Self,
+            comptime module_name: ModuleName(modules),
+            comptime component_name: ComponentName(modules),
+        ) StringTable.Index {
+            return entities.componentNameString(@tagName(module_name) ++ "." ++ @tagName(component_name));
         }
 
         /// Returns the archetype storage for the given entity.
@@ -619,19 +635,81 @@ pub fn Entities(comptime modules: anytype) type {
             return ArchetypeIterator(modules).init(entities, q);
         }
 
-        // TODO: queryDynamic
+        pub const query2 = struct {
+            /// Represents a dynamic (runtime-generated, non type safe) query.
+            pub const Dynamic = union(enum) {
+                /// Logical AND operator for query expressions
+                op_and: []const @This(),
 
-        // TODO: iteration over all entities
-        // TODO: iteration over all entities with components (U, V, ...)
-        // TODO: iteration over all entities with type T
-        // TODO: iteration over all entities with type T and components (U, V, ...)
+                /// Match a specific module component.
+                // TODO: add component name type and consider replacing StringTable approach with global enum
+                component: StringTable.Index,
 
-        // TODO: "indexes" - a few ideas we could express:
-        //
-        // * Graph relations index: e.g. parent-child entity relations for a DOM / UI / scene graph.
-        // * Spatial index: "give me all entities within 5 units distance from (x, y, z)"
-        // * Generic index: "give me all entities where arbitraryFunction(e) returns true"
-        //
+                pub fn match(q: @This(), archetype: *Archetype) bool {
+                    switch (q) {
+                        .op_and => |qs| {
+                            for (qs) |and_q| if (!and_q.match(archetype)) return false;
+                            return true;
+                        },
+                        .component => |component_name| {
+                            for (archetype.columns) |column| if (column.name == component_name) return true;
+                            return false;
+                        },
+                    }
+                }
+            };
+
+            /// When a query is first performed, it becomes active and its iterator state is stored
+            /// and maintained. When all results in the iterator have been consumed, it is marked
+            /// as finished and later recycled.
+            pub const State = struct {
+                q: query2.Dynamic,
+                next_index: u31 = 0, // archetypes index
+                finished: bool = false,
+            };
+
+            /// Represents a dynamic (runtime-generated, non type safe) query result.
+            pub const DynamicResult = struct {
+                entities: *Self,
+                index: u32, // active_queries index
+
+                pub fn next(q: *DynamicResult) ?*Archetype {
+                    const state = &q.entities.active_queries.items[q.index];
+                    if (state.finished) @panic("query iterator already finished, invoking next() is illegal");
+
+                    while (state.next_index < q.entities.archetypes.items.len) {
+                        const archetype = &q.entities.archetypes.items[state.next_index];
+                        state.next_index += 1;
+                        if (state.q.match(archetype)) return archetype;
+                    }
+
+                    state.finished = true;
+                    q.entities.reuseInactiveQueries();
+                    return null;
+                }
+            };
+        };
+
+        /// Performs a dynamic (runtime-generated, non type safe) query.
+        pub fn queryDynamic(entities: *Self, q: query2.Dynamic) !query2.DynamicResult {
+            const new_query = query2.DynamicResult{
+                .entities = entities,
+                .index = @intCast(entities.active_queries.items.len),
+            };
+            const state = query2.State{ .q = q };
+            try entities.active_queries.append(entities.allocator, state);
+            return new_query;
+        }
+
+        /// Releases any inactive queries entities.active_queries state memory space at the end of
+        /// the list, enabling reuse of it.
+        fn reuseInactiveQueries(entities: *Self) void {
+            var new_len: usize = entities.active_queries.items.len;
+            while (new_len > 0 and entities.active_queries.items[new_len - 1].finished) {
+                new_len -= 1;
+            }
+            entities.active_queries.shrinkRetainingCapacity(new_len);
+        }
 
         // TODO: ability to remove archetype entirely, deleting all entities in it
         // TODO: ability to remove archetypes with no entities (garbage collection)
@@ -679,7 +757,7 @@ pub fn ArchetypeIterator(comptime modules: anytype) type {
                                     const name = switch (component) {
                                         inline else => |c| std.fmt.bufPrint(&buf, "{s}.{s}", .{ @tagName(namespace), @tagName(c) }) catch break,
                                     };
-                                    const name_id = iter.entities.componentName(name);
+                                    const name_id = iter.entities.componentNameString(name);
                                     var has_column = false;
                                     for (consideration.columns) |column| {
                                         if (column.name == name_id) {
@@ -723,20 +801,20 @@ test "dynamic" {
     const Rotation = struct { degrees: f32 };
 
     // Create a world.
-    var world = try Entities(.{}).init(allocator);
+    var world = try Entities(merge(.{builtin_modules})).init(allocator);
     defer world.deinit();
 
     // Create an entity and add dynamic components.
     const player1 = try world.new();
-    try world.setComponentDynamic(player1, world.componentName("game.name"), "jane", @alignOf([]const u8), 100);
-    try world.setComponentDynamic(player1, world.componentName("game.name"), "joey", @alignOf([]const u8), 100);
-    try world.setComponentDynamic(player1, world.componentName("game.location"), asBytes(&Location{ .x = 1, .y = 2, .z = 3 }), @alignOf(Location), 101);
+    try world.setComponentDynamic(player1, world.componentNameString("game.name"), "jane", @alignOf([]const u8), 100);
+    try world.setComponentDynamic(player1, world.componentNameString("game.name"), "joey", @alignOf([]const u8), 100);
+    try world.setComponentDynamic(player1, world.componentNameString("game.location"), asBytes(&Location{ .x = 1, .y = 2, .z = 3 }), @alignOf(Location), 101);
 
     // Get components
-    try testing.expect(world.getComponentDynamic(player1, world.componentName("game.rotation"), @sizeOf(Rotation), @alignOf(Rotation), 102) == null);
-    const loc = world.getComponentDynamic(player1, world.componentName("game.location"), @sizeOf(Location), @alignOf(Location), 101);
+    try testing.expect(world.getComponentDynamic(player1, world.componentNameString("game.rotation"), @sizeOf(Rotation), @alignOf(Rotation), 102) == null);
+    const loc = world.getComponentDynamic(player1, world.componentNameString("game.location"), @sizeOf(Location), @alignOf(Location), 101);
     try testing.expectEqual(Location{ .x = 1, .y = 2, .z = 3 }, std.mem.bytesToValue(Location, @as(*[12]u8, @ptrCast(loc.?.ptr))));
-    try testing.expectEqualStrings(world.getComponentDynamic(player1, world.componentName("game.name"), 4, @alignOf([]const u8), 100).?, "joey");
+    try testing.expectEqualStrings(world.getComponentDynamic(player1, world.componentNameString("game.name"), 4, @alignOf([]const u8), 100).?, "joey");
 }
 
 test "entity ID size" {
@@ -754,16 +832,18 @@ test "example" {
 
     const Rotation = struct { degrees: f32 };
 
+    const Game = struct {
+        pub const name = .game;
+        pub const components = .{
+            .name = .{ .type = []const u8 },
+            .location = .{ .type = Location },
+            .rotation = .{ .type = Rotation },
+        };
+    };
+
     const modules = merge(.{
         builtin_modules,
-        struct {
-            pub const name = .game;
-            pub const components = .{
-                .name = .{ .type = []const u8 },
-                .location = .{ .type = Location },
-                .rotation = .{ .type = Rotation },
-            };
-        },
+        Game,
     });
 
     //-------------------------------------------------------------------------
@@ -819,7 +899,7 @@ test "example" {
     // Resolve archetype by entity ID and print column names
     const columns = world.archetypeByID(player2).columns;
     try testing.expectEqual(@as(usize, 2), columns.len);
-    try testing.expectEqualStrings("id", world.component_names.string(columns[0].name));
+    try testing.expectEqualStrings("entity.id", world.component_names.string(columns[0].name));
     try testing.expectEqualStrings("game.rotation", world.component_names.string(columns[1].name));
 
     //-------------------------------------------------------------------------
@@ -833,6 +913,21 @@ test "example" {
         try testing.expectEqual(player2, ids[0]);
     }
 
+    // Dynamic queries (e.g. issued from another programming language without comptime)
+    var q = try world.queryDynamic(.{
+        .op_and = &.{
+            .{ .component = world.componentName(EntityModule.name, .id) },
+            .{ .component = world.componentName(Game.name, .rotation) },
+        },
+    });
+    while (q.next()) |archtype| {
+        try testing.expectEqual(@as(usize, 1), archtype.len);
+        try testing.expectEqual(@as(usize, 2), archtype.columns.len);
+
+        try testing.expectEqualStrings("entity.id", world.component_names.string(archtype.columns[0].name));
+        try testing.expectEqualStrings("game.rotation", world.component_names.string(archtype.columns[1].name));
+    }
+
     // TODO: iterating components an entity has not currently supported.
 
     //-------------------------------------------------------------------------
@@ -843,7 +938,7 @@ test "example" {
 test "empty_world" {
     const allocator = testing.allocator;
     //-------------------------------------------------------------------------
-    var world = try Entities(.{}).init(allocator);
+    var world = try Entities(merge(.{builtin_modules})).init(allocator);
     // Create a world.
     defer world.deinit();
 }
@@ -859,7 +954,8 @@ test "many entities" {
 
     const Rotation = struct { degrees: f32 };
 
-    const modules = .{
+    const modules = merge(.{
+        builtin_modules,
         struct {
             pub const name = .game;
             pub const components = .{
@@ -868,7 +964,7 @@ test "many entities" {
                 .rotation = .{ .type = Rotation },
             };
         },
-    };
+    });
 
     // Create many entities
     var world = try Entities(modules).init(allocator);
@@ -886,16 +982,16 @@ test "many entities" {
     // Confirm archetypes
     var columns = archetypes[0].columns;
     try testing.expectEqual(@as(usize, 1), columns.len);
-    try testing.expectEqualStrings("id", world.component_names.string(columns[0].name));
+    try testing.expectEqualStrings("entity.id", world.component_names.string(columns[0].name));
 
     columns = archetypes[1].columns;
     try testing.expectEqual(@as(usize, 2), columns.len);
-    try testing.expectEqualStrings("id", world.component_names.string(columns[0].name));
+    try testing.expectEqualStrings("entity.id", world.component_names.string(columns[0].name));
     try testing.expectEqualStrings("game.name", world.component_names.string(columns[1].name));
 
     columns = archetypes[2].columns;
     try testing.expectEqual(@as(usize, 3), columns.len);
-    try testing.expectEqualStrings("id", world.component_names.string(columns[0].name));
+    try testing.expectEqualStrings("entity.id", world.component_names.string(columns[0].name));
     try testing.expectEqualStrings("game.name", world.component_names.string(columns[1].name));
     try testing.expectEqualStrings("game.location", world.component_names.string(columns[2].name));
 }
