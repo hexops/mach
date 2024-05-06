@@ -66,6 +66,7 @@ const testing = @import("../testing.zig");
 const Entities = @import("entities.zig").Entities;
 const EntityID = @import("entities.zig").EntityID;
 const is_debug = @import("Archetype.zig").is_debug;
+const builtin_modules = @import("main.zig").builtin_modules;
 
 const log = std.log.scoped(.mach);
 
@@ -534,7 +535,7 @@ pub fn Modules(comptime modules: anytype) type {
     };
 }
 
-fn ModsByName(comptime modules: anytype) type {
+pub fn ModsByName(comptime modules: anytype) type {
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     for (modules) |M| {
         const ModT = ModSet(modules).Mod(M);
@@ -627,8 +628,7 @@ pub fn ModSet(comptime modules: anytype) type {
                 pub inline fn set(
                     m: *@This(),
                     entity: EntityID,
-                    // TODO(important): cleanup comptime
-                    comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
+                    comptime component_name: ComponentNameM(M),
                     component: @field(components, @tagName(component_name)).type,
                 ) !void {
                     try m.entities.setComponent(entity, module_tag, component_name, component);
@@ -639,8 +639,7 @@ pub fn ModSet(comptime modules: anytype) type {
                 pub inline fn get(
                     m: *@This(),
                     entity: EntityID,
-                    // TODO(important): cleanup comptime
-                    comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
+                    comptime component_name: ComponentNameM(M),
                 ) ?@field(components, @tagName(component_name)).type {
                     return m.entities.getComponent(entity, module_tag, component_name);
                 }
@@ -649,8 +648,7 @@ pub fn ModSet(comptime modules: anytype) type {
                 pub inline fn remove(
                     m: *@This(),
                     entity: EntityID,
-                    // TODO(important): cleanup comptime
-                    comptime component_name: std.meta.FieldEnum(@TypeOf(components)),
+                    comptime component_name: ComponentNameM(M),
                 ) !void {
                     try m.entities.removeComponent(entity, module_tag, component_name);
                 }
@@ -908,8 +906,38 @@ fn GlobalEventEnumM(comptime M: anytype) type {
     });
 }
 
+/// enum describing component names for the given module only
+pub fn ComponentNameM(comptime M: type) type {
+    const components = ComponentTypesM(M){};
+    return std.meta.FieldEnum(@TypeOf(components));
+}
+
+/// enum describing component names for all of the modules
+pub fn ComponentName(comptime modules: anytype) type {
+    var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
+    var i: usize = 0;
+    inline for (modules) |M| {
+        search: for (@typeInfo(ComponentTypesM(M)).Struct.fields) |field| {
+            for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) continue :search;
+            enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{
+                .name = field.name,
+                .value = i,
+            }};
+            i += 1;
+        }
+    }
+    return @Type(.{
+        .Enum = .{
+            .tag_type = std.math.IntFittingRange(0, enum_fields.len - 1),
+            .fields = enum_fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+            .is_exhaustive = true,
+        },
+    });
+}
+
 /// enum describing every possible comptime-known module name
-fn ModuleName(comptime modules: anytype) type {
+pub fn ModuleName(comptime modules: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     for (modules, 0..) |M, i| {
         enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(M.name), .value = i }};
@@ -1181,11 +1209,12 @@ test Modules {
         pub const name = .engine_sprite2d;
     });
 
-    var modules: Modules(.{
+    var modules: Modules(merge(.{
+        builtin_modules,
         Physics,
         Renderer,
         Sprite2D,
-    }) = undefined;
+    })) = undefined;
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
     testing.refAllDeclsRecursive(Physics);
@@ -1237,11 +1266,12 @@ test "event name" {
         fn fooBar() void {}
     });
 
-    const Ms = Modules(.{
+    const Ms = Modules(merge(.{
+        builtin_modules,
         Physics,
         Renderer,
         Sprite2D,
-    });
+    }));
 
     const locals = @typeInfo(Ms.LocalEvent).Enum;
     try testing.expect(type, u1).eql(locals.tag_type);
@@ -1270,19 +1300,21 @@ test ModuleName {
     const Sprite2D = ModuleInterface(struct {
         pub const name = .engine_sprite2d;
     });
-    const modules = .{
+    const modules = merge(.{
+        builtin_modules,
         Physics,
         Renderer,
         Sprite2D,
-    };
+    });
     _ = Modules(modules);
     const info = @typeInfo(ModuleName(modules)).Enum;
 
     try testing.expect(type, u2).eql(info.tag_type);
-    try testing.expect(usize, 3).eql(info.fields.len);
-    try testing.expect([]const u8, "engine_physics").eql(info.fields[0].name);
-    try testing.expect([]const u8, "engine_renderer").eql(info.fields[1].name);
-    try testing.expect([]const u8, "engine_sprite2d").eql(info.fields[2].name);
+    try testing.expect(usize, 4).eql(info.fields.len);
+    try testing.expect([]const u8, "entity").eql(info.fields[0].name);
+    try testing.expect([]const u8, "engine_physics").eql(info.fields[1].name);
+    try testing.expect([]const u8, "engine_renderer").eql(info.fields[2].name);
+    try testing.expect([]const u8, "engine_sprite2d").eql(info.fields[3].name);
 }
 
 // TODO: remove this in favor of testing.expect
@@ -1444,10 +1476,11 @@ test "event name calling" {
         }
     });
 
-    const modules2 = .{
+    const modules2 = merge(.{
+        builtin_modules,
         Physics,
         Renderer,
-    };
+    });
     var modules: Modules(modules2) = undefined;
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
@@ -1578,11 +1611,12 @@ test "dispatch" {
         }
     });
 
-    const modules2 = .{
+    const modules2 = merge(.{
+        builtin_modules,
         Minimal,
         Physics,
         Renderer,
-    };
+    });
     var modules: Modules(modules2) = undefined;
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);

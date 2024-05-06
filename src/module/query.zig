@@ -1,6 +1,8 @@
 const std = @import("std");
 const testing = std.testing;
 const ComponentTypesByName = @import("module.zig").ComponentTypesByName;
+const merge = @import("main.zig").merge;
+const builtin_modules = @import("main.zig").builtin_modules;
 
 pub const QueryTag = enum {
     any,
@@ -80,7 +82,8 @@ test "query" {
 
     const Rotation = struct { degrees: f32 };
 
-    const modules = .{
+    const modules = merge(.{
+        builtin_modules,
         struct {
             pub const name = .game;
             pub const components = .{
@@ -97,7 +100,7 @@ test "query" {
         struct {
             pub const name = .renderer;
         },
-    };
+    });
 
     const Q = Query(modules);
 
