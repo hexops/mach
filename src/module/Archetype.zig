@@ -172,7 +172,6 @@ pub fn setDynamic(storage: *Archetype, row_index: u32, name: StringTable.Index, 
 }
 
 pub fn get(storage: *Archetype, row_index: u32, name: StringTable.Index, comptime ColumnType: type) ?ColumnType {
-    if (@sizeOf(ColumnType) == 0) return {};
     if (is_debug) debugAssertColumnType(storage, storage.columnByName(name) orelse return null, ColumnType);
 
     const bytes = storage.getDynamic(row_index, name, @sizeOf(ColumnType), @alignOf(ColumnType), typeId(ColumnType)) orelse return null;
