@@ -155,7 +155,7 @@ fn tick(
 
     // Query all the entities that have the .follower tag indicating they should follow the player.
     // TODO(important): better querying API
-    var archetypes_iter = core.entities.query(.{ .all = &.{
+    var archetypes_iter = core.entities.queryDeprecated(.{ .all = &.{
         .{ .app = &.{.follower} },
     } });
     while (archetypes_iter.next()) |archetype| {
@@ -169,7 +169,7 @@ fn tick(
             const close_dist = 1.0 / 15.0;
             var avoidance = Vec3.splat(0);
             var avoidance_div: f32 = 1.0;
-            var archetypes_iter_2 = core.entities.query(.{ .all = &.{
+            var archetypes_iter_2 = core.entities.queryDeprecated(.{ .all = &.{
                 .{ .app = &.{.follower} },
             } });
             while (archetypes_iter_2.next()) |archetype_2| {

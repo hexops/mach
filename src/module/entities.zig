@@ -114,7 +114,7 @@ pub fn Entities(comptime modules: anytype) type {
         };
 
         /// A complex query for entities matching a given criteria
-        pub const Query = query_mod.Query(modules);
+        pub const QueryDeprecated = query_mod.QueryDeprecated(modules);
         pub const QueryTag = query_mod.QueryTag;
 
         pub fn init(allocator: Allocator) !Self {
@@ -628,9 +628,9 @@ pub fn Entities(comptime modules: anytype) type {
         }
 
         // Queries for archetypes matching the given query.
-        pub fn query(
+        pub fn queryDeprecated(
             entities: *Self,
-            q: Query,
+            q: QueryDeprecated,
         ) ArchetypeIterator(modules) {
             return ArchetypeIterator(modules).init(entities, q);
         }
@@ -721,12 +721,12 @@ pub fn ArchetypeIterator(comptime modules: anytype) type {
     const EntitiesT = Entities(modules);
     return struct {
         entities: *EntitiesT,
-        query: EntitiesT.Query,
+        query: EntitiesT.QueryDeprecated,
         index: usize,
 
         const Self = @This();
 
-        pub fn init(entities: *EntitiesT, query: EntitiesT.Query) Self {
+        pub fn init(entities: *EntitiesT, query: EntitiesT.QueryDeprecated) Self {
             return Self{
                 .entities = entities,
                 .query = query,
@@ -921,7 +921,7 @@ test "example" {
 
     //-------------------------------------------------------------------------
     // Query for archetypes that have all of the given components
-    var iter = world.query(.{ .all = &.{
+    var iter = world.queryDeprecated(.{ .all = &.{
         .{ .game = &.{.rotation} },
     } });
     while (iter.next()) |archetype| {

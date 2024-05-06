@@ -163,7 +163,7 @@ fn tick(
     const delta_time = game.state().timer.lap();
 
     // Animate entities
-    var archetypes_iter = core.entities.query(.{ .all = &.{
+    var archetypes_iter = core.entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_sprite = &.{.transform} },
     } });
     while (archetypes_iter.next()) |archetype| {

@@ -10,7 +10,7 @@ pub const QueryTag = enum {
 };
 
 /// A complex query for entities matching a given criteria
-pub fn Query(comptime modules: anytype) type {
+pub fn QueryDeprecated(comptime modules: anytype) type {
     const component_types_by_name = ComponentTypesByName(modules){};
     return union(QueryTag) {
         // TODO: cleanup comptime
@@ -102,7 +102,7 @@ test "query" {
         },
     });
 
-    const Q = Query(modules);
+    const Q = QueryDeprecated(modules);
 
     // Namespace type lets us select a single namespace.
     try testing.expectEqual(@as(Q.Namespace, .game), .game);

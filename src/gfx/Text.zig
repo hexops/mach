@@ -59,7 +59,7 @@ const BuiltText = struct {
 };
 
 fn update(core: *mach.Core.Mod, text: *Mod, text_pipeline: *gfx.TextPipeline.Mod) !void {
-    var archetypes_iter = text_pipeline.entities.query(.{ .all = &.{
+    var archetypes_iter = text_pipeline.entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_text_pipeline = &.{
             .built,
         } },
@@ -97,7 +97,7 @@ fn updatePipeline(
     var texture_update = false;
     var num_texts: u32 = 0;
     var removes = try std.ArrayListUnmanaged(mach.EntityID).initCapacity(allocator, 8);
-    var archetypes_iter = text.entities.query(.{ .all = &.{
+    var archetypes_iter = text.entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_text = &.{
             .transform,
             .text,

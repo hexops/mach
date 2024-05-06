@@ -69,7 +69,7 @@ fn audioStateChange(
     app: *Mod,
 ) !void {
     // Find audio entities that are no longer playing
-    var archetypes_iter = audio.entities.query(.{ .all = &.{
+    var archetypes_iter = audio.entities.queryDeprecated(.{ .all = &.{
         .{ .mach_audio = &.{.playing} },
     } });
     while (archetypes_iter.next()) |archetype| {
