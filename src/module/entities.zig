@@ -97,7 +97,7 @@ pub fn Entities(comptime modules: anytype) type {
         component_names: *StringTable,
         id_name: StringTable.Index = 0,
 
-        active_queries: std.ArrayListUnmanaged(query2.State) = .{},
+        active_queries: std.ArrayListUnmanaged(query.State) = .{},
 
         const Self = @This();
 
@@ -635,7 +635,7 @@ pub fn Entities(comptime modules: anytype) type {
             return ArchetypeIterator(modules).init(entities, q);
         }
 
-        pub const query2 = struct {
+        pub const query = struct {
             /// Represents a dynamic (runtime-generated, non type safe) query.
             pub const Dynamic = union(enum) {
                 /// Logical AND operator for query expressions
@@ -663,7 +663,7 @@ pub fn Entities(comptime modules: anytype) type {
             /// and maintained. When all results in the iterator have been consumed, it is marked
             /// as finished and later recycled.
             pub const State = struct {
-                q: query2.Dynamic,
+                q: query.Dynamic,
                 next_index: u31 = 0, // archetypes index
                 finished: bool = false,
             };
@@ -691,12 +691,12 @@ pub fn Entities(comptime modules: anytype) type {
         };
 
         /// Performs a dynamic (runtime-generated, non type safe) query.
-        pub fn queryDynamic(entities: *Self, q: query2.Dynamic) !query2.DynamicResult {
-            const new_query = query2.DynamicResult{
+        pub fn queryDynamic(entities: *Self, q: query.Dynamic) !query.DynamicResult {
+            const new_query = query.DynamicResult{
                 .entities = entities,
                 .index = @intCast(entities.active_queries.items.len),
             };
-            const state = query2.State{ .q = q };
+            const state = query.State{ .q = q };
             try entities.active_queries.append(entities.allocator, state);
             return new_query;
         }
