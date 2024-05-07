@@ -63,7 +63,7 @@ const builtin = @import("builtin");
 const std = @import("std");
 const testing = @import("../testing.zig");
 
-const Entities = @import("entities.zig").Entities;
+const Database = @import("entities.zig").Database;
 const EntityID = @import("entities.zig").EntityID;
 const is_debug = @import("Archetype.zig").is_debug;
 const builtin_modules = @import("main.zig").builtin_modules;
@@ -201,12 +201,12 @@ pub fn Modules(comptime modules: anytype) type {
         events: EventQueue,
         mod: ModsByName(modules),
         // TODO: pass mods directly instead of ComponentTypesByName?
-        entities: Entities(modules),
+        entities: Database(modules),
         debug_trace: bool,
 
         pub fn init(m: *@This(), allocator: std.mem.Allocator) !void {
-            // TODO: switch Entities to stack allocation like Modules is
-            var entities = try Entities(modules).init(allocator);
+            // TODO: switch Database to stack allocation like Modules is
+            var entities = try Database(modules).init(allocator);
             errdefer entities.deinit();
 
             const debug_trace_str = std.process.getEnvVarOwned(
@@ -579,13 +579,13 @@ pub fn ModSet(comptime modules: anytype) type {
                 // The .entity module is a special builtin module, with its own unique API.
                 return struct {
                     /// Private/internal fields
-                    __entities: *Entities(modules),
+                    __entities: *Database(modules),
                     __is_initialized: bool,
                     __state: void,
 
                     pub const IsInjectedArgument = void;
 
-                    pub inline fn read(comptime component_name: ComponentNameM(M)) Entities(modules).ComponentQuery {
+                    pub inline fn read(comptime component_name: ComponentNameM(M)) Database(modules).ComponentQuery {
                         return .{ .read = .{
                             .module = M.name,
                             .component = comptime stringToEnum(ComponentName(modules), @tagName(component_name)).?,
@@ -634,7 +634,7 @@ pub fn ModSet(comptime modules: anytype) type {
                     ///
                     /// Whether you use `Foo.Mod.read()` or `Foo.Mod.write()` determines whether the
                     /// slice in each iterator value will be mutable or not.
-                    pub inline fn query(m: *@This(), comptime q: anytype) !Entities(modules).QueryResult(q) {
+                    pub inline fn query(m: *@This(), comptime q: anytype) !Database(modules).QueryResult(q) {
                         return m.__entities.query(q);
                     }
                 };
@@ -642,20 +642,20 @@ pub fn ModSet(comptime modules: anytype) type {
 
             return struct {
                 /// Private/internal fields
-                __entities: *Entities(modules),
+                __entities: *Database(modules),
                 __is_initialized: bool,
                 __state: M,
 
                 pub const IsInjectedArgument = void;
 
-                pub inline fn read(comptime component_name: ComponentNameM(M)) Entities(modules).ComponentQuery {
+                pub inline fn read(comptime component_name: ComponentNameM(M)) Database(modules).ComponentQuery {
                     return .{ .read = .{
                         .module = M.name,
                         .component = comptime stringToEnum(ComponentName(modules), @tagName(component_name)).?,
                     } };
                 }
 
-                pub inline fn write(comptime component_name: ComponentNameM(M)) Entities(modules).ComponentQuery {
+                pub inline fn write(comptime component_name: ComponentNameM(M)) Database(modules).ComponentQuery {
                     return .{ .write = .{
                         .module = M.name,
                         .component = comptime stringToEnum(ComponentName(modules), @tagName(component_name)).?,

@@ -53,8 +53,8 @@ component_names: *StringTable,
 /// A hash composed of all Column.name's, effectively acting as the unique name of this table.
 hash: u64,
 
-/// An index to Entities.archetypes, used in the event of a *bucket* hash collision (not a collision
-/// of the .hash field) - see Entities.archetypeOrPut for details.
+/// An index to Database.archetypes, used in the event of a *bucket* hash collision (not a collision
+/// of the .hash field) - see Database.archetypeOrPut for details.
 next: ?u32 = null,
 
 pub fn deinit(storage: *Archetype, gpa: Allocator) void {

@@ -3,7 +3,7 @@ const mach = @import("../main.zig");
 const testing = std.testing;
 
 pub const EntityID = @import("entities.zig").EntityID;
-pub const Entities = @import("entities.zig").Entities;
+pub const Database = @import("entities.zig").Database;
 pub const Archetype = @import("Archetype.zig");
 pub const ModSet = @import("module.zig").ModSet;
 pub const Modules = @import("module.zig").Modules;
