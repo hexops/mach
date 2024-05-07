@@ -804,8 +804,8 @@ pub fn Entities(comptime modules: anytype) type {
         ///
         /// ```
         /// var q = try world.query(.{
-        ///     .ids = entity_mod.read(.id),
-        ///     .rotations = game_mod.write(.rotation),
+        ///     .ids = mach.Entities.Mod.read(.id),
+        ///     .rotations = Game.Mod.write(.rotation),
         /// });
         /// while (q.next()) |v| {
         ///     for (v.ids, v.rotations) |id, *rotation| {

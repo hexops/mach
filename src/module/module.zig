@@ -601,6 +601,42 @@ pub fn ModSet(comptime modules: anytype) type {
                     pub inline fn remove(m: *@This(), entity: EntityID) !void {
                         try m.__entities.remove(entity);
                     }
+
+                    /// Queries for entities with the given components.
+                    ///
+                    /// ```
+                    /// var q = try entities_mod.query(.{
+                    ///     .ids = mach.Entities.Mod.read(.id),
+                    ///     .my_positions = Game.Mod.read(.position),
+                    ///     .rotations = Game.Mod.write(.rotation),
+                    /// });
+                    /// while (q.next()) |v| {
+                    ///     for (v.ids, v.my_positions, v.rotations) |id, position, *rotation| {
+                    ///         std.debug.print("entity ID: {}, position: {}, rotation: {}\n", .{id, position, rotation.*});
+                    ///         rotation.x += 0.01;
+                    ///     }
+                    /// }
+                    /// ```
+                    ///
+                    /// The input query `q` is a struct, whose field names /define/ the output fields
+                    /// in each iterator value `v`. For example, if `Game` defines its components:
+                    ///
+                    /// ```
+                    /// pub const components = .{
+                    ///     .position = .{ .type = mach.math.Vec3 },
+                    /// };
+                    /// ```
+                    ///
+                    /// Then the query containing `.my_positions = Game.Mod.read(.position)` says to
+                    /// query for entities which have a Game` .position component. Those
+                    /// component values will then be provided as a slice in each iterator value, e.g.
+                    /// v.my_positions` would be of type `[]const mach.math.Vec3`.
+                    ///
+                    /// Whether you use `Foo.Mod.read()` or `Foo.Mod.write()` determines whether the
+                    /// slice in each iterator value will be mutable or not.
+                    pub inline fn query(m: *@This(), comptime q: anytype) !Entities(modules).QueryResult(q) {
+                        return m.__entities.query(q);
+                    }
                 };
             }
 
