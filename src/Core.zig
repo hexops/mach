@@ -106,7 +106,7 @@ fn start(core: *Mod) !void {
     core.state().run_state = .running;
 }
 
-fn init(entity: *mach.Entity.Mod, core: *Mod) !void {
+fn init(entities: *mach.Entities.Mod, core: *Mod) !void {
     mach.core.allocator = gpa.allocator(); // TODO: banish this global allocator
 
     // Initialize GPU implementation
@@ -116,7 +116,7 @@ fn init(entity: *mach.Entity.Mod, core: *Mod) !void {
     try mach.core.init(.{});
 
     // TODO(important): update this information upon framebuffer resize events
-    const main_window = try entity.new();
+    const main_window = try entities.new();
     try core.set(main_window, .framebuffer_format, mach.core.descriptor.format);
     try core.set(main_window, .framebuffer_width, mach.core.descriptor.width);
     try core.set(main_window, .framebuffer_height, mach.core.descriptor.height);
@@ -141,7 +141,7 @@ fn update(core: *Mod) !void {
     var num_windows: usize = 0;
     while (archetypes_iter.next()) |archetype| {
         for (
-            archetype.slice(.entity, .id),
+            archetype.slice(.entities, .id),
             archetype.slice(.mach_core, .title),
         ) |window_id, title| {
             num_windows += 1;

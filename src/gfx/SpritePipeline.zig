@@ -144,7 +144,7 @@ fn update(core: *mach.Core.Mod, sprite_pipeline: *Mod) !void {
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
+        const ids = archetype.slice(.entities, .id);
         const textures = archetype.slice(.mach_gfx_sprite_pipeline, .texture);
 
         for (ids, textures) |pipeline_id, texture| {
@@ -373,7 +373,7 @@ fn render(sprite_pipeline: *Mod) !void {
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
+        const ids = archetype.slice(.entities, .id);
         const built_pipelines = archetype.slice(.mach_gfx_sprite_pipeline, .built);
         for (ids, built_pipelines) |pipeline_id, built| {
             // Draw the sprite batch

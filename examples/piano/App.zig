@@ -65,7 +65,7 @@ fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
 }
 
 fn audioStateChange(
-    entity: *mach.Entity.Mod,
+    entities: *mach.Entities.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
 ) !void {
@@ -75,14 +75,14 @@ fn audioStateChange(
     } });
     while (archetypes_iter.next()) |archetype| {
         for (
-            archetype.slice(.entity, .id),
+            archetype.slice(.entities, .id),
             archetype.slice(.mach_audio, .playing),
         ) |id, playing| {
             if (playing) continue;
 
             if (app.get(id, .play_after)) |frequency| {
                 // Play a new sound
-                const e = try entity.new();
+                const e = try entities.new();
                 try audio.set(e, .samples, try fillTone(audio, frequency));
                 try audio.set(e, .channels, @intCast(audio.state().player.channels().len));
                 try audio.set(e, .playing, true);
@@ -90,13 +90,13 @@ fn audioStateChange(
             }
 
             // Remove the entity for the old sound
-            try entity.remove(id);
+            try entities.remove(id);
         }
     }
 }
 
 fn tick(
-    entity: *mach.Entity.Mod,
+    entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
@@ -123,7 +123,7 @@ fn tick(
                     // Piano keys
                     else => {
                         // Play a new sound
-                        const e = try entity.new();
+                        const e = try entities.new();
                         try audio.set(e, .samples, try fillTone(audio, keyToFrequency(ev.key)));
                         try audio.set(e, .channels, @intCast(audio.state().player.channels().len));
                         try audio.set(e, .playing, true);

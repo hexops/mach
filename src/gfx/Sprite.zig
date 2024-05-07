@@ -49,7 +49,7 @@ fn update(core: *mach.Core.Mod, sprite: *Mod, sprite_pipeline: *gfx.SpritePipeli
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
+        const ids = archetype.slice(.entities, .id);
         const built_pipelines = archetype.slice(.mach_gfx_sprite_pipeline, .built);
         for (ids, built_pipelines) |pipeline_id, *built| {
             try updatePipeline(core, sprite, sprite_pipeline, pipeline_id, built);

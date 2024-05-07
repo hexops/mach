@@ -33,7 +33,7 @@ pub const components = .{
 sfx: Opus,
 
 fn init(
-    entity: *mach.Entity.Mod,
+    entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
@@ -53,7 +53,7 @@ fn init(
     // Initialize module state
     app.init(.{ .sfx = sfx });
 
-    const bgm_entity = try entity.new();
+    const bgm_entity = try entities.new();
     try app.set(bgm_entity, .is_bgm, {});
     try audio.set(bgm_entity, .samples, bgm.samples);
     try audio.set(bgm_entity, .channels, bgm.channels);
@@ -80,7 +80,7 @@ fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
 }
 
 fn audioStateChange(
-    entity: *mach.Entity.Mod,
+    entities: *mach.Entities.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
 ) !void {
@@ -88,7 +88,7 @@ fn audioStateChange(
     var archetypes_iter = audio.__entities.queryDeprecated(.{ .all = &.{.{ .mach_audio = &.{.playing} }} });
     while (archetypes_iter.next()) |archetype| {
         for (
-            archetype.slice(.entity, .id),
+            archetype.slice(.entities, .id),
             archetype.slice(.mach_audio, .playing),
         ) |id, playing| {
             if (playing) continue;
@@ -99,14 +99,14 @@ fn audioStateChange(
                 try audio.set(id, .playing, true);
             } else {
                 // Remove the entity for the old sound
-                try entity.remove(id);
+                try entities.remove(id);
             }
         }
     }
 }
 
 fn tick(
-    entity: *mach.Entity.Mod,
+    entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
@@ -128,7 +128,7 @@ fn tick(
                 },
                 else => {
                     // Play a new SFX
-                    const e = try entity.new();
+                    const e = try entities.new();
                     try audio.set(e, .samples, app.state().sfx.samples);
                     try audio.set(e, .channels, app.state().sfx.channels);
                     try audio.set(e, .index, 0);

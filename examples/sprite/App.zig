@@ -52,7 +52,7 @@ fn deinit(
 }
 
 fn init(
-    entity: *mach.Entity.Mod,
+    entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
@@ -66,12 +66,12 @@ fn init(
 
     // Create a sprite rendering pipeline
     const allocator = gpa.allocator();
-    const pipeline = try entity.new();
+    const pipeline = try entities.new();
     try sprite_pipeline.set(pipeline, .texture, try loadTexture(core, allocator));
     sprite_pipeline.send(.update, .{});
 
     // Create our player sprite
-    const player = try entity.new();
+    const player = try entities.new();
     try sprite.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
     try sprite.set(player, .size, vec2(32, 32));
     try sprite.set(player, .uv_transform, Mat3x3.translate(vec2(0, 0)));
@@ -95,7 +95,7 @@ fn init(
 }
 
 fn tick(
-    entity: *mach.Entity.Mod,
+    entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
@@ -145,7 +145,7 @@ fn tick(
             new_pos.v[0] += game.state().rand.random().floatNorm(f32) * 25;
             new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 25;
 
-            const new_entity = try entity.new();
+            const new_entity = try entities.new();
             try sprite.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scale(Vec3.splat(0.3))));
             try sprite.set(new_entity, .size, vec2(32, 32));
             try sprite.set(new_entity, .uv_transform, Mat3x3.translate(vec2(0, 0)));
@@ -162,7 +162,7 @@ fn tick(
         .{ .mach_gfx_sprite = &.{.transform} },
     } });
     while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
+        const ids = archetype.slice(.entities, .id);
         const transforms = archetype.slice(.mach_gfx_sprite, .transform);
         for (ids, transforms) |id, *old_transform| {
             _ = id;

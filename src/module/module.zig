@@ -575,8 +575,8 @@ pub fn ModSet(comptime modules: anytype) type {
             const module_tag = M.name;
             const components = ComponentTypesM(M){};
 
-            if (M.name == .entity) {
-                // The .entity module is a special builtin module, with its own unique API.
+            if (M.name == .entities) {
+                // The .entities module is a special builtin module, with its own unique API.
                 return struct {
                     /// Private/internal fields
                     __entities: *Database(modules),
