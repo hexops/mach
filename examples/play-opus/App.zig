@@ -37,7 +37,7 @@ fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) !void {
     app.send(.after_init, .{});
 
     const bgm_fbs = std.io.fixedBufferStream(assets.bgm.bit_bit_loop);
-    const sfx_fbs = std.io.fixedBufferStream(assets.sfx.death);
+    const sfx_fbs = std.io.fixedBufferStream(assets.sfx.sword1);
 
     var sound_stream = std.io.StreamSource{ .const_buffer = bgm_fbs };
     const bgm = try Opus.decodeStream(gpa.allocator(), sound_stream);
