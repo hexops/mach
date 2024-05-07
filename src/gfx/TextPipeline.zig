@@ -169,7 +169,7 @@ fn update(core: *mach.Core.Mod, text_pipeline: *Mod) !void {
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
+        const ids = archetype.slice(.entities, .id);
         for (ids) |pipeline_id| {
             try buildPipeline(core, text_pipeline, pipeline_id);
         }
@@ -402,7 +402,7 @@ fn render(text_pipeline: *Mod) !void {
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
+        const ids = archetype.slice(.entities, .id);
         const built_pipelines = archetype.slice(.mach_gfx_text_pipeline, .built);
         for (ids, built_pipelines) |pipeline_id, built| {
             // Draw the text batch

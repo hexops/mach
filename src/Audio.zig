@@ -139,7 +139,7 @@ fn audioTick(audio: *Mod) !void {
     } });
     while (archetypes_iter.next()) |archetype| {
         for (
-            archetype.slice(.entity, .id),
+            archetype.slice(.entities, .id),
             archetype.slice(.mach_audio, .samples),
             archetype.slice(.mach_audio, .channels),
             archetype.slice(.mach_audio, .playing),

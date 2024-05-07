@@ -40,7 +40,7 @@ pub const EventID = @import("module/main.zig").EventID;
 pub const AnyEvent = @import("module/main.zig").AnyEvent;
 pub const merge = @import("module/main.zig").merge;
 pub const builtin_modules = @import("module/main.zig").builtin_modules;
-pub const Entity = @import("module/main.zig").Entity;
+pub const Entities = @import("module/main.zig").Entities;
 
 /// To use experimental sysgpu graphics API, you can write this in your main.zig:
 ///

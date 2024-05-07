@@ -143,7 +143,7 @@ fn renderFrame(
     } });
     var num_entities: usize = 0;
     while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
+        const ids = archetype.slice(.entities, .id);
         const positions = archetype.slice(.renderer, .position);
         const scales = archetype.slice(.renderer, .scale);
         for (ids, positions, scales) |id, position, scale| {

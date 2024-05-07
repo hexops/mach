@@ -60,7 +60,7 @@ fn init(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: 
 }
 
 fn afterInit(
-    entity: *mach.Entity.Mod,
+    entities: *mach.Entities.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     glyphs: *Glyphs.Mod,
@@ -68,7 +68,7 @@ fn afterInit(
 ) !void {
     // Create a sprite rendering pipeline
     const texture = glyphs.state().texture;
-    const pipeline = try entity.new();
+    const pipeline = try entities.new();
     try sprite_pipeline.set(pipeline, .texture, texture);
     sprite_pipeline.send(.update, .{});
 
@@ -77,7 +77,7 @@ fn afterInit(
     // type than the `.physics2d` module's `.location` component if you desire.
 
     const r = glyphs.state().regions.get('?').?;
-    const player = try entity.new();
+    const player = try entities.new();
     try sprite.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
     try sprite.set(player, .pipeline, pipeline);
     try sprite.set(player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
@@ -98,7 +98,7 @@ fn afterInit(
 }
 
 fn tick(
-    entity: *mach.Entity.Mod,
+    entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
@@ -152,7 +152,7 @@ fn tick(
             const rand_index = game.state().rand.random().intRangeAtMost(usize, 0, glyphs.state().regions.count() - 1);
             const r = glyphs.state().regions.entries.get(rand_index).value;
 
-            const new_entity = try entity.new();
+            const new_entity = try entities.new();
             try sprite.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scaleScalar(0.3)));
             try sprite.set(new_entity, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
             try sprite.set(new_entity, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
@@ -169,7 +169,7 @@ fn tick(
         .{ .mach_gfx_sprite = &.{.transform} },
     } });
     while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
+        const ids = archetype.slice(.entities, .id);
         const transforms = archetype.slice(.mach_gfx_sprite, .transform);
         for (ids, transforms) |id, *old_transform| {
             var location = old_transform.translation();

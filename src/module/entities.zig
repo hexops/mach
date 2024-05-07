@@ -9,7 +9,7 @@ const StringTable = @import("StringTable.zig");
 const ComponentTypesByName = @import("module.zig").ComponentTypesByName;
 const merge = @import("main.zig").merge;
 const builtin_modules = @import("main.zig").builtin_modules;
-const Entity = @import("main.zig").Entity;
+const Entities = @import("main.zig").Entities;
 const ModuleName = @import("module.zig").ModuleName;
 const ComponentNameM = @import("module.zig").ComponentNameM;
 const ComponentName = @import("module.zig").ComponentName;
@@ -130,7 +130,7 @@ pub fn Database(comptime modules: anytype) type {
                 .component_names = component_names,
                 .buckets = buckets,
             };
-            entities.id_name = entities.componentName(Entity.name, .id);
+            entities.id_name = entities.componentName(Entities.name, .id);
 
             const columns = try allocator.alloc(Archetype.Column, 1);
             columns[0] = .{
@@ -1076,7 +1076,7 @@ test "example" {
     // Query for all entities that have all of the given components
     const W = @TypeOf(world);
     var q = try world.query(.{
-        .ids = W.ComponentQuery{ .read = W.ModuleComponentName{ .module = Entity.name, .component = .id } },
+        .ids = W.ComponentQuery{ .read = W.ModuleComponentName{ .module = Entities.name, .component = .id } },
         .rotations = W.ComponentQuery{ .write = W.ModuleComponentName{ .module = Game.name, .component = .rotation } },
     });
     while (q.next()) |v| {
@@ -1090,7 +1090,7 @@ test "example" {
     // Dynamic queries (e.g. issued from another programming language without comptime)
     var q2 = try world.queryDynamic(.{
         .op_and = &.{
-            .{ .read = world.componentName(Entity.name, .id) },
+            .{ .read = world.componentName(Entities.name, .id) },
             .{ .read = world.componentName(Game.name, .rotation) },
         },
     });

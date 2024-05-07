@@ -65,7 +65,7 @@ fn update(core: *mach.Core.Mod, text: *Mod, text_pipeline: *gfx.TextPipeline.Mod
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
+        const ids = archetype.slice(.entities, .id);
         const built_pipelines = archetype.slice(.mach_gfx_text_pipeline, .built);
         for (ids, built_pipelines) |pipeline_id, *built| {
             try updatePipeline(core, text, text_pipeline, pipeline_id, built);
@@ -106,7 +106,7 @@ fn updatePipeline(
         } },
     } });
     while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
+        const ids = archetype.slice(.entities, .id);
         const transforms = archetype.slice(.mach_gfx_text, .transform);
         const segment_slices = archetype.slice(.mach_gfx_text, .text);
         const style_slices = archetype.slice(.mach_gfx_text, .style);
