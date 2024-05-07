@@ -19,6 +19,8 @@ pub const builtin_modules = .{EntityModule};
 pub const EntityModule = struct {
     pub const name = .entity;
 
+    pub const Mod = mach.Mod(@This());
+
     pub const components = .{
         .id = .{ .type = EntityID, .description = "Entity ID" },
     };

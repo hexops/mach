@@ -277,10 +277,7 @@ pub fn Modules(comptime modules: anytype) type {
             comptime EventEnum: anytype,
             comptime event_name: EventEnumM(M),
         ) EventEnum(modules) {
-            for (@typeInfo(EventEnum(modules)).Enum.fields) |gfield| {
-                if (std.mem.eql(u8, @tagName(event_name), gfield.name)) return @enumFromInt(gfield.value);
-            }
-            unreachable;
+            return std.meta.stringToEnum(EventEnum(modules), @tagName(event_name)).?;
         }
 
         /// Send a global event which the specified module defines
@@ -585,6 +582,20 @@ pub fn ModSet(comptime modules: anytype) type {
                 __state: M,
 
                 pub const IsInjectedArgument = void;
+
+                pub inline fn read(comptime component_name: ComponentNameM(M)) Entities(modules).ComponentQuery {
+                    return .{ .read = .{
+                        .module = M.name,
+                        .component = std.meta.stringToEnum(ComponentName(modules), @tagName(component_name)).?,
+                    } };
+                }
+
+                pub inline fn write(comptime component_name: ComponentNameM(M)) Entities(modules).ComponentQuery {
+                    return .{ .write = .{
+                        .module = M.name,
+                        .component = std.meta.stringToEnum(ComponentName(modules), @tagName(component_name)).?,
+                    } };
+                }
 
                 /// Initializes the module's state
                 pub inline fn init(m: *@This(), s: M) void {

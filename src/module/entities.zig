@@ -13,7 +13,6 @@ const EntityModule = @import("main.zig").EntityModule;
 const ModuleName = @import("module.zig").ModuleName;
 const ComponentNameM = @import("module.zig").ComponentNameM;
 const ComponentName = @import("module.zig").ComponentName;
-const ModsByName = @import("module.zig").ModsByName;
 
 /// An entity ID uniquely identifies an entity globally within an Entities set.
 pub const EntityID = u64;
@@ -97,7 +96,7 @@ pub fn Entities(comptime modules: anytype) type {
         component_names: *StringTable,
         id_name: StringTable.Index = 0,
 
-        active_queries: std.ArrayListUnmanaged(query.State) = .{},
+        active_queries: std.ArrayListUnmanaged(QueryState) = .{},
 
         const Self = @This();
 
@@ -635,73 +634,223 @@ pub fn Entities(comptime modules: anytype) type {
             return ArchetypeIterator(modules).init(entities, q);
         }
 
-        pub const query = struct {
-            /// Represents a dynamic (runtime-generated, non type safe) query.
-            pub const Dynamic = union(enum) {
-                /// Logical AND operator for query expressions
-                op_and: []const @This(),
+        /// Represents a dynamic (runtime-generated, non type safe) query.
+        pub const QueryDynamic = union(enum) {
+            /// Logical AND operator for query expressions
+            op_and: []const @This(),
 
-                /// Match a specific module component, indicating it will only be read.
-                // TODO: add component name type and consider replacing StringTable approach with global enum
-                const_component: StringTable.Index,
+            /// Match a specific module component, indicating it will only be read.
+            // TODO: add component name type and consider replacing StringTable approach with global enum
+            read: StringTable.Index,
 
-                /// Match a specific module component, indicating it will be mutated.
-                // TODO: add component name type and consider replacing StringTable approach with global enum
-                mut_component: StringTable.Index,
+            /// Match a specific module component, indicating it will be read and potentially written.
+            // TODO: add component name type and consider replacing StringTable approach with global enum
+            write: StringTable.Index,
 
-                pub fn match(q: @This(), archetype: *Archetype) bool {
-                    switch (q) {
-                        .op_and => |qs| {
-                            for (qs) |and_q| if (!and_q.match(archetype)) return false;
-                            return true;
-                        },
-                        .const_component, .mut_component => |component_name| {
-                            for (archetype.columns) |column| if (column.name == component_name) return true;
-                            return false;
-                        },
-                    }
+            pub fn match(q: @This(), archetype: *Archetype) bool {
+                switch (q) {
+                    .op_and => |e| {
+                        for (e) |and_q| if (!and_q.match(archetype)) return false;
+                        return true;
+                    },
+                    .read, .write => |e| {
+                        for (archetype.columns) |column| if (column.name == e) return true;
+                        return false;
+                    },
                 }
-            };
+            }
 
-            /// When a query is first performed, it becomes active and its iterator state is stored
-            /// and maintained. When all results in the iterator have been consumed, it is marked
-            /// as finished and later recycled.
-            pub const State = struct {
-                q: query.Dynamic,
-                next_index: u31 = 0, // archetypes index
-                finished: bool = false,
-            };
+            /// returns a copy of this query, using dst as storage space, returning the remaining space.
+            fn copy(q: QueryDynamic, dst: []QueryDynamic) !struct { copy: QueryDynamic, remaining: []QueryDynamic } {
+                switch (q) {
+                    .op_and => |e| {
+                        if (e.len >= dst.len) return error.OutOfSpace;
+                        @memcpy(dst[0..e.len], e);
+                        const cpy = QueryDynamic{ .op_and = dst[0..e.len] };
 
-            /// Represents a dynamic (runtime-generated, non type safe) query result.
-            pub const DynamicResult = struct {
-                entities: *Self,
-                index: u32, // active_queries index
-
-                pub fn next(q: *DynamicResult) ?*Archetype {
-                    const state = &q.entities.active_queries.items[q.index];
-                    if (state.finished) @panic("query iterator already finished, invoking next() is illegal");
-
-                    while (state.next_index < q.entities.archetypes.items.len) {
-                        const archetype = &q.entities.archetypes.items[state.next_index];
-                        state.next_index += 1;
-                        if (state.q.match(archetype)) return archetype;
-                    }
-
-                    state.finished = true;
-                    q.entities.reuseInactiveQueries();
-                    return null;
+                        var remaining = dst[e.len..];
+                        for (e) |and_q| {
+                            const c = try and_q.copy(remaining);
+                            remaining = c.remaining;
+                        }
+                        return .{ .copy = cpy, .remaining = remaining };
+                    },
+                    .read, .write => return .{ .copy = q, .remaining = dst },
                 }
-            };
+            }
         };
 
+        /// When a query is first performed, it becomes active and its iterator state is stored
+        /// and maintained. When all results in the iterator have been consumed, it is marked
+        /// as finished and later recycled.
+        pub const QueryState = struct {
+            q: QueryDynamic,
+            q_storage: [32]QueryDynamic,
+            next_index: u31 = 0, // archetypes index
+            finished: bool = false,
+        };
+
+        /// Represents a dynamic (runtime-generated, non type safe) query result.
+        pub const QueryResultDynamic = struct {
+            entities: *Self,
+            index: u32, // active_queries index
+
+            pub fn next(q: *QueryResultDynamic) ?*Archetype {
+                const state = &q.entities.active_queries.items[q.index];
+                if (state.finished) @panic("query iterator already finished, invoking next() is illegal");
+
+                while (state.next_index < q.entities.archetypes.items.len) {
+                    const archetype = &q.entities.archetypes.items[state.next_index];
+                    state.next_index += 1;
+                    if (state.q.match(archetype)) return archetype;
+                }
+
+                state.finished = true;
+                q.entities.reuseInactiveQueries();
+                return null;
+            }
+        };
+
+        /// A qualified component name, describing a specific component in a specific module.
+        pub const ModuleComponentName = struct {
+            module: ModuleName(modules),
+            component: ComponentName(modules),
+        };
+
+        pub const ComponentQuery = union(enum) {
+            read: ModuleComponentName,
+            write: ModuleComponentName,
+        };
+
+        pub fn QueryResult(comptime q: anytype) type {
+            return struct {
+                dynamic: QueryResultDynamic,
+
+                pub const Slices = blk: {
+                    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
+                    fields = fields ++ [_]std.builtin.Type.StructField{.{
+                        .name = "len",
+                        .type = usize,
+                        .default_value = null,
+                        .is_comptime = false,
+                        .alignment = @alignOf(usize),
+                    }};
+                    for (@typeInfo(@TypeOf(q)).Struct.fields) |slice| {
+                        const value: ComponentQuery = @field(q, slice.name);
+                        switch (value) {
+                            .read => |v| {
+                                const T = @field(
+                                    @field(ComponentTypesByName(modules){}, @tagName(v.module)),
+                                    @tagName(v.component),
+                                ).type;
+                                fields = fields ++ [_]std.builtin.Type.StructField{.{
+                                    .name = slice.name,
+                                    .type = []const T,
+                                    .default_value = null,
+                                    .is_comptime = false,
+                                    .alignment = @alignOf([]const T),
+                                }};
+                            },
+                            .write => |v| {
+                                const T = @field(
+                                    @field(ComponentTypesByName(modules){}, @tagName(v.module)),
+                                    @tagName(v.component),
+                                ).type;
+                                fields = fields ++ [_]std.builtin.Type.StructField{.{
+                                    .name = slice.name,
+                                    .type = []T,
+                                    .default_value = null,
+                                    .is_comptime = false,
+                                    .alignment = @alignOf([]T),
+                                }};
+                            },
+                        }
+                    }
+                    break :blk @Type(.{
+                        .Struct = .{
+                            .layout = .Auto,
+                            .is_tuple = false,
+                            .fields = fields,
+                            .decls = &[_]std.builtin.Type.Declaration{},
+                        },
+                    });
+                };
+
+                pub fn next(q2: *@This()) ?Slices {
+                    const archetype = q2.dynamic.next() orelse return null;
+
+                    var slices: Slices = undefined;
+                    slices.len = archetype.len;
+                    inline for (@typeInfo(@TypeOf(q)).Struct.fields) |slice| {
+                        const value: ComponentQuery = @field(q, slice.name);
+                        switch (value) {
+                            .read => |v| {
+                                const column_name = q2.dynamic.entities.componentName(v.module, v.component);
+                                @field(slices, slice.name) = archetype.getColumnValues(column_name, std.meta.Elem(@TypeOf(@field(slices, slice.name)))).?[0..archetype.len];
+                            },
+                            .write => |v| {
+                                const column_name = q2.dynamic.entities.componentName(v.module, v.component);
+                                @field(slices, slice.name) = archetype.getColumnValues(column_name, std.meta.Elem(@TypeOf(@field(slices, slice.name)))).?[0..archetype.len];
+                            },
+                        }
+                    }
+                    return slices;
+                }
+            };
+        }
+
+        /// Performs a query which is comptime-known, enabling greater type-safety. Typical usage
+        /// looks something like:
+        ///
+        /// ```
+        /// var q = try world.query(.{
+        ///     .ids = entity_mod.read(.id),
+        ///     .rotations = game_mod.write(.rotation),
+        /// });
+        /// while (q.next()) |v| {
+        ///     for (v.ids, v.rotations) |id, *rotation| {
+        ///         std.debug.print("entity ID: {}, rotation: {}\n", .{id, rotation.*});
+        ///         rotation.x += 0.01;
+        ///     }
+        /// }
+        /// ```
+        ///
+        /// The parameter `q` to query() has fields of arbitrary names (`.ids` and `.rotations` above)
+        /// which define the name of the slice fields in each iterator value. Whether the component
+        /// value is `.read()` or `.write()` determines whether the slices are `[]T` (mutable) or
+        /// `[]const T` (immutable).
+        pub fn query(entities: *Self, comptime q: anytype) !QueryResult(q) {
+            var op_and: [@typeInfo(@TypeOf(q)).Struct.fields.len]QueryDynamic = undefined;
+            inline for (@typeInfo(@TypeOf(q)).Struct.fields, 0..) |slice, i| {
+                const value: ComponentQuery = @field(q, slice.name);
+                switch (value) {
+                    .read => |v| op_and[i] = .{ .read = entities.componentName(v.module, v.component) },
+                    .write => |v| op_and[i] = .{ .write = entities.componentName(v.module, v.component) },
+                }
+            }
+            return .{
+                .dynamic = try entities.queryDynamic(.{ .op_and = &op_and }),
+            };
+        }
+
         /// Performs a dynamic (runtime-generated, non type safe) query.
-        pub fn queryDynamic(entities: *Self, q: query.Dynamic) !query.DynamicResult {
-            const new_query = query.DynamicResult{
+        ///
+        /// The query parameter will be copied and only needs to live until this function returns.
+        pub fn queryDynamic(entities: *Self, q: QueryDynamic) !QueryResultDynamic {
+            const new_query = QueryResultDynamic{
                 .entities = entities,
                 .index = @intCast(entities.active_queries.items.len),
             };
-            const state = query.State{ .q = q };
-            try entities.active_queries.append(entities.allocator, state);
+            try entities.active_queries.append(entities.allocator, QueryState{
+                .q = undefined,
+                .q_storage = undefined,
+            });
+
+            // Copy the input query into the state storage
+            const state = &entities.active_queries.items[entities.active_queries.items.len - 1];
+            const c = q.copy(&state.q_storage) catch @panic("mach: queries with >32 expressions not yet supported, please open an issue."); // TODO: heap allocation
+            state.q = c.copy;
+
             return new_query;
         }
 
@@ -924,24 +1073,28 @@ test "example" {
     try testing.expectEqualStrings("game.rotation", world.component_names.string(columns[1].name));
 
     //-------------------------------------------------------------------------
-    // Query for archetypes that have all of the given components
-    var iter = world.queryDeprecated(.{ .all = &.{
-        .{ .game = &.{.rotation} },
-    } });
-    while (iter.next()) |archetype| {
-        const ids = archetype.slice(.entity, .id);
-        try testing.expectEqual(@as(usize, 1), ids.len);
-        try testing.expectEqual(player2, ids[0]);
+    // Query for all entities that have all of the given components
+    const W = @TypeOf(world);
+    var q = try world.query(.{
+        .ids = W.ComponentQuery{ .read = W.ModuleComponentName{ .module = EntityModule.name, .component = .id } },
+        .rotations = W.ComponentQuery{ .write = W.ModuleComponentName{ .module = Game.name, .component = .rotation } },
+    });
+    while (q.next()) |v| {
+        try testing.expectEqual(@as(usize, 1), v.len);
+        try testing.expectEqual([]const EntityID, @TypeOf(v.ids));
+        try testing.expectEqual([]Rotation, @TypeOf(v.rotations));
+        try testing.expectEqual(@as(usize, 1), v.ids.len);
+        try testing.expectEqual(@as(usize, 1), v.rotations.len);
     }
 
     // Dynamic queries (e.g. issued from another programming language without comptime)
-    var q = try world.queryDynamic(.{
+    var q2 = try world.queryDynamic(.{
         .op_and = &.{
-            .{ .const_component = world.componentName(EntityModule.name, .id) },
-            .{ .const_component = world.componentName(Game.name, .rotation) },
+            .{ .read = world.componentName(EntityModule.name, .id) },
+            .{ .read = world.componentName(Game.name, .rotation) },
         },
     });
-    while (q.next()) |archtype| {
+    while (q2.next()) |archtype| {
         try testing.expectEqual(@as(usize, 1), archtype.len);
         try testing.expectEqual(@as(usize, 2), archtype.columns.len);
 
