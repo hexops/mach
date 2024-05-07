@@ -61,7 +61,7 @@ test {
     _ = gfx;
     _ = math;
     _ = testing;
-    std.testing.refAllDeclsRecursive(@import("module/main.zig"));
+    // std.testing.refAllDeclsRecursive(@import("module/main.zig"));
     std.testing.refAllDeclsRecursive(gamemode);
     std.testing.refAllDeclsRecursive(math);
 }

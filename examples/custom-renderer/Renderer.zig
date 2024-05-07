@@ -138,7 +138,7 @@ fn renderFrame(
     defer encoder.release();
 
     // Update uniform buffer
-    var archetypes_iter = core.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = core.__entities.queryDeprecated(.{ .all = &.{
         .{ .renderer = &.{ .position, .scale } },
     } });
     var num_entities: usize = 0;

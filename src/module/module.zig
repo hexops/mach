@@ -239,7 +239,7 @@ pub fn Modules(comptime modules: anytype) type {
                 @field(m.mod, field.name) = Mod2{
                     .__is_initialized = false,
                     .__state = undefined,
-                    .entities = &m.entities,
+                    .__entities = &m.entities,
                 };
             }
         }
@@ -277,7 +277,7 @@ pub fn Modules(comptime modules: anytype) type {
             comptime EventEnum: anytype,
             comptime event_name: EventEnumM(M),
         ) EventEnum(modules) {
-            return std.meta.stringToEnum(EventEnum(modules), @tagName(event_name)).?;
+            return comptime stringToEnum(EventEnum(modules), @tagName(event_name)).?;
         }
 
         /// Send a global event which the specified module defines
@@ -575,9 +575,8 @@ pub fn ModSet(comptime modules: anytype) type {
             const module_tag = M.name;
             const components = ComponentTypesM(M){};
             return struct {
-                entities: *Entities(modules),
-
                 /// Private/internal fields
+                __entities: *Entities(modules),
                 __is_initialized: bool,
                 __state: M,
 
@@ -586,14 +585,14 @@ pub fn ModSet(comptime modules: anytype) type {
                 pub inline fn read(comptime component_name: ComponentNameM(M)) Entities(modules).ComponentQuery {
                     return .{ .read = .{
                         .module = M.name,
-                        .component = std.meta.stringToEnum(ComponentName(modules), @tagName(component_name)).?,
+                        .component = comptime stringToEnum(ComponentName(modules), @tagName(component_name)).?,
                     } };
                 }
 
                 pub inline fn write(comptime component_name: ComponentNameM(M)) Entities(modules).ComponentQuery {
                     return .{ .write = .{
                         .module = M.name,
-                        .component = std.meta.stringToEnum(ComponentName(modules), @tagName(component_name)).?,
+                        .component = comptime stringToEnum(ComponentName(modules), @tagName(component_name)).?,
                     } };
                 }
 
@@ -625,12 +624,12 @@ pub fn ModSet(comptime modules: anytype) type {
 
                 /// Returns a new entity.
                 pub inline fn newEntity(m: *@This()) !EntityID {
-                    return m.entities.new();
+                    return m.__entities.new();
                 }
 
                 /// Removes an entity.
                 pub inline fn removeEntity(m: *@This(), entity: EntityID) !void {
-                    try m.entities.remove(entity);
+                    try m.__entities.remove(entity);
                 }
 
                 /// Sets the named component to the specified value for the given entity,
@@ -642,7 +641,7 @@ pub fn ModSet(comptime modules: anytype) type {
                     comptime component_name: ComponentNameM(M),
                     component: @field(components, @tagName(component_name)).type,
                 ) !void {
-                    try m.entities.setComponent(entity, module_tag, component_name, component);
+                    try m.__entities.setComponent(entity, module_tag, component_name, component);
                 }
 
                 /// gets the named component of the given type (which must be correct, otherwise undefined
@@ -652,7 +651,7 @@ pub fn ModSet(comptime modules: anytype) type {
                     entity: EntityID,
                     comptime component_name: ComponentNameM(M),
                 ) ?@field(components, @tagName(component_name)).type {
-                    return m.entities.getComponent(entity, module_tag, component_name);
+                    return m.__entities.getComponent(entity, module_tag, component_name);
                 }
 
                 /// Removes the named component from the entity, or noop if it doesn't have such a component.
@@ -661,7 +660,7 @@ pub fn ModSet(comptime modules: anytype) type {
                     entity: EntityID,
                     comptime component_name: ComponentNameM(M),
                 ) !void {
-                    try m.entities.removeComponent(entity, module_tag, component_name);
+                    try m.__entities.removeComponent(entity, module_tag, component_name);
                 }
 
                 pub inline fn send(m: *@This(), comptime event_name: LocalEventEnumM(M), args: LocalArgsM(M, event_name)) void {
@@ -766,6 +765,15 @@ fn UninjectedArgsTuple(comptime Function: type) type {
         std_args = std_args ++ [_]type{arg.type};
     }
     return std.meta.Tuple(std_args);
+}
+
+// TODO: cannot use std.meta.stringToEnum for some reason; an issue with its internal comptime map and u0 values
+pub fn stringToEnum(comptime T: type, str: []const u8) ?T {
+    inline for (@typeInfo(T).Enum.fields) |enumField| {
+        if (std.mem.eql(u8, str, enumField.name)) {
+            return @field(T, enumField.name);
+        }
+    }
 }
 
 // TODO: tests

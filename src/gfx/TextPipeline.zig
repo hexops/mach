@@ -145,7 +145,7 @@ pub const BuiltPipeline = struct {
 };
 
 fn deinit(text_pipeline: *Mod) void {
-    var archetypes_iter = text_pipeline.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = text_pipeline.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_text_pipeline = &.{
             .built,
         } },
@@ -163,7 +163,7 @@ fn update(core: *mach.Core.Mod, text_pipeline: *Mod) !void {
     // Destroy all text render pipelines. We will rebuild them all.
     deinit(text_pipeline);
 
-    var archetypes_iter = text_pipeline.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = text_pipeline.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_text_pipeline = &.{
             .is_pipeline,
         } },
@@ -353,7 +353,7 @@ fn preRender(text_pipeline: *Mod, core: *mach.Core.Mod) void {
     const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
-    var archetypes_iter = text_pipeline.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = text_pipeline.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_text_pipeline = &.{
             .built,
         } },
@@ -396,7 +396,7 @@ fn render(text_pipeline: *Mod) !void {
     text_pipeline.state().render_pass = null;
 
     // TODO(text): need a way to specify order of rendering with multiple pipelines
-    var archetypes_iter = text_pipeline.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = text_pipeline.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_text_pipeline = &.{
             .built,
         } },

@@ -43,7 +43,7 @@ pub const events = .{
 };
 
 fn update(core: *mach.Core.Mod, sprite: *Mod, sprite_pipeline: *gfx.SpritePipeline.Mod) !void {
-    var archetypes_iter = sprite_pipeline.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = sprite_pipeline.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_sprite_pipeline = &.{
             .built,
         } },
@@ -69,7 +69,7 @@ fn updatePipeline(
     const encoder = device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
-    var archetypes_iter = sprite.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = sprite.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_sprite = &.{
             .uv_transform,
             .transform,

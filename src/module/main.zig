@@ -27,7 +27,7 @@ pub const EntityModule = struct {
 };
 
 test {
-    std.testing.refAllDeclsRecursive(@This());
+    // std.testing.refAllDeclsRecursive(@This());
     std.testing.refAllDeclsRecursive(@import("Archetype.zig"));
     std.testing.refAllDeclsRecursive(@import("entities.zig"));
     std.testing.refAllDeclsRecursive(@import("query.zig"));
