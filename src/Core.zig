@@ -106,7 +106,7 @@ fn start(core: *Mod) !void {
     core.state().run_state = .running;
 }
 
-fn init(core: *Mod) !void {
+fn init(entity: *mach.Entity.Mod, core: *Mod) !void {
     mach.core.allocator = gpa.allocator(); // TODO: banish this global allocator
 
     // Initialize GPU implementation
@@ -116,7 +116,7 @@ fn init(core: *Mod) !void {
     try mach.core.init(.{});
 
     // TODO(important): update this information upon framebuffer resize events
-    const main_window = try core.newEntity();
+    const main_window = try entity.new();
     try core.set(main_window, .framebuffer_format, mach.core.descriptor.format);
     try core.set(main_window, .framebuffer_width, mach.core.descriptor.width);
     try core.set(main_window, .framebuffer_height, mach.core.descriptor.height);

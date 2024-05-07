@@ -65,6 +65,7 @@ fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
 }
 
 fn audioStateChange(
+    entity: *mach.Entity.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
 ) !void {
@@ -81,20 +82,21 @@ fn audioStateChange(
 
             if (app.get(id, .play_after)) |frequency| {
                 // Play a new sound
-                const entity = try audio.newEntity();
-                try audio.set(entity, .samples, try fillTone(audio, frequency));
-                try audio.set(entity, .channels, @intCast(audio.state().player.channels().len));
-                try audio.set(entity, .playing, true);
-                try audio.set(entity, .index, 0);
+                const e = try entity.new();
+                try audio.set(e, .samples, try fillTone(audio, frequency));
+                try audio.set(e, .channels, @intCast(audio.state().player.channels().len));
+                try audio.set(e, .playing, true);
+                try audio.set(e, .index, 0);
             }
 
             // Remove the entity for the old sound
-            try audio.removeEntity(id);
+            try entity.remove(id);
         }
     }
 }
 
 fn tick(
+    entity: *mach.Entity.Mod,
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
@@ -121,16 +123,16 @@ fn tick(
                     // Piano keys
                     else => {
                         // Play a new sound
-                        const entity = try audio.newEntity();
-                        try audio.set(entity, .samples, try fillTone(audio, keyToFrequency(ev.key)));
-                        try audio.set(entity, .channels, @intCast(audio.state().player.channels().len));
-                        try audio.set(entity, .playing, true);
-                        try audio.set(entity, .index, 0);
+                        const e = try entity.new();
+                        try audio.set(e, .samples, try fillTone(audio, keyToFrequency(ev.key)));
+                        try audio.set(e, .channels, @intCast(audio.state().player.channels().len));
+                        try audio.set(e, .playing, true);
+                        try audio.set(e, .index, 0);
 
                         if (app.state().ghost_key_mode) {
                             // After that sound plays, we'll chain on another sound that is one semi-tone higher.
                             const one_semi_tone_higher = keyToFrequency(ev.key) * math.pow(f32, 2.0, (1.0 / 12.0));
-                            try app.set(entity, .play_after, one_semi_tone_higher);
+                            try app.set(e, .play_after, one_semi_tone_higher);
                         }
                     },
                 }

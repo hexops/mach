@@ -574,6 +574,36 @@ pub fn ModSet(comptime modules: anytype) type {
         pub fn Mod(comptime M: anytype) type {
             const module_tag = M.name;
             const components = ComponentTypesM(M){};
+
+            if (M.name == .entity) {
+                // The .entity module is a special builtin module, with its own unique API.
+                return struct {
+                    /// Private/internal fields
+                    __entities: *Entities(modules),
+                    __is_initialized: bool,
+                    __state: void,
+
+                    pub const IsInjectedArgument = void;
+
+                    pub inline fn read(comptime component_name: ComponentNameM(M)) Entities(modules).ComponentQuery {
+                        return .{ .read = .{
+                            .module = M.name,
+                            .component = comptime stringToEnum(ComponentName(modules), @tagName(component_name)).?,
+                        } };
+                    }
+
+                    /// Returns a new entity.
+                    pub inline fn new(m: *@This()) !EntityID {
+                        return m.__entities.new();
+                    }
+
+                    /// Removes an entity.
+                    pub inline fn remove(m: *@This(), entity: EntityID) !void {
+                        try m.__entities.remove(entity);
+                    }
+                };
+            }
+
             return struct {
                 /// Private/internal fields
                 __entities: *Entities(modules),
@@ -620,16 +650,6 @@ pub fn ModSet(comptime modules: anytype) type {
                 pub inline fn stateReadOnly(m: *@This()) *const M {
                     if (is_debug) if (!m.__is_initialized) @panic("mach: module ." ++ @tagName(M.name) ++ " state is not initialized, ensure mod.init(.{}) is called!");
                     return &m.__state;
-                }
-
-                /// Returns a new entity.
-                pub inline fn newEntity(m: *@This()) !EntityID {
-                    return m.__entities.new();
-                }
-
-                /// Removes an entity.
-                pub inline fn removeEntity(m: *@This(), entity: EntityID) !void {
-                    try m.__entities.remove(entity);
                 }
 
                 /// Sets the named component to the specified value for the given entity,

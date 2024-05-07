@@ -13,10 +13,10 @@ pub const AnyEvent = @import("module.zig").AnyEvent;
 pub const Merge = @import("module.zig").Merge;
 pub const merge = @import("module.zig").merge;
 
-pub const builtin_modules = .{EntityModule};
+pub const builtin_modules = .{Entity};
 
 /// Builtin .entity module
-pub const EntityModule = struct {
+pub const Entity = struct {
     pub const name = .entity;
 
     pub const Mod = mach.Mod(@This());
@@ -82,14 +82,15 @@ test "entities DB" {
     defer world.deinit(allocator);
 
     // Initialize module state.
+    var entity = &world.mod.entity;
     var physics = &world.mod.physics;
     var renderer = &world.mod.renderer;
     physics.init(.{ .pointer = 123 });
     _ = physics.state().pointer; // == 123
 
-    const player1 = try physics.newEntity();
-    const player2 = try physics.newEntity();
-    const player3 = try physics.newEntity();
+    const player1 = try entity.new();
+    const player2 = try entity.new();
+    const player3 = try entity.new();
     try physics.set(player1, .id, 1001);
     try renderer.set(player1, .id, 1001);
 
