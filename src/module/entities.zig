@@ -14,7 +14,7 @@ const ModuleName = @import("module.zig").ModuleName;
 const ComponentNameM = @import("module.zig").ComponentNameM;
 const ComponentName = @import("module.zig").ComponentName;
 
-/// An entity ID uniquely identifies an entity globally within an Entities set.
+/// An entity ID uniquely identifies an entity globally within a Database.
 pub const EntityID = u64;
 
 fn byTypeId(context: void, lhs: Archetype.Column, rhs: Archetype.Column) bool {
@@ -25,7 +25,7 @@ fn byTypeId(context: void, lhs: Archetype.Column, rhs: Archetype.Column) bool {
 /// A database of entities. For example, all player, monster, etc. entities in a game world.
 ///
 /// ```
-/// const world = Entities.init(allocator); // all entities in our world.
+/// const world = Database.init(allocator); // all entities in our world.
 /// defer world.deinit();
 ///
 /// const player1 = world.new(); // our first "player" entity
@@ -67,13 +67,13 @@ fn byTypeId(context: void, lhs: Archetype.Column, rhs: Archetype.Column) bool {
 /// deleted are merely marked as "unused" and recycled
 ///
 /// Database equivalents:
-/// * Entities is a database of tables, where each table represents a single archetype.
+/// * Database is a database of tables, where each table represents a single archetype.
 /// * Archetype is a table, whose rows are entities and columns are components.
 /// * EntityID is a mere 32-bit array index, pointing to a 16-bit archetype table index and 32-bit
 ///   row index, enabling entities to "move" from one archetype table to another seamlessly and
 ///   making lookup by entity ID a few cheap array indexing operations.
 /// * ComponentStorage(T) is a column of data within a table for a single type of component `T`.
-pub fn Entities(comptime modules: anytype) type {
+pub fn Database(comptime modules: anytype) type {
     const component_types_by_name = ComponentTypesByName(modules){};
     return struct {
         allocator: Allocator,
@@ -104,7 +104,7 @@ pub fn Entities(comptime modules: anytype) type {
         /// of that table. That is, the entity's component values are stored at:
         ///
         /// ```
-        /// Entities.archetypes.items[ptr.archetype_index].rows[ptr.row_index]
+        /// Database.archetypes.items[ptr.archetype_index].rows[ptr.row_index]
         /// ```
         ///
         pub const Pointer = struct {
@@ -271,9 +271,9 @@ pub fn Entities(comptime modules: anytype) type {
 
         /// Given a component name, returns its ID. A new ID is created if needed.
         ///
-        /// The set of components used is expected to be static for the lifetime of the Entities,
+        /// The set of components used is expected to be static for the lifetime of the Database,
         /// and as such this function allocates component names but there is no way to release that
-        /// memory until Entities.deinit() is called.
+        /// memory until Database.deinit() is called.
         pub fn componentNameString(entities: *Self, name_str: []const u8) StringTable.Index {
             return entities.component_names.indexOrPut(entities.allocator, name_str) catch @panic("TODO: implement stateful OOM");
         }
@@ -871,15 +871,15 @@ pub fn Entities(comptime modules: anytype) type {
 
 // TODO: move this type somewhere else
 pub fn ArchetypeIterator(comptime modules: anytype) type {
-    const EntitiesT = Entities(modules);
+    const DatabaseT = Database(modules);
     return struct {
-        entities: *EntitiesT,
-        query: EntitiesT.QueryDeprecated,
+        entities: *DatabaseT,
+        query: DatabaseT.QueryDeprecated,
         index: usize,
 
         const Self = @This();
 
-        pub fn init(entities: *EntitiesT, query: EntitiesT.QueryDeprecated) Self {
+        pub fn init(entities: *DatabaseT, query: DatabaseT.QueryDeprecated) Self {
             return Self{
                 .entities = entities,
                 .query = query,
@@ -935,7 +935,7 @@ test {
     const modules = merge(.{
         builtin_modules,
     });
-    std.testing.refAllDeclsRecursive(Entities(modules));
+    std.testing.refAllDeclsRecursive(Database(modules));
 }
 
 // TODO: require "one big registration of components" even when using dynamic API? Would alleviate
@@ -954,7 +954,7 @@ test "dynamic" {
     const Rotation = struct { degrees: f32 };
 
     // Create a world.
-    var world = try Entities(merge(.{builtin_modules})).init(allocator);
+    var world = try Database(merge(.{builtin_modules})).init(allocator);
     defer world.deinit();
 
     // Create an entity and add dynamic components.
@@ -1002,7 +1002,7 @@ test "example" {
 
     //-------------------------------------------------------------------------
     // Create a world.
-    var world = try Entities(modules).init(allocator);
+    var world = try Database(modules).init(allocator);
     defer world.deinit();
 
     //-------------------------------------------------------------------------
@@ -1112,7 +1112,7 @@ test "example" {
 test "empty_world" {
     const allocator = testing.allocator;
     //-------------------------------------------------------------------------
-    var world = try Entities(merge(.{builtin_modules})).init(allocator);
+    var world = try Database(merge(.{builtin_modules})).init(allocator);
     // Create a world.
     defer world.deinit();
 }
@@ -1141,7 +1141,7 @@ test "many entities" {
     });
 
     // Create many entities
-    var world = try Entities(modules).init(allocator);
+    var world = try Database(modules).init(allocator);
     defer world.deinit();
     for (0..8192) |_| {
         const player = try world.new();
