@@ -124,7 +124,7 @@ fn init(sprite_pipeline: *Mod) void {
 }
 
 fn deinit(sprite_pipeline: *Mod) void {
-    var archetypes_iter = sprite_pipeline.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = sprite_pipeline.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_sprite_pipeline = &.{
             .built,
         } },
@@ -138,7 +138,7 @@ fn update(core: *mach.Core.Mod, sprite_pipeline: *Mod) !void {
     // Destroy all sprite render pipelines. We will rebuild them all.
     deinit(sprite_pipeline);
 
-    var archetypes_iter = sprite_pipeline.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = sprite_pipeline.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_sprite_pipeline = &.{
             .texture,
         } },
@@ -324,7 +324,7 @@ fn preRender(sprite_pipeline: *Mod, core: *mach.Core.Mod) void {
     const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
-    var archetypes_iter = sprite_pipeline.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = sprite_pipeline.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_sprite_pipeline = &.{
             .built,
         } },
@@ -367,7 +367,7 @@ fn render(sprite_pipeline: *Mod) !void {
     sprite_pipeline.state().render_pass = null;
 
     // TODO(sprite): need a way to specify order of rendering with multiple pipelines
-    var archetypes_iter = sprite_pipeline.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = sprite_pipeline.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_sprite_pipeline = &.{
             .built,
         } },

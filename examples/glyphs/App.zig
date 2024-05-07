@@ -163,7 +163,7 @@ fn tick(
     const delta_time = game.state().timer.lap();
 
     // Animate entities
-    var archetypes_iter = core.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = core.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_sprite = &.{.transform} },
     } });
     while (archetypes_iter.next()) |archetype| {
@@ -174,7 +174,7 @@ fn tick(
             // TODO: formatting
             // TODO(Core)
             if (location.x() < -@as(f32, @floatFromInt(mach.core.size().width)) / 1.5 or location.x() > @as(f32, @floatFromInt(mach.core.size().width)) / 1.5 or location.y() < -@as(f32, @floatFromInt(mach.core.size().height)) / 1.5 or location.y() > @as(f32, @floatFromInt(mach.core.size().height)) / 1.5) {
-                try core.entities.remove(id);
+                try core.__entities.remove(id);
                 game.state().sprites -= 1;
                 continue;
             }

@@ -199,7 +199,7 @@ fn tick(
     const delta_time = game.state().timer.lap();
 
     // Rotate entities
-    var archetypes_iter = core.entities.queryDeprecated(.{ .all = &.{
+    var archetypes_iter = core.__entities.queryDeprecated(.{ .all = &.{
         .{ .mach_gfx_text = &.{.transform} },
     } });
     while (archetypes_iter.next()) |archetype| {
@@ -283,7 +283,7 @@ fn endFrame(game: *Mod, text: *gfx.Text.Mod, core: *mach.Core.Mod) !void {
         // Gather some text rendering stats
         var num_texts: u32 = 0;
         var num_glyphs: usize = 0;
-        var archetypes_iter = text.entities.queryDeprecated(.{ .all = &.{
+        var archetypes_iter = text.__entities.queryDeprecated(.{ .all = &.{
             .{ .mach_gfx_text = &.{
                 .built,
             } },
