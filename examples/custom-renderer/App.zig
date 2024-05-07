@@ -48,6 +48,7 @@ fn init(
     // These are injected dependencies - as long as these modules were registered in the top-level
     // of the program we can have these types injected here, letting us work with other modules in
     // our program seamlessly and with a type-safe API:
+    entity: *mach.Entity.Mod,
     core: *mach.Core.Mod,
     renderer: *Renderer.Mod,
     game: *Mod,
@@ -55,7 +56,7 @@ fn init(
     renderer.send(.init, .{});
 
     // Create our player entity.
-    const player = try core.newEntity();
+    const player = try entity.new();
 
     // Give our player entity a .renderer.position and .renderer.scale component. Note that these
     // are defined by the Renderer module, so we use `renderer: *Renderer.Mod` to interact with
@@ -81,6 +82,7 @@ fn init(
 
 // TODO(important): remove need for returning an error here
 fn tick(
+    entity: *mach.Entity.Mod,
     core: *mach.Core.Mod,
     renderer: *Renderer.Mod,
     game: *Mod,
@@ -134,7 +136,7 @@ fn tick(
         _ = game.state().spawn_timer.lap(); // Reset the timer
         for (0..5) |_| {
             // Spawn a new entity at the same position as the player, but smaller in scale.
-            const new_entity = try core.newEntity();
+            const new_entity = try entity.new();
             try renderer.set(new_entity, .position, player_pos);
             try renderer.set(new_entity, .scale, 1.0 / 6.0);
 

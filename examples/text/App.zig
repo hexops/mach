@@ -63,6 +63,7 @@ fn deinit(
 }
 
 fn init(
+    entity: *mach.Entity.Mod,
     core: *mach.Core.Mod,
     text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
@@ -73,21 +74,21 @@ fn init(
 
     // TODO: a better way to initialize entities with default values
     // TODO(text): most of these style options are not respected yet.
-    const style1 = try core.newEntity();
+    const style1 = try entity.new();
     try text_style.set(style1, .font_name, "Roboto Medium"); // TODO
     try text_style.set(style1, .font_size, 48 * gfx.px_per_pt); // 48pt
     try text_style.set(style1, .font_weight, gfx.font_weight_normal);
     try text_style.set(style1, .italic, false);
     try text_style.set(style1, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
-    const style2 = try core.newEntity();
+    const style2 = try entity.new();
     try text_style.set(style2, .font_name, "Roboto Medium"); // TODO
     try text_style.set(style2, .font_size, 48 * gfx.px_per_pt); // 48pt
     try text_style.set(style2, .font_weight, gfx.font_weight_normal);
     try text_style.set(style2, .italic, true);
     try text_style.set(style2, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
-    const style3 = try core.newEntity();
+    const style3 = try entity.new();
     try text_style.set(style3, .font_name, "Roboto Medium"); // TODO
     try text_style.set(style3, .font_size, 48 * gfx.px_per_pt); // 48pt
     try text_style.set(style3, .font_weight, gfx.font_weight_bold);
@@ -95,12 +96,12 @@ fn init(
     try text_style.set(style3, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
     // Create a text rendering pipeline
-    const pipeline = try core.newEntity();
+    const pipeline = try entity.new();
     try text_pipeline.set(pipeline, .is_pipeline, {});
     text_pipeline.send(.update, .{});
 
     // Create some text
-    const player = try core.newEntity();
+    const player = try entity.new();
     try text.set(player, .pipeline, pipeline);
     try text.set(player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(vec3(0, 0, 0))));
 
@@ -132,6 +133,7 @@ fn init(
 }
 
 fn tick(
+    entity: *mach.Entity.Mod,
     core: *mach.Core.Mod,
     text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
@@ -181,7 +183,7 @@ fn tick(
             new_pos.v[0] += game.state().rand.random().floatNorm(f32) * 50;
             new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 50;
 
-            const new_entity = try core.newEntity();
+            const new_entity = try entity.new();
             try text.set(new_entity, .pipeline, game.state().pipeline);
             try text.set(new_entity, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(new_pos)));
 

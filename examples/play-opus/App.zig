@@ -32,7 +32,12 @@ pub const components = .{
 
 sfx: Opus,
 
-fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) !void {
+fn init(
+    entity: *mach.Entity.Mod,
+    core: *mach.Core.Mod,
+    audio: *mach.Audio.Mod,
+    app: *Mod,
+) !void {
     audio.send(.init, .{});
     app.send(.after_init, .{});
 
@@ -48,7 +53,7 @@ fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) !void {
     // Initialize module state
     app.init(.{ .sfx = sfx });
 
-    const bgm_entity = try audio.newEntity();
+    const bgm_entity = try entity.new();
     try app.set(bgm_entity, .is_bgm, {});
     try audio.set(bgm_entity, .samples, bgm.samples);
     try audio.set(bgm_entity, .channels, bgm.channels);
@@ -75,6 +80,7 @@ fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
 }
 
 fn audioStateChange(
+    entity: *mach.Entity.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
 ) !void {
@@ -93,13 +99,14 @@ fn audioStateChange(
                 try audio.set(id, .playing, true);
             } else {
                 // Remove the entity for the old sound
-                try audio.removeEntity(id);
+                try entity.remove(id);
             }
         }
     }
 }
 
 fn tick(
+    entity: *mach.Entity.Mod,
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
@@ -121,11 +128,11 @@ fn tick(
                 },
                 else => {
                     // Play a new SFX
-                    const entity = try audio.newEntity();
-                    try audio.set(entity, .samples, app.state().sfx.samples);
-                    try audio.set(entity, .channels, app.state().sfx.channels);
-                    try audio.set(entity, .index, 0);
-                    try audio.set(entity, .playing, true);
+                    const e = try entity.new();
+                    try audio.set(e, .samples, app.state().sfx.samples);
+                    try audio.set(e, .channels, app.state().sfx.channels);
+                    try audio.set(e, .index, 0);
+                    try audio.set(e, .playing, true);
                 },
             },
             .close => core.send(.exit, .{}),
