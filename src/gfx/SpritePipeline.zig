@@ -155,6 +155,8 @@ fn buildPipeline(
     pipeline_id: mach.EntityID,
     texture: *gpu.Texture,
 ) !void {
+    // TODO: optimize by removing the component get/set calls in this function where possible
+    // and instead use .write() queries
     const opt_texture2 = sprite_pipeline.get(pipeline_id, .texture2);
     const opt_texture3 = sprite_pipeline.get(pipeline_id, .texture3);
     const opt_texture4 = sprite_pipeline.get(pipeline_id, .texture4);

@@ -96,6 +96,7 @@ fn updatePipeline(
         }
     }
 
+    // TODO: optimize by removing this component set call and instead use a .write() query
     try sprite_pipeline.set(pipeline_id, .num_sprites, num_sprites);
     if (num_sprites > 0) {
         encoder.writeBuffer(built.transforms, 0, gfx.SpritePipeline.cp_transforms[0..i]);

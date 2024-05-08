@@ -179,6 +179,8 @@ fn buildPipeline(
     text_pipeline: *Mod,
     pipeline_id: mach.EntityID,
 ) !void {
+    // TODO: optimize by removing the component get/set calls in this function where possible
+    // and instead use .write() queries
     const opt_shader = text_pipeline.get(pipeline_id, .shader);
     const opt_texture_sampler = text_pipeline.get(pipeline_id, .texture_sampler);
     const opt_blend_state = text_pipeline.get(pipeline_id, .blend_state);
