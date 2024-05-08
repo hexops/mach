@@ -104,7 +104,7 @@ pub const BuiltPipeline = struct {
     uv_transforms: *gpu.Buffer,
     sizes: *gpu.Buffer,
 
-    pub fn deinit(p: *BuiltPipeline) void {
+    pub fn deinit(p: *const BuiltPipeline) void {
         p.render.release();
         p.texture_sampler.release();
         p.texture.release();
@@ -123,31 +123,27 @@ fn init(sprite_pipeline: *Mod) void {
     sprite_pipeline.init(.{});
 }
 
-fn deinit(sprite_pipeline: *Mod) void {
-    var archetypes_iter = sprite_pipeline.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_sprite_pipeline = &.{
-            .built,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        for (archetype.slice(.mach_gfx_sprite_pipeline, .built)) |*p| p.deinit();
+fn deinit(entities: *mach.Entities.Mod) !void {
+    var q = try entities.query(.{
+        .built_pipelines = Mod.read(.built),
+    });
+    while (q.next()) |v| {
+        for (v.built_pipelines) |built| {
+            built.deinit();
+        }
     }
 }
 
-fn update(core: *mach.Core.Mod, sprite_pipeline: *Mod) !void {
+fn update(entities: *mach.Entities.Mod, core: *mach.Core.Mod, sprite_pipeline: *Mod) !void {
     // Destroy all sprite render pipelines. We will rebuild them all.
-    deinit(sprite_pipeline);
+    try deinit(entities);
 
-    var archetypes_iter = sprite_pipeline.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_sprite_pipeline = &.{
-            .texture,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        const textures = archetype.slice(.mach_gfx_sprite_pipeline, .texture);
-
-        for (ids, textures) |pipeline_id, texture| {
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .textures = Mod.read(.texture),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.textures) |pipeline_id, texture| {
             try buildPipeline(core, sprite_pipeline, pipeline_id, texture);
         }
     }
@@ -319,19 +315,16 @@ fn buildPipeline(
     try sprite_pipeline.set(pipeline_id, .num_sprites, 0);
 }
 
-fn preRender(sprite_pipeline: *Mod, core: *mach.Core.Mod) void {
+fn preRender(entities: *mach.Entities.Mod, core: *mach.Core.Mod) !void {
     const label = @tagName(name) ++ ".preRender";
     const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
-    var archetypes_iter = sprite_pipeline.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_sprite_pipeline = &.{
-            .built,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const built_pipelines = archetype.slice(.mach_gfx_sprite_pipeline, .built);
-        for (built_pipelines) |built| {
+    var q = try entities.query(.{
+        .built_pipelines = Mod.read(.built),
+    });
+    while (q.next()) |v| {
+        for (v.built_pipelines) |built| {
             // Create the projection matrix
             // TODO(sprite): move this out of the hot codepath
             const proj = math.Mat4x4.projection2D(.{
@@ -362,20 +355,17 @@ fn preRender(sprite_pipeline: *Mod, core: *mach.Core.Mod) void {
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
-fn render(sprite_pipeline: *Mod) !void {
+fn render(entities: *mach.Entities.Mod, sprite_pipeline: *Mod) !void {
     const render_pass = if (sprite_pipeline.state().render_pass) |rp| rp else std.debug.panic("sprite_pipeline.state().render_pass must be specified", .{});
     sprite_pipeline.state().render_pass = null;
 
     // TODO(sprite): need a way to specify order of rendering with multiple pipelines
-    var archetypes_iter = sprite_pipeline.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_sprite_pipeline = &.{
-            .built,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        const built_pipelines = archetype.slice(.mach_gfx_sprite_pipeline, .built);
-        for (ids, built_pipelines) |pipeline_id, built| {
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .built_pipelines = Mod.read(.built),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.built_pipelines) |pipeline_id, built| {
             // Draw the sprite batch
             const total_vertices = sprite_pipeline.get(pipeline_id, .num_sprites).? * 6;
             render_pass.setPipeline(built.render);

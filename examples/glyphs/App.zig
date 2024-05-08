@@ -165,18 +165,17 @@ fn tick(
     const delta_time = game.state().timer.lap();
 
     // Animate entities
-    var archetypes_iter = core.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_sprite = &.{.transform} },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        const transforms = archetype.slice(.mach_gfx_sprite, .transform);
-        for (ids, transforms) |id, *old_transform| {
-            var location = old_transform.translation();
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .transforms = gfx.Sprite.Mod.write(.transform),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.transforms) |id, *entity_transform| {
+            var location = entity_transform.translation();
             // TODO: formatting
             // TODO(Core)
             if (location.x() < -@as(f32, @floatFromInt(mach.core.size().width)) / 1.5 or location.x() > @as(f32, @floatFromInt(mach.core.size().width)) / 1.5 or location.y() < -@as(f32, @floatFromInt(mach.core.size().height)) / 1.5 or location.y() > @as(f32, @floatFromInt(mach.core.size().height)) / 1.5) {
-                try core.__entities.remove(id);
+                try entities.remove(id);
                 game.state().sprites -= 1;
                 continue;
             }
@@ -186,10 +185,7 @@ fn tick(
             transform = transform.mul(&Mat4x4.translate(location));
             transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * game.state().time));
             transform = transform.mul(&Mat4x4.scale(Vec3.splat(@max(math.cos(game.state().time / 2.0), 0.2))));
-
-            // TODO: .set() API is substantially slower due to internals
-            // try sprite.set(id, .transform, transform);
-            old_transform.* = transform;
+            entity_transform.* = transform;
         }
     }
 

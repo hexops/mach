@@ -158,26 +158,20 @@ fn tick(
     const delta_time = game.state().timer.lap();
 
     // Rotate entities
-    var archetypes_iter = core.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_sprite = &.{.transform} },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        const transforms = archetype.slice(.mach_gfx_sprite, .transform);
-        for (ids, transforms) |id, *old_transform| {
-            _ = id;
-            const location = old_transform.*.translation();
-            // var transform = old_transform.mul(&Mat4x4.translate(-location));
+    var q = try entities.query(.{
+        .transforms = gfx.Sprite.Mod.write(.transform),
+    });
+    while (q.next()) |v| {
+        for (v.transforms) |*entity_transform| {
+            const location = entity_transform.*.translation();
+            // var transform = entity_transform.mul(&Mat4x4.translate(-location));
             // transform = mat.rotateZ(0.3 * delta_time).mul(&transform);
             // transform = transform.mul(&Mat4x4.translate(location));
             var transform = Mat4x4.ident;
             transform = transform.mul(&Mat4x4.translate(location));
             transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * game.state().time));
             transform = transform.mul(&Mat4x4.scaleScalar(@min(math.cos(game.state().time / 2.0), 0.5)));
-
-            // TODO: .set() API is substantially slower due to internals
-            // try sprite.set(id, .transform, transform);
-            old_transform.* = transform;
+            entity_transform.* = transform;
         }
     }
 

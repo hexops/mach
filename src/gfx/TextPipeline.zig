@@ -144,33 +144,31 @@ pub const BuiltPipeline = struct {
     }
 };
 
-fn deinit(text_pipeline: *Mod) void {
-    var archetypes_iter = text_pipeline.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_text_pipeline = &.{
-            .built,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        for (archetype.slice(.mach_gfx_text_pipeline, .built)) |*p| p.deinit(text_pipeline.state().allocator);
+fn deinit(entities: *mach.Entities.Mod, text_pipeline: *Mod) !void {
+    var q = try entities.query(.{
+        .built_pipelines = Mod.write(.built),
+    });
+    while (q.next()) |v| {
+        for (v.built_pipelines) |*built| {
+            built.deinit(text_pipeline.state().allocator);
+        }
     }
 }
 
-fn update(core: *mach.Core.Mod, text_pipeline: *Mod) !void {
+fn update(entities: *mach.Entities.Mod, core: *mach.Core.Mod, text_pipeline: *Mod) !void {
     text_pipeline.init(.{
         .allocator = gpa.allocator(),
     });
 
     // Destroy all text render pipelines. We will rebuild them all.
-    deinit(text_pipeline);
+    try deinit(entities, text_pipeline);
 
-    var archetypes_iter = text_pipeline.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_text_pipeline = &.{
-            .is_pipeline,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        for (ids) |pipeline_id| {
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .is_pipelines = Mod.read(.is_pipeline),
+    });
+    while (q.next()) |v| {
+        for (v.ids) |pipeline_id| {
             try buildPipeline(core, text_pipeline, pipeline_id);
         }
     }
@@ -348,19 +346,16 @@ fn buildPipeline(
     try text_pipeline.set(pipeline_id, .num_glyphs, 0);
 }
 
-fn preRender(text_pipeline: *Mod, core: *mach.Core.Mod) void {
+fn preRender(entities: *mach.Entities.Mod, core: *mach.Core.Mod) !void {
     const label = @tagName(name) ++ ".preRender";
     const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
-    var archetypes_iter = text_pipeline.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_text_pipeline = &.{
-            .built,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const built_pipelines = archetype.slice(.mach_gfx_text_pipeline, .built);
-        for (built_pipelines) |built| {
+    var q = try entities.query(.{
+        .built_pipelines = Mod.read(.built),
+    });
+    while (q.next()) |v| {
+        for (v.built_pipelines) |built| {
             // Create the projection matrix
             // TODO(text): move this out of the hot codepath
             const proj = math.Mat4x4.projection2D(.{
@@ -391,20 +386,17 @@ fn preRender(text_pipeline: *Mod, core: *mach.Core.Mod) void {
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
-fn render(text_pipeline: *Mod) !void {
+fn render(entities: *mach.Entities.Mod, text_pipeline: *Mod) !void {
     const render_pass = if (text_pipeline.state().render_pass) |rp| rp else std.debug.panic("text_pipeline.state().render_pass must be specified", .{});
     text_pipeline.state().render_pass = null;
 
     // TODO(text): need a way to specify order of rendering with multiple pipelines
-    var archetypes_iter = text_pipeline.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_text_pipeline = &.{
-            .built,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        const built_pipelines = archetype.slice(.mach_gfx_text_pipeline, .built);
-        for (ids, built_pipelines) |pipeline_id, built| {
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .built_pipelines = Mod.read(.built),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.built_pipelines) |pipeline_id, built| {
             // Draw the text batch
             const total_vertices = text_pipeline.get(pipeline_id, .num_glyphs).? * 6;
             render_pass.setPipeline(built.render);

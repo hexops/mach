@@ -131,21 +131,16 @@ fn init(entities: *mach.Entities.Mod, core: *Mod) !void {
     mach.core.mods.send(.app, .init, .{});
 }
 
-fn update(core: *Mod) !void {
-    var archetypes_iter = core.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_core = &.{
-            .title,
-        } },
-    } });
-
+fn update(entities: *mach.Entities.Mod) !void {
     var num_windows: usize = 0;
-    while (archetypes_iter.next()) |archetype| {
-        for (
-            archetype.slice(.entities, .id),
-            archetype.slice(.mach_core, .title),
-        ) |window_id, title| {
-            num_windows += 1;
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .titles = Mod.read(.title),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.titles) |window_id, title| {
             _ = window_id;
+            num_windows += 1;
             try mach.core.printTitle("{s}", .{title});
         }
     }
@@ -169,17 +164,17 @@ fn presentFrame(core: *Mod) !void {
     }
 }
 
-fn deinit(core: *Mod) void {
+fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
     core.state().queue.release();
     mach.core.deinit();
 
-    var archetypes_iter = core.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_core = &.{
-            .title,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        for (archetype.slice(.mach_core, .title)) |title| core.state().allocator.free(title);
+    var q = try entities.query(.{
+        .titles = Mod.read(.title),
+    });
+    while (q.next()) |v| {
+        for (v.titles) |title| {
+            core.state().allocator.free(title);
+        }
     }
 
     _ = gpa.deinit();

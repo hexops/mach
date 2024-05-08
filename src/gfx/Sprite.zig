@@ -42,56 +42,50 @@ pub const events = .{
     .update = .{ .handler = update },
 };
 
-fn update(core: *mach.Core.Mod, sprite: *Mod, sprite_pipeline: *gfx.SpritePipeline.Mod) !void {
-    var archetypes_iter = sprite_pipeline.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_sprite_pipeline = &.{
-            .built,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        const built_pipelines = archetype.slice(.mach_gfx_sprite_pipeline, .built);
-        for (ids, built_pipelines) |pipeline_id, *built| {
-            try updatePipeline(core, sprite, sprite_pipeline, pipeline_id, built);
+fn update(
+    entities: *mach.Entities.Mod,
+    core: *mach.Core.Mod,
+    sprite_pipeline: *gfx.SpritePipeline.Mod,
+) !void {
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .built_pipelines = gfx.SpritePipeline.Mod.read(.built),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.built_pipelines) |pipeline_id, built| {
+            try updatePipeline(entities, core, sprite_pipeline, pipeline_id, &built);
         }
     }
 }
 
 fn updatePipeline(
+    entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
-    sprite: *Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     pipeline_id: mach.EntityID,
-    built: *gfx.SpritePipeline.BuiltPipeline,
+    built: *const gfx.SpritePipeline.BuiltPipeline,
 ) !void {
     const device = core.state().device;
     const label = @tagName(name) ++ ".updatePipeline";
     const encoder = device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
-    var archetypes_iter = sprite.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_sprite = &.{
-            .uv_transform,
-            .transform,
-            .size,
-            .pipeline,
-        } },
-    } });
     var num_sprites: u32 = 0;
     var i: usize = 0;
-    while (archetypes_iter.next()) |archetype| {
-        const transforms = archetype.slice(.mach_gfx_sprite, .transform);
-        const uv_transforms = archetype.slice(.mach_gfx_sprite, .uv_transform);
-        const sizes = archetype.slice(.mach_gfx_sprite, .size);
-        const pipelines = archetype.slice(.mach_gfx_sprite, .pipeline);
-
-        // TODO: currently we cannot query all sprites which have a _single_ pipeline component
-        // value and get back contiguous memory for all of them. This is because all sprites with
-        // possibly different pipeline component values are stored as the same archetype. If we
-        // introduce a new concept of tagging-by-value to our entity storage then we can enforce
-        // that all entities with the same pipeline value are stored in contiguous memory, and
-        // skip this copy.
-        for (transforms, uv_transforms, sizes, pipelines) |transform, uv_transform, size, sprite_pipeline_id| {
+    var q = try entities.query(.{
+        .transforms = Mod.read(.transform),
+        .uv_transforms = Mod.read(.uv_transform),
+        .sizes = Mod.read(.size),
+        .pipelines = Mod.read(.pipeline),
+    });
+    while (q.next()) |v| {
+        for (v.transforms, v.uv_transforms, v.sizes, v.pipelines) |transform, uv_transform, size, sprite_pipeline_id| {
+            // TODO: currently we cannot query all sprites which have a _single_ pipeline component
+            // value and get back contiguous memory for all of them. This is because all sprites with
+            // possibly different pipeline component values are stored as the same archetype. If we
+            // introduce a new concept of tagging-by-value to our entity storage then we can enforce
+            // that all entities with the same pipeline value are stored in contiguous memory, and
+            // skip this copy.
             if (sprite_pipeline_id == pipeline_id) {
                 gfx.SpritePipeline.cp_transforms[i] = transform;
                 gfx.SpritePipeline.cp_uv_transforms[i] = uv_transform;

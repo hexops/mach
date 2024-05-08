@@ -201,15 +201,12 @@ fn tick(
     const delta_time = game.state().timer.lap();
 
     // Rotate entities
-    var archetypes_iter = core.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_text = &.{.transform} },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        const transforms = archetype.slice(.mach_gfx_text, .transform);
-        for (ids, transforms) |id, *old_transform| {
-            _ = id;
-            const location = old_transform.*.translation();
+    var q = try entities.query(.{
+        .transforms = gfx.Text.Mod.write(.transform),
+    });
+    while (q.next()) |v| {
+        for (v.transforms) |*entity_transform| {
+            const location = entity_transform.*.translation();
             // var transform = old_transform.mul(&Mat4x4.translate(-location));
             // transform = mat.rotateZ(0.3 * delta_time).mul(&transform);
             // transform = transform.mul(&Mat4x4.translate(location));
@@ -217,10 +214,7 @@ fn tick(
             transform = transform.mul(&Mat4x4.translate(location));
             transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * game.state().time));
             transform = transform.mul(&Mat4x4.scaleScalar(@min(math.cos(game.state().time / 2.0), 0.5)));
-
-            // TODO: .set() API is substantially slower due to internals
-            // try text.set(id, .transform, transform);
-            old_transform.* = transform;
+            entity_transform.* = transform;
         }
     }
 
@@ -268,7 +262,11 @@ fn tick(
     game.state().time += delta_time;
 }
 
-fn endFrame(game: *Mod, text: *gfx.Text.Mod, core: *mach.Core.Mod) !void {
+fn endFrame(
+    entities: *mach.Entities.Mod,
+    game: *Mod,
+    core: *mach.Core.Mod,
+) !void {
     // Finish render pass
     game.state().frame_render_pass.end();
     const label = @tagName(name) ++ ".tick";
@@ -285,14 +283,11 @@ fn endFrame(game: *Mod, text: *gfx.Text.Mod, core: *mach.Core.Mod) !void {
         // Gather some text rendering stats
         var num_texts: u32 = 0;
         var num_glyphs: usize = 0;
-        var archetypes_iter = text.__entities.queryDeprecated(.{ .all = &.{
-            .{ .mach_gfx_text = &.{
-                .built,
-            } },
-        } });
-        while (archetypes_iter.next()) |archetype| {
-            const builts = archetype.slice(.mach_gfx_text, .built);
-            for (builts) |built| {
+        var q = try entities.query(.{
+            .built_pipelines = gfx.Text.Mod.read(.built),
+        });
+        while (q.next()) |v| {
+            for (v.built_pipelines) |built| {
                 num_texts += 1;
                 num_glyphs += built.glyphs.items.len;
             }

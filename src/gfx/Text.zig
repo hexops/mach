@@ -58,24 +58,27 @@ const BuiltText = struct {
     glyphs: std.ArrayListUnmanaged(gfx.TextPipeline.Glyph),
 };
 
-fn update(core: *mach.Core.Mod, text: *Mod, text_pipeline: *gfx.TextPipeline.Mod) !void {
-    var archetypes_iter = text_pipeline.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_text_pipeline = &.{
-            .built,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        const built_pipelines = archetype.slice(.mach_gfx_text_pipeline, .built);
-        for (ids, built_pipelines) |pipeline_id, *built| {
-            try updatePipeline(core, text, text_pipeline, pipeline_id, built);
+fn update(
+    entities: *mach.Entities.Mod,
+    text: *Mod,
+    core: *mach.Core.Mod,
+    text_pipeline: *gfx.TextPipeline.Mod,
+) !void {
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .built_pipelines = gfx.TextPipeline.Mod.write(.built),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.built_pipelines) |pipeline_id, *built| {
+            try updatePipeline(entities, text, core, text_pipeline, pipeline_id, built);
         }
     }
 }
 
 fn updatePipeline(
-    core: *mach.Core.Mod,
+    entities: *mach.Entities.Mod,
     text: *Mod,
+    core: *mach.Core.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     pipeline_id: mach.EntityID,
     built: *gfx.TextPipeline.BuiltPipeline,
@@ -97,28 +100,22 @@ fn updatePipeline(
     var texture_update = false;
     var num_texts: u32 = 0;
     var removes = try std.ArrayListUnmanaged(mach.EntityID).initCapacity(allocator, 8);
-    var archetypes_iter = text.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_gfx_text = &.{
-            .transform,
-            .text,
-            .style,
-            .pipeline,
-        } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        const transforms = archetype.slice(.mach_gfx_text, .transform);
-        const segment_slices = archetype.slice(.mach_gfx_text, .text);
-        const style_slices = archetype.slice(.mach_gfx_text, .style);
-        const pipelines = archetype.slice(.mach_gfx_text, .pipeline);
 
-        // TODO: currently we cannot query all texts which have a _single_ pipeline component
-        // value and get back contiguous memory for all of them. This is because all texts with
-        // possibly different pipeline component values are stored as the same archetype. If we
-        // introduce a new concept of tagging-by-value to our entity storage then we can enforce
-        // that all entities with the same pipeline value are stored in contiguous memory, and
-        // skip this copy.
-        for (ids, transforms, segment_slices, style_slices, pipelines) |id, transform, segments, styles, text_pipeline_id| {
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .transforms = Mod.read(.transform),
+        .segment_slices = Mod.read(.text),
+        .style_slices = Mod.read(.style),
+        .pipelines = Mod.read(.pipeline),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.transforms, v.segment_slices, v.style_slices, v.pipelines) |id, transform, segments, styles, text_pipeline_id| {
+            // TODO: currently we cannot query all texts which have a _single_ pipeline component
+            // value and get back contiguous memory for all of them. This is because all texts with
+            // possibly different pipeline component values are stored as the same archetype. If we
+            // introduce a new concept of tagging-by-value to our entity storage then we can enforce
+            // that all entities with the same pipeline value are stored in contiguous memory, and
+            // skip this copy.
             if (text_pipeline_id != pipeline_id) continue;
 
             gfx.TextPipeline.cp_transforms[num_texts] = transform;
