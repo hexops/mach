@@ -96,6 +96,24 @@ pub fn Database(comptime modules: anytype) type {
         id_name: StringTable.Index = 0,
 
         active_queries: std.ArrayListUnmanaged(QueryState) = .{},
+        deferred_queue: DeferredActionQueue,
+        deferred_bytes_queue: std.ArrayListUnmanaged(u8) = .{},
+
+        const DeferredAction = union(enum) {
+            remove: EntityID,
+            removeComponent: struct {
+                entity: EntityID,
+                component: StringTable.Index,
+            },
+            setComponent: struct {
+                entity: EntityID,
+                component: StringTable.Index,
+                component_value: []u8,
+                component_alignment: u16,
+                component_type_id: u32,
+            },
+        };
+        const DeferredActionQueue = std.fifo.LinearFifo(DeferredAction, .Dynamic);
 
         const Self = @This();
 
@@ -123,6 +141,8 @@ pub fn Database(comptime modules: anytype) type {
             var entities = Self{
                 .allocator = allocator,
                 .component_names = component_names,
+                .deferred_queue = DeferredActionQueue.init(allocator),
+                .deferred_bytes_queue = try std.ArrayListUnmanaged(u8).initCapacity(allocator, 1 * 1024 * 1024),
                 .buckets = buckets,
             };
             entities.id_name = entities.componentName(Entities.name, .id);
@@ -151,6 +171,8 @@ pub fn Database(comptime modules: anytype) type {
             entities.entities.deinit(entities.allocator);
             entities.component_names.deinit(entities.allocator);
             entities.allocator.destroy(entities.component_names);
+            entities.deferred_queue.deinit();
+            entities.deferred_bytes_queue.deinit(entities.allocator);
             entities.allocator.free(entities.buckets);
             for (entities.archetypes.items) |*archetype| archetype.deinit(entities.allocator);
             entities.archetypes.deinit(entities.allocator);
@@ -243,8 +265,13 @@ pub fn Database(comptime modules: anytype) type {
             return new_id;
         }
 
+        fn removeDeferred(e: *Self, entity: EntityID) !void {
+            try e.deferred_queue.writeItem(.{ .remove = entity });
+        }
+
         /// Removes an entity.
         pub fn remove(entities: *Self, entity: EntityID) !void {
+            if (entities.active_queries.items.len > 0) return entities.removeDeferred(entity);
             var archetype = entities.archetypeByID(entity);
             const ptr = entities.entities.get(entity).?;
 
@@ -303,6 +330,24 @@ pub fn Database(comptime modules: anytype) type {
         ) !void {
             const name_str = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             const name_id = try entities.component_names.indexOrPut(entities.allocator, name_str);
+
+            if (entities.active_queries.items.len > 0) return entities.setComponentDynamicDeferred(
+                entity,
+                name_id,
+                std.mem.asBytes(&component),
+                @alignOf(@TypeOf(component)),
+                Archetype.typeId(@TypeOf(component)),
+            );
+
+            // TODO: DRY with setComponentDynamic, but verify this is functionally equivalent in all cases:
+            //
+            // return entities.setComponentDynamic(
+            //     entity,
+            //     name_id,
+            //     std.mem.asBytes(&component),
+            //     @alignOf(@TypeOf(component)),
+            //     Archetype.typeId(@TypeOf(component)),
+            // );
 
             const prev_archetype_idx = entities.entities.get(entity).?.archetype_index;
             var prev_archetype = &entities.archetypes.items[prev_archetype_idx];
@@ -391,6 +436,26 @@ pub fn Database(comptime modules: anytype) type {
             return;
         }
 
+        fn setComponentDynamicDeferred(
+            e: *Self,
+            entity: EntityID,
+            component: StringTable.Index,
+            component_value: []const u8,
+            component_alignment: u16,
+            component_type_id: u32,
+        ) !void {
+            try e.deferred_bytes_queue.appendSlice(e.allocator, component_value);
+            errdefer e.deferred_bytes_queue.shrinkRetainingCapacity(e.deferred_bytes_queue.items.len - component_value.len);
+
+            try e.deferred_queue.writeItem(.{ .setComponent = .{
+                .entity = entity,
+                .component = component,
+                .component_value = e.deferred_bytes_queue.items[e.deferred_bytes_queue.items.len - component_value.len .. e.deferred_bytes_queue.items.len],
+                .component_alignment = component_alignment,
+                .component_type_id = component_type_id,
+            } });
+        }
+
         /// Sets the named component to the specified value for the given entity,
         /// moving the entity from it's current archetype table to the new archetype
         /// table if required.
@@ -404,6 +469,14 @@ pub fn Database(comptime modules: anytype) type {
             alignment: u16,
             type_id: u32,
         ) !void {
+            if (entities.active_queries.items.len > 0) return entities.setComponentDynamicDeferred(
+                entity,
+                name_id,
+                component,
+                alignment,
+                type_id,
+            );
+
             const prev_archetype_idx = entities.entities.get(entity).?.archetype_index;
             var prev_archetype = &entities.archetypes.items[prev_archetype_idx];
             var archetype: ?*Archetype = if (prev_archetype.hasComponent(name_id)) prev_archetype else null;
@@ -548,12 +621,20 @@ pub fn Database(comptime modules: anytype) type {
             return entities.removeComponentDynamic(entity, name_id);
         }
 
+        fn removeComponentDeferred(e: *Self, entity: EntityID, component: StringTable.Index) !void {
+            try e.deferred_queue.writeItem(.{ .removeComponent = .{
+                .entity = entity,
+                .component = component,
+            } });
+        }
+
         /// Removes the named component from the entity, or noop if it doesn't have such a component.
         pub fn removeComponentDynamic(
             entities: *Self,
             entity: EntityID,
             name_id: StringTable.Index,
         ) !void {
+            if (entities.active_queries.items.len > 0) return entities.removeComponentDeferred(entity, name_id);
             const prev_archetype_idx = entities.entities.get(entity).?.archetype_index;
             var prev_archetype = &entities.archetypes.items[prev_archetype_idx];
             var archetype: ?*Archetype = if (prev_archetype.hasComponent(name_id)) prev_archetype else return;
@@ -843,12 +924,36 @@ pub fn Database(comptime modules: anytype) type {
 
         /// Releases any inactive queries entities.active_queries state memory space at the end of
         /// the list, enabling reuse of it.
-        fn reuseInactiveQueries(entities: *Self) void {
-            var new_len: usize = entities.active_queries.items.len;
-            while (new_len > 0 and entities.active_queries.items[new_len - 1].finished) {
+        fn reuseInactiveQueries(e: *Self) void {
+            var new_len: usize = e.active_queries.items.len;
+            while (new_len > 0 and e.active_queries.items[new_len - 1].finished) {
                 new_len -= 1;
             }
-            entities.active_queries.shrinkRetainingCapacity(new_len);
+            e.active_queries.shrinkRetainingCapacity(new_len);
+
+            // TODO: improve error handling here, once actions' function calls cannot result in OOM this error will go away
+            if (e.active_queries.items.len == 0) e.applyDeferredActions() catch |err| @panic(@errorName(err));
+        }
+
+        fn applyDeferredActions(e: *Self) !void {
+            if (comptime Archetype.is_debug) if (e.active_queries.items.len != 0) @panic("application may result in active query iterators being invalidated");
+            while (true) {
+                const ev = e.deferred_queue.readItem() orelse return;
+                switch (ev) {
+                    .remove => |entity| try e.remove(entity),
+                    .removeComponent => |a| try e.removeComponentDynamic(a.entity, a.component),
+                    .setComponent => |a| {
+                        defer e.deferred_bytes_queue.shrinkRetainingCapacity(e.deferred_bytes_queue.items.len - a.component_value.len);
+                        try e.setComponentDynamic(
+                            a.entity,
+                            a.component,
+                            a.component_value,
+                            a.component_alignment,
+                            a.component_type_id,
+                        );
+                    },
+                }
+            }
         }
 
         // TODO: ability to remove archetype entirely, deleting all entities in it
