@@ -38,7 +38,7 @@ pub const components = .{
     },
 };
 
-pub const events = .{
+pub const systems = .{
     .update = .{ .handler = update },
 };
 

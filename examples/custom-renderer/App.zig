@@ -22,7 +22,7 @@ pub const components = .{
     .follower = .{ .type = void },
 };
 
-pub const events = .{
+pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
@@ -39,8 +39,8 @@ pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
 pub fn deinit(core: *mach.Core.Mod, renderer: *Renderer.Mod) void {
-    renderer.send(.deinit, .{});
-    core.send(.deinit, .{});
+    renderer.schedule(.deinit);
+    core.schedule(.deinit);
 }
 
 // TODO(important): remove need for returning an error here
@@ -53,7 +53,7 @@ fn init(
     renderer: *Renderer.Mod,
     game: *Mod,
 ) !void {
-    renderer.send(.init, .{});
+    renderer.schedule(.init);
 
     // Create our player entity.
     const player = try entities.new();
@@ -77,7 +77,7 @@ fn init(
         .player = player,
     });
 
-    core.send(.start, .{});
+    core.schedule(.start);
 }
 
 // TODO(important): remove need for returning an error here
@@ -114,7 +114,7 @@ fn tick(
                     else => {},
                 }
             },
-            .close => core.send(.exit, .{}), // Send an event telling mach to exit the app
+            .close => core.schedule(.exit), // Send an event telling mach to exit the app
             else => {},
         }
     }
@@ -208,5 +208,5 @@ fn tick(
         }
     }
 
-    renderer.send(.render_frame, .{});
+    renderer.schedule(.render_frame);
 }

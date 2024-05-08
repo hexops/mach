@@ -59,7 +59,7 @@ pub const components = .{
     .built = .{ .type = BuiltPipeline, .description = "internal" },
 };
 
-pub const events = .{
+pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .update = .{ .handler = update },

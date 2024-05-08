@@ -10,7 +10,7 @@ pub const name = .mach_core;
 
 pub const Mod = mach.Mod(@This());
 
-pub const events = .{
+pub const systems = .{
     .start = .{ .handler = start, .description = 
     \\ Send this once your app is initialized and ready for .app.tick events.
     },
@@ -128,7 +128,7 @@ fn init(entities: *mach.Entities.Mod, core: *Mod) !void {
         .main_window = main_window,
     });
 
-    mach.core.mods.send(.app, .init, .{});
+    mach.core.mods.schedule(.app, .init);
 }
 
 fn update(entities: *mach.Entities.Mod) !void {
@@ -153,12 +153,12 @@ fn presentFrame(core: *Mod) !void {
             mach.core.swap_chain.present();
 
             // Signal that mainThreadTick is done
-            core.send(.main_thread_tick_done, .{});
+            core.schedule(.main_thread_tick_done);
         },
         .exiting => {
             // Exit opportunity is here, deinitialize now
             core.state().run_state = .deinitializing;
-            mach.core.mods.send(.app, .deinit, .{});
+            mach.core.mods.schedule(.app, .deinit);
         },
         else => return,
     }
@@ -181,13 +181,13 @@ fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
     core.state().run_state = .exited;
 
     // Signal that mainThreadTick is done
-    core.send(.main_thread_tick_done, .{});
+    core.schedule(.main_thread_tick_done);
 }
 
 fn mainThreadTick(core: *Mod) !void {
     if (core.state().run_state != .running) return;
     _ = try mach.core.update(null);
-    mach.core.mods.send(.app, .tick, .{});
+    mach.core.mods.schedule(.app, .tick);
 }
 
 fn exit(core: *Mod) void {

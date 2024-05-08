@@ -36,7 +36,7 @@ frame_render_pass: *gpu.RenderPassEncoder = undefined,
 pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
-pub const events = .{
+pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
@@ -47,8 +47,8 @@ fn deinit(
     core: *mach.Core.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
 ) !void {
-    sprite_pipeline.send(.deinit, .{});
-    core.send(.deinit, .{});
+    sprite_pipeline.schedule(.deinit);
+    core.schedule(.deinit);
 }
 
 fn init(
@@ -58,7 +58,7 @@ fn init(
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     game: *Mod,
 ) !void {
-    sprite_pipeline.send(.init, .{});
+    sprite_pipeline.schedule(.init);
 
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `.mach_gfx_sprite` module could have a 3D `.location` component with a different
@@ -68,7 +68,7 @@ fn init(
     const allocator = gpa.allocator();
     const pipeline = try entities.new();
     try sprite_pipeline.set(pipeline, .texture, try loadTexture(core, allocator));
-    sprite_pipeline.send(.update, .{});
+    sprite_pipeline.schedule(.update);
 
     // Create our player sprite
     const player = try entities.new();
@@ -76,7 +76,7 @@ fn init(
     try sprite.set(player, .size, vec2(32, 32));
     try sprite.set(player, .uv_transform, Mat3x3.translate(vec2(0, 0)));
     try sprite.set(player, .pipeline, pipeline);
-    sprite.send(.update, .{});
+    sprite.schedule(.update);
 
     game.init(.{
         .timer = try mach.Timer.start(),
@@ -91,7 +91,7 @@ fn init(
         .pipeline = pipeline,
     });
 
-    core.send(.start, .{});
+    core.schedule(.start);
 }
 
 fn tick(
@@ -128,7 +128,7 @@ fn tick(
                     else => {},
                 }
             },
-            .close => core.send(.exit, .{}),
+            .close => core.schedule(.exit),
             else => {},
         }
     }
@@ -181,10 +181,10 @@ fn tick(
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
     try sprite.set(game.state().player, .transform, Mat4x4.translate(player_pos));
-    sprite.send(.update, .{});
+    sprite.schedule(.update);
 
     // Perform pre-render work
-    sprite_pipeline.send(.pre_render, .{});
+    sprite_pipeline.schedule(.pre_render);
 
     // Create a command encoder for this frame
     const label = @tagName(name) ++ ".tick";
@@ -210,10 +210,10 @@ fn tick(
 
     // Render our sprite batch
     sprite_pipeline.state().render_pass = game.state().frame_render_pass;
-    sprite_pipeline.send(.render, .{});
+    sprite_pipeline.schedule(.render);
 
     // Finish the frame once rendering is done.
-    game.send(.end_frame, .{});
+    game.schedule(.end_frame);
 
     game.state().time += delta_time;
 }
@@ -229,7 +229,7 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
     game.state().frame_render_pass.release();
 
     // Present the frame
-    core.send(.present_frame, .{});
+    core.schedule(.present_frame);
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {
@@ -239,7 +239,7 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
             "sprite [ FPS: {d} ] [ Sprites: {d} ]",
             .{ game.state().frame_count, game.state().sprites },
         );
-        core.send(.update, .{});
+        core.schedule(.update);
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }

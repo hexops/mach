@@ -37,7 +37,7 @@ frame_render_pass: *gpu.RenderPassEncoder = undefined,
 pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
-pub const events = .{
+pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
@@ -58,8 +58,8 @@ fn deinit(
     core: *mach.Core.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
 ) !void {
-    text_pipeline.send(.deinit, .{});
-    core.send(.deinit, .{});
+    text_pipeline.schedule(.deinit);
+    core.schedule(.deinit);
 }
 
 fn init(
@@ -70,7 +70,7 @@ fn init(
     text_style: *gfx.TextStyle.Mod,
     game: *Mod,
 ) !void {
-    text_pipeline.send(.init, .{});
+    text_pipeline.schedule(.init);
 
     // TODO: a better way to initialize entities with default values
     // TODO(text): most of these style options are not respected yet.
@@ -98,7 +98,7 @@ fn init(
     // Create a text rendering pipeline
     const pipeline = try entities.new();
     try text_pipeline.set(pipeline, .is_pipeline, {});
-    text_pipeline.send(.update, .{});
+    text_pipeline.schedule(.update);
 
     // Create some text
     const player = try entities.new();
@@ -129,7 +129,7 @@ fn init(
         .pipeline = pipeline,
     });
 
-    core.send(.start, .{});
+    core.schedule(.start);
 }
 
 fn tick(
@@ -166,7 +166,7 @@ fn tick(
                     else => {},
                 }
             },
-            .close => core.send(.exit, .{}),
+            .close => core.schedule(.exit),
             else => {},
         }
     }
@@ -225,10 +225,10 @@ fn tick(
     player_pos.v[1] += direction.y() * speed * delta_time;
     try text.set(game.state().player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(player_pos)));
     try text.set(game.state().player, .dirty, true);
-    text.send(.update, .{});
+    text.schedule(.update);
 
     // Perform pre-render work
-    text_pipeline.send(.pre_render, .{});
+    text_pipeline.schedule(.pre_render);
 
     // Create a command encoder for this frame
     const label = @tagName(name) ++ ".tick";
@@ -254,10 +254,10 @@ fn tick(
 
     // Render our text batch
     text_pipeline.state().render_pass = game.state().frame_render_pass;
-    text_pipeline.send(.render, .{});
+    text_pipeline.schedule(.render);
 
     // Finish the frame once rendering is done.
-    game.send(.end_frame, .{});
+    game.schedule(.end_frame);
 
     game.state().time += delta_time;
 }
@@ -277,7 +277,7 @@ fn endFrame(
     game.state().frame_render_pass.release();
 
     // Present the frame
-    core.send(.present_frame, .{});
+    core.schedule(.present_frame);
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {
@@ -300,7 +300,7 @@ fn endFrame(
             "text [ FPS: {d} ] [ Texts: {d} ] [ Glyphs: {d} ]",
             .{ game.state().frame_count, num_texts, num_glyphs },
         );
-        core.send(.update, .{});
+        core.schedule(.update);
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }

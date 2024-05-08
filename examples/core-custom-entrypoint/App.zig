@@ -5,7 +5,7 @@ const gpu = mach.gpu;
 pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
-pub const events = .{
+pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
@@ -16,7 +16,7 @@ pipeline: *gpu.RenderPipeline,
 
 pub fn deinit(core: *mach.Core.Mod, game: *Mod) void {
     game.state().pipeline.release();
-    core.send(.deinit, .{});
+    core.schedule(.deinit);
 }
 
 fn init(game: *Mod, core: *mach.Core.Mod) !void {
@@ -59,7 +59,7 @@ fn init(game: *Mod, core: *mach.Core.Mod) !void {
     });
     try updateWindowTitle(core);
 
-    core.send(.start, .{});
+    core.schedule(.start);
 }
 
 // TODO(important): remove need for returning an error here
@@ -69,7 +69,7 @@ fn tick(core: *mach.Core.Mod, game: *Mod) !void {
     var iter = mach.core.pollEvents();
     while (iter.next()) |event| {
         switch (event) {
-            .close => core.send(.exit, .{}), // Tell mach.Core to exit the app
+            .close => core.schedule(.exit), // Tell mach.Core to exit the app
             else => {},
         }
     }
@@ -111,7 +111,7 @@ fn tick(core: *mach.Core.Mod, game: *Mod) !void {
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // Present the frame
-    core.send(.present_frame, .{});
+    core.schedule(.present_frame);
 
     // update the window title every second
     if (game.state().title_timer.read() >= 1.0) {
@@ -131,5 +131,5 @@ fn updateWindowTitle(core: *mach.Core.Mod) !void {
             mach.core.inputRate(),
         },
     );
-    core.send(.update, .{});
+    core.schedule(.update);
 }

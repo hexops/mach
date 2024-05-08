@@ -32,7 +32,7 @@ frame_render_pass: *gpu.RenderPassEncoder = undefined,
 pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
-pub const events = .{
+pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
@@ -41,22 +41,22 @@ pub const events = .{
 };
 
 fn deinit(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod) !void {
-    sprite_pipeline.send(.deinit, .{});
-    glyphs.send(.deinit, .{});
-    core.send(.deinit, .{});
+    sprite_pipeline.schedule(.deinit);
+    glyphs.schedule(.deinit);
+    core.schedule(.deinit);
 }
 
 fn init(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mod) !void {
-    sprite_pipeline.send(.init, .{});
-    glyphs.send(.init, .{});
+    sprite_pipeline.schedule(.init);
+    glyphs.schedule(.init);
 
     // Prepare which glyphs we will render
-    glyphs.send(.prepare, .{});
+    glyphs.schedule(.prepare);
 
     // Run our init code after glyphs module is initialized.
-    game.send(.after_init, .{});
+    game.schedule(.after_init);
 
-    core.send(.start, .{});
+    core.schedule(.start);
 }
 
 fn afterInit(
@@ -71,7 +71,7 @@ fn afterInit(
     const pipeline = try entities.new();
     texture.reference();
     try sprite_pipeline.set(pipeline, .texture, texture);
-    sprite_pipeline.send(.update, .{});
+    sprite_pipeline.schedule(.update);
 
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `Sprite` module could have a 3D `.location` component with a different
@@ -83,7 +83,7 @@ fn afterInit(
     try sprite.set(player, .pipeline, pipeline);
     try sprite.set(player, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
     try sprite.set(player, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
-    sprite.send(.update, .{});
+    sprite.schedule(.update);
 
     game.init(.{
         .timer = try mach.Timer.start(),
@@ -133,7 +133,7 @@ fn tick(
                     else => {},
                 }
             },
-            .close => core.send(.exit, .{}),
+            .close => core.schedule(.exit),
             else => {},
         }
     }
@@ -199,10 +199,10 @@ fn tick(
         &Mat4x4.scale(Vec3.splat(1.0)),
     );
     try sprite.set(game.state().player, .transform, player_transform);
-    sprite.send(.update, .{});
+    sprite.schedule(.update);
 
     // Perform pre-render work
-    sprite_pipeline.send(.pre_render, .{});
+    sprite_pipeline.schedule(.pre_render);
 
     // Create a command encoder for this frame
     const label = @tagName(name) ++ ".tick";
@@ -228,10 +228,10 @@ fn tick(
 
     // Render our sprite batch
     sprite_pipeline.state().render_pass = game.state().frame_render_pass;
-    sprite_pipeline.send(.render, .{});
+    sprite_pipeline.schedule(.render);
 
     // Finish the frame once rendering is done.
-    game.send(.end_frame, .{});
+    game.schedule(.end_frame);
 
     game.state().time += delta_time;
 }
@@ -247,7 +247,7 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
     game.state().frame_render_pass.release();
 
     // Present the frame
-    core.send(.present_frame, .{});
+    core.schedule(.present_frame);
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {
@@ -257,7 +257,7 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
             "glyphs [ FPS: {d} ] [ Sprites: {d} ]",
             .{ game.state().frame_count, game.state().sprites },
         );
-        core.send(.update, .{});
+        core.schedule(.update);
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }
