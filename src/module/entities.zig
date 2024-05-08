@@ -1099,7 +1099,7 @@ test "example" {
     // Resolve archetype by entity ID and print column names
     const columns = world.archetypeByID(player2).columns;
     try testing.expectEqual(@as(usize, 2), columns.len);
-    try testing.expectEqualStrings("entity.id", world.component_names.string(columns[0].name));
+    try testing.expectEqualStrings("entities.id", world.component_names.string(columns[0].name));
     try testing.expectEqualStrings("game.rotation", world.component_names.string(columns[1].name));
 
     //-------------------------------------------------------------------------
@@ -1128,7 +1128,7 @@ test "example" {
         try testing.expectEqual(@as(usize, 1), archtype.len);
         try testing.expectEqual(@as(usize, 2), archtype.columns.len);
 
-        try testing.expectEqualStrings("entity.id", world.component_names.string(archtype.columns[0].name));
+        try testing.expectEqualStrings("entities.id", world.component_names.string(archtype.columns[0].name));
         try testing.expectEqualStrings("game.rotation", world.component_names.string(archtype.columns[1].name));
     }
 
@@ -1186,16 +1186,16 @@ test "many entities" {
     // Confirm archetypes
     var columns = archetypes[0].columns;
     try testing.expectEqual(@as(usize, 1), columns.len);
-    try testing.expectEqualStrings("entity.id", world.component_names.string(columns[0].name));
+    try testing.expectEqualStrings("entities.id", world.component_names.string(columns[0].name));
 
     columns = archetypes[1].columns;
     try testing.expectEqual(@as(usize, 2), columns.len);
-    try testing.expectEqualStrings("entity.id", world.component_names.string(columns[0].name));
+    try testing.expectEqualStrings("entities.id", world.component_names.string(columns[0].name));
     try testing.expectEqualStrings("game.name", world.component_names.string(columns[1].name));
 
     columns = archetypes[2].columns;
     try testing.expectEqual(@as(usize, 3), columns.len);
-    try testing.expectEqualStrings("entity.id", world.component_names.string(columns[0].name));
+    try testing.expectEqualStrings("entities.id", world.component_names.string(columns[0].name));
     try testing.expectEqualStrings("game.name", world.component_names.string(columns[1].name));
     try testing.expectEqualStrings("game.location", world.component_names.string(columns[2].name));
 }

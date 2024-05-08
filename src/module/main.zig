@@ -46,7 +46,7 @@ test "entities DB" {
             pub const components = .{
                 .id = .{ .type = u32 },
             };
-            pub const global_events = .{
+            pub const events = .{
                 .tick = .{ .handler = tick },
             };
 
@@ -60,7 +60,7 @@ test "entities DB" {
             pub const components = .{
                 .id = .{ .type = u16 },
             };
-            pub const global_events = .{
+            pub const events = .{
                 .tick = .{ .handler = tick },
             };
 
@@ -87,9 +87,9 @@ test "entities DB" {
     physics.init(.{ .pointer = 123 });
     _ = physics.state().pointer; // == 123
 
-    const player1 = try try entities.new();
-    const player2 = try try entities.new();
-    const player3 = try try entities.new();
+    const player1 = try entities.new();
+    const player2 = try entities.new();
+    const player3 = try entities.new();
     try physics.set(player1, .id, 1001);
     try renderer.set(player1, .id, 1001);
 
@@ -98,7 +98,7 @@ test "entities DB" {
 
     //-------------------------------------------------------------------------
     // Send events to modules
-    world.mod.renderer.sendGlobal(.tick, .{});
+    world.mod.renderer.send(.tick, .{});
     var stack_space: [8 * 1024 * 1024]u8 = undefined;
     try world.dispatch(&stack_space, .{});
 }
