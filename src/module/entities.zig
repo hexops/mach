@@ -3,7 +3,6 @@ const Allocator = std.mem.Allocator;
 const testing = std.testing;
 const builtin = @import("builtin");
 const assert = std.debug.assert;
-const query_mod = @import("query.zig");
 const Archetype = @import("Archetype.zig");
 const StringTable = @import("StringTable.zig");
 const ComponentTypesByName = @import("module.zig").ComponentTypesByName;
@@ -111,10 +110,6 @@ pub fn Database(comptime modules: anytype) type {
             archetype_index: u32,
             row_index: u32,
         };
-
-        /// A complex query for entities matching a given criteria
-        pub const QueryDeprecated = query_mod.QueryDeprecated(modules);
-        pub const QueryTag = query_mod.QueryTag;
 
         pub fn init(allocator: Allocator) !Self {
             const component_names = try allocator.create(StringTable);
@@ -626,14 +621,6 @@ pub fn Database(comptime modules: anytype) type {
             });
         }
 
-        // Queries for archetypes matching the given query.
-        pub fn queryDeprecated(
-            entities: *Self,
-            q: QueryDeprecated,
-        ) ArchetypeIterator(modules) {
-            return ArchetypeIterator(modules).init(entities, q);
-        }
-
         /// Represents a dynamic (runtime-generated, non type safe) query.
         pub const QueryDynamic = union(enum) {
             /// Logical AND operator for query expressions
@@ -866,68 +853,6 @@ pub fn Database(comptime modules: anytype) type {
 
         // TODO: ability to remove archetype entirely, deleting all entities in it
         // TODO: ability to remove archetypes with no entities (garbage collection)
-    };
-}
-
-// TODO: move this type somewhere else
-pub fn ArchetypeIterator(comptime modules: anytype) type {
-    const DatabaseT = Database(modules);
-    return struct {
-        entities: *DatabaseT,
-        query: DatabaseT.QueryDeprecated,
-        index: usize,
-
-        const Self = @This();
-
-        pub fn init(entities: *DatabaseT, query: DatabaseT.QueryDeprecated) Self {
-            return Self{
-                .entities = entities,
-                .query = query,
-                .index = 0,
-            };
-        }
-
-        // TODO: component_types_by_name is a superset of queried items, not type-safe.
-        pub fn next(iter: *Self) ?Archetype.Slicer(modules) {
-            while (iter.index < iter.entities.archetypes.items.len) {
-                const archetype = &iter.entities.archetypes.items[iter.index];
-                iter.index += 1;
-                if (iter.match(archetype)) return Archetype.Slicer(modules){ .archetype = archetype };
-            }
-            return null;
-        }
-
-        pub fn match(iter: *Self, consideration: *Archetype) bool {
-            if (consideration.len == 0) return false;
-            var buf: [2048]u8 = undefined;
-            switch (iter.query) {
-                .all => {
-                    for (iter.query.all) |namespace| {
-                        switch (namespace) {
-                            inline else => |components| {
-                                for (components) |component| {
-                                    if (@typeInfo(@TypeOf(component)).Enum.fields.len == 0) continue;
-                                    const name = switch (component) {
-                                        inline else => |c| std.fmt.bufPrint(&buf, "{s}.{s}", .{ @tagName(namespace), @tagName(c) }) catch break,
-                                    };
-                                    const name_id = iter.entities.componentNameString(name);
-                                    var has_column = false;
-                                    for (consideration.columns) |column| {
-                                        if (column.name == name_id) {
-                                            has_column = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!has_column) return false;
-                                }
-                            },
-                        }
-                    }
-                    return true;
-                },
-                .any => @panic("TODO"),
-            }
-        }
     };
 }
 

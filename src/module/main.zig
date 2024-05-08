@@ -30,7 +30,6 @@ test {
     // std.testing.refAllDeclsRecursive(@This());
     std.testing.refAllDeclsRecursive(@import("Archetype.zig"));
     std.testing.refAllDeclsRecursive(@import("entities.zig"));
-    std.testing.refAllDeclsRecursive(@import("query.zig"));
     std.testing.refAllDeclsRecursive(@import("StringTable.zig"));
 }
 
@@ -96,27 +95,6 @@ test "entities DB" {
 
     try physics.set(player2, .id, 1002);
     try physics.set(player3, .id, 1003);
-
-    //-------------------------------------------------------------------------
-    // Querying
-    var iter = world.entities.queryDeprecated(.{ .all = &.{
-        .{ .physics = &.{.id} },
-    } });
-
-    var archetype = iter.next().?;
-    var ids = archetype.slice(.physics, .id);
-    try testing.expectEqual(@as(usize, 2), ids.len);
-    try testing.expectEqual(@as(usize, 1002), ids[0]);
-    try testing.expectEqual(@as(usize, 1003), ids[1]);
-
-    archetype = iter.next().?;
-    ids = archetype.slice(.physics, .id);
-    try testing.expectEqual(@as(usize, 1), ids.len);
-    try testing.expectEqual(@as(usize, 1001), ids[0]);
-
-    // TODO: can't write @as type here easily due to generic parameter, should be exposed
-    // ?Archetype.Slicer(modules)
-    try testing.expectEqual(iter.next(), null);
 
     //-------------------------------------------------------------------------
     // Send events to modules
