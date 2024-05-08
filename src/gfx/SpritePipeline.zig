@@ -226,6 +226,7 @@ fn buildPipeline(
     const texture3_view = if (opt_texture3) |tex| tex.createView(&gpu.TextureView.Descriptor{ .label = label }) else texture_view;
     const texture4_view = if (opt_texture4) |tex| tex.createView(&gpu.TextureView.Descriptor{ .label = label }) else texture_view;
     defer texture_view.release();
+    // TODO: texture views 2-4 leak
 
     const bind_group = opt_bind_group orelse device.createBindGroup(
         &gpu.BindGroup.Descriptor.init(.{
