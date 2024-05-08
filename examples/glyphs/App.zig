@@ -69,6 +69,7 @@ fn afterInit(
     // Create a sprite rendering pipeline
     const texture = glyphs.state().texture;
     const pipeline = try entities.new();
+    texture.reference();
     try sprite_pipeline.set(pipeline, .texture, texture);
     sprite_pipeline.send(.update, .{});
 
