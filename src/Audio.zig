@@ -13,7 +13,7 @@ pub const components = .{
     .index = .{ .type = usize },
 };
 
-pub const events = .{
+pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .audio_tick = .{ .handler = audioTick },
@@ -32,7 +32,7 @@ ms_render_ahead: f32 = 16,
 allocator: std.mem.Allocator,
 ctx: sysaudio.Context,
 player: sysaudio.Player,
-on_state_change: ?mach.AnyEvent = null,
+on_state_change: ?mach.AnySystem = null,
 output_mu: std.Thread.Mutex = .{},
 output: SampleBuffer,
 mixing_buffer: ?std.ArrayListUnmanaged(f32) = null,
@@ -168,7 +168,7 @@ fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
         }
     }
     if (audio.state().on_state_change) |on_state_change_event| {
-        if (did_state_change) audio.sendAnyEvent(on_state_change_event);
+        if (did_state_change) audio.scheduleAny(on_state_change_event);
     }
 
     // Write our rendered samples to the fifo, expanding its size as needed and converting our f32
@@ -201,7 +201,7 @@ fn writeFn(audio_opaque: ?*anyopaque, output: []u8) void {
     const format_size = audio.state().player.format().size();
     const render_num_samples = @divExact(output.len, format_size);
     audio.state().render_num_samples = render_num_samples;
-    audio.send(.audio_tick, .{});
+    audio.schedule(.audio_tick);
 
     // Read the prepared audio samples and directly @memcpy them to the output buffer.
     audio.state().output_mu.lock();
@@ -210,7 +210,7 @@ fn writeFn(audio_opaque: ?*anyopaque, output: []u8) void {
     if (read_slice.len < output.len) {
         // We do not have enough audio data prepared. Busy-wait until we do, otherwise the audio
         // thread may become de-sync'd with the loop responsible for producing it.
-        audio.send(.audio_tick, .{});
+        audio.schedule(.audio_tick);
         if (audio.state().debug) log.debug("resync, found {} samples but need {} (nano timestamp {})", .{ read_slice.len / format_size, output.len / format_size, std.time.nanoTimestamp() });
 
         audio.state().output_mu.unlock();

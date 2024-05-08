@@ -8,8 +8,8 @@ pub const Archetype = @import("Archetype.zig");
 pub const ModSet = @import("module.zig").ModSet;
 pub const Modules = @import("module.zig").Modules;
 pub const ModuleID = @import("module.zig").ModuleID;
-pub const EventID = @import("module.zig").EventID;
-pub const AnyEvent = @import("module.zig").AnyEvent;
+pub const SystemID = @import("module.zig").SystemID;
+pub const AnySystem = @import("module.zig").AnySystem;
 pub const Merge = @import("module.zig").Merge;
 pub const merge = @import("module.zig").merge;
 
@@ -46,7 +46,7 @@ test "entities DB" {
             pub const components = .{
                 .id = .{ .type = u32 },
             };
-            pub const events = .{
+            pub const systems = .{
                 .tick = .{ .handler = tick },
             };
 
@@ -60,7 +60,7 @@ test "entities DB" {
             pub const components = .{
                 .id = .{ .type = u16 },
             };
-            pub const events = .{
+            pub const systems = .{
                 .tick = .{ .handler = tick },
             };
 
@@ -97,8 +97,10 @@ test "entities DB" {
     try physics.set(player3, .id, 1003);
 
     //-------------------------------------------------------------------------
-    // Send events to modules
-    world.mod.renderer.send(.tick, .{});
+    // Schedule systems to run
+    world.mod.renderer.schedule(.tick);
+
+    // Dispatch systems
     var stack_space: [8 * 1024 * 1024]u8 = undefined;
     try world.dispatch(&stack_space, .{});
 }

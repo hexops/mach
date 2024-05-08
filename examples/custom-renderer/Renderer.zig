@@ -26,7 +26,7 @@ pub const components = .{
     .scale = .{ .type = f32 },
 };
 
-pub const events = .{
+pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .render_frame = .{ .handler = renderFrame },
@@ -185,5 +185,5 @@ fn renderFrame(
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // Present the frame
-    core.send(.present_frame, .{});
+    core.schedule(.present_frame);
 }

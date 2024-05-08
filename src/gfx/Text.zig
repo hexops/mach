@@ -50,7 +50,7 @@ pub const components = .{
     .built = .{ .type = BuiltText, .description = "internal" },
 };
 
-pub const events = .{
+pub const systems = .{
     .update = .{ .handler = update },
 };
 

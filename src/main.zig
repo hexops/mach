@@ -36,8 +36,8 @@ pub const EntityID = @import("module/main.zig").EntityID; // TODO: rename to jus
 pub const Archetype = @import("module/main.zig").Archetype;
 
 pub const ModuleID = @import("module/main.zig").ModuleID;
-pub const EventID = @import("module/main.zig").EventID;
-pub const AnyEvent = @import("module/main.zig").AnyEvent;
+pub const SystemID = @import("module/main.zig").SystemID;
+pub const AnySystem = @import("module/main.zig").AnySystem;
 pub const merge = @import("module/main.zig").merge;
 pub const builtin_modules = @import("module/main.zig").builtin_modules;
 pub const Entities = @import("module/main.zig").Entities;

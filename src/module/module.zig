@@ -1,64 +1,3 @@
-//! Module system
-//!
-//! ## Events
-//!
-//! Every piece of logic in a Mach module runs in response to an event.
-//!
-//! Events are used to schedule the execution order of event handlers. What we call event handlers
-//! are often called 'systems' in other game engines following ECS design patterns. Typically,
-//! other engines require that you express a specific order you'd like systems to execute in via
-//! e.g. a sorting integer.
-//!
-//! Mach's module system has only events and event handlers. In order to get system/event-handler B
-//! to run after A, A simply needs to send an event that module B defines an event handler for.
-//! These are simple functions, with some dependency injection.
-//!
-//! Event handlers are also a point-of-parallelism opportunity, i.e. depending on what event
-//! handlers do within their function body (whether it be adding/removing entities/components,
-//! sending events, or reading/writing module state), the event scheduler can determine which event
-//! handlers may be eligible for parallel execution without data races or non-deterministic behavior.
-//! Mach does not yet implement this today, but will in the future.
-//!
-//! Events are simply a name associated with a function, as well as some (simple data type) parameters
-//! that function may expect. They are however **high-level** communication between modules, i.e.
-//! scheduling the execution of functions which are generally expected to do a reasonable amount of
-//! work, since events are a dynamic dispatch point and not e.g. inline function calls.
-//!
-//! Events are also the foundation for:
-//!
-//! * Graphical editor integration, e.g. event names and parameters could be enumerated via an
-//!   external process to your program, allowing a graphical editor to craft and send events with
-//!   payloads to your program over e.g. a socket.
-//! * Debugging facilities - for example the entire program can be analyzed as a sequence of named
-//!   events being dispatched, showing you the execution of e.g. a frame. Or, events could be saved
-//!   to disk and replayed/inspected later.
-//! * Networking between modules - events could be serialized and sent over the network.
-//! * Loops executing at different frequencies - a 'loop' is simply events firing in a circular loop,
-//!   e.g. you could have multiple loops of events going at the same time, using an event as a
-//!   synchronization point:
-//!   * .render_begin -> wait for .physics_sync -> .game_tick -> .game_draw_frame -> .render_end -> .render_begin
-//!   * .physics_begin -> .poll_input -> .physics_calculate -> .physics_sync -> .physics_end -> .physics_begin
-//!
-//! ## Event arguments
-//!
-//! Event arguments should only be used to convey stateless information.
-//!
-//! Good use-cases for event arguments are typically ones where you would want a graphical editor
-//! to be able to convey to your program that something should be done, for example:
-//! * `.spawn_monsters` with an argument conveying the number of monsters to spawn.
-//! * `.set_entity_position` with an argument conveying what to set an entity's position to
-//!
-//! On the other hand, bad use-cases for event arguments tend to be stateful:
-//!
-//! * Anything involving pointers (which may be completely prohibited in the future)
-//! * `.render_players` with an argument conveying to render specific player entities, rather than
-//!   the event having no arguments and instead looking at which entities have a component/tag
-//!   indicating they should be rendered.
-//!
-//! These examples are bad because if these events' arguments were to be e.g. serialized and saved
-//! to disk, and then replayed later in a future execution of the program, you may find that the
-//! arguments no longer make sense in a replay of the program.
-
 const builtin = @import("builtin");
 const std = @import("std");
 const testing = @import("../testing.zig");
@@ -76,12 +15,12 @@ fn ModuleInterface(comptime M: type) type {
     return M;
 }
 
-fn validateModule(comptime M: type, comptime events: bool) void {
+fn validateModule(comptime M: type, comptime systems: bool) void {
     if (@typeInfo(M) != .Struct) @compileError("mach: expected module struct, found: " ++ @typeName(M));
     if (!@hasDecl(M, "name")) @compileError("mach: module must have `pub const name = .foobar;`: " ++ @typeName(M));
     if (@typeInfo(@TypeOf(M.name)) != .EnumLiteral) @compileError("mach: module must have `pub const name = .foobar;`, found type:" ++ @typeName(M.name));
-    if (events) {
-        if (@hasDecl(M, "events")) validateEvents("mach: module ." ++ @tagName(M.name) ++ " events ", M.events);
+    if (systems) {
+        if (@hasDecl(M, "systems")) validateSystems("mach: module ." ++ @tagName(M.name) ++ " systems ", M.systems);
         _ = ComponentTypesM(M);
     }
 }
@@ -95,11 +34,11 @@ fn Serializable(comptime T: type) type {
 
 // TODO: add runtime module support
 pub const ModuleID = u32;
-pub const EventID = u32;
+pub const SystemID = u32;
 
-pub const AnyEvent = struct {
+pub const AnySystem = struct {
     module_id: ModuleID,
-    event_id: EventID,
+    system_id: SystemID,
 };
 
 /// Type-returning variant of merge()
@@ -180,23 +119,23 @@ pub fn Modules(comptime modules: anytype) type {
     inline for (modules) |M| _ = ModuleInterface(M);
 
     return struct {
-        pub const LocalEvent = LocalEventEnum(modules);
+        pub const System = SystemEnum(modules);
 
         /// Enables looking up a component type by module name and component name.
         /// e.g. @field(@field(ComponentTypesByName, "module_name"), "component_name")
         pub const component_types_by_name = ComponentTypesByName(modules){};
 
-        const Event = struct {
+        const Dispatch = struct {
             module_name: ModuleID,
-            event_name: EventID,
+            system_name: SystemID,
             args_slice: []u8,
             args_alignment: u32,
         };
-        const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
+        const DispatchQueue = std.fifo.LinearFifo(Dispatch, .Dynamic);
 
-        events_mu: std.Thread.RwLock = .{},
-        args_queue: std.ArrayListUnmanaged(u8) = .{},
-        events: EventQueue,
+        dispatch_queue_mu: std.Thread.RwLock = .{},
+        dispatch_args_queue: std.ArrayListUnmanaged(u8) = .{},
+        dispatch_queue: DispatchQueue,
         mod: ModsByName(modules),
         // TODO: pass mods directly instead of ComponentTypesByName?
         entities: Database(modules),
@@ -222,14 +161,14 @@ pub fn Modules(comptime modules: anytype) type {
             m.* = .{
                 .entities = entities,
                 // TODO(module): better default allocations
-                .args_queue = try std.ArrayListUnmanaged(u8).initCapacity(allocator, 8 * 1024 * 1024),
-                .events = EventQueue.init(allocator),
+                .dispatch_args_queue = try std.ArrayListUnmanaged(u8).initCapacity(allocator, 8 * 1024 * 1024),
+                .dispatch_queue = DispatchQueue.init(allocator),
                 .mod = undefined,
                 .debug_trace = debug_trace,
             };
-            errdefer m.args_queue.deinit(allocator);
-            errdefer m.events.deinit();
-            try m.events.ensureTotalCapacity(1024); // TODO(module): better default allocations
+            errdefer m.dispatch_args_queue.deinit(allocator);
+            errdefer m.dispatch_queue.deinit();
+            try m.dispatch_queue.ensureTotalCapacity(1024); // TODO(module): better default allocations
 
             // Default initialize m.mod
             inline for (@typeInfo(@TypeOf(m.mod)).Struct.fields) |field| {
@@ -243,73 +182,100 @@ pub fn Modules(comptime modules: anytype) type {
         }
 
         pub fn deinit(m: *@This(), allocator: std.mem.Allocator) void {
-            m.args_queue.deinit(allocator);
-            m.events.deinit();
+            m.dispatch_args_queue.deinit(allocator);
+            m.dispatch_queue.deinit();
             m.entities.deinit();
         }
 
         /// Returns an args tuple representing the standard, uninjected, arguments which the given
-        /// local event handler requires.
-        fn LocalArgs(module_name: ModuleName(modules), event_name: LocalEvent) type {
+        /// system requires.
+        fn SystemArgs(module_name: ModuleName(modules), system_name: System) type {
             inline for (modules) |M| {
                 _ = ModuleInterface(M); // Validate the module
                 if (M.name != module_name) continue;
-                return LocalArgsM(M, event_name);
+                return SystemArgsM(M, system_name);
             }
         }
 
-        /// Converts an event enum for a single module, to an event enum for all modules.
-        fn moduleToGlobalEvent(
+        /// Converts a system enum for a single module, to a system enum for all modules.
+        fn moduleToGlobalSystemName(
             comptime M: type,
-            comptime EventEnumM: anytype,
-            comptime EventEnum: anytype,
-            comptime event_name: EventEnumM(M),
-        ) EventEnum(modules) {
-            return comptime stringToEnum(EventEnum(modules), @tagName(event_name)).?;
+            comptime SysEnumM: anytype,
+            comptime SysEnum: anytype,
+            comptime system_name: SysEnumM(M),
+        ) SysEnum(modules) {
+            return comptime stringToEnum(SysEnum(modules), @tagName(system_name)).?;
         }
 
-        /// Send an event to a specific module
-        pub fn send(
+        /// Schedule the specified system to run later
+        pub fn schedule(
             m: *@This(),
-            // TODO: is a variant of this function where module_name/event_name is not comptime known, but asserted to be a valid enum, useful?
+            // TODO: is a variant of this function where module_name/system_name is not comptime known, but asserted to be a valid enum, useful?
             comptime module_name: ModuleName(modules),
             // TODO(important): cleanup comptime
-            comptime event_name: LocalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
-            args: LocalArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).__state), event_name),
+            comptime system_name: SystemEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
+        ) void {
+            m.scheduleWithArgs(module_name, system_name, .{});
+        }
+
+        /// Schedule the specified system to run later, passing some additional arguments.
+        ///
+        /// Today, any arguments are allowed, but in the future these will be restricted to simple
+        /// data types
+        /// , non-pointers, and you will want to ensure they are not stateful in order for
+        /// your program to work with future debugging tools.
+        ///
+        /// In general, scheduleWithArgs should really only be used for cross-language, cross-process,
+        /// or cross-network behavior. If you otherwise need to get data from one system to another
+        /// you should be using entities and components.
+        pub fn scheduleWithArgs(
+            m: *@This(),
+            // TODO: is a variant of this function where module_name/system_name is not comptime known, but asserted to be a valid enum, useful?
+            comptime module_name: ModuleName(modules),
+            // TODO(important): cleanup comptime
+            comptime system_name: SystemEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
+            args: SystemArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).__state), system_name),
         ) void {
             // TODO: comptime safety/debugging
-            const event_name_g: LocalEvent = comptime moduleToGlobalEvent(
+            const system_name_g: System = comptime moduleToGlobalSystemName(
                 // TODO(important): cleanup comptime
                 @TypeOf(@field(m.mod, @tagName(module_name)).__state),
-                LocalEventEnumM,
-                LocalEventEnum,
-                event_name,
+                SystemEnumM,
+                SystemEnum,
+                system_name,
             );
-            m.sendInternal(@intFromEnum(module_name), @intFromEnum(event_name_g), args);
+            m.sendInternal(@intFromEnum(module_name), @intFromEnum(system_name_g), args);
         }
 
-        /// Send an event to a specific module, using a dynamic (not known to the compiled program) module and event name.
-        pub fn sendDynamic(m: *@This(), module_name: ModuleID, event_name: EventID, args: anytype) void {
+        /// Schedule the specified system to run later, using fully dynamic parameters (i.e. to run
+        /// a system not known to the program at compile time.)
+        pub fn scheduleDynamic(m: *@This(), module_name: ModuleID, system_name: SystemID) void {
+            m.scheduleDynamicWithArgs(module_name, system_name, .{});
+        }
+
+        /// Schedule the specified system to run later, using fully dynamic parameters (i.e. to run
+        /// a system not known to the program at compile time.)
+        pub fn scheduleDynamicWithArgs(m: *@This(), module_name: ModuleID, system_name: SystemID, args: anytype) void {
             // TODO: runtime safety/debugging
             // TODO: check args do not have obviously wrong things, like comptime values
-            // TODO: if module_name and event_name are valid enums, can we type-check args at runtime?
-            m.sendInternal(module_name, event_name, args);
+            // TODO: if module_name and system_name are valid enums, can we type-check args at runtime?
+            m.sendInternal(module_name, system_name, args);
         }
 
-        fn sendInternal(m: *@This(), module_name: ModuleID, event_name: EventID, args: anytype) void {
+        fn sendInternal(m: *@This(), module_name: ModuleID, system_name: SystemID, args: anytype) void {
             // TODO: verify arguments are valid, e.g. not comptime types
             _ = Serializable(@TypeOf(args));
 
             // TODO: debugging
-            m.events_mu.lock();
-            defer m.events_mu.unlock();
+            m.dispatch_queue_mu.lock();
+            defer m.dispatch_queue_mu.unlock();
 
             const args_bytes = std.mem.asBytes(&args);
-            m.args_queue.appendSliceAssumeCapacity(args_bytes);
-            m.events.writeItemAssumeCapacity(.{
+            m.dispatch_args_queue.appendSliceAssumeCapacity(args_bytes);
+            m.dispatch_queue.writeItemAssumeCapacity(.{
                 .module_name = module_name,
-                .event_name = event_name,
-                .args_slice = m.args_queue.items[m.args_queue.items.len - args_bytes.len .. m.args_queue.items.len],
+                .system_name = system_name,
+                .args_slice = m.dispatch_args_queue.items[m.dispatch_args_queue.items.len - args_bytes.len .. m.dispatch_args_queue.items.len],
                 .args_alignment = @alignOf(@TypeOf(args)),
             });
         }
@@ -321,29 +287,29 @@ pub fn Modules(comptime modules: anytype) type {
         }
 
         // TODO: docs
-        pub fn localEventToID(
+        pub fn systemToID(
             m: *@This(),
             comptime module_name: ModuleName(modules),
             // TODO(important): cleanup comptime
-            local_event: LocalEventEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
-        ) EventID {
-            return @intFromEnum(local_event);
+            system: SystemEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
+        ) SystemID {
+            return @intFromEnum(system);
         }
 
         pub const DispatchOptions = struct {
-            /// If specified, instructs that dispatching should occur until the specified local
-            /// event has been dispatched.
+            /// If specified, instructs that dispatching should occur until the specified system
+            /// has been dispatched.
             ///
-            /// If null, dispatching occurs until the event queue is completely empty.
+            /// If null, dispatching occurs until the system queue is completely empty.
             until: ?struct {
                 module_name: ModuleID,
-                local_event: EventID,
+                system: SystemID,
             } = null,
         };
 
-        /// Dispatches pending events, invoking their event handlers.
+        /// Dispatches pending systems, invoking their handlers.
         ///
-        /// Stack space must be large enough to fit the uninjected arguments of any event handler
+        /// Stack space must be large enough to fit the uninjected arguments of any system handler
         /// which may be invoked, e.g. 8MB. It may be heap-allocated.
         pub fn dispatch(
             m: *@This(),
@@ -383,55 +349,55 @@ pub fn Modules(comptime modules: anytype) type {
             // TODO: PGO
 
             while (true) {
-                // Dequeue the next event
-                m.events_mu.lock();
-                var ev = m.events.readItem() orelse {
-                    m.events_mu.unlock();
+                // Dequeue the next system
+                m.dispatch_queue_mu.lock();
+                var d = m.dispatch_queue.readItem() orelse {
+                    m.dispatch_queue_mu.unlock();
                     return;
                 };
 
-                // Pop the arguments off the ev.args_slice stack, so we can release args_slice space.
-                // Otherwise when we release m.events_mu someone may add more events' arguments
+                // Pop the arguments off the d.args_slice stack, so we can release args_slice space.
+                // Otherwise when we release m.dispatch_queue_mu someone may add more system' arguments
                 // to the buffer which would make it tricky to find a good point-in-time to release
                 // argument buffer space.
-                const aligned_addr = std.mem.alignForward(usize, @intFromPtr(stack_space.ptr), ev.args_alignment);
+                const aligned_addr = std.mem.alignForward(usize, @intFromPtr(stack_space.ptr), d.args_alignment);
                 const align_offset = aligned_addr - @intFromPtr(stack_space.ptr);
 
-                @memcpy(stack_space[align_offset .. align_offset + ev.args_slice.len], ev.args_slice);
-                ev.args_slice = stack_space[align_offset .. align_offset + ev.args_slice.len];
+                @memcpy(stack_space[align_offset .. align_offset + d.args_slice.len], d.args_slice);
+                d.args_slice = stack_space[align_offset .. align_offset + d.args_slice.len];
 
-                m.args_queue.shrinkRetainingCapacity(m.args_queue.items.len - ev.args_slice.len);
-                m.events_mu.unlock();
+                m.dispatch_args_queue.shrinkRetainingCapacity(m.dispatch_args_queue.items.len - d.args_slice.len);
+                m.dispatch_queue_mu.unlock();
 
-                // Dispatch the local event
-                try m.callLocal(@enumFromInt(ev.module_name), @enumFromInt(ev.event_name), ev.args_slice, injectable);
+                // Dispatch the system
+                try m.callSystem(@enumFromInt(d.module_name), @enumFromInt(d.system_name), d.args_slice, injectable);
 
-                // If we only wanted to dispatch until this event, then return.
+                // If we only wanted to dispatch until this system, then return.
                 if (options.until) |until| {
-                    if (until.module_name == ev.module_name and until.local_event == ev.event_name) return;
+                    if (until.module_name == d.module_name and until.system == d.system_name) return;
                 }
             }
         }
 
-        /// Call local event handler with the specified name in the specified module
-        inline fn callLocal(m: *@This(), module_name: ModuleName(modules), event_name: LocalEvent, args: []u8, injectable: anytype) !void {
-            if (@typeInfo(@TypeOf(event_name)).Enum.fields.len == 0) return;
-            switch (event_name) {
+        /// Call system handler with the specified name in the specified module
+        inline fn callSystem(m: *@This(), module_name: ModuleName(modules), system_name: System, args: []u8, injectable: anytype) !void {
+            if (@typeInfo(@TypeOf(system_name)).Enum.fields.len == 0) return;
+            switch (system_name) {
                 inline else => |ev_name| {
                     switch (module_name) {
                         inline else => |mod_name| {
                             const M = @field(NamespacedModules(modules){}, @tagName(mod_name));
                             _ = ModuleInterface(M); // Validate the module
-                            if (@hasDecl(M, "events")) inline for (@typeInfo(@TypeOf(M.events)).Struct.fields) |field| {
+                            if (@hasDecl(M, "systems")) inline for (@typeInfo(@TypeOf(M.systems)).Struct.fields) |field| {
                                 comptime if (!std.mem.eql(u8, @tagName(ev_name), field.name)) continue;
                                 if (m.debug_trace) log.debug("trace: .{s}.{s}", .{
                                     @tagName(M.name),
                                     @tagName(ev_name),
                                 });
 
-                                const handler = @field(M.events, @tagName(ev_name)).handler;
-                                if (@typeInfo(@TypeOf(handler)) == .Type) continue; // Pre-declaration of what args an event has, nothing to do.
-                                if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares local event .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
+                                const handler = @field(M.systems, @tagName(ev_name)).handler;
+                                if (@typeInfo(@TypeOf(handler)) == .Type) continue; // Pre-declaration of what args an system has, nothing to do.
+                                if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares system .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
                                     @tagName(M.name),
                                     @tagName(ev_name),
                                     @typeName(@TypeOf(handler)),
@@ -444,7 +410,7 @@ pub fn Modules(comptime modules: anytype) type {
             }
         }
 
-        /// Invokes an event handler with optionally injected arguments.
+        /// Invokes a system handler with optionally injected arguments.
         inline fn callHandler(handler: anytype, args_data: []u8, injectable: anytype, comptime debug_name: anytype) !void {
             const Handler = @TypeOf(handler);
             const StdArgs = UninjectedArgsTuple(Handler);
@@ -481,7 +447,7 @@ pub fn ModsByName(comptime modules: anytype) type {
     });
 }
 
-// Note: Modules() causes analysis of event handlers' function signatures, whose parameters include
+// Note: Modules() causes analysis of system handlers' function signatures, whose parameters include
 // references to ModSet(modules).Mod(). As a result, the type returned here may never invoke Modules()
 // or depend on its result. However, it can analyze the global set of modules on its own, since no
 // module's type should embed the result of Modules().
@@ -603,7 +569,7 @@ pub fn ModSet(comptime modules: anytype) type {
                     return &m.__state;
                 }
 
-                /// Returns a read-only version of the module's state. If an event handler is
+                /// Returns a read-only version of the module's state. If a system handler is
                 /// read-only (i.e. only ever reads state/components/entities), then its events can
                 /// be skipped during e.g. record-and-replay of events from disk.
                 ///
@@ -646,34 +612,38 @@ pub fn ModSet(comptime modules: anytype) type {
                     try m.__entities.removeComponent(entity, module_tag, component_name);
                 }
 
-                pub inline fn send(m: *@This(), comptime event_name: LocalEventEnumM(M), args: LocalArgsM(M, event_name)) void {
+                pub inline fn schedule(m: *@This(), comptime system_name: SystemEnumM(M)) void {
+                    m.scheduleWithArgs(system_name, .{});
+                }
+
+                pub inline fn scheduleWithArgs(m: *@This(), comptime system_name: SystemEnumM(M), args: SystemArgsM(M, system_name)) void {
                     const ModulesT = Modules(modules);
                     const MByName = ModsByName(modules);
                     const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
                     const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
-                    mods.send(module_tag, event_name, args);
+                    mods.scheduleWithArgs(module_tag, system_name, args);
                 }
 
-                pub inline fn event(_: *@This(), comptime event_name: LocalEventEnumM(M)) AnyEvent {
+                pub inline fn system(_: *@This(), comptime system_name: SystemEnumM(M)) AnySystem {
                     const module_name_g: ModuleName(modules) = M.name;
-                    const event_name_g: Modules(modules).LocalEvent = comptime Modules(modules).moduleToGlobalEvent(
+                    const system_name_g: Modules(modules).System = comptime Modules(modules).moduleToGlobalSystemName(
                         M,
-                        LocalEventEnumM,
-                        LocalEventEnum,
-                        event_name,
+                        SystemEnumM,
+                        SystemEnum,
+                        system_name,
                     );
                     return .{
                         .module_id = @intFromEnum(module_name_g),
-                        .event_id = @intFromEnum(event_name_g),
+                        .system_id = @intFromEnum(system_name_g),
                     };
                 }
 
-                pub inline fn sendAnyEvent(m: *@This(), ev: AnyEvent) void {
+                pub inline fn scheduleAny(m: *@This(), sys: AnySystem) void {
                     const ModulesT = Modules(modules);
                     const MByName = ModsByName(modules);
                     const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
                     const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
-                    mods.sendDynamic(ev.module_id, ev.event_id, .{});
+                    mods.scheduleDynamic(sys.module_id, sys.system_id);
                 }
             };
         }
@@ -752,30 +722,26 @@ pub fn stringToEnum(comptime T: type, str: []const u8) ?T {
 }
 
 // TODO: tests
-fn LocalArgsM(comptime M: type, event_name: anytype) type {
-    return ArgsM(M, event_name, "events");
-}
-
-fn ArgsM(comptime M: type, event_name: anytype, comptime which: anytype) type {
+fn SystemArgsM(comptime M: type, system_name: anytype) type {
     _ = ModuleInterface(M); // Validate the module
+    const which = "systems";
     if (!@hasDecl(M, which)) return @TypeOf(.{});
 
-    const m_events = @field(M, which); // M.events
-    inline for (@typeInfo(@TypeOf(m_events)).Struct.fields) |field| {
-        comptime if (!std.mem.eql(u8, field.name, @tagName(event_name))) continue;
-        if (!@hasField(@TypeOf(m_events), @tagName(event_name))) @compileError(std.fmt.comptimePrint("mach: module .{s} declares no {s} event .{s}", .{
+    inline for (@typeInfo(@TypeOf(M.systems)).Struct.fields) |field| {
+        comptime if (!std.mem.eql(u8, field.name, @tagName(system_name))) continue;
+        if (!@hasField(@TypeOf(M.systems), @tagName(system_name))) @compileError(std.fmt.comptimePrint("mach: module .{s} declares no {s} system .{s}", .{
             @tagName(M.name),
             which,
-            @tagName(event_name),
+            @tagName(system_name),
         }));
-        const handler = @field(m_events, @tagName(event_name)).handler;
+        const handler = @field(M.systems, @tagName(system_name)).handler;
         const Handler = switch (@typeInfo(@TypeOf(handler))) {
             .Type => handler, // Pre-declaration of what args an event has
             .Fn => blk: {
-                if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares {s} event .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
+                if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares {s} system .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
                     @tagName(M.name),
                     which,
-                    @tagName(event_name),
+                    @tagName(system_name),
                     @typeName(@TypeOf(handler)),
                 }));
                 break :blk @TypeOf(handler);
@@ -784,16 +750,16 @@ fn ArgsM(comptime M: type, event_name: anytype, comptime which: anytype) type {
         };
         return UninjectedArgsTuple(Handler);
     }
-    @compileError("mach: module ." ++ @tagName(M.name) ++ " has no " ++ which ++ " event handler for ." ++ @tagName(event_name));
+    @compileError("mach: module ." ++ @tagName(M.name) ++ " has no " ++ which ++ " system handler for ." ++ @tagName(system_name));
 }
 
-/// enum describing every possible comptime-known local event name
-fn LocalEventEnum(comptime modules: anytype) type {
+/// enum describing every possible comptime-known system name
+fn SystemEnum(comptime modules: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
     for (modules) |M| {
         _ = ModuleInterface(M); // Validate the module
-        if (@hasDecl(M, "events")) inline for (@typeInfo(@TypeOf(M.events)).Struct.fields) |field| {
+        if (@hasDecl(M, "systems")) inline for (@typeInfo(@TypeOf(M.systems)).Struct.fields) |field| {
             const exists_already = blk: {
                 for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) break :blk true;
                 break :blk false;
@@ -814,12 +780,12 @@ fn LocalEventEnum(comptime modules: anytype) type {
     });
 }
 
-/// enum describing every possible comptime-known local event name
-fn LocalEventEnumM(comptime M: anytype) type {
+/// enum describing every possible comptime-known system name
+fn SystemEnumM(comptime M: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
     _ = ModuleInterface(M); // Validate the module
-    if (@hasDecl(M, "events")) inline for (@typeInfo(@TypeOf(M.events)).Struct.fields) |field| {
+    if (@hasDecl(M, "systems")) inline for (@typeInfo(@TypeOf(M.systems)).Struct.fields) |field| {
         const exists_already = blk: {
             for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) break :blk true;
             break :blk false;
@@ -909,17 +875,17 @@ fn NamespacedModules(comptime modules: anytype) type {
 }
 
 // TODO: tests
-fn validateEvents(comptime error_prefix: anytype, comptime events: anytype) void {
-    if (@typeInfo(@TypeOf(events)) != .Struct or @typeInfo(@TypeOf(events)).Struct.is_tuple) {
-        @compileError(error_prefix ++ "expected a struct .{}, found: " ++ @typeName(@TypeOf(events)));
+fn validateSystems(comptime error_prefix: anytype, comptime systems: anytype) void {
+    if (@typeInfo(@TypeOf(systems)) != .Struct or @typeInfo(@TypeOf(systems)).Struct.is_tuple) {
+        @compileError(error_prefix ++ "expected a struct .{}, found: " ++ @typeName(@TypeOf(systems)));
     }
-    inline for (@typeInfo(@TypeOf(events)).Struct.fields) |field| {
+    inline for (@typeInfo(@TypeOf(systems)).Struct.fields) |field| {
         const Event = field.type;
         if (@typeInfo(Event) != .Struct) @compileError(std.fmt.comptimePrint(
             error_prefix ++ "expected .{s} = .{{}}, found type: {s}",
             .{ field.name, @typeName(Event) },
         ));
-        const event = @field(events, field.name);
+        const event = @field(systems, field.name);
 
         // Verify .handler field
         if (!@hasField(Event, "handler")) @compileError(std.fmt.comptimePrint(
@@ -1101,7 +1067,7 @@ test ModuleInterface {
             .location = .{ .type = @Vector(3, f32), .description = "A location component" },
         };
 
-        pub const events = .{
+        pub const systems = .{
             .tick = .{ .handler = tick },
         };
 
@@ -1122,7 +1088,7 @@ test Modules {
             .location = .{ .type = @Vector(3, f32), .description = "A location component" },
         };
 
-        pub const events = .{
+        pub const systems = .{
             .tick = .{ .handler = tick },
         };
 
@@ -1131,7 +1097,7 @@ test Modules {
 
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
-        pub const events = .{
+        pub const systems = .{
             .tick = .{ .handler = tick },
         };
 
@@ -1155,10 +1121,10 @@ test Modules {
     testing.refAllDeclsRecursive(Sprite2D);
 }
 
-test "event name" {
+test "system name" {
     const Physics = ModuleInterface(struct {
         pub const name = .engine_physics;
-        pub const events = .{
+        pub const systems = .{
             .foo = .{ .handler = foo },
             .bar = .{ .handler = bar },
             .baz = .{ .handler = baz },
@@ -1173,7 +1139,7 @@ test "event name" {
 
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
-        pub const events = .{
+        pub const systems = .{
             .foo_unused = .{ .handler = fn (f32, i32) void },
             .bar_unused = .{ .handler = fn (i32, f32) void },
             .tick = .{ .handler = tick },
@@ -1188,7 +1154,7 @@ test "event name" {
 
     const Sprite2D = ModuleInterface(struct {
         pub const name = .engine_sprite2d;
-        pub const events = .{
+        pub const systems = .{
             .tick = .{ .handler = tick },
             .foobar = .{ .handler = fooBar },
         };
@@ -1204,7 +1170,7 @@ test "event name" {
         Sprite2D,
     }));
 
-    const locals = @typeInfo(Ms.LocalEvent).Enum;
+    const locals = @typeInfo(Ms.System).Enum;
     try testing.expect(type, u3).eql(locals.tag_type);
     try testing.expect(usize, 8).eql(locals.fields.len);
     try testing.expect([]const u8, "foo").eql(locals.fields[0].name);
@@ -1356,7 +1322,7 @@ test UninjectedArgsTuple {
     TupleTester.assertTuple(.{f32}, UninjectedArgsTuple(fn (a: *Foo, b: *Bar, c: Foo, d: Bar, i: f32) void));
 }
 
-test "event name calling" {
+test "system name calling" {
     const global = struct {
         var ticks: usize = 0;
         var physics_updates: usize = 0;
@@ -1365,7 +1331,7 @@ test "event name calling" {
     };
     const Physics = ModuleInterface(struct {
         pub const name = .engine_physics;
-        pub const events = .{
+        pub const systems = .{
             .tick = .{ .handler = tick },
             .update = .{ .handler = update },
             .calc = .{ .handler = calc },
@@ -1385,7 +1351,7 @@ test "event name calling" {
     });
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
-        pub const events = .{
+        pub const systems = .{
             .tick = .{ .handler = tick },
             .update = .{ .handler = update },
         };
@@ -1408,10 +1374,10 @@ test "event name calling" {
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
 
-    // Check we can use .callLocal() with a runtime-known event and module name.
+    // Check we can use .callSystem() with a runtime-known system and module name.
     const alloc = try testing.allocator.create(u3);
     defer testing.allocator.destroy(alloc);
-    const LE = @TypeOf(modules).LocalEvent;
+    const LE = @TypeOf(modules).System;
     const m_alloc = try testing.allocator.create(u3);
     defer testing.allocator.destroy(m_alloc);
     const M = ModuleName(modules2);
@@ -1419,9 +1385,9 @@ test "event name calling" {
     m_alloc.* = @intFromEnum(@as(M, .engine_renderer));
     alloc.* = @intFromEnum(@as(LE, .update));
     var module_name = @as(M, @enumFromInt(m_alloc.*));
-    var local_event_name = @as(LE, @enumFromInt(alloc.*));
-    try modules.callLocal(module_name, local_event_name, &.{}, .{});
-    try modules.callLocal(module_name, local_event_name, &.{}, .{});
+    var local_system_name = @as(LE, @enumFromInt(alloc.*));
+    try modules.callSystem(module_name, local_system_name, &.{}, .{});
+    try modules.callSystem(module_name, local_system_name, &.{}, .{});
     try testing.expect(usize, 0).eql(global.ticks);
     try testing.expect(usize, 0).eql(global.physics_updates);
     try testing.expect(usize, 2).eql(global.renderer_updates);
@@ -1429,15 +1395,15 @@ test "event name calling" {
     m_alloc.* = @intFromEnum(@as(M, .engine_physics));
     alloc.* = @intFromEnum(@as(LE, .update));
     module_name = @as(M, @enumFromInt(m_alloc.*));
-    local_event_name = @as(LE, @enumFromInt(alloc.*));
-    try modules.callLocal(module_name, local_event_name, &.{}, .{});
+    local_system_name = @as(LE, @enumFromInt(alloc.*));
+    try modules.callSystem(module_name, local_system_name, &.{}, .{});
     try testing.expect(usize, 1).eql(global.physics_updates);
 
     m_alloc.* = @intFromEnum(@as(M, .engine_physics));
     alloc.* = @intFromEnum(@as(LE, .calc));
     module_name = @as(M, @enumFromInt(m_alloc.*));
-    local_event_name = @as(LE, @enumFromInt(alloc.*));
-    try modules.callLocal(module_name, local_event_name, &.{}, .{});
+    local_system_name = @as(LE, @enumFromInt(alloc.*));
+    try modules.callSystem(module_name, local_system_name, &.{}, .{});
     try testing.expect(usize, 0).eql(global.ticks);
     try testing.expect(usize, 1).eql(global.physics_calc);
     try testing.expect(usize, 1).eql(global.physics_updates);
@@ -1462,7 +1428,7 @@ test "dispatch" {
     });
     const Physics = ModuleInterface(struct {
         pub const name = .engine_physics;
-        pub const events = .{
+        pub const systems = .{
             .tick = .{ .handler = tick },
             .update = .{ .handler = update },
             .update_with_struct_arg = .{ .handler = updateWithStructArg },
@@ -1492,7 +1458,7 @@ test "dispatch" {
     });
     const Renderer = ModuleInterface(struct {
         pub const name = .engine_renderer;
-        pub const events = .{
+        pub const systems = .{
             .tick = .{ .handler = tick },
             .frame_done = .{ .handler = fn (i32) void },
             .update = .{ .handler = update },
@@ -1529,28 +1495,27 @@ test "dispatch" {
     try modules.init(testing.allocator);
     defer modules.deinit(testing.allocator);
 
-    const LE = @TypeOf(modules).LocalEvent;
+    const LE = @TypeOf(modules).System;
     const M = ModuleName(modules2);
 
-    // Local events
+    // Systems
     var stack_space: [8 * 1024 * 1024]u8 = undefined;
-    modules.send(.engine_renderer, .update, .{});
+    modules.schedule(.engine_renderer, .update);
     try modules.dispatchInternal(&stack_space, .{}, .{&foo});
     try testing.expect(usize, 1).eql(global.renderer_updates);
-    modules.send(.engine_physics, .update, .{});
-    modules.send(.engine_physics, .update_with_struct_arg, .{.{}});
-    modules.sendDynamic(
+    modules.schedule(.engine_physics, .update);
+    modules.scheduleWithArgs(.engine_physics, .update_with_struct_arg, .{.{}});
+    modules.scheduleDynamic(
         @intFromEnum(@as(M, .engine_physics)),
         @intFromEnum(@as(LE, .calc)),
-        .{},
     );
     try modules.dispatchInternal(&stack_space, .{}, .{&foo});
     try testing.expect(usize, 2).eql(global.physics_updates);
     try testing.expect(usize, 1).eql(global.physics_calc);
 
-    // Local events
-    modules.send(.engine_renderer, .basic_args, .{ @as(u32, 1), @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
-    modules.send(.engine_renderer, .injected_args, .{ @as(u32, 1), @as(u32, 2) });
+    // Systems
+    modules.scheduleWithArgs(.engine_renderer, .basic_args, .{ @as(u32, 1), @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
+    modules.scheduleWithArgs(.engine_renderer, .injected_args, .{ @as(u32, 1), @as(u32, 2) });
     try modules.dispatchInternal(&stack_space, .{}, .{&foo});
     try testing.expect(usize, 3).eql(global.basic_args_sum);
     try testing.expect(usize, 3).eql(foo.injected_args_sum);

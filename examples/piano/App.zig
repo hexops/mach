@@ -23,7 +23,7 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
-pub const events = .{
+pub const systems = .{
     .init = .{ .handler = init },
     .after_init = .{ .handler = afterInit },
     .deinit = .{ .handler = deinit },
@@ -38,8 +38,8 @@ pub const components = .{
 ghost_key_mode: bool = false,
 
 fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) void {
-    audio.send(.init, .{});
-    app.send(.after_init, .{});
+    audio.schedule(.init);
+    app.schedule(.after_init);
 
     // Initialize piano module state
     app.init(.{});
@@ -50,18 +50,18 @@ fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) void {
     std.debug.print("[arrow up]   increase volume 10%\n", .{});
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
 
-    core.send(.start, .{});
+    core.schedule(.start);
 }
 
 fn afterInit(audio: *mach.Audio.Mod, app: *Mod) void {
     // Configure the audio module to send our app's .audio_state_change event when an entity's sound
     // finishes playing.
-    audio.state().on_state_change = app.event(.audio_state_change);
+    audio.state().on_state_change = app.system(.audio_state_change);
 }
 
 fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
-    audio.send(.deinit, .{});
-    core.send(.deinit, .{});
+    audio.schedule(.deinit);
+    core.schedule(.deinit);
 }
 
 fn audioStateChange(
@@ -135,7 +135,7 @@ fn tick(
                     },
                 }
             },
-            .close => core.send(.exit, .{}),
+            .close => core.schedule(.exit),
             else => {},
         }
     }
@@ -175,7 +175,7 @@ fn tick(
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // Present the frame
-    core.send(.present_frame, .{});
+    core.schedule(.present_frame);
 }
 
 fn fillTone(audio: *mach.Audio.Mod, frequency: f32) ![]const f32 {
