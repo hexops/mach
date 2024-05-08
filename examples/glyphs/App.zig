@@ -241,8 +241,8 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
     game.state().frame_render_pass.end();
     const label = @tagName(name) ++ ".endFrame";
     var command = game.state().frame_encoder.finish(&.{ .label = label });
-    defer command.release();
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
+    command.release();
     game.state().frame_encoder.release();
     game.state().frame_render_pass.release();
 
