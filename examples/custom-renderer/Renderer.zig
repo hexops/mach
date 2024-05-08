@@ -124,6 +124,7 @@ fn deinit(
 }
 
 fn renderFrame(
+    entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     renderer: *Mod,
 ) !void {
@@ -138,17 +139,13 @@ fn renderFrame(
     defer encoder.release();
 
     // Update uniform buffer
-    var archetypes_iter = core.__entities.queryDeprecated(.{ .all = &.{
-        .{ .renderer = &.{ .position, .scale } },
-    } });
     var num_entities: usize = 0;
-    while (archetypes_iter.next()) |archetype| {
-        const ids = archetype.slice(.entities, .id);
-        const positions = archetype.slice(.renderer, .position);
-        const scales = archetype.slice(.renderer, .scale);
-        for (ids, positions, scales) |id, position, scale| {
-            _ = id;
-
+    var q = try entities.query(.{
+        .positions = Mod.read(.position),
+        .scales = Mod.read(.scale),
+    });
+    while (q.next()) |v| {
+        for (v.positions, v.scales) |position, scale| {
             const ubo = UniformBufferObject{
                 .offset = position,
                 .scale = scale,

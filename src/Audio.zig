@@ -97,7 +97,7 @@ fn deinit(audio: *Mod) void {
 /// instead. At the same time, we don't want to play too far ahead as that would cause latency
 /// between e.g. user interactions and audio actually playing - so in practice the amount we play
 /// ahead is rather small and imperceivable to most humans.
-fn audioTick(audio: *Mod) !void {
+fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
     const allocator = audio.state().allocator;
     const player = &audio.state().player;
     const player_channels: u8 = @intCast(player.channels().len);
@@ -134,17 +134,15 @@ fn audioTick(audio: *Mod) !void {
     @memset(mixing_buffer.items, 0);
 
     var did_state_change = false;
-    var archetypes_iter = audio.__entities.queryDeprecated(.{ .all = &.{
-        .{ .mach_audio = &.{ .samples, .channels, .playing, .index } },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        for (
-            archetype.slice(.entities, .id),
-            archetype.slice(.mach_audio, .samples),
-            archetype.slice(.mach_audio, .channels),
-            archetype.slice(.mach_audio, .playing),
-            archetype.slice(.mach_audio, .index),
-        ) |id, samples, channels, playing, index| {
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .samples_slices = Mod.read(.samples),
+        .channels = Mod.read(.channels),
+        .playings = Mod.read(.playing),
+        .indexes = Mod.read(.index),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.samples_slices, v.channels, v.playings, v.indexes) |id, samples, channels, playing, index| {
             if (!playing) continue;
 
             const channels_diff = player_channels - channels + 1;

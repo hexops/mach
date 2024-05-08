@@ -157,27 +157,29 @@ fn tick(
 
     // Query all the entities that have the .follower tag indicating they should follow the player.
     // TODO(important): better querying API
-    var archetypes_iter = core.__entities.queryDeprecated(.{ .all = &.{
-        .{ .app = &.{.follower} },
-    } });
-    while (archetypes_iter.next()) |archetype| {
-        // Iterate the ID and position of each entity
-        const ids = archetype.slice(.entities, .id);
-        const positions = archetype.slice(.renderer, .position);
-        for (ids, positions) |id, position| {
+
+    // Iterate the ID and position of each follower entity
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .followers = Mod.read(.follower),
+        .positions = Renderer.Mod.read(.position),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.positions) |id, position| {
             // Nested query to find all the other follower entities that we should move away from.
             // We will avoid all other follower entities if we're too close to them.
             // This is not very efficient, but it works!
             const close_dist = 1.0 / 15.0;
             var avoidance = Vec3.splat(0);
             var avoidance_div: f32 = 1.0;
-            var archetypes_iter_2 = core.__entities.queryDeprecated(.{ .all = &.{
-                .{ .app = &.{.follower} },
-            } });
-            while (archetypes_iter_2.next()) |archetype_2| {
-                const other_ids = archetype_2.slice(.entities, .id);
-                const other_positions = archetype_2.slice(.renderer, .position);
-                for (other_ids, other_positions) |other_id, other_position| {
+
+            var q2 = try entities.query(.{
+                .ids = mach.Entities.Mod.read(.id),
+                .followers = Mod.read(.follower),
+                .positions = Renderer.Mod.read(.position),
+            });
+            while (q2.next()) |v2| {
+                for (v2.ids, v2.positions) |other_id, other_position| {
                     if (id == other_id) continue;
                     if (position.dist(&other_position) < close_dist) {
                         avoidance = avoidance.sub(&position.dir(&other_position, 0.0000001));
