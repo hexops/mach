@@ -61,6 +61,7 @@ const BuiltText = struct {
 fn update(
     entities: *mach.Entities.Mod,
     text: *Mod,
+    text_style: *gfx.TextStyle.Mod,
     core: *mach.Core.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
 ) !void {
@@ -70,7 +71,7 @@ fn update(
     });
     while (q.next()) |v| {
         for (v.ids, v.built_pipelines) |pipeline_id, *built| {
-            try updatePipeline(entities, text, core, text_pipeline, pipeline_id, built);
+            try updatePipeline(entities, text, text_style, core, text_pipeline, pipeline_id, built);
         }
     }
 }
@@ -80,6 +81,7 @@ var font_once: ?gfx.Font = null;
 fn updatePipeline(
     entities: *mach.Entities.Mod,
     text: *Mod,
+    text_style: *gfx.TextStyle.Mod,
     core: *mach.Core.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     pipeline_id: mach.EntityID,
@@ -147,7 +149,7 @@ fn updatePipeline(
                 // Load the font
                 // TODO(text): allow specifying a custom font
                 // TODO(text): keep fonts around for reuse later
-                const font_name = core.__entities.getComponent(style, .mach_gfx_text_style, .font_name).?;
+                const font_name = text_style.get(style, .font_name).?;
                 _ = font_name; // TODO: actually use font name
                 const font_bytes = @import("font-assets").fira_sans_regular_ttf;
                 var font = if (font_once) |f| f else blk: {
@@ -156,13 +158,13 @@ fn updatePipeline(
                 };
                 // defer font.deinit(allocator);
 
+                const font_size = text_style.get(style, .font_size).?;
                 // TODO(text): respect these style parameters
-                const font_size = core.__entities.getComponent(style, .mach_gfx_text_style, .font_size).?;
-                const font_weight = core.__entities.getComponent(style, .mach_gfx_text_style, .font_weight);
+                const font_weight = text_style.get(style, .font_weight).?;
+                const italic = text_style.get(style, .italic).?;
+                const color = text_style.get(style, .color).?;
                 _ = font_weight;
-                const italic = core.__entities.getComponent(style, .mach_gfx_text_style, .italic);
                 _ = italic;
-                const color = core.__entities.getComponent(style, .mach_gfx_text_style, .color);
                 _ = color;
 
                 // Create a text shaper
