@@ -47,7 +47,7 @@ fn deinit(
     core: *mach.Core.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
 ) !void {
-    sprite_pipeline.send(.init, .{});
+    sprite_pipeline.send(.deinit, .{});
     core.send(.deinit, .{});
 }
 
@@ -223,9 +223,10 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
     game.state().frame_render_pass.end();
     const label = @tagName(name) ++ ".endFrame";
     var command = game.state().frame_encoder.finish(&.{ .label = label });
-    game.state().frame_encoder.release();
-    defer command.release();
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
+    command.release();
+    game.state().frame_encoder.release();
+    game.state().frame_render_pass.release();
 
     // Present the frame
     core.send(.present_frame, .{});
@@ -248,7 +249,7 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
 // TODO: move this helper into gfx module
 fn loadTexture(core: *mach.Core.Mod, allocator: std.mem.Allocator) !*gpu.Texture {
     const device = core.state().device;
-    const queue = device.getQueue();
+    const queue = core.state().queue;
 
     // Load the image from memory
     var img = try zigimg.Image.fromMemory(allocator, assets.sprites_sheet_png);
