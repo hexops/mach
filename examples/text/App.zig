@@ -269,11 +269,12 @@ fn endFrame(
 ) !void {
     // Finish render pass
     game.state().frame_render_pass.end();
-    const label = @tagName(name) ++ ".tick";
+    const label = @tagName(name) ++ ".endFrame";
     var command = game.state().frame_encoder.finish(&.{ .label = label });
-    game.state().frame_encoder.release();
-    defer command.release();
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
+    command.release();
+    game.state().frame_encoder.release();
+    game.state().frame_render_pass.release();
 
     // Present the frame
     core.send(.present_frame, .{});
