@@ -135,37 +135,36 @@ fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
 
     var did_state_change = false;
     var q = try entities.query(.{
-        .ids = mach.Entities.Mod.read(.id),
         .samples_slices = Mod.read(.samples),
         .channels = Mod.read(.channels),
-        .playings = Mod.read(.playing),
-        .indexes = Mod.read(.index),
+        .playings = Mod.write(.playing),
+        .indexes = Mod.write(.index),
     });
     while (q.next()) |v| {
-        for (v.ids, v.samples_slices, v.channels, v.playings, v.indexes) |id, samples, channels, playing, index| {
-            if (!playing) continue;
+        for (v.samples_slices, v.channels, v.playings, v.indexes) |samples, channels, *playing, *index| {
+            if (!playing.*) continue;
 
             const channels_diff = player_channels - channels + 1;
-            const to_read = @min(samples.len - index, mixing_buffer.items.len) / channels_diff;
+            const to_read = @min(samples.len - index.*, mixing_buffer.items.len) / channels_diff;
             if (channels == 1 and player_channels > 1) {
                 // Duplicate samples for mono sounds
                 var i: usize = 0;
-                for (samples[index..][0..to_read]) |sample| {
+                for (samples[index.*..][0..to_read]) |sample| {
                     mixSamplesDuplicate(mixing_buffer.items[i..][0..player_channels], sample);
                     i += player_channels;
                 }
             } else {
-                mixSamples(mixing_buffer.items[0..to_read], samples[index..][0..to_read]);
+                mixSamples(mixing_buffer.items[0..to_read], samples[index.*..][0..to_read]);
             }
 
-            if (index + to_read >= samples.len) {
+            if (index.* + to_read >= samples.len) {
                 // No longer playing, we've read all samples
                 did_state_change = true;
-                try audio.set(id, .playing, false);
-                try audio.set(id, .index, 0);
+                playing.* = false;
+                index.* = 0;
                 continue;
             }
-            try audio.set(id, .index, index + to_read);
+            index.* = index.* + to_read;
         }
     }
     if (audio.state().on_state_change) |on_state_change_event| {

@@ -162,10 +162,10 @@ fn tick(
     var q = try entities.query(.{
         .ids = mach.Entities.Mod.read(.id),
         .followers = Mod.read(.follower),
-        .positions = Renderer.Mod.read(.position),
+        .positions = Renderer.Mod.write(.position),
     });
     while (q.next()) |v| {
-        for (v.ids, v.positions) |id, position| {
+        for (v.ids, v.positions) |id, *position| {
             // Nested query to find all the other follower entities that we should move away from.
             // We will avoid all other follower entities if we're too close to them.
             // This is not very efficient, but it works!
@@ -204,7 +204,7 @@ fn tick(
             new_position = new_position.lerp(&vec3(0, 0, 0), move_speed / avoidance_div);
 
             // Finally, update our entity position.
-            try renderer.set(id, .position, new_position);
+            position.* = new_position;
         }
     }
 
