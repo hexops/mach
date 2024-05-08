@@ -75,6 +75,8 @@ fn update(
     }
 }
 
+var font_once: ?gfx.Font = null;
+
 fn updatePipeline(
     entities: *mach.Entities.Mod,
     text: *Mod,
@@ -143,13 +145,16 @@ fn updatePipeline(
 
             for (segments, styles) |segment, style| {
                 // Load the font
-                // TODO(text): allow specifying a font
+                // TODO(text): allow specifying a custom font
                 // TODO(text): keep fonts around for reuse later
                 const font_name = core.__entities.getComponent(style, .mach_gfx_text_style, .font_name).?;
                 _ = font_name; // TODO: actually use font name
                 const font_bytes = @import("font-assets").fira_sans_regular_ttf;
-                var font = try gfx.Font.initBytes(font_bytes);
-                defer font.deinit(allocator);
+                var font = if (font_once) |f| f else blk: {
+                    font_once = try gfx.Font.initBytes(font_bytes);
+                    break :blk font_once.?;
+                };
+                // defer font.deinit(allocator);
 
                 // TODO(text): respect these style parameters
                 const font_size = core.__entities.getComponent(style, .mach_gfx_text_style, .font_size).?;
