@@ -82,7 +82,7 @@ pub fn append(storage: *Archetype, gpa: Allocator, row: anytype) !u32 {
     storage.len += 1;
 
     storage.setRow(storage.len - 1, row);
-    return storage.len;
+    return storage.len - 1;
 }
 
 pub fn undoAppend(storage: *Archetype) void {
@@ -194,6 +194,7 @@ pub fn getDynamic(storage: *Archetype, row_index: u32, name: StringTable.Index, 
 
 /// Swap-removes the specified row with the last row in the table.
 pub fn remove(storage: *Archetype, row_index: u32) void {
+    assert(row_index < storage.len);
     if (storage.len > 1 and row_index != storage.len - 1) {
         for (storage.columns) |column| {
             const dstStart = column.size * row_index;
@@ -237,6 +238,13 @@ pub inline fn columnByName(storage: *Archetype, name: StringTable.Index) ?*Colum
         if (column.name == name) return column;
     }
     return null;
+}
+
+pub fn debugPrint(storage: *Archetype) void {
+    std.debug.print("Archetype hash={} len={} capacity={} columns={}\n", .{ storage.hash, storage.len, storage.capacity, storage.columns.len });
+    for (storage.columns, 0..) |*column, i| {
+        std.debug.print("{}. '{s}'\n", .{ i, storage.component_names.string(column.name) });
+    }
 }
 
 pub const is_debug = builtin.mode == .Debug;

@@ -77,11 +77,10 @@ pub fn Database(comptime modules: anytype) type {
     return struct {
         allocator: Allocator,
 
-        /// TODO!
+        /// TODO: entity ID recycling
         counter: EntityID = 0,
 
-        /// A mapping of entity IDs (array indices) to where an entity's component values are actually
-        /// stored.
+        /// A mapping of entity IDs to where an entity's component values are actually stored.
         entities: std.AutoHashMapUnmanaged(EntityID, Pointer) = .{},
 
         // All archetypes are stored in a bucket. The number of buckets is configurable, and which
@@ -196,7 +195,7 @@ pub fn Database(comptime modules: anytype) type {
             const bucket_index = hash % entities.buckets.len;
             if (entities.buckets[bucket_index]) |bucket| {
                 // Bucket already exists
-                const archetype = &entities.archetypes.items[bucket];
+                var archetype = &entities.archetypes.items[bucket];
                 if (archetype.next) |_| {
                     // Multiple archetypes in bucket (there were collisions)
                     while (archetype.next) |collision_index| {
@@ -207,6 +206,7 @@ pub fn Database(comptime modules: anytype) type {
                             // column IDs are equal here too?
                             return .{ .found_existing = true, .hash = hash, .index = collision_index, .ptr = collision };
                         }
+                        archetype = collision;
                     }
 
                     // New collision
@@ -339,101 +339,13 @@ pub fn Database(comptime modules: anytype) type {
                 Archetype.typeId(@TypeOf(component)),
             );
 
-            // TODO: DRY with setComponentDynamic, but verify this is functionally equivalent in all cases:
-            //
-            // return entities.setComponentDynamic(
-            //     entity,
-            //     name_id,
-            //     std.mem.asBytes(&component),
-            //     @alignOf(@TypeOf(component)),
-            //     Archetype.typeId(@TypeOf(component)),
-            // );
-
-            const prev_archetype_idx = entities.entities.get(entity).?.archetype_index;
-            var prev_archetype = &entities.archetypes.items[prev_archetype_idx];
-            var archetype: ?*Archetype = if (prev_archetype.hasComponent(name_id)) prev_archetype else null;
-            var archetype_idx: u32 = if (archetype != null) prev_archetype_idx else 0;
-
-            if (archetype == null) {
-                // TODO: eliminate the need for allocation and sorting here, since this can occur
-                // if an archetype already exists (found_existing case below)
-                const columns = try entities.allocator.alloc(Archetype.Column, prev_archetype.columns.len + 1);
-                @memcpy(columns[0 .. columns.len - 1], prev_archetype.columns);
-                for (columns) |*column| {
-                    column.values = undefined;
-                }
-                columns[columns.len - 1] = .{
-                    .name = name_id,
-                    .type_id = Archetype.typeId(@TypeOf(component)),
-                    .size = @sizeOf(@TypeOf(component)),
-                    .alignment = if (@sizeOf(@TypeOf(component)) == 0) 1 else @alignOf(@TypeOf(component)),
-                    .values = undefined,
-                };
-                std.sort.pdq(Archetype.Column, columns, {}, byTypeId);
-
-                const archetype_entry = try entities.archetypeOrPut(columns);
-                if (!archetype_entry.found_existing) {
-                    // Update prev_archetype pointer, as it would now be invalidated due to the allocation
-                    prev_archetype = &entities.archetypes.items[prev_archetype_idx];
-
-                    archetype_entry.ptr.* = .{
-                        .len = 0,
-                        .capacity = 0,
-                        .columns = columns,
-                        .component_names = entities.component_names,
-                        .hash = archetype_entry.hash,
-                    };
-                } else {
-                    entities.allocator.free(columns);
-                }
-                archetype = archetype_entry.ptr;
-                archetype_idx = archetype_entry.index;
-            }
-
-            // Either new storage (if the entity moved between storage tables due to having a new
-            // component) or the prior storage (if the entity already had the component and it's value
-            // is merely being updated.)
-            var current_archetype_storage = archetype.?;
-
-            if (archetype_idx == prev_archetype_idx) {
-                // Update the value of the existing component of the entity.
-                const ptr = entities.entities.get(entity).?;
-                current_archetype_storage.set(ptr.row_index, name_id, component);
-                return;
-            }
-
-            // Copy to all component values for our entity from the old archetype storage (archetype)
-            // to the new one (current_archetype_storage).
-            const new_row = try current_archetype_storage.appendUndefined(entities.allocator);
-            const old_ptr = entities.entities.get(entity).?;
-
-            // Update the storage/columns for all of the existing components on the entity.
-            current_archetype_storage.set(new_row, entities.id_name, entity);
-            for (prev_archetype.columns) |column| {
-                if (column.name == entities.id_name) continue;
-                for (current_archetype_storage.columns) |corresponding| {
-                    if (column.name == corresponding.name) {
-                        const old_value_raw = prev_archetype.getDynamic(old_ptr.row_index, column.name, column.size, column.alignment, column.type_id).?;
-                        current_archetype_storage.setDynamic(new_row, corresponding.name, old_value_raw, corresponding.alignment, corresponding.type_id);
-                        break;
-                    }
-                }
-            }
-
-            // Update the storage/column for the new component.
-            current_archetype_storage.set(new_row, name_id, component);
-
-            prev_archetype.remove(old_ptr.row_index);
-            if (prev_archetype.len > 0) {
-                const swapped_entity_id = prev_archetype.get(old_ptr.row_index, entities.id_name, EntityID).?;
-                try entities.entities.put(entities.allocator, swapped_entity_id, old_ptr);
-            }
-
-            try entities.entities.put(entities.allocator, entity, Pointer{
-                .archetype_index = archetype_idx,
-                .row_index = new_row,
-            });
-            return;
+            return entities.setComponentDynamic(
+                entity,
+                name_id,
+                std.mem.asBytes(&component),
+                if (@sizeOf(@TypeOf(component)) == 0) 1 else @alignOf(@TypeOf(component)),
+                Archetype.typeId(@TypeOf(component)),
+            );
         }
 
         fn setComponentDynamicDeferred(
@@ -480,7 +392,7 @@ pub fn Database(comptime modules: anytype) type {
             const prev_archetype_idx = entities.entities.get(entity).?.archetype_index;
             var prev_archetype = &entities.archetypes.items[prev_archetype_idx];
             var archetype: ?*Archetype = if (prev_archetype.hasComponent(name_id)) prev_archetype else null;
-            var archetype_idx: u32 = if (archetype != null) prev_archetype_idx else 0;
+            var archetype_idx: ?u32 = if (archetype != null) prev_archetype_idx else null;
 
             if (archetype == null) {
                 // TODO: eliminate the need for allocation and sorting here, since this can occur
@@ -522,8 +434,9 @@ pub fn Database(comptime modules: anytype) type {
             // component) or the prior storage (if the entity already had the component and it's value
             // is merely being updated.)
             var current_archetype_storage = archetype.?;
+            const current_archetype_idx = archetype_idx.?;
 
-            if (archetype_idx == prev_archetype_idx) {
+            if (current_archetype_idx == prev_archetype_idx) {
                 // Update the value of the existing component of the entity.
                 const ptr = entities.entities.get(entity).?;
                 current_archetype_storage.setDynamic(ptr.row_index, name_id, component, alignment, type_id);
@@ -551,14 +464,17 @@ pub fn Database(comptime modules: anytype) type {
             // Update the storage/column for the new component.
             current_archetype_storage.setDynamic(new_row, name_id, component, alignment, type_id);
 
+            // Swap remove our row out of the previous archetype
             prev_archetype.remove(old_ptr.row_index);
             if (prev_archetype.len > 0) {
+                // If a swap removal did occur, then at our old slot in the archetype represents
+                // that entity. Update its pointer to point to its new location.
                 const swapped_entity_id = prev_archetype.get(old_ptr.row_index, entities.id_name, EntityID).?;
                 try entities.entities.put(entities.allocator, swapped_entity_id, old_ptr);
             }
 
             try entities.entities.put(entities.allocator, entity, Pointer{
-                .archetype_index = archetype_idx,
+                .archetype_index = current_archetype_idx,
                 .row_index = new_row,
             });
             return;
