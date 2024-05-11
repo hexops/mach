@@ -504,6 +504,7 @@ pub fn Database(comptime modules: anytype) type {
             var archetype = entities.archetypeByID(entity);
             const ptr = entities.entities.get(entity).?;
 
+            //archetype.debugPrint();
             return archetype.get(ptr.row_index, name_id, Component);
         }
 

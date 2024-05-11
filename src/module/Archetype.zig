@@ -116,13 +116,13 @@ pub fn setCapacity(storage: *Archetype, gpa: Allocator, new_capacity: usize) !vo
 
     // TODO: ensure columns are sorted by type_id
     for (storage.columns) |*column| {
-        const old_values = column.values;
-        const new_values = try gpa.alloc(u8, new_capacity * column.size);
+        const old_values = storage.alignedColumnValues(column, column.values);
+        const new_values = try gpa.alloc(u8, (new_capacity * column.size) + 64); // 64 for maximum alignment padding we could need
         if (storage.capacity > 0) {
             @memcpy(new_values[0..old_values.len], old_values);
             gpa.free(old_values);
         }
-        column.values = new_values;
+        column.values = storage.alignedColumnValues(column, new_values);
     }
     storage.capacity = @as(u32, @intCast(new_capacity));
 }
@@ -138,7 +138,8 @@ pub fn setRow(storage: *Archetype, row_index: u32, row: anytype) void {
         if (@sizeOf(ColumnType) == 0) continue;
 
         const column = storage.columns[index];
-        const column_values = @as([*]ColumnType, @ptrCast(@alignCast(column.values.ptr)));
+        const aligned = storage.alignedColumnValues(&column, column.values);
+        const column_values = @as([*]ColumnType, @ptrCast(@alignCast(aligned)));
         column_values[row_index] = @field(row, field.name);
     }
 }
@@ -197,10 +198,11 @@ pub fn remove(storage: *Archetype, row_index: u32) void {
     assert(row_index < storage.len);
     if (storage.len > 1 and row_index != storage.len - 1) {
         for (storage.columns) |column| {
+            const aligned = storage.alignedColumnValues(&column, column.values);
             const dstStart = column.size * row_index;
-            const dst = column.values[dstStart .. dstStart + column.size];
+            const dst = aligned[dstStart .. dstStart + column.size];
             const srcStart = column.size * (storage.len - 1);
-            const src = column.values[srcStart .. srcStart + column.size];
+            const src = aligned[srcStart .. srcStart + column.size];
             @memcpy(dst, src);
         }
     }
@@ -230,7 +232,7 @@ pub fn getColumnValues(storage: *Archetype, name: StringTable.Index, comptime Co
 
 pub fn getColumnValuesRaw(storage: *Archetype, name: StringTable.Index) ?[]u8 {
     const column = storage.columnByName(name) orelse return null;
-    return column.values;
+    return storage.alignedColumnValues(column, column.values);
 }
 
 pub inline fn columnByName(storage: *Archetype, name: StringTable.Index) ?*Column {
@@ -238,6 +240,11 @@ pub inline fn columnByName(storage: *Archetype, name: StringTable.Index) ?*Colum
         if (column.name == name) return column;
     }
     return null;
+}
+
+pub inline fn alignedColumnValues(storage: *Archetype, column: *const Column, values: []u8) []u8 {
+    const aligned_ptr: [*]u8 = @ptrFromInt(std.mem.alignForward(usize, @intFromPtr(values.ptr), column.alignment));
+    return aligned_ptr[0 .. storage.len * column.size];
 }
 
 pub fn debugPrint(storage: *Archetype) void {
