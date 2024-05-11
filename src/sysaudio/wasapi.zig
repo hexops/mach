@@ -162,7 +162,9 @@ pub const Context = struct {
         const default_playback_id = try ctx.getDefaultAudioEndpoint(.playback);
         defer ctx.allocator.free(default_playback_id.?);
         const default_capture_id = try ctx.getDefaultAudioEndpoint(.capture);
-        defer ctx.allocator.free(default_capture_id.?);
+        if (default_capture_id) |default_id| {
+            defer ctx.allocator.free(default_id);
+        }
 
         // enumerate
         var collection: ?*win32.IMMDeviceCollection = null;
