@@ -6,7 +6,6 @@ const builtin = @import("builtin");
 
 const mach = @import("mach");
 const assets = @import("assets");
-const Opus = @import("opus");
 const gpu = mach.gpu;
 const math = mach.math;
 const sysaudio = mach.sysaudio;
@@ -30,7 +29,7 @@ pub const components = .{
     .is_bgm = .{ .type = void },
 };
 
-sfx: Opus,
+sfx: mach.Audio.Opus,
 
 fn init(
     entities: *mach.Entities.Mod,
@@ -45,10 +44,10 @@ fn init(
     const sfx_fbs = std.io.fixedBufferStream(assets.sfx.sword1);
 
     var sound_stream = std.io.StreamSource{ .const_buffer = bgm_fbs };
-    const bgm = try Opus.decodeStream(gpa.allocator(), sound_stream);
+    const bgm = try mach.Audio.Opus.decodeStream(gpa.allocator(), sound_stream);
 
     sound_stream = std.io.StreamSource{ .const_buffer = sfx_fbs };
-    const sfx = try Opus.decodeStream(gpa.allocator(), sound_stream);
+    const sfx = try mach.Audio.Opus.decodeStream(gpa.allocator(), sound_stream);
 
     // Initialize module state
     app.init(.{ .sfx = sfx });

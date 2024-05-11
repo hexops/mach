@@ -97,6 +97,13 @@ pub fn build(b: *std.Build) !void {
                 module.addImport("mach-freetype", dep.module("mach-freetype"));
                 module.addImport("mach-harfbuzz", dep.module("mach-harfbuzz"));
             }
+
+            if (b.lazyDependency("mach_opus", .{
+                .target = target,
+                .optimize = optimize,
+            })) |dep| {
+                module.addImport("mach-opus", dep.module("mach-opus"));
+            }
         }
         if (b.lazyDependency("font_assets", .{})) |dep| module.addImport("font-assets", dep.module("font-assets"));
 
@@ -554,7 +561,6 @@ fn buildExamples(
 ) !void {
     const Dependency = enum {
         assets,
-        opus,
         model3d,
         freetype,
         zigimg,
@@ -570,9 +576,9 @@ fn buildExamples(
         .{ .name = "custom-renderer", .deps = &.{} },
         .{ .name = "glyphs", .deps = &.{ .freetype, .assets } },
         .{ .name = "piano", .deps = &.{} },
-        .{ .name = "play-opus", .deps = &.{ .opus, .assets } },
+        .{ .name = "play-opus", .deps = &.{.assets} },
         .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
-        .{ .name = "text", .deps = &.{ .freetype, .assets } },
+        .{ .name = "text", .deps = &.{.assets} },
     }) |example| {
         if (target.result.cpu.arch == .wasm32 and !example.wasm) continue;
         const exe = b.addExecutable(.{
@@ -593,12 +599,6 @@ fn buildExamples(
                         .target = target,
                         .optimize = optimize,
                     })) |dep| exe.root_module.addImport("assets", dep.module("mach-example-assets"));
-                },
-                .opus => {
-                    if (b.lazyDependency("mach_opus", .{
-                        .target = target,
-                        .optimize = optimize,
-                    })) |dep| exe.root_module.addImport("opus", dep.module("mach-opus"));
                 },
                 .model3d => {
                     if (b.lazyDependency("mach_model3d", .{

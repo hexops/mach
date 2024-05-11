@@ -3,6 +3,8 @@ const builtin = @import("builtin");
 const mach = @import("main.zig");
 const sysaudio = mach.sysaudio;
 
+pub const Opus = @import("mach-opus");
+
 pub const name = .mach_audio;
 pub const Mod = mach.Mod(@This());
 
