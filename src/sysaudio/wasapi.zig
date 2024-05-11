@@ -250,10 +250,11 @@ pub const Context = struct {
                 var fmt_arr = std.ArrayList(main.Format).init(ctx.allocator);
                 var closest_match: ?*win32.WAVEFORMATEX = null;
                 for (std.meta.tags(main.Format)) |format| {
-                    setWaveFormatFormat(wf, format);
+                    const wave_format = makeWaveFormatExtensible(format, channels, @intCast(wf.Format.nSamplesPerSec));
+
                     if (audio_client.?.IsFormatSupported(
                         .SHARED,
-                        @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(wf))),
+                        @as(?*const win32.WAVEFORMATEX, @ptrCast(@alignCast(&wave_format))),
                         &closest_match,
                     ) == win32.S_OK) {
                         try fmt_arr.append(format);
@@ -381,24 +382,6 @@ pub const Context = struct {
         };
     }
 
-    fn setWaveFormatFormat(wf: *win32.WAVEFORMATEXTENSIBLE, format: main.Format) void {
-        switch (format) {
-            .u8,
-            .i16,
-            // TODO(i24)
-            // .i24,
-            .i32,
-            => {
-                wf.SubFormat = win32.CLSID_KSDATAFORMAT_SUBTYPE_PCM.*;
-            },
-            .f32 => {
-                wf.SubFormat = win32.CLSID_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT.*;
-            },
-        }
-        wf.Format.wBitsPerSample = format.sizeBits();
-        wf.Samples.wValidBitsPerSample = format.validSizeBits();
-    }
-
     fn getDefaultAudioEndpoint(ctx: *Context, mode: main.Device.Mode) !?[:0]u8 {
         var default_playback_device: ?*win32.IMMDevice = null;
         var hr = ctx.enumerator.?.GetDefaultAudioEndpoint(
@@ -477,22 +460,7 @@ pub const Context = struct {
             }
         }
 
-        const wave_format = win32.WAVEFORMATEXTENSIBLE{
-            .Format = .{
-                .wFormatTag = win32.WAVE_FORMAT_EXTENSIBLE,
-                .nChannels = @as(u16, @intCast(device.channels.len)),
-                .nSamplesPerSec = sample_rate,
-                .nAvgBytesPerSec = sample_rate * format.frameSize(@intCast(device.channels.len)),
-                .nBlockAlign = format.frameSize(@intCast(device.channels.len)),
-                .wBitsPerSample = format.sizeBits(),
-                .cbSize = 0x16,
-            },
-            .Samples = .{
-                .wValidBitsPerSample = format.validSizeBits(),
-            },
-            .dwChannelMask = toChannelMask(device.channels),
-            .SubFormat = toSubFormat(format),
-        };
+        const wave_format = makeWaveFormatExtensible(format, device.channels, sample_rate);
 
         if (!ctx.is_wine and audio_client3.* != null) {
             hr = audio_client3.*.?.InitializeSharedAudioStream(
@@ -684,6 +652,25 @@ pub const Context = struct {
             .sample_rate = sample_rate,
         };
         return .{ .wasapi = recorder };
+    }
+
+    fn makeWaveFormatExtensible(format: main.Format, channels: []const main.ChannelPosition, sample_rate: u24) win32.WAVEFORMATEXTENSIBLE {
+        return win32.WAVEFORMATEXTENSIBLE{
+            .Format = .{
+                .wFormatTag = win32.WAVE_FORMAT_EXTENSIBLE,
+                .nChannels = @as(u16, @intCast(channels.len)),
+                .nSamplesPerSec = sample_rate,
+                .nAvgBytesPerSec = sample_rate * format.frameSize(@intCast(channels.len)),
+                .nBlockAlign = format.frameSize(@intCast(channels.len)),
+                .wBitsPerSample = format.sizeBits(),
+                .cbSize = 0x16,
+            },
+            .Samples = .{
+                .wValidBitsPerSample = format.validSizeBits(),
+            },
+            .dwChannelMask = toChannelMask(channels),
+            .SubFormat = toSubFormat(format),
+        };
     }
 
     fn toSubFormat(format: main.Format) win32.Guid {
