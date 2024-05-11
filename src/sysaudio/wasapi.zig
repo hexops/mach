@@ -677,12 +677,7 @@ pub const Context = struct {
 
     fn toSubFormat(format: main.Format) win32.Guid {
         return switch (format) {
-            .u8,
-            .i16,
-            // TODO(i24)
-            // .i24,
-            .i32,
-            => win32.CLSID_KSDATAFORMAT_SUBTYPE_PCM.*,
+            .u8, .i16, .i24, .i32 => win32.CLSID_KSDATAFORMAT_SUBTYPE_PCM.*,
             .f32 => win32.CLSID_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT.*,
         };
     }

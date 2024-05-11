@@ -321,85 +321,89 @@ pub const Recorder = struct {
     }
 };
 
-pub fn convertTo(comptime SrcType: type, src: []const SrcType, dst_format: Format, dst: []u8) void {
-    const dst_len = dst.len / dst_format.size();
-    std.debug.assert(dst_len == src.len);
+pub fn convertTo(comptime SrcType: type, src: []const SrcType, dst_format: Format, dst_bytes: []u8) void {
+    const src_stride = @bitSizeOf(SrcType) / 8;
+    const dst_stride = dst_format.size();
+    const src_bytes = @as([*]const u8, @ptrCast(@alignCast(src)))[0 .. src.len * src_stride];
+    std.debug.assert(@bitSizeOf(SrcType) % 8 == 0);
+    std.debug.assert(dst_bytes.len / dst_stride == src.len);
 
     return switch (dst_format) {
         .u8 => switch (SrcType) {
-            u8 => @memcpy(@as([*]u8, @ptrCast(@alignCast(dst)))[0..dst_len], src),
-            i8, i16, i24, i32 => conv.signedToUnsigned(SrcType, src, u8, @as([*]u8, @ptrCast(@alignCast(dst)))[0..dst_len]),
-            f32 => conv.floatToUnsigned(SrcType, src, u8, @as([*]u8, @ptrCast(@alignCast(dst)))[0..dst_len]),
+            u8 => @memcpy(dst_bytes, src_bytes),
+            i8, i16, i24, i32 => conv.signedToUnsigned(SrcType, src_stride, src_bytes, u8, dst_stride, dst_bytes, src.len),
+            f32 => conv.floatToUnsigned(SrcType, src_stride, src_bytes, u8, dst_stride, dst_bytes, src.len),
             else => unreachable,
         },
         .i16 => switch (SrcType) {
-            i16 => @memcpy(@as([*]i16, @ptrCast(@alignCast(dst)))[0..dst_len], src),
-            u8 => conv.unsignedToSigned(SrcType, src, i16, @as([*]i16, @ptrCast(@alignCast(dst)))[0..dst_len]),
-            i8, i24, i32 => conv.signedToSigned(SrcType, src, i16, @as([*]i16, @ptrCast(@alignCast(dst)))[0..dst_len]),
-            f32 => conv.floatToSigned(SrcType, src, i16, @as([*]i16, @ptrCast(@alignCast(dst)))[0..dst_len]),
+            i16 => @memcpy(dst_bytes, src_bytes),
+            u8 => conv.unsignedToSigned(SrcType, src_stride, src_bytes, i16, dst_stride, dst_bytes, src.len),
+            i8, i24, i32 => conv.signedToSigned(SrcType, src_stride, src_bytes, i16, dst_stride, dst_bytes, src.len),
+            f32 => conv.floatToSigned(SrcType, src_stride, src_bytes, i16, dst_stride, dst_bytes, src.len),
             else => unreachable,
         },
-        // TODO(i24)
-        // .i24 => switch (SrcType) {
-        //     i24 => @memcpy(@as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len], src),
-        //     u8 => conv.unsignedToSigned(SrcType, src, i24, @as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len]),
-        //     i8, i16, i32 => conv.signedToSigned(SrcType, src, i24, @as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len]),
-        //     f32 => conv.floatToSigned(SrcType, src, i24, @as([*]i24, @ptrCast(@alignCast(dst)))[0..dst_len]),
-        //     else => unreachable,
-        // },
+        .i24 => switch (SrcType) {
+            i24 => @memcpy(dst_bytes, src_bytes),
+            u8 => conv.unsignedToSigned(SrcType, src_stride, src_bytes, i24, dst_stride, dst_bytes, src.len),
+            i8, i16, i32 => conv.signedToSigned(SrcType, src_stride, src_bytes, i24, dst_stride, dst_bytes, src.len),
+            f32 => conv.floatToSigned(SrcType, src_stride, src_bytes, i24, dst_stride, dst_bytes, src.len),
+            else => unreachable,
+        },
         .i32 => switch (SrcType) {
-            i32 => @memcpy(@as([*]i32, @ptrCast(@alignCast(dst)))[0..dst_len], src),
-            u8 => conv.unsignedToSigned(SrcType, src, i32, @as([*]i32, @ptrCast(@alignCast(dst)))[0..dst_len]),
-            i8, i16, i24 => conv.signedToSigned(SrcType, src, i32, @as([*]i32, @ptrCast(@alignCast(dst)))[0..dst_len]),
-            f32 => conv.floatToSigned(SrcType, src, i32, @as([*]i32, @ptrCast(@alignCast(dst)))[0..dst_len]),
+            i32 => @memcpy(dst_bytes, src_bytes),
+            u8 => conv.unsignedToSigned(SrcType, src_stride, src_bytes, i32, dst_stride, dst_bytes, src.len),
+            i8, i16, i24 => conv.signedToSigned(SrcType, src_stride, src_bytes, i32, dst_stride, dst_bytes, src.len),
+            f32 => conv.floatToSigned(SrcType, src_stride, src_bytes, i32, dst_stride, dst_bytes, src.len),
             else => unreachable,
         },
         .f32 => switch (SrcType) {
-            f32 => @memcpy(@as([*]f32, @ptrCast(@alignCast(dst)))[0..dst_len], src),
-            u8 => conv.unsignedToFloat(SrcType, src, f32, @as([*]f32, @ptrCast(@alignCast(dst)))[0..dst_len]),
-            i8, i16, i24, i32 => conv.signedToFloat(SrcType, src, f32, @as([*]f32, @ptrCast(@alignCast(dst)))[0..dst_len]),
+            f32 => @memcpy(dst_bytes, src_bytes),
+            u8 => conv.unsignedToFloat(SrcType, src_stride, src_bytes, f32, dst_stride, dst_bytes, src.len),
+            i8, i16, i24, i32 => conv.signedToFloat(SrcType, src_stride, src_bytes, f32, dst_stride, dst_bytes, src.len),
             else => unreachable,
         },
     };
 }
 
-pub fn convertFrom(comptime DestType: type, dst: []DestType, src_format: Format, src: []const u8) void {
-    const src_len = src.len / src_format.size();
-    std.debug.assert(src_len == dst.len);
+pub fn convertFrom(comptime DstType: type, dst: []DstType, src_format: Format, src_bytes: []const u8) void {
+    const src_stride = src_format.size();
+    const dst_stride = @bitSizeOf(DstType) / 8;
+    const dst_bytes = @as([*]u8, @ptrCast(@alignCast(dst)))[0 .. dst.len * dst_stride];
+    std.debug.assert(@bitSizeOf(DstType) % 8 == 0);
+    std.debug.assert(src_bytes.len / src_stride == dst.len);
 
     return switch (src_format) {
-        .u8 => switch (DestType) {
-            u8 => @memcpy(dst, @as([*]const u8, @ptrCast(@alignCast(src)))[0..src_len]),
-            i8, i16, i24, i32 => conv.unsignedToSigned(u8, @as([*]const u8, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-            f32 => conv.unsignedToFloat(u8, @as([*]const u8, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
+        .u8 => switch (DstType) {
+            u8 => @memcpy(dst_bytes, src_bytes),
+            i8, i16, i24, i32 => conv.unsignedToSigned(u8, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
+            f32 => conv.unsignedToFloat(u8, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
             else => unreachable,
         },
-        .i16 => switch (DestType) {
-            i16 => @memcpy(dst, @as([*]const i16, @ptrCast(@alignCast(src)))[0..src_len]),
-            u8 => conv.signedToUnsigned(i16, @as([*]const i16, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-            i8, i24, i32 => conv.signedToSigned(i16, @as([*]const i16, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-            f32 => conv.signedToFloat(i16, @as([*]const i16, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
+        .i16 => switch (DstType) {
+            i16 => @memcpy(dst_bytes, src_bytes),
+            u8 => conv.signedToUnsigned(i16, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
+            i8, i24, i32 => conv.signedToSigned(i16, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
+            f32 => conv.signedToFloat(i16, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
             else => unreachable,
         },
-        // TODO(i24)
-        // .i24 => switch (DestType) {
-        //     i24 => @memcpy(dst, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len]),
-        //     u8 => conv.signedToUnsigned(i24, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-        //     i8, i16, i32 => conv.signedToSigned(i24, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-        //     f32 => conv.signedToFloat(i24, @as([*]const i24, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-        //     else => unreachable,
-        // },
-        .i32 => switch (DestType) {
-            i32 => @memcpy(dst, @as([*]const i32, @ptrCast(@alignCast(src)))[0..src_len]),
-            u8 => conv.signedToUnsigned(i32, @as([*]const i32, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-            i8, i16, i24 => conv.signedToSigned(i32, @as([*]const i32, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-            f32 => conv.signedToFloat(i32, @as([*]const i32, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
+        .i24 => switch (DstType) {
+            i24 => @memcpy(dst_bytes, src_bytes),
+            u8 => conv.signedToUnsigned(i24, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
+            i8, i16, i32 => conv.signedToSigned(i24, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
+            f32 => conv.signedToFloat(i24, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
             else => unreachable,
         },
-        .f32 => switch (DestType) {
-            f32 => @memcpy(dst, @as([*]const f32, @ptrCast(@alignCast(src)))[0..src_len]),
-            u8 => conv.floatToUnsigned(f32, @as([*]const f32, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
-            i8, i16, i24, i32 => conv.floatToSigned(f32, @as([*]const f32, @ptrCast(@alignCast(src)))[0..src_len], DestType, dst),
+        .i32 => switch (DstType) {
+            i32 => @memcpy(dst_bytes, src_bytes),
+            u8 => conv.signedToUnsigned(i32, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
+            i8, i16, i24 => conv.signedToSigned(i32, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
+            f32 => conv.signedToFloat(i32, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
+            else => unreachable,
+        },
+        .f32 => switch (DstType) {
+            f32 => @memcpy(dst_bytes, src_bytes),
+            u8 => conv.floatToUnsigned(f32, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
+            i8, i16, i24, i32 => conv.floatToSigned(f32, src_stride, src_bytes, DstType, dst_stride, dst_bytes, dst.len),
             else => unreachable,
         },
     };
@@ -418,6 +422,7 @@ pub const Device = struct {
         capture,
     };
 
+    // TODO: don't call this in backends. let the user use it
     pub fn preferredFormat(device: Device, format: ?Format) Format {
         if (format) |f| {
             for (device.formats) |fmt| if (f == fmt) return fmt;
@@ -455,8 +460,7 @@ pub const ChannelPosition = enum {
 pub const Format = enum {
     u8,
     i16,
-    // TODO(i24): Uncomment when https://github.com/hexops/mach/issues/1152 is fixed
-    // i24 = 2,
+    i24,
     i32,
     f32,
 
@@ -464,8 +468,7 @@ pub const Format = enum {
         return switch (format) {
             .u8 => 1,
             .i16 => 2,
-            // TODO(i24)
-            // .i24 => 3,
+            .i24 => 3,
             .i32, .f32 => 4,
         };
     }
@@ -474,8 +477,7 @@ pub const Format = enum {
         return switch (format) {
             .u8 => 1,
             .i16 => 2,
-            // TODO(i24)
-            // .i24 => 3,
+            .i24 => 3,
             .i32, .f32 => 4,
         };
     }
