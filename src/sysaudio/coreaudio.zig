@@ -742,8 +742,7 @@ fn createStreamDesc(format: main.Format, sample_rate: u24, ch_count: usize) !c.A
         .mFormatID = c.kAudioFormatLinearPCM,
         .mFormatFlags = switch (format) {
             .i16 => c.kAudioFormatFlagIsSignedInteger,
-            // TODO(i24)
-            // .i24 => c.kAudioFormatFlagIsSignedInteger,
+            .i24 => c.kAudioFormatFlagIsSignedInteger,
             .i32 => c.kAudioFormatFlagIsSignedInteger,
             .f32 => c.kAudioFormatFlagIsFloat,
             .u8 => return error.IncompatibleDevice,
@@ -754,8 +753,7 @@ fn createStreamDesc(format: main.Format, sample_rate: u24, ch_count: usize) !c.A
         .mChannelsPerFrame = @intCast(ch_count),
         .mBitsPerChannel = switch (format) {
             .i16 => 16,
-            // TODO(i24)
-            // .i24 => 24,
+            .i24 => 24,
             .i32 => 32,
             .f32 => 32,
             .u8 => return error.IncompatibleDevice,

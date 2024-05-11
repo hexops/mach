@@ -746,8 +746,7 @@ fn performOperation(main_loop: *c.pa_threaded_mainloop, op: ?*c.pa_operation) vo
 pub const available_formats = &[_]main.Format{
     .u8,
     .i16,
-    // TODO(i24)
-    // .i24,
+    .i24,
     .i32,
     .f32,
 };
@@ -783,8 +782,7 @@ pub fn toPAFormat(format: main.Format) c.pa_sample_format_t {
     return switch (format) {
         .u8 => c.PA_SAMPLE_U8,
         .i16 => if (is_little) c.PA_SAMPLE_S16LE else c.PA_SAMPLE_S16BE,
-        // TODO(i24)
-        // .i24 => if (is_little) c.PA_SAMPLE_S24LE else c.PA_SAMPLE_S24LE,
+        .i24 => if (is_little) c.PA_SAMPLE_S24LE else c.PA_SAMPLE_S24LE,
         .i32 => if (is_little) c.PA_SAMPLE_S32LE else c.PA_SAMPLE_S32BE,
         .f32 => if (is_little) c.PA_SAMPLE_FLOAT32LE else c.PA_SAMPLE_FLOAT32BE,
     };
