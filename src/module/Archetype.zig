@@ -73,18 +73,6 @@ pub fn appendUndefined(storage: *Archetype, gpa: Allocator) !u32 {
     return row_index;
 }
 
-// TODO: comptime: missing a runtime variant of this function
-pub fn append(storage: *Archetype, gpa: Allocator, row: anytype) !u32 {
-    debugAssertRowType(storage, row);
-
-    try storage.ensureUnusedCapacity(gpa, 1);
-    assert(storage.len < storage.capacity);
-    storage.len += 1;
-
-    storage.setRow(storage.len - 1, row);
-    return storage.len - 1;
-}
-
 pub fn undoAppend(storage: *Archetype) void {
     storage.len -= 1;
 }
@@ -107,6 +95,8 @@ pub fn ensureTotalCapacity(storage: *Archetype, gpa: Allocator, new_capacity: us
     return storage.setCapacity(gpa, better_capacity);
 }
 
+const max_align_padding = 64;
+
 /// Sets the capacity to exactly `new_capacity` rows total
 ///
 /// Asserts `new_capacity >= storage.len`, if you want to shrink capacity then change the len
@@ -117,30 +107,15 @@ pub fn setCapacity(storage: *Archetype, gpa: Allocator, new_capacity: usize) !vo
     // TODO: ensure columns are sorted by type_id
     for (storage.columns) |*column| {
         const old_values = column.values;
-        const new_values = try gpa.alloc(u8, new_capacity * column.size);
+        const new_values = try gpa.alloc(u8, (new_capacity * column.size) + max_align_padding);
         if (storage.capacity > 0) {
+            // Note: this copies alignment padding (which is fine, since it is a constant amount.)
             @memcpy(new_values[0..old_values.len], old_values);
             gpa.free(old_values);
         }
         column.values = new_values;
     }
     storage.capacity = @as(u32, @intCast(new_capacity));
-}
-
-// TODO: comptime: missing a runtime variant of this function
-/// Sets the entire row's values in the table.
-pub fn setRow(storage: *Archetype, row_index: u32, row: anytype) void {
-    debugAssertRowType(storage, row);
-
-    const fields = std.meta.fields(@TypeOf(row));
-    inline for (fields, 0..) |field, index| {
-        const ColumnType = field.type;
-        if (@sizeOf(ColumnType) == 0) continue;
-
-        const column = storage.columns[index];
-        const column_values = @as([*]ColumnType, @ptrCast(@alignCast(column.values.ptr)));
-        column_values[row_index] = @field(row, field.name);
-    }
 }
 
 /// Sets the value of the named components (columns) for the given row in the table.
@@ -197,10 +172,11 @@ pub fn remove(storage: *Archetype, row_index: u32) void {
     assert(row_index < storage.len);
     if (storage.len > 1 and row_index != storage.len - 1) {
         for (storage.columns) |column| {
+            const aligned_values = storage.aligned(&column, column.values);
             const dstStart = column.size * row_index;
-            const dst = column.values[dstStart .. dstStart + column.size];
+            const dst = aligned_values[dstStart .. dstStart + column.size];
             const srcStart = column.size * (storage.len - 1);
-            const src = column.values[srcStart .. srcStart + column.size];
+            const src = aligned_values[srcStart .. srcStart + column.size];
             @memcpy(dst, src);
         }
     }
@@ -220,6 +196,17 @@ pub fn hasComponent(storage: *Archetype, name: StringTable.Index) bool {
     return storage.columnByName(name) != null;
 }
 
+/// Given a column.values slice which is unaligned, adds the neccessary padding
+/// to achieve alignment for the column's data type, and returns the padded slice.
+inline fn aligned(storage: *Archetype, column: *const Column, values: []u8) []u8 {
+    const aligned_addr = std.mem.alignForward(usize, @intFromPtr(values.ptr), column.alignment);
+    if (is_debug) {
+        const padding_bytes = aligned_addr - @as(usize, @intFromPtr(values.ptr));
+        if (padding_bytes > max_align_padding) @panic("mach: max_align_padding is too low, this is a bug");
+    }
+    return @as([*]u8, @ptrFromInt(aligned_addr))[0 .. storage.capacity * column.size];
+}
+
 pub fn getColumnValues(storage: *Archetype, name: StringTable.Index, comptime ColumnType: type) ?[]ColumnType {
     const values = storage.getColumnValuesRaw(name) orelse return null;
     if (is_debug) debugAssertColumnType(storage, storage.columnByName(name).?, ColumnType);
@@ -230,7 +217,7 @@ pub fn getColumnValues(storage: *Archetype, name: StringTable.Index, comptime Co
 
 pub fn getColumnValuesRaw(storage: *Archetype, name: StringTable.Index) ?[]u8 {
     const column = storage.columnByName(name) orelse return null;
-    return column.values;
+    return storage.aligned(column, column.values);
 }
 
 pub inline fn columnByName(storage: *Archetype, name: StringTable.Index) ?*Column {

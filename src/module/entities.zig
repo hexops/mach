@@ -254,7 +254,8 @@ pub fn Database(comptime modules: anytype) type {
             assert(archetype_entry.found_existing);
 
             var void_archetype = archetype_entry.ptr;
-            const new_row = try void_archetype.append(entities.allocator, .{ .id = new_id });
+            const new_row = try void_archetype.appendUndefined(entities.allocator);
+            void_archetype.set(new_row, entities.id_name, new_id);
             const void_pointer = Pointer{
                 .archetype_index = 0, // void archetype is guaranteed to be first index
                 .row_index = new_row,
