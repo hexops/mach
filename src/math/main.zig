@@ -146,6 +146,7 @@ pub const log10 = std.math.log10;
 pub const degreesToRadians = std.math.degreesToRadians;
 pub const radiansToDegrees = std.math.radiansToDegrees;
 pub const maxInt = std.math.maxInt;
+pub const lerp = std.math.lerp;
 
 /// 2/sqrt(π)
 pub const two_sqrtpi = std.math.two_sqrtpi;
