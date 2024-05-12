@@ -64,7 +64,15 @@ pub const components = .{
     },
 
     .framebuffer_height = .{ .type = u32, .description = 
-    \\ The width of the framebuffer in texels
+    \\ The height of the framebuffer in texels
+    },
+
+    .width = .{ .type = u32, .description = 
+    \\ The width of the window in virtual pixels
+    },
+
+    .height = .{ .type = u32, .description = 
+    \\ The height of the window in virtual pixels
     },
 };
 
@@ -115,11 +123,13 @@ fn init(entities: *mach.Entities.Mod, core: *Mod) !void {
 
     try mach.core.init(.{});
 
-    // TODO(important): update this information upon framebuffer resize events
     const main_window = try entities.new();
+    // TODO(important): update this information upon framebuffer resize events
     try core.set(main_window, .framebuffer_format, mach.core.descriptor.format);
     try core.set(main_window, .framebuffer_width, mach.core.descriptor.width);
     try core.set(main_window, .framebuffer_height, mach.core.descriptor.height);
+    try core.set(main_window, .width, mach.core.size().width);
+    try core.set(main_window, .height, mach.core.size().height);
 
     core.init(.{
         .allocator = mach.core.allocator,
@@ -151,6 +161,15 @@ fn presentFrame(core: *Mod) !void {
     switch (core.state().run_state) {
         .running => {
             mach.core.swap_chain.present();
+
+            // TODO(important): update this information in response to resize events rather than
+            // after frame submission
+            const main_window = core.state().main_window;
+            try core.set(main_window, .framebuffer_format, mach.core.descriptor.format);
+            try core.set(main_window, .framebuffer_width, mach.core.descriptor.width);
+            try core.set(main_window, .framebuffer_height, mach.core.descriptor.height);
+            try core.set(main_window, .width, mach.core.size().width);
+            try core.set(main_window, .height, mach.core.size().height);
 
             // Signal that mainThreadTick is done
             core.schedule(.main_thread_tick_done);
