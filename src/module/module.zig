@@ -813,6 +813,7 @@ pub fn ComponentNameM(comptime M: type) type {
 
 /// enum describing component names for all of the modules
 pub fn ComponentName(comptime modules: anytype) type {
+    @setEvalBranchQuota(10_000);
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: usize = 0;
     inline for (modules) |M| {
