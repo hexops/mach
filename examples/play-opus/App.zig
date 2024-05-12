@@ -41,13 +41,12 @@ fn init(
     app.schedule(.after_init);
 
     const bgm_fbs = std.io.fixedBufferStream(assets.bgm.bit_bit_loop);
+    const bgm_sound_stream = std.io.StreamSource{ .const_buffer = bgm_fbs };
+    const bgm = try mach.Audio.Opus.decodeStream(gpa.allocator(), bgm_sound_stream);
+
     const sfx_fbs = std.io.fixedBufferStream(assets.sfx.sword1);
-
-    var sound_stream = std.io.StreamSource{ .const_buffer = bgm_fbs };
-    const bgm = try mach.Audio.Opus.decodeStream(gpa.allocator(), sound_stream);
-
-    sound_stream = std.io.StreamSource{ .const_buffer = sfx_fbs };
-    const sfx = try mach.Audio.Opus.decodeStream(gpa.allocator(), sound_stream);
+    const sfx_sound_stream = std.io.StreamSource{ .const_buffer = sfx_fbs };
+    const sfx = try mach.Audio.Opus.decodeStream(gpa.allocator(), sfx_sound_stream);
 
     // Initialize module state
     app.init(.{ .sfx = sfx });
