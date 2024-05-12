@@ -572,6 +572,7 @@ fn buildExamples(
         wasm: bool = false,
         has_assets: bool = false,
     }{
+        .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
         .{ .name = "core-custom-entrypoint", .deps = &.{} },
         .{ .name = "custom-renderer", .deps = &.{} },
         .{ .name = "glyphs", .deps = &.{ .freetype, .assets } },

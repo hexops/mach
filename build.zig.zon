@@ -98,8 +98,8 @@
             .lazy = true,
         },
         .mach_example_assets = .{
-            .url = "https://pkg.machengine.org/mach-example-assets/2200080af808e70fb20062c78c8e3e110605ac74.tar.gz",
-            .hash = "1220cb4b50aa4178b9b10a5e5628fc743abb2e3b264ce63c837c21b3b22a64dc3be2",
+            .url = "https://pkg.machengine.org/mach-example-assets/9fef2d88fa31cda58a829fa620593bb8d6d84e7f.tar.gz",
+            .hash = "122068f781d131e31726bae92057130492953b3276c272388a4e078f94d16b197b6b",
             .lazy = true,
         },
     },
