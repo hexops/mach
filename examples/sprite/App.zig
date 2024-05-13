@@ -39,6 +39,7 @@ pub const Mod = mach.Mod(@This());
 pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
+    .after_init = .{ .handler = afterInit },
     .tick = .{ .handler = tick },
     .end_frame = .{ .handler = endFrame },
 };
@@ -52,14 +53,22 @@ fn deinit(
 }
 
 fn init(
+    core: *mach.Core.Mod,
+    sprite_pipeline: *gfx.SpritePipeline.Mod,
+    game: *Mod,
+) !void {
+    core.schedule(.init);
+    sprite_pipeline.schedule(.init);
+    game.schedule(.after_init);
+}
+
+fn afterInit(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     game: *Mod,
 ) !void {
-    sprite_pipeline.schedule(.init);
-
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `.mach_gfx_sprite` module could have a 3D `.location` component with a different
     // type than the `.physics2d` module's `.location` component if you desire.

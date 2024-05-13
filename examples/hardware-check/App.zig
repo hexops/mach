@@ -66,8 +66,13 @@ fn init(
     text_pipeline: *gfx.TextPipeline.Mod,
     text: *gfx.Text.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
+    core: *mach.Core.Mod,
     game: *Mod,
 ) !void {
+    // If you want to try fullscreen:
+    // try core.set(core.state().main_window, .fullscreen, true);
+
+    core.schedule(.init);
     audio.schedule(.init);
     text.schedule(.init);
     text_pipeline.schedule(.init);

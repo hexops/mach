@@ -47,6 +47,7 @@ fn deinit(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs
 }
 
 fn init(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mod) !void {
+    core.schedule(.init);
     sprite_pipeline.schedule(.init);
     glyphs.schedule(.init);
 
@@ -55,8 +56,6 @@ fn init(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: 
 
     // Run our init code after glyphs module is initialized.
     game.schedule(.after_init);
-
-    core.schedule(.start);
 }
 
 fn afterInit(
@@ -65,6 +64,7 @@ fn afterInit(
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     glyphs: *Glyphs.Mod,
     game: *Mod,
+    core: *mach.Core.Mod,
 ) !void {
     // Create a sprite rendering pipeline
     const texture = glyphs.state().texture;
@@ -96,6 +96,8 @@ fn afterInit(
         .time = 0,
         .pipeline = pipeline,
     });
+
+    core.schedule(.start);
 }
 
 fn tick(

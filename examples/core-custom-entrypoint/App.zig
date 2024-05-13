@@ -7,6 +7,7 @@ pub const Mod = mach.Mod(@This());
 
 pub const systems = .{
     .init = .{ .handler = init },
+    .after_init = .{ .handler = afterInit },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
 };
@@ -20,6 +21,11 @@ pub fn deinit(core: *mach.Core.Mod, game: *Mod) void {
 }
 
 fn init(game: *Mod, core: *mach.Core.Mod) !void {
+    core.schedule(.init);
+    game.schedule(.after_init);
+}
+
+fn afterInit(game: *Mod, core: *mach.Core.Mod) !void {
     // Create our shader module
     const shader_module = core.state().device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
     defer shader_module.release();
@@ -62,7 +68,6 @@ fn init(game: *Mod, core: *mach.Core.Mod) !void {
     core.schedule(.start);
 }
 
-// TODO(important): remove need for returning an error here
 fn tick(core: *mach.Core.Mod, game: *Mod) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS event.
     // TODO(Core)

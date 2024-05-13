@@ -16,7 +16,7 @@ pub fn initModule() !void {
     // Initialize the global set of Mach modules used in the program.
     try mods.init(std.heap.c_allocator);
 
-    mods.schedule(.mach_core, .init);
+    mods.schedule(.mach_core, .init_module);
 }
 
 /// Tick runs a single step of the main loop on the main OS thread.

@@ -11,8 +11,13 @@ pub const name = .mach_core;
 pub const Mod = mach.Mod(@This());
 
 pub const systems = .{
+    .init = .{ .handler = init, .description = 
+    \\ Send this once you've configured any options you want on e.g. the core.state().main_window
+    },
+
     .start = .{ .handler = start, .description = 
-    \\ Send this once your app is initialized and ready for .app.tick events.
+    \\ Send this once your .app.init has been handled, you've sent .mach_core.init, and you are ready
+    \\ for .app.tick events.
     },
 
     .update = .{ .handler = update, .description = 
@@ -38,7 +43,7 @@ pub const systems = .{
 
     // TODO(important): need some way to tie event execution to a specific thread once we have a
     // multithreaded dispatch implementation
-    .init = .{ .handler = init },
+    .init_module = .{ .handler = initModule },
     .main_thread_tick = .{ .handler = mainThreadTick },
     .main_thread_tick_done = .{ .handler = fn () void },
 };
@@ -73,6 +78,10 @@ pub const components = .{
 
     .height = .{ .type = u32, .description = 
     \\ The height of the window in virtual pixels
+    },
+
+    .fullscreen = .{ .type = bool, .description = 
+    \\ Whether the window should be fullscreen (only respected at .start time)
     },
 };
 
@@ -113,27 +122,44 @@ fn start(core: *Mod) !void {
     core.state().run_state = .running;
 }
 
-fn init(entities: *mach.Entities.Mod, core: *Mod) !void {
+fn init(core: *Mod) !void {
+    try mach.core.init(.{
+        .display_mode = if (core.get(core.state().main_window, .fullscreen).?) .fullscreen else .windowed,
+        .size = .{
+            .width = core.get(core.state().main_window, .width).?,
+            .height = core.get(core.state().main_window, .height).?,
+        },
+        // TODO: expose this option
+        .power_preference = .high_performance,
+    });
+
+    // TODO(important): update this information upon framebuffer resize events
+    try core.set(core.state().main_window, .framebuffer_format, mach.core.descriptor.format);
+    try core.set(core.state().main_window, .framebuffer_width, mach.core.descriptor.width);
+    try core.set(core.state().main_window, .framebuffer_height, mach.core.descriptor.height);
+    try core.set(core.state().main_window, .width, mach.core.size().width);
+    try core.set(core.state().main_window, .height, mach.core.size().height);
+
+    core.state().allocator = mach.core.allocator;
+    core.state().device = mach.core.device;
+    core.state().queue = mach.core.device.getQueue();
+}
+
+fn initModule(entities: *mach.Entities.Mod, core: *Mod) !void {
     mach.core.allocator = gpa.allocator(); // TODO: banish this global allocator
 
     // Initialize GPU implementation
     if (comptime !mach.use_sysgpu) try mach.wgpu.Impl.init(mach.core.allocator, .{});
     if (comptime mach.use_sysgpu) try mach.sysgpu.Impl.init(mach.core.allocator, .{});
 
-    try mach.core.init(.{});
-
     const main_window = try entities.new();
-    // TODO(important): update this information upon framebuffer resize events
-    try core.set(main_window, .framebuffer_format, mach.core.descriptor.format);
-    try core.set(main_window, .framebuffer_width, mach.core.descriptor.width);
-    try core.set(main_window, .framebuffer_height, mach.core.descriptor.height);
-    try core.set(main_window, .width, mach.core.size().width);
-    try core.set(main_window, .height, mach.core.size().height);
-
+    try core.set(main_window, .fullscreen, false);
+    try core.set(main_window, .width, 1920 / 2);
+    try core.set(main_window, .height, 1080 / 2);
     core.init(.{
-        .allocator = mach.core.allocator,
-        .device = mach.core.device,
-        .queue = mach.core.device.getQueue(),
+        .allocator = undefined,
+        .device = undefined,
+        .queue = undefined,
         .main_window = main_window,
     });
 

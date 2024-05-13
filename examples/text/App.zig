@@ -61,10 +61,12 @@ fn deinit(
 }
 
 fn init(
+    core: *mach.Core.Mod,
     text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     game: *Mod,
 ) !void {
+    core.schedule(.init);
     text.schedule(.init);
     text_pipeline.schedule(.init);
     game.schedule(.after_init);

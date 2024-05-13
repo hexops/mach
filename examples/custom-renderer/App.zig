@@ -43,7 +43,6 @@ pub fn deinit(core: *mach.Core.Mod, renderer: *Renderer.Mod) void {
     core.schedule(.deinit);
 }
 
-// TODO(important): remove need for returning an error here
 fn init(
     // These are injected dependencies - as long as these modules were registered in the top-level
     // of the program we can have these types injected here, letting us work with other modules in
@@ -53,6 +52,7 @@ fn init(
     renderer: *Renderer.Mod,
     game: *Mod,
 ) !void {
+    core.schedule(.init);
     renderer.schedule(.init);
 
     // Create our player entity.
@@ -80,7 +80,6 @@ fn init(
     core.schedule(.start);
 }
 
-// TODO(important): remove need for returning an error here
 fn tick(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,

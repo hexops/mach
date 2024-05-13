@@ -38,6 +38,7 @@ pub const components = .{
 ghost_key_mode: bool = false,
 
 fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) void {
+    core.schedule(.init);
     audio.schedule(.init);
     app.schedule(.after_init);
 

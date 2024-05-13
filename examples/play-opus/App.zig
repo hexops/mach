@@ -37,6 +37,7 @@ fn init(
     audio: *mach.Audio.Mod,
     app: *Mod,
 ) !void {
+    core.schedule(.init);
     audio.schedule(.init);
     app.schedule(.after_init);
 
