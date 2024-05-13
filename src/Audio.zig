@@ -11,6 +11,7 @@ pub const Mod = mach.Mod(@This());
 pub const components = .{
     .samples = .{ .type = []const f32 },
     .channels = .{ .type = u8 },
+    .volume = .{ .type = f32 },
     .playing = .{ .type = bool },
     .index = .{ .type = usize },
 };
@@ -146,15 +147,17 @@ fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
 
     var did_state_change = false;
     var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
         .samples_slices = Mod.read(.samples),
         .channels = Mod.read(.channels),
         .playings = Mod.write(.playing),
         .indexes = Mod.write(.index),
     });
     while (q.next()) |v| {
-        for (v.samples_slices, v.channels, v.playings, v.indexes) |samples, channels, *playing, *index| {
+        for (v.ids, v.samples_slices, v.channels, v.playings, v.indexes) |id, samples, channels, *playing, *index| {
             if (!playing.*) continue;
 
+            const volume = audio.get(id, .volume) orelse 1.0;
             const channels_diff = player_channels - channels + 1;
             const to_read = @min(samples.len - index.*, mixing_buffer.items.len) / channels_diff;
             if (channels == 1 and player_channels > 1) {
@@ -165,7 +168,7 @@ fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
                     i += player_channels;
                 }
             } else {
-                mixSamples(mixing_buffer.items[0..to_read], samples[index.*..][0..to_read]);
+                mixSamples(mixing_buffer.items[0..to_read], samples[index.*..][0..to_read], volume);
             }
 
             if (index.* + to_read >= samples.len) {
@@ -270,7 +273,7 @@ const vector_length = switch (builtin.mode) {
     else => null,
 };
 
-inline fn mixSamples(a: []f32, b: []const f32) void {
+inline fn mixSamples(a: []f32, b: []const f32, volume: f32) void {
     std.debug.assert(a.len >= b.len);
 
     var i: usize = 0;
@@ -282,12 +285,12 @@ inline fn mixSamples(a: []f32, b: []const f32) void {
 
         while (i < vec_blocks_len) : (i += vec_len) {
             const b_vec: Vec = b[i..][0..vec_len].*;
-            a[i..][0..vec_len].* += b_vec;
+            a[i..][0..vec_len].* += b_vec * @as(Vec, @splat(volume));
         }
     }
 
     for (a[i..b.len], b[i..]) |*a_sample, b_sample| {
-        a_sample.* += b_sample;
+        a_sample.* += b_sample * volume;
     }
 }
 
