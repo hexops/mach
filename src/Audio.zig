@@ -87,7 +87,8 @@ fn deinit(audio: *Mod) void {
     defer audio.state().running_mu.unlock();
     audio.state().running = false;
 
-    audio.state().player.deinit();
+    // TODO: make sure this doesn't hang forever
+    // audio.state().player.deinit();
     audio.state().ctx.deinit();
     if (audio.state().mixing_buffer) |*b| b.deinit(audio.state().allocator);
 }
