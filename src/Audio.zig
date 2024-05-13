@@ -253,6 +253,7 @@ fn writeFn(audio_opaque: ?*anyopaque, output: []u8) void {
                 @memset(output, 0);
                 return;
             }
+            audio.state().running_mu.unlock();
         }
     }
     if (read_slice.len > output.len) {
