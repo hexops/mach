@@ -40,6 +40,8 @@ output: SampleBuffer,
 mixing_buffer: ?std.ArrayListUnmanaged(f32) = null,
 render_num_samples: usize = 0,
 debug: bool = false,
+running_mu: std.Thread.Mutex = .{},
+running: bool = true,
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
@@ -80,6 +82,10 @@ fn init(audio: *Mod) !void {
 }
 
 fn deinit(audio: *Mod) void {
+    audio.state().running_mu.lock();
+    defer audio.state().running_mu.unlock();
+    audio.state().running = false;
+
     audio.state().player.deinit();
     audio.state().ctx.deinit();
     if (audio.state().mixing_buffer) |*b| b.deinit(audio.state().allocator);
@@ -100,12 +106,15 @@ fn deinit(audio: *Mod) void {
 /// between e.g. user interactions and audio actually playing - so in practice the amount we play
 /// ahead is rather small and imperceivable to most humans.
 fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
+    audio.state().running_mu.lock();
+    const running = audio.state().running;
+    const driver_expects = audio.state().render_num_samples; // How many samples the driver last expected us to produce.
+    audio.state().running_mu.unlock();
+    if (!running) return; // Scheduled by the other thread e.g. right before .deinit, ignore it.
+
     const allocator = audio.state().allocator;
     const player = &audio.state().player;
     const player_channels: u8 = @intCast(player.channels().len);
-
-    // How many samples the driver last expected us to produce.
-    const driver_expects = audio.state().render_num_samples;
 
     // How many audio samples we will render ahead by
     const samples_per_ms = @as(f32, @floatFromInt(player.sampleRate())) / 1000.0;
@@ -194,15 +203,28 @@ fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
 fn writeFn(audio_opaque: ?*anyopaque, output: []u8) void {
     const audio: *Mod = @ptrCast(@alignCast(audio_opaque));
 
+    // Make sure any audio.state() we access is covered by a mutex so it is not accessed during
+    // .deinit in the main thread.
+    audio.state().running_mu.lock();
+
+    const running = audio.state().running;
+    if (!running) {
+        audio.state().running_mu.unlock();
+        @memset(output, 0);
+        return;
+    }
+    const format_size = audio.state().player.format().size();
+    const render_num_samples = @divExact(output.len, format_size);
+    audio.state().render_num_samples = render_num_samples;
+
+    audio.state().running_mu.unlock();
+
     // Notify that we are writing audio frames now
     //
     // Note that we do not *wait* at all for .audio_tick to complete, this is an asynchronous
     // dispatch of the event. The expectation is that audio.state().output already has enough
     // samples in it that we can return right now. The event is just a signal dispatched on another
     // thread to enable reacting to audio events in realtime.
-    const format_size = audio.state().player.format().size();
-    const render_num_samples = @divExact(output.len, format_size);
-    audio.state().render_num_samples = render_num_samples;
     audio.schedule(.audio_tick);
 
     // Read the prepared audio samples and directly @memcpy them to the output buffer.
