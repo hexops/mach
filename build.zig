@@ -421,7 +421,6 @@ pub const CoreApp = struct {
         compile.root_module.addImport("app", app_module);
 
         // Installation step
-        app_builder.installArtifact(compile);
         const install = app_builder.addInstallArtifact(compile, .{});
         if (options.res_dirs) |res_dirs| {
             for (res_dirs) |res| {
@@ -770,7 +769,6 @@ fn buildCoreExamples(
 
         const install_step = b.step("core-" ++ cmd_name, "Install core-" ++ cmd_name);
         install_step.dependOn(&app.install.step);
-        b.getInstallStep().dependOn(install_step);
 
         const run_step = b.step("run-core-" ++ cmd_name, "Run core-" ++ cmd_name);
         run_step.dependOn(&app.run.step);
