@@ -17,11 +17,14 @@ const Mat4x4 = math.Mat4x4;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
+info_text: mach.EntityID,
+info_text_style: mach.EntityID,
 timer: mach.Timer,
 gotta_go_fast: bool = false,
 spawn_timer: mach.Timer,
 fps_timer: mach.Timer,
 frame_count: usize,
+frame_rate: usize,
 num_sprites_spawned: usize,
 score: usize,
 rand: std.rand.DefaultPrng,
@@ -59,6 +62,20 @@ fn deinit(
 }
 
 fn init(
+    audio: *mach.Audio.Mod,
+    text_pipeline: *gfx.TextPipeline.Mod,
+    text: *gfx.Text.Mod,
+    sprite_pipeline: *gfx.SpritePipeline.Mod,
+    game: *Mod,
+) !void {
+    audio.schedule(.init);
+    text.schedule(.init);
+    text_pipeline.schedule(.init);
+    sprite_pipeline.schedule(.init);
+    game.schedule(.after_init);
+}
+
+fn afterInit(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
@@ -68,9 +85,9 @@ fn init(
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     game: *Mod,
 ) !void {
-    audio.schedule(.init);
-    text_pipeline.schedule(.init);
-    sprite_pipeline.schedule(.init);
+    // Configure the audio module to run our audio_state_change system when entities audio finishes
+    // playing
+    audio.state().on_state_change = game.system(.audio_state_change);
 
     // Create a sprite rendering pipeline
     const allocator = gpa.allocator();
@@ -79,13 +96,9 @@ fn init(
     sprite_pipeline.schedule(.update);
 
     // TODO: a better way to initialize entities with default values
-    // TODO(text): most of these style options are not respected yet.
+    // TODO(text): ability to specify other style options (custom font name, font color, italic/bold, etc.)
     const style1 = try entities.new();
-    try text_style.set(style1, .font_name, "Roboto Medium"); // TODO
     try text_style.set(style1, .font_size, 48 * gfx.px_per_pt); // 48pt
-    try text_style.set(style1, .font_weight, gfx.font_weight_normal);
-    try text_style.set(style1, .italic, false);
-    try text_style.set(style1, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
     // Create a text rendering pipeline
     const text_rendering_pipeline = try entities.new();
@@ -96,21 +109,20 @@ fn init(
     const text1 = try entities.new();
     try text.set(text1, .pipeline, text_rendering_pipeline);
     try text.set(text1, .transform, Mat4x4.translate(vec3(0, 0, 0)));
-
-    // TODO: better storage mechanism for this
-    // TODO: this is a leak
-    const styles = try allocator.alloc(mach.EntityID, 1);
-    styles[0] = style1;
-    try text.set(text1, .text, &.{
+    try gfx.Text.allocPrintText(text, text1, style1,
         \\ Mach is probably working if you:
         \\ * See this text
         \\ * See sprites to the left
-        \\ * Hear sound effects
+        \\ * Hear sounds when sprites die
         \\ * Hold space and things go faster
-    });
-    try text.set(text1, .style, styles);
-    try text.set(text1, .dirty, true);
+    , .{});
     text.schedule(.update);
+
+    const window_height: f32 = @floatFromInt(core.get(core.state().main_window, .height).?);
+    const info_text = try entities.new();
+    try text.set(info_text, .pipeline, text_rendering_pipeline);
+    try text.set(info_text, .transform, Mat4x4.translate(vec3(0, (window_height / 2.0) - 50.0, 0)));
+    try gfx.Text.allocPrintText(text, info_text, style1, "[info]", .{});
 
     // Load sfx
     const sfx_fbs = std.io.fixedBufferStream(assets.sfx.scifi_gun);
@@ -118,10 +130,13 @@ fn init(
     const sfx = try mach.Audio.Opus.decodeStream(gpa.allocator(), sfx_sound_stream);
 
     game.init(.{
+        .info_text = info_text,
+        .info_text_style = style1,
         .timer = try mach.Timer.start(),
         .spawn_timer = try mach.Timer.start(),
         .fps_timer = try mach.Timer.start(),
         .frame_count = 0,
+        .frame_rate = 0,
         .num_sprites_spawned = 0,
         .score = 0,
         .rand = std.rand.DefaultPrng.init(1337),
@@ -131,12 +146,6 @@ fn init(
         .sfx = sfx,
     });
     core.schedule(.start);
-}
-
-fn afterInit(audio: *mach.Audio.Mod, game: *Mod) void {
-    // Configure the audio module to run our audio_state_change system when entities audio finishes
-    // playing
-    audio.state().on_state_change = game.system(.audio_state_change);
 }
 
 fn audioStateChange(entities: *mach.Entities.Mod) !void {
@@ -160,6 +169,7 @@ fn tick(
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
+    text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     game: *Mod,
     audio: *mach.Audio.Mod,
@@ -188,9 +198,25 @@ fn tick(
     }
     game.state().gotta_go_fast = gotta_go_fast;
 
+    // Every second, update the frame rate
+    if (game.state().fps_timer.read() >= 1.0) {
+        game.state().frame_rate = game.state().frame_count;
+        game.state().fps_timer.reset();
+        game.state().frame_count = 0;
+    }
+
+    try gfx.Text.allocPrintText(
+        text,
+        game.state().info_text,
+        game.state().info_text_style,
+        "[ FPS: {d} ]\n[ Sprites spawned: {d} ]",
+        .{ game.state().frame_rate, game.state().num_sprites_spawned },
+    );
+    text.schedule(.update);
+
     // var player_transform = sprite.get(game.state().player, .transform).?;
     // var player_pos = player_transform.translation();
-    const framebuffer_width: f32 = @floatFromInt(core.get(core.state().main_window, .framebuffer_width).?);
+    const window_width: f32 = @floatFromInt(core.get(core.state().main_window, .width).?);
 
     const entities_per_second: f32 = @floatFromInt(
         game.state().rand.random().intRangeAtMost(usize, 0, if (gotta_go_fast) 50 else 10),
@@ -199,7 +225,7 @@ fn tick(
         // Spawn new entities
         _ = game.state().spawn_timer.lap();
 
-        var new_pos = vec3(-(framebuffer_width / 2), 0, 0);
+        var new_pos = vec3(-(window_width / 2), 0, 0);
         new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 50;
 
         const new_entity = try entities.new();
@@ -222,7 +248,7 @@ fn tick(
         for (v.ids, v.transforms) |id, *entity_transform| {
             const location = entity_transform.*.translation();
             const speed: f32 = if (gotta_go_fast) 2000 else 100;
-            const progression = std.math.clamp((location.v[0] + (framebuffer_width / 2.0)) / framebuffer_width, 0, 1);
+            const progression = std.math.clamp((location.v[0] + (window_width / 2.0)) / window_width, 0, 1);
             const scale = mach.math.lerp(2, 0, progression);
             if (progression >= 0.6) {
                 try entities.remove(id);
@@ -298,18 +324,6 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
     // Present the frame
     core.schedule(.present_frame);
 
-    // Every second, update the window title with the FPS
-    if (game.state().fps_timer.read() >= 1.0) {
-        try mach.Core.printTitle(
-            core,
-            core.state().main_window,
-            "sprite [ FPS: {d} ] [ Sprites spawned: {d} ]",
-            .{ game.state().frame_count, game.state().num_sprites_spawned },
-        );
-        core.schedule(.update);
-        game.state().fps_timer.reset();
-        game.state().frame_count = 0;
-    }
     game.state().frame_count += 1;
 }
 

@@ -12,6 +12,8 @@ const vec4 = math.vec4;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
 pub const name = .mach_gfx_text;
 pub const Mod = mach.Mod(@This());
 
@@ -51,12 +53,60 @@ pub const components = .{
 };
 
 pub const systems = .{
+    .init = .{ .handler = init },
+    .deinit = .{ .handler = deinit },
     .update = .{ .handler = update },
 };
 
 const BuiltText = struct {
     glyphs: std.ArrayListUnmanaged(gfx.TextPipeline.Glyph),
 };
+
+allocator: std.mem.Allocator,
+
+pub fn init(text: *Mod) void {
+    text.init(.{ .allocator = gpa.allocator() });
+}
+
+pub fn deinit(text: *Mod) void {
+    _ = text;
+    // TODO: help with cleaning up allocPrintText, which is currently a little difficult to track
+    // since it is a per-entity allocation
+}
+
+/// Helper to set text components on an entity simply/easily via heap allocating strings
+///
+/// ```
+/// try mach.Text.allocPrintText(text, my_text_entity, my_style_entity, "Hello, {s}!", .{"Mach"});
+/// ```
+pub fn allocPrintText(
+    text: *Mod,
+    id: mach.EntityID,
+    style: mach.EntityID,
+    comptime fmt: []const u8,
+    args: anytype,
+) !void {
+    freeText(text, id);
+    const str = try std.fmt.allocPrint(text.state().allocator, fmt, args);
+
+    const styles = try text.state().allocator.alloc(mach.EntityID, 1);
+    styles[0] = style;
+    const strings = try text.state().allocator.alloc([]const u8, 1);
+    strings[0] = str;
+
+    try text.set(id, .style, styles);
+    try text.set(id, .text, strings);
+    try text.set(id, .dirty, true);
+}
+
+/// Free's an entity's .text and .style slices that were previously allocated via e.g. allocPrintText
+pub fn freeText(text: *Mod, id: mach.EntityID) void {
+    if (text.get(id, .text)) |slice| {
+        text.state().allocator.free(slice[0]);
+        text.state().allocator.free(slice);
+    }
+    if (text.get(id, .style)) |slice| text.state().allocator.free(slice);
+}
 
 fn update(
     entities: *mach.Entities.Mod,
@@ -149,8 +199,8 @@ fn updatePipeline(
                 // Load the font
                 // TODO(text): allow specifying a custom font
                 // TODO(text): keep fonts around for reuse later
-                const font_name = text_style.get(style, .font_name).?;
-                _ = font_name; // TODO: actually use font name
+                // const font_name = text_style.get(style, .font_name).?;
+                // _ = font_name; // TODO: actually use font name
                 const font_bytes = @import("font-assets").fira_sans_regular_ttf;
                 var font = if (font_once) |f| f else blk: {
                     font_once = try gfx.Font.initBytes(font_bytes);
@@ -160,12 +210,9 @@ fn updatePipeline(
 
                 const font_size = text_style.get(style, .font_size).?;
                 // TODO(text): respect these style parameters
-                const font_weight = text_style.get(style, .font_weight).?;
-                const italic = text_style.get(style, .italic).?;
-                const color = text_style.get(style, .color).?;
-                _ = font_weight;
-                _ = italic;
-                _ = color;
+                // const font_weight = text_style.get(style, .font_weight).?;
+                // const italic = text_style.get(style, .italic).?;
+                // const color = text_style.get(style, .color).?;
 
                 // Create a text shaper
                 var run = try gfx.TextRun.init();

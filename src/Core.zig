@@ -88,7 +88,6 @@ pub fn printTitle(
     args: anytype,
 ) !void {
     // Free any previous window title slice
-    // TODO: reuse allocations
     if (core.get(window_id, .title)) |slice| core.state().allocator.free(slice);
 
     // Allocate and assign a new window title slice.

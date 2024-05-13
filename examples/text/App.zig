@@ -15,8 +15,6 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-
 timer: mach.Timer,
 player: mach.EntityID,
 direction: Vec2 = vec2(0, 0),
@@ -27,7 +25,6 @@ frame_count: usize,
 rand: std.rand.DefaultPrng,
 time: f32,
 style1: mach.EntityID,
-allocator: std.mem.Allocator,
 pipeline: mach.EntityID,
 frame_encoder: *gpu.CommandEncoder = undefined,
 frame_render_pass: *gpu.RenderPassEncoder = undefined,
@@ -40,6 +37,7 @@ pub const Mod = mach.Mod(@This());
 pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
+    .after_init = .{ .handler = afterInit },
     .tick = .{ .handler = tick },
     .end_frame = .{ .handler = endFrame },
 };
@@ -47,12 +45,12 @@ pub const systems = .{
 const upscale = 1.0;
 
 const text1: []const []const u8 = &.{
-    "Text but with spaces 😊\nand\n",
-    "italics\nand\n",
-    "bold\nand\n",
+    "Text but with spaces\n",
+    "and\n",
+    "newlines\n",
 };
 
-const text2: []const []const u8 = &.{"$!?😊"};
+const text2: []const []const u8 = &.{"$!?"};
 
 fn deinit(
     core: *mach.Core.Mod,
@@ -63,6 +61,16 @@ fn deinit(
 }
 
 fn init(
+    text: *gfx.Text.Mod,
+    text_pipeline: *gfx.TextPipeline.Mod,
+    game: *Mod,
+) !void {
+    text.schedule(.init);
+    text_pipeline.schedule(.init);
+    game.schedule(.after_init);
+}
+
+fn afterInit(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     text: *gfx.Text.Mod,
@@ -70,30 +78,10 @@ fn init(
     text_style: *gfx.TextStyle.Mod,
     game: *Mod,
 ) !void {
-    text_pipeline.schedule(.init);
-
     // TODO: a better way to initialize entities with default values
-    // TODO(text): most of these style options are not respected yet.
+    // TODO(text): ability to specify other style options (custom font name, font color, italic/bold, etc.)
     const style1 = try entities.new();
-    try text_style.set(style1, .font_name, "Roboto Medium"); // TODO
     try text_style.set(style1, .font_size, 48 * gfx.px_per_pt); // 48pt
-    try text_style.set(style1, .font_weight, gfx.font_weight_normal);
-    try text_style.set(style1, .italic, false);
-    try text_style.set(style1, .color, vec4(0.6, 1.0, 0.6, 1.0));
-
-    const style2 = try entities.new();
-    try text_style.set(style2, .font_name, "Roboto Medium"); // TODO
-    try text_style.set(style2, .font_size, 48 * gfx.px_per_pt); // 48pt
-    try text_style.set(style2, .font_weight, gfx.font_weight_normal);
-    try text_style.set(style2, .italic, true);
-    try text_style.set(style2, .color, vec4(0.6, 1.0, 0.6, 1.0));
-
-    const style3 = try entities.new();
-    try text_style.set(style3, .font_name, "Roboto Medium"); // TODO
-    try text_style.set(style3, .font_size, 48 * gfx.px_per_pt); // 48pt
-    try text_style.set(style3, .font_weight, gfx.font_weight_bold);
-    try text_style.set(style3, .italic, false);
-    try text_style.set(style3, .color, vec4(0.6, 1.0, 0.6, 1.0));
 
     // Create a text rendering pipeline
     const pipeline = try entities.new();
@@ -103,18 +91,13 @@ fn init(
     // Create some text
     const player = try entities.new();
     try text.set(player, .pipeline, pipeline);
-    try text.set(player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(vec3(0, 0, 0))));
-
-    // TODO: better storage mechanism for this
-    // TODO: this is a leak
-    const allocator = gpa.allocator();
-    const styles = try allocator.alloc(mach.EntityID, 3);
-    styles[0] = style1;
-    styles[1] = style2;
-    styles[2] = style3;
-    try text.set(player, .text, text1);
-    try text.set(player, .style, styles);
-    try text.set(player, .dirty, true);
+    try text.set(player, .transform, Mat4x4.translate(vec3(0, 0, 0)));
+    try gfx.Text.allocPrintText(text, player, style1,
+        \\ Text with spaces
+        \\ and newlines
+        \\ but nothing fancy yet
+    , .{});
+    text.schedule(.update);
 
     game.init(.{
         .timer = try mach.Timer.start(),
@@ -125,7 +108,6 @@ fn init(
         .rand = std.rand.DefaultPrng.init(1337),
         .time = 0,
         .style1 = style1,
-        .allocator = allocator,
         .pipeline = pipeline,
     });
 
@@ -183,17 +165,11 @@ fn tick(
             new_pos.v[0] += game.state().rand.random().floatNorm(f32) * 50;
             new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 50;
 
+            // Create some text
             const new_entity = try entities.new();
             try text.set(new_entity, .pipeline, game.state().pipeline);
             try text.set(new_entity, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(new_pos)));
-
-            // TODO: better storage mechanism for this
-            // TODO: this is a leak
-            const styles = try game.state().allocator.alloc(mach.EntityID, 1);
-            styles[0] = game.state().style1;
-            try text.set(new_entity, .text, text2);
-            try text.set(new_entity, .style, styles);
-            try text.set(new_entity, .dirty, true);
+            try gfx.Text.allocPrintText(text, new_entity, game.state().style1, "?!$", .{});
         }
     }
 
