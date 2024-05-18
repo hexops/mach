@@ -100,7 +100,7 @@ pub fn build(b: *std.Build) !void {
 
             if (b.lazyDependency("mach_opus", .{
                 .target = target,
-                .optimize = optimize,
+                .optimize = .ReleaseFast,
             })) |dep| {
                 module.addImport("mach-opus", dep.module("mach-opus"));
             }
