@@ -75,7 +75,7 @@ fn vertMain(
   pos = uniforms.view_projection * pos; // pixels -> normalized
 
   uv *= sprite_size; // normalized -> pixels
-  uv = (sprite_uv_transform * vec3<f32>(uv.xy, 1)).xy; // apply sprite UV transform (pixels)
+  uv = (sprite_uv_transform * vec3<f32>(uv, 1)).xy; // apply sprite UV transform (pixels)
   uv /= uniforms.texture_size; // pixels -> normalized
 
   var output : VertexOutput;
