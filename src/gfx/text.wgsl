@@ -7,6 +7,9 @@ struct VertexOutput {
 
   // UV coordinate
   @location(0) fragUV : vec2<f32>,
+
+  // Color of the glyph
+  @location(1) color : vec4<f32>,
 };
 
 // Our vertex shader will recieve these parameters
@@ -30,6 +33,9 @@ struct Glyph {
 
   // Which text this glyph belongs to; this is the index for transforms[i], colors[i]
   text_index: u32,
+
+  // Color of the glyph
+  color: vec4<f32>,
 }
 
 @group(0) @binding(0) var<uniform> uniforms : Uniforms;
@@ -96,10 +102,11 @@ fn vertMain(
 @fragment
 fn fragMain(
   @location(0) fragUV: vec2<f32>
+  @location(1) color: vec4<f32>
 ) -> @location(0) vec4<f32> {
   var c = textureSample(glyphTexture, glyphSampler, fragUV);
   if (c.a <= 0.0) {
     discard;
   }
-  return c;
+  return c * color;
 }

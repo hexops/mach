@@ -107,6 +107,9 @@ pub const Glyph = extern struct {
 
     /// Which text this glyph belongs to; this is the index for transforms[i], colors[i].
     text_index: u32,
+
+    /// Color of the glyph
+    color: math.Vec4,
 };
 
 const GlyphKey = struct {

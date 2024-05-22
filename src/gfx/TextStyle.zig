@@ -11,10 +11,9 @@ pub const components = .{
     // \\ TODO(text): this is not currently implemented
     // },
 
-    // e.g. 12 * mach.gfx.px_per_pt // 12pt
     .font_size = .{ .type = f32, .description = 
     \\ Font size in pixels
-    \\ TODO(text): this is not currently implemented
+    \\ e.g. 12 * mach.gfx.px_per_pt for 12pt font size
     },
 
     // // e.g. mach.gfx.font_weight_normal
@@ -29,11 +28,11 @@ pub const components = .{
     // \\ TODO(text): this is not currently implemented
     // },
 
-    // // e.g. vec4(0, 0, 0, 1.0)
-    // .color = .{ .type = math.Vec4, .description =
-    // \\ Fill color
-    // \\ TODO(text): this is not currently implemented
-    // },
+    .font_color = .{ .type = math.Vec4, .description = 
+    \\ Fill color of text
+    \\ e.g. vec4(0.0, 0.0, 0.0, 1.0) // black
+    \\ e.g. vec4(1.0, 1.0, 1.0, 1.0) // white
+    },
 
     // TODO(text): allow user to specify projection matrix (3d-space flat text etc.)
 };

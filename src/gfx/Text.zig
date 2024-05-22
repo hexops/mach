@@ -209,10 +209,10 @@ fn updatePipeline(
                 // defer font.deinit(allocator);
 
                 const font_size = text_style.get(style, .font_size).?;
+                const font_color = text_style.get(style, .font_color) orelse vec4(0, 0, 0, 1.0);
                 // TODO(text): respect these style parameters
                 // const font_weight = text_style.get(style, .font_weight).?;
                 // const italic = text_style.get(style, .italic).?;
-                // const color = text_style.get(style, .color).?;
 
                 // Create a text shaper
                 var run = try gfx.TextRun.init();
@@ -274,6 +274,7 @@ fn updatePipeline(
                         .size = size.divScalar(px_density),
                         .text_index = num_texts,
                         .uv_pos = vec2(@floatFromInt(r.x), @floatFromInt(r.y)),
+                        .font_color = font_color,
                     });
                     origin_x += glyph.advance.x();
                 }
