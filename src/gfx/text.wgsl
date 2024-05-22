@@ -5,7 +5,7 @@ struct VertexOutput {
   // Vertex position
   @builtin(position) Position : vec4<f32>,
 
-  // UV coordinate
+  // UV coordinate into the glyph atlas
   @location(0) fragUV : vec2<f32>,
 
   // Color of the glyph
@@ -90,6 +90,7 @@ fn vertMain(
   var output : VertexOutput;
   output.Position = pos;
   output.fragUV = uv;
+  output.color = glyph.color;
   return output;
 }
 
@@ -101,12 +102,12 @@ fn vertMain(
 
 @fragment
 fn fragMain(
-  @location(0) fragUV: vec2<f32>
+  @location(0) fragUV: vec2<f32>,
   @location(1) color: vec4<f32>
 ) -> @location(0) vec4<f32> {
   var c = textureSample(glyphTexture, glyphSampler, fragUV);
   if (c.a <= 0.0) {
     discard;
   }
-  return c * color;
+  return vec4<f32>(color.rgb * c.a, color.a);
 }

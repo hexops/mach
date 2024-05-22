@@ -274,7 +274,7 @@ fn updatePipeline(
                         .size = size.divScalar(px_density),
                         .text_index = num_texts,
                         .uv_pos = vec2(@floatFromInt(r.x), @floatFromInt(r.y)),
-                        .font_color = font_color,
+                        .color = font_color,
                     });
                     origin_x += glyph.advance.x();
                 }
