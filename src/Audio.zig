@@ -160,7 +160,7 @@ fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
 
             const volume = audio.get(id, .volume) orelse 1.0;
             const channels_diff = player_channels - channels + 1;
-            const to_read = @min(samples.len - index.*, mixing_buffer.items.len) / channels_diff;
+            const to_read = (@min(samples.len - index.*, mixing_buffer.items.len) / channels_diff) + @rem(@min(samples.len - index.*, mixing_buffer.items.len), channels_diff);
             if (channels == 1 and player_channels > 1) {
                 // Duplicate samples for mono sounds
                 var i: usize = 0;
