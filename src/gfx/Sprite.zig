@@ -96,6 +96,31 @@ fn updatePipeline(
         }
     }
 
+    // Sort sprites back-to-front for draw order, alpha blending
+    const Context = struct {
+        transforms: []Mat4x4,
+        uv_transforms: []Mat3x3,
+        sizes: []Vec2,
+
+        pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
+            const a_z = ctx.transforms[a].translation().z();
+            const b_z = ctx.transforms[b].translation().z();
+            // Greater z values are further away, and thus should render/sort before those with lesser z values.
+            return a_z > b_z;
+        }
+
+        pub fn swap(ctx: @This(), a: usize, b: usize) void {
+            std.mem.swap(Mat4x4, &ctx.transforms[a], &ctx.transforms[b]);
+            std.mem.swap(Mat3x3, &ctx.uv_transforms[a], &ctx.uv_transforms[b]);
+            std.mem.swap(Vec2, &ctx.sizes[a], &ctx.sizes[b]);
+        }
+    };
+    std.sort.pdqContext(0, i, Context{
+        .transforms = gfx.SpritePipeline.cp_transforms[0..i],
+        .uv_transforms = gfx.SpritePipeline.cp_uv_transforms[0..i],
+        .sizes = gfx.SpritePipeline.cp_sizes[0..i],
+    });
+
     // TODO: optimize by removing this component set call and instead use a .write() query
     try sprite_pipeline.set(pipeline_id, .num_sprites, num_sprites);
     if (num_sprites > 0) {
