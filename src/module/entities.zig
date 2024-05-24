@@ -271,10 +271,14 @@ pub fn Database(comptime modules: anytype) type {
         }
 
         /// Removes an entity.
+        ///
+        /// Panics if the entity does not exist.
         pub fn remove(entities: *Self, entity: EntityID) !void {
             if (entities.active_queries.items.len > 0) return entities.removeDeferred(entity);
-            var archetype = entities.archetypeByID(entity);
-            const ptr = entities.entities.get(entity).?;
+            const ptr = entities.entities.get(entity) orelse std.debug.panic("cannot remove entity {}: entity does not exist", .{
+                entity,
+            });
+            const archetype = &entities.archetypes.items[ptr.archetype_index];
 
             // A swap removal will be performed, update the entity stored in the last row of the
             // archetype table to point to the row the entity we are removing is currently located.
@@ -307,12 +311,6 @@ pub fn Database(comptime modules: anytype) type {
             comptime component_name: ComponentName(modules),
         ) StringTable.Index {
             return entities.componentNameString(@tagName(module_name) ++ "." ++ @tagName(component_name));
-        }
-
-        /// Returns the archetype storage for the given entity.
-        pub inline fn archetypeByID(entities: *Self, entity: EntityID) *Archetype {
-            const ptr = entities.entities.get(entity).?;
-            return &entities.archetypes.items[ptr.archetype_index];
         }
 
         /// Sets the named component to the specified value for the given entity,
@@ -373,6 +371,8 @@ pub fn Database(comptime modules: anytype) type {
         /// moving the entity from it's current archetype table to the new archetype
         /// table if required.
         ///
+        /// Panics if the entity does not exist.
+        ///
         /// For tags, set component.len = 0 and alignment = 1
         pub fn setComponentDynamic(
             entities: *Self,
@@ -390,7 +390,11 @@ pub fn Database(comptime modules: anytype) type {
                 type_id,
             );
 
-            const prev_archetype_idx = entities.entities.get(entity).?.archetype_index;
+            const prev_ptr = entities.entities.get(entity) orelse std.debug.panic("cannot set component {s}: entity={} does not exist", .{
+                entities.component_names.string(name_id),
+                entity,
+            });
+            const prev_archetype_idx = prev_ptr.archetype_index;
             var prev_archetype = &entities.archetypes.items[prev_archetype_idx];
             var archetype: ?*Archetype = if (prev_archetype.hasComponent(name_id)) prev_archetype else null;
             var archetype_idx: ?u32 = if (archetype != null) prev_archetype_idx else null;
@@ -483,6 +487,8 @@ pub fn Database(comptime modules: anytype) type {
 
         /// Gets the named component of the given type.
         /// Returns null if the component does not exist on the entity.
+        ///
+        /// Panics if the entity does not exist.
         pub fn getComponent(
             entities: *Self,
             entity: EntityID,
@@ -502,14 +508,19 @@ pub fn Database(comptime modules: anytype) type {
             const name_str = @tagName(namespace_name) ++ "." ++ @tagName(component_name);
             const name_id = entities.component_names.index(name_str) orelse return null;
 
-            var archetype = entities.archetypeByID(entity);
-            const ptr = entities.entities.get(entity).?;
+            const ptr = entities.entities.get(entity) orelse std.debug.panic("cannot get component {s}: entity={} does not exist", .{
+                entities.component_names.string(name_id),
+                entity,
+            });
+            const archetype = &entities.archetypes.items[ptr.archetype_index];
 
             return archetype.get(ptr.row_index, name_id, Component);
         }
 
         /// Gets the named component of the given type.
         /// Returns null if the component does not exist on the entity.
+        ///
+        /// Panics if the entity does not exist.
         ///
         /// For tags, set size = 0 and alignment = 1
         pub fn getComponentDynamic(
@@ -520,8 +531,11 @@ pub fn Database(comptime modules: anytype) type {
             alignment: u16,
             type_id: u32,
         ) ?[]u8 {
-            var archetype = entities.archetypeByID(entity);
-            const ptr = entities.entities.get(entity).?;
+            const ptr = entities.entities.get(entity) orelse std.debug.panic("cannot get component {s}: entity={} does not exist", .{
+                entities.component_names.string(name_id),
+                entity,
+            });
+            const archetype = &entities.archetypes.items[ptr.archetype_index];
             return archetype.getDynamic(ptr.row_index, name_id, size, alignment, type_id);
         }
 
@@ -546,13 +560,20 @@ pub fn Database(comptime modules: anytype) type {
         }
 
         /// Removes the named component from the entity, or noop if it doesn't have such a component.
+        ///
+        /// Panics if the entity does not exist.
         pub fn removeComponentDynamic(
             entities: *Self,
             entity: EntityID,
             name_id: StringTable.Index,
         ) !void {
             if (entities.active_queries.items.len > 0) return entities.removeComponentDeferred(entity, name_id);
-            const prev_archetype_idx = entities.entities.get(entity).?.archetype_index;
+
+            const prev_ptr = entities.entities.get(entity) orelse std.debug.panic("cannot remove component {s}: entity={} does not exist", .{
+                entities.component_names.string(name_id),
+                entity,
+            });
+            const prev_archetype_idx = prev_ptr.archetype_index;
             var prev_archetype = &entities.archetypes.items[prev_archetype_idx];
             var archetype: ?*Archetype = if (prev_archetype.hasComponent(name_id)) prev_archetype else return;
             var archetype_idx: u32 = if (archetype != null) prev_archetype_idx else 0;
@@ -1014,7 +1035,8 @@ test "example" {
     try testing.expectEqual(@as(usize, 0), archetypes[5].len);
 
     // Resolve archetype by entity ID and print column names
-    const columns = world.archetypeByID(player2).columns;
+    const archetype = &world.archetypes.items[world.entities.get(player2).?.archetype_index];
+    const columns = archetype.columns;
     try testing.expectEqual(@as(usize, 2), columns.len);
     try testing.expectEqualStrings("entities.id", world.component_names.string(columns[0].name));
     try testing.expectEqualStrings("game.rotation", world.component_names.string(columns[1].name));
