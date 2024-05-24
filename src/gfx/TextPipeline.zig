@@ -13,6 +13,33 @@ pub const components = .{
     \\ Tag to indicate an entity represents a text pipeline.
     },
 
+    .view_projection = .{ .type = math.Mat4x4, .description = 
+    \\ View*Projection matrix to use when rendering text with this pipeline. This controls both
+    \\ the size of the 'virtual canvas' which is rendered onto, as well as the 'camera position'.
+    \\
+    \\ This should be configured before .pre_render runs.
+    \\
+    \\ By default, the size is configured to be equal to the window size in virtual pixels (e.g.
+    \\ if the window size is 1920x1080, the virtual canvas will also be that size even if ran on a
+    \\ HiDPI / Retina display where the actual framebuffer is larger than that.) The origin (0, 0)
+    \\ is configured to be the center of the window:
+    \\
+    \\ ```
+    \\ const width_px: f32 = @floatFromInt(mach.core.size().width);
+    \\ const height_px: f32 = @floatFromInt(mach.core.size().height);
+    \\ const projection = math.Mat4x4.projection2D(.{
+    \\     .left = -width_px / 2.0,
+    \\     .right = width_px / 2.0,
+    \\     .bottom = -height_px / 2.0,
+    \\     .top = height_px / 2.0,
+    \\     .near = -0.1,
+    \\     .far = 100000,
+    \\ });
+    \\ const view_projection = projection.mul(&Mat4x4.translate(vec3(0, 0, 0)));
+    \\ try text_pipeline.set(my_text_pipeline, .view_projection, view_projection);
+    \\ ```
+    },
+
     .shader = .{ .type = *gpu.ShaderModule, .description = 
     \\ Shader program to use when rendering
     \\ Defaults to text.wgsl
@@ -351,31 +378,33 @@ fn buildPipeline(
     try text_pipeline.set(pipeline_id, .num_glyphs, 0);
 }
 
-fn preRender(entities: *mach.Entities.Mod, core: *mach.Core.Mod) !void {
+fn preRender(entities: *mach.Entities.Mod, core: *mach.Core.Mod, text_pipeline: *Mod) !void {
     const label = @tagName(name) ++ ".preRender";
     const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
         .built_pipelines = Mod.read(.built),
     });
     while (q.next()) |v| {
-        for (v.built_pipelines) |built| {
-            // Create the projection matrix
-            // TODO(text): move this out of the hot codepath
-            const proj = math.Mat4x4.projection2D(.{
-                // TODO(Core)
-                .left = -@as(f32, @floatFromInt(mach.core.size().width)) / 2,
-                .right = @as(f32, @floatFromInt(mach.core.size().width)) / 2,
-                .bottom = -@as(f32, @floatFromInt(mach.core.size().height)) / 2,
-                .top = @as(f32, @floatFromInt(mach.core.size().height)) / 2,
-                .near = -0.1,
-                .far = 100000,
-            });
+        for (v.ids, v.built_pipelines) |id, built| {
+            const view_projection = text_pipeline.get(id, .view_projection) orelse blk: {
+                const width_px: f32 = @floatFromInt(mach.core.size().width);
+                const height_px: f32 = @floatFromInt(mach.core.size().height);
+                break :blk math.Mat4x4.projection2D(.{
+                    .left = -width_px / 2,
+                    .right = width_px / 2,
+                    .bottom = -height_px / 2,
+                    .top = height_px / 2,
+                    .near = -0.1,
+                    .far = 100000,
+                });
+            };
 
             // Update uniform buffer
             const uniforms = Uniforms{
-                .view_projection = proj,
+                .view_projection = view_projection,
                 // TODO(text): dimensions of other textures, number of textures present
                 .texture_size = math.vec2(
                     @as(f32, @floatFromInt(built.texture.getWidth())),
