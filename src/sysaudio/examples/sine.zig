@@ -58,12 +58,14 @@ fn writeCallback(_: ?*anyopaque, output: []u8) void {
     const frames = output.len / frame_size;
 
     var i: usize = 0;
+    var src: [16]f32 = undefined;
     while (i < output.len) : (i += frame_size) {
         const frame_index: f32 = @floatFromInt(i / frame_size);
         const sample = @sin((seconds_offset + frame_index * seconds_per_frame) * radians_per_second);
+        for (0..player.channels().len) |ch| src[ch] = sample;
         sysaudio.convertTo(
             f32,
-            &.{ sample, sample },
+            src[0..player.channels().len],
             player.format(),
             output[i..][0..frame_size],
         );
