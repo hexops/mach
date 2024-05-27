@@ -196,7 +196,15 @@ pub fn Database(comptime modules: anytype) type {
             if (entities.buckets[bucket_index]) |bucket| {
                 // Bucket already exists
                 var archetype = &entities.archetypes.items[bucket];
-                if (archetype.next) |_| {
+                var archetype_index: usize = bucket;
+                if (archetype.next != null) {
+                    if (archetype.hash == hash) {
+                        // Probably a match
+                        // TODO: technically a hash collision could occur here, so maybe check
+                        // column IDs are equal here too?
+                        return .{ .found_existing = true, .hash = hash, .index = bucket, .ptr = archetype };
+                    }
+
                     // Multiple archetypes in bucket (there were collisions)
                     while (archetype.next) |collision_index| {
                         const collision = &entities.archetypes.items[collision_index];
@@ -207,10 +215,12 @@ pub fn Database(comptime modules: anytype) type {
                             return .{ .found_existing = true, .hash = hash, .index = collision_index, .ptr = collision };
                         }
                         archetype = collision;
+                        archetype_index = collision_index;
                     }
 
                     // New collision
                     try entities.archetypes.append(entities.allocator, undefined);
+                    archetype = &entities.archetypes.items[archetype_index]; // handle potential pointer invalidation
                     const index = entities.archetypes.items.len - 1;
                     const ptr = &entities.archetypes.items[index];
                     archetype.next = @intCast(index);
@@ -222,6 +232,7 @@ pub fn Database(comptime modules: anytype) type {
 
                 // New collision
                 try entities.archetypes.append(entities.allocator, undefined);
+                archetype = &entities.archetypes.items[archetype_index]; // handle potential pointer invalidation
                 const index = entities.archetypes.items.len - 1;
                 const ptr = &entities.archetypes.items[index];
                 archetype.next = @intCast(index);
