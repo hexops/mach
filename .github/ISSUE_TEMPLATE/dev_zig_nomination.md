@@ -112,8 +112,6 @@ These projects have dependencies on other projects. We update them in the exact 
 * [ ] mach-gpu, which depends on:
   * mach-glfw
   * mach-gpu-dawn
-* [ ] mach-core-starter-project, which depends on:
-  * mach
 * [ ] mach, which depends on:
   * .zigversion
   * build.zig version check
