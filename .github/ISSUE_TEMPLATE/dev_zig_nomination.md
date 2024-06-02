@@ -44,7 +44,6 @@ You may have been linked to this issue because you sent a pull request to update
 
 These projects have zero `build.zig.zon` dependencies, we update them first - and in any order.
 
-* [ ] mach-sysjs
 * [ ] mach-objc-generator
 * [ ] fastfilter
 * [ ] spirv-cross
@@ -122,7 +121,6 @@ These projects have dependencies on other projects. We update them in the exact 
   * mach-basisu
   * mach-freetype
   * font-assets
-  * mach-sysjs
   * mach-gpu
   * mach-glfw
   * mach-objc

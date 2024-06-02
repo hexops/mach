@@ -32,12 +32,6 @@
             .hash = "12205a32c8e6ca23c68191b1e95405d2bd5f8e3055cba1c8ce0738d673ef49aef913",
             .lazy = true,
         },
-        .mach_sysjs = .{
-            .url = "https://pkg.machengine.org/mach-sysjs/eeef024f79beae189b7a4ed85e64ed076e76d538.tar.gz",
-            .hash = "1220db6845ce34743ae2a1ab0222efc942496adde2736c20e3443d4fde4ef64b11b9",
-            // TODO(build): be able to mark this dependency as lazy
-            // .lazy = true,
-        },
         .mach_objc = .{
             .url = "https://pkg.machengine.org/mach-objc/a7c3483702998aa0e960a788b9f611389f17d402.tar.gz",
             .hash = "1220049052fca861248fa6fb8bc24ecdb038049be0a3b22352bebc40e4dc2d2c981b",

@@ -78,13 +78,6 @@ pub fn build(b: *std.Build) !void {
     });
     module.addImport("build-options", build_options.createModule());
 
-    if ((want_mach or want_core or want_sysaudio) and target.result.cpu.arch == .wasm32) {
-        if (b.lazyDependency("mach_sysjs", .{
-            .target = target,
-            .optimize = optimize,
-        })) |dep| module.addImport("mach-sysjs", dep.module("mach-sysjs"));
-    }
-
     if (want_mach) {
         // Linux gamemode requires libc.
         if (target.result.os.tag == .linux) module.link_libc = true;
@@ -434,7 +427,7 @@ pub const CoreApp = struct {
             }
         }
         if (platform == .web) {
-            inline for (.{ sdkPath("/src/core/platform/wasm/mach.js"), @import("mach_sysjs").getJSPath() }) |js| {
+            inline for (.{ sdkPath("/src/core/platform/wasm/mach.js"), sdkPath("/src/sysjs/mach-sysjs.js") }) |js| {
                 const install_js = app_builder.addInstallFileWithDir(
                     .{ .path = js },
                     std.Build.InstallDir{ .custom = "www" },
