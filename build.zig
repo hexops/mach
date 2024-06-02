@@ -558,13 +558,18 @@ fn buildExamples(
     };
 
     for ([_]struct {
+        core: bool = false,
         name: []const u8,
         deps: []const Dependency = &.{},
         wasm: bool = false,
         has_assets: bool = false,
     }{
+        // Mach core examples
+        .{ .core = true, .name = "custom-entrypoint", .deps = &.{} },
+        .{ .core = true, .name = "triangle", .deps = &.{} },
+
+        // Mach engine examples
         .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
-        .{ .name = "core-custom-entrypoint", .deps = &.{} },
         .{ .name = "custom-renderer", .deps = &.{} },
         .{ .name = "glyphs", .deps = &.{ .freetype, .assets } },
         .{ .name = "piano", .deps = &.{} },
@@ -574,8 +579,11 @@ fn buildExamples(
     }) |example| {
         if (target.result.cpu.arch == .wasm32 and !example.wasm) continue;
         const exe = b.addExecutable(.{
-            .name = example.name,
-            .root_source_file = .{ .path = b.fmt("examples/{s}/main.zig", .{example.name}) },
+            .name = if (example.core) b.fmt("core-{s}", .{example.name}) else example.name,
+            .root_source_file = if (example.core)
+                .{ .path = b.fmt("examples/core/{s}/main.zig", .{example.name}) }
+            else
+                .{ .path = b.fmt("examples/{s}/main.zig", .{example.name}) },
             .target = target,
             .optimize = optimize,
         });
