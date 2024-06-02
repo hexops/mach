@@ -560,7 +560,6 @@ fn buildExamples(
 ) !void {
     const Dependency = enum {
         assets,
-        model3d,
         freetype,
         zigimg,
     };
@@ -600,12 +599,6 @@ fn buildExamples(
                         .optimize = optimize,
                     })) |dep| exe.root_module.addImport("assets", dep.module("mach-example-assets"));
                 },
-                .model3d => {
-                    if (b.lazyDependency("mach_model3d", .{
-                        .target = target,
-                        .optimize = optimize,
-                    })) |dep| exe.root_module.addImport("model3d", dep.module("mach-model3d"));
-                },
                 .freetype => {
                     if (b.lazyDependency("mach_freetype", .{
                         .target = target,
@@ -642,7 +635,6 @@ fn buildCoreExamples(
 ) !void {
     const Dependency = enum {
         zigimg,
-        model3d,
         assets,
         zmath,
     };
@@ -667,16 +659,6 @@ fn buildCoreExamples(
         .{ .name = "fractal-cube", .deps = &.{.zmath} },
         .{ .name = "map-async", .deps = &.{.zmath} },
         .{ .name = "rgb-quad", .deps = &.{.zmath} },
-        .{
-            .name = "pbr-basic",
-            .deps = &.{ .zmath, .model3d, .assets },
-            .std_platform_only = true,
-        },
-        .{
-            .name = "deferred-rendering",
-            .deps = &.{ .zmath, .model3d, .assets },
-            .std_platform_only = true,
-        },
         .{ .name = "textured-cube", .deps = &.{ .zmath, .zigimg, .assets } },
         .{ .name = "textured-quad", .deps = &.{ .zmath, .zigimg, .assets } },
         .{ .name = "sprite2d", .deps = &.{ .zmath, .zigimg, .assets } },
@@ -688,13 +670,11 @@ fn buildCoreExamples(
         .{ .name = "boids", .deps = &.{.zmath}, .sysgpu = true },
         .{ .name = "clear-color", .deps = &.{.zmath}, .sysgpu = true },
         .{ .name = "cubemap", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "deferred-rendering", .deps = &.{ .zmath, .model3d, .assets }, .std_platform_only = true, .sysgpu = true },
         .{ .name = "fractal-cube", .deps = &.{.zmath}, .sysgpu = true },
         .{ .name = "gen-texture-light", .deps = &.{.zmath}, .sysgpu = true },
         .{ .name = "image-blur", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
         .{ .name = "instanced-cube", .deps = &.{.zmath}, .sysgpu = true },
         .{ .name = "map-async", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "pbr-basic", .deps = &.{ .zmath, .model3d, .assets }, .std_platform_only = true, .sysgpu = true },
         .{ .name = "pixel-post-process", .deps = &.{.zmath}, .sysgpu = true },
         .{ .name = "procedural-primitives", .deps = &.{.zmath}, .sysgpu = true },
         .{ .name = "rotating-cube", .deps = &.{.zmath}, .sysgpu = true },
@@ -745,12 +725,6 @@ fn buildCoreExamples(
                         .target = target,
                         .optimize = optimize,
                     })) |dep| app.module.addImport("zigimg", dep.module("zigimg"));
-                },
-                .model3d => {
-                    if (b.lazyDependency("mach_model3d", .{
-                        .target = target,
-                        .optimize = optimize,
-                    })) |dep| app.module.addImport("model3d", dep.module("mach-model3d"));
                 },
                 .assets => {
                     if (b.lazyDependency("mach_example_assets", .{

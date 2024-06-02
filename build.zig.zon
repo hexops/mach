@@ -87,11 +87,6 @@
             .hash = "1220ebfa8587cfd644995fc08e218dbb3ebd7344fb8e129ff02bc5a6d52a2325370d",
             .lazy = true,
         },
-        .mach_model3d = .{
-            .url = "https://pkg.machengine.org/mach-model3d/5d4dd54db2da123b38656d4574afaa4c04fd3838.tar.gz",
-            .hash = "1220c1c16fa17783379f773c291af3693b84744200099f1cf5c1ddb66c4fe88bcf3a",
-            .lazy = true,
-        },
         .mach_opus = .{
             .url = "https://pkg.machengine.org/mach-opus/58a22201881d7639339f3c029d13a00bbfe005e2.tar.gz",
             .hash = "1220821426e087874779f8d76a6bb74844aa3934648aad5b7331701e5f386791c51e",
