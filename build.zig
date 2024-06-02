@@ -72,7 +72,7 @@ pub fn build(b: *std.Build) !void {
     build_options.addOption(CoreApp.Platform, "core_platform", core_platform);
 
     const module = b.addModule("mach", .{
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .optimize = optimize,
         .target = target,
     });
@@ -107,7 +107,7 @@ pub fn build(b: *std.Build) !void {
             // TODO: for some reason this is not functional, a Zig bug (only when using this Zig package
             // externally):
             //
-            // module.addCSourceFile(.{ .file = .{ .path = sdkPath("src/core/platform/wayland/wayland.c" } });
+            // module.addCSourceFile(.{ .file = b.path("src/core/platform/wayland/wayland.c" });
             //
             // error: unable to check cache: stat file '/Volumes/data/hexops/mach-core-starter-project/zig-cache//Volumes/data/hexops/mach-core-starter-project/src/core/platform/wayland/wayland.c' failed: FileNotFound
             //
@@ -118,7 +118,7 @@ pub fn build(b: *std.Build) !void {
                 .optimize = optimize,
             });
             lib.addCSourceFile(.{
-                .file = .{ .path = "src/core/platform/wayland/wayland.c" },
+                .file = b.path("src/core/platform/wayland/wayland.c"),
             });
             lib.linkLibC();
             module.linkLibrary(lib);
@@ -154,7 +154,7 @@ pub fn build(b: *std.Build) !void {
                 }) |example| {
                     const example_exe = b.addExecutable(.{
                         .name = "sysaudio-" ++ example,
-                        .root_source_file = .{ .path = "src/sysaudio/examples/" ++ example ++ ".zig" },
+                        .root_source_file = b.path("src/sysaudio/examples/" ++ example ++ ".zig"),
                         .target = target,
                         .optimize = optimize,
                     });
@@ -198,7 +198,7 @@ pub fn build(b: *std.Build) !void {
             // externally):
             //
             // module.addCSourceFile(.{
-            //     .file = .{ .path = "src/sysaudio/pipewire/sysaudio.c" },
+            //     .file = b.path("src/sysaudio/pipewire/sysaudio.c"),
             //     .flags = &.{"-std=gnu99"},
             // });
             //
@@ -212,7 +212,7 @@ pub fn build(b: *std.Build) !void {
             });
             lib.linkLibC();
             lib.addCSourceFile(.{
-                .file = .{ .path = "src/sysaudio/pipewire/sysaudio.c" },
+                .file = b.path("src/sysaudio/pipewire/sysaudio.c"),
                 .flags = &.{"-std=gnu99"},
             });
             module.linkLibrary(lib);
@@ -259,13 +259,13 @@ pub fn build(b: *std.Build) !void {
             _ = dep;
             const gpu_dawn = @import("mach_gpu_dawn");
             gpu_dawn.addPathsToModule(b, module, .{});
-            module.addIncludePath(.{ .path = sdkPath("/src/gpu") });
+            module.addIncludePath(b.path("src/gpu"));
         }
 
         if (want_examples) {
             const example_exe = b.addExecutable(.{
                 .name = "dawn-gpu-hello-triangle",
-                .root_source_file = .{ .path = "src/gpu/example/main.zig" },
+                .root_source_file = b.path("src/gpu/example/main.zig"),
                 .target = target,
                 .optimize = optimize,
             });
@@ -293,7 +293,7 @@ pub fn build(b: *std.Build) !void {
         // Creates a step for unit testing. This only builds the test executable
         // but does not run it.
         const unit_tests = b.addTest(.{
-            .root_source_file = .{ .path = "src/main.zig" },
+            .root_source_file = b.path("src/main.zig"),
             .target = target,
             .optimize = optimize,
         });
@@ -373,7 +373,7 @@ pub const CoreApp = struct {
         if (options.deps) |app_deps| try imports.appendSlice(app_deps);
 
         const app_module = app_builder.createModule(.{
-            .root_source_file = .{ .path = options.src },
+            .root_source_file = app_builder.path(options.src),
             .imports = try imports.toOwnedSlice(),
         });
 
@@ -389,7 +389,10 @@ pub const CoreApp = struct {
 
                 const lib = app_builder.addStaticLibrary(.{
                     .name = options.name,
-                    .root_source_file = .{ .path = options.custom_entrypoint orelse sdkPath("/src/core/platform/wasm/entrypoint.zig") },
+                    .root_source_file = if (options.custom_entrypoint) |e|
+                        app_builder.path(e)
+                    else
+                        mach_builder.path("src/core/platform/wasm/entrypoint.zig"),
                     .target = options.target,
                     .optimize = options.optimize,
                 });
@@ -399,7 +402,10 @@ pub const CoreApp = struct {
             } else {
                 const exe = app_builder.addExecutable(.{
                     .name = options.name,
-                    .root_source_file = .{ .path = options.custom_entrypoint orelse sdkPath("/src/core/platform/native_entrypoint.zig") },
+                    .root_source_file = if (options.custom_entrypoint) |e|
+                        app_builder.path(e)
+                    else
+                        mach_builder.path("src/core/platform/native_entrypoint.zig"),
                     .target = options.target,
                     .optimize = options.optimize,
                 });
@@ -418,7 +424,7 @@ pub const CoreApp = struct {
         if (options.res_dirs) |res_dirs| {
             for (res_dirs) |res| {
                 const install_res = app_builder.addInstallDirectory(.{
-                    .source_dir = .{ .path = res },
+                    .source_dir = app_builder.path(res),
                     .install_dir = install.dest_dir.?,
                     .install_subdir = std.fs.path.basename(res),
                     .exclude_extensions = &.{},
@@ -427,9 +433,9 @@ pub const CoreApp = struct {
             }
         }
         if (platform == .web) {
-            inline for (.{ sdkPath("/src/core/platform/wasm/mach.js"), sdkPath("/src/sysjs/mach-sysjs.js") }) |js| {
+            inline for (.{ "src/core/platform/wasm/mach.js", "src/sysjs/mach-sysjs.js" }) |js| {
                 const install_js = app_builder.addInstallFileWithDir(
-                    .{ .path = js },
+                    mach_builder.path(js),
                     std.Build.InstallDir{ .custom = "www" },
                     std.fs.path.basename(js),
                 );
@@ -480,8 +486,11 @@ pub fn link(mach_builder: *std.Build, step: *std.Build.Step.Compile) void {
             &step.root_module,
             options.gpu_dawn_options,
         );
-        step.addCSourceFile(.{ .file = .{ .path = sdkPath("/src/gpu/mach_dawn.cpp") }, .flags = &.{"-std=c++17"} });
-        step.addIncludePath(.{ .path = sdkPath("/src/gpu") });
+        step.addCSourceFile(.{
+            .file = mach_builder.path("src/gpu/mach_dawn.cpp"),
+            .flags = &.{"-std=c++17"},
+        });
+        step.addIncludePath(mach_builder.path("src/gpu"));
     }
 }
 
@@ -581,9 +590,9 @@ fn buildExamples(
         const exe = b.addExecutable(.{
             .name = if (example.core) b.fmt("core-{s}", .{example.name}) else example.name,
             .root_source_file = if (example.core)
-                .{ .path = b.fmt("examples/core/{s}/main.zig", .{example.name}) }
+                b.path(b.fmt("examples/core/{s}/main.zig", .{example.name}))
             else
-                .{ .path = b.fmt("examples/{s}/main.zig", .{example.name}) },
+                b.path(b.fmt("examples/{s}/main.zig", .{example.name})),
             .target = target,
             .optimize = optimize,
         });
@@ -735,7 +744,7 @@ fn buildCoreExamples(
                 },
                 .zmath => {
                     const zmath = b.createModule(.{
-                        .root_source_file = .{ .path = "src/core/examples/zmath.zig" },
+                        .root_source_file = b.path("src/core/examples/zmath.zig"),
                     });
                     app.module.addImport("zmath", zmath);
                 },

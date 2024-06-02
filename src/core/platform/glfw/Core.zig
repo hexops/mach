@@ -1308,7 +1308,7 @@ inline fn printUnhandledErrorCallback(_: void, ty: gpu.ErrorType, message: [*:0]
         .unknown => std.log.err("gpu: unknown error: {s}\n", .{message}),
         else => unreachable,
     }
-    std.os.exit(1);
+    std.process.exit(1);
 }
 
 fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {

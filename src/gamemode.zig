@@ -87,9 +87,9 @@ const linux_impl = struct {
         real_gamemode_request_end: *const fn () callconv(.C) c_int,
         real_gamemode_query_status: *const fn () callconv(.C) c_int,
 
-        real_gamemode_request_start_for: *const fn (std.os.pid_t) callconv(.C) c_int,
-        real_gamemode_request_end_for: *const fn (std.os.pid_t) callconv(.C) c_int,
-        real_gamemode_query_status_for: *const fn (std.os.pid_t) callconv(.C) c_int,
+        real_gamemode_request_start_for: *const fn (std.c.pid_t) callconv(.C) c_int,
+        real_gamemode_request_end_for: *const fn (std.c.pid_t) callconv(.C) c_int,
+        real_gamemode_query_status_for: *const fn (std.c.pid_t) callconv(.C) c_int,
     };
 
     /// Try to load libgamemode, returning an error when loading fails.
@@ -169,7 +169,7 @@ const linux_impl = struct {
 
     /// Query the status of gamemode for a given PID.
     /// This does blocking IO!
-    pub fn queryStatusFor(pid: std.os.pid_t) Error!Status {
+    pub fn queryStatusFor(pid: std.c.pid_t) Error!Status {
         if (!init()) return .inactive;
 
         const ret = state.init.syms.real_gamemode_query_status_for(pid);
@@ -192,7 +192,7 @@ const linux_impl = struct {
 
     /// Request starting gamemode for a given PID.
     /// This does blocking IO!
-    pub fn requestStartFor(pid: std.os.pid_t) Error!void {
+    pub fn requestStartFor(pid: std.c.pid_t) Error!void {
         if (!init()) return;
 
         const ret = state.init.syms.real_gamemode_request_start_for(pid);
@@ -215,7 +215,7 @@ const linux_impl = struct {
 
     /// Request stopping gamemode for a given PID.
     /// This does blocking IO!
-    pub fn requestEndFor(pid: std.os.pid_t) Error!void {
+    pub fn requestEndFor(pid: std.c.pid_t) Error!void {
         if (!init()) return;
 
         const ret = state.init.syms.real_gamemode_request_end_for(pid);
@@ -244,20 +244,20 @@ const noop_impl = struct {
         return .inactive;
     }
 
-    pub fn queryStatusFor(pid: std.os.pid_t) Error!Status {
+    pub fn queryStatusFor(pid: std.c.pid_t) Error!Status {
         _ = pid;
         return .inactive;
     }
 
     pub fn requestStart() Error!void {}
 
-    pub fn requestStartFor(pid: std.os.pid_t) Error!void {
+    pub fn requestStartFor(pid: std.c.pid_t) Error!void {
         _ = pid;
     }
 
     pub fn requestEnd() Error!void {}
 
-    pub fn requestEndFor(pid: std.os.pid_t) Error!void {
+    pub fn requestEndFor(pid: std.c.pid_t) Error!void {
         _ = pid;
     }
 };

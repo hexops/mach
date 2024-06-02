@@ -8,13 +8,13 @@ pub fn Manager(comptime T: type) type {
         count: u32 = 1,
 
         pub fn reference(manager: *@This()) void {
-            _ = @atomicRmw(u32, &manager.count, .Add, 1, .Monotonic);
+            _ = @atomicRmw(u32, &manager.count, .Add, 1, .monotonic);
         }
 
         pub fn release(manager: *@This()) void {
-            if (@atomicRmw(u32, &manager.count, .Sub, 1, .Release) == 1) {
-                @fence(.Acquire);
-                const parent = @fieldParentPtr(T, "manager", manager);
+            if (@atomicRmw(u32, &manager.count, .Sub, 1, .release) == 1) {
+                @fence(.acquire);
+                const parent: *T = @alignCast(@fieldParentPtr("manager", manager));
                 parent.deinit();
             }
         }

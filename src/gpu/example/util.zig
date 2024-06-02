@@ -12,7 +12,7 @@ pub inline fn printUnhandledErrorCallback(_: void, typ: gpu.ErrorType, message: 
         .unknown => std.log.err("gpu: unknown error: {s}\n", .{message}),
         else => unreachable,
     }
-    std.os.exit(1);
+    std.process.exit(1);
 }
 
 fn getEnvVarOwned(allocator: std.mem.Allocator, key: []const u8) error{ OutOfMemory, InvalidUtf8, InvalidWtf8 }!?[]u8 {

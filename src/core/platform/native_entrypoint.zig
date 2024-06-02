@@ -24,7 +24,7 @@ pub fn main() !void {
     // Run from the directory where the executable is located so relative assets can be found.
     var buffer: [1024]u8 = undefined;
     const path = std.fs.selfExeDirPath(buffer[0..]) catch ".";
-    std.os.chdir(path) catch {};
+    std.posix.chdir(path) catch {};
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
