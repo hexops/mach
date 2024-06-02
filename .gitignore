@@ -9,7 +9,7 @@
 # Cheers!
 # -andrewrk
 
-zig-cache/
+.zig-cache/
 zig-out/
 /release/
 /debug/
