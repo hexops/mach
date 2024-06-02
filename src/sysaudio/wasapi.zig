@@ -117,31 +117,31 @@ pub const Context = struct {
     }
 
     fn onDeviceStateChangedCB(ctx: *const win32.IMMNotificationClient, _: ?[*:0]const u16, _: u32) callconv(std.os.windows.WINAPI) win32.HRESULT {
-        var watcher: *Watcher = @fieldParentPtr("notif_client", ctx);
+        var watcher: *Watcher = @constCast(@fieldParentPtr("notif_client", ctx));
         watcher.deviceChangeFn(watcher.user_data);
         return win32.S_OK;
     }
 
     fn onDeviceAddedCB(ctx: *const win32.IMMNotificationClient, _: ?[*:0]const u16) callconv(std.os.windows.WINAPI) win32.HRESULT {
-        var watcher: *Watcher = @fieldParentPtr("notif_client", ctx);
+        var watcher: *Watcher = @constCast(@fieldParentPtr("notif_client", ctx));
         watcher.deviceChangeFn(watcher.user_data);
         return win32.S_OK;
     }
 
     fn onDeviceRemovedCB(ctx: *const win32.IMMNotificationClient, _: ?[*:0]const u16) callconv(std.os.windows.WINAPI) win32.HRESULT {
-        var watcher: *Watcher = @fieldParentPtr("notif_client", ctx);
+        var watcher: *Watcher = @constCast(@fieldParentPtr("notif_client", ctx));
         watcher.deviceChangeFn(watcher.user_data);
         return win32.S_OK;
     }
 
     fn onDefaultDeviceChangedCB(ctx: *const win32.IMMNotificationClient, _: win32.DataFlow, _: win32.Role, _: ?[*:0]const u16) callconv(std.os.windows.WINAPI) win32.HRESULT {
-        var watcher: *Watcher = @fieldParentPtr("notif_client", ctx);
+        var watcher: *Watcher = @constCast(@fieldParentPtr("notif_client", ctx));
         watcher.deviceChangeFn(watcher.user_data);
         return win32.S_OK;
     }
 
     fn onPropertyValueChangedCB(ctx: *const win32.IMMNotificationClient, _: ?[*:0]const u16, _: win32.PROPERTYKEY) callconv(std.os.windows.WINAPI) win32.HRESULT {
-        var watcher: *Watcher = @fieldParentPtr("notif_client", ctx);
+        var watcher: *Watcher = @constCast(@fieldParentPtr("notif_client", ctx));
         watcher.deviceChangeFn(watcher.user_data);
         return win32.S_OK;
     }
@@ -730,7 +730,7 @@ pub const Player = struct {
     sample_rate: u24,
 
     pub fn deinit(player: *Player) void {
-        player.aborted.store(true, .Unordered);
+        player.aborted.store(true, .unordered);
         player.thread.join();
         _ = player.simple_volume.?.Release();
         _ = player.render_client.?.Release();
@@ -763,7 +763,7 @@ pub const Player = struct {
             else => unreachable,
         }
 
-        while (!player.aborted.load(.Unordered)) {
+        while (!player.aborted.load(.unordered)) {
             _ = win32.WaitForSingleObject(player.ready_event, win32.INFINITE);
 
             var padding_frames: u32 = 0;
@@ -892,7 +892,7 @@ pub const Recorder = struct {
     sample_rate: u24,
 
     pub fn deinit(recorder: *Recorder) void {
-        recorder.aborted.store(true, .Unordered);
+        recorder.aborted.store(true, .unordered);
         recorder.thread.join();
         _ = recorder.simple_volume.?.Release();
         _ = recorder.capture_client.?.Release();
@@ -925,7 +925,7 @@ pub const Recorder = struct {
             else => unreachable,
         }
 
-        while (!recorder.aborted.load(.Unordered)) {
+        while (!recorder.aborted.load(.unordered)) {
             _ = win32.WaitForSingleObject(recorder.ready_event, win32.INFINITE);
 
             var padding_frames: u32 = 0;
