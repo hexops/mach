@@ -53,7 +53,6 @@ These projects have zero `build.zig.zon` dependencies, we update them first - an
 * [ ] opengl-headers
 * [ ] linux-audio-headers
 * [ ] xcode-frameworks
-* [ ] basisu
 * [ ] vulkan-zig-generated
 * [ ] directx-headers
 * [ ] direct3d-headers
@@ -87,8 +86,6 @@ These projects have dependencies on other projects. We update them in the exact 
 * [ ] mach-glfw, which depends on:
   * glfw
 * [ ] mach-dxcompiler, which depends on:
-* [ ] mach-basisu, which depends on:
-  * basisu
 * [ ] mach-objc, which depends on:
   * xcode-frameworks
 * [ ] mach-freetype, which depends on:
@@ -115,7 +112,6 @@ These projects have dependencies on other projects. We update them in the exact 
 * [ ] mach, which depends on:
   * .zigversion
   * build.zig version check
-  * mach-basisu
   * mach-freetype
   * font-assets
   * mach-gpu
