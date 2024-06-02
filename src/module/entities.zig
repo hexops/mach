@@ -785,7 +785,7 @@ pub fn Database(comptime modules: anytype) type {
                     }
                     break :blk @Type(.{
                         .Struct = .{
-                            .layout = .Auto,
+                            .layout = .auto,
                             .is_tuple = false,
                             .fields = fields,
                             .decls = &[_]std.builtin.Type.Declaration{},

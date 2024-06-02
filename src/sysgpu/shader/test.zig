@@ -290,5 +290,5 @@ fn expectCodegen(
     defer allocator.free(out);
 
     try std.fs.cwd().makePath("zig-out/shader/");
-    try std.fs.cwd().writeFile("zig-out/shader/" ++ file_name, out);
+    try std.fs.cwd().writeFile(.{ .sub_path = "zig-out/shader/" ++ file_name, .data = out });
 }

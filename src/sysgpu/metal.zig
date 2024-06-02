@@ -288,7 +288,7 @@ pub const Device = struct {
     pub fn processQueuedOperations(device: *Device) void {
         // Reference trackers
         if (device.queue) |queue| {
-            const completed_value = queue.completed_value.load(.Acquire);
+            const completed_value = queue.completed_value.load(.acquire);
 
             var i: usize = 0;
             while (i < device.reference_trackers.items.len) {
@@ -2191,7 +2191,7 @@ pub const Queue = struct {
     // Internal
     pub fn waitUntil(queue: *Queue, fence_value: u64) void {
         // TODO - avoid spin loop
-        while (queue.completed_value.load(.Acquire) < fence_value) {}
+        while (queue.completed_value.load(.acquire) < fence_value) {}
     }
 
     // Private
@@ -2220,7 +2220,7 @@ pub const Queue = struct {
 
     fn completedHandler(ctx: CompletedContext, mtl_command_buffer: *mtl.CommandBuffer) void {
         _ = mtl_command_buffer;
-        ctx.queue.completed_value.store(ctx.fence_value, .Release);
+        ctx.queue.completed_value.store(ctx.fence_value, .release);
     }
 };
 

@@ -298,7 +298,7 @@ pub const Tag = enum {
     }
 };
 
-pub const keywords = std.ComptimeStringMap(Tag, .{
+pub const keywords = std.StaticStringMap(Tag).initComptime(.{
     .{ "enable", .k_enable },
     .{ "requires", .k_requires },
     .{ "fn", .k_fn },
@@ -368,7 +368,7 @@ pub const keywords = std.ComptimeStringMap(Tag, .{
 
 pub const reserved = blk: {
     @setEvalBranchQuota(3000);
-    break :blk std.ComptimeStringMap(void, .{
+    break :blk std.StaticStringMap(void).initComptime(.{
         .{ "NULL", {} },
         .{ "Self", {} },
         .{ "abstract", {} },

@@ -87,7 +87,7 @@ pub fn Merge(comptime tuple: anytype) type {
     return @Type(.{
         .Struct = .{
             .is_tuple = true,
-            .layout = .Auto,
+            .layout = .auto,
             .decls = &.{},
             .fields = tuple_fields,
         },
@@ -439,7 +439,7 @@ pub fn ModsByName(comptime modules: anytype) type {
     }
     return @Type(.{
         .Struct = .{
-            .layout = .Auto,
+            .layout = .auto,
             .is_tuple = false,
             .fields = fields,
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -619,8 +619,8 @@ pub fn ModSet(comptime modules: anytype) type {
                 pub inline fn scheduleWithArgs(m: *@This(), comptime system_name: SystemEnumM(M), args: SystemArgsM(M, system_name)) void {
                     const ModulesT = Modules(modules);
                     const MByName = ModsByName(modules);
-                    const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
-                    const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
+                    const mod_ptr: *MByName = @alignCast(@fieldParentPtr(@tagName(module_tag), m));
+                    const mods: *ModulesT = @fieldParentPtr("mod", mod_ptr);
                     mods.scheduleWithArgs(module_tag, system_name, args);
                 }
 
@@ -641,8 +641,8 @@ pub fn ModSet(comptime modules: anytype) type {
                 pub inline fn scheduleAny(m: *@This(), sys: AnySystem) void {
                     const ModulesT = Modules(modules);
                     const MByName = ModsByName(modules);
-                    const mod_ptr: *MByName = @alignCast(@fieldParentPtr(MByName, @tagName(module_tag), m));
-                    const mods = @fieldParentPtr(ModulesT, "mod", mod_ptr);
+                    const mod_ptr: *MByName = @alignCast(@fieldParentPtr(@tagName(module_tag), m));
+                    const mods: *ModulesT = @fieldParentPtr("mod", mod_ptr);
                     mods.scheduleDynamic(sys.module_id, sys.system_id);
                 }
             };
@@ -867,7 +867,7 @@ fn NamespacedModules(comptime modules: anytype) type {
     }
     return @Type(.{
         .Struct = .{
-            .layout = .Auto,
+            .layout = .auto,
             .is_tuple = false,
             .fields = fields,
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -942,7 +942,7 @@ pub fn ComponentTypesByName(comptime modules: anytype) type {
     }
     return @Type(.{
         .Struct = .{
-            .layout = .Auto,
+            .layout = .auto,
             .is_tuple = false,
             .fields = fields,
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -1012,7 +1012,7 @@ fn ComponentTypesM(comptime M: anytype) type {
     }
     return @Type(.{
         .Struct = .{
-            .layout = .Auto,
+            .layout = .auto,
             .is_tuple = false,
             .fields = fields,
             .decls = &[_]std.builtin.Type.Declaration{},
