@@ -547,13 +547,6 @@ fn sdkPath(comptime suffix: []const u8) []const u8 {
     };
 }
 
-comptime {
-    const supported_zig = std.SemanticVersion.parse("0.13.0-dev.351+64ef45eb0") catch unreachable;
-    if (builtin.zig_version.order(supported_zig) != .eq) {
-        @compileError(std.fmt.comptimePrint("unsupported Zig version ({}). Required Zig version 2024.3.0-mach: https://machengine.org/about/nominated-zig/#202430-mach", .{builtin.zig_version}));
-    }
-}
-
 fn buildExamples(
     b: *std.Build,
     optimize: std.builtin.OptimizeMode,
@@ -756,5 +749,12 @@ fn buildCoreExamples(
 
         const run_step = b.step("run-core-" ++ cmd_name, "Run core-" ++ cmd_name);
         run_step.dependOn(&app.run.step);
+    }
+}
+
+comptime {
+    const supported_zig = std.SemanticVersion.parse("0.13.0-dev.351+64ef45eb0") catch unreachable;
+    if (builtin.zig_version.order(supported_zig) != .eq) {
+        @compileError(std.fmt.comptimePrint("unsupported Zig version ({}). Required Zig version 2024.5.0-mach: https://machengine.org/about/nominated-zig/#202450-mach", .{builtin.zig_version}));
     }
 }
