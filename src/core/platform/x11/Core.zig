@@ -90,7 +90,7 @@ const LibX11 = struct {
 
     pub fn load() !LibX11 {
         var lib: LibX11 = undefined;
-        lib.handle = std.DynLib.openZ("libX11.so.6") catch return error.LibraryNotFound;
+        lib.handle = std.DynLib.open("libX11.so.6") catch return error.LibraryNotFound;
         inline for (@typeInfo(LibX11).Struct.fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -112,7 +112,7 @@ const LibXCursor = struct {
 
     pub fn load() !LibXCursor {
         var lib: LibXCursor = undefined;
-        lib.handle = std.DynLib.openZ("libXcursor.so.1") catch return error.LibraryNotFound;
+        lib.handle = std.DynLib.open("libXcursor.so.1") catch return error.LibraryNotFound;
         inline for (@typeInfo(LibXCursor).Struct.fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -130,7 +130,7 @@ const LibXRR = struct {
 
     pub fn load() !LibXRR {
         var lib: LibXRR = undefined;
-        lib.handle = std.DynLib.openZ("libXrandr.so.1") catch return error.LibraryNotFound;
+        lib.handle = std.DynLib.open("libXrandr.so.1") catch return error.LibraryNotFound;
         inline for (@typeInfo(LibXRR).Struct.fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -165,7 +165,7 @@ const LibGL = struct {
 
     pub fn load() !LibGL {
         var lib: LibGL = undefined;
-        lib.handle = std.DynLib.openZ("libGL.so.1") catch return error.LibraryNotFound;
+        lib.handle = std.DynLib.open("libGL.so.1") catch return error.LibraryNotFound;
         inline for (@typeInfo(LibGL).Struct.fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -191,7 +191,7 @@ libgl: ?LibGL,
 libxcursor: ?LibXCursor,
 width: c_int,
 height: c_int,
-empty_event_pipe: [2]std.os.fd_t,
+empty_event_pipe: [2]std.c.fd_t,
 gl_ctx: ?*LibGL.Context,
 wm_protocols: c.Atom,
 wm_delete_window: c.Atom,
@@ -340,7 +340,7 @@ pub fn init(
     };
     defer _ = libx11.XFreeColormap(display, colormap);
 
-    const empty_event_pipe = try std.os.pipe();
+    const empty_event_pipe = try std.posix.pipe();
     for (0..2) |i| {
         const sf = try std.os.fcntl(empty_event_pipe[i], std.os.F.GETFL, 0);
         const df = try std.os.fcntl(empty_event_pipe[i], std.os.F.GETFD, 0);
@@ -657,8 +657,8 @@ pub fn deinit(self: *Core) void {
     _ = self.libx11.XCloseDisplay(self.display);
     self.libx11.handle.close();
 
-    std.os.close(self.empty_event_pipe[0]);
-    std.os.close(self.empty_event_pipe[1]);
+    std.posix.close(self.empty_event_pipe[0]);
+    std.posix.close(self.empty_event_pipe[1]);
 }
 
 // Secondary app-update thread
@@ -1096,7 +1096,7 @@ pub inline fn outOfMemory(self: *Core) bool {
 // May be called from any thread.
 pub inline fn wakeMainThread(self: *Core) void {
     while (true) {
-        const result = std.os.write(self.empty_event_pipe[1], &.{0}) catch break;
+        const result = std.posix.write(self.empty_event_pipe[1], &.{0}) catch break;
         if (result == 1) break;
     }
 }

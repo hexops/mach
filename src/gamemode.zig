@@ -100,9 +100,9 @@ const linux_impl = struct {
     pub fn tryInit() LoadError!void {
         if (state == .init) return;
 
-        var dl = std.DynLib.openZ("libgamemode.so.0") catch |e| switch (e) {
+        var dl = std.DynLib.open("libgamemode.so.0") catch |e| switch (e) {
             // backwards-compatibility for old gamemode versions
-            error.FileNotFound => try std.DynLib.openZ("libgamemode.so"),
+            error.FileNotFound => try std.DynLib.open("libgamemode.so"),
             else => return e,
         };
         errdefer dl.close();
@@ -116,7 +116,7 @@ const linux_impl = struct {
             };
         }
 
-        state = .{ .init = .{ .lib = dl, .syms = sym_table } };
+        state = State{ .init = .{ .lib = dl, .syms = sym_table } };
     }
 
     /// Initialize gamemode, logging a possible failure.

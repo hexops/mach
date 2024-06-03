@@ -84,7 +84,7 @@ const LibXkbCommon = struct {
 
     pub fn load() !LibXkbCommon {
         var lib: LibXkbCommon = undefined;
-        lib.handle = std.DynLib.openZ("libxkbcommon.so.0") catch return error.LibraryNotFound;
+        lib.handle = std.DynLib.open("libxkbcommon.so.0") catch return error.LibraryNotFound;
         inline for (@typeInfo(LibXkbCommon).Struct.fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -139,7 +139,7 @@ const LibWaylandClient = struct {
 
     pub fn load() !LibWaylandClient {
         var lib: LibWaylandClient = undefined;
-        lib.handle = std.DynLib.openZ("libwayland-client.so.0") catch return error.LibraryNotFound;
+        lib.handle = std.DynLib.open("libwayland-client.so.0") catch return error.LibraryNotFound;
         inline for (@typeInfo(LibWaylandClient).Struct.fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -590,7 +590,7 @@ fn keyboardHandleKeymap(user_data: *GlobalState, keyboard: ?*c.struct_wl_keyboar
     //Unmap the keymap
     std.os.munmap(map_str);
     //Close the fd
-    std.os.close(fd);
+    std.posix.close(fd);
 
     const state = user_data.libxkbcommon.xkb_state_new(keymap).?;
     // defer user_data.libxkbcommon.xkb_state_unref(state);
@@ -1061,21 +1061,21 @@ pub fn update(self: *Core, app: anytype) !bool {
     }
 
     // while (libwaylandclient.wl_display_flush(self.display) == -1) {
-    //     // if (std.os.errno() == std.os.E.AGAIN) {
+    //     // if (std.os.errno() == std.posix.E.AGAIN) {
     //     // log.err("flush error", .{});
     //     // return true;
     //     // }
 
-    //     var pollfd = [_]std.os.pollfd{
-    //         std.os.pollfd{
+    //     var pollfd = [_]std.posix.pollfd{
+    //         std.posix.pollfd{
     //             .fd = libwaylandclient.wl_display_get_fd(self.display),
-    //             .events = std.os.POLL.OUT,
+    //             .events = std.posix.POLL.OUT,
     //             .revents = 0,
     //         },
     //     };
 
-    //     while (try std.os.poll(&pollfd, -1) != 0) {
-    //         // if (std.os.errno() == std.os.E.INTR or std.os.errno() == std.os.E.AGAIN) {
+    //     while (try std.posix.poll(&pollfd, -1) != 0) {
+    //         // if (std.os.errno() == std.posix.E.INTR or std.os.errno() == std.posix.E.AGAIN) {
     //         // log.err("poll error", .{});
     //         // return true;
     //         // }

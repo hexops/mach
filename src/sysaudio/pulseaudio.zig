@@ -61,7 +61,7 @@ const Lib = struct {
     pa_stream_get_sample_spec: *const fn (s: ?*c.pa_stream) [*c]const c.pa_sample_spec,
 
     pub fn load() !void {
-        lib.handle = std.DynLib.openZ("libpulse.so") catch return error.LibraryNotFound;
+        lib.handle = std.DynLib.open("libpulse.so") catch return error.LibraryNotFound;
         inline for (@typeInfo(Lib).Struct.fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
