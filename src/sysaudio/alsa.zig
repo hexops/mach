@@ -69,7 +69,7 @@ const Lib = struct {
     snd_mixer_selem_has_capture_channel: *const fn (?*c.snd_mixer_elem_t, c.snd_mixer_selem_channel_id_t) callconv(.C) c_int,
 
     pub fn load() !void {
-        lib.handle = std.DynLib.openZ("libasound.so") catch return error.LibraryNotFound;
+        lib.handle = std.DynLib.open("libasound.so") catch return error.LibraryNotFound;
         inline for (@typeInfo(Lib).Struct.fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -88,9 +88,9 @@ pub const Context = struct {
         user_data: ?*anyopaque,
         thread: std.Thread,
         aborted: std.atomic.Value(bool),
-        notify_fd: std.os.fd_t,
-        notify_wd: std.os.fd_t,
-        notify_pipe_fd: [2]std.os.fd_t,
+        notify_fd: std.c.fd_t,
+        notify_wd: std.c.fd_t,
+        notify_pipe_fd: [2]std.c.fd_t,
     };
 
     pub fn init(allocator: std.mem.Allocator, options: main.Context.Options) !backends.Context {
@@ -105,16 +105,16 @@ pub const Context = struct {
             .devices_info = util.DevicesInfo.init(),
             .watcher = blk: {
                 if (options.deviceChangeFn) |deviceChangeFn| {
-                    const notify_fd = std.os.inotify_init1(std.os.linux.IN.NONBLOCK) catch |err| switch (err) {
+                    const notify_fd = std.posix.inotify_init1(std.os.linux.IN.NONBLOCK) catch |err| switch (err) {
                         error.ProcessFdQuotaExceeded,
                         error.SystemFdQuotaExceeded,
                         error.SystemResources,
                         => return error.SystemResources,
                         error.Unexpected => unreachable,
                     };
-                    errdefer std.os.close(notify_fd);
+                    errdefer std.posix.close(notify_fd);
 
-                    const notify_wd = std.os.inotify_add_watch(
+                    const notify_wd = std.posix.inotify_add_watch(
                         notify_fd,
                         "/dev/snd",
                         std.os.linux.IN.CREATE | std.os.linux.IN.DELETE,
@@ -130,17 +130,17 @@ pub const Context = struct {
                         error.Unexpected,
                         => unreachable,
                     };
-                    errdefer std.os.inotify_rm_watch(notify_fd, notify_wd);
+                    errdefer std.posix.inotify_rm_watch(notify_fd, notify_wd);
 
-                    const notify_pipe_fd = std.os.pipe2(.{ .NONBLOCK = true }) catch |err| switch (err) {
+                    const notify_pipe_fd = std.posix.pipe2(.{ .NONBLOCK = true }) catch |err| switch (err) {
                         error.ProcessFdQuotaExceeded,
                         error.SystemFdQuotaExceeded,
                         => return error.SystemResources,
                         error.Unexpected => unreachable,
                     };
                     errdefer {
-                        std.os.close(notify_pipe_fd[0]);
-                        std.os.close(notify_pipe_fd[1]);
+                        std.posix.close(notify_pipe_fd[0]);
+                        std.posix.close(notify_pipe_fd[1]);
                     }
 
                     break :blk .{
@@ -170,14 +170,14 @@ pub const Context = struct {
 
     pub fn deinit(ctx: *Context) void {
         if (ctx.watcher) |*watcher| {
-            watcher.aborted.store(true, .Unordered);
-            _ = std.os.write(watcher.notify_pipe_fd[1], "a") catch {};
+            watcher.aborted.store(true, .unordered);
+            _ = std.posix.write(watcher.notify_pipe_fd[1], "a") catch {};
             watcher.thread.join();
 
-            std.os.close(watcher.notify_pipe_fd[0]);
-            std.os.close(watcher.notify_pipe_fd[1]);
-            std.os.inotify_rm_watch(watcher.notify_fd, watcher.notify_wd);
-            std.os.close(watcher.notify_fd);
+            std.posix.close(watcher.notify_pipe_fd[0]);
+            std.posix.close(watcher.notify_pipe_fd[1]);
+            std.posix.inotify_rm_watch(watcher.notify_fd, watcher.notify_wd);
+            std.posix.close(watcher.notify_fd);
         }
 
         for (ctx.devices_info.list.items) |d|
@@ -192,21 +192,21 @@ pub const Context = struct {
         var scan = false;
         var last_crash: ?i64 = null;
         var buf: [2048]u8 = undefined;
-        var fds = [2]std.os.pollfd{
+        var fds = [2]std.posix.pollfd{
             .{
                 .fd = watcher.notify_fd,
-                .events = std.os.POLL.IN,
+                .events = std.posix.POLL.IN,
                 .revents = 0,
             },
             .{
                 .fd = watcher.notify_pipe_fd[0],
-                .events = std.os.POLL.IN,
+                .events = std.posix.POLL.IN,
                 .revents = 0,
             },
         };
 
-        while (!watcher.aborted.load(.Unordered)) {
-            _ = std.os.poll(&fds, -1) catch |err| switch (err) {
+        while (!watcher.aborted.load(.unordered)) {
+            _ = std.posix.poll(&fds, -1) catch |err| switch (err) {
                 error.NetworkSubsystemFailed,
                 error.SystemResources,
                 => {
@@ -219,9 +219,9 @@ pub const Context = struct {
                 },
                 error.Unexpected => unreachable,
             };
-            if (watcher.notify_fd & std.os.POLL.IN != 0) {
+            if (watcher.notify_fd & std.posix.POLL.IN != 0) {
                 while (true) {
-                    const len = std.os.read(watcher.notify_fd, &buf) catch |err| {
+                    const len = std.posix.read(watcher.notify_fd, &buf) catch |err| {
                         if (err == error.WouldBlock) break;
                         const ts = std.time.milliTimestamp();
                         if (last_crash) |lc| {
@@ -273,7 +273,7 @@ pub const Context = struct {
             var ctl: ?*c.snd_ctl_t = undefined;
             _ = switch (-lib.snd_ctl_open(&ctl, card_id.ptr, 0)) {
                 0 => {},
-                @intFromEnum(std.os.E.NOENT) => break,
+                @intFromEnum(std.posix.E.NOENT) => break,
                 else => return error.OpeningDevice,
             };
             defer _ = lib.snd_ctl_close(ctl);
@@ -290,7 +290,7 @@ pub const Context = struct {
                 const snd_stream = modeToStream(mode);
                 lib.snd_pcm_info_set_stream(pcm_info, snd_stream);
                 const err = lib.snd_ctl_pcm_info(ctl, pcm_info);
-                switch (@as(std.os.E, @enumFromInt(-err))) {
+                switch (@as(std.posix.E, @enumFromInt(-err))) {
                     .SUCCESS => {},
                     .NOENT,
                     .NXIO,
@@ -554,7 +554,7 @@ pub const Player = struct {
     sample_rate: u24,
 
     pub fn deinit(player: *Player) void {
-        player.aborted.store(true, .Unordered);
+        player.aborted.store(true, .unordered);
         player.thread.join();
 
         _ = lib.snd_mixer_close(player.mixer);
@@ -579,7 +579,7 @@ pub const Player = struct {
 
     fn writeThread(player: *Player) void {
         var underrun = false;
-        while (!player.aborted.load(.Unordered)) {
+        while (!player.aborted.load(.unordered)) {
             if (!underrun) {
                 player.writeFn(
                     player.user_data,
@@ -668,7 +668,7 @@ pub const Recorder = struct {
     sample_rate: u24,
 
     pub fn deinit(recorder: *Recorder) void {
-        recorder.aborted.store(true, .Unordered);
+        recorder.aborted.store(true, .unordered);
         recorder.thread.join();
 
         _ = lib.snd_mixer_close(recorder.mixer);
@@ -693,7 +693,7 @@ pub const Recorder = struct {
 
     fn readThread(recorder: *Recorder) void {
         var underrun = false;
-        while (!recorder.aborted.load(.Unordered)) {
+        while (!recorder.aborted.load(.unordered)) {
             if (!underrun) {
                 recorder.readFn(recorder.user_data, recorder.sample_buffer[0..recorder.period_size]);
             }

@@ -33,7 +33,7 @@ const Lib = struct {
     jack_port_type_size: *const fn () c_int,
 
     pub fn load() !void {
-        lib.handle = std.DynLib.openZ("libjack.so") catch return error.LibraryNotFound;
+        lib.handle = std.DynLib.open("libjack.so") catch return error.LibraryNotFound;
         inline for (@typeInfo(Lib).Struct.fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

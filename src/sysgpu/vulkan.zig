@@ -28,7 +28,7 @@ pub fn init(alloc: std.mem.Allocator, options: InitOptions) !void {
     if (options.baseLoader) |baseLoader| {
         vkb = try proc.loadBase(baseLoader);
     } else {
-        libvulkan = try std.DynLib.openZ(switch (builtin.target.os.tag) {
+        libvulkan = try std.DynLib.open(switch (builtin.target.os.tag) {
             .windows => "vulkan-1.dll",
             .linux => "libvulkan.so.1",
             .macos => "libvulkan.1.dylib",
@@ -132,24 +132,24 @@ pub const Instance = struct {
         &.{};
     const instance_extensions: []const [*:0]const u8 = switch (builtin.target.os.tag) {
         .linux => &.{
-            vk.extension_info.khr_surface.name,
-            vk.extension_info.khr_xlib_surface.name,
-            vk.extension_info.khr_xcb_surface.name,
+            vk.extensions.khr_surface.name,
+            vk.extensions.khr_xlib_surface.name,
+            vk.extensions.khr_xcb_surface.name,
             // TODO: renderdoc will not work with this extension
-            // vk.extension_info.khr_wayland_surface.name,
+            // vk.extensions.khr_wayland_surface.name,
         },
         .windows => &.{
-            vk.extension_info.khr_surface.name,
-            vk.extension_info.khr_win_32_surface.name,
+            vk.extensions.khr_surface.name,
+            vk.extensions.khr_win_32_surface.name,
         },
         .macos, .ios => &.{
-            vk.extension_info.khr_surface.name,
-            vk.extension_info.ext_metal_surface.name,
+            vk.extensions.khr_surface.name,
+            vk.extensions.ext_metal_surface.name,
         },
         else => |tag| if (builtin.target.abi == .android)
             &.{
-                vk.extension_info.khr_surface.name,
-                vk.extension_info.khr_android_surface.name,
+                vk.extensions.khr_surface.name,
+                vk.extensions.khr_android_surface.name,
             }
         else
             @compileError(std.fmt.comptimePrint("unsupported platform ({s})", .{@tagName(tag)})),
@@ -490,7 +490,8 @@ pub const Device = struct {
                         .indirect_first_instance => features.features.draw_indirect_first_instance = vk.TRUE,
                         .shader_f16 => {
                             var feature = vk.PhysicalDeviceShaderFloat16Int8FeaturesKHR{
-                                .s_type = .physical_device_shader_float16_int8_features_khr,
+                                // physical_device_shader_float16_int8_features_khr
+                                .s_type = vk.StructureType.physical_device_shader_float16_int8_features_khr,
                                 .shader_float_16 = vk.TRUE,
                             };
                             features.p_next = @ptrCast(&feature);
@@ -716,7 +717,7 @@ pub const Device = struct {
         &[_][*:0]const u8{"VK_LAYER_KHRONOS_validation"}
     else
         &.{};
-    const device_extensions = &[_][*:0]const u8{vk.extension_info.khr_swapchain.name};
+    const device_extensions = &[_][*:0]const u8{vk.extensions.khr_swapchain.name};
 
     pub const ResolveKey = struct {
         format: vk.Format,

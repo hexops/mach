@@ -16,7 +16,7 @@ fn getProcAddress(name_ptr: [*:0]const u8) c.PROC {
 }
 
 pub fn init() !void {
-    libgl = try std.DynLib.openZ("opengl32.dll");
+    libgl = try std.DynLib.open("opengl32.dll");
 }
 
 pub fn deinit() void {

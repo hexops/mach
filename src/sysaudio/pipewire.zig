@@ -33,7 +33,7 @@ const Lib = struct {
     pw_stream_get_state: *const fn (?*c.pw_stream, [*c][*c]const u8) callconv(.C) c.pw_stream_state,
 
     pub fn load() !void {
-        lib.handle = std.DynLib.openZ("libpipewire-0.3.so") catch return error.LibraryNotFound;
+        lib.handle = std.DynLib.open("libpipewire-0.3.so") catch return error.LibraryNotFound;
         inline for (@typeInfo(Lib).Struct.fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -395,7 +395,7 @@ pub const Player = struct {
         defer _ = lib.pw_stream_queue_buffer(player.stream, buf);
 
         buf.*.buffer.*.datas[0].chunk.*.offset = 0;
-        if (player.is_paused.load(.Unordered)) {
+        if (player.is_paused.load(.unordered)) {
             buf.*.buffer.*.datas[0].chunk.*.stride = 0;
             buf.*.buffer.*.datas[0].chunk.*.size = 0;
             return;
@@ -429,15 +429,15 @@ pub const Player = struct {
     }
 
     pub fn play(player: *Player) !void {
-        player.is_paused.store(false, .Unordered);
+        player.is_paused.store(false, .unordered);
     }
 
     pub fn pause(player: *Player) !void {
-        player.is_paused.store(true, .Unordered);
+        player.is_paused.store(true, .unordered);
     }
 
     pub fn paused(player: *Player) bool {
-        return player.is_paused.load(.Unordered);
+        return player.is_paused.load(.unordered);
     }
 
     pub fn setVolume(player: *Player, vol: f32) !void {
@@ -470,7 +470,7 @@ pub const Recorder = struct {
         defer _ = lib.pw_stream_queue_buffer(recorder.stream, buf);
 
         buf.*.buffer.*.datas[0].chunk.*.offset = 0;
-        if (recorder.is_paused.load(.Unordered)) {
+        if (recorder.is_paused.load(.unordered)) {
             buf.*.buffer.*.datas[0].chunk.*.stride = 0;
             buf.*.buffer.*.datas[0].chunk.*.size = 0;
             return;
@@ -500,15 +500,15 @@ pub const Recorder = struct {
     }
 
     pub fn record(recorder: *Recorder) !void {
-        recorder.is_paused.store(false, .Unordered);
+        recorder.is_paused.store(false, .unordered);
     }
 
     pub fn pause(recorder: *Recorder) !void {
-        recorder.is_paused.store(true, .Unordered);
+        recorder.is_paused.store(true, .unordered);
     }
 
     pub fn paused(recorder: *Recorder) bool {
-        return recorder.is_paused.load(.Unordered);
+        return recorder.is_paused.load(.unordered);
     }
 
     pub fn setVolume(recorder: *Recorder, vol: f32) !void {
