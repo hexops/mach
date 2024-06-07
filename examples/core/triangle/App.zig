@@ -203,6 +203,7 @@ fn tick(core: *mach.Core.Mod, game: *Mod, offscreen: *Offscreen.Mod) !void {
             callback,
         );
 
+        state.buffer.unmap();
         game.state().save_screenshot = false;
     }
 

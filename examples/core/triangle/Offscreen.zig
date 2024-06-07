@@ -70,6 +70,9 @@ fn init(
         .texture = texture,
         .view = view,
         .buffer = buffer,
+        .buffer_width = img_size.width,
+        .buffer_height = img_size.height,
+        .buffer_padded_bytes_per_row = @sizeOf([4]u8) * img_size.width,
         .allocator = allocator,
         .pipeline = undefined,
     });
