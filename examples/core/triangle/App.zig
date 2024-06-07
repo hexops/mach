@@ -2,6 +2,8 @@ const std = @import("std");
 const mach = @import("mach");
 const gpu = mach.gpu;
 
+const zigimg = @import("zigimg");
+
 pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
@@ -205,7 +207,6 @@ fn tick(core: *mach.Core.Mod, game: *Mod, offscreen: *Offscreen.Mod) !void {
             callback,
         );
 
-        state.buffer.unmap();
         game.state().save_screenshot = false;
     }
 
@@ -237,12 +238,18 @@ pub const CallbackCtx = struct {
 pub inline fn callback(ctx: *CallbackCtx, status: mach.gpu.Buffer.MapAsyncStatus) void {
     switch (status) {
         .success => {
-            if (ctx.offscreen.buffer.getConstMappedRange([4]u8, 0, @intCast(ctx.offscreen.buffer_padded_bytes_per_row * ctx.offscreen.buffer_height))) |mapped| {
-                _ = mapped; // autofix
+            if (ctx.offscreen.buffer.getConstMappedRange(u8, 0, @intCast(ctx.offscreen.buffer_padded_bytes_per_row * ctx.offscreen.buffer_height))) |mapped| {
+                ctx.offscreen.output_image = zigimg.Image.fromMemory(ctx.offscreen.allocator, mapped) catch unreachable;
+                ctx.offscreen.output_image.writeToFilePath("zig_screenshot/output.png", .{ .png = .{} }) catch unreachable;
+                std.log.debug("Screenshot saved!", .{});
             }
         },
-        else => {},
+        else => {
+            std.log.debug("Failed", .{});
+        },
     }
+
+    ctx.offscreen.buffer.unmap();
 }
 
 //comptime callback: fn(ctx:@TypeOf(context), status:MapAsyncStatus)callconv(.Inline)void
