@@ -156,7 +156,7 @@ fn tick(core: *mach.Core.Mod, game: *Mod, offscreen: *Offscreen.Mod) !void {
                 .label = label,
                 .color_attachments = &offscreen_color_attachments,
             }));
-            defer render_pass.release();
+            defer offscreen_render_pass.release();
 
             // Draw
             offscreen_render_pass.setPipeline(game.state().pipeline);

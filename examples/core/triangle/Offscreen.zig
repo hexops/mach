@@ -52,6 +52,7 @@ fn init(
         .usage = .{
             .texture_binding = true,
             .copy_dst = true,
+            .copy_src = true,
             .render_attachment = true,
         },
     });
