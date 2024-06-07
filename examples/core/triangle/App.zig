@@ -193,7 +193,9 @@ fn tick(core: *mach.Core.Mod, game: *Mod, offscreen: *Offscreen.Mod) !void {
     if (game.state().save_screenshot) {
         const state: *Offscreen = offscreen.state();
 
-        var ctx: CallbackCtx = .{};
+        var ctx: CallbackCtx = .{
+            .offscreen = offscreen.state(),
+        };
 
         state.buffer.mapAsync(
             .{ .read = true },
@@ -228,10 +230,19 @@ fn updateWindowTitle(core: *mach.Core.Mod) !void {
     core.schedule(.update);
 }
 
-pub const CallbackCtx = struct {};
+pub const CallbackCtx = struct {
+    offscreen: *Offscreen,
+};
 
-pub inline fn callback(_: *CallbackCtx, status: mach.gpu.Buffer.MapAsyncStatus) void {
-    _ = status; // autofix
+pub inline fn callback(ctx: *CallbackCtx, status: mach.gpu.Buffer.MapAsyncStatus) void {
+    switch (status) {
+        .success => {
+            if (ctx.offscreen.buffer.getConstMappedRange([4]u8, 0, @intCast(ctx.offscreen.buffer_padded_bytes_per_row * ctx.offscreen.buffer_height))) |mapped| {
+                _ = mapped; // autofix
+            }
+        },
+        else => {},
+    }
 }
 
 //comptime callback: fn(ctx:@TypeOf(context), status:MapAsyncStatus)callconv(.Inline)void
