@@ -24,7 +24,6 @@ buffer_width: u32 = 0,
 buffer_height: u32 = 0,
 buffer_unpadded_bytes_per_row: u32 = 0,
 buffer_padded_bytes_per_row: u32 = 0,
-output_image: zigimg.Image,
 allocator: std.mem.Allocator,
 
 fn deinit(offscreen: *Mod) !void {
@@ -43,8 +42,6 @@ fn init(
     const allocator = gpa.allocator();
 
     const img_size = gpu.Extent3D{ .width = mach.core.size().width, .height = mach.core.size().height };
-
-    const output_image = zigimg.Image.create(allocator, @intCast(img_size.width), @intCast(img_size.height), .rgba32) catch unreachable;
 
     // Create a GPU texture
     const label = @tagName(name) ++ ".init";
@@ -77,7 +74,6 @@ fn init(
         .buffer_width = img_size.width,
         .buffer_height = img_size.height,
         .buffer_padded_bytes_per_row = @sizeOf([4]u8) * img_size.width,
-        .output_image = output_image,
         .allocator = allocator,
     });
 }

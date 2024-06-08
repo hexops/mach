@@ -147,10 +147,13 @@ fn tick(core: *mach.Core.Mod, game: *Mod, offscreen: *Offscreen.Mod) !void {
 
         encoder.copyTextureToBuffer(
             &.{ .texture = offscreen.state().texture },
-            &.{ .buffer = offscreen.state().buffer, .layout = .{
-                .bytes_per_row = offscreen.state().buffer_padded_bytes_per_row,
-                .rows_per_image = offscreen.state().buffer_height,
-            } },
+            &.{
+                .buffer = offscreen.state().buffer,
+                .layout = .{
+                    .bytes_per_row = offscreen.state().buffer_padded_bytes_per_row,
+                    .rows_per_image = offscreen.state().buffer_height,
+                },
+            },
             &.{
                 .width = offscreen.state().buffer_width,
                 .height = offscreen.state().buffer_height,
