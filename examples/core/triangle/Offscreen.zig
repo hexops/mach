@@ -12,12 +12,10 @@ pub const Mod = mach.Mod(@This());
 pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
-    .prepare = .{ .handler = prepare },
 };
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
-pipeline: *gpu.RenderPipeline,
 texture: *gpu.Texture,
 view: *gpu.TextureView,
 buffer: *gpu.Buffer,
@@ -81,13 +79,5 @@ fn init(
         .buffer_padded_bytes_per_row = @sizeOf([4]u8) * img_size.width,
         .output_image = output_image,
         .allocator = allocator,
-        .pipeline = undefined,
     });
-}
-
-fn prepare(core: *mach.Core.Mod, offscreen: *Mod) !void {
-    _ = core;
-
-    const state: *@This() = offscreen.state();
-    _ = state; // autofix
 }
