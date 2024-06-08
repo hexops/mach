@@ -206,6 +206,8 @@ fn tick(core: *mach.Core.Mod, game: *Mod, offscreen: *Offscreen.Mod) !void {
             try image.writeToFilePath("output.png", .{ .png = .{} });
         }
 
+        state.buffer.unmap();
+
         game.state().save_screenshot = false;
         game.state().screenshot_saved = true;
     }
