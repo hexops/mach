@@ -50,6 +50,8 @@ pub const Entities = @import("module/main.zig").Entities;
 pub const use_sysgpu = if (@hasDecl(@import("root"), "use_sysgpu")) @import("root").use_sysgpu else false;
 pub const gpu = if (use_sysgpu) sysgpu.sysgpu else wgpu;
 
+pub const is_debug = builtin.mode == .Debug;
+
 test {
     const std = @import("std");
     // TODO: refactor code so we can use this here:

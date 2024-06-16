@@ -1,10 +1,11 @@
 const builtin = @import("builtin");
 const std = @import("std");
-const testing = @import("../testing.zig");
+
+const is_debug = @import("../main.zig").is_debug;
+const testing = @import("../main.zig").testing;
 
 const Database = @import("entities.zig").Database;
 const EntityID = @import("entities.zig").EntityID;
-const is_debug = @import("Archetype.zig").is_debug;
 const builtin_modules = @import("main.zig").builtin_modules;
 
 const log = std.log.scoped(.mach);
