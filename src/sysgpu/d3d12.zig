@@ -1498,6 +1498,8 @@ pub const Resource = struct {
     pub fn deinit(resource: *Resource) void {
         if (resource.mem_allocator) |mem_allocator| {
             mem_allocator.destroyResource(resource.*) catch {};
+        } else {
+            _ = resource.d3d_resource.lpVtbl.*.Release.?(resource.d3d_resource);
         }
     }
 };
