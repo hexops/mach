@@ -1317,7 +1317,7 @@ pub const Impl = sysgpu.Interface(struct {
 
     pub inline fn textureGetWidth(texture_raw: *sysgpu.Texture) u32 {
         const texture: *impl.Texture = @ptrCast(@alignCast(texture_raw));
-        return texture.getHeight();
+        return texture.getWidth();
     }
 
     pub inline fn textureSetLabel(texture: *sysgpu.Texture, label: [*:0]const u8) void {
