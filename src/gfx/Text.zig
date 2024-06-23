@@ -273,6 +273,7 @@ fn updatePipeline(
                         ).divScalar(px_density),
                         .size = size.divScalar(px_density),
                         .text_index = num_texts,
+                        .text_padding = 0,
                         .uv_pos = vec2(@floatFromInt(r.x), @floatFromInt(r.y)),
                         .color = font_color,
                     });

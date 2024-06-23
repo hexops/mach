@@ -6,7 +6,7 @@ struct Uniforms {
 struct VertexOutput {
   @builtin(position) Position : vec4<f32>,
   @location(0) fragUV : vec2<f32>,
-  @location(1) spriteIndex : f32,
+  @location(1) spriteIndex : vec3<f32>,
 };
 
 struct Sprite {
@@ -56,7 +56,7 @@ fn vertex_main(
   var output : VertexOutput;
   output.Position = vec4<f32>(pos.x, 0.0, pos.y, 1.0) * uniforms.modelViewProjectionMatrix;
   output.fragUV = uv;
-  output.spriteIndex = f32(VertexIndex / 6);
+  output.spriteIndex = vec3<f32>(f32(VertexIndex / 6));
   return output;
 }
 
@@ -66,10 +66,10 @@ fn vertex_main(
 @fragment
 fn frag_main(
   @location(0) fragUV: vec2<f32>,
-  @location(1) spriteIndex: f32
+  @location(1) spriteIndex: vec3<f32>
 ) -> @location(0) vec4<f32> {
     var color = textureSample(spriteTexture, spriteSampler, fragUV);
-    if (spriteIndex == 0.0) {
+    if (spriteIndex[0] == 0.0) {
       if (color[3] > 0.0) {
         color[0] = 0.3;
         color[1] = 0.2;

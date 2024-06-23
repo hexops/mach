@@ -110,7 +110,7 @@ const sprite_buffer_cap = 1024 * 512; // TODO(sprite): allow user to specify pre
 // TODO(sprite): eliminate these, see Sprite.updatePipeline for details on why these exist
 // currently.
 pub var cp_transforms: [sprite_buffer_cap]math.Mat4x4 = undefined;
-pub var cp_uv_transforms: [sprite_buffer_cap]math.Mat3x3 = undefined;
+pub var cp_uv_transforms: [sprite_buffer_cap]math.Mat4x4 = undefined;
 pub var cp_sizes: [sprite_buffer_cap]math.Vec2 = undefined;
 
 /// Which render pass should be used during .render
@@ -209,7 +209,7 @@ fn buildPipeline(
     const uv_transforms = device.createBuffer(&.{
         .label = label ++ " uv_transforms",
         .usage = .{ .storage = true, .copy_dst = true },
-        .size = @sizeOf(math.Mat3x3) * sprite_buffer_cap,
+        .size = @sizeOf(math.Mat4x4) * sprite_buffer_cap,
         .mapped_at_creation = .false,
     });
     const sizes = device.createBuffer(&.{
@@ -269,9 +269,9 @@ fn buildPipeline(
                 else
                     gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(math.Mat4x4) * sprite_buffer_cap),
                 if (mach.use_sysgpu)
-                    gpu.BindGroup.Entry.buffer(2, uv_transforms, 0, @sizeOf(math.Mat3x3) * sprite_buffer_cap, @sizeOf(math.Mat3x3))
+                    gpu.BindGroup.Entry.buffer(2, uv_transforms, 0, @sizeOf(math.Mat4x4) * sprite_buffer_cap, @sizeOf(math.Mat4x4))
                 else
-                    gpu.BindGroup.Entry.buffer(2, uv_transforms, 0, @sizeOf(math.Mat3x3) * sprite_buffer_cap),
+                    gpu.BindGroup.Entry.buffer(2, uv_transforms, 0, @sizeOf(math.Mat4x4) * sprite_buffer_cap),
                 if (mach.use_sysgpu)
                     gpu.BindGroup.Entry.buffer(3, sizes, 0, @sizeOf(math.Vec2) * sprite_buffer_cap, @sizeOf(math.Vec2))
                 else
