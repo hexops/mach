@@ -33,6 +33,7 @@ struct Glyph {
 
   // Which text this glyph belongs to; this is the index for transforms[i], colors[i]
   text_index: u32,
+  text_index2: u32,   // Padding for struct alignment
 
   // Color of the glyph
   color: vec4<f32>,

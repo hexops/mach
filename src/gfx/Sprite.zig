@@ -5,6 +5,9 @@ const gfx = mach.gfx;
 
 const math = mach.math;
 const vec2 = math.vec2;
+const vec3 = math.vec3;
+const vec4 = math.vec4;
+const mat4x4 = math.mat4x4;
 const Vec2 = math.Vec2;
 const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
@@ -87,8 +90,12 @@ fn updatePipeline(
             // that all entities with the same pipeline value are stored in contiguous memory, and
             // skip this copy.
             if (sprite_pipeline_id == pipeline_id) {
+                const uv = uv_transform;
                 gfx.SpritePipeline.cp_transforms[i] = transform;
-                gfx.SpritePipeline.cp_uv_transforms[i] = uv_transform;
+                gfx.SpritePipeline.cp_uv_transforms[i].v[0] = vec4(uv.v[0].x(), uv.v[0].y(), uv.v[0].z(), 0.0);
+                gfx.SpritePipeline.cp_uv_transforms[i].v[1] = vec4(uv.v[1].x(), uv.v[1].y(), uv.v[1].z(), 0.0);
+                gfx.SpritePipeline.cp_uv_transforms[i].v[2] = vec4(uv.v[2].x(), uv.v[2].y(), uv.v[2].z(), 0.0);
+                gfx.SpritePipeline.cp_uv_transforms[i].v[3] = vec4(0.0, 0.0, 0.0, 0.0);
                 gfx.SpritePipeline.cp_sizes[i] = size;
                 i += 1;
                 num_sprites += 1;
@@ -99,7 +106,7 @@ fn updatePipeline(
     // Sort sprites back-to-front for draw order, alpha blending
     const Context = struct {
         transforms: []Mat4x4,
-        uv_transforms: []Mat3x3,
+        uv_transforms: []Mat4x4, 
         sizes: []Vec2,
 
         pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
@@ -111,7 +118,7 @@ fn updatePipeline(
 
         pub fn swap(ctx: @This(), a: usize, b: usize) void {
             std.mem.swap(Mat4x4, &ctx.transforms[a], &ctx.transforms[b]);
-            std.mem.swap(Mat3x3, &ctx.uv_transforms[a], &ctx.uv_transforms[b]);
+            std.mem.swap(Mat4x4, &ctx.uv_transforms[a], &ctx.uv_transforms[b]);
             std.mem.swap(Vec2, &ctx.sizes[a], &ctx.sizes[b]);
         }
     };

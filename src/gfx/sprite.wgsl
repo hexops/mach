@@ -25,7 +25,7 @@ struct Uniforms {
 
 // Sprite UV coordinate transformation matrices. Sprite UV coordinates are (0, 0) at the top-left
 // corner, and in pixels.
-@group(0) @binding(2) var<storage, read> sprite_uv_transforms: array<mat3x3<f32>>;
+@group(0) @binding(2) var<storage, read> sprite_uv_transforms: array<mat4x4<f32>>;
 
 // Sprite sizes, in pixels.
 @group(0) @binding(3) var<storage, read> sprite_sizes: array<vec2<f32>>;
@@ -70,12 +70,12 @@ fn vertMain(
   // Currently, our pos_2d and uv coordinates describe a card that covers 1px by 1px; and the UV
   // coordinates describe using the entire texture. We alter the coordinates to describe the
   // desired sprite location, size, and apply a subset of the texture instead of the entire texture.
-  var pos = vec4<f32>(pos_2d * sprite_size, 0, 1); // normalized -> pixels
+  var pos = vec4<f32>(pos_2d * sprite_size, 0, 1); // normalized -> pixels 
   pos = sprite_transform * pos; // apply sprite transform (pixels)
   pos = uniforms.view_projection * pos; // pixels -> normalized
 
   uv *= sprite_size; // normalized -> pixels
-  uv = (sprite_uv_transform * vec3<f32>(uv, 1)).xy; // apply sprite UV transform (pixels)
+  uv = (sprite_uv_transform * vec4<f32>(uv, 1, 0)).xy; // apply sprite UV transform (pixels)
   uv /= uniforms.texture_size; // pixels -> normalized
 
   var output : VertexOutput;
