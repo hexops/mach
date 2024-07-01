@@ -568,7 +568,7 @@ fn buildExamples(
     }{
         // Mach core examples
         .{ .core = true, .name = "custom-entrypoint", .deps = &.{} },
-        .{ .core = true, .name = "triangle", .deps = &.{} },
+        .{ .core = true, .name = "triangle", .deps = &.{.zigimg} },
 
         // Mach engine examples
         .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
