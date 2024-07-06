@@ -165,7 +165,7 @@ fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
                 // Duplicate samples for mono sounds
                 var i: usize = 0;
                 for (samples[index.*..][0..to_read]) |sample| {
-                    mixSamplesDuplicate(mixing_buffer.items[i..][0..player_channels], sample);
+                    mixSamplesDuplicate(mixing_buffer.items[i..][0..player_channels], sample * volume);
                     i += player_channels;
                 }
             } else {
