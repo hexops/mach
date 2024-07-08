@@ -39,7 +39,7 @@ fn ErrorSet(comptime F: type) type {
     return @typeInfo(@typeInfo(F).Fn.return_type.?).ErrorUnion.error_set;
 }
 
-const gpu = if (mach.use_sysgpu) sysgpu.sysgpu else @import("../gpu/main.zig");
+const gpu = sysgpu.sysgpu;
 
 pub fn AppInterface(comptime app_entry: anytype) void {
     if (!@hasDecl(app_entry, "App")) {

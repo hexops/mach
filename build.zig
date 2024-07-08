@@ -46,7 +46,7 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
 
     const sysgpu_backend = b.option(SysgpuBackend, "sysgpu_backend", "sysgpu API backend") orelse .default;
-    const core_platform = b.option(CoreApp.Platform, "core_platform", "mach core platform to use") orelse CoreApp.Platform.fromTarget(target.result);
+    const core_platform = b.option(Platform, "core_platform", "mach core platform to use") orelse Platform.fromTarget(target.result);
 
     const build_examples = b.option(bool, "examples", "build/install examples specifically");
     const build_libs = b.option(bool, "libs", "build/install libraries specifically");
@@ -69,7 +69,7 @@ pub fn build(b: *std.Build) !void {
     build_options.addOption(bool, "want_sysaudio", want_sysaudio);
     build_options.addOption(bool, "want_sysgpu", want_sysgpu);
     build_options.addOption(SysgpuBackend, "sysgpu_backend", sysgpu_backend);
-    build_options.addOption(CoreApp.Platform, "core_platform", core_platform);
+    build_options.addOption(Platform, "core_platform", core_platform);
 
     const module = b.addModule("mach", .{
         .root_source_file = b.path("src/main.zig"),
@@ -142,7 +142,6 @@ pub fn build(b: *std.Build) !void {
                 lib.linkLibrary(dep.artifact("wayland-headers"));
             }
         }
-        if (want_examples) try buildCoreExamples(b, optimize, target, module, core_platform);
     }
     if (want_sysaudio) {
         // Can build sysaudio examples if desired, then.
@@ -251,44 +250,6 @@ pub fn build(b: *std.Build) !void {
         }
     }
 
-    if (true) { // want_gpu
-        if (b.lazyDependency("mach_gpu_dawn", .{
-            .target = target,
-            .optimize = optimize,
-        })) |dep| {
-            _ = dep;
-            const gpu_dawn = @import("mach_gpu_dawn");
-            gpu_dawn.addPathsToModule(b, module, .{});
-            module.addIncludePath(b.path("src/gpu"));
-        }
-
-        if (want_examples) {
-            const example_exe = b.addExecutable(.{
-                .name = "dawn-gpu-hello-triangle",
-                .root_source_file = b.path("src/gpu/example/main.zig"),
-                .target = target,
-                .optimize = optimize,
-            });
-            example_exe.root_module.addImport("mach", module);
-            link(b, example_exe);
-
-            if (b.lazyDependency("mach_glfw", .{
-                .target = target,
-                .optimize = optimize,
-            })) |dep| example_exe.root_module.addImport("mach-glfw", dep.module("mach-glfw"));
-
-            const example_compile_step = b.step("dawn-gpu-hello-triangle", "Install 'dawn-gpu-hello-triangle'");
-            example_compile_step.dependOn(b.getInstallStep());
-
-            const example_run_cmd = b.addRunArtifact(example_exe);
-            example_run_cmd.step.dependOn(b.getInstallStep());
-            if (b.args) |args| example_run_cmd.addArgs(args);
-
-            const example_run_step = b.step("run-dawn-gpu-hello-triangle", "Run 'dawn-gpu-hello-triangle' example");
-            example_run_step.dependOn(&example_run_cmd.step);
-        }
-    }
-
     if (target.result.cpu.arch != .wasm32) {
         // Creates a step for unit testing. This only builds the test executable
         // but does not run it.
@@ -302,7 +263,6 @@ pub fn build(b: *std.Build) !void {
             unit_tests.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
         }
         addPaths(&unit_tests.root_module);
-        link(b, unit_tests);
 
         // Linux gamemode requires libc.
         if (target.result.os.tag == .linux) unit_tests.root_module.link_libc = true;
@@ -317,182 +277,17 @@ pub fn build(b: *std.Build) !void {
     }
 }
 
-pub const CoreApp = struct {
-    b: *std.Build,
-    name: []const u8,
-    module: *std.Build.Module,
-    compile: *std.Build.Step.Compile,
-    install: *std.Build.Step.InstallArtifact,
-    run: *std.Build.Step.Run,
-    platform: Platform,
-    res_dirs: ?[]const []const u8,
-    watch_paths: ?[]const []const u8,
+pub const Platform = enum {
+    glfw,
+    x11,
+    wayland,
+    web,
 
-    pub const Platform = enum {
-        glfw,
-        x11,
-        wayland,
-        web,
-
-        pub fn fromTarget(target: std.Target) Platform {
-            if (target.cpu.arch == .wasm32) return .web;
-            return .glfw;
-        }
-    };
-
-    pub fn init(
-        app_builder: *std.Build,
-        mach_builder: *std.Build,
-        options: struct {
-            name: []const u8,
-            src: []const u8,
-            target: std.Build.ResolvedTarget,
-            optimize: std.builtin.OptimizeMode,
-            custom_entrypoint: ?[]const u8 = null,
-            deps: ?[]const std.Build.Module.Import = null,
-            res_dirs: ?[]const []const u8 = null,
-            watch_paths: ?[]const []const u8 = null,
-            mach_mod: ?*std.Build.Module = null,
-            platform: ?Platform = null,
-        },
-    ) !CoreApp {
-        const target = options.target.result;
-        const platform = options.platform orelse Platform.fromTarget(target);
-
-        var imports = std.ArrayList(std.Build.Module.Import).init(app_builder.allocator);
-
-        const mach_mod = options.mach_mod orelse app_builder.dependency("mach", .{
-            .target = options.target,
-            .optimize = options.optimize,
-        }).module("mach");
-        try imports.append(.{
-            .name = "mach",
-            .module = mach_mod,
-        });
-
-        if (options.deps) |app_deps| try imports.appendSlice(app_deps);
-
-        const app_module = app_builder.createModule(.{
-            .root_source_file = app_builder.path(options.src),
-            .imports = try imports.toOwnedSlice(),
-        });
-
-        // Tell mach about the chosen platform
-        const platform_options = app_builder.addOptions();
-        platform_options.addOption(Platform, "platform", platform);
-        mach_mod.addOptions("platform_options", platform_options);
-
-        const compile = blk: {
-            if (platform == .web) {
-                // wasm libraries should go into zig-out/www/
-                app_builder.lib_dir = app_builder.fmt("{s}/www", .{app_builder.install_path});
-
-                const lib = app_builder.addStaticLibrary(.{
-                    .name = options.name,
-                    .root_source_file = if (options.custom_entrypoint) |e|
-                        app_builder.path(e)
-                    else
-                        mach_builder.path("src/core/platform/wasm/entrypoint.zig"),
-                    .target = options.target,
-                    .optimize = options.optimize,
-                });
-                lib.rdynamic = true;
-
-                break :blk lib;
-            } else {
-                const exe = app_builder.addExecutable(.{
-                    .name = options.name,
-                    .root_source_file = if (options.custom_entrypoint) |e|
-                        app_builder.path(e)
-                    else
-                        mach_builder.path("src/core/platform/native_entrypoint.zig"),
-                    .target = options.target,
-                    .optimize = options.optimize,
-                });
-                // TODO(core): figure out why we need to disable LTO: https://github.com/hexops/mach/issues/597
-                exe.want_lto = false;
-
-                break :blk exe;
-            }
-        };
-
-        compile.root_module.addImport("mach", mach_mod);
-        compile.root_module.addImport("app", app_module);
-
-        // Installation step
-        const install = app_builder.addInstallArtifact(compile, .{});
-        if (options.res_dirs) |res_dirs| {
-            for (res_dirs) |res| {
-                const install_res = app_builder.addInstallDirectory(.{
-                    .source_dir = app_builder.path(res),
-                    .install_dir = install.dest_dir.?,
-                    .install_subdir = std.fs.path.basename(res),
-                    .exclude_extensions = &.{},
-                });
-                install.step.dependOn(&install_res.step);
-            }
-        }
-        if (platform == .web) {
-            inline for (.{ "src/core/platform/wasm/mach.js", "src/sysjs/mach-sysjs.js" }) |js| {
-                const install_js = app_builder.addInstallFileWithDir(
-                    mach_builder.path(js),
-                    std.Build.InstallDir{ .custom = "www" },
-                    std.fs.path.basename(js),
-                );
-                install.step.dependOn(&install_js.step);
-            }
-        }
-
-        // Link dependencies
-        if (platform != .web) {
-            link(mach_builder, compile);
-        }
-
-        const run = app_builder.addRunArtifact(compile);
-        run.step.dependOn(&install.step);
-        return .{
-            .b = app_builder,
-            .module = app_module,
-            .compile = compile,
-            .install = install,
-            .run = run,
-            .name = options.name,
-            .platform = platform,
-            .res_dirs = options.res_dirs,
-            .watch_paths = options.watch_paths,
-        };
+    pub fn fromTarget(target: std.Target) Platform {
+        if (target.cpu.arch == .wasm32) return .web;
+        return .glfw;
     }
 };
-
-// TODO(sysgpu): remove this once we switch to sysgpu fully
-pub fn link(mach_builder: *std.Build, step: *std.Build.Step.Compile) void {
-    const target = step.root_module.resolved_target.?.result;
-    if (target.cpu.arch == .wasm32) return;
-
-    if (mach_builder.lazyDependency("mach_gpu_dawn", .{
-        .target = step.root_module.resolved_target.?,
-        .optimize = step.root_module.optimize.?,
-    })) |dep| {
-        _ = dep;
-        const gpu_dawn = @import("mach_gpu_dawn");
-        const Options = struct {
-            gpu_dawn_options: gpu_dawn.Options = .{},
-        };
-        const options: Options = .{};
-
-        gpu_dawn.link(
-            mach_builder,
-            step,
-            &step.root_module,
-            options.gpu_dawn_options,
-        );
-        step.addCSourceFile(.{
-            .file = mach_builder.path("src/gpu/mach_dawn.cpp"),
-            .flags = &.{"-std=c++17"},
-        });
-        step.addIncludePath(mach_builder.path("src/gpu"));
-    }
-}
 
 fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
     const resolved_target = module.resolved_target orelse b.host;
@@ -591,7 +386,6 @@ fn buildExamples(
         });
         exe.root_module.addImport("mach", mach_mod);
         addPaths(&exe.root_module);
-        link(b, exe);
         b.installArtifact(exe);
 
         for (example.deps) |d| {
@@ -626,129 +420,6 @@ fn buildExamples(
 
         const run_step = b.step(b.fmt("run-{s}", .{example.name}), b.fmt("Run {s}", .{example.name}));
         run_step.dependOn(&run_cmd.step);
-    }
-}
-
-fn buildCoreExamples(
-    b: *std.Build,
-    optimize: std.builtin.OptimizeMode,
-    target: std.Build.ResolvedTarget,
-    mach_mod: *std.Build.Module,
-    platform: CoreApp.Platform,
-) !void {
-    const Dependency = enum {
-        zigimg,
-        assets,
-        zmath,
-    };
-
-    inline for ([_]struct {
-        name: []const u8,
-        deps: []const Dependency = &.{},
-        std_platform_only: bool = false,
-        sysgpu: bool = false,
-    }{
-        .{ .name = "wasm-test", .deps = &.{.zmath} },
-        .{ .name = "triangle", .deps = &.{.zmath} },
-        .{ .name = "triangle-msaa", .deps = &.{.zmath} },
-        .{ .name = "clear-color", .deps = &.{.zmath} },
-        .{ .name = "procedural-primitives", .deps = &.{.zmath} },
-        .{ .name = "boids", .deps = &.{.zmath} },
-        .{ .name = "rotating-cube", .deps = &.{.zmath} },
-        .{ .name = "pixel-post-process", .deps = &.{.zmath} },
-        .{ .name = "two-cubes", .deps = &.{.zmath} },
-        .{ .name = "instanced-cube", .deps = &.{.zmath} },
-        .{ .name = "gen-texture-light", .deps = &.{.zmath} },
-        .{ .name = "fractal-cube", .deps = &.{.zmath} },
-        .{ .name = "map-async", .deps = &.{.zmath} },
-        .{ .name = "rgb-quad", .deps = &.{.zmath} },
-        .{ .name = "textured-cube", .deps = &.{ .zmath, .zigimg, .assets } },
-        .{ .name = "textured-quad", .deps = &.{ .zmath, .zigimg, .assets } },
-        .{ .name = "sprite2d", .deps = &.{ .zmath, .zigimg, .assets } },
-        .{ .name = "image", .deps = &.{ .zmath, .zigimg, .assets } },
-        .{ .name = "image-blur", .deps = &.{ .zmath, .zigimg, .assets } },
-        .{ .name = "cubemap", .deps = &.{ .zmath, .zigimg, .assets } },
-
-        // sysgpu
-        .{ .name = "boids", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "clear-color", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "cubemap", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "fractal-cube", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "gen-texture-light", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "image-blur", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "instanced-cube", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "map-async", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "pixel-post-process", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "procedural-primitives", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "rotating-cube", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "sprite2d", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "image", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "textured-cube", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "textured-quad", .deps = &.{ .zmath, .zigimg, .assets }, .sysgpu = true },
-        .{ .name = "triangle", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "triangle-msaa", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "two-cubes", .deps = &.{.zmath}, .sysgpu = true },
-        .{ .name = "rgb-quad", .deps = &.{.zmath}, .sysgpu = true },
-    }) |example| {
-        // FIXME: this is workaround for a problem that some examples
-        // (having the std_platform_only=true field) as well as zigimg
-        // uses IO and depends on gpu-dawn which is not supported
-        // in freestanding environments. So break out of this loop
-        // as soon as any such examples is found. This does means that any
-        // example which works on wasm should be placed before those who dont.
-        if (example.std_platform_only)
-            if (target.result.cpu.arch == .wasm32)
-                break;
-
-        const cmd_name = if (example.sysgpu) "sysgpu-" ++ example.name else example.name;
-        const app = try CoreApp.init(
-            b,
-            b,
-            .{
-                .name = "core-" ++ cmd_name,
-                .src = if (example.sysgpu)
-                    "src/core/examples/sysgpu/" ++ example.name ++ "/main.zig"
-                else
-                    "src/core/examples/" ++ example.name ++ "/main.zig",
-                .target = target,
-                .optimize = optimize,
-                .watch_paths = if (example.sysgpu)
-                    &.{"src/core/examples/sysgpu/" ++ example.name}
-                else
-                    &.{"src/core/examples/" ++ example.name},
-                .mach_mod = mach_mod,
-                .platform = platform,
-            },
-        );
-
-        for (example.deps) |d| {
-            switch (d) {
-                .zigimg => {
-                    if (b.lazyDependency("zigimg", .{
-                        .target = target,
-                        .optimize = optimize,
-                    })) |dep| app.module.addImport("zigimg", dep.module("zigimg"));
-                },
-                .assets => {
-                    if (b.lazyDependency("mach_example_assets", .{
-                        .target = target,
-                        .optimize = optimize,
-                    })) |dep| app.module.addImport("assets", dep.module("mach-example-assets"));
-                },
-                .zmath => {
-                    const zmath = b.createModule(.{
-                        .root_source_file = b.path("src/core/examples/zmath.zig"),
-                    });
-                    app.module.addImport("zmath", zmath);
-                },
-            }
-        }
-
-        const install_step = b.step("core-" ++ cmd_name, "Install core-" ++ cmd_name);
-        install_step.dependOn(&app.install.step);
-
-        const run_step = b.step("run-core-" ++ cmd_name, "Run core-" ++ cmd_name);
-        run_step.dependOn(&app.run.step);
     }
 }
 

@@ -13,8 +13,6 @@ const mach = @import("mach");
 const core = mach.core;
 const gpu = mach.gpu;
 
-pub const GPUInterface = gpu.StubInterface;
-
 var app: App = undefined;
 export fn wasmInit() void {
     App.init(&app) catch |err| @panic(@errorName(err));
