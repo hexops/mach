@@ -9,6 +9,9 @@ const Allocator = std.mem.Allocator;
 const testing = std.testing;
 const assert = std.debug.assert;
 const builtin = @import("builtin");
+
+const is_debug = @import("../main.zig").is_debug;
+
 const StringTable = @import("StringTable.zig");
 const ComponentTypesByName = @import("module.zig").ComponentTypesByName;
 
@@ -233,8 +236,6 @@ pub fn debugPrint(storage: *Archetype) void {
         std.debug.print("{}. '{s}'\n", .{ i, storage.component_names.string(column.name) });
     }
 }
-
-pub const is_debug = builtin.mode == .Debug;
 
 /// Returns a unique comptime usize integer representing the type T. Value will change across
 /// different compilations.

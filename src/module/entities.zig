@@ -3,6 +3,9 @@ const Allocator = std.mem.Allocator;
 const testing = std.testing;
 const builtin = @import("builtin");
 const assert = std.debug.assert;
+
+const is_debug = @import("../main.zig").is_debug;
+
 const Archetype = @import("Archetype.zig");
 const StringTable = @import("StringTable.zig");
 const ComponentTypesByName = @import("module.zig").ComponentTypesByName;
@@ -885,7 +888,7 @@ pub fn Database(comptime modules: anytype) type {
         }
 
         fn applyDeferredActions(e: *Self) !void {
-            if (comptime Archetype.is_debug) if (e.active_queries.items.len != 0) @panic("application may result in active query iterators being invalidated");
+            if (is_debug) if (e.active_queries.items.len != 0) @panic("application may result in active query iterators being invalidated");
             while (true) {
                 const ev = e.deferred_queue.readItem() orelse return;
                 switch (ev) {

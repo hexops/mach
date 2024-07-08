@@ -149,8 +149,7 @@ fn initModule(entities: *mach.Entities.Mod, core: *Mod) !void {
     mach.core.allocator = gpa.allocator(); // TODO: banish this global allocator
 
     // Initialize GPU implementation
-    if (comptime !mach.use_sysgpu) try mach.wgpu.Impl.init(mach.core.allocator, .{});
-    if (comptime mach.use_sysgpu) try mach.sysgpu.Impl.init(mach.core.allocator, .{});
+    try mach.sysgpu.Impl.init(mach.core.allocator, .{});
 
     const main_window = try entities.new();
     try core.set(main_window, .fullscreen, false);

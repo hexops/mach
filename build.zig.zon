@@ -21,12 +21,6 @@
             .hash = "12202b816e7c31c516bd87218fd56f9b1f93671e4ab42a2a98110d586c4b3bdd2730",
             .lazy = true,
         },
-        .mach_gpu_dawn = .{
-            .url = "https://pkg.machengine.org/mach-gpu-dawn/d0a1e11ac96401108ba7c35bf99101c0756ded2d.tar.gz",
-            .hash = "122060fbe61aa4a828002ca8949d9c3ef1b6b7ae3fa92558af7ccea7182e8d9d516c",
-            // TODO(build): be able to mark this dependency as lazy
-            // .lazy = true,
-        },
         .mach_glfw = .{
             .url = "https://pkg.machengine.org/mach-glfw/8da44b719e345097664ff2e0a7620474eb11db5f.tar.gz",
             .hash = "1220e5343c2fe2a490aa90dc52d92fd34ebfd7d0ffc7d246dd4720bb5c339ead4d7b",
