@@ -4,6 +4,7 @@ const mach = @import("mach");
 pub const modules = .{
     mach.Core,
     @import("App.zig"),
+    @import("Offscreen.zig"),
 };
 
 pub fn main() !void {
