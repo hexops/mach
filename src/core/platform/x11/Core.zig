@@ -300,8 +300,7 @@ pub fn init(
     input: *Frequency,
     options: Options,
 ) !void {
-    if (!@import("builtin").is_test and !mach.use_sysgpu) _ = mach.wgpu.Export(mach.wgpu.Impl);
-    if (!@import("builtin").is_test and mach.use_sysgpu) _ = mach.sysgpu.sysgpu.Export(mach.sysgpu.Impl);
+    if (!@import("builtin").is_test) _ = mach.sysgpu.sysgpu.Export(mach.sysgpu.Impl);
 
     const libx11 = try LibX11.load();
     const libxcursor: ?LibXCursor = LibXCursor.load() catch |err| switch (err) {

@@ -297,22 +297,10 @@ fn buildPipeline(
             .label = label,
             .layout = bind_group_layout,
             .entries = &.{
-                if (mach.use_sysgpu)
-                    gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms), @sizeOf(Uniforms))
-                else
-                    gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms)),
-                if (mach.use_sysgpu)
-                    gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(math.Mat4x4) * texts_buffer_cap, @sizeOf(math.Mat4x4))
-                else
-                    gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(math.Mat4x4) * texts_buffer_cap),
-                if (mach.use_sysgpu)
-                    gpu.BindGroup.Entry.buffer(2, colors, 0, @sizeOf(math.Vec4) * texts_buffer_cap, @sizeOf(math.Vec4))
-                else
-                    gpu.BindGroup.Entry.buffer(2, colors, 0, @sizeOf(math.Vec4) * texts_buffer_cap),
-                if (mach.use_sysgpu)
-                    gpu.BindGroup.Entry.buffer(3, glyphs, 0, @sizeOf(Glyph) * texts_buffer_cap, @sizeOf(Glyph))
-                else
-                    gpu.BindGroup.Entry.buffer(3, glyphs, 0, @sizeOf(Glyph) * texts_buffer_cap),
+                gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms), @sizeOf(Uniforms)),
+                gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(math.Mat4x4) * texts_buffer_cap, @sizeOf(math.Mat4x4)),
+                gpu.BindGroup.Entry.buffer(2, colors, 0, @sizeOf(math.Vec4) * texts_buffer_cap, @sizeOf(math.Vec4)),
+                gpu.BindGroup.Entry.buffer(3, glyphs, 0, @sizeOf(Glyph) * texts_buffer_cap, @sizeOf(Glyph)),
                 gpu.BindGroup.Entry.sampler(4, texture_sampler),
                 gpu.BindGroup.Entry.textureView(5, texture_view),
             },
