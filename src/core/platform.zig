@@ -8,6 +8,7 @@ const platform = switch (options.core_platform) {
     .x11 => @import("platform/x11.zig"),
     .wayland => @import("platform/wayland.zig"),
     .web => @import("platform/wasm.zig"),
+    .win32 => @import("platform/win32.zig"),
 };
 
 pub const Core = platform.Core;
