@@ -776,7 +776,6 @@ pub fn Export(comptime T: type) type {
             T.devicePushErrorScope(device, filter);
         }
 
-        // TODO: dawn: callback not marked as nullable in dawn.json but in fact is.
         // SYSGPU_EXPORT void sysgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDeviceLostCallback callback, void * userdata);
         export fn sysgpuDeviceSetDeviceLostCallback(device: *sysgpu.Device, callback: ?sysgpu.Device.LostCallback, userdata: ?*anyopaque) void {
             T.deviceSetDeviceLostCallback(device, callback, userdata);
@@ -787,13 +786,11 @@ pub fn Export(comptime T: type) type {
             T.deviceSetLabel(device, label);
         }
 
-        // TODO: dawn: callback not marked as nullable in dawn.json but in fact is.
         // SYSGPU_EXPORT void sysgpuDeviceSetLoggingCallback(WGPUDevice device, WGPULoggingCallback callback, void * userdata);
         export fn sysgpuDeviceSetLoggingCallback(device: *sysgpu.Device, callback: ?sysgpu.LoggingCallback, userdata: ?*anyopaque) void {
             T.deviceSetLoggingCallback(device, callback, userdata);
         }
 
-        // TODO: dawn: callback not marked as nullable in dawn.json but in fact is.
         // SYSGPU_EXPORT void sysgpuDeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata);
         export fn sysgpuDeviceSetUncapturedErrorCallback(device: *sysgpu.Device, callback: ?sysgpu.ErrorCallback, userdata: ?*anyopaque) void {
             T.deviceSetUncapturedErrorCallback(device, callback, userdata);
@@ -1489,7 +1486,6 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    // TODO: dawn: return value not marked as nullable in dawn.json but in fact is.
     pub inline fn bufferGetConstMappedRange(buffer: *sysgpu.Buffer, offset: usize, size: usize) ?*const anyopaque {
         _ = buffer;
         _ = offset;
@@ -1497,7 +1493,6 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    // TODO: dawn: return value not marked as nullable in dawn.json but in fact is.
     pub inline fn bufferGetMappedRange(buffer: *sysgpu.Buffer, offset: usize, size: usize) ?*anyopaque {
         _ = buffer;
         _ = offset;

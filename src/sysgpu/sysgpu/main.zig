@@ -28,7 +28,6 @@ pub const SwapChain = @import("swap_chain.zig").SwapChain;
 pub const Texture = @import("texture.zig").Texture;
 pub const TextureView = @import("texture_view.zig").TextureView;
 
-pub const dawn = @import("dawn.zig");
 const instance = @import("instance.zig");
 const device = @import("device.zig");
 const interface = @import("interface.zig");
@@ -95,7 +94,6 @@ pub const RenderPassTimestampWrite = extern struct {
 pub const RequestAdapterOptions = extern struct {
     pub const NextInChain = extern union {
         generic: ?*const ChainedStruct,
-        dawn_toggles_descriptor: *const dawn.TogglesDescriptor,
     };
 
     next_in_chain: NextInChain = .{ .generic = null },
@@ -294,9 +292,6 @@ pub const FeatureName = enum(u32) {
     rg11_b10_ufloat_renderable = 0x0000000A,
     bgra8_unorm_storage = 0x0000000B,
     float32_filterable = 0x0000000C,
-    dawn_internal_usages = 0x000003ea,
-    dawn_multi_planar_formats = 0x000003eb,
-    dawn_native = 0x000003ec,
     chromium_experimental_dp4a = 0x000003ed,
     timestamp_query_inside_passes = 0x000003EE,
     implicit_device_synchronization = 0x000003EF,
@@ -434,18 +429,9 @@ pub const SType = enum(u32) {
     external_texture_binding_layout = 0x0000000D,
     surface_descriptor_from_windows_swap_chain_panel = 0x0000000E,
     render_pass_descriptor_max_draw_count = 0x0000000F,
-    dawn_texture_internal_usage_descriptor = 0x000003E8,
-    dawn_encoder_internal_usage_descriptor = 0x000003EB,
-    dawn_instance_descriptor = 0x000003EC,
-    dawn_cache_device_descriptor = 0x000003ED,
-    dawn_adapter_properties_power_preference = 0x000003EE,
-    dawn_buffer_descriptor_error_info_from_wire_client = 0x000003EF,
-    dawn_toggles_descriptor = 0x000003F0,
-    dawn_shader_module_spirv_options_descriptor = 0x000003F1,
+    adapter_properties_power_preference = 0x000003EE,
     request_adapter_options_luid = 0x000003F2,
     request_adapter_options_get_gl_proc = 0x000003F3,
-    dawn_multisample_state_render_to_single_sampled = 0x000003F4,
-    dawn_render_pass_color_attachment_render_to_single_sampled = 0x000003F5,
     shared_texture_memory_vk_image_descriptor = 0x0000044C,
     shared_texture_memory_vk_dedicated_allocation_descriptor = 0x0000044D,
     shared_texture_memory_a_hardware_buffer_descriptor = 0x0000044E,
@@ -605,13 +591,11 @@ pub const ShaderStageFlags = packed struct(u32) {
 };
 
 pub const ChainedStruct = extern struct {
-    // TODO: dawn: not marked as nullable in dawn.json but in fact is.
     next: ?*const ChainedStruct = null,
     s_type: SType,
 };
 
 pub const ChainedStructOut = extern struct {
-    // TODO: dawn: not marked as nullable in dawn.json but in fact is.
     next: ?*ChainedStructOut = null,
     s_type: SType,
 };
@@ -720,7 +704,6 @@ pub const CopyTextureForBrowserOptions = extern struct {
 pub const MultisampleState = extern struct {
     pub const NextInChain = extern union {
         generic: ?*const ChainedStruct,
-        dawn_multisample_state_render_to_single_sampled: *const dawn.MultisampleStateRenderToSingleSampled,
     };
 
     next_in_chain: NextInChain = .{ .generic = null },
@@ -853,7 +836,6 @@ pub const ProgrammableStageDescriptor = extern struct {
 pub const RenderPassColorAttachment = extern struct {
     pub const NextInChain = extern union {
         generic: ?*const ChainedStruct,
-        dawn_render_pass_color_attachment_render_to_single_sampled: *const dawn.RenderPassColorAttachmentRenderToSingleSampled,
     };
 
     next_in_chain: NextInChain = .{ .generic = null },

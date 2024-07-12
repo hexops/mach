@@ -595,14 +595,11 @@ pub const Device = struct {
     pub fn deinit(device: *Device) void {
         const vk_device = device.vk_device;
 
-        if (device.lost_cb) |lost_cb| {
-            lost_cb(.destroyed, "Device was destroyed.", device.lost_cb_userdata);
-        }
-
         device.waitAll() catch {};
         device.processQueuedOperations();
 
         device.map_callbacks.deinit(allocator);
+        for (device.submit_objects.items) |*submit_object| submit_object.deinit();
         device.submit_objects.deinit(allocator);
         device.streaming_manager.deinit();
 
@@ -2941,7 +2938,7 @@ pub const StateTracker = struct {
             memory_barriers.len,
             &memory_barriers.buffer,
             0,
-            undefined,
+            null,
             @intCast(tracker.image_barriers.items.len),
             tracker.image_barriers.items.ptr,
         );

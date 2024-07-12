@@ -5,7 +5,6 @@ const TextureView = @import("texture_view.zig").TextureView;
 const Extent3D = @import("main.zig").Extent3D;
 const Impl = @import("interface.zig").Impl;
 const types = @import("main.zig");
-const dawn = @import("dawn.zig");
 
 pub const Texture = opaque {
     pub const Aspect = enum(u32) {
@@ -171,7 +170,6 @@ pub const Texture = opaque {
     pub const Descriptor = extern struct {
         pub const NextInChain = extern union {
             generic: ?*const ChainedStruct,
-            dawn_texture_internal_usage_descriptor: *const dawn.TextureInternalUsageDescriptor,
         };
 
         next_in_chain: NextInChain = .{ .generic = null },
