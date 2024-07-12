@@ -1,6 +1,5 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const glfw = @import("mach_glfw");
 
 pub const SysgpuBackend = enum {
     default,
@@ -118,15 +117,11 @@ pub fn build(b: *std.Build) !void {
                 .optimize = optimize,
             });
             lib.addCSourceFile(.{
-                .file = b.path("src/core/platform/wayland/wayland.c"),
+                .file = b.path("src/core/wayland/wayland.c"),
             });
             lib.linkLibC();
             module.linkLibrary(lib);
 
-            if (b.lazyDependency("mach_glfw", .{
-                .target = target,
-                .optimize = optimize,
-            })) |dep| module.addImport("mach-glfw", dep.module("mach-glfw"));
             if (b.lazyDependency("x11_headers", .{
                 .target = target,
                 .optimize = optimize,
@@ -278,14 +273,13 @@ pub fn build(b: *std.Build) !void {
 }
 
 pub const Platform = enum {
-    glfw,
     x11,
     wayland,
     web,
 
     pub fn fromTarget(target: std.Target) Platform {
         if (target.cpu.arch == .wasm32) return .web;
-        return .glfw;
+        return .x11;
     }
 };
 

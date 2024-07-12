@@ -23,7 +23,6 @@ You may have been linked to this issue because you sent a pull request to update
 * [ ] #wrench automation (`!wrench script-all install-zig`) has updated the Zig version used by self-hosted GitHub actions runners.
 * [ ] "First-order projects" below (which have zero build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
 * [ ] "Second-order projects" below (which have build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
-* [ ] The mach-glfw build.zig version check has been updated: https://github.com/hexops/mach-glfw/blob/main/build.zig
 * [ ] https://machengine.org/core/migrations/ has a new entry for Core users looking to update, or changes are not needed.
 * [ ] The `.zigversion` file https://github.com/hexops/mach/blob/main/.zigversion has been updated.
 * [ ] The mach build.zig version check has been updated: https://github.com/hexops/mach/blob/main/build.zig#L187-L192
@@ -78,13 +77,6 @@ These projects have dependencies on other projects. We update them in the exact 
 * [ ] harfbuzz, which depends on:
   * freetype
   * brotli
-* [ ] glfw, which depends on:
-  * xcode-frameworks
-  * vulkan-headers
-  * wayland-headers
-  * x11-headers
-* [ ] mach-glfw, which depends on:
-  * glfw
 * [ ] mach-dxcompiler, which depends on:
 * [ ] mach-objc, which depends on:
   * xcode-frameworks
@@ -101,21 +93,11 @@ These projects have dependencies on other projects. We update them in the exact 
   * opusenc 
   * mach-sysaudio
   * linux-audio-headers
-* [ ] mach-gpu-dawn, which depends on:
-  * xcode-frameworks
-  * direct3d-headers
-  * vulkan-headers
-  * x11-headers
-* [ ] mach-gpu, which depends on:
-  * mach-glfw
-  * mach-gpu-dawn
 * [ ] mach, which depends on:
   * .zigversion
   * build.zig version check
   * mach-freetype
   * font-assets
-  * mach-gpu
-  * mach-glfw
   * mach-objc
   * mach-example-assets
   * spirv-cross
