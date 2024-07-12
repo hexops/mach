@@ -125,11 +125,11 @@ fn renderFrame(
 ) !void {
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = core.state().swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const label = @tagName(name) ++ ".tick";
+    const label = @tagName(name) ++ ".renderFrame";
     const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
@@ -178,7 +178,4 @@ fn renderFrame(
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
-
-    // Present the frame
-    core.schedule(.present_frame);
 }

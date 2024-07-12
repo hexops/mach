@@ -21,7 +21,7 @@ pub const systems = .{
     .init = .{ .handler = init },
     .after_init = .{ .handler = afterInit },
     .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
+    .update = .{ .handler = update },
     .audio_state_change = .{ .handler = audioStateChange },
 };
 
@@ -33,11 +33,9 @@ sfx: mach.Audio.Opus,
 
 fn init(
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
 ) !void {
-    core.schedule(.init);
     audio.schedule(.init);
     app.schedule(.after_init);
 
@@ -63,8 +61,6 @@ fn init(
     std.debug.print("[typing]     Play SFX\n", .{});
     std.debug.print("[arrow up]   increase volume 10%\n", .{});
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
-
-    core.schedule(.start);
 }
 
 fn afterInit(audio: *mach.Audio.Mod, app: *Mod) void {
@@ -104,14 +100,14 @@ fn audioStateChange(
     }
 }
 
-fn tick(
+fn update(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
 ) !void {
     // TODO(Core)
-    var iter = mach.core.pollEvents();
+    var iter = core.state().pollEvents();
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| switch (ev.key) {
@@ -141,7 +137,7 @@ fn tick(
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = core.state().swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder

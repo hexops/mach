@@ -1,3 +1,4 @@
+const std = @import("std");
 const mach = @import("mach");
 
 // The global list of Mach modules registered for use in our application.
@@ -11,9 +12,11 @@ pub const modules = .{
 
 // TODO(important): use standard entrypoint instead
 pub fn main() !void {
-    // Initialize mach.Core
-    try mach.core.initModule();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
 
-    // Main loop
-    while (try mach.core.tick()) {}
+    var app = try mach.App.init(allocator, .app);
+    defer app.deinit(allocator);
+    try app.run(.{ .allocator = allocator });
 }

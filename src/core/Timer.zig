@@ -1,20 +1,20 @@
 const std = @import("std");
-const platform = @import("platform.zig");
+const builtin = @import("builtin");
+const WasmTimer = @import("wasm/Timer.zig");
+const PlatformTimer = if (builtin.cpu.arch == .wasm32) WasmTimer else NativeTimer;
 
-pub const Timer = @This();
+const Timer = @This();
 
-internal: platform.Timer,
+platform: PlatformTimer,
 
 /// Initialize the timer.
 pub fn start() !Timer {
-    return Timer{
-        .internal = try platform.Timer.start(),
-    };
+    return .{ .platform = try PlatformTimer.start() };
 }
 
 /// Reads the timer value since start or the last reset in nanoseconds.
 pub inline fn readPrecise(timer: *Timer) u64 {
-    return timer.internal.read();
+    return timer.platform.read();
 }
 
 /// Reads the timer value since start or the last reset in seconds.
@@ -24,15 +24,35 @@ pub inline fn read(timer: *Timer) f32 {
 
 /// Resets the timer value to 0/now.
 pub inline fn reset(timer: *Timer) void {
-    timer.internal.reset();
+    timer.platform.reset();
 }
 
 /// Returns the current value of the timer in nanoseconds, then resets it.
 pub inline fn lapPrecise(timer: *Timer) u64 {
-    return timer.internal.lap();
+    return timer.platform.lap();
 }
 
 /// Returns the current value of the timer in seconds, then resets it.
 pub inline fn lap(timer: *Timer) f32 {
     return @as(f32, @floatFromInt(timer.lapPrecise())) / @as(f32, @floatFromInt(std.time.ns_per_s));
 }
+
+const NativeTimer = struct {
+    timer: std.time.Timer,
+
+    pub fn start() !NativeTimer {
+        return .{ .timer = try std.time.Timer.start() };
+    }
+
+    pub inline fn read(timer: *NativeTimer) u64 {
+        return timer.timer.read();
+    }
+
+    pub inline fn reset(timer: *NativeTimer) void {
+        timer.timer.reset();
+    }
+
+    pub inline fn lap(timer: *NativeTimer) u64 {
+        return timer.timer.lap();
+    }
+};

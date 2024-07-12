@@ -1,11 +1,11 @@
 const build_options = @import("build-options");
 const builtin = @import("builtin");
+const std = @import("std");
 
 // Core
-pub const core = if (build_options.want_core) @import("core/main.zig") else struct {};
-pub const Timer = if (build_options.want_core) core.Timer else struct {};
-pub const sysjs = if (build_options.want_core) @import("mach-sysjs") else struct {};
 pub const Core = if (build_options.want_core) @import("Core.zig") else struct {};
+pub const Timer = if (build_options.want_core) Core.Timer else struct {};
+pub const sysjs = if (build_options.want_core) @import("mach-sysjs") else struct {};
 
 // Mach standard library
 // gamemode requires libc on linux
@@ -32,6 +32,7 @@ pub const modules = blk: {
 pub const ModSet = @import("module/main.zig").ModSet;
 pub const Modules = @import("module/main.zig").Modules(modules);
 pub const Mod = ModSet(modules).Mod;
+pub const ModuleName = @import("module/main.zig").ModuleName(modules);
 pub const EntityID = @import("module/main.zig").EntityID; // TODO: rename to just Entity?
 pub const Archetype = @import("module/main.zig").Archetype;
 
@@ -44,11 +45,52 @@ pub const Entities = @import("module/main.zig").Entities;
 
 pub const is_debug = builtin.mode == .Debug;
 
+pub const App = struct {
+    mods: *Modules,
+    comptime main_mod: ModuleName = .app,
+
+    pub fn init(allocator: std.mem.Allocator, comptime main_mod: ModuleName) !App {
+        var mods: *Modules = try allocator.create(Modules);
+        try mods.init(allocator);
+
+        return .{
+            .mods = mods,
+            .main_mod = main_mod,
+        };
+    }
+
+    pub fn deinit(app: *App, allocator: std.mem.Allocator) void {
+        app.mods.deinit(allocator);
+        allocator.destroy(app.mods);
+    }
+
+    pub fn run(app: *App, core_options: Core.InitOptions) !void {
+        var stack_space: [8 * 1024 * 1024]u8 = undefined;
+
+        app.mods.mod.mach_core.init(undefined); // TODO
+        app.mods.scheduleWithArgs(.mach_core, .init, .{core_options});
+        app.mods.schedule(app.main_mod, .init);
+
+        // Main loop
+        while (!app.mods.mod.mach_core.state().should_close) {
+            // Dispatch events until queue is empty
+            try app.mods.dispatch(&stack_space, .{});
+            // Run `update` when `init` and all other systems are exectued
+            app.mods.schedule(app.main_mod, .update);
+            app.mods.schedule(.mach_core, .present_frame);
+        }
+
+        app.mods.schedule(app.main_mod, .deinit);
+        app.mods.schedule(.mach_core, .deinit);
+        // Final Dispatch to deinitalize resources
+        try app.mods.dispatch(&stack_space, .{});
+    }
+};
+
 test {
-    const std = @import("std");
     // TODO: refactor code so we can use this here:
     // std.testing.refAllDeclsRecursive(@This());
-    _ = core;
+    _ = Core;
     _ = gpu;
     _ = sysaudio;
     _ = sysgpu;

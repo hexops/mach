@@ -25,8 +25,8 @@ pub const components = .{
     \\ is configured to be the center of the window:
     \\
     \\ ```
-    \\ const width_px: f32 = @floatFromInt(mach.core.size().width);
-    \\ const height_px: f32 = @floatFromInt(mach.core.size().height);
+    \\ const width_px: f32 = @floatFromInt(core.state().size().width);
+    \\ const height_px: f32 = @floatFromInt(core.state().size().height);
     \\ const projection = math.Mat4x4.projection2D(.{
     \\     .left = -width_px / 2.0,
     \\     .right = width_px / 2.0,
@@ -378,8 +378,8 @@ fn preRender(entities: *mach.Entities.Mod, core: *mach.Core.Mod, text_pipeline: 
     while (q.next()) |v| {
         for (v.ids, v.built_pipelines) |id, built| {
             const view_projection = text_pipeline.get(id, .view_projection) orelse blk: {
-                const width_px: f32 = @floatFromInt(mach.core.size().width);
-                const height_px: f32 = @floatFromInt(mach.core.size().height);
+                const width_px: f32 = @floatFromInt(core.state().size().width);
+                const height_px: f32 = @floatFromInt(core.state().size().height);
                 break :blk math.Mat4x4.projection2D(.{
                     .left = -width_px / 2,
                     .right = width_px / 2,
