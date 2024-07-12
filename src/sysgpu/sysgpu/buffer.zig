@@ -1,7 +1,6 @@
 const std = @import("std");
 const Bool32 = @import("main.zig").Bool32;
 const ChainedStruct = @import("main.zig").ChainedStruct;
-const dawn = @import("dawn.zig");
 const MapModeFlags = @import("main.zig").MapModeFlags;
 const Impl = @import("interface.zig").Impl;
 
@@ -71,7 +70,6 @@ pub const Buffer = opaque {
     pub const Descriptor = extern struct {
         pub const NextInChain = extern union {
             generic: ?*const ChainedStruct,
-            dawn_buffer_descriptor_error_info_from_wire_client: *const dawn.BufferDescriptorErrorInfoFromWireClient,
         };
 
         next_in_chain: NextInChain = .{ .generic = null },

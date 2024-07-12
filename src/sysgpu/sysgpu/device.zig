@@ -29,7 +29,6 @@ const ErrorCallback = @import("main.zig").ErrorCallback;
 const CreateComputePipelineAsyncCallback = @import("main.zig").CreateComputePipelineAsyncCallback;
 const CreateRenderPipelineAsyncCallback = @import("main.zig").CreateRenderPipelineAsyncCallback;
 const Impl = @import("interface.zig").Impl;
-const dawn = @import("dawn.zig");
 
 pub const Device = opaque {
     pub const LostCallback = *const fn (
@@ -46,8 +45,6 @@ pub const Device = opaque {
     pub const Descriptor = extern struct {
         pub const NextInChain = extern union {
             generic: ?*const ChainedStruct,
-            dawn_toggles_descriptor: *const dawn.TogglesDescriptor,
-            dawn_cache_device_descriptor: *const dawn.CacheDeviceDescriptor,
         };
 
         next_in_chain: NextInChain = .{ .generic = null },
@@ -387,8 +384,6 @@ pub const Device = opaque {
         Impl.deviceTick(device);
     }
 
-    // Mach WebGPU extension. Supported with mach-gpu-dawn.
-    //
     // When making Metal interop with other APIs, we need to be careful that QueueSubmit doesn't
     // mean that the operations will be visible to other APIs/Metal devices right away. macOS
     // does have a global queue of graphics operations, but the command buffers are inserted there
