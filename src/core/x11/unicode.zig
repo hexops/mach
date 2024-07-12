@@ -1,5 +1,5 @@
 ///! This code is taken from https://github.com/glfw/glfw/blob/master/src/xkb_unicode.c
-const c = @import("Core.zig").c;
+const c = @import("../X11.zig").c;
 
 const keysym_table = &[_]struct { c.KeySym, u21 }{
     .{ 0x01a1, 0x0104 },

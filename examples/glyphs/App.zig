@@ -35,19 +35,17 @@ pub const Mod = mach.Mod(@This());
 pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
+    .update = .{ .handler = update },
     .after_init = .{ .handler = afterInit },
     .end_frame = .{ .handler = endFrame },
 };
 
-fn deinit(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod) !void {
+fn deinit(sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod) !void {
     sprite_pipeline.schedule(.deinit);
     glyphs.schedule(.deinit);
-    core.schedule(.deinit);
 }
 
-fn init(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mod) !void {
-    core.schedule(.init);
+fn init(sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mod) !void {
     sprite_pipeline.schedule(.init);
     glyphs.schedule(.init);
 
@@ -64,7 +62,6 @@ fn afterInit(
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     glyphs: *Glyphs.Mod,
     game: *Mod,
-    core: *mach.Core.Mod,
 ) !void {
     // Create a sprite rendering pipeline
     const texture = glyphs.state().texture;
@@ -96,11 +93,9 @@ fn afterInit(
         .time = 0,
         .pipeline = pipeline,
     });
-
-    core.schedule(.start);
 }
 
-fn tick(
+fn update(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
@@ -110,7 +105,7 @@ fn tick(
 ) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
     // TODO(Core)
-    var iter = mach.core.pollEvents();
+    var iter = core.state().pollEvents();
     var direction = game.state().direction;
     var spawning = game.state().spawning;
     while (iter.next()) |event| {
@@ -177,7 +172,7 @@ fn tick(
             var location = entity_transform.translation();
             // TODO: formatting
             // TODO(Core)
-            if (location.x() < -@as(f32, @floatFromInt(mach.core.size().width)) / 1.5 or location.x() > @as(f32, @floatFromInt(mach.core.size().width)) / 1.5 or location.y() < -@as(f32, @floatFromInt(mach.core.size().height)) / 1.5 or location.y() > @as(f32, @floatFromInt(mach.core.size().height)) / 1.5) {
+            if (location.x() < -@as(f32, @floatFromInt(core.state().size().width)) / 1.5 or location.x() > @as(f32, @floatFromInt(core.state().size().width)) / 1.5 or location.y() < -@as(f32, @floatFromInt(core.state().size().height)) / 1.5 or location.y() > @as(f32, @floatFromInt(core.state().size().height)) / 1.5) {
                 try entities.remove(id);
                 game.state().sprites -= 1;
                 continue;
@@ -212,7 +207,7 @@ fn tick(
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = core.state().swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Begin render pass
@@ -253,13 +248,11 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
 
     // Every second, update the window title with the FPS
     if (game.state().fps_timer.read() >= 1.0) {
-        try mach.Core.printTitle(
-            core,
+        try core.state().printTitle(
             core.state().main_window,
             "glyphs [ FPS: {d} ] [ Sprites: {d} ]",
             .{ game.state().frame_count, game.state().sprites },
         );
-        core.schedule(.update);
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }

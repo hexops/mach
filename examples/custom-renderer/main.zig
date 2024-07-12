@@ -9,11 +9,12 @@ pub const modules = .{
     @import("Renderer.zig"),
 };
 
-// TODO: move this to a mach "entrypoint" zig module
 pub fn main() !void {
-    // Initialize mach core
-    try mach.core.initModule();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
 
-    // Main loop
-    while (try mach.core.tick()) {}
+    var app = try mach.App.init(allocator, .app);
+    defer app.deinit(allocator);
+    try app.run(.{ .allocator = allocator });
 }

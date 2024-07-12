@@ -44,20 +44,18 @@ pub const systems = .{
     .init = .{ .handler = init },
     .after_init = .{ .handler = afterInit },
     .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
+    .update = .{ .handler = update },
     .end_frame = .{ .handler = endFrame },
     .audio_state_change = .{ .handler = audioStateChange },
 };
 
 fn deinit(
-    core: *mach.Core.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     audio: *mach.Audio.Mod,
 ) !void {
     text_pipeline.schedule(.deinit);
     sprite_pipeline.schedule(.deinit);
-    core.schedule(.deinit);
     audio.schedule(.deinit);
 }
 
@@ -66,13 +64,11 @@ fn init(
     text_pipeline: *gfx.TextPipeline.Mod,
     text: *gfx.Text.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
-    core: *mach.Core.Mod,
     game: *Mod,
 ) !void {
     // If you want to try fullscreen:
     // try core.set(core.state().main_window, .fullscreen, true);
 
-    core.schedule(.init);
     audio.schedule(.init);
     text.schedule(.init);
     text_pipeline.schedule(.init);
@@ -150,7 +146,6 @@ fn afterInit(
         .pipeline = pipeline,
         .sfx = sfx,
     });
-    core.schedule(.start);
 }
 
 fn audioStateChange(entities: *mach.Entities.Mod) !void {
@@ -169,7 +164,7 @@ fn audioStateChange(entities: *mach.Entities.Mod) !void {
     }
 }
 
-fn tick(
+fn update(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
@@ -181,7 +176,7 @@ fn tick(
 ) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
     // TODO(Core)
-    var iter = mach.core.pollEvents();
+    var iter = core.state().pollEvents();
     var gotta_go_fast = game.state().gotta_go_fast;
     while (iter.next()) |event| {
         switch (event) {
@@ -286,7 +281,7 @@ fn tick(
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = core.state().swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Begin render pass

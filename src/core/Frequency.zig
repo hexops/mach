@@ -1,5 +1,4 @@
 const std = @import("std");
-const core = @import("main.zig");
 const Timer = @import("Timer.zig");
 
 pub const Frequency = @This();

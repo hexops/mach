@@ -27,7 +27,7 @@ pub const systems = .{
     .init = .{ .handler = init },
     .after_init = .{ .handler = afterInit },
     .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
+    .update = .{ .handler = update },
     .audio_state_change = .{ .handler = audioStateChange },
 };
 
@@ -37,8 +37,7 @@ pub const components = .{
 
 ghost_key_mode: bool = false,
 
-fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) void {
-    core.schedule(.init);
+fn init(audio: *mach.Audio.Mod, app: *Mod) void {
     audio.schedule(.init);
     app.schedule(.after_init);
 
@@ -50,8 +49,6 @@ fn init(core: *mach.Core.Mod, audio: *mach.Audio.Mod, app: *Mod) void {
     std.debug.print("[spacebar]   enable ghost-key mode (demonstrate seamless back-to-back sound playback)\n", .{});
     std.debug.print("[arrow up]   increase volume 10%\n", .{});
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
-
-    core.schedule(.start);
 }
 
 fn afterInit(audio: *mach.Audio.Mod, app: *Mod) void {
@@ -60,9 +57,8 @@ fn afterInit(audio: *mach.Audio.Mod, app: *Mod) void {
     audio.state().on_state_change = app.system(.audio_state_change);
 }
 
-fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
+fn deinit(audio: *mach.Audio.Mod) void {
     audio.schedule(.deinit);
-    core.schedule(.deinit);
 }
 
 fn audioStateChange(
@@ -94,14 +90,14 @@ fn audioStateChange(
     }
 }
 
-fn tick(
+fn update(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
 ) !void {
     // TODO(Core)
-    var iter = mach.core.pollEvents();
+    var iter = core.state().pollEvents();
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| {
@@ -143,7 +139,7 @@ fn tick(
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = mach.core.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = core.state().swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder
@@ -208,7 +204,7 @@ fn fillTone(audio: *mach.Audio.Mod, frequency: f32) ![]const f32 {
 }
 
 // TODO(Core)
-fn keyToFrequency(key: mach.core.Key) f32 {
+fn keyToFrequency(key: mach.Core.Key) f32 {
     // The frequencies here just come from a piano frequencies chart. You can google for them.
     return switch (key) {
         // First row of piano keys, the highest.
