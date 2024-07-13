@@ -2,23 +2,22 @@ const std = @import("std");
 const js = @import("js.zig");
 const Timer = @import("Timer.zig");
 const mach = @import("../../../main.zig");
-const mach_core = @import("../../main.zig");
 const gpu = mach.gpu;
-const Options = @import("../../main.zig").Options;
-const Event = @import("../../main.zig").Event;
-const KeyEvent = @import("../../main.zig").KeyEvent;
-const MouseButtonEvent = @import("../../main.zig").MouseButtonEvent;
-const MouseButton = @import("../../main.zig").MouseButton;
-const Size = @import("../../main.zig").Size;
-const Position = @import("../../main.zig").Position;
-const DisplayMode = @import("../../main.zig").DisplayMode;
-const SizeLimit = @import("../../main.zig").SizeLimit;
-const CursorShape = @import("../../main.zig").CursorShape;
-const VSyncMode = @import("../../main.zig").VSyncMode;
-const CursorMode = @import("../../main.zig").CursorMode;
-const Key = @import("../../main.zig").Key;
-const KeyMods = @import("../../main.zig").KeyMods;
-const Joystick = @import("../../main.zig").Joystick;
+const InitOptions = @import("../../../Core.zig").InitOptions;
+const Event = @import("../../../Core.zig").Event;
+const KeyEvent = @import("../../../Core.zig").KeyEvent;
+const MouseButtonEvent = @import("../../../Core.zig").MouseButtonEvent;
+const MouseButton = @import("../../../Core.zig").MouseButton;
+const Size = @import("../../../Core.zig").Size;
+const Position = @import("../../../Core.zig").Position;
+const DisplayMode = @import("../../../Core.zig").DisplayMode;
+const SizeLimit = @import("../../../Core.zig").SizeLimit;
+const CursorShape = @import("../../../Core.zig").CursorShape;
+const VSyncMode = @import("../../../Core.zig").VSyncMode;
+const CursorMode = @import("../../../Core.zig").CursorMode;
+const Key = @import("../../../Core.zig").Key;
+const KeyMods = @import("../../../Core.zig").KeyMods;
+const Joystick = @import("../../../Core.zig").Joystick;
 const InputState = @import("../../InputState.zig");
 const Frequency = @import("../../Frequency.zig");
 
@@ -238,7 +237,7 @@ pub fn init(
     allocator: std.mem.Allocator,
     frame: *Frequency,
     input: *Frequency,
-    options: Options,
+    options: InitOptions,
 ) !void {
     _ = options;
     var selector = [1]u8{0} ** 15;
@@ -254,11 +253,6 @@ pub fn init(
     };
 
     // TODO(wasm): wgpu support
-    mach_core.adapter = undefined;
-    mach_core.device = undefined;
-    mach_core.queue = undefined;
-    mach_core.swap_chain = undefined;
-    mach_core.descriptor = undefined;
 
     try core.frame.start();
     try core.input.start();

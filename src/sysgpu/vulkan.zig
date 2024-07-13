@@ -135,8 +135,7 @@ pub const Instance = struct {
             vk.extensions.khr_surface.name,
             vk.extensions.khr_xlib_surface.name,
             vk.extensions.khr_xcb_surface.name,
-            // TODO: renderdoc will not work with this extension
-            // vk.extensions.khr_wayland_surface.name,
+            vk.extensions.khr_wayland_surface.name,
         },
         .windows => &.{
             vk.extensions.khr_surface.name,
@@ -400,17 +399,14 @@ pub const Surface = struct {
                         null,
                     );
                 } else if (utils.findChained(sysgpu.Surface.DescriptorFromWaylandSurface, desc.next_in_chain.generic)) |wayland_desc| {
-                    _ = wayland_desc;
-                    @panic("unimplemented");
-                    // TODO: renderdoc will not work with wayland
-                    // break :blk try vki.createWaylandSurfaceKHR(
-                    //     vk_instance,
-                    //     &vk.WaylandSurfaceCreateInfoKHR{
-                    //         .display = @ptrCast(wayland_desc.display),
-                    //         .surface = @ptrCast(wayland_desc.surface),
-                    //     },
-                    //     null,
-                    // );
+                    break :blk try vki.createWaylandSurfaceKHR(
+                        vk_instance,
+                        &vk.WaylandSurfaceCreateInfoKHR{
+                            .display = @ptrCast(wayland_desc.display),
+                            .surface = @ptrCast(wayland_desc.surface),
+                        },
+                        null,
+                    );
                 }
 
                 return error.InvalidDescriptor;
@@ -595,14 +591,11 @@ pub const Device = struct {
     pub fn deinit(device: *Device) void {
         const vk_device = device.vk_device;
 
-        if (device.lost_cb) |lost_cb| {
-            lost_cb(.destroyed, "Device was destroyed.", device.lost_cb_userdata);
-        }
-
         device.waitAll() catch {};
         device.processQueuedOperations();
 
         device.map_callbacks.deinit(allocator);
+        for (device.submit_objects.items) |*submit_object| submit_object.deinit();
         device.submit_objects.deinit(allocator);
         device.streaming_manager.deinit();
 
@@ -1571,19 +1564,15 @@ pub const BindGroupLayout = struct {
     manager: utils.Manager(BindGroupLayout) = .{},
     device: *Device,
     vk_layout: vk.DescriptorSetLayout,
-    desc_pool: vk.DescriptorPool,
+    desc_types: std.AutoArrayHashMapUnmanaged(vk.DescriptorType, u32),
     entries: std.ArrayListUnmanaged(Entry),
 
-    const max_sets = 512;
-
     pub fn init(device: *Device, desc: *const sysgpu.BindGroupLayout.Descriptor) !*BindGroupLayout {
-        const vk_device = device.vk_device;
-
         var bindings = try std.ArrayListUnmanaged(vk.DescriptorSetLayoutBinding).initCapacity(allocator, desc.entry_count);
         defer bindings.deinit(allocator);
 
         var desc_types = std.AutoArrayHashMap(vk.DescriptorType, u32).init(allocator);
-        defer desc_types.deinit();
+        errdefer desc_types.deinit();
 
         var entries = try std.ArrayListUnmanaged(Entry).initCapacity(allocator, desc.entry_count);
         errdefer entries.deinit(allocator);
@@ -1611,28 +1600,9 @@ pub const BindGroupLayout = struct {
             });
         }
 
-        const vk_layout = try vkd.createDescriptorSetLayout(vk_device, &vk.DescriptorSetLayoutCreateInfo{
+        const vk_layout = try vkd.createDescriptorSetLayout(device.vk_device, &.{
             .binding_count = @intCast(bindings.items.len),
             .p_bindings = bindings.items.ptr,
-        }, null);
-
-        // Descriptor Pool
-        var pool_sizes = try std.ArrayList(vk.DescriptorPoolSize).initCapacity(allocator, desc_types.count());
-        defer pool_sizes.deinit();
-
-        var desc_types_iter = desc_types.iterator();
-        while (desc_types_iter.next()) |entry| {
-            pool_sizes.appendAssumeCapacity(.{
-                .type = entry.key_ptr.*,
-                .descriptor_count = max_sets * entry.value_ptr.*,
-            });
-        }
-
-        const desc_pool = try vkd.createDescriptorPool(vk_device, &vk.DescriptorPoolCreateInfo{
-            .flags = .{ .free_descriptor_set_bit = true },
-            .max_sets = max_sets,
-            .pool_size_count = @intCast(pool_sizes.items.len),
-            .p_pool_sizes = pool_sizes.items.ptr,
         }, null);
 
         // Result
@@ -1640,18 +1610,15 @@ pub const BindGroupLayout = struct {
         layout.* = .{
             .device = device,
             .vk_layout = vk_layout,
-            .desc_pool = desc_pool,
+            .desc_types = desc_types.unmanaged,
             .entries = entries,
         };
         return layout;
     }
 
     pub fn deinit(layout: *BindGroupLayout) void {
-        const vk_device = layout.device.vk_device;
-
-        vkd.destroyDescriptorSetLayout(vk_device, layout.vk_layout, null);
-        vkd.destroyDescriptorPool(vk_device, layout.desc_pool, null);
-
+        vkd.destroyDescriptorSetLayout(layout.device.vk_device, layout.vk_layout, null);
+        layout.desc_types.deinit(allocator);
         layout.entries.deinit(allocator);
         allocator.destroy(layout);
     }
@@ -1679,20 +1646,41 @@ pub const BindGroup = struct {
     manager: utils.Manager(BindGroup) = .{},
     device: *Device,
     layout: *BindGroupLayout,
+    desc_pool: vk.DescriptorPool,
     desc_set: vk.DescriptorSet,
     buffers: std.ArrayListUnmanaged(BufferAccess),
     texture_views: std.ArrayListUnmanaged(TextureViewAccess),
     samplers: std.ArrayListUnmanaged(*Sampler),
 
     pub fn init(device: *Device, desc: *const sysgpu.BindGroup.Descriptor) !*BindGroup {
-        const vk_device = device.vk_device;
-
         const layout: *BindGroupLayout = @ptrCast(@alignCast(desc.layout));
         layout.manager.reference();
 
+        // The total number of descriptors sets that fits given the max.
+        const max_sets: u32 = @intCast(256 / @max(desc.entry_count, 1));
+
+        var pool_sizes = try std.ArrayList(vk.DescriptorPoolSize).initCapacity(allocator, layout.desc_types.count());
+        defer pool_sizes.deinit();
+
+        var desc_types_iter = layout.desc_types.iterator();
+        while (desc_types_iter.next()) |entry| {
+            pool_sizes.appendAssumeCapacity(.{
+                .type = entry.key_ptr.*,
+                // Grow the number of desciptors in the pool to fit the computed max_sets.
+                .descriptor_count = max_sets * entry.value_ptr.*,
+            });
+        }
+
+        const desc_pool = try vkd.createDescriptorPool(device.vk_device, &vk.DescriptorPoolCreateInfo{
+            .flags = .{},
+            .max_sets = max_sets,
+            .pool_size_count = @intCast(pool_sizes.items.len),
+            .p_pool_sizes = pool_sizes.items.ptr,
+        }, null);
+
         var desc_set: vk.DescriptorSet = undefined;
-        try vkd.allocateDescriptorSets(vk_device, &vk.DescriptorSetAllocateInfo{
-            .descriptor_pool = layout.desc_pool,
+        try vkd.allocateDescriptorSets(device.vk_device, &vk.DescriptorSetAllocateInfo{
+            .descriptor_pool = desc_pool,
             .descriptor_set_count = 1,
             .p_set_layouts = @ptrCast(&layout.vk_layout),
         }, @ptrCast(&desc_set));
@@ -1758,7 +1746,7 @@ pub const BindGroup = struct {
             }
         }
 
-        vkd.updateDescriptorSets(vk_device, @intCast(writes.len), writes.ptr, 0, undefined);
+        vkd.updateDescriptorSets(device.vk_device, @intCast(writes.len), writes.ptr, 0, undefined);
 
         // Resource tracking
         var buffers = std.ArrayListUnmanaged(BufferAccess){};
@@ -1809,6 +1797,7 @@ pub const BindGroup = struct {
         bind_group.* = .{
             .device = device,
             .layout = layout,
+            .desc_pool = desc_pool,
             .desc_set = desc_set,
             .buffers = buffers,
             .texture_views = texture_views,
@@ -1818,9 +1807,7 @@ pub const BindGroup = struct {
     }
 
     pub fn deinit(group: *BindGroup) void {
-        const vk_device = group.device.vk_device;
-
-        vkd.freeDescriptorSets(vk_device, group.layout.desc_pool, 1, @ptrCast(&group.desc_set)) catch unreachable;
+        vkd.destroyDescriptorPool(group.device.vk_device, group.desc_pool, null);
 
         for (group.buffers.items) |access| access.buffer.manager.release();
         for (group.texture_views.items) |access| access.texture_view.manager.release();
@@ -2941,7 +2928,7 @@ pub const StateTracker = struct {
             memory_barriers.len,
             &memory_barriers.buffer,
             0,
-            undefined,
+            null,
             @intCast(tracker.image_barriers.items.len),
             tracker.image_barriers.items.ptr,
         );

@@ -7,6 +7,7 @@ pub const Database = @import("entities.zig").Database;
 pub const Archetype = @import("Archetype.zig");
 pub const ModSet = @import("module.zig").ModSet;
 pub const Modules = @import("module.zig").Modules;
+pub const ModuleName = @import("module.zig").ModuleName;
 pub const ModuleID = @import("module.zig").ModuleID;
 pub const SystemID = @import("module.zig").SystemID;
 pub const AnySystem = @import("module.zig").AnySystem;

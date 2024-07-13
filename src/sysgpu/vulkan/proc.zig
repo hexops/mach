@@ -17,8 +17,7 @@ pub const InstanceFunctions = vk.InstanceWrapper(&.{
     .{
         .instance_commands = .{
             .createDevice = true,
-            // TODO: renderdoc will not work with wayland
-            // .createWaylandSurfaceKHR = builtin.target.os.tag == .linux,
+            .createWaylandSurfaceKHR = builtin.target.os.tag == .linux,
             .createWin32SurfaceKHR = builtin.target.os.tag == .windows,
             .createXlibSurfaceKHR = builtin.target.os.tag == .linux,
             .destroyInstance = true,

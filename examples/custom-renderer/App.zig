@@ -25,7 +25,7 @@ pub const components = .{
 pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
+    .update = .{ .handler = update },
 };
 
 // Define the globally unique name of our module. You can use any name here, but keep in mind no
@@ -38,9 +38,8 @@ pub const name = .app;
 // Note that Mod.state() returns an instance of our module struct.
 pub const Mod = mach.Mod(@This());
 
-pub fn deinit(core: *mach.Core.Mod, renderer: *Renderer.Mod) void {
+pub fn deinit(renderer: *Renderer.Mod) void {
     renderer.schedule(.deinit);
-    core.schedule(.deinit);
 }
 
 fn init(
@@ -48,11 +47,9 @@ fn init(
     // of the program we can have these types injected here, letting us work with other modules in
     // our program seamlessly and with a type-safe API:
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
     renderer: *Renderer.Mod,
     game: *Mod,
 ) !void {
-    core.schedule(.init);
     renderer.schedule(.init);
 
     // Create our player entity.
@@ -76,11 +73,9 @@ fn init(
         .spawn_timer = try mach.Timer.start(),
         .player = player,
     });
-
-    core.schedule(.start);
 }
 
-fn tick(
+fn update(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     renderer: *Renderer.Mod,
@@ -88,7 +83,7 @@ fn tick(
 ) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS event.
     // TODO(Core)
-    var iter = mach.core.pollEvents();
+    var iter = core.state().pollEvents();
     var direction = game.state().direction;
     var spawning = game.state().spawning;
     while (iter.next()) |event| {

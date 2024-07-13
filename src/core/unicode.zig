@@ -1,7 +1,6 @@
-///! This code is taken from https://github.com/glfw/glfw/blob/master/src/xkb_unicode.c
-const c = @import("Core.zig").c;
-
-const keysym_table = &[_]struct { c.KeySym, u21 }{
+///! Taken from https://github.com/glfw/glfw/blob/master/src/xkb_unicode.c
+const KeySym = c_ulong;
+const keysym_table = &[_]struct { KeySym, u21 }{
     .{ 0x01a1, 0x0104 },
     .{ 0x01a2, 0x02d8 },
     .{ 0x01a3, 0x0141 },
@@ -832,7 +831,7 @@ const keysym_table = &[_]struct { c.KeySym, u21 }{
     .{ 0xffbd, '=' }, // XKB_KEY_KP_Equal
 };
 
-pub fn unicodeFromKeySym(keysym: c.KeySym) ?u21 {
+pub fn unicodeFromKeySym(keysym: KeySym) ?u21 {
     var min: usize = 0;
     var mid: usize = 0;
     var max = keysym_table.len - 1;

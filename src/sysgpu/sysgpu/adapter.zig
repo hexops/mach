@@ -1,6 +1,5 @@
 const std = @import("std");
 const testing = std.testing;
-const dawn = @import("dawn.zig");
 const Bool32 = @import("main.zig").Bool32;
 const ChainedStructOut = @import("main.zig").ChainedStructOut;
 const Device = @import("device.zig").Device;
@@ -10,6 +9,7 @@ const SupportedLimits = @import("main.zig").SupportedLimits;
 const RequestDeviceStatus = @import("main.zig").RequestDeviceStatus;
 const BackendType = @import("main.zig").BackendType;
 const RequestDeviceCallback = @import("main.zig").RequestDeviceCallback;
+const PowerPreference = @import("main.zig").PowerPreference;
 const Impl = @import("interface.zig").Impl;
 
 pub const Adapter = opaque {
@@ -29,10 +29,17 @@ pub const Adapter = opaque {
         }
     };
 
+    pub const PropertiesPowerPreference = extern struct {
+        chain: ChainedStructOut = .{
+            .next = null,
+            .s_type = .adapter_properties_power_preference,
+        },
+        power_preference: PowerPreference = .undefined,
+    };
+
     pub const Properties = extern struct {
         pub const NextInChain = extern union {
             generic: ?*const ChainedStructOut,
-            dawn_adapter_properties_power_preference: *const dawn.AdapterPropertiesPowerPreference,
         };
 
         next_in_chain: NextInChain = .{ .generic = null },
