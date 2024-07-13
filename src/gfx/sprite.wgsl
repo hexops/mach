@@ -25,6 +25,8 @@ struct Uniforms {
 
 // Sprite UV coordinate transformation matrices. Sprite UV coordinates are (0, 0) at the top-left
 // corner, and in pixels.
+// TODO(d3d12): #1217
+//   changed the uv_transform to 4x4. The 3x3 ca@group(0) @binding(2) var<storage, read> sprite_uv_transforms: array<mat4x4<f32>>;
 @group(0) @binding(2) var<storage, read> sprite_uv_transforms: array<mat4x4<f32>>;
 
 // Sprite sizes, in pixels.

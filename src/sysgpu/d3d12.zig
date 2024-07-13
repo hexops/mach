@@ -413,10 +413,6 @@ pub const Device = struct {
     }
 
     pub fn deinit(device: *Device) void {
-        if (device.lost_cb) |lost_cb| {
-            lost_cb(.destroyed, "Device was destroyed.", device.lost_cb_userdata);
-        }
-
         device.queue.waitUntil(device.queue.fence_value);
         device.processQueuedOperations();
 

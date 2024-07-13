@@ -273,6 +273,8 @@ fn updatePipeline(
                         ).divScalar(px_density),
                         .size = size.divScalar(px_density),
                         .text_index = num_texts,
+                        // TODO(d3d12): #1217
+                        //   Added padding for d3d12/hlsl. Having 7 floats before the color vec caused and error.
                         .text_padding = 0,
                         .uv_pos = vec2(@floatFromInt(r.x), @floatFromInt(r.y)),
                         .color = font_color,

@@ -92,6 +92,8 @@ fn updatePipeline(
             if (sprite_pipeline_id == pipeline_id) {
                 const uv = uv_transform;
                 gfx.SpritePipeline.cp_transforms[i] = transform;
+                // TODO(d3d12): #1217
+                //   changed the uv_transform to 4x4. The 3x3 causes issues with d3d12/hlsl
                 gfx.SpritePipeline.cp_uv_transforms[i].v[0] = vec4(uv.v[0].x(), uv.v[0].y(), uv.v[0].z(), 0.0);
                 gfx.SpritePipeline.cp_uv_transforms[i].v[1] = vec4(uv.v[1].x(), uv.v[1].y(), uv.v[1].z(), 0.0);
                 gfx.SpritePipeline.cp_uv_transforms[i].v[2] = vec4(uv.v[2].x(), uv.v[2].y(), uv.v[2].z(), 0.0);
@@ -105,6 +107,8 @@ fn updatePipeline(
 
     // Sort sprites back-to-front for draw order, alpha blending
     const Context = struct {
+        // TODO(d3d12): #1217
+        //   changed the uv_transform to 4x4. The 3x3 causes issues with d3d12/hlsl
         transforms: []Mat4x4,
         uv_transforms: []Mat4x4, 
         sizes: []Vec2,
@@ -118,6 +122,8 @@ fn updatePipeline(
 
         pub fn swap(ctx: @This(), a: usize, b: usize) void {
             std.mem.swap(Mat4x4, &ctx.transforms[a], &ctx.transforms[b]);
+            // TODO(d3d12): #1217
+            //   changed the uv_transform to 4x4. The 3x3 causes issues with d3d12/hlsl
             std.mem.swap(Mat4x4, &ctx.uv_transforms[a], &ctx.uv_transforms[b]);
             std.mem.swap(Vec2, &ctx.sizes[a], &ctx.sizes[b]);
         }
