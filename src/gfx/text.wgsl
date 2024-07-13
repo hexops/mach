@@ -33,6 +33,9 @@ struct Glyph {
 
   // Which text this glyph belongs to; this is the index for transforms[i], colors[i]
   text_index: u32,
+
+  // TODO(d3d12): #1217
+  //   Added padding for d3d12/hlsl. Having 7 floats before the color vec caused and error.
   text_index2: u32,   // Padding for struct alignment
 
   // TODO(d3d12): #1217
