@@ -188,6 +188,8 @@ pub fn init(
         .style = w.CS_OWNDC,
         .lpfnWndProc = wndProc,
         .hInstance = hInstance,
+        .hIcon = w.LoadIconW(null, @as([*:0]align(1) const u16, @ptrFromInt(@as(u32, w.IDI_APPLICATION)))),
+        .hCursor = w.LoadCursorW(null, @as([*:0]align(1) const u16, @ptrFromInt(@as(u32, w.IDC_ARROW)))),
         .lpszClassName = class_name,
     });
     if (w.RegisterClassW(&class) == 0) return error.Unexpected;
@@ -614,7 +616,6 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
         => {
             const x:f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF))); 
             const y:f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF))); 
-
             const xbutton: u32 = @truncate(wParam >> 16);
             const button: core.MouseButton = switch (msg) {
                 w.WM_LBUTTONDOWN, w.WM_LBUTTONUP => .left,
