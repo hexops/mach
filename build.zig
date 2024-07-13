@@ -277,9 +277,11 @@ pub const Platform = enum {
     wayland,
     web,
     win32,
+    null,
 
     pub fn fromTarget(target: std.Target) Platform {
         if (target.cpu.arch == .wasm32) return .web;
+        if (target.os.tag == .windows) return .win32;
         return .x11;
     }
 };

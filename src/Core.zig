@@ -17,10 +17,8 @@ const Platform = switch (build_options.core_platform) {
     .wayland => @import("core/Wayland.zig"),
     .web => @panic("TODO: revive wasm backend"),
     .win32 => @import("core/win32.zig"),
+    .null => @import("core/Null.zig"),
 };
-
-// TODO(important): mach.core has a lot of standard Zig APIs, and some global variables, which are
-// part of its old API design. We should elevate them into this module instead.
 
 pub const name = .mach_core;
 
@@ -246,7 +244,7 @@ pub inline fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
     {
         deinitLinuxGamemode();
     }
-    
+
     state.platform.deinit();
     state.swap_chain.release();
     state.queue.release();
