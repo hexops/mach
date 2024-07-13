@@ -110,9 +110,7 @@ fn init(
     });
 }
 
-fn deinit(
-    renderer: *Mod,
-) !void {
+fn deinit(renderer: *Mod) !void {
     renderer.state().pipeline.release();
     for (renderer.state().bind_groups) |bind_group| bind_group.release();
     renderer.state().uniform_buffer.release();
@@ -178,4 +176,6 @@ fn renderFrame(
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
+
+    core.schedule(.present_frame);
 }

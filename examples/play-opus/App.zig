@@ -69,9 +69,8 @@ fn afterInit(audio: *mach.Audio.Mod, app: *Mod) void {
     audio.state().on_state_change = app.system(.audio_state_change);
 }
 
-fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
+fn deinit(audio: *mach.Audio.Mod) void {
     audio.schedule(.deinit);
-    core.schedule(.deinit);
 }
 
 fn audioStateChange(
