@@ -110,7 +110,9 @@ const sprite_buffer_cap = 1024 * 512; // TODO(sprite): allow user to specify pre
 // TODO(sprite): eliminate these, see Sprite.updatePipeline for details on why these exist
 // currently.
 pub var cp_transforms: [sprite_buffer_cap]math.Mat4x4 = undefined;
-pub var cp_uv_transforms: [sprite_buffer_cap]math.Mat3x3 = undefined;
+// TODO(d3d12): #1217
+//   changed the uv_transform to 4x4. The 3x3 causes issues with d3d12/hlsl
+pub var cp_uv_transforms: [sprite_buffer_cap]math.Mat4x4 = undefined;
 pub var cp_sizes: [sprite_buffer_cap]math.Vec2 = undefined;
 
 /// Which render pass should be used during .render
@@ -209,7 +211,9 @@ fn buildPipeline(
     const uv_transforms = device.createBuffer(&.{
         .label = label ++ " uv_transforms",
         .usage = .{ .storage = true, .copy_dst = true },
-        .size = @sizeOf(math.Mat3x3) * sprite_buffer_cap,
+        // TODO(d3d12): #1217
+        //   changed the uv_transform to 4x4. The 3x3 causes issues with d3d12/hlsl
+        .size = @sizeOf(math.Mat4x4) * sprite_buffer_cap,
         .mapped_at_creation = .false,
     });
     const sizes = device.createBuffer(&.{

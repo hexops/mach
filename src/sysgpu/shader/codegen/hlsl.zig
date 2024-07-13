@@ -32,8 +32,6 @@ pub fn gen(allocator: std.mem.Allocator, air: *const Air, debug_info: DebugInfo)
         hlsl.arena.deinit();
     }
 
-    try hlsl.output.appendSlice(allocator, "#pragma pack_matrix( row_major )\n");
-
     for (air.refToList(air.globals_index)) |inst_idx| {
         switch (air.getInst(inst_idx)) {
             .@"var" => try hlsl.emitGlobalVar(inst_idx),
@@ -938,12 +936,14 @@ fn emitBinary(hlsl: *Hlsl, inst: Inst.Binary) !void {
             const rhs_type = hlsl.air.getInst(inst.rhs_type);
 
             if (lhs_type == .matrix or rhs_type == .matrix) {
-                // matrices are transposed
+                // TODO(d3d12): 
+                //   Changed to column major storage because dxc does not apply same ordering to Storage Buffers.
+                // matrices are in column major storage
                 try hlsl.writeAll("mul");
                 try hlsl.writeAll("(");
-                try hlsl.emitExpr(inst.rhs);
-                try hlsl.writeAll(", ");
                 try hlsl.emitExpr(inst.lhs);
+                try hlsl.writeAll(", ");
+                try hlsl.emitExpr(inst.rhs);
                 try hlsl.writeAll(")");
             } else {
                 try hlsl.emitBinaryOp(inst);
