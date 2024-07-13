@@ -77,12 +77,12 @@ pub const App = struct {
             try app.mods.dispatch(&stack_space, .{});
             // Run `update` when `init` and all other systems are exectued
             app.mods.schedule(app.main_mod, .update);
-            app.mods.schedule(.mach_core, .present_frame);
         }
 
-        app.mods.schedule(app.main_mod, .deinit);
-        app.mods.schedule(.mach_core, .deinit);
         // Final Dispatch to deinitalize resources
+        app.mods.schedule(app.main_mod, .deinit);
+        try app.mods.dispatch(&stack_space, .{});
+        app.mods.schedule(.mach_core, .deinit);
         try app.mods.dispatch(&stack_space, .{});
     }
 };

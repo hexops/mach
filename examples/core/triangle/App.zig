@@ -104,6 +104,8 @@ fn update(core: *mach.Core.Mod, game: *Mod) !void {
     defer command.release();
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
+    core.schedule(.present_frame);
+
     // update the window title every second
     if (game.state().title_timer.read() >= 1.0) {
         game.state().title_timer.reset();
