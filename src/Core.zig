@@ -16,6 +16,7 @@ const Platform = switch (build_options.core_platform) {
     .x11 => @import("core/X11.zig"),
     .wayland => @import("core/Wayland.zig"),
     .web => @panic("TODO: revive wasm backend"),
+    .win32 => @import("core/win32.zig"),
 };
 
 // TODO(important): mach.core has a lot of standard Zig APIs, and some global variables, which are
@@ -242,8 +243,10 @@ pub inline fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
     if (builtin.os.tag == .linux and
         state.linux_gamemode != null and
         state.linux_gamemode.?)
+    {
         deinitLinuxGamemode();
-
+    }
+    
     state.platform.deinit();
     state.swap_chain.release();
     state.queue.release();
