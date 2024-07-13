@@ -1,9 +1,19 @@
 const builtin = @import("builtin");
 const std = @import("std");
+const c = @cImport({
+    @cInclude("X11/Xlib.h");
+    @cInclude("X11/Xatom.h");
+    @cInclude("X11/cursorfont.h");
+    @cInclude("X11/Xcursor/Xcursor.h");
+    @cInclude("X11/extensions/Xrandr.h");
+});
 const mach = @import("../main.zig");
-const gpu = mach.gpu;
-const unicode = @import("x11/unicode.zig");
 const Core = @import("../Core.zig");
+const InputState = @import("InputState.zig");
+const Frequency = @import("Frequency.zig");
+const unicode = @import("unicode.zig");
+const detectBackendType = @import("common.zig").detectBackendType;
+const gpu = mach.gpu;
 const InitOptions = Core.InitOptions;
 const Event = Core.Event;
 const KeyEvent = Core.KeyEvent;
@@ -11,7 +21,6 @@ const MouseButtonEvent = Core.MouseButtonEvent;
 const MouseButton = Core.MouseButton;
 const Size = Core.Size;
 const DisplayMode = Core.DisplayMode;
-const SizeLimit = Core.SizeLimit;
 const CursorShape = Core.CursorShape;
 const VSyncMode = Core.VSyncMode;
 const CursorMode = Core.CursorMode;
@@ -19,17 +28,6 @@ const Key = Core.Key;
 const KeyMods = Core.KeyMods;
 const Joystick = Core.Joystick;
 const Position = Core.Position;
-const InputState = @import("InputState.zig");
-const Frequency = @import("Frequency.zig");
-const detectBackendType = @import("common.zig").detectBackendType;
-
-pub const c = @cImport({
-    @cInclude("X11/Xlib.h");
-    @cInclude("X11/Xatom.h");
-    @cInclude("X11/cursorfont.h");
-    @cInclude("X11/Xcursor/Xcursor.h");
-    @cInclude("X11/extensions/Xrandr.h");
-});
 
 const log = std.log.scoped(.mach);
 
@@ -171,18 +169,18 @@ const LibGL = struct {
 
 pub const X11 = @This();
 
-// Read-only fields
-core: *Core,
 allocator: std.mem.Allocator,
-display: *c.Display,
+core: *Core,
+
 libx11: LibX11,
 libxrr: ?LibXRR,
 libgl: ?LibGL,
 libxcursor: ?LibXCursor,
+gl_ctx: ?*LibGL.Context,
+display: *c.Display,
 width: c_int,
 height: c_int,
 empty_event_pipe: [2]std.c.fd_t,
-gl_ctx: ?*LibGL.Context,
 wm_protocols: c.Atom,
 wm_delete_window: c.Atom,
 net_wm_ping: c.Atom,
@@ -211,8 +209,7 @@ input_mu: std.Thread.RwLock = .{},
 input_state: InputState = .{},
 
 // Mutable state fields; read/write by any thread
-current_title: [:0]const u8,
-current_title_changed: bool = false,
+title: [:0]const u8,
 display_mode: DisplayMode = .windowed,
 vsync_mode: VSyncMode = .triple,
 border: bool,
@@ -233,9 +230,7 @@ pub const EventIterator = struct {
 };
 
 // Called on the main thread
-pub fn init(x11: *X11, allocator: std.mem.Allocator, options: InitOptions) !void {
-    if (!@import("builtin").is_test) _ = mach.sysgpu.sysgpu.Export(mach.sysgpu.Impl);
-
+pub fn init(x11: *X11, options: InitOptions) !void {
     const libx11 = try LibX11.load();
     const libxcursor: ?LibXCursor = LibXCursor.load() catch |err| switch (err) {
         error.LibraryNotFound => null,
@@ -317,7 +312,7 @@ pub fn init(x11: *X11, allocator: std.mem.Allocator, options: InitOptions) !void
     var window_attrs: c.XWindowAttributes = undefined;
     _ = libx11.XGetWindowAttributes(display, window, &window_attrs);
 
-    const backend_type = try detectBackendType(allocator);
+    const backend_type = try detectBackendType(options.allocator);
 
     const refresh_rate: u16 = blk: {
         if (libxrr != null) {
@@ -362,7 +357,7 @@ pub fn init(x11: *X11, allocator: std.mem.Allocator, options: InitOptions) !void
     // so we anticipate 2x that. If the event rate is higher than this per frame, it will grow to
     // that maximum (we never shrink the event queue capacity in order to avoid allocations causing
     // any stutter.)
-    var events = EventQueue.init(allocator);
+    var events = EventQueue.init(options.allocator);
     try events.ensureTotalCapacity(2048);
 
     const window_size = Size{
@@ -389,7 +384,7 @@ pub fn init(x11: *X11, allocator: std.mem.Allocator, options: InitOptions) !void
 
     x11.* = .{
         .core = @fieldParentPtr("platform", x11),
-        .allocator = allocator,
+        .allocator = options.allocator,
         .display = display,
         .libx11 = libx11,
         .libgl = libgl,
@@ -415,7 +410,7 @@ pub fn init(x11: *X11, allocator: std.mem.Allocator, options: InitOptions) !void
         .backend_type = backend_type,
         .refresh_rate = refresh_rate,
         .events = events,
-        .current_title = options.title,
+        .title = options.title,
         .display_mode = .windowed,
         .border = options.border,
         .headless = options.headless,
@@ -489,8 +484,8 @@ pub inline fn pollEvents(x11: *X11) EventIterator {
 
 // May be called from any thread.
 pub fn setTitle(x11: *X11, title: [:0]const u8) void {
-    x11.current_title = title;
-    _ = x11.libx11.XStoreName(x11.display, x11.window, x11.current_title.ptr);
+    x11.title = title;
+    _ = x11.libx11.XStoreName(x11.display, x11.window, x11.title.ptr);
 }
 
 // May be called from any thread.

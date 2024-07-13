@@ -135,8 +135,7 @@ pub const Instance = struct {
             vk.extensions.khr_surface.name,
             vk.extensions.khr_xlib_surface.name,
             vk.extensions.khr_xcb_surface.name,
-            // TODO: renderdoc will not work with this extension
-            // vk.extensions.khr_wayland_surface.name,
+            vk.extensions.khr_wayland_surface.name,
         },
         .windows => &.{
             vk.extensions.khr_surface.name,
@@ -400,17 +399,14 @@ pub const Surface = struct {
                         null,
                     );
                 } else if (utils.findChained(sysgpu.Surface.DescriptorFromWaylandSurface, desc.next_in_chain.generic)) |wayland_desc| {
-                    _ = wayland_desc;
-                    @panic("unimplemented");
-                    // TODO: renderdoc will not work with wayland
-                    // break :blk try vki.createWaylandSurfaceKHR(
-                    //     vk_instance,
-                    //     &vk.WaylandSurfaceCreateInfoKHR{
-                    //         .display = @ptrCast(wayland_desc.display),
-                    //         .surface = @ptrCast(wayland_desc.surface),
-                    //     },
-                    //     null,
-                    // );
+                    break :blk try vki.createWaylandSurfaceKHR(
+                        vk_instance,
+                        &vk.WaylandSurfaceCreateInfoKHR{
+                            .display = @ptrCast(wayland_desc.display),
+                            .surface = @ptrCast(wayland_desc.surface),
+                        },
+                        null,
+                    );
                 }
 
                 return error.InvalidDescriptor;

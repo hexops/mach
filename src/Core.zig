@@ -14,7 +14,7 @@ const Frequency = @import("core/Frequency.zig");
 
 const Platform = switch (build_options.core_platform) {
     .x11 => @import("core/X11.zig"),
-    .wayland => @panic("TODO: revive wayland backend"),
+    .wayland => @import("core/Wayland.zig"),
     .web => @panic("TODO: revive wasm backend"),
 };
 
@@ -148,7 +148,7 @@ fn init(core: *Mod, entities: *mach.Entities.Mod, options: InitOptions) !void {
         state.title[options.title.len] = 0;
     }
 
-    try Platform.init(&state.platform, options.allocator, options);
+    try Platform.init(&state.platform, options);
 
     state.instance = gpu.createInstance(null) orelse {
         log.err("failed to create GPU instance", .{});
@@ -951,11 +951,11 @@ comptime {
 }
 
 fn assertHasDecl(comptime T: anytype, comptime decl_name: []const u8) void {
-    if (!@hasDecl(T, decl_name)) @compileError("Core missing declaration: " ++ decl_name);
+    if (!@hasDecl(T, decl_name)) @compileError(@typeName(T) ++ " missing declaration: " ++ decl_name);
 }
 
 fn assertHasField(comptime T: anytype, comptime field_name: []const u8) void {
-    if (!@hasField(T, field_name)) @compileError("Core missing field: " ++ field_name);
+    if (!@hasField(T, field_name)) @compileError(@typeName(T) ++ " missing field: " ++ field_name);
 }
 
 test {
