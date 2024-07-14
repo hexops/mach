@@ -45,11 +45,9 @@ pub const systems = .{
 };
 
 fn deinit(
-    core: *mach.Core.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
 ) !void {
     sprite_pipeline.schedule(.deinit);
-    core.schedule(.deinit);
 }
 
 fn init(
@@ -268,7 +266,6 @@ fn loadTexture(core: *mach.Core.Mod, allocator: std.mem.Allocator) !*gpu.Texture
         .usage = .{
             .texture_binding = true,
             .copy_dst = true,
-            .render_attachment = true,
         },
     });
     const data_layout = gpu.Texture.DataLayout{

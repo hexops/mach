@@ -1,3 +1,4 @@
+const std = @import("std");
 const builtin = @import("builtin");
 pub const L = std.unicode.utf8ToUtf16LeStringLiteral;
 

@@ -237,7 +237,6 @@ fn buildPipeline(
         .usage = .{
             .texture_binding = true,
             .copy_dst = true,
-            .render_attachment = true,
         },
     });
     const texture_atlas = try gfx.Atlas.init(

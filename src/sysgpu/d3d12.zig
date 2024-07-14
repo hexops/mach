@@ -169,53 +169,107 @@ pub const Adapter = struct {
     dxgi_adapter: *c.IDXGIAdapter1,
     d3d_device: *c.ID3D12Device,
     dxgi_desc: c.DXGI_ADAPTER_DESC1,
+    description: [256:0]u8 = undefined,
+    adapter_type: sysgpu.Adapter.Type = .unknown,
 
     pub fn init(instance: *Instance, options: *const sysgpu.RequestAdapterOptions) !*Adapter {
-        // TODO - choose appropriate device from options
-        _ = options;
+        var last_adapter_type: sysgpu.Adapter.Type = .unknown;
 
         const dxgi_factory = instance.dxgi_factory;
         var hr: c.HRESULT = undefined;
 
         var i: u32 = 0;
         var dxgi_adapter: *c.IDXGIAdapter1 = undefined;
+        var dxgi_desc: c.DXGI_ADAPTER_DESC1 = undefined;
+        var last_dxgi_adapter: ?*c.IDXGIAdapter1 = null;
+        var last_dxgi_desc: c.DXGI_ADAPTER_DESC1 = undefined;
+
         while (dxgi_factory.lpVtbl.*.EnumAdapters1.?(
             dxgi_factory,
             i,
             @ptrCast(&dxgi_adapter),
         ) != c.DXGI_ERROR_NOT_FOUND) : (i += 1) {
-            defer _ = dxgi_adapter.lpVtbl.*.Release.?(dxgi_adapter);
-
-            var dxgi_desc: c.DXGI_ADAPTER_DESC1 = undefined;
             hr = dxgi_adapter.lpVtbl.*.GetDesc1.?(
                 dxgi_adapter,
                 &dxgi_desc,
             );
-            std.debug.assert(hr == c.S_OK);
+            var description: [256:0]u8 = undefined;
+            const l = try std.unicode.utf16LeToUtf8(&description, &dxgi_desc.Description);
+            description[l] = 0;
 
-            if ((dxgi_desc.Flags & c.DXGI_ADAPTER_FLAG_SOFTWARE) != 0)
+            if ((dxgi_desc.Flags & c.DXGI_ADAPTER_FLAG_SOFTWARE) != 0) {
+               _ = dxgi_adapter.lpVtbl.*.Release.?(dxgi_adapter);
+               continue;
+            }
+
+            const adapter_type: sysgpu.Adapter.Type = blk: {
+                var d3d_device: *c.ID3D12Device = undefined;
+                hr = c.D3D12CreateDevice(
+                    @ptrCast(dxgi_adapter),
+                    c.D3D_FEATURE_LEVEL_11_0,
+                    &c.IID_ID3D12Device,
+                    @ptrCast(&d3d_device),
+                );
+                if (hr == c.S_OK) {
+                    defer _ = d3d_device.lpVtbl.*.Release.?(d3d_device);
+
+                    var arch = c.D3D12_FEATURE_DATA_ARCHITECTURE{};
+                    _ = d3d_device.lpVtbl.*.CheckFeatureSupport.?(d3d_device, c.D3D12_FEATURE_ARCHITECTURE, &arch, @sizeOf(@TypeOf(arch)));
+                    if (arch.UMA == 0) {
+                        break :blk .discrete_gpu;
+                    } else {
+                        break :blk .integrated_gpu;
+                    }
+                } 
+                break :blk .unknown;
+            };
+
+            if (last_dxgi_adapter == null) {
+                last_dxgi_adapter = dxgi_adapter;
+                last_dxgi_desc = dxgi_desc;
+                last_adapter_type = adapter_type;
                 continue;
+            }
 
+            // Select the last discrete_gpu if power preference is high performance.
+            // Select the last integrated_gpu if power preference is not high performance.
+            // TOOD: Other selection criterias?
+            if ((options.power_preference == .high_performance and adapter_type == .discrete_gpu)
+                or (options.power_preference == .low_power and adapter_type != .discrete_gpu)) {
+                if (last_dxgi_adapter) |adapter| {
+                    _ = adapter.lpVtbl.*.Release.?(adapter);
+                }            
+                last_dxgi_adapter = dxgi_adapter;
+                last_dxgi_desc = dxgi_desc;
+                last_adapter_type = adapter_type;
+            }
+        }
+
+        if (last_dxgi_adapter) |selected_adapter| {
             var d3d_device: *c.ID3D12Device = undefined;
             hr = c.D3D12CreateDevice(
-                @ptrCast(dxgi_adapter),
+                @ptrCast(selected_adapter),
                 c.D3D_FEATURE_LEVEL_11_0,
                 &c.IID_ID3D12Device,
                 @ptrCast(&d3d_device),
             );
             if (hr == c.S_OK) {
-                _ = dxgi_adapter.lpVtbl.*.AddRef.?(dxgi_adapter);
+                _ = selected_adapter.lpVtbl.*.AddRef.?(selected_adapter);
 
-                const adapter = try allocator.create(Adapter);
+                var adapter = try allocator.create(Adapter);
                 adapter.* = .{
                     .instance = instance,
-                    .dxgi_adapter = dxgi_adapter,
+                    .dxgi_adapter = selected_adapter,
                     .d3d_device = d3d_device,
-                    .dxgi_desc = dxgi_desc,
+                    .dxgi_desc = last_dxgi_desc,
+                    .adapter_type = last_adapter_type,
                 };
+                const l = try std.unicode.utf16LeToUtf8(&adapter.description, &last_dxgi_desc.Description);
+                adapter.description[l] = 0;
                 return adapter;
             }
         }
+
 
         return error.NoAdapterFound;
     }
@@ -233,16 +287,15 @@ pub const Adapter = struct {
     }
 
     pub fn getProperties(adapter: *Adapter) sysgpu.Adapter.Properties {
-        const dxgi_desc = adapter.dxgi_desc;
-
+        const dxgi_desc = adapter.dxgi_desc;        
         return .{
             .vendor_id = dxgi_desc.VendorId,
             .vendor_name = "", // TODO
             .architecture = "", // TODO
             .device_id = dxgi_desc.DeviceId,
-            .name = "", // TODO - wide to ascii - dxgi_desc.Description
+            .name = &adapter.description,
             .driver_description = "", // TODO
-            .adapter_type = .unknown,
+            .adapter_type = adapter.adapter_type,
             .backend_type = .d3d12,
             .compatibility_mode = .false,
         };
@@ -287,6 +340,9 @@ pub const Device = struct {
     streaming_manager: StreamingManager = undefined,
     reference_trackers: std.ArrayListUnmanaged(*ReferenceTracker) = .{},
     mem_allocator: MemoryAllocator = undefined,
+
+    mem_allocator_textures: MemoryAllocator = undefined,
+
     map_callbacks: std.ArrayListUnmanaged(MapCallback) = .{},
 
     lost_cb: ?sysgpu.Device.LostCallback = null,
@@ -408,6 +464,9 @@ pub const Device = struct {
         errdefer device.streaming_manager.deinit();
 
         try device.mem_allocator.init(device);
+
+        try device.mem_allocator_textures.init(device);
+
 
         return device;
     }
@@ -698,8 +757,7 @@ pub const MemoryAllocator = struct {
                         .rtv_dsv_texture => c.D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES,
                         .other_texture => c.D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES,
                     },
-                };
-
+                }; 
                 var heap: ?*c.ID3D12Heap = null;
                 const d3d_device = group.owning_pool.device.d3d_device;
                 const hr = d3d_device.lpVtbl.*.CreateHeap.?(
@@ -1013,6 +1071,8 @@ pub const MemoryAllocator = struct {
                 1,
                 @ptrCast(desc.resource_desc),
             );
+            // TODO: If size in bytes == UINT64_MAX then an error occured
+
             break :blk AllocationCreateDescriptor{
                 .location = desc.location,
                 .size = allocation_info.*.SizeInBytes,
@@ -1676,7 +1736,8 @@ pub const Texture = struct {
                 &clear_value
             else
                 null,
-            .resource_category = .buffer,
+            // TODO: #1225: check if different textures need different resource categories. 
+            .resource_category = .other_texture,
             .initial_state = initial_state,
         };
         const resource = device.mem_allocator.createResource(&create_desc) catch

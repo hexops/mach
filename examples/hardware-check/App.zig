@@ -346,7 +346,6 @@ fn loadTexture(core: *mach.Core.Mod, allocator: std.mem.Allocator) !*gpu.Texture
         .usage = .{
             .texture_binding = true,
             .copy_dst = true,
-            .render_attachment = true,
         },
     });
     const data_layout = gpu.Texture.DataLayout{

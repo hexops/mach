@@ -321,8 +321,6 @@ pub fn outOfMemory(self: *Win32) bool {
 }
 
 fn pushEvent(self: *Win32, event: Event) void {
-    //self.event_mutex.lock();
-    //defer self.event_mutex.unlock();
     self.events.writeItem(event) catch self.oom.set();
 }
 
