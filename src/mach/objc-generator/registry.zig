@@ -194,11 +194,11 @@ pub const Registry = struct {
     }
 
     pub fn getEnum(self: *Self, name: []const u8) !*Enum {
-        var v = try self.enums.getOrPut(name);
+        const v = try self.enums.getOrPut(name);
         if (v.found_existing) {
             return v.value_ptr.*;
         } else {
-            var e = try self.allocator.create(Enum);
+            const e = try self.allocator.create(Enum);
             e.* = Enum.init(self.allocator, name);
             v.value_ptr.* = e;
             return e;
@@ -220,7 +220,7 @@ pub const Registry = struct {
         name: []const u8,
         is_interface: bool,
     ) !*Container {
-        var v = try primary.getOrPut(name);
+        const v = try primary.getOrPut(name);
         var container: *Container = undefined;
         if (v.found_existing) {
             container = v.value_ptr.*;

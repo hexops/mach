@@ -737,7 +737,7 @@ pub const Converter = struct {
     }
 
     fn convertEnumDecl(self: *Self, n: std.json.Value) !void {
-        var name = getString(n, "name");
+        const name = getString(n, "name");
         if (name.len == 0) {
             return;
         }
@@ -752,7 +752,7 @@ pub const Converter = struct {
         for (getArray(n, "inner")) |child| {
             const childKind = getString(child, "kind");
             if (std.mem.eql(u8, childKind, "EnumConstantDecl")) {
-                var v = try self.convertEnumConstantDecl(child);
+                const v = try self.convertEnumConstantDecl(child);
                 try e.values.append(v);
             }
         }
@@ -773,7 +773,7 @@ pub const Converter = struct {
     }
 
     fn convertConstantExpr(_: *Self, n: std.json.Value) i64 {
-        var value = getString(n, "value");
+        const value = getString(n, "value");
         return std.fmt.parseInt(i64, value, 10) catch 0;
     }
 
@@ -794,8 +794,8 @@ pub const Converter = struct {
     }
 
     fn convertObjCCategoryDecl(self: *Self, n: std.json.Value) !void {
-        var interfaceDecl = getObject(n, "interface").?;
-        var container = try registry.getInterface(getString(interfaceDecl, "name"));
+        const interfaceDecl = getObject(n, "interface").?;
+        const container = try registry.getInterface(getString(interfaceDecl, "name"));
         try self.convertContainer(container, n);
     }
 
@@ -846,20 +846,20 @@ pub const Converter = struct {
 
         for (getArray(n, "protocols")) |protocolJson| {
             const protocolName = getString(protocolJson, "name");
-            var protocol = try registry.getProtocol(protocolName);
+            const protocol = try registry.getProtocol(protocolName);
             try container.protocols.append(protocol);
         }
 
         for (getArray(n, "inner")) |child| {
             const childKind = getString(child, "kind");
             if (std.mem.eql(u8, childKind, "ObjCTypeParamDecl")) {
-                var type_param = try self.convertTypeParam(child);
+                const type_param = try self.convertTypeParam(child);
                 try container.type_params.append(type_param);
             } else if (std.mem.eql(u8, childKind, "ObjCPropertyDecl")) {
-                var property = try self.convertProperty(child);
+                const property = try self.convertProperty(child);
                 try container.properties.append(property);
             } else if (std.mem.eql(u8, childKind, "ObjCMethodDecl")) {
-                var method = try self.convertMethod(child);
+                const method = try self.convertMethod(child);
                 try container.methods.append(method);
             }
         }
@@ -871,18 +871,18 @@ pub const Converter = struct {
     }
 
     fn convertProperty(self: *Self, n: std.json.Value) !Property {
-        var ty = try self.convertType(getObject(n, "type").?);
+        const ty = try self.convertType(getObject(n, "type").?);
         return Property.init(getString(n, "name"), ty);
     }
 
     fn convertMethod(self: *Self, n: std.json.Value) !Method {
-        var return_type = try self.convertType(getObject(n, "returnType").?);
+        const return_type = try self.convertType(getObject(n, "returnType").?);
         var params = std.ArrayList(Param).init(registry.allocator);
 
         for (getArray(n, "inner")) |child| {
             const childKind = getString(child, "kind");
             if (std.mem.eql(u8, childKind, "ParmVarDecl")) {
-                var param = try self.convertParam(child);
+                const param = try self.convertParam(child);
                 try params.append(param);
             }
         }
@@ -980,7 +980,7 @@ fn Generator(comptime WriterType: type) type {
         }
 
         pub fn addProtocol(self: *Self, name: []const u8) !void {
-            var container = registry.protocols.get(name) orelse {
+            const container = registry.protocols.get(name) orelse {
                 std.debug.print("Protocol {s} not found\n", .{name});
                 return;
             };
@@ -989,7 +989,7 @@ fn Generator(comptime WriterType: type) type {
         }
 
         pub fn addInterface(self: *Self, name: []const u8) !void {
-            var container = registry.interfaces.get(name) orelse {
+            const container = registry.interfaces.get(name) orelse {
                 std.debug.print("Interface {s} not found\n", .{name});
                 return;
             };
@@ -998,7 +998,7 @@ fn Generator(comptime WriterType: type) type {
         }
 
         pub fn addEnum(self: *Self, name: []const u8) !void {
-            var e = registry.enums.get(name) orelse {
+            const e = registry.enums.get(name) orelse {
                 std.debug.print("Enum {s} not found\n", .{name});
                 return;
             };
