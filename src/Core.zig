@@ -244,7 +244,7 @@ pub inline fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
     {
         deinitLinuxGamemode();
     }
-
+    
     state.platform.deinit();
     state.swap_chain.release();
     state.queue.release();
