@@ -111,32 +111,46 @@ pub fn init(
     });
     if (w.RegisterClassW(&class) == 0) return error.Unexpected;
 
+    // TODO set title , copy to self.title
     const title = try std.unicode.utf8ToUtf16LeAllocZ(self.allocator, options.title);
     defer self.allocator.free(title);
-    // TODO set title , copy to self.title
+
+    var request_window_width:i32 = @bitCast(self.size.width);
+    var request_window_height:i32 = @bitCast(self.size.height);
+
+    const window_ex_style: w.WINDOW_EX_STYLE = .{.APPWINDOW = 1, .WINDOWEDGE = 1, .CLIENTEDGE = 1};
+    const window_style: w.WINDOW_STYLE = if (options.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW;
+
+    var rect: w.RECT = .{ .left = 0, .top = 0, .right = request_window_width, .bottom = request_window_height};
+
+    if (w.TRUE == w.AdjustWindowRectEx(&rect,
+        window_style, 
+        w.FALSE, 
+        window_ex_style)) 
+    {
+        request_window_width = rect.right - rect.left;
+        request_window_height = rect.bottom - rect.top;
+    }
 
     const window = w.CreateWindowExW(
-        .{.APPWINDOW = 1, .WINDOWEDGE = 1, .CLIENTEDGE = 1},
+        window_ex_style,
         class_name,
         title,
-        if (options.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW,
+        window_style,
         w.CW_USEDEFAULT,
         w.CW_USEDEFAULT,
-        @bitCast(self.size.width),
-        @bitCast(self.size.height),
+        request_window_width,
+        request_window_height,
         null,
         null,
         hInstance,
         null,
     ) orelse return error.Unexpected;
+
     self.window = window;
 
     var dinput: ?*w.IDirectInput8W = undefined;
-    //@ptrCast(*anyopaque
-
     const ptr: ?*?*anyopaque = @ptrCast(&dinput);
-
-    //    if (w.DirectInput8Create(instance, w.DIRECTINPUT_VERSION, &w.IID_IDirectInput8W, &dinput, null) != w.DI_OK) return error.Unexpected;
     if (w.DirectInput8Create(hInstance, w.DIRECTINPUT_VERSION, w.IID_IDirectInput8W, ptr, null) != w.DI_OK) {
         return error.Unexpected;
     }
@@ -157,6 +171,18 @@ pub fn init(
     if (!options.headless) {
         setDisplayMode(self, options.display_mode);
     }
+
+    self.size = getClientRect(self);
+}
+
+pub fn getClientRect(self: *Win32) Size {
+    var rect: w.RECT = undefined;
+    _ = w.GetClientRect(self.window, &rect);
+
+    const width:u32 = @intCast(rect.right - rect.left);
+    const height:u32 = @intCast(rect.bottom - rect.top);
+
+    return .{ .width = width, .height = height };
 }
 
 pub fn deinit(self: *Win32) void {
@@ -222,6 +248,7 @@ pub fn setVSync(self: *Win32, mode: VSyncMode) void {
 }
 
 pub fn setSize(self: *Win32, value: Size) void {
+    // TODO - use AdjustClientRect to get correct client rect.
     _ = w.SetWindowPos(self.window, 
         null, 
         0, 
@@ -381,7 +408,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             }
 
             const key = keyFromScancode(scancode);
-            if (msg == w.WM_KEYDOWN) {
+            if (msg == w.WM_KEYDOWN or msg == w.WM_SYSKEYDOWN) {
                 if (flags & w.KF_REPEAT == 0) {
                     self.pushEvent(.{ .key_press = .{ .key = key, .mods = undefined } });
                 } else {

@@ -91,6 +91,26 @@ pub extern "user32" fn GetClientRect(
     hWnd: ?HWND,
     lpRect: ?*RECT,
 ) callconv(@import("std").os.windows.WINAPI) BOOL;
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn GetWindowRect(
+    hWnd: ?HWND,
+    lpRect: ?*RECT,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn AdjustWindowRect(
+    lpRect: ?*RECT,
+    dwStyle: WINDOW_STYLE,
+    bMenu: BOOL,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn AdjustWindowRectEx(
+    lpRect: ?*RECT,
+    dwStyle: WINDOW_STYLE,
+    bMenu: BOOL,
+    dwExStyle: WINDOW_EX_STYLE,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
 
 // TODO: this type is limited to platform 'windows5.0'
 pub extern "user32" fn GetMessageTime() callconv(@import("std").os.windows.WINAPI) i32;
