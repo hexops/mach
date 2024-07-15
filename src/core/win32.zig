@@ -471,11 +471,14 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return if (msg == w.WM_XBUTTONDOWN or msg == w.WM_XBUTTONUP) w.TRUE else 0;
         },
         w.WM_MOUSEMOVE => {
+            const x:f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF))); 
+            const y:f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF))); 
+
             self.pushEvent(.{
                 .mouse_motion = .{
                     .pos = .{
-                        .x = 0,
-                        .y = 0,
+                        .x = x,
+                        .y = y,
                     },
                 },
             });
