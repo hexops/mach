@@ -389,6 +389,14 @@ pub fn Mat(
             else => @compileError("Expected Mat3x3, Mat4x4 found '" ++ @typeName(Matrix) ++ "'"),
         };
 
+        const Shared = MatShared(RowVec, ColVec, Matrix);
+        pub const mul = Shared.mul;
+        pub const mulVec = Shared.mulVec;
+    };
+}
+
+pub fn MatShared(comptime RowVec: type, comptime ColVec: type, comptime Matrix: type) type {
+    return struct {
         /// Matrix multiplication a*b
         pub inline fn mul(a: *const Matrix, b: *const Matrix) Matrix {
             @setEvalBranchQuota(10000);
