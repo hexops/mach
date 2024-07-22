@@ -4,7 +4,7 @@ const math = mach.math;
 const vec = @import("vec.zig");
 
 // A Ray in three-dimensional space
-pub fn Ray(comptime Scalar: type) type {
+pub fn Ray3(comptime Scalar: type) type {
     const Vec3P = vec.Vec3(Scalar);
 
     // Floating point precision, will be either f16, f32, or f64
@@ -63,7 +63,7 @@ pub fn Ray(comptime Scalar: type) type {
         /// On hit, will return a RayHit which contains distance t
         /// and barycentric coordinates.
         pub inline fn triangleIntersect(
-            ray: *const Ray(Vec3P),
+            ray: *const Ray3(Vec3P),
             va: *const Vec3P,
             vb: *const Vec3P,
             vc: *const Vec3P,
