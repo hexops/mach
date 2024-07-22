@@ -128,7 +128,7 @@ pub fn Vec3(comptime Scalar: type) type {
         }
 
         /// Vector * Matrix multiplication
-        pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(3, T))) VecN {
+        pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat3x3(T)) VecN {
             var result = [_]VecN.T{0} ** 3;
             inline for (0..3) |i| {
                 inline for (0..3) |j| {
@@ -230,7 +230,7 @@ pub fn Vec4(comptime Scalar: type) type {
         }
 
         /// Vector * Matrix multiplication
-        pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(4, 4, Vec(4, T))) VecN {
+        pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat4x4(T)) VecN {
             var result = [_]VecN.T{0} ** 4;
             inline for (0..4) |i| {
                 inline for (0..4) |j| {
@@ -504,10 +504,10 @@ pub fn VecShared(comptime Scalar: type, comptime VecN: type) type {
 
         /// Checks for approximate (absolute tolerance) equality between two vectors
         /// of the same type and dimensions
-        pub inline fn eqlApprox(a: *const VecN, b: *const VecN, tolerance: T) bool {
+        pub inline fn eqlApprox(a: *const VecN, b: *const VecN, tolerance: Scalar) bool {
             var i: usize = 0;
             while (i < VecN.n) : (i += 1) {
-                if (!math.eql(T, a.v[i], b.v[i], tolerance)) {
+                if (!math.eql(Scalar, a.v[i], b.v[i], tolerance)) {
                     return false;
                 }
             }
@@ -517,7 +517,7 @@ pub fn VecShared(comptime Scalar: type, comptime VecN: type) type {
         /// Checks for approximate (absolute epsilon tolerance) equality
         /// between two vectors of the same type and dimensions
         pub inline fn eql(a: *const VecN, b: *const VecN) bool {
-            return a.eqlApprox(b, math.eps(T));
+            return a.eqlApprox(b, math.eps(Scalar));
         }
     };
 }

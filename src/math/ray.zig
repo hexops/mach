@@ -63,7 +63,7 @@ pub fn Ray3(comptime Scalar: type) type {
         /// On hit, will return a RayHit which contains distance t
         /// and barycentric coordinates.
         pub inline fn triangleIntersect(
-            ray: *const Ray3(Vec3P),
+            ray: *const Ray3(P),
             va: *const Vec3P,
             vb: *const Vec3P,
             vc: *const Vec3P,

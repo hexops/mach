@@ -6,16 +6,16 @@ const mat = @import("mat.zig");
 
 pub fn Quat(comptime Scalar: type) type {
     return extern struct {
-        v: vec.Vec(4, Scalar),
+        v: vec.Vec4(Scalar),
 
         /// The scalar type of this matrix, e.g. Mat3x3.T == f32
         pub const T = Vec.T;
 
         /// The underlying Vec type, e.g. math.Vec4, math.Vec4h, math.Vec4d
-        pub const Vec = vec.Vec(4, Scalar);
+        pub const Vec = vec.Vec4(Scalar);
 
         /// The Vec type used to represent axes, e.g. math.Vec3
-        pub const Axis = vec.Vec(3, Scalar);
+        pub const Axis = vec.Vec3(Scalar);
 
         /// Creates a quaternion from the given x, y, z, and w values
         pub inline fn init(x: T, y: T, z: T, w: T) Quat(T) {

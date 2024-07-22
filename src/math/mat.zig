@@ -4,7 +4,7 @@ const math = mach.math;
 const vec = @import("vec.zig");
 
 pub fn Mat2x2(
-    comptime Vector: type,
+    comptime Scalar: type,
 ) type {
     return extern struct {
         /// The column vectors of the matrix.
@@ -32,16 +32,16 @@ pub fn Mat2x2(
         pub const rows = 2;
 
         /// The scalar type of this matrix, e.g. Mat3x3.T == f32
-        pub const T = Vector.T;
+        pub const T = Scalar;
 
         /// The underlying Vec type, e.g. Mat3x3.Vec == Vec3
-        pub const Vec = Vector;
+        pub const Vec = vec.Vec2(Scalar);
 
         /// The Vec type corresponding to the number of rows, e.g. Mat3x3.RowVec == Vec3
-        pub const RowVec = vec.Vec(rows, T);
+        pub const RowVec = Vec;
 
         /// The Vec type corresponding to the numebr of cols, e.g. Mat3x4.ColVec = Vec4
-        pub const ColVec = vec.Vec(cols, T);
+        pub const ColVec = Vec;
 
         const Matrix = @This();
 
@@ -122,7 +122,7 @@ pub fn Mat2x2(
 }
 
 pub fn Mat3x3(
-    comptime Vector: type,
+    comptime Scalar: type,
 ) type {
     return extern struct {
         /// The column vectors of the matrix.
@@ -150,16 +150,16 @@ pub fn Mat3x3(
         pub const rows = 3;
 
         /// The scalar type of this matrix, e.g. Mat3x3.T == f32
-        pub const T = Vector.T;
+        pub const T = Scalar;
 
         /// The underlying Vec type, e.g. Mat3x3.Vec == Vec3
-        pub const Vec = Vector;
+        pub const Vec = vec.Vec3(Scalar);
 
         /// The Vec type corresponding to the number of rows, e.g. Mat3x3.RowVec == Vec3
-        pub const RowVec = vec.Vec(rows, T);
+        pub const RowVec = Vec;
 
         /// The Vec type corresponding to the numebr of cols, e.g. Mat3x4.ColVec = Vec4
-        pub const ColVec = vec.Vec(cols, T);
+        pub const ColVec = Vec;
 
         const Matrix = @This();
 
@@ -262,7 +262,7 @@ pub fn Mat3x3(
 }
 
 pub fn Mat4x4(
-    comptime Vector: type,
+    comptime Scalar: type,
 ) type {
     return extern struct {
         /// The column vectors of the matrix.
@@ -290,16 +290,16 @@ pub fn Mat4x4(
         pub const rows = 4;
 
         /// The scalar type of this matrix, e.g. Mat3x3.T == f32
-        pub const T = Vector.T;
+        pub const T = Scalar;
 
         /// The underlying Vec type, e.g. Mat3x3.Vec == Vec3
-        pub const Vec = Vector;
+        pub const Vec = vec.Vec4(Scalar);
 
         /// The Vec type corresponding to the number of rows, e.g. Mat3x3.RowVec == Vec3
-        pub const RowVec = vec.Vec(rows, T);
+        pub const RowVec = Vec;
 
         /// The Vec type corresponding to the numebr of cols, e.g. Mat3x4.ColVec = Vec4
-        pub const ColVec = vec.Vec(cols, T);
+        pub const ColVec = Vec;
 
         const Matrix = @This();
 
@@ -516,7 +516,7 @@ pub fn MatShared(comptime RowVec: type, comptime ColVec: type, comptime Matrix: 
                     result[i] += matrix.v[row].v[i] * vector.v[row];
                 }
             }
-            return vec.Vec(ColVec.n, ColVec.T){ .v = result };
+            return ColVec{ .v = result };
         }
 
         // TODO: the below code was correct in our old implementation, it just needs to be updated
