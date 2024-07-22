@@ -395,6 +395,150 @@ pub fn Mat(
     };
 }
 
+pub fn Mat2x2(
+    comptime Vector: type,
+) type {
+    return extern struct {
+        /// The column vectors of the matrix.
+        ///
+        /// Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
+        /// The translation vector is stored in contiguous memory elements 12, 13, 14:
+        ///
+        /// ```
+        /// [4]Vec4{
+        ///     vec4( 1,  0,  0,  0),
+        ///     vec4( 0,  1,  0,  0),
+        ///     vec4( 0,  0,  1,  0),
+        ///     vec4(tx, ty, tz, tw),
+        /// }
+        /// ```
+        ///
+        /// Use the init() constructor to write code which visually matches the same layout as you'd
+        /// see used in scientific / maths communities.
+        v: [cols]Vec,
+
+        /// The number of columns, e.g. Mat3x4.cols == 3
+        pub const cols = 2;
+
+        /// The number of rows, e.g. Mat3x4.rows == 4
+        pub const rows = 2;
+
+        /// The scalar type of this matrix, e.g. Mat3x3.T == f32
+        pub const T = Vector.T;
+
+        /// The underlying Vec type, e.g. Mat3x3.Vec == Vec3
+        pub const Vec = Vector;
+
+        /// The Vec type corresponding to the number of rows, e.g. Mat3x3.RowVec == Vec3
+        pub const RowVec = vec.Vec(rows, T);
+
+        /// The Vec type corresponding to the numebr of cols, e.g. Mat3x4.ColVec = Vec4
+        pub const ColVec = vec.Vec(cols, T);
+
+        const Matrix = @This();
+
+        const Shared = MatShared(RowVec, ColVec, Matrix);
+        pub const mul = Shared.mul;
+        pub const mulVec = Shared.mulVec;
+    };
+}
+
+pub fn Mat3x3(
+    comptime Vector: type,
+) type {
+    return extern struct {
+        /// The column vectors of the matrix.
+        ///
+        /// Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
+        /// The translation vector is stored in contiguous memory elements 12, 13, 14:
+        ///
+        /// ```
+        /// [4]Vec4{
+        ///     vec4( 1,  0,  0,  0),
+        ///     vec4( 0,  1,  0,  0),
+        ///     vec4( 0,  0,  1,  0),
+        ///     vec4(tx, ty, tz, tw),
+        /// }
+        /// ```
+        ///
+        /// Use the init() constructor to write code which visually matches the same layout as you'd
+        /// see used in scientific / maths communities.
+        v: [cols]Vec,
+
+        /// The number of columns, e.g. Mat3x4.cols == 3
+        pub const cols = 3;
+
+        /// The number of rows, e.g. Mat3x4.rows == 4
+        pub const rows = 3;
+
+        /// The scalar type of this matrix, e.g. Mat3x3.T == f32
+        pub const T = Vector.T;
+
+        /// The underlying Vec type, e.g. Mat3x3.Vec == Vec3
+        pub const Vec = Vector;
+
+        /// The Vec type corresponding to the number of rows, e.g. Mat3x3.RowVec == Vec3
+        pub const RowVec = vec.Vec(rows, T);
+
+        /// The Vec type corresponding to the numebr of cols, e.g. Mat3x4.ColVec = Vec4
+        pub const ColVec = vec.Vec(cols, T);
+
+        const Matrix = @This();
+
+        const Shared = MatShared(RowVec, ColVec, Matrix);
+        pub const mul = Shared.mul;
+        pub const mulVec = Shared.mulVec;
+    };
+}
+
+pub fn Mat4x4(
+    comptime Vector: type,
+) type {
+    return extern struct {
+        /// The column vectors of the matrix.
+        ///
+        /// Mach matrices use [column-major storage and column-vectors](https://machengine.org/engine/math/matrix-storage/).
+        /// The translation vector is stored in contiguous memory elements 12, 13, 14:
+        ///
+        /// ```
+        /// [4]Vec4{
+        ///     vec4( 1,  0,  0,  0),
+        ///     vec4( 0,  1,  0,  0),
+        ///     vec4( 0,  0,  1,  0),
+        ///     vec4(tx, ty, tz, tw),
+        /// }
+        /// ```
+        ///
+        /// Use the init() constructor to write code which visually matches the same layout as you'd
+        /// see used in scientific / maths communities.
+        v: [cols]Vec,
+
+        /// The number of columns, e.g. Mat3x4.cols == 3
+        pub const cols = 4;
+
+        /// The number of rows, e.g. Mat3x4.rows == 4
+        pub const rows = 4;
+
+        /// The scalar type of this matrix, e.g. Mat3x3.T == f32
+        pub const T = Vector.T;
+
+        /// The underlying Vec type, e.g. Mat3x3.Vec == Vec3
+        pub const Vec = Vector;
+
+        /// The Vec type corresponding to the number of rows, e.g. Mat3x3.RowVec == Vec3
+        pub const RowVec = vec.Vec(rows, T);
+
+        /// The Vec type corresponding to the numebr of cols, e.g. Mat3x4.ColVec = Vec4
+        pub const ColVec = vec.Vec(cols, T);
+
+        const Matrix = @This();
+
+        const Shared = MatShared(RowVec, ColVec, Matrix);
+        pub const mul = Shared.mul;
+        pub const mulVec = Shared.mulVec;
+    };
+}
+
 pub fn MatShared(comptime RowVec: type, comptime ColVec: type, comptime Matrix: type) type {
     return struct {
         /// Matrix multiplication a*b
