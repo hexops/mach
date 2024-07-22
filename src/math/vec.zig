@@ -23,6 +23,37 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
 
         const VecN = @This();
 
+        const Shared = VecShared(Scalar, VecN);
+        pub const add = Shared.add;
+        pub const sub = Shared.sub;
+        pub const div = Shared.div;
+        pub const mul = Shared.mul;
+        pub const addScalar = Shared.addScalar;
+        pub const subScalar = Shared.subScalar;
+        pub const divScalar = Shared.divScalar;
+        pub const mulScalar = Shared.mulScalar;
+        pub const less = Shared.less;
+        pub const lessEq = Shared.lessEq;
+        pub const greater = Shared.greater;
+        pub const greaterEq = Shared.greaterEq;
+        pub const splat = Shared.splat;
+        pub const len2 = Shared.len2;
+        pub const len = Shared.len;
+        pub const normalize = Shared.normalize;
+        pub const dir = Shared.dir;
+        pub const dist2 = Shared.dist2;
+        pub const dist = Shared.dist;
+        pub const lerp = Shared.lerp;
+        pub const dot = Shared.dot;
+        pub const max = Shared.max;
+        pub const min = Shared.min;
+        pub const inverse = Shared.inverse;
+        pub const negate = Shared.negate;
+        pub const maxScalar = Shared.maxScalar;
+        pub const minScalar = Shared.minScalar;
+        pub const eqlApprox = Shared.eqlApprox;
+        pub const eql = Shared.eql;
+
         pub usingnamespace switch (VecN.n) {
             inline 2 => struct {
                 pub inline fn init(xs: Scalar, ys: Scalar) VecN {
@@ -146,7 +177,11 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
             },
             else => @compileError("Expected Vec2, Vec3, Vec4, found '" ++ @typeName(VecN) ++ "'"),
         };
+    };
+}
 
+pub fn VecShared(comptime Scalar: type, comptime VecN: type) type {
+    return struct {
         /// Element-wise addition
         pub inline fn add(a: *const VecN, b: *const VecN) VecN {
             return .{ .v = a.v + b.v };
