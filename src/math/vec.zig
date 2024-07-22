@@ -8,61 +8,6 @@ const quat = @import("quat.zig");
 
 pub const VecComponent = enum { x, y, z, w };
 
-pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
-    return extern struct {
-        v: Vector,
-
-        /// The vector dimension size, e.g. Vec3.n == 3
-        pub const n = n_value;
-
-        /// The scalar type of this vector, e.g. Vec3.T == f32
-        pub const T = Scalar;
-
-        // The underlying @Vector type
-        pub const Vector = @Vector(n_value, Scalar);
-
-        const VecN = @This();
-
-        const Shared = VecShared(Scalar, VecN);
-        pub const add = Shared.add;
-        pub const sub = Shared.sub;
-        pub const div = Shared.div;
-        pub const mul = Shared.mul;
-        pub const addScalar = Shared.addScalar;
-        pub const subScalar = Shared.subScalar;
-        pub const divScalar = Shared.divScalar;
-        pub const mulScalar = Shared.mulScalar;
-        pub const less = Shared.less;
-        pub const lessEq = Shared.lessEq;
-        pub const greater = Shared.greater;
-        pub const greaterEq = Shared.greaterEq;
-        pub const splat = Shared.splat;
-        pub const len2 = Shared.len2;
-        pub const len = Shared.len;
-        pub const normalize = Shared.normalize;
-        pub const dir = Shared.dir;
-        pub const dist2 = Shared.dist2;
-        pub const dist = Shared.dist;
-        pub const lerp = Shared.lerp;
-        pub const dot = Shared.dot;
-        pub const max = Shared.max;
-        pub const min = Shared.min;
-        pub const inverse = Shared.inverse;
-        pub const negate = Shared.negate;
-        pub const maxScalar = Shared.maxScalar;
-        pub const minScalar = Shared.minScalar;
-        pub const eqlApprox = Shared.eqlApprox;
-        pub const eql = Shared.eql;
-
-        pub usingnamespace switch (VecN.n) {
-            inline 2 => struct {},
-            inline 3 => struct {},
-            inline 4 => struct {},
-            else => @compileError("Expected Vec2, Vec3, Vec4, found '" ++ @typeName(VecN) ++ "'"),
-        };
-    };
-}
-
 pub fn Vec2(comptime Scalar: type) type {
     return extern struct {
         v: Vector,
