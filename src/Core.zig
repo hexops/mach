@@ -130,16 +130,12 @@ pub const InitOptions = struct {
 };
 
 fn init(core: *Mod, entities: *mach.Entities.Mod, options: InitOptions) !void {
-    // TODO: fix all leaks and use options.allocator
-    try mach.sysgpu.Impl.init(std.heap.c_allocator, .{});
-
+    try mach.sysgpu.Impl.init(options.allocator, .{});
     const state = core.state();
 
     state.allocator = options.allocator;
     state.main_window = try entities.new();
     try core.set(state.main_window, .fullscreen, false);
-    try core.set(state.main_window, .width, 1920 / 2);
-    try core.set(state.main_window, .height, 1080 / 2);
 
     // Copy window title into owned buffer.
     if (options.title.len < state.title.len) {
@@ -795,6 +791,15 @@ fn presentFrame(core: *Mod, entities: *mach.Entities.Mod) !void {
         state.descriptor.height = @intCast(state.platform.size.height);
         state.swap_chain.release();
         state.swap_chain = state.device.createSwapChain(state.surface, &state.descriptor);
+
+        // TODO (hj): Move event queue into Core instead of having it in platform.
+        // If Core owns the event queue then it can push events also.
+        // state.platform.pushEvent(.{
+        //     .framebuffer_resize = .{
+        //         .width = width,
+        //         .height = height,
+        //     },
+        // });
     }
 
     // TODO(important): update this information in response to resize events rather than
@@ -819,17 +824,14 @@ pub fn printTitle(
     comptime fmt: []const u8,
     args: anytype,
 ) !void {
-    _ = core;
     _ = window_id;
-    _ = fmt;
-    _ = args;
-    // TODO: NO OP
-    // // Free any previous window title slice
-    // if (core.get(window_id, .title)) |slice| core.state().allocator.free(slice);
+    // Allocate and assign a new window title slice.
+    const slice = try std.fmt.allocPrintZ(core.allocator, fmt, args);
+    defer core.allocator.free(slice);
+    core.setTitle(slice);
 
-    // // Allocate and assign a new window title slice.
-    // const slice = try std.fmt.allocPrintZ(core.state().allocator, fmt, args);
-    // try core.set(window_id, .title, slice);
+    // TODO: This function does not have access to *core.Mod to update
+    // try core.Mod.set(window_id, .title, slice);
 }
 
 fn exit(core: *Mod) void {
@@ -905,6 +907,7 @@ pub fn deinitLinuxGamemode() void {
 comptime {
     // Core
     assertHasField(Platform, "surface_descriptor");
+    assertHasField(Platform, "refresh_rate");
 
     assertHasDecl(Platform, "init");
     assertHasDecl(Platform, "deinit");
@@ -943,6 +946,8 @@ comptime {
     assertHasDecl(Platform, "mousePressed");
     assertHasDecl(Platform, "mouseReleased");
     assertHasDecl(Platform, "mousePosition");
+
+    // TODO: EventIterator is used
 
     // Timer
     assertHasDecl(@This().Timer, "start");

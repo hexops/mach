@@ -22,74 +22,39 @@ const Key = Core.Key;
 const KeyMods = Core.KeyMods;
 const Joystick = Core.Joystick;
 
-const log = std.log.scoped(.mach);
-
 const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
 const Win32 = @This();
 
-/////////////////////////
+// --------------------------
 // Module state
-////////////////////////
+// --------------------------
 allocator: std.mem.Allocator,
 core: *Core,
 
 // Core platform interface
-title: [:0]u8,
+surface_descriptor: gpu.Surface.Descriptor,
 display_mode: DisplayMode,
 vsync_mode: VSyncMode,
 cursor_mode: CursorMode,
 cursor_shape: CursorShape,
 border: bool,
 headless: bool,
-refresh_rate: u32,
 size: Size,
-surface_descriptor: gpu.Surface.Descriptor,
-surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
 
 // Internals
 window: w.HWND,
+refresh_rate: u32,
 surrogate: u16 = 0,
 dinput: *w.IDirectInput8W,
-
+saved_window_rect: w.RECT,
+surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
 events: EventQueue,
+input_state: InputState,
 oom: std.Thread.ResetEvent = .{},
 
-////////////////////////////
-/// Internals
-////////////////////////////
-
-const RequestAdapterResponse = struct {
-    status: gpu.RequestAdapterStatus,
-    adapter: ?*gpu.Adapter,
-    message: ?[*:0]const u8,
-};
-
-inline fn requestAdapterCallback(
-    context: *RequestAdapterResponse,
-    status: gpu.RequestAdapterStatus,
-    adapter: ?*gpu.Adapter,
-    message: ?[*:0]const u8,
-) void {
-    context.* = RequestAdapterResponse{
-        .status = status,
-        .adapter = adapter,
-        .message = message,
-    };
-}
-
-inline fn printUnhandledErrorCallback(_: void, ty: gpu.ErrorType, message: [*:0]const u8) void {
-    switch (ty) {
-        .validation => std.log.err("gpu: validation error: {s}\n", .{message}),
-        .out_of_memory => std.log.err("gpu: out of memory: {s}\n", .{message}),
-        .unknown => std.log.err("gpu: unknown error: {s}\n", .{message}),
-        else => unreachable,
-    }
-    std.process.exit(1);
-}
-
-////////////////////////////
-/// Platform interface 
-////////////////////////////
+// ------------------------------
+// Platform interface
+// ------------------------------
 pub fn init(
     self: *Win32,
     options: InitOptions,
@@ -98,6 +63,8 @@ pub fn init(
     self.core = @fieldParentPtr("platform", self);
     self.events = EventQueue.init(self.allocator);
     self.size = options.size;
+    self.input_state = .{};
+    self.saved_window_rect = .{.top = 0, .left = 0, .right = 0, .bottom = 0};
 
     const hInstance = w.GetModuleHandleW(null);
     const class_name = w.L("mach");
@@ -111,23 +78,19 @@ pub fn init(
     });
     if (w.RegisterClassW(&class) == 0) return error.Unexpected;
 
-    // TODO set title , copy to self.title
     const title = try std.unicode.utf8ToUtf16LeAllocZ(self.allocator, options.title);
     defer self.allocator.free(title);
 
-    var request_window_width:i32 = @bitCast(self.size.width);
-    var request_window_height:i32 = @bitCast(self.size.height);
+    var request_window_width: i32 = @bitCast(self.size.width);
+    var request_window_height: i32 = @bitCast(self.size.height);
 
-    const window_ex_style: w.WINDOW_EX_STYLE = .{.APPWINDOW = 1, .WINDOWEDGE = 1, .CLIENTEDGE = 1};
-    const window_style: w.WINDOW_STYLE = if (options.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW;
+    const window_ex_style: w.WINDOW_EX_STYLE = .{ .APPWINDOW = 1 };
+    const window_style: w.WINDOW_STYLE = if (options.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW; // w.WINDOW_STYLE{.POPUP = 1};
+    // TODO (win32): should border == false mean borderless display_mode?
 
-    var rect: w.RECT = .{ .left = 0, .top = 0, .right = request_window_width, .bottom = request_window_height};
+    var rect: w.RECT = .{ .left = 0, .top = 0, .right = request_window_width, .bottom = request_window_height };
 
-    if (w.TRUE == w.AdjustWindowRectEx(&rect,
-        window_style, 
-        w.FALSE, 
-        window_ex_style)) 
-    {
+    if (w.TRUE == w.AdjustWindowRectEx(&rect, window_style, w.FALSE, window_ex_style)) {
         request_window_width = rect.right - rect.left;
         request_window_height = rect.bottom - rect.top;
     }
@@ -157,15 +120,16 @@ pub fn init(
     self.dinput = dinput.?;
 
     self.surface_descriptor_from_hwnd = .{
-                .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
-                .hwnd = window,
-            };
-
-    self.surface_descriptor = .{
-        .next_in_chain = .{
-            .from_windows_hwnd = &self.surface_descriptor_from_hwnd,
-        }
+        .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
+        .hwnd = window,
     };
+
+    self.surface_descriptor = .{ .next_in_chain = .{
+        .from_windows_hwnd = &self.surface_descriptor_from_hwnd,
+    } };
+    self.border = options.border;
+    self.headless = options.headless;
+    self.refresh_rate = 60; // TODO (win32)  get monitor refresh rate
 
     _ = w.SetWindowLongPtrW(window, w.GWLP_USERDATA, @bitCast(@intFromPtr(self)));
     if (!options.headless) {
@@ -173,16 +137,7 @@ pub fn init(
     }
 
     self.size = getClientRect(self);
-}
-
-pub fn getClientRect(self: *Win32) Size {
-    var rect: w.RECT = undefined;
-    _ = w.GetClientRect(self.window, &rect);
-
-    const width:u32 = @intCast(rect.right - rect.left);
-    const height:u32 = @intCast(rect.bottom - rect.top);
-
-    return .{ .width = width, .height = height };
+    _ = w.GetWindowRect(self.window, &self.saved_window_rect);
 }
 
 pub fn deinit(self: *Win32) void {
@@ -196,7 +151,7 @@ pub fn update(self: *Win32) !void {
     while (w.PeekMessageW(&msg, null, 0, 0, w.PM_REMOVE) != 0) {
         _ = w.TranslateMessage(&msg);
         _ = w.DispatchMessageW(&msg);
-    }   
+    }
 }
 
 pub const EventIterator = struct {
@@ -216,18 +171,55 @@ pub fn setTitle(self: *Win32, title: [:0]const u8) void {
         self.oom.set();
         return;
     };
-    // TODO update self.title
     defer self.allocator.free(wtitle);
     _ = w.SetWindowTextW(self.window, wtitle);
 }
 
 pub fn setDisplayMode(self: *Win32, mode: DisplayMode) void {
-    // TODO update self.displayMode
+    self.display_mode = mode;
+
     switch (mode) {
-        .windowed => _ = w.ShowWindow(self.window, w.SW_RESTORE),
-        //        .maximized => _ = w.ShowWindow(self.window, w.SW_MAXIMIZE),
-        .fullscreen => {},
-        .borderless => {},
+        .windowed => {
+            const window_style: w.WINDOW_STYLE = if (self.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW; 
+            const window_ex_style = w.WINDOW_EX_STYLE{ .APPWINDOW = 1 };
+
+            _ = w.SetWindowLongW(self.window, w.GWL_STYLE, @bitCast(window_style));
+            _ = w.SetWindowLongW(self.window, w.GWL_EXSTYLE, @bitCast(window_ex_style));
+
+            restoreWindowPosition(self);
+        },
+        .fullscreen => {            
+            _ = w.GetWindowRect(self.window, &self.saved_window_rect);
+
+            const window_style = w.WINDOW_STYLE{ .POPUP = 1, .VISIBLE = 1};
+            const window_ex_style = w.WINDOW_EX_STYLE{ .APPWINDOW = 1 };
+
+            _ = w.SetWindowLongW(self.window, w.GWL_STYLE, @bitCast(window_style));
+            _ = w.SetWindowLongW(self.window, w.GWL_EXSTYLE, @bitCast(window_ex_style));
+
+            const monitor = w.MonitorFromWindow(self.window, w.MONITOR_DEFAULTTONEAREST);
+            var monitor_info: w.MONITORINFO = undefined;
+            monitor_info.cbSize = @sizeOf(w.MONITORINFO);
+            if (w.GetMonitorInfoW(monitor, &monitor_info) == w.TRUE) {
+                _ = w.SetWindowPos(self.window, 
+                    null, 
+                    monitor_info.rcMonitor.left, 
+                    monitor_info.rcMonitor.top, 
+                    monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, 
+                    monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
+                    w.SWP_NOZORDER
+                );
+            }
+        },
+        .borderless => {
+            const window_style = w.WINDOW_STYLE{ .POPUP = 1, .VISIBLE = 1};
+            const window_ex_style = w.WINDOW_EX_STYLE{ .APPWINDOW = 1 };
+
+            _ = w.SetWindowLongW(self.window, w.GWL_STYLE, @bitCast(window_style));
+            _ = w.SetWindowLongW(self.window, w.GWL_EXSTYLE, @bitCast(window_ex_style));
+
+            restoreWindowPosition(self);
+        },
     }
 }
 
@@ -248,40 +240,10 @@ pub fn setVSync(self: *Win32, mode: VSyncMode) void {
 }
 
 pub fn setSize(self: *Win32, value: Size) void {
-    // TODO - use AdjustClientRect to get correct client rect.
-    _ = w.SetWindowPos(self.window, 
-        null, 
-        0, 
-        0, 
-        @as(i32, @intCast(value.width)), 
-        @as(i32, @intCast(value.height)), 
-        w.SET_WINDOW_POS_FLAGS{.NOMOVE = 1, .NOZORDER = 1, .NOACTIVATE = 1}
-    );
+    // TODO (win32) - use AdjustClientRect to get correct client rect.
+    _ = w.SetWindowPos(self.window, null, 0, 0, @as(i32, @intCast(value.width)), @as(i32, @intCast(value.height)), w.SET_WINDOW_POS_FLAGS{ .NOMOVE = 1, .NOZORDER = 1, .NOACTIVATE = 1 });
     self.size = value;
 }
-// pub fn size(self: *Core) core.Size {
-//     var rect: w.RECT = undefined;
-//     _ = w.GetClientRect(self.window, &rect);
-
-//     const width:u32 = @intCast(rect.right - rect.left);
-//     const height:u32 = @intCast(rect.bottom - rect.top);
-
-//     return .{ .width = width, .height = height };
-// }
-
-// pub fn setSizeLimit(self: *Core, value: core.SizeLimit) void {
-//     self.mutex.lock();
-//     defer self.mutex.unlock();
-//     self.limits = value;
-//     // trigger WM_GETMINMAXINFO
-//     _ = w.SetWindowPos(self.window, 0, 0, 0, 0, 0, w.SWP_NOMOVE | w.SWP_NOSIZE | w.SWP_NOZORDER | w.SWP_NOACTIVATE);
-// }
-
-// pub fn sizeLimit(self: *Core) core.SizeLimit {
-//     self.mutex.lock();
-//     defer self.mutex.unlock();
-//     return self.limits;
-// }
 
 pub fn setCursorMode(self: *Win32, mode: CursorMode) void {
     switch (mode) {
@@ -310,37 +272,68 @@ pub fn setCursorShape(self: *Win32, shape: CursorShape) void {
 }
 
 pub fn keyPressed(self: *Win32, key: Key) bool {
-    _ = self;
-    _ = key;
-    // TODO: Not implemented
-    return false;
+    return self.input_state.isKeyPressed(key);
 }
 
 pub fn keyReleased(self: *Win32, key: Key) bool {
-    _ = self;
-    _ = key;
-    // TODO: Not implemented
-    return false;
+    return self.input_state.isKeyReleased(key);
 }
 
 pub fn mousePressed(self: *Win32, button: MouseButton) bool {
-    _ = self;
-    _ = button;
-    // TODO: Not implemented
-    return false;
+    return self.input_state.isMouseButtonPressed(button);
 }
 
 pub fn mouseReleased(self: *Win32, button: MouseButton) bool {
-    _ = self;
-    _ = button;
-    // TODO: Not implemented
-    return false;
+    return self.input_state.isMouseButtonReleased(button);
 }
 
 pub fn mousePosition(self: *Win32) Position {
-    _ = self;
-    // TODO: Not implemented
-    return Position{.x = 0.0, .y = 0.0};
+    return self.input_state.mouse_position;
+}
+
+pub fn joystickPresent(_: *Win32, _: Joystick) bool {
+    @panic("NOT IMPLEMENTED");
+}
+pub fn joystickName(_: *Win32, _: Joystick) ?[:0]const u8 {
+    @panic("NOT IMPLEMENTED");
+}
+pub fn joystickButtons(_: *Win32, _: Joystick) ?[]const bool {
+    @panic("NOT IMPLEMENTED");
+}
+// May be called from any thread.
+pub fn joystickAxes(_: *Win32, _: Joystick) ?[]const f32 {
+    @panic("NOT IMPLEMENTED");
+}
+pub fn nativeWindowWin32(self: *Win32) w.HWND {
+    return self.window;
+}
+
+// -----------------------------
+//  Internal functions
+// -----------------------------
+fn getClientRect(self: *Win32) Size {
+    var rect: w.RECT = undefined;
+    _ = w.GetClientRect(self.window, &rect);
+
+    const width: u32 = @intCast(rect.right - rect.left);
+    const height: u32 = @intCast(rect.bottom - rect.top);
+
+    return .{ .width = width, .height = height };
+}
+
+fn restoreWindowPosition(self: *Win32) void {
+    if (self.saved_window_rect.right - self.saved_window_rect.left == 0) {
+        _ = w.ShowWindow(self.window, w.SW_RESTORE);
+    } else {
+        _ = w.SetWindowPos(self.window, 
+            null, 
+            self.saved_window_rect.left,
+            self.saved_window_rect.top, 
+            self.saved_window_rect.right - self.saved_window_rect.left, 
+            self.saved_window_rect.bottom - self.saved_window_rect.top,
+            w.SWP_SHOWWINDOW
+        );
+    }
 }
 
 pub fn outOfMemory(self: *Win32) bool {
@@ -355,6 +348,18 @@ fn pushEvent(self: *Win32, event: Event) void {
     self.events.writeItem(event) catch self.oom.set();
 }
 
+fn getKeyboardModifiers() mach.Core.KeyMods {
+    return .{
+        .shift = w.GetKeyState(@as(i32, @intFromEnum(w.VK_SHIFT))) < 0, //& 0x8000 == 0x8000,
+        .control = w.GetKeyState(@as(i32, @intFromEnum(w.VK_CONTROL))) < 0, // & 0x8000 == 0x8000,
+        .alt = w.GetKeyState(@as(i32, @intFromEnum(w.VK_MENU))) < 0, // & 0x8000 == 0x8000,
+        .super = (w.GetKeyState(@as(i32, @intFromEnum(w.VK_LWIN)))) < 0 // & 0x8000 == 0x8000)
+            or (w.GetKeyState(@as(i32, @intFromEnum(w.VK_RWIN)))) < 0, // & 0x8000 == 0x8000),
+        .caps_lock = w.GetKeyState(@as(i32, @intFromEnum(w.VK_CAPITAL))) & 1 == 1,
+        .num_lock = w.GetKeyState(@as(i32, @intFromEnum(w.VK_NUMLOCK))) & 1 == 1,
+    };
+}
+
 fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w.WINAPI) w.LRESULT {
     const self = blk: {
         const userdata: usize = @bitCast(w.GetWindowLongPtrW(wnd, w.GWLP_USERDATA));
@@ -367,19 +372,18 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             self.pushEvent(.close);
             return 0;
         },
-        w.WM_GETMINMAXINFO => {
-            //self.mutex.lock();
-            //defer self.mutex.unlock();
+        w.WM_SIZE => {
+            const width: u32 = @as(u32, @intCast(lParam & 0xFFFF));
+            const height: u32 = @as(u32, @intCast((lParam >> 16) & 0xFFFF));
+            self.size = .{.width = width, .height = height};
 
-            // TODO: SizeLimit is no longer in mach core or has changed
-            // const info: *w.MINMAXINFO = blk: {
-            //     const int: usize = @bitCast(lParam);
-            //     break :blk @ptrFromInt(int);
-            // };
-            // if (self.limits.min.width) |width| info.ptMinTrackSize.x = @bitCast(width);
-            // if (self.limits.min.height) |height| info.ptMinTrackSize.y = @bitCast(height);
-            // if (self.limits.max.width) |width| info.ptMaxTrackSize.x = @bitCast(width);
-            // if (self.limits.max.height) |height| info.ptMaxTrackSize.y = @bitCast(height);
+            // TODO (win32): only send resize event when sizing is done.
+            //               the main mach loops does not run while resizing.
+            //               Which means if events are pushed here they will
+            //               queue up until resize is done.
+
+            self.core.swap_chain_update.set();
+
             return 0;
         },
         w.WM_KEYDOWN, w.WM_KEYUP, w.WM_SYSKEYDOWN, w.WM_SYSKEYUP => {
@@ -407,15 +411,18 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                 }
             }
 
+            const mods = getKeyboardModifiers();
             const key = keyFromScancode(scancode);
             if (msg == w.WM_KEYDOWN or msg == w.WM_SYSKEYDOWN) {
                 if (flags & w.KF_REPEAT == 0) {
-                    self.pushEvent(.{ .key_press = .{ .key = key, .mods = undefined } });
+                    self.pushEvent(.{ .key_press = .{ .key = key, .mods = mods } });
+                    self.input_state.keys.setValue(@intFromEnum(key), true);
                 } else {
-                    self.pushEvent(.{ .key_repeat = .{ .key = key, .mods = undefined } });
+                    self.pushEvent(.{ .key_repeat = .{ .key = key, .mods = mods } });
                 }
             } else {
-                self.pushEvent(.{ .key_release = .{ .key = key, .mods = undefined } });
+                self.pushEvent(.{ .key_release = .{ .key = key, .mods = mods } });
+                self.input_state.keys.setValue(@intFromEnum(key), false);
             }
 
             return 0;
@@ -449,8 +456,9 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
         w.WM_XBUTTONDOWN,
         w.WM_XBUTTONUP,
         => {
-            const x:f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF))); 
-            const y:f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF))); 
+            const mods = getKeyboardModifiers();
+            const x: f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF)));
+            const y: f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF)));
             const xbutton: u32 = @truncate(wParam >> 16);
             const button: MouseButton = switch (msg) {
                 w.WM_LBUTTONDOWN, w.WM_LBUTTONUP => .left,
@@ -464,15 +472,21 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                 w.WM_MBUTTONDOWN,
                 w.WM_RBUTTONDOWN,
                 w.WM_XBUTTONDOWN,
-                => self.pushEvent(.{ .mouse_press = .{ .button = button, .mods = undefined, .pos = .{.x = x, .y = y }}}),
-                else => self.pushEvent(.{ .mouse_release = .{ .button = button, .mods = undefined, .pos = .{.x = x, .y = y}}}),
+                => {
+                    self.pushEvent(.{ .mouse_press = .{ .button = button, .mods = mods, .pos = .{ .x = x, .y = y } } });
+                    self.input_state.mouse_buttons.setValue(@intFromEnum(button), true);
+                },
+                else => {
+                    self.pushEvent(.{ .mouse_release = .{ .button = button, .mods = mods, .pos = .{ .x = x, .y = y } } });
+                    self.input_state.mouse_buttons.setValue(@intFromEnum(button), false);
+                },
             }
 
             return if (msg == w.WM_XBUTTONDOWN or msg == w.WM_XBUTTONUP) w.TRUE else 0;
         },
         w.WM_MOUSEMOVE => {
-            const x:f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF))); 
-            const y:f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF))); 
+            const x: f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF)));
+            const y: f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF)));
 
             self.pushEvent(.{
                 .mouse_motion = .{
@@ -482,15 +496,31 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                     },
                 },
             });
+            self.input_state.mouse_position = .{ .x = x, .y = y };
+
             return 0;
         },
         w.WM_MOUSEWHEEL => {
+            const WHEEL_DELTA = 120.0;
+            const wheel_high_word: u16 = @truncate((wParam >> 16) & 0xffff);
+            const delta_y: f32 = @as(f32, @floatFromInt(@as(i16, @bitCast(wheel_high_word)))) / WHEEL_DELTA;
+
             self.pushEvent(.{
                 .mouse_scroll = .{
                     .xoffset = 0,
-                    .yoffset = 0,
+                    .yoffset = delta_y,
                 },
             });
+            return 0;
+        },
+        w.WM_SETFOCUS => {
+            self.pushEvent(.{ .focus_gained = {} });
+            return 0;
+        },
+        w.WM_KILLFOCUS => {
+            self.pushEvent(.{ .focus_lost = {} });
+            // Clear input state when focus is lost to avoid "stuck" button when focus is regained.
+            self.input_state = .{};
             return 0;
         },
         else => return w.DefWindowProcW(wnd, msg, wParam, lParam),
@@ -635,16 +665,7 @@ fn keyFromScancode(scancode: u9) Key {
     return if (scancode > 0 and scancode <= table.len) table[scancode - 1] else .unknown;
 }
 
-pub fn joystickPresent(_: *Win32, _: Joystick) bool {
-    @panic("NOT IMPLEMENTED");
-}
-pub fn joystickName(_: *Win32, _: Joystick) ?[:0]const u8 {
-    @panic("NOT IMPLEMENTED");
-}
-pub fn joystickButtons(_: *Win32, _: Joystick) ?[]const bool {
-    @panic("NOT IMPLEMENTED");
-}
-// May be called from any thread.
-pub fn joystickAxes(_: *Win32, _: Joystick) ?[]const f32 {
-    @panic("NOT IMPLEMENTED");
-}
+// TODO (win32) Implement consistent error handling when interfacing with the Windows API.
+// TODO (win32) Support High DPI awareness
+// TODO (win32) Consider to add support for mouse capture
+// TODO (win32) Change to using WM_INPUT for mouse movement.
