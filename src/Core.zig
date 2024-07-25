@@ -181,8 +181,8 @@ pub const InitOptions = struct {
 };
 
 fn update(core: *Mod, entities: *mach.Entities.Mod) !void {
-    _ = core; // autofix
-    _ = entities; // autofix
+    _ = core;
+    _ = entities;
 }
 
 fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
@@ -517,6 +517,7 @@ pub const Key = enum {
     kp_8,
     kp_9,
     kp_decimal,
+    kp_comma,
     kp_equal,
     kp_enter,
 
@@ -560,6 +561,9 @@ pub const Key = enum {
     period,
     slash,
     grave,
+
+    iso_backslash,
+    international1,
 
     unknown,
 
@@ -968,17 +972,14 @@ pub fn printTitle(
     comptime fmt: []const u8,
     args: anytype,
 ) !void {
-    _ = core;
     _ = window_id;
-    _ = fmt;
-    _ = args;
-    // TODO: NO OP
-    // // Free any previous window title slice
-    // if (core.get(window_id, .title)) |slice| core.state().allocator.free(slice);
+    // Allocate and assign a new window title slice.
+    const slice = try std.fmt.allocPrintZ(core.allocator, fmt, args);
+    defer core.allocator.free(slice);
+    core.setTitle(slice);
 
-    // // Allocate and assign a new window title slice.
-    // const slice = try std.fmt.allocPrintZ(core.state().allocator, fmt, args);
-    // try core.set(window_id, .title, slice);
+    // TODO: This function does not have access to *core.Mod to update
+    // try core.Mod.set(window_id, .title, slice);
 }
 
 fn exit(core: *Mod) void {
@@ -1054,6 +1055,7 @@ pub fn deinitLinuxGamemode() void {
 comptime {
     // Core
     assertHasField(Platform, "surface_descriptor");
+    assertHasField(Platform, "refresh_rate");
 
     assertHasDecl(Platform, "init");
     assertHasDecl(Platform, "deinit");

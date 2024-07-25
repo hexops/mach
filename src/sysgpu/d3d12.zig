@@ -1428,7 +1428,7 @@ pub const SwapChain = struct {
             .SampleDesc = .{ .Count = 1, .Quality = 0 },
             .BufferUsage = conv.dxgiUsage(desc.usage),
             .BufferCount = back_buffer_count,
-            .Scaling = c.DXGI_MODE_SCALING_UNSPECIFIED,
+            .Scaling = c.DXGI_SCALING_STRETCH,
             .SwapEffect = c.DXGI_SWAP_EFFECT_FLIP_DISCARD,
             .AlphaMode = c.DXGI_ALPHA_MODE_UNSPECIFIED,
             .Flags = if (instance.allow_tearing) c.DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING else 0,
