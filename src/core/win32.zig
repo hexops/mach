@@ -188,7 +188,9 @@ pub fn setDisplayMode(self: *Win32, mode: DisplayMode) void {
 
             restoreWindowPosition(self);
         },
-        .fullscreen => {            
+        .fullscreen => {         
+            // TODO (win32) - change to use exclusive fullscreen using ChangeDisplaySetting
+
             _ = w.GetWindowRect(self.window, &self.saved_window_rect);
 
             const window_style = w.WINDOW_STYLE{ .POPUP = 1, .VISIBLE = 1};
@@ -212,13 +214,27 @@ pub fn setDisplayMode(self: *Win32, mode: DisplayMode) void {
             }
         },
         .borderless => {
+            _ = w.GetWindowRect(self.window, &self.saved_window_rect);
+
             const window_style = w.WINDOW_STYLE{ .POPUP = 1, .VISIBLE = 1};
             const window_ex_style = w.WINDOW_EX_STYLE{ .APPWINDOW = 1 };
 
             _ = w.SetWindowLongW(self.window, w.GWL_STYLE, @bitCast(window_style));
             _ = w.SetWindowLongW(self.window, w.GWL_EXSTYLE, @bitCast(window_ex_style));
 
-            restoreWindowPosition(self);
+            const monitor = w.MonitorFromWindow(self.window, w.MONITOR_DEFAULTTONEAREST);
+            var monitor_info: w.MONITORINFO = undefined;
+            monitor_info.cbSize = @sizeOf(w.MONITORINFO);
+            if (w.GetMonitorInfoW(monitor, &monitor_info) == w.TRUE) {
+                _ = w.SetWindowPos(self.window, 
+                    null, 
+                    monitor_info.rcMonitor.left, 
+                    monitor_info.rcMonitor.top, 
+                    monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, 
+                    monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
+                    w.SWP_NOZORDER
+                );
+            }
         },
     }
 }
@@ -614,9 +630,13 @@ fn keyFromScancode(scancode: u9) Key {
             0x51 => .kp_3,
             0x52 => .kp_0,
             0x53 => .kp_decimal,
+            0x54 => .print, // sysrq
+            0x56 => .iso_backslash,
             //0x56 => .europe2,
             0x57 => .f11,
             0x58 => .f12,
+            0x59 => .kp_equal,
+            0x5B => .left_super, // sent by touchpad gestures
             //0x5C => .international6,
             0x64 => .f13,
             0x65 => .f14,
@@ -632,17 +652,21 @@ fn keyFromScancode(scancode: u9) Key {
             //0x70 => .international2,
             //0x73 => .international1,
             //0x76 => .lang5,
+            0x73 => .international1,
+            0x76 => .f24,            
             //0x77 => .lang4,
             //0x78 => .lang3,
             //0x79 => .international4,
             //0x7B => .international5,
             //0x7D => .international3,
-            //0x7E => .kp_comma,
+            0x7E => .kp_comma,
             //0xF1 => .lang2,
             //0xF2 => .lang1,
-            //0x11C => .kp_enter,
+            0x11C => .kp_enter,
             0x11D => .right_control,
-            //0x135 => .kp_divide,
+            0x135 => .kp_divide,
+            0x136 => .right_shift, // sent by IME
+            0x137 => .print,
             0x138 => .right_alt,
             0x145 => .num_lock,
             0x146 => .pause,

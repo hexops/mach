@@ -377,7 +377,8 @@ pub const Key = enum {
     kp_7,
     kp_8,
     kp_9,
-    kp_decimal,
+    kp_decimal,  
+    kp_comma,
     kp_equal,
     kp_enter,
 
@@ -421,6 +422,9 @@ pub const Key = enum {
     period,
     slash,
     grave,
+
+    iso_backslash,
+    international1,
 
     unknown,
 
