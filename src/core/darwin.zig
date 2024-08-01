@@ -20,6 +20,7 @@ const Position = Core.Position;
 const Key = Core.Key;
 const KeyMods = Core.KeyMods;
 const Joystick = Core.Joystick;
+const objc = @import("objc");
 
 const log = std.log.scoped(.mach);
 
@@ -54,6 +55,8 @@ surface_descriptor: gpu.Surface.Descriptor,
 
 // Called on the main thread
 pub fn init(_: *Darwin, _: InitOptions) !void {
+    const app = objc.appkit.ns.Application.sharedApplication();
+    _ = app; // autofix
     return;
 }
 
