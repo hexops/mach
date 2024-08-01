@@ -17,6 +17,7 @@ const Platform = switch (build_options.core_platform) {
     .wayland => @import("core/Wayland.zig"),
     .web => @panic("TODO: revive wasm backend"),
     .win32 => @import("core/win32.zig"),
+    .darwin => @import("core/Darwin.zig"),
     .null => @import("core/Null.zig"),
 };
 
