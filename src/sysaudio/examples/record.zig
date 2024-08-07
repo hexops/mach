@@ -41,7 +41,7 @@ pub fn main() !void {
     _ = __info_plist;
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer std.debug.assert(gpa.deinit() == .ok);
 
     var ctx = try sysaudio.Context.init(null, gpa.allocator(), .{});
     defer ctx.deinit();

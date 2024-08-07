@@ -6,7 +6,7 @@ var player: sysaudio.Player = undefined;
 pub fn main() !void {
     var timer = try std.time.Timer.start();
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer std.debug.assert(gpa.deinit() == .ok);
 
     var ctx = try sysaudio.Context.init(null, gpa.allocator(), .{ .deviceChangeFn = deviceChange });
     std.log.info("Took {} to initialize the context...", .{std.fmt.fmtDuration(timer.lap())});
