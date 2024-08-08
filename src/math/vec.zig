@@ -8,145 +8,272 @@ const quat = @import("quat.zig");
 
 pub const VecComponent = enum { x, y, z, w };
 
-pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
+pub fn Vec2(comptime Scalar: type) type {
     return extern struct {
         v: Vector,
 
         /// The vector dimension size, e.g. Vec3.n == 3
-        pub const n = n_value;
+        pub const n = 2;
 
         /// The scalar type of this vector, e.g. Vec3.T == f32
         pub const T = Scalar;
 
         // The underlying @Vector type
-        pub const Vector = @Vector(n_value, Scalar);
+        pub const Vector = @Vector(n, Scalar);
 
         const VecN = @This();
 
-        pub usingnamespace switch (VecN.n) {
-            inline 2 => struct {
-                pub inline fn init(xs: Scalar, ys: Scalar) VecN {
-                    return .{ .v = .{ xs, ys } };
-                }
-                pub inline fn fromInt(xs: anytype, ys: anytype) VecN {
-                    return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys) } };
-                }
-                pub inline fn x(v: *const VecN) Scalar {
-                    return v.v[0];
-                }
-                pub inline fn y(v: *const VecN) Scalar {
-                    return v.v[1];
-                }
-            },
-            inline 3 => struct {
-                pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar) VecN {
-                    return .{ .v = .{ xs, ys, zs } };
-                }
-                pub inline fn fromInt(xs: anytype, ys: anytype, zs: anytype) VecN {
-                    return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys), @floatFromInt(zs) } };
-                }
-                pub inline fn x(v: *const VecN) Scalar {
-                    return v.v[0];
-                }
-                pub inline fn y(v: *const VecN) Scalar {
-                    return v.v[1];
-                }
-                pub inline fn z(v: *const VecN) Scalar {
-                    return v.v[2];
-                }
+        const Shared = VecShared(Scalar, VecN);
 
-                pub inline fn swizzle(
-                    v: *const VecN,
-                    xc: VecComponent,
-                    yc: VecComponent,
-                    zc: VecComponent,
-                ) VecN {
-                    return .{ .v = @shuffle(VecN.T, v.v, undefined, [3]T{
-                        @intFromEnum(xc),
-                        @intFromEnum(yc),
-                        @intFromEnum(zc),
-                    }) };
-                }
+        pub inline fn init(xs: Scalar, ys: Scalar) VecN {
+            return .{ .v = .{ xs, ys } };
+        }
+        pub inline fn fromInt(xs: anytype, ys: anytype) VecN {
+            return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys) } };
+        }
+        pub inline fn x(v: *const VecN) Scalar {
+            return v.v[0];
+        }
+        pub inline fn y(v: *const VecN) Scalar {
+            return v.v[1];
+        }
 
-                /// Calculates the cross product between vector a and b.
-                /// This can be done only in 3D and required inputs are Vec3.
-                pub inline fn cross(a: *const VecN, b: *const VecN) VecN {
-                    // https://gamemath.com/book/vectors.html#cross_product
-                    const s1 = a.swizzle(.y, .z, .x)
-                        .mul(&b.swizzle(.z, .x, .y));
-                    const s2 = a.swizzle(.z, .x, .y)
-                        .mul(&b.swizzle(.y, .z, .x));
-                    return s1.sub(&s2);
-                }
+        pub const add = Shared.add;
+        pub const sub = Shared.sub;
+        pub const div = Shared.div;
+        pub const mul = Shared.mul;
+        pub const addScalar = Shared.addScalar;
+        pub const subScalar = Shared.subScalar;
+        pub const divScalar = Shared.divScalar;
+        pub const mulScalar = Shared.mulScalar;
+        pub const less = Shared.less;
+        pub const lessEq = Shared.lessEq;
+        pub const greater = Shared.greater;
+        pub const greaterEq = Shared.greaterEq;
+        pub const splat = Shared.splat;
+        pub const len2 = Shared.len2;
+        pub const len = Shared.len;
+        pub const normalize = Shared.normalize;
+        pub const dir = Shared.dir;
+        pub const dist2 = Shared.dist2;
+        pub const dist = Shared.dist;
+        pub const lerp = Shared.lerp;
+        pub const dot = Shared.dot;
+        pub const max = Shared.max;
+        pub const min = Shared.min;
+        pub const inverse = Shared.inverse;
+        pub const negate = Shared.negate;
+        pub const maxScalar = Shared.maxScalar;
+        pub const minScalar = Shared.minScalar;
+        pub const eqlApprox = Shared.eqlApprox;
+        pub const eql = Shared.eql;
+    };
+}
 
-                /// Vector * Matrix multiplication
-                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(3, 3, Vec(3, T))) VecN {
-                    var result = [_]VecN.T{0} ** 3;
-                    inline for (0..3) |i| {
-                        inline for (0..3) |j| {
-                            result[i] += vector.v[j] * matrix.v[i].v[j];
-                        }
-                    }
-                    return .{ .v = result };
-                }
+pub fn Vec3(comptime Scalar: type) type {
+    return extern struct {
+        v: Vector,
 
-                /// Vector * Quat multiplication
-                /// https://github.com/greggman/wgpu-matrix/blob/main/src/vec3-impl.ts#L718
-                pub inline fn mulQuat(v: *const VecN, q: *const quat.Quat(Scalar)) VecN {
-                    const qx = q.v.x();
-                    const qy = q.v.y();
-                    const qz = q.v.z();
-                    const w2 = q.v.w() * 2;
+        /// The vector dimension size, e.g. Vec3.n == 3
+        pub const n = 3;
 
-                    const vx = v.x();
-                    const vy = v.y();
-                    const vz = v.z();
+        /// The scalar type of this vector, e.g. Vec3.T == f32
+        pub const T = Scalar;
 
-                    const uv_x = qy * vz - qz * vy;
-                    const uv_y = qz * vx - qx * vz;
-                    const uv_z = qx * vy - qy * vx;
+        // The underlying @Vector type
+        pub const Vector = @Vector(n, Scalar);
 
-                    return math.vec3(
-                        vx + uv_x * w2 + (qy * uv_z - qz * uv_y) * 2,
-                        vy + uv_y * w2 + (qz * uv_x - qx * uv_z) * 2,
-                        vz + uv_z * w2 + (qz * uv_y - qy * uv_x) * 2,
-                    );
-                }
-            },
-            inline 4 => struct {
-                pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar, ws: Scalar) VecN {
-                    return .{ .v = .{ xs, ys, zs, ws } };
-                }
-                pub inline fn fromInt(xs: anytype, ys: anytype, zs: anytype, ws: anytype) VecN {
-                    return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys), @floatFromInt(zs), @floatFromInt(ws) } };
-                }
-                pub inline fn x(v: *const VecN) Scalar {
-                    return v.v[0];
-                }
-                pub inline fn y(v: *const VecN) Scalar {
-                    return v.v[1];
-                }
-                pub inline fn z(v: *const VecN) Scalar {
-                    return v.v[2];
-                }
-                pub inline fn w(v: *const VecN) Scalar {
-                    return v.v[3];
-                }
+        const VecN = @This();
 
-                /// Vector * Matrix multiplication
-                pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat(4, 4, Vec(4, T))) VecN {
-                    var result = [_]VecN.T{0} ** 4;
-                    inline for (0..4) |i| {
-                        inline for (0..4) |j| {
-                            result[i] += vector.v[j] * matrix.v[i].v[j];
-                        }
-                    }
-                    return .{ .v = result };
-                }
-            },
-            else => @compileError("Expected Vec2, Vec3, Vec4, found '" ++ @typeName(VecN) ++ "'"),
-        };
+        const Shared = VecShared(Scalar, VecN);
 
+        pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar) VecN {
+            return .{ .v = .{ xs, ys, zs } };
+        }
+        pub inline fn fromInt(xs: anytype, ys: anytype, zs: anytype) VecN {
+            return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys), @floatFromInt(zs) } };
+        }
+        pub inline fn x(v: *const VecN) Scalar {
+            return v.v[0];
+        }
+        pub inline fn y(v: *const VecN) Scalar {
+            return v.v[1];
+        }
+        pub inline fn z(v: *const VecN) Scalar {
+            return v.v[2];
+        }
+
+        pub inline fn swizzle(
+            v: *const VecN,
+            xc: VecComponent,
+            yc: VecComponent,
+            zc: VecComponent,
+        ) VecN {
+            return .{ .v = @shuffle(VecN.T, v.v, undefined, [3]T{
+                @intFromEnum(xc),
+                @intFromEnum(yc),
+                @intFromEnum(zc),
+            }) };
+        }
+
+        /// Calculates the cross product between vector a and b.
+        /// This can be done only in 3D and required inputs are Vec3.
+        pub inline fn cross(a: *const VecN, b: *const VecN) VecN {
+            // https://gamemath.com/book/vectors.html#cross_product
+            const s1 = a.swizzle(.y, .z, .x)
+                .mul(&b.swizzle(.z, .x, .y));
+            const s2 = a.swizzle(.z, .x, .y)
+                .mul(&b.swizzle(.y, .z, .x));
+            return s1.sub(&s2);
+        }
+
+        /// Vector * Matrix multiplication
+        pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat3x3(T)) VecN {
+            var result = [_]VecN.T{0} ** 3;
+            inline for (0..3) |i| {
+                inline for (0..3) |j| {
+                    result[i] += vector.v[j] * matrix.v[i].v[j];
+                }
+            }
+            return .{ .v = result };
+        }
+
+        /// Vector * Quat multiplication
+        /// https://github.com/greggman/wgpu-matrix/blob/main/src/vec3-impl.ts#L718
+        pub inline fn mulQuat(v: *const VecN, q: *const quat.Quat(Scalar)) VecN {
+            const qx = q.v.x();
+            const qy = q.v.y();
+            const qz = q.v.z();
+            const w2 = q.v.w() * 2;
+
+            const vx = v.x();
+            const vy = v.y();
+            const vz = v.z();
+
+            const uv_x = qy * vz - qz * vy;
+            const uv_y = qz * vx - qx * vz;
+            const uv_z = qx * vy - qy * vx;
+
+            return math.vec3(
+                vx + uv_x * w2 + (qy * uv_z - qz * uv_y) * 2,
+                vy + uv_y * w2 + (qz * uv_x - qx * uv_z) * 2,
+                vz + uv_z * w2 + (qz * uv_y - qy * uv_x) * 2,
+            );
+        }
+
+        pub const add = Shared.add;
+        pub const sub = Shared.sub;
+        pub const div = Shared.div;
+        pub const mul = Shared.mul;
+        pub const addScalar = Shared.addScalar;
+        pub const subScalar = Shared.subScalar;
+        pub const divScalar = Shared.divScalar;
+        pub const mulScalar = Shared.mulScalar;
+        pub const less = Shared.less;
+        pub const lessEq = Shared.lessEq;
+        pub const greater = Shared.greater;
+        pub const greaterEq = Shared.greaterEq;
+        pub const splat = Shared.splat;
+        pub const len2 = Shared.len2;
+        pub const len = Shared.len;
+        pub const normalize = Shared.normalize;
+        pub const dir = Shared.dir;
+        pub const dist2 = Shared.dist2;
+        pub const dist = Shared.dist;
+        pub const lerp = Shared.lerp;
+        pub const dot = Shared.dot;
+        pub const max = Shared.max;
+        pub const min = Shared.min;
+        pub const inverse = Shared.inverse;
+        pub const negate = Shared.negate;
+        pub const maxScalar = Shared.maxScalar;
+        pub const minScalar = Shared.minScalar;
+        pub const eqlApprox = Shared.eqlApprox;
+        pub const eql = Shared.eql;
+    };
+}
+
+pub fn Vec4(comptime Scalar: type) type {
+    return extern struct {
+        v: Vector,
+
+        /// The vector dimension size, e.g. Vec3.n == 3
+        pub const n = 4;
+
+        /// The scalar type of this vector, e.g. Vec3.T == f32
+        pub const T = Scalar;
+
+        // The underlying @Vector type
+        pub const Vector = @Vector(n, Scalar);
+
+        const VecN = @This();
+
+        const Shared = VecShared(Scalar, VecN);
+
+        pub inline fn init(xs: Scalar, ys: Scalar, zs: Scalar, ws: Scalar) VecN {
+            return .{ .v = .{ xs, ys, zs, ws } };
+        }
+        pub inline fn fromInt(xs: anytype, ys: anytype, zs: anytype, ws: anytype) VecN {
+            return .{ .v = .{ @floatFromInt(xs), @floatFromInt(ys), @floatFromInt(zs), @floatFromInt(ws) } };
+        }
+        pub inline fn x(v: *const VecN) Scalar {
+            return v.v[0];
+        }
+        pub inline fn y(v: *const VecN) Scalar {
+            return v.v[1];
+        }
+        pub inline fn z(v: *const VecN) Scalar {
+            return v.v[2];
+        }
+        pub inline fn w(v: *const VecN) Scalar {
+            return v.v[3];
+        }
+
+        /// Vector * Matrix multiplication
+        pub inline fn mulMat(vector: *const VecN, matrix: *const mat.Mat4x4(T)) VecN {
+            var result = [_]VecN.T{0} ** 4;
+            inline for (0..4) |i| {
+                inline for (0..4) |j| {
+                    result[i] += vector.v[j] * matrix.v[i].v[j];
+                }
+            }
+            return .{ .v = result };
+        }
+
+        pub const add = Shared.add;
+        pub const sub = Shared.sub;
+        pub const div = Shared.div;
+        pub const mul = Shared.mul;
+        pub const addScalar = Shared.addScalar;
+        pub const subScalar = Shared.subScalar;
+        pub const divScalar = Shared.divScalar;
+        pub const mulScalar = Shared.mulScalar;
+        pub const less = Shared.less;
+        pub const lessEq = Shared.lessEq;
+        pub const greater = Shared.greater;
+        pub const greaterEq = Shared.greaterEq;
+        pub const splat = Shared.splat;
+        pub const len2 = Shared.len2;
+        pub const len = Shared.len;
+        pub const normalize = Shared.normalize;
+        pub const dir = Shared.dir;
+        pub const dist2 = Shared.dist2;
+        pub const dist = Shared.dist;
+        pub const lerp = Shared.lerp;
+        pub const dot = Shared.dot;
+        pub const max = Shared.max;
+        pub const min = Shared.min;
+        pub const inverse = Shared.inverse;
+        pub const negate = Shared.negate;
+        pub const maxScalar = Shared.maxScalar;
+        pub const minScalar = Shared.minScalar;
+        pub const eqlApprox = Shared.eqlApprox;
+        pub const eql = Shared.eql;
+    };
+}
+
+pub fn VecShared(comptime Scalar: type, comptime VecN: type) type {
+    return struct {
         /// Element-wise addition
         pub inline fn add(a: *const VecN, b: *const VecN) VecN {
             return .{ .v = a.v + b.v };
@@ -377,10 +504,10 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
 
         /// Checks for approximate (absolute tolerance) equality between two vectors
         /// of the same type and dimensions
-        pub inline fn eqlApprox(a: *const VecN, b: *const VecN, tolerance: T) bool {
+        pub inline fn eqlApprox(a: *const VecN, b: *const VecN, tolerance: Scalar) bool {
             var i: usize = 0;
             while (i < VecN.n) : (i += 1) {
-                if (!math.eql(T, a.v[i], b.v[i], tolerance)) {
+                if (!math.eql(Scalar, a.v[i], b.v[i], tolerance)) {
                     return false;
                 }
             }
@@ -390,7 +517,7 @@ pub fn Vec(comptime n_value: usize, comptime Scalar: type) type {
         /// Checks for approximate (absolute epsilon tolerance) equality
         /// between two vectors of the same type and dimensions
         pub inline fn eql(a: *const VecN, b: *const VecN) bool {
-            return a.eqlApprox(b, math.eps(T));
+            return a.eqlApprox(b, math.eps(Scalar));
         }
     };
 }

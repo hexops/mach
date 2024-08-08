@@ -50,34 +50,34 @@ const ray = @import("ray.zig");
 pub const collision = @import("collision.zig");
 
 /// Standard f32 precision types
-pub const Vec2 = vec.Vec(2, f32);
-pub const Vec3 = vec.Vec(3, f32);
-pub const Vec4 = vec.Vec(4, f32);
+pub const Vec2 = vec.Vec2(f32);
+pub const Vec3 = vec.Vec3(f32);
+pub const Vec4 = vec.Vec4(f32);
 pub const Quat = q.Quat(f32);
-pub const Mat2x2 = mat.Mat(2, 2, Vec2);
-pub const Mat3x3 = mat.Mat(3, 3, Vec3);
-pub const Mat4x4 = mat.Mat(4, 4, Vec4);
-pub const Ray = ray.Ray(Vec3);
+pub const Mat2x2 = mat.Mat2x2(f32);
+pub const Mat3x3 = mat.Mat3x3(f32);
+pub const Mat4x4 = mat.Mat4x4(f32);
+pub const Ray = ray.Ray3(f32);
 
 /// Half-precision f16 types
-pub const Vec2h = vec.Vec(2, f16);
-pub const Vec3h = vec.Vec(3, f16);
-pub const Vec4h = vec.Vec(4, f16);
+pub const Vec2h = vec.Vec2(f16);
+pub const Vec3h = vec.Vec3(f16);
+pub const Vec4h = vec.Vec4(f16);
 pub const Quath = q.Quat(f16);
-pub const Mat2x2h = mat.Mat(2, 2, Vec2h);
-pub const Mat3x3h = mat.Mat(3, 3, Vec3h);
-pub const Mat4x4h = mat.Mat(4, 4, Vec4h);
-pub const Rayh = ray.Ray(Vec3h);
+pub const Mat2x2h = mat.Mat2x2(f16);
+pub const Mat3x3h = mat.Mat3x3(f16);
+pub const Mat4x4h = mat.Mat4x4(f16);
+pub const Rayh = ray.Ray3(f16);
 
 /// Double-precision f64 types
-pub const Vec2d = vec.Vec(2, f64);
-pub const Vec3d = vec.Vec(3, f64);
-pub const Vec4d = vec.Vec(4, f64);
+pub const Vec2d = vec.Vec2(f64);
+pub const Vec3d = vec.Vec3(f64);
+pub const Vec4d = vec.Vec4(f64);
 pub const Quatd = q.Quat(f64);
-pub const Mat2x2d = mat.Mat(2, 2, Vec2d);
-pub const Mat3x3d = mat.Mat(3, 3, Vec3d);
-pub const Mat4x4d = mat.Mat(4, 4, Vec4d);
-pub const Rayd = ray.Ray(Vec3d);
+pub const Mat2x2d = mat.Mat2x2(f64);
+pub const Mat3x3d = mat.Mat3x3(f64);
+pub const Mat4x4d = mat.Mat4x4(f64);
+pub const Rayd = ray.Ray3(f64);
 
 /// Standard f32 precision initializers
 pub const vec2 = Vec2.init;
