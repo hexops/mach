@@ -24,9 +24,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Setup Zig
-        run: |
-          sudo apt install xz-utils
-          sudo sh -c 'wget -c https://pkg.machengine.org/zig/zig-linux-x86_64-0.13.0-dev.351+64ef45eb0.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 2024.5.0-mach
+          mirror: 'https://pkg.machengine.org/zig'
       # - name: x86_64-linux -> x86_64-linux-musl
       #   run: zig build -Dtarget=x86_64-linux-musl
       - name: x86_64-linux -> x86_64-macos
@@ -70,12 +71,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Setup Zig
-        run: |
-          $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri 'https://pkg.machengine.org/zig/zig-windows-x86_64-0.13.0-dev.351+64ef45eb0.zip' -OutFile 'C:\zig.zip'
-          cd C:\
-          7z x zig.zip
-          Add-Content $env:GITHUB_PATH 'C:\zig-windows-x86_64-0.13.0-dev.351+64ef45eb0\'
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 2024.5.0-mach
+          mirror: 'https://pkg.machengine.org/zig'
       - name: test
         run: zig build test
   x86_64-macos:
@@ -87,9 +86,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Setup Zig
-        run: |
-          brew uninstall --ignore-dependencies libx11 # https://github.com/ziglang/zig/issues/11066
-          brew install xz
-          sudo sh -c 'wget -c https://pkg.machengine.org/zig/zig-macos-x86_64-0.13.0-dev.351+64ef45eb0.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 2024.5.0-mach
+          mirror: 'https://pkg.machengine.org/zig'
+      - name: Workaround Zig Bug
+        run: brew uninstall --ignore-dependencies libx11 # https://github.com/ziglang/zig/issues/11066
       - name: test
         run: zig build test
