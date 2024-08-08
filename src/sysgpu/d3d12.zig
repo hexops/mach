@@ -1401,6 +1401,8 @@ pub const SwapChain = struct {
     buffer_index: u32 = 0,
 
     pub fn init(device: *Device, surface: *Surface, desc: *const sysgpu.SwapChain.Descriptor) !*SwapChain {
+        std.debug.print("Init swap chain\n", .{});
+
         const instance = device.adapter.instance;
         const dxgi_factory = instance.dxgi_factory;
         var hr: c.HRESULT = undefined;
@@ -1417,7 +1419,7 @@ pub const SwapChain = struct {
             .SampleDesc = .{ .Count = 1, .Quality = 0 },
             .BufferUsage = conv.dxgiUsage(desc.usage),
             .BufferCount = back_buffer_count,
-            .Scaling = c.DXGI_MODE_SCALING_UNSPECIFIED,
+            .Scaling = c.DXGI_SCALING_STRETCH,
             .SwapEffect = c.DXGI_SWAP_EFFECT_FLIP_DISCARD,
             .AlphaMode = c.DXGI_ALPHA_MODE_UNSPECIFIED,
             .Flags = if (instance.allow_tearing) c.DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING else 0,
