@@ -16,5 +16,5 @@ pub fn main() !void {
 
     var app = try mach.App.init(allocator, .app);
     defer app.deinit(allocator);
-    try app.run(.{ .allocator = allocator, .power_preference = .high_performance });
+    try app.run(.{ .allocator = allocator });
 }
