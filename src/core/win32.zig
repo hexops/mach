@@ -111,32 +111,46 @@ pub fn init(
     });
     if (w.RegisterClassW(&class) == 0) return error.Unexpected;
 
+    // TODO set title , copy to self.title
     const title = try std.unicode.utf8ToUtf16LeAllocZ(self.allocator, options.title);
     defer self.allocator.free(title);
-    // TODO set title , copy to self.title
+
+    var request_window_width:i32 = @bitCast(self.size.width);
+    var request_window_height:i32 = @bitCast(self.size.height);
+
+    const window_ex_style: w.WINDOW_EX_STYLE = .{.APPWINDOW = 1, .WINDOWEDGE = 1, .CLIENTEDGE = 1};
+    const window_style: w.WINDOW_STYLE = if (options.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW;
+
+    var rect: w.RECT = .{ .left = 0, .top = 0, .right = request_window_width, .bottom = request_window_height};
+
+    if (w.TRUE == w.AdjustWindowRectEx(&rect,
+        window_style, 
+        w.FALSE, 
+        window_ex_style)) 
+    {
+        request_window_width = rect.right - rect.left;
+        request_window_height = rect.bottom - rect.top;
+    }
 
     const window = w.CreateWindowExW(
-        .{.APPWINDOW = 1, .WINDOWEDGE = 1, .CLIENTEDGE = 1},
+        window_ex_style,
         class_name,
         title,
-        if (options.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW,
+        window_style,
         w.CW_USEDEFAULT,
         w.CW_USEDEFAULT,
-        @bitCast(self.size.width),
-        @bitCast(self.size.height),
+        request_window_width,
+        request_window_height,
         null,
         null,
         hInstance,
         null,
     ) orelse return error.Unexpected;
+
     self.window = window;
 
     var dinput: ?*w.IDirectInput8W = undefined;
-    //@ptrCast(*anyopaque
-
     const ptr: ?*?*anyopaque = @ptrCast(&dinput);
-
-    //    if (w.DirectInput8Create(instance, w.DIRECTINPUT_VERSION, &w.IID_IDirectInput8W, &dinput, null) != w.DI_OK) return error.Unexpected;
     if (w.DirectInput8Create(hInstance, w.DIRECTINPUT_VERSION, w.IID_IDirectInput8W, ptr, null) != w.DI_OK) {
         return error.Unexpected;
     }
@@ -157,6 +171,18 @@ pub fn init(
     if (!options.headless) {
         setDisplayMode(self, options.display_mode);
     }
+
+    self.size = getClientRect(self);
+}
+
+pub fn getClientRect(self: *Win32) Size {
+    var rect: w.RECT = undefined;
+    _ = w.GetClientRect(self.window, &rect);
+
+    const width:u32 = @intCast(rect.right - rect.left);
+    const height:u32 = @intCast(rect.bottom - rect.top);
+
+    return .{ .width = width, .height = height };
 }
 
 pub fn deinit(self: *Win32) void {
@@ -206,7 +232,9 @@ pub fn setDisplayMode(self: *Win32, mode: DisplayMode) void {
 }
 
 pub fn setBorder(self: *Win32, value: bool) void {
-    _ = w.SetWindowLongW(self.window, w.GWL_STYLE, if (value) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW);
+    const overlappedwindow: i32 = @bitCast(w.WS_OVERLAPPEDWINDOW);
+    const popupwindow: i32 = @bitCast(w.WS_POPUPWINDOW);
+    _ = w.SetWindowLongW(self.window, w.GWL_STYLE, if (value) overlappedwindow else popupwindow);
     self.border = value;
 }
 
@@ -220,7 +248,15 @@ pub fn setVSync(self: *Win32, mode: VSyncMode) void {
 }
 
 pub fn setSize(self: *Win32, value: Size) void {
-    _ = w.SetWindowPos(self.window, 0, 0, 0, value.width, value.height, w.SWP_NOMOVE | w.SWP_NOZORDER | w.SWP_NOACTIVATE);
+    // TODO - use AdjustClientRect to get correct client rect.
+    _ = w.SetWindowPos(self.window, 
+        null, 
+        0, 
+        0, 
+        @as(i32, @intCast(value.width)), 
+        @as(i32, @intCast(value.height)), 
+        w.SET_WINDOW_POS_FLAGS{.NOMOVE = 1, .NOZORDER = 1, .NOACTIVATE = 1}
+    );
     self.size = value;
 }
 // pub fn size(self: *Core) core.Size {
@@ -249,15 +285,15 @@ pub fn setSize(self: *Win32, value: Size) void {
 
 pub fn setCursorMode(self: *Win32, mode: CursorMode) void {
     switch (mode) {
-        .normal => while (w.ShowCursor(true) < 0) {},
-        .hidden => while (w.ShowCursor(false) >= 0) {},
+        .normal => while (w.ShowCursor(w.TRUE) < 0) {},
+        .hidden => while (w.ShowCursor(w.FALSE) >= 0) {},
         .disabled => {},
     }
     self.cursor_mode = mode;
 }
 
 pub fn setCursorShape(self: *Win32, shape: CursorShape) void {
-    const name = switch (shape) {
+    const name: i32 = switch (shape) {
         .arrow => w.IDC_ARROW,
         .ibeam => w.IDC_IBEAM,
         .crosshair => w.IDC_CROSS,
@@ -269,47 +305,42 @@ pub fn setCursorShape(self: *Win32, shape: CursorShape) void {
         .resize_all => w.IDC_SIZEALL,
         .not_allowed => w.IDC_NO,
     };
-    _ = w.SetCursor(w.LoadCursorW(null, @ptrFromInt(name)));
+    _ = w.SetCursor(w.LoadCursorW(null, @ptrFromInt(@as(usize, @intCast(name)))));
     self.cursor_shape = shape;
 }
 
 pub fn keyPressed(self: *Win32, key: Key) bool {
     _ = self;
     _ = key;
-    // self.input_mutex.lockShared();
-    // defer self.input_mutex.unlockShared();
-    // return self.input_state.isKeyPressed(key);
+    // TODO: Not implemented
+    return false;
 }
 
 pub fn keyReleased(self: *Win32, key: Key) bool {
     _ = self;
     _ = key;
-    // self.input_mutex.lockShared();
-    // defer self.input_mutex.unlockShared();
-    // return self.input_state.isKeyReleased(key);
+    // TODO: Not implemented
+    return false;
 }
 
 pub fn mousePressed(self: *Win32, button: MouseButton) bool {
     _ = self;
     _ = button;
-    // self.input_mutex.lockShared();
-    // defer self.input_mutex.unlockShared();
-    // return self.input_state.isMouseButtonPressed(button);
+    // TODO: Not implemented
+    return false;
 }
 
 pub fn mouseReleased(self: *Win32, button: MouseButton) bool {
     _ = self;
     _ = button;
-    // self.input_mutex.lockShared();
-    // defer self.input_mutex.unlockShared();
-    // return self.input_state.isMouseButtonReleased(button);
+    // TODO: Not implemented
+    return false;
 }
 
 pub fn mousePosition(self: *Win32) Position {
     _ = self;
-    // self.input_mutex.lockShared();
-    // defer self.input_mutex.unlockShared();
-    // return self.input_state.mouse_position;
+    // TODO: Not implemented
+    return Position{.x = 0.0, .y = 0.0};
 }
 
 pub fn outOfMemory(self: *Win32) bool {
@@ -321,8 +352,6 @@ pub fn outOfMemory(self: *Win32) bool {
 }
 
 fn pushEvent(self: *Win32, event: Event) void {
-    //self.event_mutex.lock();
-    //defer self.event_mutex.unlock();
     self.events.writeItem(event) catch self.oom.set();
 }
 
@@ -353,7 +382,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             // if (self.limits.max.height) |height| info.ptMaxTrackSize.y = @bitCast(height);
             return 0;
         },
-        w.WM_KEYDOWN, w.WM_KEYUP => {
+        w.WM_KEYDOWN, w.WM_KEYUP, w.WM_SYSKEYDOWN, w.WM_SYSKEYUP => {
             const vkey: w.VIRTUAL_KEY = @enumFromInt(wParam);
             if (vkey == w.VK_PROCESSKEY) return 0;
 
@@ -379,7 +408,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             }
 
             const key = keyFromScancode(scancode);
-            if (msg == w.WM_KEYDOWN) {
+            if (msg == w.WM_KEYDOWN or msg == w.WM_SYSKEYDOWN) {
                 if (flags & w.KF_REPEAT == 0) {
                     self.pushEvent(.{ .key_press = .{ .key = key, .mods = undefined } });
                 } else {
@@ -442,11 +471,14 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return if (msg == w.WM_XBUTTONDOWN or msg == w.WM_XBUTTONUP) w.TRUE else 0;
         },
         w.WM_MOUSEMOVE => {
+            const x:f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF))); 
+            const y:f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF))); 
+
             self.pushEvent(.{
                 .mouse_motion = .{
                     .pos = .{
-                        .x = 0,
-                        .y = 0,
+                        .x = x,
+                        .y = y,
                     },
                 },
             });

@@ -91,6 +91,26 @@ pub extern "user32" fn GetClientRect(
     hWnd: ?HWND,
     lpRect: ?*RECT,
 ) callconv(@import("std").os.windows.WINAPI) BOOL;
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn GetWindowRect(
+    hWnd: ?HWND,
+    lpRect: ?*RECT,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn AdjustWindowRect(
+    lpRect: ?*RECT,
+    dwStyle: WINDOW_STYLE,
+    bMenu: BOOL,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn AdjustWindowRectEx(
+    lpRect: ?*RECT,
+    dwStyle: WINDOW_STYLE,
+    bMenu: BOOL,
+    dwExStyle: WINDOW_EX_STYLE,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
 
 // TODO: this type is limited to platform 'windows5.0'
 pub extern "user32" fn GetMessageTime() callconv(@import("std").os.windows.WINAPI) i32;
@@ -180,19 +200,19 @@ pub const WINDOW_LONG_PTR_INDEX = enum(i32) {
     // _HWNDPARENT = -8, this enum value conflicts with P_HWNDPARENT
     _,
 };
+pub const GWL_EXSTYLE = WINDOW_LONG_PTR_INDEX._EXSTYLE;
+pub const GWLP_HINSTANCE = WINDOW_LONG_PTR_INDEX.P_HINSTANCE;
+pub const GWLP_HWNDPARENT = WINDOW_LONG_PTR_INDEX.P_HWNDPARENT;
+pub const GWLP_ID = WINDOW_LONG_PTR_INDEX.P_ID;
+pub const GWL_STYLE = WINDOW_LONG_PTR_INDEX._STYLE;
 pub const GWLP_USERDATA = WINDOW_LONG_PTR_INDEX.P_USERDATA;
+pub const GWLP_WNDPROC = WINDOW_LONG_PTR_INDEX.P_WNDPROC;
+pub const GWL_HINSTANCE = WINDOW_LONG_PTR_INDEX.P_HINSTANCE;
+pub const GWL_ID = WINDOW_LONG_PTR_INDEX.P_ID;
+pub const GWL_USERDATA = WINDOW_LONG_PTR_INDEX.P_USERDATA;
+pub const GWL_WNDPROC = WINDOW_LONG_PTR_INDEX.P_WNDPROC;
+pub const GWL_HWNDPARENT = WINDOW_LONG_PTR_INDEX.P_HWNDPARENT;
 
-// pub usingnamespace if (@sizeOf(usize) == 8) struct {
-//     pub const SetWindowLongPtrA = win32.ui.windows_and_messaging.SetWindowLongPtrA;
-//     pub const SetWindowLongPtrW = win32.ui.windows_and_messaging.SetWindowLongPtrW;
-//     pub const GetWindowLongPtrA = win32.ui.windows_and_messaging.GetWindowLongPtrA;
-//     pub const GetWindowLongPtrW = win32.ui.windows_and_messaging.GetWindowLongPtrW;
-// } else struct {
-//     pub const SetWindowLongPtrA = win32.ui.windows_and_messaging.SetWindowLongA;
-//     pub const SetWindowLongPtrW = win32.ui.windows_and_messaging.SetWindowLongW;
-//     pub const GetWindowLongPtrA = win32.ui.windows_and_messaging.GetWindowLongA;
-//     pub const GetWindowLongPtrW = win32.ui.windows_and_messaging.GetWindowLongW;
-// };
 pub const Arch = enum { X86, X64, Arm64 };
 pub const arch: Arch = switch (builtin.target.cpu.arch) {
     .x86 => .X86,
@@ -214,6 +234,21 @@ pub usingnamespace switch (arch) {
     else => struct {},
 };
 
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn SetCursor(
+    hCursor: ?HCURSOR,
+) callconv(@import("std").os.windows.WINAPI) ?HCURSOR;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn GetCursorPos(
+    lpPoint: ?*POINT,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+pub extern "user32" fn SetCursorPos(
+    X: i32,
+    Y: i32,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
 //pub usingnamespace switch (@import("../zig.zig").arch) {
 pub usingnamespace switch (arch) {
     .X64, .Arm64 => struct {
@@ -227,6 +262,75 @@ pub usingnamespace switch (arch) {
     },
     else => struct {},
 };
+
+pub extern "user32" fn SetWindowLongW(
+    hWnd: ?HWND,
+    nIndex: WINDOW_LONG_PTR_INDEX,
+    dwNewLong: i32,
+) callconv(@import("std").os.windows.WINAPI) i32;
+
+//pub extern "user32" fn SetWindowPos(hWnd: HWND, hWndInsertAfter: HWND, X: i32, Y: i32, cx: i32, cy: i32, uFlags: u32) callconv(WINAPI) BOOL;
+pub extern "user32" fn SetWindowPos(
+    hWnd: ?HWND,
+    hWndInsertAfter: ?HWND,
+    X: i32,
+    Y: i32,
+    cx: i32,
+    cy: i32,
+    uFlags: SET_WINDOW_POS_FLAGS,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+pub const SET_WINDOW_POS_FLAGS = packed struct(u32) {
+    NOSIZE: u1 = 0,
+    NOMOVE: u1 = 0,
+    NOZORDER: u1 = 0,
+    NOREDRAW: u1 = 0,
+    NOACTIVATE: u1 = 0,
+    DRAWFRAME: u1 = 0,
+    SHOWWINDOW: u1 = 0,
+    HIDEWINDOW: u1 = 0,
+    NOCOPYBITS: u1 = 0,
+    NOOWNERZORDER: u1 = 0,
+    NOSENDCHANGING: u1 = 0,
+    _11: u1 = 0,
+    _12: u1 = 0,
+    DEFERERASE: u1 = 0,
+    ASYNCWINDOWPOS: u1 = 0,
+    _15: u1 = 0,
+    _16: u1 = 0,
+    _17: u1 = 0,
+    _18: u1 = 0,
+    _19: u1 = 0,
+    _20: u1 = 0,
+    _21: u1 = 0,
+    _22: u1 = 0,
+    _23: u1 = 0,
+    _24: u1 = 0,
+    _25: u1 = 0,
+    _26: u1 = 0,
+    _27: u1 = 0,
+    _28: u1 = 0,
+    _29: u1 = 0,
+    _30: u1 = 0,
+    _31: u1 = 0,
+    // FRAMECHANGED (bit index 5) conflicts with DRAWFRAME
+    // NOREPOSITION (bit index 9) conflicts with NOOWNERZORDER
+};
+pub const SWP_ASYNCWINDOWPOS = SET_WINDOW_POS_FLAGS{ .ASYNCWINDOWPOS = 1 };
+pub const SWP_DEFERERASE = SET_WINDOW_POS_FLAGS{ .DEFERERASE = 1 };
+pub const SWP_DRAWFRAME = SET_WINDOW_POS_FLAGS{ .DRAWFRAME = 1 };
+pub const SWP_FRAMECHANGED = SET_WINDOW_POS_FLAGS{ .DRAWFRAME = 1 };
+pub const SWP_HIDEWINDOW = SET_WINDOW_POS_FLAGS{ .HIDEWINDOW = 1 };
+pub const SWP_NOACTIVATE = SET_WINDOW_POS_FLAGS{ .NOACTIVATE = 1 };
+pub const SWP_NOCOPYBITS = SET_WINDOW_POS_FLAGS{ .NOCOPYBITS = 1 };
+pub const SWP_NOMOVE = SET_WINDOW_POS_FLAGS{ .NOMOVE = 1 };
+pub const SWP_NOOWNERZORDER = SET_WINDOW_POS_FLAGS{ .NOOWNERZORDER = 1 };
+pub const SWP_NOREDRAW = SET_WINDOW_POS_FLAGS{ .NOREDRAW = 1 };
+pub const SWP_NOREPOSITION = SET_WINDOW_POS_FLAGS{ .NOOWNERZORDER = 1 };
+pub const SWP_NOSENDCHANGING = SET_WINDOW_POS_FLAGS{ .NOSENDCHANGING = 1 };
+pub const SWP_NOSIZE = SET_WINDOW_POS_FLAGS{ .NOSIZE = 1 };
+pub const SWP_NOZORDER = SET_WINDOW_POS_FLAGS{ .NOZORDER = 1 };
+pub const SWP_SHOWWINDOW = SET_WINDOW_POS_FLAGS{ .SHOWWINDOW = 1 };
 
 // TODO: this type is limited to platform 'windows5.0'
 pub extern "user32" fn SetWindowTextW(
@@ -678,491 +782,6 @@ pub const IDirectInputDevice8W = extern struct {
     }
 };
 
-// const IID_IDirectInputDevice8W_Value = Guid.initString("54d41081-dc15-4833-a41b-748f73a38179");
-// pub const IID_IDirectInputDevice8W = &IID_IDirectInputDevice8W_Value;
-// pub const IDirectInputDevice8W = extern struct {
-//     pub const VTable = extern struct {
-//         base: IUnknown.VTable,
-//         GetCapabilities: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIDEVCAPS,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIDEVCAPS,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         EnumObjects: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?LPDIENUMDEVICEOBJECTSCALLBACKW,
-//                 param1: ?*anyopaque,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?LPDIENUMDEVICEOBJECTSCALLBACKW,
-//                 param1: ?*anyopaque,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         GetProperty: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*const Guid,
-//                 param1: ?*DIPROPHEADER,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*const Guid,
-//                 param1: ?*DIPROPHEADER,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         SetProperty: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*const Guid,
-//                 param1: ?*DIPROPHEADER,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*const Guid,
-//                 param1: ?*DIPROPHEADER,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         Acquire: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         Unacquire: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         GetDeviceState: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: u32,
-//                 param1: ?*anyopaque,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: u32,
-//                 param1: ?*anyopaque,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         GetDeviceData: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: u32,
-//                 param1: ?*DIDEVICEOBJECTDATA,
-//                 param2: ?*u32,
-//                 param3: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: u32,
-//                 param1: ?*DIDEVICEOBJECTDATA,
-//                 param2: ?*u32,
-//                 param3: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         SetDataFormat: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIDATAFORMAT,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIDATAFORMAT,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         SetEventNotification: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?HANDLE,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?HANDLE,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         SetCooperativeLevel: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?HWND,
-//                 param1: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?HWND,
-//                 param1: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         GetObjectInfo: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIDEVICEOBJECTINSTANCEW,
-//                 param1: u32,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIDEVICEOBJECTINSTANCEW,
-//                 param1: u32,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         GetDeviceInfo: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIDEVICEINSTANCEW,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIDEVICEINSTANCEW,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         RunControlPanel: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?HWND,
-//                 param1: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?HWND,
-//                 param1: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         Initialize: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?HINSTANCE,
-//                 param1: u32,
-//                 param2: ?*const Guid,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?HINSTANCE,
-//                 param1: u32,
-//                 param2: ?*const Guid,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         CreateEffect: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*const Guid,
-//                 param1: ?*DIEFFECT,
-//                 param2: ?*?*IDirectInputEffect,
-//                 param3: ?*IUnknown,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*const Guid,
-//                 param1: ?*DIEFFECT,
-//                 param2: ?*?*IDirectInputEffect,
-//                 param3: ?*IUnknown,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         EnumEffects: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?LPDIENUMEFFECTSCALLBACKW,
-//                 param1: ?*anyopaque,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?LPDIENUMEFFECTSCALLBACKW,
-//                 param1: ?*anyopaque,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         GetEffectInfo: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIEFFECTINFOW,
-//                 param1: ?*const Guid,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIEFFECTINFOW,
-//                 param1: ?*const Guid,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         GetForceFeedbackState: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         SendForceFeedbackCommand: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         EnumCreatedEffectObjects: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?LPDIENUMCREATEDEFFECTOBJECTSCALLBACK,
-//                 param1: ?*anyopaque,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?LPDIENUMCREATEDEFFECTOBJECTSCALLBACK,
-//                 param1: ?*anyopaque,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         Escape: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIEFFESCAPE,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIEFFESCAPE,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         Poll: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         SendDeviceData: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: u32,
-//                 param1: ?*DIDEVICEOBJECTDATA,
-//                 param2: ?*u32,
-//                 param3: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: u32,
-//                 param1: ?*DIDEVICEOBJECTDATA,
-//                 param2: ?*u32,
-//                 param3: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         EnumEffectsInFile: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?[*:0]const u16,
-//                 param1: ?LPDIENUMEFFECTSINFILECALLBACK,
-//                 param2: ?*anyopaque,
-//                 param3: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?[*:0]const u16,
-//                 param1: ?LPDIENUMEFFECTSINFILECALLBACK,
-//                 param2: ?*anyopaque,
-//                 param3: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         WriteEffectToFile: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?[*:0]const u16,
-//                 param1: u32,
-//                 param2: ?*DIFILEEFFECT,
-//                 param3: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?[*:0]const u16,
-//                 param1: u32,
-//                 param2: ?*DIFILEEFFECT,
-//                 param3: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         BuildActionMap: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIACTIONFORMATW,
-//                 param1: ?[*:0]const u16,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIACTIONFORMATW,
-//                 param1: ?[*:0]const u16,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         SetActionMap: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIACTIONFORMATW,
-//                 param1: ?[*:0]const u16,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIACTIONFORMATW,
-//                 param1: ?[*:0]const u16,
-//                 param2: u32,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//         GetImageInfo: switch (@import("builtin").zig_backend) {
-//             .stage1 => fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIDEVICEIMAGEINFOHEADERW,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//             else => *const fn (
-//                 self: *const IDirectInputDevice8W,
-//                 param0: ?*DIDEVICEIMAGEINFOHEADERW,
-//             ) callconv(@import("std").os.windows.WINAPI) HRESULT,
-//         },
-//     };
-//     vtable: *const VTable,
-//     pub fn MethodMixin(comptime T: type) type {
-//         return struct {
-//             pub usingnamespace IUnknown.MethodMixin(T);
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_GetCapabilities(self: *const T, param0: ?*DIDEVCAPS) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).GetCapabilities(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_EnumObjects(self: *const T, param0: ?LPDIENUMDEVICEOBJECTSCALLBACKW, param1: ?*anyopaque, param2: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).EnumObjects(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_GetProperty(self: *const T, param0: ?*const Guid, param1: ?*DIPROPHEADER) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).GetProperty(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_SetProperty(self: *const T, param0: ?*const Guid, param1: ?*DIPROPHEADER) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).SetProperty(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_Acquire(self: *const T) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).Acquire(@as(*const IDirectInputDevice8W, @ptrCast(self)));
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_Unacquire(self: *const T) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).Unacquire(@as(*const IDirectInputDevice8W, @ptrCast(self)));
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_GetDeviceState(self: *const T, param0: u32, param1: ?*anyopaque) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).GetDeviceState(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_GetDeviceData(self: *const T, param0: u32, param1: ?*DIDEVICEOBJECTDATA, param2: ?*u32, param3: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).GetDeviceData(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2, param3);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_SetDataFormat(self: *const T, param0: ?*DIDATAFORMAT) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).SetDataFormat(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_SetEventNotification(self: *const T, param0: ?HANDLE) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).SetEventNotification(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_SetCooperativeLevel(self: *const T, param0: ?HWND, param1: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).SetCooperativeLevel(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_GetObjectInfo(self: *const T, param0: ?*DIDEVICEOBJECTINSTANCEW, param1: u32, param2: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).GetObjectInfo(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_GetDeviceInfo(self: *const T, param0: ?*DIDEVICEINSTANCEW) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).GetDeviceInfo(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_RunControlPanel(self: *const T, param0: ?HWND, param1: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).RunControlPanel(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_Initialize(self: *const T, param0: ?HINSTANCE, param1: u32, param2: ?*const Guid) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).Initialize(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_CreateEffect(self: *const T, param0: ?*const Guid, param1: ?*DIEFFECT, param2: ?*?*IDirectInputEffect, param3: ?*IUnknown) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).CreateEffect(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2, param3);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_EnumEffects(self: *const T, param0: ?LPDIENUMEFFECTSCALLBACKW, param1: ?*anyopaque, param2: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).EnumEffects(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_GetEffectInfo(self: *const T, param0: ?*DIEFFECTINFOW, param1: ?*const Guid) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).GetEffectInfo(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_GetForceFeedbackState(self: *const T, param0: ?*u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).GetForceFeedbackState(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_SendForceFeedbackCommand(self: *const T, param0: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).SendForceFeedbackCommand(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_EnumCreatedEffectObjects(self: *const T, param0: ?LPDIENUMCREATEDEFFECTOBJECTSCALLBACK, param1: ?*anyopaque, param2: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).EnumCreatedEffectObjects(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_Escape(self: *const T, param0: ?*DIEFFESCAPE) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).Escape(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_Poll(self: *const T) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).Poll(@as(*const IDirectInputDevice8W, @ptrCast(self)));
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_SendDeviceData(self: *const T, param0: u32, param1: ?*DIDEVICEOBJECTDATA, param2: ?*u32, param3: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).SendDeviceData(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2, param3);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_EnumEffectsInFile(self: *const T, param0: ?[*:0]const u16, param1: ?LPDIENUMEFFECTSINFILECALLBACK, param2: ?*anyopaque, param3: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).EnumEffectsInFile(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2, param3);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_WriteEffectToFile(self: *const T, param0: ?[*:0]const u16, param1: u32, param2: ?*DIFILEEFFECT, param3: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).WriteEffectToFile(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2, param3);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_BuildActionMap(self: *const T, param0: ?*DIACTIONFORMATW, param1: ?[*:0]const u16, param2: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).BuildActionMap(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_SetActionMap(self: *const T, param0: ?*DIACTIONFORMATW, param1: ?[*:0]const u16, param2: u32) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).SetActionMap(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0, param1, param2);
-//             }
-//             // NOTE: method is namespaced with interface name to avoid conflicts for now
-//             pub inline fn IDirectInputDevice8W_GetImageInfo(self: *const T, param0: ?*DIDEVICEIMAGEINFOHEADERW) HRESULT {
-//                 return @as(*const IDirectInputDevice8W.VTable, @ptrCast(self.vtable)).GetImageInfo(@as(*const IDirectInputDevice8W, @ptrCast(self)), param0);
-//             }
-//         };
-//     }
-//     pub usingnamespace MethodMixin(@This());
-// };
-
 pub const DIACTIONFORMATW = extern struct {
     dwSize: u32,
     dwActionSize: u32,
@@ -1580,6 +1199,19 @@ pub extern "user32" fn LoadIconW(
 ) callconv(@import("std").os.windows.WINAPI) ?HICON;
 
 pub const IDC_ARROW = 32512;
+pub const IDC_HAND = 32649;
+pub const IDC_HELP = 32651;
+pub const IDC_IBEAM = 32513;
+pub const IDC_ICON = 32641;
+pub const IDC_CROSS = 32515;
+pub const IDC_SIZE = 32640;
+pub const IDC_SIZEALL = 32646;
+pub const IDC_SIZENESW = 32643;
+pub const IDC_SIZENS = 32645;
+pub const IDC_SIZENWSE = 32642;
+pub const IDC_SIZEWE = 32644;
+pub const IDC_NO = 32648;
+
 pub extern "user32" fn LoadCursorW(
     hInstance: ?HINSTANCE,
     lpCursorName: ?[*:0]align(1) const u16,
@@ -1753,6 +1385,10 @@ pub extern "user32" fn CreateWindowExW(
     hInstance: ?HINSTANCE,
     lpParam: ?*anyopaque,
 ) callconv(@import("std").os.windows.WINAPI) ?HWND;
+
+pub extern "user32" fn ShowCursor(
+    bShow: BOOL,
+) callconv(@import("std").os.windows.WINAPI) i32;
 
 // TODO: this type is limited to platform 'windows5.0'
 pub extern "user32" fn ShowWindow(
