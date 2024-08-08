@@ -686,7 +686,7 @@ pub fn update(self: *Core, app: anytype) !bool {
 
         // Headless changes
         if (self.current_headless != self.last_headless) {
-            self.current_headless = self.last_headless;
+            self.last_headless = self.current_headless;
             if (self.current_headless) self.window.hide() else self.window.show();
         }
 
