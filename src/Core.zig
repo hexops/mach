@@ -12,7 +12,7 @@ pub const sysjs = @import("mach-sysjs");
 pub const Timer = @import("core/Timer.zig");
 const Frequency = @import("core/Frequency.zig");
 
-const Platform = switch (build_options.core_platform) {
+pub const Platform = switch (build_options.core_platform) {
     .x11 => @import("core/X11.zig"),
     .wayland => @import("core/Wayland.zig"),
     .web => @panic("TODO: revive wasm backend"),
