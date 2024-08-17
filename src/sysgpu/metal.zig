@@ -2214,13 +2214,14 @@ pub const Queue = struct {
             .queue = queue,
             .fence_value = queue.fence_value,
         };
-        mtl_command_buffer.addCompletedHandler(ctx, completedHandler);
+        var handler = ns.stackBlockLiteral(completedHandler, ctx, null, null);
+        mtl_command_buffer.addCompletedHandler(handler.asBlock());
         mtl_command_buffer.commit();
     }
 
-    fn completedHandler(ctx: CompletedContext, mtl_command_buffer: *mtl.CommandBuffer) void {
+    fn completedHandler(block: *ns.BlockLiteral(CompletedContext), mtl_command_buffer: *mtl.CommandBuffer) callconv(.C) void {
         _ = mtl_command_buffer;
-        ctx.queue.completed_value.store(ctx.fence_value, .release);
+        block.context.queue.completed_value.store(block.context.fence_value, .release);
     }
 };
 
