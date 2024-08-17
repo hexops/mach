@@ -77,6 +77,17 @@ pub fn build(b: *std.Build) !void {
     });
     module.addImport("build-options", build_options.createModule());
 
+    if (target.result.isDarwin()) {
+        if (b.lazyDependency("mach_objc", .{
+            .target = target,
+            .optimize = optimize,
+        })) |dep| {
+            if (want_core or want_sysaudio or want_sysgpu) {
+                module.addImport("objc", dep.module("mach-objc"));
+            }
+        }
+    }
+
     if (want_mach) {
         // Linux gamemode requires libc.
         if (target.result.os.tag == .linux) module.link_libc = true;
@@ -167,10 +178,6 @@ pub fn build(b: *std.Build) !void {
                     example_run_step.dependOn(&example_run_cmd.step);
                 }
             }
-            if (b.lazyDependency("mach_objc", .{
-                .target = target,
-                .optimize = optimize,
-            })) |dep| module.addImport("objc", dep.module("mach-objc"));
         }
 
         if (target.result.isDarwin()) {
@@ -222,10 +229,7 @@ pub fn build(b: *std.Build) !void {
     }
     if (want_sysgpu) {
         if (b.lazyDependency("vulkan_zig_generated", .{})) |dep| module.addImport("vulkan", dep.module("vulkan-zig-generated"));
-        if (b.lazyDependency("mach_objc", .{
-            .target = target,
-            .optimize = optimize,
-        })) |dep| module.addImport("objc", dep.module("mach-objc"));
+
         linkSysgpu(b, module);
 
         if (want_libs) {
@@ -294,7 +298,11 @@ fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
     if (target.cpu.arch != .wasm32) module.link_libc = true;
     if (target.isDarwin()) {
         module.linkSystemLibrary("objc", .{});
-        module.linkFramework("AppKit", .{});
+        if (target.os.tag == .macos) {
+            module.linkFramework("AppKit", .{});
+        } else {
+            module.linkFramework("UIKit", .{});
+        }
         module.linkFramework("CoreGraphics", .{});
         module.linkFramework("Foundation", .{});
         module.linkFramework("Metal", .{});

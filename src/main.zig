@@ -72,18 +72,28 @@ pub const App = struct {
         app.mods.schedule(app.main_mod, .init);
 
         // Main loop
-        while (!app.mods.mod.mach_core.state().should_close) {
-            // Dispatch events until queue is empty
-            try app.mods.dispatch(&stack_space, .{});
-            // Run `update` when `init` and all other systems are exectued
-            app.mods.schedule(app.main_mod, .update);
+        if (comptime builtin.target.isDarwin()) {
+            Core.Platform.run(on_each_update, .{app, &stack_space});
+        } else {
+            while (try app.on_each_update(&stack_space)) {}
+        }
+    }
+
+    fn on_each_update(app: *App, stack_space: []u8) !bool {
+        if (app.mods.mod.mach_core.state().should_close) {
+            // Final Dispatch to deinitalize resources
+            app.mods.schedule(app.main_mod, .deinit);
+            try app.mods.dispatch(stack_space, .{});
+            app.mods.schedule(.mach_core, .deinit);
+            try app.mods.dispatch(stack_space, .{});
+            return false;
         }
 
-        // Final Dispatch to deinitalize resources
-        app.mods.schedule(app.main_mod, .deinit);
-        try app.mods.dispatch(&stack_space, .{});
-        app.mods.schedule(.mach_core, .deinit);
-        try app.mods.dispatch(&stack_space, .{});
+        // Dispatch events until queue is empty
+        try app.mods.dispatch(stack_space, .{});
+        // Run `update` when `init` and all other systems are exectued
+        app.mods.schedule(app.main_mod, .update);
+        return true;
     }
 };
 
