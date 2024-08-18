@@ -52,43 +52,40 @@ headless: bool,
 refresh_rate: u32,
 size: Size,
 surface_descriptor: gpu.Surface.Descriptor,
-window: ?*objc.appkit.ns.Window,
+window: ?*objc.app_kit.ns.Window,
 
-pub fn run(comptime on_each_update: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update))) noreturn {
+pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) noreturn {
     objc.avf_audio.avaudio.init();
     objc.foundation.ns.init();
     objc.metal.mtl.init();
     objc.quartz_core.ca.init();
-    objc.appkit.ns.init();
+    objc.app_kit.ns.init();
 
     const Args = @TypeOf(args_tuple);
-    const args_bytes = std.mem.toBytes(args_tuple);
-    const Literal = objc.foundation.ns.BlockLiteral(@TypeOf(args_bytes));
+    const args_bytes = std.mem.asBytes(&args_tuple);
+    const ArgsBytes = @TypeOf(args_bytes.*);
     const Helper = struct {
-        extern const _NSConcreteStackBlock: *anyopaque;
-        extern "System" fn dispatch_async(queue: *anyopaque, block: *Literal) void;
+        // TODO: port libdispatch and use it instead of doing this directly.
+        extern "System" fn dispatch_async(queue: *anyopaque, block: *objc.foundation.ns.Block(fn () void)) void;
         extern "System" var _dispatch_main_q: anyopaque;
-        extern fn _Block_copy(*const Literal) *Literal;
-        extern fn _Block_release(*const Literal) void;
-
-        pub fn cCallback(literal: *Literal) callconv(.C) void {
-            const args: *Args = @ptrCast(&literal.context);
-            if (@call(.auto, on_each_update, args.*) catch false) {
-                dispatch_async(&_dispatch_main_q, literal);
+        pub fn cCallback(block: *objc.foundation.ns.BlockLiteral(ArgsBytes)) callconv(.C) void {
+            const args: *Args = @ptrCast(&block.context);
+            if (@call(.auto, on_each_update_fn, args.*) catch false) {
+                dispatch_async(&_dispatch_main_q, block.asBlockWithSignature(fn () void));
             } else {
-                _Block_release(literal);
+                // We copied the block when we called `setRunBlock()`, so we release it here when the looping will end.
+                block.release();
             }
         }
     };
-    const descriptor = objc.foundation.ns.BlockDescriptor{ .reserved = 0, .size = @sizeOf(Literal) };
-    const block = Literal{ .isa = Helper._NSConcreteStackBlock, .flags = 0, .reserved = 0, .invoke = @ptrCast(&Helper.cCallback), .descriptor = &descriptor, .context = args_bytes };
+    var block_literal = objc.foundation.ns.stackBlockLiteral(Helper.cCallback, args_bytes.*, null, null);
 
     // `NSApplicationMain()` and `UIApplicationMain()` never return, so there's no point in trying to add any kind of cleanup work here.
-    const ns_app = objc.appkit.ns.Application.sharedApplication();
+    const ns_app = objc.app_kit.ns.Application.sharedApplication();
     const delegate = objc.mach.AppDelegate.allocInit();
-    delegate.setRunBlock(Helper._Block_copy(&block));
+    delegate.setRunBlock(block_literal.asBlock().copy());
     ns_app.setDelegate(@ptrCast(delegate));
-    _ = objc.appkit.ns.applicationMain(0, undefined);
+    _ = objc.app_kit.ns.applicationMain(0, undefined);
 
     unreachable;
     // TODO: support UIKit.
@@ -141,7 +138,7 @@ pub fn init(darwin: *Darwin, options: InitOptions) !void {
         .display_mode = options.display_mode,
         .vsync_mode = .none,
         .cursor_mode = .normal,
-        .cursor_shape =  .arrow,
+        .cursor_shape = .arrow,
         .border = options.border,
         .headless = options.headless,
         .refresh_rate = 60, // TODO: set to something meaningful
