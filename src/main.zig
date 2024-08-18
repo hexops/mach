@@ -91,7 +91,7 @@ pub const App = struct {
 
         // Dispatch events until queue is empty
         try app.mods.dispatch(stack_space, .{});
-        // Run `update` when `init` and all other systems are exectued
+        // Run `update` when `init` and all other systems are executed
         app.mods.schedule(app.main_mod, .update);
         return true;
     }
