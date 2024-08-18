@@ -22,10 +22,9 @@
             .lazy = true,
         },
         .mach_objc = .{
-            // .url = "https://pkg.machengine.org/mach-objc/055619a732ae50ba24eb04399613be87f8432f0f.tar.gz",
-            // .hash = "1220211475420584a552b461dd569f891d29cb8e9e485b97053be604680c8d6e2a3e",
-            // .lazy = true,
-            .path = "../mach-objc",
+            .url = "https://pkg.machengine.org/mach-objc/dac41fb87d34f222ebc72238e98871eba6cad982.tar.gz",
+            .hash = "12204f209a397362846c091d99483d7f2ed4cc8374c5518affc1b8fc87157e12b64a",
+            .lazy = true,
         },
         .xcode_frameworks = .{
             .url = "https://pkg.machengine.org/xcode-frameworks/122b43323db27b2082a2d44ed2121de21c9ccf75.tar.gz",
