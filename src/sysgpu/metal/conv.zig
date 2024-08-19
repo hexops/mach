@@ -1,4 +1,4 @@
-const mtl = @import("objc").metal.mtl;
+const mtl = @import("objc").metal;
 const sysgpu = @import("../sysgpu/main.zig");
 
 pub fn metalBlendFactor(factor: sysgpu.BlendFactor, color: bool) mtl.BlendFactor {
