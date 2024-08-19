@@ -55,12 +55,6 @@ surface_descriptor: gpu.Surface.Descriptor,
 window: ?*objc.app_kit.ns.Window,
 
 pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) noreturn {
-    objc.avf_audio.avaudio.init();
-    objc.foundation.ns.init();
-    objc.metal.mtl.init();
-    objc.quartz_core.ca.init();
-    objc.app_kit.ns.init();
-
     const Args = @TypeOf(args_tuple);
     const args_bytes = std.mem.asBytes(&args_tuple);
     const ArgsBytes = @TypeOf(args_bytes.*);
