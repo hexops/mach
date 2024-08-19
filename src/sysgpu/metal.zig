@@ -71,10 +71,6 @@ pub const Instance = struct {
         // TODO
         _ = desc;
 
-        ns.init();
-        ca.init();
-        mtl.init();
-
         const instance = try allocator.create(Instance);
         instance.* = .{};
         return instance;
@@ -355,7 +351,7 @@ pub const StreamingManager = struct {
                 return error.NewBufferFailed;
             };
 
-            mtl_buffer.setLabel(ns.String.stringWithUTF8String("upload"));
+            mtl_buffer.as(mtl.Resource).setLabel(ns.String.stringWithUTF8String("upload"));
             try manager.free_buffers.append(allocator, mtl_buffer);
         }
 
@@ -389,7 +385,7 @@ pub const LengthsBuffer = struct {
             mtl_buffer = mtl_device.newBufferWithLength_options(max_buffers_per_stage * @sizeOf(u32), 0) orelse {
                 return error.NewBufferFailed;
             };
-            mtl_buffer.setLabel(ns.String.stringWithUTF8String("buffer lengths"));
+            mtl_buffer.as(mtl.Resource).setLabel(ns.String.stringWithUTF8String("buffer lengths"));
         }
 
         return .{
@@ -517,7 +513,7 @@ pub const Buffer = struct {
         errdefer mtl_buffer.release();
 
         if (desc.label) |label| {
-            mtl_buffer.setLabel(ns.String.stringWithUTF8String(label));
+            mtl_buffer.as(mtl.Resource).setLabel(ns.String.stringWithUTF8String(label));
         }
 
         const buffer = try allocator.create(Buffer);
@@ -576,7 +572,7 @@ pub const Buffer = struct {
 
         const mtl_buffer = buffer.mtl_buffer;
 
-        mtl_buffer.setLabel(ns.String.stringWithUTF8String(label));
+        mtl_buffer.as(mtl.Resource).setLabel(ns.String.stringWithUTF8String(label));
     }
 
     pub fn unmap(buffer: *Buffer) !void {
@@ -601,7 +597,7 @@ pub const Texture = struct {
 
         const mtl_device = device.mtl_device;
 
-        var mtl_desc = mtl.TextureDescriptor.alloc().init();
+        var mtl_desc = mtl.TextureDescriptor.allocInit();
         defer mtl_desc.release();
 
         mtl_desc.setTextureType(conv.metalTextureType(desc.dimension, desc.size, desc.sample_count));
@@ -621,7 +617,7 @@ pub const Texture = struct {
         errdefer mtl_texture.release();
 
         if (desc.label) |label| {
-            mtl_texture.setLabel(ns.String.stringWithUTF8String(label));
+            mtl_texture.as(mtl.Resource).setLabel(ns.String.stringWithUTF8String(label));
         }
 
         const texture = try allocator.create(Texture);
@@ -680,7 +676,7 @@ pub const TextureView = struct {
                 return error.NewTextureViewFailed;
             };
             if (desc.label) |label| {
-                mtl_texture.setLabel(ns.String.stringWithUTF8String(label));
+                mtl_texture.as(mtl.Resource).setLabel(ns.String.stringWithUTF8String(label));
             }
         } else {
             _ = mtl_texture.retain();
@@ -717,7 +713,7 @@ pub const Sampler = struct {
 
         const mtl_device = device.mtl_device;
 
-        var mtl_desc = mtl.SamplerDescriptor.alloc().init();
+        var mtl_desc = mtl.SamplerDescriptor.allocInit();
         defer mtl_desc.release();
 
         mtl_desc.setMinFilter(conv.metalSamplerMinMagFilter(desc.min_filter));
@@ -1104,7 +1100,7 @@ pub const ComputePipeline = struct {
 
         const mtl_device = device.mtl_device;
 
-        var mtl_desc = mtl.ComputePipelineDescriptor.alloc().init();
+        var mtl_desc = mtl.ComputePipelineDescriptor.allocInit();
         defer mtl_desc.release();
 
         if (desc.label) |label| {
@@ -1193,7 +1189,7 @@ pub const RenderPipeline = struct {
 
         const mtl_device = device.mtl_device;
 
-        var mtl_desc = mtl.RenderPipelineDescriptor.alloc().init();
+        var mtl_desc = mtl.RenderPipelineDescriptor.allocInit();
         defer mtl_desc.release();
 
         if (desc.label) |label| {
@@ -1272,7 +1268,7 @@ pub const RenderPipeline = struct {
         // depth-stencil
         const depth_stencil_state = blk: {
             if (desc.depth_stencil) |ds| {
-                var front_desc = mtl.StencilDescriptor.alloc().init();
+                var front_desc = mtl.StencilDescriptor.allocInit();
                 defer front_desc.release();
 
                 front_desc.setStencilCompareFunction(conv.metalCompareFunction(ds.stencil_front.compare));
@@ -1282,7 +1278,7 @@ pub const RenderPipeline = struct {
                 front_desc.setReadMask(ds.stencil_read_mask);
                 front_desc.setWriteMask(ds.stencil_write_mask);
 
-                var back_desc = mtl.StencilDescriptor.alloc().init();
+                var back_desc = mtl.StencilDescriptor.allocInit();
                 defer back_desc.release();
 
                 back_desc.setStencilCompareFunction(conv.metalCompareFunction(ds.stencil_back.compare));
@@ -1292,7 +1288,7 @@ pub const RenderPipeline = struct {
                 back_desc.setReadMask(ds.stencil_read_mask);
                 back_desc.setWriteMask(ds.stencil_write_mask);
 
-                var depth_stencil_desc = mtl.DepthStencilDescriptor.alloc().init();
+                var depth_stencil_desc = mtl.DepthStencilDescriptor.allocInit();
                 defer depth_stencil_desc.release();
 
                 depth_stencil_desc.setDepthCompareFunction(conv.metalCompareFunction(ds.depth_compare));
@@ -1658,7 +1654,7 @@ pub const CommandEncoder = struct {
         encoder.endBlitEncoder();
 
         if (desc.label) |label| {
-            mtl_command_buffer.setLabel(ns.String.stringWithUTF8String(label));
+            mtl_command_buffer.as(mtl.CommandBuffer).setLabel(ns.String.stringWithUTF8String(label));
         }
 
         return command_buffer;
@@ -1732,7 +1728,7 @@ pub const CommandEncoder = struct {
 
     fn endBlitEncoder(encoder: *CommandEncoder) void {
         if (encoder.mtl_encoder) |mtl_encoder| {
-            mtl_encoder.endEncoding();
+            mtl_encoder.as(mtl.CommandEncoder).endEncoding();
             mtl_encoder.release();
             encoder.mtl_encoder = null;
         }
@@ -1764,7 +1760,7 @@ pub const ComputePassEncoder = struct {
         errdefer mtl_encoder.release();
 
         if (desc.label) |label| {
-            mtl_encoder.setLabel(ns.String.stringWithUTF8String(label));
+            mtl_encoder.as(mtl.CommandEncoder).setLabel(ns.String.stringWithUTF8String(label));
         }
 
         const lengths_buffer = try LengthsBuffer.init(cmd_encoder.device);
@@ -1798,7 +1794,7 @@ pub const ComputePassEncoder = struct {
     pub fn end(encoder: *ComputePassEncoder) void {
         const mtl_encoder = encoder.mtl_encoder;
 
-        mtl_encoder.endEncoding();
+        mtl_encoder.as(mtl.CommandEncoder).endEncoding();
     }
 
     pub fn setBindGroup(encoder: *ComputePassEncoder, group_index: u32, group: *BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) !void {
@@ -1868,20 +1864,21 @@ pub const RenderPassEncoder = struct {
 
         // color
         for (desc.color_attachments.?[0..desc.color_attachment_count], 0..) |attach, i| {
-            var mtl_attach = mtl_desc.colorAttachments().objectAtIndexedSubscript(i);
+            var mtl_color_attach = mtl_desc.colorAttachments().objectAtIndexedSubscript(i);
+            const mtl_render_attach = mtl_color_attach.as(mtl.RenderPassAttachmentDescriptor);
             if (attach.view) |view| {
                 const mtl_view: *TextureView = @ptrCast(@alignCast(view));
-                mtl_attach.setTexture(mtl_view.mtl_texture);
+                mtl_render_attach.setTexture(mtl_view.mtl_texture);
             }
             if (attach.resolve_target) |view| {
                 const mtl_view: *TextureView = @ptrCast(@alignCast(view));
-                mtl_attach.setResolveTexture(mtl_view.mtl_texture);
+                mtl_render_attach.setResolveTexture(mtl_view.mtl_texture);
             }
-            mtl_attach.setLoadAction(conv.metalLoadAction(attach.load_op));
-            mtl_attach.setStoreAction(conv.metalStoreAction(attach.store_op, attach.resolve_target != null));
+            mtl_render_attach.setLoadAction(conv.metalLoadAction(attach.load_op));
+            mtl_render_attach.setStoreAction(conv.metalStoreAction(attach.store_op, attach.resolve_target != null));
 
             if (attach.load_op == .clear) {
-                mtl_attach.setClearColor(mtl.ClearColor.init(
+                mtl_color_attach.setClearColor(mtl.ClearColor.init(
                     @floatCast(attach.clear_value.r),
                     @floatCast(attach.clear_value.g),
                     @floatCast(attach.clear_value.b),
@@ -1896,26 +1893,28 @@ pub const RenderPassEncoder = struct {
             const format = mtl_view.mtl_texture.pixelFormat();
 
             if (isDepthFormat(format)) {
-                var mtl_attach = mtl_desc.depthAttachment();
+                var mtl_depth_attach = mtl_desc.depthAttachment();
 
-                mtl_attach.setTexture(mtl_view.mtl_texture);
-                mtl_attach.setLoadAction(conv.metalLoadAction(attach.depth_load_op));
-                mtl_attach.setStoreAction(conv.metalStoreAction(attach.depth_store_op, false));
+                const mtl_render_attach = mtl_depth_attach.as(mtl.RenderPassAttachmentDescriptor);
+                mtl_render_attach.setTexture(mtl_view.mtl_texture);
+                mtl_render_attach.setLoadAction(conv.metalLoadAction(attach.depth_load_op));
+                mtl_render_attach.setStoreAction(conv.metalStoreAction(attach.depth_store_op, false));
 
                 if (attach.depth_load_op == .clear) {
-                    mtl_attach.setClearDepth(attach.depth_clear_value);
+                    mtl_depth_attach.setClearDepth(attach.depth_clear_value);
                 }
             }
 
             if (isStencilFormat(format)) {
-                var mtl_attach = mtl_desc.stencilAttachment();
+                var mtl_stencil_attach = mtl_desc.stencilAttachment();
 
-                mtl_attach.setTexture(mtl_view.mtl_texture);
-                mtl_attach.setLoadAction(conv.metalLoadAction(attach.stencil_load_op));
-                mtl_attach.setStoreAction(conv.metalStoreAction(attach.stencil_store_op, false));
+                const mtl_render_attach = mtl_stencil_attach.as(mtl.RenderPassAttachmentDescriptor);
+                mtl_render_attach.setTexture(mtl_view.mtl_texture);
+                mtl_render_attach.setLoadAction(conv.metalLoadAction(attach.stencil_load_op));
+                mtl_render_attach.setStoreAction(conv.metalStoreAction(attach.stencil_store_op, false));
 
                 if (attach.stencil_load_op == .clear) {
-                    mtl_attach.setClearStencil(attach.stencil_clear_value);
+                    mtl_stencil_attach.setClearStencil(attach.stencil_clear_value);
                 }
             }
         }
@@ -1929,7 +1928,7 @@ pub const RenderPassEncoder = struct {
         errdefer mtl_encoder.release();
 
         if (desc.label) |label| {
-            mtl_encoder.setLabel(ns.String.stringWithUTF8String(label));
+            mtl_encoder.as(mtl.CommandEncoder).setLabel(ns.String.stringWithUTF8String(label));
         }
 
         const vertex_lengths_buffer = try LengthsBuffer.init(cmd_encoder.device);
@@ -1999,7 +1998,7 @@ pub const RenderPassEncoder = struct {
     pub fn end(encoder: *RenderPassEncoder) !void {
         const mtl_encoder = encoder.mtl_encoder;
 
-        mtl_encoder.endEncoding();
+        mtl_encoder.as(mtl.CommandEncoder).endEncoding();
     }
 
     pub fn setBindGroup(encoder: *RenderPassEncoder, group_index: u32, group: *BindGroup, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) !void {
