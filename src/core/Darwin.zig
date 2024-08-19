@@ -52,7 +52,7 @@ headless: bool,
 refresh_rate: u32,
 size: Size,
 surface_descriptor: gpu.Surface.Descriptor,
-window: ?*objc.app_kit.ns.Window,
+window: ?*objc.app_kit.Window,
 
 pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) noreturn {
     const Args = @TypeOf(args_tuple);
@@ -60,9 +60,9 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     const ArgsBytes = @TypeOf(args_bytes.*);
     const Helper = struct {
         // TODO: port libdispatch and use it instead of doing this directly.
-        extern "System" fn dispatch_async(queue: *anyopaque, block: *objc.foundation.ns.Block(fn () void)) void;
+        extern "System" fn dispatch_async(queue: *anyopaque, block: *objc.foundation.Block(fn () void)) void;
         extern "System" var _dispatch_main_q: anyopaque;
-        pub fn cCallback(block: *objc.foundation.ns.BlockLiteral(ArgsBytes)) callconv(.C) void {
+        pub fn cCallback(block: *objc.foundation.BlockLiteral(ArgsBytes)) callconv(.C) void {
             const args: *Args = @ptrCast(&block.context);
             if (@call(.auto, on_each_update_fn, args.*) catch false) {
                 dispatch_async(&_dispatch_main_q, block.asBlockWithSignature(fn () void));
@@ -72,14 +72,14 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
             }
         }
     };
-    var block_literal = objc.foundation.ns.stackBlockLiteral(Helper.cCallback, args_bytes.*, null, null);
+    var block_literal = objc.foundation.stackBlockLiteral(Helper.cCallback, args_bytes.*, null, null);
 
     // `NSApplicationMain()` and `UIApplicationMain()` never return, so there's no point in trying to add any kind of cleanup work here.
-    const ns_app = objc.app_kit.ns.Application.sharedApplication();
+    const ns_app = objc.app_kit.Application.sharedApplication();
     const delegate = objc.mach.AppDelegate.allocInit();
     delegate.setRunBlock(block_literal.asBlock().copy());
     ns_app.setDelegate(@ptrCast(delegate));
-    _ = objc.app_kit.ns.applicationMain(0, undefined);
+    _ = objc.app_kit.applicationMain(0, undefined);
 
     unreachable;
     // TODO: support UIKit.
@@ -90,28 +90,28 @@ pub fn init(darwin: *Darwin, options: InitOptions) !void {
     var surface_descriptor = gpu.Surface.Descriptor{};
 
     // TODO: support UIKit.
-    var window: ?*objc.appkit.ns.Window = null;
+    var window: ?*objc.app_kit.Window = null;
     if (!options.headless) {
         const metal_descriptor = try options.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
-        const layer = objc.quartz_core.ca.MetalLayer.new();
+        const layer = objc.quartz_core.MetalLayer.new();
         defer layer.release();
         metal_descriptor.* = .{
             .layer = layer,
         };
         surface_descriptor.next_in_chain = .{ .from_metal_layer = metal_descriptor };
 
-        const screen = objc.appkit.ns.Screen.mainScreen();
-        const rect = objc.core_graphics.cg.Rect{ // TODO: use a meaningful rect
+        const screen = objc.app_kit.Screen.mainScreen();
+        const rect = objc.core_graphics.Rect{ // TODO: use a meaningful rect
             .origin = .{ .x = 100, .y = 100 },
             .size = .{ .width = 480, .height = 270 },
         };
         const window_style =
-            (if (options.display_mode == .fullscreen) objc.appkit.ns.WindowStyleMaskFullScreen else 0) |
-            (if (options.display_mode == .windowed) objc.appkit.ns.WindowStyleMaskTitled else 0) |
-            (if (options.display_mode == .windowed) objc.appkit.ns.WindowStyleMaskClosable else 0) |
-            (if (options.display_mode == .windowed) objc.appkit.ns.WindowStyleMaskMiniaturizable else 0) |
-            (if (options.display_mode == .windowed) objc.appkit.ns.WindowStyleMaskResizable else 0);
-        window = objc.appkit.ns.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(rect, window_style, objc.appkit.ns.BackingStoreBuffered, true, screen);
+            (if (options.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
+            (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskTitled else 0) |
+            (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskClosable else 0) |
+            (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
+            (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskResizable else 0);
+        window = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(rect, window_style, objc.app_kit.BackingStoreBuffered, true, screen);
         window.?.setReleasedWhenClosed(false);
         if (window.?.contentView()) |view| {
             view.setLayer(@ptrCast(layer));
@@ -143,7 +143,7 @@ pub fn init(darwin: *Darwin, options: InitOptions) !void {
 }
 
 pub fn deinit(darwin: *Darwin) void {
-    if (darwin.window) |w| @as(*objc.foundation.ns.ObjectProtocol, @ptrCast(w)).release();
+    if (darwin.window) |w| @as(*objc.foundation.ObjectProtocol, @ptrCast(w)).release();
     return;
 }
 
