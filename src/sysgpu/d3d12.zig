@@ -84,11 +84,28 @@ pub const Instance = struct {
             &c.IID_IDXGIFactory4,
             @ptrCast(&dxgi_factory),
         );
-        if (hr != c.S_OK) {
+        if (hr == c.DXGI_ERROR_INVALID_CALL) {
+            const hr_prev = hr;
+            hr = c.CreateDXGIFactory2(
+                0,
+                &c.IID_IDXGIFactory4,
+                @ptrCast(&dxgi_factory));
+            if (hr == c.S_OK) {
+                std.debug.print(
+                    \\Failed to enable debug layer ({x}):
+                         \\ For Windows 10, to create a device that supports the debug layer, enable the "Graphics Tools" optional
+                         \\ feature. On Windows 10 22H2, go to the Settings panel, under System. On older versions of Windows 10,
+                         \\ go to the Settings panel, under Apps > Apps & features. Go to Optional Features > Add a feature, and
+                         \\ then look for "Graphics Tools"
+                         \\                    
+                    , .{@as(u32, @bitCast(hr_prev))});
+            } else {
+                return error.CreateDXGIFactoryFailed;
+            }
+        } else if (hr != c.S_OK) {
             return error.CreateDXGIFactoryFailed;
         }
         errdefer _ = dxgi_factory.lpVtbl.*.Release.?(dxgi_factory);
-
         var opt_dxgi_factory5: ?*c.IDXGIFactory5 = null;
         _ = dxgi_factory.lpVtbl.*.QueryInterface.?(
             dxgi_factory,
