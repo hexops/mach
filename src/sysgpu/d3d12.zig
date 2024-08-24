@@ -100,7 +100,6 @@ pub const Instance = struct {
             return error.CreateDXGIFactoryFailed;
         }
         errdefer _ = dxgi_factory.lpVtbl.*.Release.?(dxgi_factory);
-
         var opt_dxgi_factory5: ?*c.IDXGIFactory5 = null;
         _ = dxgi_factory.lpVtbl.*.QueryInterface.?(
             dxgi_factory,
