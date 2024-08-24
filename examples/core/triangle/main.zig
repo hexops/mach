@@ -8,11 +8,9 @@ pub const modules = .{
 };
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+    // Initialize mach.Core
+    try mach.core.initModule();
 
-    var app = try mach.App.init(allocator, .app);
-    defer app.deinit(allocator);
-    try app.run(.{ .allocator = allocator });
+    // Main loop
+    while (try mach.core.tick()) {}
 }

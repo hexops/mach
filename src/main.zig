@@ -45,54 +45,50 @@ pub const Entities = @import("module/main.zig").Entities;
 
 pub const is_debug = builtin.mode == .Debug;
 
-pub const App = struct {
-    mods: *Modules,
-    comptime main_mod: ModuleName = .app,
+pub const core = struct {
+    var mods: Modules = undefined;
+    var stack_space: [8 * 1024 * 1024]u8 = undefined;
 
-    pub fn init(allocator: std.mem.Allocator, comptime main_mod: ModuleName) !App {
-        var mods: *Modules = try allocator.create(Modules);
-        try mods.init(allocator);
+    pub fn initModule() !void {
+        try mods.init(std.heap.c_allocator); // TODO: allocator
 
-        return .{
-            .mods = mods,
-            .main_mod = main_mod,
-        };
+        // TODO: this is a hack
+        mods.mod.mach_core.init(undefined);
+        mods.scheduleWithArgs(.mach_core, .init, .{.{ .allocator = std.heap.c_allocator }});
+        mods.schedule(.app, .init);
     }
 
-    pub fn deinit(app: *App, allocator: std.mem.Allocator) void {
-        app.mods.deinit(allocator);
-        allocator.destroy(app.mods);
-    }
-
-    pub fn run(app: *App, core_options: Core.InitOptions) !void {
-        var stack_space: [8 * 1024 * 1024]u8 = undefined;
-
-        app.mods.mod.mach_core.init(undefined); // TODO
-        app.mods.scheduleWithArgs(.mach_core, .init, .{core_options});
-        app.mods.schedule(app.main_mod, .init);
-
-        // Main loop
+    pub fn tick() !bool {
         if (comptime builtin.target.isDarwin()) {
-            Core.Platform.run(on_each_update, .{app, &stack_space});
+            // TODO: tick() should never block, but we should have a way to block for other platforms.
+            Core.Platform.run(on_each_update, .{});
         } else {
-            while (try app.on_each_update(&stack_space)) {}
+            return try on_each_update();
         }
+
+        return false;
     }
 
-    fn on_each_update(app: *App, stack_space: []u8) !bool {
-        if (app.mods.mod.mach_core.state().should_close) {
+    // TODO: support deinitialization
+    // pub fn deinit() void {
+    //     mods.deinit(std.heap.c_allocator); // TODO: allocator
+    // }
+
+    fn on_each_update() !bool {
+        // TODO: this should not exist here
+        if (mods.mod.mach_core.state().should_close) {
             // Final Dispatch to deinitalize resources
-            app.mods.schedule(app.main_mod, .deinit);
-            try app.mods.dispatch(stack_space, .{});
-            app.mods.schedule(.mach_core, .deinit);
-            try app.mods.dispatch(stack_space, .{});
+            mods.schedule(.app, .deinit);
+            try mods.dispatch(&stack_space, .{});
+            mods.schedule(.mach_core, .deinit);
+            try mods.dispatch(&stack_space, .{});
             return false;
         }
 
         // Dispatch events until queue is empty
-        try app.mods.dispatch(stack_space, .{});
+        try mods.dispatch(&stack_space, .{});
         // Run `update` when `init` and all other systems are executed
-        app.mods.schedule(app.main_mod, .update);
+        mods.schedule(.app, .update);
         return true;
     }
 };
