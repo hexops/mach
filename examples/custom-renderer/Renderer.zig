@@ -1,7 +1,3 @@
-// TODO(important): docs
-// TODO(important): review all code in this file in-depth
-const std = @import("std");
-
 const mach = @import("mach");
 const gpu = mach.gpu;
 const math = mach.math;
@@ -110,7 +106,9 @@ fn init(
     });
 }
 
-fn deinit(renderer: *Mod) !void {
+fn deinit(
+    renderer: *Mod,
+) !void {
     renderer.state().pipeline.release();
     for (renderer.state().bind_groups) |bind_group| bind_group.release();
     renderer.state().uniform_buffer.release();
@@ -127,7 +125,7 @@ fn renderFrame(
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const label = @tagName(name) ++ ".renderFrame";
+    const label = @tagName(name) ++ ".tick";
     const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
@@ -177,5 +175,6 @@ fn renderFrame(
     defer command.release();
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
+    // Present the frame
     core.schedule(.present_frame);
 }

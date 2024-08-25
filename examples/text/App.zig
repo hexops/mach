@@ -1,4 +1,3 @@
-// TODO(important): review all code in this file in-depth
 const std = @import("std");
 const zigimg = @import("zigimg");
 const assets = @import("assets");
@@ -38,7 +37,7 @@ pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .after_init = .{ .handler = afterInit },
-    .update = .{ .handler = update },
+    .tick = .{ .handler = tick },
     .end_frame = .{ .handler = endFrame },
 };
 
@@ -52,15 +51,21 @@ const text1: []const []const u8 = &.{
 
 const text2: []const []const u8 = &.{"$!?"};
 
-fn deinit(text_pipeline: *gfx.TextPipeline.Mod) !void {
+fn deinit(
+    core: *mach.Core.Mod,
+    text_pipeline: *gfx.TextPipeline.Mod,
+) !void {
     text_pipeline.schedule(.deinit);
+    core.schedule(.deinit);
 }
 
 fn init(
+    core: *mach.Core.Mod,
     text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     game: *Mod,
 ) !void {
+    core.schedule(.init);
     text.schedule(.init);
     text_pipeline.schedule(.init);
     game.schedule(.after_init);
@@ -68,6 +73,7 @@ fn init(
 
 fn afterInit(
     entities: *mach.Entities.Mod,
+    core: *mach.Core.Mod,
     text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     text_style: *gfx.TextStyle.Mod,
@@ -105,9 +111,11 @@ fn afterInit(
         .style1 = style1,
         .pipeline = pipeline,
     });
+
+    core.schedule(.start);
 }
 
-fn update(
+fn tick(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     text: *gfx.Text.Mod,
@@ -268,6 +276,7 @@ fn endFrame(
             "text [ FPS: {d} ] [ Texts: {d} ] [ Glyphs: {d} ]",
             .{ game.state().frame_count, num_texts, num_glyphs },
         );
+        core.schedule(.update);
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }

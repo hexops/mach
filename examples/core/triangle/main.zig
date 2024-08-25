@@ -1,4 +1,3 @@
-const std = @import("std");
 const mach = @import("mach");
 
 // The global list of Mach modules registered for use in our application.

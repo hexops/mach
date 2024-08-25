@@ -1,4 +1,3 @@
-// TODO(important): review all code in this file in-depth
 const std = @import("std");
 const mach = @import("mach");
 const gpu = mach.gpu;
@@ -35,17 +34,19 @@ pub const Mod = mach.Mod(@This());
 pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
-    .update = .{ .handler = update },
+    .tick = .{ .handler = tick },
     .after_init = .{ .handler = afterInit },
     .end_frame = .{ .handler = endFrame },
 };
 
-fn deinit(sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod) !void {
+fn deinit(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod) !void {
     sprite_pipeline.schedule(.deinit);
     glyphs.schedule(.deinit);
+    core.schedule(.deinit);
 }
 
-fn init(sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mod) !void {
+fn init(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mod) !void {
+    core.schedule(.init);
     sprite_pipeline.schedule(.init);
     glyphs.schedule(.init);
 
@@ -62,6 +63,7 @@ fn afterInit(
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     glyphs: *Glyphs.Mod,
     game: *Mod,
+    core: *mach.Core.Mod,
 ) !void {
     // Create a sprite rendering pipeline
     const texture = glyphs.state().texture;
@@ -93,9 +95,11 @@ fn afterInit(
         .time = 0,
         .pipeline = pipeline,
     });
+
+    core.schedule(.start);
 }
 
-fn update(
+fn tick(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
@@ -253,6 +257,7 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
             "glyphs [ FPS: {d} ] [ Sprites: {d} ]",
             .{ game.state().frame_count, game.state().sprites },
         );
+        core.schedule(.update);
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }
