@@ -1,5 +1,3 @@
-const std = @import("std");
-
 const mach = @import("mach");
 
 // The global list of Mach modules registered for use in our application.
@@ -9,8 +7,9 @@ pub const modules = .{
     @import("Renderer.zig"),
 };
 
+// TODO: move this to a mach "entrypoint" zig module
 pub fn main() !void {
-    // Initialize mach.Core
+    // Initialize mach core
     try mach.core.initModule();
 
     // Main loop

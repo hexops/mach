@@ -1,4 +1,3 @@
-const std = @import("std");
 const mach = @import("mach");
 const gpu = mach.gpu;
 
@@ -7,18 +6,25 @@ pub const Mod = mach.Mod(@This());
 
 pub const systems = .{
     .init = .{ .handler = init },
+    .after_init = .{ .handler = afterInit },
     .deinit = .{ .handler = deinit },
-    .update = .{ .handler = update },
+    .tick = .{ .handler = tick },
 };
 
 title_timer: mach.Timer,
 pipeline: *gpu.RenderPipeline,
 
-pub fn deinit(game: *Mod) void {
+pub fn deinit(core: *mach.Core.Mod, game: *Mod) void {
     game.state().pipeline.release();
+    core.schedule(.deinit);
 }
 
 fn init(game: *Mod, core: *mach.Core.Mod) !void {
+    core.schedule(.init);
+    game.schedule(.after_init);
+}
+
+fn afterInit(game: *Mod, core: *mach.Core.Mod) !void {
     // Create our shader module
     const shader_module = core.state().device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
     defer shader_module.release();
@@ -57,11 +63,11 @@ fn init(game: *Mod, core: *mach.Core.Mod) !void {
         .pipeline = pipeline,
     });
     try updateWindowTitle(core);
+
+    core.schedule(.start);
 }
 
-fn update(core: *mach.Core.Mod, game: *Mod) !void {
-    // TODO(important): event polling should occur in mach.Core module and get fired as ECS event.
-    // TODO(Core)
+fn tick(core: *mach.Core.Mod, game: *Mod) !void {
     var iter = core.state().pollEvents();
     while (iter.next()) |event| {
         switch (event) {
@@ -106,6 +112,7 @@ fn update(core: *mach.Core.Mod, game: *Mod) !void {
     defer command.release();
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
 
+    // Present the frame
     core.schedule(.present_frame);
 
     // update the window title every second
@@ -125,4 +132,5 @@ fn updateWindowTitle(core: *mach.Core.Mod) !void {
             core.state().inputRate(),
         },
     );
+    core.schedule(.update);
 }

@@ -15,6 +15,7 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
+// TODO: banish global allocator
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
 info_text: mach.EntityID,
@@ -44,18 +45,20 @@ pub const systems = .{
     .init = .{ .handler = init },
     .after_init = .{ .handler = afterInit },
     .deinit = .{ .handler = deinit },
-    .update = .{ .handler = update },
+    .tick = .{ .handler = tick },
     .end_frame = .{ .handler = endFrame },
     .audio_state_change = .{ .handler = audioStateChange },
 };
 
 fn deinit(
+    core: *mach.Core.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     audio: *mach.Audio.Mod,
 ) !void {
     text_pipeline.schedule(.deinit);
     sprite_pipeline.schedule(.deinit);
+    core.schedule(.deinit);
     audio.schedule(.deinit);
 }
 
@@ -64,11 +67,13 @@ fn init(
     text_pipeline: *gfx.TextPipeline.Mod,
     text: *gfx.Text.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
+    core: *mach.Core.Mod,
     game: *Mod,
 ) !void {
     // If you want to try fullscreen:
     // try core.set(core.state().main_window, .fullscreen, true);
 
+    core.schedule(.init);
     audio.schedule(.init);
     text.schedule(.init);
     text_pipeline.schedule(.init);
@@ -146,6 +151,7 @@ fn afterInit(
         .pipeline = pipeline,
         .sfx = sfx,
     });
+    core.schedule(.start);
 }
 
 fn audioStateChange(entities: *mach.Entities.Mod) !void {
@@ -164,7 +170,7 @@ fn audioStateChange(entities: *mach.Entities.Mod) !void {
     }
 }
 
-fn update(
+fn tick(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,

@@ -1,4 +1,3 @@
-// TODO(important): review all code in this file in-depth
 const mach = @import("mach");
 const gpu = mach.gpu;
 const ft = @import("freetype");
@@ -16,6 +15,7 @@ pub const systems = .{
 
 const RegionMap = std.AutoArrayHashMapUnmanaged(u21, mach.gfx.Atlas.Region);
 
+// TODO: banish global allocator
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
 texture_atlas: mach.gfx.Atlas,

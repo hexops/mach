@@ -14,6 +14,7 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
+// TODO: banish global allocator
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
 timer: mach.Timer,
@@ -40,20 +41,24 @@ pub const systems = .{
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .after_init = .{ .handler = afterInit },
-    .update = .{ .handler = update },
+    .tick = .{ .handler = tick },
     .end_frame = .{ .handler = endFrame },
 };
 
 fn deinit(
+    core: *mach.Core.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
 ) !void {
     sprite_pipeline.schedule(.deinit);
+    core.schedule(.deinit);
 }
 
 fn init(
+    core: *mach.Core.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     game: *Mod,
 ) !void {
+    core.schedule(.init);
     sprite_pipeline.schedule(.init);
     game.schedule(.after_init);
 }
@@ -95,9 +100,11 @@ fn afterInit(
         .allocator = allocator,
         .pipeline = pipeline,
     });
+
+    core.schedule(.start);
 }
 
-fn update(
+fn tick(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     sprite: *gfx.Sprite.Mod,
@@ -241,6 +248,7 @@ fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
             "sprite [ FPS: {d} ] [ Sprites: {d} ]",
             .{ game.state().frame_count, game.state().sprites },
         );
+        core.schedule(.update);
         game.state().fps_timer.reset();
         game.state().frame_count = 0;
     }
