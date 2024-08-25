@@ -8,7 +8,6 @@ const log = std.log.scoped(.mach);
 const gamemode_log = std.log.scoped(.gamemode);
 
 pub const sysgpu = @import("../main.zig").sysgpu;
-pub const sysjs = @import("mach-sysjs");
 pub const Timer = @import("core/Timer.zig");
 const Frequency = @import("core/Frequency.zig");
 

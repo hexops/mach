@@ -5,7 +5,6 @@ const std = @import("std");
 // Core
 pub const Core = if (build_options.want_core) @import("Core.zig") else struct {};
 pub const Timer = if (build_options.want_core) Core.Timer else struct {};
-pub const sysjs = if (build_options.want_core) @import("mach-sysjs") else struct {};
 
 // Mach standard library
 // gamemode requires libc on linux
