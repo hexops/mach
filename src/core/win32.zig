@@ -130,6 +130,7 @@ pub fn init(
     self.border = options.border;
     self.headless = options.headless;
     self.refresh_rate = 60; // TODO (win32)  get monitor refresh rate
+    self.vsync_mode = .triple;
 
     _ = w.SetWindowLongPtrW(window, w.GWLP_USERDATA, @bitCast(@intFromPtr(self)));
     if (!options.headless) {

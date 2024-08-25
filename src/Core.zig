@@ -331,8 +331,8 @@ pub fn start(core: *Mod) !void {
     const stack_space = try core.state().allocator.alloc(u8, 8 * 1024 * 1024);
 
     if (supports_non_blocking) {
-        while (mach.mods.mod.mach_core.state != .exited) {
-            try mach.mods.dispatchUntil(stack_space, .mach_core, .frame_finished);
+        while (core.state().state != .exited) {
+            dispatch(stack_space);
         }
         // Don't return, because Platform.run wouldn't either (marked noreturn due to underlying
         // platform APIs never returning.)
@@ -346,6 +346,10 @@ pub fn start(core: *Mod) !void {
         // good measure.
         std.process.exit(1);
     }
+}
+
+fn dispatch(stack_space: []u8) void {
+    mach.mods.dispatchUntil(stack_space, .mach_core, .frame_finished) catch { @panic("Dispatch in Core failed"); };
 }
 
 fn platform_update_callback(core: *Mod, stack_space: []u8) !bool {
