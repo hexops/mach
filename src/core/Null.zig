@@ -21,21 +21,12 @@ const KeyMods = Core.KeyMods;
 
 const log = std.log.scoped(.mach);
 
-const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
-pub const EventIterator = struct {
-    queue: *EventQueue,
-
-    pub inline fn next(self: *EventIterator) ?Event {
-        return self.queue.readItem();
-    }
-};
-
 pub const Null = @This();
 
 allocator: std.mem.Allocator,
 core: *Core,
 
-events: EventQueue,
+events: Core.EventQueue,
 input_state: Core.InputState,
 modifiers: KeyMods,
 
@@ -65,8 +56,8 @@ pub fn update(_: *Null) !void {
 }
 
 // May be called from any thread.
-pub inline fn pollEvents(n: *Null) EventIterator {
-    return EventIterator{ .queue = &n.events };
+pub inline fn pollEvents(n: *Null) Core.EventIterator {
+    return .{ .queue = &n.events };
 }
 
 // May be called from any thread.

@@ -151,14 +151,6 @@ pub fn update(self: *Win32) !void {
     }
 }
 
-pub const EventIterator = struct {
-    queue: *EventQueue,
-
-    pub fn next(self: *EventIterator) ?Event {
-        return self.queue.readItem();
-    }
-};
-
 pub fn pollEvents(self: *Win32) EventIterator {
     return .{ .queue = &self.events };
 }

@@ -7,9 +7,7 @@ const gpu = mach.gpu;
 const log = std.log.scoped(.mach);
 const gamemode_log = std.log.scoped(.gamemode);
 
-pub const sysgpu = @import("../main.zig").sysgpu;
-
-pub const Platform = switch (build_options.core_platform) {
+const Platform = switch (build_options.core_platform) {
     .wasm => @panic("TODO: support mach.Core WASM platform"),
     .windows => @import("core/Windows.zig"),
     .darwin => @import("core/Darwin.zig"),
@@ -23,6 +21,16 @@ pub const supports_non_blocking = switch (build_options.core_platform) {
     .wasm => false,
     .darwin => false,
     .null => true,
+};
+
+pub const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
+
+pub const EventIterator = struct {
+    queue: *EventQueue,
+
+    pub fn next(self: *EventIterator) ?Event {
+        return self.queue.readItem();
+    }
 };
 
 /// Set this to true if you intend to drive the main loop yourself.
@@ -147,14 +155,6 @@ queue: *gpu.Queue,
 surface: *gpu.Surface,
 swap_chain: *gpu.SwapChain,
 descriptor: gpu.SwapChain.Descriptor,
-
-pub const EventIterator = struct {
-    platform: Platform.EventIterator,
-
-    pub inline fn next(iter: *EventIterator) ?Event {
-        return iter.platform.next();
-    }
-};
 
 // TODO: this needs to be removed.
 pub const InitOptions = struct {
