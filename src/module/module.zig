@@ -308,6 +308,28 @@ pub fn Modules(comptime modules: anytype) type {
             } = null,
         };
 
+        /// Dispatch pending systems, invoking their handlers, until the specified module's system
+        /// has been dispatched.
+        ///
+        /// Stack space must be large enough to fit the uninjected arguments of any system handler
+        /// which may be invoked, e.g. 8MB. It may be heap-allocated.
+        ///
+        /// Use .dispatch() with a .until argument if you need to specify a runtime-known system.
+        pub fn dispatchUntil(
+            m: *@This(),
+            stack_space: []u8,
+            comptime module_name: ModuleName(modules),
+            // TODO(important): cleanup comptime
+            system: SystemEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
+        ) !void {
+            try m.dispatch(stack_space, .{
+                .until = .{
+                    .module_name = m.moduleNameToID(module_name),
+                    .system = m.systemToID(module_name, system),
+                },
+            });
+        }
+
         /// Dispatches pending systems, invoking their handlers.
         ///
         /// Stack space must be large enough to fit the uninjected arguments of any system handler
