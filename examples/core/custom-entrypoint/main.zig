@@ -29,6 +29,7 @@ pub fn main() !void {
             // Execute systems until a frame has been finished.
             try mach.mods.dispatchUntil(stack_space, .mach_core, .frame_finished);
         }
+        allocator.free(stack_space);
     } else {
         // On platforms where you cannot control the mach.Core main loop, the .mach_core.start
         // system your app schedules will block forever and the function call below will NEVER
