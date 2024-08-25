@@ -388,6 +388,31 @@ pub fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
     state.instance.release();
 }
 
+pub const InputState = struct {
+    const KeyBitSet = std.StaticBitSet(@intFromEnum(Key.max) + 1);
+    const MouseButtonSet = std.StaticBitSet(@as(u4, @intFromEnum(MouseButton.max)) + 1);
+
+    keys: KeyBitSet = KeyBitSet.initEmpty(),
+    mouse_buttons: MouseButtonSet = MouseButtonSet.initEmpty(),
+    mouse_position: Position = .{ .x = 0, .y = 0 },
+
+    pub inline fn isKeyPressed(input: InputState, key: Key) bool {
+        return input.keys.isSet(@intFromEnum(key));
+    }
+
+    pub inline fn isKeyReleased(input: InputState, key: Key) bool {
+        return !input.isKeyPressed(key);
+    }
+
+    pub inline fn isMouseButtonPressed(input: InputState, button: MouseButton) bool {
+        return input.mouse_buttons.isSet(@intFromEnum(button));
+    }
+
+    pub inline fn isMouseButtonReleased(input: InputState, button: MouseButton) bool {
+        return !input.isMouseButtonPressed(button);
+    }
+};
+
 pub const Event = union(enum) {
     key_press: KeyEvent,
     key_repeat: KeyEvent,
@@ -1048,6 +1073,31 @@ pub fn initLinuxGamemode() bool {
 pub fn deinitLinuxGamemode() void {
     mach.gamemode.stop();
     gamemode_log.info("gamemode: deactivated", .{});
+}
+
+pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
+    const backend = std.process.getEnvVarOwned(
+        allocator,
+        "MACH_GPU_BACKEND",
+    ) catch |err| switch (err) {
+        error.EnvironmentVariableNotFound => {
+            if (builtin.target.isDarwin()) return .metal;
+            if (builtin.target.os.tag == .windows) return .d3d12;
+            return .vulkan;
+        },
+        else => return err,
+    };
+    defer allocator.free(backend);
+
+    if (std.ascii.eqlIgnoreCase(backend, "null")) return .null;
+    if (std.ascii.eqlIgnoreCase(backend, "d3d11")) return .d3d11;
+    if (std.ascii.eqlIgnoreCase(backend, "d3d12")) return .d3d12;
+    if (std.ascii.eqlIgnoreCase(backend, "metal")) return .metal;
+    if (std.ascii.eqlIgnoreCase(backend, "vulkan")) return .vulkan;
+    if (std.ascii.eqlIgnoreCase(backend, "opengl")) return .opengl;
+    if (std.ascii.eqlIgnoreCase(backend, "opengles")) return .opengles;
+
+    @panic("unknown MACH_GPU_BACKEND type");
 }
 
 // Verifies that a platform implementation exposes the expected function declarations.
