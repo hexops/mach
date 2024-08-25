@@ -84,11 +84,22 @@ pub const Instance = struct {
             &c.IID_IDXGIFactory4,
             @ptrCast(&dxgi_factory),
         );
-        if (hr != c.S_OK) {
+        if (hr == c.DXGI_ERROR_INVALID_CALL) {
+            const hr_prev = hr;
+            hr = c.CreateDXGIFactory2(
+                0,
+                &c.IID_IDXGIFactory4,
+                @ptrCast(&dxgi_factory));
+            if (hr == c.S_OK) {
+                log.info("note: D3D12 debug layers disabled (couldn't enable, error: {x}), see https://machengine.org/about/faq/#how-to-enable-direct3d-debug-layers",
+                    .{@as(u32, @bitCast(hr_prev))});
+            } else {
+                return error.CreateDXGIFactoryFailed;
+            }
+        } else if (hr != c.S_OK) {
             return error.CreateDXGIFactoryFailed;
         }
         errdefer _ = dxgi_factory.lpVtbl.*.Release.?(dxgi_factory);
-
         var opt_dxgi_factory5: ?*c.IDXGIFactory5 = null;
         _ = dxgi_factory.lpVtbl.*.QueryInterface.?(
             dxgi_factory,
