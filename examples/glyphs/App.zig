@@ -110,12 +110,9 @@ fn tick(
     glyphs: *Glyphs.Mod,
     app: *Mod,
 ) !void {
-    // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
-    // TODO(Core)
-    var iter = core.state().pollEvents();
     var direction = app.state().direction;
     var spawning = app.state().spawning;
-    while (iter.next()) |event| {
+    while (core.state().nextEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 switch (ev.key) {

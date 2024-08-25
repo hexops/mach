@@ -71,8 +71,7 @@ fn init(app: *Mod, core: *mach.Core.Mod) !void {
 }
 
 fn tick(core: *mach.Core.Mod, app: *Mod) !void {
-    var iter = core.state().pollEvents();
-    while (iter.next()) |event| {
+    while (core.state().nextEvent()) |event| {
         switch (event) {
             .close => core.schedule(.exit), // Tell mach.Core to exit the app
             else => {},

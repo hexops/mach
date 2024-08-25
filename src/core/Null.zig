@@ -25,11 +25,8 @@ pub const Null = @This();
 
 allocator: std.mem.Allocator,
 core: *Core,
-
-events: Core.EventQueue,
 input_state: Core.InputState,
 modifiers: KeyMods,
-
 title: [:0]u8,
 display_mode: DisplayMode,
 vsync_mode: VSyncMode,
@@ -42,7 +39,14 @@ size: Size,
 surface_descriptor: gpu.Surface.Descriptor,
 
 // Called on the main thread
-pub fn init(_: *Null, _: InitOptions) !void {
+pub fn init(
+    nul: *Null,
+    core: *Core.Mod,
+    options: InitOptions,
+) !void {
+    _ = nul;
+    _ = options;
+    _ = core;
     return;
 }
 
@@ -53,11 +57,6 @@ pub fn deinit(_: *Null) void {
 // Called on the main thread
 pub fn update(_: *Null) !void {
     return;
-}
-
-// May be called from any thread.
-pub inline fn pollEvents(n: *Null) Core.EventIterator {
-    return .{ .queue = &n.events };
 }
 
 // May be called from any thread.

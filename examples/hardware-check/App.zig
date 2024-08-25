@@ -185,9 +185,8 @@ fn tick(
 ) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
     // TODO(Core)
-    var iter = core.state().pollEvents();
     var gotta_go_fast = app.state().gotta_go_fast;
-    while (iter.next()) |event| {
+    while (core.state().nextEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 switch (ev.key) {

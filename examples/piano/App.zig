@@ -104,9 +104,7 @@ fn tick(
     audio: *mach.Audio.Mod,
     app: *Mod,
 ) !void {
-    // TODO(Core)
-    var iter = core.state().pollEvents();
-    while (iter.next()) |event| {
+    while (core.state().nextEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 switch (ev.key) {

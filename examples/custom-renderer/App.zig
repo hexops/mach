@@ -96,10 +96,9 @@ fn tick(
     renderer: *Renderer.Mod,
     app: *Mod,
 ) !void {
-    var iter = core.state().pollEvents();
     var direction = app.state().direction;
     var spawning = app.state().spawning;
-    while (iter.next()) |event| {
+    while (core.state().nextEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 switch (ev.key) {

@@ -23,11 +23,7 @@ pub const Darwin = @This();
 
 allocator: std.mem.Allocator,
 core: *Core,
-
-events: Core.EventQueue,
 input_state: Core.InputState,
-// modifiers: KeyMods,
-
 title: [:0]const u8,
 display_mode: DisplayMode,
 vsync_mode: VSyncMode,
@@ -72,7 +68,12 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
 }
 
 // Called on the main thread
-pub fn init(darwin: *Darwin, options: InitOptions) !void {
+pub fn init(
+    darwin: *Darwin,
+    core: *Core.Mod,
+    options: InitOptions,
+) !void {
+    _ = core;
     var surface_descriptor = gpu.Surface.Descriptor{};
 
     // TODO: support UIKit.
@@ -106,13 +107,9 @@ pub fn init(darwin: *Darwin, options: InitOptions) !void {
         window.?.makeKeyAndOrderFront(null);
     }
 
-    var events = EventQueue.init(options.allocator);
-    try events.ensureTotalCapacity(2048);
-
     darwin.* = .{
         .allocator = options.allocator,
         .core = @fieldParentPtr("platform", darwin),
-        .events = events,
         .input_state = .{},
         .title = options.title,
         .display_mode = options.display_mode,
@@ -136,11 +133,6 @@ pub fn deinit(darwin: *Darwin) void {
 // Called on the main thread
 pub fn update(_: *Darwin) !void {
     return;
-}
-
-// May be called from any thread.
-pub inline fn pollEvents(n: *Darwin) Core.EventIterator {
-    return .{ .queue = &n.events };
 }
 
 // May be called from any thread.

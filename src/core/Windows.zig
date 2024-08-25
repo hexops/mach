@@ -44,7 +44,7 @@ surrogate: u16 = 0,
 dinput: *w.IDirectInput8W,
 saved_window_rect: w.RECT,
 surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
-events: EventQueue,
+state: *Core,
 input_state: Core.InputState,
 oom: std.Thread.ResetEvent = .{},
 
@@ -53,11 +53,12 @@ oom: std.Thread.ResetEvent = .{},
 // ------------------------------
 pub fn init(
     self: *Win32,
+    core: *Core.Mod,
     options: InitOptions,
 ) !void {
+    self.state = core.state();
     self.allocator = options.allocator;
     self.core = @fieldParentPtr("platform", self);
-    self.events = EventQueue.init(self.allocator);
     self.size = options.size;
     self.input_state = .{};
     self.saved_window_rect = .{ .top = 0, .left = 0, .right = 0, .bottom = 0 };
@@ -138,7 +139,6 @@ pub fn init(
 }
 
 pub fn deinit(self: *Win32) void {
-    self.events.deinit();
     _ = self.dinput.IUnknown_Release();
 }
 
@@ -149,10 +149,6 @@ pub fn update(self: *Win32) !void {
         _ = w.TranslateMessage(&msg);
         _ = w.DispatchMessageW(&msg);
     }
-}
-
-pub fn pollEvents(self: *Win32) EventIterator {
-    return .{ .queue = &self.events };
 }
 
 pub fn setTitle(self: *Win32, title: [:0]const u8) void {
@@ -316,7 +312,7 @@ pub fn outOfMemory(self: *Win32) bool {
 }
 
 fn pushEvent(self: *Win32, event: Event) void {
-    self.events.writeItem(event) catch self.oom.set();
+    self.state.events.writeItem(event) catch self.oom.set();
 }
 
 fn getKeyboardModifiers() mach.Core.KeyMods {

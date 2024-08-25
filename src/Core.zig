@@ -23,15 +23,7 @@ pub const supports_non_blocking = switch (build_options.core_platform) {
     .null => true,
 };
 
-pub const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
-
-pub const EventIterator = struct {
-    queue: *EventQueue,
-
-    pub fn next(self: *EventIterator) ?Event {
-        return self.queue.readItem();
-    }
-};
+const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
 
 /// Set this to true if you intend to drive the main loop yourself.
 ///
@@ -126,8 +118,10 @@ pub const components = .{
     },
 };
 
-// Callback systems
+/// Callback system invoked per tick (e.g. per-frame)
 on_tick: ?mach.AnySystem = null,
+
+/// Callback system invoked when application is exiting
 on_exit: ?mach.AnySystem = null,
 
 allocator: std.mem.Allocator,
@@ -155,6 +149,9 @@ queue: *gpu.Queue,
 surface: *gpu.Surface,
 swap_chain: *gpu.SwapChain,
 descriptor: gpu.SwapChain.Descriptor,
+
+// Internal state
+events: EventQueue,
 
 // TODO: this needs to be removed.
 pub const InitOptions = struct {
@@ -200,9 +197,13 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
         title[options.title.len] = 0;
     }
 
+    var events = EventQueue.init(allocator);
+    try events.ensureTotalCapacity(8192);
+
     core.init(.{
         .allocator = allocator,
         .main_window = main_window,
+        .events = events,
 
         // TODO: remove undefined initialization (disgusting!)
         .platform = undefined,
@@ -220,7 +221,8 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
         .descriptor = undefined,
     });
     const state = core.state();
-    try Platform.init(&state.platform, options);
+
+    try Platform.init(&state.platform, core, options);
 
     state.instance = gpu.createInstance(null) orelse {
         log.err("failed to create GPU instance", .{});
@@ -386,6 +388,7 @@ pub fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
     state.surface.release();
     state.adapter.release();
     state.instance.release();
+    state.events.deinit();
 }
 
 pub const InputState = struct {
@@ -602,8 +605,10 @@ pub const KeyMods = packed struct(u8) {
     _padding: u2 = 0,
 };
 
-pub inline fn pollEvents(core: *@This()) EventIterator {
-    return .{ .platform = core.platform.pollEvents() };
+/// Returns the next event until there are no more available. You should check for events during
+/// every on_tick()
+pub inline fn nextEvent(core: *@This()) ?Event {
+    return core.events.readItem();
 }
 
 /// Sets the window title. The string must be owned by Core, and will not be copied or freed. It is
@@ -1063,7 +1068,6 @@ comptime {
 
     assertHasDecl(Platform, "init");
     assertHasDecl(Platform, "deinit");
-    assertHasDecl(Platform, "pollEvents");
 
     assertHasDecl(Platform, "setTitle");
 
@@ -1104,10 +1108,8 @@ fn assertHasField(comptime T: anytype, comptime field_name: []const u8) void {
 }
 
 test {
-    @import("std").testing.refAllDecls(Platform);
-
+    _ = Platform;
     @import("std").testing.refAllDeclsRecursive(InitOptions);
-    @import("std").testing.refAllDeclsRecursive(EventIterator);
     @import("std").testing.refAllDeclsRecursive(VSyncMode);
     @import("std").testing.refAllDeclsRecursive(Size);
     @import("std").testing.refAllDeclsRecursive(Position);
