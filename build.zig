@@ -102,46 +102,11 @@ pub fn build(b: *std.Build) !void {
         if (want_examples) try buildExamples(b, optimize, target, module);
     }
     if (want_core) {
-        if (target.result.cpu.arch != .wasm32) {
-            // TODO: for some reason this is not functional, a Zig bug (only when using this Zig package
-            // externally):
-            //
-            // module.addCSourceFile(.{ .file = b.path("src/core/platform/wayland/wayland.c" });
-            //
-            // error: unable to check cache: stat file '/Volumes/data/hexops/mach-core-starter-project/zig-cache//Volumes/data/hexops/mach-core-starter-project/src/core/platform/wayland/wayland.c' failed: FileNotFound
-            //
-            // So instead we do this:
-            const lib = b.addStaticLibrary(.{
-                .name = "core-wayland",
+        if (target.result.isDarwin()) {
+            if (b.lazyDependency("mach_objc", .{
                 .target = target,
                 .optimize = optimize,
-            });
-            lib.addCSourceFile(.{
-                .file = b.path("src/core/wayland/wayland.c"),
-            });
-            lib.linkLibC();
-            module.linkLibrary(lib);
-
-            if (b.lazyDependency("x11_headers", .{
-                .target = target,
-                .optimize = optimize,
-            })) |dep| {
-                module.linkLibrary(dep.artifact("x11-headers"));
-                lib.linkLibrary(dep.artifact("x11-headers"));
-            }
-            if (b.lazyDependency("wayland_headers", .{
-                .target = target,
-                .optimize = optimize,
-            })) |dep| {
-                module.linkLibrary(dep.artifact("wayland-headers"));
-                lib.linkLibrary(dep.artifact("wayland-headers"));
-            }
-            if (target.result.isDarwin()) {
-                if (b.lazyDependency("mach_objc", .{
-                    .target = target,
-                    .optimize = optimize,
-                })) |dep| module.addImport("objc", dep.module("mach-objc"));
-            }
+            })) |dep| module.addImport("objc", dep.module("mach-objc"));
         }
     }
     if (want_sysaudio) {
@@ -284,8 +249,6 @@ pub fn build(b: *std.Build) !void {
 }
 
 pub const Platform = enum {
-    x11,
-    wayland,
     wasm,
     win32,
     darwin,
@@ -295,7 +258,7 @@ pub const Platform = enum {
         if (target.cpu.arch == .wasm32) return .wasm;
         if (target.os.tag.isDarwin()) return .darwin;
         if (target.os.tag == .windows) return .win32;
-        return .x11;
+        return .null;
     }
 };
 
