@@ -1,3 +1,5 @@
+//! The Mach standard library
+
 const build_options = @import("build-options");
 const builtin = @import("builtin");
 const std = @import("std");
@@ -5,8 +7,7 @@ const std = @import("std");
 // Core
 pub const Core = if (build_options.want_core) @import("Core.zig") else struct {};
 
-// Mach standard library
-// gamemode requires libc on linux
+// note: gamemode requires libc on linux
 pub const gamemode = if (builtin.os.tag != .linux or builtin.link_libc) @import("gamemode.zig");
 pub const gfx = if (build_options.want_mach) @import("gfx/main.zig") else struct {};
 pub const Audio = if (build_options.want_sysaudio) @import("Audio.zig") else struct {};
