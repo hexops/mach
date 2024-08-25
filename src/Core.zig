@@ -429,8 +429,6 @@ pub const Event = union(enum) {
         xoffset: f32,
         yoffset: f32,
     },
-    joystick_connected: Joystick,
-    joystick_disconnected: Joystick,
     framebuffer_resize: Size,
     focus_gained,
     focus_lost,
@@ -604,10 +602,6 @@ pub const KeyMods = packed struct(u8) {
     _padding: u2 = 0,
 };
 
-pub const Joystick = enum(u8) {
-    zero,
-};
-
 pub inline fn pollEvents(core: *@This()) EventIterator {
     return .{ .platform = core.platform.pollEvents() };
 }
@@ -778,45 +772,6 @@ pub inline fn setCursorShape(core: *@This(), cursor: CursorShape) void {
 pub inline fn cursorShape(core: *@This()) CursorShape {
     return core.platform.cursorShape();
 }
-
-// TODO(feature): add joystick/gamepad support https://github.com/hexops/mach/issues/884
-
-// /// Checks if the given joystick is still connected.
-// pub inline fn joystickPresent(joystick: Joystick) bool {
-//     return internal.joystickPresent(joystick);
-// }
-
-// /// Retreives the name of the joystick.
-// /// Returns `null` if the joystick isnt connected.
-// pub inline fn joystickName(joystick: Joystick) ?[:0]const u8 {
-//     return internal.joystickName(joystick);
-// }
-
-// /// Retrieves the state of the buttons of the given joystick.
-// /// A value of `true` indicates the button is pressed, `false` the button is released.
-// /// No remapping is done, so the order of these buttons are joystick-dependent and should be
-// /// consistent across platforms.
-// ///
-// /// Returns `null` if the joystick isnt connected.
-// ///
-// /// Note: For WebAssembly, the remapping is done directly by the web browser, so on that platform
-// /// the order of these buttons might be different than on others.
-// pub inline fn joystickButtons(joystick: Joystick) ?[]const bool {
-//     return internal.joystickButtons(joystick);
-// }
-
-// /// Retreives the state of the axes of the given joystick.
-// /// The values are always from -1 to 1.
-// /// No remapping is done, so the order of these axes are joytstick-dependent and should be
-// /// consistent acrsoss platforms.
-// ///
-// /// Returns `null` if the joystick isnt connected.
-// ///
-// /// Note: For WebAssembly, the remapping is done directly by the web browser, so on that platform
-// /// the order of these axes might be different than on others.
-// pub inline fn joystickAxes(joystick: Joystick) ?[]const f32 {
-//     return internal.joystickAxes(joystick);
-// }
 
 pub inline fn keyPressed(core: *@This(), key: Key) bool {
     return core.platform.keyPressed(key);
@@ -1133,11 +1088,6 @@ comptime {
     assertHasDecl(Platform, "setCursorShape");
     assertHasField(Platform, "cursor_shape");
 
-    assertHasDecl(Platform, "joystickPresent");
-    assertHasDecl(Platform, "joystickName");
-    assertHasDecl(Platform, "joystickButtons");
-    assertHasDecl(Platform, "joystickAxes");
-
     assertHasDecl(Platform, "keyPressed");
     assertHasDecl(Platform, "keyReleased");
     assertHasDecl(Platform, "mousePressed");
@@ -1170,5 +1120,4 @@ test {
     @import("std").testing.refAllDeclsRecursive(DisplayMode);
     @import("std").testing.refAllDeclsRecursive(CursorMode);
     @import("std").testing.refAllDeclsRecursive(CursorShape);
-    @import("std").testing.refAllDeclsRecursive(Joystick);
 }

@@ -15,7 +15,6 @@ const CursorMode = Core.CursorMode;
 const Position = Core.Position;
 const Key = Core.Key;
 const KeyMods = Core.KeyMods;
-const Joystick = Core.Joystick;
 const objc = @import("objc");
 
 const log = std.log.scoped(.mach);
@@ -196,26 +195,6 @@ pub fn setCursorMode(_: *Darwin, _: CursorMode) void {
 // May be called from any thread.
 pub fn setCursorShape(_: *Darwin, _: CursorShape) void {
     return;
-}
-
-// May be called from any thread.
-pub fn joystickPresent(_: *Darwin, _: Joystick) bool {
-    return false;
-}
-
-// May be called from any thread.
-pub fn joystickName(_: *Darwin, _: Joystick) ?[:0]const u8 {
-    return null;
-}
-
-// May be called from any thread.
-pub fn joystickButtons(_: *Darwin, _: Joystick) ?[]const bool {
-    return null;
-}
-
-// May be called from any thread.
-pub fn joystickAxes(_: *Darwin, _: Joystick) ?[]const f32 {
-    return null;
 }
 
 // May be called from any thread.

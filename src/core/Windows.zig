@@ -17,7 +17,6 @@ const CursorMode = Core.CursorMode;
 const Position = Core.Position;
 const Key = Core.Key;
 const KeyMods = Core.KeyMods;
-const Joystick = Core.Joystick;
 
 const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
 const Win32 = @This();
@@ -291,19 +290,6 @@ pub fn mousePosition(self: *Win32) Position {
     return self.input_state.mouse_position;
 }
 
-pub fn joystickPresent(_: *Win32, _: Joystick) bool {
-    @panic("NOT IMPLEMENTED");
-}
-pub fn joystickName(_: *Win32, _: Joystick) ?[:0]const u8 {
-    @panic("NOT IMPLEMENTED");
-}
-pub fn joystickButtons(_: *Win32, _: Joystick) ?[]const bool {
-    @panic("NOT IMPLEMENTED");
-}
-// May be called from any thread.
-pub fn joystickAxes(_: *Win32, _: Joystick) ?[]const f32 {
-    @panic("NOT IMPLEMENTED");
-}
 pub fn nativeWindowWin32(self: *Win32) w.HWND {
     return self.window;
 }
