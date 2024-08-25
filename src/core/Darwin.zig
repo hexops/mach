@@ -1,7 +1,6 @@
 const std = @import("std");
 const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
-const InputState = @import("InputState.zig");
 const gpu = mach.gpu;
 const InitOptions = Core.InitOptions;
 const Event = Core.Event;
@@ -36,7 +35,7 @@ allocator: std.mem.Allocator,
 core: *Core,
 
 events: EventQueue,
-input_state: InputState,
+input_state: Core.InputState,
 // modifiers: KeyMods,
 
 title: [:0]const u8,

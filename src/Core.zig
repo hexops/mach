@@ -11,7 +11,7 @@ pub const sysgpu = @import("../main.zig").sysgpu;
 
 pub const Platform = switch (build_options.core_platform) {
     .wasm => @panic("TODO: support mach.Core WASM platform"),
-    .win32 => @import("core/win32.zig"),
+    .windows => @import("core/Windows.zig"),
     .darwin => @import("core/Darwin.zig"),
     .null => @import("core/Null.zig"),
 };
@@ -19,7 +19,7 @@ pub const Platform = switch (build_options.core_platform) {
 // Whether or not you can drive the main loop in a non-blocking fashion, or if the underlying
 // platform must take control and drive the main loop itself.
 pub const supports_non_blocking = switch (build_options.core_platform) {
-    .win32 => true,
+    .windows => true,
     .wasm => false,
     .darwin => false,
     .null => true,

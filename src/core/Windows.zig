@@ -2,7 +2,6 @@ const std = @import("std");
 const w = @import("../win32.zig");
 const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
-const InputState = @import("InputState.zig");
 
 const gpu = mach.gpu;
 const InitOptions = Core.InitOptions;
@@ -47,7 +46,7 @@ dinput: *w.IDirectInput8W,
 saved_window_rect: w.RECT,
 surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
 events: EventQueue,
-input_state: InputState,
+input_state: Core.InputState,
 oom: std.Thread.ResetEvent = .{},
 
 // ------------------------------
