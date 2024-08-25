@@ -245,6 +245,23 @@ pub fn build(b: *std.Build) !void {
         test_step.dependOn(&run_unit_tests.step);
 
         if (want_sysgpu) linkSysgpu(b, &unit_tests.root_module);
+
+        // Documentation
+        const docs_obj = b.addObject(.{
+            .name = "mach",
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = .Debug,
+        });
+        //docs_obj.root_module.addOptions("build_options", build_options);
+        const docs = docs_obj.getEmittedDocs();
+        const install_docs = b.addInstallDirectory(.{
+            .source_dir = docs,
+            .install_dir = .prefix,
+            .install_subdir = "docs",
+        });
+        const docs_step = b.step("docs", "Generate docs");
+        docs_step.dependOn(&install_docs.step);          
     }
 }
 
