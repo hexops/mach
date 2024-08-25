@@ -15,7 +15,7 @@ const Frequency = @import("core/Frequency.zig");
 pub const Platform = switch (build_options.core_platform) {
     .x11 => @import("core/X11.zig"),
     .wayland => @import("core/Wayland.zig"),
-    .web => @panic("TODO: revive wasm backend"),
+    .wasm => @panic("TODO: support mach.Core WASM platform"),
     .win32 => @import("core/win32.zig"),
     .darwin => @import("core/Darwin.zig"),
     .null => @import("core/Null.zig"),
@@ -27,7 +27,7 @@ pub const supports_non_blocking = switch (build_options.core_platform) {
     .win32 => true,
     .x11 => true,
     .wayland => true,
-    .web => false,
+    .wasm => false,
     .darwin => false,
     .null => false,
 };
