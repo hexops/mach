@@ -86,13 +86,9 @@ pub const Instance = struct {
         );
         if (hr == c.DXGI_ERROR_INVALID_CALL) {
             const hr_prev = hr;
-            hr = c.CreateDXGIFactory2(
-                0,
-                &c.IID_IDXGIFactory4,
-                @ptrCast(&dxgi_factory));
+            hr = c.CreateDXGIFactory2(0, &c.IID_IDXGIFactory4, @ptrCast(&dxgi_factory));
             if (hr == c.S_OK) {
-                log.info("note: D3D12 debug layers disabled (couldn't enable, error: {x}), see https://machengine.org/about/faq/#how-to-enable-direct3d-debug-layers",
-                    .{@as(u32, @bitCast(hr_prev))});
+                log.info("note: D3D12 debug layers disabled (couldn't enable, error: {x}), see https://machengine.org/about/faq/#how-to-enable-direct3d-debug-layers", .{@as(u32, @bitCast(hr_prev))});
             } else {
                 return error.CreateDXGIFactoryFailed;
             }
@@ -209,8 +205,8 @@ pub const Adapter = struct {
             description[l] = 0;
 
             if ((dxgi_desc.Flags & c.DXGI_ADAPTER_FLAG_SOFTWARE) != 0) {
-               _ = dxgi_adapter.lpVtbl.*.Release.?(dxgi_adapter);
-               continue;
+                _ = dxgi_adapter.lpVtbl.*.Release.?(dxgi_adapter);
+                continue;
             }
 
             const adapter_type: sysgpu.Adapter.Type = blk: {
@@ -231,7 +227,7 @@ pub const Adapter = struct {
                     } else {
                         break :blk .integrated_gpu;
                     }
-                } 
+                }
                 break :blk .unknown;
             };
 
@@ -245,11 +241,10 @@ pub const Adapter = struct {
             // Select the last discrete_gpu if power preference is high performance.
             // Select the last integrated_gpu if power preference is not high performance.
             // TOOD: Other selection criterias?
-            if ((options.power_preference == .high_performance and adapter_type == .discrete_gpu)
-                or (options.power_preference == .low_power and adapter_type != .discrete_gpu)) {
+            if ((options.power_preference == .high_performance and adapter_type == .discrete_gpu) or (options.power_preference == .low_power and adapter_type != .discrete_gpu)) {
                 if (last_dxgi_adapter) |adapter| {
                     _ = adapter.lpVtbl.*.Release.?(adapter);
-                }            
+                }
                 last_dxgi_adapter = dxgi_adapter;
                 last_dxgi_desc = dxgi_desc;
                 last_adapter_type = adapter_type;
@@ -281,7 +276,6 @@ pub const Adapter = struct {
             }
         }
 
-
         return error.NoAdapterFound;
     }
 
@@ -298,7 +292,7 @@ pub const Adapter = struct {
     }
 
     pub fn getProperties(adapter: *Adapter) sysgpu.Adapter.Properties {
-        const dxgi_desc = adapter.dxgi_desc;        
+        const dxgi_desc = adapter.dxgi_desc;
         return .{
             .vendor_id = dxgi_desc.VendorId,
             .vendor_name = "", // TODO
@@ -477,7 +471,6 @@ pub const Device = struct {
         try device.mem_allocator.init(device);
 
         try device.mem_allocator_textures.init(device);
-
 
         return device;
     }
@@ -768,7 +761,7 @@ pub const MemoryAllocator = struct {
                         .rtv_dsv_texture => c.D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES,
                         .other_texture => c.D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES,
                     },
-                }; 
+                };
                 var heap: ?*c.ID3D12Heap = null;
                 const d3d_device = group.owning_pool.device.d3d_device;
                 const hr = d3d_device.lpVtbl.*.CreateHeap.?(
@@ -1428,7 +1421,7 @@ pub const SwapChain = struct {
             .SampleDesc = .{ .Count = 1, .Quality = 0 },
             .BufferUsage = conv.dxgiUsage(desc.usage),
             .BufferCount = back_buffer_count,
-            .Scaling = c.DXGI_MODE_SCALING_UNSPECIFIED,
+            .Scaling = c.DXGI_SCALING_STRETCH,
             .SwapEffect = c.DXGI_SWAP_EFFECT_FLIP_DISCARD,
             .AlphaMode = c.DXGI_ALPHA_MODE_UNSPECIFIED,
             .Flags = if (instance.allow_tearing) c.DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING else 0,
@@ -1747,7 +1740,7 @@ pub const Texture = struct {
                 &clear_value
             else
                 null,
-            // TODO: #1225: check if different textures need different resource categories. 
+            // TODO: #1225: check if different textures need different resource categories.
             .resource_category = .other_texture,
             .initial_state = initial_state,
         };

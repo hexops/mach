@@ -936,7 +936,7 @@ fn emitBinary(hlsl: *Hlsl, inst: Inst.Binary) !void {
             const rhs_type = hlsl.air.getInst(inst.rhs_type);
 
             if (lhs_type == .matrix or rhs_type == .matrix) {
-                // TODO(d3d12): 
+                // TODO(d3d12):
                 //   Changed to column major storage because dxc does not apply same ordering to Storage Buffers.
                 // matrices are in column major storage
                 try hlsl.writeAll("mul");

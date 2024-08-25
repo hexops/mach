@@ -21,6 +21,8 @@ pub const HICON = w.HICON;
 pub const HCURSOR = w.HCURSOR;
 pub const HBRUSH = w.HBRUSH;
 pub const HMENU = w.HMENU;
+pub const HMONITOR = *opaque {};
+pub const HDC = w.HDC;
 pub const WINAPI = w.WINAPI;
 pub const TRUE = w.TRUE;
 pub const FALSE = w.FALSE;
@@ -647,7 +649,6 @@ pub const IDirectInput8W = extern struct {
     }
     pub usingnamespace MethodMixin(@This());
 };
-
 
 pub const IID_IDirectInputDevice8W = GUID{ .Data1 = 1423184001, .Data2 = 56341, .Data3 = 18483, .Data4 = .{ 164, 27, 116, 143, 115, 163, 129, 121 } };
 pub const IDirectInputDevice8W = extern struct {
@@ -1346,11 +1347,11 @@ pub const WS_EX_WINDOWEDGE = WINDOW_EX_STYLE{ .WINDOWEDGE = 1 };
 pub const WS_EX_CLIENTEDGE = WINDOW_EX_STYLE{ .CLIENTEDGE = 1 };
 pub const WS_EX_CONTEXTHELP = WINDOW_EX_STYLE{ .CONTEXTHELP = 1 };
 pub const WS_EX_RIGHT = WINDOW_EX_STYLE{ .RIGHT = 1 };
-pub const WS_EX_LEFT = WINDOW_EX_STYLE{ };
+pub const WS_EX_LEFT = WINDOW_EX_STYLE{};
 pub const WS_EX_RTLREADING = WINDOW_EX_STYLE{ .RTLREADING = 1 };
-pub const WS_EX_LTRREADING = WINDOW_EX_STYLE{ };
+pub const WS_EX_LTRREADING = WINDOW_EX_STYLE{};
 pub const WS_EX_LEFTSCROLLBAR = WINDOW_EX_STYLE{ .LEFTSCROLLBAR = 1 };
-pub const WS_EX_RIGHTSCROLLBAR = WINDOW_EX_STYLE{ };
+pub const WS_EX_RIGHTSCROLLBAR = WINDOW_EX_STYLE{};
 pub const WS_EX_CONTROLPARENT = WINDOW_EX_STYLE{ .CONTROLPARENT = 1 };
 pub const WS_EX_STATICEDGE = WINDOW_EX_STYLE{ .STATICEDGE = 1 };
 pub const WS_EX_APPWINDOW = WINDOW_EX_STYLE{ .APPWINDOW = 1 };
@@ -2298,3 +2299,101 @@ pub const VK_ZOOM = VIRTUAL_KEY.ZOOM;
 pub const VK_NONAME = VIRTUAL_KEY.NONAME;
 pub const VK_PA1 = VIRTUAL_KEY.PA1;
 pub const VK_OEM_CLEAR = VIRTUAL_KEY.OEM_CLEAR;
+
+// ---------------------------
+// Keyboard and mouse
+// ---------------------------
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn GetFocus() callconv(@import("std").os.windows.WINAPI) ?HWND;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn GetKBCodePage() callconv(@import("std").os.windows.WINAPI) u32;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn GetKeyState(
+    nVirtKey: i32,
+) callconv(@import("std").os.windows.WINAPI) i16;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn GetAsyncKeyState(
+    vKey: i32,
+) callconv(@import("std").os.windows.WINAPI) i16;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn GetKeyboardState(
+    lpKeyState: *[256]u8,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+pub extern "user32" fn GetCapture() callconv(@import("std").os.windows.WINAPI) ?HWND;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn SetCapture(
+    hWnd: ?HWND,
+) callconv(@import("std").os.windows.WINAPI) ?HWND;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn ReleaseCapture() callconv(@import("std").os.windows.WINAPI) BOOL;
+
+// --------------------------
+//  GDI
+// --------------------------
+pub const MONITORENUMPROC = *const fn (
+    param0: ?HMONITOR,
+    param1: ?HDC,
+    param2: ?*RECT,
+    param3: LPARAM,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+pub const MONITORINFO = extern struct {
+    cbSize: u32,
+    rcMonitor: RECT,
+    rcWork: RECT,
+    dwFlags: u32,
+};
+
+pub const MONITOR_FROM_FLAGS = enum(u32) {
+    NEAREST = 2,
+    NULL = 0,
+    PRIMARY = 1,
+};
+pub const MONITOR_DEFAULTTONEAREST = MONITOR_FROM_FLAGS.NEAREST;
+pub const MONITOR_DEFAULTTONULL = MONITOR_FROM_FLAGS.NULL;
+pub const MONITOR_DEFAULTTOPRIMARY = MONITOR_FROM_FLAGS.PRIMARY;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn MonitorFromPoint(
+    pt: POINT,
+    dwFlags: MONITOR_FROM_FLAGS,
+) callconv(@import("std").os.windows.WINAPI) ?HMONITOR;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn MonitorFromRect(
+    lprc: ?*RECT,
+    dwFlags: MONITOR_FROM_FLAGS,
+) callconv(@import("std").os.windows.WINAPI) ?HMONITOR;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn MonitorFromWindow(
+    hwnd: ?HWND,
+    dwFlags: MONITOR_FROM_FLAGS,
+) callconv(@import("std").os.windows.WINAPI) ?HMONITOR;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn GetMonitorInfoA(
+    hMonitor: ?HMONITOR,
+    lpmi: ?*MONITORINFO,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn GetMonitorInfoW(
+    hMonitor: ?HMONITOR,
+    lpmi: ?*MONITORINFO,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+// TODO: this type is limited to platform 'windows5.0'
+pub extern "user32" fn EnumDisplayMonitors(
+    hdc: ?HDC,
+    lprcClip: ?*RECT,
+    lpfnEnum: ?MONITORENUMPROC,
+    dwData: LPARAM,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
