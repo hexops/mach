@@ -45,53 +45,8 @@ pub const Entities = @import("module/main.zig").Entities;
 
 pub const is_debug = builtin.mode == .Debug;
 
-pub const core = struct {
-    var mods: Modules = undefined;
-    var stack_space: [8 * 1024 * 1024]u8 = undefined;
-
-    pub fn initModule() !void {
-        try mods.init(std.heap.c_allocator); // TODO: allocator
-
-        // TODO: this is a hack
-        mods.mod.mach_core.init(undefined);
-        mods.scheduleWithArgs(.mach_core, .init, .{.{ .allocator = std.heap.c_allocator }});
-        mods.schedule(.app, .init);
-    }
-
-    pub fn tick() !bool {
-        if (comptime builtin.target.isDarwin()) {
-            // TODO: tick() should never block, but we should have a way to block for other platforms.
-            Core.Platform.run(on_each_update, .{});
-        } else {
-            return try on_each_update();
-        }
-
-        return false;
-    }
-
-    // TODO: support deinitialization
-    // pub fn deinit() void {
-    //     mods.deinit(std.heap.c_allocator); // TODO: allocator
-    // }
-
-    fn on_each_update() !bool {
-        // TODO: this should not exist here
-        if (mods.mod.mach_core.state().should_close) {
-            // Final Dispatch to deinitalize resources
-            mods.schedule(.app, .deinit);
-            try mods.dispatch(&stack_space, .{});
-            mods.schedule(.mach_core, .deinit);
-            try mods.dispatch(&stack_space, .{});
-            return false;
-        }
-
-        // Dispatch events until queue is empty
-        try mods.dispatch(&stack_space, .{});
-        // Run `update` when `init` and all other systems are executed
-        mods.schedule(.app, .update);
-        return true;
-    }
-};
+// The global set of all Mach modules that may be used in the program.
+pub var mods: Modules = undefined;
 
 test {
     // TODO: refactor code so we can use this here:
