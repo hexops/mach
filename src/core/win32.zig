@@ -64,7 +64,7 @@ pub fn init(
     self.events = EventQueue.init(self.allocator);
     self.size = options.size;
     self.input_state = .{};
-    self.saved_window_rect = .{.top = 0, .left = 0, .right = 0, .bottom = 0};
+    self.saved_window_rect = .{ .top = 0, .left = 0, .right = 0, .bottom = 0 };
 
     const hInstance = w.GetModuleHandleW(null);
     const class_name = w.L("mach");
@@ -180,7 +180,7 @@ pub fn setDisplayMode(self: *Win32, mode: DisplayMode) void {
 
     switch (mode) {
         .windowed => {
-            const window_style: w.WINDOW_STYLE = if (self.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW; 
+            const window_style: w.WINDOW_STYLE = if (self.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW;
             const window_ex_style = w.WINDOW_EX_STYLE{ .APPWINDOW = 1 };
 
             _ = w.SetWindowLongW(self.window, w.GWL_STYLE, @bitCast(window_style));
@@ -188,12 +188,12 @@ pub fn setDisplayMode(self: *Win32, mode: DisplayMode) void {
 
             restoreWindowPosition(self);
         },
-        .fullscreen => {         
+        .fullscreen => {
             // TODO (win32) - change to use exclusive fullscreen using ChangeDisplaySetting
 
             _ = w.GetWindowRect(self.window, &self.saved_window_rect);
 
-            const window_style = w.WINDOW_STYLE{ .POPUP = 1, .VISIBLE = 1};
+            const window_style = w.WINDOW_STYLE{ .POPUP = 1, .VISIBLE = 1 };
             const window_ex_style = w.WINDOW_EX_STYLE{ .APPWINDOW = 1 };
 
             _ = w.SetWindowLongW(self.window, w.GWL_STYLE, @bitCast(window_style));
@@ -203,20 +203,13 @@ pub fn setDisplayMode(self: *Win32, mode: DisplayMode) void {
             var monitor_info: w.MONITORINFO = undefined;
             monitor_info.cbSize = @sizeOf(w.MONITORINFO);
             if (w.GetMonitorInfoW(monitor, &monitor_info) == w.TRUE) {
-                _ = w.SetWindowPos(self.window, 
-                    null, 
-                    monitor_info.rcMonitor.left, 
-                    monitor_info.rcMonitor.top, 
-                    monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, 
-                    monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
-                    w.SWP_NOZORDER
-                );
+                _ = w.SetWindowPos(self.window, null, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top, monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top, w.SWP_NOZORDER);
             }
         },
         .borderless => {
             _ = w.GetWindowRect(self.window, &self.saved_window_rect);
 
-            const window_style = w.WINDOW_STYLE{ .POPUP = 1, .VISIBLE = 1};
+            const window_style = w.WINDOW_STYLE{ .POPUP = 1, .VISIBLE = 1 };
             const window_ex_style = w.WINDOW_EX_STYLE{ .APPWINDOW = 1 };
 
             _ = w.SetWindowLongW(self.window, w.GWL_STYLE, @bitCast(window_style));
@@ -226,14 +219,7 @@ pub fn setDisplayMode(self: *Win32, mode: DisplayMode) void {
             var monitor_info: w.MONITORINFO = undefined;
             monitor_info.cbSize = @sizeOf(w.MONITORINFO);
             if (w.GetMonitorInfoW(monitor, &monitor_info) == w.TRUE) {
-                _ = w.SetWindowPos(self.window, 
-                    null, 
-                    monitor_info.rcMonitor.left, 
-                    monitor_info.rcMonitor.top, 
-                    monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, 
-                    monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
-                    w.SWP_NOZORDER
-                );
+                _ = w.SetWindowPos(self.window, null, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top, monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top, w.SWP_NOZORDER);
             }
         },
     }
@@ -341,14 +327,7 @@ fn restoreWindowPosition(self: *Win32) void {
     if (self.saved_window_rect.right - self.saved_window_rect.left == 0) {
         _ = w.ShowWindow(self.window, w.SW_RESTORE);
     } else {
-        _ = w.SetWindowPos(self.window, 
-            null, 
-            self.saved_window_rect.left,
-            self.saved_window_rect.top, 
-            self.saved_window_rect.right - self.saved_window_rect.left, 
-            self.saved_window_rect.bottom - self.saved_window_rect.top,
-            w.SWP_SHOWWINDOW
-        );
+        _ = w.SetWindowPos(self.window, null, self.saved_window_rect.left, self.saved_window_rect.top, self.saved_window_rect.right - self.saved_window_rect.left, self.saved_window_rect.bottom - self.saved_window_rect.top, w.SWP_SHOWWINDOW);
     }
 }
 
@@ -370,7 +349,7 @@ fn getKeyboardModifiers() mach.Core.KeyMods {
         .control = w.GetKeyState(@as(i32, @intFromEnum(w.VK_CONTROL))) < 0, // & 0x8000 == 0x8000,
         .alt = w.GetKeyState(@as(i32, @intFromEnum(w.VK_MENU))) < 0, // & 0x8000 == 0x8000,
         .super = (w.GetKeyState(@as(i32, @intFromEnum(w.VK_LWIN)))) < 0 // & 0x8000 == 0x8000)
-            or (w.GetKeyState(@as(i32, @intFromEnum(w.VK_RWIN)))) < 0, // & 0x8000 == 0x8000),
+        or (w.GetKeyState(@as(i32, @intFromEnum(w.VK_RWIN)))) < 0, // & 0x8000 == 0x8000),
         .caps_lock = w.GetKeyState(@as(i32, @intFromEnum(w.VK_CAPITAL))) & 1 == 1,
         .num_lock = w.GetKeyState(@as(i32, @intFromEnum(w.VK_NUMLOCK))) & 1 == 1,
     };
@@ -391,7 +370,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
         w.WM_SIZE => {
             const width: u32 = @as(u32, @intCast(lParam & 0xFFFF));
             const height: u32 = @as(u32, @intCast((lParam >> 16) & 0xFFFF));
-            self.size = .{.width = width, .height = height};
+            self.size = .{ .width = width, .height = height };
 
             // TODO (win32): only send resize event when sizing is done.
             //               the main mach loops does not run while resizing.
@@ -653,7 +632,7 @@ fn keyFromScancode(scancode: u9) Key {
             //0x73 => .international1,
             //0x76 => .lang5,
             0x73 => .international1,
-            0x76 => .f24,            
+            0x76 => .f24,
             //0x77 => .lang4,
             //0x78 => .lang3,
             //0x79 => .international4,

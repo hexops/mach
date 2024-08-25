@@ -21,7 +21,7 @@ pub const HICON = w.HICON;
 pub const HCURSOR = w.HCURSOR;
 pub const HBRUSH = w.HBRUSH;
 pub const HMENU = w.HMENU;
-pub const HMONITOR = *opaque{};
+pub const HMONITOR = *opaque {};
 pub const HDC = w.HDC;
 pub const WINAPI = w.WINAPI;
 pub const TRUE = w.TRUE;
@@ -649,7 +649,6 @@ pub const IDirectInput8W = extern struct {
     }
     pub usingnamespace MethodMixin(@This());
 };
-
 
 pub const IID_IDirectInputDevice8W = GUID{ .Data1 = 1423184001, .Data2 = 56341, .Data3 = 18483, .Data4 = .{ 164, 27, 116, 143, 115, 163, 129, 121 } };
 pub const IDirectInputDevice8W = extern struct {
@@ -1348,11 +1347,11 @@ pub const WS_EX_WINDOWEDGE = WINDOW_EX_STYLE{ .WINDOWEDGE = 1 };
 pub const WS_EX_CLIENTEDGE = WINDOW_EX_STYLE{ .CLIENTEDGE = 1 };
 pub const WS_EX_CONTEXTHELP = WINDOW_EX_STYLE{ .CONTEXTHELP = 1 };
 pub const WS_EX_RIGHT = WINDOW_EX_STYLE{ .RIGHT = 1 };
-pub const WS_EX_LEFT = WINDOW_EX_STYLE{ };
+pub const WS_EX_LEFT = WINDOW_EX_STYLE{};
 pub const WS_EX_RTLREADING = WINDOW_EX_STYLE{ .RTLREADING = 1 };
-pub const WS_EX_LTRREADING = WINDOW_EX_STYLE{ };
+pub const WS_EX_LTRREADING = WINDOW_EX_STYLE{};
 pub const WS_EX_LEFTSCROLLBAR = WINDOW_EX_STYLE{ .LEFTSCROLLBAR = 1 };
-pub const WS_EX_RIGHTSCROLLBAR = WINDOW_EX_STYLE{ };
+pub const WS_EX_RIGHTSCROLLBAR = WINDOW_EX_STYLE{};
 pub const WS_EX_CONTROLPARENT = WINDOW_EX_STYLE{ .CONTROLPARENT = 1 };
 pub const WS_EX_STATICEDGE = WINDOW_EX_STYLE{ .STATICEDGE = 1 };
 pub const WS_EX_APPWINDOW = WINDOW_EX_STYLE{ .APPWINDOW = 1 };
@@ -2305,12 +2304,10 @@ pub const VK_OEM_CLEAR = VIRTUAL_KEY.OEM_CLEAR;
 // Keyboard and mouse
 // ---------------------------
 // TODO: this type is limited to platform 'windows5.0'
-pub extern "user32" fn GetFocus(
-) callconv(@import("std").os.windows.WINAPI) ?HWND;
+pub extern "user32" fn GetFocus() callconv(@import("std").os.windows.WINAPI) ?HWND;
 
 // TODO: this type is limited to platform 'windows5.0'
-pub extern "user32" fn GetKBCodePage(
-) callconv(@import("std").os.windows.WINAPI) u32;
+pub extern "user32" fn GetKBCodePage() callconv(@import("std").os.windows.WINAPI) u32;
 
 // TODO: this type is limited to platform 'windows5.0'
 pub extern "user32" fn GetKeyState(
@@ -2327,8 +2324,7 @@ pub extern "user32" fn GetKeyboardState(
     lpKeyState: *[256]u8,
 ) callconv(@import("std").os.windows.WINAPI) BOOL;
 
-pub extern "user32" fn GetCapture(
-) callconv(@import("std").os.windows.WINAPI) ?HWND;
+pub extern "user32" fn GetCapture() callconv(@import("std").os.windows.WINAPI) ?HWND;
 
 // TODO: this type is limited to platform 'windows5.0'
 pub extern "user32" fn SetCapture(
@@ -2336,19 +2332,17 @@ pub extern "user32" fn SetCapture(
 ) callconv(@import("std").os.windows.WINAPI) ?HWND;
 
 // TODO: this type is limited to platform 'windows5.0'
-pub extern "user32" fn ReleaseCapture(
-) callconv(@import("std").os.windows.WINAPI) BOOL;
-
+pub extern "user32" fn ReleaseCapture() callconv(@import("std").os.windows.WINAPI) BOOL;
 
 // --------------------------
 //  GDI
 // --------------------------
-pub const MONITORENUMPROC = *const fn(
-        param0: ?HMONITOR,
-        param1: ?HDC,
-        param2: ?*RECT,
-        param3: LPARAM,
-    ) callconv(@import("std").os.windows.WINAPI) BOOL;
+pub const MONITORENUMPROC = *const fn (
+    param0: ?HMONITOR,
+    param1: ?HDC,
+    param2: ?*RECT,
+    param3: LPARAM,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
 
 pub const MONITORINFO = extern struct {
     cbSize: u32,

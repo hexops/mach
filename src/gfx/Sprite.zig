@@ -110,7 +110,7 @@ fn updatePipeline(
         // TODO(d3d12): #1217
         //   changed the uv_transform to 4x4. The 3x3 causes issues with d3d12/hlsl
         transforms: []Mat4x4,
-        uv_transforms: []Mat4x4, 
+        uv_transforms: []Mat4x4,
         sizes: []Vec2,
 
         pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
