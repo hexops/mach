@@ -1,7 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const WasmTimer = @import("wasm/Timer.zig");
-const PlatformTimer = if (builtin.cpu.arch == .wasm32) WasmTimer else NativeTimer;
+const PlatformTimer = if (builtin.cpu.arch == .wasm32) @panic("TODO: support WASM") else NativeTimer;
 
 const Timer = @This();
 

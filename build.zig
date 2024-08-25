@@ -372,7 +372,6 @@ fn buildExamples(
         core: bool = false,
         name: []const u8,
         deps: []const Dependency = &.{},
-        wasm: bool = false,
         has_assets: bool = false,
     }{
         // Mach core examples
@@ -388,7 +387,6 @@ fn buildExamples(
         .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
         .{ .name = "text", .deps = &.{.assets} },
     }) |example| {
-        if (target.result.cpu.arch == .wasm32 and !example.wasm) continue;
         const exe = b.addExecutable(.{
             .name = if (example.core) b.fmt("core-{s}", .{example.name}) else example.name,
             .root_source_file = if (example.core)

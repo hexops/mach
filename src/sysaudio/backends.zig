@@ -26,10 +26,6 @@ pub const Context = switch (builtin.os.tag) {
         dummy: *@import("dummy.zig").Context,
     },
     .freestanding => switch (builtin.cpu.arch) {
-        .wasm32 => union(enum) {
-            webaudio: *@import("webaudio.zig").Context,
-            dummy: *@import("dummy.zig").Context,
-        },
         else => union(enum) {
             dummy: *@import("dummy.zig").Context,
         },
@@ -60,10 +56,6 @@ pub const Player = switch (builtin.os.tag) {
         dummy: *@import("dummy.zig").Player,
     },
     .freestanding => switch (builtin.cpu.arch) {
-        .wasm32 => union(enum) {
-            webaudio: *@import("webaudio.zig").Player,
-            dummy: *@import("dummy.zig").Player,
-        },
         else => union(enum) {
             dummy: *@import("dummy.zig").Player,
         },
@@ -94,10 +86,6 @@ pub const Recorder = switch (builtin.os.tag) {
         dummy: *@import("dummy.zig").Recorder,
     },
     .freestanding => switch (builtin.cpu.arch) {
-        .wasm32 => union(enum) {
-            webaudio: *@import("webaudio.zig").Recorder,
-            dummy: *@import("dummy.zig").Recorder,
-        },
         else => union(enum) {
             dummy: *@import("dummy.zig").Recorder,
         },

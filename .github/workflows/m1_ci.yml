@@ -26,5 +26,6 @@ jobs:
         run: zig build test
       - name: build
         run: zig build
-      - name: build (WASM)
-        run: zig build -Dtarget=wasm32-freestanding-none
+      # TODO: get WASM builds working
+      # - name: build (WASM)
+      #   run: zig build -Dtarget=wasm32-freestanding-none

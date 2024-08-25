@@ -5,14 +5,9 @@ const math = mach.math;
 const vec2 = math.vec2;
 const Vec2 = math.Vec2;
 
-pub const Font = FontInterface(if (@import("builtin").cpu.arch == .wasm32) {
-    @panic("TODO: implement wasm/Font.zig");
-} else @import("native/Font.zig"));
+pub const Font = FontInterface(if (@import("builtin").cpu.arch == .wasm32) @panic("TODO: implement wasm/Font.zig") else @import("native/Font.zig"));
 
-pub const TextRun = TextRunInterface(if (@import("builtin").cpu.arch == .wasm32)
-{
-    @panic("TODO: implement wasm/TextRun.zig");
-} else @import("native/TextRun.zig"));
+pub const TextRun = TextRunInterface(if (@import("builtin").cpu.arch == .wasm32) @panic("TODO: implement wasm/TextRun.zig") else @import("native/TextRun.zig"));
 
 fn FontInterface(comptime T: type) type {
     assertDecl(T, "initBytes", fn (font_bytes: []const u8) anyerror!T);
