@@ -25,7 +25,7 @@ pub const supports_non_blocking = switch (build_options.core_platform) {
     .win32 => true,
     .wasm => false,
     .darwin => false,
-    .null => false,
+    .null => true,
 };
 
 /// Set this to true if you intend to drive the main loop yourself.
@@ -349,7 +349,9 @@ pub fn start(core: *Mod) !void {
 }
 
 fn dispatch(stack_space: []u8) void {
-    mach.mods.dispatchUntil(stack_space, .mach_core, .frame_finished) catch { @panic("Dispatch in Core failed"); };
+    mach.mods.dispatchUntil(stack_space, .mach_core, .frame_finished) catch {
+        @panic("Dispatch in Core failed");
+    };
 }
 
 fn platform_update_callback(core: *Mod, stack_space: []u8) !bool {
