@@ -4,7 +4,6 @@ const std = @import("std");
 
 // Core
 pub const Core = if (build_options.want_core) @import("Core.zig") else struct {};
-pub const Timer = if (build_options.want_core) Core.Timer else struct {};
 
 // Mach standard library
 // gamemode requires libc on linux
@@ -13,6 +12,7 @@ pub const gfx = if (build_options.want_mach) @import("gfx/main.zig") else struct
 pub const Audio = if (build_options.want_sysaudio) @import("Audio.zig") else struct {};
 pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
+pub const time = @import("time/main.zig");
 
 pub const sysaudio = if (build_options.want_sysaudio) @import("sysaudio/main.zig") else struct {};
 pub const sysgpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig") else struct {};
@@ -57,6 +57,7 @@ test {
     _ = gfx;
     _ = math;
     _ = testing;
+    _ = time;
     std.testing.refAllDeclsRecursive(@import("module/Archetype.zig"));
     std.testing.refAllDeclsRecursive(@import("module/entities.zig"));
     // std.testing.refAllDeclsRecursive(@import("module/main.zig"));

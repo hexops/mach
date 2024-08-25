@@ -5,7 +5,6 @@ const std = @import("std");
 const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
 const InputState = @import("InputState.zig");
-const Frequency = @import("Frequency.zig");
 const unicode = @import("unicode.zig");
 const detectBackendType = @import("common.zig").detectBackendType;
 const gpu = mach.gpu;

@@ -8,11 +8,11 @@ const Vec2 = math.Vec2;
 const Vec3 = math.Vec3;
 
 // Global state for our game module.
-timer: mach.Timer,
+timer: mach.time.Timer,
 player: mach.EntityID,
 direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
-spawn_timer: mach.Timer,
+spawn_timer: mach.time.Timer,
 
 // Components our game module defines.
 pub const components = .{
@@ -82,8 +82,8 @@ fn init(
     // file. If this is not done, then app.state() will panic indicating the state was never
     // initialized.
     app.init(.{
-        .timer = try mach.Timer.start(),
-        .spawn_timer = try mach.Timer.start(),
+        .timer = try mach.time.Timer.start(),
+        .spawn_timer = try mach.time.Timer.start(),
         .player = player,
     });
 

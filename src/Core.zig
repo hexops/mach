@@ -8,8 +8,6 @@ const log = std.log.scoped(.mach);
 const gamemode_log = std.log.scoped(.gamemode);
 
 pub const sysgpu = @import("../main.zig").sysgpu;
-pub const Timer = @import("core/Timer.zig");
-const Frequency = @import("core/Frequency.zig");
 
 pub const Platform = switch (build_options.core_platform) {
     .wasm => @panic("TODO: support mach.Core WASM platform"),
@@ -135,10 +133,10 @@ state: enum {
     exited,
 } = .running,
 linux_gamemode: ?bool = null,
-frame: Frequency,
+frame: mach.time.Frequency,
 
 // Might be accessed by Platform backend
-input: Frequency,
+input: mach.time.Frequency,
 swap_chain_update: std.Thread.ResetEvent = .{},
 
 // GPU
@@ -1095,12 +1093,6 @@ comptime {
     assertHasDecl(Platform, "mousePressed");
     assertHasDecl(Platform, "mouseReleased");
     assertHasDecl(Platform, "mousePosition");
-
-    // Timer
-    assertHasDecl(@This().Timer, "start");
-    assertHasDecl(@This().Timer, "read");
-    assertHasDecl(@This().Timer, "reset");
-    assertHasDecl(@This().Timer, "lap");
 }
 
 fn assertHasDecl(comptime T: anytype, comptime decl_name: []const u8) void {
@@ -1112,8 +1104,6 @@ fn assertHasField(comptime T: anytype, comptime field_name: []const u8) void {
 }
 
 test {
-    @import("std").testing.refAllDecls(Timer);
-    @import("std").testing.refAllDecls(Frequency);
     @import("std").testing.refAllDecls(Platform);
 
     @import("std").testing.refAllDeclsRecursive(InitOptions);

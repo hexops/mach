@@ -3,7 +3,6 @@ const w = @import("win32/win32.zig");
 const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
 const InputState = @import("InputState.zig");
-const Frequency = @import("Frequency.zig");
 const unicode = @import("unicode.zig");
 
 const gpu = mach.gpu;

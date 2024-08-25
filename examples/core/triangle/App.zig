@@ -11,7 +11,7 @@ pub const systems = .{
     .tick = .{ .handler = tick },
 };
 
-title_timer: mach.Timer,
+title_timer: mach.time.Timer,
 pipeline: *gpu.RenderPipeline,
 
 pub fn deinit(core: *mach.Core.Mod, app: *Mod) void {
@@ -62,7 +62,7 @@ fn init(app: *Mod, core: *mach.Core.Mod) !void {
 
     // Store our render pipeline in our module's state, so we can access it later on.
     app.init(.{
-        .title_timer = try mach.Timer.start(),
+        .title_timer = try mach.time.Timer.start(),
         .pipeline = pipeline,
     });
     try updateWindowTitle(core);

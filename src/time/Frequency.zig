@@ -1,4 +1,4 @@
-const std = @import("std");
+const mach = @import("../main.zig");
 const Timer = @import("Timer.zig");
 
 pub const Frequency = @This();
@@ -38,21 +38,21 @@ pub inline fn tick(f: *Frequency) void {
 
     if (f.delta_time) |delta_time| {
         f.delta_time_ns.* = current_time -| f.internal.last_time;
-        delta_time.* = @as(f32, @floatFromInt(f.delta_time_ns.*)) / @as(f32, @floatFromInt(std.time.ns_per_s));
+        delta_time.* = @as(f32, @floatFromInt(f.delta_time_ns.*)) / @as(f32, @floatFromInt(mach.time.ns_per_s));
     }
 
-    if (current_time >= std.time.ns_per_s) {
+    if (current_time >= mach.time.ns_per_s) {
         f.rate = f.internal.count;
         f.internal.count = 0;
         f.internal.timer.reset();
-        current_time -= std.time.ns_per_s;
+        current_time -= mach.time.ns_per_s;
     }
     f.internal.last_time = current_time;
     f.internal.count += 1;
 
     if (f.target != 0) {
         const limited_count = @min(f.target, f.internal.count);
-        const target_time_per_tick: u64 = (std.time.ns_per_s / f.target);
+        const target_time_per_tick: u64 = (mach.time.ns_per_s / f.target);
         const target_time = target_time_per_tick * limited_count;
         if (current_time > target_time) {
             f.delay_ns = 0;

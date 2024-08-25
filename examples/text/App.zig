@@ -14,12 +14,12 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
-timer: mach.Timer,
+timer: mach.time.Timer,
 player: mach.EntityID,
 direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
-spawn_timer: mach.Timer,
-fps_timer: mach.Timer,
+spawn_timer: mach.time.Timer,
+fps_timer: mach.time.Timer,
 frame_count: usize,
 rand: std.rand.DefaultPrng,
 time: f32,
@@ -104,10 +104,10 @@ fn init(
     text.schedule(.update);
 
     app.init(.{
-        .timer = try mach.Timer.start(),
-        .spawn_timer = try mach.Timer.start(),
+        .timer = try mach.time.Timer.start(),
+        .spawn_timer = try mach.time.Timer.start(),
         .player = player,
-        .fps_timer = try mach.Timer.start(),
+        .fps_timer = try mach.time.Timer.start(),
         .frame_count = 0,
         .rand = std.rand.DefaultPrng.init(1337),
         .time = 0,
