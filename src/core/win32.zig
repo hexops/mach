@@ -1,5 +1,5 @@
 const std = @import("std");
-const w = @import("win32/win32.zig");
+const w = @import("../win32.zig");
 const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
 const InputState = @import("InputState.zig");
