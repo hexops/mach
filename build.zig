@@ -286,13 +286,13 @@ pub fn build(b: *std.Build) !void {
 pub const Platform = enum {
     x11,
     wayland,
-    web,
+    wasm,
     win32,
     darwin,
     null,
 
     pub fn fromTarget(target: std.Target) Platform {
-        if (target.cpu.arch == .wasm32) return .web;
+        if (target.cpu.arch == .wasm32) return .wasm;
         if (target.os.tag.isDarwin()) return .darwin;
         if (target.os.tag == .windows) return .win32;
         return .x11;
