@@ -17,7 +17,7 @@ pub const testing = @import("testing.zig");
 
 pub const sysaudio = if (build_options.want_sysaudio) @import("sysaudio/main.zig") else struct {};
 pub const sysgpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig") else struct {};
-pub const gpu = sysgpu.sysgpu;
+pub const gpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig").sysgpu else struct {};
 
 // Module system
 pub const modules = blk: {
