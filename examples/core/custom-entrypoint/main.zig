@@ -25,7 +25,7 @@ pub fn main() !void {
     // possible on all platforms.
     if (mach.Core.supports_non_blocking) {
         mach.Core.non_blocking = true;
-        while (mach.mods.mod.mach_core.state != .exited) {
+        while (mach.mods.mod.mach_core.state().state != .exited) {
             // Execute systems until a frame has been finished.
             try mach.mods.dispatchUntil(stack_space, .mach_core, .frame_finished);
         }
