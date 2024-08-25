@@ -32,10 +32,10 @@ pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
 pub const systems = .{
+    .start = .{ .handler = start },
     .init = .{ .handler = init },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
-    .after_init = .{ .handler = afterInit },
     .end_frame = .{ .handler = endFrame },
 };
 
@@ -45,7 +45,7 @@ fn deinit(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs
     core.schedule(.deinit);
 }
 
-fn init(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, game: *Mod) !void {
+fn start(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: *Glyphs.Mod, app: *Mod) !void {
     core.schedule(.init);
     sprite_pipeline.schedule(.init);
     glyphs.schedule(.init);
@@ -54,17 +54,20 @@ fn init(core: *mach.Core.Mod, sprite_pipeline: *gfx.SpritePipeline.Mod, glyphs: 
     glyphs.schedule(.prepare);
 
     // Run our init code after glyphs module is initialized.
-    game.schedule(.after_init);
+    app.schedule(.init);
 }
 
-fn afterInit(
+fn init(
     entities: *mach.Entities.Mod,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     glyphs: *Glyphs.Mod,
-    game: *Mod,
+    app: *Mod,
     core: *mach.Core.Mod,
 ) !void {
+    core.state().on_tick = app.system(.tick);
+    core.state().on_exit = app.system(.deinit);
+
     // Create a sprite rendering pipeline
     const texture = glyphs.state().texture;
     const pipeline = try entities.new();
@@ -84,7 +87,7 @@ fn afterInit(
     try sprite.set(player, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
     sprite.schedule(.update);
 
-    game.init(.{
+    app.init(.{
         .timer = try mach.Timer.start(),
         .spawn_timer = try mach.Timer.start(),
         .player = player,
@@ -105,13 +108,13 @@ fn tick(
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     glyphs: *Glyphs.Mod,
-    game: *Mod,
+    app: *Mod,
 ) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
     // TODO(Core)
     var iter = core.state().pollEvents();
-    var direction = game.state().direction;
-    var spawning = game.state().spawning;
+    var direction = app.state().direction;
+    var spawning = app.state().spawning;
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| {
@@ -138,33 +141,33 @@ fn tick(
             else => {},
         }
     }
-    game.state().direction = direction;
-    game.state().spawning = spawning;
+    app.state().direction = direction;
+    app.state().spawning = spawning;
 
-    var player_transform = sprite.get(game.state().player, .transform).?;
+    var player_transform = sprite.get(app.state().player, .transform).?;
     var player_pos = player_transform.translation();
-    if (!spawning and game.state().spawn_timer.read() > 1.0 / 60.0) {
+    if (!spawning and app.state().spawn_timer.read() > 1.0 / 60.0) {
         // Spawn new entities
-        _ = game.state().spawn_timer.lap();
+        _ = app.state().spawn_timer.lap();
         for (0..50) |_| {
             var new_pos = player_pos;
-            new_pos.v[0] += game.state().rand.random().floatNorm(f32) * 25;
-            new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 25;
+            new_pos.v[0] += app.state().rand.random().floatNorm(f32) * 25;
+            new_pos.v[1] += app.state().rand.random().floatNorm(f32) * 25;
 
-            const rand_index = game.state().rand.random().intRangeAtMost(usize, 0, glyphs.state().regions.count() - 1);
+            const rand_index = app.state().rand.random().intRangeAtMost(usize, 0, glyphs.state().regions.count() - 1);
             const r = glyphs.state().regions.entries.get(rand_index).value;
 
             const new_entity = try entities.new();
             try sprite.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scaleScalar(0.3)));
             try sprite.set(new_entity, .size, vec2(@floatFromInt(r.width), @floatFromInt(r.height)));
             try sprite.set(new_entity, .uv_transform, Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))));
-            try sprite.set(new_entity, .pipeline, game.state().pipeline);
-            game.state().sprites += 1;
+            try sprite.set(new_entity, .pipeline, app.state().pipeline);
+            app.state().sprites += 1;
         }
     }
 
     // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = game.state().timer.lap();
+    const delta_time = app.state().timer.lap();
 
     // Animate entities
     var q = try entities.query(.{
@@ -178,15 +181,15 @@ fn tick(
             // TODO(Core)
             if (location.x() < -@as(f32, @floatFromInt(core.state().size().width)) / 1.5 or location.x() > @as(f32, @floatFromInt(core.state().size().width)) / 1.5 or location.y() < -@as(f32, @floatFromInt(core.state().size().height)) / 1.5 or location.y() > @as(f32, @floatFromInt(core.state().size().height)) / 1.5) {
                 try entities.remove(id);
-                game.state().sprites -= 1;
+                app.state().sprites -= 1;
                 continue;
             }
 
             var transform = Mat4x4.ident;
             transform = transform.mul(&Mat4x4.scale(Vec3.splat(1.0 + (0.2 * delta_time))));
             transform = transform.mul(&Mat4x4.translate(location));
-            transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * game.state().time));
-            transform = transform.mul(&Mat4x4.scale(Vec3.splat(@max(math.cos(game.state().time / 2.0), 0.2))));
+            transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * app.state().time));
+            transform = transform.mul(&Mat4x4.scale(Vec3.splat(@max(math.cos(app.state().time / 2.0), 0.2))));
             entity_transform.* = transform;
         }
     }
@@ -199,7 +202,7 @@ fn tick(
     player_transform = Mat4x4.translate(player_pos).mul(
         &Mat4x4.scale(Vec3.splat(1.0)),
     );
-    try sprite.set(game.state().player, .transform, player_transform);
+    try sprite.set(app.state().player, .transform, player_transform);
     sprite.schedule(.update);
 
     // Perform pre-render work
@@ -207,7 +210,7 @@ fn tick(
 
     // Create a command encoder for this frame
     const label = @tagName(name) ++ ".tick";
-    game.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
+    app.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
@@ -222,44 +225,44 @@ fn tick(
         .load_op = .clear,
         .store_op = .store,
     }};
-    game.state().frame_render_pass = game.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+    app.state().frame_render_pass = app.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
         .label = label,
         .color_attachments = &color_attachments,
     }));
 
     // Render our sprite batch
-    sprite_pipeline.state().render_pass = game.state().frame_render_pass;
+    sprite_pipeline.state().render_pass = app.state().frame_render_pass;
     sprite_pipeline.schedule(.render);
 
     // Finish the frame once rendering is done.
-    game.schedule(.end_frame);
+    app.schedule(.end_frame);
 
-    game.state().time += delta_time;
+    app.state().time += delta_time;
 }
 
-fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
+fn endFrame(app: *Mod, core: *mach.Core.Mod) !void {
     // Finish render pass
-    game.state().frame_render_pass.end();
+    app.state().frame_render_pass.end();
     const label = @tagName(name) ++ ".endFrame";
-    var command = game.state().frame_encoder.finish(&.{ .label = label });
+    var command = app.state().frame_encoder.finish(&.{ .label = label });
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
     command.release();
-    game.state().frame_encoder.release();
-    game.state().frame_render_pass.release();
+    app.state().frame_encoder.release();
+    app.state().frame_render_pass.release();
 
     // Present the frame
     core.schedule(.present_frame);
 
     // Every second, update the window title with the FPS
-    if (game.state().fps_timer.read() >= 1.0) {
+    if (app.state().fps_timer.read() >= 1.0) {
         try core.state().printTitle(
             core.state().main_window,
             "glyphs [ FPS: {d} ] [ Sprites: {d} ]",
-            .{ game.state().frame_count, game.state().sprites },
+            .{ app.state().frame_count, app.state().sprites },
         );
         core.schedule(.update);
-        game.state().fps_timer.reset();
-        game.state().frame_count = 0;
+        app.state().fps_timer.reset();
+        app.state().frame_count = 0;
     }
-    game.state().frame_count += 1;
+    app.state().frame_count += 1;
 }

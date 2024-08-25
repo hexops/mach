@@ -19,8 +19,8 @@ pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
 pub const systems = .{
+    .start = .{ .handler = start },
     .init = .{ .handler = init },
-    .after_init = .{ .handler = afterInit },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
     .audio_state_change = .{ .handler = audioStateChange },
@@ -32,15 +32,28 @@ pub const components = .{
 
 sfx: mach.Audio.Opus,
 
-fn init(
-    entities: *mach.Entities.Mod,
+fn start(
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
     app: *Mod,
 ) !void {
     core.schedule(.init);
     audio.schedule(.init);
-    app.schedule(.after_init);
+    app.schedule(.init);
+}
+
+fn init(
+    entities: *mach.Entities.Mod,
+    core: *mach.Core.Mod,
+    audio: *mach.Audio.Mod,
+    app: *Mod,
+) !void {
+    core.state().on_tick = app.system(.tick);
+    core.state().on_exit = app.system(.deinit);
+
+    // Configure the audio module to send our app's .audio_state_change event when an entity's sound
+    // finishes playing.
+    audio.state().on_state_change = app.system(.audio_state_change);
 
     const bgm_fbs = std.io.fixedBufferStream(assets.bgm.bit_bit_loop);
     const bgm_sound_stream = std.io.StreamSource{ .const_buffer = bgm_fbs };
@@ -66,12 +79,6 @@ fn init(
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
 
     core.schedule(.start);
-}
-
-fn afterInit(audio: *mach.Audio.Mod, app: *Mod) void {
-    // Configure the audio module to send our app's .audio_state_change event when an entity's sound
-    // finishes playing.
-    audio.state().on_state_change = app.system(.audio_state_change);
 }
 
 fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {

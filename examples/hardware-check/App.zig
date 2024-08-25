@@ -42,8 +42,8 @@ pub const name = .app;
 pub const Mod = mach.Mod(@This());
 
 pub const systems = .{
+    .start = .{ .handler = start },
     .init = .{ .handler = init },
-    .after_init = .{ .handler = afterInit },
     .deinit = .{ .handler = deinit },
     .tick = .{ .handler = tick },
     .end_frame = .{ .handler = endFrame },
@@ -62,13 +62,13 @@ fn deinit(
     audio.schedule(.deinit);
 }
 
-fn init(
+fn start(
     audio: *mach.Audio.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     text: *gfx.Text.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     core: *mach.Core.Mod,
-    game: *Mod,
+    app: *Mod,
 ) !void {
     // If you want to try fullscreen:
     // try core.set(core.state().main_window, .fullscreen, true);
@@ -78,10 +78,10 @@ fn init(
     text.schedule(.init);
     text_pipeline.schedule(.init);
     sprite_pipeline.schedule(.init);
-    game.schedule(.after_init);
+    app.schedule(.init);
 }
 
-fn afterInit(
+fn init(
     entities: *mach.Entities.Mod,
     core: *mach.Core.Mod,
     audio: *mach.Audio.Mod,
@@ -89,11 +89,14 @@ fn afterInit(
     text_style: *gfx.TextStyle.Mod,
     text: *gfx.Text.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
-    game: *Mod,
+    app: *Mod,
 ) !void {
+    core.state().on_tick = app.system(.tick);
+    core.state().on_exit = app.system(.deinit);
+
     // Configure the audio module to run our audio_state_change system when entities audio finishes
     // playing
-    audio.state().on_state_change = game.system(.audio_state_change);
+    audio.state().on_state_change = app.system(.audio_state_change);
 
     // Create a sprite rendering pipeline
     const allocator = gpa.allocator();
@@ -135,7 +138,7 @@ fn afterInit(
     const sfx_sound_stream = std.io.StreamSource{ .const_buffer = sfx_fbs };
     const sfx = try mach.Audio.Opus.decodeStream(gpa.allocator(), sfx_sound_stream);
 
-    game.init(.{
+    app.init(.{
         .info_text = info_text,
         .info_text_style = style1,
         .timer = try mach.Timer.start(),
@@ -177,13 +180,13 @@ fn tick(
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
-    game: *Mod,
+    app: *Mod,
     audio: *mach.Audio.Mod,
 ) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
     // TODO(Core)
     var iter = core.state().pollEvents();
-    var gotta_go_fast = game.state().gotta_go_fast;
+    var gotta_go_fast = app.state().gotta_go_fast;
     while (iter.next()) |event| {
         switch (event) {
             .key_press => |ev| {
@@ -202,48 +205,48 @@ fn tick(
             else => {},
         }
     }
-    game.state().gotta_go_fast = gotta_go_fast;
+    app.state().gotta_go_fast = gotta_go_fast;
 
     // Every second, update the frame rate
-    if (game.state().fps_timer.read() >= 1.0) {
-        game.state().frame_rate = game.state().frame_count;
-        game.state().fps_timer.reset();
-        game.state().frame_count = 0;
+    if (app.state().fps_timer.read() >= 1.0) {
+        app.state().frame_rate = app.state().frame_count;
+        app.state().fps_timer.reset();
+        app.state().frame_count = 0;
     }
 
     try gfx.Text.allocPrintText(
         text,
-        game.state().info_text,
-        game.state().info_text_style,
+        app.state().info_text,
+        app.state().info_text_style,
         "[ FPS: {d} ]\n[ Sprites spawned: {d} ]",
-        .{ game.state().frame_rate, game.state().num_sprites_spawned },
+        .{ app.state().frame_rate, app.state().num_sprites_spawned },
     );
     text.schedule(.update);
 
-    // var player_transform = sprite.get(game.state().player, .transform).?;
+    // var player_transform = sprite.get(app.state().player, .transform).?;
     // var player_pos = player_transform.translation();
     const window_width: f32 = @floatFromInt(core.get(core.state().main_window, .width).?);
 
     const entities_per_second: f32 = @floatFromInt(
-        game.state().rand.random().intRangeAtMost(usize, 0, if (gotta_go_fast) 50 else 10),
+        app.state().rand.random().intRangeAtMost(usize, 0, if (gotta_go_fast) 50 else 10),
     );
-    if (game.state().spawn_timer.read() > 1.0 / entities_per_second) {
+    if (app.state().spawn_timer.read() > 1.0 / entities_per_second) {
         // Spawn new entities
-        _ = game.state().spawn_timer.lap();
+        _ = app.state().spawn_timer.lap();
 
         var new_pos = vec3(-(window_width / 2), 0, 0);
-        new_pos.v[1] += game.state().rand.random().floatNorm(f32) * 50;
+        new_pos.v[1] += app.state().rand.random().floatNorm(f32) * 50;
 
         const new_entity = try entities.new();
         try sprite.set(new_entity, .transform, Mat4x4.translate(new_pos));
         try sprite.set(new_entity, .size, vec2(32, 32));
         try sprite.set(new_entity, .uv_transform, Mat3x3.translate(vec2(0, 0)));
-        try sprite.set(new_entity, .pipeline, game.state().pipeline);
-        game.state().num_sprites_spawned += 1;
+        try sprite.set(new_entity, .pipeline, app.state().pipeline);
+        app.state().num_sprites_spawned += 1;
     }
 
     // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = game.state().timer.lap();
+    const delta_time = app.state().timer.lap();
 
     // Move entities to the right, and make them smaller the further they travel
     var q = try entities.query(.{
@@ -261,11 +264,11 @@ fn tick(
 
                 // Play a new SFX
                 const e = try entities.new();
-                try audio.set(e, .samples, game.state().sfx.samples);
-                try audio.set(e, .channels, game.state().sfx.channels);
+                try audio.set(e, .samples, app.state().sfx.samples);
+                try audio.set(e, .channels, app.state().sfx.channels);
                 try audio.set(e, .index, 0);
                 try audio.set(e, .playing, true);
-                game.state().score += 1;
+                app.state().score += 1;
             } else {
                 var transform = Mat4x4.ident;
                 transform = transform.mul(&Mat4x4.translate(location.add(&vec3(speed * delta_time, (speed / 2.0) * delta_time * progression, 0))));
@@ -283,7 +286,7 @@ fn tick(
 
     // Create a command encoder for this frame
     const label = @tagName(name) ++ ".tick";
-    game.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
+    app.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
@@ -298,39 +301,39 @@ fn tick(
         .load_op = .clear,
         .store_op = .store,
     }};
-    game.state().frame_render_pass = game.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+    app.state().frame_render_pass = app.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
         .label = label,
         .color_attachments = &color_attachments,
     }));
 
     // Render our sprite batch
-    sprite_pipeline.state().render_pass = game.state().frame_render_pass;
+    sprite_pipeline.state().render_pass = app.state().frame_render_pass;
     sprite_pipeline.schedule(.render);
 
     // Render our text batch
-    text_pipeline.state().render_pass = game.state().frame_render_pass;
+    text_pipeline.state().render_pass = app.state().frame_render_pass;
     text_pipeline.schedule(.render);
 
     // Finish the frame once rendering is done.
-    game.schedule(.end_frame);
+    app.schedule(.end_frame);
 
-    game.state().time += delta_time;
+    app.state().time += delta_time;
 }
 
-fn endFrame(game: *Mod, core: *mach.Core.Mod) !void {
+fn endFrame(app: *Mod, core: *mach.Core.Mod) !void {
     // Finish render pass
-    game.state().frame_render_pass.end();
+    app.state().frame_render_pass.end();
     const label = @tagName(name) ++ ".endFrame";
-    var command = game.state().frame_encoder.finish(&.{ .label = label });
+    var command = app.state().frame_encoder.finish(&.{ .label = label });
     core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
     command.release();
-    game.state().frame_encoder.release();
-    game.state().frame_render_pass.release();
+    app.state().frame_encoder.release();
+    app.state().frame_render_pass.release();
 
     // Present the frame
     core.schedule(.present_frame);
 
-    game.state().frame_count += 1;
+    app.state().frame_count += 1;
 }
 
 // TODO: move this helper into gfx module
