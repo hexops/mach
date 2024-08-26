@@ -17,6 +17,7 @@ const Key = Core.Key;
 const KeyMods = Core.KeyMods;
 
 const log = std.log.scoped(.mach);
+const gamemode_log = std.log.scoped(.gamemode);
 
 pub const Linux = @This();
 
@@ -33,19 +34,21 @@ headless: bool,
 refresh_rate: u32,
 size: Size,
 surface_descriptor: gpu.Surface.Descriptor,
+gamemode: ?bool = null,
 
 pub fn init(
     linux: *Linux,
     core: *Core.Mod,
     options: InitOptions,
 ) !void {
-    _ = linux;
-    _ = options;
     _ = core;
+
+    if (!options.is_app and try wantGamemode(options.allocator)) linux.gamemode = initLinuxGamemode();
     return;
 }
 
-pub fn deinit(_: *Linux) void {
+pub fn deinit(linux: *Linux) void {
+    if (linux.gamemode != null and linux.gamemode.?) deinitLinuxGamemode();
     return;
 }
 
@@ -87,6 +90,32 @@ pub fn setCursorMode(_: *Linux, _: CursorMode) void {
 
 pub fn setCursorShape(_: *Linux, _: CursorShape) void {
     return;
+}
+
+/// Check if gamemode should be activated
+pub fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidWtf8 }!bool {
+    const use_gamemode = std.process.getEnvVarOwned(
+        allocator,
+        "MACH_USE_GAMEMODE",
+    ) catch |err| switch (err) {
+        error.EnvironmentVariableNotFound => return true,
+        else => |e| return e,
+    };
+    defer allocator.free(use_gamemode);
+
+    return !(std.ascii.eqlIgnoreCase(use_gamemode, "off") or std.ascii.eqlIgnoreCase(use_gamemode, "false"));
+}
+
+pub fn initLinuxGamemode() bool {
+    mach.gamemode.start();
+    if (!mach.gamemode.isActive()) return false;
+    gamemode_log.info("gamemode: activated", .{});
+    return true;
+}
+
+pub fn deinitLinuxGamemode() void {
+    mach.gamemode.stop();
+    gamemode_log.info("gamemode: deactivated", .{});
 }
 
 ///! Taken from https://github.com/glfw/glfw/blob/master/src/xkb_unicode.c
