@@ -1,3 +1,94 @@
+const std = @import("std");
+const mach = @import("../main.zig");
+const Core = @import("../Core.zig");
+const gpu = mach.gpu;
+const InitOptions = Core.InitOptions;
+const Event = Core.Event;
+const KeyEvent = Core.KeyEvent;
+const MouseButtonEvent = Core.MouseButtonEvent;
+const MouseButton = Core.MouseButton;
+const Size = Core.Size;
+const DisplayMode = Core.DisplayMode;
+const CursorShape = Core.CursorShape;
+const VSyncMode = Core.VSyncMode;
+const CursorMode = Core.CursorMode;
+const Position = Core.Position;
+const Key = Core.Key;
+const KeyMods = Core.KeyMods;
+
+const log = std.log.scoped(.mach);
+
+pub const Linux = @This();
+
+allocator: std.mem.Allocator,
+core: *Core,
+modifiers: KeyMods,
+title: [:0]u8,
+display_mode: DisplayMode,
+vsync_mode: VSyncMode,
+cursor_mode: CursorMode,
+cursor_shape: CursorShape,
+border: bool,
+headless: bool,
+refresh_rate: u32,
+size: Size,
+surface_descriptor: gpu.Surface.Descriptor,
+
+pub fn init(
+    linux: *Linux,
+    core: *Core.Mod,
+    options: InitOptions,
+) !void {
+    _ = linux;
+    _ = options;
+    _ = core;
+    return;
+}
+
+pub fn deinit(_: *Linux) void {
+    return;
+}
+
+pub fn update(_: *Linux) !void {
+    return;
+}
+
+pub fn setTitle(_: *Linux, _: [:0]const u8) void {
+    return;
+}
+
+pub fn setDisplayMode(_: *Linux, _: DisplayMode) void {
+    return;
+}
+
+pub fn setBorder(_: *Linux, _: bool) void {
+    return;
+}
+
+pub fn setHeadless(_: *Linux, _: bool) void {
+    return;
+}
+
+pub fn setVSync(_: *Linux, _: VSyncMode) void {
+    return;
+}
+
+pub fn setSize(_: *Linux, _: Size) void {
+    return;
+}
+
+pub fn size(_: *Linux) Size {
+    return Size{ .width = 100, .height = 100 };
+}
+
+pub fn setCursorMode(_: *Linux, _: CursorMode) void {
+    return;
+}
+
+pub fn setCursorShape(_: *Linux, _: CursorShape) void {
+    return;
+}
+
 ///! Taken from https://github.com/glfw/glfw/blob/master/src/xkb_unicode.c
 const KeySym = c_ulong;
 const keysym_table = &[_]struct { KeySym, u21 }{

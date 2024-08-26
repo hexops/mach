@@ -12,10 +12,14 @@ const gamemode_log = std.log.scoped(.gamemode);
 // Whether or not you can drive the main loop in a non-blocking fashion, or if the underlying
 // platform must take control and drive the main loop itself.
 pub const supports_non_blocking = switch (build_options.core_platform) {
+    // Platforms that support non-blocking mode.
+    .linux => true,
     .windows => true,
+    .null => true,
+
+    // Platforms which take control of the main loop.
     .wasm => false,
     .darwin => false,
-    .null => true,
 };
 
 const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
@@ -786,6 +790,7 @@ pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
 const Platform = switch (build_options.core_platform) {
     .wasm => @panic("TODO: support mach.Core WASM platform"),
     .windows => @import("core/Windows.zig"),
+    .linux => @import("core/Linux.zig"),
     .darwin => @import("core/Darwin.zig"),
     .null => @import("core/Null.zig"),
 };

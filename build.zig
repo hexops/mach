@@ -267,6 +267,7 @@ pub fn build(b: *std.Build) !void {
 
 pub const Platform = enum {
     wasm,
+    linux,
     windows,
     darwin,
     null,
@@ -275,6 +276,7 @@ pub const Platform = enum {
         if (target.cpu.arch == .wasm32) return .wasm;
         if (target.os.tag.isDarwin()) return .darwin;
         if (target.os.tag == .windows) return .windows;
+        if (target.os.tag == .linux) return .linux;
         return .null;
     }
 };
