@@ -120,19 +120,20 @@ on_tick: ?mach.AnySystem = null,
 /// Callback system invoked when application is exiting
 on_exit: ?mach.AnySystem = null,
 
-allocator: std.mem.Allocator,
+/// Main window of the application
 main_window: mach.EntityID,
-platform: Platform,
-title: [256:0]u8 = undefined,
+
+/// Current state of the application
 state: enum {
     running,
     exiting,
     deinitializing,
     exited,
 } = .running,
-frame: mach.time.Frequency,
 
-// Might be accessed by Platform backend
+// TODO: handle window titles better
+title: [256:0]u8 = undefined,
+frame: mach.time.Frequency,
 input: mach.time.Frequency,
 swap_chain_update: std.Thread.ResetEvent = .{},
 
@@ -145,7 +146,9 @@ surface: *gpu.Surface,
 swap_chain: *gpu.SwapChain,
 descriptor: gpu.SwapChain.Descriptor,
 
-// Internal state
+// Internal module state
+allocator: std.mem.Allocator,
+platform: Platform,
 events: EventQueue,
 input_state: InputState,
 oom: std.Thread.ResetEvent = .{},
