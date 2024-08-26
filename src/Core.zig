@@ -315,7 +315,7 @@ pub fn start(core: *Mod) !void {
         }
         // Don't return, because Platform.run wouldn't either (marked noreturn due to underlying
         // platform APIs never returning.)
-        std.process.exit(1);
+        std.process.exit(0);
     } else {
         // Platform drives the main loop.
         Platform.run(platform_update_callback, .{ &mach.mods.mod.mach_core, stack_space });
@@ -323,7 +323,7 @@ pub fn start(core: *Mod) !void {
         // Platform.run should be marked noreturn, so this shouldn't ever run. But just in case we
         // accidentally introduce a different Platform.run in the future, we put an exit here for
         // good measure.
-        std.process.exit(1);
+        std.process.exit(0);
     }
 }
 
@@ -768,7 +768,7 @@ pub const InitOptions = struct {
 };
 
 pub const InputState = struct {
-    const KeyBitSet = std.StaticBitSet(@intFromEnum(Key.max) + 1);
+    const KeyBitSet = std.StaticBitSet(@as(u8, @intFromEnum(Key.max)) + 1);
     const MouseButtonSet = std.StaticBitSet(@as(u4, @intFromEnum(MouseButton.max)) + 1);
 
     keys: KeyBitSet = KeyBitSet.initEmpty(),
@@ -965,6 +965,12 @@ pub const Key = enum {
 
     iso_backslash,
     international1,
+    international2,
+    international3,
+    international4,
+    international5,
+    lang1,
+    lang2,
 
     unknown,
 
