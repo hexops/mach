@@ -5,6 +5,8 @@ const build_options = @import("build-options");
 const mach = @import("main.zig");
 const gpu = mach.gpu;
 const log = std.log.scoped(.mach);
+
+// TODO: move to Linux.zig
 const gamemode_log = std.log.scoped(.gamemode);
 
 const Platform = switch (build_options.core_platform) {
@@ -134,8 +136,10 @@ state: enum {
     deinitializing,
     exited,
 } = .running,
-linux_gamemode: ?bool = null,
 frame: mach.time.Frequency,
+
+// TODO: move to Linux.zig
+linux_gamemode: ?bool = null,
 
 // Might be accessed by Platform backend
 input: mach.time.Frequency,
@@ -291,6 +295,7 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
     try core.set(state.main_window, .width, state.platform.size.width);
     try core.set(state.main_window, .height, state.platform.size.height);
 
+    // TODO: move to Linux.zig
     if (builtin.os.tag == .linux and !options.is_app and
         state.linux_gamemode == null and try wantGamemode(options.allocator))
         state.linux_gamemode = initLinuxGamemode();
@@ -374,6 +379,7 @@ pub fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
         }
     }
 
+    // TODO: move to Linux.zig
     if (builtin.os.tag == .linux and
         state.linux_gamemode != null and
         state.linux_gamemode.?)
@@ -1009,6 +1015,7 @@ pub inline fn printUnhandledErrorCallback(_: void, ty: gpu.ErrorType, message: [
     std.process.exit(1);
 }
 
+// TODO: move to Linux.zig
 /// Check if gamemode should be activated
 pub fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidWtf8 }!bool {
     const use_gamemode = std.process.getEnvVarOwned(
@@ -1023,6 +1030,7 @@ pub fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidWtf
     return !(std.ascii.eqlIgnoreCase(use_gamemode, "off") or std.ascii.eqlIgnoreCase(use_gamemode, "false"));
 }
 
+// TODO: move to Linux.zig
 pub fn initLinuxGamemode() bool {
     mach.gamemode.start();
     if (!mach.gamemode.isActive()) return false;
@@ -1030,6 +1038,7 @@ pub fn initLinuxGamemode() bool {
     return true;
 }
 
+// TODO: move to Linux.zig
 pub fn deinitLinuxGamemode() void {
     mach.gamemode.stop();
     gamemode_log.info("gamemode: deactivated", .{});

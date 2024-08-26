@@ -67,7 +67,6 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     // TODO: support UIKit.
 }
 
-// Called on the main thread
 pub fn init(
     darwin: *Darwin,
     core: *Core.Mod,
@@ -130,77 +129,62 @@ pub fn deinit(darwin: *Darwin) void {
     return;
 }
 
-// Called on the main thread
 pub fn update(_: *Darwin) !void {
     return;
 }
 
-// May be called from any thread.
 pub fn setTitle(_: *Darwin, _: [:0]const u8) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setDisplayMode(_: *Darwin, _: DisplayMode) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setBorder(_: *Darwin, _: bool) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setHeadless(_: *Darwin, _: bool) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setVSync(_: *Darwin, _: VSyncMode) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setSize(_: *Darwin, _: Size) void {
     return;
 }
 
-// May be called from any thread.
 pub fn size(_: *Darwin) Size {
     return Size{ .width = 100, .height = 100 };
 }
 
-// May be called from any thread.
 pub fn setCursorMode(_: *Darwin, _: CursorMode) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setCursorShape(_: *Darwin, _: CursorShape) void {
     return;
 }
 
-// May be called from any thread.
 pub fn keyPressed(_: *Darwin, _: Key) bool {
     return false;
 }
 
-// May be called from any thread.
 pub fn keyReleased(_: *Darwin, _: Key) bool {
     return true;
 }
 
-// May be called from any thread.
 pub fn mousePressed(_: *Darwin, _: MouseButton) bool {
     return false;
 }
 
-// May be called from any thread.
 pub fn mouseReleased(_: *Darwin, _: MouseButton) bool {
     return true;
 }
 
-// May be called from any thread.
 pub fn mousePosition(_: *Darwin) Position {
     return Position{ .x = 0, .y = 0 };
 }

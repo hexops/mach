@@ -38,7 +38,6 @@ refresh_rate: u32,
 size: Size,
 surface_descriptor: gpu.Surface.Descriptor,
 
-// Called on the main thread
 pub fn init(
     nul: *Null,
     core: *Core.Mod,
@@ -54,77 +53,62 @@ pub fn deinit(_: *Null) void {
     return;
 }
 
-// Called on the main thread
 pub fn update(_: *Null) !void {
     return;
 }
 
-// May be called from any thread.
 pub fn setTitle(_: *Null, _: [:0]const u8) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setDisplayMode(_: *Null, _: DisplayMode) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setBorder(_: *Null, _: bool) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setHeadless(_: *Null, _: bool) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setVSync(_: *Null, _: VSyncMode) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setSize(_: *Null, _: Size) void {
     return;
 }
 
-// May be called from any thread.
 pub fn size(_: *Null) Size {
     return Size{ .width = 100, .height = 100 };
 }
 
-// May be called from any thread.
 pub fn setCursorMode(_: *Null, _: CursorMode) void {
     return;
 }
 
-// May be called from any thread.
 pub fn setCursorShape(_: *Null, _: CursorShape) void {
     return;
 }
 
-// May be called from any thread.
 pub fn keyPressed(_: *Null, _: Key) bool {
     return false;
 }
 
-// May be called from any thread.
 pub fn keyReleased(_: *Null, _: Key) bool {
     return true;
 }
 
-// May be called from any thread.
 pub fn mousePressed(_: *Null, _: MouseButton) bool {
     return false;
 }
 
-// May be called from any thread.
 pub fn mouseReleased(_: *Null, _: MouseButton) bool {
     return true;
 }
 
-// May be called from any thread.
 pub fn mousePosition(_: *Null) Position {
     return Position{ .x = 0, .y = 0 };
 }
