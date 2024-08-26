@@ -9,13 +9,6 @@ const log = std.log.scoped(.mach);
 // TODO: move to Linux.zig
 const gamemode_log = std.log.scoped(.gamemode);
 
-const Platform = switch (build_options.core_platform) {
-    .wasm => @panic("TODO: support mach.Core WASM platform"),
-    .windows => @import("core/Windows.zig"),
-    .darwin => @import("core/Darwin.zig"),
-    .null => @import("core/Null.zig"),
-};
-
 // Whether or not you can drive the main loop in a non-blocking fashion, or if the underlying
 // platform must take control and drive the main loop itself.
 pub const supports_non_blocking = switch (build_options.core_platform) {
@@ -158,23 +151,6 @@ descriptor: gpu.SwapChain.Descriptor,
 events: EventQueue,
 input_state: InputState,
 oom: std.Thread.ResetEvent = .{},
-
-// TODO: this needs to be removed.
-pub const InitOptions = struct {
-    allocator: std.mem.Allocator,
-    is_app: bool = false,
-    headless: bool = false,
-    display_mode: DisplayMode = .windowed,
-    border: bool = true,
-    title: [:0]const u8 = "Mach core",
-    size: Size = .{ .width = 1920 / 2, .height = 1080 / 2 },
-    power_preference: gpu.PowerPreference = .undefined,
-    required_features: ?[]const gpu.FeatureName = null,
-    required_limits: ?gpu.Limits = null,
-    swap_chain_usage: gpu.Texture.UsageFlags = .{
-        .render_attachment = true,
-    },
-};
 
 fn update(core: *Mod, entities: *mach.Entities.Mod) !void {
     _ = core;
@@ -400,6 +376,437 @@ pub fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
     state.events.deinit();
 }
 
+/// Returns the next event until there are no more available. You should check for events during
+/// every on_tick()
+pub inline fn nextEvent(core: *@This()) ?Event {
+    return core.events.readItem();
+}
+
+/// Push an event onto the event queue, or set OOM if no space is available.
+///
+/// Updates the input_state tracker.
+pub inline fn pushEvent(core: *@This(), event: Event) void {
+    // Write event
+    core.events.writeItem(event) catch {
+        core.oom.set();
+        return;
+    };
+
+    // Update input state
+    switch (event) {
+        .key_press => |ev| core.input_state.keys.setValue(@intFromEnum(ev.key), true),
+        .key_release => |ev| core.input_state.keys.setValue(@intFromEnum(ev.key), false),
+        .mouse_press => |ev| core.input_state.mouse_buttons.setValue(@intFromEnum(ev.button), true),
+        .mouse_release => |ev| core.input_state.mouse_buttons.setValue(@intFromEnum(ev.button), false),
+        .mouse_motion => |ev| core.input_state.mouse_position = ev.pos,
+        .focus_lost => {
+            // Clear input state that may be 'stuck' when focus is regained.
+            core.input_state.keys = InputState.KeyBitSet.initEmpty();
+            core.input_state.mouse_buttons = InputState.MouseButtonSet.initEmpty();
+        },
+        else => {},
+    }
+}
+
+/// Reports whether mach.Core ran out of memory, indicating events may have been dropped.
+///
+/// Once called, the OOM flag is reset and mach.Core will continue operating normally.
+pub fn outOfMemory(core: *@This()) bool {
+    if (!core.oom.isSet()) return false;
+    core.oom.reset();
+    return true;
+}
+
+/// Sets the window title. The string must be owned by Core, and will not be copied or freed. It is
+/// advised to use the `core.title` buffer for this purpose, e.g.:
+///
+/// ```
+/// const title = try std.fmt.bufPrintZ(&core.title, "Hello, world!", .{});
+/// core.setTitle(title);
+/// ```
+pub inline fn setTitle(core: *@This(), value: [:0]const u8) void {
+    return core.platform.setTitle(value);
+}
+
+/// Set the window mode
+pub inline fn setDisplayMode(core: *@This(), mode: DisplayMode) void {
+    return core.platform.setDisplayMode(mode);
+}
+
+/// Returns the window mode
+pub inline fn displayMode(core: *@This()) DisplayMode {
+    return core.platform.display_mode;
+}
+
+pub inline fn setBorder(core: *@This(), value: bool) void {
+    return core.platform.setBorder(value);
+}
+
+pub inline fn border(core: *@This()) bool {
+    return core.platform.border;
+}
+
+pub inline fn setHeadless(core: *@This(), value: bool) void {
+    return core.platform.setHeadless(value);
+}
+
+pub inline fn headless(core: *@This()) bool {
+    return core.platform.headless;
+}
+
+pub fn keyPressed(core: *@This(), key: Key) bool {
+    return core.input_state.isKeyPressed(key);
+}
+
+pub fn keyReleased(core: *@This(), key: Key) bool {
+    return core.input_state.isKeyReleased(key);
+}
+
+pub fn mousePressed(core: *@This(), button: MouseButton) bool {
+    return core.input_state.isMouseButtonPressed(button);
+}
+
+pub fn mouseReleased(core: *@This(), button: MouseButton) bool {
+    return core.input_state.isMouseButtonReleased(button);
+}
+
+pub fn mousePosition(core: *@This()) Position {
+    return core.input_state.mouse_position;
+}
+
+/// Set refresh rate synchronization mode. Default `.triple`
+///
+/// Calling this function also implicitly calls setFrameRateLimit for you:
+/// ```
+/// .none   => setFrameRateLimit(0) // unlimited
+/// .double => setFrameRateLimit(0) // unlimited
+/// .triple => setFrameRateLimit(2 * max_monitor_refresh_rate)
+/// ```
+pub inline fn setVSync(core: *@This(), mode: VSyncMode) void {
+    return core.platform.setVSync(mode);
+}
+
+/// Returns refresh rate synchronization mode.
+pub inline fn vsync(core: *@This()) VSyncMode {
+    return core.platform.vsync_mode;
+}
+
+/// Sets the frame rate limit. Default 0 (unlimited)
+///
+/// This is applied *in addition* to the vsync mode.
+pub inline fn setFrameRateLimit(core: *@This(), limit: u32) void {
+    core.frame.target = limit;
+}
+
+/// Returns the frame rate limit, or zero if unlimited.
+pub inline fn frameRateLimit(core: *@This()) u32 {
+    return core.frame.target;
+}
+
+/// Set the window size, in subpixel units.
+pub inline fn setSize(core: *@This(), value: Size) void {
+    return core.platform.setSize(value);
+}
+
+/// Returns the window size, in subpixel units.
+pub inline fn size(core: *@This()) Size {
+    return core.platform.size;
+}
+
+pub inline fn setCursorMode(core: *@This(), mode: CursorMode) void {
+    return core.platform.setCursorMode(mode);
+}
+
+pub inline fn cursorMode(core: *@This()) CursorMode {
+    return core.platform.cursorMode();
+}
+
+pub inline fn setCursorShape(core: *@This(), cursor: CursorShape) void {
+    return core.platform.setCursorShape(cursor);
+}
+
+pub inline fn cursorShape(core: *@This()) CursorShape {
+    return core.platform.cursorShape();
+}
+
+/// Sets the minimum target frequency of the input handling thread.
+///
+/// Input handling (the main thread) runs at a variable frequency. The thread blocks until there are
+/// input events available, or until it needs to unblock in order to achieve the minimum target
+/// frequency which is your collaboration point of opportunity with the main thread.
+///
+/// For example, by default (`setInputFrequency(1)`) mach-core will aim to invoke `updateMainThread`
+/// at least once per second (but potentially much more, e.g. once per every mouse movement or
+/// keyboard button press.) If you were to increase the input frequency to say 60hz e.g.
+/// `setInputFrequency(60)` then mach-core will aim to invoke your `updateMainThread` 60 times per
+/// second.
+///
+/// An input frequency of zero implies unlimited, in which case the main thread will busy-wait.
+///
+/// # Multithreaded mach-core behavior
+///
+/// On some platforms, mach-core is able to handle input and rendering independently for
+/// improved performance and responsiveness.
+///
+/// | Platform | Threading       |
+/// |----------|-----------------|
+/// | Desktop  | Multi threaded  |
+/// | Browser  | Single threaded |
+/// | Mobile   | TBD             |
+///
+/// On single-threaded platforms, `update` and the (optional) `updateMainThread` callback are
+/// invoked in sequence, one after the other, on the same thread.
+///
+/// On multi-threaded platforms, `init` and `deinit` are called on the main thread, while `update`
+/// is called on a separate rendering thread. The (optional) `updateMainThread` callback can be
+/// used in cases where you must run a function on the main OS thread (such as to open a native
+/// file dialog on macOS, since many system GUI APIs must be run on the main OS thread.) It is
+/// advised you do not use this callback to run any code except when absolutely neccessary, as
+/// it is in direct contention with input handling.
+///
+/// APIs which are not accessible from a specific thread are declared as such, otherwise can be
+/// called from any thread as they are internally synchronized.
+pub inline fn setInputFrequency(core: *@This(), input_frequency: u32) void {
+    core.input.target = input_frequency;
+}
+
+/// Returns the input frequency, or zero if unlimited (busy-waiting mode)
+pub inline fn inputFrequency(core: *@This()) u32 {
+    return core.input.target;
+}
+
+/// Returns the actual number of frames rendered (`update` calls that returned) in the last second.
+///
+/// This is updated once per second.
+pub inline fn frameRate(core: *@This()) u32 {
+    return core.frame.rate;
+}
+
+/// Returns the actual number of input thread iterations in the last second. See setInputFrequency
+/// for what this means.
+///
+/// This is updated once per second.
+pub inline fn inputRate(core: *@This()) u32 {
+    return core.input.rate;
+}
+
+/// Returns the underlying native NSWindow pointer
+///
+/// May only be called on macOS.
+pub fn nativeWindowCocoa(core: *@This()) *anyopaque {
+    return core.platform.nativeWindowCocoa();
+}
+
+/// Returns the underlying native Windows' HWND pointer
+///
+/// May only be called on Windows.
+pub fn nativeWindowWin32(core: *@This()) std.os.windows.HWND {
+    return core.platform.nativeWindowWin32();
+}
+
+fn presentFrame(core: *Mod, entities: *mach.Entities.Mod) !void {
+    const state: *@This() = core.state();
+
+    // Update windows title
+    var num_windows: usize = 0;
+    var q = try entities.query(.{
+        .ids = mach.Entities.Mod.read(.id),
+        .titles = Mod.read(.title),
+    });
+    while (q.next()) |v| {
+        for (v.ids, v.titles) |_, title| {
+            num_windows += 1;
+            state.platform.setTitle(title);
+        }
+    }
+    if (num_windows > 1) @panic("mach: Core currently only supports a single window");
+
+    _ = try state.platform.update();
+    state.swap_chain.present();
+
+    // Update swapchain for the next frame
+    if (state.swap_chain_update.isSet()) blk: {
+        state.swap_chain_update.reset();
+
+        switch (state.platform.vsync_mode) {
+            .triple => state.frame.target = 2 * state.platform.refresh_rate,
+            else => state.frame.target = 0,
+        }
+
+        if (state.platform.size.width == 0 or state.platform.size.height == 0) break :blk;
+
+        state.descriptor.present_mode = switch (state.platform.vsync_mode) {
+            .none => .immediate,
+            .double => .fifo,
+            .triple => .mailbox,
+        };
+        state.descriptor.width = @intCast(state.platform.size.width);
+        state.descriptor.height = @intCast(state.platform.size.height);
+        state.swap_chain.release();
+        state.swap_chain = state.device.createSwapChain(state.surface, &state.descriptor);
+    }
+
+    // TODO(important): update this information in response to resize events rather than
+    // after frame submission
+    try core.set(state.main_window, .framebuffer_format, state.descriptor.format);
+    try core.set(state.main_window, .framebuffer_width, state.descriptor.width);
+    try core.set(state.main_window, .framebuffer_height, state.descriptor.height);
+    try core.set(state.main_window, .width, state.platform.size.width);
+    try core.set(state.main_window, .height, state.platform.size.height);
+
+    // Signal that the frame was finished.
+    core.schedule(.frame_finished);
+
+    switch (core.state().state) {
+        .running => core.scheduleAny(core.state().on_tick.?),
+        .exiting => {
+            core.scheduleAny(core.state().on_exit.?);
+            core.state().state = .deinitializing;
+        },
+        .deinitializing => {},
+        .exited => @panic("application not running"),
+    }
+
+    // Record to frame rate frequency monitor that a frame was finished.
+    state.frame.tick();
+}
+
+/// Prints into the window title buffer using a format string and arguments. e.g.
+///
+/// ```
+/// try core.state().printTitle(core_mod, core_mod.state().main_window, "Hello, {s}!", .{"Mach"});
+/// ```
+pub fn printTitle(
+    core: *@This(),
+    window_id: mach.EntityID,
+    comptime fmt: []const u8,
+    args: anytype,
+) !void {
+    _ = window_id;
+    // Allocate and assign a new window title slice.
+    const slice = try std.fmt.allocPrintZ(core.allocator, fmt, args);
+    defer core.allocator.free(slice);
+    core.setTitle(slice);
+
+    // TODO: This function does not have access to *core.Mod to update
+    // try core.Mod.set(window_id, .title, slice);
+}
+
+fn exit(core: *Mod) void {
+    core.state().state = .exiting;
+}
+
+pub inline fn requestAdapterCallback(
+    context: *RequestAdapterResponse,
+    status: gpu.RequestAdapterStatus,
+    adapter: ?*gpu.Adapter,
+    message: ?[*:0]const u8,
+) void {
+    context.* = RequestAdapterResponse{
+        .status = status,
+        .adapter = adapter,
+        .message = message,
+    };
+}
+
+// TODO(important): expose device loss to users, this can happen especially in the web and on mobile
+// devices. Users will need to re-upload all assets to the GPU in this event.
+fn deviceLostCallback(reason: gpu.Device.LostReason, msg: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
+    _ = userdata;
+    _ = reason;
+    log.err("mach: device lost: {s}", .{msg});
+    @panic("mach: device lost");
+}
+
+pub inline fn printUnhandledErrorCallback(_: void, ty: gpu.ErrorType, message: [*:0]const u8) void {
+    switch (ty) {
+        .validation => std.log.err("gpu: validation error: {s}\n", .{message}),
+        .out_of_memory => std.log.err("gpu: out of memory: {s}\n", .{message}),
+        .device_lost => std.log.err("gpu: device lost: {s}\n", .{message}),
+        .unknown => std.log.err("gpu: unknown error: {s}\n", .{message}),
+        else => unreachable,
+    }
+    std.process.exit(1);
+}
+
+// TODO: move to Linux.zig
+/// Check if gamemode should be activated
+pub fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidWtf8 }!bool {
+    const use_gamemode = std.process.getEnvVarOwned(
+        allocator,
+        "MACH_USE_GAMEMODE",
+    ) catch |err| switch (err) {
+        error.EnvironmentVariableNotFound => return true,
+        else => |e| return e,
+    };
+    defer allocator.free(use_gamemode);
+
+    return !(std.ascii.eqlIgnoreCase(use_gamemode, "off") or std.ascii.eqlIgnoreCase(use_gamemode, "false"));
+}
+
+// TODO: move to Linux.zig
+pub fn initLinuxGamemode() bool {
+    mach.gamemode.start();
+    if (!mach.gamemode.isActive()) return false;
+    gamemode_log.info("gamemode: activated", .{});
+    return true;
+}
+
+// TODO: move to Linux.zig
+pub fn deinitLinuxGamemode() void {
+    mach.gamemode.stop();
+    gamemode_log.info("gamemode: deactivated", .{});
+}
+
+pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
+    const backend = std.process.getEnvVarOwned(
+        allocator,
+        "MACH_GPU_BACKEND",
+    ) catch |err| switch (err) {
+        error.EnvironmentVariableNotFound => {
+            if (builtin.target.isDarwin()) return .metal;
+            if (builtin.target.os.tag == .windows) return .d3d12;
+            return .vulkan;
+        },
+        else => return err,
+    };
+    defer allocator.free(backend);
+
+    if (std.ascii.eqlIgnoreCase(backend, "null")) return .null;
+    if (std.ascii.eqlIgnoreCase(backend, "d3d11")) return .d3d11;
+    if (std.ascii.eqlIgnoreCase(backend, "d3d12")) return .d3d12;
+    if (std.ascii.eqlIgnoreCase(backend, "metal")) return .metal;
+    if (std.ascii.eqlIgnoreCase(backend, "vulkan")) return .vulkan;
+    if (std.ascii.eqlIgnoreCase(backend, "opengl")) return .opengl;
+    if (std.ascii.eqlIgnoreCase(backend, "opengles")) return .opengles;
+
+    @panic("unknown MACH_GPU_BACKEND type");
+}
+
+const Platform = switch (build_options.core_platform) {
+    .wasm => @panic("TODO: support mach.Core WASM platform"),
+    .windows => @import("core/Windows.zig"),
+    .darwin => @import("core/Darwin.zig"),
+    .null => @import("core/Null.zig"),
+};
+
+// TODO: this needs to be removed.
+pub const InitOptions = struct {
+    allocator: std.mem.Allocator,
+    is_app: bool = false,
+    headless: bool = false,
+    display_mode: DisplayMode = .windowed,
+    border: bool = true,
+    title: [:0]const u8 = "Mach core",
+    size: Size = .{ .width = 1920 / 2, .height = 1080 / 2 },
+    power_preference: gpu.PowerPreference = .undefined,
+    required_features: ?[]const gpu.FeatureName = null,
+    required_limits: ?gpu.Limits = null,
+    swap_chain_usage: gpu.Texture.UsageFlags = .{
+        .render_attachment = true,
+    },
+};
+
 pub const InputState = struct {
     const KeyBitSet = std.StaticBitSet(@intFromEnum(Key.max) + 1);
     const MouseButtonSet = std.StaticBitSet(@as(u4, @intFromEnum(MouseButton.max)) + 1);
@@ -614,58 +1021,6 @@ pub const KeyMods = packed struct(u8) {
     _padding: u2 = 0,
 };
 
-/// Returns the next event until there are no more available. You should check for events during
-/// every on_tick()
-pub inline fn nextEvent(core: *@This()) ?Event {
-    return core.events.readItem();
-}
-
-/// Push an event onto the event queue, or set OOM if no space is available.
-///
-/// Updates the input_state tracker.
-pub inline fn pushEvent(core: *@This(), event: Event) void {
-    // Write event
-    core.events.writeItem(event) catch {
-        core.oom.set();
-        return;
-    };
-
-    // Update input state
-    switch (event) {
-        .key_press => |ev| core.input_state.keys.setValue(@intFromEnum(ev.key), true),
-        .key_release => |ev| core.input_state.keys.setValue(@intFromEnum(ev.key), false),
-        .mouse_press => |ev| core.input_state.mouse_buttons.setValue(@intFromEnum(ev.button), true),
-        .mouse_release => |ev| core.input_state.mouse_buttons.setValue(@intFromEnum(ev.button), false),
-        .mouse_motion => |ev| core.input_state.mouse_position = ev.pos,
-        .focus_lost => {
-            // Clear input state that may be 'stuck' when focus is regained.
-            core.input_state.keys = InputState.KeyBitSet.initEmpty();
-            core.input_state.mouse_buttons = InputState.MouseButtonSet.initEmpty();
-        },
-        else => {},
-    }
-}
-
-/// Reports whether mach.Core ran out of memory, indicating events may have been dropped.
-///
-/// Once called, the OOM flag is reset and mach.Core will continue operating normally.
-pub fn outOfMemory(core: *@This()) bool {
-    if (!core.oom.isSet()) return false;
-    core.oom.reset();
-    return true;
-}
-
-/// Sets the window title. The string must be owned by Core, and will not be copied or freed. It is
-/// advised to use the `core.title` buffer for this purpose, e.g.:
-///
-/// ```
-/// const title = try std.fmt.bufPrintZ(&core.title, "Hello, world!", .{});
-/// core.setTitle(title);
-/// ```
-pub inline fn setTitle(core: *@This(), value: [:0]const u8) void {
-    return core.platform.setTitle(value);
-}
-
 pub const DisplayMode = enum {
     /// Windowed mode.
     windowed,
@@ -683,52 +1038,6 @@ pub const DisplayMode = enum {
     /// Always allow users to choose their preferred display mode.
     borderless,
 };
-
-/// Set the window mode
-pub inline fn setDisplayMode(core: *@This(), mode: DisplayMode) void {
-    return core.platform.setDisplayMode(mode);
-}
-
-/// Returns the window mode
-pub inline fn displayMode(core: *@This()) DisplayMode {
-    return core.platform.display_mode;
-}
-
-pub inline fn setBorder(core: *@This(), value: bool) void {
-    return core.platform.setBorder(value);
-}
-
-pub inline fn border(core: *@This()) bool {
-    return core.platform.border;
-}
-
-pub inline fn setHeadless(core: *@This(), value: bool) void {
-    return core.platform.setHeadless(value);
-}
-
-pub inline fn headless(core: *@This()) bool {
-    return core.platform.headless;
-}
-
-pub fn keyPressed(core: *@This(), key: Key) bool {
-    return core.input_state.isKeyPressed(key);
-}
-
-pub fn keyReleased(core: *@This(), key: Key) bool {
-    return core.input_state.isKeyReleased(key);
-}
-
-pub fn mousePressed(core: *@This(), button: MouseButton) bool {
-    return core.input_state.isMouseButtonPressed(button);
-}
-
-pub fn mouseReleased(core: *@This(), button: MouseButton) bool {
-    return core.input_state.isMouseButtonReleased(button);
-}
-
-pub fn mousePosition(core: *@This()) Position {
-    return core.input_state.mouse_position;
-}
 
 pub const VSyncMode = enum {
     /// Potential screen tearing.
@@ -752,35 +1061,6 @@ pub const VSyncMode = enum {
     triple,
 };
 
-/// Set refresh rate synchronization mode. Default `.triple`
-///
-/// Calling this function also implicitly calls setFrameRateLimit for you:
-/// ```
-/// .none   => setFrameRateLimit(0) // unlimited
-/// .double => setFrameRateLimit(0) // unlimited
-/// .triple => setFrameRateLimit(2 * max_monitor_refresh_rate)
-/// ```
-pub inline fn setVSync(core: *@This(), mode: VSyncMode) void {
-    return core.platform.setVSync(mode);
-}
-
-/// Returns refresh rate synchronization mode.
-pub inline fn vsync(core: *@This()) VSyncMode {
-    return core.platform.vsync_mode;
-}
-
-/// Sets the frame rate limit. Default 0 (unlimited)
-///
-/// This is applied *in addition* to the vsync mode.
-pub inline fn setFrameRateLimit(core: *@This(), limit: u32) void {
-    core.frame.target = limit;
-}
-
-/// Returns the frame rate limit, or zero if unlimited.
-pub inline fn frameRateLimit(core: *@This()) u32 {
-    return core.frame.target;
-}
-
 pub const Size = struct {
     width: u32,
     height: u32,
@@ -789,16 +1069,6 @@ pub const Size = struct {
         return a.width == b.width and a.height == b.height;
     }
 };
-
-/// Set the window size, in subpixel units.
-pub inline fn setSize(core: *@This(), value: Size) void {
-    return core.platform.setSize(value);
-}
-
-/// Returns the window size, in subpixel units.
-pub inline fn size(core: *@This()) Size {
-    return core.platform.size;
-}
 
 pub const CursorMode = enum {
     /// Makes the cursor visible and behaving normally.
@@ -826,286 +1096,16 @@ pub const CursorShape = enum {
     not_allowed,
 };
 
-pub inline fn setCursorMode(core: *@This(), mode: CursorMode) void {
-    return core.platform.setCursorMode(mode);
-}
-
-pub inline fn cursorMode(core: *@This()) CursorMode {
-    return core.platform.cursorMode();
-}
-
-pub inline fn setCursorShape(core: *@This(), cursor: CursorShape) void {
-    return core.platform.setCursorShape(cursor);
-}
-
-pub inline fn cursorShape(core: *@This()) CursorShape {
-    return core.platform.cursorShape();
-}
-
 pub const Position = struct {
     x: f64,
     y: f64,
 };
-
-/// Sets the minimum target frequency of the input handling thread.
-///
-/// Input handling (the main thread) runs at a variable frequency. The thread blocks until there are
-/// input events available, or until it needs to unblock in order to achieve the minimum target
-/// frequency which is your collaboration point of opportunity with the main thread.
-///
-/// For example, by default (`setInputFrequency(1)`) mach-core will aim to invoke `updateMainThread`
-/// at least once per second (but potentially much more, e.g. once per every mouse movement or
-/// keyboard button press.) If you were to increase the input frequency to say 60hz e.g.
-/// `setInputFrequency(60)` then mach-core will aim to invoke your `updateMainThread` 60 times per
-/// second.
-///
-/// An input frequency of zero implies unlimited, in which case the main thread will busy-wait.
-///
-/// # Multithreaded mach-core behavior
-///
-/// On some platforms, mach-core is able to handle input and rendering independently for
-/// improved performance and responsiveness.
-///
-/// | Platform | Threading       |
-/// |----------|-----------------|
-/// | Desktop  | Multi threaded  |
-/// | Browser  | Single threaded |
-/// | Mobile   | TBD             |
-///
-/// On single-threaded platforms, `update` and the (optional) `updateMainThread` callback are
-/// invoked in sequence, one after the other, on the same thread.
-///
-/// On multi-threaded platforms, `init` and `deinit` are called on the main thread, while `update`
-/// is called on a separate rendering thread. The (optional) `updateMainThread` callback can be
-/// used in cases where you must run a function on the main OS thread (such as to open a native
-/// file dialog on macOS, since many system GUI APIs must be run on the main OS thread.) It is
-/// advised you do not use this callback to run any code except when absolutely neccessary, as
-/// it is in direct contention with input handling.
-///
-/// APIs which are not accessible from a specific thread are declared as such, otherwise can be
-/// called from any thread as they are internally synchronized.
-pub inline fn setInputFrequency(core: *@This(), input_frequency: u32) void {
-    core.input.target = input_frequency;
-}
-
-/// Returns the input frequency, or zero if unlimited (busy-waiting mode)
-pub inline fn inputFrequency(core: *@This()) u32 {
-    return core.input.target;
-}
-
-/// Returns the actual number of frames rendered (`update` calls that returned) in the last second.
-///
-/// This is updated once per second.
-pub inline fn frameRate(core: *@This()) u32 {
-    return core.frame.rate;
-}
-
-/// Returns the actual number of input thread iterations in the last second. See setInputFrequency
-/// for what this means.
-///
-/// This is updated once per second.
-pub inline fn inputRate(core: *@This()) u32 {
-    return core.input.rate;
-}
-
-/// Returns the underlying native NSWindow pointer
-///
-/// May only be called on macOS.
-pub fn nativeWindowCocoa(core: *@This()) *anyopaque {
-    return core.platform.nativeWindowCocoa();
-}
-
-/// Returns the underlying native Windows' HWND pointer
-///
-/// May only be called on Windows.
-pub fn nativeWindowWin32(core: *@This()) std.os.windows.HWND {
-    return core.platform.nativeWindowWin32();
-}
-
-fn presentFrame(core: *Mod, entities: *mach.Entities.Mod) !void {
-    const state: *@This() = core.state();
-
-    // Update windows title
-    var num_windows: usize = 0;
-    var q = try entities.query(.{
-        .ids = mach.Entities.Mod.read(.id),
-        .titles = Mod.read(.title),
-    });
-    while (q.next()) |v| {
-        for (v.ids, v.titles) |_, title| {
-            num_windows += 1;
-            state.platform.setTitle(title);
-        }
-    }
-    if (num_windows > 1) @panic("mach: Core currently only supports a single window");
-
-    _ = try state.platform.update();
-    state.swap_chain.present();
-
-    // Update swapchain for the next frame
-    if (state.swap_chain_update.isSet()) blk: {
-        state.swap_chain_update.reset();
-
-        switch (state.platform.vsync_mode) {
-            .triple => state.frame.target = 2 * state.platform.refresh_rate,
-            else => state.frame.target = 0,
-        }
-
-        if (state.platform.size.width == 0 or state.platform.size.height == 0) break :blk;
-
-        state.descriptor.present_mode = switch (state.platform.vsync_mode) {
-            .none => .immediate,
-            .double => .fifo,
-            .triple => .mailbox,
-        };
-        state.descriptor.width = @intCast(state.platform.size.width);
-        state.descriptor.height = @intCast(state.platform.size.height);
-        state.swap_chain.release();
-        state.swap_chain = state.device.createSwapChain(state.surface, &state.descriptor);
-    }
-
-    // TODO(important): update this information in response to resize events rather than
-    // after frame submission
-    try core.set(state.main_window, .framebuffer_format, state.descriptor.format);
-    try core.set(state.main_window, .framebuffer_width, state.descriptor.width);
-    try core.set(state.main_window, .framebuffer_height, state.descriptor.height);
-    try core.set(state.main_window, .width, state.platform.size.width);
-    try core.set(state.main_window, .height, state.platform.size.height);
-
-    // Signal that the frame was finished.
-    core.schedule(.frame_finished);
-
-    switch (core.state().state) {
-        .running => core.scheduleAny(core.state().on_tick.?),
-        .exiting => {
-            core.scheduleAny(core.state().on_exit.?);
-            core.state().state = .deinitializing;
-        },
-        .deinitializing => {},
-        .exited => @panic("application not running"),
-    }
-
-    // Record to frame rate frequency monitor that a frame was finished.
-    state.frame.tick();
-}
-
-/// Prints into the window title buffer using a format string and arguments. e.g.
-///
-/// ```
-/// try core.state().printTitle(core_mod, core_mod.state().main_window, "Hello, {s}!", .{"Mach"});
-/// ```
-pub fn printTitle(
-    core: *@This(),
-    window_id: mach.EntityID,
-    comptime fmt: []const u8,
-    args: anytype,
-) !void {
-    _ = window_id;
-    // Allocate and assign a new window title slice.
-    const slice = try std.fmt.allocPrintZ(core.allocator, fmt, args);
-    defer core.allocator.free(slice);
-    core.setTitle(slice);
-
-    // TODO: This function does not have access to *core.Mod to update
-    // try core.Mod.set(window_id, .title, slice);
-}
-
-fn exit(core: *Mod) void {
-    core.state().state = .exiting;
-}
 
 pub const RequestAdapterResponse = struct {
     status: gpu.RequestAdapterStatus,
     adapter: ?*gpu.Adapter,
     message: ?[*:0]const u8,
 };
-
-pub inline fn requestAdapterCallback(
-    context: *RequestAdapterResponse,
-    status: gpu.RequestAdapterStatus,
-    adapter: ?*gpu.Adapter,
-    message: ?[*:0]const u8,
-) void {
-    context.* = RequestAdapterResponse{
-        .status = status,
-        .adapter = adapter,
-        .message = message,
-    };
-}
-
-// TODO(important): expose device loss to users, this can happen especially in the web and on mobile
-// devices. Users will need to re-upload all assets to the GPU in this event.
-fn deviceLostCallback(reason: gpu.Device.LostReason, msg: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
-    _ = userdata;
-    _ = reason;
-    log.err("mach: device lost: {s}", .{msg});
-    @panic("mach: device lost");
-}
-
-pub inline fn printUnhandledErrorCallback(_: void, ty: gpu.ErrorType, message: [*:0]const u8) void {
-    switch (ty) {
-        .validation => std.log.err("gpu: validation error: {s}\n", .{message}),
-        .out_of_memory => std.log.err("gpu: out of memory: {s}\n", .{message}),
-        .device_lost => std.log.err("gpu: device lost: {s}\n", .{message}),
-        .unknown => std.log.err("gpu: unknown error: {s}\n", .{message}),
-        else => unreachable,
-    }
-    std.process.exit(1);
-}
-
-// TODO: move to Linux.zig
-/// Check if gamemode should be activated
-pub fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidWtf8 }!bool {
-    const use_gamemode = std.process.getEnvVarOwned(
-        allocator,
-        "MACH_USE_GAMEMODE",
-    ) catch |err| switch (err) {
-        error.EnvironmentVariableNotFound => return true,
-        else => |e| return e,
-    };
-    defer allocator.free(use_gamemode);
-
-    return !(std.ascii.eqlIgnoreCase(use_gamemode, "off") or std.ascii.eqlIgnoreCase(use_gamemode, "false"));
-}
-
-// TODO: move to Linux.zig
-pub fn initLinuxGamemode() bool {
-    mach.gamemode.start();
-    if (!mach.gamemode.isActive()) return false;
-    gamemode_log.info("gamemode: activated", .{});
-    return true;
-}
-
-// TODO: move to Linux.zig
-pub fn deinitLinuxGamemode() void {
-    mach.gamemode.stop();
-    gamemode_log.info("gamemode: deactivated", .{});
-}
-
-pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
-    const backend = std.process.getEnvVarOwned(
-        allocator,
-        "MACH_GPU_BACKEND",
-    ) catch |err| switch (err) {
-        error.EnvironmentVariableNotFound => {
-            if (builtin.target.isDarwin()) return .metal;
-            if (builtin.target.os.tag == .windows) return .d3d12;
-            return .vulkan;
-        },
-        else => return err,
-    };
-    defer allocator.free(backend);
-
-    if (std.ascii.eqlIgnoreCase(backend, "null")) return .null;
-    if (std.ascii.eqlIgnoreCase(backend, "d3d11")) return .d3d11;
-    if (std.ascii.eqlIgnoreCase(backend, "d3d12")) return .d3d12;
-    if (std.ascii.eqlIgnoreCase(backend, "metal")) return .metal;
-    if (std.ascii.eqlIgnoreCase(backend, "vulkan")) return .vulkan;
-    if (std.ascii.eqlIgnoreCase(backend, "opengl")) return .opengl;
-    if (std.ascii.eqlIgnoreCase(backend, "opengles")) return .opengles;
-
-    @panic("unknown MACH_GPU_BACKEND type");
-}
 
 // Verifies that a platform implementation exposes the expected function declarations.
 comptime {
