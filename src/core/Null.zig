@@ -25,7 +25,6 @@ pub const Null = @This();
 
 allocator: std.mem.Allocator,
 core: *Core,
-input_state: Core.InputState,
 modifiers: KeyMods,
 title: [:0]u8,
 display_mode: DisplayMode,
@@ -91,24 +90,4 @@ pub fn setCursorMode(_: *Null, _: CursorMode) void {
 
 pub fn setCursorShape(_: *Null, _: CursorShape) void {
     return;
-}
-
-pub fn keyPressed(_: *Null, _: Key) bool {
-    return false;
-}
-
-pub fn keyReleased(_: *Null, _: Key) bool {
-    return true;
-}
-
-pub fn mousePressed(_: *Null, _: MouseButton) bool {
-    return false;
-}
-
-pub fn mouseReleased(_: *Null, _: MouseButton) bool {
-    return true;
-}
-
-pub fn mousePosition(_: *Null) Position {
-    return Position{ .x = 0, .y = 0 };
 }

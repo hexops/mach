@@ -23,7 +23,6 @@ pub const Darwin = @This();
 
 allocator: std.mem.Allocator,
 core: *Core,
-input_state: Core.InputState,
 title: [:0]const u8,
 display_mode: DisplayMode,
 vsync_mode: VSyncMode,
@@ -109,7 +108,6 @@ pub fn init(
     darwin.* = .{
         .allocator = options.allocator,
         .core = @fieldParentPtr("platform", darwin),
-        .input_state = .{},
         .title = options.title,
         .display_mode = options.display_mode,
         .vsync_mode = .none,
@@ -167,24 +165,4 @@ pub fn setCursorMode(_: *Darwin, _: CursorMode) void {
 
 pub fn setCursorShape(_: *Darwin, _: CursorShape) void {
     return;
-}
-
-pub fn keyPressed(_: *Darwin, _: Key) bool {
-    return false;
-}
-
-pub fn keyReleased(_: *Darwin, _: Key) bool {
-    return true;
-}
-
-pub fn mousePressed(_: *Darwin, _: MouseButton) bool {
-    return false;
-}
-
-pub fn mouseReleased(_: *Darwin, _: MouseButton) bool {
-    return true;
-}
-
-pub fn mousePosition(_: *Darwin) Position {
-    return Position{ .x = 0, .y = 0 };
 }

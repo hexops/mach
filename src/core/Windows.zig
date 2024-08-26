@@ -45,8 +45,6 @@ dinput: *w.IDirectInput8W,
 saved_window_rect: w.RECT,
 surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
 state: *Core,
-input_state: Core.InputState,
-oom: std.Thread.ResetEvent = .{},
 
 // ------------------------------
 // Platform interface
@@ -60,7 +58,6 @@ pub fn init(
     self.allocator = options.allocator;
     self.core = @fieldParentPtr("platform", self);
     self.size = options.size;
-    self.input_state = .{};
     self.saved_window_rect = .{ .top = 0, .left = 0, .right = 0, .bottom = 0 };
 
     const hInstance = w.GetModuleHandleW(null);
@@ -153,7 +150,7 @@ pub fn update(self: *Win32) !void {
 
 pub fn setTitle(self: *Win32, title: [:0]const u8) void {
     const wtitle = std.unicode.utf8ToUtf16LeAllocZ(self.allocator, title) catch {
-        self.oom.set();
+        self.state.oom.set();
         return;
     };
     defer self.allocator.free(wtitle);
@@ -258,26 +255,6 @@ pub fn setCursorShape(self: *Win32, shape: CursorShape) void {
     self.cursor_shape = shape;
 }
 
-pub fn keyPressed(self: *Win32, key: Key) bool {
-    return self.input_state.isKeyPressed(key);
-}
-
-pub fn keyReleased(self: *Win32, key: Key) bool {
-    return self.input_state.isKeyReleased(key);
-}
-
-pub fn mousePressed(self: *Win32, button: MouseButton) bool {
-    return self.input_state.isMouseButtonPressed(button);
-}
-
-pub fn mouseReleased(self: *Win32, button: MouseButton) bool {
-    return self.input_state.isMouseButtonReleased(button);
-}
-
-pub fn mousePosition(self: *Win32) Position {
-    return self.input_state.mouse_position;
-}
-
 pub fn nativeWindowWin32(self: *Win32) w.HWND {
     return self.window;
 }
@@ -303,18 +280,6 @@ fn restoreWindowPosition(self: *Win32) void {
     }
 }
 
-pub fn outOfMemory(self: *Win32) bool {
-    if (self.oom.isSet()) {
-        self.oom.reset();
-        return true;
-    }
-    return false;
-}
-
-fn pushEvent(self: *Win32, event: Event) void {
-    self.state.events.writeItem(event) catch self.oom.set();
-}
-
 fn getKeyboardModifiers() mach.Core.KeyMods {
     return .{
         .shift = w.GetKeyState(@as(i32, @intFromEnum(w.VK_SHIFT))) < 0, //& 0x8000 == 0x8000,
@@ -336,7 +301,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
 
     switch (msg) {
         w.WM_CLOSE => {
-            self.pushEvent(.close);
+            self.state.pushEvent(.close);
             return 0;
         },
         w.WM_SIZE => {
@@ -358,7 +323,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             if (vkey == w.VK_PROCESSKEY) return 0;
 
             if (msg == w.WM_SYSKEYDOWN and vkey == w.VK_F4) {
-                self.pushEvent(.close);
+                self.state.pushEvent(.close);
                 return 0;
             }
 
@@ -381,16 +346,26 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             const mods = getKeyboardModifiers();
             const key = keyFromScancode(scancode);
             if (msg == w.WM_KEYDOWN or msg == w.WM_SYSKEYDOWN) {
-                if (flags & w.KF_REPEAT == 0) {
-                    self.pushEvent(.{ .key_press = .{ .key = key, .mods = mods } });
-                    self.input_state.keys.setValue(@intFromEnum(key), true);
-                } else {
-                    self.pushEvent(.{ .key_repeat = .{ .key = key, .mods = mods } });
-                }
-            } else {
-                self.pushEvent(.{ .key_release = .{ .key = key, .mods = mods } });
-                self.input_state.keys.setValue(@intFromEnum(key), false);
-            }
+                if (flags & w.KF_REPEAT == 0)
+                    self.state.pushEvent(.{
+                        .key_press = .{
+                            .key = key,
+                            .mods = mods,
+                        },
+                    })
+                else
+                    self.state.pushEvent(.{
+                        .key_repeat = .{
+                            .key = key,
+                            .mods = mods,
+                        },
+                    });
+            } else self.state.pushEvent(.{
+                .key_release = .{
+                    .key = key,
+                    .mods = mods,
+                },
+            });
 
             return 0;
         },
@@ -408,7 +383,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             }
             var iter = std.unicode.Utf16LeIterator.init(chars);
             if (iter.nextCodepoint()) |codepoint| {
-                self.pushEvent(.{ .char_input = .{ .codepoint = codepoint.? } });
+                self.state.pushEvent(.{ .char_input = .{ .codepoint = codepoint.? } });
             } else |err| {
                 err catch {};
             }
@@ -439,14 +414,20 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                 w.WM_MBUTTONDOWN,
                 w.WM_RBUTTONDOWN,
                 w.WM_XBUTTONDOWN,
-                => {
-                    self.pushEvent(.{ .mouse_press = .{ .button = button, .mods = mods, .pos = .{ .x = x, .y = y } } });
-                    self.input_state.mouse_buttons.setValue(@intFromEnum(button), true);
-                },
-                else => {
-                    self.pushEvent(.{ .mouse_release = .{ .button = button, .mods = mods, .pos = .{ .x = x, .y = y } } });
-                    self.input_state.mouse_buttons.setValue(@intFromEnum(button), false);
-                },
+                => self.state.pushEvent(.{
+                    .mouse_press = .{
+                        .button = button,
+                        .mods = mods,
+                        .pos = .{ .x = x, .y = y },
+                    },
+                }),
+                else => self.state.pushEvent(.{
+                    .mouse_release = .{
+                        .button = button,
+                        .mods = mods,
+                        .pos = .{ .x = x, .y = y },
+                    },
+                }),
             }
 
             return if (msg == w.WM_XBUTTONDOWN or msg == w.WM_XBUTTONUP) w.TRUE else 0;
@@ -454,8 +435,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
         w.WM_MOUSEMOVE => {
             const x: f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF)));
             const y: f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF)));
-
-            self.pushEvent(.{
+            self.state.pushEvent(.{
                 .mouse_motion = .{
                     .pos = .{
                         .x = x,
@@ -463,8 +443,6 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                     },
                 },
             });
-            self.input_state.mouse_position = .{ .x = x, .y = y };
-
             return 0;
         },
         w.WM_MOUSEWHEEL => {
@@ -472,7 +450,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             const wheel_high_word: u16 = @truncate((wParam >> 16) & 0xffff);
             const delta_y: f32 = @as(f32, @floatFromInt(@as(i16, @bitCast(wheel_high_word)))) / WHEEL_DELTA;
 
-            self.pushEvent(.{
+            self.state.pushEvent(.{
                 .mouse_scroll = .{
                     .xoffset = 0,
                     .yoffset = delta_y,
@@ -481,13 +459,11 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return 0;
         },
         w.WM_SETFOCUS => {
-            self.pushEvent(.{ .focus_gained = {} });
+            self.state.pushEvent(.{ .focus_gained = {} });
             return 0;
         },
         w.WM_KILLFOCUS => {
-            self.pushEvent(.{ .focus_lost = {} });
-            // Clear input state when focus is lost to avoid "stuck" button when focus is regained.
-            self.input_state = .{};
+            self.state.pushEvent(.{ .focus_lost = {} });
             return 0;
         },
         else => return w.DefWindowProcW(wnd, msg, wParam, lParam),

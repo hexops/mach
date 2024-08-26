@@ -156,6 +156,8 @@ descriptor: gpu.SwapChain.Descriptor,
 
 // Internal state
 events: EventQueue,
+input_state: InputState,
+oom: std.Thread.ResetEvent = .{},
 
 // TODO: this needs to be removed.
 pub const InitOptions = struct {
@@ -208,6 +210,7 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
         .allocator = allocator,
         .main_window = main_window,
         .events = events,
+        .input_state = .{},
 
         // TODO: remove undefined initialization (disgusting!)
         .platform = undefined,
@@ -617,6 +620,41 @@ pub inline fn nextEvent(core: *@This()) ?Event {
     return core.events.readItem();
 }
 
+/// Push an event onto the event queue, or set OOM if no space is available.
+///
+/// Updates the input_state tracker.
+pub inline fn pushEvent(core: *@This(), event: Event) void {
+    // Write event
+    core.events.writeItem(event) catch {
+        core.oom.set();
+        return;
+    };
+
+    // Update input state
+    switch (event) {
+        .key_press => |ev| core.input_state.keys.setValue(@intFromEnum(ev.key), true),
+        .key_release => |ev| core.input_state.keys.setValue(@intFromEnum(ev.key), false),
+        .mouse_press => |ev| core.input_state.mouse_buttons.setValue(@intFromEnum(ev.button), true),
+        .mouse_release => |ev| core.input_state.mouse_buttons.setValue(@intFromEnum(ev.button), false),
+        .mouse_motion => |ev| core.input_state.mouse_position = ev.pos,
+        .focus_lost => {
+            // Clear input state that may be 'stuck' when focus is regained.
+            core.input_state.keys = InputState.KeyBitSet.initEmpty();
+            core.input_state.mouse_buttons = InputState.MouseButtonSet.initEmpty();
+        },
+        else => {},
+    }
+}
+
+/// Reports whether mach.Core ran out of memory, indicating events may have been dropped.
+///
+/// Once called, the OOM flag is reset and mach.Core will continue operating normally.
+pub fn outOfMemory(core: *@This()) bool {
+    if (!core.oom.isSet()) return false;
+    core.oom.reset();
+    return true;
+}
+
 /// Sets the window title. The string must be owned by Core, and will not be copied or freed. It is
 /// advised to use the `core.title` buffer for this purpose, e.g.:
 ///
@@ -670,6 +708,26 @@ pub inline fn setHeadless(core: *@This(), value: bool) void {
 
 pub inline fn headless(core: *@This()) bool {
     return core.platform.headless;
+}
+
+pub fn keyPressed(core: *@This(), key: Key) bool {
+    return core.input_state.isKeyPressed(key);
+}
+
+pub fn keyReleased(core: *@This(), key: Key) bool {
+    return core.input_state.isKeyReleased(key);
+}
+
+pub fn mousePressed(core: *@This(), button: MouseButton) bool {
+    return core.input_state.isMouseButtonPressed(button);
+}
+
+pub fn mouseReleased(core: *@This(), button: MouseButton) bool {
+    return core.input_state.isMouseButtonReleased(button);
+}
+
+pub fn mousePosition(core: *@This()) Position {
+    return core.input_state.mouse_position;
 }
 
 pub const VSyncMode = enum {
@@ -784,30 +842,10 @@ pub inline fn cursorShape(core: *@This()) CursorShape {
     return core.platform.cursorShape();
 }
 
-pub inline fn keyPressed(core: *@This(), key: Key) bool {
-    return core.platform.keyPressed(key);
-}
-
-pub inline fn keyReleased(core: *@This(), key: Key) bool {
-    return core.platform.keyReleased(key);
-}
-
-pub inline fn mousePressed(core: *@This(), button: MouseButton) bool {
-    return core.platform.mousePressed(button);
-}
-
-pub inline fn mouseReleased(core: *@This(), button: MouseButton) bool {
-    return core.platform.mouseReleased(button);
-}
-
 pub const Position = struct {
     x: f64,
     y: f64,
 };
-
-pub inline fn mousePosition(core: *@This()) Position {
-    return core.platform.mousePosition();
-}
 
 /// Sets the minimum target frequency of the input handling thread.
 ///
@@ -1100,12 +1138,6 @@ comptime {
 
     assertHasDecl(Platform, "setCursorShape");
     assertHasField(Platform, "cursor_shape");
-
-    assertHasDecl(Platform, "keyPressed");
-    assertHasDecl(Platform, "keyReleased");
-    assertHasDecl(Platform, "mousePressed");
-    assertHasDecl(Platform, "mouseReleased");
-    assertHasDecl(Platform, "mousePosition");
 }
 
 fn assertHasDecl(comptime T: anytype, comptime decl_name: []const u8) void {
