@@ -768,7 +768,7 @@ pub const InitOptions = struct {
 };
 
 pub const InputState = struct {
-    const KeyBitSet = std.StaticBitSet(@intFromEnum(Key.max) + 1);
+    const KeyBitSet = std.StaticBitSet(@as(u8, @intFromEnum(Key.max)) + 1);
     const MouseButtonSet = std.StaticBitSet(@as(u4, @intFromEnum(MouseButton.max)) + 1);
 
     keys: KeyBitSet = KeyBitSet.initEmpty(),
@@ -965,6 +965,12 @@ pub const Key = enum {
 
     iso_backslash,
     international1,
+    international2,
+    international3,
+    international4,
+    international5,
+    lang1,
+    lang2,
 
     unknown,
 
