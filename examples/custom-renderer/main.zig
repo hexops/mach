@@ -20,6 +20,5 @@ pub fn main() !void {
 
     // Dispatch systems forever or until there are none left to dispatch. If your app uses mach.Core
     // then this will block forever and never return.
-    const stack_space = try allocator.alloc(u8, 8 * 1024 * 1024);
-    try mach.mods.dispatch(stack_space, .{});
+    try mach.mods.dispatch(.{});
 }

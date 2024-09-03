@@ -26,13 +26,6 @@ fn validateModule(comptime M: type, comptime systems: bool) void {
     }
 }
 
-/// TODO: implement serialization constraints
-/// For now this exists just to indicate things that we expect will be required to be serializable in
-/// the future.
-fn Serializable(comptime T: type) type {
-    return T;
-}
-
 // TODO: add runtime module support
 pub const ModuleID = u32;
 pub const SystemID = u32;
@@ -129,13 +122,10 @@ pub fn Modules(comptime modules: anytype) type {
         const Dispatch = struct {
             module_name: ModuleID,
             system_name: SystemID,
-            args_slice: []u8,
-            args_alignment: u32,
         };
         const DispatchQueue = std.fifo.LinearFifo(Dispatch, .Dynamic);
 
         dispatch_queue_mu: std.Thread.RwLock = .{},
-        dispatch_args_queue: std.ArrayListUnmanaged(u8) = .{},
         dispatch_queue: DispatchQueue,
         mod: ModsByName(modules),
         // TODO: pass mods directly instead of ComponentTypesByName?
@@ -161,13 +151,10 @@ pub fn Modules(comptime modules: anytype) type {
 
             m.* = .{
                 .entities = entities,
-                // TODO(module): better default allocations
-                .dispatch_args_queue = try std.ArrayListUnmanaged(u8).initCapacity(allocator, 8 * 1024 * 1024),
                 .dispatch_queue = DispatchQueue.init(allocator),
                 .mod = undefined,
                 .debug_trace = debug_trace,
             };
-            errdefer m.dispatch_args_queue.deinit(allocator);
             errdefer m.dispatch_queue.deinit();
             try m.dispatch_queue.ensureTotalCapacity(1024); // TODO(module): better default allocations
 
@@ -183,7 +170,7 @@ pub fn Modules(comptime modules: anytype) type {
         }
 
         pub fn deinit(m: *@This(), allocator: std.mem.Allocator) void {
-            m.dispatch_args_queue.deinit(allocator);
+            _ = allocator; // autofix
             m.dispatch_queue.deinit();
             m.entities.deinit();
         }
@@ -216,27 +203,6 @@ pub fn Modules(comptime modules: anytype) type {
             // TODO(important): cleanup comptime
             comptime system_name: SystemEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
         ) void {
-            m.scheduleWithArgs(module_name, system_name, .{});
-        }
-
-        /// Schedule the specified system to run later, passing some additional arguments.
-        ///
-        /// Today, any arguments are allowed, but in the future these will be restricted to simple
-        /// data types
-        /// , non-pointers, and you will want to ensure they are not stateful in order for
-        /// your program to work with future debugging tools.
-        ///
-        /// In general, scheduleWithArgs should really only be used for cross-language, cross-process,
-        /// or cross-network behavior. If you otherwise need to get data from one system to another
-        /// you should be using entities and components.
-        pub fn scheduleWithArgs(
-            m: *@This(),
-            // TODO: is a variant of this function where module_name/system_name is not comptime known, but asserted to be a valid enum, useful?
-            comptime module_name: ModuleName(modules),
-            // TODO(important): cleanup comptime
-            comptime system_name: SystemEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
-            args: SystemArgsM(@TypeOf(@field(m.mod, @tagName(module_name)).__state), system_name),
-        ) void {
             // TODO: comptime safety/debugging
             const system_name_g: System = comptime moduleToGlobalSystemName(
                 // TODO(important): cleanup comptime
@@ -245,39 +211,24 @@ pub fn Modules(comptime modules: anytype) type {
                 SystemEnum,
                 system_name,
             );
-            m.sendInternal(@intFromEnum(module_name), @intFromEnum(system_name_g), args);
+            m.sendInternal(@intFromEnum(module_name), @intFromEnum(system_name_g));
         }
 
         /// Schedule the specified system to run later, using fully dynamic parameters (i.e. to run
         /// a system not known to the program at compile time.)
         pub fn scheduleDynamic(m: *@This(), module_name: ModuleID, system_name: SystemID) void {
-            m.scheduleDynamicWithArgs(module_name, system_name, .{});
-        }
-
-        /// Schedule the specified system to run later, using fully dynamic parameters (i.e. to run
-        /// a system not known to the program at compile time.)
-        pub fn scheduleDynamicWithArgs(m: *@This(), module_name: ModuleID, system_name: SystemID, args: anytype) void {
             // TODO: runtime safety/debugging
             // TODO: check args do not have obviously wrong things, like comptime values
-            // TODO: if module_name and system_name are valid enums, can we type-check args at runtime?
-            m.sendInternal(module_name, system_name, args);
+            m.sendInternal(module_name, system_name);
         }
 
-        fn sendInternal(m: *@This(), module_name: ModuleID, system_name: SystemID, args: anytype) void {
-            // TODO: verify arguments are valid, e.g. not comptime types
-            _ = Serializable(@TypeOf(args));
-
+        fn sendInternal(m: *@This(), module_name: ModuleID, system_name: SystemID) void {
             // TODO: debugging
             m.dispatch_queue_mu.lock();
             defer m.dispatch_queue_mu.unlock();
-
-            const args_bytes = std.mem.asBytes(&args);
-            m.dispatch_args_queue.appendSliceAssumeCapacity(args_bytes);
             m.dispatch_queue.writeItemAssumeCapacity(.{
                 .module_name = module_name,
                 .system_name = system_name,
-                .args_slice = m.dispatch_args_queue.items[m.dispatch_args_queue.items.len - args_bytes.len .. m.dispatch_args_queue.items.len],
-                .args_alignment = @alignOf(@TypeOf(args)),
             });
         }
 
@@ -317,12 +268,11 @@ pub fn Modules(comptime modules: anytype) type {
         /// Use .dispatch() with a .until argument if you need to specify a runtime-known system.
         pub fn dispatchUntil(
             m: *@This(),
-            stack_space: []u8,
             comptime module_name: ModuleName(modules),
             // TODO(important): cleanup comptime
             system: SystemEnumM(@TypeOf(@field(m.mod, @tagName(module_name)).__state)),
         ) !void {
-            try m.dispatch(stack_space, .{
+            try m.dispatch(.{
                 .until = .{
                     .module_name = m.moduleNameToID(module_name),
                     .system = m.systemToID(module_name, system),
@@ -336,7 +286,6 @@ pub fn Modules(comptime modules: anytype) type {
         /// which may be invoked, e.g. 8MB. It may be heap-allocated.
         pub fn dispatch(
             m: *@This(),
-            stack_space: []u8,
             options: DispatchOptions,
         ) !void {
             const Injectable = comptime blk: {
@@ -357,12 +306,11 @@ pub fn Modules(comptime modules: anytype) type {
                 }
                 @compileError("failed to initialize Injectable field (this is a bug): " ++ field.name ++ " " ++ @typeName(field.type));
             }
-            return m.dispatchInternal(stack_space, options, injectable);
+            return m.dispatchInternal(options, injectable);
         }
 
         pub fn dispatchInternal(
             m: *@This(),
-            stack_space: []u8,
             options: DispatchOptions,
             injectable: anytype,
         ) !void {
@@ -373,27 +321,14 @@ pub fn Modules(comptime modules: anytype) type {
 
             while (true) {
                 // Dequeue the next system
-                m.dispatch_queue_mu.lock();
-                var d = m.dispatch_queue.readItem() orelse {
-                    m.dispatch_queue_mu.unlock();
-                    return;
+                const d = blk: {
+                    m.dispatch_queue_mu.lock();
+                    defer m.dispatch_queue_mu.unlock();
+                    break :blk m.dispatch_queue.readItem() orelse return;
                 };
 
-                // Pop the arguments off the d.args_slice stack, so we can release args_slice space.
-                // Otherwise when we release m.dispatch_queue_mu someone may add more system' arguments
-                // to the buffer which would make it tricky to find a good point-in-time to release
-                // argument buffer space.
-                const aligned_addr = std.mem.alignForward(usize, @intFromPtr(stack_space.ptr), d.args_alignment);
-                const align_offset = aligned_addr - @intFromPtr(stack_space.ptr);
-
-                @memcpy(stack_space[align_offset .. align_offset + d.args_slice.len], d.args_slice);
-                d.args_slice = stack_space[align_offset .. align_offset + d.args_slice.len];
-
-                m.dispatch_args_queue.shrinkRetainingCapacity(m.dispatch_args_queue.items.len - d.args_slice.len);
-                m.dispatch_queue_mu.unlock();
-
                 // Dispatch the system
-                try m.callSystem(@enumFromInt(d.module_name), @enumFromInt(d.system_name), d.args_slice, injectable);
+                try m.callSystem(@enumFromInt(d.module_name), @enumFromInt(d.system_name), &.{}, injectable);
 
                 // If we only wanted to dispatch until this system, then return.
                 if (options.until) |until| {
@@ -437,6 +372,7 @@ pub fn Modules(comptime modules: anytype) type {
         inline fn callHandler(handler: anytype, args_data: []u8, injectable: anytype, comptime debug_name: anytype) !void {
             const Handler = @TypeOf(handler);
             const StdArgs = UninjectedArgsTuple(Handler);
+            if (@typeInfo(StdArgs).Struct.fields.len > 0) @compileError("mach: system may not take any arguments except injected ones: " ++ debug_name);
             const std_args: *StdArgs = @alignCast(@ptrCast(args_data.ptr));
             const args = injectArgs(Handler, @TypeOf(injectable), injectable, std_args.*, debug_name);
             const Ret = @typeInfo(Handler).@"fn".return_type orelse void;
@@ -636,15 +572,11 @@ pub fn ModSet(comptime modules: anytype) type {
                 }
 
                 pub inline fn schedule(m: *@This(), comptime system_name: SystemEnumM(M)) void {
-                    m.scheduleWithArgs(system_name, .{});
-                }
-
-                pub inline fn scheduleWithArgs(m: *@This(), comptime system_name: SystemEnumM(M), args: SystemArgsM(M, system_name)) void {
                     const ModulesT = Modules(modules);
                     const MByName = ModsByName(modules);
                     const mod_ptr: *MByName = @alignCast(@fieldParentPtr(@tagName(module_tag), m));
                     const mods: *ModulesT = @fieldParentPtr("mod", mod_ptr);
-                    mods.scheduleWithArgs(module_tag, system_name, args);
+                    mods.schedule(module_tag, system_name);
                 }
 
                 pub inline fn system(_: *@This(), comptime system_name: SystemEnumM(M)) AnySystem {
@@ -1440,7 +1372,6 @@ test "dispatch" {
         var physics_updates: usize = 0;
         var physics_calc: usize = 0;
         var renderer_updates: usize = 0;
-        var basic_args_sum: usize = 0;
     };
     var foo = struct {
         injected_args_sum: usize = 0,
@@ -1455,7 +1386,6 @@ test "dispatch" {
         pub const systems = .{
             .tick = .{ .handler = tick },
             .update = .{ .handler = update },
-            .update_with_struct_arg = .{ .handler = updateWithStructArg },
             .calc = .{ .handler = calc },
         };
 
@@ -1464,15 +1394,6 @@ test "dispatch" {
         }
 
         fn update() void {
-            global.physics_updates += 1;
-        }
-
-        const MyStruct = extern struct {
-            x: [4]extern struct { x: @Vector(4, f32) } = undefined,
-            y: [4]extern struct { x: @Vector(4, f32) } = undefined,
-        };
-        fn updateWithStructArg(arg: MyStruct) void {
-            _ = arg;
             global.physics_updates += 1;
         }
 
@@ -1486,7 +1407,6 @@ test "dispatch" {
             .tick = .{ .handler = tick },
             .frame_done = .{ .handler = fn (i32) void },
             .update = .{ .handler = update },
-            .basic_args = .{ .handler = basicArgs },
             .injected_args = .{ .handler = injectedArgs },
         };
 
@@ -1500,12 +1420,8 @@ test "dispatch" {
             global.renderer_updates += 1;
         }
 
-        fn basicArgs(a: u32, b: u32) void {
-            global.basic_args_sum = a + b;
-        }
-
-        fn injectedArgs(foo_ptr: *@TypeOf(foo), a: u32, b: u32) void {
-            foo_ptr.*.injected_args_sum = a + b;
+        fn injectedArgs(foo_ptr: *@TypeOf(foo)) void {
+            foo_ptr.*.injected_args_sum = 1337;
         }
     });
 
@@ -1523,24 +1439,20 @@ test "dispatch" {
     const M = ModuleName(modules2);
 
     // Systems
-    var stack_space: [8 * 1024 * 1024]u8 = undefined;
     modules.schedule(.engine_renderer, .update);
-    try modules.dispatchInternal(&stack_space, .{}, .{&foo});
+    try modules.dispatchInternal(.{}, .{&foo});
     try testing.expect(usize, 1).eql(global.renderer_updates);
     modules.schedule(.engine_physics, .update);
-    modules.scheduleWithArgs(.engine_physics, .update_with_struct_arg, .{.{}});
     modules.scheduleDynamic(
         @intFromEnum(@as(M, .engine_physics)),
         @intFromEnum(@as(LE, .calc)),
     );
-    try modules.dispatchInternal(&stack_space, .{}, .{&foo});
-    try testing.expect(usize, 2).eql(global.physics_updates);
+    try modules.dispatchInternal(.{}, .{&foo});
+    try testing.expect(usize, 1).eql(global.physics_updates);
     try testing.expect(usize, 1).eql(global.physics_calc);
 
     // Systems
-    modules.scheduleWithArgs(.engine_renderer, .basic_args, .{ @as(u32, 1), @as(u32, 2) }); // TODO: match arguments against fn ArgsTuple, for correctness and type inference
-    modules.scheduleWithArgs(.engine_renderer, .injected_args, .{ @as(u32, 1), @as(u32, 2) });
-    try modules.dispatchInternal(&stack_space, .{}, .{&foo});
-    try testing.expect(usize, 3).eql(global.basic_args_sum);
-    try testing.expect(usize, 3).eql(foo.injected_args_sum);
+    modules.schedule(.engine_renderer, .injected_args);
+    try modules.dispatchInternal(.{}, .{&foo});
+    try testing.expect(usize, 1337).eql(foo.injected_args_sum);
 }
