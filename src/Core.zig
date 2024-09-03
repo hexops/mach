@@ -304,22 +304,16 @@ pub fn start(core: *Mod) !void {
     }
 
     // The user wants mach.Core to take control of the main loop.
-
-    // TODO: we already have stack space since we are an executing system, so in theory we could
-    // deduplicate this allocation and just use 'our current stack space' - but accessing it from
-    // the dispatcher is tricky.
-    const stack_space = try core.state().allocator.alloc(u8, 8 * 1024 * 1024);
-
     if (supports_non_blocking) {
         while (core.state().state != .exited) {
-            dispatch(stack_space);
+            dispatch();
         }
         // Don't return, because Platform.run wouldn't either (marked noreturn due to underlying
         // platform APIs never returning.)
         std.process.exit(0);
     } else {
         // Platform drives the main loop.
-        Platform.run(platform_update_callback, .{ &mach.mods.mod.mach_core, stack_space });
+        Platform.run(platform_update_callback, .{&mach.mods.mod.mach_core});
 
         // Platform.run should be marked noreturn, so this shouldn't ever run. But just in case we
         // accidentally introduce a different Platform.run in the future, we put an exit here for
@@ -328,16 +322,16 @@ pub fn start(core: *Mod) !void {
     }
 }
 
-fn dispatch(stack_space: []u8) void {
-    mach.mods.dispatchUntil(stack_space, .mach_core, .frame_finished) catch {
+fn dispatch() void {
+    mach.mods.dispatchUntil(.mach_core, .frame_finished) catch {
         @panic("Dispatch in Core failed");
     };
 }
 
-fn platform_update_callback(core: *Mod, stack_space: []u8) !bool {
+fn platform_update_callback(core: *Mod) !bool {
     // Execute systems until .mach_core.frame_finished is dispatched, signalling a frame was
     // finished.
-    try mach.mods.dispatchUntil(stack_space, .mach_core, .frame_finished);
+    try mach.mods.dispatchUntil(.mach_core, .frame_finished);
 
     return core.state().state != .exited;
 }
