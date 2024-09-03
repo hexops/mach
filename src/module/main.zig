@@ -102,6 +102,5 @@ test "entities DB" {
     world.mod.renderer.schedule(.tick);
 
     // Dispatch systems
-    var stack_space: [8 * 1024 * 1024]u8 = undefined;
-    try world.dispatch(&stack_space, .{});
+    try world.dispatch(.{});
 }
