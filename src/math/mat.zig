@@ -483,6 +483,8 @@ pub fn Mat4x4(
 
         pub const mul = Shared.mul;
         pub const mulVec = Shared.mulVec;
+        pub const eql = Shared.eql;
+        pub const eqlApprox = Shared.eqlApprox;
     };
 }
 
@@ -519,46 +521,27 @@ pub fn MatShared(comptime RowVec: type, comptime ColVec: type, comptime Matrix: 
             return ColVec{ .v = result };
         }
 
-        // TODO: the below code was correct in our old implementation, it just needs to be updated
-        // to work with this new Mat approach, swapping f32 for the generic T float type, moving 3x3
-        // and 4x4 specific functions into the mixin above, writing new tests, etc.
+        /// Check if two matrices are approximately equal. Returns true if the absolute difference between
+        /// each element in matrix is less than or equal to the specified tolerance.
+        pub inline fn eqlApprox(a: *const Matrix, b: *const Matrix, tolerance: ColVec.T) bool {
+            inline for (0..Matrix.rows) |row| {
+                if (!ColVec.eqlApprox(&a.v[row], &b.v[row], tolerance)) {
+                    return false;
+                }
+            }
+            return true;
+        }
 
-        // /// Check if two matrices are approximate equal. Returns true if the absolute difference between
-        // /// each element in matrix them is less or equal than the specified tolerance.
-        // pub inline fn equals(a: anytype, b: @TypeOf(a), tolerance: f32) bool {
-        //     // TODO: leverage a vec.equals function
-        //     return if (@TypeOf(a) == Mat3x3) {
-        //         return float.equals(f32, a[0][0], b[0][0], tolerance) and
-        //             float.equals(f32, a[0][1], b[0][1], tolerance) and
-        //             float.equals(f32, a[0][2], b[0][2], tolerance) and
-        //             float.equals(f32, a[0][3], b[0][3], tolerance) and
-        //             float.equals(f32, a[1][0], b[1][0], tolerance) and
-        //             float.equals(f32, a[1][1], b[1][1], tolerance) and
-        //             float.equals(f32, a[1][2], b[1][2], tolerance) and
-        //             float.equals(f32, a[1][3], b[1][3], tolerance) and
-        //             float.equals(f32, a[2][0], b[2][0], tolerance) and
-        //             float.equals(f32, a[2][1], b[2][1], tolerance) and
-        //             float.equals(f32, a[2][2], b[2][2], tolerance) and
-        //             float.equals(f32, a[2][3], b[2][3], tolerance);
-        //     } else if (@TypeOf(a) == Mat4x4) {
-        //         return float.equals(f32, a[0][0], b[0][0], tolerance) and
-        //             float.equals(f32, a[0][1], b[0][1], tolerance) and
-        //             float.equals(f32, a[0][2], b[0][2], tolerance) and
-        //             float.equals(f32, a[0][3], b[0][3], tolerance) and
-        //             float.equals(f32, a[1][0], b[1][0], tolerance) and
-        //             float.equals(f32, a[1][1], b[1][1], tolerance) and
-        //             float.equals(f32, a[1][2], b[1][2], tolerance) and
-        //             float.equals(f32, a[1][3], b[1][3], tolerance) and
-        //             float.equals(f32, a[2][0], b[2][0], tolerance) and
-        //             float.equals(f32, a[2][1], b[2][1], tolerance) and
-        //             float.equals(f32, a[2][2], b[2][2], tolerance) and
-        //             float.equals(f32, a[2][3], b[2][3], tolerance) and
-        //             float.equals(f32, a[3][0], b[3][0], tolerance) and
-        //             float.equals(f32, a[3][1], b[3][1], tolerance) and
-        //             float.equals(f32, a[3][2], b[3][2], tolerance) and
-        //             float.equals(f32, a[3][3], b[3][3], tolerance);
-        //     } else @compileError("Expected matrix, found '" ++ @typeName(@TypeOf(a)) ++ "'");
-        // }
+        /// Check if two matrices are approximately equal. Returns true if the absolute difference between
+        /// each element in matrix is less than or equal to the epsilon tolerance.
+        pub inline fn eql(a: *const Matrix, b: *const Matrix) bool {
+            inline for (0..Matrix.rows) |row| {
+                if (!ColVec.eql(&a.v[row], &b.v[row])) {
+                    return false;
+                }
+            }
+            return true;
+        }
     };
 }
 
@@ -963,6 +946,70 @@ test "Mat4x4_mul" {
         &math.vec4(15, 3, -53, -54),
     );
     try testing.expect(math.Mat4x4, expected).eql(c);
+}
+
+test "Mat4x4_eql_not_ident" {
+    const m1 = math.Mat4x4.init(
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
+    );
+    const m2 = math.Mat4x4.init(
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4.5, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
+    );
+    try testing.expect(bool, math.Mat4x4.eql(&m1, &m2)).eql(false);
+}
+
+test "Mat4x4_eql_ident" {
+    const m1 = math.Mat4x4.init(
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
+    );
+    const m2 = math.Mat4x4.init(
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
+    );
+    try testing.expect(bool, math.Mat4x4.eql(&m1, &m2)).eql(true);
+}
+
+test "Mat4x4_eqlApprox_not_ident" {
+    const m1 = math.Mat4x4.init(
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
+    );
+    const m2 = math.Mat4x4.init(
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4.11, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
+    );
+    try testing.expect(bool, math.Mat4x4.eqlApprox(&m1, &m2, 0.1)).eql(false);
+}
+
+test "Mat4x4_eqlApprox_ident" {
+    const m1 = math.Mat4x4.init(
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
+    );
+    const m2 = math.Mat4x4.init(
+        &math.vec4(0, 1, 2, 3),
+        &math.vec4(4.09, 5, 6, 7),
+        &math.vec4(8, 9, 10, 11),
+        &math.vec4(12, 13, 14, 15),
+    );
+    try testing.expect(bool, math.Mat4x4.eqlApprox(&m1, &m2, 0.1)).eql(true);
 }
 
 test "projection2D_xy_centered" {
