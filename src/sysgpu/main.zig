@@ -5,13 +5,20 @@ pub const sysgpu = @import("sysgpu/main.zig");
 pub const shader = @import("shader.zig");
 const utils = @import("utils.zig");
 
-const backend_type: sysgpu.BackendType =
-    if (build_options.sysgpu_backend != .default) build_options.sysgpu_backend else switch (builtin.target.os.tag) {
-    .linux => .vulkan,
-    .macos, .ios => .metal,
-    .windows => .d3d12,
-    else => @compileError("unsupported platform"),
+const backend_type: sysgpu.BackendType = switch (build_options.sysgpu_backend) {
+    .webgpu => .webgpu,
+    .d3d12 => .d3d12,
+    .metal => .metal,
+    .vulkan => .vulkan,
+    .opengl => .opengl,
+    .default => switch (builtin.target.os.tag) {
+        .linux => .vulkan,
+        .macos, .ios => .metal,
+        .windows => .d3d12,
+        else => @compileError("unsupported platform"),
+    },
 };
+
 const impl = switch (backend_type) {
     .d3d12 => @import("d3d12.zig"),
     .metal => @import("metal.zig"),
