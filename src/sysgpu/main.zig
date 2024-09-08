@@ -5,7 +5,20 @@ pub const sysgpu = @import("sysgpu/main.zig");
 pub const shader = @import("shader.zig");
 const utils = @import("utils.zig");
 
-const backend_type: sysgpu.BackendType = backendFromBuildOption(build_options.sysgpu_backend);
+const backend_type: sysgpu.BackendType = switch (build_options.sysgpu_backend) {
+    .webgpu => .webgpu,
+    .d3d12 => .d3d12,
+    .metal => .metal,
+    .vulkan => .vulkan,
+    .opengl => .opengl,
+    .default => switch (builtin.target.os.tag) {
+        .linux => .vulkan,
+        .macos, .ios => .metal,
+        .windows => .d3d12,
+        else => @compileError("unsupported platform"),
+    },
+};
+
 const impl = switch (backend_type) {
     .d3d12 => @import("d3d12.zig"),
     .metal => @import("metal.zig"),
@@ -16,24 +29,6 @@ const impl = switch (backend_type) {
 
 var inited = false;
 var allocator: std.mem.Allocator = undefined;
-
-fn backendFromBuildOption(comptime opt: build_options.@"build.SysgpuBackend") sysgpu.BackendType {
-    switch (opt) {
-        .default => {
-            switch (builtin.target.os.tag) {
-                .linux => return .vulkan,
-                .macos, .ios => return .metal,
-                .windows => return .d3d12,
-                else => @compileError("unsupported platform"),
-            }
-        },
-        .webgpu => return .webgpu,
-        .d3d12 => return .d3d12,
-        .metal => return .metal,
-        .vulkan => return .vulkan,
-        .opengl => return .opengl,
-    }
-}
 
 pub const Impl = sysgpu.Interface(struct {
     pub fn init(alloc: std.mem.Allocator, options: impl.InitOptions) !void {
