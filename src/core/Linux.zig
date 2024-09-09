@@ -35,21 +35,72 @@ refresh_rate: u32,
 size: Size,
 surface_descriptor: gpu.Surface.Descriptor,
 gamemode: ?bool = null,
+backend: union(enum) {
+    x11: X11,
+    wayland: Wayland,
+},
 
 pub fn init(
     linux: *Linux,
     core: *Core.Mod,
     options: InitOptions,
 ) !void {
-    _ = core;
-
     if (!options.is_app and try wantGamemode(options.allocator)) linux.gamemode = initLinuxGamemode();
-    return;
+
+    const desired_backend = blk: {
+        const backend = std.process.getEnvVarOwned(
+            allocator,
+            "MACH_CORE_BACKEND",
+        ) catch |err| switch (err) {
+            error.EnvironmentVariableNotFound => {
+                // TODO(core): default to .x11 in the future
+                return .wayland;
+            },
+            else => return err,
+        };
+        defer allocator.free(backend);
+
+        if (std.ascii.eqlIgnoreCase(backend, "x11")) return .x11;
+        if (std.ascii.eqlIgnoreCase(backend, "wayland")) return .wayland;
+        std.debug.panic("mach: unknown MACH_CORE_BACKEND: {s}", .{backend});
+    };
+
+    if (desired_backend == .x11) {
+        // TODO(core): support X11 in the future
+        @panic("X11 is not supported");
+    }
+
+    // Try to initialize the desired backend, falling back to the other if that one is not supported
+    switch (desired_backend) {
+        .x11 => {
+            var x11 = X11.init(linux, core, options) catch |err| switch (err) {
+                error.NotSupported => {
+                    log.err("failed to initialize X11 backend, falling back to Wayland", .{});
+                    linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
+                },
+                else => return err,
+            };
+            linux.backend = .{ .x11 = x11 };
+        },
+        .wayland => {
+            var wayland = Wayland.init(linux, core, options) catch |err| switch (err) {
+                error.NotSupported => {
+                    log.err("failed to initialize Wayland backend, falling back to X11", .{});
+                    linux.backend = .{ .x11 = try X11.init(linux, core, options) };
+                },
+                else => return err,
+            };
+            linux.backend = .{ .wayland = wayland };
+        },
+    }
 }
 
 pub fn deinit(linux: *Linux) void {
     if (linux.gamemode != null and linux.gamemode.?) deinitLinuxGamemode();
-    return;
+    switch (linux.backend) {
+        .x11 => |backend| backend.deinit(linux),
+        .wayland => |backend| backend.deinit(linux),
+    }
 }
 
 pub fn update(_: *Linux) !void {
