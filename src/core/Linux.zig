@@ -1,8 +1,8 @@
 const std = @import("std");
 const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
-const X11 = @import("linux/X11.zig");
-const Wayland = @import("linux/Wayland.zig");
+// const X11 = @import("linux/X11.zig");
+// const Wayland = @import("linux/Wayland.zig");
 const gpu = mach.gpu;
 const InitOptions = Core.InitOptions;
 const Event = Core.Event;
@@ -21,9 +21,13 @@ const KeyMods = Core.KeyMods;
 const log = std.log.scoped(.mach);
 const gamemode_log = std.log.scoped(.gamemode);
 
-const Backend = union(enum) {
-    x11: X11,
-    wayland: Wayland,
+// const Backend = union(enum) {
+//     x11: X11,
+//     wayland: Wayland,
+// };
+const Backend = enum { // dummy backend
+    x11,
+    wayland,
 };
 
 pub const Linux = @This();
@@ -47,6 +51,8 @@ pub fn init(
     core: *Core.Mod,
     options: InitOptions,
 ) !void {
+    _ = core;
+
     linux.allocator = options.allocator;
 
     if (!options.is_app and try wantGamemode(linux.allocator)) linux.gamemode = initLinuxGamemode();
@@ -77,32 +83,32 @@ pub fn init(
     // Try to initialize the desired backend, falling back to the other if that one is not supported
     switch (desired_backend) {
         .x11 => {
-            const x11 = X11.init(core, options) catch |err| switch (err) {
-                error.NotSupported => {
-                    log.err("failed to initialize X11 backend, falling back to Wayland", .{});
-                    linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
-                },
-                else => return err,
-            };
-            linux.backend = .{ .x11 = x11 };
+            // const x11 = X11.init(core, options) catch |err| switch (err) {
+            //     error.NotSupported => {
+            //         log.err("failed to initialize X11 backend, falling back to Wayland", .{});
+            //         linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
+            //     },
+            //     else => return err,
+            // };
+            // linux.backend = .{ .x11 = x11 };
         },
         .wayland => {
-            const wayland = Wayland.init(core, options) catch |err| switch (err) {
-                error.NotSupported => {
-                    log.err("failed to initialize Wayland backend, falling back to X11", .{});
-                    linux.backend = .{ .x11 = try X11.init(linux, core, options) };
-
-                    // TODO(core): support X11 in the future
-                    @panic("X11 is not supported...YET");
-                },
-                else => return err,
-            };
-            linux.backend = .{ .wayland = wayland };
+            // const wayland = Wayland.init(core, options) catch |err| switch (err) {
+            //     error.NotSupported => {
+            //         log.err("failed to initialize Wayland backend, falling back to X11", .{});
+            //         linux.backend = .{ .x11 = try X11.init(linux, core, options) };
+            //
+            //         // TODO(core): support X11 in the future
+            //         @panic("X11 is not supported...YET");
+            //     },
+            //     else => return err,
+            // };
+            // linux.backend = .{ .wayland = wayland };
         },
     }
 
-    linux.size = linux.backend.size;
-    linux.surface_descriptor = linux.backend.surface_descriptor;
+    // linux.size = linux.backend.size;
+    // linux.surface_descriptor = linux.backend.surface_descriptor;
     linux.refresh_rate = 60; // TODO: set to something meaningful
 
     return;
@@ -110,7 +116,7 @@ pub fn init(
 
 pub fn deinit(linux: *Linux) void {
     if (linux.gamemode != null and linux.gamemode.?) deinitLinuxGamemode();
-    linux.backend.deinit();
+    // linux.backend.deinit();
     return;
 }
 
