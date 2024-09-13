@@ -183,14 +183,15 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
     var events = EventQueue.init(allocator);
     try events.ensureTotalCapacity(8192);
 
+    // TODO: remove undefined initialization (disgusting!)
+    const platform: Platform = undefined;
     core.init(.{
         .allocator = allocator,
         .main_window = main_window,
         .events = events,
         .input_state = .{},
 
-        // TODO: remove undefined initialization (disgusting!)
-        .platform = undefined,
+        .platform = platform,
 
         // TODO: these should not be state, they should be components.
         .title = title,
