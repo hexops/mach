@@ -102,6 +102,14 @@ pub fn build(b: *std.Build) !void {
         if (want_examples) try buildExamples(b, optimize, target, module);
     }
     if (want_core) {
+        if (Platform.fromTarget(target.result) == .linux) {
+            if (b.lazyDependency("wayland_headers", .{
+                .target = target,
+                .optimize = optimize,
+            })) |dep| {
+                module.linkLibrary(dep.artifact("wayland-headers"));
+            }
+        }
         if (target.result.isDarwin()) {
             if (b.lazyDependency("mach_objc", .{
                 .target = target,
