@@ -121,6 +121,12 @@ pub fn build(b: *std.Build) !void {
                 lib.linkLibrary(dep.artifact("wayland-headers"));
                 module.linkLibrary(dep.artifact("wayland-headers"));
             }
+            if (b.lazyDependency("x11_headers", .{
+                .target = target,
+                .optimize = optimize,
+            })) |dep| {
+                module.linkLibrary(dep.artifact("x11-headers"));
+            }
         }
         if (target.result.isDarwin()) {
             if (b.lazyDependency("mach_objc", .{
