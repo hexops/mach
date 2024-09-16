@@ -107,7 +107,7 @@ pub fn init(
 
     switch (linux.backend) {
         .wayland => |be| {
-            linux.surface_descriptor = .{ .next_in_chain = .{ .from_wayland_surface = &be.surface_descriptor } };
+            linux.surface_descriptor = .{ .next_in_chain = .{ .from_wayland_surface = be.surface_descriptor } };
         },
         .x11 => {}, // TODO: setup surface descriptor
     }
@@ -119,7 +119,11 @@ pub fn init(
 
 pub fn deinit(linux: *Linux) void {
     if (linux.gamemode != null and linux.gamemode.?) deinitLinuxGamemode();
-    // linux.backend.deinit();
+    switch (linux.backend) {
+        .wayland => linux.backend.wayland.deinit(linux),
+        .x11 => {}, // TODO: set to something meaningful
+    }
+
     return;
 }
 

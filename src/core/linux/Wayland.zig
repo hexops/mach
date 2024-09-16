@@ -49,7 +49,7 @@ state: *Core,
 core: *Core,
 title: [:0]const u8,
 size: *Core.Size,
-surface_descriptor: gpu.Surface.DescriptorFromWaylandSurface,
+surface_descriptor: *gpu.Surface.DescriptorFromWaylandSurface,
 configured: bool = false,
 
 display: *c.wl_display,
@@ -107,10 +107,10 @@ pub fn init(
         .surface = undefined,
     };
     wl.xkb_context = wl.libxkbcommon.xkb_context_new(0) orelse return error.FailedToGetXkbContext;
-    const registry = wl.libwaylandclient.wl_display_get_registry(wl.display) orelse return error.FailedToGetDisplayRegistry;
+    const registry = c.wl_display_get_registry(wl.display) orelse return error.FailedToGetDisplayRegistry;
 
     // TODO: handle error return value here
-    _ = wl.libwaylandclient.wl_registry_add_listener(registry, &registry_listener.listener, &wl);
+    _ = c.wl_registry_add_listener(registry, &registry_listener.listener, &wl);
 
     //Round trip to get all the registry objects
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
@@ -119,25 +119,26 @@ pub fn init(
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
 
     //Setup surface
-    wl.surface = wl.libwaylandclient.wl_compositor_create_surface(wl.interfaces.wl_compositor) orelse return error.UnableToCreateSurface;
-    wl.surface_descriptor = .{ .display = wl.display, .surface = wl.surface };
+    wl.surface = c.wl_compositor_create_surface(wl.interfaces.wl_compositor) orelse return error.UnableToCreateSurface;
+    wl.surface_descriptor = try options.allocator.create(gpu.Surface.DescriptorFromWaylandSurface);
+    wl.surface_descriptor.* = .{ .display = wl.display, .surface = wl.surface };
 
     {
-        const region = wl.libwaylandclient.wl_compositor_create_region(wl.interfaces.wl_compositor) orelse return error.CouldntCreateWaylandRegtion;
+        const region = c.wl_compositor_create_region(wl.interfaces.wl_compositor) orelse return error.CouldntCreateWaylandRegtion;
 
-        wl.libwaylandclient.wl_region_add(
+        c.wl_region_add(
             region,
             0,
             0,
             @intCast(options.size.width),
             @intCast(options.size.height),
         );
-        wl.libwaylandclient.wl_surface_set_opaque_region(wl.surface, region);
-        wl.libwaylandclient.wl_region_destroy(region);
+        c.wl_surface_set_opaque_region(wl.surface, region);
+        c.wl_region_destroy(region);
     }
 
-    const xdg_surface = wl.libwaylandclient.xdg_wm_base_get_xdg_surface(wl.interfaces.xdg_wm_base, wl.surface) orelse return error.UnableToCreateXdgSurface;
-    const toplevel = wl.libwaylandclient.xdg_surface_get_toplevel(xdg_surface) orelse return error.UnableToGetXdgTopLevel;
+    const xdg_surface = c.xdg_wm_base_get_xdg_surface(wl.interfaces.xdg_wm_base, wl.surface) orelse return error.UnableToCreateXdgSurface;
+    const toplevel = c.xdg_surface_get_toplevel(xdg_surface) orelse return error.UnableToGetXdgTopLevel;
 
     // TODO: handle this return value
     _ = c.xdg_surface_add_listener(xdg_surface, &xdg_surface_listener.listener, &wl);
@@ -146,7 +147,7 @@ pub fn init(
     _ = c.xdg_toplevel_add_listener(toplevel, &xdg_toplevel_listener.listener, &wl);
 
     // Commit changes to surface
-    wl.libwaylandclient.wl_surface_commit(wl.surface);
+    c.wl_surface_commit(wl.surface);
 
     while (wl.libwaylandclient.wl_display_dispatch(wl.display) != -1 and !wl.configured) {
         // This space intentionally left blank
@@ -154,7 +155,7 @@ pub fn init(
 
     c.xdg_toplevel_set_title(toplevel, wl.title);
 
-    const decoration = wl.libwaylandclient.zxdg_decoration_manager_v1_get_toplevel_decoration(
+    const decoration = c.zxdg_decoration_manager_v1_get_toplevel_decoration(
         wl.interfaces.zxdg_decoration_manager_v1,
         toplevel,
     ) orelse return error.UnableToGetToplevelDecoration;
@@ -162,7 +163,7 @@ pub fn init(
     c.zxdg_toplevel_decoration_v1_set_mode(decoration, c.ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
 
     // Commit changes to surface
-    wl.libwaylandclient.wl_surface_commit(wl.surface);
+    c.wl_surface_commit(wl.surface);
     // TODO: handle return value
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
 
@@ -170,11 +171,10 @@ pub fn init(
 }
 
 pub fn deinit(
-    w: *Wayland,
+    wl: *Wayland,
     linux: *Linux,
 ) void {
-    _ = w;
-    _ = linux;
+    linux.allocator.destroy(wl.surface_descriptor);
 }
 
 pub fn update(wl: *Wayland) !void {
@@ -225,23 +225,6 @@ const LibWaylandClient = struct {
     wl_display_dispatch: *const @TypeOf(c.wl_display_dispatch),
     wl_display_flush: *const @TypeOf(c.wl_display_flush),
     wl_display_get_fd: *const @TypeOf(c.wl_display_get_fd),
-    wl_display_get_registry: *const @TypeOf(c.wl_display_get_registry),
-    wl_registry_add_listener: *const @TypeOf(c.wl_registry_add_listener),
-    wl_registry_bind: *const @TypeOf(c.wl_registry_bind),
-    wl_compositor_create_surface: *const @TypeOf(c.wl_compositor_create_surface),
-    wl_seat_add_listener: *const @TypeOf(c.wl_seat_add_listener),
-    wl_seat_get_keyboard: *const @TypeOf(c.wl_seat_get_keyboard),
-    wl_compositor_create_region: *const @TypeOf(c.wl_compositor_create_region),
-    wl_region_add: *const @TypeOf(c.wl_region_add),
-    wl_keyboard_add_listener: *const @TypeOf(c.wl_keyboard_add_listener),
-    wl_seat_get_pointer: *const @TypeOf(c.wl_seat_get_pointer),
-    wl_pointer_add_listener: *const @TypeOf(c.wl_pointer_add_listener),
-    wl_keyboard_destroy: *const @TypeOf(c.wl_keyboard_destroy),
-    wl_fixed_to_double: *const @TypeOf(c.wl_fixed_to_double),
-    wl_surface_set_opaque_region: *const @TypeOf(c.wl_surface_set_opaque_region),
-    wl_region_destroy: *const @TypeOf(c.wl_region_destroy),
-    wl_pointer_destroy: *const @TypeOf(c.wl_pointer_destroy),
-    wl_surface_commit: *const @TypeOf(c.wl_surface_commit),
     wl_proxy_add_listener: *const @TypeOf(c.wl_proxy_add_listener),
     wl_proxy_get_version: *const @TypeOf(c.wl_proxy_get_version),
     wl_proxy_marshal_flags: *const @TypeOf(c.wl_proxy_marshal_flags),
@@ -270,15 +253,6 @@ const LibWaylandClient = struct {
     wl_subsurface_interface: *@TypeOf(c.wl_subsurface_interface),
     wl_surface_interface: *@TypeOf(c.wl_surface_interface),
     wl_touch_interface: *@TypeOf(c.wl_touch_interface),
-
-    xdg_surface_interface: *const @TypeOf(c.xdg_surface_interface),
-    xdg_wm_base_interface: *const @TypeOf(c.xdg_wm_base_interface),
-    xdg_toplevel_interface: *const @TypeOf(c.xdg_toplevel_interface),
-    xdg_wm_base_get_xdg_surface: *const @TypeOf(c.xdg_wm_base_get_xdg_surface),
-    xdg_surface_get_toplevel: *const @TypeOf(c.xdg_surface_get_toplevel),
-
-    zxdg_decoration_manager_v1_interface: *const @TypeOf(c.zxdg_decoration_manager_v1_interface),
-    zxdg_decoration_manager_v1_get_toplevel_decoration: *const @TypeOf(c.zxdg_decoration_manager_v1_get_toplevel_decoration),
 
     pub fn load() !LibWaylandClient {
         var lib: LibWaylandClient = undefined;
@@ -320,59 +294,59 @@ const registry_listener = struct {
         const interface = std.mem.span(interface_ptr);
 
         if (std.mem.eql(u8, "wl_compositor", interface)) {
-            wl.interfaces.wl_compositor = @ptrCast(wl.libwaylandclient.wl_registry_bind(
+            wl.interfaces.wl_compositor = @ptrCast(c.wl_registry_bind(
                 registry,
                 name,
                 wl.libwaylandclient.wl_compositor_interface,
                 @min(3, version),
             ) orelse @panic("uh idk how to proceed"));
         } else if (std.mem.eql(u8, "wl_subcompositor", interface)) {
-            wl.interfaces.wl_subcompositor = @ptrCast(wl.libwaylandclient.wl_registry_bind(
+            wl.interfaces.wl_subcompositor = @ptrCast(c.wl_registry_bind(
                 registry,
                 name,
                 wl.libwaylandclient.wl_subcompositor_interface,
                 @min(3, version),
             ) orelse @panic("uh idk how to proceed"));
         } else if (std.mem.eql(u8, "wl_shm", interface)) {
-            wl.interfaces.wl_shm = @ptrCast(wl.libwaylandclient.wl_registry_bind(
+            wl.interfaces.wl_shm = @ptrCast(c.wl_registry_bind(
                 registry,
                 name,
                 wl.libwaylandclient.wl_shm_interface,
                 @min(3, version),
             ) orelse @panic("uh idk how to proceed"));
         } else if (std.mem.eql(u8, "wl_output", interface)) {
-            wl.interfaces.wl_output = @ptrCast(wl.libwaylandclient.wl_registry_bind(
+            wl.interfaces.wl_output = @ptrCast(c.wl_registry_bind(
                 registry,
                 name,
                 wl.libwaylandclient.wl_output_interface,
                 @min(3, version),
             ) orelse @panic("uh idk how to proceed"));
             // } else if (std.mem.eql(u8, "wl_data_device_manager", interface)) {
-            //     wl.interfaces.wl_data_device_manager = @ptrCast(wl.libwaylandclient.wl_registry_bind(
+            //     wl.interfaces.wl_data_device_manager = @ptrCast(c.wl_registry_bind(
             //         registry,
             //         name,
             //         wl.libwaylandclient.wl_data_device_manager_interface,
             //         @min(3, version),
             //     ) orelse @panic("uh idk how to proceed"));
         } else if (std.mem.eql(u8, "xdg_wm_base", interface)) {
-            wl.interfaces.xdg_wm_base = @ptrCast(wl.libwaylandclient.wl_registry_bind(
+            wl.interfaces.xdg_wm_base = @ptrCast(c.wl_registry_bind(
                 registry,
                 name,
-                wl.libwaylandclient.xdg_wm_base_interface,
+                &c.xdg_wm_base_interface,
                 @min(3, version),
             ) orelse @panic("uh idk how to proceed"));
 
             // TODO: handle return value
             _ = c.xdg_wm_base_add_listener(wl.interfaces.xdg_wm_base, &xdg_wm_base_listener.listener, wl);
         } else if (std.mem.eql(u8, "zxdg_decoration_manager_v1", interface)) {
-            wl.interfaces.zxdg_decoration_manager_v1 = @ptrCast(wl.libwaylandclient.wl_registry_bind(
+            wl.interfaces.zxdg_decoration_manager_v1 = @ptrCast(c.wl_registry_bind(
                 registry,
                 name,
-                wl.libwaylandclient.zxdg_decoration_manager_v1_interface,
+                &c.zxdg_decoration_manager_v1_interface,
                 @min(3, version),
             ) orelse @panic("uh idk how to proceed"));
         } else if (std.mem.eql(u8, "wl_seat", interface)) {
-            wl.interfaces.wl_seat = @ptrCast(wl.libwaylandclient.wl_registry_bind(
+            wl.interfaces.wl_seat = @ptrCast(c.wl_registry_bind(
                 registry,
                 name,
                 wl.libwaylandclient.wl_seat_interface,
@@ -380,7 +354,7 @@ const registry_listener = struct {
             ) orelse @panic("uh idk how to proceed"));
 
             // TODO: handle return value
-            _ = wl.libwaylandclient.wl_seat_add_listener(wl.interfaces.wl_seat, &seat_listener.listener, wl);
+            _ = c.wl_seat_add_listener(wl.interfaces.wl_seat, &seat_listener.listener, wl);
         }
     }
 
@@ -626,8 +600,8 @@ const pointer_listener = struct {
         _ = pointer;
         _ = serial;
 
-        const x = wl.libwaylandclient.wl_fixed_to_double(fixed_x);
-        const y = wl.libwaylandclient.wl_fixed_to_double(fixed_y);
+        const x = c.wl_fixed_to_double(fixed_x);
+        const y = c.wl_fixed_to_double(fixed_y);
 
         wl.state.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
         wl.input_state.mouse_position = .{ .x = x, .y = y };
@@ -682,10 +656,10 @@ const seat_listener = struct {
 
     fn seatHandleCapabilities(wl: *Wayland, seat: ?*c.struct_wl_seat, caps: c.wl_seat_capability) callconv(.C) void {
         if ((caps & c.WL_SEAT_CAPABILITY_KEYBOARD) != 0) {
-            wl.keyboard = wl.libwaylandclient.wl_seat_get_keyboard(seat);
+            wl.keyboard = c.wl_seat_get_keyboard(seat);
 
             // TODO: handle return value
-            _ = wl.libwaylandclient.wl_keyboard_add_listener(wl.keyboard, &keyboard_listener.listener, wl);
+            _ = c.wl_keyboard_add_listener(wl.keyboard, &keyboard_listener.listener, wl);
         }
 
         if ((caps & c.WL_SEAT_CAPABILITY_TOUCH) != 0) {
@@ -693,23 +667,23 @@ const seat_listener = struct {
         }
 
         if ((caps & c.WL_SEAT_CAPABILITY_POINTER) != 0) {
-            wl.pointer = wl.libwaylandclient.wl_seat_get_pointer(seat);
+            wl.pointer = c.wl_seat_get_pointer(seat);
 
             // TODO: handle return value
-            _ = wl.libwaylandclient.wl_pointer_add_listener(wl.pointer, &pointer_listener.listener, wl);
+            _ = c.wl_pointer_add_listener(wl.pointer, &pointer_listener.listener, wl);
         }
 
         // Delete keyboard if its no longer in the seat
         if (wl.keyboard) |keyboard| {
             if ((caps & c.WL_SEAT_CAPABILITY_KEYBOARD) == 0) {
-                wl.libwaylandclient.wl_keyboard_destroy(keyboard);
+                c.wl_keyboard_destroy(keyboard);
                 wl.keyboard = null;
             }
         }
 
         if (wl.pointer) |pointer| {
             if ((caps & c.WL_SEAT_CAPABILITY_POINTER) == 0) {
-                wl.libwaylandclient.wl_pointer_destroy(pointer);
+                c.wl_pointer_destroy(pointer);
                 wl.pointer = null;
             }
         }
@@ -735,7 +709,7 @@ const xdg_surface_listener = struct {
         c.xdg_surface_ack_configure(xdg_surface, serial);
 
         if (wl.configured) {
-            wl.libwaylandclient.wl_surface_commit(wl.surface);
+            c.wl_surface_commit(wl.surface);
         } else {
             wl.configured = true;
         }
@@ -904,11 +878,11 @@ fn toMachKey(key: u32) Core.Key {
 }
 
 fn setContentAreaOpaque(wl: *Wayland, new_size: Core.Size) void {
-    const region = wl.libwaylandclient.wl_compositor_create_region(wl.interfaces.wl_compositor) orelse return;
+    const region = c.wl_compositor_create_region(wl.interfaces.wl_compositor) orelse return;
 
-    wl.libwaylandclient.wl_region_add(region, 0, 0, @intCast(new_size.width), @intCast(new_size.height));
-    wl.libwaylandclient.wl_surface_set_opaque_region(wl.surface, region);
-    wl.libwaylandclient.wl_region_destroy(region);
+    c.wl_region_add(region, 0, 0, @intCast(new_size.width), @intCast(new_size.height));
+    c.wl_surface_set_opaque_region(wl.surface, region);
+    c.wl_region_destroy(region);
 
     wl.core.swap_chain_update.set();
 }

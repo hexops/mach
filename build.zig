@@ -103,10 +103,22 @@ pub fn build(b: *std.Build) !void {
     }
     if (want_core) {
         if (Platform.fromTarget(target.result) == .linux) {
+            const lib = b.addStaticLibrary(.{
+                .name = "core-wayland",
+                .target = target,
+                .optimize = optimize,
+            });
+            lib.addCSourceFile(.{
+                .file = b.path("src/core/linux/wayland.c"),
+            });
+            lib.linkLibC();
+            module.linkLibrary(lib);
+
             if (b.lazyDependency("wayland_headers", .{
                 .target = target,
                 .optimize = optimize,
             })) |dep| {
+                lib.linkLibrary(dep.artifact("wayland-headers"));
                 module.linkLibrary(dep.artifact("wayland-headers"));
             }
         }
