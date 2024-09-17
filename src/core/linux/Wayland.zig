@@ -201,6 +201,7 @@ const LibXkbCommon = struct {
     xkb_compose_state_feed: *const @TypeOf(c.xkb_compose_state_feed),
     xkb_compose_state_get_status: *const @TypeOf(c.xkb_compose_state_get_status),
     xkb_compose_state_get_one_sym: *const @TypeOf(c.xkb_compose_state_get_one_sym),
+    xkb_keysym_to_utf32: *const @TypeOf(c.xkb_keysym_to_utf32),
 
     pub fn load() !LibXkbCommon {
         var lib: LibXkbCommon = undefined;
@@ -468,8 +469,9 @@ const keyboard_listener = struct {
                 const keysym: c.xkb_keysym_t = composeSymbol(wl, keysyms.?[0]);
 
                 //Try to convert that keysym to a unicode codepoint
-                if (Linux.unicodeFromKeySym(keysym)) |codepoint| {
-                    wl.state.pushEvent(Core.Event{ .char_input = .{ .codepoint = codepoint } });
+                const codepoint = wl.libxkbcommon.xkb_keysym_to_utf32(keysym);
+                if (codepoint != 0) {
+                    wl.state.pushEvent(Core.Event{ .char_input = .{ .codepoint = @truncate(codepoint) } });
                 }
             }
         } else {
