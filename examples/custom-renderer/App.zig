@@ -7,6 +7,12 @@ const vec2 = math.vec2;
 const Vec2 = math.Vec2;
 const Vec3 = math.Vec3;
 
+const App = @This();
+
+pub const mach_module = .app;
+
+pub const mach_systems = .{ .start, .init, .deinit, .tick };
+
 // Global state for our game module.
 timer: mach.time.Timer,
 player: mach.EntityID,
@@ -21,32 +27,14 @@ pub const components = .{
     .follower = .{ .type = void },
 };
 
-pub const systems = .{
-    .start = .{ .handler = start },
-    .init = .{ .handler = init },
-    .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
-};
-
-// Define the globally unique name of our module. You can use any name here, but keep in mind no
-// two modules in the program can have the same name.
-pub const name = .app;
-
-// The mach.Mod type corresponding to our module struct (this file.) This provides methods for
-// working with this module (e.g. sending events, working with its components, etc.)
-//
-// Note that Mod.state() returns an instance of our module struct.
-pub const Mod = mach.Mod(@This());
-
-pub fn deinit(core: *mach.Core.Mod, renderer: *Renderer.Mod) void {
+pub fn deinit(renderer: *Renderer) void {
     renderer.schedule(.deinit);
-    core.schedule(.deinit);
 }
 
 fn start(
-    core: *mach.Core.Mod,
-    renderer: *Renderer.Mod,
-    app: *Mod,
+    core: *mach.Core,
+    renderer: *Renderer,
+    app: *App,
 ) !void {
     core.schedule(.init);
     renderer.schedule(.init);
@@ -58,18 +46,20 @@ fn init(
     // of the program we can have these types injected here, letting us work with other modules in
     // our program seamlessly and with a type-safe API:
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
-    renderer: *Renderer.Mod,
-    app: *Mod,
+    core: *mach.Core,
+    renderer: *Renderer,
+    app: *App,
+    app_tick: mach.Call(App, .tick),
+    app_deinit: mach.Call(App, .deinit),
 ) !void {
-    core.state().on_tick = app.system(.tick);
-    core.state().on_exit = app.system(.deinit);
+    core.on_tick = app_tick.id;
+    core.on_exit = app_deinit.id;
 
     // Create our player entity.
     const player = try entities.new();
 
     // Give our player entity a .renderer.position and .renderer.scale component. Note that these
-    // are defined by the Renderer module, so we use `renderer: *Renderer.Mod` to interact with
+    // are defined by the Renderer module, so we use `renderer: *Renderer` to interact with
     // them.
     //
     // Components live in a module's namespace, so e.g. a physics2d module and renderer3d module could
@@ -79,26 +69,24 @@ fn init(
     try renderer.set(player, .scale, 1.0);
 
     // Initialize our game module's state - these are the struct fields defined at the top of this
-    // file. If this is not done, then app.state() will panic indicating the state was never
+    // file. If this is not done, then app. will panic indicating the state was never
     // initialized.
     app.init(.{
         .timer = try mach.time.Timer.start(),
         .spawn_timer = try mach.time.Timer.start(),
         .player = player,
     });
-
-    core.schedule(.start);
 }
 
 fn tick(
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
-    renderer: *Renderer.Mod,
-    app: *Mod,
+    core: *mach.Core,
+    renderer: *Renderer,
+    app: *App,
 ) !void {
-    var direction = app.state().direction;
-    var spawning = app.state().spawning;
-    while (core.state().nextEvent()) |event| {
+    var direction = app.direction;
+    var spawning = app.spawning;
+    while (core.nextEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 switch (ev.key) {
@@ -120,7 +108,7 @@ fn tick(
                     else => {},
                 }
             },
-            .close => core.schedule(.exit), // Send an event telling mach to exit the app
+            .close => core.exit(),
             else => {},
         }
     }
@@ -128,18 +116,18 @@ fn tick(
     // Keep track of which direction we want the player to move based on input, and whether we want
     // to be spawning entities.
     //
-    // Note that app.state() simply returns a pointer to a global singleton of the struct defined
+    // Note that app. simply returns a pointer to a global singleton of the struct defined
     // by this file, so we can access fields defined at the top of this file.
-    app.state().direction = direction;
-    app.state().spawning = spawning;
+    app.direction = direction;
+    app.spawning = spawning;
 
     // Get the current player position
-    var player_pos = renderer.get(app.state().player, .position).?;
+    var player_pos = renderer.get(app.player, .position).?;
 
     // If we want to spawn new entities, then spawn them now. The timer just makes spawning rate
     // independent of frame rate.
-    if (spawning and app.state().spawn_timer.read() > 1.0 / 60.0) {
-        _ = app.state().spawn_timer.lap(); // Reset the timer
+    if (spawning and app.spawn_timer.read() > 1.0 / 60.0) {
+        _ = app.spawn_timer.lap(); // Reset the timer
         for (0..5) |_| {
             // Spawn a new entity at the same position as the player, but smaller in scale.
             const new_entity = try entities.new();
@@ -152,14 +140,14 @@ fn tick(
     }
 
     // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = app.state().timer.lap();
+    const delta_time = app.timer.lap();
 
     // Calculate the player position, by moving in the direction the player wants to go
     // by the speed amount.
     const speed = 1.0;
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
-    try renderer.set(app.state().player, .position, player_pos);
+    try renderer.set(app.player, .position, player_pos);
 
     // Query all the entities that have the .follower tag indicating they should follow the player.
     // TODO(important): better querying API
@@ -168,7 +156,7 @@ fn tick(
     var q = try entities.query(.{
         .ids = mach.Entities.Mod.read(.id),
         .followers = Mod.read(.follower),
-        .positions = Renderer.Mod.write(.position),
+        .positions = Renderer.write(.position),
     });
     while (q.next()) |v| {
         for (v.ids, v.positions) |id, *position| {
@@ -182,7 +170,7 @@ fn tick(
             var q2 = try entities.query(.{
                 .ids = mach.Entities.Mod.read(.id),
                 .followers = Mod.read(.follower),
-                .positions = Renderer.Mod.read(.position),
+                .positions = Renderer.read(.position),
             });
             while (q2.next()) |v2| {
                 for (v2.ids, v2.positions) |other_id, other_position| {

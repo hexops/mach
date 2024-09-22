@@ -73,7 +73,7 @@ modifier_indices: KeyModInd,
 
 pub fn init(
     linux: *Linux,
-    core: *Core.Mod,
+    core: *Core,
     options: InitOptions,
 ) !Wayland {
     libwaylandclient = try LibWaylandClient.load();

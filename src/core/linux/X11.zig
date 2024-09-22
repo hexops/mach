@@ -6,7 +6,7 @@ pub const X11 = @This();
 
 pub fn init(
     linux: *Linux,
-    core: *Core.Mod,
+    core: *Core,
     options: InitOptions,
 ) !X11 {
     _ = linux;

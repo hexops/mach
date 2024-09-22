@@ -51,7 +51,7 @@ state: *Core,
 // ------------------------------
 pub fn init(
     self: *Win32,
-    core: *Core.Mod,
+    core: *Core,
     options: InitOptions,
 ) !void {
     self.state = core.state();

@@ -14,6 +14,12 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
+const App = @This();
+
+pub const mach_module = .app;
+
+pub const mach_systems = .{ .start, .init, .deinit, .tick, .end_frame };
+
 timer: mach.time.Timer,
 player: mach.EntityID,
 direction: Vec2 = vec2(0, 0),
@@ -28,19 +34,6 @@ pipeline: mach.EntityID,
 frame_encoder: *gpu.CommandEncoder = undefined,
 frame_render_pass: *gpu.RenderPassEncoder = undefined,
 
-// Define the globally unique name of our module. You can use any name here, but keep in mind no
-// two modules in the program can have the same name.
-pub const name = .app;
-pub const Mod = mach.Mod(@This());
-
-pub const systems = .{
-    .start = .{ .handler = start },
-    .init = .{ .handler = init },
-    .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
-    .end_frame = .{ .handler = endFrame },
-};
-
 const upscale = 1.0;
 
 const text1: []const []const u8 = &.{
@@ -51,19 +44,15 @@ const text1: []const []const u8 = &.{
 
 const text2: []const []const u8 = &.{"$!?"};
 
-fn deinit(
-    core: *mach.Core.Mod,
-    text_pipeline: *gfx.TextPipeline.Mod,
-) !void {
+fn deinit(text_pipeline: *gfx.TextPipeline.Mod) !void {
     text_pipeline.schedule(.deinit);
-    core.schedule(.deinit);
 }
 
 fn start(
-    core: *mach.Core.Mod,
+    core: *mach.Core,
     text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
-    app: *Mod,
+    app: *App,
 ) !void {
     core.schedule(.init);
     text.schedule(.init);
@@ -73,14 +62,16 @@ fn start(
 
 fn init(
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
+    core: *mach.Core,
     text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     text_style: *gfx.TextStyle.Mod,
-    app: *Mod,
+    app: *App,
+    app_tick: mach.Call(App, .tick),
+    app_deinit: mach.Call(App, .deinit),
 ) !void {
-    core.state().on_tick = app.system(.tick);
-    core.state().on_exit = app.system(.deinit);
+    core.on_tick = app_tick.id;
+    core.on_exit = app_deinit.id;
 
     // TODO: a better way to initialize entities with default values
     // TODO(text): ability to specify other style options (custom font name, font color, italic/bold, etc.)
@@ -114,20 +105,18 @@ fn init(
         .style1 = style1,
         .pipeline = pipeline,
     });
-
-    core.schedule(.start);
 }
 
 fn tick(
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
+    core: *mach.Core,
     text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
-    app: *Mod,
+    app: *App,
 ) !void {
-    var direction = app.state().direction;
-    var spawning = app.state().spawning;
-    while (core.state().nextEvent()) |event| {
+    var direction = app.direction;
+    var spawning = app.spawning;
+    while (core.nextEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 switch (ev.key) {
@@ -149,33 +138,33 @@ fn tick(
                     else => {},
                 }
             },
-            .close => core.schedule(.exit),
+            .close => core.exit(),
             else => {},
         }
     }
-    app.state().direction = direction;
-    app.state().spawning = spawning;
+    app.direction = direction;
+    app.spawning = spawning;
 
-    var player_transform = text.get(app.state().player, .transform).?;
+    var player_transform = text.get(app.player, .transform).?;
     var player_pos = player_transform.translation().divScalar(upscale);
-    if (spawning and app.state().spawn_timer.read() > (1.0 / 60.0)) {
+    if (spawning and app.spawn_timer.read() > (1.0 / 60.0)) {
         // Spawn new entities
-        _ = app.state().spawn_timer.lap();
+        _ = app.spawn_timer.lap();
         for (0..10) |_| {
             var new_pos = player_pos;
-            new_pos.v[0] += app.state().rand.random().floatNorm(f32) * 50;
-            new_pos.v[1] += app.state().rand.random().floatNorm(f32) * 50;
+            new_pos.v[0] += app.rand.random().floatNorm(f32) * 50;
+            new_pos.v[1] += app.rand.random().floatNorm(f32) * 50;
 
             // Create some text
             const new_entity = try entities.new();
-            try text.set(new_entity, .pipeline, app.state().pipeline);
+            try text.set(new_entity, .pipeline, app.pipeline);
             try text.set(new_entity, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(new_pos)));
-            try gfx.Text.allocPrintText(text, new_entity, app.state().style1, "?!$", .{});
+            try gfx.Text.allocPrintText(text, new_entity, app.style1, "?!$", .{});
         }
     }
 
     // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = app.state().timer.lap();
+    const delta_time = app.timer.lap();
 
     // Rotate entities
     var q = try entities.query(.{
@@ -189,8 +178,8 @@ fn tick(
             // transform = transform.mul(&Mat4x4.translate(location));
             var transform = Mat4x4.ident;
             transform = transform.mul(&Mat4x4.translate(location));
-            transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * app.state().time));
-            transform = transform.mul(&Mat4x4.scaleScalar(@min(math.cos(app.state().time / 2.0), 0.5)));
+            transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * app.time));
+            transform = transform.mul(&Mat4x4.scaleScalar(@min(math.cos(app.time / 2.0), 0.5)));
             entity_transform.* = transform;
         }
     }
@@ -200,20 +189,20 @@ fn tick(
     const speed = 200.0 / upscale;
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
-    try text.set(app.state().player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(player_pos)));
-    try text.set(app.state().player, .dirty, true);
+    try text.set(app.player, .transform, Mat4x4.scaleScalar(upscale).mul(&Mat4x4.translate(player_pos)));
+    try text.set(app.player, .dirty, true);
     text.schedule(.update);
 
     // Perform pre-render work
     text_pipeline.schedule(.pre_render);
 
     // Create a command encoder for this frame
-    const label = @tagName(name) ++ ".tick";
-    app.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
+    const label = @tagName(mach_module) ++ ".tick";
+    app.frame_encoder = core.device.createCommandEncoder(&.{ .label = label });
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = core.state().swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Begin render pass
@@ -224,40 +213,37 @@ fn tick(
         .load_op = .clear,
         .store_op = .store,
     }};
-    app.state().frame_render_pass = app.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+    app.frame_render_pass = app.frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
         .label = label,
         .color_attachments = &color_attachments,
     }));
 
     // Render our text batch
-    text_pipeline.state().render_pass = app.state().frame_render_pass;
+    text_pipeline.state().render_pass = app.frame_render_pass;
     text_pipeline.schedule(.render);
 
     // Finish the frame once rendering is done.
     app.schedule(.end_frame);
 
-    app.state().time += delta_time;
+    app.time += delta_time;
 }
 
 fn endFrame(
     entities: *mach.Entities.Mod,
-    app: *Mod,
-    core: *mach.Core.Mod,
+    app: *App,
+    core: *mach.Core,
 ) !void {
     // Finish render pass
-    app.state().frame_render_pass.end();
-    const label = @tagName(name) ++ ".endFrame";
-    var command = app.state().frame_encoder.finish(&.{ .label = label });
-    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
+    app.frame_render_pass.end();
+    const label = @tagName(mach_module) ++ ".endFrame";
+    var command = app.frame_encoder.finish(&.{ .label = label });
+    core.queue.submit(&[_]*gpu.CommandBuffer{command});
     command.release();
-    app.state().frame_encoder.release();
-    app.state().frame_render_pass.release();
-
-    // Present the frame
-    core.schedule(.present_frame);
+    app.frame_encoder.release();
+    app.frame_render_pass.release();
 
     // Every second, update the window title with the FPS
-    if (app.state().fps_timer.read() >= 1.0) {
+    if (app.fps_timer.read() >= 1.0) {
         // Gather some text rendering stats
         var num_texts: u32 = 0;
         var num_glyphs: usize = 0;
@@ -271,14 +257,14 @@ fn endFrame(
             }
         }
 
-        try core.state().printTitle(
-            core.state().main_window,
+        try core.printTitle(
+            core.main_window,
             "text [ FPS: {d} ] [ Texts: {d} ] [ Glyphs: {d} ]",
-            .{ app.state().frame_count, num_texts, num_glyphs },
+            .{ app.frame_count, num_texts, num_glyphs },
         );
         core.schedule(.update);
-        app.state().fps_timer.reset();
-        app.state().frame_count = 0;
+        app.fps_timer.reset();
+        app.frame_count = 0;
     }
-    app.state().frame_count += 1;
+    app.frame_count += 1;
 }

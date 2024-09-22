@@ -39,7 +39,7 @@ surface_descriptor: gpu.Surface.Descriptor,
 
 pub fn init(
     nul: *Null,
-    core: *Core.Mod,
+    core: *Core,
     options: InitOptions,
 ) !void {
     _ = nul;

@@ -68,7 +68,7 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
 
 pub fn init(
     darwin: *Darwin,
-    core: *Core.Mod,
+    core: *Core,
     options: InitOptions,
 ) !void {
     _ = core;

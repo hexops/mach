@@ -1,35 +1,32 @@
 const mach = @import("mach");
 const gpu = mach.gpu;
 
-pub const name = .app;
-pub const Mod = mach.Mod(@This());
+const App = @This();
 
-pub const systems = .{
-    .start = .{ .handler = start },
-    .init = .{ .handler = init },
-    .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
-};
+pub const mach_module = .app;
+
+pub const mach_systems = .{ .main, .init, .tick, .deinit };
+
+pub const main = mach.schedule(.{
+    .{ mach.Core, .init },
+    .{ App, .init },
+    .{ mach.Core, .main },
+});
 
 title_timer: mach.time.Timer,
 pipeline: *gpu.RenderPipeline,
 
-pub fn deinit(core: *mach.Core.Mod, app: *Mod) void {
-    app.state().pipeline.release();
-    core.schedule(.deinit);
-}
-
-fn start(app: *Mod, core: *mach.Core.Mod) !void {
-    core.schedule(.init);
-    app.schedule(.init);
-}
-
-fn init(app: *Mod, core: *mach.Core.Mod) !void {
-    core.state().on_tick = app.system(.tick);
-    core.state().on_exit = app.system(.deinit);
+pub fn init(
+    core: *mach.Core,
+    app: *App,
+    app_tick: mach.Call(App, .tick),
+    app_deinit: mach.Call(App, .deinit),
+) !void {
+    core.on_tick = app_tick.id;
+    core.on_exit = app_deinit.id;
 
     // Create our shader module
-    const shader_module = core.state().device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
+    const shader_module = core.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
     defer shader_module.release();
 
     // Blend state describes how rendered colors get blended
@@ -37,7 +34,7 @@ fn init(app: *Mod, core: *mach.Core.Mod) !void {
 
     // Color target describes e.g. the pixel format of the window we are rendering to.
     const color_target = gpu.ColorTargetState{
-        .format = core.get(core.state().main_window, .framebuffer_format).?,
+        .format = core.windows.get(core.main_window).?.framebuffer_format,
         .blend = &blend,
     };
 
@@ -49,7 +46,7 @@ fn init(app: *Mod, core: *mach.Core.Mod) !void {
     });
 
     // Create our render pipeline that will ultimately get pixels onto the screen.
-    const label = @tagName(name) ++ ".init";
+    const label = @tagName(mach_module) ++ ".init";
     const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
         .label = label,
         .fragment = &fragment,
@@ -58,34 +55,33 @@ fn init(app: *Mod, core: *mach.Core.Mod) !void {
             .entry_point = "vertex_main",
         },
     };
-    const pipeline = core.state().device.createRenderPipeline(&pipeline_descriptor);
+    const pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
 
     // Store our render pipeline in our module's state, so we can access it later on.
-    app.init(.{
-        .title_timer = try mach.time.Timer.start(),
-        .pipeline = pipeline,
-    });
-    try updateWindowTitle(core);
+    // TODO(object): module-state-init
+    app.title_timer = try mach.time.Timer.start();
+    app.pipeline = pipeline;
 
-    core.schedule(.start);
+    // TODO(object): window-title
+    // try updateWindowTitle(core);
 }
 
-fn tick(core: *mach.Core.Mod, app: *Mod) !void {
-    while (core.state().nextEvent()) |event| {
+pub fn tick(app: *App, core: *mach.Core) void {
+    while (core.nextEvent()) |event| {
         switch (event) {
-            .close => core.schedule(.exit), // Tell mach.Core to exit the app
+            .close => core.exit(),
             else => {},
         }
     }
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = core.state().swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const label = @tagName(name) ++ ".tick";
-    const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
+    const label = @tagName(mach_module) ++ ".tick";
+    const encoder = core.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     // Begin render pass
@@ -103,7 +99,7 @@ fn tick(core: *mach.Core.Mod, app: *Mod) !void {
     defer render_pass.release();
 
     // Draw
-    render_pass.setPipeline(app.state().pipeline);
+    render_pass.setPipeline(app.pipeline);
     render_pass.draw(3, 1, 0, 0);
 
     // Finish render pass
@@ -112,27 +108,30 @@ fn tick(core: *mach.Core.Mod, app: *Mod) !void {
     // Submit our commands to the queue
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
-
-    // Present the frame
-    core.schedule(.present_frame);
+    core.queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // update the window title every second
-    if (app.state().title_timer.read() >= 1.0) {
-        app.state().title_timer.reset();
-        try updateWindowTitle(core);
+    if (app.title_timer.read() >= 1.0) {
+        app.title_timer.reset();
+        // TODO(object): window-title
+        // try updateWindowTitle(core);
     }
 }
 
-fn updateWindowTitle(core: *mach.Core.Mod) !void {
-    try core.state().printTitle(
-        core.state().main_window,
-        "core-custom-entrypoint [ {d}fps ] [ Input {d}hz ]",
-        .{
-            // TODO(Core)
-            core.state().frameRate(),
-            core.state().inputRate(),
-        },
-    );
-    core.schedule(.update);
+pub fn deinit(app: *App) void {
+    app.pipeline.release();
 }
+
+// TODO(object): window-title
+// fn updateWindowTitle(core: *mach.Core) !void {
+//     try core.printTitle(
+//         core.main_window,
+//         "core-custom-entrypoint [ {d}fps ] [ Input {d}hz ]",
+//         .{
+//             // TODO(Core)
+//             core.frameRate(),
+//             core.inputRate(),
+//         },
+//     );
+//     core.schedule(.update);
+// }

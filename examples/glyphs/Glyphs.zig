@@ -4,14 +4,9 @@ const ft = @import("freetype");
 const std = @import("std");
 const assets = @import("assets");
 
-pub const name = .glyphs;
-pub const Mod = mach.Mod(@This());
+pub const mach_module = .glyphs;
 
-pub const systems = .{
-    .init = .{ .handler = init },
-    .deinit = .{ .handler = deinit },
-    .prepare = .{ .handler = prepare },
-};
+pub const mach_systems = .{ .init, .deinit, .prepare };
 
 const RegionMap = std.AutoArrayHashMapUnmanaged(u21, mach.gfx.Atlas.Region);
 
@@ -35,17 +30,17 @@ fn deinit(glyphs: *Mod) !void {
 }
 
 fn init(
-    core: *mach.Core.Mod,
+    core: *mach.Core,
     glyphs: *Mod,
 ) !void {
-    const device = core.state().device;
+    const device = core.device;
     const allocator = gpa.allocator();
 
     // rgba32_pixels
     const img_size = gpu.Extent3D{ .width = 1024, .height = 1024 };
 
     // Create a GPU texture
-    const label = @tagName(name) ++ ".init";
+    const label = @tagName(mach_module) ++ ".init";
     const texture = device.createTexture(&.{
         .label = label,
         .size = img_size,
@@ -75,7 +70,7 @@ fn init(
     });
 }
 
-fn prepare(core: *mach.Core.Mod, glyphs: *Mod) !void {
+fn prepare(core: *mach.Core, glyphs: *Mod) !void {
     var s = glyphs.state();
 
     // Prepare which glyphs we will render
@@ -124,5 +119,5 @@ fn prepare(core: *mach.Core.Mod, glyphs: *Mod) !void {
         .bytes_per_row = @as(u32, @intCast(img_size.width * 4)),
         .rows_per_image = @as(u32, @intCast(img_size.height)),
     };
-    core.state().queue.writeTexture(&.{ .texture = s.texture }, &data_layout, &img_size, s.texture_atlas.data);
+    core.queue.writeTexture(&.{ .texture = s.texture }, &data_layout, &img_size, s.texture_atlas.data);
 }

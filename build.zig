@@ -386,14 +386,14 @@ fn buildExamples(
         .{ .core = true, .name = "custom-entrypoint", .deps = &.{} },
         .{ .core = true, .name = "triangle", .deps = &.{} },
 
-        // Mach engine examples
-        .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
-        .{ .name = "custom-renderer", .deps = &.{} },
-        .{ .name = "glyphs", .deps = &.{ .freetype, .assets } },
-        .{ .name = "piano", .deps = &.{} },
-        .{ .name = "play-opus", .deps = &.{.assets} },
-        .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
-        .{ .name = "text", .deps = &.{.assets} },
+        // // Mach engine examples
+        // .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
+        // .{ .name = "custom-renderer", .deps = &.{} },
+        // .{ .name = "glyphs", .deps = &.{ .freetype, .assets } },
+        // .{ .name = "piano", .deps = &.{} },
+        // .{ .name = "play-opus", .deps = &.{.assets} },
+        // .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
+        // .{ .name = "text", .deps = &.{.assets} },
     }) |example| {
         const exe = b.addExecutable(.{
             .name = if (example.core) b.fmt("core-{s}", .{example.name}) else example.name,

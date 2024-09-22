@@ -48,7 +48,7 @@ backend: Backend,
 
 pub fn init(
     linux: *Linux,
-    core: *Core.Mod,
+    core: *Core,
     options: InitOptions,
 ) !void {
     linux.allocator = options.allocator;
@@ -192,4 +192,3 @@ pub fn deinitLinuxGamemode() void {
     mach.gamemode.stop();
     gamemode_log.info("gamemode: deactivated", .{});
 }
-
