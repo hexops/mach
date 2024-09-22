@@ -4,6 +4,8 @@ const build_options = @import("build-options");
 const builtin = @import("builtin");
 const std = @import("std");
 
+pub const is_debug = builtin.mode == .Debug;
+
 // Core
 pub const Core = if (build_options.want_core) @import("Core.zig") else struct {};
 
@@ -19,34 +21,86 @@ pub const sysaudio = if (build_options.want_sysaudio) @import("sysaudio/main.zig
 pub const sysgpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig") else struct {};
 pub const gpu = if (build_options.want_sysgpu) @import("sysgpu/main.zig").sysgpu else struct {};
 
-// Module system
-pub const modules = blk: {
-    if (!@hasDecl(@import("root"), "modules")) {
-        @compileError("expected `pub const modules = .{};` in root file");
-    }
-    break :blk merge(.{
-        builtin_modules,
-        @import("root").modules,
-    });
-};
-pub const ModSet = @import("module/main.zig").ModSet;
-pub const Modules = @import("module/main.zig").Modules(modules);
-pub const Mod = ModSet(modules).Mod;
-pub const ModuleName = @import("module/main.zig").ModuleName(modules);
-pub const EntityID = @import("module/main.zig").EntityID; // TODO: rename to just Entity?
-pub const Archetype = @import("module/main.zig").Archetype;
+pub const Modules = @import("module.zig").Modules;
 
-pub const ModuleID = @import("module/main.zig").ModuleID;
-pub const SystemID = @import("module/main.zig").SystemID;
-pub const AnySystem = @import("module/main.zig").AnySystem;
-pub const merge = @import("module/main.zig").merge;
-pub const builtin_modules = @import("module/main.zig").builtin_modules;
-pub const Entities = @import("module/main.zig").Entities;
+pub const ModuleID = @import("module.zig").ModuleID;
+pub const ModuleFunctionID = @import("module.zig").ModuleFunctionID;
+pub const FunctionID = @import("module.zig").FunctionID;
+pub const Call = @import("module.zig").Call;
+pub const Runner = @import("module.zig").Runner;
 
-pub const is_debug = builtin.mode == .Debug;
+pub const ObjectID = u32;
 
-// The global set of all Mach modules that may be used in the program.
-pub var mods: Modules = undefined;
+pub fn Objects(comptime T: type) type {
+    return struct {
+        internal: struct {
+            allocator: std.mem.Allocator,
+            id_counter: ObjectID = 0,
+            ids: std.AutoArrayHashMapUnmanaged(ObjectID, u32) = .{},
+            data: std.MultiArrayList(T) = .{},
+        },
+
+        pub const IsMachObjects = void;
+
+        // Only iteration, get(i) and set(i) are supported currently.
+        pub const Slice = struct {
+            len: usize,
+
+            internal: std.MultiArrayList(T).Slice,
+
+            pub fn set(s: *Slice, index: usize, elem: T) void {
+                s.internal.set(index, elem);
+            }
+
+            pub fn get(s: Slice, index: usize) T {
+                return s.internal.get(index);
+            }
+        };
+
+        pub fn new(objs: *@This(), value: T) std.mem.Allocator.Error!ObjectID {
+            const allocator = objs.internal.allocator;
+            const ids = &objs.internal.ids;
+            const data = &objs.internal.data;
+
+            const new_index = try data.addOne(allocator);
+            errdefer _ = data.pop();
+
+            const new_object_id = objs.internal.id_counter;
+            try ids.putNoClobber(allocator, new_object_id, @intCast(new_index));
+            objs.internal.id_counter += 1;
+            data.set(new_index, value);
+            return new_object_id;
+        }
+
+        pub fn set(objs: *@This(), id: ObjectID, value: T) void {
+            const ids = &objs.internal.ids;
+            const data = &objs.internal.data;
+
+            const index = ids.get(id) orelse std.debug.panic("invalid object: {any}", .{id});
+            data.set(index, value);
+        }
+
+        pub fn get(objs: *@This(), id: ObjectID) ?T {
+            const ids = &objs.internal.ids;
+            const data = &objs.internal.data;
+
+            const index = ids.get(id) orelse return null;
+            return data.get(index);
+        }
+
+        pub fn slice(objs: *@This()) Slice {
+            return Slice{ .len = objs.internal.data.len, .internal = objs.internal.data };
+        }
+    };
+}
+
+pub fn Object(comptime T: type) type {
+    return T;
+}
+
+pub fn schedule(v: anytype) @TypeOf(v) {
+    return v;
+}
 
 test {
     // TODO: refactor code so we can use this here:
@@ -59,11 +113,6 @@ test {
     _ = math;
     _ = testing;
     _ = time;
-    std.testing.refAllDeclsRecursive(@import("module/Archetype.zig"));
-    std.testing.refAllDeclsRecursive(@import("module/entities.zig"));
-    // std.testing.refAllDeclsRecursive(@import("module/main.zig"));
-    std.testing.refAllDeclsRecursive(@import("module/module.zig"));
-    std.testing.refAllDeclsRecursive(@import("module/StringTable.zig"));
     std.testing.refAllDeclsRecursive(gamemode);
     std.testing.refAllDeclsRecursive(math);
 }

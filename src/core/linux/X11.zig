@@ -67,7 +67,7 @@ surface_descriptor: *gpu.Surface.DescriptorFromXlibWindow,
 
 pub fn init(
     linux: *Linux,
-    core: *Core.Mod,
+    core: *Core,
     options: InitOptions,
 ) !void {
     // TODO(core): return errors.NotSupported if not supported

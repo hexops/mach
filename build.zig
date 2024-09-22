@@ -73,13 +73,13 @@ pub fn build(b: *std.Build) !void {
     var examples = [_]Example{
         .{ .name = "core-custom-entrypoint", .deps = &.{} },
         .{ .name = "core-triangle", .deps = &.{} },
-        .{ .name = "custom-renderer", .deps = &.{} },
-        .{ .name = "glyphs", .deps = &.{ .assets, .freetype } },
+        // .{ .name = "custom-renderer", .deps = &.{} },
+        // .{ .name = "glyphs", .deps = &.{ .assets, .freetype } },
         // .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
-        .{ .name = "piano", .deps = &.{} },
-        .{ .name = "play-opus", .deps = &.{.assets} },
+        // .{ .name = "piano", .deps = &.{} },
+        // .{ .name = "play-opus", .deps = &.{.assets} },
         // .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
-        .{ .name = "text", .deps = &.{.assets} },
+        // .{ .name = "text", .deps = &.{.assets} },
     };
 
     var sysaudio_tests = [_]SysAudioTest{
