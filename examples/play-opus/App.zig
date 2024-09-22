@@ -15,16 +15,9 @@ pub const App = @This();
 // TODO: banish global allocator
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
-pub const name = .app;
-pub const Mod = mach.Mod(@This());
+pub const mach_module = .app;
 
-pub const systems = .{
-    .start = .{ .handler = start },
-    .init = .{ .handler = init },
-    .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
-    .audio_state_change = .{ .handler = audioStateChange },
-};
+pub const mach_systems = .{ .start, .init, .deinit, .tick, .audio_state_change };
 
 pub const components = .{
     .is_bgm = .{ .type = void },
@@ -33,9 +26,9 @@ pub const components = .{
 sfx: mach.Audio.Opus,
 
 fn start(
-    core: *mach.Core.Mod,
-    audio: *mach.Audio.Mod,
-    app: *Mod,
+    core: *mach.Core,
+    audio: *mach.Audio,
+    app: *App,
 ) !void {
     core.schedule(.init);
     audio.schedule(.init);
@@ -44,16 +37,19 @@ fn start(
 
 fn init(
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
-    audio: *mach.Audio.Mod,
-    app: *Mod,
+    core: *mach.Core,
+    audio: *mach.Audio,
+    app: *App,
+    app_tick: mach.Call(App, .tick),
+    app_deinit: mach.Call(App, .deinit),
+    app_audio_state_change: mach.Call(App, .audio_state_change),
 ) !void {
-    core.state().on_tick = app.system(.tick);
-    core.state().on_exit = app.system(.deinit);
+    core.on_tick = app_tick.id;
+    core.on_exit = app_deinit.id;
 
     // Configure the audio module to send our app's .audio_state_change event when an entity's sound
     // finishes playing.
-    audio.state().on_state_change = app.system(.audio_state_change);
+    audio.on_state_change = app_audio_state_change.id;
 
     const bgm_fbs = std.io.fixedBufferStream(assets.bgm.bit_bit_loop);
     const bgm_sound_stream = std.io.StreamSource{ .const_buffer = bgm_fbs };
@@ -77,24 +73,21 @@ fn init(
     std.debug.print("[typing]     Play SFX\n", .{});
     std.debug.print("[arrow up]   increase volume 10%\n", .{});
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
-
-    core.schedule(.start);
 }
 
-fn deinit(core: *mach.Core.Mod, audio: *mach.Audio.Mod) void {
+fn deinit(audio: *mach.Audio) void {
     audio.schedule(.deinit);
-    core.schedule(.deinit);
 }
 
 fn audioStateChange(
     entities: *mach.Entities.Mod,
-    audio: *mach.Audio.Mod,
-    app: *Mod,
+    audio: *mach.Audio,
+    app: *App,
 ) !void {
     // Find audio entities that are no longer playing
     var q = try entities.query(.{
         .ids = mach.Entities.Mod.read(.id),
-        .playings = mach.Audio.Mod.read(.playing),
+        .playings = mach.Audio.read(.playing),
     });
     while (q.next()) |v| {
         for (v.ids, v.playings) |id, playing| {
@@ -114,45 +107,45 @@ fn audioStateChange(
 
 fn tick(
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
-    audio: *mach.Audio.Mod,
-    app: *Mod,
+    core: *mach.Core,
+    audio: *mach.Audio,
+    app: *App,
 ) !void {
-    while (core.state().nextEvent()) |event| {
+    while (core.nextEvent()) |event| {
         switch (event) {
             .key_press => |ev| switch (ev.key) {
                 .down => {
-                    const vol = math.clamp(try audio.state().player.volume() - 0.1, 0, 1);
-                    try audio.state().player.setVolume(vol);
+                    const vol = math.clamp(try audio.player.volume() - 0.1, 0, 1);
+                    try audio.player.setVolume(vol);
                     std.debug.print("[volume] {d:.0}%\n", .{vol * 100.0});
                 },
                 .up => {
-                    const vol = math.clamp(try audio.state().player.volume() + 0.1, 0, 1);
-                    try audio.state().player.setVolume(vol);
+                    const vol = math.clamp(try audio.player.volume() + 0.1, 0, 1);
+                    try audio.player.setVolume(vol);
                     std.debug.print("[volume] {d:.0}%\n", .{vol * 100.0});
                 },
                 else => {
                     // Play a new SFX
                     const e = try entities.new();
-                    try audio.set(e, .samples, app.state().sfx.samples);
-                    try audio.set(e, .channels, app.state().sfx.channels);
+                    try audio.set(e, .samples, app.sfx.samples);
+                    try audio.set(e, .channels, app.sfx.channels);
                     try audio.set(e, .index, 0);
                     try audio.set(e, .playing, true);
                 },
             },
-            .close => core.schedule(.exit),
+            .close => core.exit(),
             else => {},
         }
     }
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = core.state().swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const label = @tagName(name) ++ ".tick";
-    const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
+    const label = @tagName(mach_module) ++ ".tick";
+    const encoder = core.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     // Begin render pass
@@ -177,8 +170,5 @@ fn tick(
     // Submit our commands to the queue
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
-
-    // Present the frame
-    core.schedule(.present_frame);
+    core.queue.submit(&[_]*gpu.CommandBuffer{command});
 }

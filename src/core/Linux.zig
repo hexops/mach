@@ -54,7 +54,7 @@ const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Changing display mode", "VSync"
 
 pub fn init(
     linux: *Linux,
-    core: *Core.Mod,
+    core: *Core,
     options: InitOptions,
 ) !void {
     linux.allocator = options.allocator;
