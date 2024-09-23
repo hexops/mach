@@ -102,6 +102,32 @@ pub fn build(b: *std.Build) !void {
         if (want_examples) try buildExamples(b, optimize, target, module);
     }
     if (want_core) {
+        if (Platform.fromTarget(target.result) == .linux) {
+            const lib = b.addStaticLibrary(.{
+                .name = "core-wayland",
+                .target = target,
+                .optimize = optimize,
+            });
+            lib.addCSourceFile(.{
+                .file = b.path("src/core/linux/wayland.c"),
+            });
+            lib.linkLibC();
+            module.linkLibrary(lib);
+
+            if (b.lazyDependency("wayland_headers", .{
+                .target = target,
+                .optimize = optimize,
+            })) |dep| {
+                lib.linkLibrary(dep.artifact("wayland-headers"));
+                module.linkLibrary(dep.artifact("wayland-headers"));
+            }
+            if (b.lazyDependency("x11_headers", .{
+                .target = target,
+                .optimize = optimize,
+            })) |dep| {
+                module.linkLibrary(dep.artifact("x11-headers"));
+            }
+        }
         if (target.result.isDarwin()) {
             if (b.lazyDependency("mach_objc", .{
                 .target = target,
