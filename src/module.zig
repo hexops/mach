@@ -9,27 +9,69 @@ pub const ModuleFunctionID = u16;
 /// Unique identifier for a function within a module, including those only known at runtime.
 pub const FunctionID = struct { module_id: ModuleID, fn_id: ModuleFunctionID };
 
-pub fn Call(module_tag_or_type: anytype, fn_name_tag: anytype) type {
+pub fn Mod(comptime M: type) type {
     return struct {
-        pub const IsMachCall = void;
+        pub const IsMachMod = void;
 
-        pub const module_name = module_tag_or_type;
-        pub const fn_name = fn_name_tag;
+        pub const module_name = M.mach_module;
+        pub const Module = M;
 
-        id: FunctionID,
+        id: ModFunctionIDs(M),
+        _ctx: *anyopaque,
+        _run: *const fn (ctx: *anyopaque, fn_id: FunctionID) void,
+
+        pub fn run(r: *const @This(), fn_id: FunctionID) void {
+            r._run(r._ctx, fn_id);
+        }
+
+        pub fn call(r: *const @This(), comptime f: ModuleFunctionName2(M)) void {
+            const fn_id = @field(r.id, @tagName(f));
+            r.run(fn_id);
+        }
     };
 }
 
-pub const Runner = struct {
-    pub const IsMachRunner = void;
-
-    ctx: *anyopaque,
-    _run: *const fn (ctx: *anyopaque, fn_id: FunctionID) void,
-
-    pub fn run(r: *const @This(), fn_id: FunctionID) void {
-        r._run(r.ctx, fn_id);
+pub fn ModFunctionIDs(comptime Module: type) type {
+    var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
+    for (Module.mach_systems) |fn_name| {
+        fields = fields ++ [_]std.builtin.Type.StructField{.{
+            .name = @tagName(fn_name),
+            .type = FunctionID,
+            .default_value = null,
+            .is_comptime = false,
+            .alignment = @alignOf(FunctionID),
+        }};
     }
-};
+    return @Type(.{
+        .Struct = .{
+            .layout = .auto,
+            .is_tuple = false,
+            .fields = fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+        },
+    });
+}
+
+/// Enum describing all declarations for a given comptime-known module.
+// TODO: unify with ModuleFunctionName
+fn ModuleFunctionName2(comptime M: type) type {
+    validate(M);
+    var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
+    var i: u32 = 0;
+    inline for (M.mach_systems) |fn_tag| {
+        // TODO: verify decls are Fn or mach.schedule() decl
+        enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(fn_tag), .value = i }};
+        i += 1;
+    }
+    return @Type(.{
+        .Enum = .{
+            .tag_type = if (enum_fields.len > 0) std.math.IntFittingRange(0, enum_fields.len - 1) else u0,
+            .fields = enum_fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+            .is_exhaustive = true,
+        },
+    });
+}
 
 pub fn Modules(module_lists: anytype) type {
     inline for (moduleTuple(module_lists)) |module| {
@@ -147,16 +189,11 @@ pub fn Modules(module_lists: anytype) type {
                             @field(args, arg.name) = &@field(m.mods, @tagName(std.meta.Child(arg.type).mach_module));
                             continue :outer;
                         }
-                        if (@typeInfo(arg.type) == .Struct and @hasDecl(arg.type, "IsMachCall")) {
-                            const machCall = arg.type;
-                            @field(args, arg.name) = .{
-                                .id = Module(@field(machCall, "module_name")).getFunction(@field(machCall, "fn_name")),
-                            };
-                            continue :outer;
-                        }
-                        if (@typeInfo(arg.type) == .Struct and @hasDecl(arg.type, "IsMachRunner")) {
-                            @field(args, arg.name) = Runner{
-                                .ctx = m.modules,
+                        if (@typeInfo(arg.type) == .Struct and @hasDecl(arg.type, "IsMachMod")) {
+                            const M = arg.type.Module;
+                            var mv: Mod(M) = .{
+                                .id = undefined,
+                                ._ctx = m.modules,
                                 ._run = (struct {
                                     pub fn run(ctx: *anyopaque, fn_id: FunctionID) void {
                                         const modules2: *Modules(module_lists) = @ptrCast(@alignCast(ctx));
@@ -164,6 +201,10 @@ pub fn Modules(module_lists: anytype) type {
                                     }
                                 }).run,
                             };
+                            inline for (M.mach_systems) |m_fn_name| {
+                                @field(mv.id, @tagName(m_fn_name)) = Module(M).getFunction(m_fn_name);
+                            }
+                            @field(args, arg.name) = mv;
                             continue :outer;
                         }
                         @compileError("mach: function " ++ debug_name ++ " has an invalid argument(" ++ arg.name ++ ") type: " ++ @typeName(arg.type));

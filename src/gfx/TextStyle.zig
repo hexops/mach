@@ -1,9 +1,9 @@
 const mach = @import("../main.zig");
 const math = mach.math;
 
-pub const name = .mach_gfx_text_style;
-pub const Mod = mach.Mod(@This());
+pub const mach_module = .mach_gfx_text_style;
 
+// TODO(object)
 pub const components = .{
     // // TODO: ship a default font
     // .font_name = .{ .type = []const u8, .description =

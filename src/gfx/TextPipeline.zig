@@ -5,9 +5,9 @@ const gfx = mach.gfx;
 const gpu = mach.gpu;
 const math = mach.math;
 
-pub const name = .mach_gfx_text_pipeline;
-pub const Mod = mach.Mod(@This());
+pub const mach_module = .mach_gfx_text_pipeline;
 
+// TODO(object)
 pub const components = .{
     .is_pipeline = .{ .type = void, .description = 
     \\ Tag to indicate an entity represents a text pipeline.

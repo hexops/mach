@@ -5,9 +5,9 @@ const sysaudio = mach.sysaudio;
 
 pub const Opus = @import("mach-opus");
 
-pub const name = .mach_audio;
-pub const Mod = mach.Mod(@This());
+pub const mach_module = .mach_audio;
 
+// TODO(object)
 pub const components = .{
     .samples = .{ .type = []const f32 },
     .channels = .{ .type = u8 },
@@ -22,7 +22,7 @@ pub const systems = .{
     .audio_tick = .{ .handler = audioTick },
 };
 
-const log = std.log.scoped(name);
+const log = std.log.scoped(mach_module);
 
 // The number of milliseconds worth of audio to render ahead of time. The lower this number is, the
 // less latency there is in playing new audio. The higher this number is, the less chance there is

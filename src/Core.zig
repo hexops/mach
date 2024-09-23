@@ -233,17 +233,17 @@ pub fn init(core: *Core) !void {
     try core.input.start();
 }
 
-pub fn tick(core: *Core, present_frame: mach.Call(Core, .present_frame), runner: mach.Runner) void {
-    runner.run(core.on_tick.?);
-    runner.run(present_frame.id);
+pub fn tick(core: *Core, core_mod: mach.Functions(Core)) void {
+    core_mod.run(core.on_tick.?);
+    core_mod.call(.presentFrame);
 }
 
-pub fn main(core: *Core, present_frame: mach.Call(Core, .presentFrame), runner: mach.Runner) !void {
+pub fn main(core: *Core, core_mod: mach.Functions(Core)) !void {
     if (core.on_tick == null) @panic("core.on_tick callback must be set");
     if (core.on_exit == null) @panic("core.on_exit callback must be set");
 
-    runner.run(core.on_tick.?);
-    runner.run(present_frame.id);
+    core_mod.run(core.on_tick.?);
+    core_mod.call(.presentFrame);
 
     // If the user doesn't want mach.Core to take control of the main loop, we bail out - the next
     // app tick is already scheduled to run in the future and they'll .present_frame to return
@@ -259,8 +259,8 @@ pub fn main(core: *Core, present_frame: mach.Call(Core, .presentFrame), runner: 
     // The user wants mach.Core to take control of the main loop.
     if (supports_non_blocking) {
         while (core.state().state != .exited) {
-            runner.run(core.on_tick.?);
-            runner.run(present_frame.id);
+            core_mod.run(core.on_tick.?);
+            core_mod.call(.presentFrame);
         }
 
         // Don't return, because Platform.run wouldn't either (marked noreturn due to underlying
@@ -268,7 +268,7 @@ pub fn main(core: *Core, present_frame: mach.Call(Core, .presentFrame), runner: 
         std.process.exit(0);
     } else {
         // Platform drives the main loop.
-        Platform.run(platform_update_callback, .{ core, present_frame.id, runner });
+        Platform.run(platform_update_callback, .{ core, core_mod });
 
         // Platform.run should be marked noreturn, so this shouldn't ever run. But just in case we
         // accidentally introduce a different Platform.run in the future, we put an exit here for
@@ -277,9 +277,9 @@ pub fn main(core: *Core, present_frame: mach.Call(Core, .presentFrame), runner: 
     }
 }
 
-fn platform_update_callback(core: *Core, present_frame: mach.FunctionID, runner: mach.Runner) !bool {
-    runner.run(core.on_tick.?);
-    runner.run(present_frame);
+fn platform_update_callback(core: *Core, core_mod: mach.Functions(Core)) !bool {
+    core_mod.run(core.on_tick.?);
+    core_mod.call(.presentFrame);
 
     return core.state != .exited;
 }
@@ -563,7 +563,7 @@ pub fn mousePosition(core: *@This()) Position {
 //     return core.platform.nativeWindowWin32();
 // }
 
-pub fn presentFrame(core: *Core, core_deinit: mach.Call(Core, .deinit), runner: mach.Runner) !void {
+pub fn presentFrame(core: *Core, core_mod: mach.Functions(Core)) !void {
     // TODO(object)(window-title)
     // // Update windows title
     // var num_windows: usize = 0;
@@ -622,8 +622,8 @@ pub fn presentFrame(core: *Core, core_deinit: mach.Call(Core, .deinit), runner: 
         .running => {},
         .exiting => {
             core.state = .deinitializing;
-            runner.run(core.on_exit.?);
-            runner.run(core_deinit.id);
+            core_mod.run(core.on_exit.?);
+            core_mod.call(.deinit);
         },
         .deinitializing => {},
         .exited => @panic("application not running"),

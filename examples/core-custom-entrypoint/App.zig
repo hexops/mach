@@ -23,11 +23,10 @@ pub fn deinit(app: *App) void {
 pub fn init(
     app: *App,
     core: *mach.Core,
-    app_tick: mach.Call(App, .tick),
-    app_deinit: mach.Call(App, .deinit),
+    app_mod: mach.Functions(App),
 ) !void {
-    core.on_tick = app_tick.id;
-    core.on_exit = app_deinit.id;
+    core.on_tick = app_mod.id.tick;
+    core.on_exit = app_mod.id.deinit;
 
     // Create our shader module
     const shader_module = core.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));

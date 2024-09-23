@@ -58,11 +58,10 @@ fn init(
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     app: *App,
-    app_tick: mach.Call(App, .tick),
-    app_deinit: mach.Call(App, .deinit),
+    app_mod: mach.Functions(App),
 ) !void {
-    core.on_tick = app_tick.id;
-    core.on_exit = app_deinit.id;
+    core.on_tick = app_mod.id.tick;
+    core.on_exit = app_mod.id.deinit;
 
     // We can create entities, and set components on them. Note that components live in a module
     // namespace, e.g. the `.mach_gfx_sprite` module could have a 3D `.location` component with a different
