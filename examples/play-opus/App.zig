@@ -19,6 +19,7 @@ pub const mach_module = .app;
 
 pub const mach_systems = .{ .start, .init, .deinit, .tick, .audio_state_change };
 
+// TODO(object)
 pub const components = .{
     .is_bgm = .{ .type = void },
 };
@@ -40,12 +41,10 @@ fn init(
     core: *mach.Core,
     audio: *mach.Audio,
     app: *App,
-    app_tick: mach.Call(App, .tick),
-    app_deinit: mach.Call(App, .deinit),
-    app_audio_state_change: mach.Call(App, .audio_state_change),
+    app_mod: mach.Functions(App),
 ) !void {
-    core.on_tick = app_tick.id;
-    core.on_exit = app_deinit.id;
+    core.on_tick = app_mod.id.tick;
+    core.on_exit = app_mod.id.deinit;
 
     // Configure the audio module to send our app's .audio_state_change event when an entity's sound
     // finishes playing.

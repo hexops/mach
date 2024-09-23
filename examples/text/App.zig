@@ -67,11 +67,10 @@ fn init(
     text_pipeline: *gfx.TextPipeline.Mod,
     text_style: *gfx.TextStyle.Mod,
     app: *App,
-    app_tick: mach.Call(App, .tick),
-    app_deinit: mach.Call(App, .deinit),
+    app_mod: mach.Functions(App),
 ) !void {
-    core.on_tick = app_tick.id;
-    core.on_exit = app_deinit.id;
+    core.on_tick = app_mod.id.tick;
+    core.on_exit = app_mod.id.deinit;
 
     // TODO: a better way to initialize entities with default values
     // TODO(text): ability to specify other style options (custom font name, font color, italic/bold, etc.)

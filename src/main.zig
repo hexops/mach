@@ -26,8 +26,7 @@ pub const Modules = @import("module.zig").Modules;
 pub const ModuleID = @import("module.zig").ModuleID;
 pub const ModuleFunctionID = @import("module.zig").ModuleFunctionID;
 pub const FunctionID = @import("module.zig").FunctionID;
-pub const Call = @import("module.zig").Call;
-pub const Runner = @import("module.zig").Runner;
+pub const Functions = @import("module.zig").Functions;
 
 pub const ObjectID = u32;
 

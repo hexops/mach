@@ -56,11 +56,10 @@ fn init(
     glyphs: *Glyphs.Mod,
     app: *App,
     core: *mach.Core,
-    app_tick: mach.Call(App, .tick),
-    app_deinit: mach.Call(App, .deinit),
+    app_mod: mach.Functions(App),
 ) !void {
-    core.on_tick = app_tick.id;
-    core.on_exit = app_deinit.id;
+    core.on_tick = app_mod.id.tick;
+    core.on_exit = app_mod.id.deinit;
 
     // Create a sprite rendering pipeline
     const texture = glyphs.state().texture;

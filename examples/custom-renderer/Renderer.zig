@@ -15,6 +15,7 @@ uniform_buffer: *gpu.Buffer,
 
 pub const mach_module = .renderer;
 
+// TODO(object)
 pub const components = .{
     .position = .{ .type = Vec3 },
     .rotation = .{ .type = Vec3 },

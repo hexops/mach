@@ -13,9 +13,9 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
-pub const name = .mach_gfx_sprite;
-pub const Mod = mach.Mod(@This());
+pub const mach_module = .mach_gfx_sprite;
 
+// TODO(object)
 pub const components = .{
     .transform = .{ .type = Mat4x4, .description = 
     \\ The sprite model transformation matrix. A sprite is measured in pixel units, starting from

@@ -20,7 +20,7 @@ direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
 spawn_timer: mach.time.Timer,
 
-// Components our game module defines.
+// TODO(object)
 pub const components = .{
     // Whether an entity is a "follower" of our player entity or not. The type is void because we
     // don't need any information, this is just a tag we assign to an entity with no data.
@@ -49,11 +49,10 @@ fn init(
     core: *mach.Core,
     renderer: *Renderer,
     app: *App,
-    app_tick: mach.Call(App, .tick),
-    app_deinit: mach.Call(App, .deinit),
+    app_mod: mach.Functions(App),
 ) !void {
-    core.on_tick = app_tick.id;
-    core.on_exit = app_deinit.id;
+    core.on_tick = app_mod.id.tick;
+    core.on_exit = app_mod.id.deinit;
 
     // Create our player entity.
     const player = try entities.new();

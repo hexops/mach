@@ -80,12 +80,10 @@ fn init(
     text: *gfx.Text.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     app: *App,
-    app_tick: mach.Call(App, .tick),
-    app_deinit: mach.Call(App, .deinit),
-    app_audio_state_change: mach.Call(App, .audio_state_change),
+    app_mod: mach.Functions(App),
 ) !void {
-    core.on_tick = app_tick.id;
-    core.on_exit = app_deinit.id;
+    core.on_tick = app_mod.id.tick;
+    core.on_exit = app_mod.id.deinit;
 
     // Configure the audio module to run our audio_state_change system when entities audio finishes
     // playing
