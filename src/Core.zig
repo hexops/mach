@@ -57,8 +57,6 @@ windows: mach.Objects(struct {
     fullscreen: bool,
 }),
 
-global: mach.Object(struct {}),
-
 /// Callback system invoked per tick (e.g. per-frame)
 on_tick: ?mach.FunctionID = null,
 
@@ -131,10 +129,8 @@ pub fn init(core: *Core) !void {
     // TODO: remove undefined initialization (disgusting!)
     const platform: Platform = undefined;
     core.* = .{
-        // TODO: this is a good example of why not *all* state fields should be allowed, must copy
-        // the ones mach initialized
+        // Note: since core.windows is initialized for us already, we just copy the pointer.
         .windows = core.windows,
-        .global = core.global,
 
         .allocator = allocator,
         .main_window = main_window,
