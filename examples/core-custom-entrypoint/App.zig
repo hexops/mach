@@ -62,9 +62,10 @@ pub fn init(
     const pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
 
     // Store our render pipeline in our module's state, so we can access it later on.
-    // TODO(object): module-state-init
-    app.title_timer = try mach.time.Timer.start();
-    app.pipeline = pipeline;
+    app.* = .{
+        .title_timer = try mach.time.Timer.start(),
+        .pipeline = pipeline,
+    };
 
     // TODO(object): window-title
     // try updateWindowTitle(core);

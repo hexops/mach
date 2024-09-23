@@ -21,9 +21,12 @@ pub fn init(
     app: *App,
     app_tick: mach.Call(App, .tick),
     app_deinit: mach.Call(App, .deinit),
+    // app_caller: mach.Caller(App),
 ) !void {
     core.on_tick = app_tick.id;
     core.on_exit = app_deinit.id;
+    // core.on_tick = app_caller.tick;
+    // core.on_exit = app_caller.exit;
 
     // Create our shader module
     const shader_module = core.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
@@ -58,9 +61,10 @@ pub fn init(
     const pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
 
     // Store our render pipeline in our module's state, so we can access it later on.
-    // TODO(object): module-state-init
-    app.title_timer = try mach.time.Timer.start();
-    app.pipeline = pipeline;
+    app.* = .{
+        .title_timer = try mach.time.Timer.start(),
+        .pipeline = pipeline,
+    };
 
     // TODO(object): window-title
     // try updateWindowTitle(core);
