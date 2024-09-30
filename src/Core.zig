@@ -233,12 +233,12 @@ pub fn init(core: *Core) !void {
     try core.input.start();
 }
 
-pub fn tick(core: *Core, core_mod: mach.Functions(Core)) void {
+pub fn tick(core: *Core, core_mod: mach.Mod(Core)) void {
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
 }
 
-pub fn main(core: *Core, core_mod: mach.Functions(Core)) !void {
+pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
     if (core.on_tick == null) @panic("core.on_tick callback must be set");
     if (core.on_exit == null) @panic("core.on_exit callback must be set");
 
@@ -277,7 +277,7 @@ pub fn main(core: *Core, core_mod: mach.Functions(Core)) !void {
     }
 }
 
-fn platform_update_callback(core: *Core, core_mod: mach.Functions(Core)) !bool {
+fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
 
@@ -563,7 +563,7 @@ pub fn mousePosition(core: *@This()) Position {
 //     return core.platform.nativeWindowWin32();
 // }
 
-pub fn presentFrame(core: *Core, core_mod: mach.Functions(Core)) !void {
+pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
     // TODO(object)(window-title)
     // // Update windows title
     // var num_windows: usize = 0;

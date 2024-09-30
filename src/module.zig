@@ -1,4 +1,249 @@
 const std = @import("std");
+const mach = @import("../main.zig");
+const StringTable = @import("StringTable.zig");
+
+/// An ID representing a mach object. This is an opaque identifier which effectively encodes:
+///
+/// * An array index that can be used to O(1) lookup the actual data / struct fields of the object.
+/// * The generation (or 'version') of the object, enabling detecting use-after-object-delete in
+///   many (but not all) cases.
+/// * Which module the object came from, allowing looking up type information or the module name
+///   from ID alone.
+/// * Which list of objects in a module the object came from, allowing looking up type information
+///   or the object type name - which enables debugging and type safety when passing opaque IDs
+///   around.
+///
+pub const ObjectID = u64;
+
+const ObjectTypeID = u16;
+
+const PackedObjectTypeID = packed struct(u16) {
+    // 2^10 (1024) modules in an application
+    module_name_id: u10,
+    // 2^6 (64) lists of objects per module
+    object_name_id: u6,
+};
+
+pub fn Objects(comptime T: type) type {
+    return struct {
+        internal: struct {
+            allocator: std.mem.Allocator,
+
+            /// Mutex to be held when operating on these objects.
+            mu: std.Thread.Mutex = .{},
+
+            /// A registered ID indicating the type of objects being represented. This can be
+            /// thought of as a hash of the module name + field name where this objects list is
+            /// stored.
+            type_id: ObjectTypeID,
+
+            /// The actual object data
+            data: std.MultiArrayList(T) = .{},
+
+            /// Whether a given slot in data[i] is dead or not
+            dead: std.bit_set.DynamicBitSetUnmanaged = .{},
+
+            /// The current generation number of data[i], when data[i] becomes dead and then alive
+            /// again, this number is incremented by one.
+            generation: std.ArrayListUnmanaged(Generation) = .{},
+
+            /// The recycling bin which tells which data indices are dead and can be reused.
+            recycling_bin: std.ArrayListUnmanaged(Index) = .{},
+
+            /// The number of objects that could not fit in the recycling bin and hence were thrown
+            /// on the floor and forgotten about. This means there are dead items recorded by dead.set(index)
+            /// which aren't in the recycling_bin, and the next call to new() may consider cleaning up.
+            thrown_on_the_floor: u32 = 0,
+        },
+
+        pub const IsMachObjects = void;
+
+        const Generation = u16;
+        const Index = u32;
+
+        const PackedID = packed struct(u64) {
+            type_id: ObjectTypeID,
+            generation: Generation,
+            index: Index,
+        };
+
+        pub const Slice = struct {
+            index: Index,
+            objs: *Objects(T),
+
+            /// Same as Objects(T).set but doesn't employ safety checks
+            pub fn set(objs: *@This(), id: ObjectID, value: T) void {
+                const data = &objs.internal.data;
+                const unpacked: PackedID = @bitCast(id);
+                data.set(unpacked.index, value);
+            }
+
+            /// Same as Objects(T).get but doesn't employ safety checks
+            pub fn get(objs: *@This(), id: ObjectID) ?T {
+                const data = &objs.internal.data;
+                const unpacked: PackedID = @bitCast(id);
+                return data.get(unpacked.index);
+            }
+
+            /// Same as Objects(T).delete but doesn't employ safety checks
+            pub fn delete(objs: *@This(), id: ObjectID) void {
+                const dead = &objs.internal.dead;
+                const recycling_bin = &objs.internal.recycling_bin;
+
+                const unpacked: PackedID = @bitCast(id);
+                if (recycling_bin.items.len < recycling_bin.capacity) {
+                    recycling_bin.appendAssumeCapacity(unpacked.index);
+                } else objs.internal.thrown_on_the_floor += 1;
+
+                dead.set(unpacked.index);
+            }
+
+            pub fn next(iter: *Slice) ?ObjectID {
+                const dead = &iter.objs.internal.dead;
+                const generation = &iter.objs.internal.generation;
+                const num_objects = generation.items.len;
+
+                while (true) {
+                    if (iter.index == num_objects) {
+                        iter.index = 0;
+                        return null;
+                    }
+                    defer iter.index += 1;
+
+                    if (!dead.isSet(iter.index)) return @bitCast(PackedID{
+                        .generation = generation.items[iter.index],
+                        .index = iter.index,
+                    });
+                }
+            }
+        };
+
+        /// Tries to acquire the mutex without blocking the caller's thread.
+        /// Returns `false` if the calling thread would have to block to acquire it.
+        /// Otherwise, returns `true` and the caller should `unlock()` the Mutex to release it.
+        pub fn tryLock(objs: *@This()) bool {
+            return objs.internal.mu.tryLock();
+        }
+
+        /// Acquires the mutex, blocking the caller's thread until it can.
+        /// It is undefined behavior if the mutex is already held by the caller's thread.
+        /// Once acquired, call `unlock()` on the Mutex to release it.
+        pub fn lock(objs: *@This()) void {
+            objs.internal.mu.lock();
+        }
+
+        /// Releases the mutex which was previously acquired with `lock()` or `tryLock()`.
+        /// It is undefined behavior if the mutex is unlocked from a different thread that it was locked from.
+        pub fn unlock(objs: *@This()) void {
+            objs.internal.mu.unlock();
+        }
+
+        pub inline fn new(objs: *@This(), value: T) std.mem.Allocator.Error!ObjectID {
+            const allocator = objs.internal.allocator;
+            const data = &objs.internal.data;
+            const dead = &objs.internal.dead;
+            const generation = &objs.internal.generation;
+            const recycling_bin = &objs.internal.recycling_bin;
+
+            // The recycling bin should always be big enough, but we check at this point if 10% of
+            // all objects have been thrown on the floor. If they have, we find them and grow the
+            // recycling bin to fit them.
+            if (objs.internal.thrown_on_the_floor >= (data.len / 10)) {
+                var iter = dead.iterator(.{});
+                while (iter.next()) |index| try recycling_bin.append(allocator, @intCast(index));
+                objs.internal.thrown_on_the_floor = 0;
+            }
+
+            if (recycling_bin.popOrNull()) |index| {
+                // Reuse a free slot from the recycling bin.
+                dead.unset(index);
+                const gen = generation.items[index] + 1;
+                generation.items[index] = gen;
+                return @bitCast(PackedID{
+                    .type_id = objs.internal.type_id,
+                    .generation = gen,
+                    .index = index,
+                });
+            }
+
+            // Ensure we have space for the new object
+            try data.ensureUnusedCapacity(allocator, 1);
+            try dead.resize(allocator, data.capacity, true);
+            try generation.ensureUnusedCapacity(allocator, 1);
+
+            const index = data.len;
+            data.appendAssumeCapacity(value);
+            dead.unset(index);
+            generation.appendAssumeCapacity(0);
+            return @bitCast(PackedID{
+                .type_id = objs.internal.type_id,
+                .generation = 0,
+                .index = @intCast(index),
+            });
+        }
+
+        pub fn set(objs: *@This(), id: ObjectID, value: T) void {
+            const data = &objs.internal.data;
+            const dead = &objs.internal.dead;
+            const generation = &objs.internal.generation;
+
+            const unpacked: PackedID = @bitCast(id);
+            if (unpacked.generation != generation.items[unpacked.index]) {
+                @panic("mach: set() called with an object that is no longer valid");
+            }
+            if (dead.isSet(unpacked.index)) {
+                @panic("mach: set() called on a dead object");
+            }
+            data.set(unpacked.index, value);
+        }
+
+        pub fn get(objs: *@This(), id: ObjectID) ?T {
+            const data = &objs.internal.data;
+            const dead = &objs.internal.dead;
+            const generation = &objs.internal.generation;
+
+            const unpacked: PackedID = @bitCast(id);
+            if (unpacked.generation != generation.items[unpacked.index]) {
+                @panic("mach: get() called with an object that is no longer valid");
+            }
+            if (dead.isSet(unpacked.index)) {
+                @panic("mach: get() called on a dead object");
+            }
+            return data.get(unpacked.index);
+        }
+
+        pub fn delete(objs: *@This(), id: ObjectID) void {
+            const data = &objs.internal.data;
+            const dead = &objs.internal.dead;
+            const generation = &objs.internal.generation;
+            const recycling_bin = &objs.internal.recycling_bin;
+
+            // TODO(object): decide whether to disable safety checks like this in some conditions,
+            // e.g. in release builds
+            const unpacked: PackedID = @bitCast(id);
+            if (unpacked.generation != generation.items[unpacked.index]) {
+                @panic("mach: delete() called with an object that is no longer valid");
+            }
+            if (dead.isSet(unpacked.index)) {
+                @panic("mach: delete() called on a dead object");
+            }
+
+            if (recycling_bin.items.len < recycling_bin.capacity) {
+                recycling_bin.appendAssumeCapacity(unpacked.index);
+            } else objs.internal.thrown_on_the_floor += 1;
+
+            dead.set(unpacked.index);
+            if (mach.is_debug) data.set(unpacked.index, undefined);
+        }
+
+        pub fn slice(objs: *@This()) Slice {
+            return Slice{
+                .index = 0,
+                .objs = objs,
+            };
+        }
+    };
+}
 
 /// Unique identifier for every module in the program, including those only known at runtime.
 pub const ModuleID = u32;
@@ -86,6 +331,9 @@ pub fn Modules(module_lists: anytype) type {
 
         mods: ModulesByName(modules),
 
+        module_names: StringTable = .{},
+        object_names: StringTable = .{},
+
         /// Enum describing all declarations for a given comptime-known module.
         fn ModuleFunctionName(comptime module_name: ModuleName) type {
             const module = @field(ModuleTypesByName(modules){}, @tagName(module_name));
@@ -108,17 +356,28 @@ pub fn Modules(module_lists: anytype) type {
             });
         }
 
-        pub fn init(allocator: std.mem.Allocator) @This() {
+        pub fn init(allocator: std.mem.Allocator) std.mem.Allocator.Error!@This() {
             var m: @This() = .{
                 .mods = undefined,
             };
             inline for (@typeInfo(@TypeOf(m.mods)).Struct.fields) |field| {
                 // TODO(objects): module-state-init
-                var mod: @TypeOf(@field(m.mods, field.name)) = undefined;
+                const Mod2 = @TypeOf(@field(m.mods, field.name));
+                var mod: Mod2 = undefined;
+                const module_name_id = try m.module_names.indexOrPut(allocator, @tagName(Mod2.mach_module));
                 inline for (@typeInfo(@TypeOf(mod)).Struct.fields) |mod_field| {
                     if (@typeInfo(mod_field.type) == .Struct and @hasDecl(mod_field.type, "IsMachObjects")) {
+                        const object_name_id = try m.module_names.indexOrPut(allocator, mod_field.name);
+
+                        // TODO: use packed struct(TypeID) here. Same thing, just get the type from central location
+                        const object_type_id: u16 = @bitCast(PackedObjectTypeID{
+                            .module_name_id = @intCast(module_name_id),
+                            .object_name_id = @intCast(object_name_id),
+                        });
+
                         @field(mod, mod_field.name).internal = .{
                             .allocator = allocator,
+                            .type_id = object_type_id,
                         };
                     }
                 }
