@@ -49,7 +49,7 @@ fn init(
     core: *mach.Core,
     renderer: *Renderer,
     app: *App,
-    app_mod: mach.Functions(App),
+    app_mod: mach.Mod(App),
 ) !void {
     core.on_tick = app_mod.id.tick;
     core.on_exit = app_mod.id.deinit;
