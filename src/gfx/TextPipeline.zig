@@ -280,12 +280,12 @@ fn buildPipeline(
         &gpu.BindGroupLayout.Descriptor.init(.{
             .label = label,
             .entries = &.{
-                gpu.BindGroupLayout.Entry.buffer(0, .{ .vertex = true }, .uniform, false, 0),
-                gpu.BindGroupLayout.Entry.buffer(1, .{ .vertex = true }, .read_only_storage, false, 0),
-                gpu.BindGroupLayout.Entry.buffer(2, .{ .vertex = true }, .read_only_storage, false, 0),
-                gpu.BindGroupLayout.Entry.buffer(3, .{ .vertex = true }, .read_only_storage, false, 0),
-                gpu.BindGroupLayout.Entry.sampler(4, .{ .fragment = true }, .filtering),
-                gpu.BindGroupLayout.Entry.texture(5, .{ .fragment = true }, .float, .dimension_2d, false),
+                gpu.BindGroupLayout.Entry.initBuffer(0, .{ .vertex = true }, .uniform, false, 0),
+                gpu.BindGroupLayout.Entry.initBuffer(1, .{ .vertex = true }, .read_only_storage, false, 0),
+                gpu.BindGroupLayout.Entry.initBuffer(2, .{ .vertex = true }, .read_only_storage, false, 0),
+                gpu.BindGroupLayout.Entry.initBuffer(3, .{ .vertex = true }, .read_only_storage, false, 0),
+                gpu.BindGroupLayout.Entry.initSampler(4, .{ .fragment = true }, .filtering),
+                gpu.BindGroupLayout.Entry.initTexture(5, .{ .fragment = true }, .float, .dimension_2d, false),
             },
         }),
     );
@@ -299,12 +299,12 @@ fn buildPipeline(
             .label = label,
             .layout = bind_group_layout,
             .entries = &.{
-                gpu.BindGroup.Entry.buffer(0, uniforms, 0, @sizeOf(Uniforms), @sizeOf(Uniforms)),
-                gpu.BindGroup.Entry.buffer(1, transforms, 0, @sizeOf(math.Mat4x4) * texts_buffer_cap, @sizeOf(math.Mat4x4)),
-                gpu.BindGroup.Entry.buffer(2, colors, 0, @sizeOf(math.Vec4) * texts_buffer_cap, @sizeOf(math.Vec4)),
-                gpu.BindGroup.Entry.buffer(3, glyphs, 0, @sizeOf(Glyph) * texts_buffer_cap, @sizeOf(Glyph)),
-                gpu.BindGroup.Entry.sampler(4, texture_sampler),
-                gpu.BindGroup.Entry.textureView(5, texture_view),
+                gpu.BindGroup.Entry.initBuffer(0, uniforms, 0, @sizeOf(Uniforms), @sizeOf(Uniforms)),
+                gpu.BindGroup.Entry.initBuffer(1, transforms, 0, @sizeOf(math.Mat4x4) * texts_buffer_cap, @sizeOf(math.Mat4x4)),
+                gpu.BindGroup.Entry.initBuffer(2, colors, 0, @sizeOf(math.Vec4) * texts_buffer_cap, @sizeOf(math.Vec4)),
+                gpu.BindGroup.Entry.initBuffer(3, glyphs, 0, @sizeOf(Glyph) * texts_buffer_cap, @sizeOf(Glyph)),
+                gpu.BindGroup.Entry.initSampler(4, texture_sampler),
+                gpu.BindGroup.Entry.initTextureView(5, texture_view),
             },
         }),
     );

@@ -109,7 +109,7 @@ const linux_impl = struct {
 
         // Populate symbol table.
         var sym_table: SymbolTable = undefined;
-        inline for (@typeInfo(SymbolTable).Struct.fields) |field| {
+        inline for (@typeInfo(SymbolTable).@"struct".fields) |field| {
             @field(sym_table, field.name) = dl.lookup(field.type, field.name ++ &[_:0]u8{}) orelse {
                 log.err("libgamemode missing symbol '{s}'", .{field.name});
                 return error.MissingSymbol;

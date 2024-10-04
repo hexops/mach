@@ -26,7 +26,7 @@ pub const BindGroupLayout = opaque {
         storage_texture: StorageTextureBindingLayout = .{},
 
         /// Helper to create a buffer BindGroupLayout.Entry.
-        pub fn buffer(
+        pub fn initBuffer(
             binding: u32,
             visibility: ShaderStageFlags,
             binding_type: Buffer.BindingType,
@@ -45,7 +45,7 @@ pub const BindGroupLayout = opaque {
         }
 
         /// Helper to create a sampler BindGroupLayout.Entry.
-        pub fn sampler(
+        pub fn initSampler(
             binding: u32,
             visibility: ShaderStageFlags,
             binding_type: Sampler.BindingType,
@@ -58,7 +58,7 @@ pub const BindGroupLayout = opaque {
         }
 
         /// Helper to create a texture BindGroupLayout.Entry.
-        pub fn texture(
+        pub fn initTexture(
             binding: u32,
             visibility: ShaderStageFlags,
             sample_type: Texture.SampleType,
@@ -77,7 +77,7 @@ pub const BindGroupLayout = opaque {
         }
 
         /// Helper to create a storage texture BindGroupLayout.Entry.
-        pub fn storageTexture(
+        pub fn initStorageTexture(
             binding: u32,
             visibility: ShaderStageFlags,
             access: StorageTextureAccess,

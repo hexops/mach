@@ -283,10 +283,10 @@ inline fn mixSamples(a: []f32, b: []const f32, volume: f32) void {
     if (vector_length) |vec_len| {
         const Vec = @Vector(vec_len, f32);
         const vec_blocks_len = b.len - (b.len % vec_len);
-
         while (i < vec_blocks_len) : (i += vec_len) {
             const b_vec: Vec = b[i..][0..vec_len].*;
-            a[i..][0..vec_len].* += b_vec * @as(Vec, @splat(volume));
+            const a_vec: *Vec = @ptrCast(@alignCast(a[i..][0..vec_len]));
+            a_vec.* += b_vec * @as(Vec, @splat(volume));
         }
     }
 
@@ -300,9 +300,11 @@ inline fn mixSamplesDuplicate(a: []f32, b: f32) void {
 
     // use SIMD when available
     if (vector_length) |vec_len| {
+        const Vec = @Vector(vec_len, f32);
         const vec_blocks_len = a.len - (a.len % vec_len);
         while (i < vec_blocks_len) : (i += vec_len) {
-            a[i..][0..vec_len].* += @as(@Vector(vec_len, f32), @splat(b));
+            const a_vec: *Vec = @ptrCast(@alignCast(a[i..][0..vec_len]));
+            a_vec.* += @as(Vec, @splat(b));
         }
     }
 

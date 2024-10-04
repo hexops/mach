@@ -17,9 +17,9 @@ fn ModuleInterface(comptime M: type) type {
 }
 
 fn validateModule(comptime M: type, comptime systems: bool) void {
-    if (@typeInfo(M) != .Struct) @compileError("mach: expected module struct, found: " ++ @typeName(M));
+    if (@typeInfo(M) != .@"struct") @compileError("mach: expected module struct, found: " ++ @typeName(M));
     if (!@hasDecl(M, "name")) @compileError("mach: module must have `pub const name = .foobar;`: " ++ @typeName(M));
-    if (@typeInfo(@TypeOf(M.name)) != .EnumLiteral) @compileError("mach: module must have `pub const name = .foobar;`, found type:" ++ @typeName(M.name));
+    if (@typeInfo(@TypeOf(M.name)) != .enum_literal) @compileError("mach: module must have `pub const name = .foobar;`, found type:" ++ @typeName(M.name));
     if (systems) {
         if (@hasDecl(M, "systems")) validateSystems("mach: module ." ++ @tagName(M.name) ++ " systems ", M.systems);
         _ = ComponentTypesM(M);
@@ -44,14 +44,14 @@ pub const AnySystem = struct {
 
 /// Type-returning variant of merge()
 pub fn Merge(comptime tuple: anytype) type {
-    if (@typeInfo(@TypeOf(tuple)) != .Struct or !@typeInfo(@TypeOf(tuple)).Struct.is_tuple) {
+    if (@typeInfo(@TypeOf(tuple)) != .@"struct" or !@typeInfo(@TypeOf(tuple)).@"struct".is_tuple) {
         @compileError("Expected to find a tuple, found: " ++ @typeName(@TypeOf(tuple)));
     }
 
     var tuple_fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     loop: inline for (tuple) |elem| {
         @setEvalBranchQuota(10_000);
-        if (@typeInfo(@TypeOf(elem)) == .Type and @typeInfo(elem) == .Struct) {
+        if (@typeInfo(@TypeOf(elem)) == .type and @typeInfo(elem) == .@"struct") {
             // Struct type
             validateModule(elem, false);
             for (tuple_fields) |field| if (@as(*const type, @ptrCast(field.default_value.?)).* == elem)
@@ -65,7 +65,7 @@ pub fn Merge(comptime tuple: anytype) type {
                 .is_comptime = false,
                 .alignment = if (@sizeOf(elem) > 0) @alignOf(elem) else 0,
             }};
-        } else if (@typeInfo(@TypeOf(elem)) == .Struct and @typeInfo(@TypeOf(elem)).Struct.is_tuple) {
+        } else if (@typeInfo(@TypeOf(elem)) == .@"struct" and @typeInfo(@TypeOf(elem)).@"struct".is_tuple) {
             // Nested tuple
             inline for (Merge(elem){}) |Nested| {
                 validateModule(Nested, false);
@@ -86,7 +86,7 @@ pub fn Merge(comptime tuple: anytype) type {
         }
     }
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .is_tuple = true,
             .layout = .auto,
             .decls = &.{},
@@ -172,7 +172,7 @@ pub fn Modules(comptime modules: anytype) type {
             try m.dispatch_queue.ensureTotalCapacity(1024); // TODO(module): better default allocations
 
             // Default initialize m.mod
-            inline for (@typeInfo(@TypeOf(m.mod)).Struct.fields) |field| {
+            inline for (@typeInfo(@TypeOf(m.mod)).@"struct".fields) |field| {
                 const Mod2 = @TypeOf(@field(m.mod, field.name));
                 @field(m.mod, field.name) = Mod2{
                     .__is_initialized = false,
@@ -341,15 +341,15 @@ pub fn Modules(comptime modules: anytype) type {
         ) !void {
             const Injectable = comptime blk: {
                 var types: []const type = &[0]type{};
-                for (@typeInfo(ModsByName(modules)).Struct.fields) |field| {
+                for (@typeInfo(ModsByName(modules)).@"struct".fields) |field| {
                     const ModPtr = @TypeOf(@as(*field.type, undefined));
                     types = types ++ [_]type{ModPtr};
                 }
                 break :blk std.meta.Tuple(types);
             };
             var injectable: Injectable = undefined;
-            outer: inline for (@typeInfo(Injectable).Struct.fields) |field| {
-                inline for (@typeInfo(ModsByName(modules)).Struct.fields) |injectable_field| {
+            outer: inline for (@typeInfo(Injectable).@"struct".fields) |field| {
+                inline for (@typeInfo(ModsByName(modules)).@"struct".fields) |injectable_field| {
                     if (*injectable_field.type == field.type) {
                         @field(injectable, field.name) = &@field(m.mod, injectable_field.name);
                         continue :outer;
@@ -404,14 +404,14 @@ pub fn Modules(comptime modules: anytype) type {
 
         /// Call system handler with the specified name in the specified module
         inline fn callSystem(m: *@This(), module_name: ModuleName(modules), system_name: System, args: []u8, injectable: anytype) !void {
-            if (@typeInfo(@TypeOf(system_name)).Enum.fields.len == 0) return;
+            if (@typeInfo(@TypeOf(system_name)).@"enum".fields.len == 0) return;
             switch (system_name) {
                 inline else => |ev_name| {
                     switch (module_name) {
                         inline else => |mod_name| {
                             const M = @field(NamespacedModules(modules){}, @tagName(mod_name));
                             _ = ModuleInterface(M); // Validate the module
-                            if (@hasDecl(M, "systems")) inline for (@typeInfo(@TypeOf(M.systems)).Struct.fields) |field| {
+                            if (@hasDecl(M, "systems")) inline for (@typeInfo(@TypeOf(M.systems)).@"struct".fields) |field| {
                                 comptime if (!std.mem.eql(u8, @tagName(ev_name), field.name)) continue;
                                 if (m.debug_trace) log.debug("trace: .{s}.{s}", .{
                                     @tagName(M.name),
@@ -419,8 +419,8 @@ pub fn Modules(comptime modules: anytype) type {
                                 });
 
                                 const handler = @field(M.systems, @tagName(ev_name)).handler;
-                                if (@typeInfo(@TypeOf(handler)) == .Type) continue; // Pre-declaration of what args an system has, nothing to do.
-                                if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares system .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
+                                if (@typeInfo(@TypeOf(handler)) == .type) continue; // Pre-declaration of what args an system has, nothing to do.
+                                if (@typeInfo(@TypeOf(handler)) != .@"fn") @compileError(std.fmt.comptimePrint("mach: module .{s} declares system .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
                                     @tagName(M.name),
                                     @tagName(ev_name),
                                     @typeName(@TypeOf(handler)),
@@ -439,9 +439,9 @@ pub fn Modules(comptime modules: anytype) type {
             const StdArgs = UninjectedArgsTuple(Handler);
             const std_args: *StdArgs = @alignCast(@ptrCast(args_data.ptr));
             const args = injectArgs(Handler, @TypeOf(injectable), injectable, std_args.*, debug_name);
-            const Ret = @typeInfo(Handler).Fn.return_type orelse void;
+            const Ret = @typeInfo(Handler).@"fn".return_type orelse void;
             switch (@typeInfo(Ret)) {
-                .ErrorUnion => try @call(.auto, handler, args),
+                .error_union => try @call(.auto, handler, args),
                 else => @call(.auto, handler, args),
             }
         }
@@ -461,7 +461,7 @@ pub fn ModsByName(comptime modules: anytype) type {
         }};
     }
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .layout = .auto,
             .is_tuple = false,
             .fields = fields,
@@ -678,18 +678,18 @@ pub fn ModSet(comptime modules: anytype) type {
 inline fn injectArgs(comptime Function: type, comptime Injectable: type, injectable_args: Injectable, std_args: UninjectedArgsTuple(Function), comptime debug_name: anytype) std.meta.ArgsTuple(Function) {
     var args: std.meta.ArgsTuple(Function) = undefined;
     comptime var std_args_index = 0;
-    outer: inline for (@typeInfo(std.meta.ArgsTuple(Function)).Struct.fields) |arg| {
+    outer: inline for (@typeInfo(std.meta.ArgsTuple(Function)).@"struct".fields) |arg| {
         // Is this a Struct or *Struct, with a `pub const IsInjectedArgument = void;` decl? If so,
         // it is considered an injected argument.
-        inline for (@typeInfo(Injectable).Struct.fields) |inject_field| {
+        inline for (@typeInfo(Injectable).@"struct".fields) |inject_field| {
             if (inject_field.type == arg.type and @alignOf(inject_field.type) == @alignOf(arg.type)) {
                 // Inject argument
                 @field(args, arg.name) = @field(injectable_args, inject_field.name);
                 continue :outer;
             }
         }
-        if (@typeInfo(arg.type) == .Pointer and
-            @typeInfo(std.meta.Child(arg.type)) == .Struct and
+        if (@typeInfo(arg.type) == .pointer and
+            @typeInfo(std.meta.Child(arg.type)) == .@"struct" and
             @hasDecl(std.meta.Child(arg.type), "IsInjectedArgument"))
         {
             // Argument is declared as injectable, but we do not have a value to inject for it.
@@ -714,15 +714,15 @@ inline fn injectArgs(comptime Function: type, comptime Injectable: type, injecta
 // parameters which would **not** be injected.
 fn UninjectedArgsTuple(comptime Function: type) type {
     var std_args: []const type = &[0]type{};
-    inline for (@typeInfo(std.meta.ArgsTuple(Function)).Struct.fields) |arg| {
+    inline for (@typeInfo(std.meta.ArgsTuple(Function)).@"struct".fields) |arg| {
         // Is this a Struct or *Struct, with a `pub const IsInjectedArgument = void;` decl? If so,
         // it is considered an injected argument.
         const is_injected = blk: {
             switch (@typeInfo(arg.type)) {
-                .Struct => break :blk @hasDecl(arg.type, "IsInjectedArgument"),
-                .Pointer => {
+                .@"struct" => break :blk @hasDecl(arg.type, "IsInjectedArgument"),
+                .pointer => {
                     switch (@typeInfo(std.meta.Child(arg.type))) {
-                        .Struct => break :blk @hasDecl(std.meta.Child(arg.type), "IsInjectedArgument"),
+                        .@"struct" => break :blk @hasDecl(std.meta.Child(arg.type), "IsInjectedArgument"),
                         else => break :blk false,
                     }
                 },
@@ -737,7 +737,7 @@ fn UninjectedArgsTuple(comptime Function: type) type {
 
 // TODO: cannot use std.meta.stringToEnum for some reason; an issue with its internal comptime map and u0 values
 pub fn stringToEnum(comptime T: type, str: []const u8) ?T {
-    inline for (@typeInfo(T).Enum.fields) |enumField| {
+    inline for (@typeInfo(T).@"enum".fields) |enumField| {
         if (std.mem.eql(u8, str, enumField.name)) {
             return @field(T, enumField.name);
         }
@@ -750,7 +750,7 @@ fn SystemArgsM(comptime M: type, system_name: anytype) type {
     const which = "systems";
     if (!@hasDecl(M, which)) return @TypeOf(.{});
 
-    inline for (@typeInfo(@TypeOf(M.systems)).Struct.fields) |field| {
+    inline for (@typeInfo(@TypeOf(M.systems)).@"struct".fields) |field| {
         comptime if (!std.mem.eql(u8, field.name, @tagName(system_name))) continue;
         if (!@hasField(@TypeOf(M.systems), @tagName(system_name))) @compileError(std.fmt.comptimePrint("mach: module .{s} declares no {s} system .{s}", .{
             @tagName(M.name),
@@ -759,9 +759,9 @@ fn SystemArgsM(comptime M: type, system_name: anytype) type {
         }));
         const handler = @field(M.systems, @tagName(system_name)).handler;
         const Handler = switch (@typeInfo(@TypeOf(handler))) {
-            .Type => handler, // Pre-declaration of what args an event has
-            .Fn => blk: {
-                if (@typeInfo(@TypeOf(handler)) != .Fn) @compileError(std.fmt.comptimePrint("mach: module .{s} declares {s} system .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
+            .type => handler, // Pre-declaration of what args an event has
+            .@"fn" => blk: {
+                if (@typeInfo(@TypeOf(handler)) != .@"fn") @compileError(std.fmt.comptimePrint("mach: module .{s} declares {s} system .{s} = .{{ .handler = T }}, expected fn but found: {s}", .{
                     @tagName(M.name),
                     which,
                     @tagName(system_name),
@@ -782,7 +782,7 @@ fn SystemEnum(comptime modules: anytype) type {
     var i: u32 = 0;
     for (modules) |M| {
         _ = ModuleInterface(M); // Validate the module
-        if (@hasDecl(M, "systems")) inline for (@typeInfo(@TypeOf(M.systems)).Struct.fields) |field| {
+        if (@hasDecl(M, "systems")) inline for (@typeInfo(@TypeOf(M.systems)).@"struct".fields) |field| {
             const exists_already = blk: {
                 for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) break :blk true;
                 break :blk false;
@@ -794,7 +794,7 @@ fn SystemEnum(comptime modules: anytype) type {
         };
     }
     return @Type(.{
-        .Enum = .{
+        .@"enum" = .{
             .tag_type = if (enum_fields.len > 0) std.math.IntFittingRange(0, enum_fields.len - 1) else u0,
             .fields = enum_fields,
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -808,7 +808,7 @@ fn SystemEnumM(comptime M: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: u32 = 0;
     _ = ModuleInterface(M); // Validate the module
-    if (@hasDecl(M, "systems")) inline for (@typeInfo(@TypeOf(M.systems)).Struct.fields) |field| {
+    if (@hasDecl(M, "systems")) inline for (@typeInfo(@TypeOf(M.systems)).@"struct".fields) |field| {
         const exists_already = blk: {
             for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) break :blk true;
             break :blk false;
@@ -819,7 +819,7 @@ fn SystemEnumM(comptime M: anytype) type {
         }
     };
     return @Type(.{
-        .Enum = .{
+        .@"enum" = .{
             .tag_type = if (enum_fields.len > 0) std.math.IntFittingRange(0, enum_fields.len - 1) else u0,
             .fields = enum_fields,
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -840,7 +840,7 @@ pub fn ComponentName(comptime modules: anytype) type {
     var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
     var i: usize = 0;
     inline for (modules) |M| {
-        search: for (@typeInfo(ComponentTypesM(M)).Struct.fields) |field| {
+        search: for (@typeInfo(ComponentTypesM(M)).@"struct".fields) |field| {
             for (enum_fields) |existing| if (std.mem.eql(u8, existing.name, field.name)) continue :search;
             enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{
                 .name = field.name,
@@ -850,7 +850,7 @@ pub fn ComponentName(comptime modules: anytype) type {
         }
     }
     return @Type(.{
-        .Enum = .{
+        .@"enum" = .{
             .tag_type = std.math.IntFittingRange(0, enum_fields.len - 1),
             .fields = enum_fields,
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -866,7 +866,7 @@ pub fn ModuleName(comptime modules: anytype) type {
         enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(M.name), .value = i }};
     }
     return @Type(.{
-        .Enum = .{
+        .@"enum" = .{
             .tag_type = std.math.IntFittingRange(0, enum_fields.len - 1),
             .fields = enum_fields,
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -889,7 +889,7 @@ fn NamespacedModules(comptime modules: anytype) type {
         }};
     }
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .layout = .auto,
             .is_tuple = false,
             .fields = fields,
@@ -900,12 +900,12 @@ fn NamespacedModules(comptime modules: anytype) type {
 
 // TODO: tests
 fn validateSystems(comptime error_prefix: anytype, comptime systems: anytype) void {
-    if (@typeInfo(@TypeOf(systems)) != .Struct or @typeInfo(@TypeOf(systems)).Struct.is_tuple) {
+    if (@typeInfo(@TypeOf(systems)) != .@"struct" or @typeInfo(@TypeOf(systems)).@"struct".is_tuple) {
         @compileError(error_prefix ++ "expected a struct .{}, found: " ++ @typeName(@TypeOf(systems)));
     }
-    inline for (@typeInfo(@TypeOf(systems)).Struct.fields) |field| {
+    inline for (@typeInfo(@TypeOf(systems)).@"struct".fields) |field| {
         const Event = field.type;
-        if (@typeInfo(Event) != .Struct) @compileError(std.fmt.comptimePrint(
+        if (@typeInfo(Event) != .@"struct") @compileError(std.fmt.comptimePrint(
             error_prefix ++ "expected .{s} = .{{}}, found type: {s}",
             .{ field.name, @typeName(Event) },
         ));
@@ -917,9 +917,9 @@ fn validateSystems(comptime error_prefix: anytype, comptime systems: anytype) vo
             .{field.name},
         ));
         const valid_handler_type = switch (@typeInfo(@TypeOf(event.handler))) {
-            .Fn => true,
-            .Type => switch (@typeInfo(event.handler)) {
-                .Fn => true,
+            .@"fn" => true,
+            .type => switch (@typeInfo(event.handler)) {
+                .@"fn" => true,
                 else => false,
             },
             else => false,
@@ -930,8 +930,8 @@ fn validateSystems(comptime error_prefix: anytype, comptime systems: anytype) vo
         ));
 
         switch (@typeInfo(@TypeOf(event.handler))) {
-            .Fn => _ = UninjectedArgsTuple(@TypeOf(event.handler)),
-            .Type => _ = UninjectedArgsTuple(event.handler),
+            .@"fn" => _ = UninjectedArgsTuple(@TypeOf(event.handler)),
+            .type => _ = UninjectedArgsTuple(event.handler),
             else => unreachable,
         }
     }
@@ -964,7 +964,7 @@ pub fn ComponentTypesByName(comptime modules: anytype) type {
         }};
     }
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .layout = .auto,
             .is_tuple = false,
             .fields = fields,
@@ -988,13 +988,13 @@ fn ComponentTypesM(comptime M: anytype) type {
     if (!@hasDecl(M, "components")) {
         return struct {};
     }
-    if (@typeInfo(@TypeOf(M.components)) != .Struct or @typeInfo(@TypeOf(M.components)).Struct.is_tuple) {
+    if (@typeInfo(@TypeOf(M.components)) != .@"struct" or @typeInfo(@TypeOf(M.components)).@"struct".is_tuple) {
         @compileError(error_prefix ++ "expected a struct .{}, found: " ++ @typeName(@TypeOf(M.components)));
     }
     var fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
-    inline for (@typeInfo(@TypeOf(M.components)).Struct.fields) |field| {
+    inline for (@typeInfo(@TypeOf(M.components)).@"struct".fields) |field| {
         const Component = field.type;
-        if (@typeInfo(Component) != .Struct) @compileError(std.fmt.comptimePrint(
+        if (@typeInfo(Component) != .@"struct") @compileError(std.fmt.comptimePrint(
             error_prefix ++ "expected .{s} = .{{}}, found type: {s}",
             .{ field.name, @typeName(Component) },
         ));
@@ -1005,7 +1005,7 @@ fn ComponentTypesM(comptime M: anytype) type {
             error_prefix ++ ".{s} missing field `.type = T`",
             .{field.name},
         ));
-        if (@typeInfo(@TypeOf(component.type)) != .Type) @compileError(std.fmt.comptimePrint(
+        if (@typeInfo(@TypeOf(component.type)) != .type) @compileError(std.fmt.comptimePrint(
             error_prefix ++ ".{s} expected field `.type = T`, found: {s}",
             .{ field.name, @typeName(@TypeOf(component.type)) },
         ));
@@ -1034,7 +1034,7 @@ fn ComponentTypesM(comptime M: anytype) type {
         }};
     }
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .layout = .auto,
             .is_tuple = false,
             .fields = fields,
@@ -1045,10 +1045,10 @@ fn ComponentTypesM(comptime M: anytype) type {
 
 fn isString(comptime S: type) bool {
     return switch (@typeInfo(S)) {
-        .Pointer => |p| switch (p.size) {
+        .pointer => |p| switch (p.size) {
             .Many, .Slice => p.child == u8,
             .One => switch (@typeInfo(p.child)) {
-                .Array => |a| a.child == u8,
+                .array => |a| a.child == u8,
                 else => false,
             },
             else => false,
@@ -1194,7 +1194,7 @@ test "system name" {
         Sprite2D,
     }));
 
-    const locals = @typeInfo(Ms.System).Enum;
+    const locals = @typeInfo(Ms.System).@"enum";
     try testing.expect(type, u3).eql(locals.tag_type);
     try testing.expect(usize, 8).eql(locals.fields.len);
     try testing.expect([]const u8, "foo").eql(locals.fields[0].name);
@@ -1224,7 +1224,7 @@ test ModuleName {
         Sprite2D,
     });
     _ = Modules(modules);
-    const info = @typeInfo(ModuleName(modules)).Enum;
+    const info = @typeInfo(ModuleName(modules)).@"enum";
 
     try testing.expect(type, u2).eql(info.tag_type);
     try testing.expect(usize, 4).eql(info.fields.len);
@@ -1242,8 +1242,8 @@ const TupleTester = struct {
 
     fn assertTuple(comptime expected: anytype, comptime Actual: type) void {
         const info = @typeInfo(Actual);
-        if (info != .Struct) @compileError("Expected struct type");
-        if (!info.Struct.is_tuple) @compileError("Struct type must be a tuple type");
+        if (info != .@"struct") @compileError("Expected struct type");
+        if (!info.@"struct".is_tuple) @compileError("Struct type must be a tuple type");
 
         const fields_list = std.meta.fields(Actual);
         if (expected.len != fields_list.len) @compileError("Argument count mismatch");

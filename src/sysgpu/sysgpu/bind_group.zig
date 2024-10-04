@@ -23,7 +23,7 @@ pub const BindGroup = opaque {
         texture_view: ?*TextureView = null,
 
         /// Helper to create a buffer BindGroup.Entry.
-        pub fn buffer(binding: u32, buf: *Buffer, offset: u64, size: u64, elem_size: u32) Entry {
+        pub fn initBuffer(binding: u32, buf: *Buffer, offset: u64, size: u64, elem_size: u32) Entry {
             return .{
                 .binding = binding,
                 .buffer = buf,
@@ -34,7 +34,7 @@ pub const BindGroup = opaque {
         }
 
         /// Helper to create a sampler BindGroup.Entry.
-        pub fn sampler(binding: u32, _sampler: *Sampler) Entry {
+        pub fn initSampler(binding: u32, _sampler: *Sampler) Entry {
             return .{
                 .binding = binding,
                 .sampler = _sampler,
@@ -43,7 +43,7 @@ pub const BindGroup = opaque {
         }
 
         /// Helper to create a texture view BindGroup.Entry.
-        pub fn textureView(binding: u32, texture_view: *TextureView) Entry {
+        pub fn initTextureView(binding: u32, texture_view: *TextureView) Entry {
             return .{
                 .binding = binding,
                 .texture_view = texture_view,

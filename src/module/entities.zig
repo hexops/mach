@@ -755,7 +755,7 @@ pub fn Database(comptime modules: anytype) type {
                         .is_comptime = false,
                         .alignment = @alignOf(usize),
                     }};
-                    for (@typeInfo(@TypeOf(q)).Struct.fields) |slice| {
+                    for (@typeInfo(@TypeOf(q)).@"struct".fields) |slice| {
                         const value: ComponentQuery = @field(q, slice.name);
                         switch (value) {
                             .read => |v| {
@@ -787,7 +787,7 @@ pub fn Database(comptime modules: anytype) type {
                         }
                     }
                     break :blk @Type(.{
-                        .Struct = .{
+                        .@"struct" = .{
                             .layout = .auto,
                             .is_tuple = false,
                             .fields = fields,
@@ -801,7 +801,7 @@ pub fn Database(comptime modules: anytype) type {
 
                     var slices: Slices = undefined;
                     slices.len = archetype.len;
-                    inline for (@typeInfo(@TypeOf(q)).Struct.fields) |slice| {
+                    inline for (@typeInfo(@TypeOf(q)).@"struct".fields) |slice| {
                         const value: ComponentQuery = @field(q, slice.name);
                         switch (value) {
                             .read => |v| {
@@ -840,8 +840,8 @@ pub fn Database(comptime modules: anytype) type {
         /// value is `.read()` or `.write()` determines whether the slices are `[]T` (mutable) or
         /// `[]const T` (immutable).
         pub fn query(entities: *Self, comptime q: anytype) !QueryResult(q) {
-            var op_and: [@typeInfo(@TypeOf(q)).Struct.fields.len]QueryDynamic = undefined;
-            inline for (@typeInfo(@TypeOf(q)).Struct.fields, 0..) |slice, i| {
+            var op_and: [@typeInfo(@TypeOf(q)).@"struct".fields.len]QueryDynamic = undefined;
+            inline for (@typeInfo(@TypeOf(q)).@"struct".fields, 0..) |slice, i| {
                 const value: ComponentQuery = @field(q, slice.name);
                 switch (value) {
                     .read => |v| op_and[i] = .{ .read = entities.componentName(v.module, v.component) },

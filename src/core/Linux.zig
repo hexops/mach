@@ -155,10 +155,6 @@ pub fn setSize(_: *Linux, _: Size) void {
     return;
 }
 
-pub fn size(_: *Linux) Size {
-    return Size{ .width = 100, .height = 100 };
-}
-
 pub fn setCursorMode(_: *Linux, _: CursorMode) void {
     return;
 }
@@ -192,4 +188,3 @@ pub fn deinitLinuxGamemode() void {
     mach.gamemode.stop();
     gamemode_log.info("gamemode: deactivated", .{});
 }
-

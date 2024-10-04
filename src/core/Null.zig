@@ -80,10 +80,6 @@ pub fn setSize(_: *Null, _: Size) void {
     return;
 }
 
-pub fn size(_: *Null) Size {
-    return Size{ .width = 100, .height = 100 };
-}
-
 pub fn setCursorMode(_: *Null, _: CursorMode) void {
     return;
 }
