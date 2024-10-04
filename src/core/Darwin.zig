@@ -155,10 +155,6 @@ pub fn setSize(_: *Darwin, _: Size) void {
     return;
 }
 
-pub fn size(_: *Darwin) Size {
-    return Size{ .width = 100, .height = 100 };
-}
-
 pub fn setCursorMode(_: *Darwin, _: CursorMode) void {
     return;
 }

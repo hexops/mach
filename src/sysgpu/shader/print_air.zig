@@ -507,7 +507,7 @@ fn Printer(comptime Writer: type) type {
         fn printFieldAny(self: @This(), indent: u16, name: []const u8, value: anytype) !void {
             try self.printFieldName(indent, name);
             try self.tty.setColor(self.writer, .cyan);
-            if (@typeInfo(@TypeOf(value)) == .Pointer) {
+            if (@typeInfo(@TypeOf(value)) == .pointer) {
                 // assume string
                 try self.writer.print("{s}", .{value});
             } else {

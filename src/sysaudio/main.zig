@@ -35,12 +35,12 @@ pub const Context = struct {
             if (backend) |b| {
                 break :blk try @typeInfo(
                     std.meta.fieldInfo(backends.Context, b).type,
-                ).Pointer.child.init(allocator, options);
+                ).pointer.child.init(allocator, options);
             } else {
                 inline for (std.meta.fields(Backend), 0..) |b, i| {
                     if (@typeInfo(
                         std.meta.fieldInfo(backends.Context, @as(Backend, @enumFromInt(b.value))).type,
-                    ).Pointer.child.init(allocator, options)) |d| {
+                    ).pointer.child.init(allocator, options)) |d| {
                         break :blk d;
                     } else |err| {
                         if (i == std.meta.fields(Backend).len - 1)

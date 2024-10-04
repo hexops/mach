@@ -1,6 +1,6 @@
 const mach = @import("mach");
 const gpu = mach.gpu;
-const ft = @import("freetype");
+const freetype = @import("freetype");
 const std = @import("std");
 const assets = @import("assets");
 
@@ -20,8 +20,8 @@ var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
 texture_atlas: mach.gfx.Atlas,
 texture: *gpu.Texture,
-ft: ft.Library,
-face: ft.Face,
+ft: freetype.Library,
+face: freetype.Face,
 regions: RegionMap = .{},
 allocator: std.mem.Allocator,
 
@@ -63,7 +63,7 @@ fn init(
         .rgba,
     );
 
-    const ft_lib = try ft.Library.init();
+    const ft_lib = try freetype.Library.init();
     const face = try ft_lib.createFaceMemory(assets.roboto_medium_ttf, 0);
 
     glyphs.init(.{

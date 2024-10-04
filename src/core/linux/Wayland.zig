@@ -23,26 +23,26 @@ pub const c = @cImport({
 
 // This needs to be declared here so it can be used in the exported functions below,
 // but doesn't need to be defined until run time (and can't be defined until run time).
-var libwaylandclient: LibWaylandClient = undefined;
+var libwaylandclient_global: LibWaylandClient = undefined;
 
 // These exported functions are defined because the wayland headers don't define them,
-// and then the linker gets confused. They reference undefined `libwaylandclient` at
-// compile time, but since they are not run until run time, after `libwaylandclient` is
+// and then the linker gets confused. They reference undefined `libwaylandclient_global` at
+// compile time, but since they are not run until run time, after `libwaylandclient_global` is
 // defined, an error never occurs.
 export fn wl_proxy_add_listener(proxy: ?*c.struct_wl_proxy, implementation: [*c]?*const fn () callconv(.C) void, data: ?*anyopaque) c_int {
-    return @call(.always_tail, libwaylandclient.wl_proxy_add_listener, .{ proxy, implementation, data });
+    return @call(.always_tail, libwaylandclient_global.wl_proxy_add_listener, .{ proxy, implementation, data });
 }
 export fn wl_proxy_get_version(proxy: ?*c.struct_wl_proxy) u32 {
-    return @call(.always_tail, libwaylandclient.wl_proxy_get_version, .{proxy});
+    return @call(.always_tail, libwaylandclient_global.wl_proxy_get_version, .{proxy});
 }
 export fn wl_proxy_marshal_flags(proxy: ?*c.struct_wl_proxy, opcode: u32, interface: [*c]const c.struct_wl_interface, version: u32, flags: u32, ...) ?*c.struct_wl_proxy {
     var arg_list: std.builtin.VaList = @cVaStart();
     defer @cVaEnd(&arg_list);
 
-    return @call(.always_tail, libwaylandclient.wl_proxy_marshal_flags, .{ proxy, opcode, interface, version, flags, arg_list });
+    return @call(.always_tail, libwaylandclient_global.wl_proxy_marshal_flags, .{ proxy, opcode, interface, version, flags, arg_list });
 }
 export fn wl_proxy_destroy(proxy: ?*c.struct_wl_proxy) void {
-    return @call(.always_tail, libwaylandclient.wl_proxy_destroy, .{proxy});
+    return @call(.always_tail, libwaylandclient_global.wl_proxy_destroy, .{proxy});
 }
 
 state: *Core,
@@ -76,14 +76,14 @@ pub fn init(
     core: *Core.Mod,
     options: InitOptions,
 ) !Wayland {
-    libwaylandclient = try LibWaylandClient.load();
+    libwaylandclient_global = try LibWaylandClient.load();
     var wl = Wayland{
         .core = @fieldParentPtr("platform", linux),
         .state = core.state(),
         .libxkbcommon = try LibXkbCommon.load(),
-        .libwaylandclient = libwaylandclient,
+        .libwaylandclient = libwaylandclient_global,
         .interfaces = Interfaces{},
-        .display = libwaylandclient.wl_display_connect(null) orelse return error.FailedToConnectToWaylandDisplay,
+        .display = libwaylandclient_global.wl_display_connect(null) orelse return error.FailedToConnectToWaylandDisplay,
         .title = try options.allocator.dupeZ(u8, options.title),
         .size = &linux.size,
         .modifiers = .{
@@ -206,7 +206,7 @@ const LibXkbCommon = struct {
     pub fn load() !LibXkbCommon {
         var lib: LibXkbCommon = undefined;
         lib.handle = std.DynLib.open("libxkbcommon.so.0") catch return error.LibraryNotFound;
-        inline for (@typeInfo(LibXkbCommon).Struct.fields[1..]) |field| {
+        inline for (@typeInfo(LibXkbCommon).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
             @field(lib, field.name) = lib.handle.lookup(field.type, name_z) orelse {
@@ -258,7 +258,7 @@ const LibWaylandClient = struct {
     pub fn load() !LibWaylandClient {
         var lib: LibWaylandClient = undefined;
         lib.handle = std.DynLib.open("libwayland-client.so.0") catch return error.LibraryNotFound;
-        inline for (@typeInfo(LibWaylandClient).Struct.fields[1..]) |field| {
+        inline for (@typeInfo(LibWaylandClient).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
             @field(lib, field.name) = lib.handle.lookup(field.type, name_z) orelse {

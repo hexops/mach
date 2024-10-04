@@ -34,7 +34,7 @@ const Lib = struct {
 
     pub fn load() !void {
         lib.handle = std.DynLib.open("libjack.so") catch return error.LibraryNotFound;
-        inline for (@typeInfo(Lib).Struct.fields[1..]) |field| {
+        inline for (@typeInfo(Lib).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
             @field(lib, field.name) = lib.handle.lookup(field.type, name_z) orelse return error.SymbolLookup;

@@ -5,7 +5,7 @@ var libgl: std.DynLib = undefined;
 
 fn removeOptional(comptime T: type) type {
     return switch (@typeInfo(T)) {
-        .Optional => |opt| opt.child,
+        .optional => |opt| opt.child,
         else => T,
     };
 }
