@@ -19,11 +19,10 @@ You may have been linked to this issue because you sent a pull request to update
 * [ ] In `machengine.org` repository `static/zig` folder, `wrench script nominate-zig-index-update nominate 2024.1.0-mach-wip` has been ran and the [`index.json`](https://machengine.org/zig/index.json) has been updated.
 * [ ] #wrench automation (`!wrench schedule-now update-zig-version`) has created new pull requests to update the Zig version used in CI of all our projects, and it matches index.json.
 * [ ] The [_Nomination history_](https://machengine.org/about/nominated-zig/#nomination-history) has a new section for the latest nightly Zig version which Wrench used in its PRs, with a warning at the top `**IN-PROGRESS:** This version is currently being nominated, see [the tracking issue](https://github.com/hexops/mach/issues/1135) for details. Once everything looks good, the new Zig version is confirmed to be working with Mach, we will declare success, close the issue, and remove this in-progress warning.`.
-* [ ] #mach-dev Discord message: `Beginning the process of nominating a new Zig version; $GITHUB_ISSUE`
+* [ ] #contributing Discord message: `Beginning the process of nominating a new Zig version; $GITHUB_ISSUE`
 * [ ] #wrench automation (`!wrench script-all install-zig`) has updated the Zig version used by self-hosted GitHub actions runners.
 * [ ] "First-order projects" below (which have zero build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
 * [ ] "Second-order projects" below (which have build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
-* [ ] https://machengine.org/core/migrations/ has a new entry for Core users looking to update, or changes are not needed.
 * [ ] The `.zigversion` file https://github.com/hexops/mach/blob/main/.zigversion has been updated.
 * [ ] The mach build.zig version check has been updated: https://github.com/hexops/mach/blob/main/build.zig#L187-L192
 * [ ] https://machengine.org/about/zig-version has been updated
@@ -35,7 +34,6 @@ You may have been linked to this issue because you sent a pull request to update
 > We've just finalized nominating and updating to Zig 2024.1.0-mach. We encourage you to update your projects to that Zig version now. :)
 >
 > * Get the new Zig version: https://machengine.org/about/nominated-zig/#202410-mach
-> * Update your mach-core project: https://machengine.org/core/migrations/#mach-core-updated-to-zig-202410-mach-2024-01-14
 > * Tips on upgrading your own Zig code: https://github.com/hexops/mach/issues/1135#issuecomment-1891175749
 > * Nomination tracking issue: $GITHUB_ISSUE
 
