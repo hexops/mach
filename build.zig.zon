@@ -12,8 +12,8 @@
     },
     .dependencies = .{
         .mach_freetype = .{
-            .url = "https://pkg.machengine.org/mach-freetype/288ab786fa21216e2420b9d8b42aec8cc17d1a2c.tar.gz",
-            .hash = "12207fcf92e0ebf400ed9a4f4a3e31b3719bf829db933f2007dd398eb7568e5cc71a",
+            .url = "https://pkg.machengine.org/mach-freetype/f4f1ba54f488a7181a26b80b655ce28680634e0d.tar.gz",
+            .hash = "1220cea9d54d0c785e085956adee05338699fb32bb93c678b451c0fe8b54acc46931",
             .lazy = true,
         },
         .font_assets = .{
