@@ -81,14 +81,14 @@ pub fn init(
     // Try to initialize the desired backend, falling back to the other if that one is not supported
     switch (desired_backend) {
         .x11 => {
-            const x11 = X11.init(linux, core, options) catch |err| switch (err) {
-                error.NotSupported => {
-                    log.err("failed to initialize X11 backend, falling back to Wayland", .{});
-                    linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
-                },
-                else => return err,
-            };
-            linux.backend = .{ .x11 = x11 };
+            // const x11 = X11.init(linux, core, options) catch |err| switch (err) {
+            //     error.NotSupported => {
+            //         log.err("failed to initialize X11 backend, falling back to Wayland", .{});
+            //         linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
+            //     },
+            //     else => return err,
+            // };
+            // linux.backend = .{ .x11 = x11 };
         },
         .wayland => {
             const wayland = Wayland.init(linux, core, options) catch |err| switch (err) {
@@ -109,7 +109,9 @@ pub fn init(
         .wayland => |be| {
             linux.surface_descriptor = .{ .next_in_chain = .{ .from_wayland_surface = be.surface_descriptor } };
         },
-        .x11 => {}, // TODO: setup surface descriptor
+        .x11 => |be| {
+            linux.surface_descriptor = .{ .next_in_chain = .{ .from_xlib_window = be.surface_descriptor } };
+        },
     }
 
     linux.refresh_rate = 60; // TODO: set to something meaningful
@@ -121,7 +123,7 @@ pub fn deinit(linux: *Linux) void {
     if (linux.gamemode != null and linux.gamemode.?) deinitLinuxGamemode();
     switch (linux.backend) {
         .wayland => linux.backend.wayland.deinit(linux),
-        .x11 => {}, // TODO: set to something meaningful
+        .x11 => linux.backend.x11.deinit(linux),
     }
 
     return;
