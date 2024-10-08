@@ -22,15 +22,14 @@
             .lazy = true,
         },
         .mach_objc = .{
-            .url = "https://pkg.machengine.org/mach-objc/8c04f317104d5a0b24806c6da7ddea2cf67ece94.tar.gz",
-            .hash = "1220396d9181fde88d809dbe7cb7f337f4217b4e242106e417053ce5877c9330d15e",
+            .url = "https://pkg.machengine.org/mach-objc/a66178db2ec3d20d928b8f90491cb30d3da23816.tar.gz",
+            .hash = "122077746182b7015b4df73c0ba38378c3499ac9353fcd8701c51cd598ea93f06582",
             .lazy = true,
         },
         .xcode_frameworks = .{
-            .url = "https://pkg.machengine.org/xcode-frameworks/a6bf82e032d4d9923ad5c222d466710fcc05f249.tar.gz",
-            .hash = "12208da4dfcd9b53fb367375fb612ec73f38e53015f1ce6ae6d6e8437a637078e170",
-            // TODO(build): be able to mark this dependency as lazy
-            // .lazy = true,
+            .url = "https://pkg.machengine.org/xcode-frameworks/9a45f3ac977fd25dff77e58c6de1870b6808c4a7.tar.gz",
+            .hash = "122098b9174895f9708bc824b0f9e550c401892c40a900006459acf2cbf78acd99bb",
+            .lazy = true,
         },
         .direct3d_headers = .{
             .url = "https://pkg.machengine.org/direct3d-headers/edfc992810c9f19b4003f398ed30e08a0dd3d356.tar.gz",
