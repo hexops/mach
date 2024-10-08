@@ -129,6 +129,15 @@ pub fn build(b: *std.Build) !void {
             }
         }
         if (target.result.isDarwin()) {
+            // TODO(build): determine if we need this after https://github.com/ziglang/zig/issues/21598 is fixed
+            if (b.lazyDependency("xcode_frameworks", .{
+                .target = target,
+                .optimize = optimize,
+            })) |dep| {
+                module.addSystemFrameworkPath(dep.path("Frameworks"));
+                module.addSystemIncludePath(dep.path("include"));
+                module.addLibraryPath(dep.path("lib"));
+            }
             if (b.lazyDependency("mach_objc", .{
                 .target = target,
                 .optimize = optimize,
@@ -150,7 +159,6 @@ pub fn build(b: *std.Build) !void {
                         .optimize = optimize,
                     });
                     example_exe.root_module.addImport("mach", module);
-                    addPaths(&example_exe.root_module);
                     // b.installArtifact(example_exe);
 
                     const example_compile_step = b.step("sysaudio-" ++ example, "Compile 'sysaudio-" ++ example ++ "' example");
@@ -164,22 +172,9 @@ pub fn build(b: *std.Build) !void {
                     example_run_step.dependOn(&example_run_cmd.step);
                 }
             }
-            if (target.result.isDarwin()) {
-                if (b.lazyDependency("mach_objc", .{
-                    .target = target,
-                    .optimize = optimize,
-                })) |dep| module.addImport("objc", dep.module("mach-objc"));
-            }
         }
 
         if (target.result.isDarwin()) {
-            // Transitive dependencies, explicit linkage of these works around
-            // ziglang/zig#17130
-            module.linkSystemLibrary("objc", .{});
-            module.linkFramework("CoreImage", .{});
-            module.linkFramework("CoreVideo", .{});
-
-            // Direct dependencies
             module.linkFramework("AudioToolbox", .{});
             module.linkFramework("CoreFoundation", .{});
             module.linkFramework("CoreAudio", .{});
@@ -222,6 +217,15 @@ pub fn build(b: *std.Build) !void {
     if (want_sysgpu) {
         if (b.lazyDependency("vulkan_zig_generated", .{})) |dep| module.addImport("vulkan", dep.module("vulkan-zig-generated"));
         if (target.result.isDarwin()) {
+            // TODO(build): determine if we need this after https://github.com/ziglang/zig/issues/21598 is fixed
+            if (b.lazyDependency("xcode_frameworks", .{
+                .target = target,
+                .optimize = optimize,
+            })) |dep| {
+                module.addSystemFrameworkPath(dep.path("Frameworks"));
+                module.addSystemIncludePath(dep.path("include"));
+                module.addLibraryPath(dep.path("lib"));
+            }
             if (b.lazyDependency("mach_objc", .{
                 .target = target,
                 .optimize = optimize,
@@ -233,7 +237,6 @@ pub fn build(b: *std.Build) !void {
         if (want_libs) {
             const lib = b.addStaticLibrary(.{
                 .name = "mach-sysgpu",
-                .root_source_file = b.addWriteFiles().add("empty.c", ""),
                 .target = target,
                 .optimize = optimize,
             });
@@ -242,7 +245,6 @@ pub fn build(b: *std.Build) !void {
                 lib.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
             }
             linkSysgpu(b, &lib.root_module);
-            addPaths(&lib.root_module);
             b.installArtifact(lib);
         }
     }
@@ -259,7 +261,6 @@ pub fn build(b: *std.Build) !void {
         while (iter.next()) |e| {
             unit_tests.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
         }
-        addPaths(&unit_tests.root_module);
 
         // Linux gamemode requires libc.
         if (target.result.os.tag == .linux) unit_tests.root_module.link_libc = true;
@@ -312,7 +313,15 @@ fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
     const target = resolved_target.result;
     if (target.cpu.arch != .wasm32) module.link_libc = true;
     if (target.isDarwin()) {
-        module.linkSystemLibrary("objc", .{});
+        // TODO(build): determine if we need this after https://github.com/ziglang/zig/issues/21598 is fixed
+        if (b.lazyDependency("xcode_frameworks", .{
+            .target = resolved_target,
+            .optimize = module.optimize.?,
+        })) |dep| {
+            module.addSystemFrameworkPath(dep.path("Frameworks"));
+            module.addSystemIncludePath(dep.path("include"));
+            module.addLibraryPath(dep.path("lib"));
+        }
         if (target.os.tag == .macos) {
             module.linkFramework("AppKit", .{});
         } else {
@@ -352,18 +361,6 @@ fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
     }
 }
 
-pub fn addPaths(mod: *std.Build.Module) void {
-    if (mod.resolved_target.?.result.isDarwin()) @import("xcode_frameworks").addPaths(mod);
-}
-
-fn sdkPath(comptime suffix: []const u8) []const u8 {
-    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
-    return comptime blk: {
-        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
-        break :blk root_dir ++ suffix;
-    };
-}
-
 fn buildExamples(
     b: *std.Build,
     optimize: std.builtin.OptimizeMode,
@@ -387,12 +384,12 @@ fn buildExamples(
         .{ .core = true, .name = "triangle", .deps = &.{} },
 
         // Mach engine examples
-        .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
+        // .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
         .{ .name = "custom-renderer", .deps = &.{} },
         .{ .name = "glyphs", .deps = &.{ .freetype, .assets } },
         .{ .name = "piano", .deps = &.{} },
         .{ .name = "play-opus", .deps = &.{.assets} },
-        .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
+        // .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
         .{ .name = "text", .deps = &.{.assets} },
     }) |example| {
         const exe = b.addExecutable(.{
@@ -405,7 +402,6 @@ fn buildExamples(
             .optimize = optimize,
         });
         exe.root_module.addImport("mach", mach_mod);
-        addPaths(&exe.root_module);
         b.installArtifact(exe);
 
         for (example.deps) |d| {
