@@ -43,8 +43,8 @@
             .lazy = true,
         },
         .vulkan_zig_generated = .{
-            .url = "https://pkg.machengine.org/vulkan-zig-generated/d0d0711f4fe64666354bfabe97e9ad44425503e6.tar.gz",
-            .hash = "1220ed0faeb2bb655616c078dbf9a3c4468392829b1e1ee48b1a2fdbf8052d9de854",
+            .url = "https://pkg.machengine.org/vulkan-zig-generated/9ccb0de4505e5491454977c15087071863a7f922.tar.gz",
+            .hash = "1220846c51a63623131286cf9623b5fe50d1b8e2d4fce2da85e6527498b68b6298dc",
             .lazy = true,
         },
         .linux_audio_headers = .{
