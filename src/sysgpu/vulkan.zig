@@ -111,9 +111,9 @@ pub const Instance = struct {
         };
         const instance_info = vk.InstanceCreateInfo{
             .p_application_info = &application_info,
-            .enabled_layer_count = layers.len,
+            .enabled_layer_count = @intCast(layers.len),
             .pp_enabled_layer_names = layers.slice().ptr,
-            .enabled_extension_count = extensions.len,
+            .enabled_extension_count = @intCast(extensions.len),
             .pp_enabled_extension_names = extensions.slice().ptr,
         };
         const vk_instance = try vkb.createInstance(&instance_info, null);
@@ -2243,7 +2243,7 @@ pub const RenderPipeline = struct {
 
         var vk_pipeline: vk.Pipeline = undefined;
         _ = try vkd.createGraphicsPipelines(vk_device, .null_handle, 1, &[_]vk.GraphicsPipelineCreateInfo{.{
-            .stage_count = stages.len,
+            .stage_count = @intCast(stages.len),
             .p_stages = stages.slice().ptr,
             .p_vertex_input_state = &vertex_input,
             .p_input_assembly_state = &input_assembly,
@@ -2925,7 +2925,7 @@ pub const StateTracker = struct {
             src_stage_mask,
             tracker.dst_stage_mask,
             .{},
-            memory_barriers.len,
+            @intCast(memory_barriers.len),
             &memory_barriers.buffer,
             0,
             null,
