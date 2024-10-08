@@ -31,11 +31,13 @@ jobs:
         run: Xvfb :99 -screen 0 1680x720x24 > /dev/null 2>&1 &
       # - name: x86_64-linux -> x86_64-linux-musl
       #   run: zig build -Dtarget=x86_64-linux-musl
-      - name: x86_64-linux -> x86_64-macos
-        run: zig build -Dtarget=x86_64-macos
-      - name: x86_64-linux -> aarch64-macos
-        run: zig build -Dtarget=aarch64-macos
+      # TODO(build): currently cannot link on macOS due to a bug in the Zig linker. https://github.com/hexops/mach/issues/1276
+      # - name: x86_64-linux -> x86_64-macos
+      #   run: zig build -Dtarget=x86_64-macos
+      # - name: x86_64-linux -> aarch64-macos
+      #   run: zig build -Dtarget=aarch64-macos
       - name: x86_64-linux -> x86_64-windows
+
         run: zig build -Dtarget=x86_64-windows-gnu
       - name: build
         run: zig build
