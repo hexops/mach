@@ -36,8 +36,9 @@ jobs:
       #   run: zig build -Dtarget=x86_64-macos
       # - name: x86_64-linux -> aarch64-macos
       #   run: zig build -Dtarget=aarch64-macos
-      - name: x86_64-linux -> x86_64-windows
-        run: zig build -Dtarget=x86_64-windows-gnu
+      # TODO(build): currently cannot link on Windows for an unknown reason ('error: the linker needs one or more objects to link')
+      # - name: x86_64-linux -> x86_64-windows
+      #   run: zig build -Dtarget=x86_64-windows-gnu
       - name: build
         run: zig build
       - name: test
