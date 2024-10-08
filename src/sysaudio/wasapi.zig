@@ -277,7 +277,7 @@ pub const Context = struct {
                 }
                 defer win32.CoTaskMemFree(id_u16);
 
-                break :blk std.unicode.utf16leToUtf8AllocZ(ctx.allocator, std.mem.span(id_u16.?)) catch |err| switch (err) {
+                break :blk std.unicode.utf16LeToUtf8AllocZ(ctx.allocator, std.mem.span(id_u16.?)) catch |err| switch (err) {
                     error.OutOfMemory => return error.OutOfMemory,
                     else => return error.OpeningDevice,
                 };
@@ -291,7 +291,7 @@ pub const Context = struct {
                 }
                 defer win32.CoTaskMemFree(variant.anon.anon.anon.pwszVal);
 
-                break :blk std.unicode.utf16leToUtf8AllocZ(
+                break :blk std.unicode.utf16LeToUtf8AllocZ(
                     ctx.allocator,
                     std.mem.span(variant.anon.anon.anon.pwszVal.?),
                 ) catch |err| switch (err) {
@@ -411,7 +411,7 @@ pub const Context = struct {
             else => return error.OpeningDevice,
         }
 
-        return std.unicode.utf16leToUtf8AllocZ(ctx.allocator, std.mem.span(default_playback_id_u16.?)) catch |err| switch (err) {
+        return std.unicode.utf16LeToUtf8AllocZ(ctx.allocator, std.mem.span(default_playback_id_u16.?)) catch |err| switch (err) {
             error.OutOfMemory => return error.OutOfMemory,
             else => return error.OpeningDevice,
         };
@@ -427,7 +427,7 @@ pub const Context = struct {
         audio_client3: *?*win32.IAudioClient3,
         max_buffer_frames: *u32,
     ) !void {
-        const id_u16 = std.unicode.utf8ToUtf16LeWithNull(ctx.allocator, device.id) catch |err| switch (err) {
+        const id_u16 = std.unicode.utf8ToUtf16LeAllocZ(ctx.allocator, device.id) catch |err| switch (err) {
             error.OutOfMemory => return error.OutOfMemory,
             else => unreachable,
         };
