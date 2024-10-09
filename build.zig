@@ -89,7 +89,6 @@ pub fn build(b: *std.Build) !void {
                 module.addImport("mach-freetype", dep.module("mach-freetype"));
                 module.addImport("mach-harfbuzz", dep.module("mach-harfbuzz"));
             }
-
             if (b.lazyDependency("mach_opus", .{
                 .target = target,
                 .optimize = .ReleaseFast,
@@ -103,24 +102,23 @@ pub fn build(b: *std.Build) !void {
     }
     if (want_core) {
         if (target.result.os.tag == .linux) {
-            const lib = b.addStaticLibrary(.{
-                .name = "core-wayland",
-                .target = target,
-                .optimize = optimize,
-            });
-            lib.addCSourceFile(.{
+            module.addCSourceFile(.{
                 .file = b.path("src/core/linux/wayland.c"),
             });
-            lib.linkLibC();
-            module.linkLibrary(lib);
-            addCoreDependencies(b, &lib.root_module);
         }
-        addCoreDependencies(b, module);
+        linkCore(b, module);
     }
     if (want_sysaudio) {
-        // Can build sysaudio examples if desired, then.
+        linkSysaudio(b, module);
+        if (target.result.os.tag == .linux) {
+            module.addCSourceFile(.{
+                .file = b.path("src/sysaudio/pipewire/sysaudio.c"),
+                .flags = &.{"-std=gnu99"},
+            });
+        }
         if (target.result.cpu.arch != .wasm32) {
             if (want_examples) {
+                // TODO(build): make these 'tests' not 'examples'
                 inline for ([_][]const u8{
                     "sine",
                     "record",
@@ -132,7 +130,6 @@ pub fn build(b: *std.Build) !void {
                         .optimize = optimize,
                     });
                     example_exe.root_module.addImport("mach", module);
-                    // b.installArtifact(example_exe);
 
                     const example_compile_step = b.step("sysaudio-" ++ example, "Compile 'sysaudio-" ++ example ++ "' example");
                     example_compile_step.dependOn(b.getInstallStep());
@@ -146,29 +143,18 @@ pub fn build(b: *std.Build) !void {
                 }
             }
         }
-        addSysaudioDependencies(b, module);
     }
     if (want_sysgpu) {
+        linkSysgpu(b, module);
         if (b.lazyDependency("vulkan_zig_generated", .{})) |dep| module.addImport("vulkan", dep.module("vulkan-zig-generated"));
         if (target.result.isDarwin()) {
-            // TODO(build): determine if we need this after https://github.com/ziglang/zig/issues/21598 is fixed
-            if (b.lazyDependency("xcode_frameworks", .{
-                .target = target,
-                .optimize = optimize,
-            })) |dep| {
-                module.addSystemFrameworkPath(dep.path("Frameworks"));
-                module.addSystemIncludePath(dep.path("include"));
-                module.addLibraryPath(dep.path("lib"));
-            }
             if (b.lazyDependency("mach_objc", .{
                 .target = target,
                 .optimize = optimize,
             })) |dep| module.addImport("objc", dep.module("mach-objc"));
         }
-
-        addSysgpuDependencies(b, module);
-
         if (want_libs) {
+            // TODO(build): make this 'libmach' and test the build of this in CI.
             const lib = b.addStaticLibrary(.{
                 .name = "mach-sysgpu",
                 .root_source_file = b.path("src/main.zig"),
@@ -179,7 +165,7 @@ pub fn build(b: *std.Build) !void {
             while (iter.next()) |e| {
                 lib.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
             }
-            addSysgpuDependencies(b, &lib.root_module);
+            linkSysgpu(b, &lib.root_module);
             b.installArtifact(lib);
         }
     }
@@ -206,9 +192,9 @@ pub fn build(b: *std.Build) !void {
         const test_step = b.step("test", "Run unit tests");
         test_step.dependOn(&run_unit_tests.step);
 
-        if (want_sysgpu) addSysgpuDependencies(b, &unit_tests.root_module);
-        if (want_core) addCoreDependencies(b, &unit_tests.root_module);
-        if (want_sysaudio) addSysaudioDependencies(b, &unit_tests.root_module);
+        if (want_sysgpu) linkSysgpu(b, &unit_tests.root_module);
+        if (want_core) linkCore(b, &unit_tests.root_module);
+        if (want_sysaudio) linkSysaudio(b, &unit_tests.root_module);
 
         // Documentation
         const docs_obj = b.addObject(.{
@@ -245,16 +231,18 @@ pub const Platform = enum {
     }
 };
 
-fn addSysgpuDependencies(b: *std.Build, module: *std.Build.Module) void {
+/// Links the system libraries, macOS frameworks, etc. that are needed to build sysgpu.
+fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
     const target = module.resolved_target orelse @panic("module must have .target specified");
     const optimize = module.optimize orelse @panic("module must have .optimize specified");
 
     if (target.result.os.tag == .linux) {
         module.link_libc = true;
     } else if (target.result.isDarwin()) {
-        // TODO(build): some of these dependencies are mach.Core dependencies, but this section
-        // 'should' only be sysgpu dependencies. We should declare sysgpu and mach.Core are
-        // inherently tied together probably and merge these two build options?
+        module.linkFramework("CoreGraphics", .{});
+        module.linkFramework("Foundation", .{});
+        module.linkFramework("Metal", .{});
+        module.linkFramework("QuartzCore", .{});
 
         if (b.lazyDependency("xcode_frameworks", .{
             .target = target,
@@ -264,23 +252,12 @@ fn addSysgpuDependencies(b: *std.Build, module: *std.Build.Module) void {
             module.addSystemIncludePath(dep.path("include"));
             module.addLibraryPath(dep.path("lib"));
         }
-
-        if (target.result.os
-            .tag == .macos)
-        {
-            module.linkFramework("AppKit", .{});
-        } else {
-            module.linkFramework("UIKit", .{});
-        }
-        module.linkFramework("CoreGraphics", .{});
-        module.linkFramework("Foundation", .{});
-        module.linkFramework("Metal", .{});
-        module.linkFramework("QuartzCore", .{});
     } else if (target.result.os.tag == .windows) {
         // TODO(build): Windows should never link OpenGL except in debug builds.
         module.linkSystemLibrary("d3d12", .{});
         module.linkSystemLibrary("d3dcompiler_47", .{});
         module.linkSystemLibrary("opengl32", .{});
+
         if (b.lazyDependency("direct3d_headers", .{
             .target = target,
             .optimize = optimize,
@@ -295,7 +272,8 @@ fn addSysgpuDependencies(b: *std.Build, module: *std.Build.Module) void {
     }
 }
 
-fn addCoreDependencies(b: *std.Build, module: *std.Build.Module) void {
+/// Links the system libraries, macOS frameworks, etc. that are needed to build core.
+fn linkCore(b: *std.Build, module: *std.Build.Module) void {
     const target = module.resolved_target orelse @panic("module must have .target specified");
     const optimize = module.optimize orelse @panic("module must have .optimize specified");
 
@@ -313,7 +291,16 @@ fn addCoreDependencies(b: *std.Build, module: *std.Build.Module) void {
             module.linkLibrary(dep.artifact("x11-headers"));
         }
     } else if (target.result.isDarwin()) {
-        // TODO(build): determine if we need this after https://github.com/ziglang/zig/issues/21598 is fixed
+        if (target.result.os.tag == .macos) {
+            module.linkFramework("AppKit", .{});
+        } else {
+            module.linkFramework("UIKit", .{});
+        }
+        module.linkFramework("CoreGraphics", .{});
+        module.linkFramework("Foundation", .{});
+        module.linkFramework("Metal", .{});
+        module.linkFramework("QuartzCore", .{});
+
         if (b.lazyDependency("xcode_frameworks", .{
             .target = target,
             .optimize = optimize,
@@ -329,47 +316,33 @@ fn addCoreDependencies(b: *std.Build, module: *std.Build.Module) void {
     }
 }
 
-fn addSysaudioDependencies(b: *std.Build, module: *std.Build.Module) void {
+/// Links the system libraries, macOS frameworks, etc. that are needed to build sysaudio.
+fn linkSysaudio(b: *std.Build, module: *std.Build.Module) void {
     const target = module.resolved_target orelse @panic("module must have .target specified");
     const optimize = module.optimize orelse @panic("module must have .optimize specified");
 
     if (target.result.os.tag == .linux) {
         module.link_libc = true;
 
-        // TODO: for some reason this is not functional, a Zig bug (only when using this Zig package
-        // externally):
-        //
-        // module.addCSourceFile(.{
-        //     .file = b.path("src/sysaudio/pipewire/sysaudio.c"),
-        //     .flags = &.{"-std=gnu99"},
-        // });
-        //
-        // error: unable to check cache: stat file '/Volumes/data/hexops/mach-flac/zig-cache//Volumes/data/hexops/mach-flac/src/pipewire/sysaudio.c' failed: FileNotFound
-        //
-        // So instead we do this:
-        const lib = b.addStaticLibrary(.{
-            .name = "sysaudio-pipewire",
-            .target = target,
-            .optimize = optimize,
-        });
-        lib.linkLibC();
-        lib.addCSourceFile(.{
-            .file = b.path("src/sysaudio/pipewire/sysaudio.c"),
-            .flags = &.{"-std=gnu99"},
-        });
-        module.linkLibrary(lib);
-
         if (b.lazyDependency("linux_audio_headers", .{
             .target = target,
             .optimize = optimize,
         })) |dep| {
             module.linkLibrary(dep.artifact("linux-audio-headers"));
-            lib.linkLibrary(dep.artifact("linux-audio-headers"));
         }
     } else if (target.result.isDarwin()) {
         module.linkFramework("AudioToolbox", .{});
         module.linkFramework("CoreFoundation", .{});
         module.linkFramework("CoreAudio", .{});
+
+        if (b.lazyDependency("xcode_frameworks", .{
+            .target = target,
+            .optimize = optimize,
+        })) |dep| {
+            module.addSystemFrameworkPath(dep.path("Frameworks"));
+            module.addSystemIncludePath(dep.path("include"));
+            module.addLibraryPath(dep.path("lib"));
+        }
     }
 }
 
