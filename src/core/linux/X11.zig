@@ -63,7 +63,7 @@ refresh_rate: u32,
 hidden_cursor: c.Cursor,
 
 // Mutable fields only used by main thread
-cursors: [@typeInfo(CursorShape).Enum.fields.len]?c.Cursor,
+cursors: [@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor,
 
 // Input state; written from main thread; read from any
 input_mu: std.Thread.RwLock = .{},
@@ -181,7 +181,7 @@ pub fn init(
         .border = options.border,
         .headless = options.headless,
         .size = window_size,
-        .cursors = std.mem.zeroes([@typeInfo(CursorShape).Enum.fields.len]?c.Cursor),
+        .cursors = std.mem.zeroes([@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor),
         .surface_descriptor = surface_descriptor,
         .libxkbcommon = try LibXkbCommon.load(),
     };
@@ -333,7 +333,7 @@ const LibX11 = struct {
     pub fn load() !LibX11 {
         var lib: LibX11 = undefined;
         lib.handle = std.DynLib.open("libX11.so.6") catch return error.LibraryNotFound;
-        inline for (@typeInfo(LibX11).Struct.fields[1..]) |field| {
+        inline for (@typeInfo(LibX11).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
             @field(lib, field.name) = lib.handle.lookup(field.type, name_z) orelse return error.SymbolLookup;
@@ -353,7 +353,7 @@ const LibXCursor = struct {
     pub fn load() !LibXCursor {
         var lib: LibXCursor = undefined;
         lib.handle = std.DynLib.open("libXcursor.so.1") catch return error.LibraryNotFound;
-        inline for (@typeInfo(LibXCursor).Struct.fields[1..]) |field| {
+        inline for (@typeInfo(LibXCursor).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
             @field(lib, field.name) = lib.handle.lookup(field.type, name_z) orelse return error.SymbolLookup;
@@ -369,7 +369,7 @@ const LibXRR = struct {
     pub fn load() !LibXRR {
         var lib: LibXRR = undefined;
         lib.handle = std.DynLib.open("libXrandr.so.1") catch return error.LibraryNotFound;
-        inline for (@typeInfo(LibXRR).Struct.fields[1..]) |field| {
+        inline for (@typeInfo(LibXRR).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
             @field(lib, field.name) = lib.handle.lookup(field.type, name_z) orelse return error.SymbolLookup;
@@ -400,7 +400,7 @@ const LibGL = struct {
     pub fn load() !LibGL {
         var lib: LibGL = undefined;
         lib.handle = std.DynLib.open("libGL.so.1") catch return error.LibraryNotFound;
-        inline for (@typeInfo(LibGL).Struct.fields[1..]) |field| {
+        inline for (@typeInfo(LibGL).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
             @field(lib, field.name) = lib.handle.lookup(field.type, name_z) orelse return error.SymbolLookup;
@@ -432,7 +432,7 @@ const LibXkbCommon = struct {
     pub fn load() !LibXkbCommon {
         var lib: LibXkbCommon = undefined;
         lib.handle = std.DynLib.open("libxkbcommon.so.0") catch return error.LibraryNotFound;
-        inline for (@typeInfo(LibXkbCommon).Struct.fields[1..]) |field| {
+        inline for (@typeInfo(LibXkbCommon).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
             @field(lib, field.name) = lib.handle.lookup(field.type, name_z) orelse {
