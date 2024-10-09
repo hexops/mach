@@ -237,6 +237,7 @@ pub fn build(b: *std.Build) !void {
         if (want_libs) {
             const lib = b.addStaticLibrary(.{
                 .name = "mach-sysgpu",
+                .root_source_file = b.path("src/main.zig"),
                 .target = target,
                 .optimize = optimize,
             });
