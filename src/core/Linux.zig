@@ -54,6 +54,14 @@ pub fn init(
     linux.allocator = options.allocator;
 
     if (!options.is_app and try wantGamemode(linux.allocator)) linux.gamemode = initLinuxGamemode();
+    linux.headless = options.headless;
+    linux.refresh_rate = 60; // TODO: set to something meaningful
+    linux.vsync_mode = .triple;
+    linux.size = options.size;
+    if (!options.headless) {
+        // TODO: this function does nothing right now
+        setDisplayMode(linux, options.display_mode);
+    }
 
     const desired_backend: BackendEnum = blk: {
         const backend = std.process.getEnvVarOwned(
@@ -61,8 +69,7 @@ pub fn init(
             "MACH_CORE_BACKEND",
         ) catch |err| switch (err) {
             error.EnvironmentVariableNotFound => {
-                // TODO(core): default to .x11 in the future
-                break :blk .wayland;
+                break :blk .x11;
             },
             else => return err,
         };
@@ -73,31 +80,27 @@ pub fn init(
         std.debug.panic("mach: unknown MACH_CORE_BACKEND: {s}", .{backend});
     };
 
-    if (desired_backend == .x11) {
-        // TODO(core): support X11 in the future
-        @panic("X11 is not supported...YET");
-    }
-
     // Try to initialize the desired backend, falling back to the other if that one is not supported
     switch (desired_backend) {
-        .x11 => {
-            // const x11 = X11.init(linux, core, options) catch |err| switch (err) {
-            //     error.NotSupported => {
-            //         log.err("failed to initialize X11 backend, falling back to Wayland", .{});
-            //         linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
-            //     },
-            //     else => return err,
-            // };
-            // linux.backend = .{ .x11 = x11 };
+        .x11 => blk: {
+            const x11 = X11.init(linux, core, options) catch |err| switch (err) {
+                error.LibraryNotFound => {
+                    log.err("failed to initialize X11 backend, falling back to Wayland", .{});
+                    linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
+
+                    break :blk;
+                },
+                else => return err,
+            };
+            linux.backend = .{ .x11 = x11 };
         },
-        .wayland => {
+        .wayland => blk: {
             const wayland = Wayland.init(linux, core, options) catch |err| switch (err) {
                 error.LibraryNotFound => {
                     log.err("failed to initialize Wayland backend, falling back to X11", .{});
                     linux.backend = .{ .x11 = try X11.init(linux, core, options) };
 
-                    // TODO(core): support X11 in the future
-                    @panic("X11 is not supported...YET");
+                    break :blk;
                 },
                 else => return err,
             };
@@ -114,8 +117,6 @@ pub fn init(
         },
     }
 
-    linux.refresh_rate = 60; // TODO: set to something meaningful
-
     return;
 }
 
@@ -129,7 +130,11 @@ pub fn deinit(linux: *Linux) void {
     return;
 }
 
-pub fn update(_: *Linux) !void {
+pub fn update(linux: *Linux) !void {
+    switch (linux.backend) {
+        .wayland => {},
+        .x11 => try linux.backend.x11.update(),
+    }
     return;
 }
 
