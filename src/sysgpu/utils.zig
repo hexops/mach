@@ -5,15 +5,15 @@ const sysgpu = @import("sysgpu/main.zig");
 
 pub fn Manager(comptime T: type) type {
     return struct {
-        count: u32 = 1,
+        count: std.atomic.Value(u32) = std.atomic.Value(u32).init(1),
 
         pub fn reference(manager: *@This()) void {
-            _ = @atomicRmw(u32, &manager.count, .Add, 1, .monotonic);
+            _ = manager.count.fetchAdd(1, .monotonic);
         }
 
         pub fn release(manager: *@This()) void {
-            if (@atomicRmw(u32, &manager.count, .Sub, 1, .release) == 1) {
-                @fence(.acquire);
+            if (manager.count.fetchSub(1, .release) == 1) {
+                _ = manager.count.load(.acquire);
                 const parent: *T = @alignCast(@fieldParentPtr("manager", manager));
                 parent.deinit();
             }
