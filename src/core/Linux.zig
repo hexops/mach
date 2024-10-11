@@ -66,7 +66,7 @@ pub fn init(
     const desired_backend: BackendEnum = blk: {
         const backend = std.process.getEnvVarOwned(
             linux.allocator,
-            "MACH_CORE_BACKEND",
+            "MACH_BACKEND",
         ) catch |err| switch (err) {
             error.EnvironmentVariableNotFound => {
                 break :blk .wayland;
@@ -77,7 +77,7 @@ pub fn init(
 
         if (std.ascii.eqlIgnoreCase(backend, "x11")) break :blk .x11;
         if (std.ascii.eqlIgnoreCase(backend, "wayland")) break :blk .wayland;
-        std.debug.panic("mach: unknown MACH_CORE_BACKEND: {s}", .{backend});
+        std.debug.panic("mach: unknown MACH_BACKEND: {s}", .{backend});
     };
 
     // Try to initialize the desired backend, falling back to the other if that one is not supported
