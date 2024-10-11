@@ -69,7 +69,7 @@ pub fn init(
             "MACH_CORE_BACKEND",
         ) catch |err| switch (err) {
             error.EnvironmentVariableNotFound => {
-                break :blk .x11;
+                break :blk .wayland;
             },
             else => return err,
         };
