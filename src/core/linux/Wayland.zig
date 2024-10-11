@@ -130,8 +130,8 @@ pub fn init(
             region,
             0,
             0,
-            @intCast(options.size.width),
-            @intCast(options.size.height),
+            @intCast(wl.size.width),
+            @intCast(wl.size.height),
         );
         c.wl_surface_set_opaque_region(wl.surface, region);
         c.wl_region_destroy(region);
