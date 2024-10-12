@@ -46,6 +46,11 @@ surface_descriptor: gpu.Surface.Descriptor,
 gamemode: ?bool = null,
 backend: Backend,
 
+// these arrays are used as info messages to the user that some features are missing
+// please keep these up to date until we can remove them
+const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/title/cursor" };
+const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Resizing window", "Keyboard input", "Changing display mode", "VSync", "Setting window border/title/cursor" };
+
 pub fn init(
     linux: *Linux,
     core: *Core.Mod,
@@ -116,6 +121,10 @@ pub fn init(
             linux.surface_descriptor = .{ .next_in_chain = .{ .from_xlib_window = be.surface_descriptor } };
         },
     }
+
+    // warn about incomplete features
+    // TODO: remove this when linux is not missing major features
+    try warnAboutIncompleteFeatures(linux.backend, &MISSING_FEATURES_X11, &MISSING_FEATURES_WAYLAND, options.allocator);
 
     return;
 }
@@ -194,4 +203,38 @@ pub fn initLinuxGamemode() bool {
 pub fn deinitLinuxGamemode() void {
     mach.gamemode.stop();
     gamemode_log.info("gamemode: deactivated", .{});
+}
+
+/// Used to inform users that some features are not present. Remove when features are complete.
+fn warnAboutIncompleteFeatures(backend: BackendEnum, missing_features_x11: []const []const u8, missing_features_wayland: []const []const u8, alloc: std.mem.Allocator) !void {
+    const features_incomplete_message =
+        \\WARNING: You are using the {s} backend, which is currently experimental as we continue to rewrite Mach in Zig instead of using C libraries like GLFW/etc. The following features are expected to not work:
+        \\
+        \\{s}
+        \\
+        \\Contributions welcome!
+    ;
+    const bullet_points = switch (backend) {
+        .x11 => try generateFeatureBulletPoints(missing_features_x11, alloc),
+        .wayland => try generateFeatureBulletPoints(missing_features_wayland, alloc),
+    };
+    defer bullet_points.deinit();
+    log.info(features_incomplete_message, .{ @tagName(backend), bullet_points.items });
+}
+
+/// Turn an array of strings into a single, bullet-pointed string, like this:
+/// * Item one
+/// * Item two
+///
+/// Returned value will need to be deinitialized.
+fn generateFeatureBulletPoints(features: []const []const u8, alloc: std.mem.Allocator) !std.ArrayList(u8) {
+    var message = std.ArrayList(u8).init(alloc);
+    for (features, 0..) |str, i| {
+        try message.appendSlice("* ");
+        try message.appendSlice(str);
+        if (i < features.len - 1) {
+            try message.appendSlice("\n");
+        }
+    }
+    return message;
 }
