@@ -41,57 +41,57 @@ You may have been linked to this issue because you sent a pull request to update
 
 These projects have zero `build.zig.zon` dependencies, we update them first - and in any order.
 
-* [ ] fastfilter
-* [ ] spirv-cross
-* [ ] brotli
-* [ ] wayland-headers
-* [ ] x11-headers
-* [ ] vulkan-headers
-* [ ] opengl-headers
-* [ ] linux-audio-headers
-* [ ] xcode-frameworks
-* [ ] vulkan-zig-generated
-* [ ] directx-headers
-* [ ] direct3d-headers
-* [ ] opus
-* [ ] flac
-* [ ] ogg
-* [ ] mach-example-assets
-* [ ] font-assets
+* [ ] [fastfilter](https://github.com/hexops/fastfilter)
+* [ ] [spirv-cross](https://github.com/hexops/spirv-cross)
+* [ ] [brotli](https://github.com/hexops/brotli)
+* [ ] [wayland-headers](https://github.com/hexops/wayland-headers)
+* [ ] [x11-headers](https://github.com/hexops/x11-headers)
+* [ ] [vulkan-headers](https://github.com/hexops/vulkan-headers)
+* [ ] [opengl-headers](https://github.com/hexops/opengl-headers)
+* [ ] [linux-audio-headers](https://github.com/hexops/linux-audio-headers)
+* [ ] [xcode-frameworks](https://github.com/hexops/xcode-frameworks)
+* [ ] [vulkan-zig-generated](https://github.com/hexops/vulkan-zig-generated)
+* [ ] [directx-headers](https://github.com/hexops/directx-headers)
+* [ ] [direct3d-headers](https://github.com/hexops/direct3d-headers)
+* [ ] [opus](https://github.com/hexops/opus)
+* [ ] [flac](https://github.com/hexops/flac)
+* [ ] [ogg](https://github.com/hexops/ogg)
+* [ ] [mach-example-assets](https://github.com/hexops/mach-example-assets)
+* [ ] [font-assets](https://github.com/hexops/font-assets)
 
 ## Second-order projects
 
 These projects have dependencies on other projects. We update them in the exact order below, top-to-bottom.
 
-* [ ] spirv-tools, which depends on:
+* [ ] [spirv-tools](https://github.com/hexops/spirv-tools), which depends on:
   * External package https://github.com/KhronosGroup/SPIRV-Headers
-* [ ] opusenc, which depends on:
+* [ ] [opusenc](https://github.com/hexops/opusenc), which depends on:
   * opus
-* [ ] freetype, which depends on:
+* [ ] [freetype](https://github.com/hexops/freetype), which depends on:
   * brotli
-* [ ] opusfile, which depends on:
+* [ ] [opusfile](https://github.com/hexops/opusfile), which depends on:
   * opus
   * ogg
-* [ ] harfbuzz, which depends on:
+* [ ] [harfbuzz](https://github.com/hexops/harfbuzz), which depends on:
   * freetype
   * brotli
-* [ ] mach-dxcompiler, which depends on:
-* [ ] mach-objc, which depends on:
+* [ ] [mach-dxcompiler](https://github.com/hexops/mach-dxcompiler), which depends on:
+* [ ] [mach-objc](https://github.com/hexops/mach-objc), which depends on:
   * xcode-frameworks
-* [ ] mach-freetype, which depends on:
+* [ ] [mach-freetype](https://github.com/hexops/mach-freetype), which depends on:
   * freetype
   * harfbuzz
   * font-assets
-* [ ] mach-flac, which depends on:
+* [ ] [mach-flac](https://github.com/hexops/mach-flac), which depends on:
   * flac
   * mach-sysaudio
   * linux-audio-headers
-* [ ] mach-opus, which depends on:
+* [ ] [mach-opus](https://github.com/hexops/mach-opus), which depends on:
   * opusfile
   * opusenc 
   * mach-sysaudio
   * linux-audio-headers
-* [ ] mach, which depends on:
+* [ ] [mach](https://github.com/hexops/mach), which depends on:
   * .zigversion
   * build.zig version check
   * mach-freetype
